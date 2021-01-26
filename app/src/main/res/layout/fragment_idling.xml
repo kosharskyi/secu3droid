@@ -1,0 +1,665 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+   SecuDroid  - An open source, free manager for SECU-3 engine control unit
+   Copyright (C) 2020 Vitaliy O. Kosharskiy. Ukraine, Kharkiv
+
+   SECU-3  - An open source, free engine control unit
+   Copyright (C) 2007 Alexey A. Shabelnikov. Ukraine, Kyiv
+
+   This program is free software: you can redistribute it and/or modify
+   it under the terms of the GNU General Public License as published by
+   the Free Software Foundation, either version 3 of the License, or
+   (at your option) any later version.
+
+   This program is distributed in the hope that it will be useful,
+   but WITHOUT ANY WARRANTY; without even the implied warranty of
+   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+   GNU General Public License for more details.
+
+   You should have received a copy of the GNU General Public License
+   along with this program.  If not, see <http://www.gnu.org/licenses/>.
+
+   contacts:
+              http://secu-3.org
+              email: vetalkosharskiy@gmail.com
+-->
+<ScrollView
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    tools:context=".ui.parameters.pages.IdlingFragment"
+    >
+
+    <androidx.constraintlayout.widget.ConstraintLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:padding="16dp">
+
+        <TextView
+            android:id="@+id/positive_reg_factor_title"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            app:layout_constraintTop_toTopOf="parent"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintEnd_toStartOf="@id/positive_reg_factor"
+            android:layout_marginEnd="8dp"
+            android:text="@string/idlreg_ifac1_title"
+            />
+
+        <TextView
+            android:id="@+id/positive_reg_factor"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            app:layout_constraintTop_toTopOf="parent"
+            app:layout_constraintEnd_toEndOf="parent"
+            android:textAppearance="?android:attr/textAppearanceLarge"
+            android:text="0.00"
+            />
+
+        <TextView
+            android:id="@+id/positive_reg_factor_units"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            app:layout_constraintTop_toBottomOf="@id/positive_reg_factor"
+            app:layout_constraintEnd_toEndOf="parent"
+
+            />
+
+
+        <!-- ************************************************************* -->
+
+        <TextView
+            android:id="@+id/negative_reg_factor_title"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            app:layout_constraintTop_toBottomOf="@id/positive_reg_factor_units"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintEnd_toStartOf="@id/negative_reg_factor"
+            android:layout_marginEnd="8dp"
+            android:text="@string/idlreg_ifac2_title"
+            />
+
+        <TextView
+            android:id="@+id/negative_reg_factor"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            app:layout_constraintTop_toTopOf="@id/negative_reg_factor_title"
+            app:layout_constraintEnd_toEndOf="parent"
+            android:textAppearance="?android:attr/textAppearanceLarge"
+            android:text="0.00"
+            />
+
+        <TextView
+            android:id="@+id/negative_reg_factor_units"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            app:layout_constraintTop_toBottomOf="@id/negative_reg_factor"
+            app:layout_constraintEnd_toEndOf="parent"
+
+            />
+
+
+        <!-- ************************************************************* -->
+
+        <TextView
+            android:id="@+id/max_reg_limit_title"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            app:layout_constraintTop_toBottomOf="@id/negative_reg_factor_units"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintEnd_toStartOf="@id/max_reg_limit"
+            android:layout_marginTop="16dp"
+            android:layout_marginEnd="8dp"
+            android:text="@string/idlreg_maximal_angle_title"
+            />
+
+        <TextView
+            android:id="@+id/max_reg_limit"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            app:layout_constraintTop_toTopOf="@id/max_reg_limit_title"
+            app:layout_constraintEnd_toEndOf="parent"
+            android:textAppearance="?android:attr/textAppearanceLarge"
+            android:text="0.00"
+            />
+
+        <TextView
+            android:id="@+id/max_reg_limit_units"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            app:layout_constraintTop_toBottomOf="@id/max_reg_limit"
+            app:layout_constraintEnd_toEndOf="parent"
+
+            />
+
+
+        <!-- ************************************************************* -->
+
+        <TextView
+            android:id="@+id/min_reg_limit_title"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            app:layout_constraintTop_toBottomOf="@id/max_reg_limit_units"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintEnd_toStartOf="@id/min_reg_limit"
+            android:layout_marginEnd="8dp"
+            android:text="@string/idlreg_minimal_angle_title"
+            />
+
+        <TextView
+            android:id="@+id/min_reg_limit"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            app:layout_constraintTop_toTopOf="@id/min_reg_limit_title"
+            app:layout_constraintEnd_toEndOf="parent"
+            android:textAppearance="?android:attr/textAppearanceLarge"
+            android:text="0.00"
+            />
+
+        <TextView
+            android:id="@+id/min_reg_limit_units"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            app:layout_constraintTop_toBottomOf="@id/min_reg_limit"
+            app:layout_constraintEnd_toEndOf="parent"
+
+            />
+
+
+        <!-- ************************************************************* -->
+
+        <TextView
+            android:id="@+id/goal_rpm_title"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            app:layout_constraintTop_toBottomOf="@id/min_reg_limit_units"
+            app:layout_constraintStart_toStartOf="parent"
+            android:layout_marginTop="16dp"
+            android:text="@string/idlreg_target_rpm_title"
+            />
+
+        <TextView
+            android:id="@+id/goal_rpm"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            app:layout_constraintTop_toTopOf="@id/goal_rpm_title"
+            app:layout_constraintEnd_toEndOf="parent"
+            android:textAppearance="?android:attr/textAppearanceLarge"
+            android:text="0.00"
+            />
+
+        <TextView
+            android:id="@+id/goal_rpm_units"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            app:layout_constraintTop_toBottomOf="@id/goal_rpm"
+            app:layout_constraintEnd_toEndOf="parent"
+            android:text="@string/units_rpm"
+            />
+
+
+        <!-- ************************************************************* -->
+
+        <TextView
+            android:id="@+id/rpm_dead_band_title"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            app:layout_constraintTop_toBottomOf="@id/goal_rpm_units"
+            app:layout_constraintStart_toStartOf="parent"
+            android:text="@string/idlreg_rpm_sensitivity_title"
+            />
+
+        <TextView
+            android:id="@+id/rpm_dead_band"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            app:layout_constraintTop_toTopOf="@id/rpm_dead_band_title"
+            app:layout_constraintEnd_toEndOf="parent"
+            android:textAppearance="?android:attr/textAppearanceLarge"
+            android:text="0.00"
+            />
+
+        <TextView
+            android:id="@+id/rpm_dead_band_units"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            app:layout_constraintTop_toBottomOf="@id/rpm_dead_band"
+            app:layout_constraintEnd_toEndOf="parent"
+            android:text="@string/units_rpm"
+            />
+
+
+        <!-- ************************************************************* -->
+
+        <TextView
+            android:id="@+id/regulator_on_temp_title"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            app:layout_constraintTop_toBottomOf="@id/rpm_dead_band_units"
+            app:layout_constraintStart_toStartOf="parent"
+            android:layout_marginTop="16dp"
+            android:text="@string/idlreg_turn_on_temp_title"
+            />
+
+        <TextView
+            android:id="@+id/regulator_on_temp"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            app:layout_constraintTop_toTopOf="@id/regulator_on_temp_title"
+            app:layout_constraintEnd_toEndOf="parent"
+            android:textAppearance="?android:attr/textAppearanceLarge"
+            android:text="0.00"
+            />
+
+        <TextView
+            android:id="@+id/regulator_on_temp_units"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            app:layout_constraintTop_toBottomOf="@id/regulator_on_temp"
+            app:layout_constraintEnd_toEndOf="parent"
+            android:text="@string/units_degrees_celcius"
+            />
+
+
+        <!-- ************************************************************* -->
+
+
+        <CheckBox
+            android:id="@+id/use_regulator"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            app:layout_constraintTop_toBottomOf="@id/regulator_on_temp_units"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintEnd_toEndOf="parent"
+            android:text="@string/idlreg_use_idle_regulator_title"
+            android:button="@null"
+            android:drawableEnd="?android:attr/listChoiceIndicatorMultiple"
+            />
+
+
+        <!-- ************************************************************* -->
+
+
+        <CheckBox
+            android:id="@+id/use_regulator_on_gas"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            app:layout_constraintTop_toBottomOf="@id/use_regulator"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintEnd_toEndOf="parent"
+            android:text="@string/idlreg_use_idle_regulator_on_gas_title"
+            android:button="@null"
+            android:drawableEnd="?android:attr/listChoiceIndicatorMultiple"
+            />
+
+        <!-- ************************************************************* -->
+
+
+        <CheckBox
+            android:id="@+id/proportional_regulator"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            app:layout_constraintTop_toBottomOf="@id/use_regulator_on_gas"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintEnd_toEndOf="parent"
+            android:text="@string/idlreg_proportional_regulator_title"
+            android:button="@null"
+            android:drawableEnd="?android:attr/listChoiceIndicatorMultiple"
+            />
+
+        <!-- ************************************************************* -->
+
+
+        <CheckBox
+            android:id="@+id/use_closed_loop"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            app:layout_constraintTop_toBottomOf="@id/proportional_regulator"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintEnd_toEndOf="parent"
+            android:text="@string/idlreg_use_closed_loop_title"
+            android:button="@null"
+            android:drawableEnd="?android:attr/listChoiceIndicatorMultiple"
+            />
+
+        <!-- ************************************************************* -->
+
+        <TextView
+            android:id="@+id/iac_add_after_exit_title"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            app:layout_constraintTop_toBottomOf="@id/use_closed_loop"
+            app:layout_constraintStart_toStartOf="parent"
+            android:layout_marginTop="16dp"
+            android:text="@string/idlreg_iac_add_after_exit_title"
+            />
+
+        <TextView
+            android:id="@+id/iac_add_after_exit"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            app:layout_constraintTop_toTopOf="@id/iac_add_after_exit_title"
+            app:layout_constraintEnd_toEndOf="parent"
+            android:textAppearance="?android:attr/textAppearanceLarge"
+            android:text="0.00"
+            />
+
+        <TextView
+            android:id="@+id/iac_add_after_exit_units"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            app:layout_constraintTop_toBottomOf="@id/iac_add_after_exit"
+            app:layout_constraintEnd_toEndOf="parent"
+            android:text="@string/units_percents"
+            />
+
+
+        <!-- ************************************************************* -->
+
+        <TextView
+            android:id="@+id/rpm_add_on_run_title"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            app:layout_constraintTop_toBottomOf="@id/iac_add_after_exit_units"
+            app:layout_constraintStart_toStartOf="parent"
+            android:layout_marginTop="16dp"
+            android:text="@string/idlreg_rpm_add_on_run_title"
+            />
+
+        <TextView
+            android:id="@+id/rpm_add_on_run"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            app:layout_constraintTop_toTopOf="@id/rpm_add_on_run_title"
+            app:layout_constraintEnd_toEndOf="parent"
+            android:textAppearance="?android:attr/textAppearanceLarge"
+            android:text="0.00"
+            />
+
+        <TextView
+            android:id="@+id/rpm_add_on_run_units"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            app:layout_constraintTop_toBottomOf="@id/rpm_add_on_run"
+            app:layout_constraintEnd_toEndOf="parent"
+            android:text="@string/units_rpm"
+            />
+
+
+        <!-- ************************************************************* -->
+
+        <TextView
+            android:id="@+id/proportional_title"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            app:layout_constraintTop_toBottomOf="@id/rpm_add_on_run_units"
+            app:layout_constraintStart_toStartOf="parent"
+            android:layout_marginTop="16dp"
+            android:text="@string/idlreg_proportional_title"
+            />
+
+        <TextView
+            android:id="@+id/proportional"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            app:layout_constraintTop_toTopOf="@id/proportional_title"
+            app:layout_constraintEnd_toEndOf="parent"
+            android:textAppearance="?android:attr/textAppearanceLarge"
+            android:text="0.00"
+            />
+
+        <TextView
+            android:id="@+id/proportional_units"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            app:layout_constraintTop_toBottomOf="@id/proportional"
+            app:layout_constraintEnd_toEndOf="parent"
+            android:text="@string/units_coef"
+            />
+
+
+        <!-- ************************************************************* -->
+
+        <TextView
+            android:id="@+id/integral_title"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            app:layout_constraintTop_toBottomOf="@id/proportional_units"
+            app:layout_constraintStart_toStartOf="parent"
+            android:layout_marginTop="16dp"
+            android:text="@string/idlreg_integral_title"
+            />
+
+        <TextView
+            android:id="@+id/integral"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            app:layout_constraintTop_toTopOf="@id/integral_title"
+            app:layout_constraintEnd_toEndOf="parent"
+            android:textAppearance="?android:attr/textAppearanceLarge"
+            android:text="0.00"
+            />
+
+        <TextView
+            android:id="@+id/integral_units"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            app:layout_constraintTop_toBottomOf="@id/integral"
+            app:layout_constraintEnd_toEndOf="parent"
+            android:text="@string/units_coef"
+            />
+
+
+        <!-- ************************************************************* -->
+
+        <TextView
+            android:id="@+id/transient_threshold1_title"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            app:layout_constraintTop_toBottomOf="@id/integral_units"
+            app:layout_constraintStart_toStartOf="parent"
+            android:layout_marginTop="16dp"
+            android:text="@string/idlreg_first_transient_threshold_title"
+            />
+
+        <TextView
+            android:id="@+id/transient_threshold1"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            app:layout_constraintTop_toTopOf="@id/transient_threshold1_title"
+            app:layout_constraintEnd_toEndOf="parent"
+            android:textAppearance="?android:attr/textAppearanceLarge"
+            android:text="0.00"
+            />
+
+        <TextView
+            android:id="@+id/transient_threshold1_units"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            app:layout_constraintTop_toBottomOf="@id/transient_threshold1"
+            app:layout_constraintEnd_toEndOf="parent"
+            android:text="@string/units_coef"
+            />
+
+
+        <!-- ************************************************************* -->
+
+        <TextView
+            android:id="@+id/transient_threshold2_title"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            app:layout_constraintTop_toBottomOf="@id/transient_threshold1_units"
+            app:layout_constraintStart_toStartOf="parent"
+            android:text="@string/idlreg_second_transient_threshold_title"
+            />
+
+        <TextView
+            android:id="@+id/transient_threshold2"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            app:layout_constraintTop_toTopOf="@id/transient_threshold2_title"
+            app:layout_constraintEnd_toEndOf="parent"
+            android:textAppearance="?android:attr/textAppearanceLarge"
+            android:text="0.00"
+            />
+
+        <TextView
+            android:id="@+id/transient_threshold2_units"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            app:layout_constraintTop_toBottomOf="@id/transient_threshold2"
+            app:layout_constraintEnd_toEndOf="parent"
+            android:text="@string/units_coef"
+            />
+
+
+        <!-- ************************************************************* -->
+
+        <TextView
+            android:id="@+id/integrator_rpm_limit_title"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            app:layout_constraintTop_toBottomOf="@id/transient_threshold2_units"
+            app:layout_constraintStart_toStartOf="parent"
+            android:layout_marginTop="16dp"
+            android:text="@string/idlreg_integrator_rpm_limit_title"
+            />
+
+        <TextView
+            android:id="@+id/integrator_rpm_limit"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            app:layout_constraintTop_toTopOf="@id/integrator_rpm_limit_title"
+            app:layout_constraintEnd_toEndOf="parent"
+            android:textAppearance="?android:attr/textAppearanceLarge"
+            android:text="0.00"
+            />
+
+        <TextView
+            android:id="@+id/integrator_rpm_limit_units"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            app:layout_constraintTop_toBottomOf="@id/integrator_rpm_limit"
+            app:layout_constraintEnd_toEndOf="parent"
+            android:text="@string/units_rpm"
+            />
+
+
+        <!-- ************************************************************* -->
+
+        <TextView
+            android:id="@+id/pressure_load_on_idling_title"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            app:layout_constraintTop_toBottomOf="@id/integrator_rpm_limit_units"
+            app:layout_constraintStart_toStartOf="parent"
+            android:layout_marginTop="16dp"
+            android:text="@string/idlreg_pressure_load_on_idling_title"
+            />
+
+        <TextView
+            android:id="@+id/pressure_load_on_idling"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            app:layout_constraintTop_toTopOf="@id/pressure_load_on_idling_title"
+            app:layout_constraintEnd_toEndOf="parent"
+            android:textAppearance="?android:attr/textAppearanceLarge"
+            android:text="0.00"
+            />
+
+        <TextView
+            android:id="@+id/pressure_load_on_idling_units"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            app:layout_constraintTop_toBottomOf="@id/pressure_load_on_idling"
+            app:layout_constraintEnd_toEndOf="parent"
+            android:text="@string/units_pressure_kpa"
+            />
+
+
+        <!-- ************************************************************* -->
+
+        <TextView
+            android:id="@+id/min_iac_position_title"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            app:layout_constraintTop_toBottomOf="@id/pressure_load_on_idling_units"
+            app:layout_constraintStart_toStartOf="parent"
+            android:layout_marginTop="16dp"
+            android:text="@string/idlreg_min_iac_position_title"
+            />
+
+        <TextView
+            android:id="@+id/min_iac_position"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            app:layout_constraintTop_toTopOf="@id/min_iac_position_title"
+            app:layout_constraintEnd_toEndOf="parent"
+            android:textAppearance="?android:attr/textAppearanceLarge"
+            android:text="0.00"
+            />
+
+        <TextView
+            android:id="@+id/min_iac_position_units"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            app:layout_constraintTop_toBottomOf="@id/min_iac_position"
+            app:layout_constraintEnd_toEndOf="parent"
+            android:text="@string/units_percents"
+            />
+
+
+        <!-- ************************************************************* -->
+
+        <TextView
+            android:id="@+id/max_iac_position_title"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            app:layout_constraintTop_toBottomOf="@id/min_iac_position_units"
+            app:layout_constraintStart_toStartOf="parent"
+            android:layout_marginTop="16dp"
+            android:text="@string/idlreg_max_iac_position_title"
+            />
+
+        <TextView
+            android:id="@+id/max_iac_position"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            app:layout_constraintTop_toTopOf="@id/max_iac_position_title"
+            app:layout_constraintEnd_toEndOf="parent"
+            android:textAppearance="?android:attr/textAppearanceLarge"
+            android:text="0.00"
+            />
+
+        <TextView
+            android:id="@+id/max_iac_position_units"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            app:layout_constraintTop_toBottomOf="@id/max_iac_position"
+            app:layout_constraintEnd_toEndOf="parent"
+            android:text="@string/units_percents"
+            />
+
+
+        <!-- ************************************************************* -->
+
+
+        <CheckBox
+            android:id="@+id/use_closed_loop_on_gas"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            app:layout_constraintTop_toBottomOf="@id/max_iac_position_units"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintEnd_toEndOf="parent"
+            android:text="@string/idlreg_use_closed_loop_on_gas_title"
+            android:button="@null"
+            android:drawableEnd="?android:attr/listChoiceIndicatorMultiple"
+            />
+
+        <!-- ************************************************************* -->
+
+    </androidx.constraintlayout.widget.ConstraintLayout>
+
+</ScrollView>

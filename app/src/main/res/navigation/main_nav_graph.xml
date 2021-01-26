@@ -1,0 +1,82 @@
+<?xml version="1.0" encoding="utf-8"?>
+<navigation xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:id="@+id/main_nav_graph"
+    app:startDestination="@id/sensorsFragment"
+    >
+
+    <fragment
+        android:id="@+id/sensorsFragment"
+        android:name="org.secu3.android.ui.main.SensorsFragment"
+        android:label="Sensors Fragment"
+        tools:layout="@layout/fragment_sensors"
+        >
+
+        <action
+            android:id="@+id/action_sensors_to_dashboard"
+            app:destination="@id/dashboardFragment"
+            />
+
+        <action
+            android:id="@+id/action_sensors_to_diagnostics"
+            app:destination="@id/diagnosticsFragment"
+            />
+
+        <action
+            android:id="@+id/action_sensors_to_errors"
+            app:destination="@id/errorsFragment"
+            />
+
+        <action
+            android:id="@+id/action_sensors_to_parameters"
+            app:destination="@id/parametersFragment"
+            />
+
+    </fragment>
+
+    <fragment
+        android:id="@+id/dashboardFragment"
+        android:name="org.secu3.android.ui.dashboard.DashBoardFragment"
+        android:label="Dashboard Fragment"
+        tools:layout="@layout/fragment_dashboard"
+        />
+
+    <fragment
+        android:id="@+id/diagnosticsFragment"
+        android:name="org.secu3.android.ui.diagnostics.DiagnosticsFragment"
+        android:label="Diagnostics Fragment"
+        tools:layout="@layout/fragment_diagnostics"
+        >
+
+        <action
+            android:id="@+id/action_diagnostic_to_additional"
+            app:destination="@id/diagnosticsAdditionalDialog"
+            />
+
+    </fragment>
+
+    <dialog
+        android:id="@+id/diagnosticsAdditionalDialog"
+        android:name="org.secu3.android.ui.diagnostics.DiagnosticAdditionalDialogFragment"
+        android:label="Diagnostics additional dialog"
+        tools:layout="@layout/fragment_diagnostic_additional_dialog"
+        />
+
+    <fragment
+        android:id="@+id/errorsFragment"
+        android:name="org.secu3.android.ui.errors.ErrorsFragment"
+        android:label="Errors Fragment"
+        tools:layout="@layout/fragment_errors"
+        />
+
+    <fragment
+        android:id="@+id/parametersFragment"
+        android:name="org.secu3.android.ui.parameters.ParamsFragment"
+        android:label="Parameters Fragment"
+        tools:layout="@layout/fragment_params"
+        />
+
+
+
+</navigation>

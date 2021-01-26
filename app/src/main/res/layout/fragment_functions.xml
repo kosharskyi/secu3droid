@@ -1,0 +1,439 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+   SecuDroid  - An open source, free manager for SECU-3 engine control unit
+   Copyright (C) 2020 Vitaliy O. Kosharskiy. Ukraine, Kharkiv
+
+   SECU-3  - An open source, free engine control unit
+   Copyright (C) 2007 Alexey A. Shabelnikov. Ukraine, Kyiv
+
+   This program is free software: you can redistribute it and/or modify
+   it under the terms of the GNU General Public License as published by
+   the Free Software Foundation, either version 3 of the License, or
+   (at your option) any later version.
+
+   This program is distributed in the hope that it will be useful,
+   but WITHOUT ANY WARRANTY; without even the implied warranty of
+   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+   GNU General Public License for more details.
+
+   You should have received a copy of the GNU General Public License
+   along with this program.  If not, see <http://www.gnu.org/licenses/>.
+
+   contacts:
+              http://secu-3.org
+              email: vetalkosharskiy@gmail.com
+-->
+<ScrollView
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    tools:context=".ui.parameters.pages.FunctionsFragment">
+
+    <androidx.constraintlayout.widget.ConstraintLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:padding="16dp"
+        >
+
+        <TextView
+            android:id="@+id/lower_load_value_title"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            app:layout_constraintTop_toTopOf="parent"
+            app:layout_constraintStart_toStartOf="parent"
+            android:text="@string/funset_lower_pressure_title"
+            />
+
+        <TextView
+            android:id="@+id/lower_load_value"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            app:layout_constraintTop_toTopOf="parent"
+            app:layout_constraintEnd_toEndOf="parent"
+            android:textAppearance="?android:attr/textAppearanceLarge"
+            android:text="0.00"
+            />
+
+        <TextView
+            android:id="@+id/lower_load_value_units"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            app:layout_constraintTop_toBottomOf="@id/lower_load_value"
+            app:layout_constraintEnd_toEndOf="parent"
+            android:text="@string/units_pressure_kpa"
+            />
+
+
+        <!-- ************************************************************* -->
+
+        <TextView
+            android:id="@+id/upper_load_value_title"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            app:layout_constraintTop_toBottomOf="@id/lower_load_value_units"
+            app:layout_constraintStart_toStartOf="parent"
+            android:layout_marginTop="16dp"
+            android:text="@string/funset_upper_pressure_title"
+            />
+
+        <TextView
+            android:id="@+id/upper_load_value"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            app:layout_constraintTop_toTopOf="@id/upper_load_value_title"
+            app:layout_constraintEnd_toEndOf="parent"
+            android:textAppearance="?android:attr/textAppearanceLarge"
+            android:text="0.00"
+            />
+
+        <TextView
+            android:id="@+id/upper_load_value_units"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            app:layout_constraintTop_toBottomOf="@id/upper_load_value"
+            app:layout_constraintEnd_toEndOf="parent"
+            android:text="@string/units_pressure_kpa"
+            />
+
+
+        <!-- ************************************************************* -->
+
+        <TextView
+            android:id="@+id/map_curve_offset_title"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            app:layout_constraintTop_toBottomOf="@id/upper_load_value_units"
+            app:layout_constraintStart_toStartOf="parent"
+            android:layout_marginTop="16dp"
+            android:text="@string/funset_map_sensor_offset_title"
+            />
+
+        <TextView
+            android:id="@+id/map_curve_offset"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            app:layout_constraintTop_toTopOf="@id/map_curve_offset_title"
+            app:layout_constraintEnd_toEndOf="parent"
+            android:textAppearance="?android:attr/textAppearanceLarge"
+            android:text="0.00"
+            />
+
+        <TextView
+            android:id="@+id/map_curve_offset_units"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            app:layout_constraintTop_toBottomOf="@id/map_curve_offset"
+            app:layout_constraintEnd_toEndOf="parent"
+            android:text="@string/units_volts"
+            />
+
+
+        <!-- ************************************************************* -->
+
+        <TextView
+            android:id="@+id/map_curve_gradient_title"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            app:layout_constraintTop_toBottomOf="@id/map_curve_offset_units"
+            app:layout_constraintStart_toStartOf="parent"
+            android:layout_marginTop="16dp"
+            android:text="@string/funset_map_sensor_gradient_title"
+            />
+
+        <TextView
+            android:id="@+id/map_curve_gradient"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            app:layout_constraintTop_toTopOf="@id/map_curve_gradient_title"
+            app:layout_constraintEnd_toEndOf="parent"
+            android:textAppearance="?android:attr/textAppearanceLarge"
+            android:text="0.00"
+            />
+
+        <TextView
+            android:id="@+id/map_curve_gradient_units"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            app:layout_constraintTop_toBottomOf="@id/map_curve_gradient"
+            app:layout_constraintEnd_toEndOf="parent"
+            android:text="@string/units_kpa_per_volt"
+            />
+
+
+        <!-- ************************************************************* -->
+
+        <com.google.android.material.textfield.TextInputLayout
+            android:id="@+id/maps_set_title"
+            android:theme="@style/Theme.MaterialComponents.DayNight.NoActionBar"
+            style="@style/Widget.MaterialComponents.TextInputLayout.OutlinedBox.ExposedDropdownMenu"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            app:layout_constraintTop_toBottomOf="@id/map_curve_gradient_units"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintEnd_toEndOf="parent"
+            android:layout_marginTop="16dp"
+            android:hint="Maps set for gasoline">
+
+            <AutoCompleteTextView
+                android:id="@+id/maps_set"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:inputType="none"
+                />
+
+        </com.google.android.material.textfield.TextInputLayout>
+
+
+        <!-- ************************************************************* -->
+
+        <com.google.android.material.textfield.TextInputLayout
+            android:id="@+id/maps_set_for_gas_title"
+            android:theme="@style/Theme.MaterialComponents.DayNight.NoActionBar"
+            style="@style/Widget.MaterialComponents.TextInputLayout.OutlinedBox.ExposedDropdownMenu"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            app:layout_constraintTop_toBottomOf="@id/maps_set_title"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintEnd_toEndOf="parent"
+            android:layout_marginTop="16dp"
+            android:hint="Maps set for gasoline">
+
+            <AutoCompleteTextView
+                android:id="@+id/maps_set_for_gas"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:inputType="none"
+                />
+
+        </com.google.android.material.textfield.TextInputLayout>
+
+        <!-- ************************************************************* -->
+
+
+
+        <TextView
+            android:id="@+id/tps_curve_offset_title"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            app:layout_constraintTop_toBottomOf="@id/maps_set_for_gas_title"
+            app:layout_constraintStart_toStartOf="parent"
+            android:layout_marginTop="16dp"
+            android:text="@string/funset_tps_curve_offset_title"
+            />
+
+        <TextView
+            android:id="@+id/tps_curve_offset"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            app:layout_constraintTop_toTopOf="@id/tps_curve_offset_title"
+            app:layout_constraintEnd_toEndOf="parent"
+            android:textAppearance="?android:attr/textAppearanceLarge"
+            android:text="0.00"
+            />
+
+        <TextView
+            android:id="@+id/tps_curve_offset_units"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            app:layout_constraintTop_toBottomOf="@id/tps_curve_offset"
+            app:layout_constraintEnd_toEndOf="parent"
+            android:text="@string/units_volts"
+            />
+
+
+        <!-- ************************************************************* -->
+
+        <TextView
+            android:id="@+id/tps_curve_gradient_title"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            app:layout_constraintTop_toBottomOf="@id/tps_curve_offset_units"
+            app:layout_constraintStart_toStartOf="parent"
+            android:layout_marginTop="16dp"
+            android:text="@string/funset_tps_curve_gradient_title"
+            />
+
+        <TextView
+            android:id="@+id/tps_curve_gradient"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            app:layout_constraintTop_toTopOf="@id/tps_curve_gradient_title"
+            app:layout_constraintEnd_toEndOf="parent"
+            android:textAppearance="?android:attr/textAppearanceLarge"
+            android:text="0.00"
+            />
+
+        <TextView
+            android:id="@+id/tps_curve_gradient_units"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            app:layout_constraintTop_toBottomOf="@id/tps_curve_gradient"
+            app:layout_constraintEnd_toEndOf="parent"
+            android:text="@string/units_percent_per_volts"
+            />
+
+
+        <!-- ************************************************************* -->
+
+        <com.google.android.material.textfield.TextInputLayout
+            android:id="@+id/load_measurement_title"
+            android:theme="@style/Theme.MaterialComponents.DayNight.NoActionBar"
+            style="@style/Widget.MaterialComponents.TextInputLayout.OutlinedBox.ExposedDropdownMenu"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            app:layout_constraintTop_toBottomOf="@id/tps_curve_gradient_units"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintEnd_toEndOf="parent"
+            android:layout_marginTop="16dp"
+            android:hint="Load measurement">
+
+            <AutoCompleteTextView
+                android:id="@+id/load_measurement"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:inputType="none"
+                />
+
+        </com.google.android.material.textfield.TextInputLayout>
+
+        <!-- ************************************************************* -->
+
+        <com.google.android.material.textfield.TextInputLayout
+            android:id="@+id/mapsel0_petrol_title"
+            android:theme="@style/Theme.MaterialComponents.DayNight.NoActionBar"
+            style="@style/Widget.MaterialComponents.TextInputLayout.OutlinedBox.ExposedDropdownMenu"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            app:layout_constraintTop_toBottomOf="@id/load_measurement_title"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintEnd_toEndOf="parent"
+            android:hint="MAPSEL0 condition for petrol">
+
+            <AutoCompleteTextView
+                android:id="@+id/mapsel_petrol"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:inputType="none"
+                />
+
+        </com.google.android.material.textfield.TextInputLayout>
+
+        <!-- ************************************************************* -->
+
+        <com.google.android.material.textfield.TextInputLayout
+            android:id="@+id/mapsel0_gas_title"
+            android:theme="@style/Theme.MaterialComponents.DayNight.NoActionBar"
+            style="@style/Widget.MaterialComponents.TextInputLayout.OutlinedBox.ExposedDropdownMenu"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            app:layout_constraintTop_toBottomOf="@id/mapsel0_petrol_title"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintEnd_toEndOf="parent"
+            android:hint="MAPSEL1 condition for petrol">
+
+            <AutoCompleteTextView
+                android:id="@+id/mapsel_gas"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:inputType="none"
+                />
+
+        </com.google.android.material.textfield.TextInputLayout>
+
+        <!-- ************************************************************* -->
+
+        <com.google.android.material.textfield.TextInputLayout
+            android:id="@+id/barometric_correction_title"
+            android:theme="@style/Theme.MaterialComponents.DayNight.NoActionBar"
+            style="@style/Widget.MaterialComponents.TextInputLayout.OutlinedBox.ExposedDropdownMenu"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            app:layout_constraintTop_toBottomOf="@id/mapsel0_gas_title"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintEnd_toEndOf="parent"
+            android:hint="Barometric correction">
+
+            <AutoCompleteTextView
+                android:id="@+id/barometric_correction"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:inputType="none"
+                />
+
+        </com.google.android.material.textfield.TextInputLayout>
+
+        <!-- ************************************************************* -->
+
+
+        <!-- ************************************************************* -->
+
+        <TextView
+            android:id="@+id/map2_curve_offset_title"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            app:layout_constraintTop_toBottomOf="@id/barometric_correction_title"
+            app:layout_constraintStart_toStartOf="parent"
+            android:layout_marginTop="16dp"
+            android:text="@string/funset_map2_sensor_offset_title"
+            />
+
+        <TextView
+            android:id="@+id/map2_curve_offset"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            app:layout_constraintTop_toTopOf="@id/map2_curve_offset_title"
+            app:layout_constraintEnd_toEndOf="parent"
+            android:textAppearance="?android:attr/textAppearanceLarge"
+            android:text="0.00"
+            />
+
+        <TextView
+            android:id="@+id/map2_curve_offset_units"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            app:layout_constraintTop_toBottomOf="@id/map2_curve_offset"
+            app:layout_constraintEnd_toEndOf="parent"
+            android:text="@string/units_volts"
+            />
+
+
+        <!-- ************************************************************* -->
+
+        <TextView
+            android:id="@+id/map2_curve_gradient_title"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            app:layout_constraintTop_toBottomOf="@id/map2_curve_offset_units"
+            app:layout_constraintStart_toStartOf="parent"
+            android:layout_marginTop="16dp"
+            android:text="@string/funset_map2_sensor_gradient_title"
+            />
+
+        <TextView
+            android:id="@+id/map2_curve_gradient"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            app:layout_constraintTop_toTopOf="@id/map2_curve_gradient_title"
+            app:layout_constraintEnd_toEndOf="parent"
+            android:textAppearance="?android:attr/textAppearanceLarge"
+            android:text="0.00"
+            />
+
+        <TextView
+            android:id="@+id/map2_curve_gradient_units"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            app:layout_constraintTop_toBottomOf="@id/map2_curve_gradient"
+            app:layout_constraintEnd_toEndOf="parent"
+            android:text="@string/units_kpa_per_volt"
+            />
+
+
+        <!-- ************************************************************* -->
+
+
+    </androidx.constraintlayout.widget.ConstraintLayout>
+
+</ScrollView>

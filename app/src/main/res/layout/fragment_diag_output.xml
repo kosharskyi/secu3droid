@@ -1,0 +1,478 @@
+<?xml version="1.0" encoding="utf-8"?>
+<ScrollView
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    tools:context=".ui.diagnostics.DiagOutputFragment"
+    >
+
+
+    <androidx.constraintlayout.widget.ConstraintLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:padding="16dp"
+        >
+
+
+        <androidx.constraintlayout.widget.Group
+            android:id="@+id/secu3i"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            app:constraint_referenced_ids="ign_out5,inj_o1,inj_o2,inj_o3,inj_o4,inj_o5,stbl_o,cel_o,fpmp_o,pwrr_o,evap_o,o2sh_o,cond_o,add_o2,tach_o"
+            android:visibility="gone"
+            tools:visibility="visible"
+
+            />
+
+        <androidx.constraintlayout.widget.Group
+            android:id="@+id/secu3t"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            app:constraint_referenced_ids="add_io1,add_io2,ie,fe, st_block,ce"
+            android:visibility="gone"
+            />
+
+        <CheckBox
+            android:id="@+id/ign_out1"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            app:layout_constraintTop_toTopOf="parent"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintEnd_toEndOf="parent"
+            android:text="IGN_OUT1"
+            android:button="@null"
+            android:drawableEnd="?android:attr/listChoiceIndicatorMultiple"
+            tools:checked="true"
+            />
+
+
+        <!-- ************************************************************* -->
+
+        <CheckBox
+            android:id="@+id/ign_out2"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            app:layout_constraintTop_toBottomOf="@id/ign_out1"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintEnd_toEndOf="parent"
+            android:text="IGN_OUT2"
+            android:button="@null"
+            android:drawableEnd="?android:attr/listChoiceIndicatorMultiple"
+            tools:checked="true"
+            />
+
+
+        <!-- ************************************************************* -->
+
+        <CheckBox
+            android:id="@+id/ign_out3"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            app:layout_constraintTop_toBottomOf="@id/ign_out2"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintEnd_toEndOf="parent"
+            android:text="IGN_OUT3"
+            android:button="@null"
+            android:drawableEnd="?android:attr/listChoiceIndicatorMultiple"
+            tools:checked="true"
+            />
+
+
+        <!-- ************************************************************* -->
+
+        <CheckBox
+            android:id="@+id/ign_out4"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            app:layout_constraintTop_toBottomOf="@id/ign_out3"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintEnd_toEndOf="parent"
+            android:text="IGN_OUT4"
+            android:button="@null"
+            android:drawableEnd="?android:attr/listChoiceIndicatorMultiple"
+            tools:checked="true"
+            />
+
+
+        <!-- ************************************************************* -->
+
+        <CheckBox
+            android:id="@+id/ign_out5"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            app:layout_constraintTop_toBottomOf="@id/ign_out4"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintEnd_toEndOf="parent"
+            android:text="IGN_OUT5"
+            android:button="@null"
+            android:drawableEnd="?android:attr/listChoiceIndicatorMultiple"
+            tools:checked="true"
+            />
+
+
+        <!-- ************************************************************* -->
+
+        <CheckBox
+            android:id="@+id/add_io1"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            app:layout_constraintTop_toBottomOf="@id/ign_out5"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintEnd_toEndOf="parent"
+            android:text="ADD_IO1"
+            android:button="@null"
+            android:drawableEnd="?android:attr/listChoiceIndicatorMultiple"
+            tools:checked="true"
+            />
+
+
+        <!-- ************************************************************* -->
+
+        <CheckBox
+            android:id="@+id/add_io2"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            app:layout_constraintTop_toBottomOf="@id/add_io1"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintEnd_toEndOf="parent"
+            android:text="ADD_IO2"
+            android:button="@null"
+            android:drawableEnd="?android:attr/listChoiceIndicatorMultiple"
+            tools:checked="true"
+            />
+
+
+        <!-- ************************************************************* -->
+
+        <CheckBox
+            android:id="@+id/ie"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            app:layout_constraintTop_toBottomOf="@id/add_io2"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintEnd_toEndOf="parent"
+            android:text="IE"
+            android:button="@null"
+            android:drawableEnd="?android:attr/listChoiceIndicatorMultiple"
+            tools:checked="true"
+            />
+
+
+        <!-- ************************************************************* -->
+
+        <CheckBox
+            android:id="@+id/fe"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            app:layout_constraintTop_toBottomOf="@id/ie"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintEnd_toEndOf="parent"
+            android:text="FE"
+            android:button="@null"
+            android:drawableEnd="?android:attr/listChoiceIndicatorMultiple"
+            tools:checked="true"
+            />
+
+
+        <!-- ************************************************************* -->
+
+        <CheckBox
+            android:id="@+id/ecf"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            app:layout_constraintTop_toBottomOf="@id/fe"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintEnd_toEndOf="parent"
+            android:text="ECF"
+            android:button="@null"
+            android:drawableEnd="?android:attr/listChoiceIndicatorMultiple"
+            tools:checked="true"
+            />
+
+
+
+
+        <!-- ************************************************************* -->
+
+        <CheckBox
+            android:id="@+id/inj_o1"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            app:layout_constraintTop_toBottomOf="@id/ecf"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintEnd_toEndOf="parent"
+            android:text="INJ_O1"
+            android:button="@null"
+            android:drawableEnd="?android:attr/listChoiceIndicatorMultiple"
+            tools:checked="true"
+            />
+
+        <!-- ************************************************************* -->
+
+        <CheckBox
+            android:id="@+id/inj_o2"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            app:layout_constraintTop_toBottomOf="@id/inj_o1"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintEnd_toEndOf="parent"
+            android:text="INJ_O2"
+            android:button="@null"
+            android:drawableEnd="?android:attr/listChoiceIndicatorMultiple"
+            tools:checked="true"
+            />
+
+        <!-- ************************************************************* -->
+
+        <CheckBox
+            android:id="@+id/inj_o3"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            app:layout_constraintTop_toBottomOf="@id/inj_o2"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintEnd_toEndOf="parent"
+            android:text="INJ_O3"
+            android:button="@null"
+            android:drawableEnd="?android:attr/listChoiceIndicatorMultiple"
+            tools:checked="true"
+            />
+
+        <!-- ************************************************************* -->
+
+        <CheckBox
+            android:id="@+id/inj_o4"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            app:layout_constraintTop_toBottomOf="@id/inj_o3"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintEnd_toEndOf="parent"
+            android:text="INJ_O4"
+            android:button="@null"
+            android:drawableEnd="?android:attr/listChoiceIndicatorMultiple"
+            tools:checked="true"
+            />
+
+        <!-- ************************************************************* -->
+
+        <CheckBox
+            android:id="@+id/inj_o5"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            app:layout_constraintTop_toBottomOf="@id/inj_o4"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintEnd_toEndOf="parent"
+            android:text="INJ_O5"
+            android:button="@null"
+            android:drawableEnd="?android:attr/listChoiceIndicatorMultiple"
+            tools:checked="true"
+            />
+
+        <!-- ************************************************************* -->
+
+
+
+        <CheckBox
+            android:id="@+id/ce"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            app:layout_constraintTop_toBottomOf="@id/inj_o5"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintEnd_toEndOf="parent"
+            android:text="CE"
+            android:button="@null"
+            android:drawableEnd="?android:attr/listChoiceIndicatorMultiple"
+            tools:checked="true"
+            />
+
+
+        <!-- ************************************************************* -->
+
+        <CheckBox
+            android:id="@+id/st_block"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            app:layout_constraintTop_toBottomOf="@id/ce"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintEnd_toEndOf="parent"
+            android:text="ST_BLOCK"
+            android:button="@null"
+            android:drawableEnd="?android:attr/listChoiceIndicatorMultiple"
+            tools:checked="true"
+            />
+
+
+        <!-- ************************************************************* -->
+
+        <CheckBox
+            android:id="@+id/bl"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            app:layout_constraintTop_toBottomOf="@id/st_block"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintEnd_toEndOf="parent"
+            android:text="BL"
+            android:button="@null"
+            android:drawableEnd="?android:attr/listChoiceIndicatorMultiple"
+            tools:checked="true"
+            />
+
+        <!-- ************************************************************* -->
+
+        <CheckBox
+            android:id="@+id/de"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            app:layout_constraintTop_toBottomOf="@id/bl"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintEnd_toEndOf="parent"
+            android:text="DE"
+            android:button="@null"
+            android:drawableEnd="?android:attr/listChoiceIndicatorMultiple"
+            tools:checked="true"
+            />
+
+
+        <!-- ************************************************************* -->
+
+        <CheckBox
+            android:id="@+id/stbl_o"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            app:layout_constraintTop_toBottomOf="@id/de"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintEnd_toEndOf="parent"
+            android:text="STBL_O"
+            android:button="@null"
+            android:drawableEnd="?android:attr/listChoiceIndicatorMultiple"
+            tools:checked="true"
+            />
+
+
+        <!-- ************************************************************* -->
+
+        <CheckBox
+            android:id="@+id/cel_o"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            app:layout_constraintTop_toBottomOf="@id/stbl_o"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintEnd_toEndOf="parent"
+            android:text="CEL_O"
+            android:button="@null"
+            android:drawableEnd="?android:attr/listChoiceIndicatorMultiple"
+            tools:checked="true"
+            />
+
+
+        <!-- ************************************************************* -->
+
+        <CheckBox
+            android:id="@+id/fpmp_o"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            app:layout_constraintTop_toBottomOf="@id/cel_o"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintEnd_toEndOf="parent"
+            android:text="FPMP_O"
+            android:button="@null"
+            android:drawableEnd="?android:attr/listChoiceIndicatorMultiple"
+            tools:checked="true"
+            />
+
+        <!-- ************************************************************* -->
+
+        <CheckBox
+            android:id="@+id/pwrr_o"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            app:layout_constraintTop_toBottomOf="@id/fpmp_o"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintEnd_toEndOf="parent"
+            android:text="PWRR_O"
+            android:button="@null"
+            android:drawableEnd="?android:attr/listChoiceIndicatorMultiple"
+            tools:checked="true"
+            />
+
+        <!-- ************************************************************* -->
+
+        <CheckBox
+            android:id="@+id/evap_o"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            app:layout_constraintTop_toBottomOf="@id/pwrr_o"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintEnd_toEndOf="parent"
+            android:text="EVAP_O"
+            android:button="@null"
+            android:drawableEnd="?android:attr/listChoiceIndicatorMultiple"
+            tools:checked="true"
+            />
+
+        <!-- ************************************************************* -->
+
+        <CheckBox
+            android:id="@+id/o2sh_o"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            app:layout_constraintTop_toBottomOf="@id/evap_o"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintEnd_toEndOf="parent"
+            android:text="O2SH_O"
+            android:button="@null"
+            android:drawableEnd="?android:attr/listChoiceIndicatorMultiple"
+            tools:checked="true"
+            />
+
+        <!-- ************************************************************* -->
+
+        <CheckBox
+            android:id="@+id/cond_o"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            app:layout_constraintTop_toBottomOf="@id/o2sh_o"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintEnd_toEndOf="parent"
+            android:text="COND_O"
+            android:button="@null"
+            android:drawableEnd="?android:attr/listChoiceIndicatorMultiple"
+            tools:checked="true"
+            />
+
+        <!-- ************************************************************* -->
+
+        <CheckBox
+            android:id="@+id/add_o2"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            app:layout_constraintTop_toBottomOf="@id/cond_o"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintEnd_toEndOf="parent"
+            android:text="ADD_O2"
+            android:button="@null"
+            android:drawableEnd="?android:attr/listChoiceIndicatorMultiple"
+            tools:checked="true"
+            />
+
+        <!-- ************************************************************* -->
+
+        <CheckBox
+            android:id="@+id/tach_o"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            app:layout_constraintTop_toBottomOf="@id/add_o2"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintEnd_toEndOf="parent"
+            android:text="TACH_O"
+            android:button="@null"
+            android:drawableEnd="?android:attr/listChoiceIndicatorMultiple"
+            tools:checked="true"
+            />
+
+        <!-- ************************************************************* -->
+
+    </androidx.constraintlayout.widget.ConstraintLayout>
+
+</ScrollView>

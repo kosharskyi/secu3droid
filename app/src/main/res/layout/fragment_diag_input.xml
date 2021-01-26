@@ -1,0 +1,476 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+   SecuDroid  - An open source, free manager for SECU-3 engine control unit
+   Copyright (C) 2020 Vitaliy O. Kosharskiy. Ukraine, Kharkiv
+
+   SECU-3  - An open source, free engine control unit
+   Copyright (C) 2007 Alexey A. Shabelnikov. Ukraine, Kyiv
+
+   This program is free software: you can redistribute it and/or modify
+   it under the terms of the GNU General Public License as published by
+   the Free Software Foundation, either version 3 of the License, or
+   (at your option) any later version.
+
+   This program is distributed in the hope that it will be useful,
+   but WITHOUT ANY WARRANTY; without even the implied warranty of
+   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+   GNU General Public License for more details.
+
+   You should have received a copy of the GNU General Public License
+   along with this program.  If not, see <http://www.gnu.org/licenses/>.
+
+   contacts:
+              http://secu-3.org
+              email: vetalkosharskiy@gmail.com
+-->
+<ScrollView
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    tools:context=".ui.diagnostics.DiagInputFragment"
+    >
+
+    <androidx.constraintlayout.widget.ConstraintLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:padding="16dp"
+        >
+
+        <TextView
+            android:id="@+id/voltage_title"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            app:layout_constraintTop_toTopOf="parent"
+            app:layout_constraintStart_toStartOf="parent"
+            android:text="Voltage"
+            />
+
+        <TextView
+            android:id="@+id/voltage"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            app:layout_constraintTop_toTopOf="parent"
+            app:layout_constraintEnd_toEndOf="parent"
+            android:textAppearance="?android:attr/textAppearanceLarge"
+            android:text="0.000"
+            />
+
+        <TextView
+            android:id="@+id/voltage_units"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            app:layout_constraintTop_toBottomOf="@id/voltage"
+            app:layout_constraintEnd_toEndOf="parent"
+            android:text="@string/units_volts"
+            />
+
+
+        <!-- ************************************************************* -->
+
+        <TextView
+            android:id="@+id/map_title"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            app:layout_constraintTop_toBottomOf="@id/voltage_units"
+            app:layout_constraintStart_toStartOf="parent"
+            android:layout_marginTop="16dp"
+            android:text="MAP_S"
+            />
+
+        <TextView
+            android:id="@+id/map"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            app:layout_constraintTop_toTopOf="@id/map_title"
+            app:layout_constraintEnd_toEndOf="parent"
+            android:textAppearance="?android:attr/textAppearanceLarge"
+            android:text="0.000"
+            />
+
+        <TextView
+            android:id="@+id/map_units"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            app:layout_constraintTop_toBottomOf="@id/map"
+            app:layout_constraintEnd_toEndOf="parent"
+            android:text="@string/units_volts"
+            />
+
+
+        <!-- ************************************************************* -->
+
+        <TextView
+            android:id="@+id/temp_title"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            app:layout_constraintTop_toBottomOf="@id/map_units"
+            app:layout_constraintStart_toStartOf="parent"
+            android:layout_marginTop="16dp"
+            android:text="TEMP"
+            />
+
+        <TextView
+            android:id="@+id/temp"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            app:layout_constraintTop_toTopOf="@id/temp_title"
+            app:layout_constraintEnd_toEndOf="parent"
+            android:textAppearance="?android:attr/textAppearanceLarge"
+            android:text="0.000"
+            />
+
+        <TextView
+            android:id="@+id/temp_units"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            app:layout_constraintTop_toBottomOf="@id/temp"
+            app:layout_constraintEnd_toEndOf="parent"
+            android:text="@string/units_volts"
+            />
+
+
+        <!-- ************************************************************* -->
+
+        <TextView
+            android:id="@+id/add1_title"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            app:layout_constraintTop_toBottomOf="@id/temp_units"
+            app:layout_constraintStart_toStartOf="parent"
+            android:layout_marginTop="16dp"
+            android:text="ADD_IO1"
+            />
+
+        <TextView
+            android:id="@+id/add1"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            app:layout_constraintTop_toTopOf="@id/add1_title"
+            app:layout_constraintEnd_toEndOf="parent"
+            android:textAppearance="?android:attr/textAppearanceLarge"
+            android:text="0.000"
+            />
+
+        <TextView
+            android:id="@+id/add1_units"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            app:layout_constraintTop_toBottomOf="@id/add1"
+            app:layout_constraintEnd_toEndOf="parent"
+            android:text="@string/units_volts"
+            />
+
+
+        <!-- ************************************************************* -->
+
+        <TextView
+            android:id="@+id/add2_title"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            app:layout_constraintTop_toBottomOf="@id/add1_units"
+            app:layout_constraintStart_toStartOf="parent"
+            android:layout_marginTop="16dp"
+            android:text="ADD_IO2"
+            />
+
+        <TextView
+            android:id="@+id/add2"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            app:layout_constraintTop_toTopOf="@id/add2_title"
+            app:layout_constraintEnd_toEndOf="parent"
+            android:textAppearance="?android:attr/textAppearanceLarge"
+            android:text="0.000"
+            />
+
+        <TextView
+            android:id="@+id/add2_units"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            app:layout_constraintTop_toBottomOf="@id/add2"
+            app:layout_constraintEnd_toEndOf="parent"
+            android:text="@string/units_volts"
+            />
+
+
+        <!-- ************************************************************* -->
+
+        <TextView
+            android:id="@+id/add3_title"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            app:layout_constraintTop_toBottomOf="@id/add2_units"
+            app:layout_constraintStart_toStartOf="parent"
+            android:layout_marginTop="16dp"
+            android:text="ADD_IO3"
+            />
+
+        <TextView
+            android:id="@+id/add3"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            app:layout_constraintTop_toTopOf="@id/add3_title"
+            app:layout_constraintEnd_toEndOf="parent"
+            android:textAppearance="?android:attr/textAppearanceLarge"
+            android:text="0.000"
+            />
+
+        <TextView
+            android:id="@+id/add3_units"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            app:layout_constraintTop_toBottomOf="@id/add3"
+            app:layout_constraintEnd_toEndOf="parent"
+            android:text="@string/units_volts"
+            />
+
+
+        <!-- ************************************************************* -->
+
+        <TextView
+            android:id="@+id/add4_title"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            app:layout_constraintTop_toBottomOf="@id/add3_units"
+            app:layout_constraintStart_toStartOf="parent"
+            android:layout_marginTop="16dp"
+            android:text="ADD_IO4"
+            />
+
+        <TextView
+            android:id="@+id/add4"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            app:layout_constraintTop_toTopOf="@id/add4_title"
+            app:layout_constraintEnd_toEndOf="parent"
+            android:textAppearance="?android:attr/textAppearanceLarge"
+            android:text="0.000"
+            />
+
+        <TextView
+            android:id="@+id/add4_units"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            app:layout_constraintTop_toBottomOf="@id/add4"
+            app:layout_constraintEnd_toEndOf="parent"
+            android:text="@string/units_volts"
+            />
+
+
+        <!-- ************************************************************* -->
+
+        <TextView
+            android:id="@+id/carb_title"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            app:layout_constraintTop_toBottomOf="@id/add4_units"
+            app:layout_constraintStart_toStartOf="parent"
+            android:layout_marginTop="16dp"
+            android:text="CARB"
+            />
+
+        <TextView
+            android:id="@+id/carb"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            app:layout_constraintTop_toTopOf="@id/carb_title"
+            app:layout_constraintEnd_toEndOf="parent"
+            android:textAppearance="?android:attr/textAppearanceLarge"
+            android:text="0.000"
+            />
+
+        <TextView
+            android:id="@+id/carb_units"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            app:layout_constraintTop_toBottomOf="@id/carb"
+            app:layout_constraintEnd_toEndOf="parent"
+            android:text="@string/units_volts"
+            />
+
+
+        <!-- ************************************************************* -->
+
+        <TextView
+            android:id="@+id/ks1_title"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            app:layout_constraintTop_toBottomOf="@id/carb_units"
+            app:layout_constraintStart_toStartOf="parent"
+            android:layout_marginTop="16dp"
+            android:text="KS_1"
+            />
+
+        <TextView
+            android:id="@+id/ks1"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            app:layout_constraintTop_toTopOf="@id/ks1_title"
+            app:layout_constraintEnd_toEndOf="parent"
+            android:textAppearance="?android:attr/textAppearanceLarge"
+            android:text="0.000"
+            />
+
+        <TextView
+            android:id="@+id/ks1_units"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            app:layout_constraintTop_toBottomOf="@id/ks1"
+            app:layout_constraintEnd_toEndOf="parent"
+            android:text="@string/units_volts"
+            />
+
+
+        <!-- ************************************************************* -->
+
+        <TextView
+            android:id="@+id/ks2_title"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            app:layout_constraintTop_toBottomOf="@id/ks1_units"
+            app:layout_constraintStart_toStartOf="parent"
+            android:layout_marginTop="16dp"
+            android:text="KS_2"
+            />
+
+        <TextView
+            android:id="@+id/ks2"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            app:layout_constraintTop_toTopOf="@id/ks2_title"
+            app:layout_constraintEnd_toEndOf="parent"
+            android:textAppearance="?android:attr/textAppearanceLarge"
+            android:text="0.000"
+            />
+
+        <TextView
+            android:id="@+id/ks2_units"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            app:layout_constraintTop_toBottomOf="@id/ks2"
+            app:layout_constraintEnd_toEndOf="parent"
+            android:text="@string/units_volts"
+            />
+
+
+        <!-- ************************************************************* -->
+
+        <CheckBox
+            android:id="@+id/gas_v"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            app:layout_constraintTop_toBottomOf="@id/ks2_units"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintEnd_toEndOf="parent"
+            android:text="GAS_V"
+            android:button="@null"
+            android:drawableEnd="?android:attr/listChoiceIndicatorMultiple"
+            android:clickable="false"
+            android:focusable="false"
+            android:focusableInTouchMode="false"
+            android:drawableTint="@color/colorPrimaryVariant"
+            tools:checked="true"
+            />
+
+
+        <!-- ************************************************************* -->
+
+        <CheckBox
+            android:id="@+id/ckps"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            app:layout_constraintTop_toBottomOf="@id/gas_v"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintEnd_toEndOf="parent"
+            android:text="CKPS"
+            android:button="@null"
+            android:drawableEnd="?android:attr/listChoiceIndicatorMultiple"
+            android:clickable="false"
+            android:focusable="false"
+            android:focusableInTouchMode="false"
+            android:drawableTint="@color/colorPrimaryVariant"
+            tools:checked="true"
+            />
+
+
+        <!-- ************************************************************* -->
+
+        <CheckBox
+            android:id="@+id/ref_s"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            app:layout_constraintTop_toBottomOf="@id/ckps"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintEnd_toEndOf="parent"
+            android:text="REF_S"
+            android:button="@null"
+            android:drawableEnd="?android:attr/listChoiceIndicatorMultiple"
+            android:clickable="false"
+            android:focusable="false"
+            android:focusableInTouchMode="false"
+            android:drawableTint="@color/colorPrimaryVariant"
+            />
+
+
+        <!-- ************************************************************* -->
+
+        <CheckBox
+            android:id="@+id/ps"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            app:layout_constraintTop_toBottomOf="@id/ref_s"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintEnd_toEndOf="parent"
+            android:text="PS"
+            android:button="@null"
+            android:drawableEnd="?android:attr/listChoiceIndicatorMultiple"
+            android:clickable="false"
+            android:focusable="false"
+            android:focusableInTouchMode="false"
+            android:drawableTint="@color/colorPrimaryVariant"
+            />
+
+
+        <!-- ************************************************************* -->
+
+
+        <CheckBox
+            android:id="@+id/bl"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            app:layout_constraintTop_toBottomOf="@id/ps"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintEnd_toEndOf="parent"
+            android:button="@null"
+            android:drawableEnd="?android:attr/listChoiceIndicatorMultiple"
+            android:text="BL"
+            android:clickable="false"
+            android:focusable="false"
+            android:focusableInTouchMode="false"
+            android:drawableTint="@color/colorPrimaryVariant"
+            />
+
+
+        <!-- ************************************************************* -->
+
+        <CheckBox
+            android:id="@+id/de"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            app:layout_constraintTop_toBottomOf="@id/bl"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintEnd_toEndOf="parent"
+            android:text="DE"
+            android:button="@null"
+            android:drawableEnd="?android:attr/listChoiceIndicatorMultiple"
+            android:clickable="false"
+            android:focusable="false"
+            android:focusableInTouchMode="false"
+            android:drawableTint="@color/colorPrimaryVariant"
+            />
+
+    </androidx.constraintlayout.widget.ConstraintLayout>
+
+</ScrollView>

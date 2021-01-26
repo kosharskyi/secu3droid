@@ -1,0 +1,204 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+   SecuDroid  - An open source, free manager for SECU-3 engine control unit
+   Copyright (C) 2020 Vitaliy O. Kosharskiy. Ukraine, Kharkiv
+
+   SECU-3  - An open source, free engine control unit
+   Copyright (C) 2007 Alexey A. Shabelnikov. Ukraine, Kyiv
+
+   This program is free software: you can redistribute it and/or modify
+   it under the terms of the GNU General Public License as published by
+   the Free Software Foundation, either version 3 of the License, or
+   (at your option) any later version.
+
+   This program is distributed in the hope that it will be useful,
+   but WITHOUT ANY WARRANTY; without even the implied warranty of
+   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+   GNU General Public License for more details.
+
+   You should have received a copy of the GNU General Public License
+   along with this program.  If not, see <http://www.gnu.org/licenses/>.
+
+   contacts:
+              http://secu-3.org
+              email: vetalkosharskiy@gmail.com
+-->
+<androidx.constraintlayout.widget.ConstraintLayout
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    tools:context=".ui.parameters.pages.AnglesFragment"
+    android:padding="16dp">
+
+
+    <TextView
+        android:id="@+id/max_advance_angle_title"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        app:layout_constraintTop_toTopOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        android:text="@string/angles_max_angle_title"
+        />
+
+    <TextView
+        android:id="@+id/max_advance_angle"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        app:layout_constraintTop_toTopOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
+        android:textAppearance="?android:attr/textAppearanceLarge"
+        android:text="00.00"
+        />
+
+    <TextView
+        android:id="@+id/max_advance_angle_units"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        app:layout_constraintTop_toBottomOf="@id/max_advance_angle"
+        app:layout_constraintEnd_toEndOf="parent"
+        android:text="@string/units_degree"
+        />
+
+
+    <!-- ************************************************************* -->
+
+    <TextView
+        android:id="@+id/min_advance_angle_title"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        app:layout_constraintTop_toBottomOf="@id/max_advance_angle_units"
+        app:layout_constraintStart_toStartOf="parent"
+        android:text="@string/angles_min_angle_title"
+        />
+
+    <TextView
+        android:id="@+id/min_advance_angle"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        app:layout_constraintTop_toTopOf="@id/min_advance_angle_title"
+        app:layout_constraintEnd_toEndOf="parent"
+        android:textAppearance="?android:attr/textAppearanceLarge"
+        android:text="00.00"
+        />
+
+    <TextView
+        android:id="@+id/min_advance_angle_units"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        app:layout_constraintTop_toBottomOf="@id/min_advance_angle"
+        app:layout_constraintEnd_toEndOf="parent"
+        android:text="@string/units_degree"
+        />
+
+
+    <!-- ************************************************************* -->
+
+    <TextView
+        android:id="@+id/angle_decrease_speed_title"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        app:layout_constraintTop_toBottomOf="@id/min_advance_angle_units"
+        app:layout_constraintStart_toStartOf="parent"
+        android:text="@string/angles_angle_decrement_step_title"
+        />
+
+    <TextView
+        android:id="@+id/angle_decrease_speed"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        app:layout_constraintTop_toTopOf="@id/angle_decrease_speed_title"
+        app:layout_constraintEnd_toEndOf="parent"
+        android:textAppearance="?android:attr/textAppearanceLarge"
+        android:text="00.00"
+        />
+
+    <TextView
+        android:id="@+id/angle_decrease_speed_units"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        app:layout_constraintTop_toBottomOf="@id/angle_decrease_speed"
+        app:layout_constraintEnd_toEndOf="parent"
+        android:text="@string/units_degree"
+        />
+
+
+    <!-- ************************************************************* -->
+
+    <TextView
+        android:id="@+id/angle_increase_speed_title"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        app:layout_constraintTop_toBottomOf="@id/angle_decrease_speed_units"
+        app:layout_constraintStart_toStartOf="parent"
+        android:text="@string/angles_angle_increment_step_title"
+        />
+
+    <TextView
+        android:id="@+id/angle_increase_speed"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        app:layout_constraintTop_toTopOf="@id/angle_increase_speed_title"
+        app:layout_constraintEnd_toEndOf="parent"
+        android:textAppearance="?android:attr/textAppearanceLarge"
+        android:text="00.00"
+        />
+
+    <TextView
+        android:id="@+id/angle_increase_speed_units"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        app:layout_constraintTop_toBottomOf="@id/angle_increase_speed"
+        app:layout_constraintEnd_toEndOf="parent"
+        android:text="@string/units_degree"
+        />
+
+
+    <!-- ************************************************************* -->
+
+    <TextView
+        android:id="@+id/octane_correction_title"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        app:layout_constraintTop_toBottomOf="@id/angle_increase_speed_units"
+        app:layout_constraintStart_toStartOf="parent"
+        android:text="@string/angles_octane_correction_title"
+        />
+
+    <TextView
+        android:id="@+id/octane_correction"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        app:layout_constraintTop_toTopOf="@id/octane_correction_title"
+        app:layout_constraintEnd_toEndOf="parent"
+        android:textAppearance="?android:attr/textAppearanceLarge"
+        android:text="00.00"
+        />
+
+    <TextView
+        android:id="@+id/octane_correction_units"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        app:layout_constraintTop_toBottomOf="@id/octane_correction"
+        app:layout_constraintEnd_toEndOf="parent"
+        android:text="@string/units_degree"
+        />
+
+
+    <!-- ************************************************************* -->
+
+
+    <CheckBox
+        android:id="@+id/zero_adv_angle"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        app:layout_constraintTop_toBottomOf="@id/octane_correction_units"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
+        android:text="@string/angles_zero_angle_title"
+        android:button="@null"
+        android:drawableEnd="?android:attr/listChoiceIndicatorMultiple"
+        />
+
+</androidx.constraintlayout.widget.ConstraintLayout>

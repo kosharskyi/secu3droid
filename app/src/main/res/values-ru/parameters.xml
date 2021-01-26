@@ -1,0 +1,255 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+   SecuDroid  - An open source, free manager for SECU-3 engine control unit
+   Copyright (C) 2020 Vitaliy O. Kosharskiy. Ukraine, Kharkiv
+
+   SECU-3  - An open source, free engine control unit
+   Copyright (C) 2007 Alexey A. Shabelnikov. Ukraine, Kyiv
+
+   This program is free software: you can redistribute it and/or modify
+   it under the terms of the GNU General Public License as published by
+   the Free Software Foundation, either version 3 of the License, or
+   (at your option) any later version.
+
+   This program is distributed in the hope that it will be useful,
+   but WITHOUT ANY WARRANTY; without even the implied warranty of
+   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+   GNU General Public License for more details.
+
+   You should have received a copy of the GNU General Public License
+   along with this program.  If not, see <http://www.gnu.org/licenses/>.
+
+   contacts:
+              http://secu-3.org
+              email: vetalkosharskiy@gmail.com
+-->
+
+<resources>
+
+    <string name="starter_off_title">Обороты блокировки стертера</string>
+    <string name="starter_map_abandon_title">Обороты перехода с пусковой карты УОЗ</string>
+    <string name="starter_dat_crank_to_run_time_title">Задержка перехода РХХ в рабочее положение</string>
+    <string name="starter_dat_afterstart_enrichment_strokes_title">Время обогащения после пуска</string>
+    <string name="starter_dat_prime_pulse_cold_title">Длительность предпускового впрыска при -30°C</string>
+    <string name="starter_dat_prime_pulse_hot_title">Длительность предпускового впрыска при 70°C</string>
+    <string name="starter_dat_prime_pulse_delay_title">Задержка предпускового впрыска</string>
+    <string name="starter_dat_flod_clear_mode_threshold_title">Порог включения режима продувки</string>
+
+
+    <string name="angles_min_angle_title">Минимальный УОЗ</string>
+    <string name="angles_max_angle_title">Максимальный УОЗ</string>
+    <string name="angles_angle_decrement_step_title">Скорость уменьшения УОЗ</string>
+    <string name="angles_angle_increment_step_title">Скорость увеличения УОЗ</string>
+    <string name="angles_zero_angle_title">Обнулить угол опережения</string>
+    <string name="angles_octane_correction_title">Октан-коррекция</string>
+    
+    <string name="idlreg_ifac1_title">Положительный коэффициент регулятора</string>
+    <string name="idlreg_ifac2_title">Отрицательный коэффициент регулятора</string>
+    <string name="idlreg_minimal_angle_title">Минимальный предел регулирования</string>
+    <string name="idlreg_maximal_angle_title">Максимальный предел регулирования</string>
+    <string name="idlreg_target_rpm_title">Целевое значение оборотов</string>
+    <string name="idlreg_rpm_sensitivity_title">Зона нечувствительности</string>
+    <string name="idlreg_turn_on_temp_title">Температура включения регулятора</string>
+    <string name="idlreg_use_idle_regulator_title">Использовать регулятор</string>
+    <string name="idlreg_use_idle_regulator_on_gas_title">Использовать регулятор на газу</string>
+    <string name="idlreg_proportional_regulator_title">Пропорциональный регулятор</string>
+    <string name="idlreg_use_closed_loop_title">Использовать closed loop</string>
+    <string name="idlreg_iac_add_after_exit_title">Добавка после выхода</string>
+    <string name="idlreg_rpm_add_on_run_title">Добавка к обор. на ходу</string>
+    <string name="idlreg_proportional_title">Пропорциональный</string>
+    <string name="idlreg_integral_title">Интегральный</string>
+    <string name="idlreg_first_transient_threshold_title">Порог 1-го пер. режима</string>
+    <string name="idlreg_second_transient_threshold_title">Порог 2-го пер. режима</string>
+    <string name="idlreg_integrator_rpm_limit_title">Огранич. обор. интегр.</string>
+    <string name="idlreg_pressure_load_on_idling_title">Режимная точка ДАД</string>
+    <string name="idlreg_min_iac_position_title">Мин. положение РДВ</string>
+    <string name="idlreg_max_iac_position_title">Макс. положение РДВ</string>
+    <string name="idlreg_use_closed_loop_on_gas_title">Использовать closed loop на газу</string>
+
+
+
+    <string name="funset_lower_pressure_title">Нижнее значение давления</string>
+    <string name="funset_upper_pressure_title">Верхнее значение давления</string>
+
+    <string name="funset_map_sensor_offset_title">Смещение кривой ДАД</string>
+    <string name="funset_map2_sensor_offset_title">Смещение кривой ДАД2</string>
+    <string name="funset_map_sensor_gradient_title">Наклон кривой ДАД</string>
+    <string name="funset_map2_sensor_gradient_title">Наклон кривой ДАД2</string>
+    <string name="funset_tps_curve_offset_title">Смещение кривой ДПДЗ</string>
+    <string name="funset_tps_curve_gradient_title">Наклон кривой ДПДЗ</string>
+
+    <string name="temper_fan_on_title">Порог включения вентилятора</string>
+    <string name="temper_fan_off_title">Порог выключения вентилятора</string>
+    <string name="temper_use_temp_sensor_title">Использовать датчик температуры охлаждающей жидкости</string>
+    <string name="temper_use_pwm_title">Управлять вентилятором используя ШИМ</string>
+    <string name="temper_use_table_title">Кривая датчика задается таблицей</string>
+    <string name="temper_fan_pwm_freq_title">Частота ШИМ</string>
+    <string name="temper_cond_turn_on_threshold_title">Порог вкл. кондиционера</string>
+    <string name="temper_cond_turn_off_threshold_title">Порог выкл. кондиционера</string>
+    <string name="temper_cond_turn_on_min_rpm_threshold_title">Мин. обороты вкл. кондиц.</string>
+    <string name="temper_fans_timer_title">Таймер вентилятора</string>
+
+    <string name="carbur_tps_threshold_title">Порог ДПДЗ</string>
+    <string name="carbur_overrun_lower_threshold_gasoline_title">Нижний порог ЭПХХ для бензина</string>
+    <string name="carbur_overrun_upper_threshold_gasoline_title">Верхний порог ЭПХХ для бензина</string>
+    <string name="carbur_overrun_lower_threshold_gas_title">Нижний порог ЭПХХ для газа</string>
+    <string name="carbur_overrun_upper_threshold_gas_title">Верхний порог ЭПХХ для газа</string>
+    <string name="carbur_overrun_valve_delay_title">Задержка выключения клапана ЭПХХ</string>
+    <string name="carbur_epm_valve_on_pressure_title">Порог включения ЭМР</string>
+    <string name="carbur_sensor_inverse_title">Инверсия концевика карбюратора</string>
+    <string name="carbur_fuelcut_map_threshold_title">Порог отсечки по ДАД</string>
+    <string name="carbur_fuelcut_temp_threshold_title">Порог отсечки по ДТОЖ</string>
+    <string name="carbur_protection_of_engine_title">Защита двигателя</string>
+    <string name="carbur_rev_limitting_lower_threshold_title">Нижн.порог отсеч.топл</string>
+    <string name="carbur_rev_limitting_upper_threshold_title">Верх.порог отсеч.топл</string>
+
+
+    <string name="ckps_ckps_edge_title">Фронт ДПКВ</string>
+	<string name="ckps_edge_negative">Отрицательный</string>
+	<string name="ckps_edge_positive">Положительный</string>
+    <string name="ckps_spark_on_rising_edge_for_cdi_title">Искра по переднему фронту (для CDI)</string>
+    <string name="ckps_merge_outputs_title">Объединить сигналы на одном выходе</string>
+    <string name="ckps_cogs_number_title">Количество зубьев шкива</string>
+    <string name="ckps_missing_cogs_number_title">Количество отсутствующих зубов</string>
+    <string name="ckps_ref_s_edge_title">Фронт ДНО</string>
+    <string name="ckps_cogs_before_tdc_title">Количество зубьев до В.М.Т.</string>
+    <string name="ckps_engine_cylinders_title">Количество цилиндров двигателя</string>
+    <string name="ckps_ignition_pulse_delay_title">Длительность импульса запуска коммутатора в зубьях шкива</string>
+    <string name="ckps_hall_wnd_width_title">Ширина окна в шторке датчика Холла в градусах по коленвалу</string>
+    <string name="ckps_degrees_before_tdc_title">Кол-во градусов до ВМТ</string>
+    <string name="ckps_use_cam_sensor_title">Использовать ДФ как ДНО</string>
+
+
+    <string name="miscel_baudrate_title">Скорость передачи данных (бод)</string>
+    <string name="miscel_period_title">Период передачи пакетов с данными</string>
+    <string name="miscel_ignition_cutoff_title">Разрешить отсечку зажигания</string>
+    <string name="miscel_ignition_cutoff_rpm_title">Обороты отсечки зажигания</string>
+    <string name="miscel_hall_output_delay_title">Длительность импульса выхода ДХ в зубьях шкива</string>
+    <string name="miscel_start_rel_to_tdc_title">Начало относительно ВМТ</string>
+    <string name="miscel_turn_off_fuel_pump_after_switching_gas_title">Выключать бензонасос при переходе на газ</string>
+    <string name="miscel_turn_off_injectors_pump_after_switching_gas_title">Выключать форсунки при переходе на газ</string>
+    <string name="miscel_turn_off_injectors_pump_after_switching_petrol_title">Выключать форсунки при переходе на бензин</string>
+    <string name="miscel_evap_starting_air_flow_title">Нач. расход воздуха</string>
+    <string name="miscel_evap_ending_air_flow_title">Кон. расход воздуха</string>
+    <string name="miscel_fuel_pump_working_time_title">Время раб. бензонасоса</string>
+
+    <string name="choke_steps_title">Количество шагов ШД</string>
+    <string name="choke_rpm_if_factor_title">Коэффициент регуляции</string>
+    <string name="choke_cranking_map_lasting_on_cold_title">Завис.врем.действия пуск.табл. при -30°C</string>
+    <string name="choke_cranking_map_lasting_on_hot_title">Завис.врем.действия пуск.табл. при 40°C</string>
+    <string name="choke_use_closed_loop_rpm_regulator_title">Использовать регулятор оборотов</string>
+    <string name="choke_dont_use_rpm_regulator_on_gas_title">Не использовать рег. обор. на газу</string>
+    <string name="choke_use_throttle_position_in_choke_init_title">Использовать полож.дросс.при иниц.</string>
+    <string name="choke_time_from_crank_to_run_position_for_choke_title">Время перехода ВЗ в рабочее положение</string>
+
+
+    <string name="secur_par_use_bluetooth_title">Использовать Bluetooth</string>
+    <string name="secur_par_use_immobilizer_title">Использовать иммобилайзер</string>
+    <string name="secur_par_always_load_params_from_flash_title">Всегда загружать параметры из flash</string>
+    <string name="secur_par_check_firmware_integrity_title">Проверять целостность прошивки</string>
+
+    <string name="unioutput1_condition_1_inverse_title">Инверсия</string>
+    <string name="unioutput1_condition_1_title">Условие 1 для выхода №1</string>
+    <string name="unioutput1_condition1_on_value_title">ВКЛ значение</string>
+    <string name="unioutput1_condition1_off_value_title">ВЫКЛ значение</string>
+    <string name="unioutput1_logical_functions_title">Логическая функция</string>
+    <string name="unioutput1_logical_functions_summary">Логическая операция между условиями 1 и 2</string>
+    <string name="unioutput1_condition_2_title">Условие 2 для выхода №1</string>
+    <string name="unioutput2_condition_1_title">Условие 1 для выхода №2</string>
+    <string name="unioutput2_condition_2_title">Условие 2 для выхода №2</string>
+    <string name="unioutput3_condition_1_title">Условие 1 для выхода №3</string>
+    <string name="unioutput3_condition_2_title">Условие 2 для выхода №3</string>
+
+    <string name="injctr_par_injector_flow_rate_title">Производительность форсунки</string>
+    <string name="injctr_par_enjine_displacement_title">Объем двигателя</string>
+    <string name="injctr_par_injector_config_title">Конфигурация впрыска</string>
+    <string name="injctr_par_number_of_squirts_per_cycle_title">Число впрысков на цикл</string>
+    <string name="injctr_par_injection_timing_title">Фаза впрыска</string>
+    <string name="injctr_par_cranking_injection_timing_title">Фаза впрыска на пуске</string>
+    <string name="injctr_par_use_map_for_inj_timing_title">Фаза впрыска задается таблицей</string>
+    <string name="injctr_par_min_inj_pw_title">Мин. длительность впрыска</string>
+    <string name="injctr_par_params_for_second_fuel_title">Параметры для второго вида топлива</string>
+    <string name="injctr_par_additional_corrections_title">Дополнительные коррекции (ГБО)</string>
+    <string name="injctr_par_use_air_density_correction_map_title">Использ.табл.корр.плотн.воздуха</string>
+    <string name="injctr_par_diff_press_for_pw_corr_from_gps_title">Дифф.давление для корр.по ДДГ</string>
+    <string name="injctr_par_switch_between_injectors_rows_title">Переключать ряды форсунок</string>
+
+
+
+    <string name="lambda_par_sensor_type_title">Тип сенсора</string>
+    <string name="lambda_par_strokes_per_step_title">Количество тактов на шаг</string>
+    <string name="lambda_par_ms_per_step_title">Количество мс на шаг</string>
+
+    <string name="lambda_par_step_size_positive_title">Размер \'+\' шага коррекции</string>
+    <string name="lambda_par_step_size_negative_title">Размер \'-\' шага коррекции</string>
+
+    <string name="lambda_par_correction_positive_limit_title">Максимальное значение коррекции (+)</string>
+    <string name="lambda_par_correction_negative_limit_title">Максимальное значение коррекции (-)</string>
+    <string name="lambda_par_switch_point_title">Порог переключения</string>
+    <string name="lambda_par_temp_threshold_title">Порог активации по ДТОЖ</string>
+    <string name="lambda_par_rpm_threshold_title">Порог активации по оборотам</string>
+    <string name="lambda_par_activation_delay_title">Активация после запуска</string>
+    <string name="lambda_par_switch_point_deadband_title">Мертвая зона переключения +/-</string>
+    <string name="lambda_par_determine_heating_voltage_title">Определять прогрев по напряжению</string>
+    <string name="lambda_par_correction_on_idling_title">Коректировать смесь на ХХ</string>
+    <string name="lambda_par_stoichiom_ratio_for_gas_title">Стехиом.соотношение для газа</string>
+    <string name="lambda_control_sensors_heating_title">Управление подогревом ДК</string>
+
+    <string name="lambda_par_heating_time_without_pwm_on_cold_title">Время прогрева без ШИМ на холодном двигателе</string>
+    <string name="lambda_par_heating_time_without_pwm_on_hot_title">Время прогрева без ШИМ на горячем двигателе</string>
+
+    <string name="lambda_par_hot_cold_temperature_threshold_title">Температурный порог (холодный/горячий)</string>
+    <string name="lambda_par_turn_on_time_in_pwm_mode_title">Длительность включения нагревателя при ШИМ</string>
+    <string name="lambda_par_air_flow_threshold_for_turning_heating_off_title">Порог выключения по расходу воздуха</string>
+    <string name="lambda_par_heating_before_cranking_title">Подогрев перед пуском</string>
+
+
+    <string name="accel_par_tpsdot_threshold_title">Порог по ДПДЗ</string>
+    <string name="accel_par_coldacc_mult_title">Коэффициент ДТОЖ при холодном двигателе</string>
+    <string name="accel_par_ae_decay_time_title">Время затухания</string>
+
+
+    <string name="knock_par_use_knock_sensor_title">Разрешить контроль детонации</string>
+    <string name="knock_par_knock_filter_frequency_title">Частота ПФ</string>
+    <string name="knock_par_phase_window_begin_title">Начало фазового окна</string>
+    <string name="knock_par_phase_window_end_title">Конец фазового окна</string>
+    <string name="knock_par_integration_timeout_title">Постоянная времени интегрирования</string>
+    <string name="knock_par_angle_displacement_step_title">Шаг смещения УОЗ</string>
+    <string name="knock_par_angle_retard_step_title">Шаг восстановления УОЗ</string>
+    <string name="knock_par_maximal_angle_displacement_title">Максимальное смещение УОЗ</string>
+    <string name="knock_par_knock_threshold_title">Порог детонации</string>
+    <string name="knock_par_angle_recovery_delay_title">Задержка восстановления УОЗ</string>
+
+
+    <string name="gasdose_par_stoich_ratio">Стехиометрич. соотношение</string>
+    <string name="gasdose_par_closing_on_fuel_cut">Прикрытие дозат. на ПХХ</string>
+
+
+
+    <string name="status_rpm_title">Обороты: %d мин-1\n</string>
+    <string name="status_map_title">Абсолютное давление: %.2f кПа\n</string>
+    <string name="status_voltage_title">Напряжение: %.2f В\n</string>
+    <string name="status_temperature_title">Температура: %.2f °C\n</string>
+    <string name="status_angle_correction_title">Угол опережения зажигания: %+.2f °\n</string>
+    <string name="status_knock_title">Сигнал детонации: %.2f В\n</string>
+    <string name="status_knock_retard_title">Поправка на детонацию: %+.2f °\n</string>
+    <string name="status_air_flow_title">Расход воздуха: %d\n</string>
+    <string name="status_fi_valve_title">Клапан ЭПХХ: %d\n</string>
+    <string name="status_carb_status_title">Дроссельная заслонка: %d\n</string>
+    <string name="status_gas_valve_title">Газовый клапан: %d\n</string>
+    <string name="status_power_valve_title">Клапан ЭМР: %d\n</string>
+    <string name="status_ecf_title">Вентилятор: %d\n</string>
+    <string name="status_starter_block_title">Стартер заблокирован: %d\n</string>
+    <string name="status_tps_title">ДПДЗ:%.2f\n</string>
+    <string name="status_addi1_voltage_title">ADD_I1: %.2f В\n</string>
+    <string name="status_addi2_voltage_title">ADD_I2: %.2f В\n</string>
+    <string name="status_choke_position_title">Воздушная заслонка: %.2f\n</string>
+
+    <string name="raw_status_map_title">Датчик абсолютного давления: %.2f В\n</string>
+    <string name="raw_status_voltage_title">Напряжение бортовой сети: %.2f В\n</string>
+    <string name="raw_status_temperature_title">Датчик температуры: %.2f В\n</string>
+    <string name="raw_status_knock_title">Датчик детонации: %.2f В\n</string>
+    <string name="raw_status_tps_title">ДПДЗ: %.2f В\n</string>
+    <string name="raw_status_addi1_title">ADD_IO1: %.2f В\n</string>
+    <string name="raw_status_addi2_title">ADD_IO2: %.2f В</string>
+</resources>

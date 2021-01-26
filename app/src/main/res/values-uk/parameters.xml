@@ -1,0 +1,259 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+   SecuDroid  - An open source, free manager for SECU-3 engine control unit
+   Copyright (C) 2020 Vitaliy O. Kosharskiy. Ukraine, Kharkiv
+
+   SECU-3  - An open source, free engine control unit
+   Copyright (C) 2007 Alexey A. Shabelnikov. Ukraine, Kyiv
+
+   This program is free software: you can redistribute it and/or modify
+   it under the terms of the GNU General Public License as published by
+   the Free Software Foundation, either version 3 of the License, or
+   (at your option) any later version.
+
+   This program is distributed in the hope that it will be useful,
+   but WITHOUT ANY WARRANTY; without even the implied warranty of
+   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+   GNU General Public License for more details.
+
+   You should have received a copy of the GNU General Public License
+   along with this program.  If not, see <http://www.gnu.org/licenses/>.
+
+   contacts:
+              http://secu-3.org
+              email: vetalkosharskiy@gmail.com
+-->
+
+<resources>
+
+    <string name="starter_off_title">Оберти блокування стартера</string>
+    <string name="starter_map_abandon_title">Оберти переходу з пускової карти КВЗ</string>
+    <string name="starter_dat_crank_to_run_time_title">Затримка перехода РХХ в робоче положення</string>
+    <string name="starter_dat_afterstart_enrichment_strokes_title">Час збагачення після запуску</string>
+    <string name="starter_dat_prime_pulse_cold_title">Тривалість предпускового вприскування при -30°C</string>
+    <string name="starter_dat_prime_pulse_hot_title">Тривалість передпускового вприскування при 70°C</string>
+    <string name="starter_dat_prime_pulse_delay_title">Затримка передпускового вприскування</string>
+    <string name="starter_dat_flod_clear_mode_threshold_title">Поріг ввімкнення режима продувки</string>
+
+    <string name="angles_min_angle_title">Мінімальний КВЗ</string>
+    <string name="angles_max_angle_title">Максимальний КВЗ</string>
+    <string name="angles_angle_decrement_step_title">Швидкість зменшення КВЗ</string>
+    <string name="angles_angle_increment_step_title">Швидкість збільшення КВЗ</string>
+    <string name="angles_zero_angle_title">Обнулити кут випередження</string>
+    <string name="angles_octane_correction_title">Октан-корекція</string>
+    
+    <string name="idlreg_ifac1_title">Позитивний коефіцієнт регулятора</string>
+    <string name="idlreg_ifac2_title">Негативний коефіцієнт регулятора</string>
+    <string name="idlreg_minimal_angle_title">Мінімальна межа регулювання</string>
+    <string name="idlreg_maximal_angle_title">Максимальна межа регулювання</string>
+    <string name="idlreg_target_rpm_title">Цільове значення обертів</string>
+    <string name="idlreg_rpm_sensitivity_title">Зона нечутливості</string>
+    <string name="idlreg_turn_on_temp_title">Температура включення регулятора</string>
+    <string name="idlreg_use_idle_regulator_title">Використовувати регулятор</string>
+    <string name="idlreg_use_idle_regulator_on_gas_title">Використовувати регулятор на газу</string>
+    <string name="idlreg_proportional_regulator_title">Пропорційний регулятор</string>
+    <string name="idlreg_use_closed_loop_title">Використовувати closed loop</string>
+    <string name="idlreg_iac_add_after_exit_title">Добавка після виходу</string>
+    <string name="idlreg_rpm_add_on_run_title">Добавка до обертів на ходу</string>
+    <string name="idlreg_proportional_title">Пропорційний</string>
+    <string name="idlreg_integral_title">Інтергальний</string>
+    <string name="idlreg_first_transient_threshold_title">Поріг 1-го пер. режима</string>
+    <string name="idlreg_second_transient_threshold_title">Поріг 2-го пер. режима</string>
+    <string name="idlreg_integrator_rpm_limit_title">Обмеж. оберт. інтегр.</string>
+    <string name="idlreg_pressure_load_on_idling_title">Режимна точка ДАТ</string>
+    <string name="idlreg_min_iac_position_title">Мін. положення РДВ</string>
+    <string name="idlreg_max_iac_position_title">Макс. положення РДВ</string>
+    <string name="idlreg_use_closed_loop_on_gas_title">Використовувати closed loop на газу</string>
+
+
+
+
+    <string name="funset_lower_pressure_title">Нижнє значення тиску</string>
+    <string name="funset_upper_pressure_title">Верхнє значення тиску</string>
+    <string name="funset_map_sensor_offset_title">Зсув кривої ДАТ</string>
+    <string name="funset_map2_sensor_offset_title">Зсув кривої ДАТ2</string>
+    <string name="funset_map_sensor_gradient_title">Нахил кривої ДАТ</string>
+    <string name="funset_map2_sensor_gradient_title">Нахил кривої ДАТ2</string>
+    <string name="funset_tps_curve_offset_title">Зміщення кривої ДПДЗ</string>
+    <string name="funset_tps_curve_gradient_title">Нахил кривої ДПДЗ</string>
+    
+
+    <string name="temper_fan_on_title">Поріг активації вентилятора</string>
+    <string name="temper_fan_off_title">Поріг вимкнення вентилятора</string>
+    <string name="temper_use_temp_sensor_title">Використовувати датчик температури охолоджуючої рідини</string>
+    <string name="temper_use_pwm_title">Керувати вентилятором використовуючи ШІМ</string>
+    <string name="temper_use_table_title">Крива датчика задається таблицею</string>
+    <string name="temper_fan_pwm_freq_title">Частота ШIM</string>
+    <string name="temper_cond_turn_on_threshold_title">Поріг ввімкнення кондиціонера</string>
+    <string name="temper_cond_turn_off_threshold_title">Поріг вимкнення кондиціонера</string>
+    <string name="temper_cond_turn_on_min_rpm_threshold_title">Мін. обeрти ввімкнення кондиц.</string>
+    <string name="temper_fans_timer_title">Таймер вентилятора</string>
+
+
+    <string name="carbur_tps_threshold_title">Поріг ДПДЗ</string>
+    <string name="carbur_overrun_lower_threshold_gasoline_title">Нижній поріг ЕПХХ для бензину</string>
+    <string name="carbur_overrun_upper_threshold_gasoline_title">Верхній поріг ЕПХХ для бензину</string>
+    <string name="carbur_overrun_lower_threshold_gas_title">Нижній поріг ЕПХХ для газу</string>
+    <string name="carbur_overrun_upper_threshold_gas_title">Верхній поріг ЕПХХ для газу</string>
+    <string name="carbur_overrun_valve_delay_title">Затримка вимкнення клапана ЕПХХ</string>
+    <string name="carbur_epm_valve_on_pressure_title">Поріг включення ЕПР</string>
+    <string name="carbur_sensor_inverse_title">Інверсія кінцевика карбюратора</string>
+    <string name="carbur_fuelcut_map_threshold_title">Поріг відсічення по ДАТ</string>
+    <string name="carbur_fuelcut_temp_threshold_title">Поріг відсічення по ДТОР</string>
+    <string name="carbur_protection_of_engine_title">Захист двигуна</string>
+    <string name="carbur_rev_limitting_lower_threshold_title">Нижн.поріг відсічки палива</string>
+    <string name="carbur_rev_limitting_upper_threshold_title">Верх.поріг відсічки палива</string>
+
+
+    <string name="ckps_ckps_edge_title">Фронт ДПКВ</string>
+    <string name="ckps_edge_negative">Негативний</string>
+    <string name="ckps_edge_positive">Позитивний</string>
+    <string name="ckps_spark_on_rising_edge_for_cdi_title">Іскра по передньому фронту (для CDI)</string>
+    <string name="ckps_merge_outputs_title">Об\'єднати сигнали на одному виході</string>
+    <string name="ckps_cogs_number_title">Кількість зубів шківа</string>
+    <string name="ckps_missing_cogs_number_title">Кількість відсутніх зубів</string>
+    <string name="ckps_ref_s_edge_title">Фронт ДНО</string>
+    <string name="ckps_cogs_before_tdc_title">Кількість зубів до В.М.Т.</string>
+    <string name="ckps_engine_cylinders_title">Кількість циліндрів двигуна</string>
+    <string name="ckps_ignition_pulse_delay_title">Тривалість імпульсу запуску комутатора в зубах шківа</string>
+    <string name="ckps_hall_wnd_width_title">Ширина вікна в шторці датчика Холла в градусах по коленвалу</string>
+    <string name="ckps_degrees_before_tdc_title">Кількість градусів до ВМТ</string>
+    <string name="ckps_use_cam_sensor_title">Використовувати ДФ як ДПВ</string>
+
+
+    <string name="miscel_baudrate_title">Швидкість передачі даних (бод)</string>
+    <string name="miscel_period_title">Період передачі пакетів з даними</string>
+    <string name="miscel_ignition_cutoff_title">Дозволити відсічення запалювання</string>
+    <string name="miscel_ignition_cutoff_rpm_title">Оберти відсічення запалювання</string>
+    <string name="miscel_hall_output_delay_title">Тривалість імпульсу виходу ДХ в зубах шківа</string>
+    <string name="miscel_start_rel_to_tdc_title">Початок відносно ВМТ</string>
+    <string name="miscel_turn_off_fuel_pump_after_switching_gas_title">Вимикати бензонасос при перемиканні на газ</string>
+    <string name="miscel_turn_off_injectors_pump_after_switching_gas_title">Вимикати форсунки при перемиканні на газ</string>
+    <string name="miscel_turn_off_injectors_pump_after_switching_petrol_title">Вимикати форсунки при перемиканні на бензин</string>
+    <string name="miscel_evap_starting_air_flow_title">Поч. споживання повітря</string>
+    <string name="miscel_evap_ending_air_flow_title">Кін. споживання повітря</string>
+    <string name="miscel_fuel_pump_working_time_title">Час роботи бензонасоса</string>
+
+    <string name="choke_steps_title">Кількість кроків КД</string>
+    <string name="choke_rpm_if_factor_title">Коефіцієнт регуляції</string>
+    <string name="choke_cranking_map_lasting_on_cold_title">Залежн.часу дії пуск.табл. при -30°C</string>
+    <string name="choke_cranking_map_lasting_on_hot_title">Залежн.часу дії пуск.табл. при 40°C</string>
+    <string name="choke_use_closed_loop_rpm_regulator_title">Використовувати регулятор обертів</string>
+    <string name="choke_dont_use_rpm_regulator_on_gas_title">Не використовувати рег. оберт. на газу</string>
+    <string name="choke_use_throttle_position_in_choke_init_title">Використовувати полож.дросс.при ініц.</string>
+    <string name="choke_time_from_crank_to_run_position_for_choke_title">Час переходу ПЗ в робоче положення</string>
+
+
+    <string name="secur_par_use_bluetooth_title">Використовувати Bluetooth</string>
+    <string name="secur_par_use_immobilizer_title">Використовувати іммобілайзер</string>
+    <string name="secur_par_always_load_params_from_flash_title">Завжди завантажувати параметри із flash</string>
+    <string name="secur_par_check_firmware_integrity_title">Перевіряти цілісність прошивки</string>
+
+    <string name="unioutput1_condition_1_inverse_title">Iнверсія</string>
+    <string name="unioutput1_condition_1_title">Умова 1  для виходу №1</string>
+    <string name="unioutput1_condition1_on_value_title">УВIМК значення</string>
+    <string name="unioutput1_condition1_off_value_title">ВИМКН значення</string>
+    <string name="unioutput1_logical_functions_title">Логічна операція</string>
+    <string name="unioutput1_logical_functions_summary"> Логічна операція між умовами 1 i 2</string>
+    <string name="unioutput1_condition_2_title">Умова 2  для виходу №1</string>
+    <string name="unioutput2_condition_1_title">Умова 1  для виходу №2</string>
+    <string name="unioutput2_condition_2_title">Умова 2  для виходу №2</string>
+    <string name="unioutput3_condition_1_title">Умова 1  для виходу №3</string>
+    <string name="unioutput3_condition_2_title">Умова 2  для виходу №3</string>
+
+    <string name="injctr_par_injector_flow_rate_title">Продуктивність форсунки</string>
+    <string name="injctr_par_enjine_displacement_title">Об\'єм двигуна</string>
+    <string name="injctr_par_injector_config_title">Конфігурація вприскування</string>
+    <string name="injctr_par_number_of_squirts_per_cycle_title">Число уприскувань на цикл</string>
+    <string name="injctr_par_injection_timing_title">Фаза вприскування</string>
+    <string name="injctr_par_cranking_injection_timing_title">Фаза вприскування при запуску</string>
+    <string name="injctr_par_use_map_for_inj_timing_title">Фаза вприскування задається таблицею</string>
+    <string name="injctr_par_min_inj_pw_title">Мін. тривалість вприскування</string>
+    <string name="injctr_par_params_for_second_fuel_title">Параметри для другого вида палива</string>
+    <string name="injctr_par_additional_corrections_title">Додаткові корекції (ГБО)</string>
+    <string name="injctr_par_use_air_density_correction_map_title">Викор.табл.корр.щільнос.повітря</string>
+    <string name="injctr_par_diff_press_for_pw_corr_from_gps_title">Дифф.тиск для корр.по ДДГ</string>
+    <string name="injctr_par_switch_between_injectors_rows_title">Перемикати ряди форсунок</string>
+
+
+    <string name="lambda_par_sensor_type_title">Тип сенсора</string>
+    <string name="lambda_par_strokes_per_step_title">"Кількість тактів на крок</string>
+    <string name="lambda_par_ms_per_step_title">"Кількість мс на крок</string>
+
+    <string name="lambda_par_step_size_positive_title">Розмір \'+\' кроку корекції</string>
+    <string name="lambda_par_step_size_negative_title">Розмір \'-\' кроку корекції</string>
+
+    <string name="lambda_par_correction_positive_limit_title">Максимальне значення корекції (+)</string>
+    <string name="lambda_par_correction_negative_limit_title">Максимальне значення корекції (-)</string>
+
+    <string name="lambda_par_switch_point_title">Поріг перемикання</string>
+
+    <string name="lambda_par_temp_threshold_title">Поріг активації по ДТОР</string>
+
+    <string name="lambda_par_rpm_threshold_title">Поріг активації по оборотам</string>
+
+    <string name="lambda_par_activation_delay_title">Активація після запуску</string>
+
+    <string name="lambda_par_switch_point_deadband_title">Мертва зона перемикання +/-</string>
+    <string name="lambda_par_determine_heating_voltage_title">Визначати прогрів по напрузі</string>
+    <string name="lambda_par_correction_on_idling_title">Корегувати суміш на ХХ</string>
+    <string name="lambda_par_stoichiom_ratio_for_gas_title">Стехіом.співвідношення для газа</string>
+    <string name="lambda_control_sensors_heating_title">Керування підігрівом ДК</string>
+
+    <string name="lambda_par_heating_time_without_pwm_on_cold_title">Час прогріву без ШІМ на холодному двигуні</string>
+    <string name="lambda_par_heating_time_without_pwm_on_hot_title">Час прогріву без ШІМ на гарячому двигуні</string>
+
+    <string name="lambda_par_hot_cold_temperature_threshold_title">Температурний поріг (холодний/гарячий)</string>
+    <string name="lambda_par_turn_on_time_in_pwm_mode_title">Тривалість ввімкнення нагрівача при ШІМ</string>
+    <string name="lambda_par_air_flow_threshold_for_turning_heating_off_title">Поріг вимкнення по споживанню повітря</string>
+    <string name="lambda_par_heating_before_cranking_title">Підігрів перед запуском</string>
+
+
+    <string name="accel_par_tpsdot_threshold_title">Поріг по ДПДЗ</string>
+    <string name="accel_par_coldacc_mult_title">Коефіцієнт ДТОР при холодному двигуні</string>
+    <string name="accel_par_ae_decay_time_title">Час затухання</string>
+
+    <string name="knock_par_use_knock_sensor_title">Дозволити контроль детонації</string>
+    <string name="knock_par_knock_filter_frequency_title">Частота ПФ</string>
+    <string name="knock_par_phase_window_begin_title">Початок фазового вікна</string>
+    <string name="knock_par_phase_window_end_title">Кінець фазового вікна</string>
+    <string name="knock_par_integration_timeout_title">Постійна часу інтегрування</string>
+    <string name="knock_par_angle_displacement_step_title">Крок зміщення КВЗ</string>
+    <string name="knock_par_angle_retard_step_title">Крок відновлення КВЗ</string>
+    <string name="knock_par_maximal_angle_displacement_title">Максимальне зміщення КВЗ</string>
+    <string name="knock_par_knock_threshold_title">Поріг детонації</string>
+    <string name="knock_par_angle_recovery_delay_title">Затримка відновлення КВЗ</string>
+
+
+    <string name="gasdose_par_stoich_ratio">Стехіометрич. співвідношення</string>
+    <string name="gasdose_par_closing_on_fuel_cut">Прикрття дозат. на ПХХ</string>
+
+
+
+    <string name="status_rpm_title">Оберти: %d хв-1\n</string>
+    <string name="status_map_title">Абсолютний тиск: %.2f кПа\n</string>
+    <string name="status_voltage_title">Напруга: %.2f В\n</string>
+    <string name="status_temperature_title">Температура: %.2f °C\n</string>
+    <string name="status_angle_correction_title">Кут випередження: %+.2f °\n</string>
+    <string name="status_knock_title">Сигнал детонації: %.2f В\n</string>
+    <string name="status_knock_retard_title">Поправка на детонацію: %+.2f °\n</string>
+    <string name="status_air_flow_title">Витрата повітря: %d\n</string>
+    <string name="status_fi_valve_title">Клапан ЕПХХ: %d\n</string>
+    <string name="status_carb_status_title">Дросельна заслонка: %d\n</string>
+    <string name="status_gas_valve_title">Газовий клапан: %d\n</string>
+    <string name="status_power_valve_title">Клапан ЕМР: %d\n</string>
+    <string name="status_ecf_title">Вентилятор: %d\n</string>
+    <string name="status_starter_block_title">Стартер заблокований: %d\n</string>
+    <string name="status_tps_title">ДПДЗ:%.2f\n</string>
+    <string name="status_addi1_voltage_title">ADD_I1: %.2f В\n</string>
+    <string name="status_addi2_voltage_title">ADD_I2: %.2f В\n</string>
+    <string name="status_choke_position_title">Повітряна заслонка: %.2f\n</string>
+
+    <string name="raw_status_map_title">Датчик абсолютного тиску: %.2f В\n</string>
+    <string name="raw_status_voltage_title">Напруга бортової мережі: %.2f В\n</string>
+    <string name="raw_status_temperature_title">Датчик температури: %.2f В\n</string>
+    <string name="raw_status_knock_title">Датчик детонації: %.2f В\n</string>
+    <string name="raw_status_tps_title">ДПДЗ: %.2f В\n</string>
+    <string name="raw_status_addi1_title">ADD_IO1: %.2f В\n</string>
+    <string name="raw_status_addi2_title">ADD_IO2: %.2f В</string>
+</resources>

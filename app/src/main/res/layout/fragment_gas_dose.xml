@@ -1,0 +1,284 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+   SecuDroid  - An open source, free manager for SECU-3 engine control unit
+   Copyright (C) 2020 Vitaliy O. Kosharskiy. Ukraine, Kharkiv
+
+   SECU-3  - An open source, free engine control unit
+   Copyright (C) 2007 Alexey A. Shabelnikov. Ukraine, Kyiv
+
+   This program is free software: you can redistribute it and/or modify
+   it under the terms of the GNU General Public License as published by
+   the Free Software Foundation, either version 3 of the License, or
+   (at your option) any later version.
+
+   This program is distributed in the hope that it will be useful,
+   but WITHOUT ANY WARRANTY; without even the implied warranty of
+   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+   GNU General Public License for more details.
+
+   You should have received a copy of the GNU General Public License
+   along with this program.  If not, see <http://www.gnu.org/licenses/>.
+
+   contacts:
+              http://secu-3.org
+              email: vetalkosharskiy@gmail.com
+-->
+
+<ScrollView
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:fillViewport="true"
+    >
+
+    <androidx.constraintlayout.widget.ConstraintLayout
+
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        tools:context=".ui.parameters.pages.GasDoseFragment"
+        android:padding="16dp"
+        >
+
+        <androidx.constraintlayout.widget.Group
+            android:id="@+id/gas_dose_param_group"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            app:constraint_referenced_ids="num_of_sm_steps,num_of_sm_steps_title,num_of_sm_steps_units,stoichiometric_ratio,
+            stoichiometric_ratio_title,stoichiometric_ratio_units, closing_on_fuel_cut,closing_on_fuel_cut_title,closing_on_fuel_cut_units,
+            correction_limit_negative,correction_limit_negative_title,correction_limit_negative_units,correction_limit_positive,
+            correction_limit_positive_title,correction_limit_positive_units,frequency_of_pulses_title,maximum_STEP_frequency_at_init"
+            tools:visibility="gone"
+            />
+
+        <TextView
+            android:id="@+id/num_of_sm_steps_title"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            app:layout_constraintTop_toTopOf="parent"
+            app:layout_constraintStart_toStartOf="parent"
+            android:layout_marginTop="16dp"
+            android:text="@string/choke_steps_title"
+            />
+
+        <TextView
+            android:id="@+id/num_of_sm_steps"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            app:layout_constraintTop_toTopOf="@id/num_of_sm_steps_title"
+            app:layout_constraintEnd_toEndOf="parent"
+            android:textAppearance="?android:attr/textAppearanceLarge"
+            android:text="000"
+            />
+
+        <TextView
+            android:id="@+id/num_of_sm_steps_units"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            app:layout_constraintTop_toBottomOf="@id/num_of_sm_steps"
+            app:layout_constraintEnd_toEndOf="parent"
+            android:text=""
+            />
+
+
+        <!-- ************************************************************* -->
+
+
+        <TextView
+            android:id="@+id/stoichiometric_ratio_title"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            app:layout_constraintTop_toBottomOf="@id/num_of_sm_steps_units"
+            app:layout_constraintStart_toStartOf="parent"
+            android:layout_marginTop="16dp"
+            android:text="@string/gasdose_par_stoich_ratio"
+            />
+
+        <TextView
+            android:id="@+id/stoichiometric_ratio"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            app:layout_constraintTop_toTopOf="@id/stoichiometric_ratio_title"
+            app:layout_constraintEnd_toEndOf="parent"
+            android:textAppearance="?android:attr/textAppearanceLarge"
+            android:text="000"
+            />
+
+        <TextView
+            android:id="@+id/stoichiometric_ratio_units"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            app:layout_constraintTop_toBottomOf="@id/stoichiometric_ratio"
+            app:layout_constraintEnd_toEndOf="parent"
+            android:text="@string/units_afr"
+            />
+
+
+        <!-- ************************************************************* -->
+
+
+        <TextView
+            android:id="@+id/closing_on_fuel_cut_title"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            app:layout_constraintTop_toBottomOf="@id/stoichiometric_ratio_units"
+            app:layout_constraintStart_toStartOf="parent"
+            android:layout_marginTop="16dp"
+            android:text="@string/gasdose_par_closing_on_fuel_cut"
+            />
+
+        <TextView
+            android:id="@+id/closing_on_fuel_cut"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            app:layout_constraintTop_toTopOf="@id/closing_on_fuel_cut_title"
+            app:layout_constraintEnd_toEndOf="parent"
+            android:textAppearance="?android:attr/textAppearanceLarge"
+            android:text="000"
+            />
+
+        <TextView
+            android:id="@+id/closing_on_fuel_cut_units"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            app:layout_constraintTop_toBottomOf="@id/closing_on_fuel_cut"
+            app:layout_constraintEnd_toEndOf="parent"
+            android:text="@string/units_percents"
+            />
+
+
+        <!-- ************************************************************* -->
+
+
+        <TextView
+            android:id="@+id/correction_limit_positive_title"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            app:layout_constraintTop_toBottomOf="@id/closing_on_fuel_cut_units"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintEnd_toStartOf="@id/correction_limit_positive"
+            android:layout_marginTop="16dp"
+            android:layout_marginEnd="8dp"
+            android:text="@string/lambda_par_correction_positive_limit_title"
+            />
+
+        <TextView
+            android:id="@+id/correction_limit_positive"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            app:layout_constraintTop_toTopOf="@id/correction_limit_positive_title"
+            app:layout_constraintEnd_toEndOf="parent"
+            android:textAppearance="?android:attr/textAppearanceLarge"
+            android:text="000"
+            />
+
+        <TextView
+            android:id="@+id/correction_limit_positive_units"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            app:layout_constraintTop_toBottomOf="@id/correction_limit_positive"
+            app:layout_constraintEnd_toEndOf="parent"
+            android:text="@string/units_percents"
+            />
+
+
+        <!-- ************************************************************* -->
+
+
+        <TextView
+            android:id="@+id/correction_limit_negative_title"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            app:layout_constraintTop_toBottomOf="@id/correction_limit_positive_units"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintEnd_toStartOf="@id/correction_limit_negative"
+            android:layout_marginEnd="8dp"
+            android:text="@string/lambda_par_correction_negative_limit_title"
+            />
+
+        <TextView
+            android:id="@+id/correction_limit_negative"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            app:layout_constraintTop_toTopOf="@id/correction_limit_negative_title"
+            app:layout_constraintEnd_toEndOf="parent"
+            android:textAppearance="?android:attr/textAppearanceLarge"
+            android:text="000"
+            />
+
+        <TextView
+            android:id="@+id/correction_limit_negative_units"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            app:layout_constraintTop_toBottomOf="@id/correction_limit_negative"
+            app:layout_constraintEnd_toEndOf="parent"
+            android:text="@string/units_percents"
+            />
+
+
+        <!-- ************************************************************* -->
+
+        <com.google.android.material.textfield.TextInputLayout
+            android:id="@+id/frequency_of_pulses_title"
+            android:theme="@style/Theme.MaterialComponents.DayNight.NoActionBar"
+            style="@style/Widget.MaterialComponents.TextInputLayout.OutlinedBox.ExposedDropdownMenu"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            app:layout_constraintTop_toBottomOf="@id/correction_limit_negative_units"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintEnd_toEndOf="parent"
+            android:layout_marginTop="16dp"
+            android:hint="Frequency of pulses">
+
+            <AutoCompleteTextView
+                android:id="@+id/frequency_of_pulses"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:inputType="none"
+                />
+
+        </com.google.android.material.textfield.TextInputLayout>
+
+        <!-- ************************************************************* -->
+
+        <CheckBox
+            android:id="@+id/maximum_STEP_frequency_at_init"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            app:layout_constraintTop_toBottomOf="@id/frequency_of_pulses_title"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintEnd_toEndOf="parent"
+            android:text="@string/maximum_step_frequency_at_init"
+            android:button="@null"
+            android:drawableEnd="?android:attr/listChoiceIndicatorMultiple"
+            />
+
+
+        <!-- ************************************************************* -->
+        <!-- ************************************************************* -->
+        <!-- ************************************************************* -->
+
+
+        <TextView
+            android:id="@+id/gas_dose_empty_text"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            app:layout_constraintTop_toTopOf="parent"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintBottom_toBottomOf="parent"
+            android:gravity="center_horizontal"
+            android:textSize="18sp"
+            android:fontFamily="sans-serif-medium"
+            android:text="This parameters are not available in your firmware"
+            android:visibility="gone"
+            tools:visibility="visible"
+            />
+
+
+
+
+    </androidx.constraintlayout.widget.ConstraintLayout>
+
+</ScrollView>

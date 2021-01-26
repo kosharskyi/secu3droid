@@ -1,0 +1,547 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+   SecuDroid  - An open source, free manager for SECU-3 engine control unit
+   Copyright (C) 2020 Vitaliy O. Kosharskiy. Ukraine, Kharkiv
+
+   SECU-3  - An open source, free engine control unit
+   Copyright (C) 2007 Alexey A. Shabelnikov. Ukraine, Kyiv
+
+   This program is free software: you can redistribute it and/or modify
+   it under the terms of the GNU General Public License as published by
+   the Free Software Foundation, either version 3 of the License, or
+   (at your option) any later version.
+
+   This program is distributed in the hope that it will be useful,
+   but WITHOUT ANY WARRANTY; without even the implied warranty of
+   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+   GNU General Public License for more details.
+
+   You should have received a copy of the GNU General Public License
+   along with this program.  If not, see <http://www.gnu.org/licenses/>.
+
+   contacts:
+              http://secu-3.org
+              email: vetalkosharskiy@gmail.com
+-->
+
+<ScrollView
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    tools:context=".ui.parameters.pages.AdcErrorsCorrectionsFragment"
+    >
+
+    <androidx.constraintlayout.widget.ConstraintLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:padding="16dp"
+        >
+
+        <TextView
+            android:id="@+id/map_factor_title"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            app:layout_constraintTop_toTopOf="parent"
+            app:layout_constraintStart_toStartOf="parent"
+            android:text="MAP factor"
+            />
+
+        <TextView
+            android:id="@+id/map_factor"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            app:layout_constraintTop_toTopOf="parent"
+            app:layout_constraintEnd_toEndOf="parent"
+            android:textAppearance="?android:attr/textAppearanceLarge"
+            android:text="0.00"
+            />
+
+        <TextView
+            android:id="@+id/map_factor_units"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            app:layout_constraintTop_toBottomOf="@id/map_factor"
+            app:layout_constraintEnd_toEndOf="parent"
+            android:text=""
+            />
+
+
+        <!-- ************************************************************* -->
+
+        <TextView
+            android:id="@+id/map_correction_title"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            app:layout_constraintTop_toBottomOf="@id/map_factor_units"
+            app:layout_constraintStart_toStartOf="parent"
+            android:text="MAP correction"
+            />
+
+        <TextView
+            android:id="@+id/map_correction"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            app:layout_constraintTop_toTopOf="@id/map_correction_title"
+            app:layout_constraintEnd_toEndOf="parent"
+            android:textAppearance="?android:attr/textAppearanceLarge"
+            android:text="0.00"
+            />
+
+        <TextView
+            android:id="@+id/map_correction_units"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            app:layout_constraintTop_toBottomOf="@id/map_correction"
+            app:layout_constraintEnd_toEndOf="parent"
+            android:text="@string/units_volts"
+            />
+
+
+        <!-- ************************************************************* -->
+
+        <TextView
+            android:id="@+id/voltage_factor_title"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            app:layout_constraintTop_toBottomOf="@id/map_correction_units"
+            app:layout_constraintStart_toStartOf="parent"
+            android:layout_marginTop="16dp"
+            android:text="Voltage factor"
+            />
+
+        <TextView
+            android:id="@+id/voltage_factor"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            app:layout_constraintTop_toTopOf="@id/voltage_factor_title"
+            app:layout_constraintEnd_toEndOf="parent"
+            android:textAppearance="?android:attr/textAppearanceLarge"
+            android:text="0.00"
+            />
+
+        <TextView
+            android:id="@+id/voltage_factor_units"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            app:layout_constraintTop_toBottomOf="@id/voltage_factor"
+            app:layout_constraintEnd_toEndOf="parent"
+            android:text=""
+            />
+
+
+        <!-- ************************************************************* -->
+
+        <TextView
+            android:id="@+id/voltage_correction_title"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            app:layout_constraintTop_toBottomOf="@id/voltage_factor_units"
+            app:layout_constraintStart_toStartOf="parent"
+            android:text="Voltage correction"
+            />
+
+        <TextView
+            android:id="@+id/voltage_correction"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            app:layout_constraintTop_toTopOf="@id/voltage_correction_title"
+            app:layout_constraintEnd_toEndOf="parent"
+            android:textAppearance="?android:attr/textAppearanceLarge"
+            android:text="0.00"
+            />
+
+        <TextView
+            android:id="@+id/voltage_correction_units"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            app:layout_constraintTop_toBottomOf="@id/voltage_correction"
+            app:layout_constraintEnd_toEndOf="parent"
+            android:text="@string/units_volts"
+            />
+
+
+        <!-- ************************************************************* -->
+
+        <TextView
+            android:id="@+id/cts_factor_title"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            app:layout_constraintTop_toBottomOf="@id/voltage_correction_units"
+            app:layout_constraintStart_toStartOf="parent"
+            android:layout_marginTop="16dp"
+            android:text="CTS factor"
+            />
+
+        <TextView
+            android:id="@+id/cts_factor"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            app:layout_constraintTop_toTopOf="@id/cts_factor_title"
+            app:layout_constraintEnd_toEndOf="parent"
+            android:textAppearance="?android:attr/textAppearanceLarge"
+            android:text="0.00"
+            />
+
+        <TextView
+            android:id="@+id/cts_factor_units"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            app:layout_constraintTop_toBottomOf="@id/cts_factor"
+            app:layout_constraintEnd_toEndOf="parent"
+            android:text=""
+            />
+
+
+        <!-- ************************************************************* -->
+
+        <TextView
+            android:id="@+id/cts_correction_title"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            app:layout_constraintTop_toBottomOf="@id/cts_factor_units"
+            app:layout_constraintStart_toStartOf="parent"
+            android:text="CTS correction"
+            />
+
+        <TextView
+            android:id="@+id/cts_correction"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            app:layout_constraintTop_toTopOf="@id/cts_correction_title"
+            app:layout_constraintEnd_toEndOf="parent"
+            android:textAppearance="?android:attr/textAppearanceLarge"
+            android:text="0.00"
+            />
+
+        <TextView
+            android:id="@+id/cts_correction_units"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            app:layout_constraintTop_toBottomOf="@id/cts_correction"
+            app:layout_constraintEnd_toEndOf="parent"
+            android:text="@string/units_volts"
+            />
+
+
+        <!-- ************************************************************* -->
+
+        <TextView
+            android:id="@+id/tps_factor_title"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            app:layout_constraintTop_toBottomOf="@id/cts_correction_units"
+            app:layout_constraintStart_toStartOf="parent"
+            android:layout_marginTop="16dp"
+            android:text="TPS factor"
+            />
+
+        <TextView
+            android:id="@+id/tps_factor"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            app:layout_constraintTop_toTopOf="@id/tps_factor_title"
+            app:layout_constraintEnd_toEndOf="parent"
+            android:textAppearance="?android:attr/textAppearanceLarge"
+            android:text="0.00"
+            />
+
+        <TextView
+            android:id="@+id/tps_factor_units"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            app:layout_constraintTop_toBottomOf="@id/tps_factor"
+            app:layout_constraintEnd_toEndOf="parent"
+            android:text=""
+            />
+
+
+        <!-- ************************************************************* -->
+
+        <TextView
+            android:id="@+id/tps_correction_title"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            app:layout_constraintTop_toBottomOf="@id/tps_factor_units"
+            app:layout_constraintStart_toStartOf="parent"
+            android:text="TPS correction"
+            />
+
+        <TextView
+            android:id="@+id/tps_correction"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            app:layout_constraintTop_toTopOf="@id/tps_correction_title"
+            app:layout_constraintEnd_toEndOf="parent"
+            android:textAppearance="?android:attr/textAppearanceLarge"
+            android:text="0.00"
+            />
+
+        <TextView
+            android:id="@+id/tps_correction_units"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            app:layout_constraintTop_toBottomOf="@id/tps_correction"
+            app:layout_constraintEnd_toEndOf="parent"
+            android:text="@string/units_volts"
+            />
+
+
+        <!-- ************************************************************* -->
+
+        <TextView
+            android:id="@+id/add1_factor_title"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            app:layout_constraintTop_toBottomOf="@id/tps_correction_units"
+            app:layout_constraintStart_toStartOf="parent"
+            android:layout_marginTop="16dp"
+            android:text="ADD_I1 factor"
+            />
+
+        <TextView
+            android:id="@+id/add1_factor"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            app:layout_constraintTop_toTopOf="@id/add1_factor_title"
+            app:layout_constraintEnd_toEndOf="parent"
+            android:textAppearance="?android:attr/textAppearanceLarge"
+            android:text="0.00"
+            />
+
+        <TextView
+            android:id="@+id/add1_factor_units"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            app:layout_constraintTop_toBottomOf="@id/add1_factor"
+            app:layout_constraintEnd_toEndOf="parent"
+            android:text=""
+            />
+
+
+        <!-- ************************************************************* -->
+
+        <TextView
+            android:id="@+id/add1_correction_title"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            app:layout_constraintTop_toBottomOf="@id/add1_factor_units"
+            app:layout_constraintStart_toStartOf="parent"
+            android:text="ADD_I1 correction"
+            />
+
+        <TextView
+            android:id="@+id/add1_correction"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            app:layout_constraintTop_toTopOf="@id/add1_correction_title"
+            app:layout_constraintEnd_toEndOf="parent"
+            android:textAppearance="?android:attr/textAppearanceLarge"
+            android:text="0.00"
+            />
+
+        <TextView
+            android:id="@+id/add1_correction_units"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            app:layout_constraintTop_toBottomOf="@id/add1_correction"
+            app:layout_constraintEnd_toEndOf="parent"
+            android:text="@string/units_volts"
+            />
+
+
+        <!-- ************************************************************* -->
+
+        <TextView
+            android:id="@+id/add2_factor_title"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            app:layout_constraintTop_toBottomOf="@id/add1_correction_units"
+            app:layout_constraintStart_toStartOf="parent"
+            android:layout_marginTop="16dp"
+            android:text="ADD_I2 factor"
+            />
+
+        <TextView
+            android:id="@+id/add2_factor"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            app:layout_constraintTop_toTopOf="@id/add2_factor_title"
+            app:layout_constraintEnd_toEndOf="parent"
+            android:textAppearance="?android:attr/textAppearanceLarge"
+            android:text="0.00"
+            />
+
+        <TextView
+            android:id="@+id/add2_factor_units"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            app:layout_constraintTop_toBottomOf="@id/add2_factor"
+            app:layout_constraintEnd_toEndOf="parent"
+            android:text=""
+            />
+
+
+        <!-- ************************************************************* -->
+
+        <TextView
+            android:id="@+id/add2_correction_title"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            app:layout_constraintTop_toBottomOf="@id/add2_factor_units"
+            app:layout_constraintStart_toStartOf="parent"
+            android:text="ADD_I2 correction"
+            />
+
+        <TextView
+            android:id="@+id/add2_correction"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            app:layout_constraintTop_toTopOf="@id/add2_correction_title"
+            app:layout_constraintEnd_toEndOf="parent"
+            android:textAppearance="?android:attr/textAppearanceLarge"
+            android:text="0.00"
+            />
+
+        <TextView
+            android:id="@+id/add2_correction_units"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            app:layout_constraintTop_toBottomOf="@id/add2_correction"
+            app:layout_constraintEnd_toEndOf="parent"
+            android:text="@string/units_volts"
+            />
+
+
+        <!-- ************************************************************* -->
+
+        <TextView
+            android:id="@+id/add3_factor_title"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            app:layout_constraintTop_toBottomOf="@id/add2_correction_units"
+            app:layout_constraintStart_toStartOf="parent"
+            android:layout_marginTop="16dp"
+            android:text="ADD_I3 factor"
+            />
+
+        <TextView
+            android:id="@+id/add3_factor"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            app:layout_constraintTop_toTopOf="@id/add3_factor_title"
+            app:layout_constraintEnd_toEndOf="parent"
+            android:textAppearance="?android:attr/textAppearanceLarge"
+            android:text="0.00"
+            />
+
+        <TextView
+            android:id="@+id/add3_factor_units"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            app:layout_constraintTop_toBottomOf="@id/add3_factor"
+            app:layout_constraintEnd_toEndOf="parent"
+            android:text=""
+            />
+
+
+        <!-- ************************************************************* -->
+
+        <TextView
+            android:id="@+id/add3_correction_title"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            app:layout_constraintTop_toBottomOf="@id/add3_factor_units"
+            app:layout_constraintStart_toStartOf="parent"
+            android:text="ADD_I3 correction"
+            />
+
+        <TextView
+            android:id="@+id/add3_correction"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            app:layout_constraintTop_toTopOf="@id/add3_correction_title"
+            app:layout_constraintEnd_toEndOf="parent"
+            android:textAppearance="?android:attr/textAppearanceLarge"
+            android:text="0.00"
+            />
+
+        <TextView
+            android:id="@+id/add3_correction_units"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            app:layout_constraintTop_toBottomOf="@id/add3_correction"
+            app:layout_constraintEnd_toEndOf="parent"
+            android:text="@string/units_volts"
+            />
+
+
+        <!-- ************************************************************* -->
+
+        <TextView
+            android:id="@+id/add4_factor_title"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            app:layout_constraintTop_toBottomOf="@id/add3_correction_units"
+            app:layout_constraintStart_toStartOf="parent"
+            android:layout_marginTop="16dp"
+            android:text="ADD_I4 factor"
+            />
+
+        <TextView
+            android:id="@+id/add4_factor"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            app:layout_constraintTop_toTopOf="@id/add4_factor_title"
+            app:layout_constraintEnd_toEndOf="parent"
+            android:textAppearance="?android:attr/textAppearanceLarge"
+            android:text="0.00"
+            />
+
+        <TextView
+            android:id="@+id/add4_factor_units"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            app:layout_constraintTop_toBottomOf="@id/add4_factor"
+            app:layout_constraintEnd_toEndOf="parent"
+            android:text=""
+            />
+
+
+        <!-- ************************************************************* -->
+
+        <TextView
+            android:id="@+id/add4_correction_title"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            app:layout_constraintTop_toBottomOf="@id/add4_factor_units"
+            app:layout_constraintStart_toStartOf="parent"
+            android:text="ADD_I4 correction"
+            />
+
+        <TextView
+            android:id="@+id/add4_correction"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            app:layout_constraintTop_toTopOf="@id/add4_correction_title"
+            app:layout_constraintEnd_toEndOf="parent"
+            android:textAppearance="?android:attr/textAppearanceLarge"
+            android:text="0.00"
+            />
+
+        <TextView
+            android:id="@+id/add4_correction_units"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            app:layout_constraintTop_toBottomOf="@id/add4_correction"
+            app:layout_constraintEnd_toEndOf="parent"
+            android:text="@string/units_volts"
+            />
+
+
+        <!-- ************************************************************* -->
+
+    </androidx.constraintlayout.widget.ConstraintLayout>
+
+</ScrollView>

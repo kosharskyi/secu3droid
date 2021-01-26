@@ -1,0 +1,334 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+   SecuDroid  - An open source, free manager for SECU-3 engine control unit
+   Copyright (C) 2020 Vitaliy O. Kosharskiy. Ukraine, Kharkiv
+
+   SECU-3  - An open source, free engine control unit
+   Copyright (C) 2007 Alexey A. Shabelnikov. Ukraine, Kyiv
+
+   This program is free software: you can redistribute it and/or modify
+   it under the terms of the GNU General Public License as published by
+   the Free Software Foundation, either version 3 of the License, or
+   (at your option) any later version.
+
+   This program is distributed in the hope that it will be useful,
+   but WITHOUT ANY WARRANTY; without even the implied warranty of
+   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+   GNU General Public License for more details.
+
+   You should have received a copy of the GNU General Public License
+   along with this program.  If not, see <http://www.gnu.org/licenses/>.
+
+   contacts:
+              http://secu-3.org
+              email: vetalkosharskiy@gmail.com
+-->
+<ScrollView
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    tools:context=".ui.parameters.pages.MiscellaneousFragment"
+    >
+
+    <androidx.constraintlayout.widget.ConstraintLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:padding="16dp"
+        >
+
+        <com.google.android.material.textfield.TextInputLayout
+            android:id="@+id/data_transmition_speed_title"
+            android:theme="@style/Theme.MaterialComponents.DayNight.NoActionBar"
+            style="@style/Widget.MaterialComponents.TextInputLayout.OutlinedBox.ExposedDropdownMenu"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            app:layout_constraintTop_toTopOf="parent"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintEnd_toEndOf="parent"
+            android:layout_marginTop="16dp"
+            android:hint="@string/miscel_baudrate_title">
+
+            <AutoCompleteTextView
+                android:id="@+id/data_transmition_speed"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:inputType="none"
+                />
+
+        </com.google.android.material.textfield.TextInputLayout>
+
+        <!-- ************************************************************* -->
+
+        <TextView
+            android:id="@+id/data_packets_transmission_period_title"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            app:layout_constraintTop_toBottomOf="@id/data_transmition_speed_title"
+            app:layout_constraintStart_toStartOf="parent"
+            android:layout_marginTop="16dp"
+            android:text="@string/miscel_period_title"
+            />
+
+        <TextView
+            android:id="@+id/data_packets_transmission_period"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            app:layout_constraintTop_toTopOf="@id/data_packets_transmission_period_title"
+            app:layout_constraintEnd_toEndOf="parent"
+            android:textAppearance="?android:attr/textAppearanceLarge"
+            android:text="000"
+            />
+
+        <TextView
+            android:id="@+id/data_packets_transmission_period_units"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            app:layout_constraintTop_toBottomOf="@id/data_packets_transmission_period"
+            app:layout_constraintEnd_toEndOf="parent"
+            android:text="@string/units_ms"
+            />
+
+
+        <!-- ************************************************************* -->
+
+        <CheckBox
+            android:id="@+id/enable_cutoff_of_ignition_checkbox"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            app:layout_constraintTop_toBottomOf="@id/data_packets_transmission_period_units"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintEnd_toEndOf="parent"
+            android:button="@null"
+            android:drawableEnd="?android:attr/listChoiceIndicatorMultiple"
+            android:text="@string/miscel_ignition_cutoff_title"
+            />
+
+        <!-- ************************************************************* -->
+
+        <TextView
+            android:id="@+id/enable_cutoff_of_ignition_title"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            app:layout_constraintTop_toBottomOf="@id/enable_cutoff_of_ignition_checkbox"
+            app:layout_constraintStart_toStartOf="parent"
+            android:layout_marginTop="16dp"
+            android:text="@string/miscel_ignition_cutoff_rpm_title"
+            />
+
+        <TextView
+            android:id="@+id/enable_cutoff_of_ignition"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            app:layout_constraintTop_toTopOf="@id/enable_cutoff_of_ignition_title"
+            app:layout_constraintEnd_toEndOf="parent"
+            android:textAppearance="?android:attr/textAppearanceLarge"
+            android:text="000"
+            />
+
+        <TextView
+            android:id="@+id/enable_cutoff_of_ignition_units"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            app:layout_constraintTop_toBottomOf="@id/enable_cutoff_of_ignition"
+            app:layout_constraintEnd_toEndOf="parent"
+            android:text="@string/units_rpm"
+            />
+
+
+        <!-- ************************************************************* -->
+
+        <TextView
+            android:id="@+id/start_rel_to_tdc_title"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            app:layout_constraintTop_toBottomOf="@id/enable_cutoff_of_ignition_units"
+            app:layout_constraintStart_toStartOf="parent"
+            android:layout_marginTop="16dp"
+            android:text="@string/miscel_start_rel_to_tdc_title"
+            />
+
+        <TextView
+            android:id="@+id/start_rel_to_tdc"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            app:layout_constraintTop_toTopOf="@id/start_rel_to_tdc_title"
+            app:layout_constraintEnd_toEndOf="parent"
+            android:textAppearance="?android:attr/textAppearanceLarge"
+            android:text="000"
+            />
+
+        <TextView
+            android:id="@+id/start_rel_to_tdc_units"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            app:layout_constraintTop_toBottomOf="@id/start_rel_to_tdc"
+            app:layout_constraintEnd_toEndOf="parent"
+            android:text=""
+            />
+
+
+        <!-- ************************************************************* -->
+
+        <TextView
+            android:id="@+id/duration_title"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            app:layout_constraintTop_toBottomOf="@id/start_rel_to_tdc_units"
+            app:layout_constraintStart_toStartOf="parent"
+            android:text="@string/miscel_hall_output_delay_title"
+            />
+
+        <TextView
+            android:id="@+id/duration"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            app:layout_constraintTop_toTopOf="@id/duration_title"
+            app:layout_constraintEnd_toEndOf="parent"
+            android:textAppearance="?android:attr/textAppearanceLarge"
+            android:text="000"
+            />
+
+        <TextView
+            android:id="@+id/duration_units"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            app:layout_constraintTop_toBottomOf="@id/duration"
+            app:layout_constraintEnd_toEndOf="parent"
+            android:text=""
+            />
+
+
+        <!-- ************************************************************* -->
+
+        <CheckBox
+            android:id="@+id/turn_off_fuel_pump_after_gas"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            app:layout_constraintTop_toBottomOf="@id/duration_units"
+            app:layout_constraintStart_toStartOf="parent"
+            android:text="@string/miscel_turn_off_fuel_pump_after_switching_gas_title"
+            />
+
+        <!-- ************************************************************* -->
+
+        <CheckBox
+            android:id="@+id/turn_off_injectors_after_gas"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            app:layout_constraintTop_toBottomOf="@id/turn_off_fuel_pump_after_gas"
+            app:layout_constraintStart_toStartOf="parent"
+            android:text="@string/miscel_turn_off_injectors_pump_after_switching_gas_title"
+            />
+
+        <!-- ************************************************************* -->
+
+        <CheckBox
+            android:id="@+id/turn_off_injectors_after_petrol"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            app:layout_constraintTop_toBottomOf="@id/turn_off_injectors_after_gas"
+            app:layout_constraintStart_toStartOf="parent"
+            android:text="@string/miscel_turn_off_injectors_pump_after_switching_petrol_title"
+            />
+
+        <!-- ************************************************************* -->
+
+        <TextView
+            android:id="@+id/evap_starting_air_flow_title"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            app:layout_constraintTop_toBottomOf="@id/turn_off_injectors_after_petrol"
+            app:layout_constraintStart_toStartOf="parent"
+            android:layout_marginTop="16dp"
+            android:text="@string/miscel_evap_starting_air_flow_title"
+            />
+
+        <TextView
+            android:id="@+id/evap_starting_air_flow"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            app:layout_constraintTop_toTopOf="@id/evap_starting_air_flow_title"
+            app:layout_constraintEnd_toEndOf="parent"
+            android:textAppearance="?android:attr/textAppearanceLarge"
+            android:text="000"
+            />
+
+        <TextView
+            android:id="@+id/evap_starting_air_flow_units"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            app:layout_constraintTop_toBottomOf="@id/evap_starting_air_flow"
+            app:layout_constraintEnd_toEndOf="parent"
+            android:text="RxL"
+            />
+
+        <!-- ************************************************************* -->
+
+        <TextView
+            android:id="@+id/evap_ending_air_flow_title"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            app:layout_constraintTop_toBottomOf="@id/evap_starting_air_flow_units"
+            app:layout_constraintStart_toStartOf="parent"
+            android:layout_marginTop="16dp"
+            android:text="@string/miscel_evap_ending_air_flow_title"
+            />
+
+        <TextView
+            android:id="@+id/evap_ending_air_flow"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            app:layout_constraintTop_toTopOf="@id/evap_ending_air_flow_title"
+            app:layout_constraintEnd_toEndOf="parent"
+            android:textAppearance="?android:attr/textAppearanceLarge"
+            android:text="000"
+            />
+
+        <TextView
+            android:id="@+id/evap_ending_air_flow_units"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            app:layout_constraintTop_toBottomOf="@id/evap_ending_air_flow"
+            app:layout_constraintEnd_toEndOf="parent"
+            android:text="RxL"
+            />
+
+        <!-- ************************************************************* -->
+
+        <TextView
+            android:id="@+id/fuel_pump_working_time_title"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            app:layout_constraintTop_toBottomOf="@id/evap_ending_air_flow_units"
+            app:layout_constraintStart_toStartOf="parent"
+            android:layout_marginTop="16dp"
+            android:text="@string/miscel_fuel_pump_working_time_title"
+            />
+
+        <TextView
+            android:id="@+id/fuel_pump_working_time"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            app:layout_constraintTop_toTopOf="@id/fuel_pump_working_time_title"
+            app:layout_constraintEnd_toEndOf="parent"
+            android:textAppearance="?android:attr/textAppearanceLarge"
+            android:text="0"
+            />
+
+        <TextView
+            android:id="@+id/fuel_pump_working_time_units"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            app:layout_constraintTop_toBottomOf="@id/fuel_pump_working_time"
+            app:layout_constraintEnd_toEndOf="parent"
+            android:text="@string/units_sec"
+            />
+
+        <!-- ************************************************************* -->
+
+
+    </androidx.constraintlayout.widget.ConstraintLayout>
+
+</ScrollView>

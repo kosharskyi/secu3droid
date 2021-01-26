@@ -1,0 +1,364 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+   SecuDroid  - An open source, free manager for SECU-3 engine control unit
+   Copyright (C) 2020 Vitaliy O. Kosharskiy. Ukraine, Kharkiv
+
+   SECU-3  - An open source, free engine control unit
+   Copyright (C) 2007 Alexey A. Shabelnikov. Ukraine, Kyiv
+
+   This program is free software: you can redistribute it and/or modify
+   it under the terms of the GNU General Public License as published by
+   the Free Software Foundation, either version 3 of the License, or
+   (at your option) any later version.
+
+   This program is distributed in the hope that it will be useful,
+   but WITHOUT ANY WARRANTY; without even the implied warranty of
+   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+   GNU General Public License for more details.
+
+   You should have received a copy of the GNU General Public License
+   along with this program.  If not, see <http://www.gnu.org/licenses/>.
+
+   contacts:
+              http://secu-3.org
+              email: vetalkosharskiy@gmail.com
+-->
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:orientation="vertical"
+    android:keepScreenOn="true">
+
+    <com.google.android.material.appbar.AppBarLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:backgroundTint="@color/colorPrimary"
+        >
+
+        <com.google.android.material.appbar.MaterialToolbar
+            android:id="@+id/toolbar"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            app:title="@string/app_name"
+            />
+
+    </com.google.android.material.appbar.AppBarLayout>
+
+    <ScrollView
+        android:layout_width="match_parent"
+        android:layout_height="0dp"
+        android:layout_weight="1"
+        >
+
+        <TableLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content">
+
+            <TableRow
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:padding="16dp"
+                >
+
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="vertical"
+                    android:layout_weight="1"
+                    >
+
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="@string/sensor_dat_speed_title"
+                        android:layout_gravity="center_horizontal"
+                        />
+
+                    <TextView
+                        android:id="@+id/speed"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_gravity="center_horizontal"
+                        android:padding="8dp"
+                        android:textSize="20sp"
+                        android:fontFamily="sans-serif-medium"
+                        android:text="0 km/h"
+                        tools:text="100 km/h"
+                        />
+
+                </LinearLayout>
+
+
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="vertical"
+                    android:layout_weight="1"
+                    >
+
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="@string/sensor_dat_rpm_title"
+                        android:layout_gravity="center_horizontal"
+                        />
+
+                    <TextView
+                        android:id="@+id/rpm"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_gravity="center_horizontal"
+                        android:padding="8dp"
+                        android:textSize="20sp"
+                        android:fontFamily="sans-serif-medium"
+                        android:text="0 rpm"
+                        tools:text="2100 rpm"
+                        />
+
+                </LinearLayout>
+
+            </TableRow>
+
+
+
+            <TableRow
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:padding="16dp"
+                >
+
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="vertical"
+                    android:layout_weight="1"
+                    >
+
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_gravity="center_horizontal"
+                        android:text="@string/sensor_dat_temperature_title"
+                        />
+
+                    <TextView
+                        android:id="@+id/temperature"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_gravity="center_horizontal"
+                        android:padding="8dp"
+                        android:textSize="20sp"
+                        android:fontFamily="sans-serif-medium"
+                        android:text="0"
+                        tools:text="90"
+                        />
+
+                </LinearLayout>
+
+
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="vertical"
+                    android:layout_weight="1"
+                    >
+
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_gravity="center_horizontal"
+                        android:text="@string/sensor_dat_voltage_title"
+                        />
+
+                    <TextView
+                        android:id="@+id/voltage"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_gravity="center_horizontal"
+                        android:padding="8dp"
+                        android:textSize="20sp"
+                        android:fontFamily="sans-serif-medium"
+                        android:text="0"
+                        tools:text="14.1 V"
+                        />
+
+                </LinearLayout>
+
+            </TableRow>
+
+
+
+            <TableRow
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:padding="16dp"
+                >
+
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="vertical"
+                    android:layout_weight="1"
+                    >
+
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_gravity="center_horizontal"
+                        android:text="Odometer"
+                        />
+
+                    <TextView
+                        android:id="@+id/odometer"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_gravity="center_horizontal"
+                        android:padding="8dp"
+                        android:textSize="20sp"
+                        android:fontFamily="sans-serif-medium"
+                        android:text="0"
+                        tools:text="1225633"
+                        />
+
+                </LinearLayout>
+
+
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="vertical"
+                    android:layout_weight="1"
+                    >
+
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_gravity="center_horizontal"
+                        android:text="Manometer"
+                        />
+
+                    <TextView
+                        android:id="@+id/manometer"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_gravity="center_horizontal"
+                        android:padding="8dp"
+                        android:textSize="20sp"
+                        android:fontFamily="sans-serif-medium"
+                        android:text="0 kPa"
+                        tools:text="20 kPa"
+                        />
+
+                </LinearLayout>
+
+            </TableRow>
+
+
+
+            <TableRow
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:padding="16dp"
+                >
+
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="horizontal"
+                    android:layout_weight="1"
+                    android:padding="16dp"
+                    android:background="#bebebe"
+                    >
+
+                    <ImageView
+                        android:id="@+id/led_online"
+                        android:layout_width="wrap_content"
+                        android:layout_height="16dp"
+                        android:src="@drawable/car"
+                        android:visibility="gone"
+                        tools:visibility="visible"
+                        android:layout_weight="1"
+                        />
+
+                    <ImageView
+                        android:id="@+id/led_check_engine"
+                        android:layout_width="wrap_content"
+                        android:layout_height="16dp"
+                        android:src="@drawable/indicators_check_engine_landscape"
+                        android:visibility="gone"
+                        tools:visibility="visible"
+                        android:layout_weight="1"
+
+                        />
+
+                    <ImageView
+                        android:id="@+id/led_gasoline"
+                        android:layout_width="wrap_content"
+                        android:layout_height="16dp"
+                        android:src="@drawable/indicators_gasoline_landscape"
+                        android:visibility="gone"
+                        tools:visibility="visible"
+                        android:layout_weight="1"
+
+                        />
+
+                    <ImageView
+                        android:id="@+id/led_eco"
+                        android:layout_width="wrap_content"
+                        android:layout_height="16dp"
+                        android:src="@drawable/indicators_eco_landscape"
+                        android:visibility="gone"
+                        tools:visibility="visible"
+                        android:layout_weight="1"
+                        />
+
+                    <ImageView
+                        android:id="@+id/led_power"
+                        android:layout_width="wrap_content"
+                        android:layout_height="16dp"
+                        android:src="@drawable/indicators_pwr_landscape"
+                        android:visibility="gone"
+                        tools:visibility="visible"
+                        android:layout_weight="1"
+                        />
+
+                    <ImageView
+                        android:id="@+id/led_choke"
+                        android:layout_width="wrap_content"
+                        android:layout_height="16dp"
+                        android:src="@drawable/indicators_choke_landscape"
+                        android:visibility="gone"
+                        tools:visibility="visible"
+                        android:layout_weight="1"
+                        />
+
+
+                    <ImageView
+                        android:id="@+id/led_fan"
+                        android:layout_width="wrap_content"
+                        android:layout_height="16dp"
+                        android:src="@drawable/indicators_fan_landscape"
+                        android:visibility="gone"
+                        tools:visibility="visible"
+                        android:layout_weight="1"
+                        />
+
+                </LinearLayout>
+
+            </TableRow>
+
+        </TableLayout>
+
+    </ScrollView>
+
+    <TextView
+        android:id="@+id/connection_status"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_gravity="center_horizontal"
+        tools:text="disconnected"
+        />
+
+</LinearLayout>

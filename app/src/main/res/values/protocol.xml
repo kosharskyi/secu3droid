@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+
+    <string name="sensor_dat_rpm_title" translatable="false">RPM</string>
+    <string name="sensor_dat_voltage_title" translatable="false">Voltage</string>
+    <string name="sensor_dat_temperature_title" translatable="false">Temperature</string>
+    <string name="sensor_dat_speed_title" translatable="false">Speed</string>
+
+
+</resources>

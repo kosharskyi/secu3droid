@@ -1,0 +1,277 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+   SecuDroid  - An open source, free manager for SECU-3 engine control unit
+   Copyright (C) 2020 Vitaliy O. Kosharskiy. Ukraine, Kharkiv
+
+   SECU-3  - An open source, free engine control unit
+   Copyright (C) 2007 Alexey A. Shabelnikov. Ukraine, Kyiv
+
+   This program is free software: you can redistribute it and/or modify
+   it under the terms of the GNU General Public License as published by
+   the Free Software Foundation, either version 3 of the License, or
+   (at your option) any later version.
+
+   This program is distributed in the hope that it will be useful,
+   but WITHOUT ANY WARRANTY; without even the implied warranty of
+   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+   GNU General Public License for more details.
+
+   You should have received a copy of the GNU General Public License
+   along with this program.  If not, see <http://www.gnu.org/licenses/>.
+
+   contacts:
+              http://secu-3.org
+              email: vetalkosharskiy@gmail.com
+-->
+<ScrollView
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    tools:context=".ui.parameters.pages.ChokeControlFragment"
+    >
+
+    <androidx.constraintlayout.widget.ConstraintLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:padding="16dp"
+        >
+
+        <TextView
+            android:id="@+id/num_sm_steps_title"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            app:layout_constraintTop_toTopOf="parent"
+            app:layout_constraintStart_toStartOf="parent"
+            android:layout_marginTop="16dp"
+            android:text="@string/choke_steps_title"
+            />
+
+        <TextView
+            android:id="@+id/num_sm_steps"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            app:layout_constraintTop_toTopOf="@id/num_sm_steps_title"
+            app:layout_constraintEnd_toEndOf="parent"
+            android:textAppearance="?android:attr/textAppearanceLarge"
+            android:text="000"
+            />
+
+        <TextView
+            android:id="@+id/num_sm_steps_units"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            app:layout_constraintTop_toBottomOf="@id/num_sm_steps"
+            app:layout_constraintEnd_toEndOf="parent"
+            android:text=""
+            />
+
+
+        <!-- ************************************************************* -->
+
+        <TextView
+            android:id="@+id/regulator_factor_title"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            app:layout_constraintTop_toBottomOf="@id/num_sm_steps_units"
+            app:layout_constraintStart_toStartOf="parent"
+            android:layout_marginTop="16dp"
+            android:text="@string/choke_rpm_if_factor_title"
+            />
+
+        <TextView
+            android:id="@+id/regulator_factor"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            app:layout_constraintTop_toTopOf="@id/regulator_factor_title"
+            app:layout_constraintEnd_toEndOf="parent"
+            android:textAppearance="?android:attr/textAppearanceLarge"
+            android:text="0.00"
+            />
+
+        <TextView
+            android:id="@+id/regulator_factor_units"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            app:layout_constraintTop_toBottomOf="@id/regulator_factor"
+            app:layout_constraintEnd_toEndOf="parent"
+            android:text=""
+            />
+
+
+        <!-- ************************************************************* -->
+
+        <TextView
+            android:id="@+id/cranking_map_lasting_cold_title"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            app:layout_constraintTop_toBottomOf="@id/regulator_factor_units"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintEnd_toStartOf="@id/cranking_map_lasting_cold"
+            android:layout_marginTop="16dp"
+            android:layout_marginEnd="8dp"
+            android:text="@string/choke_cranking_map_lasting_on_cold_title"
+            />
+
+        <TextView
+            android:id="@+id/cranking_map_lasting_cold"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            app:layout_constraintTop_toTopOf="@id/cranking_map_lasting_cold_title"
+            app:layout_constraintEnd_toEndOf="parent"
+            android:textAppearance="?android:attr/textAppearanceLarge"
+            android:text="0.00"
+            />
+
+        <TextView
+            android:id="@+id/cranking_map_lasting_cold_units"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            app:layout_constraintTop_toBottomOf="@id/cranking_map_lasting_cold"
+            app:layout_constraintEnd_toEndOf="parent"
+            android:text="@string/units_sec"
+            />
+
+
+        <!-- ************************************************************* -->
+
+        <TextView
+            android:id="@+id/cranking_map_lasting_hot_title"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            app:layout_constraintTop_toBottomOf="@id/cranking_map_lasting_cold_units"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintEnd_toStartOf="@id/cranking_map_lasting_hot"
+            android:layout_marginTop="16dp"
+            android:layout_marginEnd="8dp"
+            android:text="@string/choke_cranking_map_lasting_on_hot_title"
+            />
+
+        <TextView
+            android:id="@+id/cranking_map_lasting_hot"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            app:layout_constraintTop_toTopOf="@id/cranking_map_lasting_hot_title"
+            app:layout_constraintEnd_toEndOf="parent"
+            android:textAppearance="?android:attr/textAppearanceLarge"
+            android:text="0.00"
+            />
+
+        <TextView
+            android:id="@+id/cranking_map_lasting_hot_units"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            app:layout_constraintTop_toBottomOf="@id/cranking_map_lasting_hot"
+            app:layout_constraintEnd_toEndOf="parent"
+            android:text="@string/units_sec"
+            />
+
+
+        <!-- ************************************************************* -->
+
+        <CheckBox
+            android:id="@+id/use_closed_loop_rpm_regulator"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            app:layout_constraintTop_toBottomOf="@id/cranking_map_lasting_hot_units"
+            app:layout_constraintStart_toStartOf="parent"
+            android:text="@string/choke_use_closed_loop_rpm_regulator_title"
+            />
+
+        <!-- ************************************************************* -->
+
+        <CheckBox
+            android:id="@+id/dont_use_rpm_regulator_on_gas"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            app:layout_constraintTop_toBottomOf="@id/use_closed_loop_rpm_regulator"
+            app:layout_constraintStart_toStartOf="parent"
+            android:text="@string/choke_dont_use_rpm_regulator_on_gas_title"
+            />
+
+        <!-- ************************************************************* -->
+
+        <CheckBox
+            android:id="@+id/use_throttle_pos_in_choke_init"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            app:layout_constraintTop_toBottomOf="@id/dont_use_rpm_regulator_on_gas"
+            app:layout_constraintStart_toStartOf="parent"
+            android:text="@string/choke_use_throttle_position_in_choke_init_title"
+            />
+
+        <!-- ************************************************************* -->
+
+        <CheckBox
+            android:id="@+id/maximum_STEP_frequency_at_init"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            app:layout_constraintTop_toBottomOf="@id/use_throttle_pos_in_choke_init"
+            app:layout_constraintStart_toStartOf="parent"
+            android:text="@string/maximum_step_frequency_at_init"
+            />
+
+        <!-- ************************************************************* -->
+
+        <com.google.android.material.textfield.TextInputLayout
+            android:id="@+id/freq_of_pulses_title"
+            android:theme="@style/Theme.MaterialComponents.DayNight.NoActionBar"
+            style="@style/Widget.MaterialComponents.TextInputLayout.OutlinedBox.ExposedDropdownMenu"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            app:layout_constraintTop_toBottomOf="@id/maximum_STEP_frequency_at_init"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintEnd_toEndOf="parent"
+            android:layout_marginTop="16dp"
+            android:hint="Frequency of pulses">
+
+            <AutoCompleteTextView
+                android:id="@+id/freq_of_pulses"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:inputType="none"
+                />
+
+        </com.google.android.material.textfield.TextInputLayout>
+
+        <!-- ************************************************************* -->
+
+
+        <TextView
+            android:id="@+id/time_from_crank_to_run_title"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            app:layout_constraintTop_toBottomOf="@id/freq_of_pulses_title"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintEnd_toStartOf="@id/time_from_crank_to_run"
+            android:layout_marginTop="16dp"
+            android:layout_marginEnd="8dp"
+            android:text="@string/choke_time_from_crank_to_run_position_for_choke_title"
+            />
+
+        <TextView
+            android:id="@+id/time_from_crank_to_run"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            app:layout_constraintTop_toTopOf="@id/time_from_crank_to_run_title"
+            app:layout_constraintEnd_toEndOf="parent"
+            android:textAppearance="?android:attr/textAppearanceLarge"
+            android:text="0.00"
+            />
+
+        <TextView
+            android:id="@+id/time_from_crank_to_run_units"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            app:layout_constraintTop_toBottomOf="@id/time_from_crank_to_run"
+            app:layout_constraintEnd_toEndOf="parent"
+            android:text="@string/units_sec"
+            />
+
+
+        <!-- ************************************************************* -->
+
+    </androidx.constraintlayout.widget.ConstraintLayout>
+
+</ScrollView>

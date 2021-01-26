@@ -1,0 +1,189 @@
+<?xml version="1.0" encoding="utf-8"?>
+
+<resources>
+    <string name="app_name">Secu3Droid</string>
+    <string name="title_activity_param">Параметри</string>
+    <string name="menu_param">Параметри</string>
+
+    <string name="pref_bluetooth_device_title">Вибір пристрою Bluetooth</string>
+    <string name="pref_bluetooth_device_summary">Поточний пристрій: %s</string>
+    <string name="pref_speed_pulse_title">Імпульсів датчика швидкості на 1 км</string>
+    <string name="pref_connection_retries_title">Кількість спроб повтору з\'єднання</string>
+    <string name="pref_connection_retries_summary">Кількість спроб до виходу: %s</string>
+    <string name="pref_about_title">Про програму</string>
+    <string name="pref_about_summary"/>
+
+    <string name="pref_keep_screen_title">Не вимикати екран</string>
+    <string name="pref_keep_screen_summary">Екран залишається включеним, поки відображаються дані сенсорів</string>
+
+    <string name="msg_bluetooth_disabled">Bluetooth відключений</string>
+    <string name="status_offline">Відключено</string>
+    <string name="status_online">Підключено</string>
+    <string name="title_activity_errors">Помилки</string>
+    <string name="title_activity_settings">Налаштування</string>
+    <string name="menu_errors">Помилки</string>
+    <string name="menu_dashboard">Приладова панель</string>
+    <string name="menu_preferences">Налаштування</string>
+    <string name="menu_exit">Вихід</string>
+    <string name="menu_raw_sensors">Сирі значення</string>
+    <string name="menu_diagnostics">Діагностика</string>
+    <string name="menu_diagnostics_warning_title">Вимкніть котушки запалювання перед входом в діагностичний режим, інакше можливе їх пошкодження!</string>
+    <string name="about_title">Про програму</string>
+    <string name="about_version">Secu3Droid версія</string>
+    <string name="about_copyright_1">Copyright © 2020 Віталій Кошарський</string>
+    <string name="about_copyright_2">Copyright © 2013 Secu3Droid Project</string>
+    <string name="about_app_desc">Secu3Droid це застосунок для налаштування системи управління двигуном Secu-3. Secu-3 це безкоштовна система управління двигуном з відкритими вихідними кодами <a href="http://secu-3.org"><b>http://secu-3.org</b></a>"</string>
+    <string name="about_license">Це програмне забезпечення з відкритим вихідним кодом розповсюджується безкоштовно у відповідності з умовами<a href="http://www.gnu.org/licenses/gpl-3.0-standalone.html"><b>GNU General Public License</b></a>.</string>
+    <string name="about_sources">Вихідний код доступний з Git-репозиторію на вебсайті проекту https://github.com/kosharskiy/secu3droid</string>
+
+    <string-array name="diagnostics_fragments_title">
+        <item>Входи</item>
+        <item>Виходи</item>
+        <item>Графіки</item>
+    </string-array>
+
+    <string-array name="inj_timing_specifies">
+        <item>Початок</item>
+        <item>Середина</item>
+        <item>Кінець</item>
+    </string-array>
+
+    <string-array name="lambda_sensors_types">
+        <item>ВДК</item>
+        <item>ШДК</item>
+    </string-array>
+
+    <string-array name="errors_ecu_errors_names">
+        <item>Збої в роботі ДПКВ - помилки синхронізації</item>
+        <item>Параметри в EEPROM пошкоджені (CRC)</item>
+        <item>Код прошивки пошкоджений (CRC)</item>
+        <item>Процесор детонації не відповідає</item>
+        <item>Виявлялася детонація</item>
+        <item>Несправність або неправильна робота ДАТ</item>
+        <item>Несправність або неправильна робота ДТОР</item>
+        <item>Ненормальна напруга бортової мережі</item>
+        <item>Управління часом накопичення енергії КЗ</item>
+        <item>Несправність або неправильна робота ДФ</item>
+        <item>Несправність або неправильні показання ДПДЗ</item>
+    </string-array>
+
+    <string-array name="logical_functions">
+        <item>АБО</item>
+        <item>I</item>
+        <item>ВИКЛЮЧНЕ АБО</item>
+        <item>2 умова</item>
+        <item>Відсутня</item>
+    </string-array>
+
+    <string-array name="uniout_spinner_conditions1">
+        <item>ДТОР (°C)</item>
+        <item>Обороти (хв-1)</item>
+        <item>ДАТ (кПа)</item>
+        <item>Напруга (В)</item>
+        <item>Кінцевик карбюратора (логiч.)</item>
+        <item>Швидкість (км/год)</item>
+        <item>Витрата повітря (0..16)</item>
+        <item>Таймер по включенню запалювання (сек)</item>
+        <item>Таймер по включенню двигуна (сек)</item>
+        <item>Положення ПЗ/РХХ (\%%)</item>
+        <item>КВЗ (°КВ)</item>
+        <item>Детонація (В)</item>
+        <item>ДПДЗ (\%%)</item>
+        <item>ДТП (°C)</item>
+        <item>Аналоговий вхід 1(В)</item>
+        <item>Аналоговий вхід 2(В)</item>
+        <item>Газовий клапан (логiч)</item>
+        <item>Тривалість уприскування (мс)</item>
+        <item>Стан CE</item>
+        <item>Таймер по включенню/виключенню 1 умови (сек)</item>
+        <item>Аналоговий вхід 3(В)</item>
+        <item>Аналоговий вхід 4(В)</item>
+        <item>Аналоговий вхід 5(В)</item>
+        <item>Аналоговий вхід 6(В)</item>
+        <item>Аналоговий вхід 7(В)</item>
+        <item>Аналоговий вхід 8(В)</item>
+    </string-array>
+
+    <string-array name="uniout_spinner_conditions2">
+        <item>ДТОР (°C)</item>
+        <item>Обороти (хв-1)</item>
+        <item>ДАТ (кПа)</item>
+        <item>Напруга (В)</item>
+        <item>Кінцевик карбюратора (логiч.)</item>
+        <item>Швидкість (км/год)</item>
+        <item>Витрата повітря (0..16)</item>
+        <item>Таймер (секунд)</item>
+        <item>Таймер по включенню запалювання (сек)</item>
+        <item>Таймер по включенню двигуна (сек)</item>
+        <item>Положення ПЗ/РХХ (\%%)</item>
+        <item>КВЗ (°КВ)</item>
+        <item>Детонація (В)</item>
+        <item>ДПДЗ (\%%)</item>
+        <item>ДТП (°C)</item>
+        <item>Аналоговий вхід 1(В)</item>
+        <item>Аналоговий вхід 2(В)</item>
+        <item>Газовий клапан (логiч)</item>
+        <item>Тривалість уприскування (мс)</item>
+        <item>Стан CE</item>
+        <item>Таймер по включенню/виключенню 1 умови (сек)</item>
+        <item>Аналоговий вхід 3(В)</item>
+        <item>Аналоговий вхід 4(В)</item>
+        <item>Looper tmr. 1 cond. (sec.) не перекладено</item>
+        <item>Аналоговий вхід 5(В)</item>
+        <item>Аналоговий вхід 6(В)</item>
+        <item>Аналоговий вхід 7(В)</item>
+        <item>Аналоговий вхід 8(В)</item>
+    </string-array>
+
+    <string name="title_activity_diagnostics">Діагностика</string>
+    <string name="diagnostics_not_supported_title">Режим діагностики відключений в прошивці або не встановлено з\'єднання з Secu-3</string>
+
+    <string name="diag_enable_bl_de">Ввімкнути тестування виходів BL/DE</string>
+    <string name="diag_enable_tach_o">Ввімкнути тестування виходу TACH_O</string>
+    <string name="diag_bl_de_warning">Перед тестуванням виходів BL, DE переконайтесь, що перемички зняті!\nУВАГА! Значення входів відображається на виходах МК, а не на зовнішньому роз\'ємі (є відмінності).</string>
+
+    <string name="choose_bluetooth_adapter">Виберіть пристрій Bluetooth в налаштуваннях</string>
+
+
+    <string name="units_rpm">хв-1</string>
+    <string name="units_liter">Л</string>
+    <string name="units_cc_per_min">см3/хв</string>
+    <string name="units_hertz">Гц</string>
+    <string name="units_degree">°</string>
+    <string name="units_sec">сек</string>
+    <string name="units_pressure_kpa">кПа</string>
+    <string name="units_volts">В</string>
+    <string name="units_kpa_per_volt">кПа/В</string>
+    <string name="units_ms">мс</string>
+    <string name="units_degrees_celcius">°C</string>
+    <string name="units_percents">%</string>
+    <string name="units_percent_per_volts">%/В</string>
+    <string name="units_percent_per_second">%/сек</string>
+
+    <string-array name="params_tab_titles">
+        <item>Запуск</item>
+        <item>КВЗ</item>
+        <item>Регулятор ХХ</item>
+        <item>Функції</item>
+        <item>Температура</item>
+        <item>Карбюратор</item>
+        <item>Корекція АЦП </item>
+        <item>ДПКВ</item>
+        <item>Детонація</item>
+        <item>Інше</item>
+        <item>Управління ПЗ</item>
+        <item>Безпека</item>
+        <item>Універсальні виходи</item>
+        <item>Уприскування</item>
+        <item>Лямбда контроль</item>
+        <item>Прискорення</item>
+        <item>Gas dose</item>
+    </string-array>
+    <string name="maximum_step_frequency_at_init">Максимальна частота при ініц.</string>
+    <string name="units_degrees_cs">°КВ</string>
+    <string name="units_coef">коеф.</string>
+    <string name="units_num">чис.</string>
+    <string name="units_str">т</string>
+
+</resources>
+

@@ -1,0 +1,63 @@
+*~
+*.apk
+*.bat
+*.txt
+*.orig
+*.log
+*google-services.json
+
+app/build/*
+app/release/*
+.navigation/*
+
+.idea/dictionaries/vetal.xml
+local.properties
+.DS_Store
+gradle.properties
+
+
+
+#built application files
+*.ap_
+
+# files for the dex VM
+*.dex
+
+# Java class files
+*.class
+
+# generated files
+bin/
+gen/
+
+
+# Windows thumbnail db
+Thumbs.db
+
+# Eclipse project files
+.classpath
+.project
+
+# Android Studio
+*.iml
+.idea
+#.idea/workspace.xml - remove # and delete .idea if it better suit your needs.
+.gradle
+build/
+
+#NDK
+obj/
+
+
+
+/local.properties
+/.idea/caches
+/.idea/libraries
+/.idea/modules.xml
+/.idea/workspace.xml
+/.idea/navEditor.xml
+/.idea/assetWizardSettings.xml
+/build
+/captures
+.externalNativeBuild
+.cxx

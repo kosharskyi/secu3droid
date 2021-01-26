@@ -1,0 +1,127 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+   SecuDroid  - An open source, free manager for SECU-3 engine control unit
+   Copyright (C) 2020 Vitaliy O. Kosharskiy. Ukraine, Kharkiv
+
+   SECU-3  - An open source, free engine control unit
+   Copyright (C) 2007 Alexey A. Shabelnikov. Ukraine, Kyiv
+
+   This program is free software: you can redistribute it and/or modify
+   it under the terms of the GNU General Public License as published by
+   the Free Software Foundation, either version 3 of the License, or
+   (at your option) any later version.
+
+   This program is distributed in the hope that it will be useful,
+   but WITHOUT ANY WARRANTY; without even the implied warranty of
+   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+   GNU General Public License for more details.
+
+   You should have received a copy of the GNU General Public License
+   along with this program.  If not, see <http://www.gnu.org/licenses/>.
+
+   contacts:
+              http://secu-3.org
+              email: vetalkosharskiy@gmail.com
+-->
+<androidx.constraintlayout.widget.ConstraintLayout
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    tools:context=".ui.parameters.pages.AccelerationFragment"
+    android:padding="16dp">
+
+    <TextView
+        android:id="@+id/accel_tpsdot_threshold_title"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        app:layout_constraintTop_toTopOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        android:text="@string/accel_par_tpsdot_threshold_title"
+        />
+
+    <TextView
+        android:id="@+id/accel_tpsdot_threshold"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        app:layout_constraintTop_toTopOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
+        android:textAppearance="?android:attr/textAppearanceLarge"
+        android:text="0.00"
+        />
+
+    <TextView
+        android:id="@+id/accel_tpsdot_threshold_units"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        app:layout_constraintTop_toBottomOf="@id/accel_tpsdot_threshold"
+        app:layout_constraintEnd_toEndOf="parent"
+        android:text="@string/units_percent_per_second"
+        />
+
+
+    <!-- ************************************************************* -->
+
+    <TextView
+        android:id="@+id/cold_accel_multiplier_title"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        app:layout_constraintTop_toBottomOf="@id/accel_tpsdot_threshold_units"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintEnd_toStartOf="@id/cold_accel_multiplier"
+        android:layout_marginEnd="8dp"
+        android:text="@string/accel_par_coldacc_mult_title"
+        />
+
+    <TextView
+        android:id="@+id/cold_accel_multiplier"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        app:layout_constraintTop_toTopOf="@id/cold_accel_multiplier_title"
+        app:layout_constraintEnd_toEndOf="parent"
+        android:textAppearance="?android:attr/textAppearanceLarge"
+        android:text="0.00"
+        />
+
+    <TextView
+        android:id="@+id/cold_accel_multiplier_units"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        app:layout_constraintTop_toBottomOf="@id/cold_accel_multiplier"
+        app:layout_constraintEnd_toEndOf="parent"
+        android:text="@string/units_percents"
+        />
+
+
+    <!-- ************************************************************* -->
+
+    <TextView
+        android:id="@+id/ae_decay_time_title"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        app:layout_constraintTop_toBottomOf="@id/cold_accel_multiplier_units"
+        app:layout_constraintStart_toStartOf="parent"
+        android:text="@string/accel_par_ae_decay_time_title"
+        />
+
+    <TextView
+        android:id="@+id/ae_decay_time"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        app:layout_constraintTop_toTopOf="@id/ae_decay_time_title"
+        app:layout_constraintEnd_toEndOf="parent"
+        android:textAppearance="?android:attr/textAppearanceLarge"
+        android:text="0.00"
+        />
+
+    <TextView
+        android:id="@+id/ae_decay_time_units"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        app:layout_constraintTop_toBottomOf="@id/ae_decay_time"
+        app:layout_constraintEnd_toEndOf="parent"
+        android:text="str"
+        />
+
+</androidx.constraintlayout.widget.ConstraintLayout>

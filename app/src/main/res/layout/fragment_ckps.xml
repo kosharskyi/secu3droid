@@ -1,0 +1,351 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+   SecuDroid  - An open source, free manager for SECU-3 engine control unit
+   Copyright (C) 2020 Vitaliy O. Kosharskiy. Ukraine, Kharkiv
+
+   SECU-3  - An open source, free engine control unit
+   Copyright (C) 2007 Alexey A. Shabelnikov. Ukraine, Kyiv
+
+   This program is free software: you can redistribute it and/or modify
+   it under the terms of the GNU General Public License as published by
+   the Free Software Foundation, either version 3 of the License, or
+   (at your option) any later version.
+
+   This program is distributed in the hope that it will be useful,
+   but WITHOUT ANY WARRANTY; without even the implied warranty of
+   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+   GNU General Public License for more details.
+
+   You should have received a copy of the GNU General Public License
+   along with this program.  If not, see <http://www.gnu.org/licenses/>.
+
+   contacts:
+              http://secu-3.org
+              email: vetalkosharskiy@gmail.com
+-->
+<ScrollView
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent">
+
+    <androidx.constraintlayout.widget.ConstraintLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:padding="16dp"
+        tools:context=".ui.parameters.pages.CkpsFragment">
+
+        <RadioGroup
+            android:id="@+id/ckps_edge_group"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            app:layout_constraintTop_toTopOf="parent"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintEnd_toEndOf="parent"
+            >
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="@string/ckps_ckps_edge_title"
+                />
+
+            <com.google.android.material.radiobutton.MaterialRadioButton
+                android:id="@+id/ckps_edge_falling"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="@string/ckps_edge_negative"
+                />
+
+            <com.google.android.material.radiobutton.MaterialRadioButton
+                android:id="@+id/ckps_edge_rising"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="@string/ckps_edge_positive"
+                />
+
+        </RadioGroup>
+
+        <RadioGroup
+            android:id="@+id/ref_s_edge_group"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            app:layout_constraintTop_toBottomOf="@id/ckps_edge_group"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintEnd_toEndOf="parent"
+            android:layout_marginTop="16dp"
+            >
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="@string/ckps_ref_s_edge_title"
+                />
+
+            <com.google.android.material.radiobutton.MaterialRadioButton
+                android:id="@+id/ref_s_edge_falling"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="@string/ckps_edge_negative"
+                />
+
+            <com.google.android.material.radiobutton.MaterialRadioButton
+                android:id="@+id/ref_s_edge_rising"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="@string/ckps_edge_positive"
+                />
+
+        </RadioGroup>
+
+        <!-- ************************************************************* -->
+
+        <CheckBox
+            android:id="@+id/spark_rising_edge_for_cdi"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            app:layout_constraintTop_toBottomOf="@id/ref_s_edge_group"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintEnd_toEndOf="parent"
+            android:layout_marginTop="16dp"
+            android:button="@null"
+            android:drawableEnd="?android:attr/listChoiceIndicatorMultiple"
+            android:text="@string/ckps_spark_on_rising_edge_for_cdi_title"
+            />
+
+        <!-- ************************************************************* -->
+
+        <CheckBox
+            android:id="@+id/merge_signals_to_single_output"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            app:layout_constraintTop_toBottomOf="@id/spark_rising_edge_for_cdi"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintEnd_toEndOf="parent"
+            android:button="@null"
+            android:drawableEnd="?android:attr/listChoiceIndicatorMultiple"
+            android:text="@string/ckps_merge_outputs_title"
+            />
+
+        <!-- ************************************************************* -->
+
+        <TextView
+            android:id="@+id/number_of_wheels_teeth_title"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            app:layout_constraintTop_toBottomOf="@id/merge_signals_to_single_output"
+            app:layout_constraintStart_toStartOf="parent"
+            android:layout_marginTop="16dp"
+            android:text="@string/ckps_cogs_number_title"
+            />
+
+        <TextView
+            android:id="@+id/number_of_wheels_teeth"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            app:layout_constraintTop_toTopOf="@id/number_of_wheels_teeth_title"
+            app:layout_constraintEnd_toEndOf="parent"
+            android:textAppearance="?android:attr/textAppearanceLarge"
+            android:text="0"
+            />
+
+        <TextView
+            android:id="@+id/number_of_wheels_teeth_units"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            app:layout_constraintTop_toBottomOf="@id/number_of_wheels_teeth"
+            app:layout_constraintEnd_toEndOf="parent"
+            android:text=""
+            />
+
+
+        <!-- ************************************************************* -->
+
+        <TextView
+            android:id="@+id/number_of_missing_teeth_title"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            app:layout_constraintTop_toBottomOf="@id/number_of_wheels_teeth_units"
+            app:layout_constraintStart_toStartOf="parent"
+            android:layout_marginTop="16dp"
+            android:text="@string/ckps_missing_cogs_number_title"
+            />
+
+        <TextView
+            android:id="@+id/number_of_missing_teeth"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            app:layout_constraintTop_toTopOf="@id/number_of_missing_teeth_title"
+            app:layout_constraintEnd_toEndOf="parent"
+            android:textAppearance="?android:attr/textAppearanceLarge"
+            android:text="0"
+            />
+
+        <TextView
+            android:id="@+id/number_of_missing_teeth_units"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            app:layout_constraintTop_toBottomOf="@id/number_of_missing_teeth"
+            app:layout_constraintEnd_toEndOf="parent"
+            android:text=""
+            />
+
+
+        <!-- ************************************************************* -->
+
+        <com.google.android.material.textfield.TextInputLayout
+            android:id="@+id/teeth_before_tdc_title"
+            android:theme="@style/Theme.MaterialComponents.DayNight.NoActionBar"
+            style="@style/Widget.MaterialComponents.TextInputLayout.OutlinedBox.ExposedDropdownMenu"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            app:layout_constraintTop_toBottomOf="@id/number_of_missing_teeth_units"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintEnd_toEndOf="parent"
+            android:hint="@string/ckps_cogs_before_tdc_title">
+
+            <AutoCompleteTextView
+                android:id="@+id/teeth_before_tdc"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:inputType="none"
+                />
+
+        </com.google.android.material.textfield.TextInputLayout>
+
+        <!-- ************************************************************* -->
+
+        <com.google.android.material.textfield.TextInputLayout
+            android:id="@+id/number_of_cylinders_title"
+            android:theme="@style/Theme.MaterialComponents.DayNight.NoActionBar"
+            style="@style/Widget.MaterialComponents.TextInputLayout.OutlinedBox.ExposedDropdownMenu"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            app:layout_constraintTop_toBottomOf="@id/teeth_before_tdc_title"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintEnd_toEndOf="parent"
+            android:layout_marginTop="16dp"
+            android:hint="@string/ckps_engine_cylinders_title">
+
+            <AutoCompleteTextView
+                android:id="@+id/number_of_cylinders"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:inputType="none"
+                />
+
+        </com.google.android.material.textfield.TextInputLayout>
+
+        <!-- ************************************************************* -->
+
+        <TextView
+            android:id="@+id/duration_ing_driver_pulse_teeth_title"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            app:layout_constraintTop_toBottomOf="@id/number_of_cylinders_title"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintEnd_toStartOf="@+id/duration_ing_driver_pulse_teeth"
+            android:layout_marginTop="16dp"
+            android:layout_marginEnd="8dp"
+            android:text="@string/ckps_ignition_pulse_delay_title"
+            />
+
+        <TextView
+            android:id="@+id/duration_ing_driver_pulse_teeth"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            app:layout_constraintTop_toTopOf="@id/duration_ing_driver_pulse_teeth_title"
+            app:layout_constraintEnd_toEndOf="parent"
+            android:textAppearance="?android:attr/textAppearanceLarge"
+            android:text="0"
+            />
+
+        <TextView
+            android:id="@+id/duration_ing_driver_pulse_teeth_units"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            app:layout_constraintTop_toBottomOf="@id/duration_ing_driver_pulse_teeth"
+            app:layout_constraintEnd_toEndOf="parent"
+            android:text=""
+            />
+
+
+        <!-- ************************************************************* -->
+
+        <TextView
+            android:id="@+id/hall_sensor_interrupter_degree_title"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            app:layout_constraintTop_toBottomOf="@id/duration_ing_driver_pulse_teeth_units"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintEnd_toStartOf="@+id/hall_sensor_interrupter_degree"
+            android:layout_marginEnd="8dp"
+            android:text="@string/ckps_hall_wnd_width_title"
+            />
+
+        <TextView
+            android:id="@+id/hall_sensor_interrupter_degree"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            app:layout_constraintTop_toTopOf="@id/hall_sensor_interrupter_degree_title"
+            app:layout_constraintEnd_toEndOf="parent"
+            android:textAppearance="?android:attr/textAppearanceLarge"
+            android:text="0"
+            />
+
+        <TextView
+            android:id="@+id/hall_sensor_interrupter_degree_units"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            app:layout_constraintTop_toBottomOf="@id/hall_sensor_interrupter_degree"
+            app:layout_constraintEnd_toEndOf="parent"
+            android:text=""
+            />
+
+
+        <!-- ************************************************************* -->
+
+        <TextView
+            android:id="@+id/degrees_before_TDC_title"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            app:layout_constraintTop_toBottomOf="@id/hall_sensor_interrupter_degree_units"
+            app:layout_constraintStart_toStartOf="parent"
+            android:text="@string/ckps_degrees_before_tdc_title"
+            />
+
+        <TextView
+            android:id="@+id/degrees_before_TDC"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            app:layout_constraintTop_toTopOf="@id/degrees_before_TDC_title"
+            app:layout_constraintEnd_toEndOf="parent"
+            android:textAppearance="?android:attr/textAppearanceLarge"
+            android:text="0"
+            />
+
+        <TextView
+            android:id="@+id/degrees_before_TDC_units"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            app:layout_constraintTop_toBottomOf="@id/degrees_before_TDC"
+            app:layout_constraintEnd_toEndOf="parent"
+            android:text=""
+            />
+
+
+        <!-- ************************************************************* -->
+
+        <CheckBox
+            android:id="@+id/use_cam_sensor_as_reference"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            app:layout_constraintTop_toBottomOf="@id/degrees_before_TDC_units"
+            app:layout_constraintStart_toStartOf="parent"
+            android:text="@string/ckps_use_cam_sensor_title"
+            />
+
+    </androidx.constraintlayout.widget.ConstraintLayout>
+
+</ScrollView>

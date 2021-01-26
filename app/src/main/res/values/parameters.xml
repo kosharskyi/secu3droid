@@ -1,0 +1,242 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+   SecuDroid  - An open source, free manager for SECU-3 engine control unit
+   Copyright (C) 2020 Vitaliy O. Kosharskiy. Ukraine, Kharkiv
+
+   SECU-3  - An open source, free engine control unit
+   Copyright (C) 2007 Alexey A. Shabelnikov. Ukraine, Kyiv
+
+   This program is free software: you can redistribute it and/or modify
+   it under the terms of the GNU General Public License as published by
+   the Free Software Foundation, either version 3 of the License, or
+   (at your option) any later version.
+
+   This program is distributed in the hope that it will be useful,
+   but WITHOUT ANY WARRANTY; without even the implied warranty of
+   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+   GNU General Public License for more details.
+
+   You should have received a copy of the GNU General Public License
+   along with this program.  If not, see <http://www.gnu.org/licenses/>.
+
+   contacts:
+              http://secu-3.org
+              email: vetalkosharskiy@gmail.com
+-->
+
+<resources>
+
+    <string name="starter_off_title">Starter blocking RPM</string>
+    <string name="starter_map_abandon_title">Switch from cranking ignition map RPM</string>
+    <string name="starter_dat_crank_to_run_time_title">Time for going from crank to run position of IAC</string>
+    <string name="starter_dat_afterstart_enrichment_strokes_title">Afterstart enrichment time</string>
+    <string name="starter_dat_prime_pulse_cold_title">Prime pulse width at -30°C</string>
+    <string name="starter_dat_prime_pulse_hot_title">Prime pulse width at 70°C</string>
+    <string name="starter_dat_prime_pulse_delay_title">Prime pulse delay</string>
+    <string name="starter_dat_flod_clear_mode_threshold_title">Flood clear mode threshold</string>
+
+    <string name="angles_min_angle_title">Minimal advance angle</string>
+    <string name="angles_max_angle_title">Maximal advance angle</string>
+    <string name="angles_angle_decrement_step_title">Angle decrement step</string>
+    <string name="angles_angle_increment_step_title">Angle increment step</string>
+    <string name="angles_zero_angle_title">Zero advance angle</string>
+    <string name="angles_octane_correction_title">Octane correction</string>
+    
+    <string name="idlreg_ifac1_title">Positive regulator\'s factor</string>
+    <string name="idlreg_ifac2_title">Negative regulator\'s factor</string>
+    <string name="idlreg_minimal_angle_title">Minimal regulation limit</string>
+    <string name="idlreg_maximal_angle_title">Maximal regulation limit</string>
+    <string name="idlreg_target_rpm_title">Goal RPM</string>
+    <string name="idlreg_rpm_sensitivity_title">Dead band of RPM</string>
+    <string name="idlreg_turn_on_temp_title">Regulator turn on temperature</string>
+    <string name="idlreg_use_idle_regulator_title">Use regulator</string>
+    <string name="idlreg_use_idle_regulator_on_gas_title">Use regulator on gas fuel</string>
+    <string name="idlreg_proportional_regulator_title">Proportional regulator</string>
+    <string name="idlreg_use_closed_loop_title">Use closed loop</string>
+    <string name="idlreg_iac_add_after_exit_title">IAC add after exit</string>
+    <string name="idlreg_rpm_add_on_run_title">RPM add on run</string>
+    <string name="idlreg_proportional_title">Proportional</string>
+    <string name="idlreg_integral_title">Integral</string>
+    <string name="idlreg_first_transient_threshold_title">1-st transient threshold</string>
+    <string name="idlreg_second_transient_threshold_title">2-nd transient threshold</string>
+    <string name="idlreg_integrator_rpm_limit_title">Integrator RPM limit</string>
+    <string name="idlreg_pressure_load_on_idling_title">Pressure (load) on idling</string>
+    <string name="idlreg_min_iac_position_title">Minimum IAC position</string>
+    <string name="idlreg_max_iac_position_title">Maximum IAC position</string>
+    <string name="idlreg_use_closed_loop_on_gas_title">Use closed loop on gas</string>
+
+
+    <string name="funset_lower_pressure_title">Lower pressure value</string>
+    <string name="funset_upper_pressure_title">Upper pressure value</string>
+    <string name="funset_map_sensor_offset_title">MAP Sensor Curve offset</string>
+    <string name="funset_map2_sensor_offset_title">MAP2 Sensor Curve offset</string>
+    <string name="funset_map_sensor_gradient_title">MAP sensor curve gradient</string>
+    <string name="funset_map2_sensor_gradient_title">MAP2 sensor curve gradient</string>
+    <string name="funset_tps_curve_offset_title">TPS curve offset</string>
+    <string name="funset_tps_curve_gradient_title">TPS curve gradient</string>
+
+    <string name="temper_fan_on_title">Fan turn on threshold</string>
+    <string name="temper_fan_off_title">Fan turn off threshold</string>
+    <string name="temper_use_temp_sensor_title">Use coolant temperature sensor</string>
+    <string name="temper_use_pwm_title">Control cooling fan using PWM</string>
+    <string name="temper_use_table_title">Use table to define sensor\'s curve</string>
+    <string name="temper_fan_pwm_freq_title">PWM frequency</string>
+    <string name="temper_cond_turn_on_threshold_title">Air cond. turn on threshold</string>
+    <string name="temper_cond_turn_off_threshold_title">Air cond. turn off threshold</string>
+    <string name="temper_cond_turn_on_min_rpm_threshold_title">Air cond. turn on min. rpm</string>
+    <string name="temper_fans_timer_title">Cooling fan\'s timer</string>
+
+
+    <string name="carbur_tps_threshold_title">TPS threshold</string>
+    <string name="carbur_overrun_lower_threshold_gasoline_title">Idle cut-off valve lower threshold for gasoline</string>
+    <string name="carbur_overrun_upper_threshold_gasoline_title">Idle cut-off valve upper threshold for gasoline</string>
+    <string name="carbur_overrun_lower_threshold_gas_title">Idle cut-off valve lower threshold for gas</string>
+    <string name="carbur_overrun_upper_threshold_gas_title">Idle cut-off valve upper threshold for gas</string>
+    <string name="carbur_overrun_valve_delay_title">Valve turn off delay</string>
+    <string name="carbur_epm_valve_on_pressure_title">PVS turn on threshold</string>
+    <string name="carbur_sensor_inverse_title">Inversion of throttle position switch</string>
+    <string name="carbur_fuelcut_map_threshold_title">Fuel cut MAP threshold</string>
+    <string name="carbur_fuelcut_temp_threshold_title">Fuel cut CTS threshold</string>
+    <string name="carbur_protection_of_engine_title">Protection of engine</string>
+    <string name="carbur_rev_limitting_lower_threshold_title">Rev.limitting lower threshold</string>
+    <string name="carbur_rev_limitting_upper_threshold_title">Rev.limitting upper threshold</string>
+
+    <string name="ckps_ckps_edge_title">CKPS edge</string>
+	<string name="ckps_edge_negative">Negatige edge</string>
+	<string name="ckps_edge_positive">Positive edge</string>
+    <string name="ckps_spark_on_rising_edge_for_cdi_title">Spark on the rising edge (for CDI)</string>
+    <string name="ckps_merge_outputs_title">Merge signals to single output</string>
+    <string name="ckps_cogs_number_title">Number of wheel\'s teeth</string>
+    <string name="ckps_missing_cogs_number_title">Number of missing teeth</string>
+    <string name="ckps_ref_s_edge_title">REF_S edge</string>
+    <string name="ckps_cogs_before_tdc_title">Number of teeth before TDC</string>
+    <string name="ckps_engine_cylinders_title">Number of engine cylynders</string>
+    <string name="ckps_ignition_pulse_delay_title">Duration of igniter\'s pulse driver in teeth of wheel</string>
+    <string name="ckps_hall_wnd_width_title">Hall sensor shutter\'s window width in degrees of crankshaft</string>
+    <string name="ckps_degrees_before_tdc_title">Degrees before TDC</string>
+    <string name="ckps_use_cam_sensor_title">Use cam sensor as reference</string>
+
+    <string name="miscel_baudrate_title">Data transmission baudrate</string>
+    <string name="miscel_period_title">Data packets transmission period</string>
+    <string name="miscel_ignition_cutoff_title">Enable ignition cutoff</string>
+    <string name="miscel_ignition_cutoff_rpm_title">Ignition cutoff RPM</string>
+    <string name="miscel_hall_output_delay_title">Hall output pulse duration (in wheel teeth)</string>
+    <string name="miscel_start_rel_to_tdc_title">Start rel. to TDC</string>
+    <string name="miscel_turn_off_fuel_pump_after_switching_gas_title">Turn off fuel pump after switching to gas</string>
+    <string name="miscel_turn_off_injectors_pump_after_switching_gas_title">Turn off injectors after switching to gas</string>
+    <string name="miscel_turn_off_injectors_pump_after_switching_petrol_title">Turn off injectors after switching to petrol</string>
+    <string name="miscel_evap_starting_air_flow_title">EVAP starting air flow</string>
+    <string name="miscel_evap_ending_air_flow_title">EVAP ending air flow</string>
+    <string name="miscel_fuel_pump_working_time_title">Fuel pump working time</string>
+
+
+    <string name="choke_steps_title">Number of SM steps</string>
+    <string name="choke_rpm_if_factor_title">Regulation factor</string>
+    <string name="choke_cranking_map_lasting_on_cold_title">Cranking map lasting in -30°C</string>
+    <string name="choke_cranking_map_lasting_on_hot_title">Cranking map lasting in 40°C</string>
+    <string name="choke_use_closed_loop_rpm_regulator_title">Use closed loop RPM regulator</string>
+    <string name="choke_dont_use_rpm_regulator_on_gas_title">Don\'t use RPM regulator on gas</string>
+    <string name="choke_use_throttle_position_in_choke_init_title">Use throttle position in choke init</string>
+    <string name="choke_time_from_crank_to_run_position_for_choke_title">Time for going from crank to run position for choke</string>
+
+    <string name="secur_par_use_bluetooth_title">Use bluetooth</string>
+    <string name="secur_par_use_immobilizer_title">Use immobilizer</string>
+    <string name="secur_par_always_load_params_from_flash_title">Always load parameters from flash</string>
+    <string name="secur_par_check_firmware_integrity_title">Check firmware integrity</string>
+
+    <string name="unioutput1_condition_1_inverse_title">Inverse</string>
+    <string name="unioutput1_condition_1_title">Condition 1 for output 1</string>
+    <string name="unioutput1_condition1_on_value_title">ON value</string>
+    <string name="unioutput1_condition1_off_value_title">OFF value</string>
+    <string name="unioutput1_logical_functions_title">Logical function</string>
+    <string name="unioutput1_logical_functions_summary">Logical operation between conditions 1 &amp; 2</string>
+    <string name="unioutput1_condition_2_title">Condition 2 for output 1</string>
+    <string name="unioutput2_condition_1_title">Condition 1 for output 2</string>
+    <string name="unioutput2_condition_2_title">Condition 2 for output 2</string>
+    <string name="unioutput3_condition_1_title">Condition 1 for output 3</string>
+    <string name="unioutput3_condition_2_title">Condition 2 for output 3</string>
+
+    <string name="injctr_par_injector_flow_rate_title">Injector flow rate</string>
+    <string name="injctr_par_enjine_displacement_title">Engine displacement</string>
+    <string name="injctr_par_injector_config_title">Injector configuration</string>
+    <string name="injctr_par_number_of_squirts_per_cycle_title">Number of squirts per cycle</string>
+    <string name="injctr_par_injection_timing_title">Injection timing</string>
+    <string name="injctr_par_cranking_injection_timing_title">Cranking injection timing</string>
+    <string name="injctr_par_use_map_for_inj_timing_title">Use map for injection timing</string>
+    <string name="injctr_par_min_inj_pw_title">Min. injection PW</string>
+    <string name="injctr_par_params_for_second_fuel_title">Parameters for second fuel</string>
+    <string name="injctr_par_additional_corrections_title">Additional corrections (gas.eq)</string>
+    <string name="injctr_par_use_air_density_correction_map_title">Use air density correction map</string>
+    <string name="injctr_par_diff_press_for_pw_corr_from_gps_title">Diff.press.for PW corr.from GPS</string>
+    <string name="injctr_par_switch_between_injectors_rows_title">Switch between injectors\' rows</string>
+
+
+    <string name="lambda_par_sensor_type_title">Sensor type</string>
+    <string name="lambda_par_strokes_per_step_title">Number of strokes per step</string>
+    <string name="lambda_par_ms_per_step_title">Number of ms per step</string>
+    <string name="lambda_par_step_size_positive_title">Size of \'+\' correction step</string>
+    <string name="lambda_par_step_size_negative_title">Size of \'-\' correction step</string>
+    <string name="lambda_par_correction_positive_limit_title">Correction limit (+)</string>
+    <string name="lambda_par_correction_negative_limit_title">Correction limit (-)</string>
+    <string name="lambda_par_switch_point_title">Switch point</string>
+    <string name="lambda_par_temp_threshold_title">CTS activation threshold</string>
+    <string name="lambda_par_rpm_threshold_title">RPM activation threshold</string>
+    <string name="lambda_par_activation_delay_title">Activation after start in</string>
+    <string name="lambda_par_switch_point_deadband_title">Switch point deadband +/-</string>
+    <string name="lambda_par_determine_heating_voltage_title">Determine heating using voltage</string>
+    <string name="lambda_par_correction_on_idling_title">Lambda correction on idling</string>
+    <string name="lambda_par_stoichiom_ratio_for_gas_title">Stoichiom.ratio for 2-nd fuel</string>
+    <string name="lambda_control_sensors_heating_title">Control of sensor\'s heating</string>
+    <string name="lambda_par_heating_time_without_pwm_on_cold_title">Heating time without PWM on cold engine</string>
+    <string name="lambda_par_heating_time_without_pwm_on_hot_title">Heating time without PWM on hot engine</string>
+    <string name="lambda_par_hot_cold_temperature_threshold_title">Cold/hot temperature threshold</string>
+    <string name="lambda_par_turn_on_time_in_pwm_mode_title">Turn on time in the PWM mode</string>
+    <string name="lambda_par_air_flow_threshold_for_turning_heating_off_title">Air flow threshold for turning heating off</string>
+    <string name="lambda_par_heating_before_cranking_title">Heating before cranking</string>
+
+
+    <string name="accel_par_tpsdot_threshold_title">Acceleration TPS dot threshold</string>
+    <string name="accel_par_coldacc_mult_title">Cold acceleration multiplier</string>
+    <string name="accel_par_ae_decay_time_title">AE Decay time</string>
+
+    <string name="knock_par_use_knock_sensor_title">Enable knock control</string>
+    <string name="knock_par_knock_filter_frequency_title">BPF frequency</string>
+    <string name="knock_par_phase_window_begin_title">Phase window begin</string>
+    <string name="knock_par_phase_window_end_title">Phase window end</string>
+    <string name="knock_par_integration_timeout_title">Integration time constant</string>
+    <string name="knock_par_angle_displacement_step_title">Angle displacement step</string>
+    <string name="knock_par_angle_retard_step_title">Angle recovery step</string>
+    <string name="knock_par_maximal_angle_displacement_title">Max angle displacement</string>
+    <string name="knock_par_knock_threshold_title">Knock threshold</string>
+    <string name="knock_par_angle_recovery_delay_title">Angle recovery delay</string>
+
+    <string name="gasdose_par_stoich_ratio">Stochiometric ratio</string>
+    <string name="gasdose_par_closing_on_fuel_cut">Closing on fuel cut</string>
+
+    <string name="status_rpm_title">RPM: %d min-1\n</string>
+    <string name="status_map_title">Pressure: %.2f kPa\n</string>
+    <string name="status_voltage_title">Voltage: %.2f V\n</string>
+    <string name="status_temperature_title">Temperature: %.2f °C\n</string>
+    <string name="status_angle_correction_title">Advance angle: %+.2f °\n</string>
+    <string name="status_knock_title">Knock level: %.2f V\n</string>
+    <string name="status_knock_retard_title">Knock retard: %+.2f °\n</string>
+    <string name="status_air_flow_title">Air flow: %d\n</string>
+    <string name="status_fi_valve_title">FI valve: %d\n</string>
+    <string name="status_carb_status_title">Throttle sensor: %d\n</string>
+    <string name="status_gas_valve_title">Gas valve: %d\n</string>
+    <string name="status_power_valve_title">Power Valve: %d\n</string>
+    <string name="status_ecf_title">Cooling fan: %d\n</string>
+    <string name="status_starter_block_title">Starter blocked: %d\n</string>
+    <string name="status_tps_title">Throttle Position Sensor:%.2f\n</string>
+    <string name="status_addi1_voltage_title">ADD_I1: %.2f V\n</string>
+    <string name="status_addi2_voltage_title">ADD_I2: %.2f V\n</string>
+    <string name="status_choke_position_title">Choke position: %.2f\n</string>
+
+    <string name="raw_status_map_title">MAP Sensor data: %.2f V\n</string>
+    <string name="raw_status_voltage_title">Voltage Sensor data: %.2f V\n</string>
+    <string name="raw_status_temperature_title">Temperature Sensor data: %.2f V\n</string>
+    <string name="raw_status_knock_title">Knock Sensor data: %.2f V\n</string>
+    <string name="raw_status_tps_title">TPS Sensor data: %.2f V\n</string>
+    <string name="raw_status_addi1_title">ADD_IO1: %.2f V\n</string>
+    <string name="raw_status_addi2_title">ADD_IO2: %.2f V\n</string>
+</resources>
