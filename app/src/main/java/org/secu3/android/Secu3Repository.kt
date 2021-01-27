@@ -26,11 +26,9 @@ package org.secu3.android
 import android.bluetooth.BluetoothAdapter
 import androidx.lifecycle.LiveData
 import androidx.lifecycle.MediatorLiveData
-import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.asLiveData
 import kotlinx.coroutines.GlobalScope
 import kotlinx.coroutines.delay
-import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.launch
 import org.secu3.android.models.packets.BaseOutputPacket
@@ -49,7 +47,9 @@ class Secu3Repository @Inject constructor(private val secu3Manager: Secu3Manager
     private var lastPacketReceivedTimetamp = LocalDateTime.now().minusMinutes(1)
     private var tryToConnect = false
 
-    private val statusJob = flow {
+    private val bluetoothAdapter: BluetoothAdapter by lazy { BluetoothAdapter.getDefaultAdapter() }
+
+    private val connectionStatus = flow {
         while (lastPacketReceivedTimetamp.isAfter(LocalDateTime.now().minusMinutes(10))) {
             delay(500)
 
@@ -58,6 +58,12 @@ class Secu3Repository @Inject constructor(private val secu3Manager: Secu3Manager
             } else {
                 emit(true)
             }
+        }
+    }
+
+    private val connectionWatchdog = GlobalScope.launch {
+        while (lastPacketReceivedTimetamp.isAfter(LocalDateTime.now().minusMinutes(10))) {
+            delay(1000)
 
             if (tryToConnect.not()) {
                 continue
@@ -67,7 +73,7 @@ class Secu3Repository @Inject constructor(private val secu3Manager: Secu3Manager
                 continue
             }
 
-            if (BluetoothAdapter.getDefaultAdapter().isEnabled.not()) {
+            if (bluetoothAdapter.isEnabled.not()) {
                 continue
             }
 
@@ -85,7 +91,7 @@ class Secu3Repository @Inject constructor(private val secu3Manager: Secu3Manager
         }
     }
 
-    val connectionStatusLiveData = statusJob.asLiveData()
+    val connectionStatusLiveData = connectionStatus.asLiveData()
 
 
     private val mPacketsLiveData = MediatorLiveData<BaseSecu3Packet>().also {

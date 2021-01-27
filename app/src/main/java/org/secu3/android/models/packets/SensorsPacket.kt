@@ -89,9 +89,7 @@ data class SensorsPacket(var rpm: Int = 0,
     }
 
     fun getDistance(): Float {
-        var distance = 0f
-
-        distance = (periodDistance * rawDistance) / 1000.0f
+        var distance = (periodDistance * rawDistance) / 1000.0f
 
         if (distance > 9999.99f) {
             distance = 9999.99f
