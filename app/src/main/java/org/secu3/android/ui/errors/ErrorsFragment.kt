@@ -86,9 +86,4 @@ class ErrorsFragment : Fragment() {
         mBinding.errorsRecyclerView.adapter = ErrorsAdapter(errors)
 
     }
-
-    override fun onResume() {
-        super.onResume()
-        mViewModel.start()
-    }
 }

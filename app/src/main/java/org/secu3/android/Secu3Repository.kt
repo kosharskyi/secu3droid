@@ -27,14 +27,18 @@ import android.bluetooth.BluetoothAdapter
 import androidx.lifecycle.LiveData
 import androidx.lifecycle.MediatorLiveData
 import androidx.lifecycle.MutableLiveData
+import androidx.lifecycle.asLiveData
 import kotlinx.coroutines.GlobalScope
 import kotlinx.coroutines.delay
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.launch
 import org.secu3.android.models.packets.BaseOutputPacket
 import org.secu3.android.models.packets.BaseSecu3Packet
 import org.secu3.android.models.packets.FirmwareInfoPacket
 import org.secu3.android.utils.LifeTimePrefs
 import org.secu3.android.utils.Task
+import org.threeten.bp.LocalDateTime
 import javax.inject.Inject
 import javax.inject.Singleton
 
@@ -42,27 +46,33 @@ import javax.inject.Singleton
 class Secu3Repository @Inject constructor(private val secu3Manager: Secu3Manager,
                                           private val mPrefs: LifeTimePrefs
 ) {
+    private var lastPacketReceivedTimetamp = LocalDateTime.now().minusMinutes(1)
+    private var tryToConnect = false
 
+    private val statusJob = flow {
+        while (lastPacketReceivedTimetamp.isAfter(LocalDateTime.now().minusMinutes(10))) {
+            delay(500)
 
-    private val mStatusLiveData = MutableLiveData<Boolean>().also {
-        it.value = false
-    }
+            if (lastPacketReceivedTimetamp.isBefore(LocalDateTime.now().minusSeconds(5))) {
+                emit(false)
+            } else {
+                emit(true)
+            }
 
-    fun disable() {
-        secu3Manager.disable()
-    }
-
-    private val statusJob = GlobalScope.launch {
-        while (true) {
-            delay(5000)
-            mStatusLiveData.postValue(false)
-
+            if (tryToConnect.not()) {
+                continue
+            }
 
             if (mPrefs.bluetoothDeviceAddress.isNullOrBlank()) {
                 continue
             }
 
             if (BluetoothAdapter.getDefaultAdapter().isEnabled.not()) {
+                continue
+            }
+
+            if (secu3Manager.connectedThread == null) {
+                secu3Manager.start()
                 continue
             }
 
@@ -75,14 +85,13 @@ class Secu3Repository @Inject constructor(private val secu3Manager: Secu3Manager
         }
     }
 
-    val connectionStatusLiveData: LiveData<Boolean>
-        get() = mStatusLiveData
+    val connectionStatusLiveData = statusJob.asLiveData()
 
 
     private val mPacketsLiveData = MediatorLiveData<BaseSecu3Packet>().also {
         it.addSource(secu3Manager.receivedPacketLiveData) { packet ->
 
-            mStatusLiveData.postValue(true)
+            lastPacketReceivedTimetamp = LocalDateTime.now()
 
             if (packet is FirmwareInfoPacket) {
                 fwInfo = packet
@@ -114,9 +123,12 @@ class Secu3Repository @Inject constructor(private val secu3Manager: Secu3Manager
     }
 
     fun startConnect() {
-        if (connectionStatusLiveData.value == false) {
-            secu3Manager.start()
-        }
+        tryToConnect = true
+    }
+
+    fun disable() {
+        tryToConnect = false
+        secu3Manager.disable()
     }
 
 }

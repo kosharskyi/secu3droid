@@ -122,9 +122,6 @@ class ParamsViewModel @ViewModelInject constructor(private val secu3Repository: 
 
 
 
-    fun start() {
-        secu3Repository.startConnect()
-    }
 
 
 
@@ -135,7 +132,6 @@ class ParamsViewModel @ViewModelInject constructor(private val secu3Repository: 
 
 
     init {
-        secu3Repository.startConnect()
 
         secu3Repository.sendNewTask(Task.Secu3ReadFnNameDat)
 

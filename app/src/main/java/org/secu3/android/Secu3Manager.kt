@@ -33,9 +33,6 @@ import android.widget.Toast
 import androidx.lifecycle.LiveData
 import androidx.lifecycle.MutableLiveData
 import dagger.hilt.android.qualifiers.ApplicationContext
-import kotlinx.coroutines.GlobalScope
-import kotlinx.coroutines.delay
-import kotlinx.coroutines.launch
 import org.secu3.android.models.packets.BaseOutputPacket
 import org.secu3.android.models.packets.BaseSecu3Packet
 import org.secu3.android.models.packets.BaseSecu3Packet.Companion.MAX_PACKET_SIZE
@@ -83,8 +80,6 @@ class Secu3Manager @Inject constructor(@ApplicationContext private val context: 
             if (bluetoothAdapter.isEnabled) {
                 createConnectThread = CreateConnectThread(bluetoothAdapter, it)
                 createConnectThread?.start()
-            } else {
-                Toast.makeText(context, R.string.msg_bluetooth_disabled, Toast.LENGTH_LONG).show()
             }
         }
     }

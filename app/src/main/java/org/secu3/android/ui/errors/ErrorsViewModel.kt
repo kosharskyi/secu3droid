@@ -39,7 +39,6 @@ import org.secu3.android.utils.Task
 class ErrorsViewModel @ViewModelInject constructor(private val secu3Repository: Secu3Repository) : ViewModel() {
 
     init {
-        secu3Repository.startConnect()
         sendNewTask(Task.Secu3ReadEcuSavedErrors)
     }
 
@@ -69,9 +68,5 @@ class ErrorsViewModel @ViewModelInject constructor(private val secu3Repository: 
 
     fun sendNewTask(task: Task) {
         secu3Repository.sendNewTask(task)
-    }
-
-    fun start() {
-        secu3Repository.startConnect()
     }
 }

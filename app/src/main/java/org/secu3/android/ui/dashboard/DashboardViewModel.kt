@@ -36,10 +36,6 @@ import org.secu3.android.utils.Task
 class DashboardViewModel @ViewModelInject constructor(private val secu3Repository: Secu3Repository,
                                                       private val mPrefs: LifeTimePrefs) : ViewModel() {
 
-    init {
-        secu3Repository.startConnect()
-    }
-
     val connectionStatusLiveData: LiveData<Boolean>
         get() = secu3Repository.connectionStatusLiveData
 
@@ -65,7 +61,4 @@ class DashboardViewModel @ViewModelInject constructor(private val secu3Repositor
     val statusLiveData: LiveData<Boolean>
         get() = secu3Repository.connectionStatusLiveData
 
-    fun start() {
-        secu3Repository.startConnect()
-    }
 }

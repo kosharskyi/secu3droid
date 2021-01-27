@@ -104,8 +104,6 @@ class DashBoardFragment : Fragment() {
     override fun onResume() {
         super.onResume()
 
-        mViewModel.start()
-
         if (mPrefs.isKeepScreenAliveActive) {
             activity?.window?.addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON)
         } else {

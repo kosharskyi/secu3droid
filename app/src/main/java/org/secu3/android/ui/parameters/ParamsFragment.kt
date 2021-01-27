@@ -74,9 +74,4 @@ class ParamsFragment : Fragment() {
             tab.text = tabTitles[position]
         }.attach()
     }
-
-    override fun onResume() {
-        super.onResume()
-        mViewModel.start()
-    }
 }

@@ -80,11 +80,6 @@ class DiagnosticsFragment : Fragment() {
         initPager()
     }
 
-    override fun onResume() {
-        super.onResume()
-        mViewModel.start()
-    }
-
     override fun onDestroy() {
         mViewModel.leaveDiagnostic()
         super.onDestroy()

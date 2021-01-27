@@ -23,10 +23,13 @@
 */
 package org.secu3.android.ui.main
 
+import android.bluetooth.BluetoothAdapter
+import android.widget.Toast
 import androidx.hilt.lifecycle.ViewModelInject
 import androidx.lifecycle.LiveData
 import androidx.lifecycle.MediatorLiveData
 import androidx.lifecycle.ViewModel
+import org.secu3.android.R
 import org.secu3.android.Secu3Repository
 import org.secu3.android.models.packets.AdcRawDatPacket
 import org.secu3.android.models.packets.FirmwareInfoPacket

@@ -42,8 +42,6 @@ class DiagnosticsViewModel @ViewModelInject constructor(private val secu3Reposit
     var isDiagModeActive = false
 
     init {
-        secu3Repository.startConnect()
-
         secu3Repository.receivedPacketLiveData.observeForever {
             if (it is OpCompNc) {
                 if (it.opCode == 7) {
@@ -100,9 +98,5 @@ class DiagnosticsViewModel @ViewModelInject constructor(private val secu3Reposit
 
     fun sendDiagOutPacket() {
         secu3Repository.sendOutPacket(outputPacket)
-    }
-
-    fun start() {
-        secu3Repository.startConnect()
     }
 }

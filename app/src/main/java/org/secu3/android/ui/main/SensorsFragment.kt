@@ -24,6 +24,7 @@
 
 package org.secu3.android.ui.main
 
+import android.bluetooth.BluetoothAdapter
 import android.content.Intent
 import android.os.Bundle
 import android.view.LayoutInflater
@@ -74,10 +75,16 @@ class SensorsFragment : Fragment() {
 
     override fun onResume() {
         super.onResume()
-        if (mViewModel.isBluetoothDeviceAddressNotSelected()) {
-            Toast.makeText(context, R.string.choose_bluetooth_adapter, Toast.LENGTH_LONG).show()
-        } else {
-            mViewModel.start()
+        when {
+            mViewModel.isBluetoothDeviceAddressNotSelected() -> {
+                Toast.makeText(context, R.string.choose_bluetooth_adapter, Toast.LENGTH_LONG).show()
+            }
+            !BluetoothAdapter.getDefaultAdapter().isEnabled -> {
+                Toast.makeText(context, R.string.msg_bluetooth_disabled, Toast.LENGTH_LONG).show()
+            }
+            else -> {
+                mViewModel.start()
+            }
         }
     }
 
