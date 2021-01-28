@@ -184,5 +184,6 @@
     <string name="units_coef">коэф.</string>
     <string name="units_num">чис.</string>
     <string name="units_str">т</string>
+    <string name="sensors_tab_title">Датчики</string>
 
 </resources>

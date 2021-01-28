@@ -36,6 +36,7 @@ import androidx.fragment.app.Fragment
 import androidx.fragment.app.viewModels
 import androidx.navigation.fragment.findNavController
 import com.google.android.material.dialog.MaterialAlertDialogBuilder
+import com.google.android.material.tabs.TabLayout
 import dagger.hilt.android.AndroidEntryPoint
 import org.secu3.android.R
 import org.secu3.android.databinding.FragmentSensorsBinding
@@ -50,8 +51,6 @@ class SensorsFragment : Fragment() {
 
     private val mViewModel: SensorsViewModel by viewModels()
 
-    private var mRawSensors = false
-
     override fun onCreateView(inflater: LayoutInflater, container: ViewGroup?, savedInstanceState: Bundle?): View? {
         mBinding = FragmentSensorsBinding.inflate(layoutInflater)
         return mBinding.root
@@ -59,9 +58,8 @@ class SensorsFragment : Fragment() {
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
+
         init()
-
-
 
         mViewModel.connectionStatusLiveData.observe(viewLifecycleOwner) {
             if (it) {
@@ -101,17 +99,29 @@ class SensorsFragment : Fragment() {
             setOnMenuItemClickListener { onMenuItemSelected(it) }
         }
 
+        mBinding.tabLayout.addOnTabSelectedListener(object : TabLayout.OnTabSelectedListener {
+            override fun onTabSelected(tab: TabLayout.Tab?) {
+                when (tab?.position) {
+                    0 -> mViewModel.sendNewTask(Task.Secu3ReadSensors)
+                    else -> mViewModel.sendNewTask(Task.Secu3ReadRawSensors)
+                }
+
+            }
+
+            override fun onTabUnselected(tab: TabLayout.Tab?) {
+            }
+
+            override fun onTabReselected(tab: TabLayout.Tab?) {
+            }
+        })
+
 
         mViewModel.firmwareLiveData.observe(viewLifecycleOwner, {
             mBinding.fwInfo.text = it.tag
-            sendSensorsTask()
+            mViewModel.sendNewTask(Task.Secu3ReadSensors)
         })
 
         mViewModel.sensorsLiveData.observe(viewLifecycleOwner, {
-            if (mRawSensors) {
-                return@observe
-            }
-
             var result = ""
             result += String.format(Locale.US, getString(R.string.status_rpm_title), it.rpm)
             result += String.format(Locale.US, getString(R.string.status_map_title), it.map)
@@ -138,10 +148,6 @@ class SensorsFragment : Fragment() {
         })
 
         mViewModel.rawSensorsLiveData.observe(viewLifecycleOwner, {
-            if (mRawSensors.not()) {
-                return@observe
-            }
-
             var result = ""
             result += String.format(Locale.US, getString(R.string.raw_status_map_title), it.map)
             result += String.format(Locale.US, getString(R.string.raw_status_voltage_title), it.voltage)
@@ -199,18 +205,7 @@ class SensorsFragment : Fragment() {
                 true
             }
 
-            R.id.menu_raw_sensors -> {
-                item.isChecked = item.isChecked.not().also { mRawSensors = it }
-                sendSensorsTask()
-                true
-            }
-
             else -> super.onOptionsItemSelected(item)
         }
-    }
-
-    private fun sendSensorsTask() {
-        val task = if (mRawSensors) Task.Secu3ReadRawSensors else Task.Secu3ReadSensors
-        mViewModel.sendNewTask(task)
     }
 }

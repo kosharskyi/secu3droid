@@ -178,6 +178,7 @@
 
 
     <string name="maximum_step_frequency_at_init">Maximum STEP frequency at init</string>
+    <string name="sensors_tab_title">Sensors</string>
 
 
     <string-array name="knock_integration_timeouts" translatable="false">
