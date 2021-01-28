@@ -33,11 +33,6 @@
 		android:icon="@android:drawable/ic_menu_preferences"/>
 
 	<item
-		android:id="@+id/menu_preferences"
-		android:title="@string/menu_preferences"
-		android:icon="@android:drawable/ic_menu_preferences"/>
-
-	<item
 		android:id="@+id/menu_params"
 		android:title="@string/menu_param"
 		app:showAsAction="ifRoom"
@@ -53,6 +48,11 @@
 		android:id="@+id/menu_diagnostics"
 		android:title="@string/menu_diagnostics"
 		android:icon="@android:drawable/ic_menu_agenda"/>
+
+	<item
+		android:id="@+id/menu_preferences"
+		android:title="@string/menu_preferences"
+		android:icon="@android:drawable/ic_menu_preferences"/>
 
 	<item
 		android:id="@+id/menu_exit"

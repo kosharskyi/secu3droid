@@ -79,6 +79,7 @@ class Secu3Repository @Inject constructor(private val secu3Manager: Secu3Manager
 
             if (secu3Manager.connectedThread == null) {
                 secu3Manager.start()
+                delay(2000)
                 continue
             }
 
@@ -88,6 +89,7 @@ class Secu3Repository @Inject constructor(private val secu3Manager: Secu3Manager
                     secu3Manager.start()
                 }
             }
+            delay(2000)
         }
     }
 
