@@ -258,7 +258,7 @@
             app:layout_constraintStart_toStartOf="parent"
             app:layout_constraintEnd_toEndOf="parent"
             android:layout_marginTop="16dp"
-            android:hint="Inj. timing specifies">
+            android:hint="@string/injctr_par_inj_timing_specifies">
 
             <AutoCompleteTextView
                 android:id="@+id/inj_timing_specifies"
@@ -486,7 +486,7 @@
             app:layout_constraintStart_toStartOf="parent"
             app:layout_constraintEnd_toEndOf="parent"
             android:layout_marginTop="16dp"
-            android:hint="Inj. timing specifies">
+            android:hint="@string/injctr_par_inj_timing_specifies">
 
             <AutoCompleteTextView
                 android:id="@+id/inj_timing_specifies_g"

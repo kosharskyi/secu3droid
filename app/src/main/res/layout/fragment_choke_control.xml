@@ -224,7 +224,7 @@
             app:layout_constraintStart_toStartOf="parent"
             app:layout_constraintEnd_toEndOf="parent"
             android:layout_marginTop="16dp"
-            android:hint="Frequency of pulses">
+            android:hint="@string/choke_frequency_of_pulses">
 
             <AutoCompleteTextView
                 android:id="@+id/freq_of_pulses"

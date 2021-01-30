@@ -77,6 +77,13 @@
     <string name="funset_map2_sensor_gradient_title">Наклон кривой ДАД2</string>
     <string name="funset_tps_curve_offset_title">Смещение кривой ДПДЗ</string>
     <string name="funset_tps_curve_gradient_title">Наклон кривой ДПДЗ</string>
+    <string name="funset_maps_set_for_gasoline">Набор таблиц бенз.</string>
+    <string name="funset_maps_set_for_gas">Набор таблиц газ</string>
+    <string name="funset_barometric_correction">Барокорекция</string>
+    <string name="funset_load_measurement">Определ. нагрузку по</string>
+    <string name="funset_mapsel0_condition_for_petrol">Условие MAPSEL0 для бензина</string>
+    <string name="funset_mapsel0_condition_for_gas">Условие MAPSEL0 для газа</string>
+
 
     <string name="temper_fan_on_title">Порог включения вентилятора</string>
     <string name="temper_fan_off_title">Порог выключения вентилятора</string>
@@ -141,6 +148,7 @@
     <string name="choke_dont_use_rpm_regulator_on_gas_title">Не использовать рег. обор. на газу</string>
     <string name="choke_use_throttle_position_in_choke_init_title">Использовать полож.дросс.при иниц.</string>
     <string name="choke_time_from_crank_to_run_position_for_choke_title">Время перехода ВЗ в рабочее положение</string>
+    <string name="choke_frequency_of_pulses">Частота импульсов</string>
 
 
     <string name="secur_par_use_bluetooth_title">Использовать Bluetooth</string>
@@ -173,6 +181,7 @@
     <string name="injctr_par_use_air_density_correction_map_title">Использ.табл.корр.плотн.воздуха</string>
     <string name="injctr_par_diff_press_for_pw_corr_from_gps_title">Дифф.давление для корр.по ДДГ</string>
     <string name="injctr_par_switch_between_injectors_rows_title">Переключать ряды форсунок</string>
+    <string name="injctr_par_inj_timing_specifies">Фазу впрыска определяет</string>
 
 
 

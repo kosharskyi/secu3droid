@@ -74,6 +74,12 @@
     <string name="funset_map2_sensor_gradient_title">MAP2 sensor curve gradient</string>
     <string name="funset_tps_curve_offset_title">TPS curve offset</string>
     <string name="funset_tps_curve_gradient_title">TPS curve gradient</string>
+    <string name="funset_maps_set_for_gasoline">Maps set for gasoline</string>
+    <string name="funset_maps_set_for_gas">Maps set for gas</string>
+    <string name="funset_barometric_correction">Barometric correction</string>
+    <string name="funset_load_measurement">Load measurement</string>
+    <string name="funset_mapsel0_condition_for_petrol">MAPSEL0 condition for petrol</string>
+    <string name="funset_mapsel0_condition_for_gas">MAPSEL0 condition for gas</string>
 
     <string name="temper_fan_on_title">Fan turn on threshold</string>
     <string name="temper_fan_off_title">Fan turn off threshold</string>
@@ -138,6 +144,7 @@
     <string name="choke_dont_use_rpm_regulator_on_gas_title">Don\'t use RPM regulator on gas</string>
     <string name="choke_use_throttle_position_in_choke_init_title">Use throttle position in choke init</string>
     <string name="choke_time_from_crank_to_run_position_for_choke_title">Time for going from crank to run position for choke</string>
+    <string name="choke_frequency_of_pulses">Frequency of pulses</string>
 
     <string name="secur_par_use_bluetooth_title">Use bluetooth</string>
     <string name="secur_par_use_immobilizer_title">Use immobilizer</string>
@@ -169,6 +176,7 @@
     <string name="injctr_par_use_air_density_correction_map_title">Use air density correction map</string>
     <string name="injctr_par_diff_press_for_pw_corr_from_gps_title">Diff.press.for PW corr.from GPS</string>
     <string name="injctr_par_switch_between_injectors_rows_title">Switch between injectors\' rows</string>
+    <string name="injctr_par_inj_timing_specifies">Inj. timing specifies</string>
 
 
     <string name="lambda_par_sensor_type_title">Sensor type</string>

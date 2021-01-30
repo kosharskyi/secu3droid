@@ -59,6 +59,8 @@ class Secu3Repository @Inject constructor(private val secu3Manager: Secu3Manager
                 emit(true)
             }
         }
+
+        emit(false)
     }
 
     private val connectionWatchdog = GlobalScope.launch {

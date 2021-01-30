@@ -174,7 +174,7 @@
             app:layout_constraintStart_toStartOf="parent"
             app:layout_constraintEnd_toEndOf="parent"
             android:layout_marginTop="16dp"
-            android:hint="Maps set for gasoline">
+            android:hint="@string/funset_maps_set_for_gasoline">
 
             <AutoCompleteTextView
                 android:id="@+id/maps_set"
@@ -198,7 +198,7 @@
             app:layout_constraintStart_toStartOf="parent"
             app:layout_constraintEnd_toEndOf="parent"
             android:layout_marginTop="16dp"
-            android:hint="Maps set for gasoline">
+            android:hint="@string/funset_maps_set_for_gas">
 
             <AutoCompleteTextView
                 android:id="@+id/maps_set_for_gas"
@@ -287,7 +287,7 @@
             app:layout_constraintStart_toStartOf="parent"
             app:layout_constraintEnd_toEndOf="parent"
             android:layout_marginTop="16dp"
-            android:hint="Load measurement">
+            android:hint="@string/funset_load_measurement">
 
             <AutoCompleteTextView
                 android:id="@+id/load_measurement"
@@ -309,7 +309,7 @@
             app:layout_constraintTop_toBottomOf="@id/load_measurement_title"
             app:layout_constraintStart_toStartOf="parent"
             app:layout_constraintEnd_toEndOf="parent"
-            android:hint="MAPSEL0 condition for petrol">
+            android:hint="@string/funset_mapsel0_condition_for_petrol">
 
             <AutoCompleteTextView
                 android:id="@+id/mapsel_petrol"
@@ -331,7 +331,7 @@
             app:layout_constraintTop_toBottomOf="@id/mapsel0_petrol_title"
             app:layout_constraintStart_toStartOf="parent"
             app:layout_constraintEnd_toEndOf="parent"
-            android:hint="MAPSEL1 condition for petrol">
+            android:hint="@string/funset_mapsel0_condition_for_gas">
 
             <AutoCompleteTextView
                 android:id="@+id/mapsel_gas"
@@ -353,7 +353,7 @@
             app:layout_constraintTop_toBottomOf="@id/mapsel0_gas_title"
             app:layout_constraintStart_toStartOf="parent"
             app:layout_constraintEnd_toEndOf="parent"
-            android:hint="Barometric correction">
+            android:hint="@string/funset_barometric_correction">
 
             <AutoCompleteTextView
                 android:id="@+id/barometric_correction"
