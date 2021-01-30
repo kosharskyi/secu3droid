@@ -51,8 +51,8 @@ class IdlingFragment : Fragment() {
                 positiveRegFactor.text = "%.2f".format(it.iFac1)
                 negativeRegFactor.text = "%.2f".format(it.iFac2)
 
-                maxRegLimit.text = it.idlregMaxAngle.toString()
-                minRegLimit.text = it.idlregMinAngle.toString()
+                maxRegLimit.text = "%.2f".format(it.idlregMaxAngle)
+                minRegLimit.text = "%.2f".format(it.idlregMinAngle)
 
                 goalRpm.text = it.idlingRpm.toString()
                 rpmDeadBand.text = it.minefr.toString()

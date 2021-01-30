@@ -52,8 +52,8 @@ data class KnockParamPacket(
         fun parse(data: String) = KnockParamPacket().apply {
             useKnockChannel = data[2].toInt()
             bpfFrequency = data[3].toInt()
-            kWndBeginAngle = data.get2Bytes(4).toFloat() / ANGLE_DIVIDER
-            kWndEndAngle = data.get2Bytes(6).toFloat() / ANGLE_DIVIDER
+            kWndBeginAngle = data.get2Bytes(4).toShort().toFloat() / ANGLE_DIVIDER
+            kWndEndAngle = data.get2Bytes(6).toShort().toFloat() / ANGLE_DIVIDER
             intTimeCost = data[8].toInt()
 
             retardStep = data.get2Bytes(9).toFloat() / ANGLE_DIVIDER

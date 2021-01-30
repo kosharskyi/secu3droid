@@ -58,8 +58,8 @@ class KnockFragment : Fragment() {
         mViewModel.knockLiveData.observe(viewLifecycleOwner) {
             mBinding.apply {
                 enableSensor.isChecked = it.useKnockChannel > 0
-                phaseWindowBegin.text = it.kWndBeginAngle.toString()
-                phaseWindowEnd.text = it.kWndEndAngle.toString()
+                phaseWindowBegin.text = "%.2f".format(it.kWndBeginAngle)
+                phaseWindowEnd.text = "%.2f".format(it.kWndEndAngle)
 
                 bpfFrequency.setText(bpfList[it.bpfFrequency], false)
                 integrationTimeConstant.setText(integrationTimeConstatList[it.intTimeCost], false)
