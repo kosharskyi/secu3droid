@@ -23,19 +23,21 @@
 */
 package org.secu3.android.ui.diagnostics
 
-import androidx.hilt.lifecycle.ViewModelInject
 import androidx.lifecycle.LiveData
 import androidx.lifecycle.MediatorLiveData
 import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.ViewModel
+import dagger.hilt.android.lifecycle.HiltViewModel
 import org.secu3.android.Secu3Repository
 import org.secu3.android.models.packets.DiagInputPacket
 import org.secu3.android.models.packets.DiagOutputPacket
 import org.secu3.android.models.packets.FirmwareInfoPacket
 import org.secu3.android.models.packets.OpCompNc
 import org.secu3.android.utils.Task
+import javax.inject.Inject
 
-class DiagnosticsViewModel @ViewModelInject constructor(private val secu3Repository: Secu3Repository) : ViewModel() {
+@HiltViewModel
+class DiagnosticsViewModel @Inject constructor(private val secu3Repository: Secu3Repository) : ViewModel() {
 
     val outputPacket = DiagOutputPacket(secu3Repository.fwInfo)
 

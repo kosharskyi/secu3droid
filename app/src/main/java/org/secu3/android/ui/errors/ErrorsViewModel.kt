@@ -24,19 +24,18 @@
 
 package org.secu3.android.ui.errors
 
-import androidx.hilt.lifecycle.ViewModelInject
 import androidx.lifecycle.LiveData
 import androidx.lifecycle.MediatorLiveData
 import androidx.lifecycle.ViewModel
-import org.secu3.android.models.packets.ChangeModePacket
+import dagger.hilt.android.lifecycle.HiltViewModel
+import org.secu3.android.Secu3Repository
 import org.secu3.android.models.packets.CheckEngineErrorsPacket
 import org.secu3.android.models.packets.CheckEngineSavedErrorsPacket
-
-import org.secu3.android.Secu3Manager
-import org.secu3.android.Secu3Repository
 import org.secu3.android.utils.Task
+import javax.inject.Inject
 
-class ErrorsViewModel @ViewModelInject constructor(private val secu3Repository: Secu3Repository) : ViewModel() {
+@HiltViewModel
+class ErrorsViewModel @Inject constructor(private val secu3Repository: Secu3Repository) : ViewModel() {
 
     init {
         sendNewTask(Task.Secu3ReadEcuSavedErrors)

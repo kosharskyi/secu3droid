@@ -24,17 +24,19 @@
 
 package org.secu3.android.ui.dashboard
 
-import androidx.hilt.lifecycle.ViewModelInject
 import androidx.lifecycle.LiveData
 import androidx.lifecycle.MediatorLiveData
 import androidx.lifecycle.ViewModel
+import dagger.hilt.android.lifecycle.HiltViewModel
 import org.secu3.android.Secu3Repository
 import org.secu3.android.models.packets.SensorsPacket
 import org.secu3.android.utils.LifeTimePrefs
 import org.secu3.android.utils.Task
+import javax.inject.Inject
 
-class DashboardViewModel @ViewModelInject constructor(private val secu3Repository: Secu3Repository,
-                                                      private val mPrefs: LifeTimePrefs) : ViewModel() {
+@HiltViewModel
+class DashboardViewModel @Inject constructor(private val secu3Repository: Secu3Repository,
+                                             private val mPrefs: LifeTimePrefs) : ViewModel() {
 
     val connectionStatusLiveData: LiveData<Boolean>
         get() = secu3Repository.connectionStatusLiveData

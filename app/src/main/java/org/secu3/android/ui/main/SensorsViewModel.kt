@@ -23,13 +23,10 @@
 */
 package org.secu3.android.ui.main
 
-import android.bluetooth.BluetoothAdapter
-import android.widget.Toast
-import androidx.hilt.lifecycle.ViewModelInject
 import androidx.lifecycle.LiveData
 import androidx.lifecycle.MediatorLiveData
 import androidx.lifecycle.ViewModel
-import org.secu3.android.R
+import dagger.hilt.android.lifecycle.HiltViewModel
 import org.secu3.android.Secu3Repository
 import org.secu3.android.models.packets.AdcRawDatPacket
 import org.secu3.android.models.packets.FirmwareInfoPacket
@@ -38,9 +35,11 @@ import org.secu3.android.utils.LifeTimePrefs
 import org.secu3.android.utils.Task
 import org.threeten.bp.Duration
 import org.threeten.bp.LocalDateTime
+import javax.inject.Inject
 
-class SensorsViewModel @ViewModelInject constructor(private val secu3Repository: Secu3Repository,
-                                                    private val mPrefs: LifeTimePrefs
+@HiltViewModel
+class SensorsViewModel @Inject constructor(private val secu3Repository: Secu3Repository,
+                                           private val mPrefs: LifeTimePrefs
 ) : ViewModel() {
 
 

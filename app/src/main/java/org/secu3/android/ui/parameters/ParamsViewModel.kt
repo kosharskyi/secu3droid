@@ -23,21 +23,21 @@
 */
 package org.secu3.android.ui.parameters
 
-import androidx.hilt.lifecycle.ViewModelInject
 import androidx.lifecycle.LiveData
 import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.ViewModel
-import org.secu3.android.Secu3Manager
+import dagger.hilt.android.lifecycle.HiltViewModel
 import org.secu3.android.Secu3Repository
+import org.secu3.android.models.packets.FirmwareInfoPacket
 import org.secu3.android.models.packets.FnName
 import org.secu3.android.models.packets.FnNameDatPacket
-import org.secu3.android.models.packets.ChangeModePacket
-import org.secu3.android.models.packets.FirmwareInfoPacket
 import org.secu3.android.models.packets.params.*
 import org.secu3.android.utils.LifeTimePrefs
 import org.secu3.android.utils.Task
+import javax.inject.Inject
 
-class ParamsViewModel @ViewModelInject constructor(private val secu3Repository: Secu3Repository, private val prefs: LifeTimePrefs) : ViewModel() {
+@HiltViewModel
+class ParamsViewModel @Inject constructor(private val secu3Repository: Secu3Repository, private val prefs: LifeTimePrefs) : ViewModel() {
 
     val connectionStatusLiveData: LiveData<Boolean>
         get() = secu3Repository.connectionStatusLiveData
