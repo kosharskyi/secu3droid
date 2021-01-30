@@ -61,7 +61,20 @@ data class CkpsParamPacket(
         get() = hallFlags.getBitValue(4) > 0
 
     override fun pack(): String {
-        TODO("Not yet implemented")
+        var data = "$OUTPUT_PACKET_SYMBOL$DESCRIPTOR"
+
+        data += ckpsCogsBtdc.toChar()
+        data += ckpsIgnitCogs.toChar()
+        data += ckpsEngineCyl.toChar()
+        data += ckpsCogsNum.toChar()
+        data += ckpsMissNum.toChar()
+        data += hallFlags.toChar()
+
+        data += hallWndWidth.times(ANGLE_DIVIDER).toInt().write2Bytes(data)
+        data += hallDegreesBtdc.times(ANGLE_DIVIDER).toInt().write2Bytes(data)
+
+        data += END_PACKET_SYMBOL
+        return data
     }
 
     companion object {

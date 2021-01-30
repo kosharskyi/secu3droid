@@ -93,6 +93,28 @@ data class IdlingParamPacket(
     }
 
     override fun pack(): String {
-        TODO("Not yet implemented")
+        var data = "$OUTPUT_PACKET_SYMBOL$DESCRIPTOR"
+
+        data += idlFlags.toChar()
+        data += iFac1.times(256).toInt().write2Bytes(data)
+        data += iFac2.times(256).toInt().write2Bytes(data)
+        data += minefr.write2Bytes(data)
+        data += idlingRpm.write2Bytes(data)
+        data += idlregMinAngle.times(ANGLE_DIVIDER).toInt().write2Bytes(data)
+        data += idlregMaxAngle.times(ANGLE_DIVIDER).toInt().write2Bytes(data)
+        data += idlregTurnOnTemp.times(TEMPERATURE_MULTIPLIER).write2Bytes(data)
+        data += idlToRunAdd.times(2.0f).toInt().toChar()
+        data += rpmOnRunAdd.div(10).toChar()
+        data += idlRegP.times(256).toInt().toChar()
+        data += idlRegI.times(256).toInt().toChar()
+        data += coefThrd1.minus(1.0f).times(128).toInt().toChar()
+        data += coefThrd2.minus(1.0f).times(128).toInt().toChar()
+        data += integratorRpmLim.div(10).toChar()
+        data += mapValue.times(MAP_MULTIPLIER).toInt().write2Bytes(data)
+        data += iacMinPos.times(2).toInt().toChar()
+        data += iacMaxPos.times(2).toInt().toChar()
+
+        data += END_PACKET_SYMBOL
+        return data
     }
 }

@@ -53,7 +53,15 @@ data class SecurityParamPacket(
         get() = btFlags.getBitValue(5)
 
     override fun pack(): String {
-        TODO("Not yet implemented")
+        var data = "$OUTPUT_PACKET_SYMBOL$DESCRIPTOR"
+
+        data += btFlags.toChar()
+
+        data += iButton0
+        data += iButton1
+
+        data += END_PACKET_SYMBOL
+        return data
     }
 
     companion object {
@@ -65,7 +73,7 @@ data class SecurityParamPacket(
         fun parse(data: String) = SecurityParamPacket().apply {
             btFlags = data[4].toInt()
             iButton0 = data.substring(5, 11)
-            iButton0 = data.substring(11, 17)
+            iButton1 = data.substring(11, 17)
         }
 
     }

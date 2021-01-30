@@ -38,7 +38,23 @@ data class TemperatureParamPacket(
     ) : BaseOutputPacket() {
 
     override fun pack(): String {
-        TODO("Not yet implemented")
+        var data = "$OUTPUT_PACKET_SYMBOL$DESCRIPTOR"
+
+        data += tmpFlags.toChar()
+
+        data += ventOn.times(TEMPERATURE_MULTIPLIER).write2Bytes(data)
+        data += ventOff.times(TEMPERATURE_MULTIPLIER).write2Bytes(data)
+
+        data += 1f.div(ventPwmFrq.toFloat().div(524288)).toInt().write2Bytes(data)
+
+        data += condPvtOn.times(VOLTAGE_MULTIPLIER).toInt().write2Bytes(data)
+        data += condPvtOff.times(VOLTAGE_MULTIPLIER).toInt().write2Bytes(data)
+
+        data += condMinRpm.write2Bytes(data)
+        data += ventTmr.times(100).write2Bytes(data)
+
+        data += END_PACKET_SYMBOL
+        return data
     }
 
     val coolantUse: Boolean   //Flag of using coolant temperature sensor

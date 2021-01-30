@@ -49,7 +49,26 @@ data class FunSetParamPacket(
     ): BaseOutputPacket() {
 
     override fun pack(): String {
-        TODO("Not yet implemented")
+        var data = "$OUTPUT_PACKET_SYMBOL$DESCRIPTOR"
+
+        data += fnGasoline.toChar()
+        data += fnGas.toChar()
+        data += loadLower.times(MAP_MULTIPLIER).toInt().write2Bytes(data)
+        data += loadUpper.times(MAP_MULTIPLIER).toInt().write2Bytes(data)
+        data += mapCurveOffset.times(VOLTAGE_MULTIPLIER).toInt().write2Bytes(data)
+        data += mapCurveGradient.div(100).times(2048).toInt().write2Bytes(data)
+        data += map2CurveOffset.times(VOLTAGE_MULTIPLIER).toInt().write2Bytes(data)
+        data += map2CurveGradient.div(100).times(2048).toInt().write2Bytes(data)
+        data += tpsCurveOffset.times(VOLTAGE_MULTIPLIER).toInt().write2Bytes(data)
+        data += tpsCurveGradient.div(100).times(4096).toInt().write2Bytes(data)
+
+        data += loadSrcCfg.toChar()
+        data += mapserUni.toChar()
+        data += barocorrType.toChar()
+//        data += funcFlags.toChar()
+
+        data += END_PACKET_SYMBOL
+        return data
     }
 
     val mapserUniPetrol: Int

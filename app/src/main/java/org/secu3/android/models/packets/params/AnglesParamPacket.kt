@@ -51,6 +51,16 @@ data class AnglesParamPacket(
     }
 
     override fun pack(): String {
-        TODO("Not yet implemented")
+        var data = "$OUTPUT_PACKET_SYMBOL$DESCRIPTOR"
+
+        data += data.write2Bytes(maxAngle.times(ANGLE_DIVIDER).toInt())
+        data += data.write2Bytes(minAngle.times(ANGLE_DIVIDER).toInt())
+        data += data.write2Bytes(angleCorrection.times(ANGLE_DIVIDER).toInt())
+        data += data.write2Bytes(angleDecSpeed.times(ANGLE_DIVIDER).toInt())
+        data += data.write2Bytes(angleIncSpeed.times(ANGLE_DIVIDER).toInt())
+        data += zeroAdvAngle.toChar()
+
+        data += END_PACKET_SYMBOL
+        return data
     }
 }

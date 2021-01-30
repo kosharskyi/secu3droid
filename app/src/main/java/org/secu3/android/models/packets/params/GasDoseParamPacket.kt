@@ -40,7 +40,18 @@ data class GasDoseParamPacket(
 ): BaseOutputPacket() {
 
     override fun pack(): String {
-        TODO("Not yet implemented")
+        var data = "$OUTPUT_PACKET_SYMBOL$DESCRIPTOR"
+
+        data += steps.write2Bytes(data)
+        data += fcClosing.times(GAS_DOSE_MULTIPLIER).toInt().toChar()
+        data += lambdaCorrLimitP.times(512.0f).div(100).toInt().write2Bytes(data)
+        data += lambdaCorrLimitM.times(512.0f).div(100).toInt().write2Bytes(data)
+        data += lambdaStoichval.times(AFR_MULTIPLIER).toInt().write2Bytes(data)
+        data += freq.toChar()
+        data += maxFreqInit.toChar()
+
+        data += END_PACKET_SYMBOL
+        return data
     }
 
     companion object {

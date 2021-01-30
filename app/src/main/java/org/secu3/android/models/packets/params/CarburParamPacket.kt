@@ -43,7 +43,23 @@ data class CarburParamPacket(
 ) : BaseOutputPacket() {
 
     override fun pack(): String {
-        TODO("Not yet implemented")
+        var data = "$OUTPUT_PACKET_SYMBOL$DESCRIPTOR"
+
+        data += data.write2Bytes(ieLot)
+        data += data.write2Bytes(ieHit)
+        data += carbInvers.toChar()
+        data += feOnThresholds.times(MAP_MULTIPLIER).toInt().write2Bytes(data)
+        data += ieLotG.write2Bytes(data)
+        data += ieHitG.write2Bytes(data)
+        data += shutoffDelay.times(100).toInt().toChar()
+        data += tpsThreshold.times(TPS_MULTIPLIER).toInt().toChar()
+        data += fuelcutMapThrd.times(MAP_MULTIPLIER).toInt().write2Bytes(data)
+        data += fuelcutCtsThrd.times(TEMPERATURE_MULTIPLIER).toInt().write2Bytes(data)
+        data += revlimLot.write2Bytes(data)
+        data += revlimHit.write2Bytes(data)
+
+        data += END_PACKET_SYMBOL
+        return data
     }
 
     companion object {

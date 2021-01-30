@@ -81,7 +81,34 @@ data class UniOutParamPacket(
 ) : BaseOutputPacket() {
 
     override fun pack(): String {
-        TODO("Not yet implemented")
+        var data = "$OUTPUT_PACKET_SYMBOL$DESCRIPTOR"
+
+        data += rawOutput1Flags.toChar()
+        data += output1Condition1.toChar()
+        data += output1Condition2.toChar()
+        data += rawOutput1OnThrd1.write2Bytes(data)
+        data += rawOutput1OffThrd1.write2Bytes(data)
+        data += rawOutput1OnThrd2.write2Bytes(data)
+        data += rawOutput1OffThrd2.write2Bytes(data)
+
+        data += rawOutput2Flags.toChar()
+        data += output2Condition1.toChar()
+        data += output2Condition2.toChar()
+        data += rawOutput2OnThrd1.write2Bytes(data)
+        data += rawOutput2OffThrd1.write2Bytes(data)
+        data += rawOutput2OnThrd2.write2Bytes(data)
+        data += rawOutput2OffThrd2.write2Bytes(data)
+
+        data += rawOutput3Flags.toChar()
+        data += output3Condition1.toChar()
+        data += output3Condition2.toChar()
+        data += rawOutput3OnThrd1.write2Bytes(data)
+        data += rawOutput3OffThrd1.write2Bytes(data)
+        data += rawOutput3OnThrd2.write2Bytes(data)
+        data += rawOutput3OffThrd2.write2Bytes(data)
+
+        data += END_PACKET_SYMBOL
+        return data
     }
 
     var output1Cond1Inversion: Boolean

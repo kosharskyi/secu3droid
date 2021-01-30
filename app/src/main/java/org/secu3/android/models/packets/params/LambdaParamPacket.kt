@@ -75,7 +75,37 @@ data class LambdaParamPacket(
 
 
     override fun pack(): String {
-        TODO("Not yet implemented")
+        var data = "$OUTPUT_PACKET_SYMBOL$DESCRIPTOR"
+
+        data += strPerStp.toChar()
+
+        data += stepSizeP.div(100).times(512).toChar()
+        data += stepSizeM.div(100).times(512).toChar()
+
+        data += corrLimitP.div(100).times(512).toInt().write2Bytes(data)
+        data += corrLimitM.div(100).times(512).toInt().write2Bytes(data)
+
+        data += swtPoint.times(VOLTAGE_MULTIPLIER).toInt().write2Bytes(data)
+        data += tempThrd.times(TEMPERATURE_MULTIPLIER).toInt().write2Bytes(data)
+        data += rpmThrd.write2Bytes(data)
+
+        data += activDelay.toChar()
+
+        data += deadBand.times(VOLTAGE_MULTIPLIER).toInt().write2Bytes(data)
+        data += senstype.toChar()
+        data += msPerStp.toChar()
+        data += flags.toChar()
+        data += gdStoichval.times(AFR_MULTIPLIER).toInt().write2Bytes(data)
+
+        data += heatingTime0.toChar()
+        data += heatingTime1.toChar()
+        data += temperThrd.toChar()
+        data += heatingAct.times(100).toChar()
+
+        data += aflowThrd.div(32).write2Bytes(data)
+
+        data += END_PACKET_SYMBOL
+        return data
     }
 
     companion object {

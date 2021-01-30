@@ -56,7 +56,36 @@ data class InjctrParPacket(
 ) : BaseOutputPacket() {
 
     override fun pack(): String {
-        TODO("Not yet implemented")
+        var data = "$OUTPUT_PACKET_SYMBOL$DESCRIPTOR"
+
+        data += flags.toChar()
+
+        data += config[0].toChar()
+        data += config[1].toChar()
+
+        data += flowRate0.times(64).write2Bytes(data)
+        data += flowRate1.times(64).write2Bytes(data)
+
+        data += cylDisp.div(4).times(16384).toInt().write2Bytes(data)
+
+        data += sdIglConst0.write4Bytes(data)
+        data += sdIglConst1.write4Bytes(data)
+
+        data += ckpsEngineCyl.toChar()
+
+        data += timing0.times(ANGLE_DIVIDER).toInt().write2Bytes(data)
+        data += timing1.times(ANGLE_DIVIDER).toInt().write2Bytes(data)
+
+        data += timingCrk0.times(ANGLE_DIVIDER).toInt().write2Bytes(data)
+        data += timingCrk1.times(ANGLE_DIVIDER).toInt().write2Bytes(data)
+
+        data += angleSpec.toChar()
+
+        data += fffConst.write2Bytes(data)
+        data += minPw.write2Bytes(data)
+
+        data += END_PACKET_SYMBOL
+        return data
     }
 
     var isAtMega644: Boolean = false

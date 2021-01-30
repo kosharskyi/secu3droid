@@ -55,7 +55,18 @@ data class ChokeControlParPacket(
         get() = flags.getBitValue(3) > 0
 
     override fun pack(): String {
-        TODO("Not yet implemented")
+        var data = "$OUTPUT_PACKET_SYMBOL$DESCRIPTOR"
+
+        data += data.write2Bytes(smSteps)
+        data += rpmIf.times(1000).toInt().write2Bytes(data)
+        data += corrTime0.times(100).toInt().write2Bytes(data)
+        data += corrTime1.times(100).toInt().write2Bytes(data)
+        data += flags.toChar()
+        data += smFreq.toChar()
+        data += injCrankToRunTime.times(100).toInt().write2Bytes(data)
+
+        data += END_PACKET_SYMBOL
+        return data
     }
 
     companion object {
