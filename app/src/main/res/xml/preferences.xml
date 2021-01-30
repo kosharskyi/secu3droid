@@ -25,29 +25,18 @@
 -->
 
 <PreferenceScreen xmlns:android="http://schemas.android.com/apk/res/android" >
-	<ListPreference 
+
+	<ListPreference
 		android:dialogTitle="@string/pref_bluetooth_device_title"
 		android:title="@string/pref_bluetooth_device_title" 
 		android:key="@string/pref_bluetooth_device_key" 	
 		android:summary="@string/pref_bluetooth_device_summary" />
 
 	<EditTextPreference
-		android:key="@string/pref_connection_retries_key"
-		android:title="@string/pref_connection_retries_title"
-		android:defaultValue="@string/defaultConnectionRetries"
-		android:inputType="numberDecimal"
-		android:summary="@string/pref_connection_retries_summary" />
-
-	<EditTextPreference
 	    android:key="@string/pref_speed_pulse_key"
 	    android:title="@string/pref_speed_pulse_title"
 	    android:defaultValue="@string/defaultSpeedPulse"	    
 	    android:inputType="numberDecimal"/>
-
-	<CheckBoxPreference
-	    android:key="@string/pref_keep_screen_key"
-	    android:title="@string/pref_keep_screen_title"
-	    android:summary="@string/pref_keep_screen_summary"/>
 
 	<Preference
 		android:key="@string/pref_about_key"

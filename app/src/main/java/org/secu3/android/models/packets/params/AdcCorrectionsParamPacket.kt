@@ -55,7 +55,50 @@ data class AdcCorrectionsParamPacket(
 ) : BaseOutputPacket() {
 
     override fun pack(): String {
-        TODO("Not yet implemented")
+        var data = "$OUTPUT_PACKET_SYMBOL$DESCRIPTOR"
+
+        mapAdcFactor.times(FACTOR_DIVIDER).toInt().let { data += data.write2Bytes(it) }
+        mapAdcCorrection.div(ADC_DISCRETE).times(mapAdcFactor).plus(0.5f).times(FACTOR_DIVIDER).toInt().let {
+            data += data.write4Bytes(it)
+        }
+
+        ubatAdcFactor.times(FACTOR_DIVIDER).toInt().let { data += data.write2Bytes(it) }
+        ubatAdcCorrection.div(ADC_DISCRETE).times(ubatAdcFactor).plus(0.5f).times(FACTOR_DIVIDER).toInt().let {
+            data += data.write4Bytes(it)
+        }
+
+        tempAdcFactor.times(FACTOR_DIVIDER).toInt().let { data += data.write2Bytes(it) }
+        tempAdcCorrection.div(ADC_DISCRETE).times(tempAdcFactor).plus(0.5f).times(FACTOR_DIVIDER).toInt().let {
+            data += data.write4Bytes(it)
+        }
+
+        tpsAdcFactor.times(FACTOR_DIVIDER).toInt().let { data += data.write2Bytes(it) }
+        tpsAdcCorrection.div(ADC_DISCRETE).times(tpsAdcFactor).plus(0.5f).times(FACTOR_DIVIDER).toInt().let {
+            data += data.write4Bytes(it)
+        }
+
+        ai1AdcFactor.times(FACTOR_DIVIDER).toInt().let { data += data.write2Bytes(it) }
+        ai1AdcCorrection.div(ADC_DISCRETE).times(ai1AdcFactor).plus(0.5f).times(FACTOR_DIVIDER).toInt().let {
+            data += data.write4Bytes(it)
+        }
+
+        ai2AdcFactor.times(FACTOR_DIVIDER).toInt().let { data += data.write2Bytes(it) }
+        ai2AdcCorrection.div(ADC_DISCRETE).times(ai2AdcFactor).plus(0.5f).times(FACTOR_DIVIDER).toInt().let {
+            data += data.write4Bytes(it)
+        }
+
+        ai3AdcFactor.times(FACTOR_DIVIDER).toInt().let { data += data.write2Bytes(it) }
+        ai3AdcCorrection.div(ADC_DISCRETE).times(ai3AdcFactor).plus(0.5f).times(FACTOR_DIVIDER).toInt().let {
+            data += data.write4Bytes(it)
+        }
+
+        ai4AdcFactor.times(FACTOR_DIVIDER).toInt().let { data += data.write2Bytes(it) }
+        ai4AdcCorrection.div(ADC_DISCRETE).times(ai4AdcFactor).plus(0.5f).times(FACTOR_DIVIDER).toInt().let {
+            data += data.write4Bytes(it)
+        }
+
+        data += END_PACKET_SYMBOL
+        return data
     }
 
     companion object {

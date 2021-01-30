@@ -34,7 +34,16 @@ data class AccelerationParamPacket(
 ) : BaseOutputPacket() {
 
     override fun pack(): String {
-        TODO("Not yet implemented")
+        var data = "$OUTPUT_PACKET_SYMBOL$DESCRIPTOR"
+
+        data += injAeTpsdotThrd.toChar()
+
+        data += injAeColdaccMult.toFloat().div(100).minus(1.0f).times(128f).toInt().toChar()
+
+        data += injAeDecayTime.toChar()
+
+        data += END_PACKET_SYMBOL
+        return data
     }
 
     companion object {

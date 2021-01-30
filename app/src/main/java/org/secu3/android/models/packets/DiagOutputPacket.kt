@@ -357,13 +357,8 @@ class DiagOutputPacket(private val fwInfo: FirmwareInfoPacket) : BaseOutputPacke
     override fun pack(): String {
         var data = "$OUTPUT_PACKET_SYMBOL$DESCRIPTOR"
 
-        data += out.and(0xFF).toChar()
-        data += out.shr(8).and(0xFF).toChar()
-        data += out.shr(16).and(0xFF).toChar()
-        data += out.shr(24).and(0xFF).toChar()
-
-        data += frq.and(0xFF).toChar()
-        data += frq.shr(8).and(0xFF).toChar()
+        data = data.write4Bytes(out)
+        data = data.write2Bytes(frq)
 
         data += duty.toChar()
         data += chan.toChar()
