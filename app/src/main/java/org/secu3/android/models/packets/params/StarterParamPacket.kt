@@ -33,7 +33,7 @@ data class StarterParamPacket(
     var injPrimeCold: Float = 0f,
     var injPrimeHot: Float = 0f,
     var injPrimeDelay: Float = 0f,
-    var injFloodclearTps: Int = 0,
+    var injFloodclearTps: Float = 0f,
     var injAftStrokes1: Int = 0,
 
 ) : BaseOutputPacket(){
@@ -51,7 +51,7 @@ data class StarterParamPacket(
             injPrimeCold = data.get2Bytes(9).toFloat() * 32 / 10000
             injPrimeHot = data.get2Bytes(11).toFloat() * 32 / 10000
             injPrimeDelay = data[13].toFloat() / 10
-            injFloodclearTps = data[14].toInt() / 2
+            injFloodclearTps = data[14].toFloat() / 2f
 //            injAftStrokes1 = data[15].toInt()
         }
     }
