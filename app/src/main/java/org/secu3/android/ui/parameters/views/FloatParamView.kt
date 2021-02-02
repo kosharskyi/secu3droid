@@ -29,8 +29,10 @@ class FloatParamView @JvmOverloads constructor(
     var value: Float = 0f
         set(value) {
             field = value
-            mBinding.paramValue.text = value.toString()
+            showValue()
         }
+
+    var precision: Int = 0
 
     init {
         val inflater = context.getSystemService(Context.LAYOUT_INFLATER_SERVICE) as LayoutInflater
@@ -46,8 +48,19 @@ class FloatParamView @JvmOverloads constructor(
             getString(R.styleable.FloatParamView_title)?.let { title = it }
             getString(R.styleable.FloatParamView_units)?.let { units = it }
             value = getFloat(R.styleable.FloatParamView_float_value, 0f)
+            precision = getInt(R.styleable.FloatParamView_value_precision, 0)
 
             recycle()
+        }
+    }
+
+    private fun showValue() {
+        mBinding.paramValue.text = when (precision) {
+            0 -> "%.1f".format(value)
+            1 -> "%.2f".format(value)
+            2 -> "%.3f".format(value)
+            3 -> "%.4f".format(value)
+            else -> value.toString()
         }
     }
 

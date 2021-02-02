@@ -10,6 +10,12 @@
         <attr name="title" />
         <attr name="units" />
         <attr name="float_value" format="float" />
+        <attr name="value_precision" format="enum">
+            <enum name="one" value="0"/>
+            <enum name="two" value="1"/>
+            <enum name="three" value="2"/>
+            <enum name="four" value="3"/>
+        </attr>
     </declare-styleable>
 
     <declare-styleable name="IntParamView">
