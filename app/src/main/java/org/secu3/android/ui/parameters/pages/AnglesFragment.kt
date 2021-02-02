@@ -50,13 +50,13 @@ class AnglesFragment : Fragment() {
 
         mViewModel.anglesLiveData.observe(viewLifecycleOwner) {
             mBinding.apply {
-                minAdvanceAngle.text = it.minAngle.toString()
-                maxAdvanceAngle.text = it.maxAngle.toString()
+                minAdvanceAngle.value = it.minAngle
+                maxAdvanceAngle.value = it.maxAngle
 
-                angleDecreaseSpeed.text = it.angleDecSpeed.toString()
-                angleIncreaseSpeed.text = it.angleIncSpeed.toString()
+                angleDecreaseSpeed.value = it.angleDecSpeed
+                angleIncreaseSpeed.value = it.angleIncSpeed
 
-                octaneCorrection.text = it.angleCorrection.toString()
+                octaneCorrection.value = it.angleCorrection
 
                 zeroAdvAngle.isChecked = it.zeroAdvAngle > 0
             }

@@ -160,6 +160,7 @@
     <string name="units_cc_per_min">cc/min</string>
     <string name="units_hertz">Hz</string>
     <string name="units_degree">°</string>
+    <string name="units_degree_per_stroke">°/stroke</string>
     <string name="units_sec">sec</string>
     <string name="units_pressure_kpa">kPa</string>
     <string name="units_volts">V</string>

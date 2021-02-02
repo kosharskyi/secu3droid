@@ -150,6 +150,7 @@
     <string name="units_cc_per_min">см3/мин</string>
     <string name="units_hertz">Гц</string>
     <string name="units_degree">°</string>
+    <string name="units_degree_per_stroke">°/такт</string>
     <string name="units_sec">сек</string>
     <string name="units_pressure_kpa">кПа</string>
     <string name="units_volts">В</string>
