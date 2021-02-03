@@ -81,14 +81,14 @@ class FunctionsFragment : Fragment() {
                     mapsSetForGas.setText(fnNames[it.fnGas], false)
                 }
 
-                lowerLoadValue.text = it.loadLower.toString()
-                upperLoadValue.text = it.loadUpper.toString()
+                lowerLoadValue.value = it.loadLower
+                upperLoadValue.value = it.loadUpper
 
-                mapCurveOffset.text = it.mapCurveOffset.toString()
-                mapCurveGradient.text = "%.3f".format(it.mapCurveGradient)
+                mapCurveOffset.value = it.mapCurveOffset
+                mapCurveGradient.value = it.mapCurveGradient
 
-                tpsCurveOffset.text = "%.3f".format(it.tpsCurveOffset)
-                tpsCurveGradient.text = "%.3f".format(it.tpsCurveGradient)
+                tpsCurveOffset.value = it.tpsCurveOffset
+                tpsCurveGradient.value = it.tpsCurveGradient
 
 
                 loadMeasurement.setText(loadMeasurementItems[it.loadSrcCfg], false)
@@ -98,8 +98,8 @@ class FunctionsFragment : Fragment() {
 
                 barometricCorrection.setText(barocorrItems[it.barocorrType], false)
 
-                map2CurveOffset.text = it.map2CurveOffset.toString()
-                map2CurveGradient.text = "%.3f".format(it.map2CurveGradient)
+                map2CurveOffset.value = it.map2CurveOffset
+                map2CurveGradient.value = it.map2CurveGradient
             }
         }
     }
