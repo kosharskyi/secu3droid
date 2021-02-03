@@ -37,224 +37,106 @@
         android:layout_height="wrap_content"
         android:padding="16dp">
 
-        <TextView
-            android:id="@+id/idle_cutoff_lower_thrd_title"
-            android:layout_width="wrap_content"
+        <org.secu3.android.ui.parameters.views.IntParamView
+            android:id="@+id/idle_cutoff_lower_thrd"
+            android:layout_width="match_parent"
             android:layout_height="wrap_content"
             app:layout_constraintTop_toTopOf="parent"
             app:layout_constraintStart_toStartOf="parent"
-            android:text="@string/carbur_overrun_lower_threshold_gasoline_title"
+            app:title="@string/carbur_overrun_lower_threshold_gasoline_title"
+            app:units="@string/units_rpm"
+            app:int_value="0"
             />
 
-        <TextView
-            android:id="@+id/idle_cutoff_lower_thrd"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            app:layout_constraintTop_toTopOf="parent"
-            app:layout_constraintEnd_toEndOf="parent"
-            android:textAppearance="?android:attr/textAppearanceLarge"
-            android:text="0"
-            />
 
-        <TextView
-            android:id="@+id/idle_cutoff_lower_thrd_units"
-            android:layout_width="wrap_content"
+        <!-- ************************************************************* -->
+
+        <org.secu3.android.ui.parameters.views.IntParamView
+            android:id="@+id/idle_cutoff_upper_thrd"
+            android:layout_width="match_parent"
             android:layout_height="wrap_content"
             app:layout_constraintTop_toBottomOf="@id/idle_cutoff_lower_thrd"
-            app:layout_constraintEnd_toEndOf="parent"
-            android:text="@string/units_rpm"
+            app:layout_constraintStart_toStartOf="parent"
+            app:title="@string/carbur_overrun_upper_threshold_gasoline_title"
+            app:units="@string/units_rpm"
+            app:int_value="0"
             />
 
 
         <!-- ************************************************************* -->
 
-        <TextView
-            android:id="@+id/idle_cutoff_upper_thrd_title"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            app:layout_constraintTop_toBottomOf="@id/idle_cutoff_lower_thrd_units"
-            app:layout_constraintStart_toStartOf="parent"
-            android:text="@string/carbur_overrun_upper_threshold_gasoline_title"
-            />
 
-        <TextView
-            android:id="@+id/idle_cutoff_upper_thrd"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            app:layout_constraintTop_toTopOf="@id/idle_cutoff_upper_thrd_title"
-            app:layout_constraintEnd_toEndOf="parent"
-            android:textAppearance="?android:attr/textAppearanceLarge"
-            android:text="0"
-            />
-
-        <TextView
-            android:id="@+id/idle_cutoff_upper_thrd_units"
-            android:layout_width="wrap_content"
+        <org.secu3.android.ui.parameters.views.IntParamView
+            android:id="@+id/idle_cutoff_lower_thrd_gas"
+            android:layout_width="match_parent"
             android:layout_height="wrap_content"
             app:layout_constraintTop_toBottomOf="@id/idle_cutoff_upper_thrd"
-            app:layout_constraintEnd_toEndOf="parent"
-            android:text="@string/units_rpm"
+            app:layout_constraintStart_toStartOf="parent"
+            android:layout_marginTop="16dp"
+            app:title="@string/carbur_overrun_lower_threshold_gas_title"
+            app:units="@string/units_rpm"
+            app:int_value="0"
             />
 
 
         <!-- ************************************************************* -->
 
-        <TextView
-            android:id="@+id/idle_cutoff_lower_thrd_gas_title"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            app:layout_constraintTop_toBottomOf="@id/idle_cutoff_upper_thrd_units"
-            app:layout_constraintStart_toStartOf="parent"
-            android:layout_marginTop="16dp"
-            android:text="@string/carbur_overrun_lower_threshold_gas_title"
-            />
-
-        <TextView
-            android:id="@+id/idle_cutoff_lower_thrd_gas"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            app:layout_constraintTop_toTopOf="@id/idle_cutoff_lower_thrd_gas_title"
-            app:layout_constraintEnd_toEndOf="parent"
-            android:textAppearance="?android:attr/textAppearanceLarge"
-            android:text="0"
-            />
-
-        <TextView
-            android:id="@+id/idle_cutoff_lower_thrd_gas_units"
-            android:layout_width="wrap_content"
+        <org.secu3.android.ui.parameters.views.IntParamView
+            android:id="@+id/idle_cutoff_upper_thrd_gas"
+            android:layout_width="match_parent"
             android:layout_height="wrap_content"
             app:layout_constraintTop_toBottomOf="@id/idle_cutoff_lower_thrd_gas"
-            app:layout_constraintEnd_toEndOf="parent"
-            android:text="@string/units_rpm"
+            app:layout_constraintStart_toStartOf="parent"
+            app:title="@string/carbur_overrun_upper_threshold_gas_title"
+            app:units="@string/units_rpm"
+            app:int_value="0"
             />
 
 
         <!-- ************************************************************* -->
 
-        <TextView
-            android:id="@+id/idle_cutoff_upper_thrd_gas_title"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            app:layout_constraintTop_toBottomOf="@id/idle_cutoff_lower_thrd_gas_units"
-            app:layout_constraintStart_toStartOf="parent"
-            android:text="@string/carbur_overrun_upper_threshold_gas_title"
-            />
-
-        <TextView
-            android:id="@+id/idle_cutoff_upper_thrd_gas"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            app:layout_constraintTop_toTopOf="@id/idle_cutoff_upper_thrd_gas_title"
-            app:layout_constraintEnd_toEndOf="parent"
-            android:textAppearance="?android:attr/textAppearanceLarge"
-            android:text="0"
-            />
-
-        <TextView
-            android:id="@+id/idle_cutoff_upper_thrd_gas_units"
-            android:layout_width="wrap_content"
+        <org.secu3.android.ui.parameters.views.FloatParamView
+            android:id="@+id/cutoff_delay"
+            android:layout_width="match_parent"
             android:layout_height="wrap_content"
             app:layout_constraintTop_toBottomOf="@id/idle_cutoff_upper_thrd_gas"
-            app:layout_constraintEnd_toEndOf="parent"
-            android:text="@string/units_rpm"
+            app:layout_constraintStart_toStartOf="parent"
+            android:layout_marginTop="16dp"
+            app:title="@string/carbur_overrun_valve_delay_title"
+            app:units="@string/units_sec"
+            app:float_value="0"
+            app:value_precision="two"
             />
 
 
         <!-- ************************************************************* -->
 
-        <TextView
-            android:id="@+id/cutoff_delay_title"
-            android:layout_width="0dp"
-            android:layout_height="wrap_content"
-            app:layout_constraintTop_toBottomOf="@id/idle_cutoff_upper_thrd_gas_units"
-            app:layout_constraintStart_toStartOf="parent"
-            app:layout_constraintEnd_toStartOf="@id/cutoff_delay"
-            android:layout_marginTop="16dp"
-            android:layout_marginEnd="8dp"
-            android:text="@string/carbur_overrun_valve_delay_title"
-            />
-
-        <TextView
-            android:id="@+id/cutoff_delay"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            app:layout_constraintTop_toTopOf="@id/cutoff_delay_title"
-            app:layout_constraintEnd_toEndOf="parent"
-            android:textAppearance="?android:attr/textAppearanceLarge"
-            android:text="0.00"
-            />
-
-        <TextView
-            android:id="@+id/cutoff_delay_units"
-            android:layout_width="wrap_content"
+        <org.secu3.android.ui.parameters.views.FloatParamView
+            android:id="@+id/power_valve_turn_on_thrd"
+            android:layout_width="match_parent"
             android:layout_height="wrap_content"
             app:layout_constraintTop_toBottomOf="@id/cutoff_delay"
-            app:layout_constraintEnd_toEndOf="parent"
-            android:text="@string/units_sec"
+            app:layout_constraintStart_toStartOf="parent"
+            android:layout_marginTop="16dp"
+            app:title="@string/carbur_epm_valve_on_pressure_title"
+            app:units="dis.kPa"
+            app:float_value="0"
+            app:value_precision="one"
             />
 
 
         <!-- ************************************************************* -->
 
-        <TextView
-            android:id="@+id/power_valve_turn_on_thrd_title"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            app:layout_constraintTop_toBottomOf="@id/cutoff_delay_units"
-            app:layout_constraintStart_toStartOf="parent"
-            android:layout_marginTop="16dp"
-            android:text="@string/carbur_epm_valve_on_pressure_title"
-            />
-
-        <TextView
-            android:id="@+id/power_valve_turn_on_thrd"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            app:layout_constraintTop_toTopOf="@id/power_valve_turn_on_thrd_title"
-            app:layout_constraintEnd_toEndOf="parent"
-            android:textAppearance="?android:attr/textAppearanceLarge"
-            android:text="0.00"
-            />
-
-        <TextView
-            android:id="@+id/power_valve_turn_on_thrd_units"
-            android:layout_width="wrap_content"
+        <org.secu3.android.ui.parameters.views.FloatParamView
+            android:id="@+id/tps_threshold"
+            android:layout_width="match_parent"
             android:layout_height="wrap_content"
             app:layout_constraintTop_toBottomOf="@id/power_valve_turn_on_thrd"
-            app:layout_constraintEnd_toEndOf="parent"
-            android:text="dis.kPa"
-            />
-
-
-        <!-- ************************************************************* -->
-
-        <TextView
-            android:id="@+id/tps_threshold_title"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            app:layout_constraintTop_toBottomOf="@id/power_valve_turn_on_thrd_units"
             app:layout_constraintStart_toStartOf="parent"
-            android:layout_marginTop="16dp"
-            android:text="@string/carbur_tps_threshold_title"
-            />
-
-        <TextView
-            android:id="@+id/tps_threshold"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            app:layout_constraintTop_toTopOf="@id/tps_threshold_title"
-            app:layout_constraintEnd_toEndOf="parent"
-            android:textAppearance="?android:attr/textAppearanceLarge"
-            android:text="0.00"
-            />
-
-        <TextView
-            android:id="@+id/tps_threshold_units"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            app:layout_constraintTop_toBottomOf="@id/tps_threshold"
-            app:layout_constraintEnd_toEndOf="parent"
-            android:text="@string/units_percents"
+            app:title="@string/carbur_tps_threshold_title"
+            app:units="@string/units_percents"
+            app:float_value="0"
+            app:value_precision="one"
             />
 
 
@@ -264,7 +146,7 @@
             android:id="@+id/inversion_of_throttle_position_switch"
             android:layout_width="0dp"
             android:layout_height="wrap_content"
-            app:layout_constraintTop_toBottomOf="@id/tps_threshold_units"
+            app:layout_constraintTop_toBottomOf="@id/tps_threshold"
             app:layout_constraintStart_toStartOf="parent"
             app:layout_constraintEnd_toEndOf="parent"
             android:layout_marginTop="16dp"
@@ -275,66 +157,32 @@
 
         <!-- ************************************************************* -->
 
-
-        <TextView
-            android:id="@+id/fuel_cut_map_threshold_title"
-            android:layout_width="wrap_content"
+        <org.secu3.android.ui.parameters.views.FloatParamView
+            android:id="@+id/fuel_cut_map_threshold"
+            android:layout_width="match_parent"
             android:layout_height="wrap_content"
             app:layout_constraintTop_toBottomOf="@id/inversion_of_throttle_position_switch"
             app:layout_constraintStart_toStartOf="parent"
             android:layout_marginTop="16dp"
-            android:text="@string/carbur_fuelcut_map_threshold_title"
-            />
-
-        <TextView
-            android:id="@+id/fuel_cut_map_threshold"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            app:layout_constraintTop_toTopOf="@id/fuel_cut_map_threshold_title"
-            app:layout_constraintEnd_toEndOf="parent"
-            android:textAppearance="?android:attr/textAppearanceLarge"
-            android:text="0.00"
-            />
-
-        <TextView
-            android:id="@+id/fuel_cut_map_threshold_units"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            app:layout_constraintTop_toBottomOf="@id/fuel_cut_map_threshold"
-            app:layout_constraintEnd_toEndOf="parent"
-            android:text="@string/units_pressure_kpa"
+            app:title="@string/carbur_fuelcut_map_threshold_title"
+            app:units="@string/units_pressure_kpa"
+            app:float_value="0"
+            app:value_precision="one"
             />
 
         <!-- ************************************************************* -->
 
 
-        <TextView
-            android:id="@+id/fuel_cut_cts_threshold_title"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            app:layout_constraintTop_toBottomOf="@id/fuel_cut_map_threshold_units"
-            app:layout_constraintStart_toStartOf="parent"
-            android:layout_marginTop="16dp"
-            android:text="@string/carbur_fuelcut_temp_threshold_title"
-            />
-
-        <TextView
+        <org.secu3.android.ui.parameters.views.FloatParamView
             android:id="@+id/fuel_cut_cts_threshold"
-            android:layout_width="wrap_content"
+            android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            app:layout_constraintTop_toTopOf="@id/fuel_cut_cts_threshold_title"
-            app:layout_constraintEnd_toEndOf="parent"
-            android:textAppearance="?android:attr/textAppearanceLarge"
-            android:text="0.00"
-            />
-
-        <TextView
-            android:id="@+id/fuel_cut_cts_threshold_units"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            app:layout_constraintTop_toBottomOf="@id/fuel_cut_cts_threshold"
-            app:layout_constraintEnd_toEndOf="parent"
-            android:text="@string/units_pressure_kpa"
+            app:layout_constraintTop_toBottomOf="@id/fuel_cut_map_threshold"
+            app:layout_constraintStart_toStartOf="parent"
+            app:title="@string/carbur_fuelcut_temp_threshold_title"
+            app:units="@string/units_pressure_kpa"
+            app:float_value="0"
+            app:value_precision="one"
             />
 
         <!-- ************************************************************* -->
@@ -343,7 +191,7 @@
             android:id="@+id/engine_protection"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            app:layout_constraintTop_toBottomOf="@id/fuel_cut_cts_threshold_units"
+            app:layout_constraintTop_toBottomOf="@id/fuel_cut_cts_threshold"
             app:layout_constraintStart_toStartOf="parent"
             android:layout_marginTop="16dp"
             android:textSize="16sp"
@@ -355,65 +203,30 @@
         <!-- ************************************************************* -->
 
 
-        <TextView
-            android:id="@+id/rev_limiting_lower_thrd_title"
-            android:layout_width="wrap_content"
+        <org.secu3.android.ui.parameters.views.IntParamView
+            android:id="@+id/rev_limiting_lower_thrd"
+            android:layout_width="match_parent"
             android:layout_height="wrap_content"
             app:layout_constraintTop_toBottomOf="@id/engine_protection"
             app:layout_constraintStart_toStartOf="parent"
             android:layout_marginTop="8dp"
-            android:text="@string/carbur_rev_limitting_lower_threshold_title"
-            />
-
-        <TextView
-            android:id="@+id/rev_limiting_lower_thrd"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            app:layout_constraintTop_toTopOf="@id/rev_limiting_lower_thrd_title"
-            app:layout_constraintEnd_toEndOf="parent"
-            android:textAppearance="?android:attr/textAppearanceLarge"
-            android:text="0"
-            />
-
-        <TextView
-            android:id="@+id/rev_limiting_lower_thrd_units"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            app:layout_constraintTop_toBottomOf="@id/rev_limiting_lower_thrd"
-            app:layout_constraintEnd_toEndOf="parent"
-            android:text="@string/units_rpm"
+            app:title="@string/carbur_rev_limitting_lower_threshold_title"
+            app:units="@string/units_rpm"
+            app:int_value="0"
             />
 
 
         <!-- ************************************************************* -->
 
-
-        <TextView
-            android:id="@+id/rev_limiting_upper_thrd_title"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            app:layout_constraintTop_toBottomOf="@id/rev_limiting_lower_thrd_units"
-            app:layout_constraintStart_toStartOf="parent"
-            android:text="@string/carbur_rev_limitting_upper_threshold_title"
-            />
-
-        <TextView
+        <org.secu3.android.ui.parameters.views.IntParamView
             android:id="@+id/rev_limiting_upper_thrd"
-            android:layout_width="wrap_content"
+            android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            app:layout_constraintTop_toTopOf="@id/rev_limiting_upper_thrd_title"
-            app:layout_constraintEnd_toEndOf="parent"
-            android:textAppearance="?android:attr/textAppearanceLarge"
-            android:text="0"
-            />
-
-        <TextView
-            android:id="@+id/rev_limiting_upper_thrd_units"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            app:layout_constraintTop_toBottomOf="@id/rev_limiting_upper_thrd"
-            app:layout_constraintEnd_toEndOf="parent"
-            android:text="@string/units_rpm"
+            app:layout_constraintTop_toBottomOf="@id/rev_limiting_lower_thrd"
+            app:layout_constraintStart_toStartOf="parent"
+            app:title="@string/carbur_rev_limitting_upper_threshold_title"
+            app:units="@string/units_rpm"
+            app:int_value="0"
             />
 
     </androidx.constraintlayout.widget.ConstraintLayout>
