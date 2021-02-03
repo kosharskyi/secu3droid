@@ -47,18 +47,18 @@ class TemperatureFragment : Fragment() {
 
         mViewModel.temperatureLiveData.observe(viewLifecycleOwner) {
             mBinding.apply {
-                ventilatorTurnOn.text = it.ventOn.toString()
-                ventilatorTurnOff.text = it.ventOff.toString()
+                ventilatorTurnOn.value = it.ventOn
+                ventilatorTurnOff.value = it.ventOff
 
                 useSensor.isChecked = it.coolantUse
                 controlCoolingPwm.isChecked = it.ventPwm
                 useSensorsCurveTable.isChecked = it.coolantMap
 
-                pwmFrequency.text = it.ventPwmFrq.toString()
-                airCondOnThreshold.text = it.condPvtOn.toString()
-                airCondOffThreshold.text = it.condPvtOff.toString()
-                airCondOnMinRpmThreshold.text = it.condMinRpm.toString()
-                coolingFansTimer.text = it.ventTmr.toString()
+                pwmFrequency.value = it.ventPwmFrq
+                airCondOnThreshold.value = it.condPvtOn
+                airCondOffThreshold.value = it.condPvtOff
+                airCondOnMinRpmThreshold.value = it.condMinRpm
+                coolingFansTimer.value = it.ventTmr
             }
         }
     }
