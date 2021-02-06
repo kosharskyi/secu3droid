@@ -67,8 +67,8 @@ class UniversalOutputsFragment : Fragment() {
             mBinding.apply {
                 output1Condition1.setText(mCondition1List[it.output1Condition1], false)
                 output1Condition1Inversion.isChecked = it.output1Cond1Inversion
-                output1Condition1On.text = it.output1OnThrd1.toString()
-                output1Condition1Off.text = it.output1OffThrd1.toString()
+                output1Condition1On.value = it.output1OnThrd1
+                output1Condition1Off.value = it.output1OffThrd1
 
                 it.output1LogicFunc.let {
                     if (it == 15) {
@@ -80,8 +80,8 @@ class UniversalOutputsFragment : Fragment() {
 
                 output1Condition2.setText(mCondition1List[it.output1Condition2], false)
                 output1Condition2Inversion.isChecked = it.output1Cond2Inversion
-                output1Condition2On.text = it.output1OnThrd2.toString()
-                output1Condition2Off.text = it.output1OffThrd2.toString()
+                output1Condition2On.value = it.output1OnThrd2
+                output1Condition2Off.value = it.output1OffThrd2
 
 
                 it.logicFunction_1_2.let {
@@ -95,8 +95,8 @@ class UniversalOutputsFragment : Fragment() {
 
                 output2Condition1.setText(mCondition1List[it.output2Condition1], false)
                 output2Condition1Inversion.isChecked = it.output2Cond1Inversion
-                output2Condition1On.text = it.output2OnThrd1.toString()
-                output2Condition1Off.text = it.output2OffThrd1.toString()
+                output2Condition1On.value = it.output2OnThrd1
+                output2Condition1Off.value = it.output2OffThrd1
 
                 it.output2LogicFunc.let {
                     if (it == 15) {
@@ -108,14 +108,14 @@ class UniversalOutputsFragment : Fragment() {
 
                 output2Condition2.setText(mCondition1List[it.output2Condition2], false)
                 output2Condition2Inversion.isChecked = it.output2Cond2Inversion
-                output2Condition2On.text = it.output2OnThrd2.toString()
-                output2Condition2Off.text = it.output2OffThrd2.toString()
+                output2Condition2On.value = it.output2OnThrd2
+                output2Condition2Off.value = it.output2OffThrd2
 
 
                 output3Condition1.setText(mCondition1List[it.output3Condition1], false)
                 output3Condition1Inversion.isChecked = it.output3Cond1Inversion
-                output3Condition1On.text = it.output3OnThrd1.toString()
-                output3Condition1Off.text = it.output3OffThrd1.toString()
+                output3Condition1On.value = it.output3OnThrd1
+                output3Condition1Off.value = it.output3OffThrd1
 
                 it.output3LogicFunc.let {
                     if (it == 15) {
@@ -127,8 +127,8 @@ class UniversalOutputsFragment : Fragment() {
 
                 output3Condition2.setText(mCondition1List[it.output2Condition2], false)
                 output3Condition2Inversion.isChecked = it.output3Cond2Inversion
-                output3Condition2On.text = it.output3OnThrd2.toString()
-                output3Condition2Off.text = it.output3OffThrd2.toString()
+                output3Condition2On.value = it.output3OnThrd2
+                output3Condition2Off.value = it.output3OffThrd2
 
             }
         }
