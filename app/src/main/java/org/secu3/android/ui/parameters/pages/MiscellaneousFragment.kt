@@ -70,22 +70,22 @@ class MiscellaneousFragment : Fragment() {
         mViewModel.miscellaneousLiveData.observe(viewLifecycleOwner) {
             mBinding.apply {
                 dataTransmitionSpeed.setText(baudRateList[it.uartDivisor], false)
-                dataPacketsTransmissionPeriod.text = it.uartPeriodTms.toString()
+                dataPacketsTransmissionPeriod.value = it.uartPeriodTms
 
                 enableCutoffOfIgnitionCheckbox.isChecked = it.ignCutoff > 0
-                enableCutoffOfIgnition.text = it.ignCutoffThrd.toString()
+                enableCutoffOfIgnition.value = it.ignCutoffThrd
 
-                startRelToTdc.text = it.hopStartCogs.toString()
-                duration.text = it.hopDuratCogs.toString()
+                startRelToTdc.value = it.hopStartCogs
+                duration.value = it.hopDuratCogs
 
                 turnOffFuelPumpAfterGas.isChecked = it.offPumpOnGas
                 turnOffInjectorsAfterGas.isChecked = it.offInjOnGas
                 turnOffInjectorsAfterPetrol.isChecked = it.offInjOnPetrol
 
-                evapStartingAirFlow.text = it.evapAfbegin.toString()
-                evapEndingAirFlow.text = it.evapAfEnd.toString()
+                evapStartingAirFlow.value = it.evapAfbegin
+                evapEndingAirFlow.value = it.evapAfEnd
 
-                fuelPumpWorkingTime.text = it.fpTimeoutStrt.toString()
+                fuelPumpWorkingTime.value = it.fpTimeoutStrt
             }
         }
     }
