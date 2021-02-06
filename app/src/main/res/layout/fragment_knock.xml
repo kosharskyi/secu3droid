@@ -23,309 +23,169 @@
               http://secu-3.org
               email: vetalkosharskiy@gmail.com
 -->
-<androidx.constraintlayout.widget.ConstraintLayout
+
+<ScrollView
     xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:tools="http://schemas.android.com/tools"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    xmlns:app="http://schemas.android.com/apk/res-auto"
-    tools:context=".ui.parameters.pages.KnockFragment"
-    android:padding="16dp"
-    >
+    tools:context=".ui.parameters.pages.KnockFragment">
 
-    <CheckBox
-        android:id="@+id/enable_sensor"
-        android:layout_width="0dp"
+
+    <LinearLayout
+        android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        app:layout_constraintTop_toTopOf="parent"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintEnd_toEndOf="parent"
-        android:text="@string/knock_par_use_knock_sensor_title"
-        android:button="@null"
-        android:drawableEnd="?android:attr/listChoiceIndicatorMultiple"
-        />
+        android:orientation="vertical"
+        android:padding="16dp"
+        >
 
-    <!-- ************************************************************* -->
-
-    <TextView
-        android:id="@+id/phase_window_begin_title"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        app:layout_constraintTop_toBottomOf="@id/enable_sensor"
-        app:layout_constraintStart_toStartOf="parent"
-        android:layout_marginTop="16dp"
-        android:text="@string/knock_par_phase_window_begin_title"
-        />
-
-    <TextView
-        android:id="@+id/phase_window_begin"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        app:layout_constraintTop_toTopOf="@id/phase_window_begin_title"
-        app:layout_constraintEnd_toEndOf="parent"
-        android:textAppearance="?android:attr/textAppearanceLarge"
-        android:text="000"
-        />
-
-    <TextView
-        android:id="@+id/phase_window_begin_units"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        app:layout_constraintTop_toBottomOf="@id/phase_window_begin"
-        app:layout_constraintEnd_toEndOf="parent"
-        android:text="@string/units_degrees_cs"
-        />
-
-
-    <!-- ************************************************************* -->
-
-    <TextView
-        android:id="@+id/phase_window_end_title"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        app:layout_constraintTop_toBottomOf="@id/phase_window_begin_units"
-        app:layout_constraintStart_toStartOf="parent"
-        android:layout_marginTop="16dp"
-        android:text="@string/knock_par_phase_window_end_title"
-        />
-
-    <TextView
-        android:id="@+id/phase_window_end"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        app:layout_constraintTop_toTopOf="@id/phase_window_end_title"
-        app:layout_constraintEnd_toEndOf="parent"
-        android:textAppearance="?android:attr/textAppearanceLarge"
-        android:text="000"
-        />
-
-    <TextView
-        android:id="@+id/phase_window_end_units"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        app:layout_constraintTop_toBottomOf="@id/phase_window_end"
-        app:layout_constraintEnd_toEndOf="parent"
-        android:text="@string/units_degrees_cs"
-        />
-
-
-    <!-- ************************************************************* -->
-
-    <com.google.android.material.textfield.TextInputLayout
-        android:id="@+id/bpf_frequency_title"
-        android:theme="@style/Theme.MaterialComponents.DayNight.NoActionBar"
-        style="@style/Widget.MaterialComponents.TextInputLayout.OutlinedBox.ExposedDropdownMenu"
-        android:layout_width="0dp"
-        android:layout_height="wrap_content"
-        app:layout_constraintTop_toBottomOf="@id/phase_window_end_units"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintEnd_toEndOf="parent"
-        android:layout_marginTop="16dp"
-        android:hint="@string/knock_par_knock_filter_frequency_title">
-
-        <AutoCompleteTextView
-            android:id="@+id/bpf_frequency"
+        <CheckBox
+            android:id="@+id/enable_sensor"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:inputType="none"
+            android:text="@string/knock_par_use_knock_sensor_title"
+            android:button="@null"
+            android:drawableEnd="?android:attr/listChoiceIndicatorMultiple"
             />
 
-    </com.google.android.material.textfield.TextInputLayout>
+        <!-- ************************************************************* -->
 
-    <!-- ************************************************************* -->
-
-    <com.google.android.material.textfield.TextInputLayout
-        android:id="@+id/integration_time_constant_title"
-        android:theme="@style/Theme.MaterialComponents.DayNight.NoActionBar"
-        style="@style/Widget.MaterialComponents.TextInputLayout.OutlinedBox.ExposedDropdownMenu"
-        android:layout_width="0dp"
-        android:layout_height="wrap_content"
-        app:layout_constraintTop_toBottomOf="@id/bpf_frequency_title"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintEnd_toEndOf="parent"
-        android:layout_marginTop="16dp"
-        android:hint="@string/knock_par_integration_timeout_title">
-
-        <AutoCompleteTextView
-            android:id="@+id/integration_time_constant"
+        <org.secu3.android.ui.parameters.views.FloatParamView
+            android:id="@+id/phase_window_begin"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:inputType="none"
+            android:layout_marginTop="16dp"
+            app:title="@string/knock_par_phase_window_begin_title"
+            app:units="@string/units_degrees_cs"
+            app:float_value="0"
+            app:value_precision="two"
             />
 
-    </com.google.android.material.textfield.TextInputLayout>
 
-    <!-- ************************************************************* -->
-
+        <!-- ************************************************************* -->
 
 
-    <TextView
-        android:id="@+id/angle_displacement_step_title"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        app:layout_constraintTop_toBottomOf="@id/integration_time_constant_title"
-        app:layout_constraintStart_toStartOf="parent"
-        android:layout_marginTop="16dp"
-        android:text="@string/knock_par_angle_displacement_step_title"
-        />
-
-    <TextView
-        android:id="@+id/angle_displacement_step"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        app:layout_constraintTop_toTopOf="@id/angle_displacement_step_title"
-        app:layout_constraintEnd_toEndOf="parent"
-        android:textAppearance="?android:attr/textAppearanceLarge"
-        android:text="000"
-        />
-
-    <TextView
-        android:id="@+id/angle_displacement_units"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        app:layout_constraintTop_toBottomOf="@id/angle_displacement_step"
-        app:layout_constraintEnd_toEndOf="parent"
-        android:text="@string/units_degrees_cs"
-        />
+        <org.secu3.android.ui.parameters.views.FloatParamView
+            android:id="@+id/phase_window_end"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="16dp"
+            app:title="@string/knock_par_phase_window_end_title"
+            app:units="@string/units_degrees_cs"
+            app:float_value="0"
+            app:value_precision="two"
+            />
 
 
-    <!-- ************************************************************* -->
+        <!-- ************************************************************* -->
+
+        <com.google.android.material.textfield.TextInputLayout
+            android:id="@+id/bpf_frequency_title"
+            android:theme="@style/Theme.MaterialComponents.DayNight.NoActionBar"
+            style="@style/Widget.MaterialComponents.TextInputLayout.OutlinedBox.ExposedDropdownMenu"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="16dp"
+            android:hint="@string/knock_par_knock_filter_frequency_title">
+
+            <AutoCompleteTextView
+                android:id="@+id/bpf_frequency"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:inputType="none"
+                />
+
+        </com.google.android.material.textfield.TextInputLayout>
+
+        <!-- ************************************************************* -->
+
+        <com.google.android.material.textfield.TextInputLayout
+            android:id="@+id/integration_time_constant_title"
+            android:theme="@style/Theme.MaterialComponents.DayNight.NoActionBar"
+            style="@style/Widget.MaterialComponents.TextInputLayout.OutlinedBox.ExposedDropdownMenu"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="16dp"
+            android:hint="@string/knock_par_integration_timeout_title">
+
+            <AutoCompleteTextView
+                android:id="@+id/integration_time_constant"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:inputType="none"
+                />
+
+        </com.google.android.material.textfield.TextInputLayout>
+
+        <!-- ************************************************************* -->
 
 
-
-    <TextView
-        android:id="@+id/angle_recovery_step_title"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        app:layout_constraintTop_toBottomOf="@id/angle_displacement_units"
-        app:layout_constraintStart_toStartOf="parent"
-        android:layout_marginTop="16dp"
-        android:text="@string/knock_par_angle_retard_step_title"
-        />
-
-    <TextView
-        android:id="@+id/angle_recovery_step"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        app:layout_constraintTop_toTopOf="@id/angle_recovery_step_title"
-        app:layout_constraintEnd_toEndOf="parent"
-        android:textAppearance="?android:attr/textAppearanceLarge"
-        android:text="000"
-        />
-
-    <TextView
-        android:id="@+id/angle_recovery_step_units"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        app:layout_constraintTop_toBottomOf="@id/angle_recovery_step"
-        app:layout_constraintEnd_toEndOf="parent"
-        android:text="@string/units_degrees_cs"
-        />
+        <org.secu3.android.ui.parameters.views.FloatParamView
+            android:id="@+id/angle_displacement_step"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="16dp"
+            app:title="@string/knock_par_angle_displacement_step_title"
+            app:units="@string/units_degrees_cs"
+            app:float_value="0"
+            app:value_precision="two"
+            />
 
 
-    <!-- ************************************************************* -->
+        <!-- ************************************************************* -->
 
 
+        <org.secu3.android.ui.parameters.views.FloatParamView
+            android:id="@+id/angle_recovery_step"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="16dp"
+            app:title="@string/knock_par_angle_retard_step_title"
+            app:units="@string/units_degrees_cs"
+            app:float_value="0"
+            app:value_precision="two"
+            />
 
-    <TextView
-        android:id="@+id/max_angle_displacement_title"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        app:layout_constraintTop_toBottomOf="@id/angle_recovery_step_units"
-        app:layout_constraintStart_toStartOf="parent"
-        android:layout_marginTop="16dp"
-        android:text="@string/knock_par_maximal_angle_displacement_title"
-        />
+        <!-- ************************************************************* -->
 
-    <TextView
-        android:id="@+id/max_angle_displacement"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        app:layout_constraintTop_toTopOf="@id/max_angle_displacement_title"
-        app:layout_constraintEnd_toEndOf="parent"
-        android:textAppearance="?android:attr/textAppearanceLarge"
-        android:text="000"
-        />
+        <org.secu3.android.ui.parameters.views.FloatParamView
+            android:id="@+id/max_angle_displacement"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="16dp"
+            app:title="@string/knock_par_maximal_angle_displacement_title"
+            app:units="@string/units_degrees_cs"
+            app:float_value="0"
+            app:value_precision="two"
+            />
 
-    <TextView
-        android:id="@+id/max_angle_displacement_units"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        app:layout_constraintTop_toBottomOf="@id/max_angle_displacement"
-        app:layout_constraintEnd_toEndOf="parent"
-        android:text="@string/units_degrees_cs"
-        />
+        <!-- ************************************************************* -->
 
 
-    <!-- ************************************************************* -->
+        <org.secu3.android.ui.parameters.views.FloatParamView
+            android:id="@+id/knock_threshold"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="16dp"
+            app:title="@string/knock_par_knock_threshold_title"
+            app:units="@string/units_volts"
+            app:float_value="0"
+            app:value_precision="two"
+            />
 
+        <!-- ************************************************************* -->
 
+        <org.secu3.android.ui.parameters.views.IntParamView
+            android:id="@+id/angle_recovery_delay"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="16dp"
+            app:title="@string/knock_par_angle_recovery_delay_title"
+            app:units="@string/units_str"
+            app:int_value="0"
+            />
 
-    <TextView
-        android:id="@+id/knock_threshold_title"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        app:layout_constraintTop_toBottomOf="@id/max_angle_displacement_units"
-        app:layout_constraintStart_toStartOf="parent"
-        android:layout_marginTop="16dp"
-        android:text="@string/knock_par_knock_threshold_title"
-        />
+    </LinearLayout>
 
-    <TextView
-        android:id="@+id/knock_threshold"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        app:layout_constraintTop_toTopOf="@id/knock_threshold_title"
-        app:layout_constraintEnd_toEndOf="parent"
-        android:textAppearance="?android:attr/textAppearanceLarge"
-        android:text="000"
-        />
-
-    <TextView
-        android:id="@+id/knock_threshold_units"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        app:layout_constraintTop_toBottomOf="@id/knock_threshold"
-        app:layout_constraintEnd_toEndOf="parent"
-        android:text="@string/units_volts"
-        />
-
-
-    <!-- ************************************************************* -->
-
-
-
-    <TextView
-        android:id="@+id/angle_recovery_delay_title"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        app:layout_constraintTop_toBottomOf="@id/knock_threshold_units"
-        app:layout_constraintStart_toStartOf="parent"
-        android:layout_marginTop="16dp"
-        android:text="@string/knock_par_angle_recovery_delay_title"
-        />
-
-    <TextView
-        android:id="@+id/angle_recovery_delay"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        app:layout_constraintTop_toTopOf="@id/angle_recovery_delay_title"
-        app:layout_constraintEnd_toEndOf="parent"
-        android:textAppearance="?android:attr/textAppearanceLarge"
-        android:text="000"
-        />
-
-    <TextView
-        android:id="@+id/angle_recovery_delay_units"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        app:layout_constraintTop_toBottomOf="@id/angle_recovery_delay"
-        app:layout_constraintEnd_toEndOf="parent"
-        android:text="@string/units_str"
-        />
-
-
-    <!-- ************************************************************* -->
-
-
-</androidx.constraintlayout.widget.ConstraintLayout>
+</ScrollView>
