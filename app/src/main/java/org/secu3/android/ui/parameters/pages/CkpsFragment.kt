@@ -63,15 +63,15 @@ class CkpsFragment : Fragment() {
                 sparkRisingEdgeForCdi.isChecked = it.risingSpark
                 mergeSignalsToSingleOutput.isChecked = it.mergeOuts
 
-                numberOfWheelsTeeth.text = it.ckpsCogsNum.toString()
-                numberOfMissingTeeth.text = it.ckpsMissNum.toString()
+                numberOfWheelsTeeth.value = it.ckpsCogsNum
+                numberOfMissingTeeth.value = it.ckpsMissNum
 
                 teethBeforeTdc.setText(it.ckpsCogsBtdc.toString(), false)
                 numberOfCylinders.setText(it.ckpsEngineCyl.toString(), false)
 
-                durationIngDriverPulseTeeth.text = it.ckpsIgnitCogs.toString()
-                hallSensorInterrupterDegree.text = it.hallWndWidth.toString()
-                degreesBeforeTDC.text = it.hallDegreesBtdc.toString()
+                durationIngDriverPulseTeeth.value = it.ckpsIgnitCogs
+                hallSensorInterrupterDegree.value = it.hallWndWidth
+                degreesBeforeTDC.value = it.hallDegreesBtdc
 
                 useCamSensorAsReference.isChecked = it.useCamRef
             }
