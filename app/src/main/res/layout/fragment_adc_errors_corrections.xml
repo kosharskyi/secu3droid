@@ -33,515 +33,207 @@
     tools:context=".ui.parameters.pages.AdcErrorsCorrectionsFragment"
     >
 
-    <androidx.constraintlayout.widget.ConstraintLayout
+    <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
+        android:orientation="vertical"
         android:padding="16dp"
         >
 
-        <TextView
-            android:id="@+id/map_factor_title"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            app:layout_constraintTop_toTopOf="parent"
-            app:layout_constraintStart_toStartOf="parent"
-            android:text="MAP factor"
-            />
-
-        <TextView
+        <org.secu3.android.ui.parameters.views.FloatParamView
             android:id="@+id/map_factor"
-            android:layout_width="wrap_content"
+            android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            app:layout_constraintTop_toTopOf="parent"
-            app:layout_constraintEnd_toEndOf="parent"
-            android:textAppearance="?android:attr/textAppearanceLarge"
-            android:text="0.00"
-            />
-
-        <TextView
-            android:id="@+id/map_factor_units"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            app:layout_constraintTop_toBottomOf="@id/map_factor"
-            app:layout_constraintEnd_toEndOf="parent"
-            android:text=""
+            app:title="MAP factor"
+            app:units=""
+            app:float_value="0"
+            app:value_precision="three"
             />
 
 
-        <!-- ************************************************************* -->
-
-        <TextView
-            android:id="@+id/map_correction_title"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            app:layout_constraintTop_toBottomOf="@id/map_factor_units"
-            app:layout_constraintStart_toStartOf="parent"
-            android:text="MAP correction"
-            />
-
-        <TextView
+        <org.secu3.android.ui.parameters.views.FloatParamView
             android:id="@+id/map_correction"
-            android:layout_width="wrap_content"
+            android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            app:layout_constraintTop_toTopOf="@id/map_correction_title"
-            app:layout_constraintEnd_toEndOf="parent"
-            android:textAppearance="?android:attr/textAppearanceLarge"
-            android:text="0.00"
-            />
-
-        <TextView
-            android:id="@+id/map_correction_units"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            app:layout_constraintTop_toBottomOf="@id/map_correction"
-            app:layout_constraintEnd_toEndOf="parent"
-            android:text="@string/units_volts"
+            app:title="MAP correction"
+            app:units="@string/units_volts"
+            app:float_value="0"
+            app:value_precision="three"
             />
 
 
         <!-- ************************************************************* -->
 
-        <TextView
-            android:id="@+id/voltage_factor_title"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            app:layout_constraintTop_toBottomOf="@id/map_correction_units"
-            app:layout_constraintStart_toStartOf="parent"
-            android:layout_marginTop="16dp"
-            android:text="Voltage factor"
-            />
-
-        <TextView
+        <org.secu3.android.ui.parameters.views.FloatParamView
             android:id="@+id/voltage_factor"
-            android:layout_width="wrap_content"
+            android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            app:layout_constraintTop_toTopOf="@id/voltage_factor_title"
-            app:layout_constraintEnd_toEndOf="parent"
-            android:textAppearance="?android:attr/textAppearanceLarge"
-            android:text="0.00"
-            />
-
-        <TextView
-            android:id="@+id/voltage_factor_units"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            app:layout_constraintTop_toBottomOf="@id/voltage_factor"
-            app:layout_constraintEnd_toEndOf="parent"
-            android:text=""
+            android:layout_marginTop="16dp"
+            app:title="Voltage factor"
+            app:units=""
+            app:float_value="0"
+            app:value_precision="three"
             />
 
 
-        <!-- ************************************************************* -->
-
-        <TextView
-            android:id="@+id/voltage_correction_title"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            app:layout_constraintTop_toBottomOf="@id/voltage_factor_units"
-            app:layout_constraintStart_toStartOf="parent"
-            android:text="Voltage correction"
-            />
-
-        <TextView
+        <org.secu3.android.ui.parameters.views.FloatParamView
             android:id="@+id/voltage_correction"
-            android:layout_width="wrap_content"
+            android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            app:layout_constraintTop_toTopOf="@id/voltage_correction_title"
-            app:layout_constraintEnd_toEndOf="parent"
-            android:textAppearance="?android:attr/textAppearanceLarge"
-            android:text="0.00"
-            />
-
-        <TextView
-            android:id="@+id/voltage_correction_units"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            app:layout_constraintTop_toBottomOf="@id/voltage_correction"
-            app:layout_constraintEnd_toEndOf="parent"
-            android:text="@string/units_volts"
+            app:title="Voltage correction"
+            app:units="@string/units_volts"
+            app:float_value="0"
+            app:value_precision="four"
             />
 
 
         <!-- ************************************************************* -->
 
-        <TextView
-            android:id="@+id/cts_factor_title"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            app:layout_constraintTop_toBottomOf="@id/voltage_correction_units"
-            app:layout_constraintStart_toStartOf="parent"
-            android:layout_marginTop="16dp"
-            android:text="CTS factor"
-            />
-
-        <TextView
+        <org.secu3.android.ui.parameters.views.FloatParamView
             android:id="@+id/cts_factor"
-            android:layout_width="wrap_content"
+            android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            app:layout_constraintTop_toTopOf="@id/cts_factor_title"
-            app:layout_constraintEnd_toEndOf="parent"
-            android:textAppearance="?android:attr/textAppearanceLarge"
-            android:text="0.00"
-            />
-
-        <TextView
-            android:id="@+id/cts_factor_units"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            app:layout_constraintTop_toBottomOf="@id/cts_factor"
-            app:layout_constraintEnd_toEndOf="parent"
-            android:text=""
+            android:layout_marginTop="16dp"
+            app:title="CTS factor"
+            app:units=""
+            app:float_value="0"
+            app:value_precision="three"
             />
 
 
-        <!-- ************************************************************* -->
-
-        <TextView
-            android:id="@+id/cts_correction_title"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            app:layout_constraintTop_toBottomOf="@id/cts_factor_units"
-            app:layout_constraintStart_toStartOf="parent"
-            android:text="CTS correction"
-            />
-
-        <TextView
+        <org.secu3.android.ui.parameters.views.FloatParamView
             android:id="@+id/cts_correction"
-            android:layout_width="wrap_content"
+            android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            app:layout_constraintTop_toTopOf="@id/cts_correction_title"
-            app:layout_constraintEnd_toEndOf="parent"
-            android:textAppearance="?android:attr/textAppearanceLarge"
-            android:text="0.00"
-            />
-
-        <TextView
-            android:id="@+id/cts_correction_units"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            app:layout_constraintTop_toBottomOf="@id/cts_correction"
-            app:layout_constraintEnd_toEndOf="parent"
-            android:text="@string/units_volts"
+            app:title="CTS correction"
+            app:units="@string/units_volts"
+            app:float_value="0"
+            app:value_precision="four"
             />
 
 
         <!-- ************************************************************* -->
 
-        <TextView
-            android:id="@+id/tps_factor_title"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            app:layout_constraintTop_toBottomOf="@id/cts_correction_units"
-            app:layout_constraintStart_toStartOf="parent"
-            android:layout_marginTop="16dp"
-            android:text="TPS factor"
-            />
-
-        <TextView
+        <org.secu3.android.ui.parameters.views.FloatParamView
             android:id="@+id/tps_factor"
-            android:layout_width="wrap_content"
+            android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            app:layout_constraintTop_toTopOf="@id/tps_factor_title"
-            app:layout_constraintEnd_toEndOf="parent"
-            android:textAppearance="?android:attr/textAppearanceLarge"
-            android:text="0.00"
-            />
-
-        <TextView
-            android:id="@+id/tps_factor_units"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            app:layout_constraintTop_toBottomOf="@id/tps_factor"
-            app:layout_constraintEnd_toEndOf="parent"
-            android:text=""
+            android:layout_marginTop="16dp"
+            app:title="TPS factor"
+            app:units=""
+            app:float_value="0"
+            app:value_precision="three"
             />
 
 
-        <!-- ************************************************************* -->
-
-        <TextView
-            android:id="@+id/tps_correction_title"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            app:layout_constraintTop_toBottomOf="@id/tps_factor_units"
-            app:layout_constraintStart_toStartOf="parent"
-            android:text="TPS correction"
-            />
-
-        <TextView
+        <org.secu3.android.ui.parameters.views.FloatParamView
             android:id="@+id/tps_correction"
-            android:layout_width="wrap_content"
+            android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            app:layout_constraintTop_toTopOf="@id/tps_correction_title"
-            app:layout_constraintEnd_toEndOf="parent"
-            android:textAppearance="?android:attr/textAppearanceLarge"
-            android:text="0.00"
-            />
-
-        <TextView
-            android:id="@+id/tps_correction_units"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            app:layout_constraintTop_toBottomOf="@id/tps_correction"
-            app:layout_constraintEnd_toEndOf="parent"
-            android:text="@string/units_volts"
+            app:title="TPS correction"
+            app:units="@string/units_volts"
+            app:float_value="0"
+            app:value_precision="four"
             />
 
 
         <!-- ************************************************************* -->
 
-        <TextView
-            android:id="@+id/add1_factor_title"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            app:layout_constraintTop_toBottomOf="@id/tps_correction_units"
-            app:layout_constraintStart_toStartOf="parent"
-            android:layout_marginTop="16dp"
-            android:text="ADD_I1 factor"
-            />
-
-        <TextView
+        <org.secu3.android.ui.parameters.views.FloatParamView
             android:id="@+id/add1_factor"
-            android:layout_width="wrap_content"
+            android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            app:layout_constraintTop_toTopOf="@id/add1_factor_title"
-            app:layout_constraintEnd_toEndOf="parent"
-            android:textAppearance="?android:attr/textAppearanceLarge"
-            android:text="0.00"
-            />
-
-        <TextView
-            android:id="@+id/add1_factor_units"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            app:layout_constraintTop_toBottomOf="@id/add1_factor"
-            app:layout_constraintEnd_toEndOf="parent"
-            android:text=""
+            android:layout_marginTop="16dp"
+            app:title="ADD_I1 factor"
+            app:units=""
+            app:float_value="0"
+            app:value_precision="three"
             />
 
 
-        <!-- ************************************************************* -->
-
-        <TextView
-            android:id="@+id/add1_correction_title"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            app:layout_constraintTop_toBottomOf="@id/add1_factor_units"
-            app:layout_constraintStart_toStartOf="parent"
-            android:text="ADD_I1 correction"
-            />
-
-        <TextView
+        <org.secu3.android.ui.parameters.views.FloatParamView
             android:id="@+id/add1_correction"
-            android:layout_width="wrap_content"
+            android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            app:layout_constraintTop_toTopOf="@id/add1_correction_title"
-            app:layout_constraintEnd_toEndOf="parent"
-            android:textAppearance="?android:attr/textAppearanceLarge"
-            android:text="0.00"
+            app:title="ADD_I1 correction"
+            app:units="@string/units_volts"
+            app:float_value="0"
+            app:value_precision="four"
             />
-
-        <TextView
-            android:id="@+id/add1_correction_units"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            app:layout_constraintTop_toBottomOf="@id/add1_correction"
-            app:layout_constraintEnd_toEndOf="parent"
-            android:text="@string/units_volts"
-            />
-
 
         <!-- ************************************************************* -->
 
-        <TextView
-            android:id="@+id/add2_factor_title"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            app:layout_constraintTop_toBottomOf="@id/add1_correction_units"
-            app:layout_constraintStart_toStartOf="parent"
-            android:layout_marginTop="16dp"
-            android:text="ADD_I2 factor"
-            />
-
-        <TextView
+        <org.secu3.android.ui.parameters.views.FloatParamView
             android:id="@+id/add2_factor"
-            android:layout_width="wrap_content"
+            android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            app:layout_constraintTop_toTopOf="@id/add2_factor_title"
-            app:layout_constraintEnd_toEndOf="parent"
-            android:textAppearance="?android:attr/textAppearanceLarge"
-            android:text="0.00"
-            />
-
-        <TextView
-            android:id="@+id/add2_factor_units"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            app:layout_constraintTop_toBottomOf="@id/add2_factor"
-            app:layout_constraintEnd_toEndOf="parent"
-            android:text=""
+            android:layout_marginTop="16dp"
+            app:title="ADD_I2 factor"
+            app:units=""
+            app:float_value="0"
+            app:value_precision="three"
             />
 
 
-        <!-- ************************************************************* -->
-
-        <TextView
-            android:id="@+id/add2_correction_title"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            app:layout_constraintTop_toBottomOf="@id/add2_factor_units"
-            app:layout_constraintStart_toStartOf="parent"
-            android:text="ADD_I2 correction"
-            />
-
-        <TextView
+        <org.secu3.android.ui.parameters.views.FloatParamView
             android:id="@+id/add2_correction"
-            android:layout_width="wrap_content"
+            android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            app:layout_constraintTop_toTopOf="@id/add2_correction_title"
-            app:layout_constraintEnd_toEndOf="parent"
-            android:textAppearance="?android:attr/textAppearanceLarge"
-            android:text="0.00"
+            app:title="ADD_I2 correction"
+            app:units="@string/units_volts"
+            app:float_value="0"
+            app:value_precision="four"
             />
-
-        <TextView
-            android:id="@+id/add2_correction_units"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            app:layout_constraintTop_toBottomOf="@id/add2_correction"
-            app:layout_constraintEnd_toEndOf="parent"
-            android:text="@string/units_volts"
-            />
-
 
         <!-- ************************************************************* -->
 
-        <TextView
-            android:id="@+id/add3_factor_title"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            app:layout_constraintTop_toBottomOf="@id/add2_correction_units"
-            app:layout_constraintStart_toStartOf="parent"
-            android:layout_marginTop="16dp"
-            android:text="ADD_I3 factor"
-            />
-
-        <TextView
+        <org.secu3.android.ui.parameters.views.FloatParamView
             android:id="@+id/add3_factor"
-            android:layout_width="wrap_content"
+            android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            app:layout_constraintTop_toTopOf="@id/add3_factor_title"
-            app:layout_constraintEnd_toEndOf="parent"
-            android:textAppearance="?android:attr/textAppearanceLarge"
-            android:text="0.00"
-            />
-
-        <TextView
-            android:id="@+id/add3_factor_units"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            app:layout_constraintTop_toBottomOf="@id/add3_factor"
-            app:layout_constraintEnd_toEndOf="parent"
-            android:text=""
-            />
-
-
-        <!-- ************************************************************* -->
-
-        <TextView
-            android:id="@+id/add3_correction_title"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            app:layout_constraintTop_toBottomOf="@id/add3_factor_units"
-            app:layout_constraintStart_toStartOf="parent"
-            android:text="ADD_I3 correction"
-            />
-
-        <TextView
-            android:id="@+id/add3_correction"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            app:layout_constraintTop_toTopOf="@id/add3_correction_title"
-            app:layout_constraintEnd_toEndOf="parent"
-            android:textAppearance="?android:attr/textAppearanceLarge"
-            android:text="0.00"
-            />
-
-        <TextView
-            android:id="@+id/add3_correction_units"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            app:layout_constraintTop_toBottomOf="@id/add3_correction"
-            app:layout_constraintEnd_toEndOf="parent"
-            android:text="@string/units_volts"
-            />
-
-
-        <!-- ************************************************************* -->
-
-        <TextView
-            android:id="@+id/add4_factor_title"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            app:layout_constraintTop_toBottomOf="@id/add3_correction_units"
-            app:layout_constraintStart_toStartOf="parent"
             android:layout_marginTop="16dp"
-            android:text="ADD_I4 factor"
+            app:title="ADD_I3 factor"
+            app:units=""
+            app:float_value="0"
+            app:value_precision="three"
             />
 
-        <TextView
+
+        <org.secu3.android.ui.parameters.views.FloatParamView
+            android:id="@+id/add3_correction"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            app:title="ADD_I3 correction"
+            app:units="@string/units_volts"
+            app:float_value="0"
+            app:value_precision="four"
+            />
+
+
+        <!-- ************************************************************* -->
+
+        <org.secu3.android.ui.parameters.views.FloatParamView
             android:id="@+id/add4_factor"
-            android:layout_width="wrap_content"
+            android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            app:layout_constraintTop_toTopOf="@id/add4_factor_title"
-            app:layout_constraintEnd_toEndOf="parent"
-            android:textAppearance="?android:attr/textAppearanceLarge"
-            android:text="0.00"
-            />
-
-        <TextView
-            android:id="@+id/add4_factor_units"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            app:layout_constraintTop_toBottomOf="@id/add4_factor"
-            app:layout_constraintEnd_toEndOf="parent"
-            android:text=""
+            android:layout_marginTop="16dp"
+            app:title="ADD_I4 factor"
+            app:units=""
+            app:float_value="0"
+            app:value_precision="three"
             />
 
 
-        <!-- ************************************************************* -->
-
-        <TextView
-            android:id="@+id/add4_correction_title"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            app:layout_constraintTop_toBottomOf="@id/add4_factor_units"
-            app:layout_constraintStart_toStartOf="parent"
-            android:text="ADD_I4 correction"
-            />
-
-        <TextView
+        <org.secu3.android.ui.parameters.views.FloatParamView
             android:id="@+id/add4_correction"
-            android:layout_width="wrap_content"
+            android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            app:layout_constraintTop_toTopOf="@id/add4_correction_title"
-            app:layout_constraintEnd_toEndOf="parent"
-            android:textAppearance="?android:attr/textAppearanceLarge"
-            android:text="0.00"
+            app:title="ADD_I4 correction"
+            app:units="@string/units_volts"
+            app:float_value="0"
+            app:value_precision="four"
             />
 
-        <TextView
-            android:id="@+id/add4_correction_units"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            app:layout_constraintTop_toBottomOf="@id/add4_correction"
-            app:layout_constraintEnd_toEndOf="parent"
-            android:text="@string/units_volts"
-            />
-
-
-        <!-- ************************************************************* -->
-
-    </androidx.constraintlayout.widget.ConstraintLayout>
+    </LinearLayout>
 
 </ScrollView>
