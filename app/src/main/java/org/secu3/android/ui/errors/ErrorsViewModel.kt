@@ -25,9 +25,11 @@
 package org.secu3.android.ui.errors
 
 import androidx.lifecycle.LiveData
-import androidx.lifecycle.MediatorLiveData
 import androidx.lifecycle.ViewModel
+import androidx.lifecycle.asLiveData
 import dagger.hilt.android.lifecycle.HiltViewModel
+import kotlinx.coroutines.flow.filter
+import kotlinx.coroutines.flow.map
 import org.secu3.android.Secu3Repository
 import org.secu3.android.models.packets.CheckEngineErrorsPacket
 import org.secu3.android.models.packets.CheckEngineSavedErrorsPacket
@@ -44,25 +46,13 @@ class ErrorsViewModel @Inject constructor(private val secu3Repository: Secu3Repo
     val connectionStatusLiveData: LiveData<Boolean>
         get() = secu3Repository.connectionStatusLiveData
 
-    private val mCheckEngineLiveData = MediatorLiveData<CheckEngineErrorsPacket>().also {
-        it.addSource(secu3Repository.receivedPacketLiveData) { packet ->
-            if (packet is CheckEngineErrorsPacket) {
-                it.value = packet
-            }
-        }
-    }
     val checkEngineLiveData: LiveData<CheckEngineErrorsPacket>
-        get() = mCheckEngineLiveData
+        get() = secu3Repository.receivedPacketLiveData.filter { it is CheckEngineErrorsPacket }
+            .map { it as CheckEngineErrorsPacket }.asLiveData()
 
-    private val mCheckEngineSavedLiveData = MediatorLiveData<CheckEngineSavedErrorsPacket>().also {
-        it.addSource(secu3Repository.receivedPacketLiveData) { packet ->
-            if (packet is CheckEngineSavedErrorsPacket) {
-                it.value = packet
-            }
-        }
-    }
     val checkEngineSavedLiveData: LiveData<CheckEngineSavedErrorsPacket>
-        get() = mCheckEngineSavedLiveData
+        get() = secu3Repository.receivedPacketLiveData.filter { it is CheckEngineSavedErrorsPacket }
+            .map { it as CheckEngineSavedErrorsPacket }.asLiveData()
 
 
     fun sendNewTask(task: Task) {

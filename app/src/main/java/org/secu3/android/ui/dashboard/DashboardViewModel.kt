@@ -25,9 +25,11 @@
 package org.secu3.android.ui.dashboard
 
 import androidx.lifecycle.LiveData
-import androidx.lifecycle.MediatorLiveData
 import androidx.lifecycle.ViewModel
+import androidx.lifecycle.asLiveData
 import dagger.hilt.android.lifecycle.HiltViewModel
+import kotlinx.coroutines.flow.filter
+import kotlinx.coroutines.flow.map
 import org.secu3.android.Secu3Repository
 import org.secu3.android.models.packets.SensorsPacket
 import org.secu3.android.utils.LifeTimePrefs
@@ -49,16 +51,10 @@ class DashboardViewModel @Inject constructor(private val secu3Repository: Secu3R
         secu3Repository.sendNewTask(task)
     }
 
-    private val mPacketLiveData = MediatorLiveData<SensorsPacket>().also {
-        it.addSource(secu3Repository.receivedPacketLiveData) { packet ->
-            if (packet is SensorsPacket) {
-                packet.speedSensorPulses = mPrefs.speedPulses
-                it.value = packet
-            }
-        }
-    }
     val packetLiveData: LiveData<SensorsPacket>
-        get() = mPacketLiveData
+        get() = secu3Repository.receivedPacketLiveData.filter { it is SensorsPacket }.map {
+            (it as SensorsPacket).also { sensorsPacket -> sensorsPacket.speedSensorPulses = mPrefs.speedPulses }
+        }.asLiveData()
 
     val statusLiveData: LiveData<Boolean>
         get() = secu3Repository.connectionStatusLiveData
