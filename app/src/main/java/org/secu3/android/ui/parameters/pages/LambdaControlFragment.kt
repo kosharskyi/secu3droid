@@ -70,37 +70,37 @@ class LambdaControlFragment : Fragment() {
         mViewModel.lambdaLiveData.observe(viewLifecycleOwner) {
             mBinding.apply {
                 sensorType.setText(sensorTypesList[it.senstype], false)
-                numberOfStrokesPerStep.text = it.strPerStp.toString()
-                numberOfMsPerStep.text = it.msPerStp.toString()
+                numberOfStrokesPerStep.value = it.strPerStp
+                numberOfMsPerStep.value = it.msPerStp
 
-                sizePositiveCorrectionStep.text = "%.2f".format(it.stepSizeP)
-                sizeNegativeCorrectionStep.text = "%.2f".format(it.stepSizeM)
+                sizePositiveCorrectionStep.value = it.stepSizeP
+                sizeNegativeCorrectionStep.value = it.stepSizeM
 
-                correctionLimitPositive.text = "%.2f".format(it.corrLimitP)
-                correctionLimitNegative.text = "%.2f".format(it.corrLimitM)
+                correctionLimitPositive.value = it.corrLimitP
+                correctionLimitNegative.value = it.corrLimitM
 
-                switchPoint.text = it.swtPoint.toString()
+                switchPoint.value = it.swtPoint
 
-                ctsActivationThreshold.text = it.tempThrd.toString()
-                rpmActivationThreshold.text = it.rpmThrd.toString()
+                ctsActivationThreshold.value = it.tempThrd
+                rpmActivationThreshold.value = it.rpmThrd
 
-                activationAfterStartIn.text = it.activDelay.toString()
-                switchPointDeadband.text = it.deadBand.toString()
+                activationAfterStartIn.value = it.activDelay
+                switchPointDeadband.value = it.deadBand
 
                 determineHeatingUsingVoltage.isChecked = it.determineLambdaHeatingByVoltage
                 lambdaCorrectioinOnIdling.isChecked = it.lambdaCorrectionOnIdling
 
-                stoichiomRatioFor2Fuel.text = it.gdStoichval.toString()
+                stoichiomRatioFor2Fuel.value = it.gdStoichval
 
 
-                heatingTimeWithoutPwmOnCold.text = it.heatingTime0.toString()
-                heatingTimeWithoutPwmOnHot.text = it.heatingTime1.toString()
+                heatingTimeWithoutPwmOnCold.value = it.heatingTime0
+                heatingTimeWithoutPwmOnHot.value = it.heatingTime1
 
-                coldHotTemperatureThreshold.text = it.temperThrd.toString()
+                coldHotTemperatureThreshold.value = it.temperThrd
 
-                turnOnTimeInPwmMode.text = it.heatingAct.toString()
+                turnOnTimeInPwmMode.value = it.heatingAct
 
-                airFlowThresholdForTurningHeatingOff.text = it.aflowThrd.toString()
+                airFlowThresholdForTurningHeatingOff.value = it.aflowThrd
 
                 heatingBeforeCranking.isChecked = it.heatingBeforeCranking
             }
