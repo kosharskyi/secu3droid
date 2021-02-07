@@ -44,82 +44,43 @@
             android:id="@+id/fuel_inject_param_group"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            app:constraint_referenced_ids="engine_displacement,engine_displacement_title,engine_displacement_units,
-            injector_flow_rate,injector_flow_rate_title,injector_flow_rate_units,injection_configuration_title,num_of_squirts_cycle_title,
-            injector_timing,injector_timing_title,injector_timing_units,cranking_injection_timing,cranking_injection_timing_title,
-            cranking_injection_timing_units,use_map_injection_timing,inj_timing_specifies_title,min_injection_pw,min_injection_pw_title,
-            min_injection_pw_units,second_fuel_title,injector_flow_rate_g,injector_flow_rate_g_title,injector_flow_rate_g_units,
-            injection_configuration_g_title,num_of_squirts_cycle_g_title,injector_timing_g,injector_timing_g_title,
-            injector_timing_g_units,cranking_injection_timing_g,cranking_injection_timing_g_title,cranking_injection_timing_g_units,
-            use_map_injection_timing_g,inj_timing_specifies_g_title,min_injection_pw_g,min_injection_pw_g_title,
-            min_injection_pw_g_units,additional_corrections_gas_eq,use_air_density_correction_map,diff_press_for_pw_corr_gps,
-            switch_between_injectors_rows"
-
+            app:constraint_referenced_ids="engine_displacement,injector_flow_rate,injection_configuration_title,num_of_squirts_cycle_title,
+            injector_timing,cranking_injection_timing,use_map_injection_timing,inj_timing_specifies_title,min_injection_pw,
+            second_fuel_title,injector_flow_rate_g,injection_configuration_g_title,num_of_squirts_cycle_g_title,injector_timing_g,
+            cranking_injection_timing_g,use_map_injection_timing_g,inj_timing_specifies_g_title,min_injection_pw_g,
+            additional_corrections_gas_eq,use_air_density_correction_map,diff_press_for_pw_corr_gps,switch_between_injectors_rows"
             />
 
 
         <!-- ************************************************************* -->
 
-        <TextView
-            android:id="@+id/engine_displacement_title"
-            android:layout_width="wrap_content"
+        <org.secu3.android.ui.parameters.views.FloatParamView
+            android:id="@+id/engine_displacement"
+            android:layout_width="match_parent"
             android:layout_height="wrap_content"
             app:layout_constraintTop_toTopOf="parent"
             app:layout_constraintStart_toStartOf="parent"
-            android:layout_marginTop="16dp"
-            android:text="@string/injctr_par_enjine_displacement_title"
-            />
-
-        <TextView
-            android:id="@+id/engine_displacement"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            app:layout_constraintTop_toTopOf="@id/engine_displacement_title"
-            app:layout_constraintEnd_toEndOf="parent"
-            android:textAppearance="?android:attr/textAppearanceLarge"
-            android:text="000"
-            />
-
-        <TextView
-            android:id="@+id/engine_displacement_units"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            app:layout_constraintTop_toBottomOf="@id/engine_displacement"
-            app:layout_constraintEnd_toEndOf="parent"
-            android:text="@string/units_liter"
+            app:title="@string/injctr_par_enjine_displacement_title"
+            app:units="@string/units_liter"
+            app:float_value="0"
+            app:value_precision="four"
             />
 
         <!-- ************************************************************* -->
 
 
 
-        <TextView
-            android:id="@+id/injector_flow_rate_title"
-            android:layout_width="wrap_content"
+        <org.secu3.android.ui.parameters.views.FloatParamView
+            android:id="@+id/injector_flow_rate"
+            android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            app:layout_constraintTop_toBottomOf="@id/engine_displacement_units"
+            app:layout_constraintTop_toBottomOf="@id/engine_displacement"
             app:layout_constraintStart_toStartOf="parent"
             android:layout_marginTop="16dp"
-            android:text="@string/injctr_par_injector_flow_rate_title"
-            />
-
-        <TextView
-            android:id="@+id/injector_flow_rate"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            app:layout_constraintTop_toTopOf="@id/injector_flow_rate_title"
-            app:layout_constraintEnd_toEndOf="parent"
-            android:textAppearance="?android:attr/textAppearanceLarge"
-            android:text="000"
-            />
-
-        <TextView
-            android:id="@+id/injector_flow_rate_units"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            app:layout_constraintTop_toBottomOf="@id/injector_flow_rate"
-            app:layout_constraintEnd_toEndOf="parent"
-            android:text="@string/units_cc_per_min"
+            app:title="@string/injctr_par_injector_flow_rate_title"
+            app:units="@string/units_cc_per_min"
+            app:float_value="0"
+            app:value_precision="two"
             />
 
         <!-- ************************************************************* -->
@@ -130,7 +91,7 @@
             style="@style/Widget.MaterialComponents.TextInputLayout.OutlinedBox.ExposedDropdownMenu"
             android:layout_width="0dp"
             android:layout_height="wrap_content"
-            app:layout_constraintTop_toBottomOf="@id/injector_flow_rate_units"
+            app:layout_constraintTop_toBottomOf="@id/injector_flow_rate"
             app:layout_constraintStart_toStartOf="parent"
             app:layout_constraintEnd_toEndOf="parent"
             android:layout_marginTop="16dp"
@@ -171,65 +132,29 @@
         <!-- ************************************************************* -->
 
 
-        <TextView
-            android:id="@+id/injector_timing_title"
-            android:layout_width="wrap_content"
+        <org.secu3.android.ui.parameters.views.IntParamView
+            android:id="@+id/injector_timing"
+            android:layout_width="match_parent"
             android:layout_height="wrap_content"
             app:layout_constraintTop_toBottomOf="@id/num_of_squirts_cycle_title"
             app:layout_constraintStart_toStartOf="parent"
             android:layout_marginTop="16dp"
-            android:text="@string/injctr_par_injection_timing_title"
-            />
-
-        <TextView
-            android:id="@+id/injector_timing"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            app:layout_constraintTop_toTopOf="@id/injector_timing_title"
-            app:layout_constraintEnd_toEndOf="parent"
-            android:textAppearance="?android:attr/textAppearanceLarge"
-            android:text="000"
-            />
-
-        <TextView
-            android:id="@+id/injector_timing_units"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            app:layout_constraintTop_toBottomOf="@id/injector_timing"
-            app:layout_constraintEnd_toEndOf="parent"
-            android:text="°CS"
+            app:title="@string/injctr_par_injection_timing_title"
+            app:units="@string/units_degrees_cs"
+            app:int_value="0"
             />
 
         <!-- ************************************************************* -->
 
-
-        <TextView
-            android:id="@+id/cranking_injection_timing_title"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            app:layout_constraintTop_toBottomOf="@id/injector_timing_units"
-            app:layout_constraintStart_toStartOf="parent"
-            android:layout_marginTop="16dp"
-            android:text="@string/injctr_par_cranking_injection_timing_title"
-            />
-
-        <TextView
+        <org.secu3.android.ui.parameters.views.IntParamView
             android:id="@+id/cranking_injection_timing"
-            android:layout_width="wrap_content"
+            android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            app:layout_constraintTop_toTopOf="@id/cranking_injection_timing_title"
-            app:layout_constraintEnd_toEndOf="parent"
-            android:textAppearance="?android:attr/textAppearanceLarge"
-            android:text="000"
-            />
-
-        <TextView
-            android:id="@+id/cranking_injection_timing_units"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            app:layout_constraintTop_toBottomOf="@id/cranking_injection_timing"
-            app:layout_constraintEnd_toEndOf="parent"
-            android:text="°CS"
+            app:layout_constraintTop_toBottomOf="@id/injector_timing"
+            app:layout_constraintStart_toStartOf="parent"
+            app:title="@string/injctr_par_cranking_injection_timing_title"
+            app:units="@string/units_degrees_cs"
+            app:int_value="0"
             />
 
         <!-- ************************************************************* -->
@@ -238,9 +163,10 @@
             android:id="@+id/use_map_injection_timing"
             android:layout_width="0dp"
             android:layout_height="wrap_content"
-            app:layout_constraintTop_toBottomOf="@id/cranking_injection_timing_units"
+            app:layout_constraintTop_toBottomOf="@id/cranking_injection_timing"
             app:layout_constraintStart_toStartOf="parent"
             app:layout_constraintEnd_toEndOf="parent"
+            android:layout_marginTop="16dp"
             android:text="@string/injctr_par_use_map_for_inj_timing_title"
             android:button="@null"
             android:drawableEnd="?android:attr/listChoiceIndicatorMultiple"
@@ -272,33 +198,17 @@
         <!-- ************************************************************* -->
 
 
-        <TextView
-            android:id="@+id/min_injection_pw_title"
-            android:layout_width="wrap_content"
+        <org.secu3.android.ui.parameters.views.FloatParamView
+            android:id="@+id/min_injection_pw"
+            android:layout_width="match_parent"
             android:layout_height="wrap_content"
             app:layout_constraintTop_toBottomOf="@id/inj_timing_specifies_title"
             app:layout_constraintStart_toStartOf="parent"
             android:layout_marginTop="16dp"
-            android:text="@string/injctr_par_min_inj_pw_title"
-            />
-
-        <TextView
-            android:id="@+id/min_injection_pw"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            app:layout_constraintTop_toTopOf="@id/min_injection_pw_title"
-            app:layout_constraintEnd_toEndOf="parent"
-            android:textAppearance="?android:attr/textAppearanceLarge"
-            android:text="000"
-            />
-
-        <TextView
-            android:id="@+id/min_injection_pw_units"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            app:layout_constraintTop_toBottomOf="@id/min_injection_pw"
-            app:layout_constraintEnd_toEndOf="parent"
-            android:text="@string/units_ms"
+            app:title="@string/injctr_par_min_inj_pw_title"
+            app:units="@string/units_ms"
+            app:float_value="0"
+            app:value_precision="two"
             />
 
         <!-- ************************************************************* -->
@@ -308,7 +218,7 @@
             android:id="@+id/second_fuel_title"
             android:layout_width="0dp"
             android:layout_height="wrap_content"
-            app:layout_constraintTop_toBottomOf="@id/min_injection_pw_units"
+            app:layout_constraintTop_toBottomOf="@id/min_injection_pw"
             app:layout_constraintStart_toStartOf="parent"
             android:layout_marginTop="16dp"
             android:text="@string/injctr_par_params_for_second_fuel_title"
@@ -320,34 +230,17 @@
         <!-- ************************************************************* -->
 
 
-
-        <TextView
-            android:id="@+id/injector_flow_rate_g_title"
-            android:layout_width="wrap_content"
+        <org.secu3.android.ui.parameters.views.FloatParamView
+            android:id="@+id/injector_flow_rate_g"
+            android:layout_width="match_parent"
             android:layout_height="wrap_content"
             app:layout_constraintTop_toBottomOf="@id/second_fuel_title"
             app:layout_constraintStart_toStartOf="parent"
             android:layout_marginTop="16dp"
-            android:text="@string/injctr_par_injector_flow_rate_title"
-            />
-
-        <TextView
-            android:id="@+id/injector_flow_rate_g"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            app:layout_constraintTop_toTopOf="@id/injector_flow_rate_g_title"
-            app:layout_constraintEnd_toEndOf="parent"
-            android:textAppearance="?android:attr/textAppearanceLarge"
-            android:text="000"
-            />
-
-        <TextView
-            android:id="@+id/injector_flow_rate_g_units"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            app:layout_constraintTop_toBottomOf="@id/injector_flow_rate_g"
-            app:layout_constraintEnd_toEndOf="parent"
-            android:text="@string/units_cc_per_min"
+            app:title="@string/injctr_par_injector_flow_rate_title"
+            app:units="@string/units_cc_per_min"
+            app:float_value="0"
+            app:value_precision="two"
             />
 
         <!-- ************************************************************* -->
@@ -358,7 +251,7 @@
             style="@style/Widget.MaterialComponents.TextInputLayout.OutlinedBox.ExposedDropdownMenu"
             android:layout_width="0dp"
             android:layout_height="wrap_content"
-            app:layout_constraintTop_toBottomOf="@id/injector_flow_rate_g_units"
+            app:layout_constraintTop_toBottomOf="@id/injector_flow_rate_g"
             app:layout_constraintStart_toStartOf="parent"
             app:layout_constraintEnd_toEndOf="parent"
             android:layout_marginTop="16dp"
@@ -398,66 +291,29 @@
 
         <!-- ************************************************************* -->
 
-
-        <TextView
-            android:id="@+id/injector_timing_g_title"
-            android:layout_width="wrap_content"
+        <org.secu3.android.ui.parameters.views.IntParamView
+            android:id="@+id/injector_timing_g"
+            android:layout_width="match_parent"
             android:layout_height="wrap_content"
             app:layout_constraintTop_toBottomOf="@id/num_of_squirts_cycle_g_title"
             app:layout_constraintStart_toStartOf="parent"
             android:layout_marginTop="16dp"
-            android:text="@string/injctr_par_injection_timing_title"
-            />
-
-        <TextView
-            android:id="@+id/injector_timing_g"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            app:layout_constraintTop_toTopOf="@id/injector_timing_g_title"
-            app:layout_constraintEnd_toEndOf="parent"
-            android:textAppearance="?android:attr/textAppearanceLarge"
-            android:text="000"
-            />
-
-        <TextView
-            android:id="@+id/injector_timing_g_units"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            app:layout_constraintTop_toBottomOf="@id/injector_timing_g"
-            app:layout_constraintEnd_toEndOf="parent"
-            android:text="°CS"
+            app:title="@string/injctr_par_injection_timing_title"
+            app:units="@string/units_degrees_cs"
+            app:int_value="0"
             />
 
         <!-- ************************************************************* -->
 
-
-        <TextView
-            android:id="@+id/cranking_injection_timing_g_title"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            app:layout_constraintTop_toBottomOf="@id/injector_timing_g_units"
-            app:layout_constraintStart_toStartOf="parent"
-            android:layout_marginTop="16dp"
-            android:text="@string/injctr_par_cranking_injection_timing_title"
-            />
-
-        <TextView
+        <org.secu3.android.ui.parameters.views.IntParamView
             android:id="@+id/cranking_injection_timing_g"
-            android:layout_width="wrap_content"
+            android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            app:layout_constraintTop_toTopOf="@id/cranking_injection_timing_g_title"
-            app:layout_constraintEnd_toEndOf="parent"
-            android:textAppearance="?android:attr/textAppearanceLarge"
-            android:text="000"
-            />
-
-        <TextView
-            android:id="@+id/cranking_injection_timing_g_units"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            app:layout_constraintTop_toBottomOf="@id/cranking_injection_timing_g"
-            app:layout_constraintEnd_toEndOf="parent"
-            android:text="°CS"
+            app:layout_constraintTop_toBottomOf="@id/injector_timing_g"
+            app:layout_constraintStart_toStartOf="parent"
+            app:title="@string/injctr_par_cranking_injection_timing_title"
+            app:units="@string/units_degrees_cs"
+            app:int_value="0"
             />
 
         <!-- ************************************************************* -->
@@ -466,9 +322,10 @@
             android:id="@+id/use_map_injection_timing_g"
             android:layout_width="0dp"
             android:layout_height="wrap_content"
-            app:layout_constraintTop_toBottomOf="@id/cranking_injection_timing_g_units"
+            app:layout_constraintTop_toBottomOf="@id/cranking_injection_timing_g"
             app:layout_constraintStart_toStartOf="parent"
             app:layout_constraintEnd_toEndOf="parent"
+            android:layout_marginTop="16dp"
             android:text="@string/injctr_par_use_map_for_inj_timing_title"
             android:button="@null"
             android:drawableEnd="?android:attr/listChoiceIndicatorMultiple"
@@ -500,33 +357,17 @@
         <!-- ************************************************************* -->
 
 
-        <TextView
-            android:id="@+id/min_injection_pw_g_title"
-            android:layout_width="wrap_content"
+        <org.secu3.android.ui.parameters.views.FloatParamView
+            android:id="@+id/min_injection_pw_g"
+            android:layout_width="match_parent"
             android:layout_height="wrap_content"
             app:layout_constraintTop_toBottomOf="@id/inj_timing_specifies_g_title"
             app:layout_constraintStart_toStartOf="parent"
             android:layout_marginTop="16dp"
-            android:text="@string/injctr_par_min_inj_pw_title"
-            />
-
-        <TextView
-            android:id="@+id/min_injection_pw_g"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            app:layout_constraintTop_toTopOf="@id/min_injection_pw_g_title"
-            app:layout_constraintEnd_toEndOf="parent"
-            android:textAppearance="?android:attr/textAppearanceLarge"
-            android:text="000"
-            />
-
-        <TextView
-            android:id="@+id/min_injection_pw_g_units"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            app:layout_constraintTop_toBottomOf="@id/min_injection_pw_g"
-            app:layout_constraintEnd_toEndOf="parent"
-            android:text="@string/units_ms"
+            app:title="@string/injctr_par_min_inj_pw_title"
+            app:units="@string/units_ms"
+            app:float_value="0"
+            app:value_precision="two"
             />
 
         <!-- ************************************************************* -->
@@ -535,7 +376,7 @@
             android:id="@+id/additional_corrections_gas_eq"
             android:layout_width="0dp"
             android:layout_height="wrap_content"
-            app:layout_constraintTop_toBottomOf="@id/min_injection_pw_g_units"
+            app:layout_constraintTop_toBottomOf="@id/min_injection_pw_g"
             app:layout_constraintStart_toStartOf="parent"
             app:layout_constraintEnd_toEndOf="parent"
             android:text="@string/injctr_par_additional_corrections_title"

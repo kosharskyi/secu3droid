@@ -32,17 +32,16 @@
     android:layout_height="match_parent"
     tools:context=".ui.parameters.pages.FuelCutoffkFragment">
 
-    <androidx.constraintlayout.widget.ConstraintLayout
+    <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
+        android:orientation="vertical"
         android:padding="16dp">
 
         <org.secu3.android.ui.parameters.views.IntParamView
             android:id="@+id/idle_cutoff_lower_thrd"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            app:layout_constraintTop_toTopOf="parent"
-            app:layout_constraintStart_toStartOf="parent"
             app:title="@string/carbur_overrun_lower_threshold_gasoline_title"
             app:units="@string/units_rpm"
             app:int_value="0"
@@ -55,8 +54,6 @@
             android:id="@+id/idle_cutoff_upper_thrd"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            app:layout_constraintTop_toBottomOf="@id/idle_cutoff_lower_thrd"
-            app:layout_constraintStart_toStartOf="parent"
             app:title="@string/carbur_overrun_upper_threshold_gasoline_title"
             app:units="@string/units_rpm"
             app:int_value="0"
@@ -70,8 +67,6 @@
             android:id="@+id/idle_cutoff_lower_thrd_gas"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            app:layout_constraintTop_toBottomOf="@id/idle_cutoff_upper_thrd"
-            app:layout_constraintStart_toStartOf="parent"
             android:layout_marginTop="16dp"
             app:title="@string/carbur_overrun_lower_threshold_gas_title"
             app:units="@string/units_rpm"
@@ -85,8 +80,6 @@
             android:id="@+id/idle_cutoff_upper_thrd_gas"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            app:layout_constraintTop_toBottomOf="@id/idle_cutoff_lower_thrd_gas"
-            app:layout_constraintStart_toStartOf="parent"
             app:title="@string/carbur_overrun_upper_threshold_gas_title"
             app:units="@string/units_rpm"
             app:int_value="0"
@@ -99,8 +92,6 @@
             android:id="@+id/cutoff_delay"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            app:layout_constraintTop_toBottomOf="@id/idle_cutoff_upper_thrd_gas"
-            app:layout_constraintStart_toStartOf="parent"
             android:layout_marginTop="16dp"
             app:title="@string/carbur_overrun_valve_delay_title"
             app:units="@string/units_sec"
@@ -115,8 +106,6 @@
             android:id="@+id/power_valve_turn_on_thrd"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            app:layout_constraintTop_toBottomOf="@id/cutoff_delay"
-            app:layout_constraintStart_toStartOf="parent"
             android:layout_marginTop="16dp"
             app:title="@string/carbur_epm_valve_on_pressure_title"
             app:units="dis.kPa"
@@ -131,8 +120,6 @@
             android:id="@+id/tps_threshold"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            app:layout_constraintTop_toBottomOf="@id/power_valve_turn_on_thrd"
-            app:layout_constraintStart_toStartOf="parent"
             app:title="@string/carbur_tps_threshold_title"
             app:units="@string/units_percents"
             app:float_value="0"
@@ -144,11 +131,8 @@
 
         <CheckBox
             android:id="@+id/inversion_of_throttle_position_switch"
-            android:layout_width="0dp"
+            android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            app:layout_constraintTop_toBottomOf="@id/tps_threshold"
-            app:layout_constraintStart_toStartOf="parent"
-            app:layout_constraintEnd_toEndOf="parent"
             android:layout_marginTop="16dp"
             android:button="@null"
             android:drawableEnd="?android:attr/listChoiceIndicatorMultiple"
@@ -161,9 +145,6 @@
             android:id="@+id/fuel_cut_map_threshold"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            app:layout_constraintTop_toBottomOf="@id/inversion_of_throttle_position_switch"
-            app:layout_constraintStart_toStartOf="parent"
-            android:layout_marginTop="16dp"
             app:title="@string/carbur_fuelcut_map_threshold_title"
             app:units="@string/units_pressure_kpa"
             app:float_value="0"
@@ -177,8 +158,6 @@
             android:id="@+id/fuel_cut_cts_threshold"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            app:layout_constraintTop_toBottomOf="@id/fuel_cut_map_threshold"
-            app:layout_constraintStart_toStartOf="parent"
             app:title="@string/carbur_fuelcut_temp_threshold_title"
             app:units="@string/units_pressure_kpa"
             app:float_value="0"
@@ -191,8 +170,6 @@
             android:id="@+id/engine_protection"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            app:layout_constraintTop_toBottomOf="@id/fuel_cut_cts_threshold"
-            app:layout_constraintStart_toStartOf="parent"
             android:layout_marginTop="16dp"
             android:textSize="16sp"
             android:fontFamily="sans-serif-medium"
@@ -207,8 +184,6 @@
             android:id="@+id/rev_limiting_lower_thrd"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            app:layout_constraintTop_toBottomOf="@id/engine_protection"
-            app:layout_constraintStart_toStartOf="parent"
             android:layout_marginTop="8dp"
             app:title="@string/carbur_rev_limitting_lower_threshold_title"
             app:units="@string/units_rpm"
@@ -222,13 +197,11 @@
             android:id="@+id/rev_limiting_upper_thrd"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            app:layout_constraintTop_toBottomOf="@id/rev_limiting_lower_thrd"
-            app:layout_constraintStart_toStartOf="parent"
             app:title="@string/carbur_rev_limitting_upper_threshold_title"
             app:units="@string/units_rpm"
             app:int_value="0"
             />
 
-    </androidx.constraintlayout.widget.ConstraintLayout>
+    </LinearLayout>
 
 </ScrollView>
