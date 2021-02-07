@@ -32,9 +32,10 @@
     tools:context=".ui.parameters.pages.MiscellaneousFragment"
     >
 
-    <androidx.constraintlayout.widget.ConstraintLayout
+    <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
+        android:orientation="vertical"
         android:padding="16dp"
         >
 
@@ -42,12 +43,8 @@
             android:id="@+id/data_transmition_speed_title"
             android:theme="@style/Theme.MaterialComponents.DayNight.NoActionBar"
             style="@style/Widget.MaterialComponents.TextInputLayout.OutlinedBox.ExposedDropdownMenu"
-            android:layout_width="0dp"
+            android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            app:layout_constraintTop_toTopOf="parent"
-            app:layout_constraintStart_toStartOf="parent"
-            app:layout_constraintEnd_toEndOf="parent"
-            android:layout_marginTop="16dp"
             android:hint="@string/miscel_baudrate_title">
 
             <AutoCompleteTextView
@@ -61,33 +58,14 @@
 
         <!-- ************************************************************* -->
 
-        <TextView
-            android:id="@+id/data_packets_transmission_period_title"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            app:layout_constraintTop_toBottomOf="@id/data_transmition_speed_title"
-            app:layout_constraintStart_toStartOf="parent"
-            android:layout_marginTop="16dp"
-            android:text="@string/miscel_period_title"
-            />
-
-        <TextView
+        <org.secu3.android.ui.parameters.views.IntParamView
             android:id="@+id/data_packets_transmission_period"
-            android:layout_width="wrap_content"
+            android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            app:layout_constraintTop_toTopOf="@id/data_packets_transmission_period_title"
-            app:layout_constraintEnd_toEndOf="parent"
-            android:textAppearance="?android:attr/textAppearanceLarge"
-            android:text="000"
-            />
-
-        <TextView
-            android:id="@+id/data_packets_transmission_period_units"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            app:layout_constraintTop_toBottomOf="@id/data_packets_transmission_period"
-            app:layout_constraintEnd_toEndOf="parent"
-            android:text="@string/units_ms"
+            android:layout_marginTop="16dp"
+            app:title="@string/miscel_period_title"
+            app:units="@string/units_ms"
+            app:int_value="0"
             />
 
 
@@ -95,11 +73,8 @@
 
         <CheckBox
             android:id="@+id/enable_cutoff_of_ignition_checkbox"
-            android:layout_width="0dp"
+            android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            app:layout_constraintTop_toBottomOf="@id/data_packets_transmission_period_units"
-            app:layout_constraintStart_toStartOf="parent"
-            app:layout_constraintEnd_toEndOf="parent"
             android:button="@null"
             android:drawableEnd="?android:attr/listChoiceIndicatorMultiple"
             android:text="@string/miscel_ignition_cutoff_title"
@@ -107,96 +82,40 @@
 
         <!-- ************************************************************* -->
 
-        <TextView
-            android:id="@+id/enable_cutoff_of_ignition_title"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            app:layout_constraintTop_toBottomOf="@id/enable_cutoff_of_ignition_checkbox"
-            app:layout_constraintStart_toStartOf="parent"
-            android:layout_marginTop="16dp"
-            android:text="@string/miscel_ignition_cutoff_rpm_title"
-            />
-
-        <TextView
+        <org.secu3.android.ui.parameters.views.IntParamView
             android:id="@+id/enable_cutoff_of_ignition"
-            android:layout_width="wrap_content"
+            android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            app:layout_constraintTop_toTopOf="@id/enable_cutoff_of_ignition_title"
-            app:layout_constraintEnd_toEndOf="parent"
-            android:textAppearance="?android:attr/textAppearanceLarge"
-            android:text="000"
-            />
-
-        <TextView
-            android:id="@+id/enable_cutoff_of_ignition_units"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            app:layout_constraintTop_toBottomOf="@id/enable_cutoff_of_ignition"
-            app:layout_constraintEnd_toEndOf="parent"
-            android:text="@string/units_rpm"
-            />
-
-
-        <!-- ************************************************************* -->
-
-        <TextView
-            android:id="@+id/start_rel_to_tdc_title"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            app:layout_constraintTop_toBottomOf="@id/enable_cutoff_of_ignition_units"
-            app:layout_constraintStart_toStartOf="parent"
             android:layout_marginTop="16dp"
-            android:text="@string/miscel_start_rel_to_tdc_title"
-            />
-
-        <TextView
-            android:id="@+id/start_rel_to_tdc"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            app:layout_constraintTop_toTopOf="@id/start_rel_to_tdc_title"
-            app:layout_constraintEnd_toEndOf="parent"
-            android:textAppearance="?android:attr/textAppearanceLarge"
-            android:text="000"
-            />
-
-        <TextView
-            android:id="@+id/start_rel_to_tdc_units"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            app:layout_constraintTop_toBottomOf="@id/start_rel_to_tdc"
-            app:layout_constraintEnd_toEndOf="parent"
-            android:text=""
+            app:title="@string/miscel_ignition_cutoff_rpm_title"
+            app:units="@string/units_rpm"
+            app:int_value="0"
             />
 
 
         <!-- ************************************************************* -->
 
-        <TextView
-            android:id="@+id/duration_title"
-            android:layout_width="wrap_content"
+        <org.secu3.android.ui.parameters.views.IntParamView
+            android:id="@+id/start_rel_to_tdc"
+            android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            app:layout_constraintTop_toBottomOf="@id/start_rel_to_tdc_units"
-            app:layout_constraintStart_toStartOf="parent"
-            android:text="@string/miscel_hall_output_delay_title"
+            android:layout_marginTop="16dp"
+            app:title="@string/miscel_start_rel_to_tdc_title"
+            app:units="@string/units_degrees_cs"
+            app:int_value="0"
             />
 
-        <TextView
+
+        <!-- ************************************************************* -->
+
+        <org.secu3.android.ui.parameters.views.IntParamView
             android:id="@+id/duration"
-            android:layout_width="wrap_content"
+            android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            app:layout_constraintTop_toTopOf="@id/duration_title"
-            app:layout_constraintEnd_toEndOf="parent"
-            android:textAppearance="?android:attr/textAppearanceLarge"
-            android:text="000"
-            />
-
-        <TextView
-            android:id="@+id/duration_units"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            app:layout_constraintTop_toBottomOf="@id/duration"
-            app:layout_constraintEnd_toEndOf="parent"
-            android:text=""
+            android:layout_marginTop="16dp"
+            app:title="@string/miscel_hall_output_delay_title"
+            app:units="@string/units_degrees_cs"
+            app:int_value="0"
             />
 
 
@@ -204,10 +123,8 @@
 
         <CheckBox
             android:id="@+id/turn_off_fuel_pump_after_gas"
-            android:layout_width="0dp"
+            android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            app:layout_constraintTop_toBottomOf="@id/duration_units"
-            app:layout_constraintStart_toStartOf="parent"
             android:text="@string/miscel_turn_off_fuel_pump_after_switching_gas_title"
             />
 
@@ -215,10 +132,8 @@
 
         <CheckBox
             android:id="@+id/turn_off_injectors_after_gas"
-            android:layout_width="0dp"
+            android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            app:layout_constraintTop_toBottomOf="@id/turn_off_fuel_pump_after_gas"
-            app:layout_constraintStart_toStartOf="parent"
             android:text="@string/miscel_turn_off_injectors_pump_after_switching_gas_title"
             />
 
@@ -226,109 +141,48 @@
 
         <CheckBox
             android:id="@+id/turn_off_injectors_after_petrol"
-            android:layout_width="0dp"
+            android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            app:layout_constraintTop_toBottomOf="@id/turn_off_injectors_after_gas"
-            app:layout_constraintStart_toStartOf="parent"
             android:text="@string/miscel_turn_off_injectors_pump_after_switching_petrol_title"
             />
 
         <!-- ************************************************************* -->
 
-        <TextView
-            android:id="@+id/evap_starting_air_flow_title"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            app:layout_constraintTop_toBottomOf="@id/turn_off_injectors_after_petrol"
-            app:layout_constraintStart_toStartOf="parent"
-            android:layout_marginTop="16dp"
-            android:text="@string/miscel_evap_starting_air_flow_title"
-            />
-
-        <TextView
+        <org.secu3.android.ui.parameters.views.IntParamView
             android:id="@+id/evap_starting_air_flow"
-            android:layout_width="wrap_content"
+            android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            app:layout_constraintTop_toTopOf="@id/evap_starting_air_flow_title"
-            app:layout_constraintEnd_toEndOf="parent"
-            android:textAppearance="?android:attr/textAppearanceLarge"
-            android:text="000"
-            />
-
-        <TextView
-            android:id="@+id/evap_starting_air_flow_units"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            app:layout_constraintTop_toBottomOf="@id/evap_starting_air_flow"
-            app:layout_constraintEnd_toEndOf="parent"
-            android:text="RxL"
+            android:layout_marginTop="16dp"
+            app:title="@string/miscel_evap_starting_air_flow_title"
+            app:units="RxL"
+            app:int_value="0"
             />
 
         <!-- ************************************************************* -->
 
-        <TextView
-            android:id="@+id/evap_ending_air_flow_title"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            app:layout_constraintTop_toBottomOf="@id/evap_starting_air_flow_units"
-            app:layout_constraintStart_toStartOf="parent"
-            android:layout_marginTop="16dp"
-            android:text="@string/miscel_evap_ending_air_flow_title"
-            />
-
-        <TextView
+        <org.secu3.android.ui.parameters.views.IntParamView
             android:id="@+id/evap_ending_air_flow"
-            android:layout_width="wrap_content"
+            android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            app:layout_constraintTop_toTopOf="@id/evap_ending_air_flow_title"
-            app:layout_constraintEnd_toEndOf="parent"
-            android:textAppearance="?android:attr/textAppearanceLarge"
-            android:text="000"
-            />
-
-        <TextView
-            android:id="@+id/evap_ending_air_flow_units"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            app:layout_constraintTop_toBottomOf="@id/evap_ending_air_flow"
-            app:layout_constraintEnd_toEndOf="parent"
-            android:text="RxL"
-            />
-
-        <!-- ************************************************************* -->
-
-        <TextView
-            android:id="@+id/fuel_pump_working_time_title"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            app:layout_constraintTop_toBottomOf="@id/evap_ending_air_flow_units"
-            app:layout_constraintStart_toStartOf="parent"
             android:layout_marginTop="16dp"
-            android:text="@string/miscel_fuel_pump_working_time_title"
-            />
-
-        <TextView
-            android:id="@+id/fuel_pump_working_time"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            app:layout_constraintTop_toTopOf="@id/fuel_pump_working_time_title"
-            app:layout_constraintEnd_toEndOf="parent"
-            android:textAppearance="?android:attr/textAppearanceLarge"
-            android:text="0"
-            />
-
-        <TextView
-            android:id="@+id/fuel_pump_working_time_units"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            app:layout_constraintTop_toBottomOf="@id/fuel_pump_working_time"
-            app:layout_constraintEnd_toEndOf="parent"
-            android:text="@string/units_sec"
+            app:title="@string/miscel_evap_ending_air_flow_title"
+            app:units="RxL"
+            app:int_value="0"
             />
 
         <!-- ************************************************************* -->
 
+        <org.secu3.android.ui.parameters.views.FloatParamView
+            android:id="@+id/fuel_pump_working_time"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="16dp"
+            app:title="@string/miscel_fuel_pump_working_time_title"
+            app:units="@string/units_sec"
+            app:float_value="0"
+            app:value_precision="one"
+            />
 
-    </androidx.constraintlayout.widget.ConstraintLayout>
+    </LinearLayout>
 
 </ScrollView>

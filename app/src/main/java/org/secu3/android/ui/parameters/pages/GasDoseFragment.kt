@@ -67,12 +67,12 @@ class GasDoseFragment : Fragment() {
 
         mViewModel.gasDoseLiveData.observe(viewLifecycleOwner) {
             mBinding.apply {
-                numOfSmSteps.text = it.steps.toString()
-                stoichiometricRatio.text = it.lambdaStoichval.toString()
-                closingOnFuelCut.text = it.fcClosing.toString()
+                numOfSmSteps.value = it.steps
+                stoichiometricRatio.value = it.lambdaStoichval
+                closingOnFuelCut.value = it.fcClosing
 
-                correctionLimitPositive.text = "%.2f".format(it.lambdaCorrLimitP)
-                correctionLimitNegative.text = "%.2f".format(it.lambdaCorrLimitM)
+                correctionLimitPositive.value = it.lambdaCorrLimitP
+                correctionLimitNegative.value = it.lambdaCorrLimitM
 
                 frequencyOfPulses.setText(stepperPulses[it.freq], false)
 

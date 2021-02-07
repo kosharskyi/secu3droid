@@ -47,23 +47,23 @@ class FuelCutoffkFragment : Fragment() {
 
         mViewModel.carburLiveData.observe(viewLifecycleOwner) {
             mBinding.apply {
-                idleCutoffLowerThrd.text = it.ieLot.toString()
-                idleCutoffUpperThrd.text = it.ieHit.toString()
+                idleCutoffLowerThrd.value = it.ieLot
+                idleCutoffUpperThrd.value = it.ieHit
 
-                idleCutoffLowerThrdGas.text = it.ieLotG.toString()
-                idleCutoffUpperThrdGas.text = it.ieHitG.toString()
+                idleCutoffLowerThrdGas.value = it.ieLotG
+                idleCutoffUpperThrdGas.value = it.ieHitG
 
-                cutoffDelay.text = it.shutoffDelay.toString()
-                powerValveTurnOnThrd.text = it.feOnThresholds.toString()
-                tpsThreshold.text = it.tpsThreshold.toString()
+                cutoffDelay.value = it.shutoffDelay
+                powerValveTurnOnThrd.value = it.feOnThresholds
+                tpsThreshold.value = it.tpsThreshold
 
                 inversionOfThrottlePositionSwitch.isChecked = it.carbInvers > 0
 
-                fuelCutMapThreshold.text = it.fuelcutMapThrd.toString()
-                fuelCutCtsThreshold.text = it.fuelcutCtsThrd.toString()
+                fuelCutMapThreshold.value = it.fuelcutMapThrd
+                fuelCutCtsThreshold.value = it.fuelcutCtsThrd
 
-                revLimitingLowerThrd.text = it.revlimLot.toString()
-                revLimitingUpperThrd.text = it.revlimHit.toString()
+                revLimitingLowerThrd.value = it.revlimLot
+                revLimitingUpperThrd.value = it.revlimHit
             }
         }
     }

@@ -32,168 +32,78 @@
     tools:context=".ui.parameters.pages.AnglesFragment"
     android:padding="16dp">
 
-
-    <TextView
-        android:id="@+id/max_advance_angle_title"
-        android:layout_width="wrap_content"
+    <org.secu3.android.ui.parameters.views.FloatParamView
+        android:id="@+id/max_advance_angle"
+        android:layout_width="match_parent"
         android:layout_height="wrap_content"
         app:layout_constraintTop_toTopOf="parent"
         app:layout_constraintStart_toStartOf="parent"
-        android:text="@string/angles_max_angle_title"
+        app:title="@string/angles_max_angle_title"
+        app:units="@string/units_degree"
+        app:float_value="0"
+        app:value_precision="two"
         />
 
-    <TextView
-        android:id="@+id/max_advance_angle"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        app:layout_constraintTop_toTopOf="parent"
-        app:layout_constraintEnd_toEndOf="parent"
-        android:textAppearance="?android:attr/textAppearanceLarge"
-        android:text="00.00"
-        />
 
-    <TextView
-        android:id="@+id/max_advance_angle_units"
-        android:layout_width="wrap_content"
+    <org.secu3.android.ui.parameters.views.FloatParamView
+        android:id="@+id/min_advance_angle"
+        android:layout_width="match_parent"
         android:layout_height="wrap_content"
         app:layout_constraintTop_toBottomOf="@id/max_advance_angle"
-        app:layout_constraintEnd_toEndOf="parent"
-        android:text="@string/units_degree"
-        />
-
-
-    <!-- ************************************************************* -->
-
-    <TextView
-        android:id="@+id/min_advance_angle_title"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        app:layout_constraintTop_toBottomOf="@id/max_advance_angle_units"
         app:layout_constraintStart_toStartOf="parent"
-        android:text="@string/angles_min_angle_title"
+        app:title="@string/angles_min_angle_title"
+        app:units="@string/units_degree"
+        app:float_value="0"
+        app:value_precision="two"
         />
 
-    <TextView
-        android:id="@+id/min_advance_angle"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        app:layout_constraintTop_toTopOf="@id/min_advance_angle_title"
-        app:layout_constraintEnd_toEndOf="parent"
-        android:textAppearance="?android:attr/textAppearanceLarge"
-        android:text="00.00"
-        />
 
-    <TextView
-        android:id="@+id/min_advance_angle_units"
-        android:layout_width="wrap_content"
+    <org.secu3.android.ui.parameters.views.FloatParamView
+        android:id="@+id/angle_decrease_speed"
+        android:layout_width="match_parent"
         android:layout_height="wrap_content"
         app:layout_constraintTop_toBottomOf="@id/min_advance_angle"
-        app:layout_constraintEnd_toEndOf="parent"
-        android:text="@string/units_degree"
-        />
-
-
-    <!-- ************************************************************* -->
-
-    <TextView
-        android:id="@+id/angle_decrease_speed_title"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        app:layout_constraintTop_toBottomOf="@id/min_advance_angle_units"
         app:layout_constraintStart_toStartOf="parent"
-        android:text="@string/angles_angle_decrement_step_title"
+        android:layout_marginTop="16dp"
+        app:title="@string/angles_angle_decrement_step_title"
+        app:units="@string/units_degree_per_stroke"
+        app:float_value="0"
+        app:value_precision="two"
         />
 
-    <TextView
-        android:id="@+id/angle_decrease_speed"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        app:layout_constraintTop_toTopOf="@id/angle_decrease_speed_title"
-        app:layout_constraintEnd_toEndOf="parent"
-        android:textAppearance="?android:attr/textAppearanceLarge"
-        android:text="00.00"
-        />
 
-    <TextView
-        android:id="@+id/angle_decrease_speed_units"
-        android:layout_width="wrap_content"
+    <org.secu3.android.ui.parameters.views.FloatParamView
+        android:id="@+id/angle_increase_speed"
+        android:layout_width="match_parent"
         android:layout_height="wrap_content"
         app:layout_constraintTop_toBottomOf="@id/angle_decrease_speed"
-        app:layout_constraintEnd_toEndOf="parent"
-        android:text="@string/units_degree"
-        />
-
-
-    <!-- ************************************************************* -->
-
-    <TextView
-        android:id="@+id/angle_increase_speed_title"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        app:layout_constraintTop_toBottomOf="@id/angle_decrease_speed_units"
         app:layout_constraintStart_toStartOf="parent"
-        android:text="@string/angles_angle_increment_step_title"
+        app:title="@string/angles_angle_increment_step_title"
+        app:units="@string/units_degree_per_stroke"
+        app:float_value="0"
+        app:value_precision="two"
         />
 
-    <TextView
-        android:id="@+id/angle_increase_speed"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        app:layout_constraintTop_toTopOf="@id/angle_increase_speed_title"
-        app:layout_constraintEnd_toEndOf="parent"
-        android:textAppearance="?android:attr/textAppearanceLarge"
-        android:text="00.00"
-        />
 
-    <TextView
-        android:id="@+id/angle_increase_speed_units"
-        android:layout_width="wrap_content"
+    <org.secu3.android.ui.parameters.views.FloatParamView
+        android:id="@+id/octane_correction"
+        android:layout_width="match_parent"
         android:layout_height="wrap_content"
         app:layout_constraintTop_toBottomOf="@id/angle_increase_speed"
-        app:layout_constraintEnd_toEndOf="parent"
-        android:text="@string/units_degree"
-        />
-
-
-    <!-- ************************************************************* -->
-
-    <TextView
-        android:id="@+id/octane_correction_title"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        app:layout_constraintTop_toBottomOf="@id/angle_increase_speed_units"
         app:layout_constraintStart_toStartOf="parent"
-        android:text="@string/angles_octane_correction_title"
+        android:layout_marginTop="16dp"
+        app:title="@string/angles_octane_correction_title"
+        app:units="@string/units_degree"
+        app:float_value="0"
+        app:value_precision="two"
         />
-
-    <TextView
-        android:id="@+id/octane_correction"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        app:layout_constraintTop_toTopOf="@id/octane_correction_title"
-        app:layout_constraintEnd_toEndOf="parent"
-        android:textAppearance="?android:attr/textAppearanceLarge"
-        android:text="00.00"
-        />
-
-    <TextView
-        android:id="@+id/octane_correction_units"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        app:layout_constraintTop_toBottomOf="@id/octane_correction"
-        app:layout_constraintEnd_toEndOf="parent"
-        android:text="@string/units_degree"
-        />
-
-
-    <!-- ************************************************************* -->
 
 
     <CheckBox
         android:id="@+id/zero_adv_angle"
         android:layout_width="0dp"
         android:layout_height="wrap_content"
-        app:layout_constraintTop_toBottomOf="@id/octane_correction_units"
+        app:layout_constraintTop_toBottomOf="@id/octane_correction"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintEnd_toEndOf="parent"
         android:text="@string/angles_zero_angle_title"

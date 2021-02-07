@@ -21,45 +21,34 @@
               http://secu-3.org
               email: vetalkosharskiy@gmail.com
 */
-package org.secu3.android.ui.parameters.pages
+package org.secu3.android.ui.parameters.dialogs
 
 import android.os.Bundle
-import androidx.fragment.app.Fragment
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
-import androidx.fragment.app.activityViewModels
-import org.secu3.android.databinding.FragmentAnglesBinding
-import org.secu3.android.ui.parameters.ParamsViewModel
+import androidx.fragment.app.DialogFragment
+import org.secu3.android.databinding.FragmentParamsEditDialogBinding
 
 
-class AnglesFragment : Fragment() {
+const val ARG_CURRENT_VALUE = "current_value"
+const val ARG_PARAM_TITLE = "param_title"
+const val ARG_STEP_VALUE = "step_value"
 
-    private val mViewModel: ParamsViewModel by activityViewModels()
 
-    private lateinit var mBinding: FragmentAnglesBinding
+abstract class ParamBaseEditDialogFragment : DialogFragment() {
+
+    protected lateinit var mBinding: FragmentParamsEditDialogBinding
 
 
     override fun onCreateView(inflater: LayoutInflater, container: ViewGroup?, savedInstanceState: Bundle?): View? {
-        mBinding = FragmentAnglesBinding.inflate(inflater, container, false)
+        mBinding = FragmentParamsEditDialogBinding.inflate(inflater, container, false)
         return mBinding.root
     }
 
-    override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
-        super.onViewCreated(view, savedInstanceState)
 
-        mViewModel.anglesLiveData.observe(viewLifecycleOwner) {
-            mBinding.apply {
-                minAdvanceAngle.value = it.minAngle
-                maxAdvanceAngle.value = it.maxAngle
-
-                angleDecreaseSpeed.value = it.angleDecSpeed
-                angleIncreaseSpeed.value = it.angleIncSpeed
-
-                octaneCorrection.value = it.angleCorrection
-
-                zeroAdvAngle.isChecked = it.zeroAdvAngle > 0
-            }
-        }
+    override fun onStart() {
+        super.onStart()
+        dialog?.window?.setLayout(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT)
     }
 }

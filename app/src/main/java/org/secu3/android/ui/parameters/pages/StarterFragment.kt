@@ -49,14 +49,14 @@ class StarterFragment : Fragment() {
 
         mViewModel.starterLiveData.observe(viewLifecycleOwner) {
             mBinding.apply {
-                starterBlockingRpm.text = it.starterOff.toString()
-                switchCrankMapRpm.text = it.smapAbandon.toString()
-                timeCrankToRunPosition.text = it.crankToRunTime.toString()
-                afterstartEnrichmentTime.text = it.injAftstrStroke.toString()
-                primePulseCold.text = it.injPrimeCold.toString()
-                primePulseHot.text = it.injPrimeHot.toString()
-                primePulseDelay.text = it.injPrimeDelay.toString()
-                floodClearModeThreshold.text = it.injFloodclearTps.toString()
+                starterBlockingRpm.value = it.starterOff
+                switchCrankMapRpm.value = it.smapAbandon
+                timeCrankToRunPosition.value = it.crankToRunTime
+                afterstartEnrichmentTime.value = it.injAftstrStroke
+                primePulseCold.value = it.injPrimeCold
+                primePulseHot.value = it.injPrimeHot
+                primePulseDelay.value = it.injPrimeDelay
+                floodClearModeThreshold.value = it.injFloodclearTps
             }
         }
     }

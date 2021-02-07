@@ -47,29 +47,29 @@ class AdcErrorsCorrectionsFragment : Fragment() {
 
         mViewModel.adcCorrectionsLiveData.observe(viewLifecycleOwner) {
             mBinding.apply {
-                mapFactor.text = "%.3f".format(it.mapAdcFactor)
-                mapCorrection.text = "%.4f".format(it.mapAdcCorrection)
+                mapFactor.value = it.mapAdcFactor
+                mapCorrection.value = it.mapAdcCorrection
 
-                voltageFactor.text = "%.3f".format(it.ubatAdcFactor)
-                voltageCorrection.text = "%.4f".format(it.ubatAdcCorrection)
+                voltageFactor.value = it.ubatAdcFactor
+                voltageCorrection.value = it.ubatAdcCorrection
 
-                ctsFactor.text = "%.3f".format(it.tempAdcFactor)
-                ctsCorrection.text = "%.4f".format(it.tempAdcCorrection)
+                ctsFactor.value = it.tempAdcFactor
+                ctsCorrection.value = it.tempAdcCorrection
 
-                tpsFactor.text = "%.3f".format(it.tpsAdcFactor)
-                tpsCorrection.text = "%.4f".format(it.tpsAdcCorrection)
+                tpsFactor.value = it.tpsAdcFactor
+                tpsCorrection.value = it.tpsAdcCorrection
 
-                add1Factor.text = "%.3f".format(it.ai1AdcFactor)
-                add1Correction.text = "%.4f".format(it.ai1AdcCorrection)
+                add1Factor.value = it.ai1AdcFactor
+                add1Correction.value = it.ai1AdcCorrection
 
-                add2Factor.text = "%.3f".format(it.ai2AdcFactor)
-                add2Correction.text = "%.4f".format(it.ai2AdcCorrection)
+                add2Factor.value = it.ai2AdcFactor
+                add2Correction.value = it.ai2AdcCorrection
 
-                add3Factor.text = "%.3f".format(it.ai3AdcFactor)
-                add3Correction.text = "%.4f".format(it.ai3AdcCorrection)
+                add3Factor.value = it.ai3AdcFactor
+                add3Correction.value = it.ai3AdcCorrection
 
-                add4Factor.text = "%.3f".format(it.ai4AdcFactor)
-                add4Correction.text = "%.4f".format(it.ai4AdcCorrection)
+                add4Factor.value = it.ai4AdcFactor
+                add4Correction.value = it.ai4AdcCorrection
 
             }
         }

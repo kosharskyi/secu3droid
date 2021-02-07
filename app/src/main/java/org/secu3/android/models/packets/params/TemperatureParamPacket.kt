@@ -27,8 +27,8 @@ import org.secu3.android.models.packets.BaseOutputPacket
 
 data class TemperatureParamPacket(
     var tmpFlags: Int = 0,
-    var ventOn: Int = 0,
-    var ventOff: Int = 0,
+    var ventOn: Float = 0f,
+    var ventOff: Float = 0f,
     var ventPwmFrq: Int = 0,
     var condPvtOn: Float = 0f,
     var condPvtOff: Float = 0f,
@@ -42,8 +42,8 @@ data class TemperatureParamPacket(
 
         data += tmpFlags.toChar()
 
-        data += ventOn.times(TEMPERATURE_MULTIPLIER).write2Bytes(data)
-        data += ventOff.times(TEMPERATURE_MULTIPLIER).write2Bytes(data)
+        data += ventOn.times(TEMPERATURE_MULTIPLIER).toInt().write2Bytes(data)
+        data += ventOff.times(TEMPERATURE_MULTIPLIER).toInt().write2Bytes(data)
 
         data += 1f.div(ventPwmFrq.toFloat().div(524288)).toInt().write2Bytes(data)
 
@@ -74,8 +74,8 @@ data class TemperatureParamPacket(
         fun parse(data: String) = TemperatureParamPacket().apply {
 
             tmpFlags = data[2].toInt()
-            ventOn = data.get2Bytes(3) / TEMPERATURE_MULTIPLIER
-            ventOff = data.get2Bytes(5) / TEMPERATURE_MULTIPLIER
+            ventOn = data.get2Bytes(3).toFloat().div(TEMPERATURE_MULTIPLIER)
+            ventOff = data.get2Bytes(5).toFloat().div(TEMPERATURE_MULTIPLIER)
             data.get2Bytes(7).let {
                 ventPwmFrq = ((1f / it.toFloat()) * 524288).toInt()
             }
