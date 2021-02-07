@@ -71,35 +71,35 @@ class FuelInjectionFragment : Fragment() {
 
         mViewModel.fuelInjectionLiveData.observe(viewLifecycleOwner) {
             mBinding.apply {
-                engineDisplacement.text = it.cylDisp.toString()
+                engineDisplacement.value = it.cylDisp
 
-                injectorFlowRate.text = it.flowRate0.toString()
+                injectorFlowRate.value = it.flowRate0
 
                 injectionConfiguration.setText(mConfigList[it.config0], false)
                 numOfSquirtsCycle.setText(it.config0Pulses.toString(), false)
 
-                injectorTiming.text = it.timing0.toString()
-                crankingInjectionTiming.text = it.timingCrk0.toString()
+                injectorTiming.value = it.timing0
+                crankingInjectionTiming.value = it.timingCrk0
 
                 useMapInjectionTiming.isChecked = it.useTimingMap
                 injTimingSpecifies.setText(mInjTimingSpecifiesList[it.angleSpec0], false)
 
-                minInjectionPw.text = "%.1f".format(it.minPw0)
+                minInjectionPw.value = it.minPw0
 
 
 
-                injectorFlowRateG.text = it.flowRate1.toString()
+                injectorFlowRateG.value = it.flowRate1
 
                 injectionConfigurationG.setText(mConfigList[it.config1], false)
                 numOfSquirtsCycleG.setText(it.config1Pulses.toString(), false)
 
-                injectorTimingG.text = it.timing1.toString()
-                crankingInjectionTimingG.text = it.timingCrk1.toString()
+                injectorTimingG.value = it.timing1
+                crankingInjectionTimingG.value = it.timingCrk1
 
                 useMapInjectionTimingG.isChecked = it.useTimingMapG
                 injTimingSpecifiesG.setText(mInjTimingSpecifiesList[it.angleSpec1], false)
 
-                minInjectionPwG.text = "%.1f".format(it.minPw1)
+                minInjectionPwG.value = it.minPw1
 
 
                 additionalCorrectionsGasEq.isChecked = it.useAdditionalCorrections
