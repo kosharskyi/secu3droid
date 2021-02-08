@@ -24,6 +24,7 @@
 package org.secu3.android.models.packets.params
 
 import org.secu3.android.models.packets.BaseOutputPacket
+import kotlin.math.roundToInt
 
 data class InjctrParPacket(
 
@@ -81,7 +82,7 @@ data class InjctrParPacket(
 
         data += angleSpec.toChar()
 
-        data += fffConst.write2Bytes(data)
+        data += fffConst.toFloat().div(1000f*60f).times(65536f).toInt().write2Bytes(data)
         data += minPw.write2Bytes(data)
 
         data += END_PACKET_SYMBOL
@@ -172,7 +173,7 @@ data class InjctrParPacket(
 
             angleSpec = data[28].toInt()
 
-            fffConst = data.get2Bytes(29)
+            fffConst = data.get2Bytes(29).toFloat().div(65536f).times(1000*60).roundToInt()
             minPw = data.get2Bytes(31)
 
         }
