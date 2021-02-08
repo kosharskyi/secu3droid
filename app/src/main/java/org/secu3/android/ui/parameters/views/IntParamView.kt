@@ -12,7 +12,8 @@ class IntParamView @JvmOverloads constructor(
     context: Context, attrs: AttributeSet? = null, defStyleAttr: Int = 0
 ) : ConstraintLayout(context, attrs, defStyleAttr) {
 
-    private lateinit var mBinding: ViewBaseParameterBinding
+    private var mBinding: ViewBaseParameterBinding
+    private var mOnChangeValueListener: (Int) -> Unit = {}
 
     var title: String = ""
         set(value) {
@@ -30,7 +31,12 @@ class IntParamView @JvmOverloads constructor(
         set(value) {
             field = value
             mBinding.paramValue.text = value.toString()
+            mOnChangeValueListener(value)
         }
+
+    var step: Int = 0
+    var maxValue: Int = 0
+    var minValue: Int = 0
 
     init {
         val inflater = context.getSystemService(Context.LAYOUT_INFLATER_SERVICE) as LayoutInflater
@@ -46,9 +52,16 @@ class IntParamView @JvmOverloads constructor(
             getString(R.styleable.IntParamView_title)?.let { title = it }
             getString(R.styleable.IntParamView_units)?.let { units = it }
             value = getInt(R.styleable.IntParamView_int_value, 0)
+            step = getInt(R.styleable.IntParamView_int_step, 0)
+            minValue = getInt(R.styleable.IntParamView_int_min_value, 0)
+            maxValue = getInt(R.styleable.IntParamView_int_max_value, 0)
 
             recycle()
         }
+    }
+
+    fun addOnValueChangeListener(listener: (Int) -> Unit) {
+        mOnChangeValueListener = listener
     }
 
 }

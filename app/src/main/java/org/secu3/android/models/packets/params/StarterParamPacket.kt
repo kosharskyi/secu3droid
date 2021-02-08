@@ -63,11 +63,11 @@ data class StarterParamPacket(
         data += smapAbandon.write2Bytes(data)
         data += crankToRunTime.times(100).toInt().write2Bytes(data)
         data += injAftstrStroke.div(2).toChar()
-        data += injPrimeCold.times(10000).div(32).toChar()
-        data += injPrimeHot.times(10000).div(32).toChar()
+        data += injPrimeCold.times(10000).div(32).toInt().write2Bytes(data)
+        data += injPrimeHot.times(10000).div(32).toInt().write2Bytes(data)
         data += injPrimeDelay.times(10).toChar()
         data += injFloodclearTps.times(2).toChar()
-        data += injAftStrokes1.toChar()
+//        data += injAftStrokes1.toChar()
 
         data += END_PACKET_SYMBOL
         return data

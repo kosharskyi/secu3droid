@@ -12,7 +12,8 @@ class FloatParamView @JvmOverloads constructor(
     context: Context, attrs: AttributeSet? = null, defStyleAttr: Int = 0
 ) : ConstraintLayout(context, attrs, defStyleAttr) {
 
-    private lateinit var mBinding: ViewBaseParameterBinding
+    private var mBinding: ViewBaseParameterBinding
+    private var mOnChangeValueListener: (Float) -> Unit = {}
 
     var title: String = ""
         set(value) {
@@ -30,7 +31,12 @@ class FloatParamView @JvmOverloads constructor(
         set(value) {
             field = value
             showValue()
+            mOnChangeValueListener(value)
         }
+
+    var step: Float = 0f
+    var maxValue: Float = 0f
+    var minValue: Float = 0f
 
     var precision: Int = 0
 
@@ -48,6 +54,9 @@ class FloatParamView @JvmOverloads constructor(
             getString(R.styleable.FloatParamView_title)?.let { title = it }
             getString(R.styleable.FloatParamView_units)?.let { units = it }
             value = getFloat(R.styleable.FloatParamView_float_value, 0f)
+            step = getFloat(R.styleable.FloatParamView_float_step, 0f)
+            maxValue = getFloat(R.styleable.FloatParamView_float_max_value, 0f)
+            minValue = getFloat(R.styleable.FloatParamView_float_min_value, 0f)
             precision = getInt(R.styleable.FloatParamView_value_precision, 0)
 
             recycle()
@@ -64,4 +73,7 @@ class FloatParamView @JvmOverloads constructor(
         }
     }
 
+    fun addOnValueChangeListener(listener: (Float) -> Unit) {
+        mOnChangeValueListener = listener
+    }
 }

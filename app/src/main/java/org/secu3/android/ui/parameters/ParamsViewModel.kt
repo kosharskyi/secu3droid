@@ -28,6 +28,7 @@ import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.ViewModel
 import dagger.hilt.android.lifecycle.HiltViewModel
 import org.secu3.android.Secu3Repository
+import org.secu3.android.models.packets.BaseOutputPacket
 import org.secu3.android.models.packets.FirmwareInfoPacket
 import org.secu3.android.models.packets.FnName
 import org.secu3.android.models.packets.FnNameDatPacket
@@ -121,8 +122,9 @@ class ParamsViewModel @Inject constructor(private val secu3Repository: Secu3Repo
         get() = mGasDoseLiveData
 
 
-
-
+    fun sendPacket(packet: BaseOutputPacket) {
+        secu3Repository.sendOutPacket(packet)
+    }
 
 
 

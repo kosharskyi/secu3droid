@@ -48,6 +48,9 @@
             app:title="@string/starter_off_title"
             app:units="@string/units_rpm"
             app:int_value="0"
+            app:int_step="10"
+            app:int_max_value="6000"
+            app:int_min_value="0"
             />
 
         <org.secu3.android.ui.parameters.views.IntParamView
@@ -60,6 +63,9 @@
             app:title="@string/starter_map_abandon_title"
             app:units="@string/units_rpm"
             app:int_value="0"
+            app:int_step="10"
+            app:int_max_value="6000"
+            app:int_min_value="0"
             />
 
         <org.secu3.android.ui.parameters.views.FloatParamView
@@ -73,6 +79,9 @@
             app:units="@string/units_sec"
             app:float_value="0"
             app:value_precision="two"
+            app:float_step="0.1"
+            app:float_max_value="99"
+            app:float_min_value="0.1"
             />
 
         <org.secu3.android.ui.parameters.views.IntParamView
@@ -85,6 +94,9 @@
             app:title="@string/starter_dat_afterstart_enrichment_strokes_title"
             app:units="num"
             app:int_value="0"
+            app:int_step="2"
+            app:int_max_value="510"
+            app:int_min_value="1"
             />
 
         <org.secu3.android.ui.parameters.views.FloatParamView
@@ -98,6 +110,9 @@
             app:units="@string/units_ms"
             app:float_value="0"
             app:value_precision="one"
+            app:float_step="0.1"
+            app:float_max_value="100"
+            app:float_min_value="0.0"
             />
 
         <org.secu3.android.ui.parameters.views.FloatParamView
@@ -111,6 +126,9 @@
             app:units="@string/units_ms"
             app:float_value="0"
             app:value_precision="one"
+            app:float_step="0.1"
+            app:float_max_value="100"
+            app:float_min_value="0.0"
             />
 
         <org.secu3.android.ui.parameters.views.FloatParamView
@@ -124,6 +142,9 @@
             app:units="@string/units_sec"
             app:float_value="0"
             app:value_precision="one"
+            app:float_step="0.1"
+            app:float_max_value="25"
+            app:float_min_value="0.0"
             />
 
         <org.secu3.android.ui.parameters.views.FloatParamView
@@ -137,6 +158,9 @@
             app:units="@string/units_percents"
             app:float_value="0"
             app:value_precision="one"
+            app:float_step="0.5"
+            app:float_max_value="100"
+            app:float_min_value="0.0"
             />
 
 
