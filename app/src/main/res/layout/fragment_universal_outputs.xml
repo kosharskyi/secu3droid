@@ -82,64 +82,32 @@
 
             <!-- ************************************************************* -->
 
-            <TextView
-                android:id="@+id/output1_condition1_on_title"
-                android:layout_width="wrap_content"
+            <org.secu3.android.ui.parameters.views.FloatParamView
+                android:id="@+id/output1_condition1_on"
+                android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 app:layout_constraintTop_toBottomOf="@id/output1_condition1_inversion"
                 app:layout_constraintStart_toStartOf="parent"
                 android:layout_marginTop="16dp"
-                android:text="@string/unioutput1_condition1_on_value_title"
-                />
-
-            <TextView
-                android:id="@+id/output1_condition1_on"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                app:layout_constraintTop_toTopOf="@id/output1_condition1_on_title"
-                app:layout_constraintEnd_toEndOf="parent"
-                android:textAppearance="?android:attr/textAppearanceLarge"
-                android:text="000"
-                />
-
-            <TextView
-                android:id="@+id/output1_condition1_on_units"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                app:layout_constraintTop_toBottomOf="@id/output1_condition1_on"
-                app:layout_constraintEnd_toEndOf="parent"
-                android:text=""
+                app:title="@string/unioutput1_condition1_on_value_title"
+                app:units=""
+                app:float_value="0"
+                app:value_precision="two"
                 />
 
             <!-- ************************************************************* -->
 
-            <TextView
-                android:id="@+id/output1_condition1_off_title"
-                android:layout_width="wrap_content"
+            <org.secu3.android.ui.parameters.views.FloatParamView
+                android:id="@+id/output1_condition1_off"
+                android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                app:layout_constraintTop_toBottomOf="@id/output1_condition1_on_units"
+                app:layout_constraintTop_toBottomOf="@id/output1_condition1_on"
                 app:layout_constraintStart_toStartOf="parent"
                 android:layout_marginTop="16dp"
-                android:text="@string/unioutput1_condition1_off_value_title"
-                />
-
-            <TextView
-                android:id="@+id/output1_condition1_off"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                app:layout_constraintTop_toTopOf="@id/output1_condition1_off_title"
-                app:layout_constraintEnd_toEndOf="parent"
-                android:textAppearance="?android:attr/textAppearanceLarge"
-                android:text="000"
-                />
-
-            <TextView
-                android:id="@+id/output1_condition1_off_units"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                app:layout_constraintTop_toBottomOf="@id/output1_condition1_off"
-                app:layout_constraintEnd_toEndOf="parent"
-                android:text=""
+                app:title="@string/unioutput1_condition1_off_value_title"
+                app:units=""
+                app:float_value="0"
+                app:value_precision="two"
                 />
 
             <!-- ************************************************************* -->
@@ -150,7 +118,7 @@
                 style="@style/Widget.MaterialComponents.TextInputLayout.OutlinedBox.ExposedDropdownMenu"
                 android:layout_width="0dp"
                 android:layout_height="wrap_content"
-                app:layout_constraintTop_toBottomOf="@id/output1_condition1_off_units"
+                app:layout_constraintTop_toBottomOf="@id/output1_condition1_off"
                 app:layout_constraintStart_toStartOf="parent"
                 app:layout_constraintEnd_toEndOf="parent"
                 android:layout_marginTop="16dp"
@@ -204,67 +172,33 @@
 
             <!-- ************************************************************* -->
 
-            <TextView
-                android:id="@+id/output1_condition2_on_title"
-                android:layout_width="wrap_content"
+            <org.secu3.android.ui.parameters.views.FloatParamView
+                android:id="@+id/output1_condition2_on"
+                android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 app:layout_constraintTop_toBottomOf="@id/output1_condition2_inversion"
                 app:layout_constraintStart_toStartOf="parent"
                 android:layout_marginTop="16dp"
-                android:text="@string/unioutput1_condition1_on_value_title"
+                app:title="@string/unioutput1_condition1_on_value_title"
+                app:units=""
+                app:float_value="0"
+                app:value_precision="two"
                 />
 
-            <TextView
-                android:id="@+id/output1_condition2_on"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                app:layout_constraintTop_toTopOf="@id/output1_condition2_on_title"
-                app:layout_constraintEnd_toEndOf="parent"
-                android:textAppearance="?android:attr/textAppearanceLarge"
-                android:text="000"
-                />
+            <!-- ************************************************************* -->
 
-            <TextView
-                android:id="@+id/output1_condition2_on_units"
-                android:layout_width="wrap_content"
+            <org.secu3.android.ui.parameters.views.FloatParamView
+                android:id="@+id/output1_condition2_off"
+                android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 app:layout_constraintTop_toBottomOf="@id/output1_condition2_on"
-                app:layout_constraintEnd_toEndOf="parent"
-                android:text=""
-                />
-
-            <!-- ************************************************************* -->
-
-            <TextView
-                android:id="@+id/output1_condition2_off_title"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                app:layout_constraintTop_toBottomOf="@id/output1_condition2_on_units"
                 app:layout_constraintStart_toStartOf="parent"
                 android:layout_marginTop="16dp"
-                android:text="@string/unioutput1_condition1_off_value_title"
+                app:title="@string/unioutput1_condition1_off_value_title"
+                app:units=""
+                app:float_value="0"
+                app:value_precision="two"
                 />
-
-            <TextView
-                android:id="@+id/output1_condition2_off"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                app:layout_constraintTop_toTopOf="@id/output1_condition2_off_title"
-                app:layout_constraintEnd_toEndOf="parent"
-                android:textAppearance="?android:attr/textAppearanceLarge"
-                android:text="000"
-                />
-
-            <TextView
-                android:id="@+id/output1_condition2_off_units"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                app:layout_constraintTop_toBottomOf="@id/output1_condition2_off"
-                app:layout_constraintEnd_toEndOf="parent"
-                android:text=""
-                />
-
-            <!-- ************************************************************* -->
 
         </androidx.constraintlayout.widget.ConstraintLayout>
 
@@ -332,64 +266,32 @@
 
             <!-- ************************************************************* -->
 
-            <TextView
-                android:id="@+id/output2_condition1_on_title"
-                android:layout_width="wrap_content"
+            <org.secu3.android.ui.parameters.views.FloatParamView
+                android:id="@+id/output2_condition1_on"
+                android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 app:layout_constraintTop_toBottomOf="@id/output2_condition1_inversion"
                 app:layout_constraintStart_toStartOf="parent"
                 android:layout_marginTop="16dp"
-                android:text="@string/unioutput1_condition1_on_value_title"
-                />
-
-            <TextView
-                android:id="@+id/output2_condition1_on"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                app:layout_constraintTop_toTopOf="@id/output2_condition1_on_title"
-                app:layout_constraintEnd_toEndOf="parent"
-                android:textAppearance="?android:attr/textAppearanceLarge"
-                android:text="000"
-                />
-
-            <TextView
-                android:id="@+id/output2_condition1_on_units"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                app:layout_constraintTop_toBottomOf="@id/output2_condition1_on"
-                app:layout_constraintEnd_toEndOf="parent"
-                android:text=""
+                app:title="@string/unioutput1_condition1_on_value_title"
+                app:units=""
+                app:float_value="0"
+                app:value_precision="two"
                 />
 
             <!-- ************************************************************* -->
 
-            <TextView
-                android:id="@+id/output2_condition1_off_title"
-                android:layout_width="wrap_content"
+            <org.secu3.android.ui.parameters.views.FloatParamView
+                android:id="@+id/output2_condition1_off"
+                android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                app:layout_constraintTop_toBottomOf="@id/output2_condition1_on_units"
+                app:layout_constraintTop_toBottomOf="@id/output2_condition1_on"
                 app:layout_constraintStart_toStartOf="parent"
                 android:layout_marginTop="16dp"
-                android:text="@string/unioutput1_condition1_off_value_title"
-                />
-
-            <TextView
-                android:id="@+id/output2_condition1_off"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                app:layout_constraintTop_toTopOf="@id/output2_condition1_off_title"
-                app:layout_constraintEnd_toEndOf="parent"
-                android:textAppearance="?android:attr/textAppearanceLarge"
-                android:text="000"
-                />
-
-            <TextView
-                android:id="@+id/output2_condition1_off_units"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                app:layout_constraintTop_toBottomOf="@id/output2_condition1_off"
-                app:layout_constraintEnd_toEndOf="parent"
-                android:text=""
+                app:title="@string/unioutput1_condition1_off_value_title"
+                app:units=""
+                app:float_value="0"
+                app:value_precision="two"
                 />
 
             <!-- ************************************************************* -->
@@ -400,7 +302,7 @@
                 style="@style/Widget.MaterialComponents.TextInputLayout.OutlinedBox.ExposedDropdownMenu"
                 android:layout_width="0dp"
                 android:layout_height="wrap_content"
-                app:layout_constraintTop_toBottomOf="@id/output2_condition1_off_units"
+                app:layout_constraintTop_toBottomOf="@id/output2_condition1_off"
                 app:layout_constraintStart_toStartOf="parent"
                 app:layout_constraintEnd_toEndOf="parent"
                 android:layout_marginTop="16dp"
@@ -454,67 +356,33 @@
 
             <!-- ************************************************************* -->
 
-            <TextView
-                android:id="@+id/output2_condition2_on_title"
-                android:layout_width="wrap_content"
+            <org.secu3.android.ui.parameters.views.FloatParamView
+                android:id="@+id/output2_condition2_on"
+                android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 app:layout_constraintTop_toBottomOf="@id/output2_condition2_inversion"
                 app:layout_constraintStart_toStartOf="parent"
                 android:layout_marginTop="16dp"
-                android:text="@string/unioutput1_condition1_on_value_title"
+                app:title="@string/unioutput1_condition1_on_value_title"
+                app:units=""
+                app:float_value="0"
+                app:value_precision="two"
                 />
 
-            <TextView
-                android:id="@+id/output2_condition2_on"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                app:layout_constraintTop_toTopOf="@id/output2_condition2_on_title"
-                app:layout_constraintEnd_toEndOf="parent"
-                android:textAppearance="?android:attr/textAppearanceLarge"
-                android:text="000"
-                />
+            <!-- ************************************************************* -->
 
-            <TextView
-                android:id="@+id/output2_condition2_on_units"
-                android:layout_width="wrap_content"
+            <org.secu3.android.ui.parameters.views.FloatParamView
+                android:id="@+id/output2_condition2_off"
+                android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 app:layout_constraintTop_toBottomOf="@id/output2_condition2_on"
-                app:layout_constraintEnd_toEndOf="parent"
-                android:text=""
-                />
-
-            <!-- ************************************************************* -->
-
-            <TextView
-                android:id="@+id/output2_condition2_off_title"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                app:layout_constraintTop_toBottomOf="@id/output2_condition2_on_units"
                 app:layout_constraintStart_toStartOf="parent"
                 android:layout_marginTop="16dp"
-                android:text="@string/unioutput1_condition1_off_value_title"
+                app:title="@string/unioutput1_condition1_off_value_title"
+                app:units=""
+                app:float_value="0"
+                app:value_precision="two"
                 />
-
-            <TextView
-                android:id="@+id/output2_condition2_off"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                app:layout_constraintTop_toTopOf="@id/output2_condition2_off_title"
-                app:layout_constraintEnd_toEndOf="parent"
-                android:textAppearance="?android:attr/textAppearanceLarge"
-                android:text="000"
-                />
-
-            <TextView
-                android:id="@+id/output2_condition2_off_units"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                app:layout_constraintTop_toBottomOf="@id/output2_condition2_off"
-                app:layout_constraintEnd_toEndOf="parent"
-                android:text=""
-                />
-
-            <!-- ************************************************************* -->
 
         </androidx.constraintlayout.widget.ConstraintLayout>
 
@@ -525,9 +393,6 @@
         <androidx.constraintlayout.widget.ConstraintLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content">
-
-
-
 
             <com.google.android.material.textfield.TextInputLayout
                 android:id="@+id/output3_condition1_title"
@@ -566,64 +431,32 @@
 
             <!-- ************************************************************* -->
 
-            <TextView
-                android:id="@+id/output3_condition1_on_title"
-                android:layout_width="wrap_content"
+            <org.secu3.android.ui.parameters.views.FloatParamView
+                android:id="@+id/output3_condition1_on"
+                android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 app:layout_constraintTop_toBottomOf="@id/output3_condition1_inversion"
                 app:layout_constraintStart_toStartOf="parent"
                 android:layout_marginTop="16dp"
-                android:text="@string/unioutput1_condition1_on_value_title"
-                />
-
-            <TextView
-                android:id="@+id/output3_condition1_on"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                app:layout_constraintTop_toTopOf="@id/output3_condition1_on_title"
-                app:layout_constraintEnd_toEndOf="parent"
-                android:textAppearance="?android:attr/textAppearanceLarge"
-                android:text="000"
-                />
-
-            <TextView
-                android:id="@+id/output3_condition1_on_units"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                app:layout_constraintTop_toBottomOf="@id/output3_condition1_on"
-                app:layout_constraintEnd_toEndOf="parent"
-                android:text=""
+                app:title="@string/unioutput1_condition1_on_value_title"
+                app:units=""
+                app:float_value="0"
+                app:value_precision="two"
                 />
 
             <!-- ************************************************************* -->
 
-            <TextView
-                android:id="@+id/output3_condition1_off_title"
-                android:layout_width="wrap_content"
+            <org.secu3.android.ui.parameters.views.FloatParamView
+                android:id="@+id/output3_condition1_off"
+                android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                app:layout_constraintTop_toBottomOf="@id/output3_condition1_on_units"
+                app:layout_constraintTop_toBottomOf="@id/output3_condition1_on"
                 app:layout_constraintStart_toStartOf="parent"
                 android:layout_marginTop="16dp"
-                android:text="@string/unioutput1_condition1_off_value_title"
-                />
-
-            <TextView
-                android:id="@+id/output3_condition1_off"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                app:layout_constraintTop_toTopOf="@id/output3_condition1_off_title"
-                app:layout_constraintEnd_toEndOf="parent"
-                android:textAppearance="?android:attr/textAppearanceLarge"
-                android:text="000"
-                />
-
-            <TextView
-                android:id="@+id/output3_condition1_off_units"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                app:layout_constraintTop_toBottomOf="@id/output3_condition1_off"
-                app:layout_constraintEnd_toEndOf="parent"
-                android:text=""
+                app:title="@string/unioutput1_condition1_off_value_title"
+                app:units=""
+                app:float_value="0"
+                app:value_precision="two"
                 />
 
             <!-- ************************************************************* -->
@@ -635,7 +468,7 @@
                 style="@style/Widget.MaterialComponents.TextInputLayout.OutlinedBox.ExposedDropdownMenu"
                 android:layout_width="0dp"
                 android:layout_height="wrap_content"
-                app:layout_constraintTop_toBottomOf="@id/output3_condition1_off_units"
+                app:layout_constraintTop_toBottomOf="@id/output3_condition1_off"
                 app:layout_constraintStart_toStartOf="parent"
                 app:layout_constraintEnd_toEndOf="parent"
                 android:layout_marginTop="16dp"
@@ -690,67 +523,34 @@
 
             <!-- ************************************************************* -->
 
-            <TextView
-                android:id="@+id/output3_condition2_on_title"
-                android:layout_width="wrap_content"
+
+            <org.secu3.android.ui.parameters.views.FloatParamView
+                android:id="@+id/output3_condition2_on"
+                android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 app:layout_constraintTop_toBottomOf="@id/output3_condition2_inversion"
                 app:layout_constraintStart_toStartOf="parent"
                 android:layout_marginTop="16dp"
-                android:text="@string/unioutput1_condition1_on_value_title"
+                app:title="@string/unioutput1_condition1_on_value_title"
+                app:units=""
+                app:float_value="0"
+                app:value_precision="two"
                 />
 
-            <TextView
-                android:id="@+id/output3_condition2_on"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                app:layout_constraintTop_toTopOf="@id/output3_condition2_on_title"
-                app:layout_constraintEnd_toEndOf="parent"
-                android:textAppearance="?android:attr/textAppearanceLarge"
-                android:text="000"
-                />
+            <!-- ************************************************************* -->
 
-            <TextView
-                android:id="@+id/output3_condition2_on_units"
-                android:layout_width="wrap_content"
+            <org.secu3.android.ui.parameters.views.FloatParamView
+                android:id="@+id/output3_condition2_off"
+                android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 app:layout_constraintTop_toBottomOf="@id/output3_condition2_on"
-                app:layout_constraintEnd_toEndOf="parent"
-                android:text=""
-                />
-
-            <!-- ************************************************************* -->
-
-            <TextView
-                android:id="@+id/output3_condition2_off_title"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                app:layout_constraintTop_toBottomOf="@id/output3_condition2_on_units"
                 app:layout_constraintStart_toStartOf="parent"
                 android:layout_marginTop="16dp"
-                android:text="@string/unioutput1_condition1_off_value_title"
+                app:title="@string/unioutput1_condition1_off_value_title"
+                app:units=""
+                app:float_value="0"
+                app:value_precision="two"
                 />
-
-            <TextView
-                android:id="@+id/output3_condition2_off"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                app:layout_constraintTop_toTopOf="@id/output3_condition2_off_title"
-                app:layout_constraintEnd_toEndOf="parent"
-                android:textAppearance="?android:attr/textAppearanceLarge"
-                android:text="000"
-                />
-
-            <TextView
-                android:id="@+id/output3_condition2_off_units"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                app:layout_constraintTop_toBottomOf="@id/output3_condition2_off"
-                app:layout_constraintEnd_toEndOf="parent"
-                android:text=""
-                />
-
-            <!-- ************************************************************* -->
 
         </androidx.constraintlayout.widget.ConstraintLayout>
 

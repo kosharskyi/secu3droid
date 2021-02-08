@@ -33,64 +33,29 @@
     >
 
 
-
-    <TextView
-        android:id="@+id/ventilator_turn_on_title"
-        android:layout_width="wrap_content"
+    <org.secu3.android.ui.parameters.views.FloatParamView
+        android:id="@+id/ventilator_turn_on"
+        android:layout_width="match_parent"
         android:layout_height="wrap_content"
         app:layout_constraintTop_toTopOf="parent"
         app:layout_constraintStart_toStartOf="parent"
-        android:text="@string/temper_fan_on_title"
+        app:title="@string/temper_fan_on_title"
+        app:units="@string/units_degrees_celcius"
+        app:float_value="0"
+        app:value_precision="two"
         />
 
-    <TextView
-        android:id="@+id/ventilator_turn_on"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        app:layout_constraintTop_toTopOf="parent"
-        app:layout_constraintEnd_toEndOf="parent"
-        android:textAppearance="?android:attr/textAppearanceLarge"
-        android:text="0.00"
-        />
 
-    <TextView
-        android:id="@+id/ventilator_turn_on_units"
-        android:layout_width="wrap_content"
+    <org.secu3.android.ui.parameters.views.FloatParamView
+        android:id="@+id/ventilator_turn_off"
+        android:layout_width="match_parent"
         android:layout_height="wrap_content"
         app:layout_constraintTop_toBottomOf="@id/ventilator_turn_on"
-        app:layout_constraintEnd_toEndOf="parent"
-        android:text="@string/units_degrees_celcius"
-        />
-
-
-    <!-- ************************************************************* -->
-
-    <TextView
-        android:id="@+id/ventilator_turn_off_title"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        app:layout_constraintTop_toBottomOf="@id/ventilator_turn_on_units"
         app:layout_constraintStart_toStartOf="parent"
-        android:text="@string/temper_fan_off_title"
-        />
-
-    <TextView
-        android:id="@+id/ventilator_turn_off"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        app:layout_constraintTop_toBottomOf="@id/ventilator_turn_on_units"
-        app:layout_constraintEnd_toEndOf="parent"
-        android:textAppearance="?android:attr/textAppearanceLarge"
-        android:text="0.00"
-        />
-
-    <TextView
-        android:id="@+id/ventilator_turn_off_units"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        app:layout_constraintTop_toBottomOf="@id/ventilator_turn_off"
-        app:layout_constraintEnd_toEndOf="parent"
-        android:text="@string/units_degrees_celcius"
+        app:title="@string/temper_fan_off_title"
+        app:units="@string/units_degrees_celcius"
+        app:float_value="0"
+        app:value_precision="two"
         />
 
 
@@ -100,7 +65,7 @@
         android:id="@+id/use_sensor"
         android:layout_width="0dp"
         android:layout_height="wrap_content"
-        app:layout_constraintTop_toBottomOf="@id/ventilator_turn_off_units"
+        app:layout_constraintTop_toBottomOf="@id/ventilator_turn_off"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintEnd_toEndOf="parent"
         android:button="@null"
@@ -138,152 +103,71 @@
 
     <!-- ************************************************************* -->
 
-    <TextView
-        android:id="@+id/pwm_frequency_title"
-        android:layout_width="wrap_content"
+    <org.secu3.android.ui.parameters.views.IntParamView
+        android:id="@+id/pwm_frequency"
+        android:layout_width="match_parent"
         android:layout_height="wrap_content"
         app:layout_constraintTop_toBottomOf="@id/use_sensors_curve_table"
         app:layout_constraintStart_toStartOf="parent"
-        android:text="@string/temper_fan_pwm_freq_title"
+        android:layout_marginTop="16dp"
+        app:title="@string/temper_fan_pwm_freq_title"
+        app:units="@string/units_hertz"
+        app:int_value="0"
         />
 
-    <TextView
-        android:id="@+id/pwm_frequency"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        app:layout_constraintTop_toBottomOf="@id/use_sensors_curve_table"
-        app:layout_constraintEnd_toEndOf="parent"
-        android:textAppearance="?android:attr/textAppearanceLarge"
-        android:text="0.00"
-        />
+    <!-- ************************************************************* -->
 
-    <TextView
-        android:id="@+id/pwm_frequency_units"
-        android:layout_width="wrap_content"
+    <org.secu3.android.ui.parameters.views.FloatParamView
+        android:id="@+id/air_cond_on_threshold"
+        android:layout_width="match_parent"
         android:layout_height="wrap_content"
         app:layout_constraintTop_toBottomOf="@id/pwm_frequency"
-        app:layout_constraintEnd_toEndOf="parent"
-        android:text="@string/units_hertz"
+        app:layout_constraintStart_toStartOf="parent"
+        app:title="@string/temper_cond_turn_on_threshold_title"
+        app:units="@string/units_volts"
+        app:float_value="0"
+        app:value_precision="four"
         />
 
     <!-- ************************************************************* -->
 
-    <TextView
-        android:id="@+id/air_cond_on_threshold_title"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        app:layout_constraintTop_toBottomOf="@id/pwm_frequency_units"
-        app:layout_constraintStart_toStartOf="parent"
-        android:text="@string/temper_cond_turn_on_threshold_title"
-        />
-
-    <TextView
-        android:id="@+id/air_cond_on_threshold"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        app:layout_constraintTop_toBottomOf="@id/pwm_frequency_units"
-        app:layout_constraintEnd_toEndOf="parent"
-        android:textAppearance="?android:attr/textAppearanceLarge"
-        android:text="0.00"
-        />
-
-    <TextView
-        android:id="@+id/air_cond_on_threshold_units"
-        android:layout_width="wrap_content"
+    <org.secu3.android.ui.parameters.views.FloatParamView
+        android:id="@+id/air_cond_off_threshold"
+        android:layout_width="match_parent"
         android:layout_height="wrap_content"
         app:layout_constraintTop_toBottomOf="@id/air_cond_on_threshold"
-        app:layout_constraintEnd_toEndOf="parent"
-        android:text="@string/units_volts"
+        app:layout_constraintStart_toStartOf="parent"
+        app:title="@string/temper_cond_turn_off_threshold_title"
+        app:units="@string/units_volts"
+        app:float_value="0"
+        app:value_precision="four"
         />
 
     <!-- ************************************************************* -->
 
-    <TextView
-        android:id="@+id/air_cond_off_threshold_title"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        app:layout_constraintTop_toBottomOf="@id/air_cond_on_threshold_units"
-        app:layout_constraintStart_toStartOf="parent"
-        android:text="@string/temper_cond_turn_off_threshold_title"
-        />
-
-    <TextView
-        android:id="@+id/air_cond_off_threshold"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        app:layout_constraintTop_toTopOf="@id/air_cond_off_threshold_title"
-        app:layout_constraintEnd_toEndOf="parent"
-        android:textAppearance="?android:attr/textAppearanceLarge"
-        android:text="0.00"
-        />
-
-    <TextView
-        android:id="@+id/air_cond_off_threshold_units"
-        android:layout_width="wrap_content"
+    <org.secu3.android.ui.parameters.views.IntParamView
+        android:id="@+id/air_cond_on_min_rpm_threshold"
+        android:layout_width="match_parent"
         android:layout_height="wrap_content"
         app:layout_constraintTop_toBottomOf="@id/air_cond_off_threshold"
-        app:layout_constraintEnd_toEndOf="parent"
-        android:text="@string/units_volts"
+        app:layout_constraintStart_toStartOf="parent"
+        android:layout_marginTop="16dp"
+        app:title="@string/temper_cond_turn_on_min_rpm_threshold_title"
+        app:units="@string/units_rpm"
+        app:int_value="0"
         />
 
     <!-- ************************************************************* -->
 
-    <TextView
-        android:id="@+id/air_cond_on_min_rpm_threshold_title"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        app:layout_constraintTop_toBottomOf="@id/air_cond_off_threshold_units"
-        app:layout_constraintStart_toStartOf="parent"
-        android:text="@string/temper_cond_turn_on_min_rpm_threshold_title"
-        />
-
-    <TextView
-        android:id="@+id/air_cond_on_min_rpm_threshold"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        app:layout_constraintTop_toTopOf="@id/air_cond_on_min_rpm_threshold_title"
-        app:layout_constraintEnd_toEndOf="parent"
-        android:textAppearance="?android:attr/textAppearanceLarge"
-        android:text="0.00"
-        />
-
-    <TextView
-        android:id="@+id/air_cond_on_min_rpm_threshold_units"
-        android:layout_width="wrap_content"
+    <org.secu3.android.ui.parameters.views.IntParamView
+        android:id="@+id/cooling_fans_timer"
+        android:layout_width="match_parent"
         android:layout_height="wrap_content"
         app:layout_constraintTop_toBottomOf="@id/air_cond_on_min_rpm_threshold"
-        app:layout_constraintEnd_toEndOf="parent"
-        android:text="@string/units_rpm"
-        />
-
-    <!-- ************************************************************* -->
-
-    <TextView
-        android:id="@+id/cooling_fans_timer_title"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        app:layout_constraintTop_toBottomOf="@id/air_cond_on_min_rpm_threshold_units"
         app:layout_constraintStart_toStartOf="parent"
-        android:text="@string/temper_fans_timer_title"
-        />
-
-    <TextView
-        android:id="@+id/cooling_fans_timer"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        app:layout_constraintTop_toTopOf="@id/cooling_fans_timer_title"
-        app:layout_constraintEnd_toEndOf="parent"
-        android:textAppearance="?android:attr/textAppearanceLarge"
-        android:text="0.00"
-        />
-
-    <TextView
-        android:id="@+id/cooling_fans_timer_units"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        app:layout_constraintTop_toBottomOf="@id/cooling_fans_timer"
-        app:layout_constraintEnd_toEndOf="parent"
-        android:text="@string/units_sec"
+        app:title="@string/temper_fans_timer_title"
+        app:units="@string/units_sec"
+        app:int_value="0"
         />
 
     <!-- ************************************************************* -->

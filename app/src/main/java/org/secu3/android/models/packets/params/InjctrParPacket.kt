@@ -31,8 +31,8 @@ data class InjctrParPacket(
 
     var config: IntArray = IntArray(2),
 
-    var flowRate0: Int = 0,
-    var flowRate1: Int = 0,
+    var flowRate0: Float = 0f,
+    var flowRate1: Float = 0f,
 
     var cylDisp: Float = 0f,
 
@@ -41,11 +41,11 @@ data class InjctrParPacket(
 
     var ckpsEngineCyl: Int = 0,
 
-    var timing0: Float = 0f,
-    var timing1: Float = 0f,
+    var timing0: Int = 0,
+    var timing1: Int = 0,
 
-    var timingCrk0: Float = 0f,
-    var timingCrk1: Float = 0f,
+    var timingCrk0: Int = 0,
+    var timingCrk1: Int = 0,
 
     var angleSpec: Int = 0,
 
@@ -63,8 +63,8 @@ data class InjctrParPacket(
         data += config[0].toChar()
         data += config[1].toChar()
 
-        data += flowRate0.times(64).write2Bytes(data)
-        data += flowRate1.times(64).write2Bytes(data)
+        data += flowRate0.times(64).toInt().write2Bytes(data)
+        data += flowRate1.times(64).toInt().write2Bytes(data)
 
         data += cylDisp.div(4).times(16384).toInt().write2Bytes(data)
 
@@ -73,11 +73,11 @@ data class InjctrParPacket(
 
         data += ckpsEngineCyl.toChar()
 
-        data += timing0.times(ANGLE_DIVIDER).toInt().write2Bytes(data)
-        data += timing1.times(ANGLE_DIVIDER).toInt().write2Bytes(data)
+        data += timing0.times(PARINJTIM_DIVIDER).write2Bytes(data)
+        data += timing1.times(PARINJTIM_DIVIDER).write2Bytes(data)
 
-        data += timingCrk0.times(ANGLE_DIVIDER).toInt().write2Bytes(data)
-        data += timingCrk1.times(ANGLE_DIVIDER).toInt().write2Bytes(data)
+        data += timingCrk0.times(PARINJTIM_DIVIDER).write2Bytes(data)
+        data += timingCrk1.times(PARINJTIM_DIVIDER).write2Bytes(data)
 
         data += angleSpec.toChar()
 
@@ -154,8 +154,8 @@ data class InjctrParPacket(
             config[0] = data[3].toInt()
             config[1] = data[4].toInt()
             
-            flowRate0 = data.get2Bytes(5) / 64
-            flowRate1 = data.get2Bytes(7) / 64
+            flowRate0 = data.get2Bytes(5).toFloat() / 64
+            flowRate1 = data.get2Bytes(7).toFloat() / 64
             
             cylDisp = data.get2Bytes(9).toFloat() / 16384 * 4
 
@@ -164,11 +164,11 @@ data class InjctrParPacket(
 
             ckpsEngineCyl = data[19].toInt()
 
-            timing0 = data.get2Bytes(20).toFloat() / ANGLE_DIVIDER
-            timing1 = data.get2Bytes(22).toFloat() / ANGLE_DIVIDER
+            timing0 = data.get2Bytes(20) / PARINJTIM_DIVIDER  //FIXME change constant
+            timing1 = data.get2Bytes(22) / PARINJTIM_DIVIDER  //FIXME change constant
 
-            timingCrk0 = data.get2Bytes(24).toFloat() / ANGLE_DIVIDER
-            timingCrk1 = data.get2Bytes(26).toFloat() / ANGLE_DIVIDER
+            timingCrk0 = data.get2Bytes(24) / PARINJTIM_DIVIDER   //FIXME change constant
+            timingCrk1 = data.get2Bytes(26) / PARINJTIM_DIVIDER   //FIXME change constant
 
             angleSpec = data[28].toInt()
 

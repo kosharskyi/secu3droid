@@ -48,36 +48,36 @@ class IdlingFragment : Fragment() {
 
         mViewModel.idlingLiveData.observe(viewLifecycleOwner) {
             mBinding.apply {
-                positiveRegFactor.text = "%.2f".format(it.iFac1)
-                negativeRegFactor.text = "%.2f".format(it.iFac2)
+                positiveRegFactor.value = it.iFac1
+                negativeRegFactor.value = it.iFac2
 
-                maxRegLimit.text = "%.2f".format(it.idlregMaxAngle)
-                minRegLimit.text = "%.2f".format(it.idlregMinAngle)
+                maxRegLimit.value = it.idlregMaxAngle
+                minRegLimit.value = it.idlregMinAngle
 
-                goalRpm.text = it.idlingRpm.toString()
-                rpmDeadBand.text = it.minefr.toString()
+                goalRpm.value = it.idlingRpm
+                rpmDeadBand.value = it.minefr
 
-                regulatorOnTemp.text = it.idlregTurnOnTemp.toString()
+                regulatorOnTemp.value = it.idlregTurnOnTemp
 
                 useRegulator.isChecked = it.useRegulator
                 useRegulatorOnGas.isChecked = it.useRegulatorOnGas
                 proportionalRegulator.isChecked = it.pRegMode
                 useClosedLoop.isChecked = it.useClosedLoop
 
-                iacAddAfterExit.text = it.idlToRunAdd.toString()
-                rpmAddOnRun.text = it.rpmOnRunAdd.toString()
+                iacAddAfterExit.value = it.idlToRunAdd
+                rpmAddOnRun.value = it.rpmOnRunAdd
 
-                proportional.text = "%.3f".format(it.idlRegP)
-                integral.text = "%.3f".format(it.idlRegI)
+                proportional.value = it.idlRegP
+                integral.value = it.idlRegI
 
-                transientThreshold1.text = "%.2f".format(it.coefThrd1)
-                transientThreshold2.text = "%.2f".format(it.coefThrd2)
+                transientThreshold1.value = it.coefThrd1
+                transientThreshold2.value = it.coefThrd2
 
-                integratorRpmLimit.text = it.integratorRpmLim.toString()
-                pressureLoadOnIdling.text = it.mapValue.toString()
+                integratorRpmLimit.value = it.integratorRpmLim
+                pressureLoadOnIdling.value = it.mapValue
 
-                minIacPosition.text = it.iacMinPos.toString()
-                maxIacPosition.text = it.iacMaxPos.toString()
+                minIacPosition.value = it.iacMinPos
+                maxIacPosition.value = it.iacMaxPos
 
                 useClosedLoopOnGas.isChecked = it.useClosedLoopOnGas
 

@@ -47,9 +47,9 @@ class AccelerationFragment : Fragment() {
 
         mViewModel.accelerationLiveData.observe(viewLifecycleOwner) {
             mBinding.apply {
-                accelTpsdotThreshold.text = it.injAeTpsdotThrd.toString()
-                coldAccelMultiplier.text = it.injAeColdaccMult.toString()
-                aeDecayTime.text = it.injAeDecayTime.toString()
+                accelTpsdotThreshold.value = it.injAeTpsdotThrd
+                coldAccelMultiplier.value = it.injAeColdaccMult
+                aeDecayTime.value = it.injAeDecayTime
             }
         }
     }

@@ -107,6 +107,7 @@ abstract class BaseSecu3Packet {
         internal const val TPS_MULTIPLIER: Int = 2
         internal const val GAS_DOSE_MULTIPLIER: Int = 2
         internal const val ANGLE_DIVIDER: Int = 32
+        internal const val PARINJTIM_DIVIDER: Int = 32 //FIXME change this value to 16 to support next firmware versions
 
         internal const val ADC_MULTIPLIER = 400
         internal const val CHOKE_MULTIPLIER = 2

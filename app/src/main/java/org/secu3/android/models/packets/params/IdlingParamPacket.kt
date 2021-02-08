@@ -33,7 +33,7 @@ data class IdlingParamPacket(
     var idlingRpm: Int = 0,
     var idlregMinAngle: Float = 0f,
     var idlregMaxAngle: Float = 0f,
-    var idlregTurnOnTemp: Int = 0,
+    var idlregTurnOnTemp: Float = 0f,
 
     var idlToRunAdd: Float = 0f,
     var rpmOnRunAdd: Int = 0,
@@ -78,7 +78,7 @@ data class IdlingParamPacket(
             idlingRpm = data.get2Bytes(9)
             idlregMinAngle = data.get2Bytes(11).toShort().toFloat() / ANGLE_DIVIDER
             idlregMaxAngle = data.get2Bytes(13).toShort().toFloat() / ANGLE_DIVIDER
-            idlregTurnOnTemp = data.get2Bytes(15) / TEMPERATURE_MULTIPLIER
+            idlregTurnOnTemp = data.get2Bytes(15).toFloat() / TEMPERATURE_MULTIPLIER
             idlToRunAdd = data[17].toFloat() / 2.0f
             rpmOnRunAdd = data[18].toInt() * 10
             idlRegP = data.get2Bytes(19).toFloat() / 256
@@ -102,7 +102,7 @@ data class IdlingParamPacket(
         data += idlingRpm.write2Bytes(data)
         data += idlregMinAngle.times(ANGLE_DIVIDER).toInt().write2Bytes(data)
         data += idlregMaxAngle.times(ANGLE_DIVIDER).toInt().write2Bytes(data)
-        data += idlregTurnOnTemp.times(TEMPERATURE_MULTIPLIER).write2Bytes(data)
+        data += idlregTurnOnTemp.times(TEMPERATURE_MULTIPLIER).toInt().write2Bytes(data)
         data += idlToRunAdd.times(2.0f).toInt().toChar()
         data += rpmOnRunAdd.div(10).toChar()
         data += idlRegP.times(256).toInt().toChar()

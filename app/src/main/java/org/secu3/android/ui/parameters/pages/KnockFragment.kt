@@ -58,18 +58,18 @@ class KnockFragment : Fragment() {
         mViewModel.knockLiveData.observe(viewLifecycleOwner) {
             mBinding.apply {
                 enableSensor.isChecked = it.useKnockChannel > 0
-                phaseWindowBegin.text = "%.2f".format(it.kWndBeginAngle)
-                phaseWindowEnd.text = "%.2f".format(it.kWndEndAngle)
+                phaseWindowBegin.value = it.kWndBeginAngle
+                phaseWindowEnd.value = it.kWndEndAngle
 
                 bpfFrequency.setText(bpfList[it.bpfFrequency], false)
                 integrationTimeConstant.setText(integrationTimeConstatList[it.intTimeCost], false)
 
-                angleDisplacementStep.text = it.retardStep.toString()
-                angleRecoveryStep.text = it.advanceStep.toString()
-                maxAngleDisplacement.text = it.maxRetard.toString()
+                angleDisplacementStep.value = it.retardStep
+                angleRecoveryStep.value = it.advanceStep
+                maxAngleDisplacement.value = it.maxRetard
 
-                knockThreshold.text = it.threshold.toString()
-                angleRecoveryDelay.text = it.recoveryDelay.toString()
+                knockThreshold.value = it.threshold
+                angleRecoveryDelay.value = it.recoveryDelay
             }
         }
     }

@@ -60,11 +60,11 @@ class ChokeControlFragment : Fragment() {
 
         mViewModel.chokeLiveData.observe(viewLifecycleOwner) {
             mBinding.apply {
-                numSmSteps.text = it.smSteps.toString()
-                regulatorFactor.text = "%.2f".format(it.rpmIf)
+                numSmSteps.value = it.smSteps
+                regulatorFactor.value = it.rpmIf
 
-                crankingMapLastingCold.text = it.corrTime0.toString()
-                crankingMapLastingHot.text = it.corrTime1.toString()
+                crankingMapLastingCold.value = it.corrTime0
+                crankingMapLastingHot.value = it.corrTime1
 
                 useClosedLoopRpmRegulator.isChecked = it.useClosedLoopRmpRegulator
                 dontUseRpmRegulatorOnGas.isChecked = it.dontUseRpmRegOnGas
@@ -72,7 +72,7 @@ class ChokeControlFragment : Fragment() {
                 maximumSTEPFrequencyAtInit.isChecked = it.maxSTEPfreqAtInit
 
                 freqOfPulses.setText(stepperPulses[it.smFreq], false)
-                timeFromCrankToRun.text = it.injCrankToRunTime.toString()
+                timeFromCrankToRun.value = it.injCrankToRunTime
             }
         }
     }

@@ -45,175 +45,88 @@
             android:id="@+id/gas_dose_param_group"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            app:constraint_referenced_ids="num_of_sm_steps,num_of_sm_steps_title,num_of_sm_steps_units,stoichiometric_ratio,
-            stoichiometric_ratio_title,stoichiometric_ratio_units, closing_on_fuel_cut,closing_on_fuel_cut_title,closing_on_fuel_cut_units,
-            correction_limit_negative,correction_limit_negative_title,correction_limit_negative_units,correction_limit_positive,
-            correction_limit_positive_title,correction_limit_positive_units,frequency_of_pulses_title,maximum_STEP_frequency_at_init"
+            app:constraint_referenced_ids="num_of_sm_steps,stoichiometric_ratio, closing_on_fuel_cut,
+            correction_limit_negative,correction_limit_positive,maximum_STEP_frequency_at_init,frequency_of_pulses_title"
             tools:visibility="gone"
             />
 
-        <TextView
-            android:id="@+id/num_of_sm_steps_title"
-            android:layout_width="wrap_content"
+
+        <org.secu3.android.ui.parameters.views.IntParamView
+            android:id="@+id/num_of_sm_steps"
+            android:layout_width="match_parent"
             android:layout_height="wrap_content"
             app:layout_constraintTop_toTopOf="parent"
             app:layout_constraintStart_toStartOf="parent"
             android:layout_marginTop="16dp"
-            android:text="@string/choke_steps_title"
+            app:title="@string/choke_steps_title"
+            app:int_value="0"
             />
 
-        <TextView
-            android:id="@+id/num_of_sm_steps"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            app:layout_constraintTop_toTopOf="@id/num_of_sm_steps_title"
-            app:layout_constraintEnd_toEndOf="parent"
-            android:textAppearance="?android:attr/textAppearanceLarge"
-            android:text="000"
-            />
 
-        <TextView
-            android:id="@+id/num_of_sm_steps_units"
-            android:layout_width="wrap_content"
+        <!-- ************************************************************* -->
+
+
+        <org.secu3.android.ui.parameters.views.FloatParamView
+            android:id="@+id/stoichiometric_ratio"
+            android:layout_width="match_parent"
             android:layout_height="wrap_content"
             app:layout_constraintTop_toBottomOf="@id/num_of_sm_steps"
-            app:layout_constraintEnd_toEndOf="parent"
-            android:text=""
+            app:layout_constraintStart_toStartOf="parent"
+            android:layout_marginTop="16dp"
+            app:title="@string/gasdose_par_stoich_ratio"
+            app:units="@string/units_afr"
+            app:float_value="0"
+            app:value_precision="one"
             />
 
 
         <!-- ************************************************************* -->
 
 
-        <TextView
-            android:id="@+id/stoichiometric_ratio_title"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            app:layout_constraintTop_toBottomOf="@id/num_of_sm_steps_units"
-            app:layout_constraintStart_toStartOf="parent"
-            android:layout_marginTop="16dp"
-            android:text="@string/gasdose_par_stoich_ratio"
-            />
-
-        <TextView
-            android:id="@+id/stoichiometric_ratio"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            app:layout_constraintTop_toTopOf="@id/stoichiometric_ratio_title"
-            app:layout_constraintEnd_toEndOf="parent"
-            android:textAppearance="?android:attr/textAppearanceLarge"
-            android:text="000"
-            />
-
-        <TextView
-            android:id="@+id/stoichiometric_ratio_units"
-            android:layout_width="wrap_content"
+        <org.secu3.android.ui.parameters.views.FloatParamView
+            android:id="@+id/closing_on_fuel_cut"
+            android:layout_width="match_parent"
             android:layout_height="wrap_content"
             app:layout_constraintTop_toBottomOf="@id/stoichiometric_ratio"
-            app:layout_constraintEnd_toEndOf="parent"
-            android:text="@string/units_afr"
+            app:layout_constraintStart_toStartOf="parent"
+            android:layout_marginTop="16dp"
+            app:title="@string/gasdose_par_closing_on_fuel_cut"
+            app:units="@string/units_percents"
+            app:float_value="0"
+            app:value_precision="one"
             />
 
 
         <!-- ************************************************************* -->
 
 
-        <TextView
-            android:id="@+id/closing_on_fuel_cut_title"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            app:layout_constraintTop_toBottomOf="@id/stoichiometric_ratio_units"
-            app:layout_constraintStart_toStartOf="parent"
-            android:layout_marginTop="16dp"
-            android:text="@string/gasdose_par_closing_on_fuel_cut"
-            />
-
-        <TextView
-            android:id="@+id/closing_on_fuel_cut"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            app:layout_constraintTop_toTopOf="@id/closing_on_fuel_cut_title"
-            app:layout_constraintEnd_toEndOf="parent"
-            android:textAppearance="?android:attr/textAppearanceLarge"
-            android:text="000"
-            />
-
-        <TextView
-            android:id="@+id/closing_on_fuel_cut_units"
-            android:layout_width="wrap_content"
+        <org.secu3.android.ui.parameters.views.FloatParamView
+            android:id="@+id/correction_limit_positive"
+            android:layout_width="match_parent"
             android:layout_height="wrap_content"
             app:layout_constraintTop_toBottomOf="@id/closing_on_fuel_cut"
-            app:layout_constraintEnd_toEndOf="parent"
-            android:text="@string/units_percents"
+            app:layout_constraintStart_toStartOf="parent"
+            android:layout_marginTop="16dp"
+            app:title="@string/lambda_par_correction_positive_limit_title"
+            app:units="@string/units_percents"
+            app:float_value="0"
+            app:value_precision="two"
             />
-
 
         <!-- ************************************************************* -->
 
 
-        <TextView
-            android:id="@+id/correction_limit_positive_title"
-            android:layout_width="0dp"
-            android:layout_height="wrap_content"
-            app:layout_constraintTop_toBottomOf="@id/closing_on_fuel_cut_units"
-            app:layout_constraintStart_toStartOf="parent"
-            app:layout_constraintEnd_toStartOf="@id/correction_limit_positive"
-            android:layout_marginTop="16dp"
-            android:layout_marginEnd="8dp"
-            android:text="@string/lambda_par_correction_positive_limit_title"
-            />
-
-        <TextView
-            android:id="@+id/correction_limit_positive"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            app:layout_constraintTop_toTopOf="@id/correction_limit_positive_title"
-            app:layout_constraintEnd_toEndOf="parent"
-            android:textAppearance="?android:attr/textAppearanceLarge"
-            android:text="000"
-            />
-
-        <TextView
-            android:id="@+id/correction_limit_positive_units"
-            android:layout_width="wrap_content"
+        <org.secu3.android.ui.parameters.views.FloatParamView
+            android:id="@+id/correction_limit_negative"
+            android:layout_width="match_parent"
             android:layout_height="wrap_content"
             app:layout_constraintTop_toBottomOf="@id/correction_limit_positive"
-            app:layout_constraintEnd_toEndOf="parent"
-            android:text="@string/units_percents"
-            />
-
-
-        <!-- ************************************************************* -->
-
-
-        <TextView
-            android:id="@+id/correction_limit_negative_title"
-            android:layout_width="0dp"
-            android:layout_height="wrap_content"
-            app:layout_constraintTop_toBottomOf="@id/correction_limit_positive_units"
             app:layout_constraintStart_toStartOf="parent"
-            app:layout_constraintEnd_toStartOf="@id/correction_limit_negative"
-            android:layout_marginEnd="8dp"
-            android:text="@string/lambda_par_correction_negative_limit_title"
-            />
-
-        <TextView
-            android:id="@+id/correction_limit_negative"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            app:layout_constraintTop_toTopOf="@id/correction_limit_negative_title"
-            app:layout_constraintEnd_toEndOf="parent"
-            android:textAppearance="?android:attr/textAppearanceLarge"
-            android:text="000"
-            />
-
-        <TextView
-            android:id="@+id/correction_limit_negative_units"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            app:layout_constraintTop_toBottomOf="@id/correction_limit_negative"
-            app:layout_constraintEnd_toEndOf="parent"
-            android:text="@string/units_percents"
+            android:layout_marginTop="16dp"
+            app:title="@string/lambda_par_correction_negative_limit_title"
+            app:units="@string/units_percents"
+            app:float_value="0"
+            app:value_precision="two"
             />
 
 
@@ -225,7 +138,7 @@
             style="@style/Widget.MaterialComponents.TextInputLayout.OutlinedBox.ExposedDropdownMenu"
             android:layout_width="0dp"
             android:layout_height="wrap_content"
-            app:layout_constraintTop_toBottomOf="@id/correction_limit_negative_units"
+            app:layout_constraintTop_toBottomOf="@id/correction_limit_negative"
             app:layout_constraintStart_toStartOf="parent"
             app:layout_constraintEnd_toEndOf="parent"
             android:layout_marginTop="16dp"
