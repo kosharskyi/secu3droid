@@ -175,9 +175,11 @@
     <string name="injctr_par_number_of_squirts_per_cycle_title">Число уприскувань на цикл</string>
     <string name="injctr_par_injection_timing_title">Фаза вприскування</string>
     <string name="injctr_par_cranking_injection_timing_title">Фаза вприскування при запуску</string>
+    <string name="injctr_par_pulses_per_litter_of_fuel">Импульсів на 1Л палива</string>
     <string name="injctr_par_use_map_for_inj_timing_title">Фаза вприскування задається таблицею</string>
     <string name="injctr_par_min_inj_pw_title">Мін. тривалість вприскування</string>
     <string name="injctr_par_params_for_second_fuel_title">Параметри для другого вида палива</string>
+    <string name="injctr_par_general_title">Загальні</string>
     <string name="injctr_par_additional_corrections_title">Додаткові корекції (ГБО)</string>
     <string name="injctr_par_use_air_density_correction_map_title">Викор.табл.корр.щільнос.повітря</string>
     <string name="injctr_par_diff_press_for_pw_corr_from_gps_title">Дифф.тиск для корр.по ДДГ</string>

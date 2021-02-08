@@ -169,9 +169,11 @@
     <string name="injctr_par_number_of_squirts_per_cycle_title">Number of squirts per cycle</string>
     <string name="injctr_par_injection_timing_title">Injection timing</string>
     <string name="injctr_par_cranking_injection_timing_title">Cranking injection timing</string>
+    <string name="injctr_par_pulses_per_litter_of_fuel">Pulses per 1L of fuel</string>
     <string name="injctr_par_use_map_for_inj_timing_title">Use map for injection timing</string>
     <string name="injctr_par_min_inj_pw_title">Min. injection PW</string>
     <string name="injctr_par_params_for_second_fuel_title">Parameters for second fuel</string>
+    <string name="injctr_par_general_title">General</string>
     <string name="injctr_par_additional_corrections_title">Additional corrections (gas.eq)</string>
     <string name="injctr_par_use_air_density_correction_map_title">Use air density correction map</string>
     <string name="injctr_par_diff_press_for_pw_corr_from_gps_title">Diff.press.for PW corr.from GPS</string>
