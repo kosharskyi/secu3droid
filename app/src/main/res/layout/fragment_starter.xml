@@ -32,19 +32,17 @@
     tools:context=".ui.parameters.pages.StarterFragment"
     >
 
-    <androidx.constraintlayout.widget.ConstraintLayout
+    <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
+        android:orientation="vertical"
         android:padding="16dp"
         >
-
 
         <org.secu3.android.ui.parameters.views.IntParamView
             android:id="@+id/starter_blocking_rpm"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            app:layout_constraintTop_toTopOf="parent"
-            app:layout_constraintStart_toStartOf="parent"
             app:title="@string/starter_off_title"
             app:units="@string/units_rpm"
             app:int_value="0"
@@ -57,8 +55,6 @@
             android:id="@+id/switch_crank_map_rpm"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            app:layout_constraintTop_toBottomOf="@id/starter_blocking_rpm"
-            app:layout_constraintStart_toStartOf="parent"
             android:layout_marginTop="16dp"
             app:title="@string/starter_map_abandon_title"
             app:units="@string/units_rpm"
@@ -72,8 +68,6 @@
             android:id="@+id/time_crank_to_run_position"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            app:layout_constraintTop_toBottomOf="@id/switch_crank_map_rpm"
-            app:layout_constraintStart_toStartOf="parent"
             android:layout_marginTop="16dp"
             app:title="@string/starter_dat_crank_to_run_time_title"
             app:units="@string/units_sec"
@@ -88,8 +82,6 @@
             android:id="@+id/afterstart_enrichment_time"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            app:layout_constraintTop_toBottomOf="@id/time_crank_to_run_position"
-            app:layout_constraintStart_toStartOf="parent"
             android:layout_marginTop="16dp"
             app:title="@string/starter_dat_afterstart_enrichment_strokes_title"
             app:units="num"
@@ -103,8 +95,6 @@
             android:id="@+id/prime_pulse_cold"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            app:layout_constraintTop_toBottomOf="@id/afterstart_enrichment_time"
-            app:layout_constraintStart_toStartOf="parent"
             android:layout_marginTop="16dp"
             app:title="@string/starter_dat_prime_pulse_cold_title"
             app:units="@string/units_ms"
@@ -119,8 +109,6 @@
             android:id="@+id/prime_pulse_hot"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            app:layout_constraintTop_toBottomOf="@id/prime_pulse_cold"
-            app:layout_constraintStart_toStartOf="parent"
             android:layout_marginTop="16dp"
             app:title="@string/starter_dat_prime_pulse_hot_title"
             app:units="@string/units_ms"
@@ -164,6 +152,6 @@
             />
 
 
-    </androidx.constraintlayout.widget.ConstraintLayout>
+    </LinearLayout>
 
 </ScrollView>

@@ -23,154 +23,137 @@
               http://secu-3.org
               email: vetalkosharskiy@gmail.com
 -->
-<androidx.constraintlayout.widget.ConstraintLayout xmlns:android="http://schemas.android.com/apk/res/android"
+<ScrollView
+    xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:tools="http://schemas.android.com/tools"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    xmlns:app="http://schemas.android.com/apk/res-auto"
     tools:context=".ui.parameters.pages.TemperatureFragment"
-    android:padding="16dp"
     >
 
-
-    <org.secu3.android.ui.parameters.views.FloatParamView
-        android:id="@+id/ventilator_turn_on"
+    <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        app:layout_constraintTop_toTopOf="parent"
-        app:layout_constraintStart_toStartOf="parent"
-        app:title="@string/temper_fan_on_title"
-        app:units="@string/units_degrees_celcius"
-        app:float_value="0"
-        app:value_precision="two"
-        />
+        android:padding="16dp"
+        android:orientation="vertical"
+        >
 
 
-    <org.secu3.android.ui.parameters.views.FloatParamView
-        android:id="@+id/ventilator_turn_off"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        app:layout_constraintTop_toBottomOf="@id/ventilator_turn_on"
-        app:layout_constraintStart_toStartOf="parent"
-        app:title="@string/temper_fan_off_title"
-        app:units="@string/units_degrees_celcius"
-        app:float_value="0"
-        app:value_precision="two"
-        />
+        <org.secu3.android.ui.parameters.views.FloatParamView
+            android:id="@+id/ventilator_turn_on"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            app:title="@string/temper_fan_on_title"
+            app:units="@string/units_degrees_celcius"
+            app:float_value="0"
+            app:value_precision="two"
+            />
 
 
-    <!-- ************************************************************* -->
-
-    <CheckBox
-        android:id="@+id/use_sensor"
-        android:layout_width="0dp"
-        android:layout_height="wrap_content"
-        app:layout_constraintTop_toBottomOf="@id/ventilator_turn_off"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintEnd_toEndOf="parent"
-        android:button="@null"
-        android:drawableEnd="?android:attr/listChoiceIndicatorMultiple"
-        android:text="@string/temper_use_temp_sensor_title"
-        />
-
-    <!-- ************************************************************* -->
-
-    <CheckBox
-        android:id="@+id/control_cooling_pwm"
-        android:layout_width="0dp"
-        android:layout_height="wrap_content"
-        app:layout_constraintTop_toBottomOf="@id/use_sensor"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintEnd_toEndOf="parent"
-        android:button="@null"
-        android:drawableEnd="?android:attr/listChoiceIndicatorMultiple"
-        android:text="@string/temper_use_pwm_title"
-        />
-
-    <!-- ************************************************************* -->
-
-    <CheckBox
-        android:id="@+id/use_sensors_curve_table"
-        android:layout_width="0dp"
-        android:layout_height="wrap_content"
-        app:layout_constraintTop_toBottomOf="@id/control_cooling_pwm"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintEnd_toEndOf="parent"
-        android:button="@null"
-        android:drawableEnd="?android:attr/listChoiceIndicatorMultiple"
-        android:text="@string/temper_use_table_title"
-        />
-
-    <!-- ************************************************************* -->
-
-    <org.secu3.android.ui.parameters.views.IntParamView
-        android:id="@+id/pwm_frequency"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        app:layout_constraintTop_toBottomOf="@id/use_sensors_curve_table"
-        app:layout_constraintStart_toStartOf="parent"
-        android:layout_marginTop="16dp"
-        app:title="@string/temper_fan_pwm_freq_title"
-        app:units="@string/units_hertz"
-        app:int_value="0"
-        />
-
-    <!-- ************************************************************* -->
-
-    <org.secu3.android.ui.parameters.views.FloatParamView
-        android:id="@+id/air_cond_on_threshold"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        app:layout_constraintTop_toBottomOf="@id/pwm_frequency"
-        app:layout_constraintStart_toStartOf="parent"
-        app:title="@string/temper_cond_turn_on_threshold_title"
-        app:units="@string/units_volts"
-        app:float_value="0"
-        app:value_precision="four"
-        />
-
-    <!-- ************************************************************* -->
-
-    <org.secu3.android.ui.parameters.views.FloatParamView
-        android:id="@+id/air_cond_off_threshold"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        app:layout_constraintTop_toBottomOf="@id/air_cond_on_threshold"
-        app:layout_constraintStart_toStartOf="parent"
-        app:title="@string/temper_cond_turn_off_threshold_title"
-        app:units="@string/units_volts"
-        app:float_value="0"
-        app:value_precision="four"
-        />
-
-    <!-- ************************************************************* -->
-
-    <org.secu3.android.ui.parameters.views.IntParamView
-        android:id="@+id/air_cond_on_min_rpm_threshold"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        app:layout_constraintTop_toBottomOf="@id/air_cond_off_threshold"
-        app:layout_constraintStart_toStartOf="parent"
-        android:layout_marginTop="16dp"
-        app:title="@string/temper_cond_turn_on_min_rpm_threshold_title"
-        app:units="@string/units_rpm"
-        app:int_value="0"
-        />
-
-    <!-- ************************************************************* -->
-
-    <org.secu3.android.ui.parameters.views.IntParamView
-        android:id="@+id/cooling_fans_timer"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        app:layout_constraintTop_toBottomOf="@id/air_cond_on_min_rpm_threshold"
-        app:layout_constraintStart_toStartOf="parent"
-        app:title="@string/temper_fans_timer_title"
-        app:units="@string/units_sec"
-        app:int_value="0"
-        />
-
-    <!-- ************************************************************* -->
+        <org.secu3.android.ui.parameters.views.FloatParamView
+            android:id="@+id/ventilator_turn_off"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            app:title="@string/temper_fan_off_title"
+            app:units="@string/units_degrees_celcius"
+            app:float_value="0"
+            app:value_precision="two"
+            />
 
 
-</androidx.constraintlayout.widget.ConstraintLayout>
+        <!-- ************************************************************* -->
+
+        <CheckBox
+            android:id="@+id/use_sensor"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:button="@null"
+            android:drawableEnd="?android:attr/listChoiceIndicatorMultiple"
+            android:text="@string/temper_use_temp_sensor_title"
+            />
+
+        <!-- ************************************************************* -->
+
+        <CheckBox
+            android:id="@+id/control_cooling_pwm"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:button="@null"
+            android:drawableEnd="?android:attr/listChoiceIndicatorMultiple"
+            android:text="@string/temper_use_pwm_title"
+            />
+
+        <!-- ************************************************************* -->
+
+        <CheckBox
+            android:id="@+id/use_sensors_curve_table"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:button="@null"
+            android:drawableEnd="?android:attr/listChoiceIndicatorMultiple"
+            android:text="@string/temper_use_table_title"
+            />
+
+        <!-- ************************************************************* -->
+
+        <org.secu3.android.ui.parameters.views.IntParamView
+            android:id="@+id/pwm_frequency"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="16dp"
+            app:title="@string/temper_fan_pwm_freq_title"
+            app:units="@string/units_hertz"
+            app:int_value="0"
+            />
+
+        <!-- ************************************************************* -->
+
+        <org.secu3.android.ui.parameters.views.FloatParamView
+            android:id="@+id/air_cond_on_threshold"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            app:title="@string/temper_cond_turn_on_threshold_title"
+            app:units="@string/units_volts"
+            app:float_value="0"
+            app:value_precision="four"
+            />
+
+        <!-- ************************************************************* -->
+
+        <org.secu3.android.ui.parameters.views.FloatParamView
+            android:id="@+id/air_cond_off_threshold"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            app:title="@string/temper_cond_turn_off_threshold_title"
+            app:units="@string/units_volts"
+            app:float_value="0"
+            app:value_precision="four"
+            />
+
+        <!-- ************************************************************* -->
+
+        <org.secu3.android.ui.parameters.views.IntParamView
+            android:id="@+id/air_cond_on_min_rpm_threshold"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="16dp"
+            app:title="@string/temper_cond_turn_on_min_rpm_threshold_title"
+            app:units="@string/units_rpm"
+            app:int_value="0"
+            />
+
+        <!-- ************************************************************* -->
+
+        <org.secu3.android.ui.parameters.views.IntParamView
+            android:id="@+id/cooling_fans_timer"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            app:title="@string/temper_fans_timer_title"
+            app:units="@string/units_sec"
+            app:int_value="0"
+            />
+
+    </LinearLayout>
+
+</ScrollView>

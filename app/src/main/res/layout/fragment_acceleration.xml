@@ -23,12 +23,13 @@
               http://secu-3.org
               email: vetalkosharskiy@gmail.com
 -->
-<androidx.constraintlayout.widget.ConstraintLayout
+<LinearLayout
     xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:tools="http://schemas.android.com/tools"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:orientation="vertical"
     tools:context=".ui.parameters.pages.AccelerationFragment"
     android:padding="16dp">
 
@@ -37,8 +38,6 @@
         android:id="@+id/accel_tpsdot_threshold"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        app:layout_constraintTop_toTopOf="parent"
-        app:layout_constraintStart_toStartOf="parent"
         app:title="@string/accel_par_tpsdot_threshold_title"
         app:units="@string/units_percent_per_second"
         app:int_value="0"
@@ -50,8 +49,7 @@
         android:id="@+id/cold_accel_multiplier"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        app:layout_constraintTop_toBottomOf="@id/accel_tpsdot_threshold"
-        app:layout_constraintStart_toStartOf="parent"
+        android:layout_marginTop="16dp"
         app:title="@string/accel_par_coldacc_mult_title"
         app:units="@string/units_percents"
         app:int_value="0"
@@ -63,11 +61,10 @@
         android:id="@+id/ae_decay_time"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        app:layout_constraintTop_toBottomOf="@id/cold_accel_multiplier"
-        app:layout_constraintStart_toStartOf="parent"
+        android:layout_marginTop="16dp"
         app:title="@string/accel_par_ae_decay_time_title"
         app:units="str"
         app:int_value="0"
         />
 
-</androidx.constraintlayout.widget.ConstraintLayout>
+</LinearLayout>

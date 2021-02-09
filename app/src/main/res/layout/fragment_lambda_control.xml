@@ -46,23 +46,13 @@
             android:id="@+id/lambda_param_group"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            app:constraint_referenced_ids="sensor_type_title,number_of_strokes_per_step,number_of_strokes_per_step_title,
-            number_of_strokes_per_step_units,number_of_ms_per_step,number_of_ms_per_step_title,number_of_ms_per_step_units,
-            size_positive_correction_step,size_positive_correction_step_title,size_positive_correction_step_units,
-            size_negative_correction_step,size_negative_correction_step_title,size_negative_correction_step_units,
-            correction_limit_positive,correction_limit_positive_title,correction_limit_positive_units,
-            correction_limit_negative,correction_limit_negative_title,correction_limit_negative_units,switch_point,
-            switch_point_title,switch_point_units,cts_activation_threshold,cts_activation_threshold_title,cts_activation_threshold_units,
-            rpm_activation_threshold,rpm_activation_threshold_title,rpm_activation_threshold_units,activation_after_start_in,
-            activation_after_start_in_title,activation_after_start_in_units,switch_point_deadband,switch_point_deadband_title,
-            switch_point_deadband_units,determine_heating_using_voltage,lambda_correctioin_on_idling,stoichiom_ratio_for_2_fuel,
-            stoichiom_ratio_for_2_fuel_title,stoichiom_ratio_for_2_fuel_units,control_of_sensors_heating,heating_time_without_pwm_on_cold,
-            heating_time_without_pwm_on_cold_title,heating_time_without_pwm_on_cold_units,heating_time_without_pwm_on_hot,
-            heating_time_without_pwm_on_hot_title,heating_time_without_pwm_on_hot_units,cold_hot_temperature_threshold,
-            cold_hot_temperature_threshold_title,cold_hot_temperature_threshold_units,turn_on_time_in_pwm_mode,
-            turn_on_time_in_pwm_mode_title,turn_on_time_in_pwm_mode_units,air_flow_threshold_for_turning_heating_off,
-            air_flow_threshold_for_turning_heating_off_title,air_flow_threshold_for_turning_heating_off_units,heating_before_cranking"
-            tools:visibility="visible"
+            app:constraint_referenced_ids="sensor_type_title,number_of_strokes_per_step,number_of_ms_per_step,
+            size_positive_correction_step,size_negative_correction_step,correction_limit_positive,correction_limit_negative,
+            switch_point,cts_activation_threshold,rpm_activation_threshold,activation_after_start_in,switch_point_deadband,
+            determine_heating_using_voltage,lambda_correctioin_on_idling,stoichiom_ratio_for_2_fuel,control_of_sensors_heating,
+            heating_time_without_pwm_on_cold,heating_time_without_pwm_on_hot,cold_hot_temperature_threshold,turn_on_time_in_pwm_mode,
+            air_flow_threshold_for_turning_heating_off,heating_before_cranking"
+            tools:visibility="gone"
             />
 
 

@@ -31,9 +31,10 @@
     android:layout_height="match_parent"
     tools:context=".ui.parameters.pages.FunctionsFragment">
 
-    <androidx.constraintlayout.widget.ConstraintLayout
+    <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
+        android:orientation="vertical"
         android:padding="16dp"
         >
 
@@ -41,8 +42,6 @@
             android:id="@+id/lower_load_value"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            app:layout_constraintTop_toTopOf="parent"
-            app:layout_constraintStart_toStartOf="parent"
             app:title="@string/funset_lower_pressure_title"
             app:units="@string/units_pressure_kpa"
             app:float_value="0"
@@ -56,8 +55,6 @@
             android:id="@+id/upper_load_value"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            app:layout_constraintTop_toBottomOf="@id/lower_load_value"
-            app:layout_constraintStart_toStartOf="parent"
             app:title="@string/funset_upper_pressure_title"
             app:units="@string/units_pressure_kpa"
             app:float_value="0"
@@ -71,8 +68,6 @@
             android:id="@+id/map_curve_offset"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            app:layout_constraintTop_toBottomOf="@id/upper_load_value"
-            app:layout_constraintStart_toStartOf="parent"
             android:layout_marginTop="16dp"
             app:title="@string/funset_map_sensor_offset_title"
             app:units="@string/units_volts"
@@ -87,8 +82,6 @@
             android:id="@+id/map_curve_gradient"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            app:layout_constraintTop_toBottomOf="@id/map_curve_offset"
-            app:layout_constraintStart_toStartOf="parent"
             app:title="@string/funset_map_sensor_gradient_title"
             app:units="@string/units_kpa_per_volt"
             app:float_value="0"
@@ -102,11 +95,8 @@
             android:id="@+id/maps_set_title"
             android:theme="@style/Theme.MaterialComponents.DayNight.NoActionBar"
             style="@style/Widget.MaterialComponents.TextInputLayout.OutlinedBox.ExposedDropdownMenu"
-            android:layout_width="0dp"
+            android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            app:layout_constraintTop_toBottomOf="@id/map_curve_gradient"
-            app:layout_constraintStart_toStartOf="parent"
-            app:layout_constraintEnd_toEndOf="parent"
             android:layout_marginTop="16dp"
             android:hint="@string/funset_maps_set_for_gasoline">
 
@@ -126,11 +116,8 @@
             android:id="@+id/maps_set_for_gas_title"
             android:theme="@style/Theme.MaterialComponents.DayNight.NoActionBar"
             style="@style/Widget.MaterialComponents.TextInputLayout.OutlinedBox.ExposedDropdownMenu"
-            android:layout_width="0dp"
+            android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            app:layout_constraintTop_toBottomOf="@id/maps_set_title"
-            app:layout_constraintStart_toStartOf="parent"
-            app:layout_constraintEnd_toEndOf="parent"
             android:layout_marginTop="16dp"
             android:hint="@string/funset_maps_set_for_gas">
 
@@ -150,8 +137,6 @@
             android:id="@+id/tps_curve_offset"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            app:layout_constraintTop_toBottomOf="@id/maps_set_for_gas_title"
-            app:layout_constraintStart_toStartOf="parent"
             android:layout_marginTop="16dp"
             app:title="@string/funset_tps_curve_offset_title"
             app:units="@string/units_volts"
@@ -166,8 +151,6 @@
             android:id="@+id/tps_curve_gradient"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            app:layout_constraintTop_toBottomOf="@id/tps_curve_offset"
-            app:layout_constraintStart_toStartOf="parent"
             app:title="@string/funset_tps_curve_gradient_title"
             app:units="@string/units_percent_per_volts"
             app:float_value="0"
@@ -181,11 +164,8 @@
             android:id="@+id/load_measurement_title"
             android:theme="@style/Theme.MaterialComponents.DayNight.NoActionBar"
             style="@style/Widget.MaterialComponents.TextInputLayout.OutlinedBox.ExposedDropdownMenu"
-            android:layout_width="0dp"
+            android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            app:layout_constraintTop_toBottomOf="@id/tps_curve_gradient"
-            app:layout_constraintStart_toStartOf="parent"
-            app:layout_constraintEnd_toEndOf="parent"
             android:layout_marginTop="16dp"
             android:hint="@string/funset_load_measurement">
 
@@ -204,11 +184,8 @@
             android:id="@+id/mapsel0_petrol_title"
             android:theme="@style/Theme.MaterialComponents.DayNight.NoActionBar"
             style="@style/Widget.MaterialComponents.TextInputLayout.OutlinedBox.ExposedDropdownMenu"
-            android:layout_width="0dp"
+            android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            app:layout_constraintTop_toBottomOf="@id/load_measurement_title"
-            app:layout_constraintStart_toStartOf="parent"
-            app:layout_constraintEnd_toEndOf="parent"
             android:hint="@string/funset_mapsel0_condition_for_petrol">
 
             <AutoCompleteTextView
@@ -226,11 +203,8 @@
             android:id="@+id/mapsel0_gas_title"
             android:theme="@style/Theme.MaterialComponents.DayNight.NoActionBar"
             style="@style/Widget.MaterialComponents.TextInputLayout.OutlinedBox.ExposedDropdownMenu"
-            android:layout_width="0dp"
+            android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            app:layout_constraintTop_toBottomOf="@id/mapsel0_petrol_title"
-            app:layout_constraintStart_toStartOf="parent"
-            app:layout_constraintEnd_toEndOf="parent"
             android:hint="@string/funset_mapsel0_condition_for_gas">
 
             <AutoCompleteTextView
@@ -248,11 +222,8 @@
             android:id="@+id/barometric_correction_title"
             android:theme="@style/Theme.MaterialComponents.DayNight.NoActionBar"
             style="@style/Widget.MaterialComponents.TextInputLayout.OutlinedBox.ExposedDropdownMenu"
-            android:layout_width="0dp"
+            android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            app:layout_constraintTop_toBottomOf="@id/mapsel0_gas_title"
-            app:layout_constraintStart_toStartOf="parent"
-            app:layout_constraintEnd_toEndOf="parent"
             android:hint="@string/funset_barometric_correction">
 
             <AutoCompleteTextView
@@ -266,14 +237,10 @@
 
         <!-- ************************************************************* -->
 
-
-
         <org.secu3.android.ui.parameters.views.FloatParamView
             android:id="@+id/map2_curve_offset"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            app:layout_constraintTop_toBottomOf="@id/barometric_correction_title"
-            app:layout_constraintStart_toStartOf="parent"
             android:layout_marginTop="16dp"
             app:title="@string/funset_map2_sensor_offset_title"
             app:units="@string/units_volts"
@@ -281,25 +248,18 @@
             app:value_precision="three"
             />
 
-
         <!-- ************************************************************* -->
 
         <org.secu3.android.ui.parameters.views.FloatParamView
             android:id="@+id/map2_curve_gradient"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            app:layout_constraintTop_toBottomOf="@id/map2_curve_offset"
-            app:layout_constraintStart_toStartOf="parent"
             app:title="@string/funset_map2_sensor_gradient_title"
             app:units="@string/units_kpa_per_volt"
             app:float_value="0"
             app:value_precision="three"
             />
 
-
-        <!-- ************************************************************* -->
-
-
-    </androidx.constraintlayout.widget.ConstraintLayout>
+    </LinearLayout>
 
 </ScrollView>
