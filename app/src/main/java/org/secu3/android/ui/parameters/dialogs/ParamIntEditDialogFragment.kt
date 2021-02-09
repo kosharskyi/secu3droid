@@ -38,6 +38,8 @@ class ParamIntEditDialogFragment : ParamBaseEditDialogFragment() {
     private var currentValue: Int = 0
     private var paramTitle: String = ""
     private var stepValue: Int = 0
+    private var maxValue: Int = 0
+    private var minValue: Int = 0
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -45,6 +47,8 @@ class ParamIntEditDialogFragment : ParamBaseEditDialogFragment() {
             currentValue = it.getInt(ARG_CURRENT_VALUE)
             paramTitle = it.getString(ARG_PARAM_TITLE, "")
             stepValue = it.getInt(ARG_STEP_VALUE)
+            maxValue = it.getInt(ARG_MAX_VALUE)
+            minValue = it.getInt(ARG_MIN_VALUE)
         }
     }
 
@@ -63,11 +67,23 @@ class ParamIntEditDialogFragment : ParamBaseEditDialogFragment() {
 
 
             increment.setOnClickListener {
-                currentValue = currentValue.plus(stepValue)
+                var resValue = currentValue.plus(stepValue)
+
+                if (resValue > maxValue) {
+                    resValue = maxValue
+                }
+
+                currentValue = resValue
                 value.text = currentValue.toString()
             }
             decrement.setOnClickListener {
-                currentValue = currentValue.minus(stepValue)
+                var resValue = currentValue.minus(stepValue)
+
+                if (resValue < minValue) {
+                    resValue = minValue
+                }
+
+                currentValue = resValue
                 value.text = currentValue.toString()
             }
 
@@ -90,11 +106,13 @@ class ParamIntEditDialogFragment : ParamBaseEditDialogFragment() {
          * @param stepValue Parameter 3.
          * @return A new instance of fragment ParamsEditDialogFragment.
          */
-        fun newInstance(currentValue: Int, paramTitle: String, stepValue: Int) = ParamIntEditDialogFragment().apply {
+        fun newInstance(currentValue: Int, paramTitle: String, stepValue: Int, maxValue: Int, minValue: Int) = ParamIntEditDialogFragment().apply {
             arguments = Bundle().apply {
                 putInt(ARG_CURRENT_VALUE, currentValue)
                 putString(ARG_PARAM_TITLE, paramTitle)
                 putInt(ARG_STEP_VALUE, stepValue)
+                putInt(ARG_MAX_VALUE, maxValue)
+                putInt(ARG_MIN_VALUE, minValue)
             }
         }
     }

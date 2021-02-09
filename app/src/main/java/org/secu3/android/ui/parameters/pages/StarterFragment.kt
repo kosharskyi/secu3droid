@@ -121,22 +121,26 @@ class StarterFragment : Fragment() {
     }
 
     private fun intParamClick(view: IntParamView) {
-        ParamIntEditDialogFragment.newInstance(view.value, view.title, view.step).also {
-            it.newValueLiveData.observe(viewLifecycleOwner) { result ->
-                view.value = result
-            }
+        view.apply {
+            ParamIntEditDialogFragment.newInstance(value, title, step, maxValue, minValue).also {
+                it.newValueLiveData.observe(viewLifecycleOwner) { result ->
+                    value = result
+                }
 
-            it.show(childFragmentManager, it::class.java.simpleName)
+                it.show(childFragmentManager, it::class.java.simpleName)
+            }
         }
     }
 
     private fun floatParamClick(view: FloatParamView) {
-        ParamFloatEditDialogFragment.newInstance(view.value, view.title, view.step).also {
-            it.newValueLiveData.observe(viewLifecycleOwner) { result ->
-                view.value = result
-            }
+        view.apply {
+            ParamFloatEditDialogFragment.newInstance(value, title, step, maxValue, minValue).also {
+                it.newValueLiveData.observe(viewLifecycleOwner) { result ->
+                    value = result
+                }
 
-            it.show(childFragmentManager, it::class.java.simpleName)
+                it.show(childFragmentManager, it::class.java.simpleName)
+            }
         }
     }
 }

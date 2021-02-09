@@ -41,6 +41,8 @@ class ParamFloatEditDialogFragment : ParamBaseEditDialogFragment() {
     private var currentValue: Float = 0f
     private var paramTitle: String = ""
     private var stepValue: Float = 0f
+    private var maxValue: Float = 0f
+    private var minValue: Float = 0f
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -48,6 +50,8 @@ class ParamFloatEditDialogFragment : ParamBaseEditDialogFragment() {
             currentValue = it.getFloat(ARG_CURRENT_VALUE)
             paramTitle = it.getString(ARG_PARAM_TITLE, "")
             stepValue = it.getFloat(ARG_STEP_VALUE)
+            maxValue = it.getFloat(ARG_MAX_VALUE)
+            minValue = it.getFloat(ARG_MIN_VALUE)
         }
     }
 
@@ -66,11 +70,22 @@ class ParamFloatEditDialogFragment : ParamBaseEditDialogFragment() {
 
 
             increment.setOnClickListener {
-                currentValue = currentValue.plus(stepValue)
+                var resValue = currentValue.plus(stepValue)
+
+                if (resValue > maxValue) {
+                    resValue = maxValue
+                }
+                currentValue = resValue
                 value.text = "%.2f".format(currentValue)
             }
             decrement.setOnClickListener {
-                currentValue = currentValue.minus(stepValue)
+                var resValue = currentValue.minus(stepValue)
+
+                if (resValue < minValue) {
+                    resValue = minValue
+                }
+                currentValue = resValue
+
                 value.text = "%.2f".format(currentValue)
             }
 
@@ -93,11 +108,13 @@ class ParamFloatEditDialogFragment : ParamBaseEditDialogFragment() {
          * @param stepValue Parameter 3.
          * @return A new instance of fragment ParamsEditDialogFragment.
          */
-        fun newInstance(currentValue: Float, paramTitle: String, stepValue: Float) = ParamFloatEditDialogFragment().apply {
+        fun newInstance(currentValue: Float, paramTitle: String, stepValue: Float, maxValue: Float, minValue: Float) = ParamFloatEditDialogFragment().apply {
             arguments = Bundle().apply {
                 putFloat(ARG_CURRENT_VALUE, currentValue)
                 putString(ARG_PARAM_TITLE, paramTitle)
                 putFloat(ARG_STEP_VALUE, stepValue)
+                putFloat(ARG_MAX_VALUE, maxValue)
+                putFloat(ARG_MIN_VALUE, minValue)
             }
         }
     }
