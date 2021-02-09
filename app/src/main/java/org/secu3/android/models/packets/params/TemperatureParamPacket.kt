@@ -42,16 +42,16 @@ data class TemperatureParamPacket(
 
         data += tmpFlags.toChar()
 
-        data += ventOn.times(TEMPERATURE_MULTIPLIER).toInt().write2Bytes(data)
-        data += ventOff.times(TEMPERATURE_MULTIPLIER).toInt().write2Bytes(data)
+        data += ventOn.times(TEMPERATURE_MULTIPLIER).toInt().write2Bytes()
+        data += ventOff.times(TEMPERATURE_MULTIPLIER).toInt().write2Bytes()
 
-        data += 1f.div(ventPwmFrq.toFloat().div(524288)).toInt().write2Bytes(data)
+        data += 1f.div(ventPwmFrq.toFloat().div(524288)).toInt().write2Bytes()
 
-        data += condPvtOn.times(VOLTAGE_MULTIPLIER).toInt().write2Bytes(data)
-        data += condPvtOff.times(VOLTAGE_MULTIPLIER).toInt().write2Bytes(data)
+        data += condPvtOn.times(VOLTAGE_MULTIPLIER).toInt().write2Bytes()
+        data += condPvtOff.times(VOLTAGE_MULTIPLIER).toInt().write2Bytes()
 
-        data += condMinRpm.write2Bytes(data)
-        data += ventTmr.times(100).write2Bytes(data)
+        data += condMinRpm.write2Bytes()
+        data += ventTmr.times(100).write2Bytes()
 
         data += END_PACKET_SYMBOL
         return data

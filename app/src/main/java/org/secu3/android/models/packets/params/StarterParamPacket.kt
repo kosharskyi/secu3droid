@@ -59,12 +59,12 @@ data class StarterParamPacket(
     override fun pack(): String {
         var data = "$OUTPUT_PACKET_SYMBOL$DESCRIPTOR"
 
-        data += starterOff.write2Bytes(data)
-        data += smapAbandon.write2Bytes(data)
-        data += crankToRunTime.times(100).toInt().write2Bytes(data)
+        data += starterOff.write2Bytes()
+        data += smapAbandon.write2Bytes()
+        data += crankToRunTime.times(100).toInt().write2Bytes()
         data += injAftstrStroke.div(2).toChar()
-        data += injPrimeCold.times(10000).div(32).toInt().write2Bytes(data)
-        data += injPrimeHot.times(10000).div(32).toInt().write2Bytes(data)
+        data += injPrimeCold.times(10000).div(32).toInt().write2Bytes()
+        data += injPrimeHot.times(10000).div(32).toInt().write2Bytes()
         data += injPrimeDelay.times(10).toChar()
         data += injFloodclearTps.times(2).toChar()
 //        data += injAftStrokes1.toChar()

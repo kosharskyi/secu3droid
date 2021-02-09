@@ -58,12 +58,12 @@ data class ChokeControlParPacket(
         var data = "$OUTPUT_PACKET_SYMBOL$DESCRIPTOR"
 
         data += data.write2Bytes(smSteps)
-        data += rpmIf.times(1000).toInt().write2Bytes(data)
-        data += corrTime0.times(100).toInt().write2Bytes(data)
-        data += corrTime1.times(100).toInt().write2Bytes(data)
+        data += rpmIf.times(1000).toInt().write2Bytes()
+        data += corrTime0.times(100).toInt().write2Bytes()
+        data += corrTime1.times(100).toInt().write2Bytes()
         data += flags.toChar()
         data += smFreq.toChar()
-        data += injCrankToRunTime.times(100).toInt().write2Bytes(data)
+        data += injCrankToRunTime.times(100).toInt().write2Bytes()
 
         data += END_PACKET_SYMBOL
         return data

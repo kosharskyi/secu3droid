@@ -27,7 +27,7 @@ abstract class BaseOutputPacket : BaseSecu3Packet() {
 
     abstract fun pack(): String
 
-    protected fun Int.write2Bytes(dataWhereToWrite: String): String {
+    protected fun Int.write2Bytes(): String {
         var data = ""
 
         data += this.shr(8).and(0xFF).toChar()
@@ -36,7 +36,7 @@ abstract class BaseOutputPacket : BaseSecu3Packet() {
         return data
     }
 
-    protected fun Int.write4Bytes(dataWhereToWrite: String): String {
+    protected fun Int.write4Bytes(): String {
         var data = ""
 
         data += this.shr(24).and(0xFF).toChar()

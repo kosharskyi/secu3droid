@@ -70,8 +70,8 @@ data class CkpsParamPacket(
         data += ckpsMissNum.toChar()
         data += hallFlags.toChar()
 
-        data += hallWndWidth.times(ANGLE_DIVIDER).toInt().write2Bytes(data)
-        data += hallDegreesBtdc.times(ANGLE_DIVIDER).toInt().write2Bytes(data)
+        data += hallWndWidth.times(ANGLE_DIVIDER).toInt().write2Bytes()
+        data += hallDegreesBtdc.times(ANGLE_DIVIDER).toInt().write2Bytes()
 
         data += END_PACKET_SYMBOL
         return data

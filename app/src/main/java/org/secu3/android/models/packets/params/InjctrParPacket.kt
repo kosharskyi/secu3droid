@@ -64,26 +64,26 @@ data class InjctrParPacket(
         data += config[0].toChar()
         data += config[1].toChar()
 
-        data += flowRate0.times(64).toInt().write2Bytes(data)
-        data += flowRate1.times(64).toInt().write2Bytes(data)
+        data += flowRate0.times(64).toInt().write2Bytes()
+        data += flowRate1.times(64).toInt().write2Bytes()
 
-        data += cylDisp.div(4).times(16384).toInt().write2Bytes(data)
+        data += cylDisp.div(4).times(16384).toInt().write2Bytes()
 
-        data += sdIglConst0.write4Bytes(data)
-        data += sdIglConst1.write4Bytes(data)
+        data += sdIglConst0.write4Bytes()
+        data += sdIglConst1.write4Bytes()
 
         data += ckpsEngineCyl.toChar()
 
-        data += timing0.times(PARINJTIM_DIVIDER).write2Bytes(data)
-        data += timing1.times(PARINJTIM_DIVIDER).write2Bytes(data)
+        data += timing0.times(PARINJTIM_DIVIDER).write2Bytes()
+        data += timing1.times(PARINJTIM_DIVIDER).write2Bytes()
 
-        data += timingCrk0.times(PARINJTIM_DIVIDER).write2Bytes(data)
-        data += timingCrk1.times(PARINJTIM_DIVIDER).write2Bytes(data)
+        data += timingCrk0.times(PARINJTIM_DIVIDER).write2Bytes()
+        data += timingCrk1.times(PARINJTIM_DIVIDER).write2Bytes()
 
         data += angleSpec.toChar()
 
-        data += fffConst.toFloat().div(1000f*60f).times(65536f).toInt().write2Bytes(data)
-        data += minPw.write2Bytes(data)
+        data += fffConst.toFloat().div(1000f*60f).times(65536f).toInt().write2Bytes()
+        data += minPw.write2Bytes()
 
         data += END_PACKET_SYMBOL
         return data
