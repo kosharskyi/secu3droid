@@ -32,7 +32,7 @@ import androidx.fragment.app.activityViewModels
 import org.secu3.android.databinding.FragmentTemperatureBinding
 import org.secu3.android.ui.parameters.ParamsViewModel
 
-class TemperatureFragment : Fragment() {
+class TemperatureFragment : BaseParamFragment() {
 
     private val mViewModel: ParamsViewModel by activityViewModels()
     private lateinit var mBinding: FragmentTemperatureBinding

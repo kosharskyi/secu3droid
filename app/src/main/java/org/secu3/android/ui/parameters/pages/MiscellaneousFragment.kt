@@ -36,7 +36,7 @@ import org.secu3.android.databinding.FragmentMiscellaneousBinding
 import org.secu3.android.ui.parameters.ParamsViewModel
 
 
-class MiscellaneousFragment : Fragment() {
+class MiscellaneousFragment : BaseParamFragment() {
 
     private val mViewModel: ParamsViewModel by activityViewModels()
     private lateinit var mBinding: FragmentMiscellaneousBinding

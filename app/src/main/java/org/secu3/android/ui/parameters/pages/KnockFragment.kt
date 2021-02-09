@@ -34,7 +34,7 @@ import org.secu3.android.databinding.FragmentKnockBinding
 import org.secu3.android.ui.parameters.ParamsViewModel
 
 
-class KnockFragment : Fragment() {
+class KnockFragment : BaseParamFragment() {
 
     private val mViewModel: ParamsViewModel by activityViewModels()
     private lateinit var mBinding: FragmentKnockBinding

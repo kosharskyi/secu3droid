@@ -37,7 +37,7 @@ import org.secu3.android.ui.parameters.ParamsViewModel
 import org.secu3.android.utils.gone
 import org.secu3.android.utils.visible
 
-class FuelInjectionFragment : Fragment() {
+class FuelInjectionFragment : BaseParamFragment() {
 
     private val mViewModel: ParamsViewModel by activityViewModels()
     private lateinit var mBinding: FragmentFuelInjectionBinding

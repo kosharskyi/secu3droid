@@ -38,7 +38,7 @@ import org.secu3.android.ui.parameters.ParamsViewModel
 import kotlin.experimental.and
 
 
-class FunctionsFragment : Fragment() {
+class FunctionsFragment : BaseParamFragment() {
 
     private val mViewModel: ParamsViewModel by activityViewModels()
     private lateinit var mBinding: FragmentFunctionsBinding

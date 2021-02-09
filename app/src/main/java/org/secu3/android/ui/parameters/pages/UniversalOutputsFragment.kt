@@ -36,7 +36,7 @@ import org.secu3.android.databinding.FragmentUniversalOutputsBinding
 import org.secu3.android.ui.parameters.ParamsViewModel
 
 
-class UniversalOutputsFragment : Fragment() {
+class UniversalOutputsFragment : BaseParamFragment() {
 
     private val mViewModel: ParamsViewModel by activityViewModels()
     private lateinit var mBinding: FragmentUniversalOutputsBinding

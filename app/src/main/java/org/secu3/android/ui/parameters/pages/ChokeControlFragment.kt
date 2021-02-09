@@ -36,7 +36,7 @@ import org.secu3.android.databinding.FragmentChokeControlBinding
 import org.secu3.android.ui.parameters.ParamsViewModel
 
 
-class ChokeControlFragment : Fragment() {
+class ChokeControlFragment : BaseParamFragment() {
 
     private val mViewModel: ParamsViewModel by activityViewModels()
     private lateinit var mBinding: FragmentChokeControlBinding

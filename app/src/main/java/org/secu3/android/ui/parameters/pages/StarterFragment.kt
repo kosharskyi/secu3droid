@@ -37,7 +37,7 @@ import org.secu3.android.ui.parameters.dialogs.ParamIntEditDialogFragment
 import org.secu3.android.ui.parameters.views.FloatParamView
 import org.secu3.android.ui.parameters.views.IntParamView
 
-class StarterFragment : Fragment() {
+class StarterFragment : BaseParamFragment() {
 
     private val mViewModel: ParamsViewModel by activityViewModels()
 
@@ -117,30 +117,6 @@ class StarterFragment : Fragment() {
             primePulseHot.setOnClickListener { floatParamClick(it as FloatParamView) }
             primePulseDelay.setOnClickListener { floatParamClick(it as FloatParamView) }
             floodClearModeThreshold.setOnClickListener { floatParamClick(it as FloatParamView) }
-        }
-    }
-
-    private fun intParamClick(view: IntParamView) {
-        view.apply {
-            ParamIntEditDialogFragment.newInstance(value, title, step, maxValue, minValue).also {
-                it.newValueLiveData.observe(viewLifecycleOwner) { result ->
-                    value = result
-                }
-
-                it.show(childFragmentManager, it::class.java.simpleName)
-            }
-        }
-    }
-
-    private fun floatParamClick(view: FloatParamView) {
-        view.apply {
-            ParamFloatEditDialogFragment.newInstance(value, title, step, maxValue, minValue).also {
-                it.newValueLiveData.observe(viewLifecycleOwner) { result ->
-                    value = result
-                }
-
-                it.show(childFragmentManager, it::class.java.simpleName)
-            }
         }
     }
 }

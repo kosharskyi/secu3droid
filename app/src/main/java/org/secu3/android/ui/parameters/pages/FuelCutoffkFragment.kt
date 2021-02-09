@@ -32,7 +32,7 @@ import androidx.fragment.app.activityViewModels
 import org.secu3.android.databinding.FragmentFuelCutoffkBinding
 import org.secu3.android.ui.parameters.ParamsViewModel
 
-class FuelCutoffkFragment : Fragment() {
+class FuelCutoffkFragment : BaseParamFragment() {
 
     private val mViewModel: ParamsViewModel by activityViewModels()
     private lateinit var mBinding: FragmentFuelCutoffkBinding

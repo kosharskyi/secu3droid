@@ -38,7 +38,7 @@ import org.secu3.android.utils.gone
 import org.secu3.android.utils.visible
 
 
-class LambdaControlFragment : Fragment() {
+class LambdaControlFragment : BaseParamFragment() {
 
     private val mViewModel: ParamsViewModel by activityViewModels()
     private lateinit var mBinding: FragmentLambdaControlBinding

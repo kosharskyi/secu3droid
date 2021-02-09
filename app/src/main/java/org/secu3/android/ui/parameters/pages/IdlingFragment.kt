@@ -32,7 +32,7 @@ import androidx.fragment.app.activityViewModels
 import org.secu3.android.databinding.FragmentIdlingBinding
 import org.secu3.android.ui.parameters.ParamsViewModel
 
-class IdlingFragment : Fragment() {
+class IdlingFragment : BaseParamFragment() {
 
     private val mViewModel: ParamsViewModel by activityViewModels()
     private lateinit var mBinding: FragmentIdlingBinding

@@ -32,7 +32,7 @@ import androidx.fragment.app.activityViewModels
 import org.secu3.android.databinding.FragmentAccelerationBinding
 import org.secu3.android.ui.parameters.ParamsViewModel
 
-class AccelerationFragment : Fragment() {
+class AccelerationFragment : BaseParamFragment() {
 
     private val mViewModel: ParamsViewModel by activityViewModels()
     private lateinit var mBinding: FragmentAccelerationBinding

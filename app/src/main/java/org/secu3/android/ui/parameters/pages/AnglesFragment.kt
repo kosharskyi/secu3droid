@@ -33,7 +33,7 @@ import org.secu3.android.databinding.FragmentAnglesBinding
 import org.secu3.android.ui.parameters.ParamsViewModel
 
 
-class AnglesFragment : Fragment() {
+class AnglesFragment : BaseParamFragment() {
 
     private val mViewModel: ParamsViewModel by activityViewModels()
 
