@@ -24,13 +24,14 @@
 package org.secu3.android.ui.parameters.pages
 
 import android.os.Bundle
-import androidx.fragment.app.Fragment
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import androidx.fragment.app.activityViewModels
 import org.secu3.android.databinding.FragmentAnglesBinding
+import org.secu3.android.models.packets.params.AnglesParamPacket
 import org.secu3.android.ui.parameters.ParamsViewModel
+import org.secu3.android.ui.parameters.views.FloatParamView
 
 
 class AnglesFragment : BaseParamFragment() {
@@ -38,6 +39,8 @@ class AnglesFragment : BaseParamFragment() {
     private val mViewModel: ParamsViewModel by activityViewModels()
 
     private lateinit var mBinding: FragmentAnglesBinding
+
+    private var packet: AnglesParamPacket? = null
 
 
     override fun onCreateView(inflater: LayoutInflater, container: ViewGroup?, savedInstanceState: Bundle?): View? {
@@ -49,9 +52,12 @@ class AnglesFragment : BaseParamFragment() {
         super.onViewCreated(view, savedInstanceState)
 
         mViewModel.anglesLiveData.observe(viewLifecycleOwner) {
+
+            packet = it
+
             mBinding.apply {
-                minAdvanceAngle.value = it.minAngle
                 maxAdvanceAngle.value = it.maxAngle
+                minAdvanceAngle.value = it.minAngle
 
                 angleDecreaseSpeed.value = it.angleDecSpeed
                 angleIncreaseSpeed.value = it.angleIncSpeed
@@ -60,6 +66,44 @@ class AnglesFragment : BaseParamFragment() {
 
                 zeroAdvAngle.isChecked = it.zeroAdvAngle > 0
             }
+
+            initViews()
+        }
+    }
+
+    private fun initViews() {
+
+        mBinding.apply {
+            maxAdvanceAngle.addOnValueChangeListener {
+                packet?.maxAngle = it
+                packet?.let { it1 -> mViewModel.sendPacket(it1) }
+            }
+            minAdvanceAngle.addOnValueChangeListener {
+                packet?.minAngle = it
+                packet?.let { it1 -> mViewModel.sendPacket(it1) }
+            }
+            angleDecreaseSpeed.addOnValueChangeListener {
+                packet?.angleDecSpeed = it
+                packet?.let { it1 -> mViewModel.sendPacket(it1) }
+            }
+            angleIncreaseSpeed.addOnValueChangeListener {
+                packet?.angleIncSpeed = it
+                packet?.let { it1 -> mViewModel.sendPacket(it1) }
+            }
+            octaneCorrection.addOnValueChangeListener {
+                packet?.angleCorrection = it
+                packet?.let { it1 -> mViewModel.sendPacket(it1) }
+            }
+            zeroAdvAngle.setOnCheckedChangeListener { _, isChecked ->
+                packet?.zeroAdvAngle = if (isChecked) 1 else 0
+                packet?.let { it1 -> mViewModel.sendPacket(it1) }
+            }
+
+            maxAdvanceAngle.setOnClickListener { floatParamClick(it as FloatParamView) }
+            minAdvanceAngle.setOnClickListener { floatParamClick(it as FloatParamView) }
+            angleDecreaseSpeed.setOnClickListener { floatParamClick(it as FloatParamView) }
+            angleIncreaseSpeed.setOnClickListener { floatParamClick(it as FloatParamView) }
+            octaneCorrection.setOnClickListener { floatParamClick(it as FloatParamView) }
         }
     }
 }

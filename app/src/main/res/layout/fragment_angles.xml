@@ -42,6 +42,9 @@
         app:units="@string/units_degree"
         app:float_value="0"
         app:value_precision="two"
+        app:float_min_value="-15.0"
+        app:float_max_value="60.0"
+        app:float_step="0.25"
         />
 
 
@@ -55,6 +58,9 @@
         app:units="@string/units_degree"
         app:float_value="0"
         app:value_precision="two"
+        app:float_min_value="-15.0"
+        app:float_max_value="60.0"
+        app:float_step="0.25"
         />
 
 
@@ -69,6 +75,9 @@
         app:units="@string/units_degree_per_stroke"
         app:float_value="0"
         app:value_precision="two"
+        app:float_min_value="0"
+        app:float_max_value="10.0"
+        app:float_step="0.02"
         />
 
 
@@ -82,6 +91,9 @@
         app:units="@string/units_degree_per_stroke"
         app:float_value="0"
         app:value_precision="two"
+        app:float_min_value="0"
+        app:float_max_value="10.0"
+        app:float_step="0.02"
         />
 
 
@@ -89,15 +101,17 @@
         android:id="@+id/octane_correction"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        app:layout_constraintTop_toBottomOf="@id/angle_increase_speed"
-        app:layout_constraintStart_toStartOf="parent"
         android:layout_marginTop="16dp"
+        app:float_value="0"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@id/angle_increase_speed"
         app:title="@string/angles_octane_correction_title"
         app:units="@string/units_degree"
-        app:float_value="0"
         app:value_precision="two"
+        app:float_min_value="-30.0"
+        app:float_max_value="30.0"
+        app:float_step="0.25"
         />
-
 
     <CheckBox
         android:id="@+id/zero_adv_angle"
