@@ -45,6 +45,9 @@
             app:title="@string/idlreg_ifac1_title"
             app:float_value="0"
             app:value_precision="two"
+            app:float_min_value="0"
+            app:float_max_value="10"
+            app:float_step="0.01"
             />
 
         <org.secu3.android.ui.parameters.views.FloatParamView
@@ -54,6 +57,9 @@
             app:title="@string/idlreg_ifac2_title"
             app:float_value="0"
             app:value_precision="two"
+            app:float_min_value="0"
+            app:float_max_value="10"
+            app:float_step="0.01"
             />
 
 
@@ -67,6 +73,9 @@
             app:title="@string/idlreg_maximal_angle_title"
             app:float_value="0"
             app:value_precision="two"
+            app:float_min_value="-15"
+            app:float_max_value="30"
+            app:float_step="0.02"
             />
 
         <org.secu3.android.ui.parameters.views.FloatParamView
@@ -76,6 +85,9 @@
             app:title="@string/idlreg_minimal_angle_title"
             app:float_value="0"
             app:value_precision="two"
+            app:float_min_value="-15"
+            app:float_max_value="30"
+            app:float_step="0.02"
             />
 
 
@@ -89,6 +101,9 @@
             app:title="@string/idlreg_target_rpm_title"
             app:int_value="0"
             app:units="@string/units_rpm"
+            app:int_min_value="0"
+            app:int_max_value="1800"
+            app:int_step="5"
             />
 
 
@@ -99,6 +114,9 @@
             app:title="@string/idlreg_rpm_sensitivity_title"
             app:int_value="0"
             app:units="@string/units_rpm"
+            app:int_min_value="0"
+            app:int_max_value="500"
+            app:int_step="1"
             />
 
 
@@ -111,6 +129,9 @@
             app:float_value="0"
             app:units="@string/units_degrees_celcius"
             app:value_precision="two"
+            app:float_min_value="0.0"
+            app:float_max_value="100.0"
+            app:float_step="0.2"
             />
 
 
@@ -175,6 +196,9 @@
             app:units="@string/units_percents"
             app:float_value="0"
             app:value_precision="one"
+            app:float_min_value="0.0"
+            app:float_max_value="100.0"
+            app:float_step="0.5"
             />
 
         <!-- ************************************************************* -->
@@ -187,6 +211,9 @@
             app:title="@string/idlreg_rpm_add_on_run_title"
             app:units="@string/units_rpm"
             app:int_value="0"
+            app:int_min_value="0"
+            app:int_max_value="2000"
+            app:int_step="10"
             />
 
 
@@ -201,6 +228,9 @@
             app:units="@string/units_coef"
             app:float_value="0"
             app:value_precision="three"
+            app:float_min_value="0.0"
+            app:float_max_value="5.0"
+            app:float_step="0.005"
             />
 
         <org.secu3.android.ui.parameters.views.FloatParamView
@@ -211,6 +241,9 @@
             app:units="@string/units_coef"
             app:float_value="0"
             app:value_precision="three"
+            app:float_min_value="0.0"
+            app:float_max_value="5.0"
+            app:float_step="0.005"
             />
 
         <!-- ************************************************************* -->
@@ -225,6 +258,9 @@
             app:units="@string/units_coef"
             app:float_value="0"
             app:value_precision="two"
+            app:float_min_value="1.0"
+            app:float_max_value="2.99"
+            app:float_step="0.01"
             />
 
 
@@ -236,6 +272,9 @@
             app:units="@string/units_coef"
             app:float_value="0"
             app:value_precision="two"
+            app:float_min_value="1.0"
+            app:float_max_value="2.99"
+            app:float_step="0.01"
             />
 
 
@@ -250,6 +289,9 @@
             app:title="@string/idlreg_integrator_rpm_limit_title"
             app:units="@string/units_rpm"
             app:int_value="0"
+            app:int_min_value="10"
+            app:int_max_value="1200"
+            app:int_step="10"
             />
 
         <!-- ************************************************************* -->
@@ -263,6 +305,9 @@
             app:units="@string/units_pressure_kpa"
             app:float_value="0"
             app:value_precision="one"
+            app:float_min_value="0.0"
+            app:float_max_value="100.0"
+            app:float_step="0.1"
             />
 
         <!-- ************************************************************* -->
@@ -276,6 +321,9 @@
             app:units="@string/units_percents"
             app:float_value="0"
             app:value_precision="one"
+            app:float_min_value="0.0"
+            app:float_max_value="100.0"
+            app:float_step="0.5"
             />
 
         <org.secu3.android.ui.parameters.views.FloatParamView
@@ -286,6 +334,9 @@
             app:units="@string/units_percents"
             app:float_value="0"
             app:value_precision="one"
+            app:float_min_value="0.0"
+            app:float_max_value="100.0"
+            app:float_step="0.5"
             />
 
 
