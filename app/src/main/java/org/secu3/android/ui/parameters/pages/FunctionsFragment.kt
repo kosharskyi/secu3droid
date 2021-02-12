@@ -30,11 +30,15 @@ import androidx.fragment.app.Fragment
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
+import android.widget.AdapterView
 import android.widget.ArrayAdapter
 import androidx.fragment.app.activityViewModels
 import org.secu3.android.R
 import org.secu3.android.databinding.FragmentFunctionsBinding
+import org.secu3.android.models.packets.params.FunSetParamPacket
 import org.secu3.android.ui.parameters.ParamsViewModel
+import org.secu3.android.ui.parameters.views.FloatParamView
+import org.secu3.android.ui.parameters.views.IntParamView
 import kotlin.experimental.and
 
 
@@ -42,6 +46,8 @@ class FunctionsFragment : BaseParamFragment() {
 
     private val mViewModel: ParamsViewModel by activityViewModels()
     private lateinit var mBinding: FragmentFunctionsBinding
+
+    private var packet: FunSetParamPacket? = null
 
     private val loadMeasurementItems = listOf("MAP", "MAP(baro)", "TPS", "MAP+TPS")
     private val mapselItems = mapOf(1 to "1", 2 to "2", 3 to "3", 15 to "no")
@@ -74,6 +80,8 @@ class FunctionsFragment : BaseParamFragment() {
 
         mViewModel.funsetLiveData.observe(viewLifecycleOwner) {
 
+            packet = it
+
             mBinding.apply {
 
                 mViewModel.mFnNameDatPacket?.fnNameList?.map { fn -> fn.name }?.let { fnNames ->
@@ -101,6 +109,8 @@ class FunctionsFragment : BaseParamFragment() {
                 map2CurveOffset.value = it.map2CurveOffset
                 map2CurveGradient.value = it.map2CurveGradient
             }
+
+            initViews()
         }
     }
 
@@ -133,5 +143,83 @@ class FunctionsFragment : BaseParamFragment() {
         mBinding.barometricCorrection.inputType = InputType.TYPE_NULL
         val adapter = ArrayAdapter(requireContext(), R.layout.list_item, barocorrItems)
         mBinding.barometricCorrection.setAdapter(adapter)
+    }
+
+    private fun initViews() {
+
+        mBinding.apply {
+            lowerLoadValue.addOnValueChangeListener {
+                packet?.loadLower = it
+                packet?.let { it1 -> mViewModel.sendPacket(it1) }
+            }
+            upperLoadValue.addOnValueChangeListener {
+                packet?.loadUpper = it
+                packet?.let { it1 -> mViewModel.sendPacket(it1) }
+            }
+            mapCurveOffset.addOnValueChangeListener {
+                packet?.mapCurveOffset = it
+                packet?.let { it1 -> mViewModel.sendPacket(it1) }
+            }
+            mapCurveGradient.addOnValueChangeListener {
+                packet?.mapCurveGradient = it
+                packet?.let { it1 -> mViewModel.sendPacket(it1) }
+            }
+            tpsCurveOffset.addOnValueChangeListener {
+                packet?.tpsCurveOffset = it
+                packet?.let { it1 -> mViewModel.sendPacket(it1) }
+            }
+            tpsCurveGradient.addOnValueChangeListener {
+                packet?.tpsCurveGradient = it
+                packet?.let { it1 -> mViewModel.sendPacket(it1) }
+            }
+            map2CurveOffset.addOnValueChangeListener {
+                packet?.map2CurveOffset = it
+                packet?.let { it1 -> mViewModel.sendPacket(it1) }
+            }
+            map2CurveGradient.addOnValueChangeListener {
+                packet?.map2CurveGradient = it
+                packet?.let { it1 -> mViewModel.sendPacket(it1) }
+            }
+
+            mapsSet.onItemClickListener = AdapterView.OnItemClickListener { parent, view, position, id ->
+                packet?.fnGasoline = position
+                packet?.let { it1 -> mViewModel.sendPacket(it1) }
+            }
+
+            mapsSetForGas.onItemClickListener = AdapterView.OnItemClickListener { parent, view, position, id ->
+                packet?.fnGas = position
+                packet?.let { it1 -> mViewModel.sendPacket(it1) }
+            }
+
+            loadMeasurement.onItemClickListener = AdapterView.OnItemClickListener { parent, view, position, id ->
+                packet?.loadSrcCfg = position
+                packet?.let { it1 -> mViewModel.sendPacket(it1) }
+            }
+
+            mapselPetrol.onItemClickListener = AdapterView.OnItemClickListener { parent, view, position, id ->
+                packet?.mapserUniPetrol = mapselItems.keys.elementAt(position)
+                packet?.let { it1 -> mViewModel.sendPacket(it1) }
+            }
+
+            mapselGas.onItemClickListener = AdapterView.OnItemClickListener { parent, view, position, id ->
+                packet?.mapserUniGas = mapselItems.keys.elementAt(position)
+                packet?.let { it1 -> mViewModel.sendPacket(it1) }
+            }
+
+            barometricCorrection.onItemClickListener = AdapterView.OnItemClickListener { parent, view, position, id ->
+                packet?.barocorrType = position
+                packet?.let { it1 -> mViewModel.sendPacket(it1) }
+            }
+
+
+            lowerLoadValue.setOnClickListener { floatParamClick(it as FloatParamView) }
+            upperLoadValue.setOnClickListener { floatParamClick(it as FloatParamView) }
+            mapCurveOffset.setOnClickListener { floatParamClick(it as FloatParamView) }
+            mapCurveGradient.setOnClickListener { floatParamClick(it as FloatParamView) }
+            tpsCurveOffset.setOnClickListener { floatParamClick(it as FloatParamView) }
+            tpsCurveGradient.setOnClickListener { floatParamClick(it as FloatParamView) }
+            map2CurveOffset.setOnClickListener { floatParamClick(it as FloatParamView) }
+            map2CurveGradient.setOnClickListener { floatParamClick(it as FloatParamView) }
+        }
     }
 }
