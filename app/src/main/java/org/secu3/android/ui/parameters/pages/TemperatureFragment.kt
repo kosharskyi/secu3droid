@@ -28,14 +28,21 @@ import androidx.fragment.app.Fragment
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
+import android.widget.AdapterView
+import android.widget.RadioGroup
 import androidx.fragment.app.activityViewModels
 import org.secu3.android.databinding.FragmentTemperatureBinding
+import org.secu3.android.models.packets.params.TemperatureParamPacket
 import org.secu3.android.ui.parameters.ParamsViewModel
+import org.secu3.android.ui.parameters.views.FloatParamView
+import org.secu3.android.ui.parameters.views.IntParamView
 
 class TemperatureFragment : BaseParamFragment() {
 
     private val mViewModel: ParamsViewModel by activityViewModels()
     private lateinit var mBinding: FragmentTemperatureBinding
+
+    private var packet: TemperatureParamPacket? = null
 
     override fun onCreateView(inflater: LayoutInflater, container: ViewGroup?, savedInstanceState: Bundle?): View? {
         mBinding = FragmentTemperatureBinding.inflate(inflater, container, false)
@@ -46,6 +53,9 @@ class TemperatureFragment : BaseParamFragment() {
         super.onViewCreated(view, savedInstanceState)
 
         mViewModel.temperatureLiveData.observe(viewLifecycleOwner) {
+
+            packet = it
+
             mBinding.apply {
                 ventilatorTurnOn.value = it.ventOn
                 ventilatorTurnOff.value = it.ventOff
@@ -60,6 +70,65 @@ class TemperatureFragment : BaseParamFragment() {
                 airCondOnMinRpmThreshold.value = it.condMinRpm
                 coolingFansTimer.value = it.ventTmr
             }
+
+            initViews()
         }
     }
+
+    private fun initViews() {
+
+        mBinding.apply {
+            ventilatorTurnOn.addOnValueChangeListener {
+                packet?.ventOn = it
+                packet?.let { it1 -> mViewModel.sendPacket(it1) }
+            }
+            ventilatorTurnOff.addOnValueChangeListener {
+                packet?.ventOff = it
+                packet?.let { it1 -> mViewModel.sendPacket(it1) }
+            }
+
+            useSensor.setOnCheckedChangeListener { _, isChecked ->
+                packet?.coolantUse = isChecked
+                packet?.let { it1 -> mViewModel.sendPacket(it1) }
+            }
+            controlCoolingPwm.setOnCheckedChangeListener { _, isChecked ->
+                packet?.ventPwm = isChecked
+                packet?.let { it1 -> mViewModel.sendPacket(it1) }
+            }
+            useSensorsCurveTable.setOnCheckedChangeListener { _, isChecked ->
+                packet?.coolantMap = isChecked
+                packet?.let { it1 -> mViewModel.sendPacket(it1) }
+            }
+
+            pwmFrequency.addOnValueChangeListener {
+                packet?.ventPwmFrq = it
+                packet?.let { it1 -> mViewModel.sendPacket(it1) }
+            }
+            airCondOnThreshold.addOnValueChangeListener {
+                packet?.condPvtOn = it
+                packet?.let { it1 -> mViewModel.sendPacket(it1) }
+            }
+            airCondOffThreshold.addOnValueChangeListener {
+                packet?.condPvtOff = it
+                packet?.let { it1 -> mViewModel.sendPacket(it1) }
+            }
+            airCondOnMinRpmThreshold.addOnValueChangeListener {
+                packet?.condMinRpm = it
+                packet?.let { it1 -> mViewModel.sendPacket(it1) }
+            }
+            coolingFansTimer.addOnValueChangeListener {
+                packet?.ventTmr = it
+                packet?.let { it1 -> mViewModel.sendPacket(it1) }
+            }
+
+            ventilatorTurnOn.setOnClickListener { floatParamClick(it as FloatParamView) }
+            ventilatorTurnOn.setOnClickListener { floatParamClick(it as FloatParamView) }
+            pwmFrequency.setOnClickListener { intParamClick(it as IntParamView) }
+            airCondOnThreshold.setOnClickListener { floatParamClick(it as FloatParamView) }
+            airCondOffThreshold.setOnClickListener { floatParamClick(it as FloatParamView) }
+            airCondOnMinRpmThreshold.setOnClickListener { intParamClick(it as IntParamView) }
+            coolingFansTimer.setOnClickListener { intParamClick(it as IntParamView) }
+        }
+    }
+
 }

@@ -57,14 +57,35 @@ data class TemperatureParamPacket(
         return data
     }
 
-    val coolantUse: Boolean   //Flag of using coolant temperature sensor
+    var coolantUse: Boolean   //Flag of using coolant temperature sensor
         get() = tmpFlags.getBitValue(0) > 0
+        set(value) {
+            tmpFlags = if (value) {
+                tmpFlags.or(1)
+            } else {
+                1.inv().and(tmpFlags)
+            }
+        }
 
-    val coolantMap: Boolean   //Flag which indicates using of lookup table for coolant temperature sensor
+    var coolantMap: Boolean   //Flag which indicates using of lookup table for coolant temperature sensor
         get() = tmpFlags.getBitValue(1) > 0
+        set(value) {
+            tmpFlags = if (value) {
+                1.shl(1).or(tmpFlags)
+            } else {
+                1.shl(1).inv().and(tmpFlags)
+            }
+        }
 
-    val ventPwm: Boolean   //Flag - control cooling fan by using PWM
+    var ventPwm: Boolean   //Flag - control cooling fan by using PWM
         get() = tmpFlags.getBitValue(2) > 0
+        set(value) {
+            tmpFlags = if (value) {
+                1.shl(2).or(tmpFlags)
+            } else {
+                1.shl(2).inv().and(tmpFlags)
+            }
+        }
 
 
     companion object {
