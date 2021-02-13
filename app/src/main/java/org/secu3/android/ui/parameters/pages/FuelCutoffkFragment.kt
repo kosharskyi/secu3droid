@@ -30,12 +30,17 @@ import android.view.View
 import android.view.ViewGroup
 import androidx.fragment.app.activityViewModels
 import org.secu3.android.databinding.FragmentFuelCutoffkBinding
+import org.secu3.android.models.packets.params.CarburParamPacket
 import org.secu3.android.ui.parameters.ParamsViewModel
+import org.secu3.android.ui.parameters.views.FloatParamView
+import org.secu3.android.ui.parameters.views.IntParamView
 
 class FuelCutoffkFragment : BaseParamFragment() {
 
     private val mViewModel: ParamsViewModel by activityViewModels()
     private lateinit var mBinding: FragmentFuelCutoffkBinding
+
+    private var packet: CarburParamPacket? = null
 
     override fun onCreateView(inflater: LayoutInflater, container: ViewGroup?, savedInstanceState: Bundle?): View? {
         mBinding = FragmentFuelCutoffkBinding.inflate(inflater, container, false)
@@ -46,6 +51,8 @@ class FuelCutoffkFragment : BaseParamFragment() {
         super.onViewCreated(view, savedInstanceState)
 
         mViewModel.carburLiveData.observe(viewLifecycleOwner) {
+            packet = it
+
             mBinding.apply {
                 idleCutoffLowerThrd.value = it.ieLot
                 idleCutoffUpperThrd.value = it.ieHit
@@ -65,6 +72,82 @@ class FuelCutoffkFragment : BaseParamFragment() {
                 revLimitingLowerThrd.value = it.revlimLot
                 revLimitingUpperThrd.value = it.revlimHit
             }
+
+            initViews()
+        }
+    }
+
+
+    private fun initViews() {
+
+        mBinding.apply {
+            idleCutoffLowerThrd.addOnValueChangeListener {
+                packet?.ieLot = it
+                packet?.let { it1 -> mViewModel.sendPacket(it1) }
+            }
+            idleCutoffUpperThrd.addOnValueChangeListener {
+                packet?.ieHit = it
+                packet?.let { it1 -> mViewModel.sendPacket(it1) }
+            }
+
+            idleCutoffLowerThrdGas.addOnValueChangeListener {
+                packet?.ieLotG = it
+                packet?.let { it1 -> mViewModel.sendPacket(it1) }
+            }
+            idleCutoffUpperThrdGas.addOnValueChangeListener {
+                packet?.ieHitG = it
+                packet?.let { it1 -> mViewModel.sendPacket(it1) }
+            }
+            cutoffDelay.addOnValueChangeListener {
+                packet?.shutoffDelay = it
+                packet?.let { it1 -> mViewModel.sendPacket(it1) }
+            }
+            powerValveTurnOnThrd.addOnValueChangeListener {
+                packet?.feOnThresholds = it
+                packet?.let { it1 -> mViewModel.sendPacket(it1) }
+            }
+            tpsThreshold.addOnValueChangeListener {
+                packet?.tpsThreshold = it
+                packet?.let { it1 -> mViewModel.sendPacket(it1) }
+            }
+
+            inversionOfThrottlePositionSwitch.setOnCheckedChangeListener { _, isChecked ->
+                packet?.carbInvers = if (isChecked) 1 else 0
+                packet?.let { it1 -> mViewModel.sendPacket(it1) }
+            }
+
+            fuelCutMapThreshold.addOnValueChangeListener {
+                packet?.fuelcutMapThrd = it
+                packet?.let { it1 -> mViewModel.sendPacket(it1) }
+            }
+
+            fuelCutCtsThreshold.addOnValueChangeListener {
+                packet?.fuelcutCtsThrd = it
+                packet?.let { it1 -> mViewModel.sendPacket(it1) }
+            }
+
+            revLimitingLowerThrd.addOnValueChangeListener {
+                packet?.revlimLot = it
+                packet?.let { it1 -> mViewModel.sendPacket(it1) }
+            }
+
+            revLimitingUpperThrd.addOnValueChangeListener {
+                packet?.revlimHit = it
+                packet?.let { it1 -> mViewModel.sendPacket(it1) }
+            }
+
+            idleCutoffLowerThrd.setOnClickListener { intParamClick(it as IntParamView) }
+            idleCutoffUpperThrd.setOnClickListener { intParamClick(it as IntParamView) }
+            idleCutoffLowerThrdGas.setOnClickListener { intParamClick(it as IntParamView) }
+            idleCutoffUpperThrdGas.setOnClickListener { intParamClick(it as IntParamView) }
+            cutoffDelay.setOnClickListener { floatParamClick(it as FloatParamView) }
+            powerValveTurnOnThrd.setOnClickListener { floatParamClick(it as FloatParamView) }
+            tpsThreshold.setOnClickListener { floatParamClick(it as FloatParamView) }
+
+            fuelCutMapThreshold.setOnClickListener { floatParamClick(it as FloatParamView) }
+            fuelCutCtsThreshold.setOnClickListener { floatParamClick(it as FloatParamView) }
+            revLimitingLowerThrd.setOnClickListener { intParamClick(it as IntParamView) }
+            revLimitingUpperThrd.setOnClickListener { intParamClick(it as IntParamView) }
         }
     }
 }
