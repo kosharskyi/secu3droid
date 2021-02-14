@@ -33,7 +33,9 @@ import android.widget.ArrayAdapter
 import androidx.fragment.app.activityViewModels
 import org.secu3.android.R
 import org.secu3.android.databinding.FragmentChokeControlBinding
+import org.secu3.android.models.packets.params.ChokeControlParPacket
 import org.secu3.android.ui.parameters.ParamsViewModel
+import org.secu3.android.ui.parameters.views.FloatParamView
 
 
 class ChokeControlFragment : BaseParamFragment() {
@@ -42,6 +44,8 @@ class ChokeControlFragment : BaseParamFragment() {
     private lateinit var mBinding: FragmentChokeControlBinding
 
     private val stepperPulses = listOf("300", "150", "100", "75")
+
+    private var packet: ChokeControlParPacket? = null
 
     override fun onCreateView(inflater: LayoutInflater, container: ViewGroup?, savedInstanceState: Bundle?): View? {
         mBinding = FragmentChokeControlBinding.inflate(inflater, container, false)
@@ -59,6 +63,9 @@ class ChokeControlFragment : BaseParamFragment() {
         }
 
         mViewModel.chokeLiveData.observe(viewLifecycleOwner) {
+
+            packet = it
+
             mBinding.apply {
                 numSmSteps.value = it.smSteps
                 regulatorFactor.value = it.rpmIf
@@ -74,6 +81,68 @@ class ChokeControlFragment : BaseParamFragment() {
                 freqOfPulses.setText(stepperPulses[it.smFreq], false)
                 timeFromCrankToRun.value = it.injCrankToRunTime
             }
+
+            initViews()
+        }
+    }
+
+    private fun initViews() {
+
+        mBinding.apply {
+
+            numSmSteps.addOnValueChangeListener {
+                packet?.smSteps = it
+                packet?.let { it1 -> mViewModel.sendPacket(it1) }
+            }
+
+            regulatorFactor.addOnValueChangeListener {
+                packet?.rpmIf = it
+                packet?.let { it1 -> mViewModel.sendPacket(it1) }
+            }
+            crankingMapLastingCold.addOnValueChangeListener {
+                packet?.corrTime0 = it
+                packet?.let { it1 -> mViewModel.sendPacket(it1) }
+            }
+
+            crankingMapLastingHot.addOnValueChangeListener {
+                packet?.corrTime1 = it
+                packet?.let { it1 -> mViewModel.sendPacket(it1) }
+            }
+
+            useClosedLoopRpmRegulator.setOnCheckedChangeListener { _, isChecked ->
+                packet?.useClosedLoopRmpRegulator = isChecked
+                packet?.let { it1 -> mViewModel.sendPacket(it1) }
+            }
+            dontUseRpmRegulatorOnGas.setOnCheckedChangeListener { _, isChecked ->
+                packet?.dontUseRpmRegOnGas = isChecked
+                packet?.let { it1 -> mViewModel.sendPacket(it1) }
+            }
+            useThrottlePosInChokeInit.setOnCheckedChangeListener { _, isChecked ->
+                packet?.useThrottlePosInChokeInit = isChecked
+                packet?.let { it1 -> mViewModel.sendPacket(it1) }
+            }
+            maximumSTEPFrequencyAtInit.setOnCheckedChangeListener { _, isChecked ->
+                packet?.maxSTEPfreqAtInit = isChecked
+                packet?.let { it1 -> mViewModel.sendPacket(it1) }
+            }
+
+            freqOfPulses.setOnItemClickListener { _, _, position, _ ->
+                packet?.smFreq = position
+                packet?.let { it1 -> mViewModel.sendPacket(it1) }
+            }
+
+            timeFromCrankToRun.addOnValueChangeListener {
+                packet?.injCrankToRunTime = it
+                packet?.let { it1 -> mViewModel.sendPacket(it1) }
+            }
+
+
+            numSmSteps.setOnClickListener { floatParamClick(it as FloatParamView) }
+            regulatorFactor.setOnClickListener { floatParamClick(it as FloatParamView) }
+            crankingMapLastingCold.setOnClickListener { floatParamClick(it as FloatParamView) }
+
+            crankingMapLastingHot.setOnClickListener { floatParamClick(it as FloatParamView) }
+            timeFromCrankToRun.setOnClickListener { floatParamClick(it as FloatParamView) }
         }
     }
 

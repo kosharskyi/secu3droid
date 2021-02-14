@@ -46,6 +46,9 @@
             app:title="@string/choke_steps_title"
             app:units=""
             app:int_value="0"
+            app:int_min_value="50"
+            app:int_max_value="2000"
+            app:int_step="1"
             />
 
 
@@ -60,6 +63,9 @@
             app:units=""
             app:float_value="0"
             app:value_precision="two"
+            app:float_min_value="0.01"
+            app:float_max_value="1.00"
+            app:float_step="0.01"
             />
 
 
@@ -74,6 +80,9 @@
             app:units="@string/units_sec"
             app:float_value="0"
             app:value_precision="one"
+            app:float_min_value="0.1"
+            app:float_max_value="10.0"
+            app:float_step="0.1"
             />
 
         <!-- ************************************************************* -->
@@ -86,6 +95,9 @@
             app:units="@string/units_sec"
             app:float_value="0"
             app:value_precision="one"
+            app:float_min_value="0.1"
+            app:float_max_value="10.0"
+            app:float_step="0.1"
             />
 
         <!-- ************************************************************* -->
@@ -156,6 +168,9 @@
             app:units="@string/units_sec"
             app:float_value="0"
             app:value_precision="two"
+            app:float_min_value="0.10"
+            app:float_max_value="99.0"
+            app:float_step="0.01"
             />
 
         <!-- ************************************************************* -->

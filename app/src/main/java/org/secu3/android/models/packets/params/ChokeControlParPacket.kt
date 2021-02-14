@@ -42,17 +42,45 @@ data class ChokeControlParPacket(
 
 ) : BaseOutputPacket() {
 
-    val useClosedLoopRmpRegulator: Boolean
+    var useClosedLoopRmpRegulator: Boolean
         get() = flags.getBitValue(0) > 0
+        set(value) {
+            flags = if (value) {
+                1.or(flags)
+            } else {
+                1.inv().and(flags)
+            }
+        }
 
-    val dontUseRpmRegOnGas: Boolean
+    var dontUseRpmRegOnGas: Boolean
         get() = flags.getBitValue(1) > 0
+        set(value) {
+            flags = if (value) {
+                1.shl(1).or(flags)
+            } else {
+                1.shl(1).inv().and(flags)
+            }
+        }
 
-    val useThrottlePosInChokeInit: Boolean
+    var useThrottlePosInChokeInit: Boolean
         get() = flags.getBitValue(2) > 0
+        set(value) {
+            flags = if (value) {
+                1.shl(2).or(flags)
+            } else {
+                1.shl(2).inv().and(flags)
+            }
+        }
 
-    val maxSTEPfreqAtInit: Boolean
+    var maxSTEPfreqAtInit: Boolean
         get() = flags.getBitValue(3) > 0
+        set(value) {
+            flags = if (value) {
+                1.shl(3).or(flags)
+            } else {
+                1.shl(3).inv().and(flags)
+            }
+        }
 
     override fun pack(): String {
         var data = "$OUTPUT_PACKET_SYMBOL$DESCRIPTOR"
