@@ -91,24 +91,42 @@ data class InjctrParPacket(
 
     var isAtMega644: Boolean = false
 
-    val config0: Int
+    var config0: Int
         get() = config[0].shr(4)
+        set(value) {
+            config[0] = config[0].and(0x0F).or(value.shl(4))
+        }
 
-    val config0Pulses: Int
-        get() = config[0].and(15)
+    var config0Pulses: Int
+        get() = config[0].and(0xF)
+        set(value) {
+            config[0] = config[0].and(0xF0).or(value)
+        }
 
-    val config1: Int
+    var config1: Int
         get() = config[1].shr(4)
+        set(value) {
+            config[1] = config[1].and(0x0F).or(value.shl(4))
+        }
 
-    val config1Pulses: Int
-        get() = config[1].and(15)
+    var config1Pulses: Int
+        get() = config[1].and(0xF)
+        set(value) {
+            config[1] = config[1].and(0xF0).or(value)
+        }
 
 
-    val angleSpec0: Int
-        get() = angleSpec.and(15)
+    var angleSpec0: Int
+        get() = angleSpec.and(0xF)
+        set(value) {
+            angleSpec = angleSpec.and(0xF0).or(value)
+        }
 
-    val angleSpec1: Int
+    var angleSpec1: Int
         get() = angleSpec.shr(4)
+        set(value) {
+            angleSpec = angleSpec.and(0x0F).or(value.shl(4))
+        }
 
 
     private val discrete: Float
@@ -119,30 +137,78 @@ data class InjctrParPacket(
             return 4.0f
         }
 
-    val minPw0: Float
-        get() = minPw.and(255).toFloat().times(discrete).div(1000.0f).times(8.0f)
+    var minPw0: Float
+        get() = minPw.and(0xFF).toFloat().times(discrete).div(1000.0f).times(8.0f)
+        set(value) {
+            minPw = value.div(8.0f).times(1000.0f).div(discrete).toInt().or(minPw.and(0xFF00))
+        }
 
-    val minPw1: Float
+    var minPw1: Float
         get() = minPw.shr(8).toFloat().times(discrete).div(1000.0f).times(8.0f)
+        set(value) {
+            minPw = value.div(8.0f).times(1000.0f).div(discrete).toInt().shl(8).or(minPw.and(0x00FF))
+        }
 
 
-    val useTimingMap: Boolean
+    var useTimingMap: Boolean
         get() = flags.getBitValue(0) > 0
+        set(value) {
+            flags = if (value) {
+                1.or(flags)
+            } else {
+                1.inv().and(flags)
+            }
+        }
 
-    val useTimingMapG: Boolean
+    var useTimingMapG: Boolean
         get() = flags.getBitValue(1) > 0
+        set(value) {
+            flags = if (value) {
+                1.shl(1).or(flags)
+            } else {
+                1.shl(1).inv().and(flags)
+            }
+        }
 
-    val useAdditionalCorrections: Boolean
+    var useAdditionalCorrections: Boolean
         get() = flags.getBitValue(2) > 0
+        set(value) {
+            flags = if (value) {
+                1.shl(2).or(flags)
+            } else {
+                1.shl(2).inv().and(flags)
+            }
+        }
 
-    val useAirDensity: Boolean
+    var useAirDensity: Boolean
         get() = flags.getBitValue(3) > 0
+        set(value) {
+            flags = if (value) {
+                1.shl(3).or(flags)
+            } else {
+                1.shl(3).inv().and(flags)
+            }
+        }
 
-    val useDifferentialPressure: Boolean
+    var useDifferentialPressure: Boolean
         get() = flags.getBitValue(4) > 0
+        set(value) {
+            flags = if (value) {
+                1.shl(4).or(flags)
+            } else {
+                1.shl(4).inv().and(flags)
+            }
+        }
 
-    val switchSecondInjRow: Boolean
+    var switchSecondInjRow: Boolean
         get() = flags.getBitValue(5) > 0
+        set(value) {
+            flags = if (value) {
+                1.shl(5).or(flags)
+            } else {
+                1.shl(5).inv().and(flags)
+            }
+        }
 
     companion object {
 
