@@ -130,6 +130,9 @@
             app:title="@string/ckps_cogs_number_title"
             app:units=""
             app:int_value="0"
+            app:int_min_value="16"
+            app:int_max_value="200"
+            app:int_step="1"
             />
 
 
@@ -144,6 +147,9 @@
             app:title="@string/ckps_missing_cogs_number_title"
             app:units=""
             app:int_value="0"
+            app:int_min_value="0"
+            app:int_max_value="2"
+            app:int_step="1"
             />
 
         <!-- ************************************************************* -->
@@ -196,6 +202,9 @@
             app:title="@string/ckps_ignition_pulse_delay_title"
             app:units=""
             app:int_value="0"
+            app:int_min_value="1"
+            app:int_max_value="200"
+            app:int_step="1"
             />
 
 
@@ -210,6 +219,9 @@
             app:units="@string/units_degrees_cs"
             app:float_value="0"
             app:value_precision="one"
+            app:float_max_value="120.0"
+            app:float_min_value="0.0"
+            app:float_step="0.1"
             />
 
 
@@ -224,6 +236,9 @@
             app:units="@string/units_degrees_cs"
             app:float_value="0"
             app:value_precision="one"
+            app:float_max_value="120.0"
+            app:float_min_value="30.0"
+            app:float_step="0.1"
             />
 
 
