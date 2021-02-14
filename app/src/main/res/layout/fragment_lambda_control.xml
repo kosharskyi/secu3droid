@@ -91,6 +91,9 @@
             app:title="@string/lambda_par_strokes_per_step_title"
             app:units="@string/units_num"
             app:int_value="0"
+            app:int_max_value="0"
+            app:int_min_value="100"
+            app:int_step="1"
             />
 
 
@@ -121,6 +124,9 @@
             app:units="@string/units_percents"
             app:float_value="0"
             app:value_precision="two"
+            app:float_max_value="45.0"
+            app:float_min_value="0.0"
+            app:float_step="0.25"
             />
 
         <!-- ************************************************************* -->
@@ -135,6 +141,9 @@
             app:units="@string/units_percents"
             app:float_value="0"
             app:value_precision="two"
+            app:float_max_value="45.0"
+            app:float_min_value="0.0"
+            app:float_step="0.25"
             />
 
         <!-- ************************************************************* -->
@@ -150,6 +159,9 @@
             app:units="@string/units_percents"
             app:float_value="0"
             app:value_precision="two"
+            app:float_max_value="100.0"
+            app:float_min_value="0.5"
+            app:float_step="0.5"
             />
 
         <org.secu3.android.ui.parameters.views.FloatParamView
@@ -162,6 +174,9 @@
             app:units="@string/units_percents"
             app:float_value="0"
             app:value_precision="two"
+            app:float_max_value="100.0"
+            app:float_min_value="0.5"
+            app:float_step="0.5"
             />
 
         <!-- ************************************************************* -->
@@ -177,6 +192,9 @@
             app:units="@string/units_volts"
             app:float_value="0"
             app:value_precision="two"
+            app:float_max_value="5.0"
+            app:float_min_value="0.1"
+            app:float_step="0.01"
             />
 
 
@@ -191,6 +209,9 @@
             app:units="@string/units_degrees_celcius"
             app:float_value="0"
             app:value_precision="two"
+            app:float_max_value="300.0"
+            app:float_min_value="0.0"
+            app:float_step="0.25"
             />
 
         <!-- ************************************************************* -->
@@ -205,6 +226,9 @@
             app:title="@string/lambda_par_rpm_threshold_title"
             app:units="@string/units_rpm"
             app:int_value="0"
+            app:int_max_value="30000"
+            app:int_min_value="0"
+            app:int_step="50"
             />
 
         <!-- ************************************************************* -->
@@ -219,6 +243,9 @@
             app:title="@string/lambda_par_activation_delay_title"
             app:units="@string/units_sec"
             app:int_value="0"
+            app:int_max_value="255"
+            app:int_min_value="0"
+            app:int_step="1"
             />
 
 
@@ -236,6 +263,9 @@
             app:units="@string/units_volts"
             app:float_value="0"
             app:value_precision="two"
+            app:float_max_value="5.0"
+            app:float_min_value="0.0"
+            app:float_step="0.01"
             />
 
 
@@ -281,6 +311,9 @@
             app:units="@string/units_afr"
             app:float_value="0"
             app:value_precision="one"
+            app:float_max_value="22.0"
+            app:float_min_value="8.0"
+            app:float_step="0.1"
             />
 
 
@@ -313,6 +346,9 @@
             app:title="@string/lambda_par_heating_time_without_pwm_on_cold_title"
             app:units="@string/units_sec"
             app:int_value="0"
+            app:int_min_value="0"
+            app:int_max_value="255"
+            app:int_step="1"
             />
 
         <org.secu3.android.ui.parameters.views.IntParamView
@@ -324,6 +360,9 @@
             app:title="@string/lambda_par_heating_time_without_pwm_on_hot_title"
             app:units="@string/units_sec"
             app:int_value="0"
+            app:int_min_value="0"
+            app:int_max_value="255"
+            app:int_step="1"
             />
 
         <!-- ************************************************************* -->
@@ -338,6 +377,9 @@
             app:title="@string/lambda_par_hot_cold_temperature_threshold_title"
             app:units="@string/units_degrees_celcius"
             app:int_value="0"
+            app:int_max_value="255"
+            app:int_min_value="0"
+            app:int_step="1"
             />
 
         <!-- ************************************************************* -->
@@ -354,6 +396,9 @@
             app:units="@string/units_sec"
             app:float_value="0"
             app:value_precision="one"
+            app:float_max_value="2.55"
+            app:float_min_value="0.0"
+            app:float_step="0.01"
             />
 
         <!-- ************************************************************* -->
@@ -368,6 +413,9 @@
             app:title="@string/lambda_par_air_flow_threshold_for_turning_heating_off_title"
             app:units="@string/units_rxl"
             app:int_value="0"
+            app:int_max_value="2000000"
+            app:int_min_value="100"
+            app:int_step="10"
             />
 
         <!-- ************************************************************* -->

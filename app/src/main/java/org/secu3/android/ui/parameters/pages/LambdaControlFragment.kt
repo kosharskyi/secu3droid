@@ -33,7 +33,10 @@ import android.widget.ArrayAdapter
 import androidx.fragment.app.activityViewModels
 import org.secu3.android.R
 import org.secu3.android.databinding.FragmentLambdaControlBinding
+import org.secu3.android.models.packets.params.LambdaParamPacket
 import org.secu3.android.ui.parameters.ParamsViewModel
+import org.secu3.android.ui.parameters.views.FloatParamView
+import org.secu3.android.ui.parameters.views.IntParamView
 import org.secu3.android.utils.gone
 import org.secu3.android.utils.visible
 
@@ -46,6 +49,8 @@ class LambdaControlFragment : BaseParamFragment() {
     private val sensorTypesList: List<String> by lazy {
         resources.getStringArray(R.array.lambda_sensors_types).toList()
     }
+
+    private var packet: LambdaParamPacket? = null
 
     override fun onCreateView(inflater: LayoutInflater, container: ViewGroup?, savedInstanceState: Bundle?): View? {
         mBinding = FragmentLambdaControlBinding.inflate(inflater, container, false)
@@ -68,6 +73,9 @@ class LambdaControlFragment : BaseParamFragment() {
         }
 
         mViewModel.lambdaLiveData.observe(viewLifecycleOwner) {
+
+            packet = it
+
             mBinding.apply {
                 sensorType.setText(sensorTypesList[it.senstype], false)
                 numberOfStrokesPerStep.value = it.strPerStp
@@ -104,6 +112,141 @@ class LambdaControlFragment : BaseParamFragment() {
 
                 heatingBeforeCranking.isChecked = it.heatingBeforeCranking
             }
+        }
+
+        initViews()
+    }
+
+    private fun initViews() {
+
+        mBinding.apply {
+
+            sensorType.setOnItemClickListener { parent, view, position, id ->
+                packet?.senstype = position
+                packet?.let { it1 -> mViewModel.sendPacket(it1) }
+            }
+
+            numberOfStrokesPerStep.addOnValueChangeListener {
+                packet?.strPerStp = it
+                packet?.let { it1 -> mViewModel.sendPacket(it1) }
+            }
+
+            numberOfMsPerStep.addOnValueChangeListener {
+                packet?.msPerStp = it
+                packet?.let { it1 -> mViewModel.sendPacket(it1) }
+            }
+
+            sizePositiveCorrectionStep.addOnValueChangeListener {
+                packet?.stepSizeP = it
+                packet?.let { it1 -> mViewModel.sendPacket(it1) }
+            }
+
+            sizeNegativeCorrectionStep.addOnValueChangeListener {
+                packet?.stepSizeM = it
+                packet?.let { it1 -> mViewModel.sendPacket(it1) }
+            }
+
+            correctionLimitPositive.addOnValueChangeListener {
+                packet?.corrLimitP = it
+                packet?.let { it1 -> mViewModel.sendPacket(it1) }
+            }
+
+            correctionLimitNegative.addOnValueChangeListener {
+                packet?.corrLimitM = it
+                packet?.let { it1 -> mViewModel.sendPacket(it1) }
+            }
+
+            switchPoint.addOnValueChangeListener {
+                packet?.swtPoint = it
+                packet?.let { it1 -> mViewModel.sendPacket(it1) }
+            }
+
+            ctsActivationThreshold.addOnValueChangeListener {
+                packet?.tempThrd = it
+                packet?.let { it1 -> mViewModel.sendPacket(it1) }
+            }
+
+            rpmActivationThreshold.addOnValueChangeListener {
+                packet?.rpmThrd = it
+                packet?.let { it1 -> mViewModel.sendPacket(it1) }
+            }
+
+            activationAfterStartIn.addOnValueChangeListener {
+                packet?.activDelay = it
+                packet?.let { it1 -> mViewModel.sendPacket(it1) }
+            }
+
+            switchPointDeadband.addOnValueChangeListener {
+                packet?.deadBand = it
+                packet?.let { it1 -> mViewModel.sendPacket(it1) }
+            }
+
+            determineHeatingUsingVoltage.setOnCheckedChangeListener { _, isChecked ->
+                packet?.determineLambdaHeatingByVoltage = isChecked
+                packet?.let { it1 -> mViewModel.sendPacket(it1) }
+            }
+
+            lambdaCorrectioinOnIdling.setOnCheckedChangeListener { _, isChecked ->
+                packet?.lambdaCorrectionOnIdling = isChecked
+                packet?.let { it1 -> mViewModel.sendPacket(it1) }
+            }
+
+            stoichiomRatioFor2Fuel.addOnValueChangeListener {
+                packet?.gdStoichval = it
+                packet?.let { it1 -> mViewModel.sendPacket(it1) }
+            }
+
+            heatingTimeWithoutPwmOnCold.addOnValueChangeListener {
+                packet?.heatingTime0 = it
+                packet?.let { it1 -> mViewModel.sendPacket(it1) }
+            }
+
+            heatingTimeWithoutPwmOnHot.addOnValueChangeListener {
+                packet?.heatingTime1 = it
+                packet?.let { it1 -> mViewModel.sendPacket(it1) }
+            }
+
+            coldHotTemperatureThreshold.addOnValueChangeListener {
+                packet?.temperThrd = it
+                packet?.let { it1 -> mViewModel.sendPacket(it1) }
+            }
+
+            turnOnTimeInPwmMode.addOnValueChangeListener {
+                packet?.heatingAct = it
+                packet?.let { it1 -> mViewModel.sendPacket(it1) }
+            }
+
+            airFlowThresholdForTurningHeatingOff.addOnValueChangeListener {
+                packet?.aflowThrd = it
+                packet?.let { it1 -> mViewModel.sendPacket(it1) }
+            }
+
+            heatingBeforeCranking.setOnCheckedChangeListener { _, isChecked ->
+                packet?.heatingBeforeCranking = isChecked
+                packet?.let { it1 -> mViewModel.sendPacket(it1) }
+            }
+
+
+
+            numberOfStrokesPerStep.setOnClickListener { intParamClick(it as IntParamView) }
+            numberOfMsPerStep.setOnClickListener { intParamClick(it as IntParamView) }
+            sizePositiveCorrectionStep.setOnClickListener { floatParamClick(it as FloatParamView) }
+            sizeNegativeCorrectionStep.setOnClickListener { floatParamClick(it as FloatParamView) }
+            correctionLimitPositive.setOnClickListener { floatParamClick(it as FloatParamView) }
+            correctionLimitNegative.setOnClickListener { floatParamClick(it as FloatParamView) }
+            switchPoint.setOnClickListener { floatParamClick(it as FloatParamView) }
+            ctsActivationThreshold.setOnClickListener { floatParamClick(it as FloatParamView) }
+            rpmActivationThreshold.setOnClickListener { intParamClick(it as IntParamView) }
+            activationAfterStartIn.setOnClickListener { intParamClick(it as IntParamView) }
+
+
+            switchPointDeadband.setOnClickListener { floatParamClick(it as FloatParamView) }
+            stoichiomRatioFor2Fuel.setOnClickListener { floatParamClick(it as FloatParamView) }
+            heatingTimeWithoutPwmOnCold.setOnClickListener { intParamClick(it as IntParamView) }
+            heatingTimeWithoutPwmOnHot.setOnClickListener { intParamClick(it as IntParamView) }
+            coldHotTemperatureThreshold.setOnClickListener { intParamClick(it as IntParamView) }
+            turnOnTimeInPwmMode.setOnClickListener { floatParamClick(it as FloatParamView) }
+            airFlowThresholdForTurningHeatingOff.setOnClickListener { intParamClick(it as IntParamView) }
         }
     }
 }

@@ -64,14 +64,35 @@ data class LambdaParamPacket(
 
 ) : BaseOutputPacket() {
 
-    val determineLambdaHeatingByVoltage: Boolean
+    var determineLambdaHeatingByVoltage: Boolean
         get() = flags.getBitValue(0) > 0
+        set(value) {
+            flags = if (value) {
+                1.or(flags)
+            } else {
+                1.inv().and(flags)
+            }
+        }
 
-    val lambdaCorrectionOnIdling: Boolean
+    var lambdaCorrectionOnIdling: Boolean
         get() = flags.getBitValue(1) > 0
+        set(value) {
+            flags = if (value) {
+                1.shl(1).or(flags)
+            } else {
+                1.shl(1).inv().and(flags)
+            }
+        }
 
-    val heatingBeforeCranking: Boolean
+    var heatingBeforeCranking: Boolean
         get() = flags.getBitValue(2) > 0
+        set(value) {
+            flags = if (value) {
+                1.shl(2).or(flags)
+            } else {
+                1.shl(2).inv().and(flags)
+            }
+        }
 
 
     override fun pack(): String {
