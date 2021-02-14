@@ -60,6 +60,9 @@
             app:units="@string/units_degrees_cs"
             app:float_value="0"
             app:value_precision="two"
+            app:float_min_value="-12"
+            app:float_max_value="54"
+            app:float_step="1"
             />
 
 
@@ -75,6 +78,9 @@
             app:units="@string/units_degrees_cs"
             app:float_value="0"
             app:value_precision="two"
+            app:float_min_value="-12"
+            app:float_max_value="54"
+            app:float_step="1"
             />
 
 
@@ -130,6 +136,9 @@
             app:units="@string/units_degrees_cs"
             app:float_value="0"
             app:value_precision="two"
+            app:float_min_value="0"
+            app:float_max_value="20"
+            app:float_step="0.25"
             />
 
 
@@ -145,6 +154,9 @@
             app:units="@string/units_degrees_cs"
             app:float_value="0"
             app:value_precision="two"
+            app:float_min_value="0"
+            app:float_max_value="5"
+            app:float_step="0.2"
             />
 
         <!-- ************************************************************* -->
@@ -158,6 +170,9 @@
             app:units="@string/units_degrees_cs"
             app:float_value="0"
             app:value_precision="two"
+            app:float_min_value="0"
+            app:float_max_value="25"
+            app:float_step="0.25"
             />
 
         <!-- ************************************************************* -->
@@ -172,6 +187,9 @@
             app:units="@string/units_volts"
             app:float_value="0"
             app:value_precision="two"
+            app:float_min_value="0.1"
+            app:float_max_value="5"
+            app:float_step="0.01"
             />
 
         <!-- ************************************************************* -->
@@ -184,6 +202,9 @@
             app:title="@string/knock_par_angle_recovery_delay_title"
             app:units="@string/units_str"
             app:int_value="0"
+            app:int_min_value="1"
+            app:int_max_value="99"
+            app:int_step="1"
             />
 
     </LinearLayout>

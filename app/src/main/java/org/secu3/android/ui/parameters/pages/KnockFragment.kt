@@ -31,13 +31,18 @@ import android.view.ViewGroup
 import androidx.fragment.app.activityViewModels
 import org.secu3.android.R
 import org.secu3.android.databinding.FragmentKnockBinding
+import org.secu3.android.models.packets.params.KnockParamPacket
 import org.secu3.android.ui.parameters.ParamsViewModel
+import org.secu3.android.ui.parameters.views.FloatParamView
+import org.secu3.android.ui.parameters.views.IntParamView
 
 
 class KnockFragment : BaseParamFragment() {
 
     private val mViewModel: ParamsViewModel by activityViewModels()
     private lateinit var mBinding: FragmentKnockBinding
+
+    private var packet: KnockParamPacket? = null
 
     private val bpfList: List<String> by lazy {
         resources.getStringArray(R.array.knock_filter_frequencies).toList()
@@ -56,6 +61,9 @@ class KnockFragment : BaseParamFragment() {
         super.onViewCreated(view, savedInstanceState)
 
         mViewModel.knockLiveData.observe(viewLifecycleOwner) {
+
+            packet = it
+
             mBinding.apply {
                 enableSensor.isChecked = it.useKnockChannel > 0
                 phaseWindowBegin.value = it.kWndBeginAngle
@@ -71,6 +79,71 @@ class KnockFragment : BaseParamFragment() {
                 knockThreshold.value = it.threshold
                 angleRecoveryDelay.value = it.recoveryDelay
             }
+
+            initViews()
+        }
+    }
+
+    private fun initViews() {
+
+        mBinding.apply {
+
+            enableSensor.setOnCheckedChangeListener { _, checkedId ->
+                packet?.useKnockChannel = if (checkedId) 1 else 0
+                packet?.let { it1 -> mViewModel.sendPacket(it1) }
+            }
+
+            phaseWindowBegin.addOnValueChangeListener {
+                packet?.kWndBeginAngle = it
+                packet?.let { it1 -> mViewModel.sendPacket(it1) }
+            }
+            phaseWindowEnd.addOnValueChangeListener {
+                packet?.kWndEndAngle = it
+                packet?.let { it1 -> mViewModel.sendPacket(it1) }
+            }
+
+            bpfFrequency.setOnItemClickListener { _, _, position, _ ->
+                packet?.bpfFrequency = position
+                packet?.let { it1 -> mViewModel.sendPacket(it1) }
+            }
+            integrationTimeConstant.setOnItemClickListener { _, _, position, _ ->
+                packet?.intTimeCost = position
+                packet?.let { it1 -> mViewModel.sendPacket(it1) }
+            }
+
+            angleDisplacementStep.addOnValueChangeListener {
+                packet?.retardStep = it
+                packet?.let { it1 -> mViewModel.sendPacket(it1) }
+            }
+            angleRecoveryStep.addOnValueChangeListener {
+                packet?.advanceStep = it
+                packet?.let { it1 -> mViewModel.sendPacket(it1) }
+            }
+            maxAngleDisplacement.addOnValueChangeListener {
+                packet?.maxRetard = it
+                packet?.let { it1 -> mViewModel.sendPacket(it1) }
+            }
+
+            knockThreshold.addOnValueChangeListener {
+                packet?.threshold = it
+                packet?.let { it1 -> mViewModel.sendPacket(it1) }
+            }
+
+            angleRecoveryDelay.addOnValueChangeListener {
+                packet?.recoveryDelay = it
+                packet?.let { it1 -> mViewModel.sendPacket(it1) }
+            }
+
+
+            phaseWindowBegin.setOnClickListener { floatParamClick(it as FloatParamView) }
+            phaseWindowEnd.setOnClickListener { floatParamClick(it as FloatParamView) }
+
+            angleDisplacementStep.setOnClickListener { floatParamClick(it as FloatParamView) }
+            angleRecoveryStep.setOnClickListener { floatParamClick(it as FloatParamView) }
+            maxAngleDisplacement.setOnClickListener { floatParamClick(it as FloatParamView) }
+
+            knockThreshold.setOnClickListener { floatParamClick(it as FloatParamView) }
+            angleRecoveryDelay.setOnClickListener { intParamClick(it as IntParamView) }
         }
     }
 }
