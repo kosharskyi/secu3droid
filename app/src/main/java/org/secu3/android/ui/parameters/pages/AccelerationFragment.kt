@@ -30,12 +30,17 @@ import android.view.View
 import android.view.ViewGroup
 import androidx.fragment.app.activityViewModels
 import org.secu3.android.databinding.FragmentAccelerationBinding
+import org.secu3.android.models.packets.params.AccelerationParamPacket
 import org.secu3.android.ui.parameters.ParamsViewModel
+import org.secu3.android.ui.parameters.views.FloatParamView
+import org.secu3.android.ui.parameters.views.IntParamView
 
 class AccelerationFragment : BaseParamFragment() {
 
     private val mViewModel: ParamsViewModel by activityViewModels()
     private lateinit var mBinding: FragmentAccelerationBinding
+
+    private var packet: AccelerationParamPacket? = null
 
     override fun onCreateView(inflater: LayoutInflater, container: ViewGroup?, savedInstanceState: Bundle?): View? {
         mBinding = FragmentAccelerationBinding.inflate(inflater, container, false)
@@ -46,11 +51,42 @@ class AccelerationFragment : BaseParamFragment() {
         super.onViewCreated(view, savedInstanceState)
 
         mViewModel.accelerationLiveData.observe(viewLifecycleOwner) {
+
+            packet = it
+
             mBinding.apply {
                 accelTpsdotThreshold.value = it.injAeTpsdotThrd
                 coldAccelMultiplier.value = it.injAeColdaccMult
                 aeDecayTime.value = it.injAeDecayTime
             }
+        }
+
+        initViews()
+    }
+
+    private fun initViews() {
+
+        mBinding.apply {
+
+            accelTpsdotThreshold.addOnValueChangeListener {
+                packet?.injAeTpsdotThrd = it
+                packet?.let { it1 -> mViewModel.sendPacket(it1) }
+            }
+
+            coldAccelMultiplier.addOnValueChangeListener {
+                packet?.injAeColdaccMult = it
+                packet?.let { it1 -> mViewModel.sendPacket(it1) }
+            }
+
+            aeDecayTime.addOnValueChangeListener {
+                packet?.injAeDecayTime = it
+                packet?.let { it1 -> mViewModel.sendPacket(it1) }
+            }
+
+
+            accelTpsdotThreshold.setOnClickListener { intParamClick(it as IntParamView) }
+            coldAccelMultiplier.setOnClickListener { intParamClick(it as IntParamView) }
+            aeDecayTime.setOnClickListener { intParamClick(it as IntParamView) }
         }
     }
 }

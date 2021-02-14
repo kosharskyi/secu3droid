@@ -41,6 +41,9 @@
         app:title="@string/accel_par_tpsdot_threshold_title"
         app:units="@string/units_percent_per_second"
         app:int_value="0"
+        app:int_max_value="255"
+        app:int_min_value="0"
+        app:int_step="1"
         />
 
     <!-- ************************************************************* -->
@@ -53,6 +56,9 @@
         app:title="@string/accel_par_coldacc_mult_title"
         app:units="@string/units_percents"
         app:int_value="0"
+        app:int_max_value="299"
+        app:int_min_value="100"
+        app:int_step="1"
         />
 
     <!-- ************************************************************* -->
@@ -65,6 +71,9 @@
         app:title="@string/accel_par_ae_decay_time_title"
         app:units="str"
         app:int_value="0"
+        app:int_max_value="255"
+        app:int_min_value="1"
+        app:int_step="1"
         />
 
 </LinearLayout>
