@@ -25,8 +25,6 @@ package org.secu3.android.ui.parameters.pages
 
 import android.os.Bundle
 import android.text.InputType
-import android.util.Log
-import androidx.fragment.app.Fragment
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
@@ -38,8 +36,6 @@ import org.secu3.android.databinding.FragmentFunctionsBinding
 import org.secu3.android.models.packets.params.FunSetParamPacket
 import org.secu3.android.ui.parameters.ParamsViewModel
 import org.secu3.android.ui.parameters.views.FloatParamView
-import org.secu3.android.ui.parameters.views.IntParamView
-import kotlin.experimental.and
 
 
 class FunctionsFragment : BaseParamFragment() {
@@ -69,11 +65,11 @@ class FunctionsFragment : BaseParamFragment() {
                 val mapsSetList = it.fnNameList.map { it.name }
 
                 mapsSet.inputType = InputType.TYPE_NULL
-                val adapter = ArrayAdapter(requireContext(), R.layout.list_item, mapsSetList )
+                val adapter = ArrayAdapter(requireContext(), R.layout.list_item, mapsSetList)
                 mapsSet.setAdapter(adapter)
 
                 mapsSetForGas.inputType = InputType.TYPE_NULL
-                val adapterGas = ArrayAdapter(requireContext(), R.layout.list_item, mapsSetList )
+                val adapterGas = ArrayAdapter(requireContext(), R.layout.list_item, mapsSetList)
                 mapsSetForGas.setAdapter(adapterGas)
             }
         }
@@ -181,32 +177,32 @@ class FunctionsFragment : BaseParamFragment() {
                 packet?.let { it1 -> mViewModel.sendPacket(it1) }
             }
 
-            mapsSet.onItemClickListener = AdapterView.OnItemClickListener { parent, view, position, id ->
+            mapsSet.onItemClickListener = AdapterView.OnItemClickListener { _, _, position, _ ->
                 packet?.fnGasoline = position
                 packet?.let { it1 -> mViewModel.sendPacket(it1) }
             }
 
-            mapsSetForGas.onItemClickListener = AdapterView.OnItemClickListener { parent, view, position, id ->
+            mapsSetForGas.onItemClickListener = AdapterView.OnItemClickListener { _, _, position, _ ->
                 packet?.fnGas = position
                 packet?.let { it1 -> mViewModel.sendPacket(it1) }
             }
 
-            loadMeasurement.onItemClickListener = AdapterView.OnItemClickListener { parent, view, position, id ->
+            loadMeasurement.onItemClickListener = AdapterView.OnItemClickListener { _, _, position, _ ->
                 packet?.loadSrcCfg = position
                 packet?.let { it1 -> mViewModel.sendPacket(it1) }
             }
 
-            mapselPetrol.onItemClickListener = AdapterView.OnItemClickListener { parent, view, position, id ->
+            mapselPetrol.onItemClickListener = AdapterView.OnItemClickListener { _, _, position, _ ->
                 packet?.mapserUniPetrol = mapselItems.keys.elementAt(position)
                 packet?.let { it1 -> mViewModel.sendPacket(it1) }
             }
 
-            mapselGas.onItemClickListener = AdapterView.OnItemClickListener { parent, view, position, id ->
+            mapselGas.onItemClickListener = AdapterView.OnItemClickListener { _, _, position, _ ->
                 packet?.mapserUniGas = mapselItems.keys.elementAt(position)
                 packet?.let { it1 -> mViewModel.sendPacket(it1) }
             }
 
-            barometricCorrection.onItemClickListener = AdapterView.OnItemClickListener { parent, view, position, id ->
+            barometricCorrection.onItemClickListener = AdapterView.OnItemClickListener { _, _, position, _ ->
                 packet?.barocorrType = position
                 packet?.let { it1 -> mViewModel.sendPacket(it1) }
             }

@@ -44,34 +44,6 @@ fun View.invisible() {
     this.visibility = View.INVISIBLE
 }
 
-fun View.visibleIf(predicate: () -> Boolean) {
-    when (predicate.invoke()) {
-        true -> visible()
-        else -> gone()
-    }
-}
-
-fun View.visibleOrInvisibleIf(predicate: () -> Boolean) {
-    when (predicate.invoke()) {
-        true -> visible()
-        else -> invisible()
-    }
-}
-
-fun View.goneIf(predicate: () -> Boolean) {
-    when (predicate.invoke()) {
-        true -> gone()
-        else -> visible()
-    }
-}
-
-fun View.invisibleIf(predicate: () -> Boolean) {
-    when (predicate.invoke()) {
-        true -> invisible()
-        else -> visible()
-    }
-}
-
 fun ImageView.animateRotationByX(xDegrees: Float) {
     this.animate()
             .rotationX(xDegrees)

@@ -4,11 +4,11 @@ import android.os.Bundle
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
+import androidx.core.view.isVisible
 import androidx.fragment.app.Fragment
 import androidx.navigation.navGraphViewModels
 import org.secu3.android.R
 import org.secu3.android.databinding.FragmentDiagOutputBinding
-import org.secu3.android.utils.visibleIf
 
 class DiagOutputFragment : Fragment() {
 
@@ -25,8 +25,8 @@ class DiagOutputFragment : Fragment() {
         super.onViewCreated(view, savedInstanceState)
 
         mViewModel.firmwareLiveData.observe(viewLifecycleOwner) {
-            mBinding.secu3t.visibleIf { it.isSecu3T }
-            mBinding.secu3i.visibleIf { it.isSecu3T.not() }
+            mBinding.secu3t.isVisible = it.isSecu3T
+            mBinding.secu3i.isVisible = it.isSecu3T.not()
         }
 
         mViewModel.enableBlDe.observe(viewLifecycleOwner) {
@@ -155,8 +155,8 @@ class DiagOutputFragment : Fragment() {
     }
 
     private fun checkBlDeTachOutputs() {
-        mBinding.bl.visibleIf { mViewModel.outputPacket.enableBlDeTesting }
-        mBinding.de.visibleIf { mViewModel.outputPacket.enableBlDeTesting }
-        mBinding.tachO.visibleIf { mViewModel.outputPacket.enableTachOtesting }
+        mBinding.bl.isVisible = mViewModel.outputPacket.enableBlDeTesting
+        mBinding.de.isVisible = mViewModel.outputPacket.enableBlDeTesting
+        mBinding.tachO.isVisible = mViewModel.outputPacket.enableTachOtesting
     }
 }

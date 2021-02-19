@@ -121,7 +121,7 @@ class LambdaControlFragment : BaseParamFragment() {
 
         mBinding.apply {
 
-            sensorType.setOnItemClickListener { parent, view, position, id ->
+            sensorType.setOnItemClickListener { _, _, position, _ ->
                 packet?.senstype = position
                 packet?.let { it1 -> mViewModel.sendPacket(it1) }
             }
