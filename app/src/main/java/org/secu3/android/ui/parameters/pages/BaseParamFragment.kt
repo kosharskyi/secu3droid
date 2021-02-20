@@ -47,7 +47,7 @@ abstract class BaseParamFragment : Fragment() {
 
     protected fun floatParamClick(view: FloatParamView) {
         view.apply {
-            ParamFloatEditDialogFragment.newInstance(value, title, step, maxValue, minValue).also {
+            ParamFloatEditDialogFragment.newInstance(value, title, step, maxValue, minValue, precision).also {
                 it.newValueLiveData.observe(viewLifecycleOwner) { result ->
                     value = result
                 }

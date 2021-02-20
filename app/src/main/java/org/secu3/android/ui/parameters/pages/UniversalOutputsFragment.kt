@@ -31,15 +31,27 @@ import android.view.View
 import android.view.ViewGroup
 import android.widget.ArrayAdapter
 import androidx.fragment.app.activityViewModels
+import dagger.hilt.EntryPoint
+import dagger.hilt.android.AndroidEntryPoint
 import org.secu3.android.R
 import org.secu3.android.databinding.FragmentUniversalOutputsBinding
+import org.secu3.android.models.packets.params.UniOutParamPacket
 import org.secu3.android.ui.parameters.ParamsViewModel
+import org.secu3.android.ui.parameters.views.FloatParamView
+import org.secu3.android.utils.UnioutTabConfigurator
+import javax.inject.Inject
 
 
+@AndroidEntryPoint
 class UniversalOutputsFragment : BaseParamFragment() {
+
+    @Inject
+    internal lateinit var mUnioutConfigurator: UnioutTabConfigurator
 
     private val mViewModel: ParamsViewModel by activityViewModels()
     private lateinit var mBinding: FragmentUniversalOutputsBinding
+
+    private var packet: UniOutParamPacket? = null
 
     private val mCondition1List: List<String> by lazy {
         resources.getStringArray(R.array.uniout_spinner_conditions1).toList()
@@ -64,6 +76,9 @@ class UniversalOutputsFragment : BaseParamFragment() {
         initDropdowns()
 
         mViewModel.uniOutLiveData.observe(viewLifecycleOwner) {
+
+            packet = it
+
             mBinding.apply {
                 output1Condition1.setText(mCondition1List[it.output1Condition1], false)
                 output1Condition1Inversion.isChecked = it.output1Cond1Inversion
@@ -131,6 +146,8 @@ class UniversalOutputsFragment : BaseParamFragment() {
                 output3Condition2Off.value = it.output3OffThrd2
 
             }
+
+            initViews()
         }
     }
 
@@ -214,4 +231,141 @@ class UniversalOutputsFragment : BaseParamFragment() {
             }
         }
     }
+
+
+    private fun initViews() {
+
+        mBinding.apply {
+
+            output1Condition1.setOnItemClickListener { _, _, position, _ ->
+                mUnioutConfigurator.configureViews(position, output1Condition1On, output1Condition1Off)
+            }
+            output1LogicalFunction.setOnItemClickListener { _, _, position, _ ->
+                if (position == 4) {
+                    packet?.output1LogicFunc = 0xFF
+                } else {
+                    packet?.output1LogicFunc = position
+                }
+                packet?.let { it1 -> mViewModel.sendPacket(it1) }
+            }
+            output1Condition2.setOnItemClickListener { _, _, position, _ ->
+                mUnioutConfigurator.configureViews(position, output1Condition2On, output1Condition2Off)
+            }
+
+            logicalFunction12.setOnItemClickListener { _, _, position, _ ->
+                if (position == 4) {
+                    packet?.logicFunction_1_2 = 0xFF
+                } else {
+                    packet?.logicFunction_1_2 = position
+                }
+                packet?.let { it1 -> mViewModel.sendPacket(it1) }
+            }
+
+            output2Condition1.setOnItemClickListener { _, _, position, _ ->
+                mUnioutConfigurator.configureViews(position, output2Condition1On, output2Condition1Off)
+            }
+            output2LogicalFunction.setOnItemClickListener { _, _, position, _ ->
+                if (position == 4) {
+                    packet?.output2LogicFunc = 0xFF
+                } else {
+                    packet?.output2LogicFunc = position
+                }
+                packet?.let { it1 -> mViewModel.sendPacket(it1) }
+            }
+            output2Condition2.setOnItemClickListener { _, _, position, _ ->
+                mUnioutConfigurator.configureViews(position, output2Condition2On, output2Condition2Off)
+            }
+
+            output3Condition1.setOnItemClickListener { _, _, position, _ ->
+                mUnioutConfigurator.configureViews(position, output3Condition1On, output3Condition1Off)
+            }
+            output2LogicalFunction.setOnItemClickListener { _, _, position, _ ->
+                if (position == 4) {
+                    packet?.output2LogicFunc = 0xFF
+                } else {
+                    packet?.output2LogicFunc = position
+                }
+                packet?.let { it1 -> mViewModel.sendPacket(it1) }
+            }
+            output3Condition2.setOnItemClickListener { _, _, position, _ ->
+                mUnioutConfigurator.configureViews(position, output3Condition2On, output3Condition2Off)
+            }
+
+
+            output1Condition1On.addOnValueChangeListener {
+                packet?.output1OnThrd1 = it
+                packet?.let { it1 -> mViewModel.sendPacket(it1) }
+            }
+            output1Condition1Off.addOnValueChangeListener {
+                packet?.output1OffThrd1 = it
+                packet?.let { it1 -> mViewModel.sendPacket(it1) }
+            }
+
+            output1Condition2On.addOnValueChangeListener {
+                packet?.output1OnThrd2 = it
+                packet?.let { it1 -> mViewModel.sendPacket(it1) }
+            }
+            output1Condition2Off.addOnValueChangeListener {
+                packet?.output1OffThrd2 = it
+                packet?.let { it1 -> mViewModel.sendPacket(it1) }
+            }
+
+
+
+            output2Condition1On.addOnValueChangeListener {
+                packet?.output2OnThrd1 = it
+                packet?.let { it1 -> mViewModel.sendPacket(it1) }
+            }
+            output2Condition1Off.addOnValueChangeListener {
+                packet?.output2OffThrd1 = it
+                packet?.let { it1 -> mViewModel.sendPacket(it1) }
+            }
+
+            output2Condition2On.addOnValueChangeListener {
+                packet?.output2OnThrd2 = it
+                packet?.let { it1 -> mViewModel.sendPacket(it1) }
+            }
+            output2Condition2Off.addOnValueChangeListener {
+                packet?.output2OffThrd2 = it
+                packet?.let { it1 -> mViewModel.sendPacket(it1) }
+            }
+
+
+
+            output3Condition1On.addOnValueChangeListener {
+                packet?.output3OnThrd1 = it
+                packet?.let { it1 -> mViewModel.sendPacket(it1) }
+            }
+            output3Condition1Off.addOnValueChangeListener {
+                packet?.output3OffThrd1 = it
+                packet?.let { it1 -> mViewModel.sendPacket(it1) }
+            }
+
+            output3Condition2On.addOnValueChangeListener {
+                packet?.output3OnThrd2 = it
+                packet?.let { it1 -> mViewModel.sendPacket(it1) }
+            }
+            output3Condition2Off.addOnValueChangeListener {
+                packet?.output3OffThrd2 = it
+                packet?.let { it1 -> mViewModel.sendPacket(it1) }
+            }
+
+
+            output1Condition1On.setOnClickListener { floatParamClick(it as FloatParamView) }
+            output1Condition1Off.setOnClickListener { floatParamClick(it as FloatParamView) }
+            output1Condition2On.setOnClickListener { floatParamClick(it as FloatParamView) }
+            output1Condition2Off.setOnClickListener { floatParamClick(it as FloatParamView) }
+
+            output2Condition1On.setOnClickListener { floatParamClick(it as FloatParamView) }
+            output2Condition1Off.setOnClickListener { floatParamClick(it as FloatParamView) }
+            output2Condition2On.setOnClickListener { floatParamClick(it as FloatParamView) }
+            output2Condition2Off.setOnClickListener { floatParamClick(it as FloatParamView) }
+
+            output3Condition1On.setOnClickListener { floatParamClick(it as FloatParamView) }
+            output3Condition1Off.setOnClickListener { floatParamClick(it as FloatParamView) }
+            output3Condition2On.setOnClickListener { floatParamClick(it as FloatParamView) }
+            output3Condition2Off.setOnClickListener { floatParamClick(it as FloatParamView) }
+        }
+    }
+
 }

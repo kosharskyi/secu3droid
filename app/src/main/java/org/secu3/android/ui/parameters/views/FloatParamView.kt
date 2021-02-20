@@ -65,10 +65,11 @@ class FloatParamView @JvmOverloads constructor(
 
     private fun showValue() {
         mBinding.paramValue.text = when (precision) {
-            0 -> "%.1f".format(value)
-            1 -> "%.2f".format(value)
-            2 -> "%.3f".format(value)
-            3 -> "%.4f".format(value)
+            0 -> "%.0f".format(value)
+            1 -> "%.1f".format(value)
+            2 -> "%.2f".format(value)
+            3 -> "%.3f".format(value)
+            4 -> "%.4f".format(value)
             else -> value.toString()
         }
     }

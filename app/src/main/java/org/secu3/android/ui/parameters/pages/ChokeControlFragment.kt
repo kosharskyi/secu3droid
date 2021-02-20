@@ -145,5 +145,4 @@ class ChokeControlFragment : BaseParamFragment() {
             timeFromCrankToRun.setOnClickListener { floatParamClick(it as FloatParamView) }
         }
     }
-
 }

@@ -43,6 +43,7 @@ class ParamFloatEditDialogFragment : ParamBaseEditDialogFragment() {
     private var stepValue: Float = 0f
     private var maxValue: Float = 0f
     private var minValue: Float = 0f
+    private var precision: Int = 0
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -52,6 +53,7 @@ class ParamFloatEditDialogFragment : ParamBaseEditDialogFragment() {
             stepValue = it.getFloat(ARG_STEP_VALUE)
             maxValue = it.getFloat(ARG_MAX_VALUE)
             minValue = it.getFloat(ARG_MIN_VALUE)
+            precision = it.getInt(ARG_PRECISION)
         }
     }
 
@@ -66,7 +68,7 @@ class ParamFloatEditDialogFragment : ParamBaseEditDialogFragment() {
 
         mBinding.apply {
             parameterTitle.text = paramTitle
-            value.text = "%.2f".format(currentValue)
+            value.text = formatStr.format(currentValue)
 
 
             increment.setOnClickListener {
@@ -76,7 +78,7 @@ class ParamFloatEditDialogFragment : ParamBaseEditDialogFragment() {
                     resValue = maxValue
                 }
                 currentValue = resValue
-                value.text = "%.2f".format(currentValue)
+                value.text = formatStr.format(currentValue)
             }
             decrement.setOnClickListener {
                 var resValue = currentValue.minus(stepValue)
@@ -86,7 +88,7 @@ class ParamFloatEditDialogFragment : ParamBaseEditDialogFragment() {
                 }
                 currentValue = resValue
 
-                value.text = "%.2f".format(currentValue)
+                value.text = formatStr.format(currentValue)
             }
 
             ok.setOnClickListener {
@@ -98,7 +100,22 @@ class ParamFloatEditDialogFragment : ParamBaseEditDialogFragment() {
         }
     }
 
+    private val formatStr: String
+        get() {
+            return when (precision) {
+                0 -> "%.0f"
+                1 -> "%.1f"
+                2 -> "%.2f"
+                3 -> "%.3f"
+                4 -> "%.4f"
+                else -> "%.4f"
+            }
+        }
+
     companion object {
+
+        private const val ARG_PRECISION = "precision"
+
         /**
          * Use this factory method to create a new instance of
          * this fragment using the provided parameters.
@@ -108,13 +125,15 @@ class ParamFloatEditDialogFragment : ParamBaseEditDialogFragment() {
          * @param stepValue Parameter 3.
          * @return A new instance of fragment ParamsEditDialogFragment.
          */
-        fun newInstance(currentValue: Float, paramTitle: String, stepValue: Float, maxValue: Float, minValue: Float) = ParamFloatEditDialogFragment().apply {
+        fun newInstance(currentValue: Float, paramTitle: String, stepValue: Float,
+                        maxValue: Float, minValue: Float, precision: Int) = ParamFloatEditDialogFragment().apply {
             arguments = Bundle().apply {
                 putFloat(ARG_CURRENT_VALUE, currentValue)
                 putString(ARG_PARAM_TITLE, paramTitle)
                 putFloat(ARG_STEP_VALUE, stepValue)
                 putFloat(ARG_MAX_VALUE, maxValue)
                 putFloat(ARG_MIN_VALUE, minValue)
+                putInt(ARG_PRECISION, precision)
             }
         }
     }
