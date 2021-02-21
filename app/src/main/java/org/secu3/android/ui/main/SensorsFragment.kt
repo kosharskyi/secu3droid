@@ -186,7 +186,7 @@ class SensorsFragment : Fragment() {
             }
             R.id.menu_exit -> {
                 mViewModel.closeConnection()
-                activity?.finish()
+                activity?.finishAndRemoveTask()
                 true
             }
             R.id.menu_diagnostics -> {
