@@ -238,23 +238,25 @@ class UniversalOutputsFragment : BaseParamFragment() {
         mBinding.apply {
 
             output1Condition1.setOnItemClickListener { _, _, position, _ ->
+                packet?.output1Condition1 = position
                 mUnioutConfigurator.configureViews(position, output1Condition1On, output1Condition1Off)
             }
             output1LogicalFunction.setOnItemClickListener { _, _, position, _ ->
                 if (position == 4) {
-                    packet?.output1LogicFunc = 0xFF
+                    packet?.output1LogicFunc = 0xF
                 } else {
                     packet?.output1LogicFunc = position
                 }
                 packet?.let { it1 -> mViewModel.sendPacket(it1) }
             }
             output1Condition2.setOnItemClickListener { _, _, position, _ ->
+                packet?.output1Condition2 = position
                 mUnioutConfigurator.configureViews(position, output1Condition2On, output1Condition2Off)
             }
 
             logicalFunction12.setOnItemClickListener { _, _, position, _ ->
                 if (position == 4) {
-                    packet?.logicFunction_1_2 = 0xFF
+                    packet?.logicFunction_1_2 = 0xF
                 } else {
                     packet?.logicFunction_1_2 = position
                 }
@@ -262,32 +264,36 @@ class UniversalOutputsFragment : BaseParamFragment() {
             }
 
             output2Condition1.setOnItemClickListener { _, _, position, _ ->
+                packet?.output2Condition1 = position
                 mUnioutConfigurator.configureViews(position, output2Condition1On, output2Condition1Off)
             }
             output2LogicalFunction.setOnItemClickListener { _, _, position, _ ->
                 if (position == 4) {
-                    packet?.output2LogicFunc = 0xFF
+                    packet?.output2LogicFunc = 0xF
                 } else {
                     packet?.output2LogicFunc = position
                 }
                 packet?.let { it1 -> mViewModel.sendPacket(it1) }
             }
             output2Condition2.setOnItemClickListener { _, _, position, _ ->
+                packet?.output2Condition2 = position
                 mUnioutConfigurator.configureViews(position, output2Condition2On, output2Condition2Off)
             }
 
             output3Condition1.setOnItemClickListener { _, _, position, _ ->
+                packet?.output3Condition1 = position
                 mUnioutConfigurator.configureViews(position, output3Condition1On, output3Condition1Off)
             }
             output2LogicalFunction.setOnItemClickListener { _, _, position, _ ->
                 if (position == 4) {
-                    packet?.output2LogicFunc = 0xFF
+                    packet?.output2LogicFunc = 0xF
                 } else {
                     packet?.output2LogicFunc = position
                 }
                 packet?.let { it1 -> mViewModel.sendPacket(it1) }
             }
             output3Condition2.setOnItemClickListener { _, _, position, _ ->
+                packet?.output3Condition2 = position
                 mUnioutConfigurator.configureViews(position, output3Condition2On, output3Condition2Off)
             }
 

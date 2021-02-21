@@ -107,6 +107,9 @@ data class UniOutParamPacket(
         data += rawOutput3OnThrd2.write2Bytes()
         data += rawOutput3OffThrd2.write2Bytes()
 
+
+        data += logicFunction_1_2.toChar()
+
         data += END_PACKET_SYMBOL
         return data
     }
