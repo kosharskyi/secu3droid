@@ -33,6 +33,8 @@ import android.view.View
 import android.view.ViewGroup
 import android.view.WindowManager
 import android.widget.Toast
+import androidx.core.view.isInvisible
+import androidx.core.view.isVisible
 import androidx.fragment.app.Fragment
 import androidx.fragment.app.viewModels
 import dagger.hilt.android.AndroidEntryPoint
@@ -41,8 +43,6 @@ import org.secu3.android.databinding.FragmentDashboardBinding
 import org.secu3.android.models.packets.SensorsPacket
 import org.secu3.android.utils.LifeTimePrefs
 import org.secu3.android.utils.Task
-import org.secu3.android.utils.visibleIf
-import org.secu3.android.utils.visibleOrInvisibleIf
 import javax.inject.Inject
 
 @AndroidEntryPoint
@@ -95,8 +95,8 @@ class DashBoardFragment : Fragment() {
             updatePacket(it)
         })
 
-        mViewModel.statusLiveData.observe(viewLifecycleOwner, {
-            mBinding.ledOnline.visibleIf { it }
+        mViewModel.statusLiveData?.observe(viewLifecycleOwner, {
+            mBinding.ledOnline.isVisible = it
         })
     }
 
@@ -153,11 +153,11 @@ class DashBoardFragment : Fragment() {
         mBinding.rpm.text = "${packet.rpm} RPM"
 
 
-        mBinding.ledCheckEngine.visibleOrInvisibleIf { packet.ecuErrors > 0 }
-        mBinding.ledGasoline.visibleOrInvisibleIf { packet.gasBit > 0 }
-        mBinding.ledEco.visibleOrInvisibleIf { packet.ephhValveBit > 0 }
-        mBinding.ledPower.visibleOrInvisibleIf { packet.epmValveBit > 0 }
-        mBinding.ledChoke.visibleOrInvisibleIf { packet.chokePosition >= 95.0 }
-        mBinding.ledFan.visibleOrInvisibleIf { packet.coolFanBit > 0 }
+        mBinding.ledCheckEngine.isInvisible = packet.ecuErrors > 0
+        mBinding.ledGasoline.isInvisible = packet.gasBit > 0
+        mBinding.ledEco.isInvisible = packet.ephhValveBit > 0
+        mBinding.ledPower.isInvisible = packet.epmValveBit > 0
+        mBinding.ledChoke.isInvisible = packet.chokePosition >= 95.0
+        mBinding.ledFan.isInvisible = packet.coolFanBit > 0
     }
 }

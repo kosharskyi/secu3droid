@@ -34,6 +34,8 @@ import org.secu3.android.databinding.FragmentParamsEditDialogBinding
 const val ARG_CURRENT_VALUE = "current_value"
 const val ARG_PARAM_TITLE = "param_title"
 const val ARG_STEP_VALUE = "step_value"
+const val ARG_MIN_VALUE = "min_value"
+const val ARG_MAX_VALUE = "max_value"
 
 
 abstract class ParamBaseEditDialogFragment : DialogFragment() {

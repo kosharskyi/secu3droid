@@ -45,20 +45,55 @@ data class CkpsParamPacket(
 
 ) : BaseOutputPacket() {
 
-    val risingSpark: Boolean
+    var risingSpark: Boolean
         get() = hallFlags.getBitValue(0) > 0
+        set(value) {
+            hallFlags = if (value) {
+                1.or(hallFlags)
+            } else {
+                1.inv().and(hallFlags)
+            }
+        }
 
-    val useCamRef: Boolean
+    var useCamRef: Boolean
         get() = hallFlags.getBitValue(1) > 0
+        set(value) {
+            hallFlags = if (value) {
+                1.shl(1).or(hallFlags)
+            } else {
+                1.shl(1).inv().and(hallFlags)
+            }
+        }
 
-    val ckpsEdge: Boolean
+    var ckpsEdge: Boolean
         get() = hallFlags.getBitValue(2) > 0
+        set(value) {
+            hallFlags = if (value) {
+                1.shl(2).or(hallFlags)
+            } else {
+                1.shl(2).inv().and(hallFlags)
+            }
+        }
 
-    val refsEdge: Boolean
+    var refsEdge: Boolean
         get() = hallFlags.getBitValue(3) > 0
+        set(value) {
+            hallFlags = if (value) {
+                1.shl(3).or(hallFlags)
+            } else {
+                1.shl(3).inv().and(hallFlags)
+            }
+        }
 
-    val mergeOuts: Boolean
+    var mergeOuts: Boolean
         get() = hallFlags.getBitValue(4) > 0
+        set(value) {
+            hallFlags = if (value) {
+                1.shl(4).or(hallFlags)
+            } else {
+                1.shl(4).inv().and(hallFlags)
+            }
+        }
 
     override fun pack(): String {
         var data = "$OUTPUT_PACKET_SYMBOL$DESCRIPTOR"

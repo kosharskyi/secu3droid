@@ -24,18 +24,21 @@
 package org.secu3.android.ui.parameters.pages
 
 import android.os.Bundle
-import androidx.fragment.app.Fragment
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import androidx.fragment.app.activityViewModels
 import org.secu3.android.databinding.FragmentAdcErrorsCorrectionsBinding
+import org.secu3.android.models.packets.params.AdcCorrectionsParamPacket
 import org.secu3.android.ui.parameters.ParamsViewModel
+import org.secu3.android.ui.parameters.views.FloatParamView
 
-class AdcErrorsCorrectionsFragment : Fragment() {
+class AdcErrorsCorrectionsFragment : BaseParamFragment() {
 
     private val mViewModel: ParamsViewModel by activityViewModels()
     private lateinit var mBinding: FragmentAdcErrorsCorrectionsBinding
+
+    private var packet: AdcCorrectionsParamPacket? = null
 
     override fun onCreateView(inflater: LayoutInflater, container: ViewGroup?, savedInstanceState: Bundle?): View? {
         mBinding = FragmentAdcErrorsCorrectionsBinding.inflate(inflater)
@@ -46,6 +49,9 @@ class AdcErrorsCorrectionsFragment : Fragment() {
         super.onViewCreated(view, savedInstanceState)
 
         mViewModel.adcCorrectionsLiveData.observe(viewLifecycleOwner) {
+
+            packet = it
+
             mBinding.apply {
                 mapFactor.value = it.mapAdcFactor
                 mapCorrection.value = it.mapAdcCorrection
@@ -72,6 +78,103 @@ class AdcErrorsCorrectionsFragment : Fragment() {
                 add4Correction.value = it.ai4AdcCorrection
 
             }
+
+            initViews()
+        }
+    }
+
+    private fun initViews() {
+
+        mBinding.apply {
+            mapFactor.addOnValueChangeListener {
+                packet?.mapAdcFactor = it
+                packet?.let { it1 -> mViewModel.sendPacket(it1) }
+            }
+            mapCorrection.addOnValueChangeListener {
+                packet?.mapAdcCorrection = it
+                packet?.let { it1 -> mViewModel.sendPacket(it1) }
+            }
+
+            voltageFactor.addOnValueChangeListener {
+                packet?.ubatAdcFactor = it
+                packet?.let { it1 -> mViewModel.sendPacket(it1) }
+            }
+            voltageCorrection.addOnValueChangeListener {
+                packet?.ubatAdcCorrection = it
+                packet?.let { it1 -> mViewModel.sendPacket(it1) }
+            }
+            ctsFactor.addOnValueChangeListener {
+                packet?.tempAdcFactor = it
+                packet?.let { it1 -> mViewModel.sendPacket(it1) }
+            }
+            ctsCorrection.addOnValueChangeListener {
+                packet?.tempAdcCorrection = it
+                packet?.let { it1 -> mViewModel.sendPacket(it1) }
+            }
+            tpsFactor.addOnValueChangeListener {
+                packet?.tpsAdcFactor = it
+                packet?.let { it1 -> mViewModel.sendPacket(it1) }
+            }
+
+            tpsCorrection.addOnValueChangeListener {
+                packet?.tpsAdcCorrection = it
+                packet?.let { it1 -> mViewModel.sendPacket(it1) }
+            }
+
+            add1Factor.addOnValueChangeListener {
+                packet?.ai1AdcFactor = it
+                packet?.let { it1 -> mViewModel.sendPacket(it1) }
+            }
+
+            add1Correction.addOnValueChangeListener {
+                packet?.ai1AdcCorrection = it
+                packet?.let { it1 -> mViewModel.sendPacket(it1) }
+            }
+
+            add2Factor.addOnValueChangeListener {
+                packet?.ai2AdcFactor = it
+                packet?.let { it1 -> mViewModel.sendPacket(it1) }
+            }
+            add2Correction.addOnValueChangeListener {
+                packet?.ai2AdcCorrection = it
+                packet?.let { it1 -> mViewModel.sendPacket(it1) }
+            }
+
+            add3Factor.addOnValueChangeListener {
+                packet?.ai3AdcFactor = it
+                packet?.let { it1 -> mViewModel.sendPacket(it1) }
+            }
+            add3Correction.addOnValueChangeListener {
+                packet?.ai3AdcCorrection = it
+                packet?.let { it1 -> mViewModel.sendPacket(it1) }
+            }
+
+            add4Factor.addOnValueChangeListener {
+                packet?.ai4AdcFactor = it
+                packet?.let { it1 -> mViewModel.sendPacket(it1) }
+            }
+            add4Correction.addOnValueChangeListener {
+                packet?.ai4AdcCorrection = it
+                packet?.let { it1 -> mViewModel.sendPacket(it1) }
+            }
+
+            mapFactor.setOnClickListener { floatParamClick(it as FloatParamView) }
+            mapCorrection.setOnClickListener { floatParamClick(it as FloatParamView) }
+            voltageFactor.setOnClickListener { floatParamClick(it as FloatParamView) }
+            voltageCorrection.setOnClickListener { floatParamClick(it as FloatParamView) }
+            ctsFactor.setOnClickListener { floatParamClick(it as FloatParamView) }
+            ctsCorrection.setOnClickListener { floatParamClick(it as FloatParamView) }
+            tpsFactor.setOnClickListener { floatParamClick(it as FloatParamView) }
+            tpsCorrection.setOnClickListener { floatParamClick(it as FloatParamView) }
+
+            add1Factor.setOnClickListener { floatParamClick(it as FloatParamView) }
+            add1Correction.setOnClickListener { floatParamClick(it as FloatParamView) }
+            add2Factor.setOnClickListener { floatParamClick(it as FloatParamView) }
+            add2Correction.setOnClickListener { floatParamClick(it as FloatParamView) }
+            add3Factor.setOnClickListener { floatParamClick(it as FloatParamView) }
+            add3Correction.setOnClickListener { floatParamClick(it as FloatParamView) }
+            add4Factor.setOnClickListener { floatParamClick(it as FloatParamView) }
+            add4Correction.setOnClickListener { floatParamClick(it as FloatParamView) }
         }
     }
 }

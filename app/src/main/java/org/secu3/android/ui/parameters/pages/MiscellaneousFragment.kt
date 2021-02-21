@@ -33,10 +33,13 @@ import android.widget.ArrayAdapter
 import androidx.fragment.app.activityViewModels
 import org.secu3.android.R
 import org.secu3.android.databinding.FragmentMiscellaneousBinding
+import org.secu3.android.models.packets.params.MiscellaneousParamPacket
 import org.secu3.android.ui.parameters.ParamsViewModel
+import org.secu3.android.ui.parameters.views.FloatParamView
+import org.secu3.android.ui.parameters.views.IntParamView
 
 
-class MiscellaneousFragment : Fragment() {
+class MiscellaneousFragment : BaseParamFragment() {
 
     private val mViewModel: ParamsViewModel by activityViewModels()
     private lateinit var mBinding: FragmentMiscellaneousBinding
@@ -54,6 +57,8 @@ class MiscellaneousFragment : Fragment() {
         0x0009 to "250000"
     )
 
+    private var packet: MiscellaneousParamPacket? = null
+
     override fun onCreateView(inflater: LayoutInflater, container: ViewGroup?, savedInstanceState: Bundle?): View? {
         mBinding = FragmentMiscellaneousBinding.inflate(inflater, container, false)
         return mBinding.root
@@ -68,6 +73,9 @@ class MiscellaneousFragment : Fragment() {
         }
 
         mViewModel.miscellaneousLiveData.observe(viewLifecycleOwner) {
+
+            packet = it
+
             mBinding.apply {
                 dataTransmitionSpeed.setText(baudRateList[it.uartDivisor], false)
                 dataPacketsTransmissionPeriod.value = it.uartPeriodTms
@@ -87,6 +95,83 @@ class MiscellaneousFragment : Fragment() {
 
                 fuelPumpWorkingTime.value = it.fpTimeoutStrt
             }
+
+            initViews()
+        }
+    }
+
+    private fun initViews() {
+
+        mBinding.apply {
+
+            dataTransmitionSpeed.setOnItemClickListener { _, _, position, _ ->
+                packet?.uartDivisor = position
+                packet?.let { it1 -> mViewModel.sendPacket(it1) }
+            }
+
+            dataPacketsTransmissionPeriod.addOnValueChangeListener {
+                packet?.uartPeriodTms = it
+                packet?.let { it1 -> mViewModel.sendPacket(it1) }
+            }
+
+            enableCutoffOfIgnitionCheckbox.setOnCheckedChangeListener { _, checkedId ->
+                packet?.ignCutoff = if (checkedId) 1 else 0
+                packet?.let { it1 -> mViewModel.sendPacket(it1) }
+            }
+
+            enableCutoffOfIgnition.addOnValueChangeListener {
+                packet?.ignCutoffThrd = it
+                packet?.let { it1 -> mViewModel.sendPacket(it1) }
+            }
+            startRelToTdc.addOnValueChangeListener {
+                packet?.hopStartCogs = it
+                packet?.let { it1 -> mViewModel.sendPacket(it1) }
+            }
+
+            duration.addOnValueChangeListener {
+                packet?.hopDuratCogs = it
+                packet?.let { it1 -> mViewModel.sendPacket(it1) }
+            }
+
+            turnOffFuelPumpAfterGas.setOnCheckedChangeListener { _, isChecked ->
+                packet?.offPumpOnGas = isChecked
+                packet?.let { it1 -> mViewModel.sendPacket(it1) }
+            }
+            turnOffInjectorsAfterGas.setOnCheckedChangeListener { _, isChecked ->
+                packet?.offInjOnGas = isChecked
+                packet?.let { it1 -> mViewModel.sendPacket(it1) }
+            }
+            turnOffInjectorsAfterPetrol.setOnCheckedChangeListener { _, isChecked ->
+                packet?.offInjOnPetrol = isChecked
+                packet?.let { it1 -> mViewModel.sendPacket(it1) }
+            }
+
+            evapStartingAirFlow.addOnValueChangeListener {
+                packet?.evapAfbegin = it
+                packet?.let { it1 -> mViewModel.sendPacket(it1) }
+            }
+
+            evapEndingAirFlow.addOnValueChangeListener {
+                packet?.evapAfEnd = it
+                packet?.let { it1 -> mViewModel.sendPacket(it1) }
+            }
+
+            fuelPumpWorkingTime.addOnValueChangeListener {
+                packet?.fpTimeoutStrt = it
+                packet?.let { it1 -> mViewModel.sendPacket(it1) }
+            }
+
+
+            dataPacketsTransmissionPeriod.setOnClickListener { floatParamClick(it as FloatParamView) }
+            enableCutoffOfIgnition.setOnClickListener { floatParamClick(it as FloatParamView) }
+            startRelToTdc.setOnClickListener { floatParamClick(it as FloatParamView) }
+
+            duration.setOnClickListener { floatParamClick(it as FloatParamView) }
+            evapStartingAirFlow.setOnClickListener { floatParamClick(it as FloatParamView) }
+            evapEndingAirFlow.setOnClickListener { floatParamClick(it as FloatParamView) }
+
+            fuelPumpWorkingTime.setOnClickListener { floatParamClick(it as FloatParamView) }
+
         }
     }
 }

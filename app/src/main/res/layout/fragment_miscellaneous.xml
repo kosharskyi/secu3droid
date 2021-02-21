@@ -66,6 +66,9 @@
             app:title="@string/miscel_period_title"
             app:units="@string/units_ms"
             app:int_value="0"
+            app:int_min_value="0"
+            app:int_max_value="500"
+            app:int_step="10"
             />
 
 
@@ -90,6 +93,9 @@
             app:title="@string/miscel_ignition_cutoff_rpm_title"
             app:units="@string/units_rpm"
             app:int_value="0"
+            app:int_min_value="1000"
+            app:int_max_value="30000"
+            app:int_step="10"
             />
 
 
@@ -103,6 +109,9 @@
             app:title="@string/miscel_start_rel_to_tdc_title"
             app:units="@string/units_degrees_cs"
             app:int_value="0"
+            app:int_min_value="-6"
+            app:int_max_value="12"
+            app:int_step="1"
             />
 
 
@@ -116,6 +125,9 @@
             app:title="@string/miscel_hall_output_delay_title"
             app:units="@string/units_degrees_cs"
             app:int_value="0"
+            app:int_min_value="1"
+            app:int_max_value="30"
+            app:int_step="1"
             />
 
 
@@ -156,6 +168,9 @@
             app:title="@string/miscel_evap_starting_air_flow_title"
             app:units="RxL"
             app:int_value="0"
+            app:int_max_value="200000"
+            app:int_min_value="100"
+            app:int_step="1"
             />
 
         <!-- ************************************************************* -->
@@ -168,6 +183,9 @@
             app:title="@string/miscel_evap_ending_air_flow_title"
             app:units="RxL"
             app:int_value="0"
+            app:int_max_value="200000"
+            app:int_min_value="100"
+            app:int_step="1"
             />
 
         <!-- ************************************************************* -->
@@ -181,6 +199,9 @@
             app:units="@string/units_sec"
             app:float_value="0"
             app:value_precision="one"
+            app:float_max_value="25.5"
+            app:float_min_value="0.1"
+            app:float_step="0.1"
             />
 
     </LinearLayout>

@@ -30,13 +30,20 @@ import android.view.View
 import android.view.ViewGroup
 import androidx.fragment.app.activityViewModels
 import org.secu3.android.databinding.FragmentStarterBinding
+import org.secu3.android.models.packets.params.StarterParamPacket
 import org.secu3.android.ui.parameters.ParamsViewModel
+import org.secu3.android.ui.parameters.dialogs.ParamFloatEditDialogFragment
+import org.secu3.android.ui.parameters.dialogs.ParamIntEditDialogFragment
+import org.secu3.android.ui.parameters.views.FloatParamView
+import org.secu3.android.ui.parameters.views.IntParamView
 
-class StarterFragment : Fragment() {
+class StarterFragment : BaseParamFragment() {
 
     private val mViewModel: ParamsViewModel by activityViewModels()
 
     private lateinit var mBinding: FragmentStarterBinding
+
+    private var packet: StarterParamPacket? = null
 
     override fun onCreateView(inflater: LayoutInflater, container: ViewGroup?, savedInstanceState: Bundle?): View? {
         mBinding = FragmentStarterBinding.inflate(inflater, container, false)
@@ -46,8 +53,10 @@ class StarterFragment : Fragment() {
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
 
-
         mViewModel.starterLiveData.observe(viewLifecycleOwner) {
+
+            packet = it
+
             mBinding.apply {
                 starterBlockingRpm.value = it.starterOff
                 switchCrankMapRpm.value = it.smapAbandon
@@ -58,7 +67,56 @@ class StarterFragment : Fragment() {
                 primePulseDelay.value = it.injPrimeDelay
                 floodClearModeThreshold.value = it.injFloodclearTps
             }
+
+            initViews()
         }
     }
 
+
+    private fun initViews() {
+
+        mBinding.apply {
+            starterBlockingRpm.addOnValueChangeListener {
+                packet?.starterOff = it
+                packet?.let { it1 -> mViewModel.sendPacket(it1) }
+            }
+            switchCrankMapRpm.addOnValueChangeListener {
+                packet?.smapAbandon = it
+                packet?.let { it1 -> mViewModel.sendPacket(it1) }
+            }
+            timeCrankToRunPosition.addOnValueChangeListener {
+                packet?.crankToRunTime = it
+                packet?.let { it1 -> mViewModel.sendPacket(it1) }
+            }
+            afterstartEnrichmentTime.addOnValueChangeListener {
+                packet?.injAftstrStroke = it
+                packet?.let { it1 -> mViewModel.sendPacket(it1) }
+            }
+            primePulseCold.addOnValueChangeListener {
+                packet?.injPrimeCold = it
+                packet?.let { it1 -> mViewModel.sendPacket(it1) }
+            }
+            primePulseHot.addOnValueChangeListener {
+                packet?.injPrimeHot = it
+                packet?.let { it1 -> mViewModel.sendPacket(it1) }
+            }
+            primePulseDelay.addOnValueChangeListener {
+                packet?.injPrimeDelay = it
+                packet?.let { it1 -> mViewModel.sendPacket(it1) }
+            }
+            floodClearModeThreshold.addOnValueChangeListener {
+                packet?.injFloodclearTps = it
+                packet?.let { it1 -> mViewModel.sendPacket(it1) }
+            }
+
+            starterBlockingRpm.setOnClickListener { intParamClick(it as IntParamView) }
+            switchCrankMapRpm.setOnClickListener { intParamClick(it as IntParamView) }
+            timeCrankToRunPosition.setOnClickListener { floatParamClick(it as FloatParamView) }
+            afterstartEnrichmentTime.setOnClickListener { intParamClick(it as IntParamView) }
+            primePulseCold.setOnClickListener { floatParamClick(it as FloatParamView) }
+            primePulseHot.setOnClickListener { floatParamClick(it as FloatParamView) }
+            primePulseDelay.setOnClickListener { floatParamClick(it as FloatParamView) }
+            floodClearModeThreshold.setOnClickListener { floatParamClick(it as FloatParamView) }
+        }
+    }
 }

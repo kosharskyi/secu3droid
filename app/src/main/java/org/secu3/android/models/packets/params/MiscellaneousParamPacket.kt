@@ -52,14 +52,35 @@ data class MiscellaneousParamPacket(
         }
 
 
-    val offPumpOnGas: Boolean
+    var offPumpOnGas: Boolean
         get() = flpmpFlags.getBitValue(0) > 0
+        set(value) {
+            flpmpFlags = if (value) {
+                1.or(flpmpFlags)
+            } else {
+                1.inv().and(flpmpFlags)
+            }
+        }
 
-    val offInjOnGas: Boolean
+    var offInjOnGas: Boolean
         get() = flpmpFlags.getBitValue(1) > 0
+        set(value) {
+            flpmpFlags = if (value) {
+                1.shl(1).or(flpmpFlags)
+            } else {
+                1.shl(1).inv().and(flpmpFlags)
+            }
+        }
 
-    val offInjOnPetrol: Boolean
+    var offInjOnPetrol: Boolean
         get() = flpmpFlags.getBitValue(2) > 0
+        set(value) {
+            flpmpFlags = if (value) {
+                1.shl(2).or(flpmpFlags)
+            } else {
+                1.shl(2).inv().and(flpmpFlags)
+            }
+        }
 
     override fun pack(): String {
         var data = "$OUTPUT_PACKET_SYMBOL$DESCRIPTOR"

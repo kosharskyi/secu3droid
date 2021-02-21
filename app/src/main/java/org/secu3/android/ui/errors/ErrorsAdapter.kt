@@ -26,10 +26,10 @@ package org.secu3.android.ui.errors
 
 import android.view.LayoutInflater
 import android.view.ViewGroup
+import androidx.core.view.isInvisible
 import androidx.recyclerview.widget.RecyclerView
 import org.secu3.android.databinding.ViewErrorRowBinding
 import org.secu3.android.models.CheckEngineError
-import org.secu3.android.utils.invisibleIf
 
 class ErrorsAdapter(private val errors: List<CheckEngineError>) : RecyclerView.Adapter<ErrorsAdapter.ErrorViewHolder>() {
 
@@ -53,8 +53,8 @@ class ErrorsAdapter(private val errors: List<CheckEngineError>) : RecyclerView.A
 
         fun bind(error: CheckEngineError) {
             binding.errorName.text = error.title
-            binding.errorIsActive.invisibleIf { error.isActive.not() }
-            binding.errorIsSaved.invisibleIf { error.isSaved.not() }
+            binding.errorIsActive.isInvisible = error.isActive.not()
+            binding.errorIsSaved.isInvisible = error.isSaved.not()
         }
     }
 }

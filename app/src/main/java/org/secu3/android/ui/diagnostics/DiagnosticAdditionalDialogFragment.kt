@@ -4,12 +4,12 @@ import android.os.Bundle
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
+import androidx.core.view.isVisible
 import androidx.fragment.app.DialogFragment
 import androidx.navigation.navGraphViewModels
 import dagger.hilt.android.AndroidEntryPoint
 import org.secu3.android.R
 import org.secu3.android.databinding.FragmentDiagnosticAdditionalDialogBinding
-import org.secu3.android.utils.visibleIf
 
 @AndroidEntryPoint
 class DiagnosticAdditionalDialogFragment : DialogFragment() {
@@ -43,7 +43,7 @@ class DiagnosticAdditionalDialogFragment : DialogFragment() {
         }
 
         mViewModel.firmwareLiveData.observe(viewLifecycleOwner) {
-            mBinding.enableTachO.visibleIf { it.isSecu3T.not() }
+            mBinding.enableTachO.isVisible = it.isSecu3T.not()
         }
 
     }

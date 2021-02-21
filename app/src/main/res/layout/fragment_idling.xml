@@ -32,31 +32,34 @@
     tools:context=".ui.parameters.pages.IdlingFragment"
     >
 
-    <androidx.constraintlayout.widget.ConstraintLayout
+    <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
+        android:orientation="vertical"
         android:padding="16dp">
 
         <org.secu3.android.ui.parameters.views.FloatParamView
             android:id="@+id/positive_reg_factor"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            app:layout_constraintTop_toTopOf="parent"
-            app:layout_constraintStart_toStartOf="parent"
             app:title="@string/idlreg_ifac1_title"
             app:float_value="0"
             app:value_precision="two"
+            app:float_min_value="0"
+            app:float_max_value="10"
+            app:float_step="0.01"
             />
 
         <org.secu3.android.ui.parameters.views.FloatParamView
             android:id="@+id/negative_reg_factor"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            app:layout_constraintTop_toBottomOf="@id/positive_reg_factor"
-            app:layout_constraintStart_toStartOf="parent"
             app:title="@string/idlreg_ifac2_title"
             app:float_value="0"
             app:value_precision="two"
+            app:float_min_value="0"
+            app:float_max_value="10"
+            app:float_step="0.01"
             />
 
 
@@ -66,23 +69,25 @@
             android:id="@+id/max_reg_limit"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            app:layout_constraintTop_toBottomOf="@id/negative_reg_factor"
-            app:layout_constraintStart_toStartOf="parent"
             android:layout_marginTop="16dp"
             app:title="@string/idlreg_maximal_angle_title"
             app:float_value="0"
             app:value_precision="two"
+            app:float_min_value="-15"
+            app:float_max_value="30"
+            app:float_step="0.02"
             />
 
         <org.secu3.android.ui.parameters.views.FloatParamView
             android:id="@+id/min_reg_limit"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            app:layout_constraintTop_toBottomOf="@id/max_reg_limit"
-            app:layout_constraintStart_toStartOf="parent"
             app:title="@string/idlreg_minimal_angle_title"
             app:float_value="0"
             app:value_precision="two"
+            app:float_min_value="-15"
+            app:float_max_value="30"
+            app:float_step="0.02"
             />
 
 
@@ -92,12 +97,13 @@
             android:id="@+id/goal_rpm"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            app:layout_constraintTop_toBottomOf="@id/min_reg_limit"
-            app:layout_constraintStart_toStartOf="parent"
             android:layout_marginTop="16dp"
             app:title="@string/idlreg_target_rpm_title"
             app:int_value="0"
             app:units="@string/units_rpm"
+            app:int_min_value="0"
+            app:int_max_value="1800"
+            app:int_step="5"
             />
 
 
@@ -105,11 +111,12 @@
             android:id="@+id/rpm_dead_band"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            app:layout_constraintTop_toBottomOf="@id/goal_rpm"
-            app:layout_constraintStart_toStartOf="parent"
             app:title="@string/idlreg_rpm_sensitivity_title"
             app:int_value="0"
             app:units="@string/units_rpm"
+            app:int_min_value="0"
+            app:int_max_value="500"
+            app:int_step="1"
             />
 
 
@@ -118,12 +125,13 @@
             android:id="@+id/regulator_on_temp"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            app:layout_constraintTop_toBottomOf="@id/rpm_dead_band"
-            app:layout_constraintStart_toStartOf="parent"
             app:title="@string/idlreg_turn_on_temp_title"
             app:float_value="0"
             app:units="@string/units_degrees_celcius"
             app:value_precision="two"
+            app:float_min_value="0.0"
+            app:float_max_value="100.0"
+            app:float_step="0.2"
             />
 
 
@@ -132,10 +140,8 @@
 
         <CheckBox
             android:id="@+id/use_regulator"
-            android:layout_width="0dp"
+            android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            app:layout_constraintTop_toBottomOf="@id/regulator_on_temp"
-            app:layout_constraintStart_toStartOf="parent"
             app:layout_constraintEnd_toEndOf="parent"
             android:text="@string/idlreg_use_idle_regulator_title"
             android:button="@null"
@@ -148,11 +154,8 @@
 
         <CheckBox
             android:id="@+id/use_regulator_on_gas"
-            android:layout_width="0dp"
+            android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            app:layout_constraintTop_toBottomOf="@id/use_regulator"
-            app:layout_constraintStart_toStartOf="parent"
-            app:layout_constraintEnd_toEndOf="parent"
             android:text="@string/idlreg_use_idle_regulator_on_gas_title"
             android:button="@null"
             android:drawableEnd="?android:attr/listChoiceIndicatorMultiple"
@@ -163,11 +166,8 @@
 
         <CheckBox
             android:id="@+id/proportional_regulator"
-            android:layout_width="0dp"
+            android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            app:layout_constraintTop_toBottomOf="@id/use_regulator_on_gas"
-            app:layout_constraintStart_toStartOf="parent"
-            app:layout_constraintEnd_toEndOf="parent"
             android:text="@string/idlreg_proportional_regulator_title"
             android:button="@null"
             android:drawableEnd="?android:attr/listChoiceIndicatorMultiple"
@@ -178,11 +178,8 @@
 
         <CheckBox
             android:id="@+id/use_closed_loop"
-            android:layout_width="0dp"
+            android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            app:layout_constraintTop_toBottomOf="@id/proportional_regulator"
-            app:layout_constraintStart_toStartOf="parent"
-            app:layout_constraintEnd_toEndOf="parent"
             android:text="@string/idlreg_use_closed_loop_title"
             android:button="@null"
             android:drawableEnd="?android:attr/listChoiceIndicatorMultiple"
@@ -194,13 +191,14 @@
             android:id="@+id/iac_add_after_exit"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            app:layout_constraintTop_toBottomOf="@id/use_closed_loop"
-            app:layout_constraintStart_toStartOf="parent"
             android:layout_marginTop="16dp"
             app:title="@string/idlreg_iac_add_after_exit_title"
             app:units="@string/units_percents"
             app:float_value="0"
             app:value_precision="one"
+            app:float_min_value="0.0"
+            app:float_max_value="100.0"
+            app:float_step="0.5"
             />
 
         <!-- ************************************************************* -->
@@ -209,12 +207,13 @@
             android:id="@+id/rpm_add_on_run"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            app:layout_constraintTop_toBottomOf="@id/iac_add_after_exit"
-            app:layout_constraintStart_toStartOf="parent"
             android:layout_marginTop="16dp"
             app:title="@string/idlreg_rpm_add_on_run_title"
             app:units="@string/units_rpm"
             app:int_value="0"
+            app:int_min_value="0"
+            app:int_max_value="2000"
+            app:int_step="10"
             />
 
 
@@ -224,25 +223,27 @@
             android:id="@+id/proportional"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            app:layout_constraintTop_toBottomOf="@id/rpm_add_on_run"
-            app:layout_constraintStart_toStartOf="parent"
             android:layout_marginTop="16dp"
             app:title="@string/idlreg_proportional_title"
             app:units="@string/units_coef"
             app:float_value="0"
             app:value_precision="three"
+            app:float_min_value="0.0"
+            app:float_max_value="5.0"
+            app:float_step="0.005"
             />
 
         <org.secu3.android.ui.parameters.views.FloatParamView
             android:id="@+id/integral"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            app:layout_constraintTop_toBottomOf="@id/proportional"
-            app:layout_constraintStart_toStartOf="parent"
             app:title="@string/idlreg_integral_title"
             app:units="@string/units_coef"
             app:float_value="0"
             app:value_precision="three"
+            app:float_min_value="0.0"
+            app:float_max_value="5.0"
+            app:float_step="0.005"
             />
 
         <!-- ************************************************************* -->
@@ -252,13 +253,14 @@
             android:id="@+id/transient_threshold1"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            app:layout_constraintTop_toBottomOf="@id/integral"
-            app:layout_constraintStart_toStartOf="parent"
             android:layout_marginTop="16dp"
             app:title="@string/idlreg_first_transient_threshold_title"
             app:units="@string/units_coef"
             app:float_value="0"
             app:value_precision="two"
+            app:float_min_value="1.0"
+            app:float_max_value="2.99"
+            app:float_step="0.01"
             />
 
 
@@ -266,12 +268,13 @@
             android:id="@+id/transient_threshold2"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            app:layout_constraintTop_toBottomOf="@id/transient_threshold1"
-            app:layout_constraintStart_toStartOf="parent"
             app:title="@string/idlreg_second_transient_threshold_title"
             app:units="@string/units_coef"
             app:float_value="0"
             app:value_precision="two"
+            app:float_min_value="1.0"
+            app:float_max_value="2.99"
+            app:float_step="0.01"
             />
 
 
@@ -282,12 +285,13 @@
             android:id="@+id/integrator_rpm_limit"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            app:layout_constraintTop_toBottomOf="@id/transient_threshold2"
-            app:layout_constraintStart_toStartOf="parent"
             android:layout_marginTop="16dp"
             app:title="@string/idlreg_integrator_rpm_limit_title"
             app:units="@string/units_rpm"
             app:int_value="0"
+            app:int_min_value="10"
+            app:int_max_value="1200"
+            app:int_step="10"
             />
 
         <!-- ************************************************************* -->
@@ -296,13 +300,14 @@
             android:id="@+id/pressure_load_on_idling"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            app:layout_constraintTop_toBottomOf="@id/integrator_rpm_limit"
-            app:layout_constraintStart_toStartOf="parent"
             android:layout_marginTop="16dp"
             app:title="@string/idlreg_pressure_load_on_idling_title"
             app:units="@string/units_pressure_kpa"
             app:float_value="0"
             app:value_precision="one"
+            app:float_min_value="0.0"
+            app:float_max_value="100.0"
+            app:float_step="0.1"
             />
 
         <!-- ************************************************************* -->
@@ -311,25 +316,27 @@
             android:id="@+id/min_iac_position"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            app:layout_constraintTop_toBottomOf="@id/pressure_load_on_idling"
-            app:layout_constraintStart_toStartOf="parent"
             android:layout_marginTop="16dp"
             app:title="@string/idlreg_min_iac_position_title"
             app:units="@string/units_percents"
             app:float_value="0"
             app:value_precision="one"
+            app:float_min_value="0.0"
+            app:float_max_value="100.0"
+            app:float_step="0.5"
             />
 
         <org.secu3.android.ui.parameters.views.FloatParamView
             android:id="@+id/max_iac_position"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            app:layout_constraintTop_toBottomOf="@id/min_iac_position"
-            app:layout_constraintStart_toStartOf="parent"
             app:title="@string/idlreg_max_iac_position_title"
             app:units="@string/units_percents"
             app:float_value="0"
             app:value_precision="one"
+            app:float_min_value="0.0"
+            app:float_max_value="100.0"
+            app:float_step="0.5"
             />
 
 
@@ -338,11 +345,8 @@
 
         <CheckBox
             android:id="@+id/use_closed_loop_on_gas"
-            android:layout_width="0dp"
+            android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            app:layout_constraintTop_toBottomOf="@id/max_iac_position"
-            app:layout_constraintStart_toStartOf="parent"
-            app:layout_constraintEnd_toEndOf="parent"
             android:text="@string/idlreg_use_closed_loop_on_gas_title"
             android:button="@null"
             android:drawableEnd="?android:attr/listChoiceIndicatorMultiple"
@@ -350,6 +354,6 @@
 
         <!-- ************************************************************* -->
 
-    </androidx.constraintlayout.widget.ConstraintLayout>
+    </LinearLayout>
 
 </ScrollView>

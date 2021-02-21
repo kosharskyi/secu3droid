@@ -36,7 +36,7 @@ import org.secu3.android.databinding.FragmentSecurityBinding
 import org.secu3.android.ui.parameters.ParamsViewModel
 
 
-class SecurityFragment : Fragment() {
+class SecurityFragment : BaseParamFragment() {
 
     private val mViewModel: ParamsViewModel by activityViewModels()
     private lateinit var mBinding: FragmentSecurityBinding

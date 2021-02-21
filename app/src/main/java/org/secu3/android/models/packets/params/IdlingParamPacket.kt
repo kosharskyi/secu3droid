@@ -49,21 +49,55 @@ data class IdlingParamPacket(
 
     ) : BaseOutputPacket() {
 
-    val useRegulator: Boolean
+    var useRegulator: Boolean
         get() = idlFlags.getBitValue(0) > 0
+        set(value) {
+            idlFlags = if (value) {
+                1 or idlFlags
+            } else {
+                1.inv().and(idlFlags)
+            }
+        }
 
-    val useRegulatorOnGas: Boolean
+    var useRegulatorOnGas: Boolean
         get() = idlFlags.getBitValue(1) > 0
+        set(value) {
+            idlFlags = if (value) {
+                (1 shl 1).or(idlFlags)
+            } else {
+                (1 shl 1).inv().or(idlFlags)
+            }
+        }
 
-    val useClosedLoop: Boolean
+    var useClosedLoop: Boolean
         get() = idlFlags.getBitValue(2) > 0
+        set(value) {
+            idlFlags = if (value) {
+                (1 shl 2).or(idlFlags)
+            } else {
+                (1 shl 2).inv().or(idlFlags)
+            }
+        }
 
-    val pRegMode: Boolean
+    var pRegMode: Boolean
         get() = idlFlags.getBitValue(3) > 0
+        set(value) {
+            idlFlags = if (value) {
+                (1 shl 3).or(idlFlags)
+            } else {
+                (1 shl 3).inv().or(idlFlags)
+            }
+        }
 
-    val useClosedLoopOnGas: Boolean
+    var useClosedLoopOnGas: Boolean
         get() = idlFlags.getBitValue(4) > 0
-
+        set(value) {
+            idlFlags = if (value) {
+                (1 shl 4).or(idlFlags)
+            } else {
+                (1 shl 4).inv().or(idlFlags)
+            }
+        }
 
 
     companion object {

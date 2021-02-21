@@ -60,6 +60,9 @@
             android:layout_marginTop="16dp"
             app:title="@string/choke_steps_title"
             app:int_value="0"
+            app:int_max_value="2000"
+            app:int_min_value="10"
+            app:int_step="1"
             />
 
 
@@ -77,6 +80,9 @@
             app:units="@string/units_afr"
             app:float_value="0"
             app:value_precision="one"
+            app:float_min_value="8.0"
+            app:float_max_value="22.0"
+            app:float_step="0.1"
             />
 
 
@@ -94,6 +100,9 @@
             app:units="@string/units_percents"
             app:float_value="0"
             app:value_precision="one"
+            app:float_max_value="100"
+            app:float_min_value="0"
+            app:float_step="0.5"
             />
 
 
@@ -111,6 +120,9 @@
             app:units="@string/units_percents"
             app:float_value="0"
             app:value_precision="two"
+            app:float_max_value="100.0"
+            app:float_min_value="0.5"
+            app:float_step="0.5"
             />
 
         <!-- ************************************************************* -->
@@ -127,6 +139,9 @@
             app:units="@string/units_percents"
             app:float_value="0"
             app:value_precision="two"
+            app:float_max_value="100.0"
+            app:float_min_value="0.5"
+            app:float_step="0.5"
             />
 
 

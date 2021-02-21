@@ -64,6 +64,9 @@
             app:units="@string/units_liter"
             app:float_value="0"
             app:value_precision="four"
+            app:float_max_value="8.0"
+            app:float_min_value="0.01"
+            app:float_step="0.0001"
             />
 
         <!-- ************************************************************* -->
@@ -81,6 +84,9 @@
             app:units="@string/units_cc_per_min"
             app:float_value="0"
             app:value_precision="two"
+            app:float_max_value="1023.0"
+            app:float_min_value="50.0"
+            app:float_step="0.02"
             />
 
         <!-- ************************************************************* -->
@@ -142,6 +148,9 @@
             app:title="@string/injctr_par_injection_timing_title"
             app:units="@string/units_degrees_cs"
             app:int_value="0"
+            app:int_max_value="720"
+            app:int_min_value="0"
+            app:int_step="1"
             />
 
         <!-- ************************************************************* -->
@@ -155,6 +164,9 @@
             app:title="@string/injctr_par_cranking_injection_timing_title"
             app:units="@string/units_degrees_cs"
             app:int_value="0"
+            app:int_max_value="720"
+            app:int_min_value="0"
+            app:int_step="1"
             />
 
         <!-- ************************************************************* -->
@@ -209,6 +221,9 @@
             app:units="@string/units_ms"
             app:float_value="0"
             app:value_precision="two"
+            app:float_max_value="6.50"
+            app:float_min_value="0.10"
+            app:float_step="0.03"
             />
 
         <!-- ************************************************************* -->
@@ -241,6 +256,9 @@
             app:units="@string/units_cc_per_min"
             app:float_value="0"
             app:value_precision="two"
+            app:float_max_value="1023.0"
+            app:float_min_value="50.0"
+            app:float_step="0.02"
             />
 
         <!-- ************************************************************* -->
@@ -301,6 +319,9 @@
             app:title="@string/injctr_par_injection_timing_title"
             app:units="@string/units_degrees_cs"
             app:int_value="0"
+            app:int_max_value="720"
+            app:int_min_value="0"
+            app:int_step="1"
             />
 
         <!-- ************************************************************* -->
@@ -314,6 +335,9 @@
             app:title="@string/injctr_par_cranking_injection_timing_title"
             app:units="@string/units_degrees_cs"
             app:int_value="0"
+            app:int_max_value="720"
+            app:int_min_value="0"
+            app:int_step="1"
             />
 
         <!-- ************************************************************* -->
@@ -368,6 +392,9 @@
             app:units="@string/units_ms"
             app:float_value="0"
             app:value_precision="two"
+            app:float_max_value="6.50"
+            app:float_min_value="0.10"
+            app:float_step="0.03"
             />
 
         <!-- ************************************************************* -->
@@ -394,6 +421,9 @@
             app:title="@string/injctr_par_pulses_per_litter_of_fuel"
             app:units=""
             app:int_value="0"
+            app:int_max_value="32000"
+            app:int_min_value="8000"
+            app:int_step="1"
             />
 
         <CheckBox

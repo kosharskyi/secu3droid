@@ -14,6 +14,8 @@ class FloatParamView @JvmOverloads constructor(
 
     private var mBinding: ViewBaseParameterBinding
 
+    private var mOnChangeValueListener: (Float) -> Unit = {}
+
     var title: String = ""
         set(value) {
             field = value
@@ -30,7 +32,12 @@ class FloatParamView @JvmOverloads constructor(
         set(value) {
             field = value
             showValue()
+            mOnChangeValueListener(value)
         }
+
+    var step: Float = 0f
+    var maxValue: Float = 0f
+    var minValue: Float = 0f
 
     var precision: Int = 0
 
@@ -48,6 +55,9 @@ class FloatParamView @JvmOverloads constructor(
             getString(R.styleable.FloatParamView_title)?.let { title = it }
             getString(R.styleable.FloatParamView_units)?.let { units = it }
             value = getFloat(R.styleable.FloatParamView_float_value, 0f)
+            step = getFloat(R.styleable.FloatParamView_float_step, 0f)
+            maxValue = getFloat(R.styleable.FloatParamView_float_max_value, 0f)
+            minValue = getFloat(R.styleable.FloatParamView_float_min_value, 0f)
             precision = getInt(R.styleable.FloatParamView_value_precision, 0)
 
             recycle()
@@ -56,12 +66,16 @@ class FloatParamView @JvmOverloads constructor(
 
     private fun showValue() {
         mBinding.paramValue.text = when (precision) {
-            0 -> "%.1f".format(value)
-            1 -> "%.2f".format(value)
-            2 -> "%.3f".format(value)
-            3 -> "%.4f".format(value)
+            0 -> "%.0f".format(value)
+            1 -> "%.1f".format(value)
+            2 -> "%.2f".format(value)
+            3 -> "%.3f".format(value)
+            4 -> "%.4f".format(value)
             else -> value.toString()
         }
     }
 
+    fun addOnValueChangeListener(listener: (Float) -> Unit) {
+        mOnChangeValueListener = listener
+    }
 }

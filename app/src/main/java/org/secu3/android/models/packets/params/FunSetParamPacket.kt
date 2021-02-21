@@ -71,11 +71,17 @@ data class FunSetParamPacket(
         return data
     }
 
-    val mapserUniPetrol: Int
-        get() = mapserUni.and(15)
+    var mapserUniPetrol: Int
+        get() = mapserUni.and(0xF)
+        set(value) {
+            mapserUni = mapserUni.and(0xF0).or(value)
+        }
 
-    val mapserUniGas: Int
-        get() = mapserUni.and(240).shr(4)
+    var mapserUniGas: Int
+        get() = mapserUni.and(0xF0).shr(4)
+        set(value) {
+            mapserUni = mapserUni.and(0xF).or(value.shl(4))
+        }
 
     companion object {
 

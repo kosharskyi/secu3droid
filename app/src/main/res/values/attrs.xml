@@ -10,11 +10,15 @@
         <attr name="title" />
         <attr name="units" />
         <attr name="float_value" format="float" />
+        <attr name="float_step" format="float" />
+        <attr name="float_max_value" format="float" />
+        <attr name="float_min_value" format="float" />
         <attr name="value_precision" format="enum">
-            <enum name="one" value="0"/>
-            <enum name="two" value="1"/>
-            <enum name="three" value="2"/>
-            <enum name="four" value="3"/>
+            <enum name="zero" value="0"/>
+            <enum name="one" value="1"/>
+            <enum name="two" value="2"/>
+            <enum name="three" value="3"/>
+            <enum name="four" value="4"/>
         </attr>
     </declare-styleable>
 
@@ -22,6 +26,9 @@
         <attr name="title" />
         <attr name="units" />
         <attr name="int_value" format="integer" />
+        <attr name="int_step" format="integer" />
+        <attr name="int_max_value" format="integer" />
+        <attr name="int_min_value" format="integer" />
     </declare-styleable>
 
 

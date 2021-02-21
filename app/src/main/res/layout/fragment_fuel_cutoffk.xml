@@ -45,6 +45,9 @@
             app:title="@string/carbur_overrun_lower_threshold_gasoline_title"
             app:units="@string/units_rpm"
             app:int_value="0"
+            app:int_min_value="250"
+            app:int_max_value="7500"
+            app:int_step="10"
             />
 
 
@@ -57,6 +60,9 @@
             app:title="@string/carbur_overrun_upper_threshold_gasoline_title"
             app:units="@string/units_rpm"
             app:int_value="0"
+            app:int_min_value="250"
+            app:int_max_value="7500"
+            app:int_step="10"
             />
 
 
@@ -71,6 +77,9 @@
             app:title="@string/carbur_overrun_lower_threshold_gas_title"
             app:units="@string/units_rpm"
             app:int_value="0"
+            app:int_min_value="250"
+            app:int_max_value="7500"
+            app:int_step="10"
             />
 
 
@@ -83,6 +92,9 @@
             app:title="@string/carbur_overrun_upper_threshold_gas_title"
             app:units="@string/units_rpm"
             app:int_value="0"
+            app:int_min_value="250"
+            app:int_max_value="7500"
+            app:int_step="10"
             />
 
 
@@ -97,6 +109,9 @@
             app:units="@string/units_sec"
             app:float_value="0"
             app:value_precision="two"
+            app:float_min_value="0.0"
+            app:float_max_value="2.5"
+            app:float_step="0.01"
             />
 
 
@@ -111,6 +126,9 @@
             app:units="dis.kPa"
             app:float_value="0"
             app:value_precision="one"
+            app:float_min_value="0.0"
+            app:float_max_value="50.0"
+            app:float_step="0.10"
             />
 
 
@@ -124,6 +142,9 @@
             app:units="@string/units_percents"
             app:float_value="0"
             app:value_precision="one"
+            app:float_min_value="0.0"
+            app:float_max_value="100.0"
+            app:float_step="0.5"
             />
 
 
@@ -149,6 +170,9 @@
             app:units="@string/units_pressure_kpa"
             app:float_value="0"
             app:value_precision="one"
+            app:float_min_value="0"
+            app:float_max_value="250"
+            app:float_step="0.5"
             />
 
         <!-- ************************************************************* -->
@@ -162,6 +186,9 @@
             app:units="@string/units_pressure_kpa"
             app:float_value="0"
             app:value_precision="one"
+            app:float_min_value="-30"
+            app:float_max_value="180"
+            app:float_step="0.25"
             />
 
         <!-- ************************************************************* -->
@@ -188,6 +215,9 @@
             app:title="@string/carbur_rev_limitting_lower_threshold_title"
             app:units="@string/units_rpm"
             app:int_value="0"
+            app:int_max_value="30000"
+            app:int_min_value="500"
+            app:int_step="50"
             />
 
 
@@ -200,6 +230,9 @@
             app:title="@string/carbur_rev_limitting_upper_threshold_title"
             app:units="@string/units_rpm"
             app:int_value="0"
+            app:int_max_value="30000"
+            app:int_min_value="500"
+            app:int_step="50"
             />
 
     </LinearLayout>
