@@ -29,10 +29,10 @@ import android.bluetooth.BluetoothDevice
 import android.bluetooth.BluetoothSocket
 import android.content.Context
 import android.util.Log
-import android.widget.Toast
-import androidx.lifecycle.LiveData
-import androidx.lifecycle.MutableLiveData
 import dagger.hilt.android.qualifiers.ApplicationContext
+import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.MutableSharedFlow
+import kotlinx.coroutines.runBlocking
 import org.secu3.android.models.packets.BaseOutputPacket
 import org.secu3.android.models.packets.BaseSecu3Packet
 import org.secu3.android.models.packets.BaseSecu3Packet.Companion.MAX_PACKET_SIZE
@@ -61,9 +61,9 @@ class Secu3Manager @Inject constructor(@ApplicationContext private val context: 
     var connectedThread: ConnectedThread? = null
     private var createConnectThread: CreateConnectThread? = null
 
-    private val mReceivedPacketLiveData = MutableLiveData<BaseSecu3Packet>()
-    val receivedPacketLiveData: LiveData<BaseSecu3Packet>
-        get() = mReceivedPacketLiveData
+    private val mReceivedPacketFlow = MutableSharedFlow<BaseSecu3Packet>()
+    val receivedPacketFlow: Flow<BaseSecu3Packet>
+        get() = mReceivedPacketFlow
 
 
     fun start() {
@@ -243,7 +243,9 @@ class Secu3Manager @Inject constructor(@ApplicationContext private val context: 
                                 val line = String(packetBuffer, 0, idx - 1)
 
                                 BaseSecu3Packet.parse(line)?.let { packet ->
-                                    mReceivedPacketLiveData.postValue(packet)
+                                    runBlocking {
+                                        mReceivedPacketFlow.emit(packet)
+                                    }
                                 }
                             }
 

@@ -47,14 +47,14 @@ data class KnockParamPacket(
         data += useKnockChannel.toChar()
         data += bpfFrequency.toChar()
 
-        data += kWndBeginAngle.times(ANGLE_DIVIDER).toInt().write2Bytes(data)
-        data += kWndEndAngle.times(ANGLE_DIVIDER).toInt().write2Bytes(data)
+        data += kWndBeginAngle.times(ANGLE_DIVIDER).toInt().write2Bytes()
+        data += kWndEndAngle.times(ANGLE_DIVIDER).toInt().write2Bytes()
         data += intTimeCost.toChar()
 
-        data += retardStep.times(ANGLE_DIVIDER).toInt().write2Bytes(data)
-        data += advanceStep.times(ANGLE_DIVIDER).toInt().write2Bytes(data)
-        data += maxRetard.times(ANGLE_DIVIDER).toInt().write2Bytes(data)
-        data += threshold.times(VOLTAGE_MULTIPLIER).toInt().write2Bytes(data)
+        data += retardStep.times(ANGLE_DIVIDER).toInt().write2Bytes()
+        data += advanceStep.times(ANGLE_DIVIDER).toInt().write2Bytes()
+        data += maxRetard.times(ANGLE_DIVIDER).toInt().write2Bytes()
+        data += threshold.times(VOLTAGE_MULTIPLIER).toInt().write2Bytes()
 
         data += recoveryDelay.toChar()
 

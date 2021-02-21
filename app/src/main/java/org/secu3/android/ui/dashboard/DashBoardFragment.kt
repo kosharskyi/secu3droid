@@ -95,7 +95,7 @@ class DashBoardFragment : Fragment() {
             updatePacket(it)
         })
 
-        mViewModel.statusLiveData?.observe(viewLifecycleOwner, {
+        mViewModel.statusLiveData.observe(viewLifecycleOwner, {
             mBinding.ledOnline.visibleIf { it }
         })
     }

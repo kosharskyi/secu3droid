@@ -82,27 +82,27 @@ data class LambdaParamPacket(
         data += stepSizeP.div(100).times(512).toChar()
         data += stepSizeM.div(100).times(512).toChar()
 
-        data += corrLimitP.div(100).times(512).toInt().write2Bytes(data)
-        data += corrLimitM.div(100).times(512).toInt().write2Bytes(data)
+        data += corrLimitP.div(100).times(512).toInt().write2Bytes()
+        data += corrLimitM.div(100).times(512).toInt().write2Bytes()
 
-        data += swtPoint.times(VOLTAGE_MULTIPLIER).toInt().write2Bytes(data)
-        data += tempThrd.times(TEMPERATURE_MULTIPLIER).toInt().write2Bytes(data)
-        data += rpmThrd.write2Bytes(data)
+        data += swtPoint.times(VOLTAGE_MULTIPLIER).toInt().write2Bytes()
+        data += tempThrd.times(TEMPERATURE_MULTIPLIER).toInt().write2Bytes()
+        data += rpmThrd.write2Bytes()
 
         data += activDelay.toChar()
 
-        data += deadBand.times(VOLTAGE_MULTIPLIER).toInt().write2Bytes(data)
+        data += deadBand.times(VOLTAGE_MULTIPLIER).toInt().write2Bytes()
         data += senstype.toChar()
         data += msPerStp.toChar()
         data += flags.toChar()
-        data += gdStoichval.times(AFR_MULTIPLIER).toInt().write2Bytes(data)
+        data += gdStoichval.times(AFR_MULTIPLIER).toInt().write2Bytes()
 
         data += heatingTime0.toChar()
         data += heatingTime1.toChar()
         data += temperThrd.toChar()
         data += heatingAct.times(100).toChar()
 
-        data += aflowThrd.div(32).write2Bytes(data)
+        data += aflowThrd.div(32).write2Bytes()
 
         data += END_PACKET_SYMBOL
         return data

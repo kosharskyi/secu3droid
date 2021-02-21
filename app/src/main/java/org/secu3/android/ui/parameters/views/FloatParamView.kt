@@ -12,7 +12,7 @@ class FloatParamView @JvmOverloads constructor(
     context: Context, attrs: AttributeSet? = null, defStyleAttr: Int = 0
 ) : ConstraintLayout(context, attrs, defStyleAttr) {
 
-    private lateinit var mBinding: ViewBaseParameterBinding
+    private var mBinding: ViewBaseParameterBinding
 
     var title: String = ""
         set(value) {

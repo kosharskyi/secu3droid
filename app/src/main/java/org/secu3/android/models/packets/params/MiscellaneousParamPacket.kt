@@ -64,16 +64,16 @@ data class MiscellaneousParamPacket(
     override fun pack(): String {
         var data = "$OUTPUT_PACKET_SYMBOL$DESCRIPTOR"
 
-        data += uartDivisor.write2Bytes(data)
+        data += uartDivisor.write2Bytes()
         data += uartPeriodTms.div(10).toChar()
         data += ignCutoff.toChar()
-        data += ignCutoffThrd.write2Bytes(data)
+        data += ignCutoffThrd.write2Bytes()
 
         data += hopStartCogs.toChar()
         data += hopDuratCogs.toChar()
         data += flpmpFlags.toChar()
 
-        data += evapAfbegin.div(32).write2Bytes(data)
+        data += evapAfbegin.div(32).write2Bytes()
         data += evapAfEnd.times(32).times(1048576.0f).toChar()
 
         data += fpTimeoutStrt.times(10).toChar()
