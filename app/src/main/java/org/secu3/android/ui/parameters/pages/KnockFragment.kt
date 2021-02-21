@@ -24,10 +24,12 @@
 package org.secu3.android.ui.parameters.pages
 
 import android.os.Bundle
+import android.text.InputType
 import androidx.fragment.app.Fragment
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
+import android.widget.ArrayAdapter
 import androidx.fragment.app.activityViewModels
 import org.secu3.android.R
 import org.secu3.android.databinding.FragmentKnockBinding
@@ -59,6 +61,20 @@ class KnockFragment : BaseParamFragment() {
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
+
+        mBinding.bpfFrequency.apply {
+            inputType = InputType.TYPE_NULL
+            ArrayAdapter(requireContext(), R.layout.list_item, bpfList).also {
+                setAdapter(it)
+            }
+        }
+
+        mBinding.integrationTimeConstant.apply {
+            inputType = InputType.TYPE_NULL
+            ArrayAdapter(requireContext(), R.layout.list_item, integrationTimeConstatList).also {
+                setAdapter(it)
+            }
+        }
 
         mViewModel.knockLiveData.observe(viewLifecycleOwner) {
 

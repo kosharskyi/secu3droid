@@ -141,6 +141,28 @@ class FuelInjectionFragment : BaseParamFragment() {
                 setAdapter(it)
             }
         }
+
+
+        mBinding.injectionConfigurationG.apply {
+            inputType = InputType.TYPE_NULL
+            ArrayAdapter(requireContext(), R.layout.list_item, mConfigList).also {
+                setAdapter(it)
+            }
+        }
+
+        mBinding.numOfSquirtsCycleG.apply {
+            inputType = InputType.TYPE_NULL
+            ArrayAdapter(requireContext(), R.layout.list_item, numOfSquirtsList).also {
+                setAdapter(it)
+            }
+        }
+
+        mBinding.injTimingSpecifiesG.apply {
+            inputType = InputType.TYPE_NULL
+            ArrayAdapter(requireContext(), R.layout.list_item, mInjTimingSpecifiesList).also {
+                setAdapter(it)
+            }
+        }
     }
 
     private fun initViews() {

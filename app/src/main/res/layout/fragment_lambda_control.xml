@@ -91,8 +91,8 @@
             app:title="@string/lambda_par_strokes_per_step_title"
             app:units="@string/units_num"
             app:int_value="0"
-            app:int_max_value="0"
-            app:int_min_value="100"
+            app:int_max_value="100"
+            app:int_min_value="0"
             app:int_step="1"
             />
 
@@ -395,7 +395,7 @@
             app:title="@string/lambda_par_turn_on_time_in_pwm_mode_title"
             app:units="@string/units_sec"
             app:float_value="0"
-            app:value_precision="one"
+            app:value_precision="two"
             app:float_max_value="2.55"
             app:float_min_value="0.0"
             app:float_step="0.01"
