@@ -162,13 +162,13 @@ class MiscellaneousFragment : BaseParamFragment() {
             }
 
 
-            dataPacketsTransmissionPeriod.setOnClickListener { floatParamClick(it as FloatParamView) }
-            enableCutoffOfIgnition.setOnClickListener { floatParamClick(it as FloatParamView) }
-            startRelToTdc.setOnClickListener { floatParamClick(it as FloatParamView) }
+            dataPacketsTransmissionPeriod.setOnClickListener { intParamClick(it as IntParamView) }
+            enableCutoffOfIgnition.setOnClickListener { intParamClick(it as IntParamView) }
+            startRelToTdc.setOnClickListener { intParamClick(it as IntParamView) }
 
-            duration.setOnClickListener { floatParamClick(it as FloatParamView) }
-            evapStartingAirFlow.setOnClickListener { floatParamClick(it as FloatParamView) }
-            evapEndingAirFlow.setOnClickListener { floatParamClick(it as FloatParamView) }
+            duration.setOnClickListener { intParamClick(it as IntParamView) }
+            evapStartingAirFlow.setOnClickListener { intParamClick(it as IntParamView) }
+            evapEndingAirFlow.setOnClickListener { intParamClick(it as IntParamView) }
 
             fuelPumpWorkingTime.setOnClickListener { floatParamClick(it as FloatParamView) }
 

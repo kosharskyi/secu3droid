@@ -25,7 +25,6 @@ package org.secu3.android.ui.parameters.pages
 
 import android.os.Bundle
 import android.text.InputType
-import androidx.fragment.app.Fragment
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
@@ -36,6 +35,7 @@ import org.secu3.android.databinding.FragmentChokeControlBinding
 import org.secu3.android.models.packets.params.ChokeControlParPacket
 import org.secu3.android.ui.parameters.ParamsViewModel
 import org.secu3.android.ui.parameters.views.FloatParamView
+import org.secu3.android.ui.parameters.views.IntParamView
 
 
 class ChokeControlFragment : BaseParamFragment() {
@@ -137,7 +137,7 @@ class ChokeControlFragment : BaseParamFragment() {
             }
 
 
-            numSmSteps.setOnClickListener { floatParamClick(it as FloatParamView) }
+            numSmSteps.setOnClickListener { intParamClick(it as IntParamView) }
             regulatorFactor.setOnClickListener { floatParamClick(it as FloatParamView) }
             crankingMapLastingCold.setOnClickListener { floatParamClick(it as FloatParamView) }
 

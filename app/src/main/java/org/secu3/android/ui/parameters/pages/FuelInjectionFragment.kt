@@ -36,6 +36,7 @@ import org.secu3.android.databinding.FragmentFuelInjectionBinding
 import org.secu3.android.models.packets.params.InjctrParPacket
 import org.secu3.android.ui.parameters.ParamsViewModel
 import org.secu3.android.ui.parameters.views.FloatParamView
+import org.secu3.android.ui.parameters.views.IntParamView
 import org.secu3.android.utils.gone
 import org.secu3.android.utils.visible
 
@@ -292,14 +293,14 @@ class FuelInjectionFragment : BaseParamFragment() {
 
             engineDisplacement.setOnClickListener { floatParamClick(it as FloatParamView) }
             injectorFlowRate.setOnClickListener { floatParamClick(it as FloatParamView) }
-            injectorTiming.setOnClickListener { floatParamClick(it as FloatParamView) }
-            crankingInjectionTiming.setOnClickListener { floatParamClick(it as FloatParamView) }
+            injectorTiming.setOnClickListener { intParamClick(it as IntParamView) }
+            crankingInjectionTiming.setOnClickListener { intParamClick(it as IntParamView) }
             minInjectionPw.setOnClickListener { floatParamClick(it as FloatParamView) }
             injectorFlowRateG.setOnClickListener { floatParamClick(it as FloatParamView) }
-            injectorTimingG.setOnClickListener { floatParamClick(it as FloatParamView) }
-            crankingInjectionTimingG.setOnClickListener { floatParamClick(it as FloatParamView) }
+            injectorTimingG.setOnClickListener { intParamClick(it as IntParamView) }
+            crankingInjectionTimingG.setOnClickListener { intParamClick(it as IntParamView) }
             minInjectionPwG.setOnClickListener { floatParamClick(it as FloatParamView) }
-            pulsesPerLitterOfFuel.setOnClickListener { floatParamClick(it as FloatParamView) }
+            pulsesPerLitterOfFuel.setOnClickListener { intParamClick(it as IntParamView) }
         }
     }
 }
