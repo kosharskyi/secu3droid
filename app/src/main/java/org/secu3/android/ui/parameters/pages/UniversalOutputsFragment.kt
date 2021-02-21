@@ -25,13 +25,12 @@ package org.secu3.android.ui.parameters.pages
 
 import android.os.Bundle
 import android.text.InputType
-import androidx.fragment.app.Fragment
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import android.widget.ArrayAdapter
+import androidx.core.view.isGone
 import androidx.fragment.app.activityViewModels
-import dagger.hilt.EntryPoint
 import dagger.hilt.android.AndroidEntryPoint
 import org.secu3.android.R
 import org.secu3.android.databinding.FragmentUniversalOutputsBinding
@@ -85,12 +84,14 @@ class UniversalOutputsFragment : BaseParamFragment() {
                 output1Condition1On.value = it.output1OnThrd1
                 output1Condition1Off.value = it.output1OffThrd1
 
-                it.output1LogicFunc.let {
-                    if (it == 15) {
+                it.output1LogicFunc.let { logicFunc ->
+                    output1Condition2Group.isGone = logicFunc == 0xF
+
+                    if (logicFunc == 0xF) {
                         output1LogicalFunction.setText(mLogicalFunctionsList[4], false)
                         return@let
                     }
-                    output1LogicalFunction.setText(mLogicalFunctionsList[it], false)
+                    output1LogicalFunction.setText(mLogicalFunctionsList[logicFunc], false)
                 }
 
                 output1Condition2.setText(mCondition1List[it.output1Condition2], false)
@@ -99,12 +100,12 @@ class UniversalOutputsFragment : BaseParamFragment() {
                 output1Condition2Off.value = it.output1OffThrd2
 
 
-                it.logicFunction_1_2.let {
-                    if (it == 15) {
+                it.logicFunction_1_2.let { logicFunc ->
+                    if (logicFunc == 0xF) {
                         logicalFunction12.setText(mLogicalFunctionsList[4], false)
                         return@let
                     }
-                    logicalFunction12.setText(mLogicalFunctionsList[it], false)
+                    logicalFunction12.setText(mLogicalFunctionsList[logicFunc], false)
                 }
 
 
@@ -113,12 +114,15 @@ class UniversalOutputsFragment : BaseParamFragment() {
                 output2Condition1On.value = it.output2OnThrd1
                 output2Condition1Off.value = it.output2OffThrd1
 
-                it.output2LogicFunc.let {
-                    if (it == 15) {
+                it.output2LogicFunc.let { logicFunc ->
+
+                    output2Condition2Group.isGone = logicFunc == 0xF
+
+                    if (logicFunc == 0xF) {
                         output2LogicalFunction.setText(mLogicalFunctionsList[4], false)
                         return@let
                     }
-                    output2LogicalFunction.setText(mLogicalFunctionsList[it], false)
+                    output2LogicalFunction.setText(mLogicalFunctionsList[logicFunc], false)
                 }
 
                 output2Condition2.setText(mCondition1List[it.output2Condition2], false)
@@ -132,12 +136,14 @@ class UniversalOutputsFragment : BaseParamFragment() {
                 output3Condition1On.value = it.output3OnThrd1
                 output3Condition1Off.value = it.output3OffThrd1
 
-                it.output3LogicFunc.let {
-                    if (it == 15) {
+                it.output3LogicFunc.let { logicFunc ->
+                    output3Condition2Group.isGone = logicFunc == 0xF
+
+                    if (logicFunc == 0xF) {
                         output3LogicalFunction.setText(mLogicalFunctionsList[4], false)
                         return@let
                     }
-                    output3LogicalFunction.setText(mLogicalFunctionsList[it], false)
+                    output3LogicalFunction.setText(mLogicalFunctionsList[logicFunc], false)
                 }
 
                 output3Condition2.setText(mCondition1List[it.output2Condition2], false)
@@ -247,6 +253,9 @@ class UniversalOutputsFragment : BaseParamFragment() {
                 } else {
                     packet?.output1LogicFunc = position
                 }
+
+                output1Condition2Group.isGone = position == 4
+
                 packet?.let { it1 -> mViewModel.sendPacket(it1) }
             }
             output1Condition2.setOnItemClickListener { _, _, position, _ ->
@@ -273,6 +282,9 @@ class UniversalOutputsFragment : BaseParamFragment() {
                 } else {
                     packet?.output2LogicFunc = position
                 }
+
+                output2Condition2Group.isGone = position == 4
+
                 packet?.let { it1 -> mViewModel.sendPacket(it1) }
             }
             output2Condition2.setOnItemClickListener { _, _, position, _ ->
@@ -284,12 +296,15 @@ class UniversalOutputsFragment : BaseParamFragment() {
                 packet?.output3Condition1 = position
                 mUnioutConfigurator.configureViews(position, output3Condition1On, output3Condition1Off)
             }
-            output2LogicalFunction.setOnItemClickListener { _, _, position, _ ->
+            output3LogicalFunction.setOnItemClickListener { _, _, position, _ ->
                 if (position == 4) {
-                    packet?.output2LogicFunc = 0xF
+                    packet?.output3LogicFunc = 0xF
                 } else {
-                    packet?.output2LogicFunc = position
+                    packet?.output3LogicFunc = position
                 }
+
+                output3Condition2Group.isGone = position == 4
+
                 packet?.let { it1 -> mViewModel.sendPacket(it1) }
             }
             output3Condition2.setOnItemClickListener { _, _, position, _ ->

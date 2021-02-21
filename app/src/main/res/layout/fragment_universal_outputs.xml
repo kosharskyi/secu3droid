@@ -44,6 +44,12 @@
             android:layout_height="wrap_content">
 
 
+            <androidx.constraintlayout.widget.Group
+                android:id="@+id/output1_condition2_group"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                app:constraint_referenced_ids="output1_condition2_title,output1_condition2_inversion,output1_condition2_on,output1_condition2_off"
+                />
 
 
             <com.google.android.material.textfield.TextInputLayout
@@ -210,7 +216,7 @@
             style="@style/Widget.MaterialComponents.TextInputLayout.OutlinedBox.ExposedDropdownMenu"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:layout_marginTop="16dp"
+            android:layout_marginTop="32dp"
             android:hint="@string/unioutput1_logical_functions_summary">
 
             <AutoCompleteTextView
@@ -226,8 +232,16 @@
 
         <androidx.constraintlayout.widget.ConstraintLayout
             android:layout_width="match_parent"
-            android:layout_height="wrap_content">
+            android:layout_height="wrap_content"
+            android:layout_marginTop="32dp"
+            >
 
+            <androidx.constraintlayout.widget.Group
+                android:id="@+id/output2_condition2_group"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                app:constraint_referenced_ids="output2_condition2_title,output2_condition2_inversion,output2_condition2_on,output2_condition2_off"
+                />
 
             <com.google.android.material.textfield.TextInputLayout
                 android:id="@+id/output2_condition1_title"
@@ -392,7 +406,16 @@
 
         <androidx.constraintlayout.widget.ConstraintLayout
             android:layout_width="match_parent"
-            android:layout_height="wrap_content">
+            android:layout_height="wrap_content"
+            android:layout_marginTop="32dp"
+            >
+
+            <androidx.constraintlayout.widget.Group
+                android:id="@+id/output3_condition2_group"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                app:constraint_referenced_ids="output3_condition2_title,output3_condition2_inversion,output3_condition2_on,output3_condition2_off"
+                />
 
             <com.google.android.material.textfield.TextInputLayout
                 android:id="@+id/output3_condition1_title"
