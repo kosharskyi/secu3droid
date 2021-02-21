@@ -372,13 +372,38 @@
 
         <!-- ************************************************************* -->
 
-        <CheckBox
-            android:id="@+id/additional_corrections_gas_eq"
+        <TextView
+            android:id="@+id/general_title"
             android:layout_width="0dp"
             android:layout_height="wrap_content"
             app:layout_constraintTop_toBottomOf="@id/min_injection_pw_g"
             app:layout_constraintStart_toStartOf="parent"
+            android:layout_marginTop="16dp"
+            android:text="@string/injctr_par_general_title"
+            android:textSize="18sp"
+            android:fontFamily="sans-serif-medium"
+            />
+
+        <org.secu3.android.ui.parameters.views.IntParamView
+            android:id="@+id/pulses_per_litter_of_fuel"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            app:layout_constraintTop_toBottomOf="@id/general_title"
+            app:layout_constraintStart_toStartOf="parent"
+            android:layout_marginTop="16dp"
+            app:title="@string/injctr_par_pulses_per_litter_of_fuel"
+            app:units=""
+            app:int_value="0"
+            />
+
+        <CheckBox
+            android:id="@+id/additional_corrections_gas_eq"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            app:layout_constraintTop_toBottomOf="@id/pulses_per_litter_of_fuel"
+            app:layout_constraintStart_toStartOf="parent"
             app:layout_constraintEnd_toEndOf="parent"
+            android:layout_marginTop="16dp"
             android:text="@string/injctr_par_additional_corrections_title"
             android:button="@null"
             android:drawableEnd="?android:attr/listChoiceIndicatorMultiple"

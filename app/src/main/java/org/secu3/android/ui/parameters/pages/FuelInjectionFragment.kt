@@ -101,6 +101,7 @@ class FuelInjectionFragment : Fragment() {
 
                 minInjectionPwG.value = it.minPw1
 
+                pulsesPerLitterOfFuel.value = it.fffConst
 
                 additionalCorrectionsGasEq.isChecked = it.useAdditionalCorrections
                 useAirDensityCorrectionMap.isChecked = it.useAirDensity
