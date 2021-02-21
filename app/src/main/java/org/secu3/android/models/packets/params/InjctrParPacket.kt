@@ -82,7 +82,7 @@ data class InjctrParPacket(
 
         data += angleSpec.toChar()
 
-        data += fffConst.toFloat().div(1000f*60f).times(65536f).toInt().write2Bytes(data)
+        data += fffConst.toFloat().div(1000f*60f).times(65536f).toInt().write2Bytes()
         data += minPw.write2Bytes()
 
         data += END_PACKET_SYMBOL
