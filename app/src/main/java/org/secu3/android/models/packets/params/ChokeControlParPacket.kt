@@ -28,6 +28,8 @@ import org.secu3.android.models.packets.BaseOutputPacket
 data class ChokeControlParPacket(
 
     var smSteps: Int = 0,
+    var testing: Int = 0,           //fake parameter (actually it is status)
+    var manualPositionD: Int = 0,   //fake parameter
 
     var rpmIf: Float = 0f,
 
@@ -86,6 +88,10 @@ data class ChokeControlParPacket(
         var data = "$OUTPUT_PACKET_SYMBOL$DESCRIPTOR"
 
         data += data.write2Bytes(smSteps)
+
+        data += testing.toChar()
+        data += manualPositionD.toChar()
+
         data += rpmIf.times(1000).toInt().write2Bytes()
         data += corrTime0.times(100).toInt().write2Bytes()
         data += corrTime1.times(100).toInt().write2Bytes()
