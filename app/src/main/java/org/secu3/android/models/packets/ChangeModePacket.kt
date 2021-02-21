@@ -31,7 +31,7 @@ data class ChangeModePacket(
 ) : BaseOutputPacket() {
 
     override fun pack(): String {
-        return EscTxPacket("${OUTPUT_PACKET_SYMBOL}h$descriptor$END_PACKET_SYMBOL")
+        return "${OUTPUT_PACKET_SYMBOL}h$descriptor$END_PACKET_SYMBOL"
     }
 
 

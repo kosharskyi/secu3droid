@@ -211,7 +211,8 @@ class Secu3Manager @Inject constructor(@ApplicationContext private val context: 
                     if (sendPacket.isNotEmpty()) {
                         sendPacket.poll()?.let {
                             Log.e("TAG", it.pack())
-                            writer.append(it.pack())
+                            val escaped = BaseSecu3Packet.EscTxPacket(it.pack())
+                            writer.append(escaped)
 
                             sleep(20)
                             writer.flush()
