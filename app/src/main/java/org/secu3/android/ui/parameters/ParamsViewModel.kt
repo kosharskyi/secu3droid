@@ -26,7 +26,12 @@ package org.secu3.android.ui.parameters
 import androidx.lifecycle.LiveData
 import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.ViewModel
+import androidx.lifecycle.viewModelScope
 import dagger.hilt.android.lifecycle.HiltViewModel
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 import org.secu3.android.Secu3Repository
 import org.secu3.android.models.packets.BaseOutputPacket
 import org.secu3.android.models.packets.FirmwareInfoPacket
@@ -132,145 +137,118 @@ class ParamsViewModel @Inject constructor(private val secu3Repository: Secu3Repo
 
 
 
+    private suspend fun fnNameDatReceive() = withContext(Dispatchers.IO) {
+        while (mFnNameDatPacket?.isAllFnNamesReceived != true) {
+
+            val packet = secu3Repository.receivedPacketLiveData.first { it is FnNameDatPacket } as FnNameDatPacket
+
+            mFnNameDatPacket = mFnNameDatPacket?: packet.also {
+                it.fnNameList = MutableList(packet.tablesNumber) { FnName(-1, "placeholder name") }
+            }
+
+            mFnNameDatPacket?.fnNameList?.set(packet.fnName.index, packet.fnName)
+        }
+    }
 
     init {
 
         secu3Repository.sendNewTask(Task.Secu3ReadFnNameDat)
 
-        secu3Repository.receivedPacketLiveData.observeForever { packet ->
+        viewModelScope.launch {
 
-            when (packet) {
-                is FnNameDatPacket -> {
+            fnNameDatReceive()
 
-                    if (mFnNameDatPacket == null) {
-                        mFnNameDatPacket = packet
-                        mFnNameDatPacket?.fnNameList = MutableList(packet.tablesNumber) { FnName(-1, "placeholder name") }
-                        mFnNameDatPacket?.fnNameList?.set(packet.fnName.index, packet.fnName)
-                    } else {
-                        mFnNameDatPacket?.fnNameList?.set(packet.fnName.index, packet.fnName)
-
-                        if (mFnNameDatPacket!!.isAllFnNamesReceived) {
-                            mFnNameLiveData.value = mFnNameDatPacket
-                            secu3Repository.sendNewTask(Task.Secu3ReadStarterParam)
-                        }
-                    }
-                }
-
-                is StarterParamPacket -> {
-                    mStarterLiveData.value = packet
-                    secu3Repository.sendNewTask(Task.Secu3ReadAnglesParam)
-                }
+            mFnNameLiveData.value = mFnNameDatPacket
+            secu3Repository.sendNewTask(Task.Secu3ReadStarterParam)
 
 
-                is AnglesParamPacket -> {
-                    mAnglesLiveData.value = packet
-                    secu3Repository.sendNewTask(Task.Secu3ReadIdlingParam)
-                }
 
-                is IdlingParamPacket -> {
-                    mIdlingLiveData.value = packet
-                    secu3Repository.sendNewTask(Task.Secu3ReadFunsetParam)
-                }
+            mStarterLiveData.value = secu3Repository.receivedPacketLiveData.first { it is StarterParamPacket } as StarterParamPacket
+            secu3Repository.sendNewTask(Task.Secu3ReadAnglesParam)
 
-                is FunSetParamPacket -> {
-                    mFunsetLiveData.value = packet
-                    secu3Repository.sendNewTask(Task.Secu3ReadTemperatureParam)
-                }
+            mAnglesLiveData.value = secu3Repository.receivedPacketLiveData.first { it is AnglesParamPacket } as AnglesParamPacket
+            secu3Repository.sendNewTask(Task.Secu3ReadIdlingParam)
 
-                is TemperatureParamPacket -> {
-                    mTemperatureLiveData.value = packet
-                    secu3Repository.sendNewTask(Task.Secu3ReadCarburParam)
-                }
+            mIdlingLiveData.value = secu3Repository.receivedPacketLiveData.first { it is IdlingParamPacket } as IdlingParamPacket
+            secu3Repository.sendNewTask(Task.Secu3ReadFunsetParam)
 
-                is CarburParamPacket -> {
-                    mCarburLiveData.value = packet
-                    secu3Repository.sendNewTask(Task.Secu3ReadAdcErrorsCorrectionsParam)
-                }
+            mFunsetLiveData.value = secu3Repository.receivedPacketLiveData.first { it is FunSetParamPacket } as FunSetParamPacket
+            secu3Repository.sendNewTask(Task.Secu3ReadTemperatureParam)
 
-                is AdcCorrectionsParamPacket -> {
-                    mAdcCorrectionsLiveData.value = packet
-                    secu3Repository.sendNewTask(Task.Secu3ReadCkpsParam)
-                }
+            mTemperatureLiveData.value = secu3Repository.receivedPacketLiveData.first { it is TemperatureParamPacket } as TemperatureParamPacket
+            secu3Repository.sendNewTask(Task.Secu3ReadCarburParam)
 
-                is CkpsParamPacket -> {
-                    mCkpsLiveData.value = packet
-                    secu3Repository.sendNewTask(Task.Secu3ReadKnockParam)
-                }
+            mCarburLiveData.value = secu3Repository.receivedPacketLiveData.first { it is CarburParamPacket } as CarburParamPacket
+            secu3Repository.sendNewTask(Task.Secu3ReadAdcErrorsCorrectionsParam)
 
-                is KnockParamPacket -> {
-                    mKnockLiveData.value = packet
-                    secu3Repository.sendNewTask(Task.Secu3ReadMiscellaneousParam)
-                }
+            mAdcCorrectionsLiveData.value = secu3Repository.receivedPacketLiveData.first { it is AdcCorrectionsParamPacket } as AdcCorrectionsParamPacket
+            secu3Repository.sendNewTask(Task.Secu3ReadCkpsParam)
 
-                is MiscellaneousParamPacket -> {
-                    mMiscellaneousLiveData.value = packet
-                    secu3Repository.sendNewTask(Task.Secu3ReadChokeControlParam)
-                }
+            mCkpsLiveData.value = secu3Repository.receivedPacketLiveData.first { it is CkpsParamPacket } as CkpsParamPacket
+            secu3Repository.sendNewTask(Task.Secu3ReadKnockParam)
 
-                is ChokeControlParPacket -> {
-                    mChokeLiveData.value = packet
-                    secu3Repository.sendNewTask(Task.Secu3ReadSecurityParam)
-                }
+            mKnockLiveData.value = secu3Repository.receivedPacketLiveData.first { it is KnockParamPacket } as KnockParamPacket
+            secu3Repository.sendNewTask(Task.Secu3ReadMiscellaneousParam)
 
-                is SecurityParamPacket -> {
-                    mSecurityLiveData.value = packet
-                    secu3Repository.sendNewTask(Task.Secu3ReadUniversalOutputsParam)
-                }
+            mMiscellaneousLiveData.value = secu3Repository.receivedPacketLiveData.first { it is MiscellaneousParamPacket } as MiscellaneousParamPacket
+            secu3Repository.sendNewTask(Task.Secu3ReadChokeControlParam)
 
-                is UniOutParamPacket -> {
-                    packet.speedSensorPulses = prefs.speedPulses
-                    mUniOutLiveData.value = packet
+            mChokeLiveData.value = secu3Repository.receivedPacketLiveData.first { it is ChokeControlParPacket } as ChokeControlParPacket
+            secu3Repository.sendNewTask(Task.Secu3ReadSecurityParam)
 
-                    secu3Repository.fwInfo.let {
-                        if (it.isFuelInjectEnabled) {
-                            secu3Repository.sendNewTask(Task.Secu3ReadFuelInjectionParam)
-                        } else if (it.isFuelInjectEnabled || it.isCarbAfrEnabled || it.isGdControlEnabled) {
-                            secu3Repository.sendNewTask(Task.Secu3ReadLambdaParam)
-                        } else if (it.isFuelInjectEnabled || it.isGdControlEnabled) {
-                            secu3Repository.sendNewTask(Task.Secu3ReadAccelerationParam)
-                        } else {
-                            secu3Repository.sendNewTask(Task.Secu3ReadSensors)
-                        }
-                    }
-                }
+            mSecurityLiveData.value = secu3Repository.receivedPacketLiveData.first { it is SecurityParamPacket } as SecurityParamPacket
+            secu3Repository.sendNewTask(Task.Secu3ReadUniversalOutputsParam)
 
-                is InjctrParPacket -> {
-                    secu3Repository.fwInfo.let {
-                        packet.isAtMega644 = it.isATMEGA644
-                        mFuelInjectionLiveData.value = packet
 
-                        if (it.isFuelInjectEnabled || it.isCarbAfrEnabled || it.isGdControlEnabled) {
-                            secu3Repository.sendNewTask(Task.Secu3ReadLambdaParam)
-                        } else if (it.isFuelInjectEnabled || it.isGdControlEnabled) {
-                            secu3Repository.sendNewTask(Task.Secu3ReadAccelerationParam)
-                        } else {
-                            secu3Repository.sendNewTask(Task.Secu3ReadSensors)
-                        }
-                    }
-                }
 
-                is LambdaParamPacket -> {
-                    mLambdaLiveData.value = packet
+            mUniOutLiveData.value = (secu3Repository.receivedPacketLiveData.first { it is UniOutParamPacket } as UniOutParamPacket).also {
+                it.speedSensorPulses = prefs.speedPulses
+            }
+
+            secu3Repository.fwInfo.let {
+                if (it.isFuelInjectEnabled) {
+                    secu3Repository.sendNewTask(Task.Secu3ReadFuelInjectionParam)
+                } else if (it.isFuelInjectEnabled || it.isCarbAfrEnabled || it.isGdControlEnabled) {
+                    secu3Repository.sendNewTask(Task.Secu3ReadLambdaParam)
+                } else if (it.isFuelInjectEnabled || it.isGdControlEnabled) {
                     secu3Repository.sendNewTask(Task.Secu3ReadAccelerationParam)
-                }
-
-                is AccelerationParamPacket -> {
-                    mAccelerationLiveData.value = packet
-
-                    secu3Repository.fwInfo.let {
-                        if (it.isGdControlEnabled) {
-                            secu3Repository.sendNewTask(Task.Secu3ReadGasDoseParam)
-                        } else {
-                            secu3Repository.sendNewTask(Task.Secu3ReadSensors)
-                        }
-                    }
-                }
-
-                is GasDoseParamPacket -> {
-                    mGasDoseLiveData.value = packet
+                } else {
                     secu3Repository.sendNewTask(Task.Secu3ReadSensors)
                 }
             }
+
+
+
+            mFuelInjectionLiveData.value = (secu3Repository.receivedPacketLiveData.first { it is InjctrParPacket } as InjctrParPacket).also {
+                it.isAtMega644 = secu3Repository.fwInfo.isATMEGA644
+            }
+
+            secu3Repository.fwInfo.let {
+                if (it.isFuelInjectEnabled || it.isCarbAfrEnabled || it.isGdControlEnabled) {
+                    secu3Repository.sendNewTask(Task.Secu3ReadLambdaParam)
+                } else if (it.isFuelInjectEnabled || it.isGdControlEnabled) {
+                    secu3Repository.sendNewTask(Task.Secu3ReadAccelerationParam)
+                } else {
+                    secu3Repository.sendNewTask(Task.Secu3ReadSensors)
+                }
+            }
+
+
+            mLambdaLiveData.value = secu3Repository.receivedPacketLiveData.first { it is LambdaParamPacket } as LambdaParamPacket
+            secu3Repository.sendNewTask(Task.Secu3ReadAccelerationParam)
+
+
+            mAccelerationLiveData.value = secu3Repository.receivedPacketLiveData.first { it is AccelerationParamPacket } as AccelerationParamPacket
+            secu3Repository.fwInfo.let {
+                if (it.isGdControlEnabled) {
+                    secu3Repository.sendNewTask(Task.Secu3ReadGasDoseParam)
+                } else {
+                    secu3Repository.sendNewTask(Task.Secu3ReadSensors)
+                }
+            }
+
+            mGasDoseLiveData.value = secu3Repository.receivedPacketLiveData.first { it is GasDoseParamPacket } as GasDoseParamPacket
+            secu3Repository.sendNewTask(Task.Secu3ReadSensors)
         }
     }
 }

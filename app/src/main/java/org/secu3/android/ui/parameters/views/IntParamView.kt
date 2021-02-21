@@ -13,6 +13,7 @@ class IntParamView @JvmOverloads constructor(
 ) : ConstraintLayout(context, attrs, defStyleAttr) {
 
     private var mBinding: ViewBaseParameterBinding
+
     private var mOnChangeValueListener: (Int) -> Unit = {}
 
     var title: String = ""

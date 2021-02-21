@@ -24,13 +24,12 @@
 package org.secu3.android
 
 import android.bluetooth.BluetoothAdapter
+import android.util.Log
 import androidx.lifecycle.LiveData
 import androidx.lifecycle.MediatorLiveData
 import androidx.lifecycle.asLiveData
-import kotlinx.coroutines.GlobalScope
-import kotlinx.coroutines.delay
-import kotlinx.coroutines.flow.flow
-import kotlinx.coroutines.launch
+import kotlinx.coroutines.*
+import kotlinx.coroutines.flow.*
 import org.secu3.android.models.packets.BaseOutputPacket
 import org.secu3.android.models.packets.BaseSecu3Packet
 import org.secu3.android.models.packets.FirmwareInfoPacket
@@ -44,6 +43,11 @@ import javax.inject.Singleton
 class Secu3Repository @Inject constructor(private val secu3Manager: Secu3Manager,
                                           private val mPrefs: LifeTimePrefs
 ) {
+
+    private val repositoryJob = Job()
+    private val repositoryScope = CoroutineScope(Dispatchers.Default + repositoryJob)
+
+
     private var lastPacketReceivedTimetamp = LocalDateTime.now().minusMinutes(1)
     private var tryToConnect = false
 
@@ -63,65 +67,15 @@ class Secu3Repository @Inject constructor(private val secu3Manager: Secu3Manager
         emit(false)
     }
 
-    private val connectionWatchdog = GlobalScope.launch {
-        while (lastPacketReceivedTimetamp.isAfter(LocalDateTime.now().minusMinutes(10))) {
-            delay(1000)
-
-            if (tryToConnect.not()) {
-                continue
-            }
-
-            if (mPrefs.bluetoothDeviceAddress.isNullOrBlank()) {
-                continue
-            }
-
-            if (bluetoothAdapter.isEnabled.not()) {
-                continue
-            }
-
-            if (secu3Manager.connectedThread == null) {
-                secu3Manager.start()
-                delay(2000)
-                continue
-            }
-
-            secu3Manager.connectedThread?.mmSocket?.let {
-                if (it.isConnected.not()) {
-                    secu3Manager.disable()
-                    secu3Manager.start()
-                }
-            }
-            delay(2000)
-        }
-    }
-
     val connectionStatusLiveData = connectionStatus.asLiveData()
-
-
-    private val mPacketsLiveData = MediatorLiveData<BaseSecu3Packet>().also {
-        it.addSource(secu3Manager.receivedPacketLiveData) { packet ->
-
-            lastPacketReceivedTimetamp = LocalDateTime.now()
-
-            if (packet is FirmwareInfoPacket) {
-                fwInfo = packet
-                mFirmwareLiveData.value = packet
-            } else {
-                it.value = packet
-            }
-        }
-    }
-
-
 
     lateinit var fwInfo: FirmwareInfoPacket
 
-    private val mFirmwareLiveData = MediatorLiveData<FirmwareInfoPacket>()
-    val firmwareLiveData: LiveData<FirmwareInfoPacket>
-        get() = mFirmwareLiveData
+    val firmwareLiveData: LiveData<FirmwareInfoPacket> = secu3Manager.receivedPacketFlow.filter { it is FirmwareInfoPacket }
+        .map { it as FirmwareInfoPacket }
+        .asLiveData()
 
-    val receivedPacketLiveData: LiveData<BaseSecu3Packet>
-        get() = mPacketsLiveData
+    val receivedPacketLiveData: Flow<BaseSecu3Packet> = secu3Manager.receivedPacketFlow
 
 
     fun sendNewTask(task: Task) {
@@ -132,6 +86,7 @@ class Secu3Repository @Inject constructor(private val secu3Manager: Secu3Manager
         secu3Manager.addPacket(packet)
     }
 
+
     fun startConnect() {
         tryToConnect = true
     }
@@ -141,4 +96,49 @@ class Secu3Repository @Inject constructor(private val secu3Manager: Secu3Manager
         secu3Manager.disable()
     }
 
+
+    init {
+
+        repositoryScope.launch {
+            secu3Manager.receivedPacketFlow.collect {
+                lastPacketReceivedTimetamp = LocalDateTime.now()
+            }
+        }
+
+        repositoryScope.launch {
+            fwInfo = secu3Manager.receivedPacketFlow.first { it is FirmwareInfoPacket } as FirmwareInfoPacket
+        }
+
+        repositoryScope.launch {
+            while (lastPacketReceivedTimetamp.isAfter(LocalDateTime.now().minusMinutes(10))) {
+                delay(1000)
+
+                if (tryToConnect.not()) {
+                    continue
+                }
+
+                if (mPrefs.bluetoothDeviceAddress.isNullOrBlank()) {
+                    continue
+                }
+
+                if (bluetoothAdapter.isEnabled.not()) {
+                    continue
+                }
+
+                if (secu3Manager.connectedThread == null) {
+                    secu3Manager.start()
+                    delay(2000)
+                    continue
+                }
+
+                secu3Manager.connectedThread?.mmSocket?.let {
+                    if (it.isConnected.not()) {
+                        secu3Manager.disable()
+                        secu3Manager.start()
+                    }
+                }
+                delay(2000)
+            }
+        }
+    }
 }

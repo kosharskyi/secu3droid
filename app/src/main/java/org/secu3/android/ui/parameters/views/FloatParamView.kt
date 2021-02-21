@@ -13,6 +13,7 @@ class FloatParamView @JvmOverloads constructor(
 ) : ConstraintLayout(context, attrs, defStyleAttr) {
 
     private var mBinding: ViewBaseParameterBinding
+
     private var mOnChangeValueListener: (Float) -> Unit = {}
 
     var title: String = ""

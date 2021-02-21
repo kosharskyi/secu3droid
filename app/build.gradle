@@ -69,7 +69,8 @@ android {
     }
 }
 
-def dagger = '2.31.2'
+
+def dagger = '2.32'
 def fragment_version = "1.3.0"
 
 dependencies {

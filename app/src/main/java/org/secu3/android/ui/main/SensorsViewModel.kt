@@ -24,16 +24,17 @@
 package org.secu3.android.ui.main
 
 import androidx.lifecycle.LiveData
-import androidx.lifecycle.MediatorLiveData
 import androidx.lifecycle.ViewModel
+import androidx.lifecycle.asLiveData
 import dagger.hilt.android.lifecycle.HiltViewModel
+import kotlinx.coroutines.flow.filter
+import kotlinx.coroutines.flow.map
 import org.secu3.android.Secu3Repository
 import org.secu3.android.models.packets.AdcRawDatPacket
 import org.secu3.android.models.packets.FirmwareInfoPacket
 import org.secu3.android.models.packets.SensorsPacket
 import org.secu3.android.utils.LifeTimePrefs
 import org.secu3.android.utils.Task
-import org.threeten.bp.Duration
 import org.threeten.bp.LocalDateTime
 import javax.inject.Inject
 
@@ -53,34 +54,20 @@ class SensorsViewModel @Inject constructor(private val secu3Repository: Secu3Rep
         get() = secu3Repository.connectionStatusLiveData
 
 
-    val firmwareLiveData: LiveData<FirmwareInfoPacket>
-        get() = secu3Repository.firmwareLiveData
+    val firmwareLiveData: LiveData<FirmwareInfoPacket> = secu3Repository.firmwareLiveData
+
+    val firmware: FirmwareInfoPacket
+        get() = secu3Repository.fwInfo
 
 
-    private val mSensorsDataLiveData = MediatorLiveData<SensorsPacket>().also {
-        it.addSource(secu3Repository.receivedPacketLiveData) { packet ->
-            if (packet is SensorsPacket) {
-                it.value = packet
-            }
-        }
-    }
     val sensorsLiveData: LiveData<SensorsPacket>
-        get() = mSensorsDataLiveData
+        get() = secu3Repository.receivedPacketLiveData.filter { it is SensorsPacket }
+            .map { it as SensorsPacket }.asLiveData()
 
 
-
-    private val mRawSensorsDataLiveData = MediatorLiveData<AdcRawDatPacket>().also {
-        it.addSource(secu3Repository.receivedPacketLiveData) { packet ->
-            if (packet is AdcRawDatPacket) {
-                if (Duration.between(lastPacketReceivedStamp, LocalDateTime.now()).toMillis() > 500) {
-                    it.value = packet
-                    lastPacketReceivedStamp = LocalDateTime.now()
-                }
-            }
-        }
-    }
     val rawSensorsLiveData: LiveData<AdcRawDatPacket>
-        get() = mRawSensorsDataLiveData
+        get() = secu3Repository.receivedPacketLiveData.filter { it is AdcRawDatPacket }
+            .map { it as AdcRawDatPacket }.asLiveData()
 
 
     fun start() {

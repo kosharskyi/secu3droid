@@ -23,11 +23,12 @@
 */
 package org.secu3.android.ui.diagnostics
 
-import androidx.lifecycle.LiveData
-import androidx.lifecycle.MediatorLiveData
-import androidx.lifecycle.MutableLiveData
-import androidx.lifecycle.ViewModel
+import androidx.lifecycle.*
 import dagger.hilt.android.lifecycle.HiltViewModel
+import kotlinx.coroutines.flow.collect
+import kotlinx.coroutines.flow.filter
+import kotlinx.coroutines.flow.map
+import kotlinx.coroutines.launch
 import org.secu3.android.Secu3Repository
 import org.secu3.android.models.packets.DiagInputPacket
 import org.secu3.android.models.packets.DiagOutputPacket
@@ -44,8 +45,10 @@ class DiagnosticsViewModel @Inject constructor(private val secu3Repository: Secu
     var isDiagModeActive = false
 
     init {
-        secu3Repository.receivedPacketLiveData.observeForever {
-            if (it is OpCompNc) {
+        viewModelScope.launch {
+            secu3Repository.receivedPacketLiveData.filter { it is OpCompNc }.map {
+                it as OpCompNc
+            }.collect {
                 if (it.opCode == 7) {
                     isDiagModeActive = false
                     mConfirmExit.value = true
@@ -86,16 +89,11 @@ class DiagnosticsViewModel @Inject constructor(private val secu3Repository: Secu
     val connectionStatusLiveData: LiveData<Boolean>
         get() = secu3Repository.connectionStatusLiveData
 
-    private val mDiagInputLiveData = MediatorLiveData<DiagInputPacket>().also {
-        it.addSource(secu3Repository.receivedPacketLiveData) { packet ->
-            if (packet is DiagInputPacket) {
-                isDiagModeActive = true
-                it.value = packet
-            }
-        }
-    }
     val diagInputLiveData: LiveData<DiagInputPacket>
-        get() = mDiagInputLiveData
+        get() = secu3Repository.receivedPacketLiveData.filter { it is DiagInputPacket }.map {
+            isDiagModeActive = true
+            it as DiagInputPacket
+        }.asLiveData()
 
 
     fun sendDiagOutPacket() {
