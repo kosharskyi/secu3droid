@@ -196,7 +196,7 @@ class Secu3Manager @Inject constructor(@ApplicationContext private val context: 
             val reader = BufferedReader(InputStreamReader(mmInStream, StandardCharsets.ISO_8859_1))
             val writer = BufferedWriter(OutputStreamWriter(mmOutStream, StandardCharsets.ISO_8859_1))
 
-            loop@ while (true) {
+            loop@ while (mmSocket.isConnected) {
                 try {
 
                     if (sendPacket.isNotEmpty()) {
