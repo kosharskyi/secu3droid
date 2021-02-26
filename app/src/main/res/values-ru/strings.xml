@@ -178,7 +178,7 @@
         <item>Впрыск</item>
         <item>Лямбда контроль</item>
         <item>Ускорение</item>
-        <item>Gas dose</item>
+        <item>Доз. газа</item>
     </string-array>
     <string name="maximum_step_frequency_at_init">Максимальная частота при иниц.</string>
     <string name="units_degrees_cs">°КВ</string>
@@ -186,5 +186,11 @@
     <string name="units_num">чис.</string>
     <string name="units_str">т</string>
     <string name="sensors_tab_title">Датчики</string>
+    <string name="enable_bluetooth_to_start_work">Для начала работы включите Bluetooth и нажмите \"Повторить попытку\"</string>
+    <string name="try_again">Повторить попытку</string>
+    <string name="secu_device_is_not_selected">Bluetooth устройство не выбрано</string>
+    <string name="select_bluetooth_device">Выбрать Bluetooth устройство</string>
+    <string name="bluetooth_device_not_valid">Выбраное ранее устройство Bluetooth недействительно</string>
+    <string name="open_settings">Перейти в Настройки</string>
 
 </resources>

@@ -32,6 +32,7 @@ import android.view.MenuItem
 import android.view.View
 import android.view.ViewGroup
 import android.widget.Toast
+import androidx.activity.addCallback
 import androidx.fragment.app.Fragment
 import androidx.fragment.app.viewModels
 import androidx.navigation.fragment.findNavController
@@ -50,6 +51,15 @@ class SensorsFragment : Fragment() {
     private lateinit var mBinding: FragmentSensorsBinding
 
     private val mViewModel: SensorsViewModel by viewModels()
+
+    override fun onCreate(savedInstanceState: Bundle?) {
+        super.onCreate(savedInstanceState)
+
+        // This callback will only be called when MyFragment is at least Started.
+        requireActivity().onBackPressedDispatcher.addCallback(this) {
+            exit()
+        }
+    }
 
     override fun onCreateView(inflater: LayoutInflater, container: ViewGroup?, savedInstanceState: Bundle?): View? {
         mBinding = FragmentSensorsBinding.inflate(layoutInflater)
@@ -185,8 +195,7 @@ class SensorsFragment : Fragment() {
                 true
             }
             R.id.menu_exit -> {
-                mViewModel.closeConnection()
-                activity?.finishAndRemoveTask()
+                exit()
                 true
             }
             R.id.menu_diagnostics -> {
@@ -207,5 +216,10 @@ class SensorsFragment : Fragment() {
 
             else -> super.onOptionsItemSelected(item)
         }
+    }
+
+    private fun exit() {
+        mViewModel.closeConnection()
+        activity?.finishAndRemoveTask()
     }
 }

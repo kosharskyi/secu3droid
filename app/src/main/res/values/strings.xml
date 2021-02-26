@@ -180,6 +180,12 @@
 
     <string name="maximum_step_frequency_at_init">Maximum STEP frequency at init</string>
     <string name="sensors_tab_title">Sensors</string>
+    <string name="enable_bluetooth_to_start_work">Enable bluetooth to start work</string>
+    <string name="try_again">Try again</string>
+    <string name="secu_device_is_not_selected">Bluetooth device is not selected</string>
+    <string name="select_bluetooth_device">Select Bluetooth device</string>
+    <string name="bluetooth_device_not_valid">Previously configured Bluetooth device not valid</string>
+    <string name="open_settings">Open settings</string>
 
 
     <string-array name="knock_integration_timeouts" translatable="false">
