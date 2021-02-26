@@ -107,22 +107,13 @@ class Secu3Manager @Inject constructor(@ApplicationContext private val context: 
     inner class CreateConnectThread(bluetoothAdapter: BluetoothAdapter, address: String) : Thread() {
 
         var mmSocket: BluetoothSocket? = null
+        private val uuid = UUID.fromString("00001101-0000-1000-8000-00805F9B34FB")
 
         init {
-            /*
-            Use a temporary object that is later assigned to mmSocket
-            because mmSocket is final.
-             */
-            val bluetoothDevice: BluetoothDevice = bluetoothAdapter.getRemoteDevice(address)
+            val bluetoothDevice: BluetoothDevice = bluetoothAdapter.bondedDevices.first { it.address == address }
             var tmp: BluetoothSocket? = null
-            val uuid: UUID = bluetoothDevice.uuids[0].uuid
+
             try {
-                /*
-                Get a BluetoothSocket to connect with the given BluetoothDevice.
-                Due to Android device varieties,the method below may not work fo different devices.
-                You should try using other methods i.e. :
-                tmp = device.createRfcommSocketToServiceRecord(MY_UUID);
-                 */
                 tmp = bluetoothDevice.createInsecureRfcommSocketToServiceRecord(uuid)
             } catch (e: IOException) {
                 Log.e("TAG", "Socket's create() method failed", e)
