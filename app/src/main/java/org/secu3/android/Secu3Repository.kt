@@ -69,7 +69,7 @@ class Secu3Repository @Inject constructor(private val secu3Manager: Secu3Manager
 
     val connectionStatusLiveData = connectionStatus.asLiveData()
 
-    lateinit var fwInfo: FirmwareInfoPacket
+    var fwInfo: FirmwareInfoPacket? = null
 
     val firmwareLiveData: LiveData<FirmwareInfoPacket> = secu3Manager.receivedPacketFlow.filter { it is FirmwareInfoPacket }
         .map { it as FirmwareInfoPacket }

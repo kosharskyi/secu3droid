@@ -56,7 +56,7 @@ class SensorsViewModel @Inject constructor(private val secu3Repository: Secu3Rep
 
     val firmwareLiveData: LiveData<FirmwareInfoPacket> = secu3Repository.firmwareLiveData
 
-    val firmware: FirmwareInfoPacket
+    val firmware: FirmwareInfoPacket?
         get() = secu3Repository.fwInfo
 
 

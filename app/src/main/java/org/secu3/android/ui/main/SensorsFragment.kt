@@ -203,7 +203,7 @@ class SensorsFragment : Fragment() {
                     .setIcon(android.R.drawable.ic_dialog_alert).setMessage(R.string.menu_diagnostics_warning_title)
                     .setPositiveButton(android.R.string.ok) { _, _ ->
 
-                        if (mViewModel.firmware.isDiagnosticsEnabled) {
+                        if (mViewModel.firmware?.isDiagnosticsEnabled == true) {
                             findNavController().navigate(SensorsFragmentDirections.actionSensorsToDiagnostics())
                             return@setPositiveButton
                         }

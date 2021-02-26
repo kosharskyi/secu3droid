@@ -205,7 +205,7 @@ class ParamsViewModel @Inject constructor(private val secu3Repository: Secu3Repo
                 it.speedSensorPulses = prefs.speedPulses
             }
 
-            secu3Repository.fwInfo.let {
+            secu3Repository.fwInfo?.let {
                 if (it.isFuelInjectEnabled) {
                     secu3Repository.sendNewTask(Task.Secu3ReadFuelInjectionParam)
                 } else if (it.isFuelInjectEnabled || it.isCarbAfrEnabled || it.isGdControlEnabled) {
@@ -220,10 +220,10 @@ class ParamsViewModel @Inject constructor(private val secu3Repository: Secu3Repo
 
 
             mFuelInjectionLiveData.value = (secu3Repository.receivedPacketLiveData.first { it is InjctrParPacket } as InjctrParPacket).also {
-                it.isAtMega644 = secu3Repository.fwInfo.isATMEGA644
+                it.isAtMega644 = secu3Repository.fwInfo?.isATMEGA644 ?: true
             }
 
-            secu3Repository.fwInfo.let {
+            secu3Repository.fwInfo?.let {
                 if (it.isFuelInjectEnabled || it.isCarbAfrEnabled || it.isGdControlEnabled) {
                     secu3Repository.sendNewTask(Task.Secu3ReadLambdaParam)
                 } else if (it.isFuelInjectEnabled || it.isGdControlEnabled) {
@@ -239,7 +239,7 @@ class ParamsViewModel @Inject constructor(private val secu3Repository: Secu3Repo
 
 
             mAccelerationLiveData.value = secu3Repository.receivedPacketLiveData.first { it is AccelerationParamPacket } as AccelerationParamPacket
-            secu3Repository.fwInfo.let {
+            secu3Repository.fwInfo?.let {
                 if (it.isGdControlEnabled) {
                     secu3Repository.sendNewTask(Task.Secu3ReadGasDoseParam)
                 } else {

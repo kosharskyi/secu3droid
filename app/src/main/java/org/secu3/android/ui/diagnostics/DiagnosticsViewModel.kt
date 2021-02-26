@@ -40,7 +40,7 @@ import javax.inject.Inject
 @HiltViewModel
 class DiagnosticsViewModel @Inject constructor(private val secu3Repository: Secu3Repository) : ViewModel() {
 
-    val outputPacket = DiagOutputPacket(secu3Repository.fwInfo)
+    val outputPacket = DiagOutputPacket(secu3Repository.fwInfo!!)
 
     var isDiagModeActive = false
 
