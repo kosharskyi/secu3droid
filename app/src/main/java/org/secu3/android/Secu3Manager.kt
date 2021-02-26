@@ -245,18 +245,9 @@ class Secu3Manager @Inject constructor(@ApplicationContext private val context: 
                     }
                 } catch (e: IOException) {
                     e.printStackTrace()
+                    disable()
                     break
                 }
-            }
-        }
-
-        /* Call this from the main activity to send data to the remote device */
-        fun write(input: String) {
-            val bytes = input.toByteArray() //converts entered String into bytes
-            try {
-                mmOutStream!!.write(bytes)
-            } catch (e: IOException) {
-                Log.e("Send Error", "Unable to send message", e)
             }
         }
 
