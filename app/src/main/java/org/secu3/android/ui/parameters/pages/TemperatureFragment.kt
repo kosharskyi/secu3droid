@@ -122,7 +122,7 @@ class TemperatureFragment : BaseParamFragment() {
             }
 
             ventilatorTurnOn.setOnClickListener { floatParamClick(it as FloatParamView) }
-            ventilatorTurnOn.setOnClickListener { floatParamClick(it as FloatParamView) }
+            ventilatorTurnOff.setOnClickListener { floatParamClick(it as FloatParamView) }
             pwmFrequency.setOnClickListener { intParamClick(it as IntParamView) }
             airCondOnThreshold.setOnClickListener { floatParamClick(it as FloatParamView) }
             airCondOffThreshold.setOnClickListener { floatParamClick(it as FloatParamView) }
