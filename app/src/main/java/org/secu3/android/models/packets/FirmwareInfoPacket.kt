@@ -23,6 +23,9 @@
 */
 package org.secu3.android.models.packets
 
+import java.nio.charset.Charset
+import java.nio.charset.StandardCharsets
+
 data class FirmwareInfoPacket(
     var tag: String = "",
     var options: Int = 0,
@@ -125,7 +128,7 @@ data class FirmwareInfoPacket(
         internal const val DESCRIPTOR = 'y'
 
         fun parse(data: String) = FirmwareInfoPacket().apply {
-            tag = data.substring(2, 50)
+            tag = data.substring(2, 50).toByteArray(StandardCharsets.ISO_8859_1).toString(Charset.forName("IBM866"))
             options = data.get4Bytes(50)
             version = data[54]
         }

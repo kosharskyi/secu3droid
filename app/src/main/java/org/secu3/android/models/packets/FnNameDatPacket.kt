@@ -23,6 +23,9 @@
 */
 package org.secu3.android.models.packets
 
+import java.nio.charset.Charset
+import java.nio.charset.StandardCharsets
+
 data class FnNameDatPacket(
 
     var tablesNumber: Int = 0,
@@ -55,7 +58,9 @@ data class FnNameDatPacket(
         fun parse(data: String) = FnNameDatPacket().apply {
             tablesNumber = data[2].toInt()
 
-            fnName = FnName(data[3].toInt(), data.substring(4, F_NAME_SIZE))
+            val name = data.substring(4, F_NAME_SIZE).toByteArray(StandardCharsets.ISO_8859_1).toString(Charset.forName("IBM866"))
+
+            fnName = FnName(data[3].toInt(), name)
         }
 
     }
