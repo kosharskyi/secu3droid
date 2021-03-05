@@ -58,7 +58,7 @@ data class FnNameDatPacket(
         fun parse(data: String) = FnNameDatPacket().apply {
             tablesNumber = data[2].toInt()
 
-            val name = data.substring(4, F_NAME_SIZE).toByteArray(StandardCharsets.ISO_8859_1).toString(Charset.forName("IBM866"))
+            val name = data.substring(4, 4 +  F_NAME_SIZE).toByteArray(StandardCharsets.ISO_8859_1).toString(Charset.forName("IBM866"))
 
             fnName = FnName(data[3].toInt(), name)
         }
