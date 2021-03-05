@@ -193,8 +193,9 @@ class Secu3Manager @Inject constructor(@ApplicationContext private val context: 
             var packetBuffer = IntArray(MAX_PACKET_SIZE)
             Log.e("Status", "comunicating with device")
 
-            val reader = BufferedReader(InputStreamReader(mmInStream, StandardCharsets.ISO_8859_1))
-            val writer = BufferedWriter(OutputStreamWriter(mmOutStream, StandardCharsets.ISO_8859_1))
+            val charset = StandardCharsets.ISO_8859_1
+            val reader = BufferedReader(InputStreamReader(mmInStream, charset))
+            val writer = BufferedWriter(OutputStreamWriter(mmOutStream, charset))
 
             loop@ while (mmSocket.isConnected) {
                 try {
@@ -263,7 +264,6 @@ class Secu3Manager @Inject constructor(@ApplicationContext private val context: 
     fun disable() {
         connectedThread?.disable()
         connectedThread = null
-        createConnectThread?.interrupt()
         createConnectThread = null
     }
 
