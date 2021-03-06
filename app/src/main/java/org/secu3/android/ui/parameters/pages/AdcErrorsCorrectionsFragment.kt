@@ -77,6 +77,18 @@ class AdcErrorsCorrectionsFragment : BaseParamFragment() {
                 add4Factor.value = it.ai4AdcFactor
                 add4Correction.value = it.ai4AdcCorrection
 
+                add5Factor.value = it.ai5AdcFactor
+                add5Correction.value = it.ai5AdcCorrection
+
+                add6Factor.value = it.ai6AdcFactor
+                add6Correction.value = it.ai6AdcCorrection
+
+                add7Factor.value = it.ai7AdcFactor
+                add7Correction.value = it.ai7AdcCorrection
+
+                add8Factor.value = it.ai8AdcFactor
+                add8Correction.value = it.ai8AdcCorrection
+
             }
 
             initViews()
@@ -158,6 +170,42 @@ class AdcErrorsCorrectionsFragment : BaseParamFragment() {
                 packet?.let { it1 -> mViewModel.sendPacket(it1) }
             }
 
+            add5Factor.addOnValueChangeListener {
+                packet?.ai5AdcFactor = it
+                packet?.let { it1 -> mViewModel.sendPacket(it1) }
+            }
+            add5Correction.addOnValueChangeListener {
+                packet?.ai5AdcCorrection = it
+                packet?.let { it1 -> mViewModel.sendPacket(it1) }
+            }
+
+            add6Factor.addOnValueChangeListener {
+                packet?.ai6AdcFactor = it
+                packet?.let { it1 -> mViewModel.sendPacket(it1) }
+            }
+            add6Correction.addOnValueChangeListener {
+                packet?.ai6AdcCorrection = it
+                packet?.let { it1 -> mViewModel.sendPacket(it1) }
+            }
+
+            add7Factor.addOnValueChangeListener {
+                packet?.ai7AdcFactor = it
+                packet?.let { it1 -> mViewModel.sendPacket(it1) }
+            }
+            add7Correction.addOnValueChangeListener {
+                packet?.ai7AdcCorrection = it
+                packet?.let { it1 -> mViewModel.sendPacket(it1) }
+            }
+
+            add8Factor.addOnValueChangeListener {
+                packet?.ai8AdcFactor = it
+                packet?.let { it1 -> mViewModel.sendPacket(it1) }
+            }
+            add8Correction.addOnValueChangeListener {
+                packet?.ai8AdcCorrection = it
+                packet?.let { it1 -> mViewModel.sendPacket(it1) }
+            }
+
             mapFactor.setOnClickListener { floatParamClick(it as FloatParamView) }
             mapCorrection.setOnClickListener { floatParamClick(it as FloatParamView) }
             voltageFactor.setOnClickListener { floatParamClick(it as FloatParamView) }
@@ -175,6 +223,14 @@ class AdcErrorsCorrectionsFragment : BaseParamFragment() {
             add3Correction.setOnClickListener { floatParamClick(it as FloatParamView) }
             add4Factor.setOnClickListener { floatParamClick(it as FloatParamView) }
             add4Correction.setOnClickListener { floatParamClick(it as FloatParamView) }
+            add5Factor.setOnClickListener { floatParamClick(it as FloatParamView) }
+            add5Correction.setOnClickListener { floatParamClick(it as FloatParamView) }
+            add6Factor.setOnClickListener { floatParamClick(it as FloatParamView) }
+            add6Correction.setOnClickListener { floatParamClick(it as FloatParamView) }
+            add7Factor.setOnClickListener { floatParamClick(it as FloatParamView) }
+            add7Correction.setOnClickListener { floatParamClick(it as FloatParamView) }
+            add8Factor.setOnClickListener { floatParamClick(it as FloatParamView) }
+            add8Correction.setOnClickListener { floatParamClick(it as FloatParamView) }
         }
     }
 }
