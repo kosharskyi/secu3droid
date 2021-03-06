@@ -94,6 +94,9 @@ class MiscellaneousFragment : BaseParamFragment() {
                 evapEndingAirFlow.value = it.evapAfEnd
 
                 fuelPumpWorkingTime.value = it.fpTimeoutStrt
+
+                pwmfrq0.value = it.pwmFrq0
+                pwmfrq1.value = it.pwmFrq1
             }
 
             initViews()
@@ -161,6 +164,16 @@ class MiscellaneousFragment : BaseParamFragment() {
                 packet?.let { it1 -> mViewModel.sendPacket(it1) }
             }
 
+            pwmfrq0.addOnValueChangeListener {
+                packet?.pwmFrq0 = it
+                packet?.let { it1 -> mViewModel.sendPacket(it1) }
+            }
+
+            pwmfrq1.addOnValueChangeListener {
+                packet?.pwmFrq1 = it
+                packet?.let { it1 -> mViewModel.sendPacket(it1) }
+            }
+
 
             dataPacketsTransmissionPeriod.setOnClickListener { intParamClick(it as IntParamView) }
             enableCutoffOfIgnition.setOnClickListener { intParamClick(it as IntParamView) }
@@ -171,6 +184,9 @@ class MiscellaneousFragment : BaseParamFragment() {
             evapEndingAirFlow.setOnClickListener { intParamClick(it as IntParamView) }
 
             fuelPumpWorkingTime.setOnClickListener { floatParamClick(it as FloatParamView) }
+
+            pwmfrq0.setOnClickListener { intParamClick(it as IntParamView) }
+            pwmfrq1.setOnClickListener { intParamClick(it as IntParamView) }
 
         }
     }

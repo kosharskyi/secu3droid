@@ -24,6 +24,7 @@
 package org.secu3.android.models.packets.params
 
 import org.secu3.android.models.packets.BaseOutputPacket
+import kotlin.math.roundToInt
 
 data class MiscellaneousParamPacket(
 
@@ -90,17 +91,17 @@ data class MiscellaneousParamPacket(
         data += ignCutoff.toChar()
         data += ignCutoffThrd.write2Bytes()
 
-        data += hopStartCogs.toChar()
-        data += hopDuratCogs.toChar()
+        data += hopStartCogs.times(ANGLE_DIVIDER).write2Bytes()
+        data += hopDuratCogs.times(ANGLE_DIVIDER).write2Bytes()
         data += flpmpFlags.toChar()
 
         data += evapAfbegin.div(32).write2Bytes()
-        data += evapAfEnd.times(32).times(1048576.0f).toChar()
+        data += evapAfEnd.times(32).times(1048576.0f).toInt().write2Bytes()
 
         data += fpTimeoutStrt.times(10).toChar()
 
-//        data += pwmFrq0.write2Bytes(data)
-//        data += pwmFrq0.write2Bytes(data)
+        data += 1.0.div(pwmFrq0.toFloat()).times(524288.0f).roundToInt().write2Bytes()
+        data += 1.0.div(pwmFrq1.toFloat()).times(524288.0f).roundToInt().write2Bytes()
 
         data += END_PACKET_SYMBOL
         return data
@@ -115,14 +116,18 @@ data class MiscellaneousParamPacket(
             uartPeriodTms = data[4].toInt() * 10
             ignCutoff = data[5].toInt()
             ignCutoffThrd = data.get2Bytes(6)
-            hopStartCogs = data[8].toInt()
-            hopDuratCogs = data[9].toInt()
-            flpmpFlags = data[10].toInt()
-            evapAfbegin = data.get2Bytes(11) * 32
-            evapAfslope = data.get2Bytes(13).toFloat().div(1048576.0f).div(32)
-            fpTimeoutStrt = data[15].toFloat() / 10
-//            pwmFrq0 = data.get2Bytes(16)
-//            pwmFrq1 = data.get2Bytes(18)
+            hopStartCogs = data.get2Bytes(8).div(ANGLE_DIVIDER)
+            hopDuratCogs = data.get2Bytes(10).div(ANGLE_DIVIDER)
+            flpmpFlags = data[12].toInt()
+            evapAfbegin = data.get2Bytes(13) * 32
+            evapAfslope = data.get2Bytes(15).toFloat().div(1048576.0f).div(32)
+            fpTimeoutStrt = data[17].toFloat() / 10
+            data.get2Bytes(18).toFloat().div(524288.0f).let {
+                pwmFrq0 = 1.0.div(it).roundToInt()
+            }
+            data.get2Bytes(20).toFloat().div(524288.0f).let {
+                pwmFrq1 = 1.0.div(it).roundToInt()
+            }
         }
     }
 

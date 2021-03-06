@@ -134,6 +134,8 @@
     <string name="miscel_evap_starting_air_flow_title">EVAP starting air flow</string>
     <string name="miscel_evap_ending_air_flow_title">EVAP ending air flow</string>
     <string name="miscel_fuel_pump_working_time_title">Fuel pump working time</string>
+    <string name="miscel_pwmfrq0_title">PWM frequency for PWM0</string>
+    <string name="miscel_pwmfrq1_title">PWM frequency for PWM1</string>
 
 
     <string name="choke_steps_title">Number of SM steps</string>

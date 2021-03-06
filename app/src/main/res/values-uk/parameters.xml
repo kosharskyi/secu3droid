@@ -139,6 +139,8 @@
     <string name="miscel_evap_starting_air_flow_title">Поч. споживання повітря</string>
     <string name="miscel_evap_ending_air_flow_title">Кін. споживання повітря</string>
     <string name="miscel_fuel_pump_working_time_title">Час роботи бензонасоса</string>
+    <string name="miscel_pwmfrq0_title">Частота ШІМ PWM1</string>
+    <string name="miscel_pwmfrq1_title">Частота ШІМ PWM1</string>
 
     <string name="choke_steps_title">Кількість кроків КД</string>
     <string name="choke_rpm_if_factor_title">Коефіцієнт регуляції</string>
