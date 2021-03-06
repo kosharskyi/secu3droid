@@ -151,6 +151,72 @@ class UniversalOutputsFragment : BaseParamFragment() {
                 output3Condition2On.value = it.output3OnThrd2
                 output3Condition2Off.value = it.output3OffThrd2
 
+
+
+                output4Condition1.setText(mCondition1List[it.output4Condition1], false)
+                output4Condition1Inversion.isChecked = it.output4Cond1Inversion
+                output4Condition1On.value = it.output4OnThrd1
+                output4Condition1Off.value = it.output4OffThrd1
+
+                it.output4LogicFunc.let { logicFunc ->
+                    output4Condition2Group.isGone = logicFunc == 0xF
+
+                    if (logicFunc == 0xF) {
+                        output4LogicalFunction.setText(mLogicalFunctionsList[4], false)
+                        return@let
+                    }
+                    output4LogicalFunction.setText(mLogicalFunctionsList[logicFunc], false)
+                }
+
+                output4Condition2.setText(mCondition1List[it.output4Condition2], false)
+                output4Condition2Inversion.isChecked = it.output4Cond2Inversion
+                output4Condition2On.value = it.output4OnThrd2
+                output4Condition2Off.value = it.output4OffThrd2
+
+
+
+                output5Condition1.setText(mCondition1List[it.output5Condition1], false)
+                output5Condition1Inversion.isChecked = it.output5Cond1Inversion
+                output5Condition1On.value = it.output5OnThrd1
+                output5Condition1Off.value = it.output5OffThrd1
+
+                it.output5LogicFunc.let { logicFunc ->
+                    output5Condition2Group.isGone = logicFunc == 0xF
+
+                    if (logicFunc == 0xF) {
+                        output5LogicalFunction.setText(mLogicalFunctionsList[4], false)
+                        return@let
+                    }
+                    output5LogicalFunction.setText(mLogicalFunctionsList[logicFunc], false)
+                }
+
+                output5Condition2.setText(mCondition1List[it.output5Condition2], false)
+                output5Condition2Inversion.isChecked = it.output5Cond2Inversion
+                output5Condition2On.value = it.output5OnThrd2
+                output5Condition2Off.value = it.output5OffThrd2
+
+
+
+                output6Condition1.setText(mCondition1List[it.output6Condition1], false)
+                output6Condition1Inversion.isChecked = it.output6Cond1Inversion
+                output6Condition1On.value = it.output6OnThrd1
+                output6Condition1Off.value = it.output6OffThrd1
+
+                it.output6LogicFunc.let { logicFunc ->
+                    output6Condition2Group.isGone = logicFunc == 0xF
+
+                    if (logicFunc == 0xF) {
+                        output6LogicalFunction.setText(mLogicalFunctionsList[4], false)
+                        return@let
+                    }
+                    output6LogicalFunction.setText(mLogicalFunctionsList[logicFunc], false)
+                }
+
+                output6Condition2.setText(mCondition1List[it.output6Condition2], false)
+                output6Condition2Inversion.isChecked = it.output6Cond2Inversion
+                output6Condition2On.value = it.output6OnThrd2
+                output6Condition2Off.value = it.output6OffThrd2
+
             }
 
             initViews()
@@ -236,6 +302,78 @@ class UniversalOutputsFragment : BaseParamFragment() {
                 setAdapter(it)
             }
         }
+
+
+
+
+        mBinding.output4Condition1.apply {
+            inputType = InputType.TYPE_NULL
+            ArrayAdapter(requireContext(), R.layout.list_item, mCondition1List).also {
+                setAdapter(it)
+            }
+        }
+
+        mBinding.output4Condition2.apply {
+            inputType = InputType.TYPE_NULL
+            ArrayAdapter(requireContext(), R.layout.list_item, mCondition2List).also {
+                setAdapter(it)
+            }
+        }
+
+        mBinding.output4LogicalFunction.apply {
+            inputType = InputType.TYPE_NULL
+            ArrayAdapter(requireContext(), R.layout.list_item, mLogicalFunctionsList).also {
+                setAdapter(it)
+            }
+        }
+
+
+
+
+        mBinding.output5Condition1.apply {
+            inputType = InputType.TYPE_NULL
+            ArrayAdapter(requireContext(), R.layout.list_item, mCondition1List).also {
+                setAdapter(it)
+            }
+        }
+
+        mBinding.output5Condition2.apply {
+            inputType = InputType.TYPE_NULL
+            ArrayAdapter(requireContext(), R.layout.list_item, mCondition2List).also {
+                setAdapter(it)
+            }
+        }
+
+        mBinding.output5LogicalFunction.apply {
+            inputType = InputType.TYPE_NULL
+            ArrayAdapter(requireContext(), R.layout.list_item, mLogicalFunctionsList).also {
+                setAdapter(it)
+            }
+        }
+
+
+
+
+        mBinding.output6Condition1.apply {
+            inputType = InputType.TYPE_NULL
+            ArrayAdapter(requireContext(), R.layout.list_item, mCondition1List).also {
+                setAdapter(it)
+            }
+        }
+
+        mBinding.output6Condition2.apply {
+            inputType = InputType.TYPE_NULL
+            ArrayAdapter(requireContext(), R.layout.list_item, mCondition2List).also {
+                setAdapter(it)
+            }
+        }
+
+        mBinding.output6LogicalFunction.apply {
+            inputType = InputType.TYPE_NULL
+            ArrayAdapter(requireContext(), R.layout.list_item, mLogicalFunctionsList).also {
+                setAdapter(it)
+            }
+        }
     }
 
 
@@ -312,6 +450,66 @@ class UniversalOutputsFragment : BaseParamFragment() {
                 mUnioutConfigurator.configureViews(position, output3Condition2On, output3Condition2Off)
             }
 
+            output4Condition1.setOnItemClickListener { _, _, position, _ ->
+                packet?.output4Condition1 = position
+                mUnioutConfigurator.configureViews(position, output4Condition1On, output4Condition1Off)
+            }
+            output4LogicalFunction.setOnItemClickListener { _, _, position, _ ->
+                if (position == 4) {
+                    packet?.output4LogicFunc = 0xF
+                } else {
+                    packet?.output4LogicFunc = position
+                }
+
+                output4Condition2Group.isGone = position == 4
+
+                packet?.let { it1 -> mViewModel.sendPacket(it1) }
+            }
+            output4Condition2.setOnItemClickListener { _, _, position, _ ->
+                packet?.output4Condition2 = position
+                mUnioutConfigurator.configureViews(position, output4Condition2On, output4Condition2Off)
+            }
+
+            output5Condition1.setOnItemClickListener { _, _, position, _ ->
+                packet?.output5Condition1 = position
+                mUnioutConfigurator.configureViews(position, output5Condition1On, output5Condition1Off)
+            }
+            output5LogicalFunction.setOnItemClickListener { _, _, position, _ ->
+                if (position == 4) {
+                    packet?.output5LogicFunc = 0xF
+                } else {
+                    packet?.output5LogicFunc = position
+                }
+
+                output5Condition2Group.isGone = position == 4
+
+                packet?.let { it1 -> mViewModel.sendPacket(it1) }
+            }
+            output5Condition2.setOnItemClickListener { _, _, position, _ ->
+                packet?.output5Condition2 = position
+                mUnioutConfigurator.configureViews(position, output5Condition2On, output5Condition2Off)
+            }
+
+            output6Condition1.setOnItemClickListener { _, _, position, _ ->
+                packet?.output6Condition1 = position
+                mUnioutConfigurator.configureViews(position, output6Condition1On, output6Condition1Off)
+            }
+            output6LogicalFunction.setOnItemClickListener { _, _, position, _ ->
+                if (position == 4) {
+                    packet?.output6LogicFunc = 0xF
+                } else {
+                    packet?.output6LogicFunc = position
+                }
+
+                output6Condition2Group.isGone = position == 4
+
+                packet?.let { it1 -> mViewModel.sendPacket(it1) }
+            }
+            output6Condition2.setOnItemClickListener { _, _, position, _ ->
+                packet?.output6Condition2 = position
+                mUnioutConfigurator.configureViews(position, output6Condition2On, output6Condition2Off)
+            }
+
 
             output1Condition1On.addOnValueChangeListener {
                 packet?.output1OnThrd1 = it
@@ -372,6 +570,66 @@ class UniversalOutputsFragment : BaseParamFragment() {
             }
 
 
+
+            output4Condition1On.addOnValueChangeListener {
+                packet?.output4OnThrd1 = it
+                packet?.let { it1 -> mViewModel.sendPacket(it1) }
+            }
+            output4Condition1Off.addOnValueChangeListener {
+                packet?.output4OffThrd1 = it
+                packet?.let { it1 -> mViewModel.sendPacket(it1) }
+            }
+
+            output4Condition2On.addOnValueChangeListener {
+                packet?.output4OnThrd2 = it
+                packet?.let { it1 -> mViewModel.sendPacket(it1) }
+            }
+            output4Condition2Off.addOnValueChangeListener {
+                packet?.output4OffThrd2 = it
+                packet?.let { it1 -> mViewModel.sendPacket(it1) }
+            }
+
+
+
+            output5Condition1On.addOnValueChangeListener {
+                packet?.output5OnThrd1 = it
+                packet?.let { it1 -> mViewModel.sendPacket(it1) }
+            }
+            output5Condition1Off.addOnValueChangeListener {
+                packet?.output5OffThrd1 = it
+                packet?.let { it1 -> mViewModel.sendPacket(it1) }
+            }
+
+            output5Condition2On.addOnValueChangeListener {
+                packet?.output5OnThrd2 = it
+                packet?.let { it1 -> mViewModel.sendPacket(it1) }
+            }
+            output5Condition2Off.addOnValueChangeListener {
+                packet?.output5OffThrd2 = it
+                packet?.let { it1 -> mViewModel.sendPacket(it1) }
+            }
+
+
+
+            output6Condition1On.addOnValueChangeListener {
+                packet?.output6OnThrd1 = it
+                packet?.let { it1 -> mViewModel.sendPacket(it1) }
+            }
+            output6Condition1Off.addOnValueChangeListener {
+                packet?.output6OffThrd1 = it
+                packet?.let { it1 -> mViewModel.sendPacket(it1) }
+            }
+
+            output6Condition2On.addOnValueChangeListener {
+                packet?.output6OnThrd2 = it
+                packet?.let { it1 -> mViewModel.sendPacket(it1) }
+            }
+            output6Condition2Off.addOnValueChangeListener {
+                packet?.output6OffThrd2 = it
+                packet?.let { it1 -> mViewModel.sendPacket(it1) }
+            }
+
+
             output1Condition1On.setOnClickListener { floatParamClick(it as FloatParamView) }
             output1Condition1Off.setOnClickListener { floatParamClick(it as FloatParamView) }
             output1Condition2On.setOnClickListener { floatParamClick(it as FloatParamView) }
@@ -386,6 +644,21 @@ class UniversalOutputsFragment : BaseParamFragment() {
             output3Condition1Off.setOnClickListener { floatParamClick(it as FloatParamView) }
             output3Condition2On.setOnClickListener { floatParamClick(it as FloatParamView) }
             output3Condition2Off.setOnClickListener { floatParamClick(it as FloatParamView) }
+
+            output4Condition1On.setOnClickListener { floatParamClick(it as FloatParamView) }
+            output4Condition1Off.setOnClickListener { floatParamClick(it as FloatParamView) }
+            output4Condition2On.setOnClickListener { floatParamClick(it as FloatParamView) }
+            output4Condition2Off.setOnClickListener { floatParamClick(it as FloatParamView) }
+
+            output5Condition1On.setOnClickListener { floatParamClick(it as FloatParamView) }
+            output5Condition1Off.setOnClickListener { floatParamClick(it as FloatParamView) }
+            output5Condition2On.setOnClickListener { floatParamClick(it as FloatParamView) }
+            output5Condition2Off.setOnClickListener { floatParamClick(it as FloatParamView) }
+
+            output6Condition1On.setOnClickListener { floatParamClick(it as FloatParamView) }
+            output6Condition1Off.setOnClickListener { floatParamClick(it as FloatParamView) }
+            output6Condition2On.setOnClickListener { floatParamClick(it as FloatParamView) }
+            output6Condition2Off.setOnClickListener { floatParamClick(it as FloatParamView) }
         }
     }
 

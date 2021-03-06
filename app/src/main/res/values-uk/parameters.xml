@@ -170,6 +170,12 @@
     <string name="unioutput2_condition_2_title">Умова 2  для виходу №2</string>
     <string name="unioutput3_condition_1_title">Умова 1  для виходу №3</string>
     <string name="unioutput3_condition_2_title">Умова 2  для виходу №3</string>
+    <string name="unioutput4_condition_1_title">Умова 1  для виходу №4</string>
+    <string name="unioutput4_condition_2_title">Умова 2  для виходу №4</string>
+    <string name="unioutput5_condition_1_title">Умова 1  для виходу №5</string>
+    <string name="unioutput5_condition_2_title">Умова 2  для виходу №5</string>
+    <string name="unioutput6_condition_1_title">Умова 1  для виходу №6</string>
+    <string name="unioutput6_condition_2_title">Умова 2  для виходу №6</string>
 
     <string name="injctr_par_injector_flow_rate_title">Продуктивність форсунки</string>
     <string name="injctr_par_enjine_displacement_title">Об\'єм двигуна</string>
