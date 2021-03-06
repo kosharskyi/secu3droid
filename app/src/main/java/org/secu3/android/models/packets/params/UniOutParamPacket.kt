@@ -139,32 +139,21 @@ data class UniOutParamPacket(
     }
 
     var output1Cond1Inversion: Boolean
-        get() = (rawOutput1Flags and 1) > 0
+        get() = rawOutput1Flags.getBitValue(0) > 0
         set(value) {
-            val lf = output1LogicFunc
-            val cond1Inversion = if (value) 1 else 0
-            val cond2Inversion = if (output1Cond2Inversion) 2 else 0
-
-            rawOutput1Flags = ((lf shl 4) or cond2Inversion) or cond1Inversion
+            rawOutput1Flags = rawOutput1Flags.setBitValue(value, 0)
         }
 
     var output1Cond2Inversion: Boolean
-        get() = (rawOutput1Flags and 2) > 0
+        get() = rawOutput1Flags.getBitValue(1) > 0
         set(value) {
-            val lf = output1LogicFunc
-            val cond1Inversion = if (output1Cond1Inversion) 1 else 0
-            val cond2Inversion = if (value) 2 else 0
-
-            rawOutput1Flags = ((lf shl 4) or cond2Inversion) or cond1Inversion
+            rawOutput1Flags = rawOutput1Flags.setBitValue(value, 1)
         }
 
     var output1LogicFunc: Int
         get() = rawOutput1Flags shr 4
         set(value) {
-            val cond1Inversion = if (output1Cond1Inversion) 1 else 0
-            val cond2Inversion = if (output1Cond2Inversion) 2 else 0
-
-            rawOutput1Flags = ((value shl 4) or cond2Inversion) or cond1Inversion
+            rawOutput1Flags = rawOutput1Flags.and(0xF).or(value shl 4)
         }
 
     var output1OnThrd1: Float
@@ -195,32 +184,21 @@ data class UniOutParamPacket(
 
 
     var output2Cond1Inversion: Boolean
-        get() = (rawOutput2Flags and 1) > 0
+        get() = rawOutput2Flags.getBitValue(0) > 0
         set(value) {
-            val lf = output2LogicFunc
-            val cond1Inversion = if (value) 1 else 0
-            val cond2Inversion = if (output2Cond2Inversion) 2 else 0
-
-            rawOutput2Flags = ((lf shl 4) or cond2Inversion) or cond1Inversion
+            rawOutput2Flags = rawOutput2Flags.setBitValue(value, 0)
         }
 
     var output2Cond2Inversion: Boolean
-        get() = (rawOutput2Flags and 2) > 0
+        get() = rawOutput2Flags.getBitValue(1) > 0
         set(value) {
-            val lf = output2LogicFunc
-            val cond1Inversion = if (output2Cond1Inversion) 1 else 0
-            val cond2Inversion = if (value) 2 else 0
-
-            rawOutput2Flags = ((lf shl 4) or cond2Inversion) or cond1Inversion
+            rawOutput2Flags = rawOutput2Flags.setBitValue(value, 1)
         }
 
     var output2LogicFunc: Int
         get() = rawOutput2Flags shr 4
         set(value) {
-            val cond1Inversion = if (output2Cond1Inversion) 1 else 0
-            val cond2Inversion = if (output2Cond2Inversion) 2 else 0
-
-            rawOutput2Flags = ((value shl 4) or cond2Inversion) or cond1Inversion
+            rawOutput2Flags = rawOutput2Flags.and(0xF).or(value shl 4)
         }
 
     var output2OnThrd1: Float
@@ -251,32 +229,21 @@ data class UniOutParamPacket(
 
 
     var output3Cond1Inversion: Boolean
-        get() = (rawOutput3Flags and 1) > 0
+        get() = rawOutput3Flags.getBitValue(0) > 0
         set(value) {
-            val lf = output3LogicFunc
-            val cond1Inversion = if (value) 1 else 0
-            val cond2Inversion = if (output3Cond2Inversion) 2 else 0
-
-            rawOutput3Flags = ((lf shl 4) or cond2Inversion) or cond1Inversion
+            rawOutput3Flags = rawOutput3Flags.setBitValue(value, 0)
         }
 
     var output3Cond2Inversion: Boolean
-        get() = (rawOutput3Flags and 2) > 0
+        get() = rawOutput3Flags.getBitValue(1) > 0
         set(value) {
-            val lf = output3LogicFunc
-            val cond1Inversion = if (output3Cond1Inversion) 1 else 0
-            val cond2Inversion = if (value) 2 else 0
-
-            rawOutput3Flags = ((lf shl 4) or cond2Inversion) or cond1Inversion
+            rawOutput3Flags = rawOutput3Flags.setBitValue(value, 1)
         }
 
     var output3LogicFunc: Int
         get() = rawOutput3Flags shr 4
         set(value) {
-            val cond1Inversion = if (output3Cond1Inversion) 1 else 0
-            val cond2Inversion = if (output3Cond2Inversion) 2 else 0
-
-            rawOutput3Flags = ((value shl 4) or cond2Inversion) or cond1Inversion
+            rawOutput3Flags = rawOutput3Flags.and(0xF).or(value shl 4)
         }
 
     var output3OnThrd1: Float
@@ -308,32 +275,21 @@ data class UniOutParamPacket(
 
 
     var output4Cond1Inversion: Boolean
-        get() = (rawOutput4Flags and 1) > 0
+        get() = rawOutput4Flags.getBitValue(0) > 0
         set(value) {
-            val lf = output4LogicFunc
-            val cond1Inversion = if (value) 1 else 0
-            val cond2Inversion = if (output4Cond2Inversion) 2 else 0
-
-            rawOutput4Flags = ((lf shl 4) or cond2Inversion) or cond1Inversion
+            rawOutput4Flags = rawOutput4Flags.setBitValue(value, 0)
         }
 
     var output4Cond2Inversion: Boolean
-        get() = (rawOutput3Flags and 2) > 0
+        get() = rawOutput4Flags.getBitValue(1) > 0
         set(value) {
-            val lf = output4LogicFunc
-            val cond1Inversion = if (output4Cond1Inversion) 1 else 0
-            val cond2Inversion = if (value) 2 else 0
-
-            rawOutput4Flags = ((lf shl 4) or cond2Inversion) or cond1Inversion
+            rawOutput4Flags = rawOutput4Flags.setBitValue(value, 1)
         }
 
     var output4LogicFunc: Int
         get() = rawOutput4Flags shr 4
         set(value) {
-            val cond1Inversion = if (output4Cond1Inversion) 1 else 0
-            val cond2Inversion = if (output4Cond2Inversion) 2 else 0
-
-            rawOutput4Flags = ((value shl 4) or cond2Inversion) or cond1Inversion
+            rawOutput4Flags = rawOutput4Flags.and(0xF).or(value shl 4)
         }
 
     var output4OnThrd1: Float
@@ -365,32 +321,21 @@ data class UniOutParamPacket(
 
 
     var output5Cond1Inversion: Boolean
-        get() = (rawOutput5Flags and 1) > 0
+        get() = rawOutput5Flags.getBitValue(0) > 0
         set(value) {
-            val lf = output5LogicFunc
-            val cond1Inversion = if (value) 1 else 0
-            val cond2Inversion = if (output5Cond2Inversion) 2 else 0
-
-            rawOutput4Flags = ((lf shl 4) or cond2Inversion) or cond1Inversion
+            rawOutput5Flags = rawOutput5Flags.setBitValue(value, 0)
         }
 
     var output5Cond2Inversion: Boolean
-        get() = (rawOutput5Flags and 2) > 0
+        get() = rawOutput5Flags.getBitValue(1) > 0
         set(value) {
-            val lf = output5LogicFunc
-            val cond1Inversion = if (output5Cond1Inversion) 1 else 0
-            val cond2Inversion = if (value) 2 else 0
-
-            rawOutput5Flags = ((lf shl 4) or cond2Inversion) or cond1Inversion
+            rawOutput5Flags = rawOutput5Flags.setBitValue(value, 1)
         }
 
     var output5LogicFunc: Int
         get() = rawOutput5Flags shr 4
         set(value) {
-            val cond1Inversion = if (output5Cond1Inversion) 1 else 0
-            val cond2Inversion = if (output5Cond2Inversion) 2 else 0
-
-            rawOutput5Flags = ((value shl 4) or cond2Inversion) or cond1Inversion
+            rawOutput5Flags = rawOutput5Flags.and(0xF).or(value shl 4)
         }
 
     var output5OnThrd1: Float
@@ -423,32 +368,21 @@ data class UniOutParamPacket(
 
 
     var output6Cond1Inversion: Boolean
-        get() = (rawOutput6Flags and 1) > 0
+        get() = rawOutput6Flags.getBitValue(0) > 0
         set(value) {
-            val lf = output6LogicFunc
-            val cond1Inversion = if (value) 1 else 0
-            val cond2Inversion = if (output6Cond2Inversion) 2 else 0
-
-            rawOutput4Flags = ((lf shl 4) or cond2Inversion) or cond1Inversion
+            rawOutput6Flags = rawOutput6Flags.setBitValue(value, 0)
         }
 
     var output6Cond2Inversion: Boolean
-        get() = (rawOutput6Flags and 2) > 0
+        get() = rawOutput6Flags.getBitValue(1) > 0
         set(value) {
-            val lf = output6LogicFunc
-            val cond1Inversion = if (output6Cond1Inversion) 1 else 0
-            val cond2Inversion = if (value) 2 else 0
-
-            rawOutput6Flags = ((lf shl 4) or cond2Inversion) or cond1Inversion
+            rawOutput6Flags = rawOutput6Flags.setBitValue(value, 1)
         }
 
     var output6LogicFunc: Int
         get() = rawOutput5Flags shr 4
         set(value) {
-            val cond1Inversion = if (output6Cond1Inversion) 1 else 0
-            val cond2Inversion = if (output6Cond2Inversion) 2 else 0
-
-            rawOutput6Flags = ((value shl 4) or cond2Inversion) or cond1Inversion
+            rawOutput6Flags = rawOutput6Flags.and(0xF).or(value shl 4)
         }
 
     var output6OnThrd1: Float
