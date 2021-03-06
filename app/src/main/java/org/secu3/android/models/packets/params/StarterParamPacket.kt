@@ -47,12 +47,12 @@ data class StarterParamPacket(
             starterOff = data.get2Bytes(2)
             smapAbandon = data.get2Bytes(4)
             crankToRunTime = data.get2Bytes(6).toFloat() / 100
-            injAftstrStroke = data[8].toInt() * 2
+            injAftstrStroke = data[8].toInt() * 4
             injPrimeCold = data.get2Bytes(9).toFloat() * 32 / 10000
             injPrimeHot = data.get2Bytes(11).toFloat() * 32 / 10000
             injPrimeDelay = data[13].toFloat() / 10
             injFloodclearTps = data[14].toFloat() / 2f
-//            injAftStrokes1 = data[15].toInt()
+            injAftStrokes1 = data[15].toInt() * 4
         }
     }
 
@@ -62,12 +62,12 @@ data class StarterParamPacket(
         data += starterOff.write2Bytes()
         data += smapAbandon.write2Bytes()
         data += crankToRunTime.times(100).toInt().write2Bytes()
-        data += injAftstrStroke.div(2).toChar()
+        data += injAftstrStroke.div(4).toChar()
         data += injPrimeCold.times(10000).div(32).toInt().write2Bytes()
         data += injPrimeHot.times(10000).div(32).toInt().write2Bytes()
         data += injPrimeDelay.times(10).toChar()
         data += injFloodclearTps.times(2).toChar()
-//        data += injAftStrokes1.toChar()
+        data += injAftStrokes1.div(4).toChar()
 
         data += END_PACKET_SYMBOL
         return data

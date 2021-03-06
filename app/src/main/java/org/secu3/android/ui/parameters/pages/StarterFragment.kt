@@ -61,7 +61,8 @@ class StarterFragment : BaseParamFragment() {
                 starterBlockingRpm.value = it.starterOff
                 switchCrankMapRpm.value = it.smapAbandon
                 timeCrankToRunPosition.value = it.crankToRunTime
-                afterstartEnrichmentTime.value = it.injAftstrStroke
+                afterstartEnrichmentTimePetrol.value = it.injAftstrStroke
+                afterstartEnrichmentTimeGas.value = it.injAftStrokes1
                 primePulseCold.value = it.injPrimeCold
                 primePulseHot.value = it.injPrimeHot
                 primePulseDelay.value = it.injPrimeDelay
@@ -88,8 +89,12 @@ class StarterFragment : BaseParamFragment() {
                 packet?.crankToRunTime = it
                 packet?.let { it1 -> mViewModel.sendPacket(it1) }
             }
-            afterstartEnrichmentTime.addOnValueChangeListener {
+            afterstartEnrichmentTimePetrol.addOnValueChangeListener {
                 packet?.injAftstrStroke = it
+                packet?.let { it1 -> mViewModel.sendPacket(it1) }
+            }
+            afterstartEnrichmentTimeGas.addOnValueChangeListener {
+                packet?.injAftStrokes1 = it
                 packet?.let { it1 -> mViewModel.sendPacket(it1) }
             }
             primePulseCold.addOnValueChangeListener {
@@ -112,7 +117,8 @@ class StarterFragment : BaseParamFragment() {
             starterBlockingRpm.setOnClickListener { intParamClick(it as IntParamView) }
             switchCrankMapRpm.setOnClickListener { intParamClick(it as IntParamView) }
             timeCrankToRunPosition.setOnClickListener { floatParamClick(it as FloatParamView) }
-            afterstartEnrichmentTime.setOnClickListener { intParamClick(it as IntParamView) }
+            afterstartEnrichmentTimePetrol.setOnClickListener { intParamClick(it as IntParamView) }
+            afterstartEnrichmentTimeGas.setOnClickListener { intParamClick(it as IntParamView) }
             primePulseCold.setOnClickListener { floatParamClick(it as FloatParamView) }
             primePulseHot.setOnClickListener { floatParamClick(it as FloatParamView) }
             primePulseDelay.setOnClickListener { floatParamClick(it as FloatParamView) }
