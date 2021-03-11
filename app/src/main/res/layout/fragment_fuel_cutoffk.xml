@@ -183,7 +183,7 @@
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             app:title="@string/carbur_fuelcut_temp_threshold_title"
-            app:units="@string/units_pressure_kpa"
+            app:units="@string/units_degrees_celcius"
             app:float_value="0"
             app:value_precision="one"
             app:float_min_value="-30"
