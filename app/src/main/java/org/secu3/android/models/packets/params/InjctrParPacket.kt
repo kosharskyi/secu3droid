@@ -32,21 +32,17 @@ data class InjctrParPacket(
 
     var config: IntArray = IntArray(2),
 
-    var flowRate0: Float = 0f,
-    var flowRate1: Float = 0f,
+    var flowRate: FloatArray = FloatArray(2),
 
-    var cylDisp: Float = 0f,
+    private var cylDisp: Float = 0f,
 
-    var sdIglConst0: Int = 0,
-    var sdIglConst1: Int = 0,
+    var sdIglConst: IntArray = IntArray(2),
 
     var ckpsEngineCyl: Int = 0,
 
-    var timing0: Int = 0,
-    var timing1: Int = 0,
+    var timing: IntArray = IntArray(2),
 
-    var timingCrk0: Int = 0,
-    var timingCrk1: Int = 0,
+    var timingCrk: IntArray = IntArray(2),
 
     var angleSpec: Int = 0,
 
@@ -64,21 +60,21 @@ data class InjctrParPacket(
         data += config[0].toChar()
         data += config[1].toChar()
 
-        data += flowRate0.times(64).toInt().write2Bytes()
-        data += flowRate1.times(64).toInt().write2Bytes()
+        data += flowRate[0].times(64).toInt().write2Bytes()
+        data += flowRate[1].times(64).toInt().write2Bytes()
 
-        data += cylDisp.div(4).times(16384).toInt().write2Bytes()
+        data += cylDisp.times(16384).toInt().write2Bytes()
 
-        data += sdIglConst0.write4Bytes()
-        data += sdIglConst1.write4Bytes()
+        data += sdIglConst[0].write4Bytes()
+        data += sdIglConst[1].write4Bytes()
 
         data += ckpsEngineCyl.toChar()
 
-        data += timing0.times(PARINJTIM_DIVIDER).write2Bytes()
-        data += timing1.times(PARINJTIM_DIVIDER).write2Bytes()
+        data += timing[0].times(PARINJTIM_DIVIDER).write2Bytes()
+        data += timing[1].times(PARINJTIM_DIVIDER).write2Bytes()
 
-        data += timingCrk0.times(PARINJTIM_DIVIDER).write2Bytes()
-        data += timingCrk1.times(PARINJTIM_DIVIDER).write2Bytes()
+        data += timingCrk[0].times(PARINJTIM_DIVIDER).write2Bytes()
+        data += timingCrk[1].times(PARINJTIM_DIVIDER).write2Bytes()
 
         data += angleSpec.toChar()
 
@@ -95,26 +91,35 @@ data class InjctrParPacket(
         get() = config[0].shr(4)
         set(value) {
             config[0] = config[0].and(0x0F).or(value.shl(4))
+            configChanged(0, config0Pulses)
         }
 
     var config0Pulses: Int
         get() = config[0].and(0xF)
         set(value) {
             config[0] = config[0].and(0xF0).or(value)
+            configChanged(0, value)
         }
 
     var config1: Int
         get() = config[1].shr(4)
         set(value) {
             config[1] = config[1].and(0x0F).or(value.shl(4))
+            configChanged(1, config1Pulses)
         }
 
     var config1Pulses: Int
         get() = config[1].and(0xF)
         set(value) {
             config[1] = config[1].and(0xF0).or(value)
+            configChanged(1, value)
         }
 
+    var engineDisp: Float
+        get() = cylDisp * ckpsEngineCyl
+        set(value) {
+            cylDisp = value / ckpsEngineCyl
+        }
 
     var angleSpec0: Int
         get() = angleSpec.and(0xF)
@@ -210,9 +215,95 @@ data class InjctrParPacket(
             }
         }
 
+
+    private fun configChanged(configNum: Int, pulses: Int) {
+
+        val cfg = if (configNum == 0) config0 else config1
+
+        val bnkNum = bnkNum(cfg).toFloat()
+        val injNum = injNum(cfg).toFloat()
+        val mifr = flowRate[configNum] * fuelDensity[configNum]
+
+        sdIglConst[configNum] = (((cylDisp * 3.482f * 18750000f) / mifr) * (bnkNum * ckpsEngineCyl.toFloat()) / (injNum * pulses.toFloat())).toInt()
+    }
+
+    private fun injNum(config: Int): Int {
+        return when (config) {
+            INJCFG_THROTTLEBODY -> 1
+            INJCFG_SIMULTANEOUS -> ckpsEngineCyl
+            INJCFG_2BANK_ALTERN -> ckpsEngineCyl
+            INJCFG_SEMISEQUENTIAL -> ckpsEngineCyl
+            INJCFG_SEMISEQSEPAR -> ckpsEngineCyl
+            INJCFG_FULLSEQUENTIAL -> ckpsEngineCyl
+            else -> ckpsEngineCyl
+        }
+    }
+
+    private fun bnkNum(config: Int): Int {
+        return when (config) {
+            INJCFG_THROTTLEBODY -> 1
+            INJCFG_SIMULTANEOUS -> 1
+            INJCFG_2BANK_ALTERN -> 2
+            INJCFG_SEMISEQUENTIAL -> ckpsEngineCyl / 2
+            INJCFG_SEMISEQSEPAR -> ckpsEngineCyl / 2
+            INJCFG_FULLSEQUENTIAL -> ckpsEngineCyl
+            else -> ckpsEngineCyl
+        }
+    }
+
+    override fun equals(other: Any?): Boolean {
+        if (this === other) return true
+        if (javaClass != other?.javaClass) return false
+
+        other as InjctrParPacket
+
+        if (flags != other.flags) return false
+        if (!config.contentEquals(other.config)) return false
+        if (!flowRate.contentEquals(other.flowRate)) return false
+        if (cylDisp != other.cylDisp) return false
+        if (!sdIglConst.contentEquals(other.sdIglConst)) return false
+        if (ckpsEngineCyl != other.ckpsEngineCyl) return false
+        if (!timing.contentEquals(other.timing)) return false
+        if (!timingCrk.contentEquals(other.timingCrk)) return false
+        if (angleSpec != other.angleSpec) return false
+        if (fffConst != other.fffConst) return false
+        if (minPw != other.minPw) return false
+        if (isAtMega644 != other.isAtMega644) return false
+
+        return true
+    }
+
+    override fun hashCode(): Int {
+        var result = flags
+        result = 31 * result + config.contentHashCode()
+        result = 31 * result + flowRate.contentHashCode()
+        result = 31 * result + cylDisp.hashCode()
+        result = 31 * result + sdIglConst.contentHashCode()
+        result = 31 * result + ckpsEngineCyl
+        result = 31 * result + timing.contentHashCode()
+        result = 31 * result + timingCrk.contentHashCode()
+        result = 31 * result + angleSpec
+        result = 31 * result + fffConst
+        result = 31 * result + minPw
+        result = 31 * result + isAtMega644.hashCode()
+        return result
+    }
+
     companion object {
 
         internal const val DESCRIPTOR = ';'
+
+        private val fuelDensity = arrayOf(
+            0.710f, //petrol density (0.710 g/cc)
+            0.536f  //LPG density (0.536 g/cc)
+        )
+
+        const val INJCFG_THROTTLEBODY  = 0;  //single injector for N cylinders
+        const val INJCFG_SIMULTANEOUS = 1;   //N injectors, all injectors work simultaneously
+        const val INJCFG_2BANK_ALTERN = 2;   //N injectors split into 2 banks, banks work alternately
+        const val INJCFG_SEMISEQUENTIAL = 3; //N injectors, injectors work in pairs
+        const val INJCFG_FULLSEQUENTIAL = 4; //N injectors, each injector works 1 time per cycle
+        const val INJCFG_SEMISEQSEPAR  = 5;  //N injectors, injectors work in pairs, each injector has its own separate output
 
         fun parse(data: String) = InjctrParPacket().apply {
 
@@ -221,21 +312,21 @@ data class InjctrParPacket(
             config[0] = data[3].toInt()
             config[1] = data[4].toInt()
             
-            flowRate0 = data.get2Bytes(5).toFloat() / 64
-            flowRate1 = data.get2Bytes(7).toFloat() / 64
+            flowRate[0] = data.get2Bytes(5).toFloat() / 64
+            flowRate[1] = data.get2Bytes(7).toFloat() / 64
             
-            cylDisp = data.get2Bytes(9).toFloat() / 16384 * 4
+            cylDisp = data.get2Bytes(9).toFloat() / 16384
 
-            sdIglConst0 = data.get4Bytes(11)
-            sdIglConst1 = data.get4Bytes(15)
+            sdIglConst[0] = data.get4Bytes(11)
+            sdIglConst[1] = data.get4Bytes(15)
 
             ckpsEngineCyl = data[19].toInt()
 
-            timing0 = data.get2Bytes(20) / PARINJTIM_DIVIDER  //FIXME change constant
-            timing1 = data.get2Bytes(22) / PARINJTIM_DIVIDER  //FIXME change constant
+            timing[0] = data.get2Bytes(20) / PARINJTIM_DIVIDER  //FIXME change constant
+            timing[1] = data.get2Bytes(22) / PARINJTIM_DIVIDER  //FIXME change constant
 
-            timingCrk0 = data.get2Bytes(24) / PARINJTIM_DIVIDER   //FIXME change constant
-            timingCrk1 = data.get2Bytes(26) / PARINJTIM_DIVIDER   //FIXME change constant
+            timingCrk[0] = data.get2Bytes(24) / PARINJTIM_DIVIDER   //FIXME change constant
+            timingCrk[1] = data.get2Bytes(26) / PARINJTIM_DIVIDER   //FIXME change constant
 
             angleSpec = data[28].toInt()
 

@@ -25,16 +25,18 @@ package org.secu3.android.ui.parameters.pages
 
 import android.os.Bundle
 import android.text.InputType
-import androidx.fragment.app.Fragment
+import android.util.Log
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import android.widget.ArrayAdapter
 import androidx.fragment.app.activityViewModels
+import androidx.fragment.app.viewModels
 import org.secu3.android.R
 import org.secu3.android.databinding.FragmentFuelInjectionBinding
 import org.secu3.android.models.packets.params.InjctrParPacket
 import org.secu3.android.ui.parameters.ParamsViewModel
+import org.secu3.android.ui.parameters.pages.injection.FuelInjectionViewModel
 import org.secu3.android.ui.parameters.views.FloatParamView
 import org.secu3.android.ui.parameters.views.IntParamView
 import org.secu3.android.utils.gone
@@ -43,6 +45,7 @@ import org.secu3.android.utils.visible
 class FuelInjectionFragment : BaseParamFragment() {
 
     private val mViewModel: ParamsViewModel by activityViewModels()
+    private val mInjViewModel: FuelInjectionViewModel by viewModels()
     private lateinit var mBinding: FragmentFuelInjectionBinding
 
     private val mConfigList: List<String> by lazy {
@@ -53,9 +56,7 @@ class FuelInjectionFragment : BaseParamFragment() {
         resources.getStringArray(R.array.inj_timing_specifies).toList()
     }
 
-    private val numOfSquirtsList = listOf(1, 2, 4)
-
-    private var packet: InjctrParPacket? = null
+    private lateinit var packet: InjctrParPacket
 
     override fun onCreateView(inflater: LayoutInflater, container: ViewGroup?, savedInstanceState: Bundle?): View? {
         mBinding = FragmentFuelInjectionBinding.inflate(inflater, container, false)
@@ -74,20 +75,43 @@ class FuelInjectionFragment : BaseParamFragment() {
             }
         }
 
+        mInjViewModel.sqrnum[0].observe(viewLifecycleOwner) {
+            mBinding.numOfSquirtsCycle.apply {
+                inputType = InputType.TYPE_NULL
+                ArrayAdapter(requireContext(), R.layout.list_item, it.map { it.second }).also {
+                    setAdapter(it)
+                }
+
+                setText(packet.config0Pulses.toString(), false)
+            }
+        }
+
+        mInjViewModel.sqrnum[1].observe(viewLifecycleOwner) {
+            mBinding.numOfSquirtsCycleG.apply {
+                inputType = InputType.TYPE_NULL
+                ArrayAdapter(requireContext(), R.layout.list_item, it.map { it.second }).also {
+                    setAdapter(it)
+                }
+                setText(packet.config1Pulses.toString(), false)
+            }
+        }
+
         mViewModel.fuelInjectionLiveData.observe(viewLifecycleOwner) {
 
             packet = it
 
-            mBinding.apply {
-                engineDisplacement.value = it.cylDisp
+            mInjViewModel.generateSquirtsDropDown(packet, 0)
+            mInjViewModel.generateSquirtsDropDown(packet, 1)
 
-                injectorFlowRate.value = it.flowRate0
+            mBinding.apply {
+                engineDisplacement.value = it.engineDisp
+
+                injectorFlowRate.value = it.flowRate[0]
 
                 injectionConfiguration.setText(mConfigList[it.config0], false)
-                numOfSquirtsCycle.setText(it.config0Pulses.toString(), false)
 
-                injectorTiming.value = it.timing0
-                crankingInjectionTiming.value = it.timingCrk0
+                injectorTiming.value = it.timing[0]
+                crankingInjectionTiming.value = it.timingCrk[0]
 
                 useMapInjectionTiming.isChecked = it.useTimingMap
                 injTimingSpecifies.setText(mInjTimingSpecifiesList[it.angleSpec0], false)
@@ -96,13 +120,12 @@ class FuelInjectionFragment : BaseParamFragment() {
 
 
 
-                injectorFlowRateG.value = it.flowRate1
+                injectorFlowRateG.value = it.flowRate[1]
 
                 injectionConfigurationG.setText(mConfigList[it.config1], false)
-                numOfSquirtsCycleG.setText(it.config1Pulses.toString(), false)
 
-                injectorTimingG.value = it.timing1
-                crankingInjectionTimingG.value = it.timingCrk1
+                injectorTimingG.value = it.timing[1]
+                crankingInjectionTimingG.value = it.timingCrk[1]
 
                 useMapInjectionTimingG.isChecked = it.useTimingMapG
                 injTimingSpecifiesG.setText(mInjTimingSpecifiesList[it.angleSpec1], false)
@@ -131,9 +154,6 @@ class FuelInjectionFragment : BaseParamFragment() {
 
         mBinding.numOfSquirtsCycle.apply {
             inputType = InputType.TYPE_NULL
-            ArrayAdapter(requireContext(), R.layout.list_item, numOfSquirtsList).also {
-                setAdapter(it)
-            }
         }
 
         mBinding.injTimingSpecifies.apply {
@@ -146,14 +166,11 @@ class FuelInjectionFragment : BaseParamFragment() {
 
         mBinding.injectionConfigurationG.apply {
             inputType = InputType.TYPE_NULL
-            ArrayAdapter(requireContext(), R.layout.list_item, mConfigList).also {
-                setAdapter(it)
-            }
         }
 
         mBinding.numOfSquirtsCycleG.apply {
             inputType = InputType.TYPE_NULL
-            ArrayAdapter(requireContext(), R.layout.list_item, numOfSquirtsList).also {
+            ArrayAdapter(requireContext(), R.layout.list_item, mInjViewModel.defaultSqrnum.map { it.second }).also {
                 setAdapter(it)
             }
         }
@@ -171,48 +188,48 @@ class FuelInjectionFragment : BaseParamFragment() {
         mBinding.apply {
 
             engineDisplacement.addOnValueChangeListener {
-                packet?.cylDisp = it
-                packet?.let { it1 -> mViewModel.sendPacket(it1) }
+                packet.engineDisp = it
+                packet.let { it1 -> mViewModel.sendPacket(it1) }
             }
 
             injectorFlowRate.addOnValueChangeListener {
-                packet?.flowRate0 = it
-                packet?.let { it1 -> mViewModel.sendPacket(it1) }
+                packet.flowRate[0] = it
+                packet.let { it1 -> mViewModel.sendPacket(it1) }
             }
 
             injectionConfiguration.setOnItemClickListener { _, _, position, _ ->
-                packet?.config0 = position
-                packet?.let { it1 -> mViewModel.sendPacket(it1) }
+                packet.config0 = position
+                packet.let { it1 -> mViewModel.sendPacket(it1) }
             }
 
             numOfSquirtsCycle.setOnItemClickListener { _, _, position, _ ->
-                packet?.config0Pulses = numOfSquirtsList[position]
-                packet?.let { it1 -> mViewModel.sendPacket(it1) }
+                packet.config0Pulses = mInjViewModel.sqrnum[0].value?.get(position)?.first!!
+                packet.let { it1 -> mViewModel.sendPacket(it1) }
             }
 
             injectorTiming.addOnValueChangeListener {
-                packet?.timing0 = it
-                packet?.let { it1 -> mViewModel.sendPacket(it1) }
+                packet.timing[0] = it
+                packet.let { it1 -> mViewModel.sendPacket(it1) }
             }
 
             crankingInjectionTiming.addOnValueChangeListener {
-                packet?.timingCrk0 = it
-                packet?.let { it1 -> mViewModel.sendPacket(it1) }
+                packet.timingCrk[0] = it
+                packet.let { it1 -> mViewModel.sendPacket(it1) }
             }
 
             useMapInjectionTiming.setOnCheckedChangeListener { _, isChecked ->
-                packet?.useTimingMap = isChecked
-                packet?.let { it1 -> mViewModel.sendPacket(it1) }
+                packet.useTimingMap = isChecked
+                packet.let { it1 -> mViewModel.sendPacket(it1) }
             }
 
             injTimingSpecifies.setOnItemClickListener { _, _, position, _ ->
-                packet?.angleSpec0 = position
-                packet?.let { it1 -> mViewModel.sendPacket(it1) }
+                packet.angleSpec0 = position
+                packet.let { it1 -> mViewModel.sendPacket(it1) }
             }
 
             minInjectionPw.addOnValueChangeListener {
-                packet?.minPw0 = it
-                packet?.let { it1 -> mViewModel.sendPacket(it1) }
+                packet.minPw0 = it
+                packet.let { it1 -> mViewModel.sendPacket(it1) }
             }
 
 
@@ -224,43 +241,43 @@ class FuelInjectionFragment : BaseParamFragment() {
 
 
             injectorFlowRateG.addOnValueChangeListener {
-                packet?.flowRate1 = it
-                packet?.let { it1 -> mViewModel.sendPacket(it1) }
+                packet.flowRate[1] = it
+                packet.let { it1 -> mViewModel.sendPacket(it1) }
             }
 
             injectionConfigurationG.setOnItemClickListener { _, _, position, _ ->
-                packet?.config1 = position
-                packet?.let { it1 -> mViewModel.sendPacket(it1) }
+                packet.config1 = position
+                packet.let { it1 -> mViewModel.sendPacket(it1) }
             }
 
             numOfSquirtsCycleG.setOnItemClickListener { _, _, position, _ ->
-                packet?.config1Pulses = numOfSquirtsList[position]
-                packet?.let { it1 -> mViewModel.sendPacket(it1) }
+                packet.config1Pulses = mInjViewModel.sqrnum[1].value?.get(position)?.first!!
+                packet.let { it1 -> mViewModel.sendPacket(it1) }
             }
 
             injectorTimingG.addOnValueChangeListener {
-                packet?.timing1 = it
-                packet?.let { it1 -> mViewModel.sendPacket(it1) }
+                packet.timing[1] = it
+                packet.let { it1 -> mViewModel.sendPacket(it1) }
             }
 
             crankingInjectionTimingG.addOnValueChangeListener {
-                packet?.timingCrk1 = it
-                packet?.let { it1 -> mViewModel.sendPacket(it1) }
+                packet.timingCrk[1] = it
+                packet.let { it1 -> mViewModel.sendPacket(it1) }
             }
 
             useMapInjectionTimingG.setOnCheckedChangeListener { _, isChecked ->
-                packet?.useTimingMapG = isChecked
-                packet?.let { it1 -> mViewModel.sendPacket(it1) }
+                packet.useTimingMapG = isChecked
+                packet.let { it1 -> mViewModel.sendPacket(it1) }
             }
 
             injTimingSpecifiesG.setOnItemClickListener { _, _, position, _ ->
-                packet?.angleSpec1 = position
-                packet?.let { it1 -> mViewModel.sendPacket(it1) }
+                packet.angleSpec1 = position
+                packet.let { it1 -> mViewModel.sendPacket(it1) }
             }
 
             minInjectionPwG.addOnValueChangeListener {
-                packet?.minPw1 = it
-                packet?.let { it1 -> mViewModel.sendPacket(it1) }
+                packet.minPw1 = it
+                packet.let { it1 -> mViewModel.sendPacket(it1) }
             }
 
 
@@ -268,25 +285,25 @@ class FuelInjectionFragment : BaseParamFragment() {
 
 
             pulsesPerLitterOfFuel.addOnValueChangeListener {
-                packet?.fffConst = it
-                packet?.let { it1 -> mViewModel.sendPacket(it1) }
+                packet.fffConst = it
+                packet.let { it1 -> mViewModel.sendPacket(it1) }
             }
 
             additionalCorrectionsGasEq.setOnCheckedChangeListener { _, isChecked ->
-                packet?.useAdditionalCorrections = isChecked
-                packet?.let { it1 -> mViewModel.sendPacket(it1) }
+                packet.useAdditionalCorrections = isChecked
+                packet.let { it1 -> mViewModel.sendPacket(it1) }
             }
             useAirDensityCorrectionMap.setOnCheckedChangeListener { _, isChecked ->
-                packet?.useAirDensity = isChecked
-                packet?.let { it1 -> mViewModel.sendPacket(it1) }
+                packet.useAirDensity = isChecked
+                packet.let { it1 -> mViewModel.sendPacket(it1) }
             }
             diffPressForPwCorrGps.setOnCheckedChangeListener { _, isChecked ->
-                packet?.useDifferentialPressure = isChecked
-                packet?.let { it1 -> mViewModel.sendPacket(it1) }
+                packet.useDifferentialPressure = isChecked
+                packet.let { it1 -> mViewModel.sendPacket(it1) }
             }
             switchBetweenInjectorsRows.setOnCheckedChangeListener { _, isChecked ->
-                packet?.switchSecondInjRow = isChecked
-                packet?.let { it1 -> mViewModel.sendPacket(it1) }
+                packet.switchSecondInjRow = isChecked
+                packet.let { it1 -> mViewModel.sendPacket(it1) }
             }
 
 
