@@ -66,6 +66,15 @@
         <item>Dwell control</item>
         <item>Breakage or wrong work of cam sensor</item>
         <item>Breakage or wrong indications of TPS</item>
+        <item>ADD_I1 input\'s sensor failure</item>
+        <item>ADD_I2 input\'s sensor failure</item>
+        <item>ADD_I3 input\'s sensor failure</item>
+        <item>ADD_I4 input\'s sensor failure</item>
+        <item>Firmware start (reset of processor)</item>
+        <item>ADD_I5 input\'s sensor failure</item>
+        <item>ADD_I6 input\'s sensor failure</item>
+        <item>ADD_I7 input\'s sensor failure</item>
+        <item>ADD_I8 input\'s sensor failure</item>
     </string-array>
 
     <string-array name="fuel_inject_config_types">

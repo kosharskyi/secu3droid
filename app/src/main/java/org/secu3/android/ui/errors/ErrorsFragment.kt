@@ -65,7 +65,7 @@ class ErrorsFragment : Fragment() {
             }
         }
 
-        mViewModel.checkEngineSavedLiveData.observe(viewLifecycleOwner, {
+        mViewModel.checkEngineSavedLiveData.observe(viewLifecycleOwner) {
 
             for (i in errors.indices) {
                 errors[i].isSaved = it.isError(i)
@@ -73,15 +73,15 @@ class ErrorsFragment : Fragment() {
 
             mBinding.errorsRecyclerView.adapter?.notifyDataSetChanged()
             mViewModel.sendNewTask(Task.Secu3ReadEcuErrors)
-        })
+        }
 
-        mViewModel.checkEngineLiveData.observe(viewLifecycleOwner, {
+        mViewModel.checkEngineLiveData.observe(viewLifecycleOwner) {
             for (i in errors.indices) {
                 errors[i].isActive = it.isError(i)
             }
 
             mBinding.errorsRecyclerView.adapter?.notifyDataSetChanged()
-        })
+        }
 
         mBinding.errorsRecyclerView.adapter = ErrorsAdapter(errors)
 

@@ -144,7 +144,7 @@ data class SensorsPacket(var rpm: Int = 0,
             addI1 = data.get2Bytes(20).toFloat() / VOLTAGE_MULTIPLIER
             addI2 = data.get2Bytes(22).toFloat() / VOLTAGE_MULTIPLIER
 
-            ecuErrors = data.get2Bytes(24).toShort()
+            ecuErrors = data.get4Bytes(24).toShort()
             chokePosition = data[26].toInt().toFloat() / CHOKE_MULTIPLIER
             gasDosePosition = data[27].toInt() / GAS_DOSE_MULTIPLIER
 
