@@ -195,5 +195,13 @@ data class SensorsPacket(var rpm: Int = 0,
         private const val BITNUMBER_CE_STATE = 4
         private const val BITNUMBER_COOL_FAN = 5
         private const val BITNUMBER_ST_BLOCK = 6
+        private const val BITNUMBER_ACCELERATION = 7  // acceleration enrichment flag
+        private const val BITNUMBER_FC_REVLIM = 8  // fuel cut rev.lim. flag
+        private const val BITNUMBER_FLOODCLEAR = 9  // flood clear mode flag
+        private const val BITNUMBER_SYS_LOCKED = 10  // system locked flag (immobilizer)
+        private const val BITNUMBER_IGN_I = 11  // IGN_I flag
+        private const val BITNUMBER_COND_I = 12  // COND_I flag
+        private const val BITNUMBER_EPAS_I = 13  // EPAS_I flag
+        private const val BITNUMBER_AFTSTR_ENR = 14  // after start enrichment flag
     }
 }

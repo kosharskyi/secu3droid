@@ -32,8 +32,8 @@ data class MiscellaneousParamPacket(
     var uartPeriodTms: Int = 0,
     var ignCutoff: Int = 0,
     var ignCutoffThrd: Int = 0,
-    var hopStartCogs: Int = 0,
-    var hopDuratCogs: Int = 0,
+    var hopStartAng: Int = 0,
+    var hopDuratAng: Int = 0,
     var flpmpFlags: Int = 0,
     var evapAfbegin: Int = 0,
     var evapAfslope: Float = 0f,
@@ -91,8 +91,8 @@ data class MiscellaneousParamPacket(
         data += ignCutoff.toChar()
         data += ignCutoffThrd.write2Bytes()
 
-        data += hopStartCogs.times(ANGLE_DIVIDER).write2Bytes()
-        data += hopDuratCogs.times(ANGLE_DIVIDER).write2Bytes()
+        data += hopStartAng.times(ANGLE_DIVIDER).write2Bytes()
+        data += hopDuratAng.times(ANGLE_DIVIDER).write2Bytes()
         data += flpmpFlags.toChar()
 
         data += evapAfbegin.div(32).write2Bytes()
@@ -116,8 +116,8 @@ data class MiscellaneousParamPacket(
             uartPeriodTms = data[4].toInt() * 10
             ignCutoff = data[5].toInt()
             ignCutoffThrd = data.get2Bytes(6)
-            hopStartCogs = data.get2Bytes(8).div(ANGLE_DIVIDER)
-            hopDuratCogs = data.get2Bytes(10).div(ANGLE_DIVIDER)
+            hopStartAng = data.get2Bytes(8).div(ANGLE_DIVIDER)
+            hopDuratAng = data.get2Bytes(10).div(ANGLE_DIVIDER)
             flpmpFlags = data[12].toInt()
             evapAfbegin = data.get2Bytes(13) * 32
             evapAfslope = data.get2Bytes(15).toFloat().div(1048576.0f).div(32)

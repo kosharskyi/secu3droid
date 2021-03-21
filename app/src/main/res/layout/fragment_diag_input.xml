@@ -471,6 +471,137 @@
             android:drawableTint="@color/colorPrimaryVariant"
             />
 
+        <!-- ************************************************************* -->
+
+        <TextView
+            android:id="@+id/add5_title"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            app:layout_constraintTop_toBottomOf="@id/de"
+            app:layout_constraintStart_toStartOf="parent"
+            android:layout_marginTop="16dp"
+            android:text="ADD_IO5"
+            />
+
+        <TextView
+            android:id="@+id/add5"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            app:layout_constraintTop_toTopOf="@id/add5_title"
+            app:layout_constraintEnd_toEndOf="parent"
+            android:textAppearance="?android:attr/textAppearanceLarge"
+            android:text="0.000"
+            />
+
+        <TextView
+            android:id="@+id/add5_units"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            app:layout_constraintTop_toBottomOf="@id/add5"
+            app:layout_constraintEnd_toEndOf="parent"
+            android:text="@string/units_volts"
+            />
+
+
+        <!-- ************************************************************* -->
+
+        <TextView
+            android:id="@+id/add6_title"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            app:layout_constraintTop_toBottomOf="@id/add5_units"
+            app:layout_constraintStart_toStartOf="parent"
+            android:layout_marginTop="16dp"
+            android:text="ADD_IO6"
+            />
+
+        <TextView
+            android:id="@+id/add6"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            app:layout_constraintTop_toTopOf="@id/add6_title"
+            app:layout_constraintEnd_toEndOf="parent"
+            android:textAppearance="?android:attr/textAppearanceLarge"
+            android:text="0.000"
+            />
+
+        <TextView
+            android:id="@+id/add6_units"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            app:layout_constraintTop_toBottomOf="@id/add6"
+            app:layout_constraintEnd_toEndOf="parent"
+            android:text="@string/units_volts"
+            />
+
+
+        <!-- ************************************************************* -->
+
+        <TextView
+            android:id="@+id/add7_title"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            app:layout_constraintTop_toBottomOf="@id/add6_units"
+            app:layout_constraintStart_toStartOf="parent"
+            android:layout_marginTop="16dp"
+            android:text="ADD_IO7"
+            />
+
+        <TextView
+            android:id="@+id/add7"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            app:layout_constraintTop_toTopOf="@id/add7_title"
+            app:layout_constraintEnd_toEndOf="parent"
+            android:textAppearance="?android:attr/textAppearanceLarge"
+            android:text="0.000"
+            />
+
+        <TextView
+            android:id="@+id/add7_units"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            app:layout_constraintTop_toBottomOf="@id/add7"
+            app:layout_constraintEnd_toEndOf="parent"
+            android:text="@string/units_volts"
+            />
+
+
+        <!-- ************************************************************* -->
+
+        <TextView
+            android:id="@+id/add8_title"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            app:layout_constraintTop_toBottomOf="@id/add7_units"
+            app:layout_constraintStart_toStartOf="parent"
+            android:layout_marginTop="16dp"
+            android:text="ADD_IO8"
+            />
+
+        <TextView
+            android:id="@+id/add8"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            app:layout_constraintTop_toTopOf="@id/add8_title"
+            app:layout_constraintEnd_toEndOf="parent"
+            android:textAppearance="?android:attr/textAppearanceLarge"
+            android:text="0.000"
+            />
+
+        <TextView
+            android:id="@+id/add8_units"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            app:layout_constraintTop_toBottomOf="@id/add8"
+            app:layout_constraintEnd_toEndOf="parent"
+            android:text="@string/units_volts"
+            />
+
+
+        <!-- ************************************************************* -->
+
+
     </androidx.constraintlayout.widget.ConstraintLayout>
 
 </ScrollView>

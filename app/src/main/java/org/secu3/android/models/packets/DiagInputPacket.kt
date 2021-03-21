@@ -38,6 +38,11 @@ data class DiagInputPacket(
     var addI3: Float = 0f,                // ADD_I3 voltage
     var addI4: Float = 0f,                // ADD_I4 voltage
 
+    var addI5: Float = 0f,                // ADD_I5 voltage
+    var addI6: Float = 0f,                // ADD_I6 voltage
+    var addI7: Float = 0f,                // ADD_I7 voltage
+    var addI8: Float = 0f,                // ADD_I8 voltage
+
     var carb: Float = 0f,
 
     var ks1: Float = 0f,
@@ -80,12 +85,17 @@ data class DiagInputPacket(
             addI3 = data.get2Bytes(13).toFloat() / VOLTAGE_MULTIPLIER
             addI4 = data.get2Bytes(15).toFloat() / VOLTAGE_MULTIPLIER
 
-            carb = data.get2Bytes(17).toFloat() / VOLTAGE_MULTIPLIER
+            addI5 = data.get2Bytes(17).toFloat() / VOLTAGE_MULTIPLIER
+            addI6 = data.get2Bytes(19).toFloat() / VOLTAGE_MULTIPLIER
+            addI7 = data.get2Bytes(21).toFloat() / VOLTAGE_MULTIPLIER
+            addI8 = data.get2Bytes(23).toFloat() / VOLTAGE_MULTIPLIER
 
-            ks1 = data.get2Bytes(19).toFloat() / VOLTAGE_MULTIPLIER
-            ks2 = data.get2Bytes(21).toFloat() / VOLTAGE_MULTIPLIER
+            carb = data.get2Bytes(25).toFloat() / VOLTAGE_MULTIPLIER
 
-            bits = data.get2Bytes(23)
+            ks1 = data.get2Bytes(27).toFloat() / VOLTAGE_MULTIPLIER
+            ks2 = data.get2Bytes(29).toFloat() / VOLTAGE_MULTIPLIER
+
+            bits = data.get2Bytes(31)
 
         }
 
