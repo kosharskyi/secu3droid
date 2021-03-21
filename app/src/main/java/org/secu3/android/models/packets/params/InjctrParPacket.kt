@@ -322,11 +322,11 @@ data class InjctrParPacket(
 
             ckpsEngineCyl = data[19].toInt()
 
-            timing[0] = data.get2Bytes(20) / PARINJTIM_DIVIDER  //FIXME change constant
-            timing[1] = data.get2Bytes(22) / PARINJTIM_DIVIDER  //FIXME change constant
+            timing[0] = data.get2Bytes(20) / PARINJTIM_DIVIDER
+            timing[1] = data.get2Bytes(22) / PARINJTIM_DIVIDER
 
-            timingCrk[0] = data.get2Bytes(24) / PARINJTIM_DIVIDER   //FIXME change constant
-            timingCrk[1] = data.get2Bytes(26) / PARINJTIM_DIVIDER   //FIXME change constant
+            timingCrk[0] = data.get2Bytes(24) / PARINJTIM_DIVIDER
+            timingCrk[1] = data.get2Bytes(26) / PARINJTIM_DIVIDER
 
             angleSpec = data[28].toInt()
 
