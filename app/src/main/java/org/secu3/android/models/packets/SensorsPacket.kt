@@ -35,7 +35,7 @@ data class SensorsPacket(var rpm: Int = 0,
                          var tps: Float = 0f,                  // TPS throttle position sensor (0...100%, x2)
                          var addI1: Float = 0f,                // ADD_I1 voltage
                          var addI2: Float = 0f,                // ADD_I2 voltage
-                         var ecuErrors: Short = 0,            // Check Engine errors
+                         var ecuErrors: Int = 0,            // Check Engine errors
                          var chokePosition: Float = 0f,
                          var gasDosePosition: Int = 0,      // gas dosator position
                          private var rawSpeed: Int = 0,              // vehicle speed (2 bytes)
@@ -146,8 +146,8 @@ data class SensorsPacket(var rpm: Int = 0,
             addI1 = data.get2Bytes(20).toFloat() / VOLTAGE_MULTIPLIER
             addI2 = data.get2Bytes(22).toFloat() / VOLTAGE_MULTIPLIER
 
-            ecuErrors = data.get4Bytes(24).toShort()
-            chokePosition = data[28].toInt().toFloat() / CHOKE_MULTIPLIER
+            ecuErrors = data.get4Bytes(24)
+            chokePosition = data[28].toFloat() / CHOKE_MULTIPLIER
             gasDosePosition = data[29].toInt() / GAS_DOSE_MULTIPLIER
 
             rawSpeed = data.get2Bytes(30)
