@@ -153,11 +153,11 @@ class DashBoardFragment : Fragment() {
         mBinding.rpm.text = "${packet.rpm} RPM"
 
 
-        mBinding.ledCheckEngine.isInvisible = packet.ecuErrors > 0
-        mBinding.ledGasoline.isInvisible = packet.gasBit > 0
-        mBinding.ledEco.isInvisible = packet.ephhValveBit > 0
-        mBinding.ledPower.isInvisible = packet.epmValveBit > 0
-        mBinding.ledChoke.isInvisible = packet.chokePosition >= 95.0
-        mBinding.ledFan.isInvisible = packet.coolFanBit > 0
+        mBinding.ledCheckEngine.isVisible = packet.checkEngineBit > 0
+        mBinding.ledGasoline.isVisible = packet.gasBit > 0
+        mBinding.ledEco.isVisible = packet.ephhValveBit > 0
+        mBinding.ledPower.isVisible = packet.epmValveBit > 0
+        mBinding.ledChoke.isVisible = packet.carbBit > 0
+        mBinding.ledFan.isVisible = packet.coolFanBit > 0
     }
 }

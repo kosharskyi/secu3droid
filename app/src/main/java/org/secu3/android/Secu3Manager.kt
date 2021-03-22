@@ -258,13 +258,13 @@ class Secu3Manager @Inject constructor(@ApplicationContext private val context: 
                 mmSocket.close()
             } catch (e: IOException) {
             }
+            connectedThread = null
+            createConnectThread = null
         }
     }
 
     fun disable() {
         connectedThread?.disable()
-        connectedThread = null
-        createConnectThread = null
     }
 
 }

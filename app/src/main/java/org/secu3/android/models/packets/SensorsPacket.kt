@@ -110,6 +110,9 @@ data class SensorsPacket(var rpm: Int = 0,
     val coolFanBit: Int
         get() = sensorsFlags.getBitValue(BITNUMBER_COOL_FAN)
 
+    val checkEngineBit: Int
+        get() = sensorsFlags.getBitValue(BITNUMBER_CE_STATE)
+
     val carbBit: Int
         get() = sensorsFlags.getBitValue(BITNUMBER_CARB)
 
