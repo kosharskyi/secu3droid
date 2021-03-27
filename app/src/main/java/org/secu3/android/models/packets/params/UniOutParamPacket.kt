@@ -107,6 +107,30 @@ data class UniOutParamPacket(
         data += rawOutput3OnThrd2.write2Bytes()
         data += rawOutput3OffThrd2.write2Bytes()
 
+        data += rawOutput4Flags.toChar()
+        data += output4Condition1.toChar()
+        data += output4Condition2.toChar()
+        data += rawOutput4OnThrd1.write2Bytes()
+        data += rawOutput4OffThrd1.write2Bytes()
+        data += rawOutput4OnThrd2.write2Bytes()
+        data += rawOutput4OffThrd2.write2Bytes()
+
+        data += rawOutput5Flags.toChar()
+        data += output5Condition1.toChar()
+        data += output5Condition2.toChar()
+        data += rawOutput5OnThrd1.write2Bytes()
+        data += rawOutput5OffThrd1.write2Bytes()
+        data += rawOutput5OnThrd2.write2Bytes()
+        data += rawOutput5OffThrd2.write2Bytes()
+
+        data += rawOutput6Flags.toChar()
+        data += output6Condition1.toChar()
+        data += output6Condition2.toChar()
+        data += rawOutput6OnThrd1.write2Bytes()
+        data += rawOutput6OffThrd1.write2Bytes()
+        data += rawOutput6OnThrd2.write2Bytes()
+        data += rawOutput6OffThrd2.write2Bytes()
+
 
         data += logicFunction_1_2.toChar()
 
@@ -115,32 +139,21 @@ data class UniOutParamPacket(
     }
 
     var output1Cond1Inversion: Boolean
-        get() = (rawOutput1Flags and 1) > 0
+        get() = rawOutput1Flags.getBitValue(0) > 0
         set(value) {
-            val lf = output1LogicFunc
-            val cond1Inversion = if (value) 1 else 0
-            val cond2Inversion = if (output1Cond2Inversion) 2 else 0
-
-            rawOutput1Flags = ((lf shl 4) or cond2Inversion) or cond1Inversion
+            rawOutput1Flags = rawOutput1Flags.setBitValue(value, 0)
         }
 
     var output1Cond2Inversion: Boolean
-        get() = (rawOutput1Flags and 2) > 0
+        get() = rawOutput1Flags.getBitValue(1) > 0
         set(value) {
-            val lf = output1LogicFunc
-            val cond1Inversion = if (output1Cond1Inversion) 1 else 0
-            val cond2Inversion = if (value) 2 else 0
-
-            rawOutput1Flags = ((lf shl 4) or cond2Inversion) or cond1Inversion
+            rawOutput1Flags = rawOutput1Flags.setBitValue(value, 1)
         }
 
     var output1LogicFunc: Int
         get() = rawOutput1Flags shr 4
         set(value) {
-            val cond1Inversion = if (output1Cond1Inversion) 1 else 0
-            val cond2Inversion = if (output1Cond2Inversion) 2 else 0
-
-            rawOutput1Flags = ((value shl 4) or cond2Inversion) or cond1Inversion
+            rawOutput1Flags = rawOutput1Flags.and(0xF).or(value shl 4)
         }
 
     var output1OnThrd1: Float
@@ -171,32 +184,21 @@ data class UniOutParamPacket(
 
 
     var output2Cond1Inversion: Boolean
-        get() = (rawOutput2Flags and 1) > 0
+        get() = rawOutput2Flags.getBitValue(0) > 0
         set(value) {
-            val lf = output2LogicFunc
-            val cond1Inversion = if (value) 1 else 0
-            val cond2Inversion = if (output2Cond2Inversion) 2 else 0
-
-            rawOutput2Flags = ((lf shl 4) or cond2Inversion) or cond1Inversion
+            rawOutput2Flags = rawOutput2Flags.setBitValue(value, 0)
         }
 
     var output2Cond2Inversion: Boolean
-        get() = (rawOutput2Flags and 2) > 0
+        get() = rawOutput2Flags.getBitValue(1) > 0
         set(value) {
-            val lf = output2LogicFunc
-            val cond1Inversion = if (output2Cond1Inversion) 1 else 0
-            val cond2Inversion = if (value) 2 else 0
-
-            rawOutput2Flags = ((lf shl 4) or cond2Inversion) or cond1Inversion
+            rawOutput2Flags = rawOutput2Flags.setBitValue(value, 1)
         }
 
     var output2LogicFunc: Int
         get() = rawOutput2Flags shr 4
         set(value) {
-            val cond1Inversion = if (output2Cond1Inversion) 1 else 0
-            val cond2Inversion = if (output2Cond2Inversion) 2 else 0
-
-            rawOutput2Flags = ((value shl 4) or cond2Inversion) or cond1Inversion
+            rawOutput2Flags = rawOutput2Flags.and(0xF).or(value shl 4)
         }
 
     var output2OnThrd1: Float
@@ -227,32 +229,21 @@ data class UniOutParamPacket(
 
 
     var output3Cond1Inversion: Boolean
-        get() = (rawOutput3Flags and 1) > 0
+        get() = rawOutput3Flags.getBitValue(0) > 0
         set(value) {
-            val lf = output3LogicFunc
-            val cond1Inversion = if (value) 1 else 0
-            val cond2Inversion = if (output3Cond2Inversion) 2 else 0
-
-            rawOutput3Flags = ((lf shl 4) or cond2Inversion) or cond1Inversion
+            rawOutput3Flags = rawOutput3Flags.setBitValue(value, 0)
         }
 
     var output3Cond2Inversion: Boolean
-        get() = (rawOutput3Flags and 2) > 0
+        get() = rawOutput3Flags.getBitValue(1) > 0
         set(value) {
-            val lf = output3LogicFunc
-            val cond1Inversion = if (output3Cond1Inversion) 1 else 0
-            val cond2Inversion = if (value) 2 else 0
-
-            rawOutput3Flags = ((lf shl 4) or cond2Inversion) or cond1Inversion
+            rawOutput3Flags = rawOutput3Flags.setBitValue(value, 1)
         }
 
     var output3LogicFunc: Int
         get() = rawOutput3Flags shr 4
         set(value) {
-            val cond1Inversion = if (output3Cond1Inversion) 1 else 0
-            val cond2Inversion = if (output3Cond2Inversion) 2 else 0
-
-            rawOutput3Flags = ((value shl 4) or cond2Inversion) or cond1Inversion
+            rawOutput3Flags = rawOutput3Flags.and(0xF).or(value shl 4)
         }
 
     var output3OnThrd1: Float
@@ -282,6 +273,25 @@ data class UniOutParamPacket(
 
 
 
+
+    var output4Cond1Inversion: Boolean
+        get() = rawOutput4Flags.getBitValue(0) > 0
+        set(value) {
+            rawOutput4Flags = rawOutput4Flags.setBitValue(value, 0)
+        }
+
+    var output4Cond2Inversion: Boolean
+        get() = rawOutput4Flags.getBitValue(1) > 0
+        set(value) {
+            rawOutput4Flags = rawOutput4Flags.setBitValue(value, 1)
+        }
+
+    var output4LogicFunc: Int
+        get() = rawOutput4Flags shr 4
+        set(value) {
+            rawOutput4Flags = rawOutput4Flags.and(0xF).or(value shl 4)
+        }
+
     var output4OnThrd1: Float
         get() = decodeCondVal(rawOutput4OnThrd1, output4Condition1)
         set(value) {
@@ -309,6 +319,25 @@ data class UniOutParamPacket(
 
 
 
+
+    var output5Cond1Inversion: Boolean
+        get() = rawOutput5Flags.getBitValue(0) > 0
+        set(value) {
+            rawOutput5Flags = rawOutput5Flags.setBitValue(value, 0)
+        }
+
+    var output5Cond2Inversion: Boolean
+        get() = rawOutput5Flags.getBitValue(1) > 0
+        set(value) {
+            rawOutput5Flags = rawOutput5Flags.setBitValue(value, 1)
+        }
+
+    var output5LogicFunc: Int
+        get() = rawOutput5Flags shr 4
+        set(value) {
+            rawOutput5Flags = rawOutput5Flags.and(0xF).or(value shl 4)
+        }
+
     var output5OnThrd1: Float
         get() = decodeCondVal(rawOutput5OnThrd1, output5Condition1)
         set(value) {
@@ -331,6 +360,53 @@ data class UniOutParamPacket(
         get() = decodeCondVal(rawOutput5OffThrd2, output5Condition2)
         set(value) {
             rawOutput5OffThrd2 = encodeCondVal(value, output5Condition2)
+        }
+
+
+
+
+
+
+    var output6Cond1Inversion: Boolean
+        get() = rawOutput6Flags.getBitValue(0) > 0
+        set(value) {
+            rawOutput6Flags = rawOutput6Flags.setBitValue(value, 0)
+        }
+
+    var output6Cond2Inversion: Boolean
+        get() = rawOutput6Flags.getBitValue(1) > 0
+        set(value) {
+            rawOutput6Flags = rawOutput6Flags.setBitValue(value, 1)
+        }
+
+    var output6LogicFunc: Int
+        get() = rawOutput5Flags shr 4
+        set(value) {
+            rawOutput6Flags = rawOutput6Flags.and(0xF).or(value shl 4)
+        }
+
+    var output6OnThrd1: Float
+        get() = decodeCondVal(rawOutput6OnThrd1, output6Condition1)
+        set(value) {
+            rawOutput6OnThrd1 = encodeCondVal(value, output6Condition1)
+        }
+
+    var output6OffThrd1: Float
+        get() = decodeCondVal(rawOutput6OffThrd1, output6Condition1)
+        set(value) {
+            rawOutput6OffThrd1 = encodeCondVal(value, output6Condition1)
+        }
+
+    var output6OnThrd2: Float
+        get() = decodeCondVal(rawOutput6OnThrd2, output6Condition2)
+        set(value) {
+            rawOutput6OnThrd2 = encodeCondVal(value, output6Condition2)
+        }
+
+    var output6OffThrd2: Float
+        get() = decodeCondVal(rawOutput6OffThrd2, output6Condition2)
+        set(value) {
+            rawOutput6OffThrd2 = encodeCondVal(value, output6Condition2)
         }
 
 
@@ -467,29 +543,29 @@ data class UniOutParamPacket(
             rawOutput3OnThrd2 = data.get2Bytes(31)
             rawOutput3OffThrd2 = data.get2Bytes(33)
 
-//            output4Flags = data[35].toInt()
-//            rawOutput4Condition1 = data[36].toInt()
-//            rawOutput4Condition2 = data[37].toInt()
-//            rawOutput4OnThrd1 = data.get2Bytes(38)
-//            rawOutput4OffThrd1 = data.get2Bytes(40)
-//            rawOutput4OnThrd2 = data.get2Bytes(42)
-//            rawOutput4OffThrd2 = data.get2Bytes(44)
-//
-//            output5Flags = data[46].toInt()
-//            rawOutput5Condition1 = data[47].toInt()
-//            rawOutput5Condition2 = data[48].toInt()
-//            rawOutput5OnThrd1 = data.get2Bytes(49)
-//            rawOutput5OffThrd1 = data.get2Bytes(51)
-//            rawOutput5OnThrd2 = data.get2Bytes(53)
-//            rawOutput5OffThrd2 = data.get2Bytes(55)
-//
-//            output6Flags = data[57].toInt()
-//            rawOutput6Condition1 = data[58].toInt()
-//            rawOutput6Condition2 = data[59].toInt()
-//            rawOutput6OnThrd1 = data.get2Bytes(60)
-//            rawOutput6OffThrd1 = data.get2Bytes(62)
-//            rawOutput6OnThrd2 = data.get2Bytes(64)
-//            rawOutput6OffThrd2 = data.get2Bytes(66)
+            rawOutput4Flags = data[35].toInt()
+            output4Condition1 = data[36].toInt()
+            output4Condition2 = data[37].toInt()
+            rawOutput4OnThrd1 = data.get2Bytes(38)
+            rawOutput4OffThrd1 = data.get2Bytes(40)
+            rawOutput4OnThrd2 = data.get2Bytes(42)
+            rawOutput4OffThrd2 = data.get2Bytes(44)
+
+            rawOutput5Flags = data[46].toInt()
+            output5Condition1 = data[47].toInt()
+            output5Condition2 = data[48].toInt()
+            rawOutput5OnThrd1 = data.get2Bytes(49)
+            rawOutput5OffThrd1 = data.get2Bytes(51)
+            rawOutput5OnThrd2 = data.get2Bytes(53)
+            rawOutput5OffThrd2 = data.get2Bytes(55)
+
+            rawOutput6Flags = data[57].toInt()
+            output6Condition1 = data[58].toInt()
+            output6Condition2 = data[59].toInt()
+            rawOutput6OnThrd1 = data.get2Bytes(60)
+            rawOutput6OffThrd1 = data.get2Bytes(62)
+            rawOutput6OnThrd2 = data.get2Bytes(64)
+            rawOutput6OffThrd2 = data.get2Bytes(66)
 
 
             logicFunction_1_2 = data[data.lastIndex].toInt()

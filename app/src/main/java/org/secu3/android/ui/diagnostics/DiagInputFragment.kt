@@ -67,6 +67,10 @@ class DiagInputFragment : Fragment() {
                 bl.isChecked = it.bl
                 de.isChecked = it.de
 
+                add5.text = "%.3f".format(it.addI5)
+                add6.text = "%.3f".format(it.addI6)
+                add7.text = "%.3f".format(it.addI7)
+                add8.text = "%.3f".format(it.addI8)
             }
         }
     }

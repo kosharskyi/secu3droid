@@ -63,6 +63,14 @@ abstract class BaseSecu3Packet {
         return this shr bitNumber and 1
     }
 
+    protected fun Int.setBitValue(value: Boolean, bitNumber: Int): Int {
+        return if (value) {
+            1.shl(bitNumber).or(this)
+        } else {
+            1.shl(bitNumber).inv().and(this)
+        }
+    }
+
     var speedSensorPulses: Int = 0
 
     val periodDistance: Float
@@ -107,7 +115,7 @@ abstract class BaseSecu3Packet {
         internal const val TPS_MULTIPLIER: Int = 2
         internal const val GAS_DOSE_MULTIPLIER: Int = 2
         internal const val ANGLE_DIVIDER: Int = 32
-        internal const val PARINJTIM_DIVIDER: Int = 32 //FIXME change this value to 16 to support next firmware versions
+        internal const val PARINJTIM_DIVIDER: Int = 16
 
         internal const val ADC_MULTIPLIER = 400
         internal const val CHOKE_MULTIPLIER = 2

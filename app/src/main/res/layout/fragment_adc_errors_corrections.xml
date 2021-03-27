@@ -282,6 +282,130 @@
             app:float_step="0.0025"
             />
 
+
+        <!-- ************************************************************* -->
+
+        <org.secu3.android.ui.parameters.views.FloatParamView
+            android:id="@+id/add5_factor"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="16dp"
+            app:title="ADD_I5 factor"
+            app:units=""
+            app:float_value="0"
+            app:value_precision="three"
+            app:float_min_value="-2.0"
+            app:float_max_value="2.0"
+            app:float_step="0.001"
+            />
+
+
+        <org.secu3.android.ui.parameters.views.FloatParamView
+            android:id="@+id/add5_correction"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            app:title="ADD_I5 correction"
+            app:units="@string/units_volts"
+            app:float_value="0"
+            app:value_precision="four"
+            app:float_min_value="-2.0"
+            app:float_max_value="2.0"
+            app:float_step="0.0025"
+            />
+
+
+        <!-- ************************************************************* -->
+
+        <org.secu3.android.ui.parameters.views.FloatParamView
+            android:id="@+id/add6_factor"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="16dp"
+            app:title="ADD_I6 factor"
+            app:units=""
+            app:float_value="0"
+            app:value_precision="three"
+            app:float_min_value="-2.0"
+            app:float_max_value="2.0"
+            app:float_step="0.001"
+            />
+
+
+        <org.secu3.android.ui.parameters.views.FloatParamView
+            android:id="@+id/add6_correction"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            app:title="ADD_I6 correction"
+            app:units="@string/units_volts"
+            app:float_value="0"
+            app:value_precision="four"
+            app:float_min_value="-2.0"
+            app:float_max_value="2.0"
+            app:float_step="0.0025"
+            />
+
+
+        <!-- ************************************************************* -->
+
+        <org.secu3.android.ui.parameters.views.FloatParamView
+            android:id="@+id/add7_factor"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="16dp"
+            app:title="ADD_I7 factor"
+            app:units=""
+            app:float_value="0"
+            app:value_precision="three"
+            app:float_min_value="-2.0"
+            app:float_max_value="2.0"
+            app:float_step="0.001"
+            />
+
+
+        <org.secu3.android.ui.parameters.views.FloatParamView
+            android:id="@+id/add7_correction"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            app:title="ADD_I7 correction"
+            app:units="@string/units_volts"
+            app:float_value="0"
+            app:value_precision="four"
+            app:float_min_value="-2.0"
+            app:float_max_value="2.0"
+            app:float_step="0.0025"
+            />
+
+
+        <!-- ************************************************************* -->
+
+        <org.secu3.android.ui.parameters.views.FloatParamView
+            android:id="@+id/add8_factor"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="16dp"
+            app:title="ADD_I8 factor"
+            app:units=""
+            app:float_value="0"
+            app:value_precision="three"
+            app:float_min_value="-2.0"
+            app:float_max_value="2.0"
+            app:float_step="0.001"
+            />
+
+
+        <org.secu3.android.ui.parameters.views.FloatParamView
+            android:id="@+id/add8_correction"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            app:title="ADD_I8 correction"
+            app:units="@string/units_volts"
+            app:float_value="0"
+            app:value_precision="four"
+            app:float_min_value="-2.0"
+            app:float_max_value="2.0"
+            app:float_step="0.0025"
+            />
+
     </LinearLayout>
 
 </ScrollView>

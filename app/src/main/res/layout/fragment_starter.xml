@@ -79,7 +79,20 @@
             />
 
         <org.secu3.android.ui.parameters.views.IntParamView
-            android:id="@+id/afterstart_enrichment_time"
+            android:id="@+id/afterstart_enrichment_time_petrol"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="16dp"
+            app:title="@string/starter_dat_afterstart_enrichment_strokes_title"
+            app:units="num"
+            app:int_value="0"
+            app:int_step="2"
+            app:int_max_value="510"
+            app:int_min_value="1"
+            />
+
+        <org.secu3.android.ui.parameters.views.IntParamView
+            android:id="@+id/afterstart_enrichment_time_gas"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:layout_marginTop="16dp"

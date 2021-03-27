@@ -139,6 +139,8 @@
     <string name="miscel_evap_starting_air_flow_title">Поч. споживання повітря</string>
     <string name="miscel_evap_ending_air_flow_title">Кін. споживання повітря</string>
     <string name="miscel_fuel_pump_working_time_title">Час роботи бензонасоса</string>
+    <string name="miscel_pwmfrq0_title">Частота ШІМ PWM1</string>
+    <string name="miscel_pwmfrq1_title">Частота ШІМ PWM1</string>
 
     <string name="choke_steps_title">Кількість кроків КД</string>
     <string name="choke_rpm_if_factor_title">Коефіцієнт регуляції</string>
@@ -168,6 +170,12 @@
     <string name="unioutput2_condition_2_title">Умова 2  для виходу №2</string>
     <string name="unioutput3_condition_1_title">Умова 1  для виходу №3</string>
     <string name="unioutput3_condition_2_title">Умова 2  для виходу №3</string>
+    <string name="unioutput4_condition_1_title">Умова 1  для виходу №4</string>
+    <string name="unioutput4_condition_2_title">Умова 2  для виходу №4</string>
+    <string name="unioutput5_condition_1_title">Умова 1  для виходу №5</string>
+    <string name="unioutput5_condition_2_title">Умова 2  для виходу №5</string>
+    <string name="unioutput6_condition_1_title">Умова 1  для виходу №6</string>
+    <string name="unioutput6_condition_2_title">Умова 2  для виходу №6</string>
 
     <string name="injctr_par_injector_flow_rate_title">Продуктивність форсунки</string>
     <string name="injctr_par_enjine_displacement_title">Об\'єм двигуна</string>

@@ -134,6 +134,8 @@
     <string name="miscel_evap_starting_air_flow_title">EVAP starting air flow</string>
     <string name="miscel_evap_ending_air_flow_title">EVAP ending air flow</string>
     <string name="miscel_fuel_pump_working_time_title">Fuel pump working time</string>
+    <string name="miscel_pwmfrq0_title">PWM frequency for PWM0</string>
+    <string name="miscel_pwmfrq1_title">PWM frequency for PWM1</string>
 
 
     <string name="choke_steps_title">Number of SM steps</string>
@@ -162,6 +164,12 @@
     <string name="unioutput2_condition_2_title">Condition 2 for output 2</string>
     <string name="unioutput3_condition_1_title">Condition 1 for output 3</string>
     <string name="unioutput3_condition_2_title">Condition 2 for output 3</string>
+    <string name="unioutput4_condition_1_title">Condition 1 for output 4</string>
+    <string name="unioutput4_condition_2_title">Condition 2 for output 4</string>
+    <string name="unioutput5_condition_1_title">Condition 1 for output 5</string>
+    <string name="unioutput5_condition_2_title">Condition 2 for output 5</string>
+    <string name="unioutput6_condition_1_title">Condition 1 for output 6</string>
+    <string name="unioutput6_condition_2_title">Condition 2 for output 6</string>
 
     <string name="injctr_par_injector_flow_rate_title">Injector flow rate</string>
     <string name="injctr_par_enjine_displacement_title">Engine displacement</string>

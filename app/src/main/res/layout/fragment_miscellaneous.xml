@@ -204,6 +204,40 @@
             app:float_step="0.1"
             />
 
+
+        <!-- ************************************************************* -->
+
+
+        <org.secu3.android.ui.parameters.views.IntParamView
+            android:id="@+id/pwmfrq0"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="16dp"
+            app:title="@string/miscel_pwmfrq0_title"
+            app:units="@string/units_hertz"
+            app:int_value="10"
+            app:int_max_value="5000"
+            app:int_min_value="10"
+            app:int_step="1"
+            />
+
+
+        <!-- ************************************************************* -->
+
+
+        <org.secu3.android.ui.parameters.views.IntParamView
+            android:id="@+id/pwmfrq1"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="16dp"
+            app:title="@string/miscel_pwmfrq1_title"
+            app:units="@string/units_hertz"
+            app:int_value="10"
+            app:int_max_value="5000"
+            app:int_min_value="10"
+            app:int_step="1"
+            />
+
     </LinearLayout>
 
 </ScrollView>

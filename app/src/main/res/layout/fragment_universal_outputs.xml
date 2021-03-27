@@ -577,6 +577,537 @@
 
         </androidx.constraintlayout.widget.ConstraintLayout>
 
+
+
+
+
+        <androidx.constraintlayout.widget.ConstraintLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="32dp"
+            >
+
+            <androidx.constraintlayout.widget.Group
+                android:id="@+id/output4_condition2_group"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                app:constraint_referenced_ids="output4_condition2_title,output4_condition2_inversion,output4_condition2_on,output4_condition2_off"
+                />
+
+            <com.google.android.material.textfield.TextInputLayout
+                android:id="@+id/output4_condition1_title"
+                android:theme="@style/Theme.MaterialComponents.DayNight.NoActionBar"
+                style="@style/Widget.MaterialComponents.TextInputLayout.OutlinedBox.ExposedDropdownMenu"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                app:layout_constraintTop_toTopOf="parent"
+                app:layout_constraintStart_toStartOf="parent"
+                app:layout_constraintEnd_toEndOf="parent"
+                android:layout_marginTop="16dp"
+                android:hint="@string/unioutput4_condition_1_title">
+
+                <AutoCompleteTextView
+                    android:id="@+id/output4_condition1"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:inputType="none"
+                    />
+
+            </com.google.android.material.textfield.TextInputLayout>
+
+            <!-- ************************************************************* -->
+
+            <CheckBox
+                android:id="@+id/output4_condition1_inversion"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                app:layout_constraintTop_toBottomOf="@id/output4_condition1_title"
+                app:layout_constraintStart_toStartOf="parent"
+                app:layout_constraintEnd_toEndOf="parent"
+                android:text="@string/unioutput1_condition_1_inverse_title"
+                android:button="@null"
+                android:drawableEnd="?android:attr/listChoiceIndicatorMultiple"
+                />
+
+            <!-- ************************************************************* -->
+
+            <org.secu3.android.ui.parameters.views.FloatParamView
+                android:id="@+id/output4_condition1_on"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                app:layout_constraintTop_toBottomOf="@id/output4_condition1_inversion"
+                app:layout_constraintStart_toStartOf="parent"
+                android:layout_marginTop="16dp"
+                app:title="@string/unioutput1_condition1_on_value_title"
+                app:units=""
+                app:float_value="0"
+                app:value_precision="two"
+                />
+
+            <!-- ************************************************************* -->
+
+            <org.secu3.android.ui.parameters.views.FloatParamView
+                android:id="@+id/output4_condition1_off"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                app:layout_constraintTop_toBottomOf="@id/output4_condition1_on"
+                app:layout_constraintStart_toStartOf="parent"
+                android:layout_marginTop="16dp"
+                app:title="@string/unioutput1_condition1_off_value_title"
+                app:units=""
+                app:float_value="0"
+                app:value_precision="two"
+                />
+
+            <!-- ************************************************************* -->
+
+
+            <com.google.android.material.textfield.TextInputLayout
+                android:id="@+id/output4_logical_function_title"
+                android:theme="@style/Theme.MaterialComponents.DayNight.NoActionBar"
+                style="@style/Widget.MaterialComponents.TextInputLayout.OutlinedBox.ExposedDropdownMenu"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                app:layout_constraintTop_toBottomOf="@id/output4_condition1_off"
+                app:layout_constraintStart_toStartOf="parent"
+                app:layout_constraintEnd_toEndOf="parent"
+                android:layout_marginTop="16dp"
+                android:hint="@string/unioutput1_logical_functions_title">
+
+                <AutoCompleteTextView
+                    android:id="@+id/output4_logical_function"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:inputType="none"
+                    />
+
+            </com.google.android.material.textfield.TextInputLayout>
+
+            <!-- ************************************************************* -->
+
+
+            <com.google.android.material.textfield.TextInputLayout
+                android:id="@+id/output4_condition2_title"
+                android:theme="@style/Theme.MaterialComponents.DayNight.NoActionBar"
+                style="@style/Widget.MaterialComponents.TextInputLayout.OutlinedBox.ExposedDropdownMenu"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                app:layout_constraintTop_toBottomOf="@id/output4_logical_function_title"
+                app:layout_constraintStart_toStartOf="parent"
+                app:layout_constraintEnd_toEndOf="parent"
+                android:layout_marginTop="16dp"
+                android:hint="@string/unioutput4_condition_2_title">
+
+                <AutoCompleteTextView
+                    android:id="@+id/output4_condition2"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:inputType="none"
+                    />
+
+            </com.google.android.material.textfield.TextInputLayout>
+
+            <!-- ************************************************************* -->
+
+            <CheckBox
+                android:id="@+id/output4_condition2_inversion"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                app:layout_constraintTop_toBottomOf="@id/output4_condition2_title"
+                app:layout_constraintStart_toStartOf="parent"
+                app:layout_constraintEnd_toEndOf="parent"
+                android:text="@string/unioutput1_condition_1_inverse_title"
+                android:button="@null"
+                android:drawableEnd="?android:attr/listChoiceIndicatorMultiple"
+                />
+
+            <!-- ************************************************************* -->
+
+
+            <org.secu3.android.ui.parameters.views.FloatParamView
+                android:id="@+id/output4_condition2_on"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                app:layout_constraintTop_toBottomOf="@id/output4_condition2_inversion"
+                app:layout_constraintStart_toStartOf="parent"
+                android:layout_marginTop="16dp"
+                app:title="@string/unioutput1_condition1_on_value_title"
+                app:units=""
+                app:float_value="0"
+                app:value_precision="two"
+                />
+
+            <!-- ************************************************************* -->
+
+            <org.secu3.android.ui.parameters.views.FloatParamView
+                android:id="@+id/output4_condition2_off"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                app:layout_constraintTop_toBottomOf="@id/output4_condition2_on"
+                app:layout_constraintStart_toStartOf="parent"
+                android:layout_marginTop="16dp"
+                app:title="@string/unioutput1_condition1_off_value_title"
+                app:units=""
+                app:float_value="0"
+                app:value_precision="two"
+                />
+
+        </androidx.constraintlayout.widget.ConstraintLayout>
+
+
+
+
+
+        <androidx.constraintlayout.widget.ConstraintLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="32dp"
+            >
+
+            <androidx.constraintlayout.widget.Group
+                android:id="@+id/output5_condition2_group"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                app:constraint_referenced_ids="output5_condition2_title,output5_condition2_inversion,output5_condition2_on,output5_condition2_off"
+                />
+
+            <com.google.android.material.textfield.TextInputLayout
+                android:id="@+id/output5_condition1_title"
+                android:theme="@style/Theme.MaterialComponents.DayNight.NoActionBar"
+                style="@style/Widget.MaterialComponents.TextInputLayout.OutlinedBox.ExposedDropdownMenu"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                app:layout_constraintTop_toTopOf="parent"
+                app:layout_constraintStart_toStartOf="parent"
+                app:layout_constraintEnd_toEndOf="parent"
+                android:layout_marginTop="16dp"
+                android:hint="@string/unioutput5_condition_1_title">
+
+                <AutoCompleteTextView
+                    android:id="@+id/output5_condition1"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:inputType="none"
+                    />
+
+            </com.google.android.material.textfield.TextInputLayout>
+
+            <!-- ************************************************************* -->
+
+            <CheckBox
+                android:id="@+id/output5_condition1_inversion"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                app:layout_constraintTop_toBottomOf="@id/output5_condition1_title"
+                app:layout_constraintStart_toStartOf="parent"
+                app:layout_constraintEnd_toEndOf="parent"
+                android:text="@string/unioutput1_condition_1_inverse_title"
+                android:button="@null"
+                android:drawableEnd="?android:attr/listChoiceIndicatorMultiple"
+                />
+
+            <!-- ************************************************************* -->
+
+            <org.secu3.android.ui.parameters.views.FloatParamView
+                android:id="@+id/output5_condition1_on"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                app:layout_constraintTop_toBottomOf="@id/output5_condition1_inversion"
+                app:layout_constraintStart_toStartOf="parent"
+                android:layout_marginTop="16dp"
+                app:title="@string/unioutput1_condition1_on_value_title"
+                app:units=""
+                app:float_value="0"
+                app:value_precision="two"
+                />
+
+            <!-- ************************************************************* -->
+
+            <org.secu3.android.ui.parameters.views.FloatParamView
+                android:id="@+id/output5_condition1_off"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                app:layout_constraintTop_toBottomOf="@id/output5_condition1_on"
+                app:layout_constraintStart_toStartOf="parent"
+                android:layout_marginTop="16dp"
+                app:title="@string/unioutput1_condition1_off_value_title"
+                app:units=""
+                app:float_value="0"
+                app:value_precision="two"
+                />
+
+            <!-- ************************************************************* -->
+
+
+            <com.google.android.material.textfield.TextInputLayout
+                android:id="@+id/output5_logical_function_title"
+                android:theme="@style/Theme.MaterialComponents.DayNight.NoActionBar"
+                style="@style/Widget.MaterialComponents.TextInputLayout.OutlinedBox.ExposedDropdownMenu"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                app:layout_constraintTop_toBottomOf="@id/output5_condition1_off"
+                app:layout_constraintStart_toStartOf="parent"
+                app:layout_constraintEnd_toEndOf="parent"
+                android:layout_marginTop="16dp"
+                android:hint="@string/unioutput1_logical_functions_title">
+
+                <AutoCompleteTextView
+                    android:id="@+id/output5_logical_function"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:inputType="none"
+                    />
+
+            </com.google.android.material.textfield.TextInputLayout>
+
+            <!-- ************************************************************* -->
+
+
+            <com.google.android.material.textfield.TextInputLayout
+                android:id="@+id/output5_condition2_title"
+                android:theme="@style/Theme.MaterialComponents.DayNight.NoActionBar"
+                style="@style/Widget.MaterialComponents.TextInputLayout.OutlinedBox.ExposedDropdownMenu"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                app:layout_constraintTop_toBottomOf="@id/output5_logical_function_title"
+                app:layout_constraintStart_toStartOf="parent"
+                app:layout_constraintEnd_toEndOf="parent"
+                android:layout_marginTop="16dp"
+                android:hint="@string/unioutput5_condition_2_title">
+
+                <AutoCompleteTextView
+                    android:id="@+id/output5_condition2"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:inputType="none"
+                    />
+
+            </com.google.android.material.textfield.TextInputLayout>
+
+            <!-- ************************************************************* -->
+
+            <CheckBox
+                android:id="@+id/output5_condition2_inversion"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                app:layout_constraintTop_toBottomOf="@id/output5_condition2_title"
+                app:layout_constraintStart_toStartOf="parent"
+                app:layout_constraintEnd_toEndOf="parent"
+                android:text="@string/unioutput1_condition_1_inverse_title"
+                android:button="@null"
+                android:drawableEnd="?android:attr/listChoiceIndicatorMultiple"
+                />
+
+            <!-- ************************************************************* -->
+
+
+            <org.secu3.android.ui.parameters.views.FloatParamView
+                android:id="@+id/output5_condition2_on"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                app:layout_constraintTop_toBottomOf="@id/output5_condition2_inversion"
+                app:layout_constraintStart_toStartOf="parent"
+                android:layout_marginTop="16dp"
+                app:title="@string/unioutput1_condition1_on_value_title"
+                app:units=""
+                app:float_value="0"
+                app:value_precision="two"
+                />
+
+            <!-- ************************************************************* -->
+
+            <org.secu3.android.ui.parameters.views.FloatParamView
+                android:id="@+id/output5_condition2_off"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                app:layout_constraintTop_toBottomOf="@id/output5_condition2_on"
+                app:layout_constraintStart_toStartOf="parent"
+                android:layout_marginTop="16dp"
+                app:title="@string/unioutput1_condition1_off_value_title"
+                app:units=""
+                app:float_value="0"
+                app:value_precision="two"
+                />
+
+        </androidx.constraintlayout.widget.ConstraintLayout>
+
+
+
+
+
+        <androidx.constraintlayout.widget.ConstraintLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="32dp"
+            >
+
+            <androidx.constraintlayout.widget.Group
+                android:id="@+id/output6_condition2_group"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                app:constraint_referenced_ids="output6_condition2_title,output6_condition2_inversion,output6_condition2_on,output6_condition2_off"
+                />
+
+            <com.google.android.material.textfield.TextInputLayout
+                android:id="@+id/output6_condition1_title"
+                android:theme="@style/Theme.MaterialComponents.DayNight.NoActionBar"
+                style="@style/Widget.MaterialComponents.TextInputLayout.OutlinedBox.ExposedDropdownMenu"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                app:layout_constraintTop_toTopOf="parent"
+                app:layout_constraintStart_toStartOf="parent"
+                app:layout_constraintEnd_toEndOf="parent"
+                android:layout_marginTop="16dp"
+                android:hint="@string/unioutput6_condition_1_title">
+
+                <AutoCompleteTextView
+                    android:id="@+id/output6_condition1"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:inputType="none"
+                    />
+
+            </com.google.android.material.textfield.TextInputLayout>
+
+            <!-- ************************************************************* -->
+
+            <CheckBox
+                android:id="@+id/output6_condition1_inversion"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                app:layout_constraintTop_toBottomOf="@id/output6_condition1_title"
+                app:layout_constraintStart_toStartOf="parent"
+                app:layout_constraintEnd_toEndOf="parent"
+                android:text="@string/unioutput1_condition_1_inverse_title"
+                android:button="@null"
+                android:drawableEnd="?android:attr/listChoiceIndicatorMultiple"
+                />
+
+            <!-- ************************************************************* -->
+
+            <org.secu3.android.ui.parameters.views.FloatParamView
+                android:id="@+id/output6_condition1_on"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                app:layout_constraintTop_toBottomOf="@id/output6_condition1_inversion"
+                app:layout_constraintStart_toStartOf="parent"
+                android:layout_marginTop="16dp"
+                app:title="@string/unioutput1_condition1_on_value_title"
+                app:units=""
+                app:float_value="0"
+                app:value_precision="two"
+                />
+
+            <!-- ************************************************************* -->
+
+            <org.secu3.android.ui.parameters.views.FloatParamView
+                android:id="@+id/output6_condition1_off"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                app:layout_constraintTop_toBottomOf="@id/output6_condition1_on"
+                app:layout_constraintStart_toStartOf="parent"
+                android:layout_marginTop="16dp"
+                app:title="@string/unioutput1_condition1_off_value_title"
+                app:units=""
+                app:float_value="0"
+                app:value_precision="two"
+                />
+
+            <!-- ************************************************************* -->
+
+
+            <com.google.android.material.textfield.TextInputLayout
+                android:id="@+id/output6_logical_function_title"
+                android:theme="@style/Theme.MaterialComponents.DayNight.NoActionBar"
+                style="@style/Widget.MaterialComponents.TextInputLayout.OutlinedBox.ExposedDropdownMenu"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                app:layout_constraintTop_toBottomOf="@id/output6_condition1_off"
+                app:layout_constraintStart_toStartOf="parent"
+                app:layout_constraintEnd_toEndOf="parent"
+                android:layout_marginTop="16dp"
+                android:hint="@string/unioutput1_logical_functions_title">
+
+                <AutoCompleteTextView
+                    android:id="@+id/output6_logical_function"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:inputType="none"
+                    />
+
+            </com.google.android.material.textfield.TextInputLayout>
+
+            <!-- ************************************************************* -->
+
+
+            <com.google.android.material.textfield.TextInputLayout
+                android:id="@+id/output6_condition2_title"
+                android:theme="@style/Theme.MaterialComponents.DayNight.NoActionBar"
+                style="@style/Widget.MaterialComponents.TextInputLayout.OutlinedBox.ExposedDropdownMenu"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                app:layout_constraintTop_toBottomOf="@id/output6_logical_function_title"
+                app:layout_constraintStart_toStartOf="parent"
+                app:layout_constraintEnd_toEndOf="parent"
+                android:layout_marginTop="16dp"
+                android:hint="@string/unioutput6_condition_2_title">
+
+                <AutoCompleteTextView
+                    android:id="@+id/output6_condition2"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:inputType="none"
+                    />
+
+            </com.google.android.material.textfield.TextInputLayout>
+
+            <!-- ************************************************************* -->
+
+            <CheckBox
+                android:id="@+id/output6_condition2_inversion"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                app:layout_constraintTop_toBottomOf="@id/output6_condition2_title"
+                app:layout_constraintStart_toStartOf="parent"
+                app:layout_constraintEnd_toEndOf="parent"
+                android:text="@string/unioutput1_condition_1_inverse_title"
+                android:button="@null"
+                android:drawableEnd="?android:attr/listChoiceIndicatorMultiple"
+                />
+
+            <!-- ************************************************************* -->
+
+
+            <org.secu3.android.ui.parameters.views.FloatParamView
+                android:id="@+id/output6_condition2_on"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                app:layout_constraintTop_toBottomOf="@id/output6_condition2_inversion"
+                app:layout_constraintStart_toStartOf="parent"
+                android:layout_marginTop="16dp"
+                app:title="@string/unioutput1_condition1_on_value_title"
+                app:units=""
+                app:float_value="0"
+                app:value_precision="two"
+                />
+
+            <!-- ************************************************************* -->
+
+            <org.secu3.android.ui.parameters.views.FloatParamView
+                android:id="@+id/output6_condition2_off"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                app:layout_constraintTop_toBottomOf="@id/output6_condition2_on"
+                app:layout_constraintStart_toStartOf="parent"
+                android:layout_marginTop="16dp"
+                app:title="@string/unioutput1_condition1_off_value_title"
+                app:units=""
+                app:float_value="0"
+                app:value_precision="two"
+                />
+
+        </androidx.constraintlayout.widget.ConstraintLayout>
+
     </LinearLayout>
 
 </ScrollView>

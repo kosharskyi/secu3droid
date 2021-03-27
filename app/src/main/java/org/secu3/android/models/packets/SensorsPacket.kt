@@ -35,7 +35,7 @@ data class SensorsPacket(var rpm: Int = 0,
                          var tps: Float = 0f,                  // TPS throttle position sensor (0...100%, x2)
                          var addI1: Float = 0f,                // ADD_I1 voltage
                          var addI2: Float = 0f,                // ADD_I2 voltage
-                         var ecuErrors: Short = 0,            // Check Engine errors
+                         var ecuErrors: Int = 0,            // Check Engine errors
                          var chokePosition: Float = 0f,
                          var gasDosePosition: Int = 0,      // gas dosator position
                          private var rawSpeed: Int = 0,              // vehicle speed (2 bytes)
@@ -67,7 +67,9 @@ data class SensorsPacket(var rpm: Int = 0,
                          var baroPress: Int = 0,
 
                          var iit: Short = 0,
-                         var rigidArg: Int = 0
+                         var rigidArg: Int = 0,
+                         var grts: Int = 0,                  // fas reducer's temperature
+                         var rxlaf: Int = 0                  // RxL air flow
 
 ) : BaseSecu3Packet(){
 
@@ -144,43 +146,45 @@ data class SensorsPacket(var rpm: Int = 0,
             addI1 = data.get2Bytes(20).toFloat() / VOLTAGE_MULTIPLIER
             addI2 = data.get2Bytes(22).toFloat() / VOLTAGE_MULTIPLIER
 
-            ecuErrors = data.get2Bytes(24).toShort()
-            chokePosition = data[26].toInt().toFloat() / CHOKE_MULTIPLIER
-            gasDosePosition = data[27].toInt() / GAS_DOSE_MULTIPLIER
+            ecuErrors = data.get4Bytes(24)
+            chokePosition = data[28].toFloat() / CHOKE_MULTIPLIER
+            gasDosePosition = data[29].toInt() / GAS_DOSE_MULTIPLIER
 
-            rawSpeed = data.get2Bytes(28)
-            rawDistance = data.get3Bytes(30)
+            rawSpeed = data.get2Bytes(30)
+            rawDistance = data.get3Bytes(32)
 
-            fuelInject = data.get2Bytes(33)
+            fuelInject = data.get2Bytes(35)
 
-            data.get2Bytes(35).takeIf { it != 0x7FFF }?.let {
+            data.get2Bytes(37).takeIf { it != 0x7FFF }?.let {
                 airtempSensor = it.toShort().toFloat() / TEMPERATURE_MULTIPLIER
             }
 
-            strtAalt = data.get2Bytes(37)
-            idleAalt = data.get2Bytes(39)
-            workAalt = data.get2Bytes(41)
-            tempAalt = data.get2Bytes(43)
-            airtAalt = data.get2Bytes(45)
-            idlregAac = data.get2Bytes(47)
-            octanAac = data.get2Bytes(49)
+            strtAalt = data.get2Bytes(39)
+            idleAalt = data.get2Bytes(41)
+            workAalt = data.get2Bytes(43)
+            tempAalt = data.get2Bytes(45)
+            airtAalt = data.get2Bytes(47)
+            idlregAac = data.get2Bytes(49)
+            octanAac = data.get2Bytes(51)
 
-            lambda = data.get2Bytes(51)
+            lambda = data.get2Bytes(53)
 
-            injPw = data.get2Bytes(53)
+            injPw = data.get2Bytes(55)
 
-            tpsdot = data.get2Bytes(55)
+            tpsdot = data.get2Bytes(57)
 
-            map2 = data.get2Bytes(57).toFloat() / MAP_MULTIPLIER
-            tmp2 = data.get2Bytes(59).toShort().toFloat() / TEMPERATURE_MULTIPLIER
+            map2 = data.get2Bytes(59).toFloat() / MAP_MULTIPLIER
+            tmp2 = data.get2Bytes(61).toShort().toFloat() / TEMPERATURE_MULTIPLIER
 
 
-            afr = data.get2Bytes(61).toFloat() / AFR_MULTIPLIER
-            load = data.get2Bytes(63)
-            baroPress = data.get2Bytes(65)
+            afr = data.get2Bytes(63).toFloat() / AFR_MULTIPLIER
+            load = data.get2Bytes(65)
+            baroPress = data.get2Bytes(67)
 
-//            iit = data.get2Bytes(67).toShort()
-//            rigidArg = data[69].toInt()
+            iit = data.get2Bytes(69).toShort()
+            rigidArg = data[71].toInt()
+            grts = data.get2Bytes(72)           // gas reducer's temperature
+            rxlaf = data.get2Bytes(74)           // RxL air flow, note: it is divided by 32
         }
 
 
@@ -191,5 +195,13 @@ data class SensorsPacket(var rpm: Int = 0,
         private const val BITNUMBER_CE_STATE = 4
         private const val BITNUMBER_COOL_FAN = 5
         private const val BITNUMBER_ST_BLOCK = 6
+        private const val BITNUMBER_ACCELERATION = 7  // acceleration enrichment flag
+        private const val BITNUMBER_FC_REVLIM = 8  // fuel cut rev.lim. flag
+        private const val BITNUMBER_FLOODCLEAR = 9  // flood clear mode flag
+        private const val BITNUMBER_SYS_LOCKED = 10  // system locked flag (immobilizer)
+        private const val BITNUMBER_IGN_I = 11  // IGN_I flag
+        private const val BITNUMBER_COND_I = 12  // COND_I flag
+        private const val BITNUMBER_EPAS_I = 13  // EPAS_I flag
+        private const val BITNUMBER_AFTSTR_ENR = 14  // after start enrichment flag
     }
 }

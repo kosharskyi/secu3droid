@@ -25,7 +25,6 @@ package org.secu3.android.ui.parameters.pages
 
 import android.os.Bundle
 import android.text.InputType
-import androidx.fragment.app.Fragment
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
@@ -83,8 +82,8 @@ class MiscellaneousFragment : BaseParamFragment() {
                 enableCutoffOfIgnitionCheckbox.isChecked = it.ignCutoff > 0
                 enableCutoffOfIgnition.value = it.ignCutoffThrd
 
-                startRelToTdc.value = it.hopStartCogs
-                duration.value = it.hopDuratCogs
+                startRelToTdc.value = it.hopStartAng
+                duration.value = it.hopDuratAng
 
                 turnOffFuelPumpAfterGas.isChecked = it.offPumpOnGas
                 turnOffInjectorsAfterGas.isChecked = it.offInjOnGas
@@ -94,6 +93,9 @@ class MiscellaneousFragment : BaseParamFragment() {
                 evapEndingAirFlow.value = it.evapAfEnd
 
                 fuelPumpWorkingTime.value = it.fpTimeoutStrt
+
+                pwmfrq0.value = it.pwmFrq0
+                pwmfrq1.value = it.pwmFrq1
             }
 
             initViews()
@@ -124,12 +126,12 @@ class MiscellaneousFragment : BaseParamFragment() {
                 packet?.let { it1 -> mViewModel.sendPacket(it1) }
             }
             startRelToTdc.addOnValueChangeListener {
-                packet?.hopStartCogs = it
+                packet?.hopStartAng = it
                 packet?.let { it1 -> mViewModel.sendPacket(it1) }
             }
 
             duration.addOnValueChangeListener {
-                packet?.hopDuratCogs = it
+                packet?.hopDuratAng = it
                 packet?.let { it1 -> mViewModel.sendPacket(it1) }
             }
 
@@ -161,6 +163,16 @@ class MiscellaneousFragment : BaseParamFragment() {
                 packet?.let { it1 -> mViewModel.sendPacket(it1) }
             }
 
+            pwmfrq0.addOnValueChangeListener {
+                packet?.pwmFrq0 = it
+                packet?.let { it1 -> mViewModel.sendPacket(it1) }
+            }
+
+            pwmfrq1.addOnValueChangeListener {
+                packet?.pwmFrq1 = it
+                packet?.let { it1 -> mViewModel.sendPacket(it1) }
+            }
+
 
             dataPacketsTransmissionPeriod.setOnClickListener { intParamClick(it as IntParamView) }
             enableCutoffOfIgnition.setOnClickListener { intParamClick(it as IntParamView) }
@@ -171,6 +183,9 @@ class MiscellaneousFragment : BaseParamFragment() {
             evapEndingAirFlow.setOnClickListener { intParamClick(it as IntParamView) }
 
             fuelPumpWorkingTime.setOnClickListener { floatParamClick(it as FloatParamView) }
+
+            pwmfrq0.setOnClickListener { intParamClick(it as IntParamView) }
+            pwmfrq1.setOnClickListener { intParamClick(it as IntParamView) }
 
         }
     }
