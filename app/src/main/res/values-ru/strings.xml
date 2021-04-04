@@ -67,6 +67,15 @@
         <item>Поломка или неправильные показания ДПДЗ</item>
     </string-array>
 
+    <string-array name="fuel_inject_config_types">
+        <item>Моновпрыск</item>
+        <item>Одновременный</item>
+        <item>2 банка попер.</item>
+        <item>Попарно-паралельный</item>
+        <item>ПП разд.кан.</item>
+        <item>Распределенный</item>
+    </string-array>
+
     <string-array name="logical_functions">
         <item>ИЛИ</item>
         <item>И</item>
