@@ -146,10 +146,10 @@ class FuelInjectionFragment : BaseParamFragment() {
 
     private fun initDropdowns() {
         mBinding.injectionConfiguration.apply {
-            inputType = InputType.TYPE_NULL
             ArrayAdapter(requireContext(), R.layout.list_item, mConfigList).also {
                 setAdapter(it)
             }
+            inputType = InputType.TYPE_NULL
         }
 
         mBinding.numOfSquirtsCycle.apply {
@@ -165,14 +165,14 @@ class FuelInjectionFragment : BaseParamFragment() {
 
 
         mBinding.injectionConfigurationG.apply {
+            ArrayAdapter(requireContext(), R.layout.list_item, mConfigList).also {
+                setAdapter(it)
+            }
             inputType = InputType.TYPE_NULL
         }
 
         mBinding.numOfSquirtsCycleG.apply {
             inputType = InputType.TYPE_NULL
-            ArrayAdapter(requireContext(), R.layout.list_item, mInjViewModel.defaultSqrnum.map { it.second }).also {
-                setAdapter(it)
-            }
         }
 
         mBinding.injTimingSpecifiesG.apply {
