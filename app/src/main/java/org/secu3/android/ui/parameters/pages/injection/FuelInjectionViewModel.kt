@@ -25,13 +25,9 @@
 
 package org.secu3.android.ui.parameters.pages.injection
 
-import android.util.Log
 import androidx.lifecycle.LiveData
 import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.ViewModel
-import androidx.lifecycle.viewModelScope
-import dagger.hilt.android.lifecycle.HiltViewModel
-import kotlinx.coroutines.launch
 import org.secu3.android.models.packets.params.InjctrParPacket
 import org.secu3.android.models.packets.params.InjctrParPacket.Companion.INJCFG_2BANK_ALTERN
 import org.secu3.android.models.packets.params.InjctrParPacket.Companion.INJCFG_FULLSEQUENTIAL
@@ -39,16 +35,8 @@ import org.secu3.android.models.packets.params.InjctrParPacket.Companion.INJCFG_
 import org.secu3.android.models.packets.params.InjctrParPacket.Companion.INJCFG_SEMISEQUENTIAL
 import org.secu3.android.models.packets.params.InjctrParPacket.Companion.INJCFG_SIMULTANEOUS
 import org.secu3.android.models.packets.params.InjctrParPacket.Companion.INJCFG_THROTTLEBODY
-import javax.inject.Inject
 
 class FuelInjectionViewModel: ViewModel() {
-
-    val defaultSqrnum = listOf(
-        Pair(1, "1"),
-        Pair(2, "2"),
-        Pair(4, "4"),
-        Pair(8, "8")
-    )
 
     private var mSqrnum = listOf(
         MutableLiveData<List<Pair<Int, String>>>(),
@@ -66,19 +54,16 @@ class FuelInjectionViewModel: ViewModel() {
 
             when (packet.ckpsEngineCyl) {
                 1 -> {
-                    Log.e("TAG", "num of cylinders ${packet.ckpsEngineCyl}")
                     mSqrnum[fi].value = listOf(Pair(1, "1"))
                 }
 
                 2 -> {
-                    Log.e("TAG", "when 2")
                     mSqrnum[fi].value = listOf(
                         Pair(1, "1"),
                         Pair(2, "2"),
                     )
                 }
                 3 -> {
-                    Log.e("TAG", "when 3")
                     mSqrnum[fi].value = listOf(Pair(1, "1"), Pair(3, "3"))
                 }
                 4 -> mSqrnum[fi].value = listOf(
@@ -91,8 +76,6 @@ class FuelInjectionViewModel: ViewModel() {
                     Pair(5, "5")
                 )
                 6 -> {
-                    Log.e("TAG", "when 6")
-
                     mSqrnum[fi].value = listOf(Pair(1, "1"), Pair(2, "2"), Pair(3, "3"), Pair(6, "6"))
                 }
                 8 -> mSqrnum[fi].value = listOf(
@@ -105,7 +88,6 @@ class FuelInjectionViewModel: ViewModel() {
         }
 
         if (config == INJCFG_2BANK_ALTERN) {
-            Log.e("TAG", "test when")
 
             when (packet.ckpsEngineCyl) {
                 1, 2, 3, 5 -> mSqrnum[fi].value = listOf()
@@ -118,7 +100,6 @@ class FuelInjectionViewModel: ViewModel() {
         }
 
         if (config == INJCFG_SEMISEQUENTIAL || config == INJCFG_SEMISEQSEPAR) {
-            Log.e("TAG", "test whenfffff")
             when (packet.ckpsEngineCyl) {
                 1, 3, 5 -> mSqrnum[fi].value = listOf()
                 2 -> mSqrnum[fi].value = listOf(
@@ -141,11 +122,7 @@ class FuelInjectionViewModel: ViewModel() {
         }
 
         if (config == INJCFG_FULLSEQUENTIAL) {
-            Log.e("TAG", "test whenqqqqqqqqq")
             mSqrnum[fi].value = listOf(Pair(packet.ckpsEngineCyl, packet.ckpsEngineCyl.toString()))
         }
-
-        Log.e("TAG", "test if")
     }
-
 }
