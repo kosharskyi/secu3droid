@@ -48,7 +48,8 @@
             injector_timing,cranking_injection_timing,use_map_injection_timing,inj_timing_specifies_title,min_injection_pw,
             second_fuel_title,injector_flow_rate_g,injection_configuration_g_title,num_of_squirts_cycle_g_title,injector_timing_g,
             cranking_injection_timing_g,use_map_injection_timing_g,inj_timing_specifies_g_title,min_injection_pw_g,
-            additional_corrections_gas_eq,use_air_density_correction_map,diff_press_for_pw_corr_gps,switch_between_injectors_rows"
+            additional_corrections_gas_eq,use_air_density_correction_map,diff_press_for_pw_corr_gps,switch_between_injectors_rows,
+            general_title,additional_corrections_gas_eq"
             />
 
 

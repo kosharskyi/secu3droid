@@ -30,31 +30,32 @@ import org.secu3.android.ui.parameters.pages.*
 
 class ParametersPagerAdapter(fragment: Fragment) : FragmentStateAdapter(fragment) {
 
-    private val mFragments: List<Fragment> = listOf(
-        StarterFragment(),
-        AnglesFragment(),
-        IdlingFragment(),
-        FunctionsFragment(),
-        TemperatureFragment(),
-        FuelCutoffkFragment(),
-        AdcErrorsCorrectionsFragment(),
-        CkpsFragment(),
-        KnockFragment(),
-        MiscellaneousFragment(),
-        ChokeControlFragment(),
-        SecurityFragment(),
-        UniversalOutputsFragment(),
-        FuelInjectionFragment(),
-        LambdaControlFragment(),
-        AccelerationFragment(),
-        GasDoseFragment()
-    )
-
     override fun getItemCount(): Int {
-        return mFragments.size
+        return 17
     }
 
     override fun createFragment(position: Int): Fragment {
-        return mFragments[position]
+        return when (position) {
+            0 -> StarterFragment()
+            1 -> AnglesFragment()
+            2 -> IdlingFragment()
+            3 -> FunctionsFragment()
+            4 -> TemperatureFragment()
+            5 -> FuelCutoffkFragment()
+            6 -> AdcErrorsCorrectionsFragment()
+            7 -> CkpsFragment()
+            8 -> KnockFragment()
+            9 -> MiscellaneousFragment()
+            10 -> ChokeControlFragment()
+            11 -> SecurityFragment()
+            12 -> UniversalOutputsFragment()
+            13 -> FuelInjectionFragment()
+            14 -> LambdaControlFragment()
+            15 -> AccelerationFragment()
+            16 -> GasDoseFragment()
+            else -> TODO()
+        }
     }
+
+
 }
