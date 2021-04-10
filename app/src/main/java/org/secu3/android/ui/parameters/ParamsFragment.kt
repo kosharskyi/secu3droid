@@ -68,10 +68,16 @@ class ParamsFragment : Fragment() {
     }
 
     private fun initPager() {
-        mBinding.paramsPager.adapter = ParametersPagerAdapter(this)
 
-        TabLayoutMediator(mBinding.tabLayout, mBinding.paramsPager) { tab, position ->
-            tab.text = tabTitles[position]
-        }.attach()
+        mBinding.apply {
+            paramsPager.apply {
+                adapter = ParametersPagerAdapter(this@ParamsFragment)
+                offscreenPageLimit = 2
+            }
+
+            TabLayoutMediator(tabLayout, paramsPager) { tab, position ->
+                tab.text = tabTitles[position]
+            }.attach()
+        }
     }
 }
