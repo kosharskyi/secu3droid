@@ -69,7 +69,10 @@ data class SensorsPacket(var rpm: Int = 0,
                          var iit: Short = 0,
                          var rigidArg: Int = 0,
                          var grts: Int = 0,                  // fas reducer's temperature
-                         var rxlaf: Int = 0                  // RxL air flow
+                         var rxlaf: Int = 0,                 // RxL air flow
+                         var ftls: Int = 0,                  //fuel tank level
+                         var egts: Int = 0,                  //exhaust gas temperature
+                         var ops: Int = 0,                   //oil pressure
 
 ) : BaseSecu3Packet(){
 
@@ -185,6 +188,9 @@ data class SensorsPacket(var rpm: Int = 0,
             rigidArg = data[71].toInt()
             grts = data.get2Bytes(72)           // gas reducer's temperature
             rxlaf = data.get2Bytes(74)           // RxL air flow, note: it is divided by 32
+            ftls = data.get2Bytes(76)
+            egts = data.get2Bytes(78)
+            ops = data.get2Bytes(80)
         }
 
 
