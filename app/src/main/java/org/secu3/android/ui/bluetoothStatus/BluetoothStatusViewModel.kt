@@ -51,7 +51,7 @@ class BluetoothStatusViewModel @Inject constructor(private val mPrefs: LifeTimeP
 
         val btAddress = mPrefs.bluetoothDeviceAddress ?: return false
 
-        val bluetoothDevice: BluetoothDevice? = bluetoothAdapter.bondedDevices.firstOrNull { it.address == btAddress }
+        val bluetoothDevice: BluetoothDevice? = bluetoothAdapter.bondedDevices.firstOrNull { it.name == btAddress }
 
         return bluetoothDevice == null
     }

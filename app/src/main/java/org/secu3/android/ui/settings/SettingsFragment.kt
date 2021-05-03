@@ -39,8 +39,6 @@ class SettingsFragment : PreferenceFragmentCompat(), OnSharedPreferenceChangeLis
     private var bluetoothAdapter: BluetoothAdapter? = null
     private lateinit var sharedPref: SharedPreferences
 
-    private lateinit var mLifeTimePrefs: LifeTimePrefs
-
     private fun updatePreferenceSummary() {
         val deviceAddress = sharedPref.getString(getString(R.string.pref_bluetooth_device_key), null)
 
@@ -57,10 +55,9 @@ class SettingsFragment : PreferenceFragmentCompat(), OnSharedPreferenceChangeLis
         updatePreferenceSummary()
 
         findPreference<ListPreference>(getString(R.string.pref_bluetooth_device_key))?.apply {
-            bluetoothAdapter?.bondedDevices?.let {
-                this.entryValues = it.map { device -> device.address }.toTypedArray()
-                this.entries = it.map { device -> device.name }.toTypedArray()
-            }
+            val devices = bluetoothAdapter?.bondedDevices?.map { device -> device.name }?.toTypedArray()
+            this.entryValues = devices
+            this.entries = devices
         }
 
         findPreference<Preference>(getString(R.string.pref_connection_retries_key))?.let {
@@ -73,10 +70,7 @@ class SettingsFragment : PreferenceFragmentCompat(), OnSharedPreferenceChangeLis
     override fun onCreatePreferences(savedInstanceState: Bundle?, rootKey: String?) {
         addPreferencesFromResource(R.xml.preferences)
 
-        context?.let {
-            mLifeTimePrefs = LifeTimePrefs(it)
-            sharedPref = PreferenceManager.getDefaultSharedPreferences(it)
-        }
+        sharedPref = PreferenceManager.getDefaultSharedPreferences(context)
 
         bluetoothAdapter = BluetoothAdapter.getDefaultAdapter()
 

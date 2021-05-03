@@ -110,7 +110,7 @@ class Secu3Manager @Inject constructor(@ApplicationContext private val context: 
         private val uuid = UUID.fromString("00001101-0000-1000-8000-00805F9B34FB")
 
         init {
-            val bluetoothDevice: BluetoothDevice = bluetoothAdapter.bondedDevices.first { it.address == address }
+            val bluetoothDevice: BluetoothDevice = bluetoothAdapter.bondedDevices.first { it.name == address }
             var tmp: BluetoothSocket? = null
 
             try {
