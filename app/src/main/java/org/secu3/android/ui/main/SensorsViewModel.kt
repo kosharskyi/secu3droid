@@ -45,7 +45,7 @@ class SensorsViewModel @Inject constructor(private val secu3Repository: Secu3Rep
 
 
     fun isBluetoothDeviceAddressNotSelected(): Boolean {
-        return mPrefs.bluetoothDeviceAddress.isNullOrBlank()
+        return mPrefs.bluetoothDeviceName.isNullOrBlank()
     }
 
     var lastPacketReceivedStamp: LocalDateTime = LocalDateTime.now()

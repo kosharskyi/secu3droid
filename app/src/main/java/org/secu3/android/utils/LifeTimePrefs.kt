@@ -69,7 +69,7 @@ class LifeTimePrefs @Inject constructor(@ApplicationContext private val ctx: Con
         get() = mPrefs.getBoolean(ctx.getString(R.string.pref_night_mode_key), false);
         set(value) = mPrefs.edit().putBoolean(ctx.getString(R.string.pref_night_mode_key), value).apply()
 
-    var bluetoothDeviceAddress: String?
+    var bluetoothDeviceName: String?
         get() = mPrefs.getString(ctx.getString(R.string.pref_bluetooth_device_key), null);
         set(value) = mPrefs.edit().putString(ctx.getString(R.string.pref_bluetooth_device_key), value).apply()
 

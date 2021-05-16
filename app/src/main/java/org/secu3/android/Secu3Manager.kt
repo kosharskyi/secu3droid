@@ -67,7 +67,7 @@ class Secu3Manager @Inject constructor(@ApplicationContext private val context: 
 
 
     fun start() {
-        prefs.bluetoothDeviceAddress?.let {
+        prefs.bluetoothDeviceName?.let {
 
             connectedThread?.mmSocket?.let { socket ->
                 if (socket.isConnected) {

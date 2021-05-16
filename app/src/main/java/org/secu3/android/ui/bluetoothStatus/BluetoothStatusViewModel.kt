@@ -27,11 +27,9 @@ package org.secu3.android.ui.bluetoothStatus
 
 import android.bluetooth.BluetoothAdapter
 import android.bluetooth.BluetoothDevice
-import android.bluetooth.BluetoothSocket
 import androidx.lifecycle.ViewModel
 import dagger.hilt.android.lifecycle.HiltViewModel
 import org.secu3.android.utils.LifeTimePrefs
-import java.util.*
 import javax.inject.Inject
 
 @HiltViewModel
@@ -44,12 +42,12 @@ class BluetoothStatusViewModel @Inject constructor(private val mPrefs: LifeTimeP
     }
 
     fun isBtDeviceAddressNotSelected(): Boolean {
-        return mPrefs.bluetoothDeviceAddress.isNullOrBlank()
+        return mPrefs.bluetoothDeviceName.isNullOrBlank()
     }
 
     fun isBtDeviceNotExist(): Boolean {
 
-        val btAddress = mPrefs.bluetoothDeviceAddress ?: return false
+        val btAddress = mPrefs.bluetoothDeviceName ?: return false
 
         val bluetoothDevice: BluetoothDevice? = bluetoothAdapter.bondedDevices.firstOrNull { it.name == btAddress }
 

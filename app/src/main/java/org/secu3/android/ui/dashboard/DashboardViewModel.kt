@@ -44,7 +44,7 @@ class DashboardViewModel @Inject constructor(private val secu3Repository: Secu3R
         get() = secu3Repository.connectionStatusLiveData
 
     fun isBluetoothDeviceAddressNotSelected(): Boolean {
-        return mPrefs.bluetoothDeviceAddress.isNullOrBlank()
+        return mPrefs.bluetoothDeviceName.isNullOrBlank()
     }
 
     fun setTask(task: Task) {

@@ -24,9 +24,7 @@
 package org.secu3.android
 
 import android.bluetooth.BluetoothAdapter
-import android.util.Log
 import androidx.lifecycle.LiveData
-import androidx.lifecycle.MediatorLiveData
 import androidx.lifecycle.asLiveData
 import kotlinx.coroutines.*
 import kotlinx.coroutines.flow.*
@@ -117,7 +115,7 @@ class Secu3Repository @Inject constructor(private val secu3Manager: Secu3Manager
                     continue
                 }
 
-                if (mPrefs.bluetoothDeviceAddress.isNullOrBlank()) {
+                if (mPrefs.bluetoothDeviceName.isNullOrBlank()) {
                     continue
                 }
 
