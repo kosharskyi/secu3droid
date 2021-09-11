@@ -140,18 +140,18 @@ data class SensorsPacket(var rpm: Int = 0,
             currentAngle = data.get2Bytes(10).toFloat() / ANGLE_DIVIDER
             knockValue = data.get2Bytes(12).toFloat() / ADC_MULTIPLIER
             knockRetard = data.get2Bytes(14).toFloat() / ANGLE_DIVIDER
-            airflow = data[16].toInt()
+            airflow = data[16].code
 
             sensorsFlags = data.get2Bytes(17)
 
-            tps = data[19].toInt().toFloat() / TPS_MULTIPLIER
+            tps = data[19].code.toFloat() / TPS_MULTIPLIER
 
             addI1 = data.get2Bytes(20).toFloat() / VOLTAGE_MULTIPLIER
             addI2 = data.get2Bytes(22).toFloat() / VOLTAGE_MULTIPLIER
 
             ecuErrors = data.get4Bytes(24)
-            chokePosition = data[28].toFloat() / CHOKE_MULTIPLIER
-            gasDosePosition = data[29].toInt() / GAS_DOSE_MULTIPLIER
+            chokePosition = data[28].code.toFloat() / CHOKE_MULTIPLIER
+            gasDosePosition = data[29].code / GAS_DOSE_MULTIPLIER
 
             rawSpeed = data.get2Bytes(30)
             rawDistance = data.get3Bytes(32)
@@ -209,5 +209,6 @@ data class SensorsPacket(var rpm: Int = 0,
         private const val BITNUMBER_COND_I = 12  // COND_I flag
         private const val BITNUMBER_EPAS_I = 13  // EPAS_I flag
         private const val BITNUMBER_AFTSTR_ENR = 14  // after start enrichment flag
+        private const val BITNUMBER_IAC_CLOSED_LOOP = 14  // IAC closed loop flag
     }
 }

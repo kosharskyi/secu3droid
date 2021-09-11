@@ -37,7 +37,9 @@ data class KnockParamPacket(
     var advanceStep: Float = 0f,
     var maxRetard: Float = 0f,
     var threshold: Float = 0f,
-    var recoveryDelay: Int = 0
+    var recoveryDelay: Int = 0,
+    var selch: Int = 0,         //!< 1 bit per channel (cylinder). 0 - 1st KS, 1 - 2nd KS
+    var knkcltThrd: Int = 0,
 
     ) : BaseOutputPacket() {
 
@@ -58,6 +60,9 @@ data class KnockParamPacket(
 
         data += recoveryDelay.toChar()
 
+        data += selch.toChar()
+        data += knkcltThrd.times(TEMPERATURE_MULTIPLIER).write2Bytes()
+
         return data
     }
 
@@ -66,8 +71,8 @@ data class KnockParamPacket(
         internal const val DESCRIPTOR = 'w'
 
         fun parse(data: String) = KnockParamPacket().apply {
-            useKnockChannel = data[2].toInt()
-            bpfFrequency = data[3].toInt()
+            useKnockChannel = data[2].code
+            bpfFrequency = data[3].code
             kWndBeginAngle = data.get2Bytes(4).toShort().toFloat() / ANGLE_DIVIDER
             kWndEndAngle = data.get2Bytes(6).toShort().toFloat() / ANGLE_DIVIDER
             intTimeCost = data[8].toInt()
@@ -76,7 +81,9 @@ data class KnockParamPacket(
             advanceStep = data.get2Bytes(11).toFloat() / ANGLE_DIVIDER
             maxRetard = data.get2Bytes(13).toFloat() / ANGLE_DIVIDER
             threshold = data.get2Bytes(15).toFloat() / VOLTAGE_MULTIPLIER
-            recoveryDelay = data[17].toInt()
+            recoveryDelay = data[17].code
+            selch = data[18].code
+            knkcltThrd = data.get2Bytes(19) / TEMPERATURE_MULTIPLIER
         }
     }
 }
