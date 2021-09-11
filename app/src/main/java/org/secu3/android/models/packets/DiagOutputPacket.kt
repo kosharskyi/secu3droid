@@ -363,7 +363,6 @@ class DiagOutputPacket(private val fwInfo: FirmwareInfoPacket) : BaseOutputPacke
 //        data += duty.toChar()
 //        data += chan.toChar()
 
-        data += END_PACKET_SYMBOL
         return data
     }
 

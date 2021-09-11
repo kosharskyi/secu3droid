@@ -103,7 +103,6 @@ data class MiscellaneousParamPacket(
         data += 1.0.div(pwmFrq0.toFloat()).times(524288.0f).roundToInt().write2Bytes()
         data += 1.0.div(pwmFrq1.toFloat()).times(524288.0f).roundToInt().write2Bytes()
 
-        data += END_PACKET_SYMBOL
         return data
     }
 

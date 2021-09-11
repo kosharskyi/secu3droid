@@ -60,7 +60,6 @@ data class AnglesParamPacket(
         data += data.write2Bytes(angleIncSpeed.times(ANGLE_DIVIDER).toInt())
         data += zeroAdvAngle.toChar()
 
-        data += END_PACKET_SYMBOL
         return data
     }
 }

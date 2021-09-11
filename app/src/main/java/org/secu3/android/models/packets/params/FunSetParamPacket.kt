@@ -67,7 +67,6 @@ data class FunSetParamPacket(
         data += barocorrType.toChar()
 //        data += funcFlags.toChar()
 
-        data += END_PACKET_SYMBOL
         return data
     }
 

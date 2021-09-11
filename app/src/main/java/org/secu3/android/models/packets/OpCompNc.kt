@@ -32,7 +32,7 @@ data class OpCompNc(
 ) : BaseOutputPacket() {
     
     override fun pack(): String {
-        return "${OUTPUT_PACKET_SYMBOL}$DESCRIPTOR${opData.toChar()}${opCode.toChar()}$END_PACKET_SYMBOL"
+        return "${OUTPUT_PACKET_SYMBOL}$DESCRIPTOR${opData.toChar()}${opCode.toChar()}"
     }
 
 

@@ -52,7 +52,6 @@ data class GasDoseParamPacket(
         data += freq.toChar()
         data += maxFreqInit.toChar()
 
-        data += END_PACKET_SYMBOL
         return data
     }
 

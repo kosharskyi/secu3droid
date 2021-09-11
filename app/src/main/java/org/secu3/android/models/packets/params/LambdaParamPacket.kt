@@ -125,7 +125,6 @@ data class LambdaParamPacket(
 
         data += aflowThrd.div(32).write2Bytes()
 
-        data += END_PACKET_SYMBOL
         return data
     }
 

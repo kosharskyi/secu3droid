@@ -134,7 +134,6 @@ data class UniOutParamPacket(
 
         data += logicFunction_1_2.toChar()
 
-        data += END_PACKET_SYMBOL
         return data
     }
 
@@ -568,7 +567,7 @@ data class UniOutParamPacket(
             rawOutput6OffThrd2 = data.get2Bytes(66)
 
 
-            logicFunction_1_2 = data[data.lastIndex].toInt()
+            logicFunction_1_2 = data[data.lastIndex].code
         }
     }
 }

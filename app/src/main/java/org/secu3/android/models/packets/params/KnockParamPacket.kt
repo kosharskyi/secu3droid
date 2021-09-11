@@ -58,7 +58,6 @@ data class KnockParamPacket(
 
         data += recoveryDelay.toChar()
 
-        data += END_PACKET_SYMBOL
         return data
     }
 

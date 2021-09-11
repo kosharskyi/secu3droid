@@ -148,7 +148,6 @@ data class IdlingParamPacket(
         data += iacMinPos.times(2).toInt().toChar()
         data += iacMaxPos.times(2).toInt().toChar()
 
-        data += END_PACKET_SYMBOL
         return data
     }
 }

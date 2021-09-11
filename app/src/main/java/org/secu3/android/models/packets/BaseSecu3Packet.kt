@@ -24,9 +24,11 @@
 package org.secu3.android.models.packets
 
 import org.secu3.android.models.packets.params.*
-import java.util.*
+import org.secu3.android.utils.PacketUtils
 
 abstract class BaseSecu3Packet {
+
+    protected var packetCrc: UByteArray = UByteArray(2)
 
     protected fun String.get2Bytes(startIndex: Int): Int {
         if (startIndex + 2 > length) {
@@ -81,30 +83,6 @@ abstract class BaseSecu3Packet {
 
         private const val TAG = "SecuPacketParser"
 
-        // There are several special reserved symbols in binary mode: 0x21, 0x40,
-        // 0x0D, 0x0A
-        const val FIBEGIN = 0x21 // '!' indicates beginning of the
-
-        // ingoing packet
-        private const val FOBEGIN = 0x40 // '@' indicates beginning of the
-
-        // outgoing packet
-        private const val FIOEND = 0x0D // '\r' indicates ending of the
-
-        // ingoing/outgoing packet
-        private const val FESC = 0x0A // '\n' Packet escape (FESC)
-
-        // Following bytes are used only in escape sequeces and may appear in the
-        // data without any problems
-        private const val TFIBEGIN = 0x81 // Transposed FIBEGIN
-
-        private const val TFOBEGIN = 0x82 // Transposed FOBEGIN
-
-        private const val TFIOEND = 0x83 // Transposed FIOEND
-
-        private const val TFESC = 0x84 // Transposed FESC
-
-
         const val INPUT_PACKET_SYMBOL = '@'
         const val OUTPUT_PACKET_SYMBOL = '!'
         const val END_PACKET_SYMBOL = '\r'
@@ -124,9 +102,9 @@ abstract class BaseSecu3Packet {
 
         const val MAX_PACKET_SIZE = 128
 
-        fun parse(data: String): BaseSecu3Packet? {
+        fun parse(data: String, notEscaped: IntArray): BaseSecu3Packet? {
             return try {
-                when (data[1]) {
+                val packet = when (data[1]) {
                     SensorsPacket.DESCRIPTOR -> SensorsPacket.parse(data)
                     FirmwareInfoPacket.DESCRIPTOR -> FirmwareInfoPacket.parse(data)
                     AdcRawDatPacket.DESCRIPTOR -> AdcRawDatPacket.parse(data)
@@ -157,6 +135,21 @@ abstract class BaseSecu3Packet {
 
                     else -> null
                 }
+
+                packet?.apply {
+                    packetCrc[0] = notEscaped[notEscaped.lastIndex - 2].toUByte()
+                    packetCrc[1] = notEscaped[notEscaped.lastIndex - 1].toUByte()
+                }
+
+                if (packet != null) {
+                    val checksum = PacketUtils.calculateChecksum(data.substring(2, data.length))
+
+                    if (packet.packetCrc[0] == checksum[1] && packet.packetCrc[1] == checksum[0]) {
+                        return packet
+                    }
+                }
+
+                throw java.lang.IllegalArgumentException("checksumm doesn't match")
             } catch (e: IllegalArgumentException) {
                 e.printStackTrace()
                 null
@@ -164,57 +157,6 @@ abstract class BaseSecu3Packet {
                 e.printStackTrace()
                 null
             }
-
         }
-
-        fun EscRxPacket(packetBuffer: IntArray): IntArray {
-            val buf = IntArray(packetBuffer.size)
-            var esc = false
-            var idx = 0
-            for (i in packetBuffer.indices) {
-                if (packetBuffer[i] == FESC && i >= 2) {
-                    esc = true
-                    continue
-                }
-                if (esc) {
-                    esc = false
-                    when(packetBuffer[i]) {
-                        TFOBEGIN -> buf[idx++] = FOBEGIN
-                        TFIOEND -> buf[idx++] = FIOEND
-                        TFESC -> buf[idx++] = FESC
-                    }
-                } else buf[idx++] = packetBuffer[i]
-            }
-            return buf
-        }
-
-        fun EscTxPacket(packetBuffer: String): String {
-            val buf = ArrayList<Int>(packetBuffer.length - 3)
-            for (i in packetBuffer.indices) {
-                if (i >= 2 && i < packetBuffer.length - 1) {
-                    if (packetBuffer[i].toInt() == FIBEGIN) {
-                        buf.add(FESC)
-                        buf.add(TFIBEGIN)
-                        continue
-                    } else if (packetBuffer[i].toInt() == FIOEND) {
-                        buf.add(FESC)
-                        buf.add(FIOEND)
-                        continue
-                    } else if (packetBuffer[i].toInt() == FESC) {
-                        buf.add(FESC)
-                        buf.add(TFESC)
-                        continue
-                    }
-                }
-                buf.add(packetBuffer[i].toInt())
-            }
-            val outBuf = IntArray(buf.size)
-            for (i in buf.indices) {
-                outBuf[i] = buf[i]
-            }
-            return String(outBuf, 0, outBuf.size)
-        }
-
     }
-
 }

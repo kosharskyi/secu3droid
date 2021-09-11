@@ -117,7 +117,6 @@ data class AdcCorrectionsParamPacket(
             data += data.write4Bytes(it)
         }
 
-        data += END_PACKET_SYMBOL
         return data
     }
 

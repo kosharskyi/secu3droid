@@ -42,7 +42,6 @@ data class AccelerationParamPacket(
 
         data += injAeDecayTime.toChar()
 
-        data += END_PACKET_SYMBOL
         return data
     }
 

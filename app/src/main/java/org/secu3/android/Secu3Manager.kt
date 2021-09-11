@@ -35,9 +35,11 @@ import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.runBlocking
 import org.secu3.android.models.packets.BaseOutputPacket
 import org.secu3.android.models.packets.BaseSecu3Packet
+import org.secu3.android.models.packets.BaseSecu3Packet.Companion.END_PACKET_SYMBOL
 import org.secu3.android.models.packets.BaseSecu3Packet.Companion.MAX_PACKET_SIZE
 import org.secu3.android.models.packets.ChangeModePacket
 import org.secu3.android.utils.LifeTimePrefs
+import org.secu3.android.utils.PacketUtils
 import org.secu3.android.utils.Task
 import java.io.*
 import java.nio.charset.StandardCharsets
@@ -202,8 +204,12 @@ class Secu3Manager @Inject constructor(@ApplicationContext private val context: 
 
                     if (sendPacket.isNotEmpty()) {
                         sendPacket.poll()?.let {
-                            Log.e("TAG", it.pack())
-                            val escaped = BaseSecu3Packet.EscTxPacket(it.pack())
+                            val packet = it.pack()
+                            Log.e("TAG", packet)
+                            val escaped = PacketUtils.EscTxPacket(packet).run {
+                                val checksum = PacketUtils.calculateChecksum(this.substring(2, this.length))
+                                this + checksum[1].toInt().toChar() + checksum[0].toInt().toChar() + END_PACKET_SYMBOL
+                            }
                             writer.append(escaped)
 
                             sleep(20)
@@ -223,7 +229,7 @@ class Secu3Manager @Inject constructor(@ApplicationContext private val context: 
                                 }
                             }
 
-                            packetBuffer[idx++] = it.toInt()
+                            packetBuffer[idx++] = it.code
 
                             if (idx >= MAX_PACKET_SIZE) {
                                 mSecu3PacketSearch = SECU3_PACKET_SEARCH.SEARCH_START
@@ -232,10 +238,11 @@ class Secu3Manager @Inject constructor(@ApplicationContext private val context: 
 
                             if (mSecu3PacketSearch == SECU3_PACKET_SEARCH.SEARCH_END && it == '\r') {
                                 mSecu3PacketSearch = SECU3_PACKET_SEARCH.SEARCH_START
-                                packetBuffer = BaseSecu3Packet.EscRxPacket(packetBuffer)
-                                val line = String(packetBuffer, 0, idx - 1)
+                                val escaped = PacketUtils.EscRxPacket(packetBuffer.sliceArray(IntRange(0, idx - 4)))
+                                val line = String(escaped, 0, escaped.size)
 
-                                BaseSecu3Packet.parse(line)?.let { packet ->
+
+                                BaseSecu3Packet.parse(line, packetBuffer.sliceArray(IntRange(0, idx - 1)))?.let { packet ->
                                     runBlocking {
                                         mReceivedPacketFlow.emit(packet)
                                     }

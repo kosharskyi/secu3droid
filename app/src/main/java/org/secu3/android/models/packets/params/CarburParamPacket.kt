@@ -58,7 +58,6 @@ data class CarburParamPacket(
         data += revlimLot.write2Bytes()
         data += revlimHit.write2Bytes()
 
-        data += END_PACKET_SYMBOL
         return data
     }
 

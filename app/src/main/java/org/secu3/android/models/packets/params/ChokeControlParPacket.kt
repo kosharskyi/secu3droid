@@ -99,7 +99,6 @@ data class ChokeControlParPacket(
         data += smFreq.toChar()
         data += injCrankToRunTime.times(100).toInt().write2Bytes()
 
-        data += END_PACKET_SYMBOL
         return data
     }
 

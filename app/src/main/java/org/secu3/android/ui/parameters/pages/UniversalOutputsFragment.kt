@@ -80,7 +80,13 @@ class UniversalOutputsFragment : BaseParamFragment() {
 
             mBinding.apply {
                 output1Condition1.setText(mCondition1List[it.output1Condition1], false)
-                output1Condition1Inversion.isChecked = it.output1Cond1Inversion
+                output1Condition1Inversion.apply {
+                    isChecked = it.output1Cond1Inversion
+                    setOnCheckedChangeListener { _, isChecked ->
+                        it.output1Cond1Inversion = isChecked
+                        mViewModel.sendPacket(it)
+                    }
+                }
                 output1Condition1On.value = it.output1OnThrd1
                 output1Condition1Off.value = it.output1OffThrd1
 
@@ -95,7 +101,13 @@ class UniversalOutputsFragment : BaseParamFragment() {
                 }
 
                 output1Condition2.setText(mCondition1List[it.output1Condition2], false)
-                output1Condition2Inversion.isChecked = it.output1Cond2Inversion
+                output1Condition2Inversion.apply {
+                    isChecked = it.output1Cond2Inversion
+                    setOnCheckedChangeListener { _, isChecked ->
+                        it.output1Cond2Inversion = isChecked
+                        mViewModel.sendPacket(it)
+                    }
+                }
                 output1Condition2On.value = it.output1OnThrd2
                 output1Condition2Off.value = it.output1OffThrd2
 
@@ -110,7 +122,13 @@ class UniversalOutputsFragment : BaseParamFragment() {
 
 
                 output2Condition1.setText(mCondition1List[it.output2Condition1], false)
-                output2Condition1Inversion.isChecked = it.output2Cond1Inversion
+                output2Condition1Inversion.apply {
+                    isChecked = it.output2Cond1Inversion
+                    setOnCheckedChangeListener { _, isChecked ->
+                        it.output2Cond1Inversion = isChecked
+                        mViewModel.sendPacket(it)
+                    }
+                }
                 output2Condition1On.value = it.output2OnThrd1
                 output2Condition1Off.value = it.output2OffThrd1
 
@@ -126,13 +144,25 @@ class UniversalOutputsFragment : BaseParamFragment() {
                 }
 
                 output2Condition2.setText(mCondition1List[it.output2Condition2], false)
-                output2Condition2Inversion.isChecked = it.output2Cond2Inversion
+                output2Condition2Inversion.apply {
+                    isChecked = it.output2Cond2Inversion
+                    setOnCheckedChangeListener { _, isChecked ->
+                        it.output2Cond2Inversion = isChecked
+                        mViewModel.sendPacket(it)
+                    }
+                }
                 output2Condition2On.value = it.output2OnThrd2
                 output2Condition2Off.value = it.output2OffThrd2
 
 
                 output3Condition1.setText(mCondition1List[it.output3Condition1], false)
-                output3Condition1Inversion.isChecked = it.output3Cond1Inversion
+                output3Condition1Inversion.apply {
+                    isChecked = it.output3Cond1Inversion
+                    setOnCheckedChangeListener { _, isChecked ->
+                        it.output3Cond1Inversion = isChecked
+                        mViewModel.sendPacket(it)
+                    }
+                }
                 output3Condition1On.value = it.output3OnThrd1
                 output3Condition1Off.value = it.output3OffThrd1
 
@@ -147,14 +177,26 @@ class UniversalOutputsFragment : BaseParamFragment() {
                 }
 
                 output3Condition2.setText(mCondition1List[it.output2Condition2], false)
-                output3Condition2Inversion.isChecked = it.output3Cond2Inversion
+                output3Condition2Inversion.apply {
+                    isChecked = it.output3Cond2Inversion
+                    setOnCheckedChangeListener { _, isChecked ->
+                        it.output3Cond2Inversion = isChecked
+                        mViewModel.sendPacket(it)
+                    }
+                }
                 output3Condition2On.value = it.output3OnThrd2
                 output3Condition2Off.value = it.output3OffThrd2
 
 
 
                 output4Condition1.setText(mCondition1List[it.output4Condition1], false)
-                output4Condition1Inversion.isChecked = it.output4Cond1Inversion
+                output4Condition1Inversion.apply {
+                    isChecked = it.output4Cond1Inversion
+                    setOnCheckedChangeListener { _, isChecked ->
+                        it.output4Cond1Inversion = isChecked
+                        mViewModel.sendPacket(it)
+                    }
+                }
                 output4Condition1On.value = it.output4OnThrd1
                 output4Condition1Off.value = it.output4OffThrd1
 
@@ -169,14 +211,26 @@ class UniversalOutputsFragment : BaseParamFragment() {
                 }
 
                 output4Condition2.setText(mCondition1List[it.output4Condition2], false)
-                output4Condition2Inversion.isChecked = it.output4Cond2Inversion
+                output4Condition2Inversion.apply {
+                    isChecked = it.output4Cond2Inversion
+                    setOnCheckedChangeListener { _, isChecked ->
+                        it.output4Cond2Inversion = isChecked
+                        mViewModel.sendPacket(it)
+                    }
+                }
                 output4Condition2On.value = it.output4OnThrd2
                 output4Condition2Off.value = it.output4OffThrd2
 
 
 
                 output5Condition1.setText(mCondition1List[it.output5Condition1], false)
-                output5Condition1Inversion.isChecked = it.output5Cond1Inversion
+                output5Condition1Inversion.apply {
+                    isChecked = it.output5Cond1Inversion
+                    setOnCheckedChangeListener { _, isChecked ->
+                        it.output5Cond1Inversion = isChecked
+                        mViewModel.sendPacket(it)
+                    }
+                }
                 output5Condition1On.value = it.output5OnThrd1
                 output5Condition1Off.value = it.output5OffThrd1
 
@@ -191,14 +245,26 @@ class UniversalOutputsFragment : BaseParamFragment() {
                 }
 
                 output5Condition2.setText(mCondition1List[it.output5Condition2], false)
-                output5Condition2Inversion.isChecked = it.output5Cond2Inversion
+                output5Condition2Inversion.apply {
+                    isChecked = it.output5Cond2Inversion
+                    setOnCheckedChangeListener { _, isChecked ->
+                        it.output5Cond2Inversion = isChecked
+                        mViewModel.sendPacket(it)
+                    }
+                }
                 output5Condition2On.value = it.output5OnThrd2
                 output5Condition2Off.value = it.output5OffThrd2
 
 
 
                 output6Condition1.setText(mCondition1List[it.output6Condition1], false)
-                output6Condition1Inversion.isChecked = it.output6Cond1Inversion
+                output6Condition1Inversion.apply {
+                    isChecked = it.output6Cond1Inversion
+                    setOnCheckedChangeListener { _, isChecked ->
+                        it.output6Cond1Inversion = isChecked
+                        mViewModel.sendPacket(it)
+                    }
+                }
                 output6Condition1On.value = it.output6OnThrd1
                 output6Condition1Off.value = it.output6OffThrd1
 
@@ -213,7 +279,13 @@ class UniversalOutputsFragment : BaseParamFragment() {
                 }
 
                 output6Condition2.setText(mCondition1List[it.output6Condition2], false)
-                output6Condition2Inversion.isChecked = it.output6Cond2Inversion
+                output6Condition2Inversion.apply {
+                    isChecked = it.output6Cond2Inversion
+                    setOnCheckedChangeListener { _, isChecked ->
+                        it.output6Cond2Inversion = isChecked
+                        mViewModel.sendPacket(it)
+                    }
+                }
                 output6Condition2On.value = it.output6OnThrd2
                 output6Condition2Off.value = it.output6OffThrd2
 

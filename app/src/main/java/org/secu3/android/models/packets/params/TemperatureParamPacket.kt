@@ -53,7 +53,6 @@ data class TemperatureParamPacket(
         data += condMinRpm.write2Bytes()
         data += ventTmr.times(100).write2Bytes()
 
-        data += END_PACKET_SYMBOL
         return data
     }
 

@@ -69,7 +69,6 @@ data class StarterParamPacket(
         data += injFloodclearTps.times(2).toChar()
         data += injAftStrokes1.div(4).toChar()
 
-        data += END_PACKET_SYMBOL
         return data
     }
 }

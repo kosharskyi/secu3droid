@@ -60,7 +60,6 @@ data class SecurityParamPacket(
         data += iButton0
         data += iButton1
 
-        data += END_PACKET_SYMBOL
         return data
     }
 
