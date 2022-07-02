@@ -70,7 +70,7 @@ class SettingsFragment : PreferenceFragmentCompat(), OnSharedPreferenceChangeLis
     override fun onCreatePreferences(savedInstanceState: Bundle?, rootKey: String?) {
         addPreferencesFromResource(R.xml.preferences)
 
-        sharedPref = PreferenceManager.getDefaultSharedPreferences(context)
+        sharedPref = PreferenceManager.getDefaultSharedPreferences(requireContext())
 
         bluetoothAdapter = BluetoothAdapter.getDefaultAdapter()
 
