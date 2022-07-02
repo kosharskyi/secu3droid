@@ -25,7 +25,6 @@
 
 package org.secu3.android.utils
 
-import org.secu3.android.models.packets.BaseSecu3Packet
 import java.util.ArrayList
 
 object PacketUtils {

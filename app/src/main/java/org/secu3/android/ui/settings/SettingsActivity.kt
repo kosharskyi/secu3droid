@@ -25,9 +25,7 @@
 package org.secu3.android.ui.settings
 
 import android.os.Bundle
-import android.os.PersistableBundle
 import androidx.appcompat.app.AppCompatActivity
-import androidx.preference.PreferenceManager
 import com.google.android.material.appbar.MaterialToolbar
 import org.secu3.android.R
 

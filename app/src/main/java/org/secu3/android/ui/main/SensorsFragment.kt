@@ -126,12 +126,12 @@ class SensorsFragment : Fragment() {
         })
 
 
-        mViewModel.firmwareLiveData.observe(viewLifecycleOwner, {
+        mViewModel.firmwareLiveData.observe(viewLifecycleOwner) {
             mBinding.fwInfo.text = it.tag
             mViewModel.sendNewTask(Task.Secu3ReadSensors)
-        })
+        }
 
-        mViewModel.sensorsLiveData.observe(viewLifecycleOwner, {
+        mViewModel.sensorsLiveData.observe(viewLifecycleOwner) {
             var result = ""
             result += String.format(Locale.US, getString(R.string.status_rpm_title), it.rpm)
             result += String.format(Locale.US, getString(R.string.status_map_title), it.map)
@@ -155,9 +155,9 @@ class SensorsFragment : Fragment() {
             result += String.format(Locale.US, getString(R.string.status_choke_position_title), it.chokePosition)
 
             mBinding.sensorsData.text = result
-        })
+        }
 
-        mViewModel.rawSensorsLiveData.observe(viewLifecycleOwner, {
+        mViewModel.rawSensorsLiveData.observe(viewLifecycleOwner) {
             var result = ""
             result += String.format(Locale.US, getString(R.string.raw_status_map_title), it.map)
             result += String.format(Locale.US, getString(R.string.raw_status_voltage_title), it.voltage)
@@ -168,7 +168,7 @@ class SensorsFragment : Fragment() {
             result += String.format(Locale.US, getString(R.string.raw_status_addi2_title), it.addI2)
 
             mBinding.sensorsData.text = result
-        })
+        }
     }
 
     override fun onStart() {

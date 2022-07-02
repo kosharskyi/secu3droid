@@ -24,15 +24,9 @@
 package org.secu3.android.ui.parameters.dialogs
 
 import android.os.Bundle
-import android.view.LayoutInflater
 import android.view.View
-import android.view.ViewGroup
-import androidx.fragment.app.DialogFragment
 import androidx.lifecycle.LiveData
 import androidx.lifecycle.MutableLiveData
-import org.secu3.android.R
-import org.secu3.android.databinding.FragmentParamsBinding
-import org.secu3.android.databinding.FragmentParamsEditDialogBinding
 
 
 

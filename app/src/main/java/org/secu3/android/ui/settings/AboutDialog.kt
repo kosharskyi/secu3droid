@@ -40,7 +40,7 @@ class AboutDialog : DialogFragment() {
 
     override fun onCreateView(inflater: LayoutInflater, container: ViewGroup?, savedInstanceState: Bundle?): View? {
         mBinding =  AboutBinding.inflate(inflater, container, false)
-        return mBinding.root;
+        return mBinding.root
     }
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {

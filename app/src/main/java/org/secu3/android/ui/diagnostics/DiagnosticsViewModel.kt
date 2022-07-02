@@ -42,7 +42,7 @@ class DiagnosticsViewModel @Inject constructor(private val secu3Repository: Secu
 
     val outputPacket = DiagOutputPacket(secu3Repository.fwInfo!!)
 
-    var isDiagModeActive = false
+    private var isDiagModeActive = false
 
     init {
         viewModelScope.launch {

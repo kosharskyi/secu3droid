@@ -24,12 +24,9 @@
 package org.secu3.android.ui.parameters.pages
 
 import android.os.Bundle
-import androidx.fragment.app.Fragment
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
-import android.widget.AdapterView
-import android.widget.RadioGroup
 import androidx.fragment.app.activityViewModels
 import org.secu3.android.databinding.FragmentTemperatureBinding
 import org.secu3.android.models.packets.params.TemperatureParamPacket

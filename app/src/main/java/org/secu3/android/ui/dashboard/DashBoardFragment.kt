@@ -33,7 +33,6 @@ import android.view.View
 import android.view.ViewGroup
 import android.view.WindowManager
 import android.widget.Toast
-import androidx.core.view.isInvisible
 import androidx.core.view.isVisible
 import androidx.fragment.app.Fragment
 import androidx.fragment.app.viewModels
@@ -91,13 +90,13 @@ class DashBoardFragment : Fragment() {
             }
         }
 
-        mViewModel.packetLiveData.observe(viewLifecycleOwner, {
+        mViewModel.packetLiveData.observe(viewLifecycleOwner) {
             updatePacket(it)
-        })
+        }
 
-        mViewModel.statusLiveData?.observe(viewLifecycleOwner, {
+        mViewModel.statusLiveData.observe(viewLifecycleOwner) {
             mBinding.ledOnline.isVisible = it
-        })
+        }
     }
 
     @Synchronized

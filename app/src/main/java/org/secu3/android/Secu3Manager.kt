@@ -50,8 +50,7 @@ import javax.inject.Singleton
 
 
 @Singleton
-class Secu3Manager @Inject constructor(@ApplicationContext private val context: Context,
-                                       private val prefs: LifeTimePrefs) {
+class Secu3Manager @Inject constructor(private val prefs: LifeTimePrefs) {
 
     enum class SECU3_PACKET_SEARCH {
         SEARCH_START, SEARCH_END
@@ -192,7 +191,7 @@ class Secu3Manager @Inject constructor(@ApplicationContext private val context: 
 
             var idx = 0
 
-            var packetBuffer = IntArray(MAX_PACKET_SIZE)
+            val packetBuffer = IntArray(MAX_PACKET_SIZE)
             Log.e("Status", "comunicating with device")
 
             val charset = StandardCharsets.ISO_8859_1

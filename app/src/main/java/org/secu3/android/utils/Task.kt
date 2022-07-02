@@ -24,7 +24,6 @@
 package org.secu3.android.utils
 
 import org.secu3.android.models.packets.*
-import org.secu3.android.models.packets.params.*
 
 sealed class Task {
 

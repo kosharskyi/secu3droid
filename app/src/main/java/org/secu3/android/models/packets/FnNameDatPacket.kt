@@ -52,7 +52,7 @@ data class FnNameDatPacket(
 
     companion object {
 
-        internal const val F_NAME_SIZE = 16          //!< number of symbols in names of tables' sets
+        private const val F_NAME_SIZE = 16          //!< number of symbols in names of tables' sets
         internal const val DESCRIPTOR = 'p'
 
         fun parse(data: String) = FnNameDatPacket().apply {
