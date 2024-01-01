@@ -58,7 +58,7 @@ data class AdcRawDatPacket(
             addI5 = data.get2Bytes(20).toFloat() / VOLTAGE_MULTIPLIER
             addI6 = data.get2Bytes(22).toFloat() / VOLTAGE_MULTIPLIER
             addI7 = data.get2Bytes(24).toFloat() / VOLTAGE_MULTIPLIER
-//            addI8 = data.get2Bytes(26).toFloat() / VOLTAGE_MULTIPLIER
+            addI8 = data.get2Bytes(26).toFloat() / VOLTAGE_MULTIPLIER
         }
     }
 }

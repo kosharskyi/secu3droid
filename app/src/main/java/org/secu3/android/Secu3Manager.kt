@@ -248,7 +248,7 @@ class Secu3Manager @Inject constructor(
 
                             if (mSecu3PacketSearch == SECU3_PACKET_SEARCH.SEARCH_END && it == '\r') {
                                 mSecu3PacketSearch = SECU3_PACKET_SEARCH.SEARCH_START
-                                val escaped = PacketUtils.EscRxPacket(packetBuffer.sliceArray(IntRange(0, idx - 4)))
+                                val escaped = PacketUtils.EscRxPacket(packetBuffer)
                                 val line = String(escaped, 0, escaped.size)
 
                                 val rawPacket = RawPacket(line, packetBuffer.sliceArray(IntRange(0, idx - 1)))

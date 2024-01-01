@@ -100,7 +100,7 @@ abstract class BaseSecu3Packet {
 
         internal const val AFR_MULTIPLIER: Int = 128
 
-        const val MAX_PACKET_SIZE = 128
+        const val MAX_PACKET_SIZE = 250
 
 //        fun parse(data: String, notEscaped: IntArray): BaseSecu3Packet? {
 //            return try {
