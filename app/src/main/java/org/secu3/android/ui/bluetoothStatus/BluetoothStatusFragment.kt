@@ -43,6 +43,7 @@ import androidx.navigation.fragment.findNavController
 import com.google.android.material.dialog.MaterialAlertDialogBuilder
 import dagger.hilt.android.AndroidEntryPoint
 import kotlinx.coroutines.launch
+import org.secu3.android.R
 import org.secu3.android.databinding.FragmentBluetoothStatusBinding
 import org.secu3.android.ui.settings.SettingsActivity
 import org.secu3.android.utils.gone
@@ -113,10 +114,10 @@ class BluetoothStatusFragment : Fragment() {
 
         if (permissions.any{ shouldShowRequestPermissionRationale(it) }) {
             MaterialAlertDialogBuilder(requireContext())
-                .setTitle("Test title")
-                .setMessage("Because")
-                .setPositiveButton("OK") { _, _ -> permissionRequest.launch(permissions.toTypedArray()) }
-                .setNegativeButton("Cancel", null)
+                .setTitle(R.string.permission_rationale_title)
+                .setMessage(R.string.permission_rationale_message)
+                .setPositiveButton(android.R.string.ok) { _, _ -> permissionRequest.launch(permissions.toTypedArray()) }
+                .setNegativeButton(android.R.string.cancel, null)
                 .show()
             return
         }
