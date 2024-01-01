@@ -105,7 +105,6 @@ abstract class BaseSecu3Packet {
 
         fun parse(data: String, notEscaped: IntArray): BaseSecu3Packet? {
             return try {
-                Log.e(this.javaClass.simpleName, data)
                 when (data[1]) {
                     SensorsPacket.DESCRIPTOR -> SensorsPacket.parse(data)
                     FirmwareInfoPacket.DESCRIPTOR -> FirmwareInfoPacket.parse(data)

@@ -23,7 +23,7 @@
 */
 package org.secu3.android
 
-import android.bluetooth.BluetoothAdapter
+import android.bluetooth.BluetoothManager
 import androidx.lifecycle.LiveData
 import androidx.lifecycle.asLiveData
 import kotlinx.coroutines.*
@@ -39,7 +39,8 @@ import javax.inject.Singleton
 
 @Singleton
 class Secu3Repository @Inject constructor(private val secu3Manager: Secu3Manager,
-                                          private val mPrefs: LifeTimePrefs
+                                          private val mPrefs: LifeTimePrefs,
+                                          private val bluetoothManager: BluetoothManager
 ) {
 
     private val repositoryJob = Job()
@@ -48,8 +49,6 @@ class Secu3Repository @Inject constructor(private val secu3Manager: Secu3Manager
 
     private var lastPacketReceivedTimetamp = LocalDateTime.now().minusMinutes(1)
     private var tryToConnect = false
-
-    private val bluetoothAdapter: BluetoothAdapter by lazy { BluetoothAdapter.getDefaultAdapter() }
 
     private val connectionStatus = flow {
         while (lastPacketReceivedTimetamp.isAfter(LocalDateTime.now().minusMinutes(10))) {
@@ -119,7 +118,7 @@ class Secu3Repository @Inject constructor(private val secu3Manager: Secu3Manager
                     continue
                 }
 
-                if (bluetoothAdapter.isEnabled.not()) {
+                if (bluetoothManager.adapter.isEnabled.not()) {
                     continue
                 }
 
