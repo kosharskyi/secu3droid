@@ -25,15 +25,24 @@
 
 package org.secu3.android.ui.bluetoothStatus
 
+import android.Manifest
 import android.content.Intent
+import android.content.pm.PackageManager
+import android.os.Build
 import android.os.Bundle
-import androidx.fragment.app.Fragment
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
+import androidx.activity.result.contract.ActivityResultContracts
+import androidx.core.content.ContextCompat
+import androidx.fragment.app.Fragment
 import androidx.fragment.app.viewModels
+import androidx.lifecycle.lifecycleScope
+import androidx.lifecycle.withResumed
 import androidx.navigation.fragment.findNavController
+import com.google.android.material.dialog.MaterialAlertDialogBuilder
 import dagger.hilt.android.AndroidEntryPoint
+import kotlinx.coroutines.launch
 import org.secu3.android.databinding.FragmentBluetoothStatusBinding
 import org.secu3.android.ui.settings.SettingsActivity
 import org.secu3.android.utils.gone
@@ -69,11 +78,50 @@ class BluetoothStatusFragment : Fragment() {
                 startActivity(Intent(context, SettingsActivity::class.java))
             }
         }
+
+        lifecycleScope.launch {
+            lifecycle.withResumed {
+                checkBluetoothPermissions()
+            }
+        }
     }
 
-    override fun onResume() {
-        super.onResume()
-        checkBtConfig()
+    private val permissionRequest = registerForActivityResult(ActivityResultContracts.RequestMultiplePermissions()) {
+        val isDeclined = it.values.any { isGranted -> isGranted.not() }
+
+        if (isDeclined.not()) {
+            checkBtConfig()
+        }
+    }
+
+    private fun checkBluetoothPermissions() {
+        val permissions = mutableListOf<String>()
+
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
+            permissions.add(Manifest.permission.BLUETOOTH_CONNECT)
+            permissions.add(Manifest.permission.BLUETOOTH_SCAN)
+        } else {
+            permissions.add(Manifest.permission.BLUETOOTH)
+        }
+
+        val deniedPermissions = permissions.filter { ContextCompat.checkSelfPermission(requireContext(), it) == PackageManager.PERMISSION_DENIED }
+
+        if (deniedPermissions.isEmpty()) {
+            checkBtConfig()
+            return
+        }
+
+        if (permissions.any{ shouldShowRequestPermissionRationale(it) }) {
+            MaterialAlertDialogBuilder(requireContext())
+                .setTitle("Test title")
+                .setMessage("Because")
+                .setPositiveButton("OK") { _, _ -> permissionRequest.launch(permissions.toTypedArray()) }
+                .setNegativeButton("Cancel", null)
+                .show()
+            return
+        }
+
+        permissionRequest.launch(permissions.toTypedArray())
     }
 
     private fun checkBtConfig() {

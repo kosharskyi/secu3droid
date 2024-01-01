@@ -26,10 +26,9 @@ package org.secu3.android
 
 import android.bluetooth.BluetoothAdapter
 import android.bluetooth.BluetoothDevice
+import android.bluetooth.BluetoothManager
 import android.bluetooth.BluetoothSocket
-import android.content.Context
 import android.util.Log
-import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.runBlocking
@@ -41,16 +40,29 @@ import org.secu3.android.models.packets.ChangeModePacket
 import org.secu3.android.utils.LifeTimePrefs
 import org.secu3.android.utils.PacketUtils
 import org.secu3.android.utils.Task
-import java.io.*
+import java.io.BufferedReader
+import java.io.BufferedWriter
+import java.io.IOException
+import java.io.InputStream
+import java.io.InputStreamReader
+import java.io.OutputStream
+import java.io.OutputStreamWriter
 import java.nio.charset.StandardCharsets
-import java.util.*
+import java.util.Queue
+import java.util.UUID
 import java.util.concurrent.ConcurrentLinkedDeque
 import javax.inject.Inject
 import javax.inject.Singleton
 
 
 @Singleton
-class Secu3Manager @Inject constructor(private val prefs: LifeTimePrefs) {
+class Secu3Manager @Inject constructor(
+    private val prefs: LifeTimePrefs,
+    private val bluetoothManager: BluetoothManager
+    ) {
+
+    private val bluetoothAdapter: BluetoothAdapter
+        get() = bluetoothManager.adapter
 
     enum class SECU3_PACKET_SEARCH {
         SEARCH_START, SEARCH_END
@@ -75,8 +87,6 @@ class Secu3Manager @Inject constructor(private val prefs: LifeTimePrefs) {
                     return
                 }
             }
-
-            val bluetoothAdapter = BluetoothAdapter.getDefaultAdapter()
 
             if (bluetoothAdapter.isEnabled) {
                 createConnectThread = CreateConnectThread(bluetoothAdapter, it)
@@ -127,7 +137,6 @@ class Secu3Manager @Inject constructor(private val prefs: LifeTimePrefs) {
 
         override fun run() {
             // Cancel discovery because it otherwise slows down the connection.
-            val bluetoothAdapter = BluetoothAdapter.getDefaultAdapter()
             bluetoothAdapter.cancelDiscovery()
             try {
                 // Connect to the remote device through the socket. This call blocks

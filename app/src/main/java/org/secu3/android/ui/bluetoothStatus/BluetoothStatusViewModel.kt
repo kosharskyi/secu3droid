@@ -27,15 +27,19 @@ package org.secu3.android.ui.bluetoothStatus
 
 import android.bluetooth.BluetoothAdapter
 import android.bluetooth.BluetoothDevice
+import android.bluetooth.BluetoothManager
 import androidx.lifecycle.ViewModel
 import dagger.hilt.android.lifecycle.HiltViewModel
 import org.secu3.android.utils.LifeTimePrefs
 import javax.inject.Inject
 
 @HiltViewModel
-class BluetoothStatusViewModel @Inject constructor(private val mPrefs: LifeTimePrefs): ViewModel() {
+class BluetoothStatusViewModel @Inject constructor(
+    private val mPrefs: LifeTimePrefs,
+    private val bluetoothManager: BluetoothManager
+): ViewModel() {
 
-    private val bluetoothAdapter: BluetoothAdapter by lazy { BluetoothAdapter.getDefaultAdapter() }
+    private val bluetoothAdapter: BluetoothAdapter by lazy { bluetoothManager.adapter }
 
     fun isBtEnabled(): Boolean {
         return bluetoothAdapter.isEnabled

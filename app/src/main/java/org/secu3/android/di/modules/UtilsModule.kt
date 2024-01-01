@@ -24,13 +24,24 @@
 package org.secu3.android.di.modules
 
 
+import android.bluetooth.BluetoothManager
+import android.content.Context
 import dagger.Module
+import dagger.Provides
 import dagger.hilt.InstallIn
+import dagger.hilt.android.qualifiers.ApplicationContext
 import dagger.hilt.components.SingletonComponent
+import javax.inject.Singleton
 
 @InstallIn(SingletonComponent::class)
 @Module
 object UtilsModule {
+
+    @Singleton
+    @Provides
+    fun getBluetoothManager(@ApplicationContext context: Context): BluetoothManager {
+        return context.getSystemService(Context.BLUETOOTH_SERVICE) as BluetoothManager
+    }
 
 //    @Singleton
 //    @Provides
