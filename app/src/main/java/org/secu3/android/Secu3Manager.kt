@@ -127,7 +127,7 @@ class Secu3Manager @Inject constructor(
             try {
                 tmp = bluetoothDevice.createInsecureRfcommSocketToServiceRecord(uuid)
             } catch (e: IOException) {
-                Log.e("TAG", "Socket's create() method failed", e)
+                Log.e(this.javaClass.simpleName, "Socket's create() method failed", e)
             }
             mmSocket = tmp
         }
@@ -142,15 +142,15 @@ class Secu3Manager @Inject constructor(
                 // Connect to the remote device through the socket. This call blocks
                 // until it succeeds or throws an exception.
                 mmSocket?.connect()
-                Log.e("Status", "Device connected")
+                Log.e(this.javaClass.simpleName, "Device connected")
 
             } catch (connectException: IOException) {
                 // Unable to connect; close the socket and return.
                 try {
                     mmSocket?.close()
-                    Log.e("Status", "Cannot connect to device")
+                    Log.e(this.javaClass.simpleName, "Cannot connect to device")
                 } catch (closeException: IOException) {
-                    Log.e("TAG", "Could not close the client socket", closeException)
+                    Log.e(this.javaClass.simpleName, "Could not close the client socket", closeException)
                 }
                 return
             }
@@ -166,7 +166,7 @@ class Secu3Manager @Inject constructor(
             try {
                 mmSocket?.close()
             } catch (e: IOException) {
-                Log.e("TAG", "Could not close the client socket", e)
+                Log.e(this.javaClass.simpleName, "Could not close the client socket", e)
             }
         }
     }
@@ -201,7 +201,7 @@ class Secu3Manager @Inject constructor(
             var idx = 0
 
             val packetBuffer = IntArray(MAX_PACKET_SIZE)
-            Log.e("Status", "comunicating with device")
+            Log.e(this.javaClass.simpleName, "comunicating with device")
 
             val charset = StandardCharsets.ISO_8859_1
             val reader = BufferedReader(InputStreamReader(mmInStream, charset))
@@ -213,7 +213,7 @@ class Secu3Manager @Inject constructor(
                     if (sendPacket.isNotEmpty()) {
                         sendPacket.poll()?.let {
                             val packet = it.pack()
-                            Log.e("TAG", packet)
+                            Log.e(this.javaClass.simpleName, packet)
                             val escaped = PacketUtils.EscTxPacket(packet).run {
                                 val checksum = PacketUtils.calculateChecksum(this.substring(2, this.length))
                                 this + checksum[1].toInt().toChar() + checksum[0].toInt().toChar() + END_PACKET_SYMBOL

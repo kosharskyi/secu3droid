@@ -23,6 +23,7 @@
 */
 package org.secu3.android.models.packets
 
+import android.util.Log
 import org.secu3.android.models.packets.params.*
 import org.secu3.android.utils.PacketUtils
 
@@ -104,7 +105,8 @@ abstract class BaseSecu3Packet {
 
         fun parse(data: String, notEscaped: IntArray): BaseSecu3Packet? {
             return try {
-                val packet = when (data[1]) {
+                Log.e(this.javaClass.simpleName, data)
+                when (data[1]) {
                     SensorsPacket.DESCRIPTOR -> SensorsPacket.parse(data)
                     FirmwareInfoPacket.DESCRIPTOR -> FirmwareInfoPacket.parse(data)
                     AdcRawDatPacket.DESCRIPTOR -> AdcRawDatPacket.parse(data)
@@ -136,20 +138,20 @@ abstract class BaseSecu3Packet {
                     else -> null
                 }
 
-                packet?.apply {
-                    packetCrc[0] = notEscaped[notEscaped.lastIndex - 2].toUByte()
-                    packetCrc[1] = notEscaped[notEscaped.lastIndex - 1].toUByte()
-                }
-
-                if (packet != null) {
-                    val checksum = PacketUtils.calculateChecksum(data.substring(2, data.length))
-
-                    if (packet.packetCrc[0] == checksum[1] && packet.packetCrc[1] == checksum[0]) {
-                        return packet
-                    }
-                }
-
-                throw java.lang.IllegalArgumentException("checksumm doesn't match")
+//                packet?.apply {
+//                    packetCrc[0] = notEscaped[notEscaped.lastIndex - 2].toUByte()
+//                    packetCrc[1] = notEscaped[notEscaped.lastIndex - 1].toUByte()
+//                }
+//
+//                if (packet != null) {
+//                    val checksum = PacketUtils.calculateChecksum(data.substring(2, data.length))
+//
+//                    if (packet.packetCrc[0] == checksum[1] && packet.packetCrc[1] == checksum[0]) {
+//                        return packet
+//                    }
+//                }
+//
+//                throw java.lang.IllegalArgumentException("checksumm doesn't match")
             } catch (e: IllegalArgumentException) {
                 e.printStackTrace()
                 null
