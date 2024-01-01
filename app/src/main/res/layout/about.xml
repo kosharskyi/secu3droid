@@ -81,10 +81,12 @@
         </LinearLayout>
 
         <TextView
+            android:id="@+id/copyright_1"
             style="@style/about_text"
             android:text="@string/about_copyright_1" />
 
         <TextView
+            android:id="@+id/copyright_2"
             style="@style/about_text"
             android:text="@string/about_copyright_2" />
 

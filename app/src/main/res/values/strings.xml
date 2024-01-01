@@ -31,8 +31,8 @@
     <string name="menu_diagnostics_warning_title">WARNING! Disconnect ignition coils before entering diagnostic mode. Before testing of BL, DE outputs make sure that corresp. jumpers are opened!\nWARNING! Displayed inputs\' values are on the MCU lines, not on the external connector (there are differences).</string>
     <string name="about_title">About</string>
     <string name="about_version">Secu3Droid version</string>
-    <string name="about_copyright_1">Copyright © 2020 Kosharskiy Vitaliy</string>
-    <string name="about_copyright_2">Copyright © 2020 Secu3Droid Project</string>
+    <string name="about_copyright_1">Copyright © %d Kosharskyi Vitalii</string>
+    <string name="about_copyright_2">Copyright © %d Secu3Droid Project</string>
     <string name="about_app_desc">Secu3Droid is an application for managing Secu-3 ignition system. Secu-3 is an open source, free engine control unit, see <a href="http://secu-3.org"><b>http://secu-3.org</b></a>"</string>
     <string name="about_license">It is open source software distributed free of charge under the terms of the <a href="http://www.gnu.org/licenses/gpl-3.0-standalone.html"><b>GNU General Public License</b></a>.</string>
     <string name="about_sources">The source code is available from Git repository on the project website: https://github.com/kosharskiy/secu3droid</string>
