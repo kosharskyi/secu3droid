@@ -1,31 +1,30 @@
-/* SecuDroid  - An open source, free manager for SECU-3 engine control unit
-   Copyright (C) 2020 Vitaliy O. Kosharskiy. Ukraine, Kharkiv
-
-   SECU-3  - An open source, free engine control unit
-   Copyright (C) 2007 Alexey A. Shabelnikov. Ukraine, Kyiv
-
-   This program is free software: you can redistribute it and/or modify
-   it under the terms of the GNU General Public License as published by
-   the Free Software Foundation, either version 3 of the License, or
-   (at your option) any later version.
-
-   This program is distributed in the hope that it will be useful,
-   but WITHOUT ANY WARRANTY; without even the implied warranty of
-   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-   GNU General Public License for more details.
-
-   You should have received a copy of the GNU General Public License
-   along with this program.  If not, see <http://www.gnu.org/licenses/>.
-
-   contacts:
-              http://secu-3.org
-              email: vetalkosharskiy@gmail.com
-*/
+/*
+ *    SecuDroid  - An open source, free manager for SECU-3 engine control unit
+ *    Copyright (C) 2024 Vitaliy O. Kosharskyi. Ukraine, Kyiv
+ *
+ *    SECU-3  - An open source, free engine control unit
+ *    Copyright (C) 2007-2024 Alexey A. Shabelnikov. Ukraine, Kyiv
+ *
+ *    This program is free software: you can redistribute it and/or modify
+ *    it under the terms of the GNU General Public License as published by
+ *    the Free Software Foundation, either version 3 of the License, or
+ *    (at your option) any later version.
+ *
+ *    This program is distributed in the hope that it will be useful,
+ *    but WITHOUT ANY WARRANTY; without even the implied warranty of
+ *    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ *    GNU General Public License for more details.
+ *
+ *    You should have received a copy of the GNU General Public License
+ *    along with this program.  If not, see <http://www.gnu.org/licenses/>.
+ *
+ *    contacts:
+ *                    http://secu-3.org
+ *                    email: vetalkosharskiy@gmail.com
+ */
 package org.secu3.android.models.packets
 
-import android.util.Log
 import org.secu3.android.models.packets.params.*
-import org.secu3.android.utils.PacketUtils
 
 abstract class BaseSecu3Packet {
 
@@ -33,7 +32,7 @@ abstract class BaseSecu3Packet {
 
     protected fun String.get2Bytes(startIndex: Int): Int {
         if (startIndex + 2 > length) {
-            throw IllegalArgumentException("Packet too short")
+            throw IllegalArgumentException("Packet too short; request ${startIndex + 2} but length is $length")
         }
 
         return this.substring(startIndex, startIndex + 2).binToInt()
@@ -41,14 +40,14 @@ abstract class BaseSecu3Packet {
 
     protected fun String.get3Bytes(startIndex: Int): Int {
         if (startIndex + 3 > length) {
-            throw IllegalArgumentException("Packet too short")
+            throw IllegalArgumentException("Packet too short; request ${startIndex + 3} but length is $length")
         }
         return this.substring(startIndex, startIndex + 3).binToInt()
     }
 
     protected fun String.get4Bytes(startIndex: Int): Int {
         if (startIndex + 4 > length) {
-            throw IllegalArgumentException("Packet too short")
+            throw IllegalArgumentException("Packet too short; request ${startIndex + 4} but length is $length")
         }
         return this.substring(startIndex, startIndex + 4).binToInt()
     }
@@ -103,61 +102,61 @@ abstract class BaseSecu3Packet {
 
         const val MAX_PACKET_SIZE = 128
 
-        fun parse(data: String, notEscaped: IntArray): BaseSecu3Packet? {
-            return try {
-                when (data[1]) {
-                    SensorsPacket.DESCRIPTOR -> SensorsPacket.parse(data)
-                    FirmwareInfoPacket.DESCRIPTOR -> FirmwareInfoPacket.parse(data)
-                    AdcRawDatPacket.DESCRIPTOR -> AdcRawDatPacket.parse(data)
-                    CheckEngineErrorsPacket.DESCRIPTOR -> CheckEngineErrorsPacket.parse(data)
-                    CheckEngineSavedErrorsPacket.DESCRIPTOR -> CheckEngineSavedErrorsPacket.parse(data)
-                    DiagInputPacket.DESCRIPTOR -> DiagInputPacket.parse(data)
-
-                    StarterParamPacket.DESCRIPTOR -> StarterParamPacket.parse(data)
-                    AnglesParamPacket.DESCRIPTOR -> AnglesParamPacket.parse(data)
-                    IdlingParamPacket.DESCRIPTOR -> IdlingParamPacket.parse(data)
-                    FunSetParamPacket.DESCRIPTOR -> FunSetParamPacket.parse(data)
-                    TemperatureParamPacket.DESCRIPTOR -> TemperatureParamPacket.parse(data)
-                    CarburParamPacket.DESCRIPTOR -> CarburParamPacket.parse(data)
-                    AdcCorrectionsParamPacket.DESCRIPTOR -> AdcCorrectionsParamPacket.parse(data)
-                    CkpsParamPacket.DESCRIPTOR -> CkpsParamPacket.parse(data)
-                    KnockParamPacket.DESCRIPTOR -> KnockParamPacket.parse(data)
-                    MiscellaneousParamPacket.DESCRIPTOR -> MiscellaneousParamPacket.parse(data)
-                    ChokeControlParPacket.DESCRIPTOR -> ChokeControlParPacket.parse(data)
-                    SecurityParamPacket.DESCRIPTOR -> SecurityParamPacket.parse(data)
-                    UniOutParamPacket.DESCRIPTOR -> UniOutParamPacket.parse(data)
-                    InjctrParPacket.DESCRIPTOR -> InjctrParPacket.parse(data)
-                    LambdaParamPacket.DESCRIPTOR -> LambdaParamPacket.parse(data)
-                    AccelerationParamPacket.DESCRIPTOR -> AccelerationParamPacket.parse(data)
-                    GasDoseParamPacket.DESCRIPTOR -> GasDoseParamPacket.parse(data)
-
-                    FnNameDatPacket.DESCRIPTOR -> FnNameDatPacket.parse(data)
-                    OpCompNc.DESCRIPTOR -> OpCompNc.parse(data)
-
-                    else -> null
-                }
-
-//                packet?.apply {
-//                    packetCrc[0] = notEscaped[notEscaped.lastIndex - 2].toUByte()
-//                    packetCrc[1] = notEscaped[notEscaped.lastIndex - 1].toUByte()
+//        fun parse(data: String, notEscaped: IntArray): BaseSecu3Packet? {
+//            return try {
+//                when (data[1]) {
+//                    SensorsPacket.DESCRIPTOR -> SensorsPacket.parse(data)
+//                    FirmwareInfoPacket.DESCRIPTOR -> FirmwareInfoPacket.parse(data)
+//                    AdcRawDatPacket.DESCRIPTOR -> AdcRawDatPacket.parse(data, firmwarePacket)
+//                    CheckEngineErrorsPacket.DESCRIPTOR -> CheckEngineErrorsPacket.parse(data)
+//                    CheckEngineSavedErrorsPacket.DESCRIPTOR -> CheckEngineSavedErrorsPacket.parse(data)
+//                    DiagInputPacket.DESCRIPTOR -> DiagInputPacket.parse(data)
+//
+//                    StarterParamPacket.DESCRIPTOR -> StarterParamPacket.parse(data)
+//                    AnglesParamPacket.DESCRIPTOR -> AnglesParamPacket.parse(data)
+//                    IdlingParamPacket.DESCRIPTOR -> IdlingParamPacket.parse(data)
+//                    FunSetParamPacket.DESCRIPTOR -> FunSetParamPacket.parse(data)
+//                    TemperatureParamPacket.DESCRIPTOR -> TemperatureParamPacket.parse(data)
+//                    CarburParamPacket.DESCRIPTOR -> CarburParamPacket.parse(data)
+//                    AdcCorrectionsParamPacket.DESCRIPTOR -> AdcCorrectionsParamPacket.parse(data)
+//                    CkpsParamPacket.DESCRIPTOR -> CkpsParamPacket.parse(data)
+//                    KnockParamPacket.DESCRIPTOR -> KnockParamPacket.parse(data)
+//                    MiscellaneousParamPacket.DESCRIPTOR -> MiscellaneousParamPacket.parse(data)
+//                    ChokeControlParPacket.DESCRIPTOR -> ChokeControlParPacket.parse(data)
+//                    SecurityParamPacket.DESCRIPTOR -> SecurityParamPacket.parse(data)
+//                    UniOutParamPacket.DESCRIPTOR -> UniOutParamPacket.parse(data)
+//                    InjctrParPacket.DESCRIPTOR -> InjctrParPacket.parse(data)
+//                    LambdaParamPacket.DESCRIPTOR -> LambdaParamPacket.parse(data)
+//                    AccelerationParamPacket.DESCRIPTOR -> AccelerationParamPacket.parse(data)
+//                    GasDoseParamPacket.DESCRIPTOR -> GasDoseParamPacket.parse(data)
+//
+//                    FnNameDatPacket.DESCRIPTOR -> FnNameDatPacket.parse(data)
+//                    OpCompNc.DESCRIPTOR -> OpCompNc.parse(data)
+//
+//                    else -> null
 //                }
 //
-//                if (packet != null) {
-//                    val checksum = PacketUtils.calculateChecksum(data.substring(2, data.length))
-//
-//                    if (packet.packetCrc[0] == checksum[1] && packet.packetCrc[1] == checksum[0]) {
-//                        return packet
-//                    }
-//                }
-//
-//                throw java.lang.IllegalArgumentException("checksumm doesn't match")
-            } catch (e: IllegalArgumentException) {
-                e.printStackTrace()
-                null
-            } catch (e: StringIndexOutOfBoundsException) {
-                e.printStackTrace()
-                null
-            }
-        }
+////                packet?.apply {
+////                    packetCrc[0] = notEscaped[notEscaped.lastIndex - 2].toUByte()
+////                    packetCrc[1] = notEscaped[notEscaped.lastIndex - 1].toUByte()
+////                }
+////
+////                if (packet != null) {
+////                    val checksum = PacketUtils.calculateChecksum(data.substring(2, data.length))
+////
+////                    if (packet.packetCrc[0] == checksum[1] && packet.packetCrc[1] == checksum[0]) {
+////                        return packet
+////                    }
+////                }
+////
+////                throw java.lang.IllegalArgumentException("checksumm doesn't match")
+//            } catch (e: IllegalArgumentException) {
+//                e.printStackTrace()
+//                null
+//            } catch (e: StringIndexOutOfBoundsException) {
+//                e.printStackTrace()
+//                null
+//            }
+//        }
     }
 }

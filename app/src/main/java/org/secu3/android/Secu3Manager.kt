@@ -1,26 +1,27 @@
-/* SecuDroid  - An open source, free manager for SECU-3 engine control unit
-   Copyright (C) 2020 Vitaliy O. Kosharskiy. Ukraine, Kharkiv
-
-   SECU-3  - An open source, free engine control unit
-   Copyright (C) 2007 Alexey A. Shabelnikov. Ukraine, Kyiv
-
-   This program is free software: you can redistribute it and/or modify
-   it under the terms of the GNU General Public License as published by
-   the Free Software Foundation, either version 3 of the License, or
-   (at your option) any later version.
-
-   This program is distributed in the hope that it will be useful,
-   but WITHOUT ANY WARRANTY; without even the implied warranty of
-   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-   GNU General Public License for more details.
-
-   You should have received a copy of the GNU General Public License
-   along with this program.  If not, see <http://www.gnu.org/licenses/>.
-
-   contacts:
-              http://secu-3.org
-              email: vetalkosharskiy@gmail.com
-*/
+/*
+ *    SecuDroid  - An open source, free manager for SECU-3 engine control unit
+ *    Copyright (C) 2024 Vitaliy O. Kosharskyi. Ukraine, Kyiv
+ *
+ *    SECU-3  - An open source, free engine control unit
+ *    Copyright (C) 2007-2024 Alexey A. Shabelnikov. Ukraine, Kyiv
+ *
+ *    This program is free software: you can redistribute it and/or modify
+ *    it under the terms of the GNU General Public License as published by
+ *    the Free Software Foundation, either version 3 of the License, or
+ *    (at your option) any later version.
+ *
+ *    This program is distributed in the hope that it will be useful,
+ *    but WITHOUT ANY WARRANTY; without even the implied warranty of
+ *    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ *    GNU General Public License for more details.
+ *
+ *    You should have received a copy of the GNU General Public License
+ *    along with this program.  If not, see <http://www.gnu.org/licenses/>.
+ *
+ *    contacts:
+ *                    http://secu-3.org
+ *                    email: vetalkosharskiy@gmail.com
+ */
 
 package org.secu3.android
 
@@ -32,6 +33,7 @@ import android.util.Log
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.runBlocking
+import org.secu3.android.models.RawPacket
 import org.secu3.android.models.packets.BaseOutputPacket
 import org.secu3.android.models.packets.BaseSecu3Packet
 import org.secu3.android.models.packets.BaseSecu3Packet.Companion.END_PACKET_SYMBOL
@@ -74,8 +76,8 @@ class Secu3Manager @Inject constructor(
     var connectedThread: ConnectedThread? = null
     private var createConnectThread: CreateConnectThread? = null
 
-    private val mReceivedPacketFlow = MutableSharedFlow<BaseSecu3Packet>()
-    val receivedPacketFlow: Flow<BaseSecu3Packet>
+    private val mReceivedPacketFlow = MutableSharedFlow<RawPacket>()
+    val receivedPacketFlow: Flow<RawPacket>
         get() = mReceivedPacketFlow
 
 
@@ -249,11 +251,9 @@ class Secu3Manager @Inject constructor(
                                 val escaped = PacketUtils.EscRxPacket(packetBuffer.sliceArray(IntRange(0, idx - 4)))
                                 val line = String(escaped, 0, escaped.size)
 
-
-                                BaseSecu3Packet.parse(line, packetBuffer.sliceArray(IntRange(0, idx - 1)))?.let { packet ->
-                                    runBlocking {
-                                        mReceivedPacketFlow.emit(packet)
-                                    }
+                                val rawPacket = RawPacket(line, packetBuffer.sliceArray(IntRange(0, idx - 1)))
+                                runBlocking {
+                                    mReceivedPacketFlow.emit(rawPacket)
                                 }
                             }
 

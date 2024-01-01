@@ -1,26 +1,27 @@
-/* SecuDroid  - An open source, free manager for SECU-3 engine control unit
-   Copyright (C) 2020 Vitaliy O. Kosharskiy. Ukraine, Kharkiv
-
-   SECU-3  - An open source, free engine control unit
-   Copyright (C) 2007 Alexey A. Shabelnikov. Ukraine, Kyiv
-
-   This program is free software: you can redistribute it and/or modify
-   it under the terms of the GNU General Public License as published by
-   the Free Software Foundation, either version 3 of the License, or
-   (at your option) any later version.
-
-   This program is distributed in the hope that it will be useful,
-   but WITHOUT ANY WARRANTY; without even the implied warranty of
-   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-   GNU General Public License for more details.
-
-   You should have received a copy of the GNU General Public License
-   along with this program.  If not, see <http://www.gnu.org/licenses/>.
-
-   contacts:
-              http://secu-3.org
-              email: vetalkosharskiy@gmail.com
-*/
+/*
+ *    SecuDroid  - An open source, free manager for SECU-3 engine control unit
+ *    Copyright (C) 2024 Vitaliy O. Kosharskyi. Ukraine, Kyiv
+ *
+ *    SECU-3  - An open source, free engine control unit
+ *    Copyright (C) 2007-2024 Alexey A. Shabelnikov. Ukraine, Kyiv
+ *
+ *    This program is free software: you can redistribute it and/or modify
+ *    it under the terms of the GNU General Public License as published by
+ *    the Free Software Foundation, either version 3 of the License, or
+ *    (at your option) any later version.
+ *
+ *    This program is distributed in the hope that it will be useful,
+ *    but WITHOUT ANY WARRANTY; without even the implied warranty of
+ *    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ *    GNU General Public License for more details.
+ *
+ *    You should have received a copy of the GNU General Public License
+ *    along with this program.  If not, see <http://www.gnu.org/licenses/>.
+ *
+ *    contacts:
+ *                    http://secu-3.org
+ *                    email: vetalkosharskiy@gmail.com
+ */
 package org.secu3.android.models.packets
 
 data class AdcRawDatPacket(
@@ -44,7 +45,7 @@ data class AdcRawDatPacket(
 
         internal const val DESCRIPTOR = 's'
 
-        fun parse(data: String) = AdcRawDatPacket().apply {
+        fun parse(data: String, firmwarePacket: FirmwareInfoPacket?) = AdcRawDatPacket().apply {
             map = data.get2Bytes(2).toFloat() / VOLTAGE_MULTIPLIER
             voltage = data.get2Bytes(4).toFloat() / VOLTAGE_MULTIPLIER
             temperature = data.get2Bytes(6).toShort().toFloat() / VOLTAGE_MULTIPLIER
@@ -57,7 +58,7 @@ data class AdcRawDatPacket(
             addI5 = data.get2Bytes(20).toFloat() / VOLTAGE_MULTIPLIER
             addI6 = data.get2Bytes(22).toFloat() / VOLTAGE_MULTIPLIER
             addI7 = data.get2Bytes(24).toFloat() / VOLTAGE_MULTIPLIER
-            addI8 = data.get2Bytes(26).toFloat() / VOLTAGE_MULTIPLIER
+//            addI8 = data.get2Bytes(26).toFloat() / VOLTAGE_MULTIPLIER
         }
     }
 }
