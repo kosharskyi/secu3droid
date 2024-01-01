@@ -247,7 +247,6 @@
     <string name="status_starter_block_title">Starter blocked: %d\n</string>
     <string name="status_tps_title">Throttle Position Sensor:%.2f\n</string>
     <string name="status_addi1_voltage_title">ADD_I1: %.2f V\n</string>
-    <string name="status_addi2_voltage_title">ADD_I2: %.2f V\n</string>
     <string name="status_choke_position_title">Choke position: %.2f\n</string>
 
     <string name="raw_status_map_title">MAP Sensor data: %.2f V\n</string>
