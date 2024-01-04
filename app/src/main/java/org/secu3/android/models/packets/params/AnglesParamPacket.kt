@@ -32,10 +32,40 @@ data class AnglesParamPacket(
     var angleDecSpeed: Float = 0f,
     var angleIncSpeed: Float = 0f,
     var zeroAdvAngle: Int = 0,
-    var igntimFlags: Int = 0,
-    var shift_ingtim: Int = 0,
+    var igntimFlags: Int = 0,   // Ignition timing flags
+    var shift_ingtim: Float = 0f, // Shift ignition timing (degrees)
 
 ) : BaseOutputPacket(){
+
+    var alwaysUseIgnitionMap: Boolean           // Allways use working mode's ignition timing map
+        get() = igntimFlags.getBitValue(0) > 0
+        set(value) {
+            igntimFlags = if (value) {
+                1 or igntimFlags
+            } else {
+                1.inv().and(igntimFlags)
+            }
+        }
+
+    var zeroAdvAngleWithCorr: Boolean           // Zero advance angle with octane correction
+        get() = igntimFlags.getBitValue(1) > 0
+        set(value) {
+            igntimFlags = if (value) {
+                1 or igntimFlags
+            } else {
+                1.inv().and(igntimFlags)
+            }
+        }
+
+    var applyManualTimingCorrOnIdl: Boolean           // Apply manual ignition timing correction on idling
+        get() = igntimFlags.getBitValue(2) > 0
+        set(value) {
+            igntimFlags = if (value) {
+                1 or igntimFlags
+            } else {
+                1.inv().and(igntimFlags)
+            }
+        }
 
 
     companion object {
@@ -50,7 +80,7 @@ data class AnglesParamPacket(
             angleIncSpeed = data.get2Bytes(10).toFloat() / ANGLE_DIVIDER
             zeroAdvAngle = data[12].code
             igntimFlags = data[13].code
-            shift_ingtim = data.get2Bytes(2)
+            shift_ingtim = data.get2Bytes(2).toFloat() / ANGLE_DIVIDER
         }
     }
 
@@ -64,7 +94,7 @@ data class AnglesParamPacket(
         data += angleIncSpeed.times(ANGLE_DIVIDER).toInt().write2Bytes()
         data += zeroAdvAngle.toChar()
         data += igntimFlags.toChar()
-        data += shift_ingtim.write2Bytes()
+        data += shift_ingtim.times(ANGLE_DIVIDER).toInt().write2Bytes()
 
         return data
     }

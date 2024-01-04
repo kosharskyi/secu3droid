@@ -43,7 +43,11 @@
     <string name="angles_angle_increment_step_title">Angle increment step</string>
     <string name="angles_zero_angle_title">Zero advance angle</string>
     <string name="angles_octane_correction_title">Octane correction</string>
-    
+    <string name="angles_ign_timing_when_shifting_title">Ignition timing when shifting gears</string>
+    <string name="angles_always_use_ing_timing_map_title">Always use working mode\'s ignition timing map</string>
+    <string name="angles_apply_manual_timing_corr_title">Apply manual ignition timing correction on idling</string>
+    <string name="angles_zero_adv_correction_title">Zero adv. angle with octane correction</string>
+
     <string name="idlreg_ifac1_title">Positive regulator\'s factor</string>
     <string name="idlreg_ifac2_title">Negative regulator\'s factor</string>
     <string name="idlreg_minimal_angle_title">Minimal regulation limit</string>

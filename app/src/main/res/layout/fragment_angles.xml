@@ -113,4 +113,45 @@
         android:drawableEnd="?android:attr/listChoiceIndicatorMultiple"
         />
 
+    <org.secu3.android.ui.parameters.views.FloatParamView
+        android:id="@+id/ign_timing_when_shifting"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="16dp"
+        app:float_value="0"
+        app:title="@string/angles_ign_timing_when_shifting_title"
+        app:units="@string/units_degree"
+        app:value_precision="one"
+        app:float_min_value="-16.9"
+        app:float_max_value="55.0"
+        app:float_step="0.1"
+        />
+
+    <CheckBox
+        android:id="@+id/always_use_working_mode_angle_map"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="@string/angles_always_use_ing_timing_map_title"
+        android:button="@null"
+        android:drawableEnd="?android:attr/listChoiceIndicatorMultiple"
+        />
+
+    <CheckBox
+        android:id="@+id/apply_manual_timing_corr"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="@string/angles_apply_manual_timing_corr_title"
+        android:button="@null"
+        android:drawableEnd="?android:attr/listChoiceIndicatorMultiple"
+        />
+
+    <CheckBox
+        android:id="@+id/zero_adv_octane_corr"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="@string/angles_zero_adv_correction_title"
+        android:button="@null"
+        android:drawableEnd="?android:attr/listChoiceIndicatorMultiple"
+        />
+
 </LinearLayout>

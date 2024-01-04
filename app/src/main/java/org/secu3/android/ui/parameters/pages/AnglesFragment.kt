@@ -65,6 +65,12 @@ class AnglesFragment : BaseParamFragment() {
                 octaneCorrection.value = it.angleCorrection
 
                 zeroAdvAngle.isChecked = it.zeroAdvAngle > 0
+
+                ignTimingWhenShifting.value = it.shift_ingtim
+
+                alwaysUseWorkingModeAngleMap.isChecked = it.alwaysUseIgnitionMap
+                applyManualTimingCorr.isChecked = it.applyManualTimingCorrOnIdl
+                zeroAdvOctaneCorr.isChecked = it.zeroAdvAngleWithCorr
             }
 
             initViews()
@@ -99,11 +105,40 @@ class AnglesFragment : BaseParamFragment() {
                 packet?.let { it1 -> mViewModel.sendPacket(it1) }
             }
 
+            ignTimingWhenShifting.addOnValueChangeListener {
+                packet?.apply {
+                    shift_ingtim = it
+                    mViewModel.sendPacket(this)
+                }
+            }
+
+            alwaysUseWorkingModeAngleMap.setOnCheckedChangeListener { _, isChecked ->
+                packet?.apply {
+                    alwaysUseIgnitionMap = isChecked
+                    mViewModel.sendPacket(this)
+                }
+            }
+
+            applyManualTimingCorr.setOnCheckedChangeListener { _, isChecked ->
+                packet?.apply {
+                    applyManualTimingCorrOnIdl = isChecked
+                    mViewModel.sendPacket(this)
+                }
+            }
+
+            zeroAdvOctaneCorr.setOnCheckedChangeListener { _, isChecked ->
+                packet?.apply {
+                    zeroAdvAngleWithCorr = isChecked
+                    mViewModel.sendPacket(this)
+                }
+            }
+
             maxAdvanceAngle.setOnClickListener { floatParamClick(it as FloatParamView) }
             minAdvanceAngle.setOnClickListener { floatParamClick(it as FloatParamView) }
             angleDecreaseSpeed.setOnClickListener { floatParamClick(it as FloatParamView) }
             angleIncreaseSpeed.setOnClickListener { floatParamClick(it as FloatParamView) }
             octaneCorrection.setOnClickListener { floatParamClick(it as FloatParamView) }
+            ignTimingWhenShifting.setOnClickListener { floatParamClick(it as FloatParamView) }
         }
     }
 }

@@ -43,6 +43,10 @@
     <string name="angles_angle_increment_step_title">Швидкість збільшення КВЗ</string>
     <string name="angles_zero_angle_title">Обнулити кут випередження</string>
     <string name="angles_octane_correction_title">Октан-корекція</string>
+    <string name="angles_ign_timing_when_shifting_title">КВЗ при перемиканні передач</string>
+    <string name="angles_always_use_ing_timing_map_title">Завжди використовувати карту КВЗ робочого режиму</string>
+    <string name="angles_apply_manual_timing_corr_title">Застосовувати ручну октан корекцію в режимі ХХ</string>
+    <string name="angles_zero_adv_correction_title">Нулев. кут випередж. з октан корекцією</string>
     
     <string name="idlreg_ifac1_title">Позитивний коефіцієнт регулятора</string>
     <string name="idlreg_ifac2_title">Негативний коефіцієнт регулятора</string>

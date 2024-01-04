@@ -44,6 +44,10 @@
     <string name="angles_angle_increment_step_title">Скорость увеличения УОЗ</string>
     <string name="angles_zero_angle_title">Обнулить угол опережения</string>
     <string name="angles_octane_correction_title">Октан-коррекция</string>
+    <string name="angles_ign_timing_when_shifting_title">УОЗ при переключении передач</string>
+    <string name="angles_always_use_ing_timing_map_title">Всегда использовать карту УОЗ рабочего режима</string>
+    <string name="angles_apply_manual_timing_corr_title">Применять ручную октан коррекцию в режиме ХХ</string>
+    <string name="angles_zero_adv_correction_title">Нулев. уг. опер. с октан корекцией</string>
     
     <string name="idlreg_ifac1_title">Положительный коэффициент регулятора</string>
     <string name="idlreg_ifac2_title">Отрицательный коэффициент регулятора</string>
