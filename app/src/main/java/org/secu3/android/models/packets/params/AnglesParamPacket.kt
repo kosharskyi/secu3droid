@@ -32,6 +32,8 @@ data class AnglesParamPacket(
     var angleDecSpeed: Float = 0f,
     var angleIncSpeed: Float = 0f,
     var zeroAdvAngle: Int = 0,
+    var igntimFlags: Int = 0,
+    var shift_ingtim: Int = 0,
 
 ) : BaseOutputPacket(){
 
@@ -46,19 +48,23 @@ data class AnglesParamPacket(
             angleCorrection = data.get2Bytes(6).toFloat() / ANGLE_DIVIDER
             angleDecSpeed = data.get2Bytes(8).toFloat() / ANGLE_DIVIDER
             angleIncSpeed = data.get2Bytes(10).toFloat() / ANGLE_DIVIDER
-            zeroAdvAngle = data[12].toInt()
+            zeroAdvAngle = data[12].code
+            igntimFlags = data[13].code
+            shift_ingtim = data.get2Bytes(2)
         }
     }
 
     override fun pack(): String {
         var data = "$OUTPUT_PACKET_SYMBOL$DESCRIPTOR"
 
-        data += data.write2Bytes(maxAngle.times(ANGLE_DIVIDER).toInt())
-        data += data.write2Bytes(minAngle.times(ANGLE_DIVIDER).toInt())
-        data += data.write2Bytes(angleCorrection.times(ANGLE_DIVIDER).toInt())
-        data += data.write2Bytes(angleDecSpeed.times(ANGLE_DIVIDER).toInt())
-        data += data.write2Bytes(angleIncSpeed.times(ANGLE_DIVIDER).toInt())
+        data += maxAngle.times(ANGLE_DIVIDER).toInt().write2Bytes()
+        data += minAngle.times(ANGLE_DIVIDER).toInt().write2Bytes()
+        data += angleCorrection.times(ANGLE_DIVIDER).toInt().write2Bytes()
+        data += angleDecSpeed.times(ANGLE_DIVIDER).toInt().write2Bytes()
+        data += angleIncSpeed.times(ANGLE_DIVIDER).toInt().write2Bytes()
         data += zeroAdvAngle.toChar()
+        data += igntimFlags.toChar()
+        data += shift_ingtim.write2Bytes()
 
         return data
     }

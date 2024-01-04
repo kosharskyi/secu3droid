@@ -37,14 +37,17 @@ data class IdlingParamPacket(
 
     var idlToRunAdd: Float = 0f,
     var rpmOnRunAdd: Int = 0,
-    var idlRegP: Float = 0f,
-    var idlRegI: Float = 0f,
+    var idlRegP0: Float = 0f,
+    var idlRegP1: Float = 0f,
+    var idlRegI0: Float = 0f,
+    var idlRegI1: Float = 0f,
     var coefThrd1: Float = 0f,
     var coefThrd2: Float = 0f,
     var integratorRpmLim: Int = 0,
     var mapValue: Float = 0f,
     var iacMinPos: Float = 0f,
     var iacMaxPos: Float = 0f,
+    var iacRegDb: Float = 0f,
 
 
     ) : BaseOutputPacket() {
@@ -105,7 +108,7 @@ data class IdlingParamPacket(
         internal const val DESCRIPTOR = 'l'
 
         fun parse(data: String) = IdlingParamPacket().apply {
-            idlFlags = data[2].toInt()
+            idlFlags = data[2].code
             iFac1 = data.get2Bytes(3).toFloat() / 256
             iFac2 = data.get2Bytes(5).toFloat() / 256
             minefr = data.get2Bytes(7)
@@ -113,16 +116,19 @@ data class IdlingParamPacket(
             idlregMinAngle = data.get2Bytes(11).toShort().toFloat() / ANGLE_DIVIDER
             idlregMaxAngle = data.get2Bytes(13).toShort().toFloat() / ANGLE_DIVIDER
             idlregTurnOnTemp = data.get2Bytes(15).toFloat() / TEMPERATURE_MULTIPLIER
-            idlToRunAdd = data[17].toFloat() / 2.0f
-            rpmOnRunAdd = data[18].toInt() * 10
-            idlRegP = data.get2Bytes(19).toFloat() / 256
-            idlRegI = data.get2Bytes(21).toFloat() / 256
-            coefThrd1 = data[23].toFloat().div(128).plus(1.0f)
-            coefThrd2 = data[24].toFloat().div(128).plus(1.0f)
-            integratorRpmLim = data[25].toInt().times(10)
-            mapValue = data.get2Bytes(26).toFloat() / MAP_MULTIPLIER
-            iacMinPos = data[28].toFloat() / 2
-            iacMaxPos = data[29].toFloat() / 2
+            idlToRunAdd = data[17].code.toFloat() / 2.0f
+            rpmOnRunAdd = data[18].code * 10
+            idlRegP0 = data.get2Bytes(19).toFloat() / 256
+            idlRegP1 = data.get2Bytes(21).toFloat() / 256
+            idlRegI0 = data.get2Bytes(23).toFloat() / 256
+            idlRegI1 = data.get2Bytes(25).toFloat() / 256
+            coefThrd1 = data[27].code.toFloat().div(128).plus(1.0f)
+            coefThrd2 = data[28].code.toFloat().div(128).plus(1.0f)
+            integratorRpmLim = data[29].code.times(10)
+            mapValue = data.get2Bytes(30).toFloat() / MAP_MULTIPLIER
+            iacMinPos = data[32].code.toFloat() / 2
+            iacMaxPos = data[33].code.toFloat() / 2
+            iacRegDb = data.get2Bytes(34).toFloat() / 2
         }
     }
 
@@ -139,14 +145,17 @@ data class IdlingParamPacket(
         data += idlregTurnOnTemp.times(TEMPERATURE_MULTIPLIER).toInt().write2Bytes()
         data += idlToRunAdd.times(2.0f).toInt().toChar()
         data += rpmOnRunAdd.div(10).toChar()
-        data += idlRegP.times(256).toInt().toChar()
-        data += idlRegI.times(256).toInt().toChar()
+        data += idlRegP0.times(256).toInt().write2Bytes()
+        data += idlRegP1.times(256).toInt().write2Bytes()
+        data += idlRegI0.times(256).toInt().write2Bytes()
+        data += idlRegI1.times(256).toInt().write2Bytes()
         data += coefThrd1.minus(1.0f).times(128).toInt().toChar()
         data += coefThrd2.minus(1.0f).times(128).toInt().toChar()
         data += integratorRpmLim.div(10).toChar()
         data += mapValue.times(MAP_MULTIPLIER).toInt().write2Bytes()
         data += iacMinPos.times(2).toInt().toChar()
         data += iacMaxPos.times(2).toInt().toChar()
+        data += iacRegDb.times(2).toInt().write2Bytes()
 
         return data
     }

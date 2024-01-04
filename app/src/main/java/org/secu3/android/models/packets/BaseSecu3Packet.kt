@@ -24,11 +24,9 @@
  */
 package org.secu3.android.models.packets
 
-import org.secu3.android.models.packets.params.*
-
 abstract class BaseSecu3Packet {
 
-    protected var packetCrc: UByteArray = UByteArray(2)
+    var packetCrc: ByteArray = ByteArray(2)
 
     protected fun String.get2Bytes(startIndex: Int): Int {
         if (startIndex + 2 > length) {
@@ -56,7 +54,7 @@ abstract class BaseSecu3Packet {
         var v = 0
         for (element in this) {
             v = v shl 8
-            v = v or element.toInt()
+            v = v or element.code
         }
         return v
     }
@@ -81,8 +79,6 @@ abstract class BaseSecu3Packet {
 
     companion object {
 
-        private const val TAG = "SecuPacketParser"
-
         const val INPUT_PACKET_SYMBOL = '@'
         const val OUTPUT_PACKET_SYMBOL = '!'
         const val END_PACKET_SYMBOL = '\r'
@@ -101,62 +97,5 @@ abstract class BaseSecu3Packet {
         internal const val AFR_MULTIPLIER: Int = 128
 
         const val MAX_PACKET_SIZE = 250
-
-//        fun parse(data: String, notEscaped: IntArray): BaseSecu3Packet? {
-//            return try {
-//                when (data[1]) {
-//                    SensorsPacket.DESCRIPTOR -> SensorsPacket.parse(data)
-//                    FirmwareInfoPacket.DESCRIPTOR -> FirmwareInfoPacket.parse(data)
-//                    AdcRawDatPacket.DESCRIPTOR -> AdcRawDatPacket.parse(data, firmwarePacket)
-//                    CheckEngineErrorsPacket.DESCRIPTOR -> CheckEngineErrorsPacket.parse(data)
-//                    CheckEngineSavedErrorsPacket.DESCRIPTOR -> CheckEngineSavedErrorsPacket.parse(data)
-//                    DiagInputPacket.DESCRIPTOR -> DiagInputPacket.parse(data)
-//
-//                    StarterParamPacket.DESCRIPTOR -> StarterParamPacket.parse(data)
-//                    AnglesParamPacket.DESCRIPTOR -> AnglesParamPacket.parse(data)
-//                    IdlingParamPacket.DESCRIPTOR -> IdlingParamPacket.parse(data)
-//                    FunSetParamPacket.DESCRIPTOR -> FunSetParamPacket.parse(data)
-//                    TemperatureParamPacket.DESCRIPTOR -> TemperatureParamPacket.parse(data)
-//                    CarburParamPacket.DESCRIPTOR -> CarburParamPacket.parse(data)
-//                    AdcCorrectionsParamPacket.DESCRIPTOR -> AdcCorrectionsParamPacket.parse(data)
-//                    CkpsParamPacket.DESCRIPTOR -> CkpsParamPacket.parse(data)
-//                    KnockParamPacket.DESCRIPTOR -> KnockParamPacket.parse(data)
-//                    MiscellaneousParamPacket.DESCRIPTOR -> MiscellaneousParamPacket.parse(data)
-//                    ChokeControlParPacket.DESCRIPTOR -> ChokeControlParPacket.parse(data)
-//                    SecurityParamPacket.DESCRIPTOR -> SecurityParamPacket.parse(data)
-//                    UniOutParamPacket.DESCRIPTOR -> UniOutParamPacket.parse(data)
-//                    InjctrParPacket.DESCRIPTOR -> InjctrParPacket.parse(data)
-//                    LambdaParamPacket.DESCRIPTOR -> LambdaParamPacket.parse(data)
-//                    AccelerationParamPacket.DESCRIPTOR -> AccelerationParamPacket.parse(data)
-//                    GasDoseParamPacket.DESCRIPTOR -> GasDoseParamPacket.parse(data)
-//
-//                    FnNameDatPacket.DESCRIPTOR -> FnNameDatPacket.parse(data)
-//                    OpCompNc.DESCRIPTOR -> OpCompNc.parse(data)
-//
-//                    else -> null
-//                }
-//
-////                packet?.apply {
-////                    packetCrc[0] = notEscaped[notEscaped.lastIndex - 2].toUByte()
-////                    packetCrc[1] = notEscaped[notEscaped.lastIndex - 1].toUByte()
-////                }
-////
-////                if (packet != null) {
-////                    val checksum = PacketUtils.calculateChecksum(data.substring(2, data.length))
-////
-////                    if (packet.packetCrc[0] == checksum[1] && packet.packetCrc[1] == checksum[0]) {
-////                        return packet
-////                    }
-////                }
-////
-////                throw java.lang.IllegalArgumentException("checksumm doesn't match")
-//            } catch (e: IllegalArgumentException) {
-//                e.printStackTrace()
-//                null
-//            } catch (e: StringIndexOutOfBoundsException) {
-//                e.printStackTrace()
-//                null
-//            }
-//        }
     }
 }

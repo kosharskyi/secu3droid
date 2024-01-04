@@ -34,6 +34,7 @@ data class SensorsPacket(var rpm: Int = 0,
                          var sensorsFlags: Int = 0,
                          var tps: Float = 0f,                  // TPS throttle position sensor (0...100%, x2)
                          var addI1: Float = 0f,                // ADD_I1 voltage
+                         var addI2: Float = 0f,                // ADD_I2 voltage
                          var ecuErrors: Int = 0,            // Check Engine errors
                          var chokePosition: Float = 0f,
                          var gasDosePosition: Int = 0,      // gas dosator position
@@ -72,6 +73,12 @@ data class SensorsPacket(var rpm: Int = 0,
                          var ftls: Int = 0,                  //fuel tank level
                          var egts: Int = 0,                  //exhaust gas temperature
                          var ops: Int = 0,                   //oil pressure
+
+                         var sens_injDuty: Float = 0f,               //injector's duty in % (value * 2)
+                         var sens_maf: Float = 0f,                   //Air flow (g/sec) * 64 from the MAF sensor
+                         var ventDuty: Int = 0,                   //PWM duty of cooling fan
+
+                         var uniOutput: Int = 0,                   //states of universal outputs
 
 ) : BaseSecu3Packet(){
 
@@ -146,49 +153,57 @@ data class SensorsPacket(var rpm: Int = 0,
             tps = data[19].code.toFloat() / TPS_MULTIPLIER
 
             addI1 = data.get2Bytes(20).toFloat() / VOLTAGE_MULTIPLIER
+            addI2 = data.get2Bytes(22).toFloat() / VOLTAGE_MULTIPLIER
 
-            ecuErrors = data.get4Bytes(22)
-            chokePosition = data[26].code.toFloat() / CHOKE_MULTIPLIER
-            gasDosePosition = data[27].code / GAS_DOSE_MULTIPLIER
+            ecuErrors = data.get4Bytes(24)
+            chokePosition = data[28].code.toFloat() / CHOKE_MULTIPLIER
+            gasDosePosition = data[29].code / GAS_DOSE_MULTIPLIER
 
-            rawSpeed = data.get2Bytes(28)
-            rawDistance = data.get3Bytes(30)
+            rawSpeed = data.get2Bytes(30)
+            rawDistance = data.get3Bytes(32)
 
-            fuelInject = data.get2Bytes(33)
+            fuelInject = data.get2Bytes(35)
 
-            data.get2Bytes(35).takeIf { it != 0x7FFF }?.let {
+            data.get2Bytes(37).takeIf { it != 0x7FFF }?.let {
                 airtempSensor = it.toShort().toFloat() / TEMPERATURE_MULTIPLIER
             }
 
-            strtAalt = data.get2Bytes(37)
-            idleAalt = data.get2Bytes(39)
-            workAalt = data.get2Bytes(41)
-            tempAalt = data.get2Bytes(43)
-            airtAalt = data.get2Bytes(45)
-            idlregAac = data.get2Bytes(47)
-            octanAac = data.get2Bytes(49)
+            strtAalt = data.get2Bytes(39)
+            idleAalt = data.get2Bytes(41)
+            workAalt = data.get2Bytes(43)
+            tempAalt = data.get2Bytes(45)
+            airtAalt = data.get2Bytes(47)
+            idlregAac = data.get2Bytes(49)
+            octanAac = data.get2Bytes(51)
 
-            lambda = data.get2Bytes(51)
+            lambda = data.get2Bytes(53)
 
-            injPw = data.get2Bytes(53)
+            injPw = data.get2Bytes(55)
 
-            tpsdot = data.get2Bytes(55)
+            tpsdot = data.get2Bytes(57)
 
-            map2 = data.get2Bytes(57).toFloat() / MAP_MULTIPLIER
-            tmp2 = data.get2Bytes(59).toShort().toFloat() / TEMPERATURE_MULTIPLIER
+            map2 = data.get2Bytes(59).toFloat() / MAP_MULTIPLIER
+            tmp2 = data.get2Bytes(61).toShort().toFloat() / TEMPERATURE_MULTIPLIER
 
 
-            afr = data.get2Bytes(61).toFloat() / AFR_MULTIPLIER
-            load = data.get2Bytes(63)
-            baroPress = data.get2Bytes(65)
+            afr = data.get2Bytes(63).toFloat() / AFR_MULTIPLIER
+            load = data.get2Bytes(65)
+            baroPress = data.get2Bytes(67)
 
-            iit = data.get2Bytes(67).toShort()
-            rigidArg = data[71].toInt()
-            grts = data.get2Bytes(70)           // gas reducer's temperature
-            rxlaf = data.get2Bytes(72)           // RxL air flow, note: it is divided by 32
-            ftls = data.get2Bytes(74)
-            egts = data.get2Bytes(76)
-            ops = data.get2Bytes(78)
+            iit = data.get2Bytes(69).toShort()
+            rigidArg = data[71].code
+            grts = data.get2Bytes(72)           // gas reducer's temperature
+            rxlaf = data.get2Bytes(74)           // RxL air flow, note: it is divided by 32
+            ftls = data.get2Bytes(76)
+            egts = data.get2Bytes(78)
+            ops = data.get2Bytes(80)
+
+            sens_injDuty = data[82].code.toFloat() / TPS_MULTIPLIER
+
+            sens_maf = data.get2Bytes(83).toFloat() / MAP_MULTIPLIER
+            ventDuty = data[85].code
+
+            uniOutput = data[86].code
         }
 
 

@@ -51,7 +51,7 @@ data class OpCompNc(
         internal const val DESCRIPTOR = 'u'
 
 
-        fun parse(data: String) = OpCompNc(data[2].toInt(), data[3].toInt())
+        fun parse(data: String) = OpCompNc(data[2].code, data[3].code)
         
         fun getEnterDiagPacket() = OpCompNc(0, DIAGNOST_ENTER)
         fun getLeaveDiagPacket() = OpCompNc(0, DIAGNOST_LEAVE)

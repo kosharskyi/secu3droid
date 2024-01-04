@@ -29,7 +29,9 @@ data class AccelerationParamPacket(
 
     var injAeTpsdotThrd: Int = 0,
     var injAeColdaccMult: Int = 0,
-    var injAeDecayTime: Int = 0
+    var injAeDecayTime: Int = 0,
+    var injAeType: Int = 0,
+    var injAeTime: Int = 0,
 
 ) : BaseOutputPacket() {
 
@@ -42,6 +44,9 @@ data class AccelerationParamPacket(
 
         data += injAeDecayTime.toChar()
 
+        data += injAeType.toChar()
+        data += injAeTime.toChar()
+
         return data
     }
 
@@ -51,12 +56,14 @@ data class AccelerationParamPacket(
 
         fun parse(data: String) = AccelerationParamPacket().apply {
 
-            injAeTpsdotThrd = data[2].toInt()
-            data[3].toInt().let {
+            injAeTpsdotThrd = data[2].code
+            data[3].code.let {
                 injAeColdaccMult = ((it.toFloat() / 128f + 1.0f) * 100).toInt()
             }
-            injAeDecayTime = data[4].toInt()
+            injAeDecayTime = data[4].code
 
+            injAeType = data[5].code
+            injAeTime = data[6].code
         }
     }
 

@@ -100,13 +100,12 @@ object PacketUtils {
         return String(outBuf, 0, outBuf.size)
     }
 
-    @ExperimentalUnsignedTypes
-    fun calculateChecksum(packet: String): UByteArray {
-        val crc22 = UByteArray(2) { 0u }
+    fun calculateChecksum(packet: String): ByteArray {
+        val crc22 = ByteArray(2) { 0 }
 
         for (char in packet) {
-            crc22[0] = (crc22[0] + char.code.toUByte()).toUByte()
-            crc22[1] = (crc22[1] + crc22[0]).toUByte()
+            crc22[0] = (crc22[0] + char.code.toByte()).toByte()
+            crc22[1] = (crc22[1] + crc22[0]).toByte()
         }
         return crc22
     }

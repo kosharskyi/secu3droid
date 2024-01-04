@@ -46,6 +46,14 @@ data class FunSetParamPacket(
     var barocorrType: Int = 0,
     var funcFlags: Int = 0,
 
+    var ve2MapFunc: Int = 0,
+    var gasVUni: Int = 0,
+
+    var ckpsEngineCyl: Int = 0, //used for calculations on SECU-3 Manager side
+    var injCylDisp: Int = 0,    //used for calculations on SECU-3 Manager side
+    var mafload_const: Int = 0, //calculated in manager before send
+    var tps_raw: Int = 0,        //for TPS learning
+
     ): BaseOutputPacket() {
 
     override fun pack(): String {
@@ -65,7 +73,15 @@ data class FunSetParamPacket(
         data += loadSrcCfg.toChar()
         data += mapserUni.toChar()
         data += barocorrType.toChar()
-//        data += funcFlags.toChar()
+        data += funcFlags.toChar()
+
+        data += ve2MapFunc.toChar()
+        data += gasVUni.toChar()
+
+        data += ckpsEngineCyl.toChar()
+        data += injCylDisp.write2Bytes()
+        data += mafload_const.write4Bytes()
+        data += tps_raw.write2Bytes()
 
         return data
     }
@@ -88,8 +104,8 @@ data class FunSetParamPacket(
 
         fun parse(data: String) = FunSetParamPacket().apply {
 
-            fnGasoline = data[2].toInt()
-            fnGas = data[3].toInt()
+            fnGasoline = data[2].code
+            fnGas = data[3].code
             loadLower = data.get2Bytes(4).toFloat() / MAP_MULTIPLIER
             loadUpper = data.get2Bytes(6).toFloat() / MAP_MULTIPLIER
             mapCurveOffset = data.get2Bytes(8).toFloat() / VOLTAGE_MULTIPLIER
@@ -98,10 +114,18 @@ data class FunSetParamPacket(
             map2CurveGradient = data.get2Bytes(14).toFloat() / 2048 * 100
             tpsCurveOffset = data.get2Bytes(16).toFloat() / VOLTAGE_MULTIPLIER
             tpsCurveGradient = data.get2Bytes(18).toFloat() / 4096 * 100
-            loadSrcCfg = data[20].toInt()
-            mapserUni = data[21].toInt()
-            barocorrType = data[22].toInt()
-//            funcFlags = data[23].toInt()
+            loadSrcCfg = data[20].code
+            mapserUni = data[21].code
+            barocorrType = data[22].code
+            funcFlags = data[23].code
+
+            ve2MapFunc = data[24].code
+            gasVUni = data[25].code
+
+            ckpsEngineCyl = data[26].code
+            injCylDisp = data.get2Bytes(27)
+            mafload_const = data.get4Bytes(29)
+            tps_raw = data.get2Bytes(33)
         }
 
     }

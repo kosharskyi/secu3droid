@@ -261,6 +261,7 @@
     <string name="status_starter_block_title">Стартер заблокирован: %d\n</string>
     <string name="status_tps_title">ДПДЗ:%.2f\n</string>
     <string name="status_addi1_voltage_title">ADD_I1: %.2f В\n</string>
+    <string name="status_addi2_voltage_title">ADD_I2: %.2f В\n</string>
     <string name="status_choke_position_title">Воздушная заслонка: %.2f\n</string>
 
     <string name="raw_status_map_title">Датчик абсолютного давления: %.2f В\n</string>

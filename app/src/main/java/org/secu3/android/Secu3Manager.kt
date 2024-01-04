@@ -214,12 +214,16 @@ class Secu3Manager @Inject constructor(
 
                     if (sendPacket.isNotEmpty()) {
                         sendPacket.poll()?.let {
-                            val packet = it.pack()
+                            var packet = it.pack()
+                            val checksum = PacketUtils.calculateChecksum(packet.substring(2, packet.length))
+
+                            packet += checksum[1].toInt().toChar()
+                            packet += checksum[0].toInt().toChar()
+
                             Log.e(this.javaClass.simpleName, packet)
-                            val escaped = PacketUtils.EscTxPacket(packet).run {
-                                val checksum = PacketUtils.calculateChecksum(this.substring(2, this.length))
-                                this + checksum[1].toInt().toChar() + checksum[0].toInt().toChar() + END_PACKET_SYMBOL
-                            }
+                            var escaped = PacketUtils.EscTxPacket(packet)
+                            escaped += END_PACKET_SYMBOL
+
                             writer.append(escaped)
 
                             sleep(20)
@@ -239,7 +243,9 @@ class Secu3Manager @Inject constructor(
                                 }
                             }
 
-                            packetBuffer[idx++] = it.code
+                            if (it != '\r') {
+                                packetBuffer[idx++] = it.code
+                            }
 
                             if (idx >= MAX_PACKET_SIZE) {
                                 mSecu3PacketSearch = SECU3_PACKET_SEARCH.SEARCH_START
@@ -248,10 +254,10 @@ class Secu3Manager @Inject constructor(
 
                             if (mSecu3PacketSearch == SECU3_PACKET_SEARCH.SEARCH_END && it == '\r') {
                                 mSecu3PacketSearch = SECU3_PACKET_SEARCH.SEARCH_START
-                                val escaped = PacketUtils.EscRxPacket(packetBuffer)
+                                val escaped = PacketUtils.EscRxPacket(packetBuffer.sliceArray(IntRange(0, idx-1)))
                                 val line = String(escaped, 0, escaped.size)
 
-                                val rawPacket = RawPacket(line, packetBuffer.sliceArray(IntRange(0, idx - 1)))
+                                val rawPacket = RawPacket(line)
                                 runBlocking {
                                     mReceivedPacketFlow.emit(rawPacket)
                                 }

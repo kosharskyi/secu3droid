@@ -150,6 +150,7 @@ class SensorsFragment : Fragment() {
             result += String.format(Locale.US, getString(R.string.status_starter_block_title), it.stBlockBit)
 
             result += String.format(Locale.US, getString(R.string.status_addi1_voltage_title), it.addI1)
+            result += String.format(Locale.US, getString(R.string.status_addi2_voltage_title), it.addI2)
             result += String.format(Locale.US, getString(R.string.status_tps_title), it.tps)
             result += String.format(Locale.US, getString(R.string.status_choke_position_title), it.chokePosition)
 

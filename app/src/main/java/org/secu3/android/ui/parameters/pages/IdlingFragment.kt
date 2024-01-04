@@ -73,8 +73,9 @@ class IdlingFragment : BaseParamFragment() {
                 iacAddAfterExit.value = it.idlToRunAdd
                 rpmAddOnRun.value = it.rpmOnRunAdd
 
-                proportional.value = it.idlRegP
-                integral.value = it.idlRegI
+                //TODO add imple of idlRegP1 and idlRegI1
+                proportional.value = it.idlRegP0
+                integral.value = it.idlRegI0
 
                 transientThreshold1.value = it.coefThrd1
                 transientThreshold2.value = it.coefThrd2
@@ -152,13 +153,14 @@ class IdlingFragment : BaseParamFragment() {
                 packet?.let { it1 -> mViewModel.sendPacket(it1) }
             }
 
+            //TODO add imple of idlRegP1 and idlRegI1
             proportional.addOnValueChangeListener {
-                packet?.idlRegP = it
+                packet?.idlRegP0 = it
                 packet?.let { it1 -> mViewModel.sendPacket(it1) }
             }
 
             integral.addOnValueChangeListener {
-                packet?.idlRegI = it
+                packet?.idlRegI0 = it
                 packet?.let { it1 -> mViewModel.sendPacket(it1) }
             }
 

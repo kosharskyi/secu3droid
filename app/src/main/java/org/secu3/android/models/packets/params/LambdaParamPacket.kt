@@ -100,8 +100,8 @@ data class LambdaParamPacket(
 
         data += strPerStp.toChar()
 
-        data += stepSizeP.div(100).times(512).toChar()
-        data += stepSizeM.div(100).times(512).toChar()
+        data += stepSizeP.div(100).times(512).toInt().toChar()
+        data += stepSizeM.div(100).times(512).toInt().toChar()
 
         data += corrLimitP.div(100).times(512).toInt().write2Bytes()
         data += corrLimitM.div(100).times(512).toInt().write2Bytes()
@@ -121,7 +121,7 @@ data class LambdaParamPacket(
         data += heatingTime0.toChar()
         data += heatingTime1.toChar()
         data += temperThrd.toChar()
-        data += heatingAct.times(100).toChar()
+        data += heatingAct.times(100).toInt().toChar()
 
         data += aflowThrd.div(32).write2Bytes()
 
@@ -134,10 +134,10 @@ data class LambdaParamPacket(
 
         fun parse(data: String) = LambdaParamPacket().apply {
 
-            strPerStp = data[2].toInt()
+            strPerStp = data[2].code
 
-            stepSizeP = data[3].toFloat() / 512 * 100
-            stepSizeM = data[4].toFloat() / 512 * 100
+            stepSizeP = data[3].code.toFloat() / 512 * 100
+            stepSizeM = data[4].code.toFloat() / 512 * 100
 
             corrLimitP = data.get2Bytes(5).toFloat() / 512 * 100
             corrLimitM = data.get2Bytes(7).toFloat() / 512 * 100
@@ -146,18 +146,18 @@ data class LambdaParamPacket(
             tempThrd = data.get2Bytes(11).toFloat() / TEMPERATURE_MULTIPLIER
             rpmThrd = data.get2Bytes(13)
 
-            activDelay = data[15].toInt()
+            activDelay = data[15].code
 
             deadBand = data.get2Bytes(16).toFloat() / VOLTAGE_MULTIPLIER
-            senstype = data[18].toInt()
-            msPerStp = data[19].toInt()
-            flags = data[20].toInt()
+            senstype = data[18].code
+            msPerStp = data[19].code
+            flags = data[20].code
             gdStoichval = data.get2Bytes(21).toFloat() / AFR_MULTIPLIER
 
-            heatingTime0 = data[23].toInt()
-            heatingTime1 = data[24].toInt()
-            temperThrd = data[25].toInt()
-            heatingAct = data[26].toFloat() / 100
+            heatingTime0 = data[23].code
+            heatingTime1 = data[24].code
+            temperThrd = data[25].code
+            heatingAct = data[26].code.toFloat() / 100
             aflowThrd = data.get2Bytes(27) * 32
 
         }

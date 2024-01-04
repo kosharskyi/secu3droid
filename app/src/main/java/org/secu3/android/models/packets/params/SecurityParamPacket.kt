@@ -70,7 +70,7 @@ data class SecurityParamPacket(
         internal const val IBTN_KEY_SIZE = 6
 
         fun parse(data: String) = SecurityParamPacket().apply {
-            btFlags = data[4].toInt()
+            btFlags = data[4].code
             iButton0 = data.substring(5, 11)
             iButton1 = data.substring(11, 17)
         }

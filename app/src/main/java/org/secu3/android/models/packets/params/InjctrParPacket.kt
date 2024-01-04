@@ -48,7 +48,14 @@ data class InjctrParPacket(
 
     var fffConst: Int = 0,
 
-    var minPw: Int = 0
+    var minPw: Int = 0,
+
+    var injMafConst: IntArray = IntArray(2),
+
+    var mafloadConst: Int = 0,
+
+    var injMaxPw: IntArray = IntArray(2),
+
 
 ) : BaseOutputPacket() {
 
@@ -80,6 +87,14 @@ data class InjctrParPacket(
 
         data += fffConst.toFloat().div(1000f*60f).times(65536f).toInt().write2Bytes()
         data += minPw.write2Bytes()
+
+        data += injMafConst[0].write4Bytes()
+        data += injMafConst[1].write4Bytes()
+
+        data += mafloadConst.write4Bytes()
+
+        data += injMaxPw[0].write2Bytes()
+        data += injMaxPw[1].write2Bytes()
 
         return data
     }
@@ -306,10 +321,10 @@ data class InjctrParPacket(
 
         fun parse(data: String) = InjctrParPacket().apply {
 
-            flags = data[2].toInt()
+            flags = data[2].code
 
-            config[0] = data[3].toInt()
-            config[1] = data[4].toInt()
+            config[0] = data[3].code
+            config[1] = data[4].code
             
             flowRate[0] = data.get2Bytes(5).toFloat() / 64
             flowRate[1] = data.get2Bytes(7).toFloat() / 64
@@ -319,7 +334,7 @@ data class InjctrParPacket(
             sdIglConst[0] = data.get4Bytes(11)
             sdIglConst[1] = data.get4Bytes(15)
 
-            ckpsEngineCyl = data[19].toInt()
+            ckpsEngineCyl = data[19].code
 
             timing[0] = data.get2Bytes(20) / PARINJTIM_DIVIDER
             timing[1] = data.get2Bytes(22) / PARINJTIM_DIVIDER
@@ -327,11 +342,18 @@ data class InjctrParPacket(
             timingCrk[0] = data.get2Bytes(24) / PARINJTIM_DIVIDER
             timingCrk[1] = data.get2Bytes(26) / PARINJTIM_DIVIDER
 
-            angleSpec = data[28].toInt()
+            angleSpec = data[28].code
 
             fffConst = data.get2Bytes(29).toFloat().div(65536f).times(1000*60).roundToInt()
             minPw = data.get2Bytes(31)
 
+            injMafConst[0] = data.get4Bytes(33)
+            injMafConst[1] = data.get4Bytes(37)
+
+            mafloadConst = data.get4Bytes(41)
+
+            injMaxPw[0] = data.get2Bytes(45)
+            injMaxPw[1] = data.get2Bytes(47)
         }
     }
 

@@ -35,6 +35,8 @@ data class StarterParamPacket(
     var injPrimeDelay: Float = 0f,
     var injFloodclearTps: Float = 0f,
     var injAftStrokes1: Int = 0,
+    var stblStrCnt: Int = 0,
+    var strtFlags: Int = 0,
 
 ) : BaseOutputPacket(){
 
@@ -47,12 +49,14 @@ data class StarterParamPacket(
             starterOff = data.get2Bytes(2)
             smapAbandon = data.get2Bytes(4)
             crankToRunTime = data.get2Bytes(6).toFloat() / 100
-            injAftstrStroke = data[8].toInt() * 4
+            injAftstrStroke = data[8].code * 4
             injPrimeCold = data.get2Bytes(9).toFloat() * 32 / 10000
             injPrimeHot = data.get2Bytes(11).toFloat() * 32 / 10000
-            injPrimeDelay = data[13].toFloat() / 10
-            injFloodclearTps = data[14].toFloat() / 2f
-            injAftStrokes1 = data[15].toInt() * 4
+            injPrimeDelay = data[13].code.toFloat() / 10
+            injFloodclearTps = data[14].code.toFloat() / 2f
+            injAftStrokes1 = data[15].code * 4
+            stblStrCnt = data[16].code
+            strtFlags = data[17].code
         }
     }
 
@@ -65,9 +69,11 @@ data class StarterParamPacket(
         data += injAftstrStroke.div(4).toChar()
         data += injPrimeCold.times(10000).div(32).toInt().write2Bytes()
         data += injPrimeHot.times(10000).div(32).toInt().write2Bytes()
-        data += injPrimeDelay.times(10).toChar()
-        data += injFloodclearTps.times(2).toChar()
+        data += injPrimeDelay.times(10).toInt().toChar()
+        data += injFloodclearTps.times(2).toInt().toChar()
         data += injAftStrokes1.div(4).toChar()
+        data += stblStrCnt.toChar()
+        data += strtFlags.toChar()
 
         return data
     }

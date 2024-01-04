@@ -38,7 +38,9 @@ data class CarburParamPacket(
     var fuelcutMapThrd: Float = 0f,
     var fuelcutCtsThrd: Float = 0f,
     var revlimLot: Int = 0,
-    var revlimHit: Int = 0
+    var revlimHit: Int = 0,
+    var fuelcut_uni: Int = 0,
+    var igncut_uni: Int = 0,
 
 ) : BaseOutputPacket() {
 
@@ -57,6 +59,8 @@ data class CarburParamPacket(
         data += fuelcutCtsThrd.times(TEMPERATURE_MULTIPLIER).toInt().write2Bytes()
         data += revlimLot.write2Bytes()
         data += revlimHit.write2Bytes()
+        data += fuelcut_uni.toChar()
+        data += igncut_uni.toChar()
 
         return data
     }
@@ -72,12 +76,14 @@ data class CarburParamPacket(
             feOnThresholds = data.get2Bytes(7).toFloat() / MAP_MULTIPLIER
             ieLotG = data.get2Bytes(9)
             ieHitG = data.get2Bytes(11)
-            shutoffDelay = data[13].toFloat() / 100
-            tpsThreshold = data[14].toFloat() / TPS_MULTIPLIER
+            shutoffDelay = data[13].code.toFloat() / 100
+            tpsThreshold = data[14].code.toFloat() / TPS_MULTIPLIER
             fuelcutMapThrd = data.get2Bytes(15).toFloat() / MAP_MULTIPLIER
             fuelcutCtsThrd = data.get2Bytes(17).toFloat() / TEMPERATURE_MULTIPLIER
             revlimLot = data.get2Bytes(19)
             revlimHit = data.get2Bytes(21)
+            fuelcut_uni = data[23].code
+            igncut_uni = data[24].code
         }
     }
 }

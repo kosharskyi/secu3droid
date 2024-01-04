@@ -25,6 +25,7 @@
 
 package org.secu3.android.models
 
+import android.util.Log
 import org.secu3.android.models.packets.AdcRawDatPacket
 import org.secu3.android.models.packets.BaseSecu3Packet
 import org.secu3.android.models.packets.CheckEngineErrorsPacket
@@ -51,12 +52,13 @@ import org.secu3.android.models.packets.params.SecurityParamPacket
 import org.secu3.android.models.packets.params.StarterParamPacket
 import org.secu3.android.models.packets.params.TemperatureParamPacket
 import org.secu3.android.models.packets.params.UniOutParamPacket
+import org.secu3.android.utils.PacketUtils
 
-data class RawPacket(val data: String, val notEscaped: IntArray)  {
+data class RawPacket(val data: String)  {
 
     fun parse(firmwarePacket: FirmwareInfoPacket?): BaseSecu3Packet? {
         return try {
-            when (data[1]) {
+            val packet = when (data[1]) {
                 SensorsPacket.DESCRIPTOR -> SensorsPacket.parse(data)
                 FirmwareInfoPacket.DESCRIPTOR -> FirmwareInfoPacket.parse(data)
                 AdcRawDatPacket.DESCRIPTOR -> AdcRawDatPacket.parse(data, firmwarePacket)
@@ -87,6 +89,23 @@ data class RawPacket(val data: String, val notEscaped: IntArray)  {
 
                 else -> null
             }
+
+            packet?.apply {
+                packetCrc[0] = data[data.lastIndex - 1].code.toByte()
+                packetCrc[1] = data[data.lastIndex].code.toByte()
+            }
+
+            if (packet != null) {
+                val checksum = PacketUtils.calculateChecksum(data.substring(2, data.length - 2))
+
+                if (packet.packetCrc[0] == checksum[1] && packet.packetCrc[1] == checksum[0]) {
+                    return packet
+                } else {
+                    Log.e("RawPacket", "checksum is not valid")
+                }
+            }
+
+            return null
         } catch (e: IllegalArgumentException) {
             e.printStackTrace()
             null
