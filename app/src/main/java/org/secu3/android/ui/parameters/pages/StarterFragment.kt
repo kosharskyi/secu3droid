@@ -64,6 +64,8 @@ class StarterFragment : BaseParamFragment() {
                 primePulseHot.value = it.injPrimeHot
                 primePulseDelay.value = it.injPrimeDelay
                 floodClearModeThreshold.value = it.injFloodclearTps
+                stblStrCountdown.value = it.stblStrCnt
+                allowStartOnFloodClearMode.isChecked = it.allowStartOnClearFlood
             }
 
             initViews()
@@ -110,6 +112,18 @@ class StarterFragment : BaseParamFragment() {
                 packet?.injFloodclearTps = it
                 packet?.let { it1 -> mViewModel.sendPacket(it1) }
             }
+            stblStrCountdown.addOnValueChangeListener {
+                packet?.apply {
+                    stblStrCnt = it
+                    mViewModel.sendPacket(this)
+                }
+            }
+            allowStartOnFloodClearMode.setOnCheckedChangeListener { _, isChecked ->
+                packet?.apply {
+                    allowStartOnClearFlood = isChecked
+                    mViewModel.sendPacket(this)
+                }
+            }
 
             starterBlockingRpm.setOnClickListener { intParamClick(it as IntParamView) }
             switchCrankMapRpm.setOnClickListener { intParamClick(it as IntParamView) }
@@ -120,6 +134,7 @@ class StarterFragment : BaseParamFragment() {
             primePulseHot.setOnClickListener { floatParamClick(it as FloatParamView) }
             primePulseDelay.setOnClickListener { floatParamClick(it as FloatParamView) }
             floodClearModeThreshold.setOnClickListener { floatParamClick(it as FloatParamView) }
+            stblStrCountdown.setOnClickListener { intParamClick(it as IntParamView) }
         }
     }
 }

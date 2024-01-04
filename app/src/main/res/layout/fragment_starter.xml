@@ -164,6 +164,27 @@
             app:float_min_value="0.0"
             />
 
+        <org.secu3.android.ui.parameters.views.IntParamView
+            android:id="@+id/stblStrCountdown"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="16dp"
+            app:title="@string/starter_dat_afterstart_enrichment_strokes_title"
+            app:units="str"
+            app:int_value="0"
+            app:int_step="1"
+            app:int_max_value="255"
+            app:int_min_value="0"
+            />
+
+        <CheckBox
+            android:id="@+id/allow_start_on_flood_clear_mode"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="@string/starter_dat_allow_start_flood_clear_mode_title"
+            android:button="@null"
+            android:drawableEnd="?android:attr/listChoiceIndicatorMultiple"
+            />
 
     </LinearLayout>
 

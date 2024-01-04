@@ -34,6 +34,8 @@
     <string name="starter_dat_prime_pulse_hot_title">Длительность предпускового впрыска при 70°C</string>
     <string name="starter_dat_prime_pulse_delay_title">Задержка предпускового впрыска</string>
     <string name="starter_dat_flod_clear_mode_threshold_title">Порог включения режима продувки</string>
+    <string name="starter_dat_starters_blocking_timer_title">Таймер блокировки стартера</string>
+    <string name="starter_dat_allow_start_flood_clear_mode_title">Разрешить запуск при продувке двигателя</string>
 
 
     <string name="angles_min_angle_title">Минимальный УОЗ</string>

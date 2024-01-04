@@ -30,6 +30,8 @@
     <string name="starter_map_abandon_title">Switch from cranking ignition map RPM</string>
     <string name="starter_dat_crank_to_run_time_title">Time for going from crank to run position of IAC</string>
     <string name="starter_dat_afterstart_enrichment_strokes_title">Afterstart enrichment time</string>
+    <string name="starter_dat_starters_blocking_timer_title">Starter\'s blocking timer</string>
+    <string name="starter_dat_allow_start_flood_clear_mode_title">Allow engine start in flood clear mode</string>
     <string name="starter_dat_prime_pulse_cold_title">Prime pulse width at -30°C</string>
     <string name="starter_dat_prime_pulse_hot_title">Prime pulse width at 70°C</string>
     <string name="starter_dat_prime_pulse_delay_title">Prime pulse delay</string>

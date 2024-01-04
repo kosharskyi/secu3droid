@@ -40,6 +40,16 @@ data class StarterParamPacket(
 
 ) : BaseOutputPacket(){
 
+    var allowStartOnClearFlood: Boolean
+        get() = strtFlags.getBitValue(0) > 0
+        set(value) {
+            strtFlags = if (value) {
+                1 or strtFlags
+            } else {
+                1.inv().and(strtFlags)
+            }
+        }
+
 
     companion object {
 
