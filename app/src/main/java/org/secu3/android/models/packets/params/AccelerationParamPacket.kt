@@ -47,6 +47,8 @@ data class AccelerationParamPacket(
         data += injAeType.toChar()
         data += injAeTime.toChar()
 
+        data += unhandledParams
+
         return data
     }
 
@@ -64,6 +66,12 @@ data class AccelerationParamPacket(
 
             injAeType = data[5].code
             injAeTime = data[6].code
+
+            if (data.length == 7) {
+                return@apply
+            }
+
+            unhandledParams = data.substring(28)
         }
     }
 

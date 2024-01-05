@@ -52,6 +52,8 @@ data class GasDoseParamPacket(
         data += freq.toChar()
         data += maxFreqInit.toChar()
 
+        data += unhandledParams
+
         return data
     }
 
@@ -61,12 +63,18 @@ data class GasDoseParamPacket(
 
         fun parse(data: String) = GasDoseParamPacket().apply {
             steps = data.get2Bytes(2)
-            fcClosing = data[6].toFloat() / GAS_DOSE_MULTIPLIER
+            fcClosing = data[6].code.toFloat() / GAS_DOSE_MULTIPLIER
             lambdaCorrLimitP = data.get2Bytes(7).toFloat().times(100.0f).div(512.0f)
             lambdaCorrLimitM = data.get2Bytes(9).toFloat().times(100.0f).div(512.0f)
             lambdaStoichval = data.get2Bytes(11).toFloat() / AFR_MULTIPLIER
-            freq = data[13].toInt()
-            maxFreqInit = data[14].toInt()
+            freq = data[13].code
+            maxFreqInit = data[14].code
+
+            if (data.length == 15) {
+                return@apply
+            }
+
+            unhandledParams = data.substring(15)
         }
     }
 }

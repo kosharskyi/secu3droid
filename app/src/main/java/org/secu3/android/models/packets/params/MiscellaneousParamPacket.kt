@@ -103,6 +103,8 @@ data class MiscellaneousParamPacket(
         data += 1.0.div(pwmFrq0.toFloat()).times(524288.0f).roundToInt().write2Bytes()
         data += 1.0.div(pwmFrq1.toFloat()).times(524288.0f).roundToInt().write2Bytes()
 
+        data += unhandledParams
+
         return data
     }
 
@@ -112,21 +114,27 @@ data class MiscellaneousParamPacket(
 
         fun parse(data: String) = MiscellaneousParamPacket().apply {
             uartDivisor = data.get2Bytes(2)
-            uartPeriodTms = data[4].toInt() * 10
-            ignCutoff = data[5].toInt()
+            uartPeriodTms = data[4].code * 10
+            ignCutoff = data[5].code
             ignCutoffThrd = data.get2Bytes(6)
             hopStartAng = data.get2Bytes(8).div(ANGLE_DIVIDER)
             hopDuratAng = data.get2Bytes(10).div(ANGLE_DIVIDER)
-            flpmpFlags = data[12].toInt()
+            flpmpFlags = data[12].code
             evapAfbegin = data.get2Bytes(13) * 32
             evapAfslope = data.get2Bytes(15).toFloat().div(1048576.0f).div(32)
-            fpTimeoutStrt = data[17].toFloat() / 10
+            fpTimeoutStrt = data[17].code.toFloat() / 10
             data.get2Bytes(18).toFloat().div(524288.0f).let {
                 pwmFrq0 = 1.0.div(it).roundToInt()
             }
             data.get2Bytes(20).toFloat().div(524288.0f).let {
                 pwmFrq1 = 1.0.div(it).roundToInt()
             }
+
+            if (data.length == 22) {
+                return@apply
+            }
+
+            unhandledParams = data.substring(22)
         }
     }
 

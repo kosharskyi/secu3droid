@@ -60,6 +60,8 @@ data class SecurityParamPacket(
         data += iButton0
         data += iButton1
 
+        data += unhandledParams
+
         return data
     }
 
@@ -73,6 +75,12 @@ data class SecurityParamPacket(
             btFlags = data[4].code
             iButton0 = data.substring(5, 11)
             iButton1 = data.substring(11, 17)
+
+            if (data.length == 17) {
+                return@apply
+            }
+
+            unhandledParams = data.substring(17)
         }
 
     }

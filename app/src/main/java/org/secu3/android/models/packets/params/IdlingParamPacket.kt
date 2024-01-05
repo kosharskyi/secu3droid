@@ -129,6 +129,12 @@ data class IdlingParamPacket(
             iacMinPos = data[32].code.toFloat() / 2
             iacMaxPos = data[33].code.toFloat() / 2
             iacRegDb = data.get2Bytes(34).toFloat() / 2
+
+            if (data.length == 36) {
+                return@apply
+            }
+
+            unhandledParams = data.substring(36)
         }
     }
 
@@ -156,6 +162,8 @@ data class IdlingParamPacket(
         data += iacMinPos.times(2).toInt().toChar()
         data += iacMaxPos.times(2).toInt().toChar()
         data += iacRegDb.times(2).toInt().write2Bytes()
+
+        data += unhandledParams
 
         return data
     }

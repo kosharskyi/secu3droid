@@ -62,6 +62,8 @@ data class CarburParamPacket(
         data += fuelcut_uni.toChar()
         data += igncut_uni.toChar()
 
+        data += unhandledParams
+
         return data
     }
 
@@ -84,6 +86,12 @@ data class CarburParamPacket(
             revlimHit = data.get2Bytes(21)
             fuelcut_uni = data[23].code
             igncut_uni = data[24].code
+
+            if (data.length == 25) {
+                return@apply
+            }
+
+            unhandledParams = data.substring(25)
         }
     }
 }

@@ -96,6 +96,8 @@ data class InjctrParPacket(
         data += injMaxPw[0].write2Bytes()
         data += injMaxPw[1].write2Bytes()
 
+        data += unhandledParams
+
         return data
     }
 
@@ -354,7 +356,12 @@ data class InjctrParPacket(
 
             injMaxPw[0] = data.get2Bytes(45)
             injMaxPw[1] = data.get2Bytes(47)
+
+            if (data.length == 49) {
+                return@apply
+            }
+
+            unhandledParams = data.substring(49)
         }
     }
-
 }

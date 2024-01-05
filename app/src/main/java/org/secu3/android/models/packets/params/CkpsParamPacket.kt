@@ -108,6 +108,8 @@ data class CkpsParamPacket(
         data += hallWndWidth.times(ANGLE_DIVIDER).toInt().write2Bytes()
         data += hallDegreesBtdc.times(ANGLE_DIVIDER).toInt().write2Bytes()
 
+        data += unhandledParams
+
         return data
     }
 
@@ -116,14 +118,20 @@ data class CkpsParamPacket(
         internal const val DESCRIPTOR = 't'
 
         fun parse(data: String) = CkpsParamPacket().apply {
-            ckpsCogsBtdc = data[2].toInt()
-            ckpsIgnitCogs = data[3].toInt()
-            ckpsEngineCyl = data[4].toInt()
-            ckpsCogsNum = data[5].toInt()
-            ckpsMissNum = data[6].toInt()
-            hallFlags = data[7].toInt()
+            ckpsCogsBtdc = data[2].code
+            ckpsIgnitCogs = data[3].code
+            ckpsEngineCyl = data[4].code
+            ckpsCogsNum = data[5].code
+            ckpsMissNum = data[6].code
+            hallFlags = data[7].code
             hallWndWidth = data.get2Bytes(8).toFloat() / ANGLE_DIVIDER
             hallDegreesBtdc = data.get2Bytes(10).toFloat() / ANGLE_DIVIDER
+
+            if (data.length == 12) {
+                return@apply
+            }
+
+            unhandledParams = data.substring(12)
         }
     }
 }

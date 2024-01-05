@@ -67,6 +67,12 @@ data class StarterParamPacket(
             injAftStrokes1 = data[15].code * 4
             stblStrCnt = data[16].code
             strtFlags = data[17].code
+
+            if (data.length == 18) {
+                return@apply
+            }
+
+            unhandledParams = data.substring(18)
         }
     }
 
@@ -84,6 +90,8 @@ data class StarterParamPacket(
         data += injAftStrokes1.div(4).toChar()
         data += stblStrCnt.toChar()
         data += strtFlags.toChar()
+
+        data += unhandledParams
 
         return data
     }

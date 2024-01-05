@@ -28,6 +28,8 @@ abstract class BaseSecu3Packet {
 
     var packetCrc: ByteArray = ByteArray(2)
 
+    protected var unhandledParams: String = ""
+
     protected fun String.get2Bytes(startIndex: Int): Int {
         if (startIndex + 2 > length) {
             throw IllegalArgumentException("Packet too short; request ${startIndex + 2} but length is $length")

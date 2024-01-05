@@ -99,6 +99,8 @@ data class ChokeControlParPacket(
         data += smFreq.toChar()
         data += injCrankToRunTime.times(100).toInt().write2Bytes()
 
+        data += unhandledParams
+
         return data
     }
 
@@ -112,10 +114,16 @@ data class ChokeControlParPacket(
             rpmIf = data.get2Bytes(6).toFloat() / 1000
             corrTime0 = data.get2Bytes(8).toFloat() / 100
             corrTime1 = data.get2Bytes(10).toFloat() / 100
-            flags = data[12].toInt()
-            smFreq = data[13].toInt()
+            flags = data[12].code
+            smFreq = data[13].code
             injCrankToRunTime = data.get2Bytes(14).toFloat() / 100
 
+
+            if (data.length == 16) {
+                return@apply
+            }
+
+            unhandledParams = data.substring(16)
         }
     }
 }

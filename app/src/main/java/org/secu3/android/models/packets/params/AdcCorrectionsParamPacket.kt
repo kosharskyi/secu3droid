@@ -120,6 +120,8 @@ data class AdcCorrectionsParamPacket(
             data += data.write4Bytes(it)
         }
 
+        data += unhandledParams
+
         return data
     }
 
@@ -204,6 +206,12 @@ data class AdcCorrectionsParamPacket(
                 ai8AdcCorrection = ((it / FACTOR_DIVIDER) - 0.5f) / ai8AdcFactor
                 ai8AdcCorrection *= ADC_DISCRETE
             }
+
+            if (data.length == 75) {
+                return@apply
+            }
+
+            unhandledParams = data.substring(75)
 
         }
     }

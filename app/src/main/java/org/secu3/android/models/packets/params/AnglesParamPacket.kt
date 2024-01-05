@@ -80,7 +80,13 @@ data class AnglesParamPacket(
             angleIncSpeed = data.get2Bytes(10).toFloat() / ANGLE_DIVIDER
             zeroAdvAngle = data[12].code
             igntimFlags = data[13].code
-            shift_ingtim = data.get2Bytes(2).toFloat() / ANGLE_DIVIDER
+            shift_ingtim = data.get2Bytes(14).toFloat() / ANGLE_DIVIDER
+
+            if (data.length == 16) {
+                return@apply
+            }
+
+            unhandledParams = data.substring(16)
         }
     }
 
@@ -95,6 +101,8 @@ data class AnglesParamPacket(
         data += zeroAdvAngle.toChar()
         data += igntimFlags.toChar()
         data += shift_ingtim.times(ANGLE_DIVIDER).toInt().write2Bytes()
+
+        data += unhandledParams
 
         return data
     }

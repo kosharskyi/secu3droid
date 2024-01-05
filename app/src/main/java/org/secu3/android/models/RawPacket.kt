@@ -58,34 +58,36 @@ data class RawPacket(val data: String)  {
 
     fun parse(firmwarePacket: FirmwareInfoPacket?): BaseSecu3Packet? {
         return try {
-            val packet = when (data[1]) {
-                SensorsPacket.DESCRIPTOR -> SensorsPacket.parse(data)
-                FirmwareInfoPacket.DESCRIPTOR -> FirmwareInfoPacket.parse(data)
+            val packetData = data.substring(0, data.length - 2)
+
+            val packet = when (packetData[1]) {
+                SensorsPacket.DESCRIPTOR -> SensorsPacket.parse(packetData)
+                FirmwareInfoPacket.DESCRIPTOR -> FirmwareInfoPacket.parse(packetData)
                 AdcRawDatPacket.DESCRIPTOR -> AdcRawDatPacket.parse(data, firmwarePacket)
-                CheckEngineErrorsPacket.DESCRIPTOR -> CheckEngineErrorsPacket.parse(data)
-                CheckEngineSavedErrorsPacket.DESCRIPTOR -> CheckEngineSavedErrorsPacket.parse(data)
-                DiagInputPacket.DESCRIPTOR -> DiagInputPacket.parse(data)
+                CheckEngineErrorsPacket.DESCRIPTOR -> CheckEngineErrorsPacket.parse(packetData)
+                CheckEngineSavedErrorsPacket.DESCRIPTOR -> CheckEngineSavedErrorsPacket.parse(packetData)
+                DiagInputPacket.DESCRIPTOR -> DiagInputPacket.parse(packetData)
 
-                StarterParamPacket.DESCRIPTOR -> StarterParamPacket.parse(data)
-                AnglesParamPacket.DESCRIPTOR -> AnglesParamPacket.parse(data)
-                IdlingParamPacket.DESCRIPTOR -> IdlingParamPacket.parse(data)
-                FunSetParamPacket.DESCRIPTOR -> FunSetParamPacket.parse(data)
-                TemperatureParamPacket.DESCRIPTOR -> TemperatureParamPacket.parse(data)
-                CarburParamPacket.DESCRIPTOR -> CarburParamPacket.parse(data)
-                AdcCorrectionsParamPacket.DESCRIPTOR -> AdcCorrectionsParamPacket.parse(data)
-                CkpsParamPacket.DESCRIPTOR -> CkpsParamPacket.parse(data)
-                KnockParamPacket.DESCRIPTOR -> KnockParamPacket.parse(data)
-                MiscellaneousParamPacket.DESCRIPTOR -> MiscellaneousParamPacket.parse(data)
-                ChokeControlParPacket.DESCRIPTOR -> ChokeControlParPacket.parse(data)
-                SecurityParamPacket.DESCRIPTOR -> SecurityParamPacket.parse(data)
-                UniOutParamPacket.DESCRIPTOR -> UniOutParamPacket.parse(data)
-                InjctrParPacket.DESCRIPTOR -> InjctrParPacket.parse(data)
-                LambdaParamPacket.DESCRIPTOR -> LambdaParamPacket.parse(data)
-                AccelerationParamPacket.DESCRIPTOR -> AccelerationParamPacket.parse(data)
-                GasDoseParamPacket.DESCRIPTOR -> GasDoseParamPacket.parse(data)
+                StarterParamPacket.DESCRIPTOR -> StarterParamPacket.parse(packetData)
+                AnglesParamPacket.DESCRIPTOR -> AnglesParamPacket.parse(packetData)
+                IdlingParamPacket.DESCRIPTOR -> IdlingParamPacket.parse(packetData)
+                FunSetParamPacket.DESCRIPTOR -> FunSetParamPacket.parse(packetData)
+                TemperatureParamPacket.DESCRIPTOR -> TemperatureParamPacket.parse(packetData)
+                CarburParamPacket.DESCRIPTOR -> CarburParamPacket.parse(packetData)
+                AdcCorrectionsParamPacket.DESCRIPTOR -> AdcCorrectionsParamPacket.parse(packetData)
+                CkpsParamPacket.DESCRIPTOR -> CkpsParamPacket.parse(packetData)
+                KnockParamPacket.DESCRIPTOR -> KnockParamPacket.parse(packetData)
+                MiscellaneousParamPacket.DESCRIPTOR -> MiscellaneousParamPacket.parse(packetData)
+                ChokeControlParPacket.DESCRIPTOR -> ChokeControlParPacket.parse(packetData)
+                SecurityParamPacket.DESCRIPTOR -> SecurityParamPacket.parse(packetData)
+                UniOutParamPacket.DESCRIPTOR -> UniOutParamPacket.parse(packetData)
+                InjctrParPacket.DESCRIPTOR -> InjctrParPacket.parse(packetData)
+                LambdaParamPacket.DESCRIPTOR -> LambdaParamPacket.parse(packetData)
+                AccelerationParamPacket.DESCRIPTOR -> AccelerationParamPacket.parse(packetData)
+                GasDoseParamPacket.DESCRIPTOR -> GasDoseParamPacket.parse(packetData)
 
-                FnNameDatPacket.DESCRIPTOR -> FnNameDatPacket.parse(data)
-                OpCompNc.DESCRIPTOR -> OpCompNc.parse(data)
+                FnNameDatPacket.DESCRIPTOR -> FnNameDatPacket.parse(packetData)
+                OpCompNc.DESCRIPTOR -> OpCompNc.parse(packetData)
 
                 else -> null
             }

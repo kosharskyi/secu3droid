@@ -63,6 +63,8 @@ data class KnockParamPacket(
         data += selch.toChar()
         data += knkcltThrd.times(TEMPERATURE_MULTIPLIER).write2Bytes()
 
+        data += unhandledParams
+
         return data
     }
 
@@ -84,6 +86,12 @@ data class KnockParamPacket(
             recoveryDelay = data[17].code
             selch = data[18].code
             knkcltThrd = data.get2Bytes(19) / TEMPERATURE_MULTIPLIER
+
+            if (data.length == 21) {
+                return@apply
+            }
+
+            unhandledParams = data.substring(21)
         }
     }
 }

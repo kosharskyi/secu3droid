@@ -125,6 +125,8 @@ data class LambdaParamPacket(
 
         data += aflowThrd.div(32).write2Bytes()
 
+        data += unhandledParams
+
         return data
     }
 
@@ -160,8 +162,12 @@ data class LambdaParamPacket(
             heatingAct = data[26].code.toFloat() / 100
             aflowThrd = data.get2Bytes(27) * 32
 
+            if (data.length == 29) {
+                return@apply
+            }
+
+            unhandledParams = data.substring(29)
+
         }
-
     }
-
 }

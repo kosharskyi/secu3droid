@@ -83,6 +83,8 @@ data class FunSetParamPacket(
         data += mafload_const.write4Bytes()
         data += tps_raw.write2Bytes()
 
+        data += unhandledParams
+
         return data
     }
 
@@ -126,6 +128,12 @@ data class FunSetParamPacket(
             injCylDisp = data.get2Bytes(27)
             mafload_const = data.get4Bytes(29)
             tps_raw = data.get2Bytes(33)
+
+            if (data.length == 35) {
+                return@apply
+            }
+
+            unhandledParams = data.substring(35)
         }
 
     }
