@@ -47,23 +47,23 @@ data class AnglesParamPacket(
             }
         }
 
-    var zeroAdvAngleWithCorr: Boolean           // Zero advance angle with octane correction
+    var applyManualTimingCorrOnIdl: Boolean           // Apply manual ignition timing correction on idling
         get() = igntimFlags.getBitValue(1) > 0
         set(value) {
             igntimFlags = if (value) {
-                1 or igntimFlags
+                (1 shl 1).or(igntimFlags)
             } else {
-                1.inv().and(igntimFlags)
+                (1 shl 1).inv().or(igntimFlags)
             }
         }
 
-    var applyManualTimingCorrOnIdl: Boolean           // Apply manual ignition timing correction on idling
+    var zeroAdvAngleWithCorr: Boolean           // Zero advance angle with octane correction
         get() = igntimFlags.getBitValue(2) > 0
         set(value) {
             igntimFlags = if (value) {
-                1 or igntimFlags
+                (1 shl 2).or(igntimFlags)
             } else {
-                1.inv().and(igntimFlags)
+                (1 shl 2).inv().or(igntimFlags)
             }
         }
 
