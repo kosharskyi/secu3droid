@@ -1,9 +1,9 @@
 /*
  *    SecuDroid  - An open source, free manager for SECU-3 engine control unit
- *    Copyright (C) 2021 Vitaliy O. Kosharskiy. Ukraine, Kharkiv
+ *    Copyright (C) 2024 Vitaliy O. Kosharskyi. Ukraine, Kyiv
  *
  *    SECU-3  - An open source, free engine control unit
- *    Copyright (C) 2007-2021 Alexey A. Shabelnikov. Ukraine, Kyiv
+ *    Copyright (C) 2007-2024 Alexey A. Shabelnikov. Ukraine, Kyiv
  *
  *    This program is free software: you can redistribute it and/or modify
  *    it under the terms of the GNU General Public License as published by
