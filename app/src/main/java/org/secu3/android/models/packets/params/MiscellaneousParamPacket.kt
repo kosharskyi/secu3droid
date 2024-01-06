@@ -40,6 +40,7 @@ data class MiscellaneousParamPacket(
     var fpTimeoutStrt: Float = 0f,
     var pwmFrq0: Int = 0,
     var pwmFrq1: Int = 0,
+    var vssPeriodDist: Int = 0,
 
     ) : BaseOutputPacket() {
 
@@ -103,6 +104,8 @@ data class MiscellaneousParamPacket(
         data += 1.0.div(pwmFrq0.toFloat()).times(524288.0f).roundToInt().write2Bytes()
         data += 1.0.div(pwmFrq1.toFloat()).times(524288.0f).roundToInt().write2Bytes()
 
+        data += vssPeriodDist.write2Bytes()
+
         data += unhandledParams
 
         return data
@@ -130,11 +133,13 @@ data class MiscellaneousParamPacket(
                 pwmFrq1 = 1.0.div(it).roundToInt()
             }
 
-            if (data.length == 22) {
+            vssPeriodDist = data.get2Bytes(22)
+
+            if (data.length == 24) {
                 return@apply
             }
 
-            unhandledParams = data.substring(22)
+            unhandledParams = data.substring(24)
         }
     }
 

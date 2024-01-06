@@ -32,6 +32,12 @@ data class AccelerationParamPacket(
     var injAeDecayTime: Int = 0,
     var injAeType: Int = 0,
     var injAeTime: Int = 0,
+    var injAeBallance: Int = 0,
+    var injAeMapdotThrd: Int = 0,
+    var injXtauSThrd: Int = 0,
+    var injXtauFThrd: Int = 0,
+    var wallwetModel: Int = 0,
+
 
 ) : BaseOutputPacket() {
 
@@ -46,6 +52,12 @@ data class AccelerationParamPacket(
 
         data += injAeType.toChar()
         data += injAeTime.toChar()
+
+        data += injAeBallance.toChar()
+        data += injAeMapdotThrd.toChar()
+        data += injXtauSThrd.toChar()
+        data += injXtauFThrd.toChar()
+        data += wallwetModel.toChar()
 
         data += unhandledParams
 
@@ -67,11 +79,17 @@ data class AccelerationParamPacket(
             injAeType = data[5].code
             injAeTime = data[6].code
 
-            if (data.length == 7) {
+            injAeBallance = data[7].code
+            injAeMapdotThrd = data[8].code
+            injXtauSThrd = data[9].code
+            injXtauFThrd = data[10].code
+            wallwetModel = data[11].code
+
+            if (data.length == 12) {
                 return@apply
             }
 
-            unhandledParams = data.substring(28)
+            unhandledParams = data.substring(12)
         }
     }
 

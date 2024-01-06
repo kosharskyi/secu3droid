@@ -60,7 +60,9 @@ data class LambdaParamPacket(
 
     var heatingAct: Float = 0f,
 
-    var aflowThrd: Int = 0
+    var aflowThrd: Int = 0,
+
+    var lambdaSelectedChanel: Int = 0,
 
 ) : BaseOutputPacket() {
 
@@ -125,6 +127,8 @@ data class LambdaParamPacket(
 
         data += aflowThrd.div(32).write2Bytes()
 
+        data += lambdaSelectedChanel.toChar()
+
         data += unhandledParams
 
         return data
@@ -162,11 +166,13 @@ data class LambdaParamPacket(
             heatingAct = data[26].code.toFloat() / 100
             aflowThrd = data.get2Bytes(27) * 32
 
-            if (data.length == 29) {
+            lambdaSelectedChanel = data[29].code
+
+            if (data.length == 30) {
                 return@apply
             }
 
-            unhandledParams = data.substring(29)
+            unhandledParams = data.substring(30)
 
         }
     }
