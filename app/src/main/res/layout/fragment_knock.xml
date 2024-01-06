@@ -207,6 +207,108 @@
             app:int_step="1"
             />
 
+        <TextView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="16dp"
+            android:text="@string/knock_par_select_knock_sensor_title"
+            />
+
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal"
+            >
+
+            <CheckBox
+                android:id="@+id/knock_ch_1"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:text="1"
+                />
+
+            <CheckBox
+                android:id="@+id/knock_ch_2"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:text="2"
+                />
+
+            <CheckBox
+                android:id="@+id/knock_ch_3"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:text="3"
+                />
+
+            <CheckBox
+                android:id="@+id/knock_ch_4"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:text="4"
+                />
+
+        </LinearLayout>
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal"
+            >
+
+            <CheckBox
+                android:id="@+id/knock_ch_5"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:text="5"
+                />
+
+            <CheckBox
+                android:id="@+id/knock_ch_6"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:text="6"
+                />
+
+            <CheckBox
+                android:id="@+id/knock_ch_7"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:text="7"
+                />
+
+            <CheckBox
+                android:id="@+id/knock_ch_8"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:text="8"
+                />
+
+        </LinearLayout>
+
+        <org.secu3.android.ui.parameters.views.FloatParamView
+            android:id="@+id/knock_control_threshold"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="16dp"
+            app:title="@string/knock_par_knock_threshold_control_title"
+            app:units="@string/units_degrees_celcius"
+            app:float_value="0"
+            app:value_precision="two"
+            app:float_min_value="-40.0"
+            app:float_max_value="120.0"
+            app:float_step="0.25"
+            />
+
     </LinearLayout>
 
 </ScrollView>

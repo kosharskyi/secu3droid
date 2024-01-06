@@ -38,10 +38,22 @@ data class KnockParamPacket(
     var maxRetard: Float = 0f,
     var threshold: Float = 0f,
     var recoveryDelay: Int = 0,
-    var selch: Int = 0,         //!< 1 bit per channel (cylinder). 0 - 1st KS, 1 - 2nd KS
-    var knkcltThrd: Int = 0,
+    var selectedChanels: Int = 0,         //!< 1 bit per channel (cylinder). 0 - 1st KS, 1 - 2nd KS
+    var knkctlThrd: Float = 0f,
 
     ) : BaseOutputPacket() {
+
+    fun isKnockChanelSelected(knockPosition: Int): Boolean {
+        return selectedChanels.getBitValue(knockPosition) > 0
+    }
+
+    fun selectKnockChanel(knockChanel: Int, isSelected: Boolean) {
+        if (isSelected) {
+            (1 shl knockChanel).or(selectedChanels)
+        } else {
+            (1 shl knockChanel).inv().or(selectedChanels)
+        }
+    }
 
     override fun pack(): String {
         var data = "$OUTPUT_PACKET_SYMBOL$DESCRIPTOR"
@@ -60,8 +72,8 @@ data class KnockParamPacket(
 
         data += recoveryDelay.toChar()
 
-        data += selch.toChar()
-        data += knkcltThrd.times(TEMPERATURE_MULTIPLIER).write2Bytes()
+        data += selectedChanels.toChar()
+        data += knkctlThrd.times(TEMPERATURE_MULTIPLIER).toInt().write2Bytes()
 
         data += unhandledParams
 
@@ -84,8 +96,8 @@ data class KnockParamPacket(
             maxRetard = data.get2Bytes(13).toFloat() / ANGLE_DIVIDER
             threshold = data.get2Bytes(15).toFloat() / VOLTAGE_MULTIPLIER
             recoveryDelay = data[17].code
-            selch = data[18].code
-            knkcltThrd = data.get2Bytes(19) / TEMPERATURE_MULTIPLIER
+            selectedChanels = data[18].code
+            knkctlThrd = data.get2Bytes(19).toFloat() / TEMPERATURE_MULTIPLIER
 
             if (data.length == 21) {
                 return@apply

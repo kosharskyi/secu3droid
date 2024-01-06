@@ -283,4 +283,6 @@
     <string name="raw_status_addi2_title">ADD_IO2: %.2f В</string>
     <string name="idlreg_proportional_negative_title">Пропорційний (-)</string>
     <string name="idlreg_integral_negative_title">" Інтегральний (-)"</string>
+    <string name="knock_par_select_knock_sensor_title">Вибір датчика детонації</string>
+    <string name="knock_par_knock_threshold_control_title">Поріг контроля Детонації</string>
 </resources>

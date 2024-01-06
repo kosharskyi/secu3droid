@@ -93,6 +93,17 @@ class KnockFragment : BaseParamFragment() {
 
                 knockThreshold.value = it.threshold
                 angleRecoveryDelay.value = it.recoveryDelay
+
+                knockCh1.isChecked = it.isKnockChanelSelected(0)
+                knockCh2.isChecked = it.isKnockChanelSelected(1)
+                knockCh3.isChecked = it.isKnockChanelSelected(2)
+                knockCh4.isChecked = it.isKnockChanelSelected(3)
+                knockCh5.isChecked = it.isKnockChanelSelected(4)
+                knockCh6.isChecked = it.isKnockChanelSelected(5)
+                knockCh7.isChecked = it.isKnockChanelSelected(6)
+                knockCh8.isChecked = it.isKnockChanelSelected(7)
+
+                knockControlThreshold.value = it.knkctlThrd
             }
 
             initViews()
@@ -149,6 +160,69 @@ class KnockFragment : BaseParamFragment() {
                 packet?.let { it1 -> mViewModel.sendPacket(it1) }
             }
 
+            knockCh1.setOnCheckedChangeListener { _, isChecked ->
+                packet?.apply {
+                    selectKnockChanel(0, isChecked)
+                    mViewModel.sendPacket(this)
+                }
+            }
+
+            knockCh2.setOnCheckedChangeListener { _, isChecked ->
+                packet?.apply {
+                    selectKnockChanel(1, isChecked)
+                    mViewModel.sendPacket(this)
+                }
+            }
+
+            knockCh3.setOnCheckedChangeListener { _, isChecked ->
+                packet?.apply {
+                    selectKnockChanel(2, isChecked)
+                    mViewModel.sendPacket(this)
+                }
+            }
+
+            knockCh4.setOnCheckedChangeListener { _, isChecked ->
+                packet?.apply {
+                    selectKnockChanel(3, isChecked)
+                    mViewModel.sendPacket(this)
+                }
+            }
+
+            knockCh5.setOnCheckedChangeListener { _, isChecked ->
+                packet?.apply {
+                    selectKnockChanel(4, isChecked)
+                    mViewModel.sendPacket(this)
+                }
+            }
+
+            knockCh6.setOnCheckedChangeListener { _, isChecked ->
+                packet?.apply {
+                    selectKnockChanel(5, isChecked)
+                    mViewModel.sendPacket(this)
+                }
+            }
+
+            knockCh7.setOnCheckedChangeListener { _, isChecked ->
+                packet?.apply {
+                    selectKnockChanel(6, isChecked)
+                    mViewModel.sendPacket(this)
+                }
+            }
+
+            knockCh8.setOnCheckedChangeListener { _, isChecked ->
+                packet?.apply {
+                    selectKnockChanel(7, isChecked)
+                    mViewModel.sendPacket(this)
+                }
+            }
+
+            knockControlThreshold.addOnValueChangeListener {
+                packet?.apply {
+                    knkctlThrd = it
+                    mViewModel.sendPacket(this)
+                }
+            }
+
 
             phaseWindowBegin.setOnClickListener { floatParamClick(it as FloatParamView) }
             phaseWindowEnd.setOnClickListener { floatParamClick(it as FloatParamView) }
@@ -159,6 +233,7 @@ class KnockFragment : BaseParamFragment() {
 
             knockThreshold.setOnClickListener { floatParamClick(it as FloatParamView) }
             angleRecoveryDelay.setOnClickListener { intParamClick(it as IntParamView) }
+            knockControlThreshold.setOnClickListener { floatParamClick(it as FloatParamView) }
         }
     }
 }

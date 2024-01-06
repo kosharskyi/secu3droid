@@ -234,7 +234,9 @@
     <string name="knock_par_angle_retard_step_title">Angle recovery step</string>
     <string name="knock_par_maximal_angle_displacement_title">Max angle displacement</string>
     <string name="knock_par_knock_threshold_title">Knock threshold</string>
+    <string name="knock_par_knock_threshold_control_title">Knock control threshold</string>
     <string name="knock_par_angle_recovery_delay_title">Angle recovery delay</string>
+    <string name="knock_par_select_knock_sensor_title">Select a knock sensor</string>
 
     <string name="gasdose_par_stoich_ratio">Stochiometric ratio</string>
     <string name="gasdose_par_closing_on_fuel_cut">Closing on fuel cut</string>
