@@ -227,6 +227,22 @@
             app:float_step="0.03"
             />
 
+        <org.secu3.android.ui.parameters.views.FloatParamView
+            android:id="@+id/max_injection_pw"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            app:layout_constraintTop_toBottomOf="@id/min_injection_pw"
+            app:layout_constraintStart_toStartOf="parent"
+            android:layout_marginTop="16dp"
+            app:title="@string/injctr_par_max_inj_pw_title"
+            app:units="@string/units_ms"
+            app:float_value="0"
+            app:value_precision="two"
+            app:float_max_value="6.50"
+            app:float_min_value="0.10"
+            app:float_step="0.03"
+            />
+
         <!-- ************************************************************* -->
 
 
@@ -234,7 +250,7 @@
             android:id="@+id/second_fuel_title"
             android:layout_width="0dp"
             android:layout_height="wrap_content"
-            app:layout_constraintTop_toBottomOf="@id/min_injection_pw"
+            app:layout_constraintTop_toBottomOf="@id/max_injection_pw"
             app:layout_constraintStart_toStartOf="parent"
             android:layout_marginTop="16dp"
             android:text="@string/injctr_par_params_for_second_fuel_title"
@@ -398,13 +414,30 @@
             app:float_step="0.03"
             />
 
+
+        <org.secu3.android.ui.parameters.views.FloatParamView
+            android:id="@+id/max_injection_pw_g"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            app:layout_constraintTop_toBottomOf="@id/min_injection_pw_g"
+            app:layout_constraintStart_toStartOf="parent"
+            android:layout_marginTop="16dp"
+            app:title="@string/injctr_par_max_inj_pw_title"
+            app:units="@string/units_ms"
+            app:float_value="0"
+            app:value_precision="two"
+            app:float_max_value="6.50"
+            app:float_min_value="0.10"
+            app:float_step="0.03"
+            />
+
         <!-- ************************************************************* -->
 
         <TextView
             android:id="@+id/general_title"
             android:layout_width="0dp"
             android:layout_height="wrap_content"
-            app:layout_constraintTop_toBottomOf="@id/min_injection_pw_g"
+            app:layout_constraintTop_toBottomOf="@id/max_injection_pw_g"
             app:layout_constraintStart_toStartOf="parent"
             android:layout_marginTop="16dp"
             android:text="@string/injctr_par_general_title"

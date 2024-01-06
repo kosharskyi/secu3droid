@@ -117,6 +117,7 @@ class FuelInjectionFragment : BaseParamFragment() {
                 injTimingSpecifies.setText(mInjTimingSpecifiesList[it.angleSpec0], false)
 
                 minInjectionPw.value = it.minPw0
+                maxInjectionPw.value = it.injMaxPw[0]
 
 
 
@@ -131,6 +132,7 @@ class FuelInjectionFragment : BaseParamFragment() {
                 injTimingSpecifiesG.setText(mInjTimingSpecifiesList[it.angleSpec1], false)
 
                 minInjectionPwG.value = it.minPw1
+                maxInjectionPwG.value = it.injMaxPw[1]
 
                 pulsesPerLitterOfFuel.value = it.fffConst
 
@@ -232,6 +234,13 @@ class FuelInjectionFragment : BaseParamFragment() {
                 packet.let { it1 -> mViewModel.sendPacket(it1) }
             }
 
+            maxInjectionPw.addOnValueChangeListener {
+                packet.apply {
+                    injMaxPw[0] = it
+                    mViewModel.sendPacket(this)
+                }
+            }
+
 
 
 
@@ -280,6 +289,13 @@ class FuelInjectionFragment : BaseParamFragment() {
                 packet.let { it1 -> mViewModel.sendPacket(it1) }
             }
 
+            maxInjectionPwG.addOnValueChangeListener {
+                packet.apply {
+                    injMaxPw[1] = it
+                    mViewModel.sendPacket(this)
+                }
+            }
+
 
 
 
@@ -313,10 +329,12 @@ class FuelInjectionFragment : BaseParamFragment() {
             injectorTiming.setOnClickListener { intParamClick(it as IntParamView) }
             crankingInjectionTiming.setOnClickListener { intParamClick(it as IntParamView) }
             minInjectionPw.setOnClickListener { floatParamClick(it as FloatParamView) }
+            maxInjectionPw.setOnClickListener { floatParamClick(it as FloatParamView) }
             injectorFlowRateG.setOnClickListener { floatParamClick(it as FloatParamView) }
             injectorTimingG.setOnClickListener { intParamClick(it as IntParamView) }
             crankingInjectionTimingG.setOnClickListener { intParamClick(it as IntParamView) }
             minInjectionPwG.setOnClickListener { floatParamClick(it as FloatParamView) }
+            maxInjectionPwG.setOnClickListener { floatParamClick(it as FloatParamView) }
             pulsesPerLitterOfFuel.setOnClickListener { intParamClick(it as IntParamView) }
         }
     }

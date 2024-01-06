@@ -188,6 +188,7 @@
     <string name="injctr_par_pulses_per_litter_of_fuel">Pulses per 1L of fuel</string>
     <string name="injctr_par_use_map_for_inj_timing_title">Use map for injection timing</string>
     <string name="injctr_par_min_inj_pw_title">Min. injection PW</string>
+    <string name="injctr_par_max_inj_pw_title">Max. injection PW</string>
     <string name="injctr_par_params_for_second_fuel_title">Parameters for second fuel</string>
     <string name="injctr_par_general_title">General</string>
     <string name="injctr_par_additional_corrections_title">Additional corrections (gas.eq)</string>

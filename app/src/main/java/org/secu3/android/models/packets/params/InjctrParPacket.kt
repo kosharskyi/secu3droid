@@ -87,15 +87,7 @@ data class InjctrParPacket(
 
         data += fffConst.toFloat().div(1000f*60f).times(65536f).toInt().write2Bytes()
 
-
-/**
- *  float discrete = (m_quartz_frq == 20000000 ? 3.2f : 4.0f);
- *  unsigned char inj_min_pw = MathHelpers::Round(((packet_data->inj_min_pw[1] * 1000.0f) / discrete) / 8.0f);
- *  mp_pdp->Bin8ToHex(inj_min_pw, m_outgoing_packet);
- *  inj_min_pw = MathHelpers::Round(((packet_data->inj_min_pw[0] * 1000.0f) / discrete) / 8.0f);
- *  mp_pdp->Bin8ToHex(inj_min_pw, m_outgoing_packet);
-* */
-        data += minPw.write2Bytes() // TODO: fix parcer
+        data += minPw.write2Bytes()
 
 
         data += injMafConst[0].write4Bytes()
