@@ -1,12 +1,11 @@
 plugins {
     id 'com.android.application'
-    id 'kotlin-android'
-    id 'kotlin-parcelize'
-    id 'kotlin-kapt'
+    id 'org.jetbrains.kotlin.android'
+    id 'org.jetbrains.kotlin.plugin.parcelize'
+    id 'com.google.devtools.ksp'
     id 'com.google.gms.google-services'
     id 'dagger.hilt.android.plugin'
     id 'androidx.navigation.safeargs.kotlin'
-    id 'org.jetbrains.kotlin.android'
     id 'com.google.firebase.crashlytics'
 }
 
@@ -77,7 +76,7 @@ dependencies {
 
     implementation "androidx.fragment:fragment-ktx:$fragment_version"
 
-    implementation "org.jetbrains.kotlin:kotlin-stdlib-jdk7:$kotlin_version"
+    implementation libs.kotlin.stdlib
     implementation 'androidx.appcompat:appcompat:1.6.1'
     implementation 'androidx.preference:preference-ktx:1.2.1'
     implementation 'androidx.core:core-ktx:1.12.0'
@@ -91,23 +90,23 @@ dependencies {
     implementation "androidx.lifecycle:lifecycle-runtime-ktx:$lifecycle_version"
     implementation "androidx.lifecycle:lifecycle-livedata-ktx:$lifecycle_version"
 
-    implementation "androidx.navigation:navigation-fragment-ktx:$nav_version"
-    implementation "androidx.navigation:navigation-ui-ktx:$nav_version"
+    implementation libs.navigation.fragment.ktx
+    implementation libs.navigation.ui.ktx
 
     implementation "androidx.viewpager2:viewpager2:1.0.0"
 
     implementation 'com.jakewharton.threetenabp:threetenabp:1.4.6'
 
-    //Dagger 2
-    implementation "com.google.dagger:dagger:$dagger_version"
     implementation 'androidx.core:core-ktx:1.12.0'
     implementation 'androidx.lifecycle:lifecycle-viewmodel-ktx:2.6.2'
-    kapt "com.google.dagger:dagger-compiler:$dagger_version"
+    //Dagger 2
+    implementation "com.google.dagger:dagger:$dagger_version"
+    ksp "com.google.dagger:dagger-compiler:$dagger_version"
 
     implementation "com.google.dagger:hilt-android:$dagger_version"
-    kapt "com.google.dagger:hilt-android-compiler:$dagger_version"
+    ksp "com.google.dagger:hilt-android-compiler:$dagger_version"
 
-    kapt 'androidx.hilt:hilt-compiler:1.1.0'
+    ksp 'androidx.hilt:hilt-compiler:1.1.0'
 
 
     // Import the Firebase BoM
