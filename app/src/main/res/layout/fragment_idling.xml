@@ -220,11 +220,11 @@
         <!-- ************************************************************* -->
 
         <org.secu3.android.ui.parameters.views.FloatParamView
-            android:id="@+id/proportional"
+            android:id="@+id/proportional_positive"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:layout_marginTop="16dp"
-            app:title="@string/idlreg_proportional_title"
+            app:title="@string/idlreg_proportional_positive_title"
             app:units="@string/units_coef"
             app:float_value="0"
             app:value_precision="three"
@@ -234,10 +234,36 @@
             />
 
         <org.secu3.android.ui.parameters.views.FloatParamView
-            android:id="@+id/integral"
+            android:id="@+id/integral_positive"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            app:title="@string/idlreg_integral_title"
+            app:title="@string/idlreg_integral_positive_title"
+            app:units="@string/units_coef"
+            app:float_value="0"
+            app:value_precision="three"
+            app:float_min_value="0.0"
+            app:float_max_value="5.0"
+            app:float_step="0.005"
+            />
+
+        <org.secu3.android.ui.parameters.views.FloatParamView
+            android:id="@+id/proportional_negative"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            app:title="@string/idlreg_proportional_negative_title"
+            app:units="@string/units_coef"
+            app:float_value="0"
+            app:value_precision="three"
+            app:float_min_value="0.0"
+            app:float_max_value="5.0"
+            app:float_step="0.005"
+            />
+
+        <org.secu3.android.ui.parameters.views.FloatParamView
+            android:id="@+id/integral_negative"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            app:title="@string/idlreg_integral_negative_title"
             app:units="@string/units_coef"
             app:float_value="0"
             app:value_precision="three"
@@ -337,6 +363,18 @@
             app:float_min_value="0.0"
             app:float_max_value="100.0"
             app:float_step="0.5"
+            />
+
+        <org.secu3.android.ui.parameters.views.IntParamView
+            android:id="@+id/iac_dead_band"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            app:title="@string/idlreg_iac_dead_band_title"
+            app:units="@string/units_rpm"
+            app:int_value="0"
+            app:int_min_value="0"
+            app:int_max_value="500"
+            app:int_step="1"
             />
 
 

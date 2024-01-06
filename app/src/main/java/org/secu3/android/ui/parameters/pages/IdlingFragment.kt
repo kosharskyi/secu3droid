@@ -73,9 +73,10 @@ class IdlingFragment : BaseParamFragment() {
                 iacAddAfterExit.value = it.idlToRunAdd
                 rpmAddOnRun.value = it.rpmOnRunAdd
 
-                //TODO add imple of idlRegP1 and idlRegI1
-                proportional.value = it.idlRegP0
-                integral.value = it.idlRegI0
+                proportionalPositive.value = it.idlRegP0
+                integralPositive.value = it.idlRegI0
+                proportionalNegative.value = it.idlRegP1
+                integralNegative.value = it.idlRegI1
 
                 transientThreshold1.value = it.coefThrd1
                 transientThreshold2.value = it.coefThrd2
@@ -85,6 +86,8 @@ class IdlingFragment : BaseParamFragment() {
 
                 minIacPosition.value = it.iacMinPos
                 maxIacPosition.value = it.iacMaxPos
+
+                iacDeadBand.value = it.iacRegDb
 
                 useClosedLoopOnGas.isChecked = it.useClosedLoopOnGas
             }
@@ -153,14 +156,22 @@ class IdlingFragment : BaseParamFragment() {
                 packet?.let { it1 -> mViewModel.sendPacket(it1) }
             }
 
-            //TODO add imple of idlRegP1 and idlRegI1
-            proportional.addOnValueChangeListener {
+            proportionalPositive.addOnValueChangeListener {
                 packet?.idlRegP0 = it
                 packet?.let { it1 -> mViewModel.sendPacket(it1) }
             }
 
-            integral.addOnValueChangeListener {
+            integralPositive.addOnValueChangeListener {
                 packet?.idlRegI0 = it
+                packet?.let { it1 -> mViewModel.sendPacket(it1) }
+            }
+            proportionalNegative.addOnValueChangeListener {
+                packet?.idlRegP1 = it
+                packet?.let { it1 -> mViewModel.sendPacket(it1) }
+            }
+
+            integralNegative.addOnValueChangeListener {
+                packet?.idlRegI1 = it
                 packet?.let { it1 -> mViewModel.sendPacket(it1) }
             }
 
@@ -194,6 +205,13 @@ class IdlingFragment : BaseParamFragment() {
                 packet?.let { it1 -> mViewModel.sendPacket(it1) }
             }
 
+            iacDeadBand.addOnValueChangeListener {
+                packet?.apply {
+                    iacRegDb = it
+                    mViewModel.sendPacket(this)
+                }
+            }
+
             useClosedLoopOnGas.setOnCheckedChangeListener { _, isChecked ->
                 packet?.useClosedLoopOnGas = isChecked
                 packet?.let { it1 -> mViewModel.sendPacket(it1) }
@@ -209,8 +227,10 @@ class IdlingFragment : BaseParamFragment() {
 
             iacAddAfterExit.setOnClickListener { floatParamClick(it as FloatParamView) }
             rpmAddOnRun.setOnClickListener { intParamClick(it as IntParamView) }
-            proportional.setOnClickListener { floatParamClick(it as FloatParamView) }
-            integral.setOnClickListener { floatParamClick(it as FloatParamView) }
+            proportionalPositive.setOnClickListener { floatParamClick(it as FloatParamView) }
+            integralPositive.setOnClickListener { floatParamClick(it as FloatParamView) }
+            proportionalNegative.setOnClickListener { floatParamClick(it as FloatParamView) }
+            integralNegative.setOnClickListener { floatParamClick(it as FloatParamView) }
             transientThreshold1.setOnClickListener { floatParamClick(it as FloatParamView) }
             transientThreshold2.setOnClickListener { floatParamClick(it as FloatParamView) }
             integratorRpmLimit.setOnClickListener { intParamClick(it as IntParamView) }

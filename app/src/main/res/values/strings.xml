@@ -321,5 +321,6 @@
         <item>Acceleration</item>
         <item>Gas dose</item>
     </string-array>
+    <string name="idlreg_iac_dead_band_title">IAC dead band</string>
 
 </resources>

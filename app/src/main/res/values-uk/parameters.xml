@@ -61,14 +61,15 @@
     <string name="idlreg_use_closed_loop_title">Використовувати closed loop</string>
     <string name="idlreg_iac_add_after_exit_title">Добавка після виходу</string>
     <string name="idlreg_rpm_add_on_run_title">Добавка до обертів на ходу</string>
-    <string name="idlreg_proportional_title">Пропорційний</string>
-    <string name="idlreg_integral_title">Інтергальний</string>
+    <string name="idlreg_proportional_positive_title">Пропорційний (+)</string>
+    <string name="idlreg_integral_positive_title">" Інтегральний (+)"</string>
     <string name="idlreg_first_transient_threshold_title">Поріг 1-го пер. режима</string>
     <string name="idlreg_second_transient_threshold_title">Поріг 2-го пер. режима</string>
     <string name="idlreg_integrator_rpm_limit_title">Обмеж. оберт. інтегр.</string>
     <string name="idlreg_pressure_load_on_idling_title">Режимна точка ДАТ</string>
     <string name="idlreg_min_iac_position_title">Мін. положення РДВ</string>
     <string name="idlreg_max_iac_position_title">Макс. положення РДВ</string>
+    <string name="idlreg_iac_dead_band_title">Зона нечутливості РДВ</string>
     <string name="idlreg_use_closed_loop_on_gas_title">Використовувати closed loop на газу</string>
 
 
@@ -280,4 +281,6 @@
     <string name="raw_status_tps_title">ДПДЗ: %.2f В\n</string>
     <string name="raw_status_addi1_title">ADD_IO1: %.2f В\n</string>
     <string name="raw_status_addi2_title">ADD_IO2: %.2f В</string>
+    <string name="idlreg_proportional_negative_title">Пропорційний (-)</string>
+    <string name="idlreg_integral_negative_title">" Інтегральний (-)"</string>
 </resources>

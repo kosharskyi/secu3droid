@@ -213,5 +213,6 @@
     <string name="select_bluetooth_device">Выбрать Bluetooth устройство</string>
     <string name="bluetooth_device_not_valid">Выбраное ранее устройство Bluetooth недействительно</string>
     <string name="open_settings">Перейти в Настройки</string>
+    <string name="idlreg_iac_dead_band_title">Зона нечуствительности РДВ</string>
 
 </resources>

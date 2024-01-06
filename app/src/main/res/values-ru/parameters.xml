@@ -62,8 +62,8 @@
     <string name="idlreg_use_closed_loop_title">Использовать closed loop</string>
     <string name="idlreg_iac_add_after_exit_title">Добавка после выхода</string>
     <string name="idlreg_rpm_add_on_run_title">Добавка к обор. на ходу</string>
-    <string name="idlreg_proportional_title">Пропорциональный</string>
-    <string name="idlreg_integral_title">Интегральный</string>
+    <string name="idlreg_proportional_positive_title">Пропорциональный (+)</string>
+    <string name="idlreg_integral_positive_title">Интегральный (+)</string>
     <string name="idlreg_first_transient_threshold_title">Порог 1-го пер. режима</string>
     <string name="idlreg_second_transient_threshold_title">Порог 2-го пер. режима</string>
     <string name="idlreg_integrator_rpm_limit_title">Огранич. обор. интегр.</string>
@@ -277,4 +277,6 @@
     <string name="raw_status_tps_title">ДПДЗ: %.2f В\n</string>
     <string name="raw_status_addi1_title">ADD_IO1: %.2f В\n</string>
     <string name="raw_status_addi2_title">ADD_IO2: %.2f В</string>
+    <string name="idlreg_proportional_negative_title">Пропорциональный (-)</string>
+    <string name="idlreg_integral_negative_title">Интегральный (-)</string>
 </resources>

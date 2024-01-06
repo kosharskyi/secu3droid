@@ -47,7 +47,7 @@ data class IdlingParamPacket(
     var mapValue: Float = 0f,
     var iacMinPos: Float = 0f,
     var iacMaxPos: Float = 0f,
-    var iacRegDb: Float = 0f,
+    var iacRegDb: Int = 0,
 
 
     ) : BaseOutputPacket() {
@@ -128,7 +128,7 @@ data class IdlingParamPacket(
             mapValue = data.get2Bytes(30).toFloat() / MAP_MULTIPLIER
             iacMinPos = data[32].code.toFloat() / 2
             iacMaxPos = data[33].code.toFloat() / 2
-            iacRegDb = data.get2Bytes(34).toFloat() / 2
+            iacRegDb = data.get2Bytes(34) / 2
 
             if (data.length == 36) {
                 return@apply
@@ -161,7 +161,7 @@ data class IdlingParamPacket(
         data += mapValue.times(MAP_MULTIPLIER).toInt().write2Bytes()
         data += iacMinPos.times(2).toInt().toChar()
         data += iacMaxPos.times(2).toInt().toChar()
-        data += iacRegDb.times(2).toInt().write2Bytes()
+        data += iacRegDb.times(2).write2Bytes()
 
         data += unhandledParams
 

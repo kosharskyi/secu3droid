@@ -61,8 +61,10 @@
     <string name="idlreg_use_closed_loop_title">Use closed loop</string>
     <string name="idlreg_iac_add_after_exit_title">IAC add after exit</string>
     <string name="idlreg_rpm_add_on_run_title">RPM add on run</string>
-    <string name="idlreg_proportional_title">Proportional</string>
-    <string name="idlreg_integral_title">Integral</string>
+    <string name="idlreg_proportional_positive_title">Proportional (+)</string>
+    <string name="idlreg_integral_positive_title">Integral (+)</string>
+    <string name="idlreg_proportional_negative_title">Proportional (-)</string>
+    <string name="idlreg_integral_negative_title">Integral (-)</string>
     <string name="idlreg_first_transient_threshold_title">1-st transient threshold</string>
     <string name="idlreg_second_transient_threshold_title">2-nd transient threshold</string>
     <string name="idlreg_integrator_rpm_limit_title">Integrator RPM limit</string>
