@@ -68,7 +68,7 @@ data class IdlingParamPacket(
             idlFlags = if (value) {
                 (1 shl 1).or(idlFlags)
             } else {
-                (1 shl 1).inv().or(idlFlags)
+                (1 shl 1).inv().and(idlFlags)
             }
         }
 
@@ -78,7 +78,7 @@ data class IdlingParamPacket(
             idlFlags = if (value) {
                 (1 shl 2).or(idlFlags)
             } else {
-                (1 shl 2).inv().or(idlFlags)
+                (1 shl 2).inv().and(idlFlags)
             }
         }
 
@@ -88,7 +88,7 @@ data class IdlingParamPacket(
             idlFlags = if (value) {
                 (1 shl 3).or(idlFlags)
             } else {
-                (1 shl 3).inv().or(idlFlags)
+                (1 shl 3).inv().and(idlFlags)
             }
         }
 
@@ -98,7 +98,7 @@ data class IdlingParamPacket(
             idlFlags = if (value) {
                 (1 shl 4).or(idlFlags)
             } else {
-                (1 shl 4).inv().or(idlFlags)
+                (1 shl 4).inv().and(idlFlags)
             }
         }
 

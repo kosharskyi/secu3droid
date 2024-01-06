@@ -51,7 +51,7 @@ data class KnockParamPacket(
         if (isSelected) {
             (1 shl knockChanel).or(selectedChanels)
         } else {
-            (1 shl knockChanel).inv().or(selectedChanels)
+            (1 shl knockChanel).inv().and(selectedChanels)
         }
     }
 

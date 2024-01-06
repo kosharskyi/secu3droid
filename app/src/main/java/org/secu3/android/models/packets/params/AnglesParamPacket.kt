@@ -53,7 +53,7 @@ data class AnglesParamPacket(
             igntimFlags = if (value) {
                 (1 shl 1).or(igntimFlags)
             } else {
-                (1 shl 1).inv().or(igntimFlags)
+                (1 shl 1).inv().and(igntimFlags)
             }
         }
 
@@ -63,7 +63,7 @@ data class AnglesParamPacket(
             igntimFlags = if (value) {
                 (1 shl 2).or(igntimFlags)
             } else {
-                (1 shl 2).inv().or(igntimFlags)
+                (1 shl 2).inv().and(igntimFlags)
             }
         }
 
