@@ -24,6 +24,7 @@
 package org.secu3.android.models.packets.params
 
 import org.secu3.android.models.packets.BaseOutputPacket
+import org.secu3.android.models.packets.params.UniOutParamPacket.Companion.UNI_OUTPUT_NUM
 
 data class FunSetParamPacket(
 
@@ -50,7 +51,7 @@ data class FunSetParamPacket(
     var gasVUni: Int = 0,
 
     var ckpsEngineCyl: Int = 0, //used for calculations on SECU-3 Manager side
-    var injCylDisp: Int = 0,    //used for calculations on SECU-3 Manager side
+    var injCylDisp: Float = 0f,    //used for calculations on SECU-3 Manager side
     var mafload_const: Int = 0, //calculated in manager before send
     var tps_raw: Int = 0,        //for TPS learning
 
@@ -76,10 +77,16 @@ data class FunSetParamPacket(
         data += funcFlags.toChar()
 
         data += ve2MapFunc.toChar()
-        data += gasVUni.toChar()
 
-        data += ckpsEngineCyl.toChar()
-        data += injCylDisp.write2Bytes()
+        if (gasVUni == UNI_OUTPUT_NUM) {
+            data += 0xF
+        } else {
+            data += gasVUni.toChar()
+        }
+
+        data += 0.toChar() // stub for cyl_num
+
+        data += injCylDisp.times(16384.0f).toInt().write2Bytes()
         data += mafload_const.write4Bytes()
         data += tps_raw.write2Bytes()
 
@@ -125,7 +132,7 @@ data class FunSetParamPacket(
             gasVUni = data[25].code
 
             ckpsEngineCyl = data[26].code
-            injCylDisp = data.get2Bytes(27)
+            injCylDisp = data.get2Bytes(27).toFloat().div(16384.0f)
             mafload_const = data.get4Bytes(29)
             tps_raw = data.get2Bytes(33)
 

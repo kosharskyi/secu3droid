@@ -98,6 +98,8 @@ abstract class BaseSecu3Packet {
 
         internal const val AFR_MULTIPLIER: Int = 128
 
+        internal const val MAFS_MULT = 64.0f
+
         const val MAX_PACKET_SIZE = 250
     }
 }

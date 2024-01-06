@@ -514,7 +514,7 @@ data class UniOutParamPacket(
         const val CONDITION_AI8 = 27 // Analog input 8
 
 
-
+        const val UNI_OUTPUT_NUM = 8
 
         internal const val DESCRIPTOR = '&'
 

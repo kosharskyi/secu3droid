@@ -24,6 +24,7 @@
 package org.secu3.android.models.packets.params
 
 import org.secu3.android.models.packets.BaseOutputPacket
+import org.secu3.android.models.packets.params.UniOutParamPacket.Companion.UNI_OUTPUT_NUM
 
 data class CarburParamPacket(
 
@@ -59,8 +60,18 @@ data class CarburParamPacket(
         data += fuelcutCtsThrd.times(TEMPERATURE_MULTIPLIER).toInt().write2Bytes()
         data += revlimLot.write2Bytes()
         data += revlimHit.write2Bytes()
-        data += fuelcut_uni.toChar()
-        data += igncut_uni.toChar()
+
+        if (fuelcut_uni == UNI_OUTPUT_NUM) {
+            data += 0xF
+        } else {
+            data += fuelcut_uni.toChar()
+        }
+
+        if (igncut_uni == UNI_OUTPUT_NUM) {
+            data += 0xF
+        } else {
+            data += igncut_uni.toChar()
+        }
 
         data += unhandledParams
 
@@ -84,8 +95,16 @@ data class CarburParamPacket(
             fuelcutCtsThrd = data.get2Bytes(17).toFloat() / TEMPERATURE_MULTIPLIER
             revlimLot = data.get2Bytes(19)
             revlimHit = data.get2Bytes(21)
+
             fuelcut_uni = data[23].code
+            if (fuelcut_uni == 0xF) {
+                fuelcut_uni = UNI_OUTPUT_NUM //disabled
+            }
+
             igncut_uni = data[24].code
+            if (igncut_uni == 0xF) {
+                igncut_uni = UNI_OUTPUT_NUM  //disabled
+            }
 
             if (data.length == 25) {
                 return@apply

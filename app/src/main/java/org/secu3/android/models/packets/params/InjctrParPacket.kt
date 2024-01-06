@@ -54,7 +54,7 @@ data class InjctrParPacket(
 
     var mafloadConst: Int = 0,
 
-    var injMaxPw: IntArray = IntArray(2),
+    var injMaxPw: FloatArray = FloatArray(2),
 
 
 ) : BaseOutputPacket() {
@@ -86,15 +86,24 @@ data class InjctrParPacket(
         data += angleSpec.toChar()
 
         data += fffConst.toFloat().div(1000f*60f).times(65536f).toInt().write2Bytes()
-        data += minPw.write2Bytes()
+
+
+/**
+ *  float discrete = (m_quartz_frq == 20000000 ? 3.2f : 4.0f);
+ *  unsigned char inj_min_pw = MathHelpers::Round(((packet_data->inj_min_pw[1] * 1000.0f) / discrete) / 8.0f);
+ *  mp_pdp->Bin8ToHex(inj_min_pw, m_outgoing_packet);
+ *  inj_min_pw = MathHelpers::Round(((packet_data->inj_min_pw[0] * 1000.0f) / discrete) / 8.0f);
+ *  mp_pdp->Bin8ToHex(inj_min_pw, m_outgoing_packet);
+* */
+        data += minPw.write2Bytes() // TODO: fix parcer
+
 
         data += injMafConst[0].write4Bytes()
         data += injMafConst[1].write4Bytes()
-
         data += mafloadConst.write4Bytes()
 
-        data += injMaxPw[0].write2Bytes()
-        data += injMaxPw[1].write2Bytes()
+        data += injMaxPw[0].times(1000.0f / 3.2f).roundToInt().write2Bytes()
+        data += injMaxPw[1].times(1000.0f / 3.2f).roundToInt().write2Bytes()
 
         data += unhandledParams
 
@@ -354,8 +363,8 @@ data class InjctrParPacket(
 
             mafloadConst = data.get4Bytes(41)
 
-            injMaxPw[0] = data.get2Bytes(45)
-            injMaxPw[1] = data.get2Bytes(47)
+            injMaxPw[0] = data.get2Bytes(45).toFloat().div(1000.0f / 3.2f)
+            injMaxPw[1] = data.get2Bytes(47).toFloat().div(1000.0f / 3.2f)
 
             if (data.length == 49) {
                 return@apply

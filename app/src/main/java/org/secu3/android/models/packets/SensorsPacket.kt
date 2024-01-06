@@ -76,7 +76,7 @@ data class SensorsPacket(var rpm: Int = 0,
 
                          var sens_injDuty: Float = 0f,               //injector's duty in % (value * 2)
                          var sens_maf: Float = 0f,                   //Air flow (g/sec) * 64 from the MAF sensor
-                         var ventDuty: Int = 0,                   //PWM duty of cooling fan
+                         var ventDuty: Float = 0f,                   //PWM duty of cooling fan
 
                          var uniOutput: Int = 0,                   //states of universal outputs
 
@@ -200,8 +200,8 @@ data class SensorsPacket(var rpm: Int = 0,
 
             sens_injDuty = data[82].code.toFloat() / TPS_MULTIPLIER
 
-            sens_maf = data.get2Bytes(83).toFloat() / MAP_MULTIPLIER
-            ventDuty = data[85].code
+            sens_maf = data.get2Bytes(83).toFloat() / MAFS_MULT
+            ventDuty = data[85].code.toFloat().div(2.0f)
 
             uniOutput = data[86].code
         }
