@@ -225,6 +225,8 @@
     <string name="accel_par_tpsdot_threshold_title">Acceleration TPS dot threshold</string>
     <string name="accel_par_coldacc_mult_title">Cold acceleration multiplier</string>
     <string name="accel_par_ae_decay_time_title">AE Decay time</string>
+    <string name="accel_par_ae_type_title">AE type</string>
+    <string name="accel_par_ae_time_title">AE time</string>
 
     <string name="knock_par_use_knock_sensor_title">Enable knock control</string>
     <string name="knock_par_knock_filter_frequency_title">BPF frequency</string>

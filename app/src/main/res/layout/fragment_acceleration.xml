@@ -76,4 +76,36 @@
         app:int_step="1"
         />
 
+    <com.google.android.material.textfield.TextInputLayout
+        android:id="@+id/ae_type_title"
+        android:theme="@style/Theme.MaterialComponents.DayNight.NoActionBar"
+        style="@style/Widget.MaterialComponents.TextInputLayout.OutlinedBox.ExposedDropdownMenu"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="16dp"
+        android:hint="@string/accel_par_ae_type_title">
+
+        <AutoCompleteTextView
+            android:id="@+id/ae_type"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:inputType="none"
+            android:textEditSuggestionItemLayout="@layout/list_item"
+            />
+
+    </com.google.android.material.textfield.TextInputLayout>
+
+    <org.secu3.android.ui.parameters.views.IntParamView
+        android:id="@+id/ae_time"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="16dp"
+        app:title="@string/accel_par_ae_time_title"
+        app:units="str"
+        app:int_value="0"
+        app:int_max_value="255"
+        app:int_min_value="1"
+        app:int_step="1"
+        />
+
 </LinearLayout>

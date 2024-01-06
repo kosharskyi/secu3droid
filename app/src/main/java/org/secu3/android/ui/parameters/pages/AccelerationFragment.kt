@@ -24,10 +24,13 @@
 package org.secu3.android.ui.parameters.pages
 
 import android.os.Bundle
+import android.text.InputType
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
+import android.widget.ArrayAdapter
 import androidx.fragment.app.activityViewModels
+import org.secu3.android.R
 import org.secu3.android.databinding.FragmentAccelerationBinding
 import org.secu3.android.models.packets.params.AccelerationParamPacket
 import org.secu3.android.ui.parameters.ParamsViewModel
@@ -37,6 +40,10 @@ class AccelerationFragment : BaseParamFragment() {
 
     private val mViewModel: ParamsViewModel by activityViewModels()
     private lateinit var mBinding: FragmentAccelerationBinding
+
+    private val accelEnrichmentTypesList: List<String> by lazy {
+        resources.getStringArray(R.array.accel_enrichment_types).toList()
+    }
 
     private var packet: AccelerationParamPacket? = null
 
@@ -48,6 +55,11 @@ class AccelerationFragment : BaseParamFragment() {
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
 
+        mBinding.aeType.inputType = InputType.TYPE_NULL
+        ArrayAdapter(requireContext(), R.layout.list_item, accelEnrichmentTypesList).also {
+            mBinding.aeType.setAdapter(it)
+        }
+
         mViewModel.accelerationLiveData.observe(viewLifecycleOwner) {
 
             packet = it
@@ -56,6 +68,10 @@ class AccelerationFragment : BaseParamFragment() {
                 accelTpsdotThreshold.value = it.injAeTpsdotThrd
                 coldAccelMultiplier.value = it.injAeColdaccMult
                 aeDecayTime.value = it.injAeDecayTime
+
+                aeType.setText(accelEnrichmentTypesList[it.injAeType], false)
+
+                aeTime.value = it.injAeTime
             }
         }
 
@@ -81,10 +97,25 @@ class AccelerationFragment : BaseParamFragment() {
                 packet?.let { it1 -> mViewModel.sendPacket(it1) }
             }
 
+            aeType.setOnItemClickListener { _, _, position, _ ->
+                packet?.apply {
+                    injAeType = position
+                    mViewModel.sendPacket(this)
+                }
+            }
+
+            aeTime.addOnValueChangeListener {
+                packet?.apply {
+                    injAeTime = it
+                    mViewModel.sendPacket(this)
+                }
+            }
+
 
             accelTpsdotThreshold.setOnClickListener { intParamClick(it as IntParamView) }
             coldAccelMultiplier.setOnClickListener { intParamClick(it as IntParamView) }
             aeDecayTime.setOnClickListener { intParamClick(it as IntParamView) }
+            aeTime.setOnClickListener { intParamClick(it as IntParamView) }
         }
     }
 }

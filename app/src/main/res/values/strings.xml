@@ -57,6 +57,11 @@
         <item>WBO</item>
     </string-array>
 
+    <string-array name="accel_enrichment_types">
+        <item>Acceler. pump</item>
+        <item>Time based</item>
+    </string-array>
+
     <string-array name="errors_ecu_errors_names">
         <item>Failures in working of CKP sensor - synchronization errors</item>
         <item>EEPROM parameters are damaged (CRC)</item>

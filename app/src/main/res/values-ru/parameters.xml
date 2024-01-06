@@ -282,4 +282,6 @@
     <string name="knock_par_select_knock_sensor_title">Выбор датчика детонации</string>
     <string name="knock_par_knock_threshold_control_title">Порог контроля детонации</string>
     <string name="injctr_par_max_inj_pw_title">Макс. длительность впрыска</string>
+    <string name="accel_par_ae_type_title">Тип обогащения</string>
+    <string name="accel_par_ae_time_title">Длительность обогащения</string>
 </resources>

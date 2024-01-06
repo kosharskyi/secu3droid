@@ -56,6 +56,11 @@
         <item>ШДК</item>
     </string-array>
 
+    <string-array name="accel_enrichment_types">
+        <item>Ускорительный насос</item>
+        <item>По времени</item>
+    </string-array>
+
     <string-array name="errors_ecu_errors_names">
         <item>Сбои в работе ДПКВ - ошибки синхронизации</item>
         <item>Параметры в EEPROM повреждены (CRC)</item>

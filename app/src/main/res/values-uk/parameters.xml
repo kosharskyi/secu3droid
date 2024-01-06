@@ -286,4 +286,6 @@
     <string name="knock_par_select_knock_sensor_title">Вибір датчика детонації</string>
     <string name="knock_par_knock_threshold_control_title">Поріг контроля Детонації</string>
     <string name="injctr_par_max_inj_pw_title">Макс. тривалість вприскування</string>
+    <string name="accel_par_ae_type_title">Тип збагачення</string>
+    <string name="accel_par_ae_time_title">Тривалість збагачення</string>
 </resources>
