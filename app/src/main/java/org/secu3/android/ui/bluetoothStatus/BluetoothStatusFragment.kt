@@ -37,7 +37,9 @@ import androidx.activity.result.contract.ActivityResultContracts
 import androidx.core.content.ContextCompat
 import androidx.fragment.app.Fragment
 import androidx.fragment.app.viewModels
+import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.lifecycleScope
+import androidx.lifecycle.repeatOnLifecycle
 import androidx.lifecycle.withResumed
 import androidx.navigation.fragment.findNavController
 import com.google.android.material.dialog.MaterialAlertDialogBuilder
@@ -79,12 +81,11 @@ class BluetoothStatusFragment : Fragment() {
                 startActivity(Intent(context, SettingsActivity::class.java))
             }
         }
+    }
 
-        lifecycleScope.launch {
-            lifecycle.withResumed {
-                checkBluetoothPermissions()
-            }
-        }
+    override fun onResume() {
+        super.onResume()
+        checkBluetoothPermissions()
     }
 
     private val permissionRequest = registerForActivityResult(ActivityResultContracts.RequestMultiplePermissions()) {
