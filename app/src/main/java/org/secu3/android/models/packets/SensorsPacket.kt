@@ -53,7 +53,7 @@ data class SensorsPacket(var rpm: Int = 0,
                          var idlregAac: Int = 0,        // advance angle correction from idling RPM regulator
                          var octanAac: Int = 0,         // octane correction value
 
-                         var lambda: Int = 0,           // lambda correction
+                         var lambda: IntArray = IntArray(2),           // lambda correction
                          var injPw: Int = 0,            // injector pulse width
                          var tpsdot: Int = 0,           // TPS opening/closing speed
 
@@ -61,7 +61,7 @@ data class SensorsPacket(var rpm: Int = 0,
                          var map2: Float = 0f,
                          var tmp2: Float = 0f,
 
-                         var afr: Float = 0f,              // #if defined(FUEL_INJECT) || defined(CARB_AFR) || defined(GD_CONTROL)
+                         var sensAfr: FloatArray = FloatArray(2),              // #if defined(FUEL_INJECT) || defined(CARB_AFR) || defined(GD_CONTROL)
 
                          var load: Int = 0,
                          var baroPress: Int = 0,
@@ -79,6 +79,13 @@ data class SensorsPacket(var rpm: Int = 0,
                          var ventDuty: Float = 0f,                   //PWM duty of cooling fan
 
                          var uniOutput: Int = 0,                   //states of universal outputs
+                         var mapdot: Float = 0f,                 //MAPdot
+                         var fts: Float = 0f,                    //fuel temperature
+                         var cons_fuel: Float = 0f,              //consumed fuel, L * 1024
+
+                         var lambda_mx: Int = 0,              //mix of 2 lambda sensors
+                         var corrAfr: Float = 0f,                // Current value of air to fuel ration from AFR map
+                         var tchrg: Float = 0f,                  // Corrected value of MAT
 
 ) : BaseSecu3Packet(){
 
@@ -176,7 +183,7 @@ data class SensorsPacket(var rpm: Int = 0,
             idlregAac = data.get2Bytes(49)
             octanAac = data.get2Bytes(51)
 
-            lambda = data.get2Bytes(53)
+            lambda[0] = data.get2Bytes(53)
 
             injPw = data.get2Bytes(55)
 
@@ -186,7 +193,7 @@ data class SensorsPacket(var rpm: Int = 0,
             tmp2 = data.get2Bytes(61).toShort().toFloat() / TEMPERATURE_MULTIPLIER
 
 
-            afr = data.get2Bytes(63).toFloat() / AFR_MULTIPLIER
+            sensAfr[0] = data.get2Bytes(63).toFloat() / AFR_MULTIPLIER
             load = data.get2Bytes(65)
             baroPress = data.get2Bytes(67)
 
@@ -204,6 +211,15 @@ data class SensorsPacket(var rpm: Int = 0,
             ventDuty = data[85].code.toFloat().div(2.0f)
 
             uniOutput = data[86].code
+
+            mapdot = data.get2Bytes(87).toFloat()
+            fts = data.get2Bytes(89).toFloat()  / TEMPERATURE_MULTIPLIER
+            cons_fuel = data.get3Bytes(91).toFloat() / 1024
+
+            sensAfr[1] = data.get2Bytes(94).toFloat() / AFR_MULTIPLIER
+            lambda_mx = data.get2Bytes(96)
+            corrAfr = data.get2Bytes(98).toFloat()
+            tchrg = data.get2Bytes(100).toFloat()
         }
 
 
