@@ -76,7 +76,7 @@ data class DiagInputPacket(
         internal const val DESCRIPTOR = '='
 
         fun parse(data: String) = DiagInputPacket().apply {
-            flags = data[2].toInt()
+            flags = data[2].code
             voltage = data.get2Bytes(3).toFloat() / VOLTAGE_MULTIPLIER
             map = data.get2Bytes(5).toFloat() / VOLTAGE_MULTIPLIER
             temperature = data.get2Bytes(7).toShort().toFloat() / VOLTAGE_MULTIPLIER

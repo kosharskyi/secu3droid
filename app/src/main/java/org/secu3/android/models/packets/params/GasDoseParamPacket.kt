@@ -46,7 +46,7 @@ data class GasDoseParamPacket(
         data += steps.write2Bytes()
         data += testing.toChar()
         data += manualPositionD.toChar()
-        data += fcClosing.times(GAS_DOSE_MULTIPLIER).toChar()
+        data += fcClosing.times(GAS_DOSE_MULTIPLIER).toInt().toChar()
         data += lambdaCorrLimitP.times(512.0f).div(100).toInt().write2Bytes()
         data += lambdaCorrLimitM.times(512.0f).div(100).toInt().write2Bytes()
         data += lambdaStoichval.times(AFR_MULTIPLIER).toInt().write2Bytes()

@@ -77,21 +77,21 @@ object PacketUtils {
         val buf = ArrayList<Int>(packetBuffer.length - 3)
         for (i in packetBuffer.indices) {
             if (i >= 2 && i < packetBuffer.length - 1) {
-                if (packetBuffer[i].toInt() == FIBEGIN) {
+                if (packetBuffer[i].code == FIBEGIN) {
                     buf.add(FESC)
                     buf.add(TFIBEGIN)
                     continue
-                } else if (packetBuffer[i].toInt() == FIOEND) {
+                } else if (packetBuffer[i].code == FIOEND) {
                     buf.add(FESC)
                     buf.add(FIOEND)
                     continue
-                } else if (packetBuffer[i].toInt() == FESC) {
+                } else if (packetBuffer[i].code == FESC) {
                     buf.add(FESC)
                     buf.add(TFESC)
                     continue
                 }
             }
-            buf.add(packetBuffer[i].toInt())
+            buf.add(packetBuffer[i].code)
         }
         val outBuf = IntArray(buf.size)
         for (i in buf.indices) {

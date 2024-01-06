@@ -86,7 +86,7 @@ data class CarburParamPacket(
         fun parse(data: String) = CarburParamPacket().apply {
             ieLot = data.get2Bytes(2)
             ieHit = data.get2Bytes(4)
-            carbInvers = data[6].toInt()
+            carbInvers = data[6].code
             feOnThresholds = data.get2Bytes(7).toFloat() / MAP_MULTIPLIER
             ieLotG = data.get2Bytes(9)
             ieHitG = data.get2Bytes(11)

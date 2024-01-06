@@ -90,7 +90,7 @@ data class KnockParamPacket(
             bpfFrequency = data[3].code
             kWndBeginAngle = data.get2Bytes(4).toShort().toFloat() / ANGLE_DIVIDER
             kWndEndAngle = data.get2Bytes(6).toShort().toFloat() / ANGLE_DIVIDER
-            intTimeCost = data[8].toInt()
+            intTimeCost = data[8].code
 
             retardStep = data.get2Bytes(9).toFloat() / ANGLE_DIVIDER
             advanceStep = data.get2Bytes(11).toFloat() / ANGLE_DIVIDER

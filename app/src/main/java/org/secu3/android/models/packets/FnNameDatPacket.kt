@@ -57,11 +57,11 @@ data class FnNameDatPacket(
         internal const val DESCRIPTOR = 'p'
 
         fun parse(data: String) = FnNameDatPacket().apply {
-            tablesNumber = data[2].toInt()
+            tablesNumber = data[2].code
 
             val name = data.substring(4, 4 +  F_NAME_SIZE).toByteArray(StandardCharsets.ISO_8859_1).toString(Charset.forName("IBM866"))
 
-            fnName = FnName(data[3].toInt(), name)
+            fnName = FnName(data[3].code, name)
         }
 
     }
