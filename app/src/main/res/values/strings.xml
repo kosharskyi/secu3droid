@@ -62,6 +62,21 @@
         <item>Time based</item>
     </string-array>
 
+    <string-array name="load_measurement_items">
+        <item>MAP</item>
+        <item>MAP(baro)</item>
+        <item>TPS</item>
+        <item>MAP+TPS</item>
+        <item>MAF</item>
+    </string-array>
+
+    <string-array name="barocorr_items">
+        <item>Disabled</item>
+        <item>Static MAP1</item>
+        <item>Dynamic MAP1</item>
+        <item>Dynamic MAP2</item>
+    </string-array>
+
     <string-array name="errors_ecu_errors_names">
         <item>Failures in working of CKP sensor - synchronization errors</item>
         <item>EEPROM parameters are damaged (CRC)</item>

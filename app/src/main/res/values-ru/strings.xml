@@ -61,6 +61,21 @@
         <item>По времени</item>
     </string-array>
 
+    <string-array name="load_measurement_items">
+        <item>ДАД</item>
+        <item>ДАД(баро)</item>
+        <item>ДПДЗ</item>
+        <item>ДАД+ДПДЗ</item>
+        <item>ДМРВ</item>
+    </string-array>
+
+    <string-array name="barocorr_items">
+        <item>Отключена</item>
+        <item>Статическая MAP1</item>
+        <item>Динамическая MAP1</item>
+        <item>Динамическая MAP2</item>
+    </string-array>
+
     <string-array name="errors_ecu_errors_names">
         <item>Сбои в работе ДПКВ - ошибки синхронизации</item>
         <item>Параметры в EEPROM повреждены (CRC)</item>

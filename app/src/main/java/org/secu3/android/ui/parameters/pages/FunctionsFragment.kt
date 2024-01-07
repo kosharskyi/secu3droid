@@ -46,9 +46,13 @@ class FunctionsFragment : BaseParamFragment() {
 
     private var packet: FunSetParamPacket? = null
 
-    private val loadMeasurementItems = listOf("MAP", "MAP(baro)", "TPS", "MAP+TPS")
-    private val mapselItems = mapOf(1 to "1", 2 to "2", 3 to "3", 15 to "no")
-    private val barocorrItems = listOf("Disabled", "Static MAP1", "Dynamic MAP1", "Dynamic MAP2")
+    private val loadMeasurementItems : List<String> by lazy {
+        resources.getStringArray(R.array.load_measurement_items).toList()
+    }
+    private val mapselItems = mapOf(1 to "1", 2 to "2", 3 to "3", 4 to "4", 5 to "5", 6 to "6", 15 to "no")
+    private val barocorrItems : List<String> by lazy {
+        resources.getStringArray(R.array.barocorr_items).toList()
+    }
 
     override fun onCreateView(inflater: LayoutInflater, container: ViewGroup?, savedInstanceState: Bundle?): View? {
         mBinding = FragmentFunctionsBinding.inflate(inflater, container, false)
@@ -105,6 +109,9 @@ class FunctionsFragment : BaseParamFragment() {
 
                 map2CurveOffset.value = it.map2CurveOffset
                 map2CurveGradient.value = it.map2CurveGradient
+
+                //TODO: add to the fragment ve2MapFunc
+                //TODO: add to the fragment gasVUni
             }
 
             initViews()

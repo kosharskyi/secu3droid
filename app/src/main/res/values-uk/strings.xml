@@ -61,6 +61,21 @@
         <item>По часу</item>
     </string-array>
 
+    <string-array name="load_measurement_items">
+        <item>ДАТ</item>
+        <item>ДАТ(баро)</item>
+        <item>ДПДЗ</item>
+        <item>ДАТ+ДПДЗ</item>
+        <item>ДМВП</item>
+    </string-array>
+
+    <string-array name="barocorr_items">
+        <item>Відключена</item>
+        <item>Статичка MAP1</item>
+        <item>Динамічна MAP1</item>
+        <item>Динамічна MAP2</item>
+    </string-array>
+
     <string-array name="errors_ecu_errors_names">
         <item>Збої в роботі ДПКВ - помилки синхронізації</item>
         <item>Параметри в EEPROM пошкоджені (CRC)</item>
