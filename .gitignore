@@ -10,10 +10,8 @@ app/build/*
 app/release/*
 .navigation/*
 
-.idea/dictionaries/vetal.xml
 local.properties
 .DS_Store
-gradle.properties
 
 
 
@@ -61,3 +59,4 @@ obj/
 /captures
 .externalNativeBuild
 .cxx
+/keystore.properties

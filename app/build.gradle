@@ -9,6 +9,9 @@ plugins {
     id 'com.google.firebase.crashlytics'
 }
 
+def keystorePropertiesFile = rootProject.file("keystore.properties")
+def keystoreProperties = new Properties()
+keystoreProperties.load(new FileInputStream(keystorePropertiesFile))
 
 android {
     compileSdk = 34
@@ -26,10 +29,10 @@ android {
 
     signingConfigs {
         release {
-            keyAlias KEY_ALIAS
-            keyPassword KEY_PASSWORD
-            storeFile file(KEYSTORE_PATH)
-            storePassword KEYSTORE_PASSWORD
+            keyAlias keystoreProperties['KEY_ALIAS']
+            keyPassword keystoreProperties['KEY_PASSWORD']
+            storeFile file(keystoreProperties['KEYSTORE_PATH'])
+            storePassword keystoreProperties['KEYSTORE_PASSWORD']
         }
     }
 
