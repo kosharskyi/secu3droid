@@ -30,7 +30,6 @@ import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import androidx.fragment.app.DialogFragment
-import org.secu3.android.BuildConfig
 import org.secu3.android.R
 import org.secu3.android.databinding.AboutBinding
 import org.threeten.bp.LocalDateTime
@@ -56,7 +55,7 @@ class AboutDialog : DialogFragment() {
 
             aboutSources.setTextColor(defaultColor)
 
-            aboutVersionName.text = BuildConfig.VERSION_NAME
+            aboutVersionName.text = ""
 
             val year = LocalDateTime.now().year
             copyright1.text = getString(R.string.about_copyright_1, year)
