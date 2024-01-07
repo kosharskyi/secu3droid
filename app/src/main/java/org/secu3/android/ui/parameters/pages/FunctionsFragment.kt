@@ -54,6 +54,10 @@ class FunctionsFragment : BaseParamFragment() {
         resources.getStringArray(R.array.barocorr_items).toList()
     }
 
+    private val ve2MapFuncItems : List<String> by lazy {
+        resources.getStringArray(R.array.ve2_map_func_items).toList()
+    }
+
     override fun onCreateView(inflater: LayoutInflater, container: ViewGroup?, savedInstanceState: Bundle?): View? {
         mBinding = FragmentFunctionsBinding.inflate(inflater, container, false)
         return mBinding.root
@@ -110,8 +114,8 @@ class FunctionsFragment : BaseParamFragment() {
                 map2CurveOffset.value = it.map2CurveOffset
                 map2CurveGradient.value = it.map2CurveGradient
 
-                //TODO: add to the fragment ve2MapFunc
-                //TODO: add to the fragment gasVUni
+                ve2MapFunc.setText(ve2MapFuncItems[it.ve2MapFunc], false)
+                gasVCondition.setText(mapselItems[it.gasVUni], false)
             }
 
             initViews()
@@ -122,6 +126,16 @@ class FunctionsFragment : BaseParamFragment() {
         initLoadMeasurement()
         initMapsel()
         initBarometricCorrection()
+
+        mBinding.apply {
+            ve2MapFunc.inputType = InputType.TYPE_NULL
+            val adapter = ArrayAdapter(requireContext(), R.layout.list_item, ve2MapFuncItems)
+            ve2MapFunc.setAdapter(adapter)
+
+            gasVCondition.inputType = InputType.TYPE_NULL
+            val gasAdapter = ArrayAdapter(requireContext(), R.layout.list_item, mapselItems.values.toList())
+            gasVCondition.setAdapter(gasAdapter)
+        }
     }
 
     private fun initLoadMeasurement() {
@@ -213,6 +227,20 @@ class FunctionsFragment : BaseParamFragment() {
             barometricCorrection.onItemClickListener = AdapterView.OnItemClickListener { _, _, position, _ ->
                 packet?.barocorrType = position
                 packet?.let { it1 -> mViewModel.sendPacket(it1) }
+            }
+
+            ve2MapFunc.onItemClickListener = AdapterView.OnItemClickListener { _, _, position, _ ->
+                packet?.apply {
+                    ve2MapFunc = position
+                    mViewModel.sendPacket(this)
+                }
+            }
+
+            gasVCondition.onItemClickListener = AdapterView.OnItemClickListener { _, _, position, _ ->
+                packet?.apply {
+                    gasVUni = mapselItems.keys.elementAt(position)
+                    mViewModel.sendPacket(this)
+                }
             }
 
 

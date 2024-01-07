@@ -89,6 +89,8 @@
     <string name="funset_load_measurement">Визнач. навантаження по</string>
     <string name="funset_mapsel0_condition_for_petrol">Умова MAPSEL0 для бензину</string>
     <string name="funset_mapsel0_condition_for_gas">Умова MAPSEL0 для газу</string>
+    <string name="funset_ve2_map_func_title">Функція 2-ї табл. наповн.</string>
+    <string name="funset_gas_v_uni_title">Умова GAS_V</string>
 
 
     <string name="temper_fan_on_title">Поріг активації вентилятора</string>

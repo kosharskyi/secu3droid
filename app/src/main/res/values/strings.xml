@@ -77,6 +77,13 @@
         <item>Dynamic MAP2</item>
     </string-array>
 
+
+    <string-array name="ve2_map_func_items">
+        <item>VE1</item>
+        <item>VE1*VE2</item>
+        <item>VE1+VE2</item>
+    </string-array>
+
     <string-array name="errors_ecu_errors_names">
         <item>Failures in working of CKP sensor - synchronization errors</item>
         <item>EEPROM parameters are damaged (CRC)</item>

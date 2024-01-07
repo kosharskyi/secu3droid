@@ -88,6 +88,9 @@
     <string name="funset_load_measurement">Load measurement</string>
     <string name="funset_mapsel0_condition_for_petrol">MAPSEL0 condition for petrol</string>
     <string name="funset_mapsel0_condition_for_gas">MAPSEL0 condition for gas</string>
+    <string name="funset_ve2_map_func_title">Function of 2nd VE map</string>
+    <string name="funset_gas_v_uni_title">GAS_V condition</string>
+
 
     <string name="temper_fan_on_title">Fan turn on threshold</string>
     <string name="temper_fan_off_title">Fan turn off threshold</string>
