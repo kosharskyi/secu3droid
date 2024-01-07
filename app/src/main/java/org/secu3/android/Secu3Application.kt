@@ -46,7 +46,9 @@ class Secu3Application : Application(){
 
         AndroidThreeTen.init(this)
 
-        initFirebase()
+        if (BuildConfig.DEBUG.not()) {
+            initFirebase()
+        }
 
         AppCompatDelegate.setDefaultNightMode(AppCompatDelegate.MODE_NIGHT_NO)
     }
