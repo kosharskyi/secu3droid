@@ -83,7 +83,7 @@ object PacketUtils {
                     continue
                 } else if (packetBuffer[i].toInt() == FIOEND) {
                     buf.add(FESC)
-                    buf.add(FIOEND)
+                    buf.add(TFIOEND)
                     continue
                 } else if (packetBuffer[i].toInt() == FESC) {
                     buf.add(FESC)

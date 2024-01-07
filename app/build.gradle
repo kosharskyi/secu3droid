@@ -3,11 +3,11 @@ plugins {
     id 'kotlin-android'
     id 'kotlin-parcelize'
     id 'kotlin-kapt'
-    id 'com.google.gms.google-services'
+    //id 'com.google.gms.google-services'
     id 'dagger.hilt.android.plugin'
     id 'androidx.navigation.safeargs.kotlin'
     id 'org.jetbrains.kotlin.android'
-    id 'com.google.firebase.crashlytics'
+    //id 'com.google.firebase.crashlytics'
 }
 
 
@@ -25,21 +25,21 @@ android {
         testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
     }
 
-    signingConfigs {
+    /*signingConfigs {
         release {
             keyAlias KEY_ALIAS
             keyPassword KEY_PASSWORD
             storeFile file(KEYSTORE_PATH)
             storePassword KEYSTORE_PASSWORD
         }
-    }
+    }*/
 
     buildTypes {
         release {
             debuggable false
             minifyEnabled false
             proguardFiles getDefaultProguardFile('proguard-android-optimize.txt'), 'proguard-rules.pro'
-            signingConfig signingConfigs.release
+            /*signingConfig signingConfigs.release*/
         }
 
 
@@ -110,14 +110,14 @@ dependencies {
     kapt 'androidx.hilt:hilt-compiler:1.1.0'
 
 
-    // Import the Firebase BoM
-    implementation platform('com.google.firebase:firebase-bom:32.7.0')
+    /*// Import the Firebase BoM
+    implementation platform('com.google.firebase:firebase-bom:32.7.0')*/
 
     // When using the BoM, you don't specify versions in Firebase library dependencies
 
-    // Add the dependency for the Firebase SDK for Google Analytics
+    /*// Add the dependency for the Firebase SDK for Google Analytics
     implementation 'com.google.firebase:firebase-analytics-ktx'
-    implementation 'com.google.firebase:firebase-crashlytics-ktx'
+    implementation 'com.google.firebase:firebase-crashlytics-ktx'*/
 
 
     testImplementation 'junit:junit:4.13.2'

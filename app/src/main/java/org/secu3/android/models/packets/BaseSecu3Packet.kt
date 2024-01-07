@@ -95,10 +95,15 @@ abstract class BaseSecu3Packet {
 
         internal const val ADC_MULTIPLIER = 400
         internal const val CHOKE_MULTIPLIER = 2
-
         internal const val AFR_MULTIPLIER: Int = 128
+        internal const val LOAD_MULTIPLIER: Int = 64
 
-        internal const val MAFS_MULT = 64.0f
+        internal const val FTLS_MULT: Float = 64.0f
+        internal const val FTS_MULT: Float = 4.0f
+        internal const val EGTS_MULT: Float = 4.0f
+        internal const val OPS_MULT: Float = 256.0f
+        internal const val MAFS_MULT: Float = 64.0f
+        internal const val INJPWCOEF_MULT: Float = 4096.0f
 
         const val MAX_PACKET_SIZE = 250
     }

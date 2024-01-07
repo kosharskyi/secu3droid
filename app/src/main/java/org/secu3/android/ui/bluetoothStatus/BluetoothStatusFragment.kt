@@ -87,7 +87,9 @@ class BluetoothStatusFragment : Fragment() {
         }
     }
 
-    private val permissionRequest = registerForActivityResult(ActivityResultContracts.RequestMultiplePermissions()) {
+    private val permissionRequest = registerForActivityResult(
+        ActivityResultContracts.RequestMultiplePermissions()
+    ) {
         val isDeclined = it.values.any { isGranted -> isGranted.not() }
 
         if (isDeclined.not()) {
@@ -105,7 +107,10 @@ class BluetoothStatusFragment : Fragment() {
             permissions.add(Manifest.permission.BLUETOOTH)
         }
 
-        val deniedPermissions = permissions.filter { ContextCompat.checkSelfPermission(requireContext(), it) == PackageManager.PERMISSION_DENIED }
+        val deniedPermissions = permissions.filter {
+            ContextCompat.checkSelfPermission(requireContext(),
+                it) == PackageManager.PERMISSION_DENIED
+        }
 
         if (deniedPermissions.isEmpty()) {
             checkBtConfig()
@@ -136,7 +141,6 @@ class BluetoothStatusFragment : Fragment() {
                 mViewModel.isBtDeviceAddressNotSelected() -> btSettingsGroup.visible()
                 mViewModel.isBtDeviceNotExist() -> btUuidGroup.visible()
             }
-
 
         }
 
