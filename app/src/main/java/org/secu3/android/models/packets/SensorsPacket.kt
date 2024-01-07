@@ -41,7 +41,7 @@ data class SensorsPacket(var rpm: Int = 0,
                          var gasDosePosition: Int = 0,      // gas dosator position
                          private var rawSpeed: Int = 0,              // vehicle speed (2 bytes)
                          private var rawDistance: Int = 0,             // distance (3 bytes)
-                         var fuelInject: Int = 0,           // instant fuel flow (frequency: 16000 pulses per 1L of burnt fuel)
+                         var fuelInject: Float = 0f,           // instant fuel flow (frequency: 16000 pulses per 1L of burnt fuel)
                          var airtempSensor: Float = 0f,        // 0x7FFF indicates that it is not used, voltage will be shown on the dashboard
 
 
@@ -150,7 +150,7 @@ data class SensorsPacket(var rpm: Int = 0,
             map = data.get2Bytes(4).toFloat() / MAP_MULTIPLIER
             voltage = data.get2Bytes(6).toFloat() / VOLTAGE_MULTIPLIER
 
-            temperature = data.get2Bytes(8).toShort().toFloat() / TEMPERATURE_MULTIPLIER
+            temperature = data.get2Bytes(8).toShort().toFloat().div(TEMPERATURE_MULTIPLIER).coerceIn(-99.9f, 999.0f)
             currentAngle = data.get2Bytes(10).toFloat() / ANGLE_DIVIDER
             knockValue = data.get2Bytes(12).toFloat() / ADC_MULTIPLIER
             data.get2Bytes(14).let {
@@ -176,7 +176,7 @@ data class SensorsPacket(var rpm: Int = 0,
             rawSpeed = data.get2Bytes(30)
             rawDistance = data.get3Bytes(32)
 
-            fuelInject = data.get2Bytes(35)
+            fuelInject = data.get2Bytes(35).toFloat().div(256.0f)
 
             data.get2Bytes(37).takeIf { it != 0x7FFF }?.let {
                 airtempSensor = it.toShort().toFloat() / TEMPERATURE_MULTIPLIER
