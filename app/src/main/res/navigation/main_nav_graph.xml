@@ -47,6 +47,10 @@
             app:destination="@id/parametersFragment"
             />
 
+        <action
+            android:id="@+id/action_sensorsFragment_to_secuLogsFragment"
+            app:destination="@id/secuLogsFragment" />
+
     </fragment>
 
     <fragment
@@ -89,6 +93,13 @@
         android:name="org.secu3.android.ui.parameters.ParamsFragment"
         android:label="Parameters Fragment"
         tools:layout="@layout/fragment_params"
+        />
+
+    <fragment
+        android:id="@+id/secuLogsFragment"
+        android:name="org.secu3.android.ui.logger.SecuLogsFragment"
+        android:label="Secu Logs Fragment"
+        tools:layout="@layout/fragment_secu_logs"
         />
 
 

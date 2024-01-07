@@ -10,6 +10,9 @@
     <string name="pref_speed_pulse_title">Импульсов датчика скорости на 1 км</string>
     <string name="pref_connection_retries_title">Количество попыток повтора соединения</string>
     <string name="pref_connection_retries_summary">Число попыток до выхода: %s</string>
+    <string name="pref_write_log_title">Запись лога сенсоров</string>
+    <string name="pref_write_log_summary">Записывать информацию с сенсоров в лог</string>
+    <string name="pref_log_csv_delimeter_title">Символ-разделитель лога</string>
     <string name="pref_about_title">О программе</string>
     <string name="pref_about_summary"/>
 
@@ -24,6 +27,7 @@
     <string name="title_activity_settings">Настройки</string>
     <string name="menu_errors">Ошибки</string>
     <string name="menu_preferences">Настройки</string>
+    <string name="menu_secu_logs">Логи Secu</string>
     <string name="menu_exit">Выход</string>
     <string name="menu_raw_sensors">Сырые значения</string>
     <string name="menu_diagnostics">Диагностика</string>
@@ -234,5 +238,13 @@
     <string name="bluetooth_device_not_valid">Выбраное ранее устройство Bluetooth недействительно</string>
     <string name="open_settings">Перейти в Настройки</string>
     <string name="idlreg_iac_dead_band_title">Зона нечуствительности РДВ</string>
+    <string name="empty_logs_list">У вас пока нет записаных логов</string>
+    <string name="log_start_writing">Начать запись</string>
+    <string name="stop">Стоп</string>
+    <string name="mark_1">Мркр 1</string>
+    <string name="mark_2">Мркр 2</string>
+    <string name="mark_3">Мркр 3</string>
+    <string name="dialog_confirm_delete_log_file_title">Удалить файл лога</string>
+    <string name="dialog_confirm_delete_log_message">Вы уверенны что хотите удалить файл лога?</string>
 
 </resources>

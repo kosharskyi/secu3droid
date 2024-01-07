@@ -140,8 +140,8 @@ class DashBoardFragment : Fragment() {
 
         time = System.currentTimeMillis()
 
-        mBinding.speed.text = "%.0f km/h".format(packet.getSpeed())
-        mBinding.odometer.text = "%.2f km".format(packet.getDistance())
+        mBinding.speed.text = "%.0f km/h".format(packet.speed)
+        mBinding.odometer.text = "%.2f km".format(packet.distance)
 
         mBinding.manometer.text = "%.2f kPa".format(packet.map)
 

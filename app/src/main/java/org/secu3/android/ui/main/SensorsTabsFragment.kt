@@ -34,6 +34,7 @@ import android.view.View
 import android.view.ViewGroup
 import android.widget.Toast
 import androidx.activity.addCallback
+import androidx.core.view.isVisible
 import androidx.fragment.app.Fragment
 import androidx.fragment.app.viewModels
 import androidx.navigation.fragment.findNavController
@@ -46,6 +47,8 @@ import org.secu3.android.R
 import org.secu3.android.databinding.FragmentSensorsTabsBinding
 import org.secu3.android.ui.settings.SettingsActivity
 import org.secu3.android.utils.Task
+import org.secu3.android.utils.gone
+import org.secu3.android.utils.visible
 
 @AndroidEntryPoint
 class SensorsTabsFragment : Fragment() {
@@ -86,7 +89,7 @@ class SensorsTabsFragment : Fragment() {
     override fun onResume() {
         super.onResume()
         when {
-            mViewModel.isBluetoothDeviceAddressNotSelected() -> {
+            mViewModel.isBluetoothDeviceAddressNotSelected -> {
                 Toast.makeText(context, R.string.choose_bluetooth_adapter, Toast.LENGTH_LONG).show()
             }
             !BluetoothAdapter.getDefaultAdapter().isEnabled -> {
@@ -94,6 +97,11 @@ class SensorsTabsFragment : Fragment() {
             }
             else -> {
                 mViewModel.start()
+                mBinding.apply {
+                    logStart.isVisible = mViewModel.isLoggerEnabled && mViewModel.isLoggerStarted.not()
+                    logMarkBtnsGroup.isVisible = mViewModel.isLoggerEnabled && mViewModel.isLoggerStarted
+                }
+
             }
         }
     }
@@ -142,6 +150,30 @@ class SensorsTabsFragment : Fragment() {
                 }
 
             })
+
+            logStart.setOnClickListener {
+                logMarkBtnsGroup.visible()
+                logStart.gone()
+                mViewModel.startWriteLog()
+            }
+
+            logMark1.setOnClickListener {
+                mViewModel.logMark1()
+            }
+
+            logMark2.setOnClickListener {
+                mViewModel.logMark2()
+            }
+
+            logMark3.setOnClickListener {
+                mViewModel.logMark3()
+            }
+
+            logStop.setOnClickListener {
+                logMarkBtnsGroup.gone()
+                logStart.visible()
+                mViewModel.stopWriteLog()
+            }
         }
 
 
@@ -168,6 +200,10 @@ class SensorsTabsFragment : Fragment() {
             }
             R.id.menu_params -> {
                 findNavController().navigate(SensorsTabsFragmentDirections.actionSensorsToParameters())
+                true
+            }
+            R.id.logs_preferences -> {
+                findNavController().navigate(SensorsTabsFragmentDirections.actionSensorsFragmentToSecuLogsFragment())
                 true
             }
             R.id.menu_errors -> {

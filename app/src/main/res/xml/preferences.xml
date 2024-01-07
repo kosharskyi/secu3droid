@@ -38,6 +38,21 @@
 	    android:defaultValue="@string/defaultSpeedPulse"	    
 	    android:inputType="numberDecimal"/>
 
+	<CheckBoxPreference
+		android:key="@string/pref_write_log_key"
+		android:title="@string/pref_write_log_title"
+		android:defaultValue="false"
+		android:summary="@string/pref_write_log_summary"/>
+
+	<ListPreference
+		android:dialogTitle="@string/pref_log_csv_delimeter_title"
+		android:title="@string/pref_log_csv_delimeter_title"
+		android:key="@string/pref_log_csv_delimeter_key"
+		android:summary="@string/pref_log_csv_delimeter_title"
+		android:entries="@array/csv_delimeters"
+		android:entryValues="@array/csv_delimeters_values"
+		/>
+
 	<Preference
 		android:key="@string/pref_about_key"
 		android:persistent="false"

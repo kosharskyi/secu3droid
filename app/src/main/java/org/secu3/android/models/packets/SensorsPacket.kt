@@ -24,170 +24,200 @@
  */
 package org.secu3.android.models.packets
 
-data class SensorsPacket(var rpm: Int = 0,
-                         var map: Float = 0f,
-                         var voltage: Float = 0f,
-                         var temperature: Float = 0f,
-                         var currentAngle: Float = 0f,
-                         var knockValue: Float = 0f,
-                         var knockRetard: Float = 0f,
-                         var airflow: Int = 0,
-                         var sensorsFlags: Int = 0,
-                         var tps: Float = 0f,                  // TPS throttle position sensor (0...100%, x2)
-                         var addI1: Float = 0f,                // ADD_I1 voltage
-                         var addI2: Float = 0f,                // ADD_I2 voltage
-                         var ecuErrors: Int = 0,            // Check Engine errors
-                         var chokePosition: Float = 0f,
-                         var gasDosePosition: Int = 0,      // gas dosator position
-                         private var rawSpeed: Int = 0,              // vehicle speed (2 bytes)
-                         private var rawDistance: Int = 0,             // distance (3 bytes)
-                         var fuelInject: Float = 0f,           // instant fuel flow (frequency: 16000 pulses per 1L of burnt fuel)
-                         var airtempSensor: Float = 0f,        // 0x7FFF indicates that it is not used, voltage will be shown on the dashboard
+data class SensorsPacket(
+    var rpm: Int = 0,
+    var map: Float = 0f,
+    var voltage: Float = 0f,
+    var temperature: Float = 0f,
+    var currentAngle: Float = 0f,
+    var knockValue: Float = 0f,
+    var knockRetard: Float = 0f,
+    var airflow: Int = 0,
+    var sensorsFlags: Int = 0,
+    var tps: Float = 0f,                  // TPS throttle position sensor (0...100%, x2)
+    var addI1: Float = 0f,                // ADD_I1 voltage
+    var addI2: Float = 0f,                // ADD_I2 voltage
+    var ecuErrors: Int = 0,            // Check Engine errors
+    var chokePosition: Float = 0f,
+    var gasDosePosition: Float = 0f,      // gas dosator position
+    var speed: Float = 0f,              // vehicle speed (2 bytes)
+    var distance: Float = 0f,             // distance (3 bytes)
+    var fuelFlowFrequency: Float = 0f,           // instant fuel flow (frequency: 16000 pulses per 1L of burnt fuel)
+
+    //Intake air temperature
+    var airtempSensor: Float = 0f,        // 0x7FFF indicates that it is not used, voltage will be shown on the dashboard
 
 
     //corrections
-                         var strtAalt: Int = 0,         // advance angle from start map
-                         var idleAalt: Int = 0,         // advance angle from idle map
-                         var workAalt: Int = 0,        // advance angle from work map
-                         var tempAalt: Int = 0,         // advance angle from coolant temperature correction map
-                         var airtAalt: Int = 0,        // advance angle from air temperature correction map
-                         var idlregAac: Int = 0,        // advance angle correction from idling RPM regulator
-                         var octanAac: Int = 0,         // octane correction value
+    val serviceFlags: Int = 0,
+    var strtAalt: Float = 0f,         // advance angle from start map
+    var idleAalt: Float = 0f,         // advance angle from idle map
+    var workAalt: Float = 0f,        // advance angle from work map
+    var tempAalt: Float = 0f,         // advance angle from coolant temperature correction map
+    var airtAalt: Float = 0f,        // advance angle from air temperature correction map
+    var idlregAac: Float = 0f,        // advance angle correction from idling RPM regulator
+    var octanAac: Float = 0f,         // octane correction value
 
-                         var lambda: FloatArray = FloatArray(2),           // lambda correction
-                         var injPw: Float = 0f,            // injector pulse width
-                         var tpsdot: Int = 0,           // TPS opening/closing speed
+    var lambda: FloatArray = FloatArray(2),           // lambda correction
+    var injPw: Float = 0f,            // injector pulse width
+    var tpsdot: Int = 0,           // TPS opening/closing speed
 
     // if SECU-3T
-                         var map2: Float = 0f,
-                         var tmp2: Float = 0f,
+    var map2: Float = 0f,
+    var mapd: Float = 0f,   //differential pressure
 
-                         var sensAfr: FloatArray = FloatArray(2),              // #if defined(FUEL_INJECT) || defined(CARB_AFR) || defined(GD_CONTROL)
+    var tmp2: Float = 0f,
 
-                         var load: Float = 0f,
-                         var baroPress: Int = 0,
+    var sensAfr: FloatArray = FloatArray(2),              // #if defined(FUEL_INJECT) || defined(CARB_AFR) || defined(GD_CONTROL)
 
-                         var iit: Short = 0,
-                         var rigidArg: Int = 0,
-                         var grts: Float = 0f,                  // fas reducer's temperature
-                         var rxlaf: Float = 0f,                 // RxL air flow
-                         var ftls: Float = 0f,                  //fuel tank level
-                         var egts: Float = 0f,                  //exhaust gas temperature
-                         var ops: Float = 0f,                   //oil pressure
+    var load: Float = 0f,
+    var baroPress: Float = 0f,
 
-                         var sens_injDuty: Float = 0f,               //injector's duty in % (value * 2)
-                         var sens_maf: Float = 0f,                   //Air flow (g/sec) * 64 from the MAF sensor
-                         var ventDuty: Float = 0f,                   //PWM duty of cooling fan
+    var iit: Int = 0,
+    var injTimBegin: Float = 0f,
+    var injTimEnd: Float = 0f,
 
-                         var uniOutput: Int = 0,                   //states of universal outputs
-                         var mapdot: Float = 0f,                 //MAPdot
-                         var fts: Float = 0f,                    //fuel temperature
-                         var cons_fuel: Float = 0f,              //consumed fuel, L * 1024
+    var rigidArg: Float = 0f,          // idling regulator's rigidity
+    var grts: Float = 0f,                  // fas reducer's temperature
+    var rxlaf: Int = 0,                 // RxL air flow
+    var ftls: Float = 0f,                  //fuel tank level
+    var egts: Float = 0f,                  //exhaust gas temperature
+    var ops: Float = 0f,                   //oil pressure
 
-                         var lambda_mx: Int = 0,              //mix of 2 lambda sensors
-                         var corrAfr: Float = 0f,                // Current value of air to fuel ration from AFR map
-                         var tchrg: Float = 0f,                  // Corrected value of MAT
+    var sens_injDuty: Float = 0f,               //injector's duty in % (value * 2)
+    var sens_maf: Float = 0f,                   //Air flow (g/sec) * 64 from the MAF sensor
+    var ventDuty: Float = 0f,                   //PWM duty of cooling fan
+
+    var uniOutput: Int = 0,                   //states of universal outputs
+    var mapdot: Int = 0,                 //MAPdot
+    var fts: Float = 0f,                    //fuel temperature
+    var cons_fuel: Float = 0f,              //consumed fuel, L * 1024
+
+    var lambda_mx: Float = 0f,              //mix of 2 lambda sensors
+    var corrAfr: Float = 0f,                // Current value of air to fuel ration from AFR map
+    var tchrg: Float = 0f,                  // Corrected value of MAT; charge temp
 
 ) : BaseSecu3Packet(){
 
-    fun getSpeed(): Float {
-        var speed = 0f
+    private var isSpeedUnitKm = true
+    var isAddI2Enabled = false
 
-        if (rawSpeed != 0 && rawSpeed != 65535) { //speed sensor is used, value is correct
+    var inj_ffd: Float = 0f         // fuel flow in L/100km
+    var inj_ffh: Float = 0f         // consumption in L/h
 
-            val periodS = rawSpeed / 312500f      //period in seconds
+    val ephhValveBit: Int //idle cutoff valve
+        get() = sensorsFlags.getBitValue(BITNUMBER_EPHH_VALVE)
 
-            speed = ((periodDistance / periodS) * 3600.0f) / 1000.0f; //Km/h
-
-            if (speed >= 999.9f) {
-                speed = 999.9f
-            }
-        }
-
-        return speed
-    }
-
-    fun getDistance(): Float {
-        var distance = (periodDistance * rawDistance) / 1000.0f
-
-        if (distance > 9999.99f) {
-            distance = 9999.99f
-        }
-
-        return distance
-    }
+    val carbBit: Int // throttle limit switch
+        get() = sensorsFlags.getBitValue(BITNUMBER_CARB)
 
     val gasBit: Int
         get() = sensorsFlags.getBitValue(BITNUMBER_GAS)
 
-    val ephhValveBit: Int
-        get() = sensorsFlags.getBitValue(BITNUMBER_EPHH_VALVE)
-
     val epmValveBit: Int
         get() = sensorsFlags.getBitValue(BITNUMBER_EPM_VALVE)
-
-    val coolFanBit: Int
-        get() = sensorsFlags.getBitValue(BITNUMBER_COOL_FAN)
 
     val checkEngineBit: Int
         get() = sensorsFlags.getBitValue(BITNUMBER_CE_STATE)
 
-    val carbBit: Int
-        get() = sensorsFlags.getBitValue(BITNUMBER_CARB)
+    val coolFanBit: Int
+        get() = sensorsFlags.getBitValue(BITNUMBER_COOL_FAN)
 
-    val stBlockBit: Int
+    val starterBlockBit: Int
         get() = sensorsFlags.getBitValue(BITNUMBER_ST_BLOCK)
 
-    val accelerationBit: Int
+    val accelerationEnrichment: Int
         get() = sensorsFlags.getBitValue(BITNUMBER_ACCELERATION)
 
-    val fcRevlimBit: Int
+    val fc_revlim: Int // Rev. lim. fuel cut
         get() = sensorsFlags.getBitValue(BITNUMBER_FC_REVLIM)
 
-    val floodClearBit: Int
+    val floodclear: Int
         get() = sensorsFlags.getBitValue(BITNUMBER_FLOODCLEAR)
 
-    val sysLockedBit: Int
+    val sys_locked: Int
         get() = sensorsFlags.getBitValue(BITNUMBER_SYS_LOCKED)
 
-    val ignIBit: Int
+    val ign_i: Int
         get() = sensorsFlags.getBitValue(BITNUMBER_IGN_I)
 
-    val condIBit: Int
+    val cond_i: Int
         get() = sensorsFlags.getBitValue(BITNUMBER_COND_I)
 
-    val epasIBit: Int
+    val epas_i: Int
         get() = sensorsFlags.getBitValue(BITNUMBER_EPAS_I)
 
-    val afterStEnrBit: Int
+    val aftstr_enr: Int // afterstart enrichment
         get() = sensorsFlags.getBitValue(BITNUMBER_AFTSTR_ENR)
 
-    val iacClosedLoopBit: Int
+    val iac_closed_loop: Int
         get() = sensorsFlags.getBitValue(BITNUMBER_IAC_CLOSED_LOOP)
+
 
     // UniOut States of universal outputs
     val uniOut0Bit: Int
-        get() = uniOutput.getBitValue(BITNUMBER_UNIOUT0)
+        get() = uniOutput.getBitValue(0)
 
     val uniOut1Bit: Int
-        get() = uniOutput.getBitValue(BITNUMBER_UNIOUT1)
+        get() = uniOutput.getBitValue(1)
 
     val uniOut2Bit: Int
-        get() = uniOutput.getBitValue(BITNUMBER_UNIOUT2)
+        get() = uniOutput.getBitValue(2)
 
     val uniOut3Bit: Int
-        get() = uniOutput.getBitValue(BITNUMBER_UNIOUT3)
+        get() = uniOutput.getBitValue(3)
 
     val uniOut4Bit: Int
-        get() = uniOutput.getBitValue(BITNUMBER_UNIOUT4)
+        get() = uniOutput.getBitValue(4)
 
     val uniOut5Bit: Int
-        get() = uniOutput.getBitValue(BITNUMBER_UNIOUT5)
+        get() = uniOutput.getBitValue(5)
 
+
+
+
+    // ServiceFlags
+    var knkret_use: Boolean
+        get() = serviceFlags.getBitValue(0) > 0
+        set(value) { serviceFlags.setBitValue(value, 0) }
+
+    var strtUse: Boolean
+        get() = serviceFlags.getBitValue(1) > 0
+        set(value) { serviceFlags.setBitValue(value, 1) }
+
+    var idleUse: Boolean
+        get() = serviceFlags.getBitValue(2) > 0
+        set(value) { serviceFlags.setBitValue(value, 2) }
+
+    var workUse: Boolean
+        get() = serviceFlags.getBitValue(3) > 0
+        set(value) { serviceFlags.setBitValue(value, 3) }
+
+    var tempUse: Boolean
+        get() = serviceFlags.getBitValue(4) > 0
+        set(value) { serviceFlags.setBitValue(value, 4) }
+
+    var airtUse: Boolean
+        get() = serviceFlags.getBitValue(5) > 0
+        set(value) { serviceFlags.setBitValue(value, 5) }
+
+    var idlregUse: Boolean
+        get() = serviceFlags.getBitValue(6) > 0
+        set(value) { serviceFlags.setBitValue(value, 6) }
+
+    var octanUse: Boolean
+        get() = serviceFlags.getBitValue(7) > 0
+        set(value) { serviceFlags.setBitValue(value, 7) }
+
+    var rigidUse: Boolean
+        get() = serviceFlags.getBitValue(8) > 0
+        set(value) { serviceFlags.setBitValue(value, 8) }
 
 
 
     companion object {
+
+        private const val fffConst = 1600
 
         internal const val DESCRIPTOR = 'q'
 
@@ -198,81 +228,167 @@ data class SensorsPacket(var rpm: Int = 0,
 
             temperature = data.get2Bytes(8).toShort().toFloat().div(TEMPERATURE_MULTIPLIER).coerceIn(-99.9f, 999.0f)
             currentAngle = data.get2Bytes(10).toFloat() / ANGLE_DIVIDER
-            knockValue = data.get2Bytes(12).toFloat() / ADC_MULTIPLIER
-            data.get2Bytes(14).let {
-                val isKnockRetardUse = it != 32767
-                if (isKnockRetardUse) {
-                    knockRetard = it.toFloat()  / ANGLE_DIVIDER
-                }
+            knockValue = data.get2Bytes(12).toFloat() * ADC_DISCRETE
 
+            data.get2Bytes(14).takeIf { it != 32767 }?.toFloat()?.let {
+                knockRetard = it.div(ANGLE_DIVIDER)
+                knkret_use = true
             }
+
             airflow = data[16].code
 
             sensorsFlags = data.get2Bytes(17)
 
             tps = data[19].code.toFloat() / TPS_MULTIPLIER
 
-            addI1 = data.get2Bytes(20).toFloat() / VOLTAGE_MULTIPLIER
-            addI2 = data.get2Bytes(22).toFloat() / VOLTAGE_MULTIPLIER
+            addI1 = data.get2Bytes(20).toFloat() * ADC_DISCRETE
+            addI2 = data.get2Bytes(22).toFloat() * ADC_DISCRETE
 
             ecuErrors = data.get4Bytes(24)
             chokePosition = data[28].code.toFloat() / CHOKE_MULTIPLIER
-            gasDosePosition = data[29].code / GAS_DOSE_MULTIPLIER
+            gasDosePosition = data[29].code.toFloat() / GAS_DOSE_MULTIPLIER
 
-            rawSpeed = data.get2Bytes(30)
-            rawDistance = data.get3Bytes(32)
-
-            fuelInject = data.get2Bytes(35).toFloat().div(256.0f)
-
-            data.get2Bytes(37).takeIf { it != 0x7FFF }?.let {
-                airtempSensor = it.toShort().toFloat() / TEMPERATURE_MULTIPLIER
+            data.get2Bytes(30).toFloat().div(32.0f).coerceAtMost(999.9f).let {
+                speed = it
+                if (isSpeedUnitKm.not()) {
+                    speed /= 1.609344f
+                }
+            }
+            data.get3Bytes(32).toFloat().div(125.0f).coerceAtMost(99999.99f).let {
+                distance = it
+                if (isSpeedUnitKm.not()) {
+                    distance /= 1.609344f
+                }
             }
 
-            strtAalt = data.get2Bytes(39)
-            idleAalt = data.get2Bytes(41)
-            workAalt = data.get2Bytes(43)
-            tempAalt = data.get2Bytes(45)
-            airtAalt = data.get2Bytes(47)
-            idlregAac = data.get2Bytes(49)
-            octanAac = data.get2Bytes(51)
+            fuelFlowFrequency = data.get2Bytes(35).toFloat().div(256.0f)
 
-            lambda[0] = data.get2Bytes(53).toFloat()
+            //calculate value of fuel flow in L/100km
+            if (speed > .0f) {
+                inj_ffd = fuelFlowFrequency.div(speed).times((3600.0f * 100.0f).div(fffConst)).coerceIn(0f, 999.999f)
+            }
 
-            injPw = data.get2Bytes(55).toFloat()
+            inj_ffh = 3600.0f * fuelFlowFrequency / fffConst  //consumption in L/h
+
+
+            data.get2Bytes(37).takeIf { it != 0x7FFF }?.let {
+                airtempSensor = it.toFloat().div(TEMPERATURE_MULTIPLIER).coerceIn(-99.9f, 999.0f)
+                isAddI2Enabled = true
+            }
+
+            data.get2Bytes(39).takeIf { it != 32767 }?.let {
+                strtAalt = it.toFloat().div(ANGLE_DIVIDER)
+                strtUse = true
+            }
+
+            data.get2Bytes(41).takeIf { it != 32767 }?.let {
+                idleAalt = it.toFloat().div(ANGLE_DIVIDER)
+                idleUse = true
+            }
+            data.get2Bytes(43).takeIf { it != 32767 }?.let {
+                workAalt = it.toFloat().div(ANGLE_DIVIDER)
+                workUse = true
+            }
+
+            data.get2Bytes(45).takeIf { it != 32767 }?.let {
+                tempAalt = it.toFloat().div(ANGLE_DIVIDER)
+                tempUse = true
+            }
+            data.get2Bytes(47).takeIf { it != 32767 }?.let {
+                airtAalt = it.toFloat().div(ANGLE_DIVIDER)
+                airtUse = true
+            }
+            data.get2Bytes(49).takeIf { it != 32767 }?.let {
+                idlregAac = it.toFloat().div(ANGLE_DIVIDER)
+                idlregUse = true
+            }
+            data.get2Bytes(51).takeIf { it != 32767 }?.let {
+                octanAac = it.toFloat().div(ANGLE_DIVIDER)
+                octanUse = true
+            }
+
+            lambda[0] = data.get2Bytes(53).toFloat().div(512.0f).times(100.0f)  //obtain value in %
+
+            // Injector PW(ms)
+            injPw = data.get2Bytes(55).toFloat().times(3.2f).div(1000.0f)
 
             tpsdot = data.get2Bytes(57)
 
             map2 = data.get2Bytes(59).toFloat() / MAP_MULTIPLIER
-            tmp2 = data.get2Bytes(61).toShort().toFloat() / TEMPERATURE_MULTIPLIER
+            mapd = map2 - map
+
+            tmp2 = data.get2Bytes(61).toShort().toFloat().div(TEMPERATURE_MULTIPLIER).coerceIn(-99.9f, 999.0f)
 
 
             sensAfr[0] = data.get2Bytes(63).toFloat() / AFR_MULTIPLIER
-            load = data.get2Bytes(65).toFloat()
-            baroPress = data.get2Bytes(67)
+            load = data.get2Bytes(65).toFloat() / LOAD_PHYSICAL_MAGNITUDE_MULTIPLIER
+            baroPress = data.get2Bytes(67).toFloat() / MAP_MULTIPLIER
 
-            iit = data.get2Bytes(69).toShort()
-            rigidArg = data[71].code
-            grts = data.get2Bytes(72).toFloat()          // gas reducer's temperature
-            rxlaf = data.get2Bytes(74).toFloat()           // RxL air flow, note: it is divided by 32
-            ftls = data.get2Bytes(76).toFloat()
-            egts = data.get2Bytes(78).toFloat()
-            ops = data.get2Bytes(80).toFloat()
 
-            sens_injDuty = data[82].code.toFloat() / TPS_MULTIPLIER
+            //inj.timing with info
+            iit = data.get2Bytes(69)
+            val mode = iit shr 14 and 0x3
+            val inj_timing = (iit and 0x3FFF).toFloat() / 16.0f //inj.timing in crankshaft degrees
+            val inj_pw_degr: Float = 360.0f / (1000.0f * 60.0f) * rpm * injPw //inj. PW in crankshaft degrees
+            if (mode == 0)
+            { //begin
+                injTimBegin = inj_timing;
+                injTimEnd = inj_timing - inj_pw_degr;
+            }
+            else if (mode == 1)
+            { //middle
+                injTimBegin = inj_timing + (inj_pw_degr / 2);
+                injTimEnd = inj_timing - (inj_pw_degr / 2);
+            }
+            else
+            {//end
+                injTimBegin = inj_timing + inj_pw_degr;
+                injTimEnd = inj_timing;
+            }
+            if (injTimBegin > 720.0f)
+                injTimBegin -= 720.0f;
+            if (injTimEnd < 0)
+                injTimEnd += 720.0f;
 
+
+
+            data[71].code.takeIf { it != 255 }?.toFloat()?.let {
+                rigidUse = true
+                rigidArg = 1.0f + it.div(256.0f / 7.0f)
+            }
+
+            //Gas reducer's temperature
+            grts = data.get2Bytes(72).toFloat().div(TEMPERATURE_MULTIPLIER).coerceIn(-99.9f, 999.0f)           // gas reducer's temperature
+
+            rxlaf = data.get2Bytes(74).times(32)           // RxL air flow
+            ftls = data.get2Bytes(76).toFloat().div(FTLS_MULT)  // fuel tank level
+            egts = data.get2Bytes(78).toFloat().div(EGTS_MULT)  // exhaust gas temperature
+            ops = data.get2Bytes(80).toFloat().div(OPS_MULT)    // oil pressure
+
+            sens_injDuty = data[82].code.toFloat() / 2.0f
+
+            //mass air flow (g/sec)
             sens_maf = data.get2Bytes(83).toFloat() / MAFS_MULT
             ventDuty = data[85].code.toFloat().div(2.0f)
 
             uniOutput = data[86].code
 
-            mapdot = data.get2Bytes(87).toFloat()
-            fts = data.get2Bytes(89).toFloat()  / TEMPERATURE_MULTIPLIER
-            cons_fuel = data.get3Bytes(91).toFloat() / 1024
+            mapdot = data.get2Bytes(87)
+            fts = data.get2Bytes(89).toFloat()  / FTS_MULT
+            cons_fuel = data.get3Bytes(91).toFloat() / 1024.0f //consumed fuel
 
             sensAfr[1] = data.get2Bytes(94).toFloat() / AFR_MULTIPLIER
-            lambda_mx = data.get2Bytes(96)
-            corrAfr = data.get2Bytes(98).toFloat()
-            tchrg = data.get2Bytes(100).toFloat()
+
+            lambda[1] = data.get2Bytes(53).toFloat().div(512.0f).times(100.0f)  //obtain value in %
+
+            //mixed voltages from two EGO sensors
+            lambda_mx = data.get2Bytes(96).times(ADC_DISCRETE)
+
+            //AFR value from map
+            corrAfr = data.get2Bytes(98).toFloat().div(AFR_MULTIPLIER)
+
+            //Corrected MAT
+            tchrg = data.get2Bytes(100).toFloat().div(TEMPERATURE_MULTIPLIER).coerceIn(-99.9f, 999.0f)
         }
 
 
@@ -292,12 +408,5 @@ data class SensorsPacket(var rpm: Int = 0,
         private const val BITNUMBER_EPAS_I = 13  // EPAS_I flag
         private const val BITNUMBER_AFTSTR_ENR = 14  // after start enrichment flag
         private const val BITNUMBER_IAC_CLOSED_LOOP = 15  // IAC closed loop flag
-
-        private const val BITNUMBER_UNIOUT0 = 0  // uniout 1
-        private const val BITNUMBER_UNIOUT1 = 1  // uniout 2
-        private const val BITNUMBER_UNIOUT2 = 2  // uniout 3
-        private const val BITNUMBER_UNIOUT3 = 3  // uniout 4
-        private const val BITNUMBER_UNIOUT4 = 4  // uniout 5
-        private const val BITNUMBER_UNIOUT5 = 5  // uniout 6
     }
 }

@@ -10,6 +10,9 @@
     <string name="pref_speed_pulse_title">Speed sensor pulses per 1 km</string>
     <string name="pref_connection_retries_title">Connection retry number</string>
     <string name="pref_connection_retries_summary">Number of attempts before exiting: %s</string>
+    <string name="pref_write_log_title">Sensors log writing</string>
+    <string name="pref_write_log_summary">Writing information from sensors into a log</string>
+    <string name="pref_log_csv_delimeter_title">Log delimeter character</string>
     <string name="pref_about_title">About</string>
     <string name="pref_about_summary" />
 
@@ -25,6 +28,7 @@
     <string name="menu_errors">Errors</string>
     <string name="menu_dashboard">Dashboard</string>
     <string name="menu_preferences">Preferences</string>
+    <string name="menu_secu_logs">Secu logs</string>
     <string name="menu_raw_sensors">Raw values</string>
     <string name="menu_exit">Exit</string>
     <string name="menu_diagnostics">Diagnostics</string>
@@ -82,6 +86,26 @@
         <item>VE1</item>
         <item>VE1*VE2</item>
         <item>VE1+VE2</item>
+    </string-array>
+
+    <string-array name="csv_delimeters" translatable="false">
+        <item>\",\" Comma</item>
+        <item>\";\" Semicolon</item>
+        <item>\":\" Colon</item>
+        <item>\"+\" Plus</item>
+        <item>\"-\" Minus</item>
+        <item>\"*\" Star</item>
+        <item>\"|\" Stick</item>
+    </string-array>
+
+    <string-array name="csv_delimeters_values" translatable="false">
+        <item>,</item>
+        <item>;</item>
+        <item>:</item>
+        <item>+</item>
+        <item>-</item>
+        <item>*</item>
+        <item>|</item>
     </string-array>
 
     <string-array name="errors_ecu_errors_names">
@@ -349,8 +373,13 @@
         <item>Gas dose</item>
     </string-array>
     <string name="idlreg_iac_dead_band_title">IAC dead band</string>
-    <!-- TODO: Remove or change this placeholder text -->
-
-
+    <string name="empty_logs_list">You have no recorded logs yet</string>
+    <string name="log_start_writing">Start writing</string>
+    <string name="stop">Stop</string>
+    <string name="mark_1">Mark 1</string>
+    <string name="mark_2">Mark 2</string>
+    <string name="mark_3">Mark 3</string>
+    <string name="dialog_confirm_delete_log_file_title">Delete log file</string>
+    <string name="dialog_confirm_delete_log_message">Are you sure want to delete log file?</string>
 
 </resources>

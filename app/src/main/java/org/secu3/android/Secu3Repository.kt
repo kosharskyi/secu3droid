@@ -32,7 +32,10 @@ import kotlinx.coroutines.flow.*
 import org.secu3.android.models.packets.BaseOutputPacket
 import org.secu3.android.models.packets.BaseSecu3Packet
 import org.secu3.android.models.packets.FirmwareInfoPacket
+import org.secu3.android.models.packets.SensorsPacket
+import org.secu3.android.utils.FileHelper
 import org.secu3.android.utils.LifeTimePrefs
+import org.secu3.android.utils.SecuLogger
 import org.secu3.android.utils.Task
 import org.threeten.bp.LocalDateTime
 import javax.inject.Inject
@@ -41,7 +44,8 @@ import javax.inject.Singleton
 @Singleton
 class Secu3Repository @Inject constructor(private val secu3Manager: Secu3Manager,
                                           private val mPrefs: LifeTimePrefs,
-                                          private val bluetoothManager: BluetoothManager
+                                          private val bluetoothManager: BluetoothManager,
+                                          private val secuLogger: SecuLogger,
 ) {
 
     private val repositoryJob = Job()
@@ -98,13 +102,22 @@ class Secu3Repository @Inject constructor(private val secu3Manager: Secu3Manager
         secu3Manager.disable()
     }
 
-
     init {
 
         repositoryScope.launch {
             secu3Manager.receivedPacketFlow.collect {
                 lastPacketReceivedTimetamp = LocalDateTime.now()
             }
+        }
+
+        repositoryScope.launch {
+            receivedPacketFlow.filter { it is SensorsPacket }
+                .map { it as SensorsPacket }
+                .collect {
+                    if (mPrefs.isSensorLoggerEnabled) {
+                        secuLogger.logPacket(it)
+                    }
+                }
         }
 
         repositoryScope.launch {
