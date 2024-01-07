@@ -153,7 +153,13 @@ data class SensorsPacket(var rpm: Int = 0,
             temperature = data.get2Bytes(8).toShort().toFloat() / TEMPERATURE_MULTIPLIER
             currentAngle = data.get2Bytes(10).toFloat() / ANGLE_DIVIDER
             knockValue = data.get2Bytes(12).toFloat() / ADC_MULTIPLIER
-            knockRetard = data.get2Bytes(14).toFloat() / ANGLE_DIVIDER
+            data.get2Bytes(14).let {
+                val isKnockRetardUse = it != 32767
+                if (isKnockRetardUse) {
+                    knockRetard = it.toFloat()  / ANGLE_DIVIDER
+                }
+
+            }
             airflow = data[16].code
 
             sensorsFlags = data.get2Bytes(17)
