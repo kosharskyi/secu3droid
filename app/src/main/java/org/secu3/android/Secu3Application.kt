@@ -46,15 +46,7 @@ class Secu3Application : Application(){
 
         AndroidThreeTen.init(this)
 
-        initFirebase()
 
         AppCompatDelegate.setDefaultNightMode(AppCompatDelegate.MODE_NIGHT_NO)
-    }
-
-    private fun initFirebase() {
-        FirebaseAnalytics.getInstance(this).setAnalyticsCollectionEnabled(!BuildConfig.DEBUG)
-
-        FirebaseCrashlytics.getInstance()
-            .setCrashlyticsCollectionEnabled(!BuildConfig.DEBUG)
     }
 }
