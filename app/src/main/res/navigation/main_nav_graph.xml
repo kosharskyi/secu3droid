@@ -22,9 +22,9 @@
 
     <fragment
         android:id="@+id/sensorsFragment"
-        android:name="org.secu3.android.ui.main.SensorsFragment"
+        android:name="org.secu3.android.ui.main.SensorsTabsFragment"
         android:label="Sensors Fragment"
-        tools:layout="@layout/fragment_sensors"
+        tools:layout="@layout/fragment_sensors_tabs"
         >
 
         <action
