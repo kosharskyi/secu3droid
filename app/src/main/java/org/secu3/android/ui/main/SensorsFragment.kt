@@ -95,13 +95,13 @@ class SensorsFragment : Fragment() {
                 synthLoad.value.text = String.format(Locale.US, "%.1f", it.load)
 
                 speed.title.text = "Скорость авто, км/ч:"
-                speed.value.text = String.format(Locale.US, "%.1f", it.getSpeed())
+                speed.value.text = String.format(Locale.US, "%.1f", it.speed)
 
                 distance.title.text = "Пробег, км:"
-                distance.value.text = String.format(Locale.US, "%.1f", it.getDistance())
+                distance.value.text = String.format(Locale.US, "%.1f", it.distance)
 
                 fuelInj.title.text = "Расход топлива, Гц:"
-                fuelInj.value.text = it.fuelInject.toString()
+                fuelInj.value.text = it.fuelFlowFrequency.toString()
 
                 airTemp.title.text = "Температура ДТВ, °C:"
                 airTemp.value.text = String.format(Locale.US, "%.1f", it.airtempSensor)
@@ -192,33 +192,33 @@ class SensorsFragment : Fragment() {
                 statusPowerValveStarterAe.status1.text = "Клапан ЭМР"
                 statusPowerValveStarterAe.status1.setBackgroundColor(if(it.epmValveBit > 0) Color.GREEN else Color.LTGRAY)
                 statusPowerValveStarterAe.status2.text = "Блокир. стартера"
-                statusPowerValveStarterAe.status2.setBackgroundColor(if(it.stBlockBit > 0) Color.GREEN else Color.LTGRAY)
+                statusPowerValveStarterAe.status2.setBackgroundColor(if(it.starterBlockBit > 0) Color.GREEN else Color.LTGRAY)
                 statusPowerValveStarterAe.status3.text = "Обогащ. при уск."
-                statusPowerValveStarterAe.status3.setBackgroundColor(if(it.accelerationBit > 0) Color.GREEN else Color.LTGRAY)
+                statusPowerValveStarterAe.status3.setBackgroundColor(if(it.accelerationEnrichment > 0) Color.GREEN else Color.LTGRAY)
 
                 statusCoolingFanCheckEngineRevLimFuelCut.status1.text = "Вентилятор"
                 statusCoolingFanCheckEngineRevLimFuelCut.status1.setBackgroundColor(if(it.coolFanBit > 0) Color.GREEN else Color.LTGRAY)
                 statusCoolingFanCheckEngineRevLimFuelCut.status2.text = "Check Engine"
                 statusCoolingFanCheckEngineRevLimFuelCut.status2.setBackgroundColor(if(it.checkEngineBit > 0) Color.GREEN else Color.LTGRAY)
                 statusCoolingFanCheckEngineRevLimFuelCut.status3.text = "Отсеч. топл. по обр."
-                statusCoolingFanCheckEngineRevLimFuelCut.status3.setBackgroundColor(if(it.fcRevlimBit > 0) Color.GREEN else Color.LTGRAY)
+                statusCoolingFanCheckEngineRevLimFuelCut.status3.setBackgroundColor(if(it.fc_revlim > 0) Color.GREEN else Color.LTGRAY)
 
                 statusFloodClearSysLockIgnInput.status1.text = "Продувка двиг."
-                statusFloodClearSysLockIgnInput.status1.setBackgroundColor(if(it.floodClearBit > 0) Color.GREEN else Color.LTGRAY)
+                statusFloodClearSysLockIgnInput.status1.setBackgroundColor(if(it.floodclear > 0) Color.GREEN else Color.LTGRAY)
                 statusFloodClearSysLockIgnInput.status2.text = "Система заблок."
-                statusFloodClearSysLockIgnInput.status2.setBackgroundColor(if(it.sysLockedBit > 0) Color.GREEN else Color.LTGRAY)
+                statusFloodClearSysLockIgnInput.status2.setBackgroundColor(if(it.sys_locked > 0) Color.GREEN else Color.LTGRAY)
                 statusFloodClearSysLockIgnInput.status3.text = "Вход IGN_I"
-                statusFloodClearSysLockIgnInput.status3.setBackgroundColor(if(it.ignIBit > 0) Color.GREEN else Color.LTGRAY)
+                statusFloodClearSysLockIgnInput.status3.setBackgroundColor(if(it.ign_i > 0) Color.GREEN else Color.LTGRAY)
 
                 statusCondEpasAfterstrEnr.status1.text = "Вход COND_I"
-                statusCondEpasAfterstrEnr.status1.setBackgroundColor(if(it.condIBit > 0) Color.GREEN else Color.LTGRAY)
+                statusCondEpasAfterstrEnr.status1.setBackgroundColor(if(it.cond_i > 0) Color.GREEN else Color.LTGRAY)
                 statusCondEpasAfterstrEnr.status2.text = "Вход EPAS_I"
-                statusCondEpasAfterstrEnr.status2.setBackgroundColor(if(it.epasIBit > 0) Color.GREEN else Color.LTGRAY)
+                statusCondEpasAfterstrEnr.status2.setBackgroundColor(if(it.epas_i > 0) Color.GREEN else Color.LTGRAY)
                 statusCondEpasAfterstrEnr.status3.text = "Обог. после пуска"
-                statusCondEpasAfterstrEnr.status3.setBackgroundColor(if(it.afterStEnrBit > 0) Color.GREEN else Color.LTGRAY)
+                statusCondEpasAfterstrEnr.status3.setBackgroundColor(if(it.aftstr_enr > 0) Color.GREEN else Color.LTGRAY)
 
                 statusClosedLoopReservReserv.status1.text = "РХХ closed loop"
-                statusClosedLoopReservReserv.status1.setBackgroundColor(if(it.iacClosedLoopBit > 0) Color.GREEN else Color.LTGRAY)
+                statusClosedLoopReservReserv.status1.setBackgroundColor(if(it.iac_closed_loop > 0) Color.GREEN else Color.LTGRAY)
 
                 statusUni1Uni2Uni3.status1.text = "Универ. 1"
                 statusUni1Uni2Uni3.status1.setBackgroundColor(if(it.uniOut0Bit > 0) Color.GREEN else Color.LTGRAY)

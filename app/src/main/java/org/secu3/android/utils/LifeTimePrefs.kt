@@ -43,18 +43,7 @@ class LifeTimePrefs @Inject constructor(@ApplicationContext private val ctx: Con
 
     var CSVDelimeter: String
         get() {
-            val delimeter = mPrefs.getString(
-                ctx.getString(R.string.pref_log_csv_delimeter_key),
-                ctx.getString(R.string.defaultCsvDelimeter)
-            )
-
-            try {
-                val idx = delimeter!!.indexOf("\"")
-                return delimeter.substring(idx + 1, idx + 2)
-            } catch (e: NullPointerException) {
-                e.printStackTrace()
-            }
-            return ";"
+            return mPrefs.getString(ctx.getString(R.string.pref_log_csv_delimeter_key),";")!!
         }
         set(value) = mPrefs.edit().putString(ctx.getString(R.string.pref_log_csv_delimeter_key), value).apply()
 

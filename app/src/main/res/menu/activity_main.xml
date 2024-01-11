@@ -55,6 +55,10 @@
 		android:icon="@android:drawable/ic_menu_preferences"/>
 
 	<item
+		android:id="@+id/logs_preferences"
+		android:title="@string/menu_secu_logs" />
+
+	<item
 		android:id="@+id/menu_exit"
 		android:title="@string/menu_exit"
 		android:icon="@android:drawable/ic_menu_close_clear_cancel"/>

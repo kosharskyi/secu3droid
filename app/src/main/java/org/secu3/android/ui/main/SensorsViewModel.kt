@@ -35,21 +35,26 @@ import org.secu3.android.models.packets.AdcRawDatPacket
 import org.secu3.android.models.packets.FirmwareInfoPacket
 import org.secu3.android.models.packets.SensorsPacket
 import org.secu3.android.utils.LifeTimePrefs
+import org.secu3.android.utils.SecuLogger
 import org.secu3.android.utils.Task
 import org.threeten.bp.LocalDateTime
 import javax.inject.Inject
 
 @HiltViewModel
 class SensorsViewModel @Inject constructor(private val secu3Repository: Secu3Repository,
-                                           private val mPrefs: LifeTimePrefs
-) : ViewModel() {
+                                           private val mPrefs: LifeTimePrefs,
+                                           private val secuLogger: SecuLogger,
+                                           ) : ViewModel() {
 
 
-    fun isBluetoothDeviceAddressNotSelected(): Boolean {
-        return mPrefs.bluetoothDeviceName.isNullOrBlank()
-    }
+    val isBluetoothDeviceAddressNotSelected: Boolean
+        get() = mPrefs.bluetoothDeviceName.isNullOrBlank()
 
-    var lastPacketReceivedStamp: LocalDateTime = LocalDateTime.now()
+    val isLoggerEnabled: Boolean
+        get() = mPrefs.isSensorLoggerEnabled
+
+    val isLoggerStarted: Boolean
+        get() = secuLogger.isLoggerStarted
 
     val connectionStatusLiveData: LiveData<Boolean>
         get() = secu3Repository.connectionStatusLiveData
@@ -81,5 +86,30 @@ class SensorsViewModel @Inject constructor(private val secu3Repository: Secu3Rep
 
     fun closeConnection() {
         secu3Repository.disable()
+    }
+
+    fun startWriteLog() {
+        if (secuLogger.isLoggerStarted) {
+            return
+        }
+
+        secuLogger.prepareToLog()
+        secuLogger.startLogging()
+    }
+
+    fun logMark1() {
+        secuLogger.setMark1()
+    }
+
+    fun logMark2() {
+        secuLogger.setMark2()
+    }
+
+    fun logMark3() {
+        secuLogger.setMark3()
+    }
+
+    fun stopWriteLog() {
+        secuLogger.stopLogging()
     }
 }

@@ -431,11 +431,11 @@ data class UniOutParamPacket(
             CONDITION_TMR, CONDITION_ITTMR, CONDITION_ESTMR -> return value.toFloat() / 100.0f
             CONDITION_CPOS -> return value.toFloat() / CHOKE_MULTIPLIER
             CONDITION_AANG -> return value.toFloat() / ANGLE_DIVIDER
-            CONDITION_KLEV -> return value.toFloat() / ADC_MULTIPLIER
+            CONDITION_KLEV -> return value.toFloat() * ADC_DISCRETE
             CONDITION_TPS -> return value.toFloat() / TPS_MULTIPLIER
             CONDITION_ATS -> return value.toFloat() / TEMPERATURE_MULTIPLIER
 
-            CONDITION_AI1, CONDITION_AI2, CONDITION_AI3, CONDITION_AI4, CONDITION_AI5, CONDITION_AI6, CONDITION_AI7, CONDITION_AI8 -> return value.toFloat() / ADC_MULTIPLIER
+            CONDITION_AI1, CONDITION_AI2, CONDITION_AI3, CONDITION_AI4, CONDITION_AI5, CONDITION_AI6, CONDITION_AI7, CONDITION_AI8 -> return value.toFloat() * ADC_DISCRETE
 
             CONDITION_GASV -> return value.toFloat()
             CONDITION_IPW -> return (value.toFloat() * 3.2f) / 1000.0f
@@ -458,11 +458,11 @@ data class UniOutParamPacket(
             CONDITION_TMR, CONDITION_ITTMR, CONDITION_ESTMR -> return (value * 100.0f).roundToInt()
             CONDITION_CPOS -> return (value * CHOKE_MULTIPLIER).roundToInt()
             CONDITION_AANG -> return (value * ANGLE_DIVIDER).roundToInt()
-            CONDITION_KLEV -> return (value * ADC_MULTIPLIER).roundToInt()
+            CONDITION_KLEV -> return (value / ADC_DISCRETE).roundToInt()
             CONDITION_TPS -> return (value * TPS_MULTIPLIER).roundToInt()
             CONDITION_ATS -> return (value * TEMPERATURE_MULTIPLIER).roundToInt()
 
-            CONDITION_AI1, CONDITION_AI2, CONDITION_AI3, CONDITION_AI4, CONDITION_AI5, CONDITION_AI6, CONDITION_AI7, CONDITION_AI8 -> return (value * ADC_MULTIPLIER).roundToInt()
+            CONDITION_AI1, CONDITION_AI2, CONDITION_AI3, CONDITION_AI4, CONDITION_AI5, CONDITION_AI6, CONDITION_AI7, CONDITION_AI8 -> return (value / ADC_DISCRETE).roundToInt()
 
             CONDITION_GASV -> return value.roundToInt()
             CONDITION_IPW -> return ((value * 1000.0f) / 3.2f).roundToInt()
