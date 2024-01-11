@@ -37,7 +37,6 @@ import org.secu3.android.models.packets.SensorsPacket
 import org.secu3.android.utils.LifeTimePrefs
 import org.secu3.android.utils.SecuLogger
 import org.secu3.android.utils.Task
-import org.threeten.bp.LocalDateTime
 import javax.inject.Inject
 
 @HiltViewModel
