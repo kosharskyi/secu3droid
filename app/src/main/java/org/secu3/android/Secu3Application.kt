@@ -27,8 +27,6 @@ package org.secu3.android
 
 import android.app.Application
 import androidx.appcompat.app.AppCompatDelegate
-import com.google.firebase.analytics.FirebaseAnalytics
-import com.google.firebase.crashlytics.FirebaseCrashlytics
 import com.jakewharton.threetenabp.AndroidThreeTen
 import dagger.hilt.EntryPoints
 import dagger.hilt.android.HiltAndroidApp

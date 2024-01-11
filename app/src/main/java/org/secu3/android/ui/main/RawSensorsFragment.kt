@@ -51,16 +51,47 @@ class RawSensorsFragment : Fragment() {
         super.onViewCreated(view, savedInstanceState)
 
         mViewModel.rawSensorsLiveData.observe(viewLifecycleOwner) {
-            var result = ""
-            result += String.format(Locale.US, getString(R.string.raw_status_map_title), it.map)
-            result += String.format(Locale.US, getString(R.string.raw_status_voltage_title), it.voltage)
-            result += String.format(Locale.US, getString(R.string.raw_status_temperature_title), it.temperature)
-            result += String.format(Locale.US, getString(R.string.raw_status_knock_title), it.knockValue)
-            result += String.format(Locale.US, getString(R.string.raw_status_tps_title), it.tps)
-            result += String.format(Locale.US, getString(R.string.raw_status_addi1_title), it.addI1)
-            result += String.format(Locale.US, getString(R.string.raw_status_addi2_title), it.addI2)
+            mBinding?.apply {
+                rawMap.title.text = "Датчик абсолютного давления, В:"
+                rawMap.value.text = String.format(Locale.US, "%.3f", it.map)
 
-            mBinding?.sensorsData?.text = result
+                rawVoltage.title.text = "Напряжение бортовой сети, В:"
+                rawVoltage.value.text = String.format(Locale.US, "%.3f", it.voltage)
+
+                rawCoolantTemp.title.text = "Датчик температуры ОЖ, В:"
+                rawCoolantTemp.value.text = String.format(Locale.US, "%.3f", it.temperature)
+
+                rawKnockLvl.title.text = "Уровень сигнала детонации, В:"
+                rawKnockLvl.value.text = String.format(Locale.US, "%.3f", it.knockValue)
+
+                rawThrottle.title.text = "Датчик полож. дрос. заслонки, В:"
+                rawThrottle.value.text = String.format(Locale.US, "%.3f", it.tps)
+
+                rawAdd1.title.text = "Вход ADD_I1, В:"
+                rawAdd1.value.text = String.format(Locale.US, "%.3f", it.addI1)
+
+                rawAdd2.title.text = "Вход ADD_I2, В:"
+                rawAdd2.value.text = String.format(Locale.US, "%.3f", it.addI2)
+
+                rawAdd3.title.text = "Вход ADD_I3, В:"
+                rawAdd3.value.text = String.format(Locale.US, "%.3f", it.addI3)
+
+                rawAdd4.title.text = "Вход ADD_I4, В:"
+                rawAdd4.value.text = String.format(Locale.US, "%.3f", it.addI4)
+
+                rawAdd5.title.text = "Вход ADD_I5, В:"
+                rawAdd5.value.text = String.format(Locale.US, "%.3f", it.addI5)
+
+                rawAdd6.title.text = "Вход ADD_I6, В:"
+                rawAdd6.value.text = String.format(Locale.US, "%.3f", it.addI6)
+
+                rawAdd7.title.text = "Вход ADD_I7, В:"
+                rawAdd7.value.text = String.format(Locale.US, "%.3f", it.addI7)
+
+                rawAdd8.title.text = "Вход ADD_I1, В:"
+                rawAdd8.value.text = String.format(Locale.US, "%.3f", it.addI8)
+            }
+
         }
     }
 

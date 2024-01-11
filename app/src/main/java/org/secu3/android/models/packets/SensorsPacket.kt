@@ -54,8 +54,8 @@ data class SensorsPacket(var rpm: Int = 0,
                          var idlregAac: Int = 0,        // advance angle correction from idling RPM regulator
                          var octanAac: Int = 0,         // octane correction value
 
-                         var lambda: IntArray = IntArray(2),           // lambda correction
-                         var injPw: Int = 0,            // injector pulse width
+                         var lambda: FloatArray = FloatArray(2),           // lambda correction
+                         var injPw: Float = 0f,            // injector pulse width
                          var tpsdot: Int = 0,           // TPS opening/closing speed
 
     // if SECU-3T
@@ -64,16 +64,16 @@ data class SensorsPacket(var rpm: Int = 0,
 
                          var sensAfr: FloatArray = FloatArray(2),              // #if defined(FUEL_INJECT) || defined(CARB_AFR) || defined(GD_CONTROL)
 
-                         var load: Int = 0,
+                         var load: Float = 0f,
                          var baroPress: Int = 0,
 
                          var iit: Short = 0,
                          var rigidArg: Int = 0,
-                         var grts: Int = 0,                  // fas reducer's temperature
-                         var rxlaf: Int = 0,                 // RxL air flow
-                         var ftls: Int = 0,                  //fuel tank level
-                         var egts: Int = 0,                  //exhaust gas temperature
-                         var ops: Int = 0,                   //oil pressure
+                         var grts: Float = 0f,                  // fas reducer's temperature
+                         var rxlaf: Float = 0f,                 // RxL air flow
+                         var ftls: Float = 0f,                  //fuel tank level
+                         var egts: Float = 0f,                  //exhaust gas temperature
+                         var ops: Float = 0f,                   //oil pressure
 
                          var sens_injDuty: Float = 0f,               //injector's duty in % (value * 2)
                          var sens_maf: Float = 0f,                   //Air flow (g/sec) * 64 from the MAF sensor
@@ -138,6 +138,52 @@ data class SensorsPacket(var rpm: Int = 0,
     val stBlockBit: Int
         get() = sensorsFlags.getBitValue(BITNUMBER_ST_BLOCK)
 
+    val accelerationBit: Int
+        get() = sensorsFlags.getBitValue(BITNUMBER_ACCELERATION)
+
+    val fcRevlimBit: Int
+        get() = sensorsFlags.getBitValue(BITNUMBER_FC_REVLIM)
+
+    val floodClearBit: Int
+        get() = sensorsFlags.getBitValue(BITNUMBER_FLOODCLEAR)
+
+    val sysLockedBit: Int
+        get() = sensorsFlags.getBitValue(BITNUMBER_SYS_LOCKED)
+
+    val ignIBit: Int
+        get() = sensorsFlags.getBitValue(BITNUMBER_IGN_I)
+
+    val condIBit: Int
+        get() = sensorsFlags.getBitValue(BITNUMBER_COND_I)
+
+    val epasIBit: Int
+        get() = sensorsFlags.getBitValue(BITNUMBER_EPAS_I)
+
+    val afterStEnrBit: Int
+        get() = sensorsFlags.getBitValue(BITNUMBER_AFTSTR_ENR)
+
+    val iacClosedLoopBit: Int
+        get() = sensorsFlags.getBitValue(BITNUMBER_IAC_CLOSED_LOOP)
+
+    // UniOut States of universal outputs
+    val uniOut0Bit: Int
+        get() = uniOutput.getBitValue(BITNUMBER_UNIOUT0)
+
+    val uniOut1Bit: Int
+        get() = uniOutput.getBitValue(BITNUMBER_UNIOUT1)
+
+    val uniOut2Bit: Int
+        get() = uniOutput.getBitValue(BITNUMBER_UNIOUT2)
+
+    val uniOut3Bit: Int
+        get() = uniOutput.getBitValue(BITNUMBER_UNIOUT3)
+
+    val uniOut4Bit: Int
+        get() = uniOutput.getBitValue(BITNUMBER_UNIOUT4)
+
+    val uniOut5Bit: Int
+        get() = uniOutput.getBitValue(BITNUMBER_UNIOUT5)
+
 
 
 
@@ -190,9 +236,9 @@ data class SensorsPacket(var rpm: Int = 0,
             idlregAac = data.get2Bytes(49)
             octanAac = data.get2Bytes(51)
 
-            lambda[0] = data.get2Bytes(53)
+            lambda[0] = data.get2Bytes(53).toFloat()
 
-            injPw = data.get2Bytes(55)
+            injPw = data.get2Bytes(55).toFloat()
 
             tpsdot = data.get2Bytes(57)
 
@@ -201,16 +247,16 @@ data class SensorsPacket(var rpm: Int = 0,
 
 
             sensAfr[0] = data.get2Bytes(63).toFloat() / AFR_MULTIPLIER
-            load = data.get2Bytes(65)
+            load = data.get2Bytes(65).toFloat()
             baroPress = data.get2Bytes(67)
 
             iit = data.get2Bytes(69).toShort()
             rigidArg = data[71].code
-            grts = data.get2Bytes(72)           // gas reducer's temperature
-            rxlaf = data.get2Bytes(74)           // RxL air flow, note: it is divided by 32
-            ftls = data.get2Bytes(76)
-            egts = data.get2Bytes(78)
-            ops = data.get2Bytes(80)
+            grts = data.get2Bytes(72).toFloat()          // gas reducer's temperature
+            rxlaf = data.get2Bytes(74).toFloat()           // RxL air flow, note: it is divided by 32
+            ftls = data.get2Bytes(76).toFloat()
+            egts = data.get2Bytes(78).toFloat()
+            ops = data.get2Bytes(80).toFloat()
 
             sens_injDuty = data[82].code.toFloat() / TPS_MULTIPLIER
 
@@ -245,6 +291,13 @@ data class SensorsPacket(var rpm: Int = 0,
         private const val BITNUMBER_COND_I = 12  // COND_I flag
         private const val BITNUMBER_EPAS_I = 13  // EPAS_I flag
         private const val BITNUMBER_AFTSTR_ENR = 14  // after start enrichment flag
-        private const val BITNUMBER_IAC_CLOSED_LOOP = 14  // IAC closed loop flag
+        private const val BITNUMBER_IAC_CLOSED_LOOP = 15  // IAC closed loop flag
+
+        private const val BITNUMBER_UNIOUT0 = 0  // uniout 1
+        private const val BITNUMBER_UNIOUT1 = 1  // uniout 2
+        private const val BITNUMBER_UNIOUT2 = 2  // uniout 3
+        private const val BITNUMBER_UNIOUT3 = 3  // uniout 4
+        private const val BITNUMBER_UNIOUT4 = 4  // uniout 5
+        private const val BITNUMBER_UNIOUT5 = 5  // uniout 6
     }
 }
