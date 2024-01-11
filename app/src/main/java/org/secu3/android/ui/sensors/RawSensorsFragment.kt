@@ -23,7 +23,7 @@
  *                    email: vetalkosharskiy@gmail.com
  */
 
-package org.secu3.android.ui.main
+package org.secu3.android.ui.sensors
 
 import android.os.Bundle
 import androidx.fragment.app.Fragment

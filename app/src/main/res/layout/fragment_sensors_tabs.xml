@@ -31,7 +31,7 @@
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     android:keepScreenOn="true"
-    tools:context=".ui.main.SensorsTabsFragment"
+    tools:context=".ui.sensors.SensorsTabsFragment"
     >
 
     <com.google.android.material.appbar.MaterialToolbar

@@ -22,7 +22,7 @@
  *                    http://secu-3.org
  *                    email: vetalkosharskiy@gmail.com
  */
-package org.secu3.android.ui.main
+package org.secu3.android.ui.sensors
 
 import androidx.lifecycle.LiveData
 import androidx.lifecycle.ViewModel
