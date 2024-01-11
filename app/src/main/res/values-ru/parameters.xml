@@ -29,7 +29,8 @@
     <string name="starter_off_title">Обороты блокировки стертера</string>
     <string name="starter_map_abandon_title">Обороты перехода с пусковой карты УОЗ</string>
     <string name="starter_dat_crank_to_run_time_title">Задержка перехода РХХ в рабочее положение</string>
-    <string name="starter_dat_afterstart_enrichment_strokes_title">Время обогащения после пуска</string>
+    <string name="starter_dat_afterstart_enrichment_strokes_petrol_title">Время обогащения после пуска (бензин)</string>
+    <string name="starter_dat_afterstart_enrichment_strokes_gas_title">Время обогащения после пуска (газ)</string>
     <string name="starter_dat_prime_pulse_cold_title">Длительность предпускового впрыска при -30°C</string>
     <string name="starter_dat_prime_pulse_hot_title">Длительность предпускового впрыска при 70°C</string>
     <string name="starter_dat_prime_pulse_delay_title">Задержка предпускового впрыска</string>
@@ -42,7 +43,7 @@
     <string name="angles_max_angle_title">Максимальный УОЗ</string>
     <string name="angles_angle_decrement_step_title">Скорость уменьшения УОЗ</string>
     <string name="angles_angle_increment_step_title">Скорость увеличения УОЗ</string>
-    <string name="angles_zero_angle_title">Обнулить угол опережения</string>
+    <string name="angles_zero_angle_title">Нулевой угол опережения (полезно для отладки)</string>
     <string name="angles_octane_correction_title">Октан-коррекция</string>
     <string name="angles_ign_timing_when_shifting_title">УОЗ при переключении передач</string>
     <string name="angles_always_use_ing_timing_map_title">Всегда использовать карту УОЗ рабочего режима</string>
@@ -51,6 +52,7 @@
     
     <string name="idlreg_ifac1_title">Положительный коэффициент регулятора</string>
     <string name="idlreg_ifac2_title">Отрицательный коэффициент регулятора</string>
+    <string name="idlreg_use_load_grid_title">Использовать таблицу</string>
     <string name="idlreg_minimal_angle_title">Минимальный предел регулирования</string>
     <string name="idlreg_maximal_angle_title">Максимальный предел регулирования</string>
     <string name="idlreg_target_rpm_title">Целевое значение оборотов</string>
@@ -61,6 +63,7 @@
     <string name="idlreg_proportional_regulator_title">Пропорциональный регулятор</string>
     <string name="idlreg_use_closed_loop_title">Использовать closed loop</string>
     <string name="idlreg_iac_add_after_exit_title">Добавка после выхода</string>
+    <string name="idlreg_use_table_title">Использовать таблицу</string>
     <string name="idlreg_rpm_add_on_run_title">Добавка к обор. на ходу</string>
     <string name="idlreg_proportional_positive_title">Пропорциональный (+)</string>
     <string name="idlreg_integral_positive_title">Интегральный (+)</string>
@@ -117,6 +120,8 @@
     <string name="carbur_protection_of_engine_title">Защита двигателя</string>
     <string name="carbur_rev_limitting_lower_threshold_title">Нижн.порог отсеч.топл</string>
     <string name="carbur_rev_limitting_upper_threshold_title">Верх.порог отсеч.топл</string>
+    <string name="carbur_use_uniout_condition_title">Использ. условие универ. вых.</string>
+    <string name="carbur_use_uniout_condition_for_ign_cutoff_title">Использ. условие универ. вых. для отсечки зажигания</string>
 
 
     <string name="ckps_ckps_edge_title">Фронт ДПКВ</string>
@@ -147,8 +152,9 @@
     <string name="miscel_evap_starting_air_flow_title">Нач. расход воздуха</string>
     <string name="miscel_evap_ending_air_flow_title">Кон. расход воздуха</string>
     <string name="miscel_fuel_pump_working_time_title">Время раб. бензонасоса</string>
-    <string name="miscel_pwmfrq0_title">Частота ШИМ PWM1</string>
     <string name="miscel_pwmfrq1_title">Частота ШИМ PWM1</string>
+    <string name="miscel_pwmfrq2_title">Частота ШИМ PWM2</string>
+    <string name="miscel_num_vss_pulsed_per_dist_title">Число импульсов датчика</string>
 
     <string name="choke_steps_title">Количество шагов ШД</string>
     <string name="choke_rpm_if_factor_title">Коэффициент регуляции</string>
@@ -286,4 +292,6 @@
     <string name="injctr_par_max_inj_pw_title">Макс. длительность впрыска</string>
     <string name="accel_par_ae_type_title">Тип обогащения</string>
     <string name="accel_par_ae_time_title">Длительность обогащения</string>
+
+    <string name="adc_cor_multiply_corr_and_koef_title">Умножать корр. на коэфф.</string>
 </resources>

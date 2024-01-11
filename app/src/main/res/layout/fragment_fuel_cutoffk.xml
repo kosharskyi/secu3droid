@@ -235,6 +235,48 @@
             app:int_step="50"
             />
 
+        <!-- ************************************************************* -->
+
+        <com.google.android.material.textfield.TextInputLayout
+            android:id="@+id/use_uniout_cond_title"
+            android:theme="@style/Theme.MaterialComponents.DayNight.NoActionBar"
+            style="@style/Widget.MaterialComponents.TextInputLayout.OutlinedBox.ExposedDropdownMenu"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="16dp"
+            android:hint="@string/carbur_use_uniout_condition_title">
+
+            <AutoCompleteTextView
+                android:id="@+id/use_uniout_cond"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:inputType="none"
+                />
+
+        </com.google.android.material.textfield.TextInputLayout>
+
+        <!-- ************************************************************* -->
+
+        <com.google.android.material.textfield.TextInputLayout
+            android:id="@+id/use_uniout_cond_for_ign_cutoff_title"
+            android:theme="@style/Theme.MaterialComponents.DayNight.NoActionBar"
+            style="@style/Widget.MaterialComponents.TextInputLayout.OutlinedBox.ExposedDropdownMenu"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="16dp"
+            android:hint="@string/carbur_use_uniout_condition_for_ign_cutoff_title">
+
+            <AutoCompleteTextView
+                android:id="@+id/use_uniout_cond_for_ign_cutoff"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:inputType="none"
+                />
+
+        </com.google.android.material.textfield.TextInputLayout>
+
+        <!-- ************************************************************* -->
+
     </LinearLayout>
 
 </ScrollView>

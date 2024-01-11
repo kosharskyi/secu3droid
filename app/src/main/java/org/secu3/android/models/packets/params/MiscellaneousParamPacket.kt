@@ -25,6 +25,8 @@
 package org.secu3.android.models.packets.params
 
 import org.secu3.android.models.packets.BaseOutputPacket
+import org.secu3.android.utils.getBitValue
+import org.secu3.android.utils.setBitValue
 import kotlin.math.roundToInt
 
 data class MiscellaneousParamPacket(
@@ -41,7 +43,7 @@ data class MiscellaneousParamPacket(
     var fpTimeoutStrt: Float = 0f,
     var pwmFrq0: Int = 0,
     var pwmFrq1: Int = 0,
-    var vssPeriodDist: Int = 0,
+    var vssPeriodDist: Int = 0, //Number of VSS pulses per 1km
 
     ) : BaseOutputPacket() {
 
@@ -58,31 +60,19 @@ data class MiscellaneousParamPacket(
     var offPumpOnGas: Boolean
         get() = flpmpFlags.getBitValue(0) > 0
         set(value) {
-            flpmpFlags = if (value) {
-                1.or(flpmpFlags)
-            } else {
-                1.inv().and(flpmpFlags)
-            }
+            flpmpFlags = flpmpFlags.setBitValue(value, 0)
         }
 
     var offInjOnGas: Boolean
         get() = flpmpFlags.getBitValue(1) > 0
         set(value) {
-            flpmpFlags = if (value) {
-                1.shl(1).or(flpmpFlags)
-            } else {
-                1.shl(1).inv().and(flpmpFlags)
-            }
+            flpmpFlags = flpmpFlags.setBitValue(value, 1)
         }
 
     var offInjOnPetrol: Boolean
         get() = flpmpFlags.getBitValue(2) > 0
         set(value) {
-            flpmpFlags = if (value) {
-                1.shl(2).or(flpmpFlags)
-            } else {
-                1.shl(2).inv().and(flpmpFlags)
-            }
+            flpmpFlags = flpmpFlags.setBitValue(value, 2)
         }
 
     override fun pack(): String {
@@ -105,7 +95,7 @@ data class MiscellaneousParamPacket(
         data += 1.0.div(pwmFrq0.toFloat()).times(524288.0f).roundToInt().write2Bytes()
         data += 1.0.div(pwmFrq1.toFloat()).times(524288.0f).roundToInt().write2Bytes()
 
-        data += vssPeriodDist.write2Bytes()
+        data +=  (1000.0f * 32768.0f).div(vssPeriodDist).roundToInt().write2Bytes()
 
         data += unhandledParams
 
@@ -127,14 +117,26 @@ data class MiscellaneousParamPacket(
             evapAfbegin = data.get2Bytes(13) * 32
             evapAfslope = data.get2Bytes(15).toFloat().div(1048576.0f).div(32)
             fpTimeoutStrt = data[17].code.toFloat() / 10
-            data.get2Bytes(18).toFloat().div(524288.0f).let {
-                pwmFrq0 = 1.0.div(it).roundToInt()
+
+            pwmFrq0 = data.get2Bytes(18).let {
+                if (it == 0) {
+                    5000
+                } else {
+                    1.0.div(it.toFloat().div(524288.0f)).roundToInt()
+                }
             }
-            data.get2Bytes(20).toFloat().div(524288.0f).let {
-                pwmFrq1 = 1.0.div(it).roundToInt()
+            pwmFrq1 = data.get2Bytes(20).let {
+                if (it == 0) {
+                    5000
+                } else {
+                    1.0.div(it.toFloat().div(524288.0f)).roundToInt()
+                }
             }
 
-            vssPeriodDist = data.get2Bytes(22)
+            //Number of VSS pulses per 1km
+            vssPeriodDist = data.get2Bytes(22).let {
+                ((1000.0f * 32768.0f) / it).toInt()
+            }
 
             if (data.length == 24) {
                 return@apply

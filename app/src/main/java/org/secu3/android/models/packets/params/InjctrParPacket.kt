@@ -25,6 +25,8 @@
 package org.secu3.android.models.packets.params
 
 import org.secu3.android.models.packets.BaseOutputPacket
+import org.secu3.android.utils.getBitValue
+import org.secu3.android.utils.setBitValue
 import kotlin.math.roundToInt
 
 data class InjctrParPacket(
@@ -176,61 +178,37 @@ data class InjctrParPacket(
     var useTimingMap: Boolean
         get() = flags.getBitValue(0) > 0
         set(value) {
-            flags = if (value) {
-                1.or(flags)
-            } else {
-                1.inv().and(flags)
-            }
+            flags = flags.setBitValue(value, 0)
         }
 
     var useTimingMapG: Boolean
         get() = flags.getBitValue(1) > 0
         set(value) {
-            flags = if (value) {
-                1.shl(1).or(flags)
-            } else {
-                1.shl(1).inv().and(flags)
-            }
+            flags = flags.setBitValue(value, 1)
         }
 
     var useAdditionalCorrections: Boolean
         get() = flags.getBitValue(2) > 0
         set(value) {
-            flags = if (value) {
-                1.shl(2).or(flags)
-            } else {
-                1.shl(2).inv().and(flags)
-            }
+            flags = flags.setBitValue(value, 2)
         }
 
     var useAirDensity: Boolean
         get() = flags.getBitValue(3) > 0
         set(value) {
-            flags = if (value) {
-                1.shl(3).or(flags)
-            } else {
-                1.shl(3).inv().and(flags)
-            }
+            flags = flags.setBitValue(value, 3)
         }
 
     var useDifferentialPressure: Boolean
         get() = flags.getBitValue(4) > 0
         set(value) {
-            flags = if (value) {
-                1.shl(4).or(flags)
-            } else {
-                1.shl(4).inv().and(flags)
-            }
+            flags = flags.setBitValue(value, 4)
         }
 
     var switchSecondInjRow: Boolean
         get() = flags.getBitValue(5) > 0
         set(value) {
-            flags = if (value) {
-                1.shl(5).or(flags)
-            } else {
-                1.shl(5).inv().and(flags)
-            }
+            flags = flags.setBitValue(value, 5)
         }
 
 

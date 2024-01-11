@@ -14,10 +14,36 @@
         >
 
         <action
+            android:id="@+id/action_open_main_menu"
+            app:destination="@id/mainMenuFragment"
+            />
+
+    </fragment>
+
+    <fragment
+        android:id="@+id/mainMenuFragment"
+        android:name="org.secu3.android.ui.main.MainFragment"
+        android:label="fragment_main_menu"
+        tools:layout="@layout/fragment_main_menu">
+
+        <action
+            android:id="@+id/action_open_dashboard"
+            app:destination="@id/dashboardFragment"
+            />
+
+        <action
             android:id="@+id/action_open_sensors"
             app:destination="@id/sensorsFragment"
             />
 
+        <action
+            android:id="@+id/action_open_parameters"
+            app:destination="@id/parametersFragment"
+            />
+
+        <action
+            android:id="@+id/action_open_secu_logs"
+            app:destination="@id/secuLogsFragment" />
     </fragment>
 
     <fragment
@@ -27,10 +53,7 @@
         tools:layout="@layout/fragment_sensors_tabs"
         >
 
-        <action
-            android:id="@+id/action_sensors_to_dashboard"
-            app:destination="@id/dashboardFragment"
-            />
+
 
         <action
             android:id="@+id/action_sensors_to_diagnostics"
@@ -41,15 +64,6 @@
             android:id="@+id/action_sensors_to_errors"
             app:destination="@id/errorsFragment"
             />
-
-        <action
-            android:id="@+id/action_sensors_to_parameters"
-            app:destination="@id/parametersFragment"
-            />
-
-        <action
-            android:id="@+id/action_sensorsFragment_to_secuLogsFragment"
-            app:destination="@id/secuLogsFragment" />
 
     </fragment>
 
@@ -101,7 +115,5 @@
         android:label="Secu Logs Fragment"
         tools:layout="@layout/fragment_secu_logs"
         />
-
-
 
 </navigation>

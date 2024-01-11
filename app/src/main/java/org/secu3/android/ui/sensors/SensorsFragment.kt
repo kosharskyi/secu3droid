@@ -34,6 +34,7 @@ import android.view.ViewGroup
 import androidx.fragment.app.viewModels
 import org.secu3.android.R
 import org.secu3.android.databinding.FragmentSensorsBinding
+import org.secu3.android.utils.Task
 import java.util.Locale
 
 class SensorsFragment : Fragment() {
@@ -241,6 +242,11 @@ class SensorsFragment : Fragment() {
                 statusUni4Uni5Uni6.status3.setBackgroundColor(if(it.uniOut5Bit > 0) Color.GREEN else Color.LTGRAY)
             }
         }
+    }
+
+    override fun onResume() {
+        super.onResume()
+        mViewModel.sendNewTask(Task.Secu3ReadSensors)
     }
 
     override fun onDestroyView() {

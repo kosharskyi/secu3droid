@@ -24,6 +24,8 @@
  */
 package org.secu3.android.models.packets
 
+import org.secu3.android.utils.getBitValue
+
 data class DiagInputPacket(
 
     var flags: Int = 0,

@@ -72,6 +72,7 @@ class IdlingFragment : BaseParamFragment() {
                 useClosedLoop.isChecked = it.useClosedLoop
 
                 iacAddAfterExit.value = it.idlToRunAdd
+                useThrassmap.isChecked = it.useThrassmap
                 rpmAddOnRun.value = it.rpmOnRunAdd
 
                 proportionalPositive.value = it.idlRegP0
@@ -150,6 +151,13 @@ class IdlingFragment : BaseParamFragment() {
             iacAddAfterExit.addOnValueChangeListener {
                 packet?.idlToRunAdd = it
                 packet?.let { it1 -> mViewModel.sendPacket(it1) }
+            }
+
+            useThrassmap.setOnCheckedChangeListener { _, isChecked ->
+                packet?.apply {
+                    useThrassmap = isChecked
+                    mViewModel.sendPacket(this)
+                }
             }
 
             rpmAddOnRun.addOnValueChangeListener {

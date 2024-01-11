@@ -30,6 +30,7 @@ import androidx.lifecycle.asLiveData
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.filter
 import kotlinx.coroutines.flow.map
+import kotlinx.coroutines.flow.sample
 import org.secu3.android.Secu3Repository
 import org.secu3.android.models.packets.AdcRawDatPacket
 import org.secu3.android.models.packets.FirmwareInfoPacket
@@ -45,47 +46,29 @@ class SensorsViewModel @Inject constructor(private val secu3Repository: Secu3Rep
                                            private val secuLogger: SecuLogger,
                                            ) : ViewModel() {
 
-
-    val isBluetoothDeviceAddressNotSelected: Boolean
-        get() = mPrefs.bluetoothDeviceName.isNullOrBlank()
-
     val isLoggerEnabled: Boolean
         get() = mPrefs.isSensorLoggerEnabled
 
     val isLoggerStarted: Boolean
         get() = secuLogger.isLoggerStarted
 
-    val connectionStatusLiveData: LiveData<Boolean>
-        get() = secu3Repository.connectionStatusLiveData
-
-
-    val firmwareLiveData: LiveData<FirmwareInfoPacket> = secu3Repository.firmwareLiveData
-
     val firmware: FirmwareInfoPacket?
         get() = secu3Repository.fwInfo
 
 
     val sensorsLiveData: LiveData<SensorsPacket>
-        get() = secu3Repository.receivedPacketFlow.filter { it is SensorsPacket }
+        get() = secu3Repository.receivedPacketFlow.sample(1000).filter { it is SensorsPacket }
             .map { it as SensorsPacket }.asLiveData()
 
 
     val rawSensorsLiveData: LiveData<AdcRawDatPacket>
-        get() = secu3Repository.receivedPacketFlow.filter { it is AdcRawDatPacket }
+        get() = secu3Repository.receivedPacketFlow.sample(1000).filter { it is AdcRawDatPacket }
             .map { it as AdcRawDatPacket }.asLiveData()
-
-
-    fun start() {
-        secu3Repository.startConnect()
-    }
 
     fun sendNewTask(task: Task) {
         secu3Repository.sendNewTask(task)
     }
 
-    fun closeConnection() {
-        secu3Repository.disable()
-    }
 
     fun startWriteLog() {
         if (secuLogger.isLoggerStarted) {

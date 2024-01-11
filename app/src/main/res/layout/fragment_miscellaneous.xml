@@ -213,7 +213,7 @@
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:layout_marginTop="16dp"
-            app:title="@string/miscel_pwmfrq0_title"
+            app:title="@string/miscel_pwmfrq1_title"
             app:units="@string/units_hertz"
             app:int_value="10"
             app:int_max_value="5000"
@@ -230,11 +230,27 @@
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:layout_marginTop="16dp"
-            app:title="@string/miscel_pwmfrq1_title"
+            app:title="@string/miscel_pwmfrq2_title"
             app:units="@string/units_hertz"
             app:int_value="10"
             app:int_max_value="5000"
             app:int_min_value="10"
+            app:int_step="1"
+            />
+
+
+        <!-- ************************************************************* -->
+
+
+        <org.secu3.android.ui.parameters.views.IntParamView
+            android:id="@+id/number_vss_pulses"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="16dp"
+            app:title="@string/miscel_num_vss_pulsed_per_dist_title"
+            app:int_value="100"
+            app:int_max_value="60000"
+            app:int_min_value="100"
             app:int_step="1"
             />
 

@@ -90,6 +90,7 @@ class AdcErrorsCorrectionsFragment : BaseParamFragment() {
                 add8Factor.value = it.ai8AdcFactor
                 add8Correction.value = it.ai8AdcCorrection
 
+                multiplyCorrAndKoef.isChecked = it.adcCompMode
             }
 
             initViews()
@@ -205,6 +206,13 @@ class AdcErrorsCorrectionsFragment : BaseParamFragment() {
             add8Correction.addOnValueChangeListener {
                 packet?.ai8AdcCorrection = it
                 packet?.let { it1 -> mViewModel.sendPacket(it1) }
+            }
+
+            multiplyCorrAndKoef.setOnCheckedChangeListener { _, isChecked ->
+                packet?.apply {
+                    adcCompMode = isChecked
+                    mViewModel.sendPacket(this)
+                }
             }
 
             mapFactor.setOnClickListener { floatParamClick(it as FloatParamView) }

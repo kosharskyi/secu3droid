@@ -25,6 +25,8 @@
 package org.secu3.android.models.packets.params
 
 import org.secu3.android.models.packets.BaseOutputPacket
+import org.secu3.android.utils.getBitValue
+import org.secu3.android.utils.setBitValue
 
 data class IdlingParamPacket(
     var idlFlags: Int = 0,
@@ -56,51 +58,37 @@ data class IdlingParamPacket(
     var useRegulator: Boolean
         get() = idlFlags.getBitValue(0) > 0
         set(value) {
-            idlFlags = if (value) {
-                1 or idlFlags
-            } else {
-                1.inv().and(idlFlags)
-            }
+            idlFlags = idlFlags.setBitValue(value, 0)
         }
 
     var useRegulatorOnGas: Boolean
         get() = idlFlags.getBitValue(1) > 0
         set(value) {
-            idlFlags = if (value) {
-                (1 shl 1).or(idlFlags)
-            } else {
-                (1 shl 1).inv().and(idlFlags)
-            }
+            idlFlags = idlFlags.setBitValue(value, 1)
         }
 
     var useClosedLoop: Boolean
         get() = idlFlags.getBitValue(2) > 0
         set(value) {
-            idlFlags = if (value) {
-                (1 shl 2).or(idlFlags)
-            } else {
-                (1 shl 2).inv().and(idlFlags)
-            }
+            idlFlags = idlFlags.setBitValue(value, 2)
         }
 
     var pRegMode: Boolean
         get() = idlFlags.getBitValue(3) > 0
         set(value) {
-            idlFlags = if (value) {
-                (1 shl 3).or(idlFlags)
-            } else {
-                (1 shl 3).inv().and(idlFlags)
-            }
+            idlFlags = idlFlags.setBitValue(value, 3)
         }
 
     var useClosedLoopOnGas: Boolean
         get() = idlFlags.getBitValue(4) > 0
         set(value) {
-            idlFlags = if (value) {
-                (1 shl 4).or(idlFlags)
-            } else {
-                (1 shl 4).inv().and(idlFlags)
-            }
+            idlFlags = idlFlags.setBitValue(value, 4)
+        }
+
+    var useThrassmap: Boolean
+        get() = idlFlags.getBitValue(5) > 0
+        set(value) {
+            idlFlags = idlFlags.setBitValue(value, 5)
         }
 
 

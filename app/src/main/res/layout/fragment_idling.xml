@@ -203,6 +203,17 @@
 
         <!-- ************************************************************* -->
 
+        <CheckBox
+            android:id="@+id/use_thrassmap"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="@string/idlreg_use_table_title"
+            android:button="@null"
+            android:drawableEnd="?android:attr/listChoiceIndicatorMultiple"
+            />
+
+        <!-- ************************************************************* -->
+
         <org.secu3.android.ui.parameters.views.IntParamView
             android:id="@+id/rpm_add_on_run"
             android:layout_width="match_parent"

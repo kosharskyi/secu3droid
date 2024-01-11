@@ -25,6 +25,8 @@
 package org.secu3.android.models.packets.params
 
 import org.secu3.android.models.packets.BaseOutputPacket
+import org.secu3.android.utils.getBitValue
+import org.secu3.android.utils.setBitValue
 
 data class AdcCorrectionsParamPacket(
 
@@ -55,6 +57,12 @@ data class AdcCorrectionsParamPacket(
     var ai8AdcCorrection: Float = 0f,
 
 ) : BaseOutputPacket() {
+
+    var adcCompMode: Boolean
+        get() = adcFlags.getBitValue(0) > 0
+        set(value) {
+            adcFlags = adcFlags.setBitValue(value, 0)
+        }
 
     override fun pack(): String {
         var data = "$OUTPUT_PACKET_SYMBOL$DESCRIPTOR"

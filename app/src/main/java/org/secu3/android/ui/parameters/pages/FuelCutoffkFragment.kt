@@ -25,10 +25,14 @@
 package org.secu3.android.ui.parameters.pages
 
 import android.os.Bundle
+import android.text.InputType
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
+import android.widget.AdapterView
+import android.widget.ArrayAdapter
 import androidx.fragment.app.activityViewModels
+import org.secu3.android.R
 import org.secu3.android.databinding.FragmentFuelCutoffkBinding
 import org.secu3.android.models.packets.params.CarburParamPacket
 import org.secu3.android.ui.parameters.ParamsViewModel
@@ -36,6 +40,8 @@ import org.secu3.android.ui.parameters.views.FloatParamView
 import org.secu3.android.ui.parameters.views.IntParamView
 
 class FuelCutoffkFragment : BaseParamFragment() {
+
+    private val uniOutItems = mapOf(1 to "1", 2 to "2", 3 to "3", 4 to "4", 5 to "5", 6 to "6", 15 to "no")
 
     private val mViewModel: ParamsViewModel by activityViewModels()
     private lateinit var mBinding: FragmentFuelCutoffkBinding
@@ -49,6 +55,16 @@ class FuelCutoffkFragment : BaseParamFragment() {
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
+
+        mBinding.apply {
+            val adapter = ArrayAdapter(requireContext(), R.layout.list_item, uniOutItems.values.toList())
+
+            useUnioutCond.inputType = InputType.TYPE_NULL
+            useUnioutCond.setAdapter(adapter)
+
+            useUnioutCondForIgnCutoff.inputType = InputType.TYPE_NULL
+            useUnioutCondForIgnCutoff.setAdapter(adapter)
+        }
 
         mViewModel.carburLiveData.observe(viewLifecycleOwner) {
             packet = it
@@ -71,6 +87,10 @@ class FuelCutoffkFragment : BaseParamFragment() {
 
                 revLimitingLowerThrd.value = it.revlimLot
                 revLimitingUpperThrd.value = it.revlimHit
+
+                useUnioutCond.setText(uniOutItems[it.fuelcut_uni], false)
+                useUnioutCondForIgnCutoff.setText(uniOutItems[it.igncut_uni], false)
+
             }
 
             initViews()
@@ -134,6 +154,20 @@ class FuelCutoffkFragment : BaseParamFragment() {
             revLimitingUpperThrd.addOnValueChangeListener {
                 packet?.revlimHit = it
                 packet?.let { it1 -> mViewModel.sendPacket(it1) }
+            }
+
+            useUnioutCond.onItemClickListener = AdapterView.OnItemClickListener { _, _, position, _ ->
+                packet?.apply {
+                    fuelcut_uni = uniOutItems.keys.elementAt(position)
+                    mViewModel.sendPacket(this)
+                }
+            }
+
+            useUnioutCondForIgnCutoff.onItemClickListener = AdapterView.OnItemClickListener { _, _, position, _ ->
+                packet?.apply {
+                    igncut_uni = uniOutItems.keys.elementAt(position)
+                    mViewModel.sendPacket(this)
+                }
             }
 
             idleCutoffLowerThrd.setOnClickListener { intParamClick(it as IntParamView) }

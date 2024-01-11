@@ -28,17 +28,6 @@
 	xmlns:app="http://schemas.android.com/apk/res-auto">
 
 	<item
-		android:id="@+id/menu_dashboard"
-		android:title="@string/menu_dashboard"
-		android:icon="@android:drawable/ic_menu_preferences"/>
-
-	<item
-		android:id="@+id/menu_params"
-		android:title="@string/menu_param"
-		app:showAsAction="ifRoom"
-		android:icon="@android:drawable/ic_menu_manage"/>
-
-	<item
 		android:id="@+id/menu_errors"
 		android:title="@string/menu_errors"
 		app:showAsAction="ifRoom"
@@ -48,18 +37,4 @@
 		android:id="@+id/menu_diagnostics"
 		android:title="@string/menu_diagnostics"
 		android:icon="@android:drawable/ic_menu_agenda"/>
-
-	<item
-		android:id="@+id/menu_preferences"
-		android:title="@string/menu_preferences"
-		android:icon="@android:drawable/ic_menu_preferences"/>
-
-	<item
-		android:id="@+id/logs_preferences"
-		android:title="@string/menu_secu_logs" />
-
-	<item
-		android:id="@+id/menu_exit"
-		android:title="@string/menu_exit"
-		android:icon="@android:drawable/ic_menu_close_clear_cancel"/>
 </menu>

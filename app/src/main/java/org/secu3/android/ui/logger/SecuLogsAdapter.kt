@@ -30,6 +30,7 @@ import android.view.ViewGroup
 import androidx.recyclerview.widget.RecyclerView
 import androidx.recyclerview.widget.RecyclerView.ViewHolder
 import org.secu3.android.databinding.ItemSecuLogBinding
+import org.secu3.android.utils.sizeStr
 import java.io.File
 
 class SecuLogsAdapter(private val files: List<File>, val shareClick: (File) -> Unit, val deleteClick: (File) -> Unit) : RecyclerView.Adapter<SecuLogsAdapter.SecuLogViewHolder>() {
@@ -59,6 +60,7 @@ class SecuLogsAdapter(private val files: List<File>, val shareClick: (File) -> U
 
             binding.apply {
                 fileName.text = file.name
+                fileSize.text = file.sizeStr()
                 shareBtn.setOnClickListener {
                     shareClick(file)
                 }

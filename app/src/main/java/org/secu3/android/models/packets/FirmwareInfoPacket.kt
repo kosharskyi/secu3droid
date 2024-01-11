@@ -24,6 +24,7 @@
  */
 package org.secu3.android.models.packets
 
+import org.secu3.android.utils.getBitValue
 import java.nio.charset.Charset
 import java.nio.charset.StandardCharsets
 

@@ -142,7 +142,7 @@ class BluetoothStatusFragment : Fragment() {
         }
 
         if (mViewModel.isBtConfigured) {
-            findNavController().navigate(BluetoothStatusFragmentDirections.actionOpenSensors())
+            findNavController().navigate(BluetoothStatusFragmentDirections.actionOpenMainMenu())
         }
     }
 }

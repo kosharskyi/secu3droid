@@ -25,6 +25,7 @@
 package org.secu3.android.models.packets.params
 
 import org.secu3.android.models.packets.BaseOutputPacket
+import org.secu3.android.utils.getBitValue
 
 data class KnockParamPacket(
 
