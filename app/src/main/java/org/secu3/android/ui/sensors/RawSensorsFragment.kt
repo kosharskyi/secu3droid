@@ -31,6 +31,7 @@ import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import androidx.fragment.app.viewModels
+import org.secu3.android.R
 import org.secu3.android.databinding.FragmentRawSensorsBinding
 import java.util.Locale
 
@@ -51,43 +52,43 @@ class RawSensorsFragment : Fragment() {
 
         mViewModel.rawSensorsLiveData.observe(viewLifecycleOwner) {
             mBinding?.apply {
-                rawMap.title.text = "Датчик абсолютного давления, В:"
+                rawMap.title.text = getString(R.string.raw_sensors_frag_map_sensor_label)
                 rawMap.value.text = String.format(Locale.US, "%.3f", it.map)
 
-                rawVoltage.title.text = "Напряжение бортовой сети, В:"
+                rawVoltage.title.text = getString(R.string.raw_sensors_frag_voltage_label)
                 rawVoltage.value.text = String.format(Locale.US, "%.3f", it.voltage)
 
-                rawCoolantTemp.title.text = "Датчик температуры ОЖ, В:"
+                rawCoolantTemp.title.text = getString(R.string.raw_sensors_frag_coolant_sensor_label)
                 rawCoolantTemp.value.text = String.format(Locale.US, "%.3f", it.temperature)
 
-                rawKnockLvl.title.text = "Уровень сигнала детонации, В:"
+                rawKnockLvl.title.text = getString(R.string.raw_sensors_frag_knock_signal_lavel_label)
                 rawKnockLvl.value.text = String.format(Locale.US, "%.3f", it.knockValue)
 
-                rawThrottle.title.text = "Датчик полож. дрос. заслонки, В:"
+                rawThrottle.title.text = getString(R.string.raw_sensors_frag_throttle_position_sensor_label)
                 rawThrottle.value.text = String.format(Locale.US, "%.3f", it.tps)
 
-                rawAdd1.title.text = "Вход ADD_I1, В:"
+                rawAdd1.title.text = getString(R.string.raw_sensors_frag_add_io1_input_label)
                 rawAdd1.value.text = String.format(Locale.US, "%.3f", it.addI1)
 
-                rawAdd2.title.text = "Вход ADD_I2, В:"
+                rawAdd2.title.text = getString(R.string.raw_sensors_frag_add_io2_input_label)
                 rawAdd2.value.text = String.format(Locale.US, "%.3f", it.addI2)
 
-                rawAdd3.title.text = "Вход ADD_I3, В:"
+                rawAdd3.title.text = getString(R.string.raw_sensors_frag_add_io3_input_label)
                 rawAdd3.value.text = String.format(Locale.US, "%.3f", it.addI3)
 
-                rawAdd4.title.text = "Вход ADD_I4, В:"
+                rawAdd4.title.text = getString(R.string.raw_sensors_frag_add_io4_input_label)
                 rawAdd4.value.text = String.format(Locale.US, "%.3f", it.addI4)
 
-                rawAdd5.title.text = "Вход ADD_I5, В:"
+                rawAdd5.title.text = getString(R.string.raw_sensors_frag_add_io5_input_label)
                 rawAdd5.value.text = String.format(Locale.US, "%.3f", it.addI5)
 
-                rawAdd6.title.text = "Вход ADD_I6, В:"
+                rawAdd6.title.text = getString(R.string.raw_sensors_frag_add_io6_input_label)
                 rawAdd6.value.text = String.format(Locale.US, "%.3f", it.addI6)
 
-                rawAdd7.title.text = "Вход ADD_I7, В:"
+                rawAdd7.title.text = getString(R.string.raw_sensors_frag_add_io7_input_label)
                 rawAdd7.value.text = String.format(Locale.US, "%.3f", it.addI7)
 
-                rawAdd8.title.text = "Вход ADD_I1, В:"
+                rawAdd8.title.text = getString(R.string.raw_sensors_frag_add_io8_input_label)
                 rawAdd8.value.text = String.format(Locale.US, "%.3f", it.addI8)
             }
 
