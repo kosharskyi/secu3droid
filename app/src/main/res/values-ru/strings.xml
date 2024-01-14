@@ -248,13 +248,17 @@
     <string name="dialog_confirm_delete_log_file_title">Удалить файл лога</string>
     <string name="dialog_confirm_delete_log_message">Вы уверенны что хотите удалить файл лога?</string>
     <string name="sensors">Датчики</string>
+
     <string name="sensors_frag_rpm_label">Обороты, об/мин:</string>
+    <string name="sensors_frag_absolute_pressure_label">Абсолютное давление, kPa:</string>
     <string name="sensors_frag_voltage_label">Напряжение борт. сети, В:</string>
+    <string name="sensors_frag_coolant_temperature_label">Температура ОЖ, °C:</string>
     <string name="sensors_frag_advance_angle_label">Угол опережения, град.:</string>
     <string name="sensors_frag_knock_retard_label">Корр. УОЗ от ДД, град.:</string>
     <string name="sensors_frag_knock_signal_label">Сигнал детонации, В:</string>
     <string name="sensors_frag_air_flow_label">Расход воздуха, N кривой:</string>
     <string name="sensors_frag_throttle_gate_label">Дроссельная заслонка, %:</string>
+    <string name="sensors_frag_input_1_label">Вход 1, В:</string>
     <string name="sensors_frag_input_2_label">Вход 2, В:</string>
     <string name="sensors_frag_iac_valve_label">ВЗ/РДВ, %:</string>
     <string name="sensors_frag_gas_dispenser_label">"Дозатор газа, %: "</string>
@@ -315,6 +319,7 @@
     <string name="raw_sensors_frag_knock_signal_lavel_label">Уровень сигнала детонации, В:</string>
     <string name="raw_sensors_frag_throttle_position_sensor_label">Датчик полож. дрос. заслонки, В:</string>
     <string name="raw_sensors_frag_add_io1_input_label">Вход ADD_I1, В:</string>
+    <string name="raw_sensors_frag_add_io2_input_label">Вход ADD_I2, В:</string>
     <string name="raw_sensors_frag_add_io3_input_label">Вход ADD_I3, В:</string>
     <string name="raw_sensors_frag_add_io4_input_label">Вход ADD_I4, В:</string>
     <string name="raw_sensors_frag_add_io5_input_label">Вход ADD_I5, В:</string>
