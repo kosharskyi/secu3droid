@@ -406,6 +406,17 @@
             app:float_step="0.0025"
             />
 
+        <!-- ************************************************************* -->
+
+        <CheckBox
+            android:id="@+id/multiply_corr_and_koef"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="@string/adc_cor_multiply_corr_and_koef_title"
+            android:button="@null"
+            android:drawableEnd="?android:attr/listChoiceIndicatorMultiple"
+            />
+
     </LinearLayout>
 
 </ScrollView>

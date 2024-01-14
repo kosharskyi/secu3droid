@@ -25,6 +25,8 @@
 package org.secu3.android.models.packets.params
 
 import org.secu3.android.models.packets.BaseOutputPacket
+import org.secu3.android.utils.getBitValue
+import org.secu3.android.utils.setBitValue
 
 data class CkpsParamPacket(
 
@@ -49,51 +51,31 @@ data class CkpsParamPacket(
     var risingSpark: Boolean
         get() = hallFlags.getBitValue(0) > 0
         set(value) {
-            hallFlags = if (value) {
-                1.or(hallFlags)
-            } else {
-                1.inv().and(hallFlags)
-            }
+            hallFlags = hallFlags.setBitValue(value, 0)
         }
 
     var useCamRef: Boolean
         get() = hallFlags.getBitValue(1) > 0
         set(value) {
-            hallFlags = if (value) {
-                1.shl(1).or(hallFlags)
-            } else {
-                1.shl(1).inv().and(hallFlags)
-            }
+            hallFlags.setBitValue(value, 1)
         }
 
     var ckpsEdge: Boolean
         get() = hallFlags.getBitValue(2) > 0
         set(value) {
-            hallFlags = if (value) {
-                1.shl(2).or(hallFlags)
-            } else {
-                1.shl(2).inv().and(hallFlags)
-            }
+            hallFlags = hallFlags.setBitValue(value, 2)
         }
 
     var refsEdge: Boolean
         get() = hallFlags.getBitValue(3) > 0
         set(value) {
-            hallFlags = if (value) {
-                1.shl(3).or(hallFlags)
-            } else {
-                1.shl(3).inv().and(hallFlags)
-            }
+            hallFlags = hallFlags.setBitValue(value, 3)
         }
 
     var mergeOuts: Boolean
         get() = hallFlags.getBitValue(4) > 0
         set(value) {
-            hallFlags = if (value) {
-                1.shl(4).or(hallFlags)
-            } else {
-                1.shl(4).inv().and(hallFlags)
-            }
+            hallFlags = hallFlags.setBitValue(value, 4)
         }
 
     override fun pack(): String {

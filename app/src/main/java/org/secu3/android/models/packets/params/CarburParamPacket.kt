@@ -62,17 +62,8 @@ data class CarburParamPacket(
         data += revlimLot.write2Bytes()
         data += revlimHit.write2Bytes()
 
-        if (fuelcut_uni == UNI_OUTPUT_NUM) {
-            data += 0xF
-        } else {
-            data += fuelcut_uni.toChar()
-        }
-
-        if (igncut_uni == UNI_OUTPUT_NUM) {
-            data += 0xF
-        } else {
-            data += igncut_uni.toChar()
-        }
+        data += fuelcut_uni.toChar()
+        data += igncut_uni.toChar()
 
         data += unhandledParams
 
@@ -98,14 +89,7 @@ data class CarburParamPacket(
             revlimHit = data.get2Bytes(21)
 
             fuelcut_uni = data[23].code
-            if (fuelcut_uni == 0xF) {
-                fuelcut_uni = UNI_OUTPUT_NUM //disabled
-            }
-
             igncut_uni = data[24].code
-            if (igncut_uni == 0xF) {
-                igncut_uni = UNI_OUTPUT_NUM  //disabled
-            }
 
             if (data.length == 25) {
                 return@apply

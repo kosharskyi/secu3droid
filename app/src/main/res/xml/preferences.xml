@@ -44,6 +44,12 @@
 		android:defaultValue="false"
 		android:summary="@string/pref_write_log_summary"/>
 
+	<CheckBoxPreference
+		android:key="@string/pref_write_binary_log_key"
+		android:title="@string/pref_write_binary_log_title"
+		android:defaultValue="false"
+		/>
+
 	<ListPreference
 		android:dialogTitle="@string/pref_log_csv_delimeter_title"
 		android:title="@string/pref_log_csv_delimeter_title"

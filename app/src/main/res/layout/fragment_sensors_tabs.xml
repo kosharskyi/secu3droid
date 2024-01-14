@@ -39,6 +39,7 @@
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         app:layout_constraintTop_toTopOf="parent"
+        app:navigationIcon="@drawable/ic_arrow_back_24"
         android:background="@color/colorPrimary"
         app:title="@string/app_name"
         />
@@ -62,27 +63,7 @@
         app:layout_constraintTop_toBottomOf="@id/tab_layout"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintBottom_toTopOf="@id/fw_info"
-        />
-
-    <TextView
-        android:id="@+id/fw_info"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintBottom_toTopOf="@id/connection_status"
-        tools:text="Fw info"
-        />
-
-    <TextView
-        android:id="@+id/connection_status"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintBottom_toBottomOf="@id/logger_barrier"
-        tools:text="disconnected"
+        app:layout_constraintBottom_toTopOf="@id/logger_barrier"
         />
 
     <androidx.constraintlayout.widget.Barrier
@@ -150,7 +131,7 @@
         android:textColor="@android:color/white"
         android:text="@string/stop"
         />
-
+    
     <com.google.android.material.button.MaterialButton
         android:id="@+id/log_start"
         android:layout_width="0dp"

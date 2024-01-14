@@ -97,6 +97,8 @@ class MiscellaneousFragment : BaseParamFragment() {
 
                 pwmfrq0.value = it.pwmFrq0
                 pwmfrq1.value = it.pwmFrq1
+
+                numberVssPulses.value = it.vssPeriodDist
             }
 
             initViews()
@@ -174,6 +176,13 @@ class MiscellaneousFragment : BaseParamFragment() {
                 packet?.let { it1 -> mViewModel.sendPacket(it1) }
             }
 
+            numberVssPulses.addOnValueChangeListener {
+                packet?.apply {
+                    vssPeriodDist = it
+                    mViewModel.sendPacket(this)
+                }
+            }
+
 
             dataPacketsTransmissionPeriod.setOnClickListener { intParamClick(it as IntParamView) }
             enableCutoffOfIgnition.setOnClickListener { intParamClick(it as IntParamView) }
@@ -187,6 +196,8 @@ class MiscellaneousFragment : BaseParamFragment() {
 
             pwmfrq0.setOnClickListener { intParamClick(it as IntParamView) }
             pwmfrq1.setOnClickListener { intParamClick(it as IntParamView) }
+
+            numberVssPulses.setOnClickListener { intParamClick(it as IntParamView) }
 
         }
     }

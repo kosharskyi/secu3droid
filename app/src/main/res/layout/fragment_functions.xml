@@ -68,7 +68,19 @@
             />
 
 
-        <!-- ************************************************************* -->
+        <!-- ************************************************************* --><!-- ************************************************************* -->
+
+
+        <CheckBox
+            android:id="@+id/use_load_grid"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="@string/idlreg_use_load_grid_title"
+            android:button="@null"
+            android:drawableEnd="?android:attr/listChoiceIndicatorMultiple"
+            />
+
+        <!-- ************************************************************* --><!-- ************************************************************* -->
 
         <org.secu3.android.ui.parameters.views.FloatParamView
             android:id="@+id/map_curve_offset"

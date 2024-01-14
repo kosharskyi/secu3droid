@@ -25,6 +25,8 @@
 package org.secu3.android.models.packets.params
 
 import org.secu3.android.models.packets.BaseOutputPacket
+import org.secu3.android.utils.getBitValue
+import org.secu3.android.utils.setBitValue
 
 data class AnglesParamPacket(
     var maxAngle: Float = 0f,
@@ -40,15 +42,15 @@ data class AnglesParamPacket(
 
     var alwaysUseIgnitionMap: Boolean           // Allways use working mode's ignition timing map
         get() = igntimFlags.getBitValue(0) > 0
-        set(value) { igntimFlags.setBitValue(value, 0) }
+        set(value) { igntimFlags = igntimFlags.setBitValue(value, 0) }
 
     var applyManualTimingCorrOnIdl: Boolean           // Apply manual ignition timing correction on idling
         get() = igntimFlags.getBitValue(1) > 0
-        set(value) { igntimFlags.setBitValue(value, 1) }
+        set(value) { igntimFlags = igntimFlags.setBitValue(value, 1) }
 
     var zeroAdvAngleWithCorr: Boolean           // Zero advance angle with octane correction
         get() = igntimFlags.getBitValue(2) > 0
-        set(value) { igntimFlags.setBitValue(value, 2) }
+        set(value) { igntimFlags = igntimFlags.setBitValue(value, 2) }
 
 
     companion object {

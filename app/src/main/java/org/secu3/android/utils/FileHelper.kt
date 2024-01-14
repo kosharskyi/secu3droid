@@ -39,11 +39,13 @@ import javax.inject.Singleton
 @Singleton
 class FileHelper @Inject constructor(@ApplicationContext private val context: Context) {
 
-    private val rootDir = context.filesDir
-
     private val dateTimeFormatter = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss");
 
-    private val logsDir: File
+    private val rootDir = context.filesDir
+
+    private val cacheDir = context.cacheDir
+
+    val logsDir: File
         get() = File(rootDir, "logs").also {
             it.mkdir()
         }
@@ -51,10 +53,16 @@ class FileHelper @Inject constructor(@ApplicationContext private val context: Co
     val listOfLogs: List<File>
         get() = logsDir.listFiles()?.toList()?.sortedByDescending { LocalDateTime.parse(it.nameWithoutExtension, dateTimeFormatter) } ?: emptyList()
 
-    val getNewLogFile: File
+    val generateTempCsvFile: File
         get() {
             val name = LocalDateTime.now().format(dateTimeFormatter)
-            return File(logsDir, "${name}.csv")
+            return File(cacheDir, "${name}.csv")
+        }
+
+    val generateTempS3lFile: File
+        get() {
+            val name = LocalDateTime.now().format(dateTimeFormatter)
+            return File(cacheDir, "${name}.s3l")
         }
 
     fun getFileUri(file: File): Uri? {

@@ -25,6 +25,8 @@
 package org.secu3.android.models.packets.params
 
 import org.secu3.android.models.packets.BaseOutputPacket
+import org.secu3.android.utils.getBitValue
+import org.secu3.android.utils.setBitValue
 
 data class StarterParamPacket(
     var starterOff: Int = 0,
@@ -44,11 +46,7 @@ data class StarterParamPacket(
     var allowStartOnClearFlood: Boolean
         get() = strtFlags.getBitValue(0) > 0
         set(value) {
-            strtFlags = if (value) {
-                1 or strtFlags
-            } else {
-                1.inv().and(strtFlags)
-            }
+            strtFlags = strtFlags.setBitValue(value, 0)
         }
 
 

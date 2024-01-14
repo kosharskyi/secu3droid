@@ -47,39 +47,54 @@
             android:layout_height="wrap_content"
             >
 
-        <TextView
-            android:id="@+id/file_name"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            app:layout_constraintTop_toTopOf="parent"
-            app:layout_constraintBottom_toBottomOf="parent"
-            android:textSize="16sp"
-            android:paddingStart="16dp"
-            android:paddingEnd="16dp"
-            tools:text="@tools:sample/date/mmddyy"
-            />
+            <TextView
+                android:id="@+id/file_name"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                app:layout_constraintTop_toTopOf="parent"
+                app:layout_constraintBottom_toTopOf="@id/file_size"
+                android:textSize="16sp"
+                android:paddingStart="16dp"
+                android:paddingEnd="16dp"
+                app:layout_constraintVertical_chainStyle="packed"
+                tools:text="@tools:sample/date/mmddyy"
+                />
 
-        <ImageView
-            android:id="@+id/delete_btn"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            app:layout_constraintTop_toTopOf="parent"
-            app:layout_constraintEnd_toStartOf="@id/share_btn"
-            app:layout_constraintBottom_toBottomOf="parent"
-            android:padding="16dp"
-            android:src="@drawable/ic_delete_outline_24"
-            />
+            <TextView
+                android:id="@+id/file_size"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                app:layout_constraintTop_toBottomOf="@id/file_name"
+                app:layout_constraintBottom_toBottomOf="parent"
+                android:textSize="12sp"
+                android:paddingStart="16dp"
+                android:paddingEnd="16dp"
+                android:textColor="@color/colorPrimaryVariant"
+                app:layout_constraintVertical_chainStyle="packed"
+                tools:text="@tools:sample/lorem"
+                />
 
-        <ImageView
-            android:id="@+id/share_btn"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            app:layout_constraintTop_toTopOf="parent"
-            app:layout_constraintEnd_toEndOf="parent"
-            app:layout_constraintBottom_toBottomOf="parent"
-            android:padding="16dp"
-            android:src="@drawable/ic_share_24"
-            />
+            <ImageView
+                android:id="@+id/delete_btn"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                app:layout_constraintTop_toTopOf="parent"
+                app:layout_constraintEnd_toStartOf="@id/share_btn"
+                app:layout_constraintBottom_toBottomOf="parent"
+                android:padding="16dp"
+                android:src="@drawable/ic_delete_outline_24"
+                />
+
+            <ImageView
+                android:id="@+id/share_btn"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                app:layout_constraintTop_toTopOf="parent"
+                app:layout_constraintEnd_toEndOf="parent"
+                app:layout_constraintBottom_toBottomOf="parent"
+                android:padding="16dp"
+                android:src="@drawable/ic_share_24"
+                />
 
         </androidx.constraintlayout.widget.ConstraintLayout>
 

@@ -29,19 +29,20 @@
     <string name="starter_off_title">Starter blocking RPM</string>
     <string name="starter_map_abandon_title">Switch from cranking ignition map RPM</string>
     <string name="starter_dat_crank_to_run_time_title">Time for going from crank to run position of IAC</string>
-    <string name="starter_dat_afterstart_enrichment_strokes_title">Afterstart enrichment time</string>
-    <string name="starter_dat_starters_blocking_timer_title">Starter\'s blocking timer</string>
-    <string name="starter_dat_allow_start_flood_clear_mode_title">Allow engine start in flood clear mode</string>
+    <string name="starter_dat_afterstart_enrichment_strokes_petrol_title">Afterstart enrichment time (petrol)</string>
+    <string name="starter_dat_afterstart_enrichment_strokes_gas_title">Afterstart enrichment time (gas)</string>
     <string name="starter_dat_prime_pulse_cold_title">Prime pulse width at -30°C</string>
     <string name="starter_dat_prime_pulse_hot_title">Prime pulse width at 70°C</string>
     <string name="starter_dat_prime_pulse_delay_title">Prime pulse delay</string>
     <string name="starter_dat_flod_clear_mode_threshold_title">Flood clear mode threshold</string>
+    <string name="starter_dat_starters_blocking_timer_title">Starter\'s blocking timer</string>
+    <string name="starter_dat_allow_start_flood_clear_mode_title">Allow engine start in flood clear mode</string>
 
     <string name="angles_min_angle_title">Minimal advance angle</string>
     <string name="angles_max_angle_title">Maximal advance angle</string>
     <string name="angles_angle_decrement_step_title">Angle decrement step</string>
     <string name="angles_angle_increment_step_title">Angle increment step</string>
-    <string name="angles_zero_angle_title">Zero advance angle</string>
+    <string name="angles_zero_angle_title">Zero advance angle (useful for check-out)</string>
     <string name="angles_octane_correction_title">Octane correction</string>
     <string name="angles_ign_timing_when_shifting_title">Ignition timing when shifting gears</string>
     <string name="angles_always_use_ing_timing_map_title">Always use working mode\'s ignition timing map</string>
@@ -50,6 +51,7 @@
 
     <string name="idlreg_ifac1_title">Positive regulator\'s factor</string>
     <string name="idlreg_ifac2_title">Negative regulator\'s factor</string>
+    <string name="idlreg_use_load_grid_title">Use grid table</string>
     <string name="idlreg_minimal_angle_title">Minimal regulation limit</string>
     <string name="idlreg_maximal_angle_title">Maximal regulation limit</string>
     <string name="idlreg_target_rpm_title">Goal RPM</string>
@@ -60,6 +62,7 @@
     <string name="idlreg_proportional_regulator_title">Proportional regulator</string>
     <string name="idlreg_use_closed_loop_title">Use closed loop</string>
     <string name="idlreg_iac_add_after_exit_title">IAC add after exit</string>
+    <string name="idlreg_use_table_title">Use table</string>
     <string name="idlreg_rpm_add_on_run_title">RPM add on run</string>
     <string name="idlreg_proportional_positive_title">Proportional (+)</string>
     <string name="idlreg_integral_positive_title">Integral (+)</string>
@@ -117,6 +120,8 @@
     <string name="carbur_protection_of_engine_title">Protection of engine</string>
     <string name="carbur_rev_limitting_lower_threshold_title">Rev.limitting lower threshold</string>
     <string name="carbur_rev_limitting_upper_threshold_title">Rev.limitting upper threshold</string>
+    <string name="carbur_use_uniout_condition_title">Use univ.output\'s condition</string>
+    <string name="carbur_use_uniout_condition_for_ign_cutoff_title">Use univ.output\'s condition for ignition cut off</string>
 
     <string name="ckps_ckps_edge_title">CKPS edge</string>
 	<string name="ckps_edge_negative">Negatige edge</string>
@@ -145,8 +150,9 @@
     <string name="miscel_evap_starting_air_flow_title">EVAP starting air flow</string>
     <string name="miscel_evap_ending_air_flow_title">EVAP ending air flow</string>
     <string name="miscel_fuel_pump_working_time_title">Fuel pump working time</string>
-    <string name="miscel_pwmfrq0_title">PWM frequency for PWM0</string>
     <string name="miscel_pwmfrq1_title">PWM frequency for PWM1</string>
+    <string name="miscel_pwmfrq2_title">PWM frequency for PWM2</string>
+    <string name="miscel_num_vss_pulsed_per_dist_title">Number of VSS pulses per 1km</string>
 
 
     <string name="choke_steps_title">Number of SM steps</string>
@@ -273,4 +279,6 @@
     <string name="raw_status_tps_title">TPS Sensor data: %.2f V\n</string>
     <string name="raw_status_addi1_title">ADD_IO1: %.2f V\n</string>
     <string name="raw_status_addi2_title">ADD_IO2: %.2f V\n</string>
+
+    <string name="adc_cor_multiply_corr_and_koef_title">Multiply corr. by factor</string>
 </resources>

@@ -25,6 +25,9 @@
 package org.secu3.android.models.packets.params
 
 import org.secu3.android.models.packets.BaseOutputPacket
+import org.secu3.android.utils.getBitValue
+import org.secu3.android.utils.setBitValue
+import kotlin.math.roundToInt
 
 data class TemperatureParamPacket(
     var tmpFlags: Int = 0,
@@ -43,13 +46,13 @@ data class TemperatureParamPacket(
 
         data += tmpFlags.toChar()
 
-        data += ventOn.times(TEMPERATURE_MULTIPLIER).toInt().write2Bytes()
-        data += ventOff.times(TEMPERATURE_MULTIPLIER).toInt().write2Bytes()
+        data += ventOn.times(TEMPERATURE_MULTIPLIER).roundToInt().write2Bytes()
+        data += ventOff.times(TEMPERATURE_MULTIPLIER).roundToInt().write2Bytes()
 
-        data += 1f.div(ventPwmFrq.toFloat().div(524288)).toInt().write2Bytes()
+        data += 1f.div(ventPwmFrq.toFloat()).times(524288.0).roundToInt().write2Bytes()
 
-        data += condPvtOn.times(VOLTAGE_MULTIPLIER).toInt().write2Bytes()
-        data += condPvtOff.times(VOLTAGE_MULTIPLIER).toInt().write2Bytes()
+        data += condPvtOn.div(ADC_DISCRETE).roundToInt().write2Bytes()
+        data += condPvtOff.div(ADC_DISCRETE).roundToInt().write2Bytes()
 
         data += condMinRpm.write2Bytes()
         data += ventTmr.times(100).write2Bytes()
@@ -62,31 +65,19 @@ data class TemperatureParamPacket(
     var coolantUse: Boolean   //Flag of using coolant temperature sensor
         get() = tmpFlags.getBitValue(0) > 0
         set(value) {
-            tmpFlags = if (value) {
-                tmpFlags.or(1)
-            } else {
-                1.inv().and(tmpFlags)
-            }
+            tmpFlags = tmpFlags.setBitValue(value, 0)
         }
 
     var coolantMap: Boolean   //Flag which indicates using of lookup table for coolant temperature sensor
         get() = tmpFlags.getBitValue(1) > 0
         set(value) {
-            tmpFlags = if (value) {
-                1.shl(1).or(tmpFlags)
-            } else {
-                1.shl(1).inv().and(tmpFlags)
-            }
+            tmpFlags = tmpFlags.setBitValue(value, 1)
         }
 
     var ventPwm: Boolean   //Flag - control cooling fan by using PWM
         get() = tmpFlags.getBitValue(2) > 0
         set(value) {
-            tmpFlags = if (value) {
-                1.shl(2).or(tmpFlags)
-            } else {
-                1.shl(2).inv().and(tmpFlags)
-            }
+            tmpFlags = tmpFlags.setBitValue(value, 2)
         }
 
 
@@ -100,10 +91,10 @@ data class TemperatureParamPacket(
             ventOn = data.get2Bytes(3).toFloat().div(TEMPERATURE_MULTIPLIER)
             ventOff = data.get2Bytes(5).toFloat().div(TEMPERATURE_MULTIPLIER)
             data.get2Bytes(7).let {
-                ventPwmFrq = ((1f / it.toFloat()) * 524288).toInt()
+                ventPwmFrq = (1f / (( it.toDouble() / 524288))).roundToInt()
             }
-            condPvtOn = data.get2Bytes(9).toFloat() / VOLTAGE_MULTIPLIER
-            condPvtOff = data.get2Bytes(11).toFloat() / VOLTAGE_MULTIPLIER
+            condPvtOn = data.get2Bytes(9).toFloat() * ADC_DISCRETE
+            condPvtOff = data.get2Bytes(11).toFloat() * ADC_DISCRETE
             condMinRpm = data.get2Bytes(13)
             ventTmr = data.get2Bytes(15) / 100
 

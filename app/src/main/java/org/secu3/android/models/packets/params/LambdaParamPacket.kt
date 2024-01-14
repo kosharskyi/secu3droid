@@ -25,6 +25,8 @@
 package org.secu3.android.models.packets.params
 
 import org.secu3.android.models.packets.BaseOutputPacket
+import org.secu3.android.utils.getBitValue
+import org.secu3.android.utils.setBitValue
 
 data class LambdaParamPacket(
 
@@ -70,31 +72,19 @@ data class LambdaParamPacket(
     var determineLambdaHeatingByVoltage: Boolean
         get() = flags.getBitValue(0) > 0
         set(value) {
-            flags = if (value) {
-                1.or(flags)
-            } else {
-                1.inv().and(flags)
-            }
+            flags = flags.setBitValue(value, 0)
         }
 
     var lambdaCorrectionOnIdling: Boolean
         get() = flags.getBitValue(1) > 0
         set(value) {
-            flags = if (value) {
-                1.shl(1).or(flags)
-            } else {
-                1.shl(1).inv().and(flags)
-            }
+            flags = flags.setBitValue(value, 1)
         }
 
     var heatingBeforeCranking: Boolean
         get() = flags.getBitValue(2) > 0
         set(value) {
-            flags = if (value) {
-                1.shl(2).or(flags)
-            } else {
-                1.shl(2).inv().and(flags)
-            }
+            flags = flags.setBitValue(value, 2)
         }
 
 

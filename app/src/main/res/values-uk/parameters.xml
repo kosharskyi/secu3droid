@@ -29,7 +29,8 @@
     <string name="starter_off_title">Оберти блокування стартера</string>
     <string name="starter_map_abandon_title">Оберти переходу з пускової карти КВЗ</string>
     <string name="starter_dat_crank_to_run_time_title">Затримка перехода РХХ в робоче положення</string>
-    <string name="starter_dat_afterstart_enrichment_strokes_title">Час збагачення після запуску</string>
+    <string name="starter_dat_afterstart_enrichment_strokes_petrol_title">Час збагачення після запуску (бензин)</string>
+    <string name="starter_dat_afterstart_enrichment_strokes_gas_title">Час збагачення після запуску (газ)</string>
     <string name="starter_dat_prime_pulse_cold_title">Тривалість предпускового вприскування при -30°C</string>
     <string name="starter_dat_prime_pulse_hot_title">Тривалість передпускового вприскування при 70°C</string>
     <string name="starter_dat_prime_pulse_delay_title">Затримка передпускового вприскування</string>
@@ -41,7 +42,7 @@
     <string name="angles_max_angle_title">Максимальний КВЗ</string>
     <string name="angles_angle_decrement_step_title">Швидкість зменшення КВЗ</string>
     <string name="angles_angle_increment_step_title">Швидкість збільшення КВЗ</string>
-    <string name="angles_zero_angle_title">Обнулити кут випередження</string>
+    <string name="angles_zero_angle_title">Нульовий кут випередження (корисно для налагодження)</string>
     <string name="angles_octane_correction_title">Октан-корекція</string>
     <string name="angles_ign_timing_when_shifting_title">КВЗ при перемиканні передач</string>
     <string name="angles_always_use_ing_timing_map_title">Завжди використовувати карту КВЗ робочого режиму</string>
@@ -50,6 +51,7 @@
     
     <string name="idlreg_ifac1_title">Позитивний коефіцієнт регулятора</string>
     <string name="idlreg_ifac2_title">Негативний коефіцієнт регулятора</string>
+    <string name="idlreg_use_load_grid_title">Використовувати таблицю</string>
     <string name="idlreg_minimal_angle_title">Мінімальна межа регулювання</string>
     <string name="idlreg_maximal_angle_title">Максимальна межа регулювання</string>
     <string name="idlreg_target_rpm_title">Цільове значення обертів</string>
@@ -60,6 +62,7 @@
     <string name="idlreg_proportional_regulator_title">Пропорційний регулятор</string>
     <string name="idlreg_use_closed_loop_title">Використовувати closed loop</string>
     <string name="idlreg_iac_add_after_exit_title">Добавка після виходу</string>
+    <string name="idlreg_use_table_title">Використовувати таблицю</string>
     <string name="idlreg_rpm_add_on_run_title">Добавка до обертів на ходу</string>
     <string name="idlreg_proportional_positive_title">Пропорційний (+)</string>
     <string name="idlreg_integral_positive_title">" Інтегральний (+)"</string>
@@ -118,6 +121,8 @@
     <string name="carbur_protection_of_engine_title">Захист двигуна</string>
     <string name="carbur_rev_limitting_lower_threshold_title">Нижн.поріг відсічки палива</string>
     <string name="carbur_rev_limitting_upper_threshold_title">Верх.поріг відсічки палива</string>
+    <string name="carbur_use_uniout_condition_title">Викор. умову універ. вих.</string>
+    <string name="carbur_use_uniout_condition_for_ign_cutoff_title">Викор. умову універ. вих. для відсічки запалювання</string>
 
 
     <string name="ckps_ckps_edge_title">Фронт ДПКВ</string>
@@ -148,8 +153,9 @@
     <string name="miscel_evap_starting_air_flow_title">Поч. споживання повітря</string>
     <string name="miscel_evap_ending_air_flow_title">Кін. споживання повітря</string>
     <string name="miscel_fuel_pump_working_time_title">Час роботи бензонасоса</string>
-    <string name="miscel_pwmfrq0_title">Частота ШІМ PWM1</string>
     <string name="miscel_pwmfrq1_title">Частота ШІМ PWM1</string>
+    <string name="miscel_pwmfrq2_title">Частота ШІМ PWM2</string>
+    <string name="miscel_num_vss_pulsed_per_dist_title">Число імпульсів датчика</string>
 
     <string name="choke_steps_title">Кількість кроків КД</string>
     <string name="choke_rpm_if_factor_title">Коефіцієнт регуляції</string>
@@ -290,4 +296,6 @@
     <string name="injctr_par_max_inj_pw_title">Макс. тривалість вприскування</string>
     <string name="accel_par_ae_type_title">Тип збагачення</string>
     <string name="accel_par_ae_time_title">Тривалість збагачення</string>
+
+    <string name="adc_cor_multiply_corr_and_koef_title">Множити корр. на коеф.</string>
 </resources>

@@ -30,6 +30,7 @@
     <string name="pref_bluetooth_device_key" translatable="false">bluetoothDeviceName</string>
     <string name="pref_upload_immediately_key" translatable="false">uploadImmediately</string>
     <string name="pref_write_log_key" translatable="false">writeLog</string>
+    <string name="pref_write_binary_log_key" translatable="false">writeBinaryLog</string>
     <string name="pref_log_csv_delimeter_key" translatable="false">logCsvDelimeter</string>
     <string name="pref_about_key" translatable="false">about</string>
     <string name="defaultConnectionRetries" translatable="false">5</string>

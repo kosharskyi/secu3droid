@@ -31,6 +31,8 @@ import android.view.inputmethod.InputMethodManager
 import android.widget.ImageView
 import androidx.appcompat.app.AppCompatActivity
 import androidx.fragment.app.Fragment
+import java.io.File
+import java.text.DecimalFormat
 
 
 fun View.gone() {
@@ -68,4 +70,31 @@ fun AppCompatActivity.hideKeyboard(): Boolean {
         return true
     }
     return false
+}
+
+fun File.sizeStr(): String {
+    val size = length()
+    val units = arrayOf("B", "KB", "MB", "GB", "TB")
+    var unitIndex = 0
+
+    var sizeInUnits = size.toDouble()
+    while (sizeInUnits > 1024 && unitIndex < units.size - 1) {
+        sizeInUnits /= 1024.0
+        unitIndex++
+    }
+
+    val df = DecimalFormat("#.##")
+    return "${df.format(sizeInUnits)} ${units[unitIndex]}"
+}
+
+fun Int.getBitValue(bitNumber: Int): Int {
+    return this shr bitNumber and 1
+}
+
+fun Int.setBitValue(value: Boolean, bitNumber: Int): Int {
+    return if (value) {
+        1.shl(bitNumber).or(this)
+    } else {
+        1.shl(bitNumber).inv().and(this)
+    }
 }

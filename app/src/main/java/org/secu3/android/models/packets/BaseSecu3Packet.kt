@@ -61,17 +61,7 @@ abstract class BaseSecu3Packet {
         return v
     }
 
-    protected fun Int.getBitValue(bitNumber: Int): Int {
-        return this shr bitNumber and 1
-    }
 
-    protected fun Int.setBitValue(value: Boolean, bitNumber: Int): Int {
-        return if (value) {
-            1.shl(bitNumber).or(this)
-        } else {
-            1.shl(bitNumber).inv().and(this)
-        }
-    }
 
     var speedSensorPulses: Int = 0
 

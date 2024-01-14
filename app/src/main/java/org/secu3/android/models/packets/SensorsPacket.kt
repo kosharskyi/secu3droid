@@ -24,6 +24,9 @@
  */
 package org.secu3.android.models.packets
 
+import org.secu3.android.utils.getBitValue
+import org.secu3.android.utils.setBitValue
+
 data class SensorsPacket(
     var rpm: Int = 0,
     var map: Float = 0f,

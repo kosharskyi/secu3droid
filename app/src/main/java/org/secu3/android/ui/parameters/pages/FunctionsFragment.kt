@@ -96,6 +96,7 @@ class FunctionsFragment : BaseParamFragment() {
 
                 lowerLoadValue.value = it.loadLower
                 upperLoadValue.value = it.loadUpper
+                useLoadGrid.isChecked = it.useLoadGrid
 
                 mapCurveOffset.value = it.mapCurveOffset
                 mapCurveGradient.value = it.mapCurveGradient
@@ -106,8 +107,8 @@ class FunctionsFragment : BaseParamFragment() {
 
                 loadMeasurement.setText(loadMeasurementItems[it.loadSrcCfg], false)
 
-                mapselPetrol.setText(mapselItems[it.mapserUniPetrol], false)
-                mapselGas.setText(mapselItems[it.mapserUniGas], false)
+                mapselPetrol.setText(mapselItems[it.mapselUniPetrol], false)
+                mapselGas.setText(mapselItems[it.mapselUniGas], false)
 
                 barometricCorrection.setText(barocorrItems[it.barocorrType], false)
 
@@ -174,6 +175,13 @@ class FunctionsFragment : BaseParamFragment() {
                 packet?.loadUpper = it
                 packet?.let { it1 -> mViewModel.sendPacket(it1) }
             }
+            useLoadGrid.setOnCheckedChangeListener { buttonView, isChecked ->
+                packet?.apply {
+                    useLoadGrid = isChecked
+                    mViewModel.sendPacket(this)
+                }
+            }
+
             mapCurveOffset.addOnValueChangeListener {
                 packet?.mapCurveOffset = it
                 packet?.let { it1 -> mViewModel.sendPacket(it1) }
@@ -215,12 +223,12 @@ class FunctionsFragment : BaseParamFragment() {
             }
 
             mapselPetrol.onItemClickListener = AdapterView.OnItemClickListener { _, _, position, _ ->
-                packet?.mapserUniPetrol = mapselItems.keys.elementAt(position)
+                packet?.mapselUniPetrol = mapselItems.keys.elementAt(position)
                 packet?.let { it1 -> mViewModel.sendPacket(it1) }
             }
 
             mapselGas.onItemClickListener = AdapterView.OnItemClickListener { _, _, position, _ ->
-                packet?.mapserUniGas = mapselItems.keys.elementAt(position)
+                packet?.mapselUniGas = mapselItems.keys.elementAt(position)
                 packet?.let { it1 -> mViewModel.sendPacket(it1) }
             }
 

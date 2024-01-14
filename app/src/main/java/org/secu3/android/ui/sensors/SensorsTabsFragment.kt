@@ -25,15 +25,12 @@
 
 package org.secu3.android.ui.sensors
 
-import android.bluetooth.BluetoothAdapter
-import android.content.Intent
 import android.os.Bundle
 import android.view.LayoutInflater
 import android.view.MenuItem
 import android.view.View
 import android.view.ViewGroup
 import android.widget.Toast
-import androidx.activity.addCallback
 import androidx.core.view.isVisible
 import androidx.fragment.app.Fragment
 import androidx.fragment.app.viewModels
@@ -45,7 +42,6 @@ import com.google.android.material.tabs.TabLayoutMediator
 import dagger.hilt.android.AndroidEntryPoint
 import org.secu3.android.R
 import org.secu3.android.databinding.FragmentSensorsTabsBinding
-import org.secu3.android.ui.settings.SettingsActivity
 import org.secu3.android.utils.Task
 import org.secu3.android.utils.gone
 import org.secu3.android.utils.visible
@@ -57,15 +53,6 @@ class SensorsTabsFragment : Fragment() {
 
     private val mViewModel: SensorsViewModel by viewModels()
 
-    override fun onCreate(savedInstanceState: Bundle?) {
-        super.onCreate(savedInstanceState)
-
-        // This callback will only be called when MyFragment is at least Started.
-        requireActivity().onBackPressedDispatcher.addCallback(this) {
-            exit()
-        }
-    }
-
     override fun onCreateView(inflater: LayoutInflater, container: ViewGroup?, savedInstanceState: Bundle?): View? {
         mBinding = FragmentSensorsTabsBinding.inflate(layoutInflater)
         return mBinding.root
@@ -76,39 +63,15 @@ class SensorsTabsFragment : Fragment() {
 
         init()
 
-        mViewModel.connectionStatusLiveData.observe(viewLifecycleOwner) {
-            if (it) {
-                mBinding.connectionStatus.text = getString(R.string.status_online)
-            } else {
-                mBinding.connectionStatus.text = getString(R.string.status_offline)
-            }
-        }
-
     }
 
     override fun onResume() {
         super.onResume()
-        when {
-            mViewModel.isBluetoothDeviceAddressNotSelected -> {
-                Toast.makeText(context, R.string.choose_bluetooth_adapter, Toast.LENGTH_LONG).show()
-            }
-            !BluetoothAdapter.getDefaultAdapter().isEnabled -> {
-                Toast.makeText(context, R.string.msg_bluetooth_disabled, Toast.LENGTH_LONG).show()
-            }
-            else -> {
-                mViewModel.start()
-                mBinding.apply {
-                    logStart.isVisible = mViewModel.isLoggerEnabled && mViewModel.isLoggerStarted.not()
-                    logMarkBtnsGroup.isVisible = mViewModel.isLoggerEnabled && mViewModel.isLoggerStarted
-                }
-
-            }
+        mBinding.apply {
+            toolbar.setNavigationOnClickListener { findNavController().popBackStack() }
+            logStart.isVisible = mViewModel.isLoggerEnabled && mViewModel.isLoggerStarted.not()
+            logMarkBtnsGroup.isVisible = mViewModel.isLoggerEnabled && mViewModel.isLoggerStarted
         }
-    }
-
-    override fun onDestroy() {
-        super.onDestroy()
-        mViewModel.closeConnection()
     }
 
     private fun init() {
@@ -175,45 +138,16 @@ class SensorsTabsFragment : Fragment() {
                 mViewModel.stopWriteLog()
             }
         }
-
-
-        mViewModel.firmwareLiveData.observe(viewLifecycleOwner) {
-            mBinding.fwInfo.text = it.tag
-            mViewModel.sendNewTask(Task.Secu3ReadSensors)
-        }
-    }
-
-    override fun onStart() {
-        super.onStart()
-        mViewModel.sendNewTask(Task.Secu3ReadFirmwareInfo)
     }
 
     private fun onMenuItemSelected(item: MenuItem): Boolean {
         return when (item.itemId) {
-            R.id.menu_dashboard -> {
-                findNavController().navigate(SensorsTabsFragmentDirections.actionSensorsToDashboard())
-                true
-            }
-            R.id.menu_preferences -> {
-                startActivity(Intent(context, SettingsActivity::class.java))
-                true
-            }
-            R.id.menu_params -> {
-                findNavController().navigate(SensorsTabsFragmentDirections.actionSensorsToParameters())
-                true
-            }
-            R.id.logs_preferences -> {
-                findNavController().navigate(SensorsTabsFragmentDirections.actionSensorsFragmentToSecuLogsFragment())
-                true
-            }
+
             R.id.menu_errors -> {
                 findNavController().navigate(SensorsTabsFragmentDirections.actionSensorsToErrors())
                 true
             }
-            R.id.menu_exit -> {
-                exit()
-                true
-            }
+
             R.id.menu_diagnostics -> {
                 MaterialAlertDialogBuilder(requireContext()).setTitle(android.R.string.dialog_alert_title)
                     .setIcon(android.R.drawable.ic_dialog_alert).setMessage(R.string.menu_diagnostics_warning_title)
@@ -232,10 +166,5 @@ class SensorsTabsFragment : Fragment() {
 
             else -> super.onOptionsItemSelected(item)
         }
-    }
-
-    private fun exit() {
-        mViewModel.closeConnection()
-        activity?.finishAndRemoveTask()
     }
 }
