@@ -89,6 +89,27 @@
                 />
 
             <include
+                android:id="@+id/map2"
+                layout="@layout/view_sensor_item"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                />
+
+            <include
+                android:id="@+id/map_diff"
+                layout="@layout/view_sensor_item"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                />
+
+            <include
+                android:id="@+id/mapDot"
+                layout="@layout/view_sensor_item"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                />
+
+            <include
                 android:id="@+id/knock_value"
                 layout="@layout/view_sensor_item"
                 android:layout_width="wrap_content"
@@ -103,6 +124,13 @@
                 />
 
             <include
+                android:id="@+id/maf"
+                layout="@layout/view_sensor_item"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                />
+
+            <include
                 android:id="@+id/air_flow"
                 layout="@layout/view_sensor_item"
                 android:layout_width="wrap_content"
@@ -110,7 +138,21 @@
                 />
 
             <include
+                android:id="@+id/air_temp"
+                layout="@layout/view_sensor_item"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                />
+
+            <include
                 android:id="@+id/tps"
+                layout="@layout/view_sensor_item"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                />
+
+            <include
+                android:id="@+id/tps_dot"
                 layout="@layout/view_sensor_item"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
@@ -145,6 +187,13 @@
                 />
 
             <include
+                android:id="@+id/grts"
+                layout="@layout/view_sensor_item"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                />
+
+            <include
                 android:id="@+id/synth_load"
                 layout="@layout/view_sensor_item"
                 android:layout_width="wrap_content"
@@ -173,14 +222,7 @@
                 />
 
             <include
-                android:id="@+id/air_temp"
-                layout="@layout/view_sensor_item"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                />
-
-            <include
-                android:id="@+id/lambda_corr"
+                android:id="@+id/consFuel"
                 layout="@layout/view_sensor_item"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
@@ -188,69 +230,6 @@
 
             <include
                 android:id="@+id/inj_pw"
-                layout="@layout/view_sensor_item"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                />
-
-            <include
-                android:id="@+id/tps_dot"
-                layout="@layout/view_sensor_item"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                />
-
-            <include
-                android:id="@+id/map2"
-                layout="@layout/view_sensor_item"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                />
-
-            <include
-                android:id="@+id/map_diff"
-                layout="@layout/view_sensor_item"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                />
-
-            <include
-                android:id="@+id/tmp2"
-                layout="@layout/view_sensor_item"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                />
-
-            <include
-                android:id="@+id/afr"
-                layout="@layout/view_sensor_item"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                />
-
-            <include
-                android:id="@+id/grts"
-                layout="@layout/view_sensor_item"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                />
-
-            <include
-                android:id="@+id/ftls"
-                layout="@layout/view_sensor_item"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                />
-
-            <include
-                android:id="@+id/egts"
-                layout="@layout/view_sensor_item"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                />
-
-            <include
-                android:id="@+id/ops"
                 layout="@layout/view_sensor_item"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
@@ -278,35 +257,21 @@
                 />
 
             <include
-                android:id="@+id/maf"
+                android:id="@+id/lambda_corr"
                 layout="@layout/view_sensor_item"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 />
 
             <include
-                android:id="@+id/vent_duty"
+                android:id="@+id/lambda_corr2"
                 layout="@layout/view_sensor_item"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 />
 
             <include
-                android:id="@+id/mapDot"
-                layout="@layout/view_sensor_item"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                />
-
-            <include
-                android:id="@+id/fts"
-                layout="@layout/view_sensor_item"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                />
-
-            <include
-                android:id="@+id/consFuel"
+                android:id="@+id/afr"
                 layout="@layout/view_sensor_item"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
@@ -327,6 +292,48 @@
                 />
 
             <include
+                android:id="@+id/tmp2"
+                layout="@layout/view_sensor_item"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                />
+
+            <include
+                android:id="@+id/ftls"
+                layout="@layout/view_sensor_item"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                />
+
+            <include
+                android:id="@+id/egts"
+                layout="@layout/view_sensor_item"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                />
+
+            <include
+                android:id="@+id/ops"
+                layout="@layout/view_sensor_item"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                />
+
+            <include
+                android:id="@+id/vent_duty"
+                layout="@layout/view_sensor_item"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                />
+
+            <include
+                android:id="@+id/fts"
+                layout="@layout/view_sensor_item"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                />
+
+            <!--<include
                 android:id="@+id/afr_difference"
                 layout="@layout/view_sensor_item"
                 android:layout_width="wrap_content"
@@ -338,14 +345,7 @@
                 layout="@layout/view_sensor_item"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                />
-
-            <include
-                android:id="@+id/lambda_corr2"
-                layout="@layout/view_sensor_item"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                />
+                /> -->
 
             <!--000000000000000000000000000000000000000000000000000-->
             <include
