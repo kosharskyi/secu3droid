@@ -112,9 +112,4 @@ class MainFragment : Fragment() {
         super.onDestroyView()
         mBinding = null
     }
-
-    override fun onDestroy() {
-        super.onDestroy()
-        exit()
-    }
 }

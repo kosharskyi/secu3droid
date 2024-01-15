@@ -13,6 +13,7 @@
     <string name="pref_write_log_title">Запись лога сенсоров</string>
     <string name="pref_write_log_summary">Записывать информацию с сенсоров в лог</string>
     <string name="pref_write_binary_log_title">Записывать лог в бинарном формате (s3l)</string>
+    <string name="pref_log_csv_write_title">Заголовок в CSV лог файле</string>
     <string name="pref_log_csv_delimeter_title">Символ-разделитель лога</string>
     <string name="pref_about_title">О программе</string>
     <string name="pref_about_summary"/>

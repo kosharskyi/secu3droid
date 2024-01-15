@@ -27,6 +27,7 @@ package org.secu3.android.utils
 
 import org.secu3.android.models.packets.SensorsPacket
 import org.threeten.bp.LocalTime
+import org.threeten.bp.format.DateTimeFormatter
 import java.io.File
 import java.io.FileOutputStream
 import java.io.FileWriter
@@ -46,6 +47,8 @@ class SecuLogger @Inject constructor(private val prefs: LifeTimePrefs, private v
     private var mIsLoggingRunning = false
 
     private var mCsvWriter: FileWriter? = null
+    private var mCsvDelimeter: String = ";"
+    private val mCsvFormatter = DateTimeFormatter.ofPattern("HH:mm:ss.SS")
 
     private var fileOutputStream: FileOutputStream? = null
     private var byteChanel: FileChannel? = null
@@ -85,6 +88,11 @@ class SecuLogger @Inject constructor(private val prefs: LifeTimePrefs, private v
         try {
             mCsvWriter = FileWriter(mLogFile, true)
             mIsLoggingRunning = true
+            mCsvDelimeter = prefs.CSVDelimeter
+
+            if (prefs.isCsvTitleEnabled) {
+                writeInCsv(generateCsvTitle(delimeter = mCsvDelimeter))
+            }
         } catch (e: IOException) {
             e.printStackTrace()
         }
@@ -141,7 +149,8 @@ class SecuLogger @Inject constructor(private val prefs: LifeTimePrefs, private v
             if (mLogFile?.extension == "s3l") {  // check the extension to prevent disabling binary format in setting during log writing
                 writeBinaryLog(sensorsPacket)
             } else {
-                writeCsv(sensorsPacket)
+                val csvString = sensorsPacket.scvString(mMark, mCsvDelimeter)
+                writeInCsv(csvString)
             }
             mMark = 0
         }
@@ -248,9 +257,9 @@ class SecuLogger @Inject constructor(private val prefs: LifeTimePrefs, private v
         byteChanel?.write(buf)
     }
 
-    private fun writeCsv(sensorsPacket: SensorsPacket) {
+    private fun writeInCsv(csvString: String) {
         try {
-            mCsvWriter?.append(sensorsPacket.scvString(mMark, prefs.CSVDelimeter))
+            mCsvWriter?.append(csvString)
             mCsvWriter?.flush()
         } catch (e: IOException) {
             e.printStackTrace()
@@ -258,9 +267,7 @@ class SecuLogger @Inject constructor(private val prefs: LifeTimePrefs, private v
     }
 
     private fun SensorsPacket.scvString(mark: Int, delimeter: String): String {
-        val now = LocalTime.now().toString().let {
-            it.substring(0, it.lastIndex)
-        }
+        val now = LocalTime.now().format(mCsvFormatter)
 
         val values = listOf(
             now,
@@ -347,4 +354,86 @@ class SecuLogger @Inject constructor(private val prefs: LifeTimePrefs, private v
             val binaryString = Integer.toBinaryString(ecuErrors)
             return binaryString.padStart(32, '0')
         }
+
+    private fun generateCsvTitle(delimeter: String): String {
+        val values = listOf(
+            "Time",
+            "RPM",
+            "IgnTim",
+            "Map",
+            "VBat",
+            "CLT",
+            "Knock",
+            "KnockCorr",
+            "LoadCurve",
+            "CarbSw",
+            "Gas_V",
+            "IdleValve",
+            "PowerValve",
+            "CoolingFan",
+            "StBlock",
+            "AE",
+            "FCRevLim",
+            "FloodClear",
+            "SysLocked",
+            "CE",
+            "Ign_i",
+            "Cond_i",
+            "Epas_I",
+            "AftStrEnr",
+            "IacClLoop",
+            "TPS",
+            "Add_i1",
+            "Add_i2",
+            "ChokePos",
+            "GDPos",
+            "VehSpeed",
+            "PasDist",
+            "FuelConsum",
+            "FuelConsumF",
+            "IAT",
+            "StrtIgnTim",
+            "IdleIgnTim",
+            "WorkIgnTim",
+            "TempIgnTim",
+            "IATIgnTim",
+            "IdlRegIgnTim",
+            "IgnTimCorr",
+            "EGOcorr",
+            "InjPW",
+            "TPSdot",
+            "MAP2",
+            "Tmp2",
+            "DiffMAP",
+            "AFR",
+            "SynLoad",
+            "BaroPress",
+            "InjTimBeg",
+            "InjTimEnd",
+            "GRTS",
+            "FTLS",
+            "EGTS",
+            "OPS",
+            "InjDuty",
+            "RigidArg",
+            "Rxlaf",
+            "MAF",
+            "VentDuty",
+            "UnivOuts",
+            "MAPdot",
+            "FTS",
+            "FuelConsumed",
+            "EGOcorr2",
+            "AFR2",
+            "AFRMap",
+            "Tchrg",
+            "LogMarks",
+            "ServFlag",
+            "CECodes"
+        )
+
+        val csvRow = values.joinToString(separator = delimeter)
+
+        return "$csvRow\r\n"
+    }
 }
