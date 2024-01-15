@@ -161,11 +161,11 @@ class SensorsFragment : Fragment() {
                 lambdaCorr2.title.text = getString(R.string.sensors_frag_ego_correction2_label)
                 lambdaCorr2.value.text = String.format(Locale.US, "%.1f", it.lambda[1])
 
-                afrDifference.title.text = getString(R.string.sensors_frag_afr_difference_label)
+                /*afrDifference.title.text = getString(R.string.sensors_frag_afr_difference_label)
                 afrDifference.value.text = ""
 
                 afrDifference2.title.text = getString(R.string.sensors_frag_afr_difference2_label)
-                afrDifference2.value.text = ""
+                afrDifference2.value.text = ""*/
 
                 beginInjPhase.title.text = getString(R.string.sensors_frag_begin_inj_phase_label)
                 beginInjPhase.value.text = String.format(Locale.US, "%.1f", it.injTimBegin)
@@ -174,7 +174,7 @@ class SensorsFragment : Fragment() {
                 endInjPhase.value.text = String.format(Locale.US, "%.1f", it.injTimEnd)
 
                 afrTable.title.text = getString(R.string.wbo_afr_tabl)
-                afrTable.value.text = ""
+                afrTable.value.text = String.format(Locale.US, "%.2f", it.corrAfr)
 
                 afr2.title.text = getString(R.string.sensors_frag_wbo_afr_2_label)
                 afr2.value.text = String.format(Locale.US, "%.1f", it.sensAfr[1])

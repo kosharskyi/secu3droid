@@ -325,6 +325,6 @@
     <string name="raw_sensors_frag_add_io5_input_label">Вхід ADD_I5, В:</string>
     <string name="raw_sensors_frag_add_io6_input_label">Вхід ADD_I6, В:</string>
     <string name="raw_sensors_frag_add_io7_input_label">Вхід ADD_I7, В:</string>
-    <string name="raw_sensors_frag_add_io8_input_label">Вхід ADD_I1, В:</string>
+    <string name="raw_sensors_frag_add_io8_input_label">Вхід ADD_I8, В:</string>
 </resources>
 
