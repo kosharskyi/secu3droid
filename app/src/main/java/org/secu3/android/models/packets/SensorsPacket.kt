@@ -310,7 +310,7 @@ data class SensorsPacket(
                 octanUse = true
             }
 
-            lambda[0] = data.get2Bytes(53).toFloat().div(512.0f).times(100.0f)  //obtain value in %
+            lambda[0] = data.get2Bytes(53).toShort().toFloat().div(512.0f).times(100.0f)  //obtain value in %
 
             // Injector PW(ms)
             injPw = data.get2Bytes(55).toFloat().times(3.2f).div(1000.0f)
@@ -382,7 +382,7 @@ data class SensorsPacket(
 
             sensAfr[1] = data.get2Bytes(94).toFloat() / AFR_MULTIPLIER
 
-            lambda[1] = data.get2Bytes(53).toFloat().div(512.0f).times(100.0f)  //obtain value in %
+            lambda[1] = data.get2Bytes(53).toShort().toFloat().div(512.0f).times(100.0f)  //obtain value in %
 
             //mixed voltages from two EGO sensors
             lambda_mx = data.get2Bytes(96).times(ADC_DISCRETE)
