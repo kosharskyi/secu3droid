@@ -53,16 +53,16 @@ class FileHelper @Inject constructor(@ApplicationContext private val context: Co
     val listOfLogs: List<File>
         get() = logsDir.listFiles()?.toList()?.sortedByDescending { LocalDateTime.parse(it.nameWithoutExtension, dateTimeFormatter) } ?: emptyList()
 
-    val generateTempCsvFile: File
+    val generateCsvFile: File
         get() {
             val name = LocalDateTime.now().format(dateTimeFormatter)
-            return File(cacheDir, "${name}.csv")
+            return File(logsDir, "${name}.csv")
         }
 
-    val generateTempS3lFile: File
+    val generateS3lFile: File
         get() {
             val name = LocalDateTime.now().format(dateTimeFormatter)
-            return File(cacheDir, "${name}.s3l")
+            return File(logsDir, "${name}.s3l")
         }
 
     fun getFileUri(file: File): Uri? {

@@ -62,9 +62,9 @@ class SecuLogger @Inject constructor(private val prefs: LifeTimePrefs, private v
         }
 
         mLogFile = if (prefs.isBinaryLogFormatEnabled) {
-            fileHelper.generateTempS3lFile
+            fileHelper.generateS3lFile
         } else {
-            fileHelper.generateTempCsvFile
+            fileHelper.generateCsvFile
         }
     }
 
@@ -115,11 +115,6 @@ class SecuLogger @Inject constructor(private val prefs: LifeTimePrefs, private v
         byteChanel = null
 
         mCsvWriter = null
-
-        mLogFile?.let {
-            val file = File(fileHelper.logsDir, it.name)
-            it.renameTo(file)
-        }
 
         mLogFile = null
 
