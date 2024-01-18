@@ -275,7 +275,7 @@ data class SensorsPacket(
 
 
             data.get2Bytes(37).takeIf { it != 0x7FFF }?.let {
-                airtempSensor = it.toFloat().div(TEMPERATURE_MULTIPLIER).coerceIn(-99.9f, 999.0f)
+                airtempSensor = it.toShort().toFloat().div(TEMPERATURE_MULTIPLIER).coerceIn(-99.9f, 999.0f)
                 isAddI2Enabled = true
             }
 
@@ -361,7 +361,7 @@ data class SensorsPacket(
             }
 
             //Gas reducer's temperature
-            grts = data.get2Bytes(72).toFloat().div(TEMPERATURE_MULTIPLIER).coerceIn(-99.9f, 999.0f)           // gas reducer's temperature
+            grts = data.get2Bytes(72).toShort().toFloat().div(TEMPERATURE_MULTIPLIER).coerceIn(-99.9f, 999.0f)           // gas reducer's temperature
 
             rxlaf = data.get2Bytes(74).times(32)           // RxL air flow
             ftls = data.get2Bytes(76).toFloat().div(FTLS_MULT)  // fuel tank level
@@ -382,16 +382,16 @@ data class SensorsPacket(
 
             sensAfr[1] = data.get2Bytes(94).toFloat() / AFR_MULTIPLIER
 
-            lambda[1] = data.get2Bytes(53).toShort().toFloat().div(512.0f).times(100.0f)  //obtain value in %
+            lambda[1] = data.get2Bytes(96).toShort().toFloat().div(512.0f).times(100.0f)  //obtain value in %
 
             //mixed voltages from two EGO sensors
-            lambda_mx = data.get2Bytes(96).times(ADC_DISCRETE)
+            lambda_mx = data.get2Bytes(98).times(ADC_DISCRETE)
 
             //AFR value from map
-            corrAfr = data.get2Bytes(98).toFloat().div(AFR_MULTIPLIER)
+            corrAfr = data.get2Bytes(100).toFloat().div(AFR_MULTIPLIER)
 
             //Corrected MAT
-            tchrg = data.get2Bytes(100).toFloat().div(TEMPERATURE_MULTIPLIER).coerceIn(-99.9f, 999.0f)
+            tchrg = data.get2Bytes(102).toShort().toFloat().div(TEMPERATURE_MULTIPLIER).coerceIn(-99.9f, 999.0f)
         }
 
 
