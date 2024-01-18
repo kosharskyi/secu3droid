@@ -63,7 +63,7 @@ data class SensorsPacket(
 
     var lambda: FloatArray = FloatArray(2),           // lambda correction
     var injPw: Float = 0f,            // injector pulse width
-    var tpsdot: Int = 0,           // TPS opening/closing speed
+    var tpsdot: Short = 0,           // TPS opening/closing speed
 
     // if SECU-3T
     var map2: Float = 0f,
@@ -92,7 +92,7 @@ data class SensorsPacket(
     var ventDuty: Float = 0f,                   //PWM duty of cooling fan
 
     var uniOutput: Int = 0,                   //states of universal outputs
-    var mapdot: Int = 0,                 //MAPdot
+    var mapdot: Short = 0,                 //MAPdot
     var fts: Float = 0f,                    //fuel temperature
     var cons_fuel: Float = 0f,              //consumed fuel, L * 1024
 
@@ -230,7 +230,7 @@ data class SensorsPacket(
             voltage = data.get2Bytes(6).toFloat() / VOLTAGE_MULTIPLIER
 
             temperature = data.get2Bytes(8).toShort().toFloat().div(TEMPERATURE_MULTIPLIER).coerceIn(-99.9f, 999.0f)
-            currentAngle = data.get2Bytes(10).toFloat() / ANGLE_DIVIDER
+            currentAngle = data.get2Bytes(10).toShort().toFloat() / ANGLE_DIVIDER
             knockValue = data.get2Bytes(12).toFloat() * ADC_DISCRETE
 
             data.get2Bytes(14).takeIf { it != 32767 }?.toFloat()?.let {
@@ -280,33 +280,33 @@ data class SensorsPacket(
             }
 
             data.get2Bytes(39).takeIf { it != 32767 }?.let {
-                strtAalt = it.toFloat().div(ANGLE_DIVIDER)
+                strtAalt = it.toShort().toFloat().div(ANGLE_DIVIDER)
                 strtUse = true
             }
 
             data.get2Bytes(41).takeIf { it != 32767 }?.let {
-                idleAalt = it.toFloat().div(ANGLE_DIVIDER)
+                idleAalt = it.toShort().toFloat().div(ANGLE_DIVIDER)
                 idleUse = true
             }
             data.get2Bytes(43).takeIf { it != 32767 }?.let {
-                workAalt = it.toFloat().div(ANGLE_DIVIDER)
+                workAalt = it.toShort().toFloat().div(ANGLE_DIVIDER)
                 workUse = true
             }
 
             data.get2Bytes(45).takeIf { it != 32767 }?.let {
-                tempAalt = it.toFloat().div(ANGLE_DIVIDER)
+                tempAalt = it.toShort().toFloat().div(ANGLE_DIVIDER)
                 tempUse = true
             }
             data.get2Bytes(47).takeIf { it != 32767 }?.let {
-                airtAalt = it.toFloat().div(ANGLE_DIVIDER)
+                airtAalt = it.toShort().toFloat().div(ANGLE_DIVIDER)
                 airtUse = true
             }
             data.get2Bytes(49).takeIf { it != 32767 }?.let {
-                idlregAac = it.toFloat().div(ANGLE_DIVIDER)
+                idlregAac = it.toShort().toFloat().div(ANGLE_DIVIDER)
                 idlregUse = true
             }
             data.get2Bytes(51).takeIf { it != 32767 }?.let {
-                octanAac = it.toFloat().div(ANGLE_DIVIDER)
+                octanAac = it.toShort().toFloat().div(ANGLE_DIVIDER)
                 octanUse = true
             }
 
@@ -315,7 +315,7 @@ data class SensorsPacket(
             // Injector PW(ms)
             injPw = data.get2Bytes(55).toFloat().times(3.2f).div(1000.0f)
 
-            tpsdot = data.get2Bytes(57)
+            tpsdot = data.get2Bytes(57).toShort()
 
             map2 = data.get2Bytes(59).toFloat() / MAP_MULTIPLIER
             mapd = map2 - map
@@ -376,7 +376,7 @@ data class SensorsPacket(
 
             uniOutput = data[86].code
 
-            mapdot = data.get2Bytes(87)
+            mapdot = data.get2Bytes(87).toShort()
             fts = data.get2Bytes(89).toFloat()  / FTS_MULT
             cons_fuel = data.get3Bytes(91).toFloat() / 1024.0f //consumed fuel
 

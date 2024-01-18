@@ -88,8 +88,8 @@ data class TemperatureParamPacket(
         fun parse(data: String) = TemperatureParamPacket().apply {
 
             tmpFlags = data[2].code
-            ventOn = data.get2Bytes(3).toFloat().div(TEMPERATURE_MULTIPLIER)
-            ventOff = data.get2Bytes(5).toFloat().div(TEMPERATURE_MULTIPLIER)
+            ventOn = data.get2Bytes(3).toShort().toFloat().div(TEMPERATURE_MULTIPLIER)
+            ventOff = data.get2Bytes(5).toShort().toFloat().div(TEMPERATURE_MULTIPLIER)
             data.get2Bytes(7).let {
                 ventPwmFrq = (1f / (( it.toDouble() / 524288))).roundToInt()
             }

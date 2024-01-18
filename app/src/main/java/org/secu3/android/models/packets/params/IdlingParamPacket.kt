@@ -98,13 +98,13 @@ data class IdlingParamPacket(
 
         fun parse(data: String) = IdlingParamPacket().apply {
             idlFlags = data[2].code
-            iFac1 = data.get2Bytes(3).toFloat() / 256
-            iFac2 = data.get2Bytes(5).toFloat() / 256
+            iFac1 = data.get2Bytes(3).toShort().toFloat() / 256
+            iFac2 = data.get2Bytes(5).toShort().toFloat() / 256
             minefr = data.get2Bytes(7)
             idlingRpm = data.get2Bytes(9)
             idlregMinAngle = data.get2Bytes(11).toShort().toFloat() / ANGLE_DIVIDER
             idlregMaxAngle = data.get2Bytes(13).toShort().toFloat() / ANGLE_DIVIDER
-            idlregTurnOnTemp = data.get2Bytes(15).toFloat() / TEMPERATURE_MULTIPLIER
+            idlregTurnOnTemp = data.get2Bytes(15).toShort().toFloat() / TEMPERATURE_MULTIPLIER
             idlToRunAdd = data[17].code.toFloat() / 2.0f
             rpmOnRunAdd = data[18].code * 10
             idlRegP0 = data.get2Bytes(19).toFloat() / 256

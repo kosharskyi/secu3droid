@@ -27,6 +27,7 @@ package org.secu3.android.models.packets.params
 import org.secu3.android.models.packets.BaseOutputPacket
 import org.secu3.android.utils.getBitValue
 import org.secu3.android.utils.setBitValue
+import kotlin.math.roundToInt
 
 data class AnglesParamPacket(
     var maxAngle: Float = 0f,
@@ -58,11 +59,11 @@ data class AnglesParamPacket(
         internal const val DESCRIPTOR = 'm'
 
         fun parse(data: String) = AnglesParamPacket().apply {
-            maxAngle = data.get2Bytes(2).toFloat() / ANGLE_DIVIDER
-            minAngle = data.get2Bytes(4).toFloat() / ANGLE_DIVIDER
-            angleCorrection = data.get2Bytes(6).toFloat() / ANGLE_DIVIDER
-            angleDecSpeed = data.get2Bytes(8).toFloat() / ANGLE_DIVIDER
-            angleIncSpeed = data.get2Bytes(10).toFloat() / ANGLE_DIVIDER
+            maxAngle = data.get2Bytes(2).toShort().toFloat() / ANGLE_DIVIDER
+            minAngle = data.get2Bytes(4).toShort().toFloat() / ANGLE_DIVIDER
+            angleCorrection = data.get2Bytes(6).toShort().toFloat() / ANGLE_DIVIDER
+            angleDecSpeed = data.get2Bytes(8).toShort().toFloat() / ANGLE_DIVIDER
+            angleIncSpeed = data.get2Bytes(10).toShort().toFloat() / ANGLE_DIVIDER
             zeroAdvAngle = data[12].code
             igntimFlags = data[13].code
             shift_ingtim = data.get2Bytes(14).toFloat() / ANGLE_DIVIDER
@@ -78,14 +79,14 @@ data class AnglesParamPacket(
     override fun pack(): String {
         var data = "$OUTPUT_PACKET_SYMBOL$DESCRIPTOR"
 
-        data += maxAngle.times(ANGLE_DIVIDER).toInt().write2Bytes()
-        data += minAngle.times(ANGLE_DIVIDER).toInt().write2Bytes()
-        data += angleCorrection.times(ANGLE_DIVIDER).toInt().write2Bytes()
-        data += angleDecSpeed.times(ANGLE_DIVIDER).toInt().write2Bytes()
-        data += angleIncSpeed.times(ANGLE_DIVIDER).toInt().write2Bytes()
+        data += maxAngle.times(ANGLE_DIVIDER).roundToInt().write2Bytes()
+        data += minAngle.times(ANGLE_DIVIDER).roundToInt().write2Bytes()
+        data += angleCorrection.times(ANGLE_DIVIDER).roundToInt().write2Bytes()
+        data += angleDecSpeed.times(ANGLE_DIVIDER).roundToInt().write2Bytes()
+        data += angleIncSpeed.times(ANGLE_DIVIDER).roundToInt().write2Bytes()
         data += zeroAdvAngle.toChar()
         data += igntimFlags.toChar()
-        data += shift_ingtim.times(ANGLE_DIVIDER).toInt().write2Bytes()
+        data += shift_ingtim.times(ANGLE_DIVIDER).roundToInt().write2Bytes()
 
         data += unhandledParams
 
