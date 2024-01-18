@@ -250,7 +250,7 @@
     <string name="sensors">Датчики</string>
 
     <string name="sensors_frag_rpm_label">Оберти, об/хв:</string>
-    <string name="sensors_frag_absolute_pressure_label">Абсолютний тиск, kPa:</string>
+    <string name="sensors_frag_absolute_pressure_label">Абсолютний тиск, кПа:</string>
     <string name="sensors_frag_voltage_label">Напруга борт. мережі, В:</string>
     <string name="sensors_frag_coolant_temperature_label">Температура охол. рідини, °C:</string>
     <string name="sensors_frag_advance_angle_label">Кут випередження, град.:</string>
@@ -273,7 +273,7 @@
     <string name="sensors_frag_map2_label">ДАТ 2, кПа:</string>
     <string name="sensors_frag_diff_pressure_label">Диф. тиск, кПа:</string>
     <string name="sensors_frag_iat2_label">ДТП 2, °C:</string>
-    <string name="sensors_frag_wbo_afr_label">Повітря/паливо ШДК, в/т:</string>
+    <string name="sensors_frag_wbo_afr_label">Повітря/паливо ШДК, п/п:</string>
     <string name="sensors_frag_fuel_consumption_label">Витрата палива, Л/100км:</string>
     <string name="sensors_frag_grts_label">ДТГР, °C:</string>
     <string name="sensors_frag_fuel_lavel_label">Рівень палива, Л:</string>
