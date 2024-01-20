@@ -52,7 +52,7 @@
             determine_heating_using_voltage,lambda_correctioin_on_idling,stoichiom_ratio_for_2_fuel,control_of_sensors_heating,
             heating_time_without_pwm_on_cold,heating_time_without_pwm_on_hot,cold_hot_temperature_threshold,turn_on_time_in_pwm_mode,
             air_flow_threshold_for_turning_heating_off,heating_before_cranking"
-            tools:visibility="gone"
+
             />
 
 
@@ -432,7 +432,98 @@
             android:drawableEnd="?android:attr/listChoiceIndicatorMultiple"
             />
 
+        <!-- ************************************************************* -->
 
+        <TextView
+            android:id="@+id/lambda_select_chanel_title"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            app:layout_constraintTop_toBottomOf="@id/heating_before_cranking"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintStart_toEndOf="parent"
+            android:text="В_бор датчика кислорода"
+            />
+
+        <LinearLayout
+            android:id="@+id/lambda_chanels"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            app:layout_constraintTop_toBottomOf="@id/lambda_select_chanel_title"
+            android:orientation="horizontal"
+            >
+
+            <CheckBox
+                android:id="@+id/lambda_chanel_1"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="1"
+                />
+
+            <CheckBox
+                android:id="@+id/lambda_chanel_2"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="2"
+                />
+
+            <CheckBox
+                android:id="@+id/lambda_chanel_3"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="3"
+                />
+
+            <CheckBox
+                android:id="@+id/lambda_chanel_4"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="4"
+                />
+
+            <CheckBox
+                android:id="@+id/lambda_chanel_5"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="5"
+                />
+
+            <CheckBox
+                android:id="@+id/lambda_chanel_6"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="6"
+                />
+
+            <CheckBox
+                android:id="@+id/lambda_chanel_7"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="7"
+                />
+
+            <CheckBox
+                android:id="@+id/lambda_chanel_8"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="8"
+                />
+
+        </LinearLayout>
+
+
+        <!-- ************************************************************* -->
+
+        <CheckBox
+            android:id="@+id/mix_sensors_value"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            app:layout_constraintTop_toBottomOf="@id/lambda_chanels"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintEnd_toEndOf="parent"
+            android:text="@string/lambda_par_heating_before_cranking_title"
+            android:button="@null"
+            android:drawableEnd="?android:attr/listChoiceIndicatorMultiple"
+            />
 
 
         <!-- ************************************************************* -->

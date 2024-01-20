@@ -108,9 +108,20 @@ class LambdaControlFragment : BaseParamFragment() {
 
                 turnOnTimeInPwmMode.value = it.heatingAct
 
-                airFlowThresholdForTurningHeatingOff.value = it.aflowThrd
+                airFlowThresholdForTurningHeatingOff.value = it.aflowThrd.toInt()
 
                 heatingBeforeCranking.isChecked = it.heatingBeforeCranking
+
+                lambdaChanel1.isChecked = it.lambdaChanel1
+                lambdaChanel2.isChecked = it.lambdaChanel2
+                lambdaChanel3.isChecked = it.lambdaChanel3
+                lambdaChanel4.isChecked = it.lambdaChanel4
+                lambdaChanel5.isChecked = it.lambdaChanel5
+                lambdaChanel6.isChecked = it.lambdaChanel6
+                lambdaChanel7.isChecked = it.lambdaChanel7
+                lambdaChanel8.isChecked = it.lambdaChanel8
+
+                mixSensorsValue.isChecked = it.mixSenorsValue
             }
         }
 
@@ -217,7 +228,7 @@ class LambdaControlFragment : BaseParamFragment() {
             }
 
             airFlowThresholdForTurningHeatingOff.addOnValueChangeListener {
-                packet?.aflowThrd = it
+                packet?.aflowThrd = it.toFloat()
                 packet?.let { it1 -> mViewModel.sendPacket(it1) }
             }
 
@@ -226,6 +237,68 @@ class LambdaControlFragment : BaseParamFragment() {
                 packet?.let { it1 -> mViewModel.sendPacket(it1) }
             }
 
+            lambdaChanel1.setOnCheckedChangeListener { _, isChecked ->
+                packet?.apply {
+                    lambdaChanel1 = isChecked
+                    mViewModel.sendPacket(this)
+                }
+            }
+
+            lambdaChanel2.setOnCheckedChangeListener { _, isChecked ->
+                packet?.apply {
+                    lambdaChanel2 = isChecked
+                    mViewModel.sendPacket(this)
+                }
+            }
+
+            lambdaChanel3.setOnCheckedChangeListener { _, isChecked ->
+                packet?.apply {
+                    lambdaChanel3 = isChecked
+                    mViewModel.sendPacket(this)
+                }
+            }
+
+            lambdaChanel4.setOnCheckedChangeListener { _, isChecked ->
+                packet?.apply {
+                    lambdaChanel4 = isChecked
+                    mViewModel.sendPacket(this)
+                }
+            }
+
+            lambdaChanel5.setOnCheckedChangeListener { _, isChecked ->
+                packet?.apply {
+                    lambdaChanel5 = isChecked
+                    mViewModel.sendPacket(this)
+                }
+            }
+
+            lambdaChanel6.setOnCheckedChangeListener { _, isChecked ->
+                packet?.apply {
+                    lambdaChanel6 = isChecked
+                    mViewModel.sendPacket(this)
+                }
+            }
+
+            lambdaChanel7.setOnCheckedChangeListener { _, isChecked ->
+                packet?.apply {
+                    lambdaChanel7 = isChecked
+                    mViewModel.sendPacket(this)
+                }
+            }
+
+            lambdaChanel8.setOnCheckedChangeListener { _, isChecked ->
+                packet?.apply {
+                    lambdaChanel8 = isChecked
+                    mViewModel.sendPacket(this)
+                }
+            }
+
+            mixSensorsValue.setOnCheckedChangeListener { _, isChecked ->
+                packet?.apply {
+                    mixSenorsValue = isChecked
+                    mViewModel.sendPacket(this)
+                }
+            }
 
 
             numberOfStrokesPerStep.setOnClickListener { intParamClick(it as IntParamView) }

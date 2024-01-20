@@ -27,6 +27,7 @@ package org.secu3.android.models.packets.params
 import org.secu3.android.models.packets.BaseOutputPacket
 import org.secu3.android.utils.getBitValue
 import org.secu3.android.utils.setBitValue
+import kotlin.math.roundToInt
 
 data class LambdaParamPacket(
 
@@ -63,7 +64,7 @@ data class LambdaParamPacket(
 
     var heatingAct: Float = 0f,
 
-    var aflowThrd: Int = 0,
+    var aflowThrd: Float = 0f,
 
     var lambdaSelectedChanel: Int = 0,
 
@@ -87,6 +88,62 @@ data class LambdaParamPacket(
             flags = flags.setBitValue(value, 2)
         }
 
+    var mixSenorsValue: Boolean
+        get() = flags.getBitValue(3) > 0
+        set(value) {
+            flags = flags.setBitValue(value, 3)
+        }
+
+
+
+
+    var lambdaChanel1: Boolean
+        get() = lambdaSelectedChanel.getBitValue(0) > 0
+        set(value) {
+            lambdaSelectedChanel = lambdaSelectedChanel.setBitValue(value,0)
+        }
+
+    var lambdaChanel2: Boolean
+        get() = lambdaSelectedChanel.getBitValue(1) > 0
+        set(value) {
+            lambdaSelectedChanel = lambdaSelectedChanel.setBitValue(value,1)
+        }
+
+    var lambdaChanel3: Boolean
+        get() = lambdaSelectedChanel.getBitValue(2) > 0
+        set(value) {
+            lambdaSelectedChanel = lambdaSelectedChanel.setBitValue(value,2)
+        }
+
+    var lambdaChanel4: Boolean
+        get() = lambdaSelectedChanel.getBitValue(3) > 0
+        set(value) {
+            lambdaSelectedChanel = lambdaSelectedChanel.setBitValue(value,3)
+        }
+
+    var lambdaChanel5: Boolean
+        get() = lambdaSelectedChanel.getBitValue(4) > 0
+        set(value) {
+            lambdaSelectedChanel = lambdaSelectedChanel.setBitValue(value,4)
+        }
+
+    var lambdaChanel6: Boolean
+        get() = lambdaSelectedChanel.getBitValue(5) > 0
+        set(value) {
+            lambdaSelectedChanel = lambdaSelectedChanel.setBitValue(value,5)
+        }
+
+    var lambdaChanel7: Boolean
+        get() = lambdaSelectedChanel.getBitValue(6) > 0
+        set(value) {
+            lambdaSelectedChanel = lambdaSelectedChanel.setBitValue(value,6)
+        }
+
+    var lambdaChanel8: Boolean
+        get() = lambdaSelectedChanel.getBitValue(7) > 0
+        set(value) {
+            lambdaSelectedChanel = lambdaSelectedChanel.setBitValue(value,7)
+        }
 
     override fun pack(): String {
         var data = "$OUTPUT_PACKET_SYMBOL$DESCRIPTOR"
@@ -99,24 +156,24 @@ data class LambdaParamPacket(
         data += corrLimitP.div(100).times(512).toInt().write2Bytes()
         data += corrLimitM.div(100).times(512).toInt().write2Bytes()
 
-        data += swtPoint.times(VOLTAGE_MULTIPLIER).toInt().write2Bytes()
+        data += swtPoint.div(ADC_DISCRETE).roundToInt().write2Bytes()
         data += tempThrd.times(TEMPERATURE_MULTIPLIER).toInt().write2Bytes()
         data += rpmThrd.write2Bytes()
 
         data += activDelay.toChar()
 
-        data += deadBand.times(VOLTAGE_MULTIPLIER).toInt().write2Bytes()
+        data += deadBand.div(ADC_DISCRETE).roundToInt().write2Bytes()
         data += senstype.toChar()
-        data += msPerStp.toChar()
+        data += msPerStp.div(10).toChar()
         data += flags.toChar()
-        data += gdStoichval.times(AFR_MULTIPLIER).toInt().write2Bytes()
+        data += gdStoichval.times(128.0f).roundToInt().write2Bytes()
 
         data += heatingTime0.toChar()
         data += heatingTime1.toChar()
         data += temperThrd.toChar()
         data += heatingAct.times(100).toInt().toChar()
 
-        data += aflowThrd.div(32).write2Bytes()
+        data += aflowThrd.div(32).roundToInt().write2Bytes()
 
         data += lambdaSelectedChanel.toChar()
 
@@ -139,23 +196,23 @@ data class LambdaParamPacket(
             corrLimitP = data.get2Bytes(5).toFloat() / 512 * 100
             corrLimitM = data.get2Bytes(7).toFloat() / 512 * 100
 
-            swtPoint = data.get2Bytes(9).toFloat() / VOLTAGE_MULTIPLIER
+            swtPoint = data.get2Bytes(9).toFloat() * ADC_DISCRETE
             tempThrd = data.get2Bytes(11).toFloat() / TEMPERATURE_MULTIPLIER
             rpmThrd = data.get2Bytes(13)
 
             activDelay = data[15].code
 
-            deadBand = data.get2Bytes(16).toFloat() / VOLTAGE_MULTIPLIER
+            deadBand = data.get2Bytes(16).toFloat() * ADC_DISCRETE
             senstype = data[18].code
-            msPerStp = data[19].code
+            msPerStp = data[19].code * 10
             flags = data[20].code
-            gdStoichval = data.get2Bytes(21).toFloat() / AFR_MULTIPLIER
+            gdStoichval = data.get2Bytes(21).toFloat() / 128.0f
 
             heatingTime0 = data[23].code
             heatingTime1 = data[24].code
             temperThrd = data[25].code
             heatingAct = data[26].code.toFloat() / 100
-            aflowThrd = data.get2Bytes(27) * 32
+            aflowThrd = data.get2Bytes(27).toFloat() * 32.0f
 
             lambdaSelectedChanel = data[29].code
 
