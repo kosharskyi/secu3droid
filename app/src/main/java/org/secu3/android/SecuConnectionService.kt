@@ -22,6 +22,7 @@ import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import org.secu3.android.ui.MainActivity
+import org.secu3.android.utils.SecuLogger
 import javax.inject.Inject
 
 @AndroidEntryPoint
@@ -29,6 +30,9 @@ class SecuConnectionService : LifecycleService() {
 
     @Inject
     internal lateinit var secu3Repository: Secu3Repository
+
+    @Inject
+    internal lateinit var mLogger: SecuLogger
 
     private var lostConnectionJob: Job? = null
 
@@ -98,6 +102,7 @@ class SecuConnectionService : LifecycleService() {
 
     override fun onDestroy() {
         secu3Repository.disable()
+        mLogger.stopLogging()
         ServiceCompat.stopForeground(this@SecuConnectionService, ServiceCompat.STOP_FOREGROUND_REMOVE)
         super.onDestroy()
     }
