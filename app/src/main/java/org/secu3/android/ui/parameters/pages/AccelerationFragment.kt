@@ -45,6 +45,9 @@ class AccelerationFragment : BaseParamFragment() {
     private val accelEnrichmentTypesList: List<String> by lazy {
         resources.getStringArray(R.array.accel_enrichment_types).toList()
     }
+    private val wallwetModelList: List<String> by lazy {
+        resources.getStringArray(R.array.accel_wallwet_types).toList()
+    }
 
     private var packet: AccelerationParamPacket? = null
 
@@ -55,10 +58,17 @@ class AccelerationFragment : BaseParamFragment() {
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
+        mBinding.apply {
 
-        mBinding.aeType.inputType = InputType.TYPE_NULL
-        ArrayAdapter(requireContext(), R.layout.list_item, accelEnrichmentTypesList).also {
-            mBinding.aeType.setAdapter(it)
+            aeType.inputType = InputType.TYPE_NULL
+            ArrayAdapter(requireContext(), R.layout.list_item, accelEnrichmentTypesList).also {
+                aeType.setAdapter(it)
+            }
+
+            wallwetModel.inputType = InputType.TYPE_NULL
+            ArrayAdapter(requireContext(), R.layout.list_item, wallwetModelList).also {
+                wallwetModel.setAdapter(it)
+            }
         }
 
         mViewModel.accelerationLiveData.observe(viewLifecycleOwner) {
@@ -73,6 +83,13 @@ class AccelerationFragment : BaseParamFragment() {
                 aeType.setText(accelEnrichmentTypesList[it.injAeType], false)
 
                 aeTime.value = it.injAeTime
+
+                aeBalance.value = it.injAeBallance
+                aeMapdoeThrd.value = it.injAeMapdotThrd
+
+                wallwetModel.setText(wallwetModelList[it.wallwetModel], false)
+                xTauStartThrd.value = it.injXtauSThrd.toInt()
+                xTauFinishThrd.value = it.injXtauFThrd.toInt()
             }
         }
 
@@ -112,11 +129,52 @@ class AccelerationFragment : BaseParamFragment() {
                 }
             }
 
+            aeBalance.addOnChangeListener { _, value, fromUser ->
+                if (fromUser.not()) {
+                    return@addOnChangeListener
+                }
+
+                packet?.apply {
+                    injAeBallance = value
+                    mViewModel.sendPacket(this)
+                }
+            }
+
+            aeMapdoeThrd.addOnValueChangeListener {
+                packet?.apply {
+                    injAeMapdotThrd = it
+                    mViewModel.sendPacket(this)
+                }
+            }
+
+            wallwetModel.setOnItemClickListener { _, _, position, _ ->
+                packet?.apply {
+                    wallwetModel = position
+                    mViewModel.sendPacket(this)
+                }
+            }
+
+            xTauStartThrd.addOnValueChangeListener {
+                packet?.apply {
+                    injXtauSThrd = it.toFloat()
+                    mViewModel.sendPacket(this)
+                }
+            }
+
+            xTauFinishThrd.addOnValueChangeListener {
+                packet?.apply {
+                    injXtauFThrd = it.toFloat()
+                    mViewModel.sendPacket(this)
+                }
+            }
 
             accelTpsdotThreshold.setOnClickListener { intParamClick(it as IntParamView) }
             coldAccelMultiplier.setOnClickListener { intParamClick(it as IntParamView) }
             aeDecayTime.setOnClickListener { intParamClick(it as IntParamView) }
             aeTime.setOnClickListener { intParamClick(it as IntParamView) }
+            aeMapdoeThrd.setOnClickListener { intParamClick(it as IntParamView) }
+            xTauStartThrd.setOnClickListener { intParamClick(it as IntParamView) }
+            xTauFinishThrd.setOnClickListener { intParamClick(it as IntParamView) }
         }
     }
 }

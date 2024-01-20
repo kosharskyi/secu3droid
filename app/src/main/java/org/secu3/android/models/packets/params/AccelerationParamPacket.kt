@@ -25,6 +25,7 @@
 package org.secu3.android.models.packets.params
 
 import org.secu3.android.models.packets.BaseOutputPacket
+import kotlin.math.roundToInt
 
 data class AccelerationParamPacket(
 
@@ -33,10 +34,10 @@ data class AccelerationParamPacket(
     var injAeDecayTime: Int = 0,
     var injAeType: Int = 0,
     var injAeTime: Int = 0,
-    var injAeBallance: Int = 0,
+    var injAeBallance: Float = 0f,
     var injAeMapdotThrd: Int = 0,
-    var injXtauSThrd: Int = 0,
-    var injXtauFThrd: Int = 0,
+    var injXtauSThrd: Float = 0f,
+    var injXtauFThrd: Float = 0f,
     var wallwetModel: Int = 0,
 
 
@@ -47,17 +48,17 @@ data class AccelerationParamPacket(
 
         data += injAeTpsdotThrd.toChar()
 
-        data += injAeColdaccMult.toFloat().div(100).minus(1.0f).times(128f).toInt().write2Bytes()
+        data += injAeColdaccMult.toFloat().div(100).minus(1.0f).times(128f).roundToInt().write2Bytes()
 
         data += injAeDecayTime.toChar()
 
         data += injAeType.toChar()
         data += injAeTime.toChar()
 
-        data += injAeBallance.toChar()
+        data += injAeBallance.times(2.56f).roundToInt().coerceAtMost(255).toChar()
         data += injAeMapdotThrd.toChar()
-        data += injXtauSThrd.toChar()
-        data += injXtauFThrd.toChar()
+        data += injXtauSThrd.roundToInt().unaryMinus().toChar()
+        data += injXtauFThrd.roundToInt().unaryMinus().toChar()
         data += wallwetModel.toChar()
 
         data += unhandledParams
@@ -73,17 +74,17 @@ data class AccelerationParamPacket(
 
             injAeTpsdotThrd = data[2].code
             data.get2Bytes(3).let {
-                injAeColdaccMult = ((it.toFloat() / 128f + 1.0f) * 100).toInt()
+                injAeColdaccMult = it.toShort().toFloat().plus(128.0f).div(128.0f).times(100.0f).toInt()
             }
             injAeDecayTime = data[5].code
 
             injAeType = data[6].code
             injAeTime = data[7].code
 
-            injAeBallance = data[8].code
+            injAeBallance = data[8].code.toFloat().div(2.56f)   //multiply by 100% and divide by 256
             injAeMapdotThrd = data[9].code
-            injXtauSThrd = data[10].code
-            injXtauFThrd = data[11].code
+            injXtauSThrd = -data[10].code.toFloat()
+            injXtauFThrd = -data[11].code.toFloat()
             wallwetModel = data[12].code
 
             if (data.length == 13) {

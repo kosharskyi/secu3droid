@@ -236,6 +236,11 @@
     <string name="accel_par_ae_decay_time_title">AE Decay time</string>
     <string name="accel_par_ae_type_title">AE type</string>
     <string name="accel_par_ae_time_title">AE time</string>
+    <string name="accel_par_ae_ballance_title">MAP/TPS enrichment blend</string>
+    <string name="accel_par_ae_mapdot_thrd_title">Accel. MAPdot threshold</string>
+    <string name="accel_par_fuel_film_model_title">Fuel film model</string>
+    <string name="accel_par_start_transition_title">Start transition</string>
+    <string name="accel_par_finish_transition_title">Finish transition</string>
 
     <string name="knock_par_use_knock_sensor_title">Enable knock control</string>
     <string name="knock_par_knock_filter_frequency_title">BPF frequency</string>

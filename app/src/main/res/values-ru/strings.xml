@@ -67,6 +67,13 @@
         <item>По времени</item>
     </string-array>
 
+    <string-array name="accel_wallwet_types">
+        <item>Выключено</item>
+        <item>X-tau бензин</item>
+        <item>X-tau газ</item>
+        <item>X-tau бенз. и газ</item>
+    </string-array>
+
     <string-array name="load_measurement_items">
         <item>ДАД</item>
         <item>ДАД(баро)</item>

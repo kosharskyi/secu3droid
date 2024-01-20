@@ -292,6 +292,11 @@
     <string name="injctr_par_max_inj_pw_title">Макс. длительность впрыска</string>
     <string name="accel_par_ae_type_title">Тип обогащения</string>
     <string name="accel_par_ae_time_title">Длительность обогащения</string>
+    <string name="accel_par_ae_ballance_title">Баланс обогащений ДАД/ДПДЗ</string>
+    <string name="accel_par_ae_mapdot_thrd_title">Порог по ДАД</string>
+    <string name="accel_par_fuel_film_model_title">Модель топливной пленки</string>
+    <string name="accel_par_start_transition_title">Начало перехода</string>
+    <string name="accel_par_finish_transition_title">Конец перехода</string>
 
     <string name="adc_cor_multiply_corr_and_koef_title">Умножать корр. на коэфф.</string>
 </resources>

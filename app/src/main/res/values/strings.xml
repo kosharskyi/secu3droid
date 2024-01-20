@@ -68,6 +68,13 @@
         <item>Time based</item>
     </string-array>
 
+    <string-array name="accel_wallwet_types">
+        <item>OFF</item>
+        <item>X-tau petrol</item>
+        <item>X-tau gas</item>
+        <item>X-tau pet. and gas</item>
+    </string-array>
+
     <string-array name="load_measurement_items">
         <item>MAP</item>
         <item>MAP(baro)</item>

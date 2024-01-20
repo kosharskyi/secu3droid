@@ -296,6 +296,11 @@
     <string name="injctr_par_max_inj_pw_title">Макс. тривалість вприскування</string>
     <string name="accel_par_ae_type_title">Тип збагачення</string>
     <string name="accel_par_ae_time_title">Тривалість збагачення</string>
+    <string name="accel_par_ae_ballance_title">Баланс збагачення ДАТ/ДПДЗ</string>
+    <string name="accel_par_ae_mapdot_thrd_title">Поріг по ДАТ</string>
+    <string name="accel_par_fuel_film_model_title">Модель паливної плівки</string>
+    <string name="accel_par_start_transition_title">Початок переходу</string>
+    <string name="accel_par_finish_transition_title">Кінець переходу</string>
 
     <string name="adc_cor_multiply_corr_and_koef_title">Множити корр. на коеф.</string>
 </resources>
