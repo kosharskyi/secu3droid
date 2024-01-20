@@ -70,6 +70,10 @@ class MainFragment : Fragment() {
                 exit()
             }
 
+            carStatus.setOnClickListener {
+                findNavController().navigate(MainFragmentDirections.actionOpenFirmwareDialog())
+            }
+
             dashboard.setOnClickListener {
                 findNavController().navigate(MainFragmentDirections.actionOpenDashboard())
             }
@@ -97,10 +101,6 @@ class MainFragment : Fragment() {
             } else {
                 mBinding?.carStatus?.setColorFilter(Color.RED)
             }
-        }
-
-        mViewModel.firmwareLiveData.observe(viewLifecycleOwner) {
-
         }
     }
 

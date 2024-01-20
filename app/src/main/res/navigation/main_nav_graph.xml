@@ -44,6 +44,10 @@
         <action
             android:id="@+id/action_open_secu_logs"
             app:destination="@id/secuLogsFragment" />
+
+        <action
+            android:id="@+id/action_open_firmware_dialog"
+            app:destination="@id/firmwareDialogFragment" />
     </fragment>
 
     <fragment
@@ -115,5 +119,11 @@
         android:label="Secu Logs Fragment"
         tools:layout="@layout/fragment_secu_logs"
         />
+
+    <dialog
+        android:id="@+id/firmwareDialogFragment"
+        android:name="org.secu3.android.ui.firmware.FirmwareDialogFragment"
+        android:label="Firmware info dialog"
+        tools:layout="@layout/fragment_firmware_dialog" />
 
 </navigation>

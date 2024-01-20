@@ -23,7 +23,6 @@
     <string name="pref_about_summary" />
 
 
-
     <string name="msg_bluetooth_disabled">Bluetooth is disabled</string>
     <string name="status_offline">Offline</string>
     <string name="status_online">Online</string>
