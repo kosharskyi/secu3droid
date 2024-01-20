@@ -26,16 +26,17 @@
 package org.secu3.android.ui.main
 
 import android.content.Intent
+import android.graphics.Color
 import android.os.Bundle
-import androidx.fragment.app.Fragment
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import androidx.activity.addCallback
+import androidx.fragment.app.Fragment
 import androidx.fragment.app.viewModels
 import androidx.navigation.fragment.findNavController
 import dagger.hilt.android.AndroidEntryPoint
-import org.secu3.android.R
+import org.secu3.android.SecuConnectionService
 import org.secu3.android.databinding.FragmentMainMenuBinding
 import org.secu3.android.ui.settings.SettingsActivity
 
@@ -51,7 +52,7 @@ class MainFragment : Fragment() {
 
         // This callback will only be called when MainMenuFragment is at least Started.
         requireActivity().onBackPressedDispatcher.addCallback(this) {
-            exit()
+            requireActivity().finish()
         }
     }
 
@@ -64,6 +65,10 @@ class MainFragment : Fragment() {
         super.onViewCreated(view, savedInstanceState)
 
         mBinding?.apply {
+
+            exit.setOnClickListener {
+                exit()
+            }
 
             dashboard.setOnClickListener {
                 findNavController().navigate(MainFragmentDirections.actionOpenDashboard())
@@ -88,22 +93,19 @@ class MainFragment : Fragment() {
 
         mViewModel.connectionStatusLiveData.observe(viewLifecycleOwner) {
             if (it) {
-                mBinding?.connectionStatus?.text = getString(R.string.status_online)
+                mBinding?.carStatus?.setColorFilter(Color.GREEN)
             } else {
-                mBinding?.connectionStatus?.text = getString(R.string.status_offline)
+                mBinding?.carStatus?.setColorFilter(Color.RED)
             }
         }
 
         mViewModel.firmwareLiveData.observe(viewLifecycleOwner) {
-            mBinding?.apply {
-                if (fwInfo.text.isEmpty()) {
-                    fwInfo.text = it.tag
-                }
-            }
+
         }
     }
 
     private fun exit() {
+        requireActivity().stopService(Intent(requireContext(), SecuConnectionService::class.java))
         mViewModel.closeConnection()
         activity?.finishAndRemoveTask()
     }

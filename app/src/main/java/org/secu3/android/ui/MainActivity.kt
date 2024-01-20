@@ -24,11 +24,14 @@
  */
 package org.secu3.android.ui
 
-import androidx.appcompat.app.AppCompatActivity
+import android.content.Intent
+import android.os.Build
 import android.os.Bundle
 import android.view.WindowManager
+import androidx.appcompat.app.AppCompatActivity
 import dagger.hilt.android.AndroidEntryPoint
 import org.secu3.android.R
+import org.secu3.android.SecuConnectionService
 import org.secu3.android.utils.LifeTimePrefs
 import javax.inject.Inject
 
@@ -46,10 +49,28 @@ class MainActivity : AppCompatActivity() {
     override fun onResume() {
         super.onResume()
 
-        if (prefs.isWakeLockEnabled) {
+        handleKeepScreenOn()
+        handleSecuConnectionService()
+    }
+
+    private fun handleKeepScreenOn() {
+        if (prefs.isKeepScreenAliveActive) {
             window.addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON)
         } else {
             window.clearFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON)
+        }
+    }
+
+    private fun handleSecuConnectionService() {
+        val intent = Intent(this, SecuConnectionService::class.java)
+        if (prefs.isWakeLockEnabled) {
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+                startForegroundService(intent)
+            } else {
+                startService(intent)
+            }
+        } else {
+            stopService(intent)
         }
     }
 }

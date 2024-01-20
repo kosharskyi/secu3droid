@@ -16,12 +16,12 @@
     <string name="pref_log_csv_write_title">Title in csv log file</string>
     <string name="pref_log_csv_delimeter_title">Log delimeter character</string>
     <string name="pref_wakelock_title">Wakelock</string>
-    <string name="pref_wakelock_summary">The screen will be always awake while Secu-3Droid started</string>
+    <string name="pref_wakelock_summary">CPU is always running while Secu-3Droid started</string>
+    <string name="pref_keep_screen_title">Keep screen active</string>
+    <string name="pref_keep_screen_summary">Disable screen blank while connected to Secu</string>
     <string name="pref_about_title">About</string>
     <string name="pref_about_summary" />
 
-    <string name="pref_keep_screen_title">Keep screen active</string>
-    <string name="pref_keep_screen_summary">Disable screen blank while Sensors data visible</string>
 
 
     <string name="msg_bluetooth_disabled">Bluetooth is disabled</string>
@@ -471,5 +471,7 @@
     <string name="raw_sensors_frag_add_io6_input_label">Input ADD_I6, V:</string>
     <string name="raw_sensors_frag_add_io7_input_label">Input ADD_I7, V:</string>
     <string name="raw_sensors_frag_add_io8_input_label">Input ADD_I8, V:</string>
+
+    <string name="service_working_in_background">Secu3Droid working in background</string>
 
 </resources>

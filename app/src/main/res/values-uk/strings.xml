@@ -15,13 +15,12 @@
     <string name="pref_write_binary_log_title">Записувати лог в бінарному форматі (s3l)</string>
     <string name="pref_log_csv_write_title">Заголовок в CSV лог файлі</string>
     <string name="pref_log_csv_delimeter_title">Символ-роздільник логу</string>
-    <string name="pref_wakelock_title">Залишати пристрій ввімкненим</string>
-    <string name="pref_wakelock_summary">Екран не буде гаснути, поки запущений Secu3Droid</string>
+    <string name="pref_wakelock_title">Залишати пристрій включеним</string>
+    <string name="pref_wakelock_summary">CPU завжди працює, поки запущений Secu3Droid</string>
+    <string name="pref_keep_screen_title">Не вимикати екран</string>
+    <string name="pref_keep_screen_summary">Екран залишається ввімкненим</string>
     <string name="pref_about_title">Про програму</string>
     <string name="pref_about_summary"/>
-
-    <string name="pref_keep_screen_title">Не вимикати екран</string>
-    <string name="pref_keep_screen_summary">Екран залишається включеним, поки відображаються дані сенсорів</string>
 
     <string name="msg_bluetooth_disabled">Bluetooth відключений</string>
     <string name="status_offline">Відключено</string>
@@ -335,5 +334,8 @@
     <string name="raw_sensors_frag_add_io6_input_label">Вхід ADD_I6, В:</string>
     <string name="raw_sensors_frag_add_io7_input_label">Вхід ADD_I7, В:</string>
     <string name="raw_sensors_frag_add_io8_input_label">Вхід ADD_I8, В:</string>
+
+    <string name="service_working_in_background">Secu3Droid працює у фоні</string>
+
 </resources>
 
