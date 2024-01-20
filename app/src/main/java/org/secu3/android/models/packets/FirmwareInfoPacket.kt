@@ -137,7 +137,7 @@ data class FirmwareInfoPacket(
 
         private const val COPT_OBD_SUPPORT = 0
         private const val COPT_ATMEGA1284 = 1
-        private const val COPT_ATMEGA64 = 2   //  Left for compatibility
+        private const val COPT_ODDFIRE_ALGO = 2
         private const val COPT_ATMEGA128 = 3   // Left for compatibility
         private const val COPT_SPLIT_ANGLE = 4
         private const val COPT_TPIC8101 = 5
@@ -160,9 +160,9 @@ data class FirmwareInfoPacket(
         private const val COPT_SM_CONTROL = 22
         private const val COPT_VREF_5V = 23
         private const val COPT_HALL_SYNC = 24
-        private const val COPT_UART_BINARY = 25
+        private const val COPT_UART_BINARY = 25     //obsolete, left for compatibility
         private const val COPT_CKPS_2CHIGN = 26
-        private const val COPT_ATMEGA644 = 27
+        private const val COPT_ATMEGA644 = 27       //obsolete, left for compatibility
         private const val COPT_FUEL_INJECT = 28
         private const val COPT_GD_CONTROL = 29
         private const val COPT_CARB_AFR = 30
