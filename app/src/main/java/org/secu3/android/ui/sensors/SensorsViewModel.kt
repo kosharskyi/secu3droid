@@ -33,7 +33,6 @@ import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.sample
 import org.secu3.android.Secu3Repository
 import org.secu3.android.models.packets.AdcRawDatPacket
-import org.secu3.android.models.packets.FirmwareInfoPacket
 import org.secu3.android.models.packets.SensorsPacket
 import org.secu3.android.utils.LifeTimePrefs
 import org.secu3.android.utils.SecuLogger
@@ -51,9 +50,6 @@ class SensorsViewModel @Inject constructor(private val secu3Repository: Secu3Rep
 
     val isLoggerStarted: Boolean
         get() = secuLogger.isLoggerStarted
-
-    val firmware: FirmwareInfoPacket?
-        get() = secu3Repository.fwInfo
 
 
     val sensorsLiveData: LiveData<SensorsPacket>

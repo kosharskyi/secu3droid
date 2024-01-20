@@ -48,6 +48,14 @@
         <action
             android:id="@+id/action_open_firmware_dialog"
             app:destination="@id/firmwareDialogFragment" />
+
+        <action
+            android:id="@+id/action_open_secu_errors"
+            app:destination="@id/errorsFragment" />
+
+        <action
+            android:id="@+id/action_open_secu_diagnostic"
+            app:destination="@id/diagnosticsFragment" />
     </fragment>
 
     <fragment
@@ -55,21 +63,7 @@
         android:name="org.secu3.android.ui.sensors.SensorsTabsFragment"
         android:label="Sensors Fragment"
         tools:layout="@layout/fragment_sensors_tabs"
-        >
-
-
-
-        <action
-            android:id="@+id/action_sensors_to_diagnostics"
-            app:destination="@id/diagnosticsFragment"
-            />
-
-        <action
-            android:id="@+id/action_sensors_to_errors"
-            app:destination="@id/errorsFragment"
-            />
-
-    </fragment>
+        />
 
     <fragment
         android:id="@+id/dashboardFragment"

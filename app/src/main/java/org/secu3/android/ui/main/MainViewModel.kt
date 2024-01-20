@@ -40,6 +40,9 @@ class MainViewModel @Inject constructor(private val secu3Repository: Secu3Reposi
     val connectionStatusLiveData: LiveData<Boolean>
         get() = secu3Repository.connectionStatusLiveData
 
+    val firmware: FirmwareInfoPacket?
+        get() = secu3Repository.fwInfo
+
     val firmwareLiveData: LiveData<FirmwareInfoPacket> = secu3Repository.firmwareLiveData
 
     init {

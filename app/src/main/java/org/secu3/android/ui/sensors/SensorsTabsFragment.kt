@@ -30,12 +30,10 @@ import android.view.LayoutInflater
 import android.view.MenuItem
 import android.view.View
 import android.view.ViewGroup
-import android.widget.Toast
 import androidx.core.view.isVisible
 import androidx.fragment.app.Fragment
 import androidx.fragment.app.viewModels
 import androidx.navigation.fragment.findNavController
-import com.google.android.material.dialog.MaterialAlertDialogBuilder
 import com.google.android.material.tabs.TabLayout
 import com.google.android.material.tabs.TabLayout.OnTabSelectedListener
 import com.google.android.material.tabs.TabLayoutMediator
@@ -78,7 +76,7 @@ class SensorsTabsFragment : Fragment() {
 
         mBinding.apply {
             toolbar.apply {
-                inflateMenu(R.menu.activity_main)
+//                inflateMenu(R.menu.activity_sensors)
 
                 setOnMenuItemClickListener { onMenuItemSelected(it) }
             }
@@ -142,27 +140,6 @@ class SensorsTabsFragment : Fragment() {
 
     private fun onMenuItemSelected(item: MenuItem): Boolean {
         return when (item.itemId) {
-
-            R.id.menu_errors -> {
-                findNavController().navigate(SensorsTabsFragmentDirections.actionSensorsToErrors())
-                true
-            }
-
-            R.id.menu_diagnostics -> {
-                MaterialAlertDialogBuilder(requireContext()).setTitle(android.R.string.dialog_alert_title)
-                    .setIcon(android.R.drawable.ic_dialog_alert).setMessage(R.string.menu_diagnostics_warning_title)
-                    .setPositiveButton(android.R.string.ok) { _, _ ->
-
-                        if (mViewModel.firmware?.isDiagnosticsEnabled == true) {
-                            findNavController().navigate(SensorsTabsFragmentDirections.actionSensorsToDiagnostics())
-                            return@setPositiveButton
-                        }
-
-                        Toast.makeText(context, R.string.diagnostics_not_supported_title, Toast.LENGTH_LONG).show()
-
-                    }.setNegativeButton(android.R.string.cancel, null).create().show()
-                true
-            }
 
             else -> super.onOptionsItemSelected(item)
         }
