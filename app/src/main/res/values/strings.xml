@@ -15,6 +15,8 @@
     <string name="pref_write_binary_log_title">Write log in binary format (s3l)</string>
     <string name="pref_log_csv_write_title">Title in csv log file</string>
     <string name="pref_log_csv_delimeter_title">Log delimeter character</string>
+    <string name="pref_wakelock_title">Wakelock</string>
+    <string name="pref_wakelock_summary">The screen will be always awake while Secu-3Droid started</string>
     <string name="pref_about_title">About</string>
     <string name="pref_about_summary" />
 

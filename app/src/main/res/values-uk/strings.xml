@@ -15,6 +15,8 @@
     <string name="pref_write_binary_log_title">Записувати лог в бінарному форматі (s3l)</string>
     <string name="pref_log_csv_write_title">Заголовок в CSV лог файлі</string>
     <string name="pref_log_csv_delimeter_title">Символ-роздільник логу</string>
+    <string name="pref_wakelock_title">Залишати пристрій ввімкненим</string>
+    <string name="pref_wakelock_summary">Екран не буде гаснути, поки запущений Secu3Droid</string>
     <string name="pref_about_title">Про програму</string>
     <string name="pref_about_summary"/>
 

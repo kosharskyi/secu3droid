@@ -65,6 +65,11 @@
         android:defaultValue="false"
         />
 
+    <CheckBoxPreference
+        android:key="@string/pref_wakelock_key"
+        android:title="@string/pref_wakelock_title"
+        android:summary="@string/pref_wakelock_summary"/>
+
 	<Preference
 		android:key="@string/pref_about_key"
 		android:persistent="false"
