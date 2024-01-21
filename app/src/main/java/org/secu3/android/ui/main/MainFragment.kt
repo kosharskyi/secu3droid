@@ -74,6 +74,7 @@ class MainFragment : Fragment() {
             }
 
             carStatus.setOnClickListener {
+                mViewModel.firmware ?: return@setOnClickListener
                 findNavController().navigate(MainFragmentDirections.actionOpenFirmwareDialog())
             }
 
