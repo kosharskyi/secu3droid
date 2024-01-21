@@ -472,5 +472,6 @@
     <string name="raw_sensors_frag_add_io8_input_label">Input ADD_I8, V:</string>
 
     <string name="service_working_in_background">Secu3Droid working in background</string>
+    <string name="exit">Exit</string>
 
 </resources>

@@ -338,5 +338,6 @@
     <string name="raw_sensors_frag_add_io8_input_label">Вход ADD_I8, В:</string>
 
     <string name="service_working_in_background">Secu3Droid работает в фоне</string>
+    <string name="exit">Выход</string>
 
 </resources>
