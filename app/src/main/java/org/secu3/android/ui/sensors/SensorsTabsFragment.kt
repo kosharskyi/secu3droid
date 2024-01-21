@@ -27,7 +27,6 @@ package org.secu3.android.ui.sensors
 
 import android.os.Bundle
 import android.view.LayoutInflater
-import android.view.MenuItem
 import android.view.View
 import android.view.ViewGroup
 import androidx.core.view.isVisible
@@ -75,11 +74,6 @@ class SensorsTabsFragment : Fragment() {
     private fun init() {
 
         mBinding.apply {
-            toolbar.apply {
-//                inflateMenu(R.menu.activity_sensors)
-
-                setOnMenuItemClickListener { onMenuItemSelected(it) }
-            }
 
             viewPager.adapter = SensorsPagerAdapter(this@SensorsTabsFragment)
 
@@ -135,13 +129,6 @@ class SensorsTabsFragment : Fragment() {
                 logStart.visible()
                 mViewModel.stopWriteLog()
             }
-        }
-    }
-
-    private fun onMenuItemSelected(item: MenuItem): Boolean {
-        return when (item.itemId) {
-
-            else -> super.onOptionsItemSelected(item)
         }
     }
 }

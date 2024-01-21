@@ -34,6 +34,10 @@ import kotlinx.coroutines.flow.sample
 import org.secu3.android.Secu3Repository
 import org.secu3.android.models.packets.input.AdcRawDatPacket
 import org.secu3.android.models.packets.input.SensorsPacket
+import org.secu3.android.ui.sensors.models.GaugeItem
+import org.secu3.android.ui.sensors.models.GaugeType
+import org.secu3.android.ui.sensors.models.IndicatorItem
+import org.secu3.android.ui.sensors.models.IndicatorType
 import org.secu3.android.utils.LifeTimePrefs
 import org.secu3.android.utils.SecuLogger
 import org.secu3.android.utils.Task
@@ -43,6 +47,7 @@ import javax.inject.Inject
 class SensorsViewModel @Inject constructor(private val secu3Repository: Secu3Repository,
                                            private val mPrefs: LifeTimePrefs,
                                            private val secuLogger: SecuLogger,
+                                           private val repository: SensorsRepository
                                            ) : ViewModel() {
 
     val isLoggerEnabled: Boolean
@@ -52,13 +57,18 @@ class SensorsViewModel @Inject constructor(private val secu3Repository: Secu3Rep
         get() = secuLogger.isLoggerStarted
 
 
-    val sensorsLiveData: LiveData<SensorsPacket>
-        get() = secu3Repository.receivedPacketFlow.sample(1000).filter { it is SensorsPacket }
-            .map { it as SensorsPacket }.asLiveData()
+    val gaugesLiveData: LiveData<List<GaugeItem>>
+        get() = secu3Repository.receivedPacketFlow.sample(500).filter { it is SensorsPacket }
+            .map { it as SensorsPacket }.map { repository.convertToGaugeItemList(it) }.asLiveData()
+
+
+    val indicatorLiveData: LiveData<List<IndicatorItem>>
+        get() = secu3Repository.receivedPacketFlow.sample(500).filter { it is SensorsPacket }
+            .map { it as SensorsPacket }.map { repository.convertToIndicatorItemList(it) }.asLiveData()
 
 
     val rawSensorsLiveData: LiveData<AdcRawDatPacket>
-        get() = secu3Repository.receivedPacketFlow.sample(1000).filter { it is AdcRawDatPacket }
+        get() = secu3Repository.receivedPacketFlow.sample(500).filter { it is AdcRawDatPacket }
             .map { it as AdcRawDatPacket }.asLiveData()
 
     fun sendNewTask(task: Task) {
@@ -89,5 +99,33 @@ class SensorsViewModel @Inject constructor(private val secu3Repository: Secu3Rep
 
     fun stopWriteLog() {
         secuLogger.stopLogging()
+    }
+
+    fun getGaugesAvaliableToAdd(): List<GaugeType> {
+        return GaugeType.entries.filter { it !in mPrefs.gaugesEnabled }
+    }
+
+    fun addGauge(gauge: GaugeType) {
+        mPrefs.apply {
+            val gauges = gaugesEnabled.toMutableList()
+            gauges.add(gauge)
+            gaugesEnabled = gauges
+        }
+    }
+
+    fun deleteGauge(gauge: GaugeType) {
+        mPrefs.apply {
+            val gauges = gaugesEnabled.toMutableList()
+            gauges.remove(gauge)
+            gaugesEnabled = gauges
+        }
+    }
+
+    fun deleteIndicator(indicator: IndicatorType) {
+        mPrefs.apply {
+            val indicators = indicatorsEnabled.toMutableList()
+            indicators.remove(indicator)
+            indicatorsEnabled = indicators
+        }
     }
 }

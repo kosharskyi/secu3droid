@@ -38,7 +38,7 @@ data class SensorsPacket(
     var knockRetard: Float = 0f,
     var airflow: Int = 0,
     var sensorsFlags: Int = 0,
-    var tps: Float = 0f,                  // TPS throttle position sensor (0...100%, x2)
+    var tps: Float = 0f,                  // TPS throttle position sensor (0...100%, x2); aka IAC valve
     var addI1: Float = 0f,                // ADD_I1 voltage
     var addI2: Float = 0f,                // ADD_I2 voltage
     var ecuErrors: Int = 0,            // Check Engine errors

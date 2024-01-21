@@ -206,16 +206,26 @@
     <string name="units_cc_per_min">см3/мин</string>
     <string name="units_hertz">Гц</string>
     <string name="units_degree">°</string>
+    <string name="units_degree_word">град.</string>
     <string name="units_degree_per_stroke">°/такт</string>
+    <string name="units_degrees_cs">°КВ</string>
+    <string name="units_degrees_celcius">°C</string>
     <string name="units_sec">сек</string>
     <string name="units_pressure_kpa">кПа</string>
-    <string name="units_volts">В</string>
     <string name="units_kpa_per_volt">кПа/В</string>
+    <string name="units_kpa_per_sec">кПа/сек</string>
+    <string name="units_volts">В</string>
     <string name="units_ms">мс</string>
-    <string name="units_degrees_celcius">°C</string>
     <string name="units_percents">%</string>
     <string name="units_percent_per_volts">%/В</string>
     <string name="units_percent_per_second">%/сек</string>
+    <string name="units_num">чис.</string>
+    <string name="units_str">т</string>
+    <string name="units_coef">коэф.</string>
+    <string name="units_km_h">км/ч</string>
+    <string name="units_curve_n">Кривая N</string>
+    <string name="units_l_per_100km">Л/100км</string>
+    <string name="units_gram_per_second">г/сек</string>
 
     <string-array name="params_tab_titles">
         <item>Запуск</item>
@@ -237,10 +247,7 @@
         <item>Доз. газа</item>
     </string-array>
     <string name="maximum_step_frequency_at_init">Максимальная частота при иниц.</string>
-    <string name="units_degrees_cs">°КВ</string>
-    <string name="units_coef">коэф.</string>
-    <string name="units_num">чис.</string>
-    <string name="units_str">т</string>
+
     <string name="sensors_tab_title">Датчики</string>
     <string name="enable_bluetooth_to_start_work">Для начала работы включите Bluetooth и нажмите \"Повторить попытку\"</string>
     <string name="try_again">Повторить попытку</string>
@@ -259,18 +266,18 @@
     <string name="dialog_confirm_delete_log_message">Вы уверенны что хотите удалить файл лога?</string>
     <string name="sensors">Датчики</string>
 
-    <string name="sensors_frag_rpm_label">Обороты, об/мин:</string>
-    <string name="sensors_frag_absolute_pressure_label">Абсолютное давление, kPa:</string>
-    <string name="sensors_frag_voltage_label">Напряжение борт. сети, В:</string>
-    <string name="sensors_frag_coolant_temperature_label">Температура ОЖ, °C:</string>
-    <string name="sensors_frag_advance_angle_label">Угол опережения, град.:</string>
+    <string name="sensors_frag_rpm_label">Обороты</string>
+    <string name="sensors_frag_absolute_pressure_label">Абсолютное давление</string>
+    <string name="sensors_frag_voltage_label">Напряжение</string>
+    <string name="sensors_frag_coolant_temperature_label">Температура ДТОЖ</string>
+    <string name="sensors_frag_advance_angle_label">Угол опережения</string>
     <string name="sensors_frag_knock_retard_label">Корр. УОЗ от ДД, град.:</string>
     <string name="sensors_frag_knock_signal_label">Сигнал детонации, В:</string>
     <string name="sensors_frag_air_flow_label">Расход воздуха, N кривой:</string>
     <string name="sensors_frag_throttle_gate_label">Дроссельная заслонка, %:</string>
     <string name="sensors_frag_input_1_label">Вход 1, В:</string>
     <string name="sensors_frag_input_2_label">Вход 2, В:</string>
-    <string name="sensors_frag_iac_valve_label">ВЗ/РДВ, %:</string>
+    <string name="sensors_frag_iac_valve_label">ВЗ/РДВ</string>
     <string name="sensors_frag_gas_dispenser_label">"Дозатор газа, %: "</string>
     <string name="sensors_frag_synthetic_load_label">Синтет. нагрузка:</string>
     <string name="sensors_frag_vehicle_speed_label">Скорость авто, км/ч:</string>
@@ -286,7 +293,7 @@
     <string name="sensors_frag_wbo_afr_label">Воздух/топливо ШДК, в/т:</string>
     <string name="sensors_frag_fuel_consumption_label">Расход топлива, Л/100км:</string>
     <string name="sensors_frag_grts_label">ДТГР, °C:</string>
-    <string name="sensors_frag_fuel_lavel_label">Уровень топлива, Л:</string>
+    <string name="sensors_frag_fuel_level_label">Уровень топлива, Л:</string>
     <string name="sensors_frag_exhaust_gas_temp_label">Темп. выхл. газов, °C:</string>
     <string name="sensors_frag_oil_pressure_label">Давление масла, кг/см2:</string>
     <string name="sensors_frag_injector_duty_label">Загрузка форсунок, %:</string>
@@ -339,5 +346,7 @@
 
     <string name="service_working_in_background">Secu3Droid работает в фоне</string>
     <string name="exit">Выход</string>
+    <string name="select_gauge_to_add">Добавить прибор</string>
+
 
 </resources>
