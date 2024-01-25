@@ -31,7 +31,7 @@ import java.nio.charset.StandardCharsets
 data class FirmwareInfoPacket(
     var tag: String = "",
     var options: Int = 0,
-    var version: Char = '0'
+    var version: IntArray = IntArray(2)
 ) : BaseSecu3Packet() {
 
     val isObdSupported: Boolean
@@ -132,7 +132,8 @@ data class FirmwareInfoPacket(
         fun parse(data: String) = FirmwareInfoPacket().apply {
             tag = data.substring(2, 50).toByteArray(StandardCharsets.ISO_8859_1).toString(Charset.forName("IBM866"))
             options = data.get4Bytes(50)
-            version = data[54]
+            version[0] = data[54].code.and(0x0F)
+            version[1] = data[54].code.shr(4)
         }
 
         private const val COPT_OBD_SUPPORT = 0
