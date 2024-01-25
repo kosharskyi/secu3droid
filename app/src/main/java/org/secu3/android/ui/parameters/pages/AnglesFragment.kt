@@ -28,6 +28,10 @@ import android.os.Bundle
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
+import androidx.lifecycle.lifecycleScope
+import androidx.lifecycle.withResumed
+import androidx.lifecycle.withStarted
+import kotlinx.coroutines.launch
 import org.secu3.android.databinding.FragmentAnglesBinding
 import org.secu3.android.models.packets.params.AnglesParamPacket
 import org.secu3.android.ui.parameters.views.FloatParamView
@@ -48,29 +52,33 @@ class AnglesFragment : BaseParamFragment() {
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
 
-        mViewModel.anglesLiveData.observe(viewLifecycleOwner) {
+        lifecycleScope.launch {
+            withResumed {
+                mViewModel.anglesLiveData.observe(viewLifecycleOwner) {
 
-            packet = it
+                    packet = it
 
-            mBinding.apply {
-                maxAdvanceAngle.value = it.maxAngle
-                minAdvanceAngle.value = it.minAngle
+                    mBinding.apply {
+                        maxAdvanceAngle.value = it.maxAngle
+                        minAdvanceAngle.value = it.minAngle
 
-                angleDecreaseSpeed.value = it.angleDecSpeed
-                angleIncreaseSpeed.value = it.angleIncSpeed
+                        angleDecreaseSpeed.value = it.angleDecSpeed
+                        angleIncreaseSpeed.value = it.angleIncSpeed
 
-                octaneCorrection.value = it.angleCorrection
+                        octaneCorrection.value = it.angleCorrection
 
-                zeroAdvAngle.isChecked = it.zeroAdvAngle > 0
+                        zeroAdvAngle.isChecked = it.zeroAdvAngle > 0
 
-                ignTimingWhenShifting.value = it.shift_ingtim
+                        ignTimingWhenShifting.value = it.shift_ingtim
 
-                alwaysUseWorkingModeAngleMap.isChecked = it.alwaysUseIgnitionMap
-                applyManualTimingCorr.isChecked = it.applyManualTimingCorrOnIdl
-                zeroAdvOctaneCorr.isChecked = it.zeroAdvAngleWithCorr
+                        alwaysUseWorkingModeAngleMap.isChecked = it.alwaysUseIgnitionMap
+                        applyManualTimingCorr.isChecked = it.applyManualTimingCorrOnIdl
+                        zeroAdvOctaneCorr.isChecked = it.zeroAdvAngleWithCorr
+                    }
+                }
+
+                initViews()
             }
-
-            initViews()
         }
     }
 

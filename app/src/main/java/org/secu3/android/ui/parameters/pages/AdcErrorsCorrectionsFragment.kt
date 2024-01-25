@@ -28,6 +28,10 @@ import android.os.Bundle
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
+import androidx.lifecycle.lifecycleScope
+import androidx.lifecycle.withResumed
+import androidx.lifecycle.withStarted
+import kotlinx.coroutines.launch
 import org.secu3.android.databinding.FragmentAdcErrorsCorrectionsBinding
 import org.secu3.android.models.packets.params.AdcCorrectionsParamPacket
 import org.secu3.android.ui.parameters.views.FloatParamView
@@ -46,51 +50,55 @@ class AdcErrorsCorrectionsFragment : BaseParamFragment() {
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
 
-        mViewModel.adcCorrectionsLiveData.observe(viewLifecycleOwner) {
+        lifecycleScope.launch {
+            withResumed {
+                mViewModel.adcCorrectionsLiveData.observe(viewLifecycleOwner) {
 
-            packet = it
+                    packet = it
 
-            mBinding.apply {
-                mapFactor.value = it.mapAdcFactor
-                mapCorrection.value = it.mapAdcCorrection
+                    mBinding.apply {
+                        mapFactor.value = it.mapAdcFactor
+                        mapCorrection.value = it.mapAdcCorrection
 
-                voltageFactor.value = it.ubatAdcFactor
-                voltageCorrection.value = it.ubatAdcCorrection
+                        voltageFactor.value = it.ubatAdcFactor
+                        voltageCorrection.value = it.ubatAdcCorrection
 
-                ctsFactor.value = it.tempAdcFactor
-                ctsCorrection.value = it.tempAdcCorrection
+                        ctsFactor.value = it.tempAdcFactor
+                        ctsCorrection.value = it.tempAdcCorrection
 
-                tpsFactor.value = it.tpsAdcFactor
-                tpsCorrection.value = it.tpsAdcCorrection
+                        tpsFactor.value = it.tpsAdcFactor
+                        tpsCorrection.value = it.tpsAdcCorrection
 
-                add1Factor.value = it.ai1AdcFactor
-                add1Correction.value = it.ai1AdcCorrection
+                        add1Factor.value = it.ai1AdcFactor
+                        add1Correction.value = it.ai1AdcCorrection
 
-                add2Factor.value = it.ai2AdcFactor
-                add2Correction.value = it.ai2AdcCorrection
+                        add2Factor.value = it.ai2AdcFactor
+                        add2Correction.value = it.ai2AdcCorrection
 
-                add3Factor.value = it.ai3AdcFactor
-                add3Correction.value = it.ai3AdcCorrection
+                        add3Factor.value = it.ai3AdcFactor
+                        add3Correction.value = it.ai3AdcCorrection
 
-                add4Factor.value = it.ai4AdcFactor
-                add4Correction.value = it.ai4AdcCorrection
+                        add4Factor.value = it.ai4AdcFactor
+                        add4Correction.value = it.ai4AdcCorrection
 
-                add5Factor.value = it.ai5AdcFactor
-                add5Correction.value = it.ai5AdcCorrection
+                        add5Factor.value = it.ai5AdcFactor
+                        add5Correction.value = it.ai5AdcCorrection
 
-                add6Factor.value = it.ai6AdcFactor
-                add6Correction.value = it.ai6AdcCorrection
+                        add6Factor.value = it.ai6AdcFactor
+                        add6Correction.value = it.ai6AdcCorrection
 
-                add7Factor.value = it.ai7AdcFactor
-                add7Correction.value = it.ai7AdcCorrection
+                        add7Factor.value = it.ai7AdcFactor
+                        add7Correction.value = it.ai7AdcCorrection
 
-                add8Factor.value = it.ai8AdcFactor
-                add8Correction.value = it.ai8AdcCorrection
+                        add8Factor.value = it.ai8AdcFactor
+                        add8Correction.value = it.ai8AdcCorrection
 
-                multiplyCorrAndKoef.isChecked = it.adcCompMode
+                        multiplyCorrAndKoef.isChecked = it.adcCompMode
+                    }
+
+                    initViews()
+                }
             }
-
-            initViews()
         }
     }
 

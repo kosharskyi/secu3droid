@@ -30,6 +30,10 @@ import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import android.widget.ArrayAdapter
+import androidx.lifecycle.lifecycleScope
+import androidx.lifecycle.withResumed
+import androidx.lifecycle.withStarted
+import kotlinx.coroutines.launch
 import org.secu3.android.R
 import org.secu3.android.databinding.FragmentLambdaControlBinding
 import org.secu3.android.models.packets.params.LambdaParamPacket
@@ -69,60 +73,64 @@ class LambdaControlFragment : BaseParamFragment() {
             }
         }
 
-        mViewModel.lambdaLiveData.observe(viewLifecycleOwner) {
+        lifecycleScope.launch {
+            withResumed {
+                mViewModel.lambdaLiveData.observe(viewLifecycleOwner) {
 
-            packet = it
+                    packet = it
 
-            mBinding.apply {
-                sensorType.setText(sensorTypesList[it.senstype], false)
-                numberOfStrokesPerStep.value = it.strPerStp
-                numberOfMsPerStep.value = it.msPerStp
+                    mBinding.apply {
+                        sensorType.setText(sensorTypesList[it.senstype], false)
+                        numberOfStrokesPerStep.value = it.strPerStp
+                        numberOfMsPerStep.value = it.msPerStp
 
-                sizePositiveCorrectionStep.value = it.stepSizeP
-                sizeNegativeCorrectionStep.value = it.stepSizeM
+                        sizePositiveCorrectionStep.value = it.stepSizeP
+                        sizeNegativeCorrectionStep.value = it.stepSizeM
 
-                correctionLimitPositive.value = it.corrLimitP
-                correctionLimitNegative.value = it.corrLimitM
+                        correctionLimitPositive.value = it.corrLimitP
+                        correctionLimitNegative.value = it.corrLimitM
 
-                switchPoint.value = it.swtPoint
+                        switchPoint.value = it.swtPoint
 
-                ctsActivationThreshold.value = it.tempThrd
-                rpmActivationThreshold.value = it.rpmThrd
+                        ctsActivationThreshold.value = it.tempThrd
+                        rpmActivationThreshold.value = it.rpmThrd
 
-                activationAfterStartIn.value = it.activDelay
-                switchPointDeadband.value = it.deadBand
+                        activationAfterStartIn.value = it.activDelay
+                        switchPointDeadband.value = it.deadBand
 
-                determineHeatingUsingVoltage.isChecked = it.determineLambdaHeatingByVoltage
-                lambdaCorrectioinOnIdling.isChecked = it.lambdaCorrectionOnIdling
+                        determineHeatingUsingVoltage.isChecked = it.determineLambdaHeatingByVoltage
+                        lambdaCorrectioinOnIdling.isChecked = it.lambdaCorrectionOnIdling
 
-                stoichiomRatioFor2Fuel.value = it.gdStoichval
+                        stoichiomRatioFor2Fuel.value = it.gdStoichval
 
 
-                heatingTimeWithoutPwmOnCold.value = it.heatingTime0
-                heatingTimeWithoutPwmOnHot.value = it.heatingTime1
+                        heatingTimeWithoutPwmOnCold.value = it.heatingTime0
+                        heatingTimeWithoutPwmOnHot.value = it.heatingTime1
 
-                coldHotTemperatureThreshold.value = it.temperThrd
+                        coldHotTemperatureThreshold.value = it.temperThrd
 
-                turnOnTimeInPwmMode.value = it.heatingAct
+                        turnOnTimeInPwmMode.value = it.heatingAct
 
-                airFlowThresholdForTurningHeatingOff.value = it.aflowThrd.toInt()
+                        airFlowThresholdForTurningHeatingOff.value = it.aflowThrd.toInt()
 
-                heatingBeforeCranking.isChecked = it.heatingBeforeCranking
+                        heatingBeforeCranking.isChecked = it.heatingBeforeCranking
 
-                lambdaChanel1.isChecked = it.lambdaChanel1
-                lambdaChanel2.isChecked = it.lambdaChanel2
-                lambdaChanel3.isChecked = it.lambdaChanel3
-                lambdaChanel4.isChecked = it.lambdaChanel4
-                lambdaChanel5.isChecked = it.lambdaChanel5
-                lambdaChanel6.isChecked = it.lambdaChanel6
-                lambdaChanel7.isChecked = it.lambdaChanel7
-                lambdaChanel8.isChecked = it.lambdaChanel8
+                        lambdaChanel1.isChecked = it.lambdaChanel1
+                        lambdaChanel2.isChecked = it.lambdaChanel2
+                        lambdaChanel3.isChecked = it.lambdaChanel3
+                        lambdaChanel4.isChecked = it.lambdaChanel4
+                        lambdaChanel5.isChecked = it.lambdaChanel5
+                        lambdaChanel6.isChecked = it.lambdaChanel6
+                        lambdaChanel7.isChecked = it.lambdaChanel7
+                        lambdaChanel8.isChecked = it.lambdaChanel8
 
-                mixSensorsValue.isChecked = it.mixSenorsValue
+                        mixSensorsValue.isChecked = it.mixSenorsValue
+                    }
+                }
+
+                initViews()
             }
         }
-
-        initViews()
     }
 
     private fun initViews() {

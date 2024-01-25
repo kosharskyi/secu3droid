@@ -30,6 +30,10 @@ import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import android.widget.ArrayAdapter
+import androidx.lifecycle.lifecycleScope
+import androidx.lifecycle.withResumed
+import androidx.lifecycle.withStarted
+import kotlinx.coroutines.launch
 import org.secu3.android.R
 import org.secu3.android.databinding.FragmentMiscellaneousBinding
 import org.secu3.android.models.packets.params.MiscellaneousParamPacket
@@ -69,36 +73,40 @@ class MiscellaneousFragment : BaseParamFragment() {
             mBinding.dataTransmitionSpeed.setAdapter(it)
         }
 
-        mViewModel.miscellaneousLiveData.observe(viewLifecycleOwner) {
+        lifecycleScope.launch {
+            withResumed {
+                mViewModel.miscellaneousLiveData.observe(viewLifecycleOwner) {
 
-            packet = it
+                    packet = it
 
-            mBinding.apply {
-                dataTransmitionSpeed.setText(baudRateList[it.uartDivisor], false)
-                dataPacketsTransmissionPeriod.value = it.uartPeriodTms
+                    mBinding.apply {
+                        dataTransmitionSpeed.setText(baudRateList[it.uartDivisor], false)
+                        dataPacketsTransmissionPeriod.value = it.uartPeriodTms
 
-                enableCutoffOfIgnitionCheckbox.isChecked = it.ignCutoff > 0
-                enableCutoffOfIgnition.value = it.ignCutoffThrd
+                        enableCutoffOfIgnitionCheckbox.isChecked = it.ignCutoff > 0
+                        enableCutoffOfIgnition.value = it.ignCutoffThrd
 
-                startRelToTdc.value = it.hopStartAng
-                duration.value = it.hopDuratAng
+                        startRelToTdc.value = it.hopStartAng
+                        duration.value = it.hopDuratAng
 
-                turnOffFuelPumpAfterGas.isChecked = it.offPumpOnGas
-                turnOffInjectorsAfterGas.isChecked = it.offInjOnGas
-                turnOffInjectorsAfterPetrol.isChecked = it.offInjOnPetrol
+                        turnOffFuelPumpAfterGas.isChecked = it.offPumpOnGas
+                        turnOffInjectorsAfterGas.isChecked = it.offInjOnGas
+                        turnOffInjectorsAfterPetrol.isChecked = it.offInjOnPetrol
 
-                evapStartingAirFlow.value = it.evapAfbegin
-                evapEndingAirFlow.value = it.evapAfEnd
+                        evapStartingAirFlow.value = it.evapAfbegin
+                        evapEndingAirFlow.value = it.evapAfEnd
 
-                fuelPumpWorkingTime.value = it.fpTimeoutStrt
+                        fuelPumpWorkingTime.value = it.fpTimeoutStrt
 
-                pwmfrq0.value = it.pwmFrq0
-                pwmfrq1.value = it.pwmFrq1
+                        pwmfrq0.value = it.pwmFrq0
+                        pwmfrq1.value = it.pwmFrq1
 
-                numberVssPulses.value = it.vssPeriodDist
+                        numberVssPulses.value = it.vssPeriodDist
+                    }
+
+                    initViews()
+                }
             }
-
-            initViews()
         }
     }
 

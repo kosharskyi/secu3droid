@@ -30,6 +30,10 @@ import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import android.widget.ArrayAdapter
+import androidx.lifecycle.lifecycleScope
+import androidx.lifecycle.withResumed
+import androidx.lifecycle.withStarted
+import kotlinx.coroutines.launch
 import org.secu3.android.R
 import org.secu3.android.databinding.FragmentKnockBinding
 import org.secu3.android.models.packets.params.KnockParamPacket
@@ -73,38 +77,42 @@ class KnockFragment : BaseParamFragment() {
             }
         }
 
-        mViewModel.knockLiveData.observe(viewLifecycleOwner) {
+        lifecycleScope.launch {
+            withResumed {
+                mViewModel.knockLiveData.observe(viewLifecycleOwner) {
 
-            packet = it
+                    packet = it
 
-            mBinding.apply {
-                enableSensor.isChecked = it.useKnockChannel > 0
-                phaseWindowBegin.value = it.kWndBeginAngle
-                phaseWindowEnd.value = it.kWndEndAngle
+                    mBinding.apply {
+                        enableSensor.isChecked = it.useKnockChannel > 0
+                        phaseWindowBegin.value = it.kWndBeginAngle
+                        phaseWindowEnd.value = it.kWndEndAngle
 
-                bpfFrequency.setText(bpfList[it.bpfFrequency], false)
-                integrationTimeConstant.setText(integrationTimeConstatList[it.intTimeCost], false)
+                        bpfFrequency.setText(bpfList[it.bpfFrequency], false)
+                        integrationTimeConstant.setText(integrationTimeConstatList[it.intTimeCost], false)
 
-                angleDisplacementStep.value = it.retardStep
-                angleRecoveryStep.value = it.advanceStep
-                maxAngleDisplacement.value = it.maxRetard
+                        angleDisplacementStep.value = it.retardStep
+                        angleRecoveryStep.value = it.advanceStep
+                        maxAngleDisplacement.value = it.maxRetard
 
-                knockThreshold.value = it.threshold
-                angleRecoveryDelay.value = it.recoveryDelay
+                        knockThreshold.value = it.threshold
+                        angleRecoveryDelay.value = it.recoveryDelay
 
-                knockCh1.isChecked = it.isKnockChanelSelected(0)
-                knockCh2.isChecked = it.isKnockChanelSelected(1)
-                knockCh3.isChecked = it.isKnockChanelSelected(2)
-                knockCh4.isChecked = it.isKnockChanelSelected(3)
-                knockCh5.isChecked = it.isKnockChanelSelected(4)
-                knockCh6.isChecked = it.isKnockChanelSelected(5)
-                knockCh7.isChecked = it.isKnockChanelSelected(6)
-                knockCh8.isChecked = it.isKnockChanelSelected(7)
+                        knockCh1.isChecked = it.isKnockChanelSelected(0)
+                        knockCh2.isChecked = it.isKnockChanelSelected(1)
+                        knockCh3.isChecked = it.isKnockChanelSelected(2)
+                        knockCh4.isChecked = it.isKnockChanelSelected(3)
+                        knockCh5.isChecked = it.isKnockChanelSelected(4)
+                        knockCh6.isChecked = it.isKnockChanelSelected(5)
+                        knockCh7.isChecked = it.isKnockChanelSelected(6)
+                        knockCh8.isChecked = it.isKnockChanelSelected(7)
 
-                knockControlThreshold.value = it.knkctlThrd
+                        knockControlThreshold.value = it.knkctlThrd
+                    }
+
+                    initViews()
+                }
             }
-
-            initViews()
         }
     }
 

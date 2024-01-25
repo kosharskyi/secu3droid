@@ -28,6 +28,10 @@ import android.os.Bundle
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
+import androidx.lifecycle.lifecycleScope
+import androidx.lifecycle.withResumed
+import androidx.lifecycle.withStarted
+import kotlinx.coroutines.launch
 import org.secu3.android.databinding.FragmentIdlingBinding
 import org.secu3.android.models.packets.params.IdlingParamPacket
 import org.secu3.android.ui.parameters.views.FloatParamView
@@ -47,51 +51,55 @@ class IdlingFragment : BaseParamFragment() {
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
 
-        mViewModel.idlingLiveData.observe(viewLifecycleOwner) {
+        lifecycleScope.launch {
+            withResumed {
+                mViewModel.idlingLiveData.observe(viewLifecycleOwner) {
 
-            packet = it
+                    packet = it
 
-            mBinding.apply {
-                positiveRegFactor.value = it.iFac1
-                negativeRegFactor.value = it.iFac2
+                    mBinding.apply {
+                        positiveRegFactor.value = it.iFac1
+                        negativeRegFactor.value = it.iFac2
 
-                maxRegLimit.value = it.idlregMaxAngle
-                minRegLimit.value = it.idlregMinAngle
+                        maxRegLimit.value = it.idlregMaxAngle
+                        minRegLimit.value = it.idlregMinAngle
 
-                goalRpm.value = it.idlingRpm
-                rpmDeadBand.value = it.minefr
+                        goalRpm.value = it.idlingRpm
+                        rpmDeadBand.value = it.minefr
 
-                regulatorOnTemp.value = it.idlregTurnOnTemp
+                        regulatorOnTemp.value = it.idlregTurnOnTemp
 
-                useRegulator.isChecked = it.useRegulator
-                useRegulatorOnGas.isChecked = it.useRegulatorOnGas
-                proportionalRegulator.isChecked = it.pRegMode
-                useClosedLoop.isChecked = it.useClosedLoop
+                        useRegulator.isChecked = it.useRegulator
+                        useRegulatorOnGas.isChecked = it.useRegulatorOnGas
+                        proportionalRegulator.isChecked = it.pRegMode
+                        useClosedLoop.isChecked = it.useClosedLoop
 
-                iacAddAfterExit.value = it.idlToRunAdd
-                useThrassmap.isChecked = it.useThrassmap
-                rpmAddOnRun.value = it.rpmOnRunAdd
+                        iacAddAfterExit.value = it.idlToRunAdd
+                        useThrassmap.isChecked = it.useThrassmap
+                        rpmAddOnRun.value = it.rpmOnRunAdd
 
-                proportionalPositive.value = it.idlRegP0
-                integralPositive.value = it.idlRegI0
-                proportionalNegative.value = it.idlRegP1
-                integralNegative.value = it.idlRegI1
+                        proportionalPositive.value = it.idlRegP0
+                        integralPositive.value = it.idlRegI0
+                        proportionalNegative.value = it.idlRegP1
+                        integralNegative.value = it.idlRegI1
 
-                transientThreshold1.value = it.coefThrd1
-                transientThreshold2.value = it.coefThrd2
+                        transientThreshold1.value = it.coefThrd1
+                        transientThreshold2.value = it.coefThrd2
 
-                integratorRpmLimit.value = it.integratorRpmLim
-                pressureLoadOnIdling.value = it.mapValue
+                        integratorRpmLimit.value = it.integratorRpmLim
+                        pressureLoadOnIdling.value = it.mapValue
 
-                minIacPosition.value = it.iacMinPos
-                maxIacPosition.value = it.iacMaxPos
+                        minIacPosition.value = it.iacMinPos
+                        maxIacPosition.value = it.iacMaxPos
 
-                iacDeadBand.value = it.iacRegDb
+                        iacDeadBand.value = it.iacRegDb
 
-                useClosedLoopOnGas.isChecked = it.useClosedLoopOnGas
+                        useClosedLoopOnGas.isChecked = it.useClosedLoopOnGas
+                    }
+
+                    initViews()
+                }
             }
-
-            initViews()
         }
     }
 

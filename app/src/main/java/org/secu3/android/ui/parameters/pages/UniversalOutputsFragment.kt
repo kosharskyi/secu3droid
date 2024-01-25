@@ -31,7 +31,11 @@ import android.view.View
 import android.view.ViewGroup
 import android.widget.ArrayAdapter
 import androidx.core.view.isGone
+import androidx.lifecycle.lifecycleScope
+import androidx.lifecycle.withResumed
+import androidx.lifecycle.withStarted
 import dagger.hilt.android.AndroidEntryPoint
+import kotlinx.coroutines.launch
 import org.secu3.android.R
 import org.secu3.android.databinding.FragmentUniversalOutputsBinding
 import org.secu3.android.models.packets.params.UniOutParamPacket
@@ -72,224 +76,228 @@ class UniversalOutputsFragment : BaseParamFragment() {
 
         initDropdowns()
 
-        mViewModel.uniOutLiveData.observe(viewLifecycleOwner) {
+        lifecycleScope.launch {
+            withResumed {
+                mViewModel.uniOutLiveData.observe(viewLifecycleOwner) {
 
-            packet = it
+                    packet = it
 
-            mBinding.apply {
-                output1Condition1.setText(mCondition1List[it.output1Condition1], false)
-                output1Condition1Inversion.apply {
-                    isChecked = it.output1Cond1Inversion
-                    setOnCheckedChangeListener { _, isChecked ->
-                        it.output1Cond1Inversion = isChecked
-                        mViewModel.sendPacket(it)
+                    mBinding.apply {
+                        output1Condition1.setText(mCondition1List[it.output1Condition1], false)
+                        output1Condition1Inversion.apply {
+                            isChecked = it.output1Cond1Inversion
+                            setOnCheckedChangeListener { _, isChecked ->
+                                it.output1Cond1Inversion = isChecked
+                                mViewModel.sendPacket(it)
+                            }
+                        }
+                        output1Condition1On.value = it.output1OnThrd1
+                        output1Condition1Off.value = it.output1OffThrd1
+
+                        it.output1LogicFunc.let { logicFunc ->
+                            output1Condition2Group.isGone = logicFunc == 0xF
+
+                            if (logicFunc == 0xF) {
+                                output1LogicalFunction.setText(mLogicalFunctionsList[4], false)
+                                return@let
+                            }
+                            output1LogicalFunction.setText(mLogicalFunctionsList[logicFunc], false)
+                        }
+
+                        output1Condition2.setText(mCondition1List[it.output1Condition2], false)
+                        output1Condition2Inversion.apply {
+                            isChecked = it.output1Cond2Inversion
+                            setOnCheckedChangeListener { _, isChecked ->
+                                it.output1Cond2Inversion = isChecked
+                                mViewModel.sendPacket(it)
+                            }
+                        }
+                        output1Condition2On.value = it.output1OnThrd2
+                        output1Condition2Off.value = it.output1OffThrd2
+
+
+                        it.logicFunction_1_2.let { logicFunc ->
+                            if (logicFunc == 0xF) {
+                                logicalFunction12.setText(mLogicalFunctionsList[4], false)
+                                return@let
+                            }
+                            logicalFunction12.setText(mLogicalFunctionsList[logicFunc], false)
+                        }
+
+
+                        output2Condition1.setText(mCondition1List[it.output2Condition1], false)
+                        output2Condition1Inversion.apply {
+                            isChecked = it.output2Cond1Inversion
+                            setOnCheckedChangeListener { _, isChecked ->
+                                it.output2Cond1Inversion = isChecked
+                                mViewModel.sendPacket(it)
+                            }
+                        }
+                        output2Condition1On.value = it.output2OnThrd1
+                        output2Condition1Off.value = it.output2OffThrd1
+
+                        it.output2LogicFunc.let { logicFunc ->
+
+                            output2Condition2Group.isGone = logicFunc == 0xF
+
+                            if (logicFunc == 0xF) {
+                                output2LogicalFunction.setText(mLogicalFunctionsList[4], false)
+                                return@let
+                            }
+                            output2LogicalFunction.setText(mLogicalFunctionsList[logicFunc], false)
+                        }
+
+                        output2Condition2.setText(mCondition1List[it.output2Condition2], false)
+                        output2Condition2Inversion.apply {
+                            isChecked = it.output2Cond2Inversion
+                            setOnCheckedChangeListener { _, isChecked ->
+                                it.output2Cond2Inversion = isChecked
+                                mViewModel.sendPacket(it)
+                            }
+                        }
+                        output2Condition2On.value = it.output2OnThrd2
+                        output2Condition2Off.value = it.output2OffThrd2
+
+
+                        output3Condition1.setText(mCondition1List[it.output3Condition1], false)
+                        output3Condition1Inversion.apply {
+                            isChecked = it.output3Cond1Inversion
+                            setOnCheckedChangeListener { _, isChecked ->
+                                it.output3Cond1Inversion = isChecked
+                                mViewModel.sendPacket(it)
+                            }
+                        }
+                        output3Condition1On.value = it.output3OnThrd1
+                        output3Condition1Off.value = it.output3OffThrd1
+
+                        it.output3LogicFunc.let { logicFunc ->
+                            output3Condition2Group.isGone = logicFunc == 0xF
+
+                            if (logicFunc == 0xF) {
+                                output3LogicalFunction.setText(mLogicalFunctionsList[4], false)
+                                return@let
+                            }
+                            output3LogicalFunction.setText(mLogicalFunctionsList[logicFunc], false)
+                        }
+
+                        output3Condition2.setText(mCondition1List[it.output2Condition2], false)
+                        output3Condition2Inversion.apply {
+                            isChecked = it.output3Cond2Inversion
+                            setOnCheckedChangeListener { _, isChecked ->
+                                it.output3Cond2Inversion = isChecked
+                                mViewModel.sendPacket(it)
+                            }
+                        }
+                        output3Condition2On.value = it.output3OnThrd2
+                        output3Condition2Off.value = it.output3OffThrd2
+
+
+
+                        output4Condition1.setText(mCondition1List[it.output4Condition1], false)
+                        output4Condition1Inversion.apply {
+                            isChecked = it.output4Cond1Inversion
+                            setOnCheckedChangeListener { _, isChecked ->
+                                it.output4Cond1Inversion = isChecked
+                                mViewModel.sendPacket(it)
+                            }
+                        }
+                        output4Condition1On.value = it.output4OnThrd1
+                        output4Condition1Off.value = it.output4OffThrd1
+
+                        it.output4LogicFunc.let { logicFunc ->
+                            output4Condition2Group.isGone = logicFunc == 0xF
+
+                            if (logicFunc == 0xF) {
+                                output4LogicalFunction.setText(mLogicalFunctionsList[4], false)
+                                return@let
+                            }
+                            output4LogicalFunction.setText(mLogicalFunctionsList[logicFunc], false)
+                        }
+
+                        output4Condition2.setText(mCondition1List[it.output4Condition2], false)
+                        output4Condition2Inversion.apply {
+                            isChecked = it.output4Cond2Inversion
+                            setOnCheckedChangeListener { _, isChecked ->
+                                it.output4Cond2Inversion = isChecked
+                                mViewModel.sendPacket(it)
+                            }
+                        }
+                        output4Condition2On.value = it.output4OnThrd2
+                        output4Condition2Off.value = it.output4OffThrd2
+
+
+
+                        output5Condition1.setText(mCondition1List[it.output5Condition1], false)
+                        output5Condition1Inversion.apply {
+                            isChecked = it.output5Cond1Inversion
+                            setOnCheckedChangeListener { _, isChecked ->
+                                it.output5Cond1Inversion = isChecked
+                                mViewModel.sendPacket(it)
+                            }
+                        }
+                        output5Condition1On.value = it.output5OnThrd1
+                        output5Condition1Off.value = it.output5OffThrd1
+
+                        it.output5LogicFunc.let { logicFunc ->
+                            output5Condition2Group.isGone = logicFunc == 0xF
+
+                            if (logicFunc == 0xF) {
+                                output5LogicalFunction.setText(mLogicalFunctionsList[4], false)
+                                return@let
+                            }
+                            output5LogicalFunction.setText(mLogicalFunctionsList[logicFunc], false)
+                        }
+
+                        output5Condition2.setText(mCondition1List[it.output5Condition2], false)
+                        output5Condition2Inversion.apply {
+                            isChecked = it.output5Cond2Inversion
+                            setOnCheckedChangeListener { _, isChecked ->
+                                it.output5Cond2Inversion = isChecked
+                                mViewModel.sendPacket(it)
+                            }
+                        }
+                        output5Condition2On.value = it.output5OnThrd2
+                        output5Condition2Off.value = it.output5OffThrd2
+
+
+
+                        output6Condition1.setText(mCondition1List[it.output6Condition1], false)
+                        output6Condition1Inversion.apply {
+                            isChecked = it.output6Cond1Inversion
+                            setOnCheckedChangeListener { _, isChecked ->
+                                it.output6Cond1Inversion = isChecked
+                                mViewModel.sendPacket(it)
+                            }
+                        }
+                        output6Condition1On.value = it.output6OnThrd1
+                        output6Condition1Off.value = it.output6OffThrd1
+
+                        it.output6LogicFunc.let { logicFunc ->
+                            output6Condition2Group.isGone = logicFunc == 0xF
+
+                            if (logicFunc == 0xF) {
+                                output6LogicalFunction.setText(mLogicalFunctionsList[4], false)
+                                return@let
+                            }
+                            output6LogicalFunction.setText(mLogicalFunctionsList[logicFunc], false)
+                        }
+
+                        output6Condition2.setText(mCondition1List[it.output6Condition2], false)
+                        output6Condition2Inversion.apply {
+                            isChecked = it.output6Cond2Inversion
+                            setOnCheckedChangeListener { _, isChecked ->
+                                it.output6Cond2Inversion = isChecked
+                                mViewModel.sendPacket(it)
+                            }
+                        }
+                        output6Condition2On.value = it.output6OnThrd2
+                        output6Condition2Off.value = it.output6OffThrd2
+
                     }
+
+                    initViews()
                 }
-                output1Condition1On.value = it.output1OnThrd1
-                output1Condition1Off.value = it.output1OffThrd1
-
-                it.output1LogicFunc.let { logicFunc ->
-                    output1Condition2Group.isGone = logicFunc == 0xF
-
-                    if (logicFunc == 0xF) {
-                        output1LogicalFunction.setText(mLogicalFunctionsList[4], false)
-                        return@let
-                    }
-                    output1LogicalFunction.setText(mLogicalFunctionsList[logicFunc], false)
-                }
-
-                output1Condition2.setText(mCondition1List[it.output1Condition2], false)
-                output1Condition2Inversion.apply {
-                    isChecked = it.output1Cond2Inversion
-                    setOnCheckedChangeListener { _, isChecked ->
-                        it.output1Cond2Inversion = isChecked
-                        mViewModel.sendPacket(it)
-                    }
-                }
-                output1Condition2On.value = it.output1OnThrd2
-                output1Condition2Off.value = it.output1OffThrd2
-
-
-                it.logicFunction_1_2.let { logicFunc ->
-                    if (logicFunc == 0xF) {
-                        logicalFunction12.setText(mLogicalFunctionsList[4], false)
-                        return@let
-                    }
-                    logicalFunction12.setText(mLogicalFunctionsList[logicFunc], false)
-                }
-
-
-                output2Condition1.setText(mCondition1List[it.output2Condition1], false)
-                output2Condition1Inversion.apply {
-                    isChecked = it.output2Cond1Inversion
-                    setOnCheckedChangeListener { _, isChecked ->
-                        it.output2Cond1Inversion = isChecked
-                        mViewModel.sendPacket(it)
-                    }
-                }
-                output2Condition1On.value = it.output2OnThrd1
-                output2Condition1Off.value = it.output2OffThrd1
-
-                it.output2LogicFunc.let { logicFunc ->
-
-                    output2Condition2Group.isGone = logicFunc == 0xF
-
-                    if (logicFunc == 0xF) {
-                        output2LogicalFunction.setText(mLogicalFunctionsList[4], false)
-                        return@let
-                    }
-                    output2LogicalFunction.setText(mLogicalFunctionsList[logicFunc], false)
-                }
-
-                output2Condition2.setText(mCondition1List[it.output2Condition2], false)
-                output2Condition2Inversion.apply {
-                    isChecked = it.output2Cond2Inversion
-                    setOnCheckedChangeListener { _, isChecked ->
-                        it.output2Cond2Inversion = isChecked
-                        mViewModel.sendPacket(it)
-                    }
-                }
-                output2Condition2On.value = it.output2OnThrd2
-                output2Condition2Off.value = it.output2OffThrd2
-
-
-                output3Condition1.setText(mCondition1List[it.output3Condition1], false)
-                output3Condition1Inversion.apply {
-                    isChecked = it.output3Cond1Inversion
-                    setOnCheckedChangeListener { _, isChecked ->
-                        it.output3Cond1Inversion = isChecked
-                        mViewModel.sendPacket(it)
-                    }
-                }
-                output3Condition1On.value = it.output3OnThrd1
-                output3Condition1Off.value = it.output3OffThrd1
-
-                it.output3LogicFunc.let { logicFunc ->
-                    output3Condition2Group.isGone = logicFunc == 0xF
-
-                    if (logicFunc == 0xF) {
-                        output3LogicalFunction.setText(mLogicalFunctionsList[4], false)
-                        return@let
-                    }
-                    output3LogicalFunction.setText(mLogicalFunctionsList[logicFunc], false)
-                }
-
-                output3Condition2.setText(mCondition1List[it.output2Condition2], false)
-                output3Condition2Inversion.apply {
-                    isChecked = it.output3Cond2Inversion
-                    setOnCheckedChangeListener { _, isChecked ->
-                        it.output3Cond2Inversion = isChecked
-                        mViewModel.sendPacket(it)
-                    }
-                }
-                output3Condition2On.value = it.output3OnThrd2
-                output3Condition2Off.value = it.output3OffThrd2
-
-
-
-                output4Condition1.setText(mCondition1List[it.output4Condition1], false)
-                output4Condition1Inversion.apply {
-                    isChecked = it.output4Cond1Inversion
-                    setOnCheckedChangeListener { _, isChecked ->
-                        it.output4Cond1Inversion = isChecked
-                        mViewModel.sendPacket(it)
-                    }
-                }
-                output4Condition1On.value = it.output4OnThrd1
-                output4Condition1Off.value = it.output4OffThrd1
-
-                it.output4LogicFunc.let { logicFunc ->
-                    output4Condition2Group.isGone = logicFunc == 0xF
-
-                    if (logicFunc == 0xF) {
-                        output4LogicalFunction.setText(mLogicalFunctionsList[4], false)
-                        return@let
-                    }
-                    output4LogicalFunction.setText(mLogicalFunctionsList[logicFunc], false)
-                }
-
-                output4Condition2.setText(mCondition1List[it.output4Condition2], false)
-                output4Condition2Inversion.apply {
-                    isChecked = it.output4Cond2Inversion
-                    setOnCheckedChangeListener { _, isChecked ->
-                        it.output4Cond2Inversion = isChecked
-                        mViewModel.sendPacket(it)
-                    }
-                }
-                output4Condition2On.value = it.output4OnThrd2
-                output4Condition2Off.value = it.output4OffThrd2
-
-
-
-                output5Condition1.setText(mCondition1List[it.output5Condition1], false)
-                output5Condition1Inversion.apply {
-                    isChecked = it.output5Cond1Inversion
-                    setOnCheckedChangeListener { _, isChecked ->
-                        it.output5Cond1Inversion = isChecked
-                        mViewModel.sendPacket(it)
-                    }
-                }
-                output5Condition1On.value = it.output5OnThrd1
-                output5Condition1Off.value = it.output5OffThrd1
-
-                it.output5LogicFunc.let { logicFunc ->
-                    output5Condition2Group.isGone = logicFunc == 0xF
-
-                    if (logicFunc == 0xF) {
-                        output5LogicalFunction.setText(mLogicalFunctionsList[4], false)
-                        return@let
-                    }
-                    output5LogicalFunction.setText(mLogicalFunctionsList[logicFunc], false)
-                }
-
-                output5Condition2.setText(mCondition1List[it.output5Condition2], false)
-                output5Condition2Inversion.apply {
-                    isChecked = it.output5Cond2Inversion
-                    setOnCheckedChangeListener { _, isChecked ->
-                        it.output5Cond2Inversion = isChecked
-                        mViewModel.sendPacket(it)
-                    }
-                }
-                output5Condition2On.value = it.output5OnThrd2
-                output5Condition2Off.value = it.output5OffThrd2
-
-
-
-                output6Condition1.setText(mCondition1List[it.output6Condition1], false)
-                output6Condition1Inversion.apply {
-                    isChecked = it.output6Cond1Inversion
-                    setOnCheckedChangeListener { _, isChecked ->
-                        it.output6Cond1Inversion = isChecked
-                        mViewModel.sendPacket(it)
-                    }
-                }
-                output6Condition1On.value = it.output6OnThrd1
-                output6Condition1Off.value = it.output6OffThrd1
-
-                it.output6LogicFunc.let { logicFunc ->
-                    output6Condition2Group.isGone = logicFunc == 0xF
-
-                    if (logicFunc == 0xF) {
-                        output6LogicalFunction.setText(mLogicalFunctionsList[4], false)
-                        return@let
-                    }
-                    output6LogicalFunction.setText(mLogicalFunctionsList[logicFunc], false)
-                }
-
-                output6Condition2.setText(mCondition1List[it.output6Condition2], false)
-                output6Condition2Inversion.apply {
-                    isChecked = it.output6Cond2Inversion
-                    setOnCheckedChangeListener { _, isChecked ->
-                        it.output6Cond2Inversion = isChecked
-                        mViewModel.sendPacket(it)
-                    }
-                }
-                output6Condition2On.value = it.output6OnThrd2
-                output6Condition2Off.value = it.output6OffThrd2
-
             }
-
-            initViews()
         }
     }
 

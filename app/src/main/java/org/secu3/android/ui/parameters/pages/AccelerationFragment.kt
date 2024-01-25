@@ -30,6 +30,10 @@ import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import android.widget.ArrayAdapter
+import androidx.lifecycle.lifecycleScope
+import androidx.lifecycle.withResumed
+import androidx.lifecycle.withStarted
+import kotlinx.coroutines.launch
 import org.secu3.android.R
 import org.secu3.android.databinding.FragmentAccelerationBinding
 import org.secu3.android.models.packets.params.AccelerationParamPacket
@@ -68,29 +72,33 @@ class AccelerationFragment : BaseParamFragment() {
             }
         }
 
-        mViewModel.accelerationLiveData.observe(viewLifecycleOwner) {
+        lifecycleScope.launch {
+            withResumed {
+                mViewModel.accelerationLiveData.observe(viewLifecycleOwner) {
 
-            packet = it
+                    packet = it
 
-            mBinding.apply {
-                accelTpsdotThreshold.value = it.injAeTpsdotThrd
-                coldAccelMultiplier.value = it.injAeColdaccMult
-                aeDecayTime.value = it.injAeDecayTime
+                    mBinding.apply {
+                        accelTpsdotThreshold.value = it.injAeTpsdotThrd
+                        coldAccelMultiplier.value = it.injAeColdaccMult
+                        aeDecayTime.value = it.injAeDecayTime
 
-                aeType.setText(accelEnrichmentTypesList[it.injAeType], false)
+                        aeType.setText(accelEnrichmentTypesList[it.injAeType], false)
 
-                aeTime.value = it.injAeTime
+                        aeTime.value = it.injAeTime
 
-                aeBalance.value = it.injAeBallance
-                aeMapdoeThrd.value = it.injAeMapdotThrd
+                        aeBalance.value = it.injAeBallance
+                        aeMapdoeThrd.value = it.injAeMapdotThrd
 
-                wallwetModel.setText(wallwetModelList[it.wallwetModel], false)
-                xTauStartThrd.value = it.injXtauSThrd.toInt()
-                xTauFinishThrd.value = it.injXtauFThrd.toInt()
+                        wallwetModel.setText(wallwetModelList[it.wallwetModel], false)
+                        xTauStartThrd.value = it.injXtauSThrd.toInt()
+                        xTauFinishThrd.value = it.injXtauFThrd.toInt()
+                    }
+                }
+
+                initViews()
             }
         }
-
-        initViews()
     }
 
     private fun initViews() {

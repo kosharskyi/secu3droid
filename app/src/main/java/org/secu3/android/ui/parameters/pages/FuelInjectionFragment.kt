@@ -31,6 +31,10 @@ import android.view.View
 import android.view.ViewGroup
 import android.widget.ArrayAdapter
 import androidx.fragment.app.viewModels
+import androidx.lifecycle.lifecycleScope
+import androidx.lifecycle.withResumed
+import androidx.lifecycle.withStarted
+import kotlinx.coroutines.launch
 import org.secu3.android.R
 import org.secu3.android.databinding.FragmentFuelInjectionBinding
 import org.secu3.android.models.packets.params.InjctrParPacket
@@ -93,53 +97,57 @@ class FuelInjectionFragment : BaseParamFragment() {
             }
         }
 
-        mViewModel.fuelInjectionLiveData.observe(viewLifecycleOwner) {
+        lifecycleScope.launch {
+            withResumed {
+                mViewModel.fuelInjectionLiveData.observe(viewLifecycleOwner) {
 
-            packet = it
+                    packet = it
 
-            mInjViewModel.generateSquirtsDropDown(packet, 0)
-            mInjViewModel.generateSquirtsDropDown(packet, 1)
+                    mInjViewModel.generateSquirtsDropDown(packet, 0)
+                    mInjViewModel.generateSquirtsDropDown(packet, 1)
 
-            mBinding.apply {
-                engineDisplacement.value = it.engineDisp
+                    mBinding.apply {
+                        engineDisplacement.value = it.engineDisp
 
-                injectorFlowRate.value = it.flowRate[0]
+                        injectorFlowRate.value = it.flowRate[0]
 
-                injectionConfiguration.setText(mConfigList[it.config0], false)
+                        injectionConfiguration.setText(mConfigList[it.config0], false)
 
-                injectorTiming.value = it.timing[0]
-                crankingInjectionTiming.value = it.timingCrk[0]
+                        injectorTiming.value = it.timing[0]
+                        crankingInjectionTiming.value = it.timingCrk[0]
 
-                useMapInjectionTiming.isChecked = it.useTimingMap
-                injTimingSpecifies.setText(mInjTimingSpecifiesList[it.angleSpec0], false)
+                        useMapInjectionTiming.isChecked = it.useTimingMap
+                        injTimingSpecifies.setText(mInjTimingSpecifiesList[it.angleSpec0], false)
 
-                minInjectionPw.value = it.minPw0
-                maxInjectionPw.value = it.injMaxPw[0]
+                        minInjectionPw.value = it.minPw0
+                        maxInjectionPw.value = it.injMaxPw[0]
 
 
 
-                injectorFlowRateG.value = it.flowRate[1]
+                        injectorFlowRateG.value = it.flowRate[1]
 
-                injectionConfigurationG.setText(mConfigList[it.config1], false)
+                        injectionConfigurationG.setText(mConfigList[it.config1], false)
 
-                injectorTimingG.value = it.timing[1]
-                crankingInjectionTimingG.value = it.timingCrk[1]
+                        injectorTimingG.value = it.timing[1]
+                        crankingInjectionTimingG.value = it.timingCrk[1]
 
-                useMapInjectionTimingG.isChecked = it.useTimingMapG
-                injTimingSpecifiesG.setText(mInjTimingSpecifiesList[it.angleSpec1], false)
+                        useMapInjectionTimingG.isChecked = it.useTimingMapG
+                        injTimingSpecifiesG.setText(mInjTimingSpecifiesList[it.angleSpec1], false)
 
-                minInjectionPwG.value = it.minPw1
-                maxInjectionPwG.value = it.injMaxPw[1]
+                        minInjectionPwG.value = it.minPw1
+                        maxInjectionPwG.value = it.injMaxPw[1]
 
-                pulsesPerLitterOfFuel.value = it.fffConst
+                        pulsesPerLitterOfFuel.value = it.fffConst
 
-                additionalCorrectionsGasEq.isChecked = it.useAdditionalCorrections
-                useAirDensityCorrectionMap.isChecked = it.useAirDensity
-                diffPressForPwCorrGps.isChecked = it.useDifferentialPressure
-                switchBetweenInjectorsRows.isChecked = it.switchSecondInjRow
+                        additionalCorrectionsGasEq.isChecked = it.useAdditionalCorrections
+                        useAirDensityCorrectionMap.isChecked = it.useAirDensity
+                        diffPressForPwCorrGps.isChecked = it.useDifferentialPressure
+                        switchBetweenInjectorsRows.isChecked = it.switchSecondInjRow
+                    }
+
+                    initViews()
+                }
             }
-
-            initViews()
         }
     }
 

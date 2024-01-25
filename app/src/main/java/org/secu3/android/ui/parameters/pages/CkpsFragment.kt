@@ -30,6 +30,10 @@ import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import android.widget.ArrayAdapter
+import androidx.lifecycle.lifecycleScope
+import androidx.lifecycle.withResumed
+import androidx.lifecycle.withStarted
+import kotlinx.coroutines.launch
 import org.secu3.android.R
 import org.secu3.android.databinding.FragmentCkpsBinding
 import org.secu3.android.models.packets.params.CkpsParamPacket
@@ -56,41 +60,45 @@ class CkpsFragment : BaseParamFragment() {
         initTeethBeforeTdc()
         initNumberOfCylinders()
 
-        mViewModel.ckpsLiveData.observe(viewLifecycleOwner) {
+        lifecycleScope.launch {
+            withResumed {
+                mViewModel.ckpsLiveData.observe(viewLifecycleOwner) {
 
-            packet = it
+                    packet = it
 
-            mBinding.apply {
+                    mBinding.apply {
 
-                if (it.ckpsEdge) {
-                    ckpsEdgeRising.isChecked = true
-                } else {
-                    ckpsEdgeFalling.isChecked = true
+                        if (it.ckpsEdge) {
+                            ckpsEdgeRising.isChecked = true
+                        } else {
+                            ckpsEdgeFalling.isChecked = true
+                        }
+
+                        if (it.refsEdge) {
+                            refSEdgeRising.isChecked = true
+                        } else {
+                            refSEdgeFalling.isChecked = true
+                        }
+
+                        sparkRisingEdgeForCdi.isChecked = it.risingSpark
+                        mergeSignalsToSingleOutput.isChecked = it.mergeOuts
+
+                        numberOfWheelsTeeth.value = it.ckpsCogsNum
+                        numberOfMissingTeeth.value = it.ckpsMissNum
+
+                        teethBeforeTdc.setText(it.ckpsCogsBtdc.toString(), false)
+                        numberOfCylinders.setText(it.ckpsEngineCyl.toString(), false)
+
+                        durationIngDriverPulseTeeth.value = it.ckpsIgnitCogs
+                        hallSensorInterrupterDegree.value = it.hallWndWidth
+                        degreesBeforeTDC.value = it.hallDegreesBtdc
+
+                        useCamSensorAsReference.isChecked = it.useCamRef
+                    }
+
+                    initViews()
                 }
-
-                if (it.refsEdge) {
-                    refSEdgeRising.isChecked = true
-                } else {
-                    refSEdgeFalling.isChecked = true
-                }
-
-                sparkRisingEdgeForCdi.isChecked = it.risingSpark
-                mergeSignalsToSingleOutput.isChecked = it.mergeOuts
-
-                numberOfWheelsTeeth.value = it.ckpsCogsNum
-                numberOfMissingTeeth.value = it.ckpsMissNum
-
-                teethBeforeTdc.setText(it.ckpsCogsBtdc.toString(), false)
-                numberOfCylinders.setText(it.ckpsEngineCyl.toString(), false)
-
-                durationIngDriverPulseTeeth.value = it.ckpsIgnitCogs
-                hallSensorInterrupterDegree.value = it.hallWndWidth
-                degreesBeforeTDC.value = it.hallDegreesBtdc
-
-                useCamSensorAsReference.isChecked = it.useCamRef
             }
-
-            initViews()
         }
     }
 

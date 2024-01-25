@@ -30,6 +30,10 @@ import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import android.widget.ArrayAdapter
+import androidx.lifecycle.lifecycleScope
+import androidx.lifecycle.withResumed
+import androidx.lifecycle.withStarted
+import kotlinx.coroutines.launch
 import org.secu3.android.R
 import org.secu3.android.databinding.FragmentSecurityBinding
 
@@ -53,15 +57,19 @@ class SecurityFragment : BaseParamFragment() {
             mBinding.bluetoothType.setAdapter(it)
         }
 
-        mViewModel.securityLiveData.observe(viewLifecycleOwner) {
-            mBinding.apply {
-                bluetoothType.setText(btTypes[it.btType], false)
+        lifecycleScope.launch {
+            withResumed {
+                mViewModel.securityLiveData.observe(viewLifecycleOwner) {
+                    mBinding.apply {
+                        bluetoothType.setText(btTypes[it.btType], false)
 
-                useBluetooth.isChecked = it.useBt
-                useImmobilizer.isChecked = it.useImmobilizer
+                        useBluetooth.isChecked = it.useBt
+                        useImmobilizer.isChecked = it.useImmobilizer
 
-                loadParamsFromFlash.isChecked = it.useReserveParams
-                checkFirmwareIntegrity.isChecked = it.checkFwCrc
+                        loadParamsFromFlash.isChecked = it.useReserveParams
+                        checkFirmwareIntegrity.isChecked = it.checkFwCrc
+                    }
+                }
             }
         }
     }

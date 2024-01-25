@@ -31,6 +31,10 @@ import android.view.View
 import android.view.ViewGroup
 import android.widget.AdapterView
 import android.widget.ArrayAdapter
+import androidx.lifecycle.lifecycleScope
+import androidx.lifecycle.withResumed
+import androidx.lifecycle.withStarted
+import kotlinx.coroutines.launch
 import org.secu3.android.R
 import org.secu3.android.databinding.FragmentFuelCutoffkBinding
 import org.secu3.android.models.packets.params.CarburParamPacket
@@ -63,34 +67,39 @@ class FuelCutoffkFragment : BaseParamFragment() {
             useUnioutCondForIgnCutoff.setAdapter(adapter)
         }
 
-        mViewModel.carburLiveData.observe(viewLifecycleOwner) {
-            packet = it
+        lifecycleScope.launch {
+            withResumed {
 
-            mBinding.apply {
-                idleCutoffLowerThrd.value = it.ieLot
-                idleCutoffUpperThrd.value = it.ieHit
+                mViewModel.carburLiveData.observe(viewLifecycleOwner) {
+                    packet = it
 
-                idleCutoffLowerThrdGas.value = it.ieLotG
-                idleCutoffUpperThrdGas.value = it.ieHitG
+                    mBinding.apply {
+                        idleCutoffLowerThrd.value = it.ieLot
+                        idleCutoffUpperThrd.value = it.ieHit
 
-                cutoffDelay.value = it.shutoffDelay
-                powerValveTurnOnThrd.value = it.feOnThresholds
-                tpsThreshold.value = it.tpsThreshold
+                        idleCutoffLowerThrdGas.value = it.ieLotG
+                        idleCutoffUpperThrdGas.value = it.ieHitG
 
-                inversionOfThrottlePositionSwitch.isChecked = it.carbInvers > 0
+                        cutoffDelay.value = it.shutoffDelay
+                        powerValveTurnOnThrd.value = it.feOnThresholds
+                        tpsThreshold.value = it.tpsThreshold
 
-                fuelCutMapThreshold.value = it.fuelcutMapThrd
-                fuelCutCtsThreshold.value = it.fuelcutCtsThrd
+                        inversionOfThrottlePositionSwitch.isChecked = it.carbInvers > 0
 
-                revLimitingLowerThrd.value = it.revlimLot
-                revLimitingUpperThrd.value = it.revlimHit
+                        fuelCutMapThreshold.value = it.fuelcutMapThrd
+                        fuelCutCtsThreshold.value = it.fuelcutCtsThrd
 
-                useUnioutCond.setText(uniOutItems[it.fuelcut_uni], false)
-                useUnioutCondForIgnCutoff.setText(uniOutItems[it.igncut_uni], false)
+                        revLimitingLowerThrd.value = it.revlimLot
+                        revLimitingUpperThrd.value = it.revlimHit
 
+                        useUnioutCond.setText(uniOutItems[it.fuelcut_uni], false)
+                        useUnioutCondForIgnCutoff.setText(uniOutItems[it.igncut_uni], false)
+
+                    }
+
+                    initViews()
+                }
             }
-
-            initViews()
         }
     }
 

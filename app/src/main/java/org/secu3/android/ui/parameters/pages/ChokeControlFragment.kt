@@ -30,6 +30,10 @@ import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import android.widget.ArrayAdapter
+import androidx.lifecycle.lifecycleScope
+import androidx.lifecycle.withResumed
+import androidx.lifecycle.withStarted
+import kotlinx.coroutines.launch
 import org.secu3.android.R
 import org.secu3.android.databinding.FragmentChokeControlBinding
 import org.secu3.android.models.packets.params.ChokeControlParPacket
@@ -60,27 +64,31 @@ class ChokeControlFragment : BaseParamFragment() {
             }
         }
 
-        mViewModel.chokeLiveData.observe(viewLifecycleOwner) {
+        lifecycleScope.launch {
+            withResumed {
+                mViewModel.chokeLiveData.observe(viewLifecycleOwner) {
 
-            packet = it
+                    packet = it
 
-            mBinding.apply {
-                numSmSteps.value = it.smSteps
-                regulatorFactor.value = it.rpmIf
+                    mBinding.apply {
+                        numSmSteps.value = it.smSteps
+                        regulatorFactor.value = it.rpmIf
 
-                crankingMapLastingCold.value = it.corrTime0
-                crankingMapLastingHot.value = it.corrTime1
+                        crankingMapLastingCold.value = it.corrTime0
+                        crankingMapLastingHot.value = it.corrTime1
 
-                useClosedLoopRpmRegulator.isChecked = it.useClosedLoopRmpRegulator
-                dontUseRpmRegulatorOnGas.isChecked = it.dontUseRpmRegOnGas
-                useThrottlePosInChokeInit.isChecked = it.useThrottlePosInChokeInit
-                maximumSTEPFrequencyAtInit.isChecked = it.maxSTEPfreqAtInit
+                        useClosedLoopRpmRegulator.isChecked = it.useClosedLoopRmpRegulator
+                        dontUseRpmRegulatorOnGas.isChecked = it.dontUseRpmRegOnGas
+                        useThrottlePosInChokeInit.isChecked = it.useThrottlePosInChokeInit
+                        maximumSTEPFrequencyAtInit.isChecked = it.maxSTEPfreqAtInit
 
-                freqOfPulses.setText(stepperPulses[it.smFreq], false)
-                timeFromCrankToRun.value = it.injCrankToRunTime
+                        freqOfPulses.setText(stepperPulses[it.smFreq], false)
+                        timeFromCrankToRun.value = it.injCrankToRunTime
+                    }
+
+                    initViews()
+                }
             }
-
-            initViews()
         }
     }
 

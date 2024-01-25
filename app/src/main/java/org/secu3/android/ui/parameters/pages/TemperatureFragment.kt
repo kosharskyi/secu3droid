@@ -28,6 +28,10 @@ import android.os.Bundle
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
+import androidx.lifecycle.lifecycleScope
+import androidx.lifecycle.withResumed
+import androidx.lifecycle.withStarted
+import kotlinx.coroutines.launch
 import org.secu3.android.databinding.FragmentTemperatureBinding
 import org.secu3.android.models.packets.params.TemperatureParamPacket
 import org.secu3.android.ui.parameters.views.FloatParamView
@@ -47,26 +51,30 @@ class TemperatureFragment : BaseParamFragment() {
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
 
-        mViewModel.temperatureLiveData.observe(viewLifecycleOwner) {
+        lifecycleScope.launch {
+            withResumed {
+                mViewModel.temperatureLiveData.observe(viewLifecycleOwner) {
 
-            packet = it
+                    packet = it
 
-            mBinding.apply {
-                ventilatorTurnOn.value = it.ventOn
-                ventilatorTurnOff.value = it.ventOff
+                    mBinding.apply {
+                        ventilatorTurnOn.value = it.ventOn
+                        ventilatorTurnOff.value = it.ventOff
 
-                useSensor.isChecked = it.coolantUse
-                controlCoolingPwm.isChecked = it.ventPwm
-                useSensorsCurveTable.isChecked = it.coolantMap
+                        useSensor.isChecked = it.coolantUse
+                        controlCoolingPwm.isChecked = it.ventPwm
+                        useSensorsCurveTable.isChecked = it.coolantMap
 
-                pwmFrequency.value = it.ventPwmFrq
-                airCondOnThreshold.value = it.condPvtOn
-                airCondOffThreshold.value = it.condPvtOff
-                airCondOnMinRpmThreshold.value = it.condMinRpm
-                coolingFansTimer.value = it.ventTmr
+                        pwmFrequency.value = it.ventPwmFrq
+                        airCondOnThreshold.value = it.condPvtOn
+                        airCondOffThreshold.value = it.condPvtOff
+                        airCondOnMinRpmThreshold.value = it.condMinRpm
+                        coolingFansTimer.value = it.ventTmr
+                    }
+
+                    initViews()
+                }
             }
-
-            initViews()
         }
     }
 

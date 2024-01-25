@@ -30,6 +30,10 @@ import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import android.widget.ArrayAdapter
+import androidx.lifecycle.lifecycleScope
+import androidx.lifecycle.withResumed
+import androidx.lifecycle.withStarted
+import kotlinx.coroutines.launch
 import org.secu3.android.R
 import org.secu3.android.databinding.FragmentGasDoseBinding
 import org.secu3.android.models.packets.params.GasDoseParamPacket
@@ -67,24 +71,28 @@ class GasDoseFragment : BaseParamFragment() {
             }
         }
 
-        mViewModel.gasDoseLiveData.observe(viewLifecycleOwner) {
+        lifecycleScope.launch {
+            withResumed {
+                mViewModel.gasDoseLiveData.observe(viewLifecycleOwner) {
 
-            packet = it
+                    packet = it
 
-            mBinding.apply {
-                numOfSmSteps.value = it.steps
-                stoichiometricRatio.value = it.lambdaStoichval
-                closingOnFuelCut.value = it.fcClosing
+                    mBinding.apply {
+                        numOfSmSteps.value = it.steps
+                        stoichiometricRatio.value = it.lambdaStoichval
+                        closingOnFuelCut.value = it.fcClosing
 
-                correctionLimitPositive.value = it.lambdaCorrLimitP
-                correctionLimitNegative.value = it.lambdaCorrLimitM
+                        correctionLimitPositive.value = it.lambdaCorrLimitP
+                        correctionLimitNegative.value = it.lambdaCorrLimitM
 
-                frequencyOfPulses.setText(stepperPulses[it.freq], false)
+                        frequencyOfPulses.setText(stepperPulses[it.freq], false)
 
-                maximumSTEPFrequencyAtInit.isChecked = it.maxFreqInit > 0
+                        maximumSTEPFrequencyAtInit.isChecked = it.maxFreqInit > 0
+                    }
+
+                    initViews()
+                }
             }
-
-            initViews()
         }
     }
 

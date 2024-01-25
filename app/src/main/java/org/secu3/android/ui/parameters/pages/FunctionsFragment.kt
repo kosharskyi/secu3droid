@@ -31,8 +31,12 @@ import android.view.View
 import android.view.ViewGroup
 import android.widget.AdapterView
 import android.widget.ArrayAdapter
+import androidx.lifecycle.lifecycleScope
+import androidx.lifecycle.withResumed
+import kotlinx.coroutines.launch
 import org.secu3.android.R
 import org.secu3.android.databinding.FragmentFunctionsBinding
+import org.secu3.android.models.packets.FnNameDatPacket
 import org.secu3.android.models.packets.params.FunSetParamPacket
 import org.secu3.android.ui.parameters.views.FloatParamView
 
@@ -41,7 +45,9 @@ class FunctionsFragment : BaseParamFragment() {
 
     private lateinit var mBinding: FragmentFunctionsBinding
 
-    private var packet: FunSetParamPacket? = null
+    private var funSetPacket: FunSetParamPacket? = null
+    private var fnNamePacket: FnNameDatPacket? = null
+
 
     private val loadMeasurementItems : List<String> by lazy {
         resources.getStringArray(R.array.load_measurement_items).toList()
@@ -64,59 +70,66 @@ class FunctionsFragment : BaseParamFragment() {
         super.onViewCreated(view, savedInstanceState)
 
         init()
+        lifecycleScope.launch {
+            withResumed {
 
-        mViewModel.fnNameLiveData.observe(viewLifecycleOwner) {
-            mBinding.apply {
+                mViewModel.fnNameLiveData.observe(viewLifecycleOwner) {
+                    fnNamePacket = it
 
-                val mapsSetList = it.fnNameList.map { it.name }
+                    mBinding.apply {
 
-                mapsSet.inputType = InputType.TYPE_NULL
-                val adapter = ArrayAdapter(requireContext(), R.layout.list_item, mapsSetList)
-                mapsSet.setAdapter(adapter)
+                        val mapsSetList = it.fnNameList.map { it.name }
 
-                mapsSetForGas.inputType = InputType.TYPE_NULL
-                val adapterGas = ArrayAdapter(requireContext(), R.layout.list_item, mapsSetList)
-                mapsSetForGas.setAdapter(adapterGas)
-            }
-        }
+                        mapsSet.inputType = InputType.TYPE_NULL
+                        val adapter = ArrayAdapter(requireContext(), R.layout.list_item, mapsSetList)
+                        mapsSet.setAdapter(adapter)
 
-        mViewModel.funsetLiveData.observe(viewLifecycleOwner) {
-
-            packet = it
-
-            mBinding.apply {
-
-                mViewModel.mFnNameDatPacket?.fnNameList?.map { fn -> fn.name }?.let { fnNames ->
-                    mapsSet.setText(fnNames[it.fnGasoline], false)
-                    mapsSetForGas.setText(fnNames[it.fnGas], false)
+                        mapsSetForGas.inputType = InputType.TYPE_NULL
+                        val adapterGas = ArrayAdapter(requireContext(), R.layout.list_item, mapsSetList)
+                        mapsSetForGas.setAdapter(adapterGas)
+                    }
                 }
 
-                lowerLoadValue.value = it.loadLower
-                upperLoadValue.value = it.loadUpper
-                useLoadGrid.isChecked = it.useLoadGrid
 
-                mapCurveOffset.value = it.mapCurveOffset
-                mapCurveGradient.value = it.mapCurveGradient
+                mViewModel.funsetLiveData.observe(viewLifecycleOwner) {
 
-                tpsCurveOffset.value = it.tpsCurveOffset
-                tpsCurveGradient.value = it.tpsCurveGradient
+                    funSetPacket = it
+
+                    mBinding.apply {
+
+                        fnNamePacket?.fnNameList?.map { fn -> fn.name }?.let { fnNames ->
+                            mapsSet.setText(fnNames[it.fnGasoline], false)
+                            mapsSetForGas.setText(fnNames[it.fnGas], false)
+                        }
+
+                        lowerLoadValue.value = it.loadLower
+                        upperLoadValue.value = it.loadUpper
+                        useLoadGrid.isChecked = it.useLoadGrid
+
+                        mapCurveOffset.value = it.mapCurveOffset
+                        mapCurveGradient.value = it.mapCurveGradient
+
+                        tpsCurveOffset.value = it.tpsCurveOffset
+                        tpsCurveGradient.value = it.tpsCurveGradient
 
 
-                loadMeasurement.setText(loadMeasurementItems[it.loadSrcCfg], false)
+                        loadMeasurement.setText(loadMeasurementItems[it.loadSrcCfg], false)
 
-                mapselPetrol.setText(mapselItems[it.mapselUniPetrol], false)
-                mapselGas.setText(mapselItems[it.mapselUniGas], false)
+                        mapselPetrol.setText(mapselItems[it.mapselUniPetrol], false)
+                        mapselGas.setText(mapselItems[it.mapselUniGas], false)
 
-                barometricCorrection.setText(barocorrItems[it.barocorrType], false)
+                        barometricCorrection.setText(barocorrItems[it.barocorrType], false)
 
-                map2CurveOffset.value = it.map2CurveOffset
-                map2CurveGradient.value = it.map2CurveGradient
+                        map2CurveOffset.value = it.map2CurveOffset
+                        map2CurveGradient.value = it.map2CurveGradient
 
-                ve2MapFunc.setText(ve2MapFuncItems[it.ve2MapFunc], false)
-                gasVCondition.setText(mapselItems[it.gasVUni], false)
+                        ve2MapFunc.setText(ve2MapFuncItems[it.ve2MapFunc], false)
+                        gasVCondition.setText(mapselItems[it.gasVUni], false)
+                    }
+
+                    initViews()
+                }
             }
-
-            initViews()
         }
     }
 
@@ -165,84 +178,84 @@ class FunctionsFragment : BaseParamFragment() {
 
         mBinding.apply {
             lowerLoadValue.addOnValueChangeListener {
-                packet?.loadLower = it
-                packet?.let { it1 -> mViewModel.sendPacket(it1) }
+                funSetPacket?.loadLower = it
+                funSetPacket?.let { it1 -> mViewModel.sendPacket(it1) }
             }
             upperLoadValue.addOnValueChangeListener {
-                packet?.loadUpper = it
-                packet?.let { it1 -> mViewModel.sendPacket(it1) }
+                funSetPacket?.loadUpper = it
+                funSetPacket?.let { it1 -> mViewModel.sendPacket(it1) }
             }
             useLoadGrid.setOnCheckedChangeListener { buttonView, isChecked ->
-                packet?.apply {
+                funSetPacket?.apply {
                     useLoadGrid = isChecked
                     mViewModel.sendPacket(this)
                 }
             }
 
             mapCurveOffset.addOnValueChangeListener {
-                packet?.mapCurveOffset = it
-                packet?.let { it1 -> mViewModel.sendPacket(it1) }
+                funSetPacket?.mapCurveOffset = it
+                funSetPacket?.let { it1 -> mViewModel.sendPacket(it1) }
             }
             mapCurveGradient.addOnValueChangeListener {
-                packet?.mapCurveGradient = it
-                packet?.let { it1 -> mViewModel.sendPacket(it1) }
+                funSetPacket?.mapCurveGradient = it
+                funSetPacket?.let { it1 -> mViewModel.sendPacket(it1) }
             }
             tpsCurveOffset.addOnValueChangeListener {
-                packet?.tpsCurveOffset = it
-                packet?.let { it1 -> mViewModel.sendPacket(it1) }
+                funSetPacket?.tpsCurveOffset = it
+                funSetPacket?.let { it1 -> mViewModel.sendPacket(it1) }
             }
             tpsCurveGradient.addOnValueChangeListener {
-                packet?.tpsCurveGradient = it
-                packet?.let { it1 -> mViewModel.sendPacket(it1) }
+                funSetPacket?.tpsCurveGradient = it
+                funSetPacket?.let { it1 -> mViewModel.sendPacket(it1) }
             }
             map2CurveOffset.addOnValueChangeListener {
-                packet?.map2CurveOffset = it
-                packet?.let { it1 -> mViewModel.sendPacket(it1) }
+                funSetPacket?.map2CurveOffset = it
+                funSetPacket?.let { it1 -> mViewModel.sendPacket(it1) }
             }
             map2CurveGradient.addOnValueChangeListener {
-                packet?.map2CurveGradient = it
-                packet?.let { it1 -> mViewModel.sendPacket(it1) }
+                funSetPacket?.map2CurveGradient = it
+                funSetPacket?.let { it1 -> mViewModel.sendPacket(it1) }
             }
 
             mapsSet.onItemClickListener = AdapterView.OnItemClickListener { _, _, position, _ ->
-                packet?.fnGasoline = position
-                packet?.let { it1 -> mViewModel.sendPacket(it1) }
+                funSetPacket?.fnGasoline = position
+                funSetPacket?.let { it1 -> mViewModel.sendPacket(it1) }
             }
 
             mapsSetForGas.onItemClickListener = AdapterView.OnItemClickListener { _, _, position, _ ->
-                packet?.fnGas = position
-                packet?.let { it1 -> mViewModel.sendPacket(it1) }
+                funSetPacket?.fnGas = position
+                funSetPacket?.let { it1 -> mViewModel.sendPacket(it1) }
             }
 
             loadMeasurement.onItemClickListener = AdapterView.OnItemClickListener { _, _, position, _ ->
-                packet?.loadSrcCfg = position
-                packet?.let { it1 -> mViewModel.sendPacket(it1) }
+                funSetPacket?.loadSrcCfg = position
+                funSetPacket?.let { it1 -> mViewModel.sendPacket(it1) }
             }
 
             mapselPetrol.onItemClickListener = AdapterView.OnItemClickListener { _, _, position, _ ->
-                packet?.mapselUniPetrol = mapselItems.keys.elementAt(position)
-                packet?.let { it1 -> mViewModel.sendPacket(it1) }
+                funSetPacket?.mapselUniPetrol = mapselItems.keys.elementAt(position)
+                funSetPacket?.let { it1 -> mViewModel.sendPacket(it1) }
             }
 
             mapselGas.onItemClickListener = AdapterView.OnItemClickListener { _, _, position, _ ->
-                packet?.mapselUniGas = mapselItems.keys.elementAt(position)
-                packet?.let { it1 -> mViewModel.sendPacket(it1) }
+                funSetPacket?.mapselUniGas = mapselItems.keys.elementAt(position)
+                funSetPacket?.let { it1 -> mViewModel.sendPacket(it1) }
             }
 
             barometricCorrection.onItemClickListener = AdapterView.OnItemClickListener { _, _, position, _ ->
-                packet?.barocorrType = position
-                packet?.let { it1 -> mViewModel.sendPacket(it1) }
+                funSetPacket?.barocorrType = position
+                funSetPacket?.let { it1 -> mViewModel.sendPacket(it1) }
             }
 
             ve2MapFunc.onItemClickListener = AdapterView.OnItemClickListener { _, _, position, _ ->
-                packet?.apply {
+                funSetPacket?.apply {
                     ve2MapFunc = position
                     mViewModel.sendPacket(this)
                 }
             }
 
             gasVCondition.onItemClickListener = AdapterView.OnItemClickListener { _, _, position, _ ->
-                packet?.apply {
+                funSetPacket?.apply {
                     gasVUni = mapselItems.keys.elementAt(position)
                     mViewModel.sendPacket(this)
                 }

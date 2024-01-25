@@ -25,20 +25,36 @@
 package org.secu3.android.ui.parameters
 
 import androidx.lifecycle.LiveData
-import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.ViewModel
-import androidx.lifecycle.viewModelScope
+import androidx.lifecycle.asLiveData
 import dagger.hilt.android.lifecycle.HiltViewModel
-import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.flow.filter
 import kotlinx.coroutines.flow.first
-import kotlinx.coroutines.launch
-import kotlinx.coroutines.withContext
+import kotlinx.coroutines.flow.flow
+import kotlinx.coroutines.flow.map
+import kotlinx.coroutines.flow.sample
 import org.secu3.android.Secu3Repository
 import org.secu3.android.models.packets.BaseOutputPacket
 import org.secu3.android.models.packets.FirmwareInfoPacket
 import org.secu3.android.models.packets.FnName
 import org.secu3.android.models.packets.FnNameDatPacket
-import org.secu3.android.models.packets.params.*
+import org.secu3.android.models.packets.params.AccelerationParamPacket
+import org.secu3.android.models.packets.params.AdcCorrectionsParamPacket
+import org.secu3.android.models.packets.params.AnglesParamPacket
+import org.secu3.android.models.packets.params.CarburParamPacket
+import org.secu3.android.models.packets.params.ChokeControlParPacket
+import org.secu3.android.models.packets.params.CkpsParamPacket
+import org.secu3.android.models.packets.params.FunSetParamPacket
+import org.secu3.android.models.packets.params.GasDoseParamPacket
+import org.secu3.android.models.packets.params.IdlingParamPacket
+import org.secu3.android.models.packets.params.InjctrParPacket
+import org.secu3.android.models.packets.params.KnockParamPacket
+import org.secu3.android.models.packets.params.LambdaParamPacket
+import org.secu3.android.models.packets.params.MiscellaneousParamPacket
+import org.secu3.android.models.packets.params.SecurityParamPacket
+import org.secu3.android.models.packets.params.StarterParamPacket
+import org.secu3.android.models.packets.params.TemperatureParamPacket
+import org.secu3.android.models.packets.params.UniOutParamPacket
 import org.secu3.android.utils.LifeTimePrefs
 import org.secu3.android.utils.Task
 import javax.inject.Inject
@@ -49,207 +65,261 @@ class ParamsViewModel @Inject constructor(private val secu3Repository: Secu3Repo
     val connectionStatusLiveData: LiveData<Boolean>
         get() = secu3Repository.connectionStatusLiveData
 
-    var mFnNameDatPacket: FnNameDatPacket? = null
-
-
-    private val mFnNameLiveData = MutableLiveData<FnNameDatPacket>()
-    val fnNameLiveData: LiveData<FnNameDatPacket>
-        get() = mFnNameLiveData
-
     val fwInfoLiveData: LiveData<FirmwareInfoPacket>
         get() = secu3Repository.firmwareLiveData
 
-    private val mStarterLiveData = MutableLiveData<StarterParamPacket>()
     val starterLiveData: LiveData<StarterParamPacket>
-        get() = mStarterLiveData
+        get() = flow {
+            secu3Repository.sendNewTask(Task.Secu3ReadStarterParam)
+            secu3Repository.receivedPacketFlow
+                .filter { it is StarterParamPacket }
+                .map { it as StarterParamPacket }
+                .sample(1000)
+                .collect {
+                    emit(it)
+                    secu3Repository.sendNewTask(Task.Secu3ReadSensors)
+                }
+        }.asLiveData()
 
-    private val mAnglesLiveData = MutableLiveData<AnglesParamPacket>()
     val anglesLiveData: LiveData<AnglesParamPacket>
-        get() = mAnglesLiveData
+        get() = flow {
+            secu3Repository.sendNewTask(Task.Secu3ReadAnglesParam)
+            secu3Repository.receivedPacketFlow
+                .filter { it is AnglesParamPacket }
+                .map { it as AnglesParamPacket }
+                .sample(1000)
+                .collect {
+                    emit(it)
+                    secu3Repository.sendNewTask(Task.Secu3ReadSensors)
+                }
+        }.asLiveData()
 
-    private val mIdlingLiveData = MutableLiveData<IdlingParamPacket>()
     val idlingLiveData: LiveData<IdlingParamPacket>
-        get() = mIdlingLiveData
+        get() = flow {
+            secu3Repository.sendNewTask(Task.Secu3ReadIdlingParam)
+            secu3Repository.receivedPacketFlow
+                .filter { it is IdlingParamPacket }
+                .map { it as IdlingParamPacket }
+                .sample(1000)
+                .collect {
+                    emit(it)
+                    secu3Repository.sendNewTask(Task.Secu3ReadSensors)
+                }
+        }.asLiveData()
 
-    private val mFunsetLiveData = MutableLiveData<FunSetParamPacket>()
+    val fnNameLiveData: LiveData<FnNameDatPacket>
+        get() = flow {
+            var fnNameDatPacket: FnNameDatPacket? = null
+
+            secu3Repository.sendNewTask(Task.Secu3ReadFnNameDat)
+            while (fnNameDatPacket?.isAllFnNamesReceived != true) {
+
+                val packet = secu3Repository.receivedPacketFlow.first { it is FnNameDatPacket } as FnNameDatPacket
+
+                fnNameDatPacket = fnNameDatPacket?: packet.also {
+                    it.fnNameList = MutableList(packet.tablesNumber) { FnName(-1, "placeholder name") }
+                }
+
+                fnNameDatPacket.fnNameList.set(packet.fnName.index, packet.fnName)
+            }
+            emit(fnNameDatPacket)
+            secu3Repository.sendNewTask(Task.Secu3ReadFunsetParam)
+        }.asLiveData()
+
     val funsetLiveData: LiveData<FunSetParamPacket>
-        get() = mFunsetLiveData
+        get() = flow {
+            secu3Repository.receivedPacketFlow
+                .filter { it is FunSetParamPacket }
+                .map { it as FunSetParamPacket }
+                .sample(1000)
+                .collect {
+                    emit(it)
+                    secu3Repository.sendNewTask(Task.Secu3ReadSensors)
+                }
+        }.asLiveData()
 
-    private val mTemperatureLiveData = MutableLiveData<TemperatureParamPacket>()
     val temperatureLiveData: LiveData<TemperatureParamPacket>
-        get() = mTemperatureLiveData
+        get() = flow {
+            secu3Repository.sendNewTask(Task.Secu3ReadTemperatureParam)
+            secu3Repository.receivedPacketFlow
+                .filter { it is TemperatureParamPacket }
+                .map { it as TemperatureParamPacket }
+                .sample(1000)
+                .collect {
+                    emit(it)
+                    secu3Repository.sendNewTask(Task.Secu3ReadSensors)
+                }
+        }.asLiveData()
 
-    private val mCarburLiveData = MutableLiveData<CarburParamPacket>()
     val carburLiveData: LiveData<CarburParamPacket>
-        get() = mCarburLiveData
+        get() = flow {
+            secu3Repository.sendNewTask(Task.Secu3ReadCarburParam)
+            secu3Repository.receivedPacketFlow
+                .filter { it is CarburParamPacket }
+                .map { it as CarburParamPacket }
+                .sample(1000)
+                .collect {
+                    emit(it)
+                    secu3Repository.sendNewTask(Task.Secu3ReadSensors)
+                }
+        }.asLiveData()
 
-    private val mAdcCorrectionsLiveData = MutableLiveData<AdcCorrectionsParamPacket>()
     val adcCorrectionsLiveData: LiveData<AdcCorrectionsParamPacket>
-        get() = mAdcCorrectionsLiveData
+        get() = flow {
+            secu3Repository.sendNewTask(Task.Secu3ReadAdcErrorsCorrectionsParam)
+            secu3Repository.receivedPacketFlow
+                .filter { it is AdcCorrectionsParamPacket }
+                .map { it as AdcCorrectionsParamPacket }
+                .sample(1000)
+                .collect {
+                    emit(it)
+                    secu3Repository.sendNewTask(Task.Secu3ReadSensors)
+                }
+        }.asLiveData()
 
-    private val mCkpsLiveData = MutableLiveData<CkpsParamPacket>()
     val ckpsLiveData: LiveData<CkpsParamPacket>
-        get() = mCkpsLiveData
+        get() = flow {
+            secu3Repository.sendNewTask(Task.Secu3ReadCkpsParam)
+            secu3Repository.receivedPacketFlow
+                .filter { it is CkpsParamPacket }
+                .map { it as CkpsParamPacket }
+                .sample(1000)
+                .collect {
+                    emit(it)
+                    secu3Repository.sendNewTask(Task.Secu3ReadSensors)
+                }
+        }.asLiveData()
 
-    private val mKnockLiveData = MutableLiveData<KnockParamPacket>()
     val knockLiveData: LiveData<KnockParamPacket>
-        get() = mKnockLiveData
+        get() = flow {
+            secu3Repository.sendNewTask(Task.Secu3ReadKnockParam)
+            secu3Repository.receivedPacketFlow
+                .filter { it is KnockParamPacket }
+                .map { it as KnockParamPacket }
+                .sample(1000)
+                .collect {
+                    emit(it)
+                    secu3Repository.sendNewTask(Task.Secu3ReadSensors)
+                }
+        }.asLiveData()
 
-    private val mMiscellaneousLiveData = MutableLiveData<MiscellaneousParamPacket>()
     val miscellaneousLiveData: LiveData<MiscellaneousParamPacket>
-        get() = mMiscellaneousLiveData
+        get() = flow {
+            secu3Repository.sendNewTask(Task.Secu3ReadMiscellaneousParam)
+            secu3Repository.receivedPacketFlow
+                .filter { it is MiscellaneousParamPacket }
+                .map { it as MiscellaneousParamPacket }
+                .sample(1000)
+                .collect {
+                    emit(it)
+                    secu3Repository.sendNewTask(Task.Secu3ReadSensors)
+                }
+        }.asLiveData()
 
-    private val mChokeLiveData = MutableLiveData<ChokeControlParPacket>()
     val chokeLiveData: LiveData<ChokeControlParPacket>
-        get() = mChokeLiveData
+        get() = flow {
+            secu3Repository.sendNewTask(Task.Secu3ReadChokeControlParam)
+            secu3Repository.receivedPacketFlow
+                .filter { it is ChokeControlParPacket }
+                .map { it as ChokeControlParPacket }
+                .sample(1000)
+                .collect {
+                    emit(it)
+                }
+        }.asLiveData()
 
-    private val mSecurityLiveData = MutableLiveData<SecurityParamPacket>()
     val securityLiveData: LiveData<SecurityParamPacket>
-        get() = mSecurityLiveData
+        get() = flow {
+            secu3Repository.sendNewTask(Task.Secu3ReadSecurityParam)
+            secu3Repository.receivedPacketFlow
+                .filter { it is SecurityParamPacket }
+                .map { it as SecurityParamPacket }
+                .sample(1000)
+                .collect {
+                    emit(it)
+                    secu3Repository.sendNewTask(Task.Secu3ReadSensors)
+                }
+        }.asLiveData()
 
-    private val mUniOutLiveData = MutableLiveData<UniOutParamPacket>()
     val uniOutLiveData: LiveData<UniOutParamPacket>
-        get() = mUniOutLiveData
+        get() = flow {
+            secu3Repository.sendNewTask(Task.Secu3ReadUniversalOutputsParam)
+            secu3Repository.receivedPacketFlow
+                .filter { it is UniOutParamPacket }
+                .map { it as UniOutParamPacket }
+                .sample(1000)
+                .collect {
+                    it.speedSensorPulses = prefs.speedPulses
+                    emit(it)
+                    secu3Repository.sendNewTask(Task.Secu3ReadSensors)
+                }
+        }.asLiveData()
 
-    private val mFuelInjectionLiveData = MutableLiveData<InjctrParPacket>()
     val fuelInjectionLiveData: LiveData<InjctrParPacket>
-        get() = mFuelInjectionLiveData
-
-    private val mLambdaLiveData = MutableLiveData<LambdaParamPacket>()
+        get() = flow {
+            if (secu3Repository.fwInfo?.isFuelInjectEnabled != true) {
+                return@flow
+            }
+            secu3Repository.sendNewTask(Task.Secu3ReadFuelInjectionParam)
+            secu3Repository.receivedPacketFlow
+                .filter { it is InjctrParPacket }
+                .map { it as InjctrParPacket }
+                .sample(1000)
+                .collect {
+                    it.isAtMega644 = secu3Repository.fwInfo?.isATMEGA644 ?: true
+                    emit(it)
+                    secu3Repository.sendNewTask(Task.Secu3ReadSensors)
+                }
+        }.asLiveData()
     val lambdaLiveData: LiveData<LambdaParamPacket>
-        get() = mLambdaLiveData
-
-    private val mAccelerationLiveData = MutableLiveData<AccelerationParamPacket>()
+        get() = flow {
+            val fw = secu3Repository.fwInfo ?: return@flow
+            if (fw.isFuelInjectEnabled.not() || fw.isCarbAfrEnabled.not() || fw.isGdControlEnabled.not()) {
+                return@flow
+            }
+            secu3Repository.sendNewTask(Task.Secu3ReadLambdaParam)
+            secu3Repository.receivedPacketFlow
+                .filter { it is LambdaParamPacket }
+                .map { it as LambdaParamPacket }
+                .sample(1000)
+                .collect {
+                    emit(it)
+                    secu3Repository.sendNewTask(Task.Secu3ReadSensors)
+                }
+        }.asLiveData()
     val accelerationLiveData: LiveData<AccelerationParamPacket>
-        get() = mAccelerationLiveData
+        get() = flow {
+            val fw = secu3Repository.fwInfo ?: return@flow
+            if (fw.isFuelInjectEnabled.not() || fw.isGdControlEnabled.not()) {
+                return@flow
+            }
+            secu3Repository.sendNewTask(Task.Secu3ReadAccelerationParam)
+            secu3Repository.receivedPacketFlow
+                .filter { it is AccelerationParamPacket }
+                .map { it as AccelerationParamPacket }
+                .sample(1000)
+                .collect {
+                    emit(it)
+                    secu3Repository.sendNewTask(Task.Secu3ReadSensors)
+                }
+        }.asLiveData()
 
-    private val mGasDoseLiveData = MutableLiveData<GasDoseParamPacket>()
     val gasDoseLiveData: LiveData<GasDoseParamPacket>
-        get() = mGasDoseLiveData
+        get() = flow {
+            secu3Repository.sendNewTask(Task.Secu3ReadGasDoseParam)
+            secu3Repository.receivedPacketFlow
+                .filter { it is GasDoseParamPacket }
+                .map { it as GasDoseParamPacket }
+                .sample(1000)
+                .collect {
+                    emit(it)
+                    secu3Repository.sendNewTask(Task.Secu3ReadSensors)
+                }
+        }.asLiveData()
 
 
     fun sendPacket(packet: BaseOutputPacket) {
         secu3Repository.sendOutPacket(packet)
     }
 
-
-
-
-
-
-
-    private suspend fun fnNameDatReceive() = withContext(Dispatchers.IO) {
-        while (mFnNameDatPacket?.isAllFnNamesReceived != true) {
-
-            val packet = secu3Repository.receivedPacketFlow.first { it is FnNameDatPacket } as FnNameDatPacket
-
-            mFnNameDatPacket = mFnNameDatPacket?: packet.also {
-                it.fnNameList = MutableList(packet.tablesNumber) { FnName(-1, "placeholder name") }
-            }
-
-            mFnNameDatPacket?.fnNameList?.set(packet.fnName.index, packet.fnName)
-        }
-    }
-
-    init {
-
-        secu3Repository.sendNewTask(Task.Secu3ReadFnNameDat)
-
-        viewModelScope.launch {
-
-            fnNameDatReceive()
-
-            mFnNameLiveData.value = mFnNameDatPacket
-            secu3Repository.sendNewTask(Task.Secu3ReadStarterParam)
-
-
-
-            mStarterLiveData.value = secu3Repository.receivedPacketFlow.first { it is StarterParamPacket } as StarterParamPacket
-            secu3Repository.sendNewTask(Task.Secu3ReadAnglesParam)
-
-            mAnglesLiveData.value = secu3Repository.receivedPacketFlow.first { it is AnglesParamPacket } as AnglesParamPacket
-            secu3Repository.sendNewTask(Task.Secu3ReadIdlingParam)
-
-            mIdlingLiveData.value = secu3Repository.receivedPacketFlow.first { it is IdlingParamPacket } as IdlingParamPacket
-            secu3Repository.sendNewTask(Task.Secu3ReadFunsetParam)
-
-            mFunsetLiveData.value = secu3Repository.receivedPacketFlow.first { it is FunSetParamPacket } as FunSetParamPacket
-            secu3Repository.sendNewTask(Task.Secu3ReadTemperatureParam)
-
-            mTemperatureLiveData.value = secu3Repository.receivedPacketFlow.first { it is TemperatureParamPacket } as TemperatureParamPacket
-            secu3Repository.sendNewTask(Task.Secu3ReadCarburParam)
-
-            mCarburLiveData.value = secu3Repository.receivedPacketFlow.first { it is CarburParamPacket } as CarburParamPacket
-            secu3Repository.sendNewTask(Task.Secu3ReadAdcErrorsCorrectionsParam)
-
-            mAdcCorrectionsLiveData.value = secu3Repository.receivedPacketFlow.first { it is AdcCorrectionsParamPacket } as AdcCorrectionsParamPacket
-            secu3Repository.sendNewTask(Task.Secu3ReadCkpsParam)
-
-            mCkpsLiveData.value = secu3Repository.receivedPacketFlow.first { it is CkpsParamPacket } as CkpsParamPacket
-            secu3Repository.sendNewTask(Task.Secu3ReadKnockParam)
-
-            mKnockLiveData.value = secu3Repository.receivedPacketFlow.first { it is KnockParamPacket } as KnockParamPacket
-            secu3Repository.sendNewTask(Task.Secu3ReadMiscellaneousParam)
-
-            mMiscellaneousLiveData.value = secu3Repository.receivedPacketFlow.first { it is MiscellaneousParamPacket } as MiscellaneousParamPacket
-            secu3Repository.sendNewTask(Task.Secu3ReadChokeControlParam)
-
-            mChokeLiveData.value = secu3Repository.receivedPacketFlow.first { it is ChokeControlParPacket } as ChokeControlParPacket
-            secu3Repository.sendNewTask(Task.Secu3ReadSecurityParam)
-
-            mSecurityLiveData.value = secu3Repository.receivedPacketFlow.first { it is SecurityParamPacket } as SecurityParamPacket
-            secu3Repository.sendNewTask(Task.Secu3ReadUniversalOutputsParam)
-
-
-
-            mUniOutLiveData.value = (secu3Repository.receivedPacketFlow.first { it is UniOutParamPacket } as UniOutParamPacket).also {
-                it.speedSensorPulses = prefs.speedPulses
-            }
-
-            secu3Repository.fwInfo?.let {
-                if (it.isFuelInjectEnabled) {
-                    secu3Repository.sendNewTask(Task.Secu3ReadFuelInjectionParam)
-                } else if (it.isFuelInjectEnabled || it.isCarbAfrEnabled || it.isGdControlEnabled) {
-                    secu3Repository.sendNewTask(Task.Secu3ReadLambdaParam)
-                } else if (it.isFuelInjectEnabled || it.isGdControlEnabled) {
-                    secu3Repository.sendNewTask(Task.Secu3ReadAccelerationParam)
-                } else {
-                    secu3Repository.sendNewTask(Task.Secu3ReadSensors)
-                }
-            }
-
-
-
-            mFuelInjectionLiveData.value = (secu3Repository.receivedPacketFlow.first { it is InjctrParPacket } as InjctrParPacket).also {
-                it.isAtMega644 = secu3Repository.fwInfo?.isATMEGA644 ?: true
-            }
-
-            secu3Repository.fwInfo?.let {
-                if (it.isFuelInjectEnabled || it.isCarbAfrEnabled || it.isGdControlEnabled) {
-                    secu3Repository.sendNewTask(Task.Secu3ReadLambdaParam)
-                } else if (it.isFuelInjectEnabled || it.isGdControlEnabled) {
-                    secu3Repository.sendNewTask(Task.Secu3ReadAccelerationParam)
-                } else {
-                    secu3Repository.sendNewTask(Task.Secu3ReadSensors)
-                }
-            }
-
-
-            mLambdaLiveData.value = secu3Repository.receivedPacketFlow.first { it is LambdaParamPacket } as LambdaParamPacket
-            secu3Repository.sendNewTask(Task.Secu3ReadAccelerationParam)
-
-
-            mAccelerationLiveData.value = secu3Repository.receivedPacketFlow.first { it is AccelerationParamPacket } as AccelerationParamPacket
-            secu3Repository.fwInfo?.let {
-                if (it.isGdControlEnabled) {
-                    secu3Repository.sendNewTask(Task.Secu3ReadGasDoseParam)
-                } else {
-                    secu3Repository.sendNewTask(Task.Secu3ReadSensors)
-                }
-            }
-
-            mGasDoseLiveData.value = secu3Repository.receivedPacketFlow.first { it is GasDoseParamPacket } as GasDoseParamPacket
-            secu3Repository.sendNewTask(Task.Secu3ReadSensors)
-        }
-    }
 }
