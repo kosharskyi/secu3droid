@@ -30,18 +30,15 @@ import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import android.widget.ArrayAdapter
-import androidx.fragment.app.activityViewModels
 import org.secu3.android.R
 import org.secu3.android.databinding.FragmentMiscellaneousBinding
 import org.secu3.android.models.packets.params.MiscellaneousParamPacket
-import org.secu3.android.ui.parameters.ParamsViewModel
 import org.secu3.android.ui.parameters.views.FloatParamView
 import org.secu3.android.ui.parameters.views.IntParamView
 
 
 class MiscellaneousFragment : BaseParamFragment() {
 
-    private val mViewModel: ParamsViewModel by activityViewModels()
     private lateinit var mBinding: FragmentMiscellaneousBinding
 
     private val baudRateList = mapOf(

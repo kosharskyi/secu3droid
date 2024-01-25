@@ -28,16 +28,13 @@ import android.os.Bundle
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
-import androidx.fragment.app.activityViewModels
 import org.secu3.android.databinding.FragmentIdlingBinding
 import org.secu3.android.models.packets.params.IdlingParamPacket
-import org.secu3.android.ui.parameters.ParamsViewModel
 import org.secu3.android.ui.parameters.views.FloatParamView
 import org.secu3.android.ui.parameters.views.IntParamView
 
 class IdlingFragment : BaseParamFragment() {
 
-    private val mViewModel: ParamsViewModel by activityViewModels()
     private lateinit var mBinding: FragmentIdlingBinding
 
     private var packet: IdlingParamPacket? = null

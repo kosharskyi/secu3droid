@@ -26,12 +26,16 @@
 package org.secu3.android.ui.parameters.pages
 
 import androidx.fragment.app.Fragment
+import androidx.fragment.app.viewModels
+import org.secu3.android.ui.parameters.ParamsViewModel
 import org.secu3.android.ui.parameters.dialogs.ParamFloatEditDialogFragment
 import org.secu3.android.ui.parameters.dialogs.ParamIntEditDialogFragment
 import org.secu3.android.ui.parameters.views.FloatParamView
 import org.secu3.android.ui.parameters.views.IntParamView
 
 abstract class BaseParamFragment : Fragment() {
+
+    protected val mViewModel: ParamsViewModel by viewModels( ownerProducer = { requireParentFragment() })
 
     protected fun intParamClick(view: IntParamView) {
         view.apply {

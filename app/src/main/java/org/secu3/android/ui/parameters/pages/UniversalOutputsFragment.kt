@@ -31,12 +31,10 @@ import android.view.View
 import android.view.ViewGroup
 import android.widget.ArrayAdapter
 import androidx.core.view.isGone
-import androidx.fragment.app.activityViewModels
 import dagger.hilt.android.AndroidEntryPoint
 import org.secu3.android.R
 import org.secu3.android.databinding.FragmentUniversalOutputsBinding
 import org.secu3.android.models.packets.params.UniOutParamPacket
-import org.secu3.android.ui.parameters.ParamsViewModel
 import org.secu3.android.ui.parameters.views.FloatParamView
 import org.secu3.android.utils.UnioutTabConfigurator
 import javax.inject.Inject
@@ -48,7 +46,6 @@ class UniversalOutputsFragment : BaseParamFragment() {
     @Inject
     internal lateinit var mUnioutConfigurator: UnioutTabConfigurator
 
-    private val mViewModel: ParamsViewModel by activityViewModels()
     private lateinit var mBinding: FragmentUniversalOutputsBinding
 
     private var packet: UniOutParamPacket? = null

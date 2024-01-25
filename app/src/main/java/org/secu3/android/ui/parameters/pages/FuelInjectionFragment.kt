@@ -26,17 +26,14 @@ package org.secu3.android.ui.parameters.pages
 
 import android.os.Bundle
 import android.text.InputType
-import android.util.Log
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import android.widget.ArrayAdapter
-import androidx.fragment.app.activityViewModels
 import androidx.fragment.app.viewModels
 import org.secu3.android.R
 import org.secu3.android.databinding.FragmentFuelInjectionBinding
 import org.secu3.android.models.packets.params.InjctrParPacket
-import org.secu3.android.ui.parameters.ParamsViewModel
 import org.secu3.android.ui.parameters.pages.injection.FuelInjectionViewModel
 import org.secu3.android.ui.parameters.views.FloatParamView
 import org.secu3.android.ui.parameters.views.IntParamView
@@ -45,7 +42,6 @@ import org.secu3.android.utils.visible
 
 class FuelInjectionFragment : BaseParamFragment() {
 
-    private val mViewModel: ParamsViewModel by activityViewModels()
     private val mInjViewModel: FuelInjectionViewModel by viewModels()
     private lateinit var mBinding: FragmentFuelInjectionBinding
 

@@ -30,11 +30,9 @@ import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import android.widget.ArrayAdapter
-import androidx.fragment.app.activityViewModels
 import org.secu3.android.R
 import org.secu3.android.databinding.FragmentGasDoseBinding
 import org.secu3.android.models.packets.params.GasDoseParamPacket
-import org.secu3.android.ui.parameters.ParamsViewModel
 import org.secu3.android.ui.parameters.views.FloatParamView
 import org.secu3.android.ui.parameters.views.IntParamView
 import org.secu3.android.utils.gone
@@ -43,7 +41,6 @@ import org.secu3.android.utils.visible
 
 class GasDoseFragment : BaseParamFragment() {
 
-    private val mViewModel: ParamsViewModel by activityViewModels()
     private lateinit var mBinding: FragmentGasDoseBinding
 
     private val stepperPulses = listOf("300", "150", "100", "75")

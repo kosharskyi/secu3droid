@@ -30,15 +30,12 @@ import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import android.widget.ArrayAdapter
-import androidx.fragment.app.activityViewModels
 import org.secu3.android.R
 import org.secu3.android.databinding.FragmentSecurityBinding
-import org.secu3.android.ui.parameters.ParamsViewModel
 
 
 class SecurityFragment : BaseParamFragment() {
 
-    private val mViewModel: ParamsViewModel by activityViewModels()
     private lateinit var mBinding: FragmentSecurityBinding
 
     private val btTypes = listOf("BC417", "BK3231")

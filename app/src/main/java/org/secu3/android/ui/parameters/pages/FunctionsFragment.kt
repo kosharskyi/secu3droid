@@ -31,17 +31,14 @@ import android.view.View
 import android.view.ViewGroup
 import android.widget.AdapterView
 import android.widget.ArrayAdapter
-import androidx.fragment.app.activityViewModels
 import org.secu3.android.R
 import org.secu3.android.databinding.FragmentFunctionsBinding
 import org.secu3.android.models.packets.params.FunSetParamPacket
-import org.secu3.android.ui.parameters.ParamsViewModel
 import org.secu3.android.ui.parameters.views.FloatParamView
 
 
 class FunctionsFragment : BaseParamFragment() {
 
-    private val mViewModel: ParamsViewModel by activityViewModels()
     private lateinit var mBinding: FragmentFunctionsBinding
 
     private var packet: FunSetParamPacket? = null

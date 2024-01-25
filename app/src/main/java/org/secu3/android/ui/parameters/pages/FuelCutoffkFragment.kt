@@ -31,11 +31,9 @@ import android.view.View
 import android.view.ViewGroup
 import android.widget.AdapterView
 import android.widget.ArrayAdapter
-import androidx.fragment.app.activityViewModels
 import org.secu3.android.R
 import org.secu3.android.databinding.FragmentFuelCutoffkBinding
 import org.secu3.android.models.packets.params.CarburParamPacket
-import org.secu3.android.ui.parameters.ParamsViewModel
 import org.secu3.android.ui.parameters.views.FloatParamView
 import org.secu3.android.ui.parameters.views.IntParamView
 
@@ -43,7 +41,6 @@ class FuelCutoffkFragment : BaseParamFragment() {
 
     private val uniOutItems = mapOf(1 to "1", 2 to "2", 3 to "3", 4 to "4", 5 to "5", 6 to "6", 15 to "no")
 
-    private val mViewModel: ParamsViewModel by activityViewModels()
     private lateinit var mBinding: FragmentFuelCutoffkBinding
 
     private var packet: CarburParamPacket? = null
