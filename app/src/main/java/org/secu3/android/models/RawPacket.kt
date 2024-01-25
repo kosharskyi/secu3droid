@@ -93,8 +93,8 @@ data class RawPacket(val data: String)  {
             }
 
             packet?.apply {
-                packetCrc[0] = data[data.lastIndex - 1].code.toByte()
-                packetCrc[1] = data[data.lastIndex].code.toByte()
+                packetCrc[0] = data[data.lastIndex - 1].code.toUByte()
+                packetCrc[1] = data[data.lastIndex].code.toUByte()
             }
 
             if (packet != null) {

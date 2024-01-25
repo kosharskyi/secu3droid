@@ -26,7 +26,7 @@ package org.secu3.android.models.packets
 
 abstract class BaseSecu3Packet {
 
-    var packetCrc: ByteArray = ByteArray(2)
+    var packetCrc: UByteArray = UByteArray(2)
 
     protected var unhandledParams: String = ""
 
