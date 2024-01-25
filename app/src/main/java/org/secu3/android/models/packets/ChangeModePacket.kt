@@ -32,7 +32,8 @@ data class ChangeModePacket(
 ) : BaseOutputPacket() {
 
     override fun pack(): String {
-        return "${OUTPUT_PACKET_SYMBOL}h$descriptor"
+        val stubByte = 0.toUByte().toInt().toChar()
+        return "${OUTPUT_PACKET_SYMBOL}h$descriptor$stubByte"
     }
 
 

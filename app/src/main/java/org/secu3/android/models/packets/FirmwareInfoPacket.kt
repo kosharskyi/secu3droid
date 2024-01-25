@@ -132,8 +132,8 @@ data class FirmwareInfoPacket(
         fun parse(data: String) = FirmwareInfoPacket().apply {
             tag = data.substring(2, 50).toByteArray(StandardCharsets.ISO_8859_1).toString(Charset.forName("IBM866"))
             options = data.get4Bytes(50)
-            version[0] = data[54].code.and(0x0F)
-            version[1] = data[54].code.shr(4)
+            version[0] = data[54].code.and(0x0F)  // minor
+            version[1] = data[54].code.shr(4)  // major
         }
 
         private const val COPT_OBD_SUPPORT = 0
