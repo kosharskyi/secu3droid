@@ -27,6 +27,7 @@ package org.secu3.android.models.packets.params
 import org.secu3.android.models.packets.BaseOutputPacket
 import org.secu3.android.utils.getBitValue
 import org.secu3.android.utils.setBitValue
+import kotlin.math.roundToInt
 
 data class ChokeControlParPacket(
 
@@ -74,17 +75,17 @@ data class ChokeControlParPacket(
     override fun pack(): String {
         var data = "$OUTPUT_PACKET_SYMBOL$DESCRIPTOR"
 
-        data += data.write2Bytes(smSteps)
+        data += smSteps.write2Bytes()
 
         data += testing.toChar()
         data += manualPositionD.toChar()
 
-        data += rpmIf.times(1024.0f).toInt().write2Bytes()
-        data += corrTime0.times(100).toInt().write2Bytes()
-        data += corrTime1.times(100).toInt().write2Bytes()
+        data += rpmIf.times(1024.0f).roundToInt().write2Bytes()
+        data += corrTime0.times(100).roundToInt().write2Bytes()
+        data += corrTime1.times(100).roundToInt().write2Bytes()
         data += flags.toChar()
         data += smFreq.toChar()
-        data += injCrankToRunTime.times(100).toInt().write2Bytes()
+        data += injCrankToRunTime.times(100).roundToInt().write2Bytes()
 
         data += unhandledParams
 

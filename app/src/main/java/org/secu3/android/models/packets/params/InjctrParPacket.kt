@@ -70,10 +70,10 @@ data class InjctrParPacket(
         data += config[0].toChar()
         data += config[1].toChar()
 
-        data += flowRate[0].times(64).toInt().write2Bytes()
-        data += flowRate[1].times(64).toInt().write2Bytes()
+        data += flowRate[0].times(64).roundToInt().write2Bytes()
+        data += flowRate[1].times(64).roundToInt().write2Bytes()
 
-        data += cylDisp.times(16384).toInt().write2Bytes()
+        data += cylDisp.times(16384).roundToInt().write2Bytes()
 
         data += sdIglConst[0].write4Bytes()
         data += sdIglConst[1].write4Bytes()
@@ -88,7 +88,7 @@ data class InjctrParPacket(
 
         data += angleSpec.toChar()
 
-        data += fffConst.toFloat().div(1000f*60f).times(65536f).toInt().write2Bytes()
+        data += fffConst.toFloat().div(1000f*60f).times(65536f).roundToInt().write2Bytes()
 
         data += minPw.write2Bytes()
 

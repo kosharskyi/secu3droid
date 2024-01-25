@@ -27,6 +27,7 @@ package org.secu3.android.models.packets.params
 import org.secu3.android.models.packets.BaseOutputPacket
 import org.secu3.android.utils.getBitValue
 import org.secu3.android.utils.setBitValue
+import kotlin.math.roundToInt
 
 data class CkpsParamPacket(
 
@@ -88,8 +89,8 @@ data class CkpsParamPacket(
         data += ckpsMissNum.toChar()
         data += hallFlags.toChar()
 
-        data += hallWndWidth.times(ANGLE_DIVIDER).toInt().write2Bytes()
-        data += hallDegreesBtdc.times(ANGLE_DIVIDER).toInt().write2Bytes()
+        data += hallWndWidth.times(ANGLE_DIVIDER).roundToInt().write2Bytes()
+        data += hallDegreesBtdc.times(ANGLE_DIVIDER).roundToInt().write2Bytes()
 
         data += unhandledParams
 

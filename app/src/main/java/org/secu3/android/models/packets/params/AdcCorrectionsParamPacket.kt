@@ -27,6 +27,7 @@ package org.secu3.android.models.packets.params
 import org.secu3.android.models.packets.BaseOutputPacket
 import org.secu3.android.utils.getBitValue
 import org.secu3.android.utils.setBitValue
+import kotlin.math.roundToInt
 
 data class AdcCorrectionsParamPacket(
 
@@ -69,65 +70,41 @@ data class AdcCorrectionsParamPacket(
 
         data += adcFlags.toChar()
 
-        mapAdcFactor.times(FACTOR_DIVIDER).toInt().let { data += data.write2Bytes(it) }
-        mapAdcCorrection.div(ADC_DISCRETE).times(mapAdcFactor).plus(0.5f).times(FACTOR_DIVIDER).toInt().let {
-            data += data.write4Bytes(it)
-        }
+        data += mapAdcFactor.times(FACTOR_DIVIDER).roundToInt().write2Bytes()
+        data += mapAdcCorrection.div(ADC_DISCRETE).times(mapAdcFactor).plus(0.5f).times(FACTOR_DIVIDER).roundToInt().write4Bytes()
 
-        ubatAdcFactor.times(FACTOR_DIVIDER).toInt().let { data += data.write2Bytes(it) }
-        ubatAdcCorrection.div(ADC_DISCRETE).times(ubatAdcFactor).plus(0.5f).times(FACTOR_DIVIDER).toInt().let {
-            data += data.write4Bytes(it)
-        }
+        data += ubatAdcFactor.times(FACTOR_DIVIDER).roundToInt().write2Bytes()
+        data += ubatAdcCorrection.div(ADC_DISCRETE).times(ubatAdcFactor).plus(0.5f).times(FACTOR_DIVIDER).roundToInt().write4Bytes()
 
-        tempAdcFactor.times(FACTOR_DIVIDER).toInt().let { data += data.write2Bytes(it) }
-        tempAdcCorrection.div(ADC_DISCRETE).times(tempAdcFactor).plus(0.5f).times(FACTOR_DIVIDER).toInt().let {
-            data += data.write4Bytes(it)
-        }
+        data += tempAdcFactor.times(FACTOR_DIVIDER).roundToInt().write2Bytes()
+        data += tempAdcCorrection.div(ADC_DISCRETE).times(tempAdcFactor).plus(0.5f).times(FACTOR_DIVIDER).roundToInt().write4Bytes()
 
-        tpsAdcFactor.times(FACTOR_DIVIDER).toInt().let { data += data.write2Bytes(it) }
-        tpsAdcCorrection.div(ADC_DISCRETE).times(tpsAdcFactor).plus(0.5f).times(FACTOR_DIVIDER).toInt().let {
-            data += data.write4Bytes(it)
-        }
+        data += tpsAdcFactor.times(FACTOR_DIVIDER).roundToInt().write2Bytes()
+        data += tpsAdcCorrection.div(ADC_DISCRETE).times(tpsAdcFactor).plus(0.5f).times(FACTOR_DIVIDER).roundToInt().write4Bytes()
 
-        ai1AdcFactor.times(FACTOR_DIVIDER).toInt().let { data += data.write2Bytes(it) }
-        ai1AdcCorrection.div(ADC_DISCRETE).times(ai1AdcFactor).plus(0.5f).times(FACTOR_DIVIDER).toInt().let {
-            data += data.write4Bytes(it)
-        }
+        data += ai1AdcFactor.times(FACTOR_DIVIDER).roundToInt().write2Bytes()
+        data += ai1AdcCorrection.div(ADC_DISCRETE).times(ai1AdcFactor).plus(0.5f).times(FACTOR_DIVIDER).roundToInt().write4Bytes()
 
-        ai2AdcFactor.times(FACTOR_DIVIDER).toInt().let { data += data.write2Bytes(it) }
-        ai2AdcCorrection.div(ADC_DISCRETE).times(ai2AdcFactor).plus(0.5f).times(FACTOR_DIVIDER).toInt().let {
-            data += data.write4Bytes(it)
-        }
+        data += ai2AdcFactor.times(FACTOR_DIVIDER).roundToInt().write2Bytes()
+        data += ai2AdcCorrection.div(ADC_DISCRETE).times(ai2AdcFactor).plus(0.5f).times(FACTOR_DIVIDER).roundToInt().write4Bytes()
 
-        ai3AdcFactor.times(FACTOR_DIVIDER).toInt().let { data += data.write2Bytes(it) }
-        ai3AdcCorrection.div(ADC_DISCRETE).times(ai3AdcFactor).plus(0.5f).times(FACTOR_DIVIDER).toInt().let {
-            data += data.write4Bytes(it)
-        }
+        data += ai3AdcFactor.times(FACTOR_DIVIDER).roundToInt().write2Bytes()
+        data += ai3AdcCorrection.div(ADC_DISCRETE).times(ai3AdcFactor).plus(0.5f).times(FACTOR_DIVIDER).roundToInt().write4Bytes()
 
-        ai4AdcFactor.times(FACTOR_DIVIDER).toInt().let { data += data.write2Bytes(it) }
-        ai4AdcCorrection.div(ADC_DISCRETE).times(ai4AdcFactor).plus(0.5f).times(FACTOR_DIVIDER).toInt().let {
-            data += data.write4Bytes(it)
-        }
+        data += ai4AdcFactor.times(FACTOR_DIVIDER).roundToInt().write2Bytes()
+        data += ai4AdcCorrection.div(ADC_DISCRETE).times(ai4AdcFactor).plus(0.5f).times(FACTOR_DIVIDER).roundToInt().write4Bytes()
 
-        ai5AdcFactor.times(FACTOR_DIVIDER).toInt().let { data += data.write2Bytes(it) }
-        ai5AdcCorrection.div(ADC_DISCRETE).times(ai5AdcFactor).plus(0.5f).times(FACTOR_DIVIDER).toInt().let {
-            data += data.write4Bytes(it)
-        }
+        data += ai5AdcFactor.times(FACTOR_DIVIDER).roundToInt().write2Bytes()
+        data += ai5AdcCorrection.div(ADC_DISCRETE).times(ai5AdcFactor).plus(0.5f).times(FACTOR_DIVIDER).roundToInt().write4Bytes()
 
-        ai6AdcFactor.times(FACTOR_DIVIDER).toInt().let { data += data.write2Bytes(it) }
-        ai6AdcCorrection.div(ADC_DISCRETE).times(ai6AdcFactor).plus(0.5f).times(FACTOR_DIVIDER).toInt().let {
-            data += data.write4Bytes(it)
-        }
+        data += ai6AdcFactor.times(FACTOR_DIVIDER).roundToInt().write2Bytes()
+        data += ai6AdcCorrection.div(ADC_DISCRETE).times(ai6AdcFactor).plus(0.5f).times(FACTOR_DIVIDER).roundToInt().write4Bytes()
 
-        ai7AdcFactor.times(FACTOR_DIVIDER).toInt().let { data += data.write2Bytes(it) }
-        ai7AdcCorrection.div(ADC_DISCRETE).times(ai7AdcFactor).plus(0.5f).times(FACTOR_DIVIDER).toInt().let {
-            data += data.write4Bytes(it)
-        }
+        data += ai7AdcFactor.times(FACTOR_DIVIDER).roundToInt().write2Bytes()
+        data += ai7AdcCorrection.div(ADC_DISCRETE).times(ai7AdcFactor).plus(0.5f).times(FACTOR_DIVIDER).roundToInt().write4Bytes()
 
-        ai8AdcFactor.times(FACTOR_DIVIDER).toInt().let { data += data.write2Bytes(it) }
-        ai8AdcCorrection.div(ADC_DISCRETE).times(ai8AdcFactor).plus(0.5f).times(FACTOR_DIVIDER).toInt().let {
-            data += data.write4Bytes(it)
-        }
+        data += ai8AdcFactor.times(FACTOR_DIVIDER).roundToInt().write2Bytes()
+        data += ai8AdcCorrection.div(ADC_DISCRETE).times(ai8AdcFactor).plus(0.5f).times(FACTOR_DIVIDER).roundToInt().write4Bytes()
 
         data += unhandledParams
 

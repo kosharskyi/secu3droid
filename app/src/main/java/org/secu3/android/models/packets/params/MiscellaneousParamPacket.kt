@@ -88,9 +88,9 @@ data class MiscellaneousParamPacket(
         data += flpmpFlags.toChar()
 
         data += evapAfbegin.div(32).write2Bytes()
-        data += evapAfEnd.times(32).times(1048576.0f).toInt().write2Bytes()
+        data += evapAfEnd.times(32).times(1048576.0f).roundToInt().write2Bytes()
 
-        data += fpTimeoutStrt.times(10).toInt().toChar()
+        data += fpTimeoutStrt.times(10).roundToInt().toChar()
 
         data += 1.0.div(pwmFrq0.toFloat()).times(524288.0f).roundToInt().write2Bytes()
         data += 1.0.div(pwmFrq1.toFloat()).times(524288.0f).roundToInt().write2Bytes()

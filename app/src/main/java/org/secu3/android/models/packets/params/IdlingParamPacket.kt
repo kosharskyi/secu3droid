@@ -27,6 +27,7 @@ package org.secu3.android.models.packets.params
 import org.secu3.android.models.packets.BaseOutputPacket
 import org.secu3.android.utils.getBitValue
 import org.secu3.android.utils.setBitValue
+import kotlin.math.roundToInt
 
 data class IdlingParamPacket(
     var idlFlags: Int = 0,
@@ -131,25 +132,25 @@ data class IdlingParamPacket(
         var data = "$OUTPUT_PACKET_SYMBOL$DESCRIPTOR"
 
         data += idlFlags.toChar()
-        data += iFac1.times(256).toInt().write2Bytes()
-        data += iFac2.times(256).toInt().write2Bytes()
+        data += iFac1.times(256).roundToInt().write2Bytes()
+        data += iFac2.times(256).roundToInt().write2Bytes()
         data += minefr.write2Bytes()
         data += idlingRpm.write2Bytes()
-        data += idlregMinAngle.times(ANGLE_DIVIDER).toInt().write2Bytes()
-        data += idlregMaxAngle.times(ANGLE_DIVIDER).toInt().write2Bytes()
-        data += idlregTurnOnTemp.times(TEMPERATURE_MULTIPLIER).toInt().write2Bytes()
-        data += idlToRunAdd.times(2.0f).toInt().toChar()
+        data += idlregMinAngle.times(ANGLE_DIVIDER).roundToInt().write2Bytes()
+        data += idlregMaxAngle.times(ANGLE_DIVIDER).roundToInt().write2Bytes()
+        data += idlregTurnOnTemp.times(TEMPERATURE_MULTIPLIER).roundToInt().write2Bytes()
+        data += idlToRunAdd.times(2.0f).roundToInt().toChar()
         data += rpmOnRunAdd.div(10).toChar()
-        data += idlRegP0.times(256).toInt().write2Bytes()
-        data += idlRegP1.times(256).toInt().write2Bytes()
-        data += idlRegI0.times(256).toInt().write2Bytes()
-        data += idlRegI1.times(256).toInt().write2Bytes()
-        data += coefThrd1.minus(1.0f).times(128).toInt().toChar()
-        data += coefThrd2.minus(1.0f).times(128).toInt().toChar()
+        data += idlRegP0.times(256).roundToInt().write2Bytes()
+        data += idlRegP1.times(256).roundToInt().write2Bytes()
+        data += idlRegI0.times(256).roundToInt().write2Bytes()
+        data += idlRegI1.times(256).roundToInt().write2Bytes()
+        data += coefThrd1.minus(1.0f).times(128).roundToInt().toChar()
+        data += coefThrd2.minus(1.0f).times(128).roundToInt().toChar()
         data += integratorRpmLim.div(10).toChar()
-        data += mapValue.times(MAP_MULTIPLIER).toInt().write2Bytes()
-        data += iacMinPos.times(2).toInt().toChar()
-        data += iacMaxPos.times(2).toInt().toChar()
+        data += mapValue.times(MAP_MULTIPLIER).roundToInt().write2Bytes()
+        data += iacMinPos.times(2).roundToInt().toChar()
+        data += iacMaxPos.times(2).roundToInt().toChar()
         data += iacRegDb.times(2).write2Bytes()
 
         data += unhandledParams

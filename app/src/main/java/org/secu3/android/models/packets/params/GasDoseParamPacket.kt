@@ -25,6 +25,7 @@
 package org.secu3.android.models.packets.params
 
 import org.secu3.android.models.packets.BaseOutputPacket
+import kotlin.math.roundToInt
 
 data class GasDoseParamPacket(
 
@@ -46,10 +47,10 @@ data class GasDoseParamPacket(
         data += steps.write2Bytes()
         data += testing.toChar()
         data += manualPositionD.toChar()
-        data += fcClosing.times(GAS_DOSE_MULTIPLIER).toInt().toChar()
-        data += lambdaCorrLimitP.times(512.0f).div(100).toInt().write2Bytes()
-        data += lambdaCorrLimitM.times(512.0f).div(100).toInt().write2Bytes()
-        data += lambdaStoichval.times(AFR_MULTIPLIER).toInt().write2Bytes()
+        data += fcClosing.times(GAS_DOSE_MULTIPLIER).roundToInt().toChar()
+        data += lambdaCorrLimitP.times(512.0f).div(100).roundToInt().write2Bytes()
+        data += lambdaCorrLimitM.times(512.0f).div(100).roundToInt().write2Bytes()
+        data += lambdaStoichval.times(AFR_MULTIPLIER).roundToInt().write2Bytes()
         data += freq.toChar()
         data += maxFreqInit.toChar()
 

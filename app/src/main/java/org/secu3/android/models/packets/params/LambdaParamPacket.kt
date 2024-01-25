@@ -150,14 +150,14 @@ data class LambdaParamPacket(
 
         data += strPerStp.toChar()
 
-        data += stepSizeP.div(100).times(512).toInt().toChar()
-        data += stepSizeM.div(100).times(512).toInt().toChar()
+        data += stepSizeP.div(100).times(512).roundToInt().toChar()
+        data += stepSizeM.div(100).times(512).roundToInt().toChar()
 
-        data += corrLimitP.div(100).times(512).toInt().write2Bytes()
-        data += corrLimitM.div(100).times(512).toInt().write2Bytes()
+        data += corrLimitP.div(100).times(512).roundToInt().write2Bytes()
+        data += corrLimitM.div(100).times(512).roundToInt().write2Bytes()
 
         data += swtPoint.div(ADC_DISCRETE).roundToInt().write2Bytes()
-        data += tempThrd.times(TEMPERATURE_MULTIPLIER).toInt().write2Bytes()
+        data += tempThrd.times(TEMPERATURE_MULTIPLIER).roundToInt().write2Bytes()
         data += rpmThrd.write2Bytes()
 
         data += activDelay.toChar()
@@ -171,7 +171,7 @@ data class LambdaParamPacket(
         data += heatingTime0.toChar()
         data += heatingTime1.toChar()
         data += temperThrd.toChar()
-        data += heatingAct.times(100).toInt().toChar()
+        data += heatingAct.times(100).roundToInt().toChar()
 
         data += aflowThrd.div(32).roundToInt().write2Bytes()
 

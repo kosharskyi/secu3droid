@@ -26,6 +26,7 @@ package org.secu3.android.models.packets.params
 
 import org.secu3.android.models.packets.BaseOutputPacket
 import org.secu3.android.utils.getBitValue
+import kotlin.math.roundToInt
 
 data class KnockParamPacket(
 
@@ -63,19 +64,19 @@ data class KnockParamPacket(
         data += useKnockChannel.toChar()
         data += bpfFrequency.toChar()
 
-        data += kWndBeginAngle.times(ANGLE_DIVIDER).toInt().write2Bytes()
-        data += kWndEndAngle.times(ANGLE_DIVIDER).toInt().write2Bytes()
+        data += kWndBeginAngle.times(ANGLE_DIVIDER).roundToInt().write2Bytes()
+        data += kWndEndAngle.times(ANGLE_DIVIDER).roundToInt().write2Bytes()
         data += intTimeCost.toChar()
 
-        data += retardStep.times(ANGLE_DIVIDER).toInt().write2Bytes()
-        data += advanceStep.times(ANGLE_DIVIDER).toInt().write2Bytes()
-        data += maxRetard.times(ANGLE_DIVIDER).toInt().write2Bytes()
-        data += threshold.times(VOLTAGE_MULTIPLIER).toInt().write2Bytes()
+        data += retardStep.times(ANGLE_DIVIDER).roundToInt().write2Bytes()
+        data += advanceStep.times(ANGLE_DIVIDER).roundToInt().write2Bytes()
+        data += maxRetard.times(ANGLE_DIVIDER).roundToInt().write2Bytes()
+        data += threshold.times(VOLTAGE_MULTIPLIER).roundToInt().write2Bytes()
 
         data += recoveryDelay.toChar()
 
         data += selectedChanels.toChar()
-        data += knkctlThrd.times(TEMPERATURE_MULTIPLIER).toInt().write2Bytes()
+        data += knkctlThrd.times(TEMPERATURE_MULTIPLIER).roundToInt().write2Bytes()
 
         data += unhandledParams
 

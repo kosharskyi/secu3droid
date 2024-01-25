@@ -26,6 +26,7 @@ package org.secu3.android.models.packets.params
 
 import org.secu3.android.models.packets.BaseOutputPacket
 import org.secu3.android.models.packets.params.UniOutParamPacket.Companion.UNI_OUTPUT_NUM
+import kotlin.math.roundToInt
 
 data class CarburParamPacket(
 
@@ -49,16 +50,16 @@ data class CarburParamPacket(
     override fun pack(): String {
         var data = "$OUTPUT_PACKET_SYMBOL$DESCRIPTOR"
 
-        data += data.write2Bytes(ieLot)
-        data += data.write2Bytes(ieHit)
+        data += ieLot.write2Bytes()
+        data += ieHit.write2Bytes()
         data += carbInvers.toChar()
-        data += feOnThresholds.times(MAP_MULTIPLIER).toInt().write2Bytes()
+        data += feOnThresholds.times(MAP_MULTIPLIER).roundToInt().write2Bytes()
         data += ieLotG.write2Bytes()
         data += ieHitG.write2Bytes()
-        data += shutoffDelay.times(100).toInt().toChar()
-        data += tpsThreshold.times(TPS_MULTIPLIER).toInt().toChar()
-        data += fuelcutMapThrd.times(MAP_MULTIPLIER).toInt().write2Bytes()
-        data += fuelcutCtsThrd.times(TEMPERATURE_MULTIPLIER).toInt().write2Bytes()
+        data += shutoffDelay.times(100).roundToInt().toChar()
+        data += tpsThreshold.times(TPS_MULTIPLIER).roundToInt().toChar()
+        data += fuelcutMapThrd.times(MAP_MULTIPLIER).roundToInt().write2Bytes()
+        data += fuelcutCtsThrd.times(TEMPERATURE_MULTIPLIER).roundToInt().write2Bytes()
         data += revlimLot.write2Bytes()
         data += revlimHit.write2Bytes()
 
