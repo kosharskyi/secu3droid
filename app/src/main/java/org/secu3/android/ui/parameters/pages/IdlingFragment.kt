@@ -57,6 +57,8 @@ class IdlingFragment : BaseParamFragment() {
             withResumed {
                 mViewModel.idlingLiveData.observe(viewLifecycleOwner) {
 
+                    mViewModel.isSendAllowed = false
+
                     packet = it
 
                     mBinding.apply {
@@ -104,6 +106,8 @@ class IdlingFragment : BaseParamFragment() {
                     }
 
                     initViews()
+
+                    mViewModel.isSendAllowed = true
                 }
             }
         }

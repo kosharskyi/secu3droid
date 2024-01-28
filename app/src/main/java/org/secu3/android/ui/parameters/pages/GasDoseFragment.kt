@@ -75,6 +75,8 @@ class GasDoseFragment : BaseParamFragment() {
             withResumed {
                 mViewModel.gasDoseLiveData.observe(viewLifecycleOwner) {
 
+                    mViewModel.isSendAllowed = false
+
                     packet = it
 
                     mBinding.apply {
@@ -95,6 +97,8 @@ class GasDoseFragment : BaseParamFragment() {
                     }
 
                     initViews()
+
+                    mViewModel.isSendAllowed = true
                 }
             }
         }

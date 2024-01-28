@@ -82,6 +82,8 @@ class UniversalOutputsFragment : BaseParamFragment() {
             withResumed {
                 mViewModel.uniOutLiveData.observe(viewLifecycleOwner) {
 
+                    mViewModel.isSendAllowed = false
+
                     packet = it
 
                     mBinding.apply {
@@ -301,6 +303,8 @@ class UniversalOutputsFragment : BaseParamFragment() {
                     }
 
                     initViews()
+
+                    mViewModel.isSendAllowed = true
                 }
             }
         }

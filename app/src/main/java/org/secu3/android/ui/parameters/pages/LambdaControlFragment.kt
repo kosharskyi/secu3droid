@@ -77,6 +77,8 @@ class LambdaControlFragment : BaseParamFragment() {
             withResumed {
                 mViewModel.lambdaLiveData.observe(viewLifecycleOwner) {
 
+                    mViewModel.isSendAllowed = false
+
                     packet = it
 
                     mBinding.apply {
@@ -130,9 +132,11 @@ class LambdaControlFragment : BaseParamFragment() {
 
                         mixSensorsValue.isChecked = it.mixSenorsValue
                     }
-                }
 
-                initViews()
+                    initViews()
+
+                    mViewModel.isSendAllowed = true
+                }
             }
         }
     }

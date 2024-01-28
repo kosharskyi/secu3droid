@@ -66,6 +66,8 @@ class CkpsFragment : BaseParamFragment() {
             withResumed {
                 mViewModel.ckpsLiveData.observe(viewLifecycleOwner) {
 
+                    mViewModel.isSendAllowed = false
+
                     packet = it
 
                     mBinding.apply {
@@ -102,6 +104,8 @@ class CkpsFragment : BaseParamFragment() {
                     }
 
                     initViews()
+
+                    mViewModel.isSendAllowed = true
                 }
             }
         }

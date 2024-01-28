@@ -50,6 +50,7 @@ class StarterFragment : BaseParamFragment() {
         super.onViewCreated(view, savedInstanceState)
 
         mViewModel.starterLiveData.observe(viewLifecycleOwner) {
+            mViewModel.isSendAllowed = false
 
             packet = it
 
@@ -72,6 +73,8 @@ class StarterFragment : BaseParamFragment() {
             }
 
             initViews()
+
+            mViewModel.isSendAllowed = true
         }
     }
 

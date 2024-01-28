@@ -62,6 +62,8 @@ import javax.inject.Inject
 @HiltViewModel
 class ParamsViewModel @Inject constructor(private val secu3Repository: Secu3Repository, private val prefs: LifeTimePrefs) : ViewModel() {
 
+    var isSendAllowed: Boolean = false
+
     val connectionStatusLiveData: LiveData<Boolean>
         get() = secu3Repository.connectionStatusLiveData
 
@@ -319,6 +321,9 @@ class ParamsViewModel @Inject constructor(private val secu3Repository: Secu3Repo
 
 
     fun sendPacket(packet: BaseOutputPacket) {
+        if (isSendAllowed.not()) {
+            return
+        }
         secu3Repository.sendOutPacket(packet)
     }
 

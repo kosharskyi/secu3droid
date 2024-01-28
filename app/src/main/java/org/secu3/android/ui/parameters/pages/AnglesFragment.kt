@@ -57,6 +57,7 @@ class AnglesFragment : BaseParamFragment() {
         lifecycleScope.launch {
             withResumed {
                 mViewModel.anglesLiveData.observe(viewLifecycleOwner) {
+                    mViewModel.isSendAllowed = false
 
                     packet = it
 
@@ -81,9 +82,11 @@ class AnglesFragment : BaseParamFragment() {
                         applyManualTimingCorr.isChecked = it.applyManualTimingCorrOnIdl
                         zeroAdvOctaneCorr.isChecked = it.zeroAdvAngleWithCorr
                     }
-                }
 
-                initViews()
+                    initViews()
+
+                    mViewModel.isSendAllowed = true
+                }
             }
         }
     }

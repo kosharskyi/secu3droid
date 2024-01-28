@@ -76,6 +76,9 @@ class FunctionsFragment : BaseParamFragment() {
             withResumed {
 
                 mViewModel.fnNameLiveData.observe(viewLifecycleOwner) {
+
+                    mViewModel.isSendAllowed = false
+
                     fnNamePacket = it
 
                     mBinding.apply {
@@ -133,6 +136,8 @@ class FunctionsFragment : BaseParamFragment() {
                     }
 
                     initViews()
+
+                    mViewModel.isSendAllowed = false
                 }
             }
         }

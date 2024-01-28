@@ -70,6 +70,8 @@ class ChokeControlFragment : BaseParamFragment() {
             withResumed {
                 mViewModel.chokeLiveData.observe(viewLifecycleOwner) {
 
+                    mViewModel.isSendAllowed = false
+
                     packet = it
 
                     mBinding.apply {
@@ -93,6 +95,8 @@ class ChokeControlFragment : BaseParamFragment() {
                     }
 
                     initViews()
+
+                    mViewModel.isSendAllowed = true
                 }
             }
         }

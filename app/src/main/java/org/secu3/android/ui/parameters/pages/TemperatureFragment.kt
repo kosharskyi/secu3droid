@@ -57,6 +57,8 @@ class TemperatureFragment : BaseParamFragment() {
             withResumed {
                 mViewModel.temperatureLiveData.observe(viewLifecycleOwner) {
 
+                    mViewModel.isSendAllowed = false
+
                     packet = it
 
                     mBinding.apply {
@@ -79,6 +81,8 @@ class TemperatureFragment : BaseParamFragment() {
                     }
 
                     initViews()
+
+                    mViewModel.isSendAllowed = true
                 }
             }
         }

@@ -56,6 +56,8 @@ class AdcErrorsCorrectionsFragment : BaseParamFragment() {
             withResumed {
                 mViewModel.adcCorrectionsLiveData.observe(viewLifecycleOwner) {
 
+                    mViewModel.isSendAllowed = false
+
                     packet = it
 
                     mBinding.apply {
@@ -103,6 +105,8 @@ class AdcErrorsCorrectionsFragment : BaseParamFragment() {
                     }
 
                     initViews()
+
+                    mViewModel.isSendAllowed = true
                 }
             }
         }

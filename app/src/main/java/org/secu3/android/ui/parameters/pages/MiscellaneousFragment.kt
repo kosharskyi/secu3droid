@@ -79,6 +79,8 @@ class MiscellaneousFragment : BaseParamFragment() {
             withResumed {
                 mViewModel.miscellaneousLiveData.observe(viewLifecycleOwner) {
 
+                    mViewModel.isSendAllowed = false
+
                     packet = it
 
                     mBinding.apply {
@@ -111,6 +113,8 @@ class MiscellaneousFragment : BaseParamFragment() {
                     }
 
                     initViews()
+
+                    mViewModel.isSendAllowed = true
                 }
             }
         }

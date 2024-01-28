@@ -101,6 +101,8 @@ class FuelInjectionFragment : BaseParamFragment() {
             withResumed {
                 mViewModel.fuelInjectionLiveData.observe(viewLifecycleOwner) {
 
+                    mViewModel.isSendAllowed = false
+
                     packet = it
 
                     mInjViewModel.generateSquirtsDropDown(packet, 0)
@@ -149,6 +151,8 @@ class FuelInjectionFragment : BaseParamFragment() {
                     }
 
                     initViews()
+
+                    mViewModel.isSendAllowed = true
                 }
             }
         }

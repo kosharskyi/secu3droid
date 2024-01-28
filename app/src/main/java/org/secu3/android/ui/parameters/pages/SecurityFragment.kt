@@ -62,6 +62,9 @@ class SecurityFragment : BaseParamFragment() {
         lifecycleScope.launch {
             withResumed {
                 mViewModel.securityLiveData.observe(viewLifecycleOwner) {
+
+                    mViewModel.isSendAllowed = false
+
                     mBinding.apply {
 
                         progressBar.gone()
@@ -75,6 +78,8 @@ class SecurityFragment : BaseParamFragment() {
                         loadParamsFromFlash.isChecked = it.useReserveParams
                         checkFirmwareIntegrity.isChecked = it.checkFwCrc
                     }
+
+                    mViewModel.isSendAllowed = true
                 }
             }
         }

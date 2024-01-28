@@ -73,6 +73,9 @@ class FuelCutoffkFragment : BaseParamFragment() {
             withResumed {
 
                 mViewModel.carburLiveData.observe(viewLifecycleOwner) {
+
+                    mViewModel.isSendAllowed = false
+
                     packet = it
 
                     mBinding.apply {
@@ -104,6 +107,8 @@ class FuelCutoffkFragment : BaseParamFragment() {
                     }
 
                     initViews()
+
+                    mViewModel.isSendAllowed = true
                 }
             }
         }

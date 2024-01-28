@@ -83,6 +83,8 @@ class KnockFragment : BaseParamFragment() {
             withResumed {
                 mViewModel.knockLiveData.observe(viewLifecycleOwner) {
 
+                    mViewModel.isSendAllowed = false
+
                     packet = it
 
                     mBinding.apply {
@@ -116,6 +118,8 @@ class KnockFragment : BaseParamFragment() {
                     }
 
                     initViews()
+
+                    mViewModel.isSendAllowed = true
                 }
             }
         }

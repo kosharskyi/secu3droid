@@ -77,6 +77,7 @@ class AccelerationFragment : BaseParamFragment() {
         lifecycleScope.launch {
             withResumed {
                 mViewModel.accelerationLiveData.observe(viewLifecycleOwner) {
+                    mViewModel.isSendAllowed = false
 
                     packet = it
 
@@ -99,9 +100,11 @@ class AccelerationFragment : BaseParamFragment() {
                         xTauStartThrd.value = it.injXtauSThrd.toInt()
                         xTauFinishThrd.value = it.injXtauFThrd.toInt()
                     }
-                }
 
-                initViews()
+                    initViews()
+
+                    mViewModel.isSendAllowed = true
+                }
             }
         }
     }
