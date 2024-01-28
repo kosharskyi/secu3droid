@@ -36,7 +36,7 @@ import androidx.lifecycle.withStarted
 import kotlinx.coroutines.launch
 import org.secu3.android.R
 import org.secu3.android.databinding.FragmentGasDoseBinding
-import org.secu3.android.models.packets.params.GasDoseParamPacket
+import org.secu3.android.models.packets.out.params.GasDoseParamPacket
 import org.secu3.android.ui.parameters.views.FloatParamView
 import org.secu3.android.ui.parameters.views.IntParamView
 import org.secu3.android.utils.gone

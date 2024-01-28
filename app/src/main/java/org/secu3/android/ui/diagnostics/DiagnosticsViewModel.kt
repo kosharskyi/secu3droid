@@ -30,10 +30,10 @@ import kotlinx.coroutines.flow.filter
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.launch
 import org.secu3.android.Secu3Repository
-import org.secu3.android.models.packets.DiagInputPacket
-import org.secu3.android.models.packets.DiagOutputPacket
-import org.secu3.android.models.packets.FirmwareInfoPacket
-import org.secu3.android.models.packets.OpCompNc
+import org.secu3.android.models.packets.input.DiagInputPacket
+import org.secu3.android.models.packets.out.DiagOutputPacket
+import org.secu3.android.models.packets.input.FirmwareInfoPacket
+import org.secu3.android.models.packets.out.OpCompNc
 import org.secu3.android.utils.Task
 import javax.inject.Inject
 

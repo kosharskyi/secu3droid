@@ -32,8 +32,8 @@ import kotlinx.coroutines.flow.filter
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.sample
 import org.secu3.android.Secu3Repository
-import org.secu3.android.models.packets.AdcRawDatPacket
-import org.secu3.android.models.packets.SensorsPacket
+import org.secu3.android.models.packets.input.AdcRawDatPacket
+import org.secu3.android.models.packets.input.SensorsPacket
 import org.secu3.android.utils.LifeTimePrefs
 import org.secu3.android.utils.SecuLogger
 import org.secu3.android.utils.Task

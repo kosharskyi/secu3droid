@@ -29,11 +29,10 @@ import androidx.lifecycle.LiveData
 import androidx.lifecycle.asLiveData
 import kotlinx.coroutines.*
 import kotlinx.coroutines.flow.*
-import org.secu3.android.models.packets.BaseOutputPacket
-import org.secu3.android.models.packets.BaseSecu3Packet
-import org.secu3.android.models.packets.FirmwareInfoPacket
-import org.secu3.android.models.packets.SensorsPacket
-import org.secu3.android.utils.FileHelper
+import org.secu3.android.models.packets.base.BaseOutputPacket
+import org.secu3.android.models.packets.base.BaseSecu3Packet
+import org.secu3.android.models.packets.input.FirmwareInfoPacket
+import org.secu3.android.models.packets.input.SensorsPacket
 import org.secu3.android.utils.LifeTimePrefs
 import org.secu3.android.utils.SecuLogger
 import org.secu3.android.utils.Task

@@ -26,16 +26,14 @@
 package org.secu3.android.ui.firmware
 
 import android.os.Bundle
-import androidx.fragment.app.Fragment
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import androidx.fragment.app.DialogFragment
 import androidx.fragment.app.viewModels
 import dagger.hilt.android.AndroidEntryPoint
-import org.secu3.android.R
 import org.secu3.android.databinding.FragmentFirmwareDialogBinding
-import org.secu3.android.models.packets.FirmwareInfoPacket
+import org.secu3.android.models.packets.input.FirmwareInfoPacket
 
 @AndroidEntryPoint
 class FirmwareDialogFragment : DialogFragment() {

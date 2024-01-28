@@ -36,7 +36,7 @@ import androidx.lifecycle.withStarted
 import kotlinx.coroutines.launch
 import org.secu3.android.R
 import org.secu3.android.databinding.FragmentChokeControlBinding
-import org.secu3.android.models.packets.params.ChokeControlParPacket
+import org.secu3.android.models.packets.out.params.ChokeControlParPacket
 import org.secu3.android.ui.parameters.views.FloatParamView
 import org.secu3.android.ui.parameters.views.IntParamView
 import org.secu3.android.utils.gone

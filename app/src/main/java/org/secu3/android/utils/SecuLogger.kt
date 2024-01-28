@@ -25,7 +25,7 @@
 
 package org.secu3.android.utils
 
-import org.secu3.android.models.packets.SensorsPacket
+import org.secu3.android.models.packets.input.SensorsPacket
 import org.threeten.bp.LocalTime
 import org.threeten.bp.format.DateTimeFormatter
 import java.io.File

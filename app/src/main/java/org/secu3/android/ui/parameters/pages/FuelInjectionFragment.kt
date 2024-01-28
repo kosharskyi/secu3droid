@@ -37,7 +37,7 @@ import androidx.lifecycle.withStarted
 import kotlinx.coroutines.launch
 import org.secu3.android.R
 import org.secu3.android.databinding.FragmentFuelInjectionBinding
-import org.secu3.android.models.packets.params.InjctrParPacket
+import org.secu3.android.models.packets.out.params.InjctrParPacket
 import org.secu3.android.ui.parameters.pages.injection.FuelInjectionViewModel
 import org.secu3.android.ui.parameters.views.FloatParamView
 import org.secu3.android.ui.parameters.views.IntParamView

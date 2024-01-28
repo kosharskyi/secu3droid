@@ -36,7 +36,7 @@ import androidx.lifecycle.withStarted
 import kotlinx.coroutines.launch
 import org.secu3.android.R
 import org.secu3.android.databinding.FragmentAccelerationBinding
-import org.secu3.android.models.packets.params.AccelerationParamPacket
+import org.secu3.android.models.packets.out.params.AccelerationParamPacket
 import org.secu3.android.ui.parameters.views.IntParamView
 import org.secu3.android.utils.gone
 import org.secu3.android.utils.visible

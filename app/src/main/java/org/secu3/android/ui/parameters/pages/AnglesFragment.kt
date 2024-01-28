@@ -33,7 +33,7 @@ import androidx.lifecycle.withResumed
 import androidx.lifecycle.withStarted
 import kotlinx.coroutines.launch
 import org.secu3.android.databinding.FragmentAnglesBinding
-import org.secu3.android.models.packets.params.AnglesParamPacket
+import org.secu3.android.models.packets.out.params.AnglesParamPacket
 import org.secu3.android.ui.parameters.views.FloatParamView
 import org.secu3.android.utils.gone
 import org.secu3.android.utils.visible

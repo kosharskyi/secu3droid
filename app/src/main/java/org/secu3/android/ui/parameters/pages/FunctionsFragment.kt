@@ -36,8 +36,8 @@ import androidx.lifecycle.withResumed
 import kotlinx.coroutines.launch
 import org.secu3.android.R
 import org.secu3.android.databinding.FragmentFunctionsBinding
-import org.secu3.android.models.packets.FnNameDatPacket
-import org.secu3.android.models.packets.params.FunSetParamPacket
+import org.secu3.android.models.packets.input.FnNameDatPacket
+import org.secu3.android.models.packets.out.params.FunSetParamPacket
 import org.secu3.android.ui.parameters.views.FloatParamView
 import org.secu3.android.utils.gone
 import org.secu3.android.utils.visible

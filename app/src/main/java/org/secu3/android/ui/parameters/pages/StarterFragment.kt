@@ -29,7 +29,7 @@ import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import org.secu3.android.databinding.FragmentStarterBinding
-import org.secu3.android.models.packets.params.StarterParamPacket
+import org.secu3.android.models.packets.out.params.StarterParamPacket
 import org.secu3.android.ui.parameters.views.FloatParamView
 import org.secu3.android.ui.parameters.views.IntParamView
 import org.secu3.android.utils.gone

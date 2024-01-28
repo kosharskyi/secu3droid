@@ -24,7 +24,9 @@
  */
 package org.secu3.android.utils
 
-import org.secu3.android.models.packets.*
+import org.secu3.android.models.packets.base.BaseOutputPacket
+import org.secu3.android.models.packets.out.ChangeModePacket
+import org.secu3.android.models.packets.out.OpCompNc
 
 sealed class Task {
 

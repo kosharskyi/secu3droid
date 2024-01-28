@@ -29,7 +29,7 @@ import androidx.lifecycle.LiveData
 import androidx.lifecycle.ViewModel
 import dagger.hilt.android.lifecycle.HiltViewModel
 import org.secu3.android.Secu3Repository
-import org.secu3.android.models.packets.FirmwareInfoPacket
+import org.secu3.android.models.packets.input.FirmwareInfoPacket
 import javax.inject.Inject
 
 @HiltViewModel

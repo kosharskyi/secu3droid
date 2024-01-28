@@ -28,13 +28,13 @@ package org.secu3.android.ui.parameters.pages.injection
 import androidx.lifecycle.LiveData
 import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.ViewModel
-import org.secu3.android.models.packets.params.InjctrParPacket
-import org.secu3.android.models.packets.params.InjctrParPacket.Companion.INJCFG_2BANK_ALTERN
-import org.secu3.android.models.packets.params.InjctrParPacket.Companion.INJCFG_FULLSEQUENTIAL
-import org.secu3.android.models.packets.params.InjctrParPacket.Companion.INJCFG_SEMISEQSEPAR
-import org.secu3.android.models.packets.params.InjctrParPacket.Companion.INJCFG_SEMISEQUENTIAL
-import org.secu3.android.models.packets.params.InjctrParPacket.Companion.INJCFG_SIMULTANEOUS
-import org.secu3.android.models.packets.params.InjctrParPacket.Companion.INJCFG_THROTTLEBODY
+import org.secu3.android.models.packets.out.params.InjctrParPacket
+import org.secu3.android.models.packets.out.params.InjctrParPacket.Companion.INJCFG_2BANK_ALTERN
+import org.secu3.android.models.packets.out.params.InjctrParPacket.Companion.INJCFG_FULLSEQUENTIAL
+import org.secu3.android.models.packets.out.params.InjctrParPacket.Companion.INJCFG_SEMISEQSEPAR
+import org.secu3.android.models.packets.out.params.InjctrParPacket.Companion.INJCFG_SEMISEQUENTIAL
+import org.secu3.android.models.packets.out.params.InjctrParPacket.Companion.INJCFG_SIMULTANEOUS
+import org.secu3.android.models.packets.out.params.InjctrParPacket.Companion.INJCFG_THROTTLEBODY
 
 class FuelInjectionViewModel: ViewModel() {
 

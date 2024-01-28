@@ -33,7 +33,7 @@ import androidx.lifecycle.withResumed
 import androidx.lifecycle.withStarted
 import kotlinx.coroutines.launch
 import org.secu3.android.databinding.FragmentTemperatureBinding
-import org.secu3.android.models.packets.params.TemperatureParamPacket
+import org.secu3.android.models.packets.out.params.TemperatureParamPacket
 import org.secu3.android.ui.parameters.views.FloatParamView
 import org.secu3.android.ui.parameters.views.IntParamView
 import org.secu3.android.utils.gone

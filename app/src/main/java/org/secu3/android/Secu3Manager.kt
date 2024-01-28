@@ -34,11 +34,11 @@ import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.runBlocking
 import org.secu3.android.models.RawPacket
-import org.secu3.android.models.packets.BaseOutputPacket
-import org.secu3.android.models.packets.BaseSecu3Packet
-import org.secu3.android.models.packets.BaseSecu3Packet.Companion.END_PACKET_SYMBOL
-import org.secu3.android.models.packets.BaseSecu3Packet.Companion.MAX_PACKET_SIZE
-import org.secu3.android.models.packets.ChangeModePacket
+import org.secu3.android.models.packets.base.BaseOutputPacket
+import org.secu3.android.models.packets.base.BaseSecu3Packet
+import org.secu3.android.models.packets.base.BaseSecu3Packet.Companion.END_PACKET_SYMBOL
+import org.secu3.android.models.packets.base.BaseSecu3Packet.Companion.MAX_PACKET_SIZE
+import org.secu3.android.models.packets.out.ChangeModePacket
 import org.secu3.android.utils.LifeTimePrefs
 import org.secu3.android.utils.PacketUtils
 import org.secu3.android.utils.Task

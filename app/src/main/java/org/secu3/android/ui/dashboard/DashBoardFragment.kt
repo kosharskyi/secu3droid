@@ -39,7 +39,7 @@ import androidx.fragment.app.viewModels
 import dagger.hilt.android.AndroidEntryPoint
 import org.secu3.android.R
 import org.secu3.android.databinding.FragmentDashboardBinding
-import org.secu3.android.models.packets.SensorsPacket
+import org.secu3.android.models.packets.input.SensorsPacket
 import org.secu3.android.utils.LifeTimePrefs
 import org.secu3.android.utils.Task
 import javax.inject.Inject

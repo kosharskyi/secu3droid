@@ -38,7 +38,7 @@ import dagger.hilt.android.AndroidEntryPoint
 import kotlinx.coroutines.launch
 import org.secu3.android.R
 import org.secu3.android.databinding.FragmentUniversalOutputsBinding
-import org.secu3.android.models.packets.params.UniOutParamPacket
+import org.secu3.android.models.packets.out.params.UniOutParamPacket
 import org.secu3.android.ui.parameters.views.FloatParamView
 import org.secu3.android.utils.UnioutTabConfigurator
 import org.secu3.android.utils.gone
