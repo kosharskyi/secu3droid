@@ -71,7 +71,7 @@ class ParamsFragment : Fragment() {
 
         mBinding.apply {
             paramsPager.apply {
-                adapter = ParametersPagerAdapter(this@ParamsFragment)
+                adapter = ParametersPagerAdapter(this@ParamsFragment, mViewModel.fwInfoPacket)
                 offscreenPageLimit = 2
             }
 

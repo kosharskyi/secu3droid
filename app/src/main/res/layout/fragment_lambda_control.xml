@@ -56,24 +56,6 @@
             android:padding="16dp"
             >
 
-
-
-            <androidx.constraintlayout.widget.Group
-                android:id="@+id/lambda_param_group"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                app:constraint_referenced_ids="sensor_type_title,number_of_strokes_per_step,number_of_ms_per_step,
-            size_positive_correction_step,size_negative_correction_step,correction_limit_positive,correction_limit_negative,
-            switch_point,cts_activation_threshold,rpm_activation_threshold,activation_after_start_in,switch_point_deadband,
-            determine_heating_using_voltage,lambda_correctioin_on_idling,stoichiom_ratio_for_2_fuel,control_of_sensors_heating,
-            heating_time_without_pwm_on_cold,heating_time_without_pwm_on_hot,cold_hot_temperature_threshold,turn_on_time_in_pwm_mode,
-            air_flow_threshold_for_turning_heating_off,heating_before_cranking"
-
-                />
-
-
-
-
             <com.google.android.material.textfield.TextInputLayout
                 android:id="@+id/sensor_type_title"
                 android:theme="@style/Theme.MaterialComponents.DayNight.NoActionBar"
@@ -539,27 +521,6 @@
                 android:text="@string/lambda_par_heating_before_cranking_title"
                 android:button="@null"
                 android:drawableEnd="?android:attr/listChoiceIndicatorMultiple"
-                />
-
-
-            <!-- ************************************************************* -->
-            <!-- ************************************************************* -->
-            <!-- ************************************************************* -->
-
-
-            <TextView
-                android:id="@+id/lambda_empty_text"
-                android:layout_width="0dp"
-                android:layout_height="wrap_content"
-                app:layout_constraintTop_toTopOf="parent"
-                app:layout_constraintStart_toStartOf="parent"
-                app:layout_constraintEnd_toEndOf="parent"
-                app:layout_constraintBottom_toBottomOf="parent"
-                android:gravity="center_horizontal"
-                android:textSize="18sp"
-                android:fontFamily="sans-serif-medium"
-                android:text="This parameters are not available in your firmware"
-                android:visibility="gone"
                 />
 
         </androidx.constraintlayout.widget.ConstraintLayout>

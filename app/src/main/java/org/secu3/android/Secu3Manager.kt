@@ -213,6 +213,7 @@ class Secu3Manager @Inject constructor(
                 try {
 
                     if (sendPacket.isNotEmpty()) {
+                        sleep(200)
                         sendPacket.poll()?.let {
                             var packet = it.pack()
                             val checksum = PacketUtils.calculateChecksum(packet.substring(2, packet.length))

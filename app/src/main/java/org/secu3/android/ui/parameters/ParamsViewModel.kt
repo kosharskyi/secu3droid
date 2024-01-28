@@ -67,6 +67,8 @@ class ParamsViewModel @Inject constructor(private val secu3Repository: Secu3Repo
     val connectionStatusLiveData: LiveData<Boolean>
         get() = secu3Repository.connectionStatusLiveData
 
+    val fwInfoPacket: FirmwareInfoPacket?
+        get() = secu3Repository.fwInfo
     val fwInfoLiveData: LiveData<FirmwareInfoPacket>
         get() = secu3Repository.firmwareLiveData
 
@@ -276,7 +278,7 @@ class ParamsViewModel @Inject constructor(private val secu3Repository: Secu3Repo
     val lambdaLiveData: LiveData<LambdaParamPacket>
         get() = flow {
             val fw = secu3Repository.fwInfo ?: return@flow
-            if (fw.isFuelInjectEnabled.not() || fw.isCarbAfrEnabled.not() || fw.isGdControlEnabled.not()) {
+            if (fw.isFuelInjectEnabled.not() && fw.isCarbAfrEnabled.not() && fw.isGdControlEnabled.not()) {
                 return@flow
             }
             secu3Repository.sendNewTask(Task.Secu3ReadLambdaParam)
@@ -292,7 +294,7 @@ class ParamsViewModel @Inject constructor(private val secu3Repository: Secu3Repo
     val accelerationLiveData: LiveData<AccelerationParamPacket>
         get() = flow {
             val fw = secu3Repository.fwInfo ?: return@flow
-            if (fw.isFuelInjectEnabled.not() || fw.isGdControlEnabled.not()) {
+            if (fw.isFuelInjectEnabled.not() && fw.isGdControlEnabled.not()) {
                 return@flow
             }
             secu3Repository.sendNewTask(Task.Secu3ReadAccelerationParam)
@@ -308,6 +310,11 @@ class ParamsViewModel @Inject constructor(private val secu3Repository: Secu3Repo
 
     val gasDoseLiveData: LiveData<GasDoseParamPacket>
         get() = flow {
+            val fw = secu3Repository.fwInfo ?: return@flow
+            if (fw.isGdControlEnabled.not()) {
+                return@flow
+            }
+
             secu3Repository.sendNewTask(Task.Secu3ReadGasDoseParam)
             secu3Repository.receivedPacketFlow
                 .filter { it is GasDoseParamPacket }

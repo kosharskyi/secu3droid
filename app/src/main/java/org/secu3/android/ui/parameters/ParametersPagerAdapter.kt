@@ -27,35 +27,55 @@ package org.secu3.android.ui.parameters
 
 import androidx.fragment.app.Fragment
 import androidx.viewpager2.adapter.FragmentStateAdapter
+import org.secu3.android.models.packets.input.FirmwareInfoPacket
 import org.secu3.android.ui.parameters.pages.*
 
-class ParametersPagerAdapter(fragment: Fragment) : FragmentStateAdapter(fragment) {
+class ParametersPagerAdapter(fragment: Fragment, fwInfoPacket: FirmwareInfoPacket?) : FragmentStateAdapter(fragment) {
 
+    private val pages: List<BaseParamFragment>
+
+    init {
+        val list =  mutableListOf(
+            StarterFragment(),
+            AnglesFragment(),
+            IdlingFragment(),
+            FunctionsFragment(),
+            TemperatureFragment(),
+            FuelCutoffkFragment(),
+            AdcErrorsCorrectionsFragment(),
+            CkpsFragment(),
+            KnockFragment(),
+            MiscellaneousFragment(),
+            ChokeControlFragment(),
+            SecurityFragment(),
+            UniversalOutputsFragment(),
+        )
+
+        fwInfoPacket?.let {
+            if (it.isFuelInjectEnabled) {
+                list.add(FuelInjectionFragment())
+            }
+
+            if (it.isFuelInjectEnabled || it.isCarbAfrEnabled || it.isGdControlEnabled) {
+                list.add(LambdaControlFragment())
+            }
+
+            if (it.isFuelInjectEnabled || it.isGdControlEnabled) {
+                list.add(AccelerationFragment())
+            }
+
+            if (it.isGdControlEnabled) {
+                list.add(GasDoseFragment())
+            }
+        }
+        pages = list
+    }
     override fun getItemCount(): Int {
-        return 17
+        return pages.size
     }
 
     override fun createFragment(position: Int): Fragment {
-        return when (position) {
-            0 -> StarterFragment()
-            1 -> AnglesFragment()
-            2 -> IdlingFragment()
-            3 -> FunctionsFragment()
-            4 -> TemperatureFragment()
-            5 -> FuelCutoffkFragment()
-            6 -> AdcErrorsCorrectionsFragment()
-            7 -> CkpsFragment()
-            8 -> KnockFragment()
-            9 -> MiscellaneousFragment()
-            10 -> ChokeControlFragment()
-            11 -> SecurityFragment()
-            12 -> UniversalOutputsFragment()
-            13 -> FuelInjectionFragment()
-            14 -> LambdaControlFragment()
-            15 -> AccelerationFragment()
-            16 -> GasDoseFragment()
-            else -> TODO()
-        }
+        return pages[position]
     }
 
 
