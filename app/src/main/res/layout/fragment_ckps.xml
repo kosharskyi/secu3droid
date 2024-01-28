@@ -23,234 +23,252 @@
               http://secu-3.org
               email: vetalkosharskiy@gmail.com
 -->
-<ScrollView
+<androidx.constraintlayout.widget.ConstraintLayout
     xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:tools="http://schemas.android.com/tools"
     xmlns:app="http://schemas.android.com/apk/res-auto"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    tools:context=".ui.parameters.pages.CkpsFragment"
-    >
+    tools:context=".ui.parameters.pages.CkpsFragment">
 
-    <LinearLayout
-        android:layout_width="match_parent"
+    <ProgressBar
+        android:id="@+id/progress_bar"
+        android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:padding="16dp"
-        android:orientation="vertical"
+        app:layout_constraintTop_toTopOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintBottom_toBottomOf="parent"
+        />
+
+    <ScrollView
+        android:id="@+id/params"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:visibility="gone"
         >
 
-        <RadioGroup
-            android:id="@+id/ckps_edge_group"
+        <LinearLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
+            android:padding="16dp"
+            android:orientation="vertical"
             >
 
-            <TextView
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:text="@string/ckps_ckps_edge_title"
-                />
-
-            <com.google.android.material.radiobutton.MaterialRadioButton
-                android:id="@+id/ckps_edge_falling"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:text="@string/ckps_edge_negative"
-                />
-
-            <com.google.android.material.radiobutton.MaterialRadioButton
-                android:id="@+id/ckps_edge_rising"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:text="@string/ckps_edge_positive"
-                />
-
-        </RadioGroup>
-
-        <RadioGroup
-            android:id="@+id/ref_s_edge_group"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:layout_marginTop="16dp"
-            >
-
-            <TextView
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:text="@string/ckps_ref_s_edge_title"
-                />
-
-            <com.google.android.material.radiobutton.MaterialRadioButton
-                android:id="@+id/ref_s_edge_falling"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:text="@string/ckps_edge_negative"
-                />
-
-            <com.google.android.material.radiobutton.MaterialRadioButton
-                android:id="@+id/ref_s_edge_rising"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:text="@string/ckps_edge_positive"
-                />
-
-        </RadioGroup>
-
-        <!-- ************************************************************* -->
-
-        <CheckBox
-            android:id="@+id/spark_rising_edge_for_cdi"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:layout_marginTop="16dp"
-            android:button="@null"
-            android:drawableEnd="?android:attr/listChoiceIndicatorMultiple"
-            android:text="@string/ckps_spark_on_rising_edge_for_cdi_title"
-            />
-
-        <!-- ************************************************************* -->
-
-        <CheckBox
-            android:id="@+id/merge_signals_to_single_output"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:button="@null"
-            android:drawableEnd="?android:attr/listChoiceIndicatorMultiple"
-            android:text="@string/ckps_merge_outputs_title"
-            />
-
-        <!-- ************************************************************* -->
-
-
-        <org.secu3.android.ui.parameters.views.IntParamView
-            android:id="@+id/number_of_wheels_teeth"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:layout_marginTop="16dp"
-            app:title="@string/ckps_cogs_number_title"
-            app:units=""
-            app:int_value="0"
-            app:int_min_value="16"
-            app:int_max_value="200"
-            app:int_step="1"
-            />
-
-
-        <!-- ************************************************************* -->
-
-
-        <org.secu3.android.ui.parameters.views.IntParamView
-            android:id="@+id/number_of_missing_teeth"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:layout_marginTop="16dp"
-            app:title="@string/ckps_missing_cogs_number_title"
-            app:units=""
-            app:int_value="0"
-            app:int_min_value="0"
-            app:int_max_value="2"
-            app:int_step="1"
-            />
-
-        <!-- ************************************************************* -->
-
-        <com.google.android.material.textfield.TextInputLayout
-            android:id="@+id/teeth_before_tdc_title"
-            android:theme="@style/Theme.MaterialComponents.DayNight.NoActionBar"
-            style="@style/Widget.MaterialComponents.TextInputLayout.OutlinedBox.ExposedDropdownMenu"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:hint="@string/ckps_cogs_before_tdc_title">
-
-            <AutoCompleteTextView
-                android:id="@+id/teeth_before_tdc"
+            <RadioGroup
+                android:id="@+id/ckps_edge_group"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:inputType="none"
-                />
+                >
 
-        </com.google.android.material.textfield.TextInputLayout>
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="@string/ckps_ckps_edge_title"
+                    />
 
-        <!-- ************************************************************* -->
+                <com.google.android.material.radiobutton.MaterialRadioButton
+                    android:id="@+id/ckps_edge_falling"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="@string/ckps_edge_negative"
+                    />
 
-        <com.google.android.material.textfield.TextInputLayout
-            android:id="@+id/number_of_cylinders_title"
-            android:theme="@style/Theme.MaterialComponents.DayNight.NoActionBar"
-            style="@style/Widget.MaterialComponents.TextInputLayout.OutlinedBox.ExposedDropdownMenu"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:layout_marginTop="16dp"
-            android:hint="@string/ckps_engine_cylinders_title">
+                <com.google.android.material.radiobutton.MaterialRadioButton
+                    android:id="@+id/ckps_edge_rising"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="@string/ckps_edge_positive"
+                    />
 
-            <AutoCompleteTextView
-                android:id="@+id/number_of_cylinders"
+            </RadioGroup>
+
+            <RadioGroup
+                android:id="@+id/ref_s_edge_group"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:inputType="none"
+                android:layout_marginTop="16dp"
+                >
+
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="@string/ckps_ref_s_edge_title"
+                    />
+
+                <com.google.android.material.radiobutton.MaterialRadioButton
+                    android:id="@+id/ref_s_edge_falling"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="@string/ckps_edge_negative"
+                    />
+
+                <com.google.android.material.radiobutton.MaterialRadioButton
+                    android:id="@+id/ref_s_edge_rising"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="@string/ckps_edge_positive"
+                    />
+
+            </RadioGroup>
+
+            <!-- ************************************************************* -->
+
+            <CheckBox
+                android:id="@+id/spark_rising_edge_for_cdi"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="16dp"
+                android:button="@null"
+                android:drawableEnd="?android:attr/listChoiceIndicatorMultiple"
+                android:text="@string/ckps_spark_on_rising_edge_for_cdi_title"
                 />
 
-        </com.google.android.material.textfield.TextInputLayout>
+            <!-- ************************************************************* -->
 
-        <!-- ************************************************************* -->
+            <CheckBox
+                android:id="@+id/merge_signals_to_single_output"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:button="@null"
+                android:drawableEnd="?android:attr/listChoiceIndicatorMultiple"
+                android:text="@string/ckps_merge_outputs_title"
+                />
 
-
-        <org.secu3.android.ui.parameters.views.IntParamView
-            android:id="@+id/duration_ing_driver_pulse_teeth"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:layout_marginTop="16dp"
-            app:title="@string/ckps_ignition_pulse_delay_title"
-            app:units=""
-            app:int_value="0"
-            app:int_min_value="1"
-            app:int_max_value="200"
-            app:int_step="1"
-            />
+            <!-- ************************************************************* -->
 
 
-        <!-- ************************************************************* -->
+            <org.secu3.android.ui.parameters.views.IntParamView
+                android:id="@+id/number_of_wheels_teeth"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="16dp"
+                app:title="@string/ckps_cogs_number_title"
+                app:units=""
+                app:int_value="0"
+                app:int_min_value="16"
+                app:int_max_value="200"
+                app:int_step="1"
+                />
 
 
-        <org.secu3.android.ui.parameters.views.FloatParamView
-            android:id="@+id/hall_sensor_interrupter_degree"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            app:title="@string/ckps_hall_wnd_width_title"
-            app:units="@string/units_degrees_cs"
-            app:float_value="0"
-            app:value_precision="one"
-            app:float_max_value="120.0"
-            app:float_min_value="0.0"
-            app:float_step="0.1"
-            />
+            <!-- ************************************************************* -->
 
 
-        <!-- ************************************************************* -->
+            <org.secu3.android.ui.parameters.views.IntParamView
+                android:id="@+id/number_of_missing_teeth"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="16dp"
+                app:title="@string/ckps_missing_cogs_number_title"
+                app:units=""
+                app:int_value="0"
+                app:int_min_value="0"
+                app:int_max_value="2"
+                app:int_step="1"
+                />
+
+            <!-- ************************************************************* -->
+
+            <com.google.android.material.textfield.TextInputLayout
+                android:id="@+id/teeth_before_tdc_title"
+                android:theme="@style/Theme.MaterialComponents.DayNight.NoActionBar"
+                style="@style/Widget.MaterialComponents.TextInputLayout.OutlinedBox.ExposedDropdownMenu"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:hint="@string/ckps_cogs_before_tdc_title">
+
+                <AutoCompleteTextView
+                    android:id="@+id/teeth_before_tdc"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:inputType="none"
+                    />
+
+            </com.google.android.material.textfield.TextInputLayout>
+
+            <!-- ************************************************************* -->
+
+            <com.google.android.material.textfield.TextInputLayout
+                android:id="@+id/number_of_cylinders_title"
+                android:theme="@style/Theme.MaterialComponents.DayNight.NoActionBar"
+                style="@style/Widget.MaterialComponents.TextInputLayout.OutlinedBox.ExposedDropdownMenu"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="16dp"
+                android:hint="@string/ckps_engine_cylinders_title">
+
+                <AutoCompleteTextView
+                    android:id="@+id/number_of_cylinders"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:inputType="none"
+                    />
+
+            </com.google.android.material.textfield.TextInputLayout>
+
+            <!-- ************************************************************* -->
 
 
-        <org.secu3.android.ui.parameters.views.FloatParamView
-            android:id="@+id/degrees_before_TDC"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            app:title="@string/ckps_degrees_before_tdc_title"
-            app:units="@string/units_degrees_cs"
-            app:float_value="0"
-            app:value_precision="one"
-            app:float_max_value="120.0"
-            app:float_min_value="30.0"
-            app:float_step="0.1"
-            />
+            <org.secu3.android.ui.parameters.views.IntParamView
+                android:id="@+id/duration_ing_driver_pulse_teeth"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="16dp"
+                app:title="@string/ckps_ignition_pulse_delay_title"
+                app:units=""
+                app:int_value="0"
+                app:int_min_value="1"
+                app:int_max_value="200"
+                app:int_step="1"
+                />
 
 
-        <!-- ************************************************************* -->
+            <!-- ************************************************************* -->
 
-        <CheckBox
-            android:id="@+id/use_cam_sensor_as_reference"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:text="@string/ckps_use_cam_sensor_title"
-            />
 
-    </LinearLayout>
+            <org.secu3.android.ui.parameters.views.FloatParamView
+                android:id="@+id/hall_sensor_interrupter_degree"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                app:title="@string/ckps_hall_wnd_width_title"
+                app:units="@string/units_degrees_cs"
+                app:float_value="0"
+                app:value_precision="one"
+                app:float_max_value="120.0"
+                app:float_min_value="0.0"
+                app:float_step="0.1"
+                />
 
-</ScrollView>
+
+            <!-- ************************************************************* -->
+
+
+            <org.secu3.android.ui.parameters.views.FloatParamView
+                android:id="@+id/degrees_before_TDC"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                app:title="@string/ckps_degrees_before_tdc_title"
+                app:units="@string/units_degrees_cs"
+                app:float_value="0"
+                app:value_precision="one"
+                app:float_max_value="120.0"
+                app:float_min_value="30.0"
+                app:float_step="0.1"
+                />
+
+
+            <!-- ************************************************************* -->
+
+            <CheckBox
+                android:id="@+id/use_cam_sensor_as_reference"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="@string/ckps_use_cam_sensor_title"
+                />
+
+        </LinearLayout>
+
+    </ScrollView>
+
+</androidx.constraintlayout.widget.ConstraintLayout>

@@ -39,6 +39,8 @@ import org.secu3.android.databinding.FragmentFunctionsBinding
 import org.secu3.android.models.packets.FnNameDatPacket
 import org.secu3.android.models.packets.params.FunSetParamPacket
 import org.secu3.android.ui.parameters.views.FloatParamView
+import org.secu3.android.utils.gone
+import org.secu3.android.utils.visible
 
 
 class FunctionsFragment : BaseParamFragment() {
@@ -96,6 +98,9 @@ class FunctionsFragment : BaseParamFragment() {
                     funSetPacket = it
 
                     mBinding.apply {
+
+                        progressBar.gone()
+                        params.visible()
 
                         fnNamePacket?.fnNameList?.map { fn -> fn.name }?.let { fnNames ->
                             mapsSet.setText(fnNames[it.fnGasoline], false)

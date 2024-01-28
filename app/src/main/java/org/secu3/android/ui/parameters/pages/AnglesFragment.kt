@@ -35,6 +35,8 @@ import kotlinx.coroutines.launch
 import org.secu3.android.databinding.FragmentAnglesBinding
 import org.secu3.android.models.packets.params.AnglesParamPacket
 import org.secu3.android.ui.parameters.views.FloatParamView
+import org.secu3.android.utils.gone
+import org.secu3.android.utils.visible
 
 
 class AnglesFragment : BaseParamFragment() {
@@ -59,6 +61,10 @@ class AnglesFragment : BaseParamFragment() {
                     packet = it
 
                     mBinding.apply {
+
+                        progressBar.gone()
+                        params.visible()
+
                         maxAdvanceAngle.value = it.maxAngle
                         minAdvanceAngle.value = it.minAngle
 

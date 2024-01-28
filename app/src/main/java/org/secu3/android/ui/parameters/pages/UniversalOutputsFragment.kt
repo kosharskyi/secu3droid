@@ -41,6 +41,8 @@ import org.secu3.android.databinding.FragmentUniversalOutputsBinding
 import org.secu3.android.models.packets.params.UniOutParamPacket
 import org.secu3.android.ui.parameters.views.FloatParamView
 import org.secu3.android.utils.UnioutTabConfigurator
+import org.secu3.android.utils.gone
+import org.secu3.android.utils.visible
 import javax.inject.Inject
 
 
@@ -83,6 +85,9 @@ class UniversalOutputsFragment : BaseParamFragment() {
                     packet = it
 
                     mBinding.apply {
+                        progressBar.gone()
+                        params.visible()
+
                         output1Condition1.setText(mCondition1List[it.output1Condition1], false)
                         output1Condition1Inversion.apply {
                             isChecked = it.output1Cond1Inversion

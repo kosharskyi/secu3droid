@@ -40,6 +40,8 @@ import org.secu3.android.databinding.FragmentFuelCutoffkBinding
 import org.secu3.android.models.packets.params.CarburParamPacket
 import org.secu3.android.ui.parameters.views.FloatParamView
 import org.secu3.android.ui.parameters.views.IntParamView
+import org.secu3.android.utils.gone
+import org.secu3.android.utils.visible
 
 class FuelCutoffkFragment : BaseParamFragment() {
 
@@ -74,6 +76,10 @@ class FuelCutoffkFragment : BaseParamFragment() {
                     packet = it
 
                     mBinding.apply {
+
+                        progressBar.gone()
+                        params.visible()
+
                         idleCutoffLowerThrd.value = it.ieLot
                         idleCutoffUpperThrd.value = it.ieHit
 

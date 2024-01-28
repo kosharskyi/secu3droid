@@ -39,6 +39,8 @@ import org.secu3.android.databinding.FragmentKnockBinding
 import org.secu3.android.models.packets.params.KnockParamPacket
 import org.secu3.android.ui.parameters.views.FloatParamView
 import org.secu3.android.ui.parameters.views.IntParamView
+import org.secu3.android.utils.gone
+import org.secu3.android.utils.visible
 
 
 class KnockFragment : BaseParamFragment() {
@@ -84,6 +86,9 @@ class KnockFragment : BaseParamFragment() {
                     packet = it
 
                     mBinding.apply {
+                        progressBar.gone()
+                        params.visible()
+
                         enableSensor.isChecked = it.useKnockChannel > 0
                         phaseWindowBegin.value = it.kWndBeginAngle
                         phaseWindowEnd.value = it.kWndEndAngle

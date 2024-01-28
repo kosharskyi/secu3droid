@@ -107,6 +107,9 @@ class FuelInjectionFragment : BaseParamFragment() {
                     mInjViewModel.generateSquirtsDropDown(packet, 1)
 
                     mBinding.apply {
+                        progressBar.gone()
+                        params.visible()
+
                         engineDisplacement.value = it.engineDisp
 
                         injectorFlowRate.value = it.flowRate[0]

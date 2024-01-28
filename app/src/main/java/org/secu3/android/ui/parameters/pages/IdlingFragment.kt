@@ -36,6 +36,8 @@ import org.secu3.android.databinding.FragmentIdlingBinding
 import org.secu3.android.models.packets.params.IdlingParamPacket
 import org.secu3.android.ui.parameters.views.FloatParamView
 import org.secu3.android.ui.parameters.views.IntParamView
+import org.secu3.android.utils.gone
+import org.secu3.android.utils.visible
 
 class IdlingFragment : BaseParamFragment() {
 
@@ -58,6 +60,10 @@ class IdlingFragment : BaseParamFragment() {
                     packet = it
 
                     mBinding.apply {
+
+                        progressBar.gone()
+                        params.visible()
+
                         positiveRegFactor.value = it.iFac1
                         negativeRegFactor.value = it.iFac2
 

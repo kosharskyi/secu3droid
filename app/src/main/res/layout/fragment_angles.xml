@@ -23,135 +23,161 @@
               http://secu-3.org
               email: vetalkosharskiy@gmail.com
 -->
-<LinearLayout
+<androidx.constraintlayout.widget.ConstraintLayout
     xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:tools="http://schemas.android.com/tools"
     xmlns:app="http://schemas.android.com/apk/res-auto"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:orientation="vertical"
     tools:context=".ui.parameters.pages.AnglesFragment"
-    android:padding="16dp">
+    >
 
-    <org.secu3.android.ui.parameters.views.FloatParamView
-        android:id="@+id/max_advance_angle"
-        android:layout_width="match_parent"
+    <ProgressBar
+        android:id="@+id/progress_bar"
+        android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        app:title="@string/angles_max_angle_title"
-        app:units="@string/units_degree"
-        app:float_value="0"
-        app:value_precision="two"
-        app:float_min_value="-15.0"
-        app:float_max_value="60.0"
-        app:float_step="0.25"
+        app:layout_constraintTop_toTopOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintBottom_toBottomOf="parent"
         />
 
-
-    <org.secu3.android.ui.parameters.views.FloatParamView
-        android:id="@+id/min_advance_angle"
+    <ScrollView
+        android:id="@+id/params"
         android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        app:title="@string/angles_min_angle_title"
-        app:units="@string/units_degree"
-        app:float_value="0"
-        app:value_precision="two"
-        app:float_min_value="-15.0"
-        app:float_max_value="60.0"
-        app:float_step="0.25"
-        />
+        android:layout_height="match_parent"
+        android:visibility="gone"
+        >
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical"
+            android:padding="16dp">
+
+            <org.secu3.android.ui.parameters.views.FloatParamView
+                android:id="@+id/max_advance_angle"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                app:title="@string/angles_max_angle_title"
+                app:units="@string/units_degree"
+                app:float_value="0"
+                app:value_precision="two"
+                app:float_min_value="-15.0"
+                app:float_max_value="60.0"
+                app:float_step="0.25"
+                />
 
 
-    <org.secu3.android.ui.parameters.views.FloatParamView
-        android:id="@+id/angle_decrease_speed"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:layout_marginTop="16dp"
-        app:title="@string/angles_angle_decrement_step_title"
-        app:units="@string/units_degree_per_stroke"
-        app:float_value="0"
-        app:value_precision="two"
-        app:float_min_value="0"
-        app:float_max_value="10.0"
-        app:float_step="0.02"
-        />
+            <org.secu3.android.ui.parameters.views.FloatParamView
+                android:id="@+id/min_advance_angle"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                app:title="@string/angles_min_angle_title"
+                app:units="@string/units_degree"
+                app:float_value="0"
+                app:value_precision="two"
+                app:float_min_value="-15.0"
+                app:float_max_value="60.0"
+                app:float_step="0.25"
+                />
 
 
-    <org.secu3.android.ui.parameters.views.FloatParamView
-        android:id="@+id/angle_increase_speed"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        app:title="@string/angles_angle_increment_step_title"
-        app:units="@string/units_degree_per_stroke"
-        app:float_value="0"
-        app:value_precision="two"
-        app:float_min_value="0"
-        app:float_max_value="10.0"
-        app:float_step="0.02"
-        />
+            <org.secu3.android.ui.parameters.views.FloatParamView
+                android:id="@+id/angle_decrease_speed"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="16dp"
+                app:title="@string/angles_angle_decrement_step_title"
+                app:units="@string/units_degree_per_stroke"
+                app:float_value="0"
+                app:value_precision="two"
+                app:float_min_value="0"
+                app:float_max_value="10.0"
+                app:float_step="0.02"
+                />
 
 
-    <org.secu3.android.ui.parameters.views.FloatParamView
-        android:id="@+id/octane_correction"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:layout_marginTop="16dp"
-        app:float_value="0"
-        app:title="@string/angles_octane_correction_title"
-        app:units="@string/units_degree"
-        app:value_precision="two"
-        app:float_min_value="-30.0"
-        app:float_max_value="30.0"
-        app:float_step="0.25"
-        />
+            <org.secu3.android.ui.parameters.views.FloatParamView
+                android:id="@+id/angle_increase_speed"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                app:title="@string/angles_angle_increment_step_title"
+                app:units="@string/units_degree_per_stroke"
+                app:float_value="0"
+                app:value_precision="two"
+                app:float_min_value="0"
+                app:float_max_value="10.0"
+                app:float_step="0.02"
+                />
 
-    <CheckBox
-        android:id="@+id/zero_adv_angle"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:text="@string/angles_zero_angle_title"
-        android:button="@null"
-        android:drawableEnd="?android:attr/listChoiceIndicatorMultiple"
-        />
 
-    <org.secu3.android.ui.parameters.views.FloatParamView
-        android:id="@+id/ign_timing_when_shifting"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:layout_marginTop="16dp"
-        app:float_value="0"
-        app:title="@string/angles_ign_timing_when_shifting_title"
-        app:units="@string/units_degree"
-        app:value_precision="one"
-        app:float_min_value="-16.9"
-        app:float_max_value="55.0"
-        app:float_step="0.1"
-        />
+            <org.secu3.android.ui.parameters.views.FloatParamView
+                android:id="@+id/octane_correction"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="16dp"
+                app:float_value="0"
+                app:title="@string/angles_octane_correction_title"
+                app:units="@string/units_degree"
+                app:value_precision="two"
+                app:float_min_value="-30.0"
+                app:float_max_value="30.0"
+                app:float_step="0.25"
+                />
 
-    <CheckBox
-        android:id="@+id/always_use_working_mode_angle_map"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:text="@string/angles_always_use_ing_timing_map_title"
-        android:button="@null"
-        android:drawableEnd="?android:attr/listChoiceIndicatorMultiple"
-        />
+            <CheckBox
+                android:id="@+id/zero_adv_angle"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="@string/angles_zero_angle_title"
+                android:button="@null"
+                android:drawableEnd="?android:attr/listChoiceIndicatorMultiple"
+                />
 
-    <CheckBox
-        android:id="@+id/apply_manual_timing_corr"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:text="@string/angles_apply_manual_timing_corr_title"
-        android:button="@null"
-        android:drawableEnd="?android:attr/listChoiceIndicatorMultiple"
-        />
+            <org.secu3.android.ui.parameters.views.FloatParamView
+                android:id="@+id/ign_timing_when_shifting"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="16dp"
+                app:float_value="0"
+                app:title="@string/angles_ign_timing_when_shifting_title"
+                app:units="@string/units_degree"
+                app:value_precision="one"
+                app:float_min_value="-16.9"
+                app:float_max_value="55.0"
+                app:float_step="0.1"
+                />
 
-    <CheckBox
-        android:id="@+id/zero_adv_octane_corr"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:text="@string/angles_zero_adv_correction_title"
-        android:button="@null"
-        android:drawableEnd="?android:attr/listChoiceIndicatorMultiple"
-        />
+            <CheckBox
+                android:id="@+id/always_use_working_mode_angle_map"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="@string/angles_always_use_ing_timing_map_title"
+                android:button="@null"
+                android:drawableEnd="?android:attr/listChoiceIndicatorMultiple"
+                />
 
-</LinearLayout>
+            <CheckBox
+                android:id="@+id/apply_manual_timing_corr"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="@string/angles_apply_manual_timing_corr_title"
+                android:button="@null"
+                android:drawableEnd="?android:attr/listChoiceIndicatorMultiple"
+                />
+
+            <CheckBox
+                android:id="@+id/zero_adv_octane_corr"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="@string/angles_zero_adv_correction_title"
+                android:button="@null"
+                android:drawableEnd="?android:attr/listChoiceIndicatorMultiple"
+                />
+
+        </LinearLayout>
+
+    </ScrollView>
+
+</androidx.constraintlayout.widget.ConstraintLayout>

@@ -80,6 +80,10 @@ class LambdaControlFragment : BaseParamFragment() {
                     packet = it
 
                     mBinding.apply {
+
+                        progressBar.gone()
+                        params.visible()
+
                         sensorType.setText(sensorTypesList[it.senstype], false)
                         numberOfStrokesPerStep.value = it.strPerStp
                         numberOfMsPerStep.value = it.msPerStp

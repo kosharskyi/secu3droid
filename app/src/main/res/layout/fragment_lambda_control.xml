@@ -23,529 +23,547 @@
               http://secu-3.org
               email: vetalkosharskiy@gmail.com
 -->
-<ScrollView
+<androidx.constraintlayout.widget.ConstraintLayout
     xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:tools="http://schemas.android.com/tools"
     xmlns:app="http://schemas.android.com/apk/res-auto"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    tools:context=".ui.parameters.pages.LambdaControlFragment"
-    android:fillViewport="true"
-    >
+    tools:context=".ui.parameters.pages.LambdaControlFragment">
 
-
-    <androidx.constraintlayout.widget.ConstraintLayout
-        android:layout_width="match_parent"
+    <ProgressBar
+        android:id="@+id/progress_bar"
+        android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:padding="16dp"
+        app:layout_constraintTop_toTopOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintBottom_toBottomOf="parent"
+        />
+
+    <ScrollView
+        android:id="@+id/params"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:fillViewport="true"
+        android:visibility="gone"
         >
 
 
-
-        <androidx.constraintlayout.widget.Group
-            android:id="@+id/lambda_param_group"
-            android:layout_width="wrap_content"
+        <androidx.constraintlayout.widget.ConstraintLayout
+            android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            app:constraint_referenced_ids="sensor_type_title,number_of_strokes_per_step,number_of_ms_per_step,
+            android:padding="16dp"
+            >
+
+
+
+            <androidx.constraintlayout.widget.Group
+                android:id="@+id/lambda_param_group"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                app:constraint_referenced_ids="sensor_type_title,number_of_strokes_per_step,number_of_ms_per_step,
             size_positive_correction_step,size_negative_correction_step,correction_limit_positive,correction_limit_negative,
             switch_point,cts_activation_threshold,rpm_activation_threshold,activation_after_start_in,switch_point_deadband,
             determine_heating_using_voltage,lambda_correctioin_on_idling,stoichiom_ratio_for_2_fuel,control_of_sensors_heating,
             heating_time_without_pwm_on_cold,heating_time_without_pwm_on_hot,cold_hot_temperature_threshold,turn_on_time_in_pwm_mode,
             air_flow_threshold_for_turning_heating_off,heating_before_cranking"
 
-            />
+                />
 
 
 
 
-        <com.google.android.material.textfield.TextInputLayout
-            android:id="@+id/sensor_type_title"
-            android:theme="@style/Theme.MaterialComponents.DayNight.NoActionBar"
-            style="@style/Widget.MaterialComponents.TextInputLayout.OutlinedBox.ExposedDropdownMenu"
-            android:layout_width="0dp"
-            android:layout_height="wrap_content"
-            app:layout_constraintTop_toTopOf="parent"
-            app:layout_constraintStart_toStartOf="parent"
-            app:layout_constraintEnd_toEndOf="parent"
-            android:layout_marginTop="16dp"
-            android:hint="@string/lambda_par_sensor_type_title">
+            <com.google.android.material.textfield.TextInputLayout
+                android:id="@+id/sensor_type_title"
+                android:theme="@style/Theme.MaterialComponents.DayNight.NoActionBar"
+                style="@style/Widget.MaterialComponents.TextInputLayout.OutlinedBox.ExposedDropdownMenu"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                app:layout_constraintTop_toTopOf="parent"
+                app:layout_constraintStart_toStartOf="parent"
+                app:layout_constraintEnd_toEndOf="parent"
+                android:layout_marginTop="16dp"
+                android:hint="@string/lambda_par_sensor_type_title">
 
-            <AutoCompleteTextView
-                android:id="@+id/sensor_type"
+                <AutoCompleteTextView
+                    android:id="@+id/sensor_type"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:inputType="none"
+                    />
+
+            </com.google.android.material.textfield.TextInputLayout>
+
+            <!-- ************************************************************* -->
+
+            <org.secu3.android.ui.parameters.views.IntParamView
+                android:id="@+id/number_of_strokes_per_step"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:inputType="none"
+                app:layout_constraintTop_toBottomOf="@id/sensor_type_title"
+                app:layout_constraintStart_toStartOf="parent"
+                android:layout_marginTop="16dp"
+                app:title="@string/lambda_par_strokes_per_step_title"
+                app:units="@string/units_num"
+                app:int_value="0"
+                app:int_max_value="100"
+                app:int_min_value="0"
+                app:int_step="1"
                 />
 
-        </com.google.android.material.textfield.TextInputLayout>
 
-        <!-- ************************************************************* -->
+            <!-- ************************************************************* -->
 
-        <org.secu3.android.ui.parameters.views.IntParamView
-            android:id="@+id/number_of_strokes_per_step"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            app:layout_constraintTop_toBottomOf="@id/sensor_type_title"
-            app:layout_constraintStart_toStartOf="parent"
-            android:layout_marginTop="16dp"
-            app:title="@string/lambda_par_strokes_per_step_title"
-            app:units="@string/units_num"
-            app:int_value="0"
-            app:int_max_value="100"
-            app:int_min_value="0"
-            app:int_step="1"
-            />
+            <org.secu3.android.ui.parameters.views.IntParamView
+                android:id="@+id/number_of_ms_per_step"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                app:layout_constraintTop_toBottomOf="@id/number_of_strokes_per_step"
+                app:layout_constraintStart_toStartOf="parent"
+                app:title="@string/lambda_par_ms_per_step_title"
+                app:units="@string/units_ms"
+                app:int_value="0"
+                />
 
 
-        <!-- ************************************************************* -->
+            <!-- ************************************************************* -->
 
-        <org.secu3.android.ui.parameters.views.IntParamView
-            android:id="@+id/number_of_ms_per_step"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            app:layout_constraintTop_toBottomOf="@id/number_of_strokes_per_step"
-            app:layout_constraintStart_toStartOf="parent"
-            app:title="@string/lambda_par_ms_per_step_title"
-            app:units="@string/units_ms"
-            app:int_value="0"
-            />
+            <org.secu3.android.ui.parameters.views.FloatParamView
+                android:id="@+id/size_positive_correction_step"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                app:layout_constraintTop_toBottomOf="@id/number_of_ms_per_step"
+                app:layout_constraintStart_toStartOf="parent"
+                android:layout_marginTop="16dp"
+                app:title="@string/lambda_par_step_size_positive_title"
+                app:units="@string/units_percents"
+                app:float_value="0"
+                app:value_precision="two"
+                app:float_max_value="45.0"
+                app:float_min_value="0.0"
+                app:float_step="0.25"
+                />
 
+            <!-- ************************************************************* -->
 
-        <!-- ************************************************************* -->
+            <org.secu3.android.ui.parameters.views.FloatParamView
+                android:id="@+id/size_negative_correction_step"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                app:layout_constraintTop_toBottomOf="@id/size_positive_correction_step"
+                app:layout_constraintStart_toStartOf="parent"
+                app:title="@string/lambda_par_step_size_negative_title"
+                app:units="@string/units_percents"
+                app:float_value="0"
+                app:value_precision="two"
+                app:float_max_value="45.0"
+                app:float_min_value="0.0"
+                app:float_step="0.25"
+                />
 
-        <org.secu3.android.ui.parameters.views.FloatParamView
-            android:id="@+id/size_positive_correction_step"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            app:layout_constraintTop_toBottomOf="@id/number_of_ms_per_step"
-            app:layout_constraintStart_toStartOf="parent"
-            android:layout_marginTop="16dp"
-            app:title="@string/lambda_par_step_size_positive_title"
-            app:units="@string/units_percents"
-            app:float_value="0"
-            app:value_precision="two"
-            app:float_max_value="45.0"
-            app:float_min_value="0.0"
-            app:float_step="0.25"
-            />
+            <!-- ************************************************************* -->
 
-        <!-- ************************************************************* -->
+            <org.secu3.android.ui.parameters.views.FloatParamView
+                android:id="@+id/correction_limit_positive"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                app:layout_constraintTop_toBottomOf="@id/size_negative_correction_step"
+                app:layout_constraintStart_toStartOf="parent"
+                android:layout_marginTop="16dp"
+                app:title="@string/lambda_par_correction_positive_limit_title"
+                app:units="@string/units_percents"
+                app:float_value="0"
+                app:value_precision="two"
+                app:float_max_value="100.0"
+                app:float_min_value="0.5"
+                app:float_step="0.5"
+                />
 
-        <org.secu3.android.ui.parameters.views.FloatParamView
-            android:id="@+id/size_negative_correction_step"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            app:layout_constraintTop_toBottomOf="@id/size_positive_correction_step"
-            app:layout_constraintStart_toStartOf="parent"
-            app:title="@string/lambda_par_step_size_negative_title"
-            app:units="@string/units_percents"
-            app:float_value="0"
-            app:value_precision="two"
-            app:float_max_value="45.0"
-            app:float_min_value="0.0"
-            app:float_step="0.25"
-            />
+            <org.secu3.android.ui.parameters.views.FloatParamView
+                android:id="@+id/correction_limit_negative"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                app:layout_constraintTop_toBottomOf="@id/correction_limit_positive"
+                app:layout_constraintStart_toStartOf="parent"
+                app:title="@string/lambda_par_correction_negative_limit_title"
+                app:units="@string/units_percents"
+                app:float_value="0"
+                app:value_precision="two"
+                app:float_max_value="100.0"
+                app:float_min_value="0.5"
+                app:float_step="0.5"
+                />
 
-        <!-- ************************************************************* -->
+            <!-- ************************************************************* -->
 
-        <org.secu3.android.ui.parameters.views.FloatParamView
-            android:id="@+id/correction_limit_positive"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            app:layout_constraintTop_toBottomOf="@id/size_negative_correction_step"
-            app:layout_constraintStart_toStartOf="parent"
-            android:layout_marginTop="16dp"
-            app:title="@string/lambda_par_correction_positive_limit_title"
-            app:units="@string/units_percents"
-            app:float_value="0"
-            app:value_precision="two"
-            app:float_max_value="100.0"
-            app:float_min_value="0.5"
-            app:float_step="0.5"
-            />
-
-        <org.secu3.android.ui.parameters.views.FloatParamView
-            android:id="@+id/correction_limit_negative"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            app:layout_constraintTop_toBottomOf="@id/correction_limit_positive"
-            app:layout_constraintStart_toStartOf="parent"
-            app:title="@string/lambda_par_correction_negative_limit_title"
-            app:units="@string/units_percents"
-            app:float_value="0"
-            app:value_precision="two"
-            app:float_max_value="100.0"
-            app:float_min_value="0.5"
-            app:float_step="0.5"
-            />
-
-        <!-- ************************************************************* -->
-
-        <org.secu3.android.ui.parameters.views.FloatParamView
-            android:id="@+id/switch_point"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            app:layout_constraintTop_toBottomOf="@id/correction_limit_negative"
-            app:layout_constraintStart_toStartOf="parent"
-            android:layout_marginTop="16dp"
-            app:title="@string/lambda_par_switch_point_title"
-            app:units="@string/units_volts"
-            app:float_value="0"
-            app:value_precision="two"
-            app:float_max_value="5.0"
-            app:float_min_value="0.1"
-            app:float_step="0.01"
-            />
+            <org.secu3.android.ui.parameters.views.FloatParamView
+                android:id="@+id/switch_point"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                app:layout_constraintTop_toBottomOf="@id/correction_limit_negative"
+                app:layout_constraintStart_toStartOf="parent"
+                android:layout_marginTop="16dp"
+                app:title="@string/lambda_par_switch_point_title"
+                app:units="@string/units_volts"
+                app:float_value="0"
+                app:value_precision="two"
+                app:float_max_value="5.0"
+                app:float_min_value="0.1"
+                app:float_step="0.01"
+                />
 
 
-        <org.secu3.android.ui.parameters.views.FloatParamView
-            android:id="@+id/cts_activation_threshold"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            app:layout_constraintTop_toBottomOf="@id/switch_point"
-            app:layout_constraintStart_toStartOf="parent"
-            android:layout_marginTop="16dp"
-            app:title="@string/lambda_par_temp_threshold_title"
-            app:units="@string/units_degrees_celcius"
-            app:float_value="0"
-            app:value_precision="two"
-            app:float_max_value="300.0"
-            app:float_min_value="0.0"
-            app:float_step="0.25"
-            />
+            <org.secu3.android.ui.parameters.views.FloatParamView
+                android:id="@+id/cts_activation_threshold"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                app:layout_constraintTop_toBottomOf="@id/switch_point"
+                app:layout_constraintStart_toStartOf="parent"
+                android:layout_marginTop="16dp"
+                app:title="@string/lambda_par_temp_threshold_title"
+                app:units="@string/units_degrees_celcius"
+                app:float_value="0"
+                app:value_precision="two"
+                app:float_max_value="300.0"
+                app:float_min_value="0.0"
+                app:float_step="0.25"
+                />
 
-        <!-- ************************************************************* -->
-
-
-        <org.secu3.android.ui.parameters.views.IntParamView
-            android:id="@+id/rpm_activation_threshold"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            app:layout_constraintTop_toBottomOf="@id/cts_activation_threshold"
-            app:layout_constraintStart_toStartOf="parent"
-            app:title="@string/lambda_par_rpm_threshold_title"
-            app:units="@string/units_rpm"
-            app:int_value="0"
-            app:int_max_value="30000"
-            app:int_min_value="0"
-            app:int_step="50"
-            />
-
-        <!-- ************************************************************* -->
-
-        <org.secu3.android.ui.parameters.views.IntParamView
-            android:id="@+id/activation_after_start_in"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            app:layout_constraintTop_toBottomOf="@id/rpm_activation_threshold"
-            app:layout_constraintStart_toStartOf="parent"
-            android:layout_marginTop="16dp"
-            app:title="@string/lambda_par_activation_delay_title"
-            app:units="@string/units_sec"
-            app:int_value="0"
-            app:int_max_value="255"
-            app:int_min_value="0"
-            app:int_step="1"
-            />
+            <!-- ************************************************************* -->
 
 
-        <!-- ************************************************************* -->
+            <org.secu3.android.ui.parameters.views.IntParamView
+                android:id="@+id/rpm_activation_threshold"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                app:layout_constraintTop_toBottomOf="@id/cts_activation_threshold"
+                app:layout_constraintStart_toStartOf="parent"
+                app:title="@string/lambda_par_rpm_threshold_title"
+                app:units="@string/units_rpm"
+                app:int_value="0"
+                app:int_max_value="30000"
+                app:int_min_value="0"
+                app:int_step="50"
+                />
+
+            <!-- ************************************************************* -->
+
+            <org.secu3.android.ui.parameters.views.IntParamView
+                android:id="@+id/activation_after_start_in"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                app:layout_constraintTop_toBottomOf="@id/rpm_activation_threshold"
+                app:layout_constraintStart_toStartOf="parent"
+                android:layout_marginTop="16dp"
+                app:title="@string/lambda_par_activation_delay_title"
+                app:units="@string/units_sec"
+                app:int_value="0"
+                app:int_max_value="255"
+                app:int_min_value="0"
+                app:int_step="1"
+                />
 
 
-        <org.secu3.android.ui.parameters.views.FloatParamView
-            android:id="@+id/switch_point_deadband"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            app:layout_constraintTop_toBottomOf="@id/activation_after_start_in"
-            app:layout_constraintStart_toStartOf="parent"
-            android:layout_marginTop="16dp"
-            app:title="@string/lambda_par_switch_point_deadband_title"
-            app:units="@string/units_volts"
-            app:float_value="0"
-            app:value_precision="two"
-            app:float_max_value="5.0"
-            app:float_min_value="0.0"
-            app:float_step="0.01"
-            />
+            <!-- ************************************************************* -->
 
 
-        <!-- ************************************************************* -->
-
-        <CheckBox
-            android:id="@+id/determine_heating_using_voltage"
-            android:layout_width="0dp"
-            android:layout_height="wrap_content"
-            app:layout_constraintTop_toBottomOf="@id/switch_point_deadband"
-            app:layout_constraintStart_toStartOf="parent"
-            app:layout_constraintEnd_toEndOf="parent"
-            android:text="@string/lambda_par_determine_heating_voltage_title"
-            android:button="@null"
-            android:drawableEnd="?android:attr/listChoiceIndicatorMultiple"
-            />
-
-        <!-- ************************************************************* -->
-
-        <CheckBox
-            android:id="@+id/lambda_correctioin_on_idling"
-            android:layout_width="0dp"
-            android:layout_height="wrap_content"
-            app:layout_constraintTop_toBottomOf="@id/determine_heating_using_voltage"
-            app:layout_constraintStart_toStartOf="parent"
-            app:layout_constraintEnd_toEndOf="parent"
-            android:text="@string/lambda_par_correction_on_idling_title"
-            android:button="@null"
-            android:drawableEnd="?android:attr/listChoiceIndicatorMultiple"
-            />
-
-        <!-- ************************************************************* -->
+            <org.secu3.android.ui.parameters.views.FloatParamView
+                android:id="@+id/switch_point_deadband"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                app:layout_constraintTop_toBottomOf="@id/activation_after_start_in"
+                app:layout_constraintStart_toStartOf="parent"
+                android:layout_marginTop="16dp"
+                app:title="@string/lambda_par_switch_point_deadband_title"
+                app:units="@string/units_volts"
+                app:float_value="0"
+                app:value_precision="two"
+                app:float_max_value="5.0"
+                app:float_min_value="0.0"
+                app:float_step="0.01"
+                />
 
 
-        <org.secu3.android.ui.parameters.views.FloatParamView
-            android:id="@+id/stoichiom_ratio_for_2_fuel"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            app:layout_constraintTop_toBottomOf="@id/lambda_correctioin_on_idling"
-            app:layout_constraintStart_toStartOf="parent"
-            android:layout_marginTop="16dp"
-            app:title="@string/lambda_par_stoichiom_ratio_for_gas_title"
-            app:units="@string/units_afr"
-            app:float_value="0"
-            app:value_precision="one"
-            app:float_max_value="22.0"
-            app:float_min_value="8.0"
-            app:float_step="0.1"
-            />
-
-
-        <!-- ************************************************************* -->
-
-
-        <TextView
-            android:id="@+id/control_of_sensors_heating"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            app:layout_constraintTop_toBottomOf="@id/stoichiom_ratio_for_2_fuel"
-            app:layout_constraintStart_toStartOf="parent"
-            android:layout_marginTop="16dp"
-            android:textSize="18sp"
-            android:fontFamily="sans-serif-medium"
-            android:text="@string/lambda_control_sensors_heating_title"
-            />
-
-        <!-- ************************************************************* -->
-
-
-
-        <org.secu3.android.ui.parameters.views.IntParamView
-            android:id="@+id/heating_time_without_pwm_on_cold"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            app:layout_constraintTop_toBottomOf="@id/control_of_sensors_heating"
-            app:layout_constraintStart_toStartOf="parent"
-            android:layout_marginTop="16dp"
-            app:title="@string/lambda_par_heating_time_without_pwm_on_cold_title"
-            app:units="@string/units_sec"
-            app:int_value="0"
-            app:int_min_value="0"
-            app:int_max_value="255"
-            app:int_step="1"
-            />
-
-        <org.secu3.android.ui.parameters.views.IntParamView
-            android:id="@+id/heating_time_without_pwm_on_hot"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            app:layout_constraintTop_toBottomOf="@id/heating_time_without_pwm_on_cold"
-            app:layout_constraintStart_toStartOf="parent"
-            app:title="@string/lambda_par_heating_time_without_pwm_on_hot_title"
-            app:units="@string/units_sec"
-            app:int_value="0"
-            app:int_min_value="0"
-            app:int_max_value="255"
-            app:int_step="1"
-            />
-
-        <!-- ************************************************************* -->
-
-        <org.secu3.android.ui.parameters.views.IntParamView
-            android:id="@+id/cold_hot_temperature_threshold"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            app:layout_constraintTop_toBottomOf="@id/heating_time_without_pwm_on_hot"
-            app:layout_constraintStart_toStartOf="parent"
-            android:layout_marginTop="16dp"
-            app:title="@string/lambda_par_hot_cold_temperature_threshold_title"
-            app:units="@string/units_degrees_celcius"
-            app:int_value="0"
-            app:int_max_value="255"
-            app:int_min_value="0"
-            app:int_step="1"
-            />
-
-        <!-- ************************************************************* -->
-
-
-        <org.secu3.android.ui.parameters.views.FloatParamView
-            android:id="@+id/turn_on_time_in_pwm_mode"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            app:layout_constraintTop_toBottomOf="@id/cold_hot_temperature_threshold"
-            app:layout_constraintStart_toStartOf="parent"
-            android:layout_marginTop="16dp"
-            app:title="@string/lambda_par_turn_on_time_in_pwm_mode_title"
-            app:units="@string/units_sec"
-            app:float_value="0"
-            app:value_precision="two"
-            app:float_max_value="2.55"
-            app:float_min_value="0.0"
-            app:float_step="0.01"
-            />
-
-        <!-- ************************************************************* -->
-
-        <org.secu3.android.ui.parameters.views.IntParamView
-            android:id="@+id/air_flow_threshold_for_turning_heating_off"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            app:layout_constraintTop_toBottomOf="@id/turn_on_time_in_pwm_mode"
-            app:layout_constraintStart_toStartOf="parent"
-            android:layout_marginTop="16dp"
-            app:title="@string/lambda_par_air_flow_threshold_for_turning_heating_off_title"
-            app:units="@string/units_rxl"
-            app:int_value="0"
-            app:int_max_value="2000000"
-            app:int_min_value="100"
-            app:int_step="10"
-            />
-
-        <!-- ************************************************************* -->
-
-        <CheckBox
-            android:id="@+id/heating_before_cranking"
-            android:layout_width="0dp"
-            android:layout_height="wrap_content"
-            app:layout_constraintTop_toBottomOf="@id/air_flow_threshold_for_turning_heating_off"
-            app:layout_constraintStart_toStartOf="parent"
-            app:layout_constraintEnd_toEndOf="parent"
-            android:text="@string/lambda_par_heating_before_cranking_title"
-            android:button="@null"
-            android:drawableEnd="?android:attr/listChoiceIndicatorMultiple"
-            />
-
-        <!-- ************************************************************* -->
-
-        <TextView
-            android:id="@+id/lambda_select_chanel_title"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            app:layout_constraintTop_toBottomOf="@id/heating_before_cranking"
-            app:layout_constraintStart_toStartOf="parent"
-            app:layout_constraintStart_toEndOf="parent"
-            android:text="В_бор датчика кислорода"
-            />
-
-        <LinearLayout
-            android:id="@+id/lambda_chanels"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            app:layout_constraintTop_toBottomOf="@id/lambda_select_chanel_title"
-            android:orientation="horizontal"
-            >
+            <!-- ************************************************************* -->
 
             <CheckBox
-                android:id="@+id/lambda_chanel_1"
-                android:layout_width="wrap_content"
+                android:id="@+id/determine_heating_using_voltage"
+                android:layout_width="0dp"
                 android:layout_height="wrap_content"
-                android:text="1"
+                app:layout_constraintTop_toBottomOf="@id/switch_point_deadband"
+                app:layout_constraintStart_toStartOf="parent"
+                app:layout_constraintEnd_toEndOf="parent"
+                android:text="@string/lambda_par_determine_heating_voltage_title"
+                android:button="@null"
+                android:drawableEnd="?android:attr/listChoiceIndicatorMultiple"
                 />
+
+            <!-- ************************************************************* -->
 
             <CheckBox
-                android:id="@+id/lambda_chanel_2"
+                android:id="@+id/lambda_correctioin_on_idling"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                app:layout_constraintTop_toBottomOf="@id/determine_heating_using_voltage"
+                app:layout_constraintStart_toStartOf="parent"
+                app:layout_constraintEnd_toEndOf="parent"
+                android:text="@string/lambda_par_correction_on_idling_title"
+                android:button="@null"
+                android:drawableEnd="?android:attr/listChoiceIndicatorMultiple"
+                />
+
+            <!-- ************************************************************* -->
+
+
+            <org.secu3.android.ui.parameters.views.FloatParamView
+                android:id="@+id/stoichiom_ratio_for_2_fuel"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                app:layout_constraintTop_toBottomOf="@id/lambda_correctioin_on_idling"
+                app:layout_constraintStart_toStartOf="parent"
+                android:layout_marginTop="16dp"
+                app:title="@string/lambda_par_stoichiom_ratio_for_gas_title"
+                app:units="@string/units_afr"
+                app:float_value="0"
+                app:value_precision="one"
+                app:float_max_value="22.0"
+                app:float_min_value="8.0"
+                app:float_step="0.1"
+                />
+
+
+            <!-- ************************************************************* -->
+
+
+            <TextView
+                android:id="@+id/control_of_sensors_heating"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:text="2"
+                app:layout_constraintTop_toBottomOf="@id/stoichiom_ratio_for_2_fuel"
+                app:layout_constraintStart_toStartOf="parent"
+                android:layout_marginTop="16dp"
+                android:textSize="18sp"
+                android:fontFamily="sans-serif-medium"
+                android:text="@string/lambda_control_sensors_heating_title"
                 />
+
+            <!-- ************************************************************* -->
+
+
+
+            <org.secu3.android.ui.parameters.views.IntParamView
+                android:id="@+id/heating_time_without_pwm_on_cold"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                app:layout_constraintTop_toBottomOf="@id/control_of_sensors_heating"
+                app:layout_constraintStart_toStartOf="parent"
+                android:layout_marginTop="16dp"
+                app:title="@string/lambda_par_heating_time_without_pwm_on_cold_title"
+                app:units="@string/units_sec"
+                app:int_value="0"
+                app:int_min_value="0"
+                app:int_max_value="255"
+                app:int_step="1"
+                />
+
+            <org.secu3.android.ui.parameters.views.IntParamView
+                android:id="@+id/heating_time_without_pwm_on_hot"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                app:layout_constraintTop_toBottomOf="@id/heating_time_without_pwm_on_cold"
+                app:layout_constraintStart_toStartOf="parent"
+                app:title="@string/lambda_par_heating_time_without_pwm_on_hot_title"
+                app:units="@string/units_sec"
+                app:int_value="0"
+                app:int_min_value="0"
+                app:int_max_value="255"
+                app:int_step="1"
+                />
+
+            <!-- ************************************************************* -->
+
+            <org.secu3.android.ui.parameters.views.IntParamView
+                android:id="@+id/cold_hot_temperature_threshold"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                app:layout_constraintTop_toBottomOf="@id/heating_time_without_pwm_on_hot"
+                app:layout_constraintStart_toStartOf="parent"
+                android:layout_marginTop="16dp"
+                app:title="@string/lambda_par_hot_cold_temperature_threshold_title"
+                app:units="@string/units_degrees_celcius"
+                app:int_value="0"
+                app:int_max_value="255"
+                app:int_min_value="0"
+                app:int_step="1"
+                />
+
+            <!-- ************************************************************* -->
+
+
+            <org.secu3.android.ui.parameters.views.FloatParamView
+                android:id="@+id/turn_on_time_in_pwm_mode"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                app:layout_constraintTop_toBottomOf="@id/cold_hot_temperature_threshold"
+                app:layout_constraintStart_toStartOf="parent"
+                android:layout_marginTop="16dp"
+                app:title="@string/lambda_par_turn_on_time_in_pwm_mode_title"
+                app:units="@string/units_sec"
+                app:float_value="0"
+                app:value_precision="two"
+                app:float_max_value="2.55"
+                app:float_min_value="0.0"
+                app:float_step="0.01"
+                />
+
+            <!-- ************************************************************* -->
+
+            <org.secu3.android.ui.parameters.views.IntParamView
+                android:id="@+id/air_flow_threshold_for_turning_heating_off"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                app:layout_constraintTop_toBottomOf="@id/turn_on_time_in_pwm_mode"
+                app:layout_constraintStart_toStartOf="parent"
+                android:layout_marginTop="16dp"
+                app:title="@string/lambda_par_air_flow_threshold_for_turning_heating_off_title"
+                app:units="@string/units_rxl"
+                app:int_value="0"
+                app:int_max_value="2000000"
+                app:int_min_value="100"
+                app:int_step="10"
+                />
+
+            <!-- ************************************************************* -->
 
             <CheckBox
-                android:id="@+id/lambda_chanel_3"
+                android:id="@+id/heating_before_cranking"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                app:layout_constraintTop_toBottomOf="@id/air_flow_threshold_for_turning_heating_off"
+                app:layout_constraintStart_toStartOf="parent"
+                app:layout_constraintEnd_toEndOf="parent"
+                android:text="@string/lambda_par_heating_before_cranking_title"
+                android:button="@null"
+                android:drawableEnd="?android:attr/listChoiceIndicatorMultiple"
+                />
+
+            <!-- ************************************************************* -->
+
+            <TextView
+                android:id="@+id/lambda_select_chanel_title"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:text="3"
+                app:layout_constraintTop_toBottomOf="@id/heating_before_cranking"
+                app:layout_constraintStart_toStartOf="parent"
+                app:layout_constraintStart_toEndOf="parent"
+                android:text="В_бор датчика кислорода"
                 />
+
+            <LinearLayout
+                android:id="@+id/lambda_chanels"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                app:layout_constraintTop_toBottomOf="@id/lambda_select_chanel_title"
+                android:orientation="horizontal"
+                >
+
+                <CheckBox
+                    android:id="@+id/lambda_chanel_1"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="1"
+                    />
+
+                <CheckBox
+                    android:id="@+id/lambda_chanel_2"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="2"
+                    />
+
+                <CheckBox
+                    android:id="@+id/lambda_chanel_3"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="3"
+                    />
+
+                <CheckBox
+                    android:id="@+id/lambda_chanel_4"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="4"
+                    />
+
+                <CheckBox
+                    android:id="@+id/lambda_chanel_5"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="5"
+                    />
+
+                <CheckBox
+                    android:id="@+id/lambda_chanel_6"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="6"
+                    />
+
+                <CheckBox
+                    android:id="@+id/lambda_chanel_7"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="7"
+                    />
+
+                <CheckBox
+                    android:id="@+id/lambda_chanel_8"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="8"
+                    />
+
+            </LinearLayout>
+
+
+            <!-- ************************************************************* -->
 
             <CheckBox
-                android:id="@+id/lambda_chanel_4"
-                android:layout_width="wrap_content"
+                android:id="@+id/mix_sensors_value"
+                android:layout_width="0dp"
                 android:layout_height="wrap_content"
-                android:text="4"
+                app:layout_constraintTop_toBottomOf="@id/lambda_chanels"
+                app:layout_constraintStart_toStartOf="parent"
+                app:layout_constraintEnd_toEndOf="parent"
+                android:text="@string/lambda_par_heating_before_cranking_title"
+                android:button="@null"
+                android:drawableEnd="?android:attr/listChoiceIndicatorMultiple"
                 />
 
-            <CheckBox
-                android:id="@+id/lambda_chanel_5"
-                android:layout_width="wrap_content"
+
+            <!-- ************************************************************* -->
+            <!-- ************************************************************* -->
+            <!-- ************************************************************* -->
+
+
+            <TextView
+                android:id="@+id/lambda_empty_text"
+                android:layout_width="0dp"
                 android:layout_height="wrap_content"
-                android:text="5"
+                app:layout_constraintTop_toTopOf="parent"
+                app:layout_constraintStart_toStartOf="parent"
+                app:layout_constraintEnd_toEndOf="parent"
+                app:layout_constraintBottom_toBottomOf="parent"
+                android:gravity="center_horizontal"
+                android:textSize="18sp"
+                android:fontFamily="sans-serif-medium"
+                android:text="This parameters are not available in your firmware"
+                android:visibility="gone"
                 />
 
-            <CheckBox
-                android:id="@+id/lambda_chanel_6"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:text="6"
-                />
+        </androidx.constraintlayout.widget.ConstraintLayout>
 
-            <CheckBox
-                android:id="@+id/lambda_chanel_7"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:text="7"
-                />
+    </ScrollView>
 
-            <CheckBox
-                android:id="@+id/lambda_chanel_8"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:text="8"
-                />
-
-        </LinearLayout>
-
-
-        <!-- ************************************************************* -->
-
-        <CheckBox
-            android:id="@+id/mix_sensors_value"
-            android:layout_width="0dp"
-            android:layout_height="wrap_content"
-            app:layout_constraintTop_toBottomOf="@id/lambda_chanels"
-            app:layout_constraintStart_toStartOf="parent"
-            app:layout_constraintEnd_toEndOf="parent"
-            android:text="@string/lambda_par_heating_before_cranking_title"
-            android:button="@null"
-            android:drawableEnd="?android:attr/listChoiceIndicatorMultiple"
-            />
-
-
-        <!-- ************************************************************* -->
-        <!-- ************************************************************* -->
-        <!-- ************************************************************* -->
-
-
-        <TextView
-            android:id="@+id/lambda_empty_text"
-            android:layout_width="0dp"
-            android:layout_height="wrap_content"
-            app:layout_constraintTop_toTopOf="parent"
-            app:layout_constraintStart_toStartOf="parent"
-            app:layout_constraintEnd_toEndOf="parent"
-            app:layout_constraintBottom_toBottomOf="parent"
-            android:gravity="center_horizontal"
-            android:textSize="18sp"
-            android:fontFamily="sans-serif-medium"
-            android:text="This parameters are not available in your firmware"
-            android:visibility="gone"
-            />
-
-    </androidx.constraintlayout.widget.ConstraintLayout>
-
-</ScrollView>
+</androidx.constraintlayout.widget.ConstraintLayout>

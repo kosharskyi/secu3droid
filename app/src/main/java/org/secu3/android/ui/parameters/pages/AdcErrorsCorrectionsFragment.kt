@@ -35,6 +35,8 @@ import kotlinx.coroutines.launch
 import org.secu3.android.databinding.FragmentAdcErrorsCorrectionsBinding
 import org.secu3.android.models.packets.params.AdcCorrectionsParamPacket
 import org.secu3.android.ui.parameters.views.FloatParamView
+import org.secu3.android.utils.gone
+import org.secu3.android.utils.visible
 
 class AdcErrorsCorrectionsFragment : BaseParamFragment() {
 
@@ -57,6 +59,10 @@ class AdcErrorsCorrectionsFragment : BaseParamFragment() {
                     packet = it
 
                     mBinding.apply {
+
+                        progressBar.gone()
+                        params.visible()
+
                         mapFactor.value = it.mapAdcFactor
                         mapCorrection.value = it.mapAdcCorrection
 

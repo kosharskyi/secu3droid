@@ -39,6 +39,8 @@ import org.secu3.android.databinding.FragmentMiscellaneousBinding
 import org.secu3.android.models.packets.params.MiscellaneousParamPacket
 import org.secu3.android.ui.parameters.views.FloatParamView
 import org.secu3.android.ui.parameters.views.IntParamView
+import org.secu3.android.utils.gone
+import org.secu3.android.utils.visible
 
 
 class MiscellaneousFragment : BaseParamFragment() {
@@ -80,6 +82,10 @@ class MiscellaneousFragment : BaseParamFragment() {
                     packet = it
 
                     mBinding.apply {
+
+                        progressBar.gone()
+                        params.visible()
+
                         dataTransmitionSpeed.setText(baudRateList[it.uartDivisor], false)
                         dataPacketsTransmissionPeriod.value = it.uartPeriodTms
 

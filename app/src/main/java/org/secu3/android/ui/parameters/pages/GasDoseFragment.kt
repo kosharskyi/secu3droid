@@ -78,6 +78,10 @@ class GasDoseFragment : BaseParamFragment() {
                     packet = it
 
                     mBinding.apply {
+
+                        progressBar.gone()
+                        params.visible()
+
                         numOfSmSteps.value = it.steps
                         stoichiometricRatio.value = it.lambdaStoichval
                         closingOnFuelCut.value = it.fcClosing

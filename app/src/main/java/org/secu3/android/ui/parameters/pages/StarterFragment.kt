@@ -32,6 +32,8 @@ import org.secu3.android.databinding.FragmentStarterBinding
 import org.secu3.android.models.packets.params.StarterParamPacket
 import org.secu3.android.ui.parameters.views.FloatParamView
 import org.secu3.android.ui.parameters.views.IntParamView
+import org.secu3.android.utils.gone
+import org.secu3.android.utils.visible
 
 class StarterFragment : BaseParamFragment() {
 
@@ -52,6 +54,10 @@ class StarterFragment : BaseParamFragment() {
             packet = it
 
             mBinding.apply {
+
+                progressBar.gone()
+                params.visible()
+
                 starterBlockingRpm.value = it.starterOff
                 switchCrankMapRpm.value = it.smapAbandon
                 timeCrankToRunPosition.value = it.crankToRunTime

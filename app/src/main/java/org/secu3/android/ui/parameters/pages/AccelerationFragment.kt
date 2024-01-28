@@ -38,6 +38,8 @@ import org.secu3.android.R
 import org.secu3.android.databinding.FragmentAccelerationBinding
 import org.secu3.android.models.packets.params.AccelerationParamPacket
 import org.secu3.android.ui.parameters.views.IntParamView
+import org.secu3.android.utils.gone
+import org.secu3.android.utils.visible
 
 class AccelerationFragment : BaseParamFragment() {
 
@@ -79,6 +81,9 @@ class AccelerationFragment : BaseParamFragment() {
                     packet = it
 
                     mBinding.apply {
+                        progressBar.gone()
+                        params.visible()
+
                         accelTpsdotThreshold.value = it.injAeTpsdotThrd
                         coldAccelMultiplier.value = it.injAeColdaccMult
                         aeDecayTime.value = it.injAeDecayTime

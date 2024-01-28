@@ -36,6 +36,8 @@ import org.secu3.android.databinding.FragmentTemperatureBinding
 import org.secu3.android.models.packets.params.TemperatureParamPacket
 import org.secu3.android.ui.parameters.views.FloatParamView
 import org.secu3.android.ui.parameters.views.IntParamView
+import org.secu3.android.utils.gone
+import org.secu3.android.utils.visible
 
 class TemperatureFragment : BaseParamFragment() {
 
@@ -58,6 +60,10 @@ class TemperatureFragment : BaseParamFragment() {
                     packet = it
 
                     mBinding.apply {
+
+                        progressBar.gone()
+                        params.visible()
+
                         ventilatorTurnOn.value = it.ventOn
                         ventilatorTurnOff.value = it.ventOff
 

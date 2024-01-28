@@ -39,6 +39,8 @@ import org.secu3.android.databinding.FragmentChokeControlBinding
 import org.secu3.android.models.packets.params.ChokeControlParPacket
 import org.secu3.android.ui.parameters.views.FloatParamView
 import org.secu3.android.ui.parameters.views.IntParamView
+import org.secu3.android.utils.gone
+import org.secu3.android.utils.visible
 
 
 class ChokeControlFragment : BaseParamFragment() {
@@ -71,6 +73,10 @@ class ChokeControlFragment : BaseParamFragment() {
                     packet = it
 
                     mBinding.apply {
+
+                        progressBar.gone()
+                        params.visible()
+
                         numSmSteps.value = it.smSteps
                         regulatorFactor.value = it.rpmIf
 

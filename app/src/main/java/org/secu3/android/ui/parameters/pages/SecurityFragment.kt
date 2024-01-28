@@ -36,6 +36,8 @@ import androidx.lifecycle.withStarted
 import kotlinx.coroutines.launch
 import org.secu3.android.R
 import org.secu3.android.databinding.FragmentSecurityBinding
+import org.secu3.android.utils.gone
+import org.secu3.android.utils.visible
 
 
 class SecurityFragment : BaseParamFragment() {
@@ -61,6 +63,10 @@ class SecurityFragment : BaseParamFragment() {
             withResumed {
                 mViewModel.securityLiveData.observe(viewLifecycleOwner) {
                     mBinding.apply {
+
+                        progressBar.gone()
+                        params.visible()
+
                         bluetoothType.setText(btTypes[it.btType], false)
 
                         useBluetooth.isChecked = it.useBt
