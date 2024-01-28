@@ -25,6 +25,9 @@
 package org.secu3.android.ui.dashboard
 
 import android.content.Context
+import android.content.pm.ActivityInfo
+import android.content.res.Configuration
+import android.os.Build
 import android.os.Bundle
 import android.os.PowerManager
 import android.os.PowerManager.WakeLock
@@ -47,17 +50,17 @@ import javax.inject.Inject
 @AndroidEntryPoint
 class DashBoardFragment : Fragment() {
 
-    private lateinit var wakelock: WakeLock
-
     private var time: Long = 0
     private var delta = 0f
-
-    @Inject
-    internal lateinit var mPrefs: LifeTimePrefs
 
     private lateinit var mBinding: FragmentDashboardBinding
 
     private val mViewModel: DashboardViewModel by viewModels()
+
+    override fun onAttach(context: Context) {
+        super.onAttach(context)
+//        activity?.requestedOrientation = ActivityInfo.SCREEN_ORIENTATION_SENSOR_LANDSCAPE
+    }
 
 
     override fun onCreateView(inflater: LayoutInflater, container: ViewGroup?, savedInstanceState: Bundle?): View? {
@@ -73,9 +76,6 @@ class DashBoardFragment : Fragment() {
             setNavigationIcon(R.drawable.ic_arrow_back_24)
             setNavigationOnClickListener { activity?.onBackPressed() }
         }
-
-        val pm = context?.getSystemService(Context.POWER_SERVICE) as PowerManager
-        wakelock = pm.newWakeLock(PowerManager.PARTIAL_WAKE_LOCK, "Secu3Droid:wakelock")
 
         if (mViewModel.isBluetoothDeviceAddressNotSelected()) {
             Toast.makeText(context, getString(R.string.choose_bluetooth_adapter), Toast.LENGTH_LONG).show()
@@ -102,35 +102,7 @@ class DashBoardFragment : Fragment() {
     @Synchronized
     override fun onResume() {
         super.onResume()
-
-        if (mPrefs.isKeepScreenAliveActive) {
-            activity?.window?.addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON)
-        } else {
-            activity?.window?.clearFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON)
-        }
-
-        if (mPrefs.isWakeLockEnabled) {
-            wakelock.acquire(10*60*1000L /*10 minutes*/)
-        } else if (wakelock.isHeld) {
-            wakelock.release()
-        }
-
         mViewModel.setTask(Task.Secu3ReadSensors)
-    }
-
-    override fun onDestroy() {
-        super.onDestroy()
-        if (wakelock.isHeld) {
-            wakelock.release()
-        }
-    }
-
-    override fun onPause() {
-        super.onPause()
-
-        if (mPrefs.isKeepScreenAliveActive) {
-            activity?.window?.clearFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON)
-        }
     }
 
     private fun updatePacket(packet: SensorsPacket) {
@@ -158,5 +130,10 @@ class DashBoardFragment : Fragment() {
         mBinding.ledPower.isVisible = packet.epmValveBit > 0
         mBinding.ledChoke.isVisible = packet.carbBit > 0
         mBinding.ledFan.isVisible = packet.coolFanBit > 0
+    }
+
+    override fun onDestroy() {
+        super.onDestroy()
+//        activity?.requestedOrientation = ActivityInfo.SCREEN_ORIENTATION_UNSPECIFIED
     }
 }
