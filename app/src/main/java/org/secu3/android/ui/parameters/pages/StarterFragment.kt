@@ -61,7 +61,8 @@ class StarterFragment : BaseParamFragment() {
 
                 starterBlockingRpm.value = it.starterOff
                 switchCrankMapRpm.value = it.smapAbandon
-                timeCrankToRunPosition.value = it.crankToRunTime
+                timeCrankToRunPositionCold.value = it.crankToRunTime
+                timeCrankToRunPositionHot.value = it.injCrankToRun_time1
                 afterstartEnrichmentTimePetrol.value = it.injAftstrStroke
                 afterstartEnrichmentTimeGas.value = it.injAftStrokes1
                 primePulseCold.value = it.injPrimeCold
@@ -70,6 +71,7 @@ class StarterFragment : BaseParamFragment() {
                 floodClearModeThreshold.value = it.injFloodclearTps
                 stblStrCountdown.value = it.stblStrCnt
                 allowStartOnFloodClearMode.isChecked = it.allowStartOnClearFlood
+                limitMaxInjPwOnCranking.isChecked = it.limitMaxInjPwOnCranking
             }
 
             initViews()
@@ -90,8 +92,12 @@ class StarterFragment : BaseParamFragment() {
                 packet?.smapAbandon = it
                 packet?.let { it1 -> mViewModel.sendPacket(it1) }
             }
-            timeCrankToRunPosition.addOnValueChangeListener {
+            timeCrankToRunPositionCold.addOnValueChangeListener {
                 packet?.crankToRunTime = it
+                packet?.let { it1 -> mViewModel.sendPacket(it1) }
+            }
+            timeCrankToRunPositionHot.addOnValueChangeListener {
+                packet?.injCrankToRun_time1 = it
                 packet?.let { it1 -> mViewModel.sendPacket(it1) }
             }
             afterstartEnrichmentTimePetrol.addOnValueChangeListener {
@@ -130,10 +136,17 @@ class StarterFragment : BaseParamFragment() {
                     mViewModel.sendPacket(this)
                 }
             }
+            limitMaxInjPwOnCranking.setOnCheckedChangeListener { _, isChecked ->
+                packet?.apply {
+                    limitMaxInjPwOnCranking = isChecked
+                    mViewModel.sendPacket(this)
+                }
+            }
 
             starterBlockingRpm.setOnClickListener { intParamClick(it as IntParamView) }
             switchCrankMapRpm.setOnClickListener { intParamClick(it as IntParamView) }
-            timeCrankToRunPosition.setOnClickListener { floatParamClick(it as FloatParamView) }
+            timeCrankToRunPositionCold.setOnClickListener { floatParamClick(it as FloatParamView) }
+            timeCrankToRunPositionHot.setOnClickListener { floatParamClick(it as FloatParamView) }
             afterstartEnrichmentTimePetrol.setOnClickListener { intParamClick(it as IntParamView) }
             afterstartEnrichmentTimeGas.setOnClickListener { intParamClick(it as IntParamView) }
             primePulseCold.setOnClickListener { floatParamClick(it as FloatParamView) }

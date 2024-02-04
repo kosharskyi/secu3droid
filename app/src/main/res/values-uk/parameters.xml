@@ -28,7 +28,8 @@
 
     <string name="starter_off_title">Оберти блокування стартера</string>
     <string name="starter_map_abandon_title">Оберти переходу з пускової карти КВЗ</string>
-    <string name="starter_dat_crank_to_run_time_title">Затримка перехода РХХ в робоче положення</string>
+    <string name="starter_dat_crank_to_run_time_cold_title">Затримка переходу РХХ в робоче положення при -30°C</string>
+    <string name="starter_dat_crank_to_run_time_hot_title">Затримка переходу РХХ в робоче положення при 70°C</string>
     <string name="starter_dat_afterstart_enrichment_strokes_petrol_title">Час збагачення після запуску (бензин)</string>
     <string name="starter_dat_afterstart_enrichment_strokes_gas_title">Час збагачення після запуску (газ)</string>
     <string name="starter_dat_prime_pulse_cold_title">Тривалість предпускового вприскування при -30°C</string>
@@ -37,6 +38,7 @@
     <string name="starter_dat_flod_clear_mode_threshold_title">Поріг ввімкнення режима продувки</string>
     <string name="starter_dat_starters_blocking_timer_title">Таймер блокування стартера</string>
     <string name="starter_dat_allow_start_flood_clear_mode_title">Дозволити запуск при продуванні двигуна</string>
+    <string name="starter_dat_limit_max_inj_pw_on_cranking_title">Обмежувати максимальну тривалість вприскування при запуску</string>
 
     <string name="angles_min_angle_title">Мінімальний КВЗ</string>
     <string name="angles_max_angle_title">Максимальний КВЗ</string>

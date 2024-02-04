@@ -28,7 +28,8 @@
 
     <string name="starter_off_title">Starter blocking RPM</string>
     <string name="starter_map_abandon_title">Switch from cranking ignition map RPM</string>
-    <string name="starter_dat_crank_to_run_time_title">Time for going from crank to run position of IAC</string>
+    <string name="starter_dat_crank_to_run_time_cold_title">Time for going from crank to run position of IAC at -30°C</string>
+    <string name="starter_dat_crank_to_run_time_hot_title">Time for going from crank to run position of IAC at 70°C</string>
     <string name="starter_dat_afterstart_enrichment_strokes_petrol_title">Afterstart enrichment time (petrol)</string>
     <string name="starter_dat_afterstart_enrichment_strokes_gas_title">Afterstart enrichment time (gas)</string>
     <string name="starter_dat_prime_pulse_cold_title">Prime pulse width at -30°C</string>
@@ -37,6 +38,7 @@
     <string name="starter_dat_flod_clear_mode_threshold_title">Flood clear mode threshold</string>
     <string name="starter_dat_starters_blocking_timer_title">Starter\'s blocking timer</string>
     <string name="starter_dat_allow_start_flood_clear_mode_title">Allow engine start in flood clear mode</string>
+    <string name="starter_dat_limit_max_inj_pw_on_cranking_title">Limit max inj. PW on cranking</string>
 
     <string name="angles_min_angle_title">Minimal advance angle</string>
     <string name="angles_max_angle_title">Maximal advance angle</string>

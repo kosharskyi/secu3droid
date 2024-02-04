@@ -41,6 +41,7 @@ data class StarterParamPacket(
     var injAftStrokes1: Int = 0,
     var stblStrCnt: Int = 0,
     var strtFlags: Int = 0,
+    var injCrankToRun_time1: Float = 0f
 
 ) : BaseOutputPacket(){
 
@@ -48,6 +49,11 @@ data class StarterParamPacket(
         get() = strtFlags.getBitValue(0) > 0
         set(value) {
             strtFlags = strtFlags.setBitValue(value, 0)
+        }
+    var limitMaxInjPwOnCranking: Boolean
+        get() = strtFlags.getBitValue(1) > 0
+        set(value) {
+            strtFlags = strtFlags.setBitValue(value, 1)
         }
 
 
@@ -67,12 +73,13 @@ data class StarterParamPacket(
             injAftStrokes1 = data[15].code * 4
             stblStrCnt = data[16].code
             strtFlags = data[17].code
+            injCrankToRun_time1 = data.get2Bytes(18).toFloat() / 100
 
-            if (data.length == 18) {
+            if (data.length == 20) {
                 return@apply
             }
 
-            unhandledParams = data.substring(18)
+            unhandledParams = data.substring(20)
         }
     }
 
@@ -90,6 +97,7 @@ data class StarterParamPacket(
         data += injAftStrokes1.div(4).toChar()
         data += stblStrCnt.toChar()
         data += strtFlags.toChar()
+        data += injCrankToRun_time1.times(100).roundToInt().write2Bytes()
 
         data += unhandledParams
 

@@ -39,6 +39,7 @@
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintBottom_toBottomOf="parent"
+        tools:visibility="gone"
         />
 
     <ScrollView
@@ -46,6 +47,7 @@
         android:layout_width="match_parent"
         android:layout_height="match_parent"
         android:visibility="gone"
+        tools:visibility="visible"
         >
 
         <LinearLayout
@@ -81,11 +83,25 @@
                 />
 
             <org.secu3.android.ui.parameters.views.FloatParamView
-                android:id="@+id/time_crank_to_run_position"
+                android:id="@+id/time_crank_to_run_position_cold"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:layout_marginTop="16dp"
-                app:title="@string/starter_dat_crank_to_run_time_title"
+                app:title="@string/starter_dat_crank_to_run_time_cold_title"
+                app:units="@string/units_sec"
+                app:float_value="0"
+                app:value_precision="two"
+                app:float_step="0.1"
+                app:float_max_value="99"
+                app:float_min_value="0.1"
+                />
+
+            <org.secu3.android.ui.parameters.views.FloatParamView
+                android:id="@+id/time_crank_to_run_position_hot"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="16dp"
+                app:title="@string/starter_dat_crank_to_run_time_hot_title"
                 app:units="@string/units_sec"
                 app:float_value="0"
                 app:value_precision="two"
@@ -198,6 +214,15 @@
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:text="@string/starter_dat_allow_start_flood_clear_mode_title"
+                android:button="@null"
+                android:drawableEnd="?android:attr/listChoiceIndicatorMultiple"
+                />
+
+            <CheckBox
+                android:id="@+id/limit_max_inj_pw_on_cranking"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="@string/starter_dat_limit_max_inj_pw_on_cranking_title"
                 android:button="@null"
                 android:drawableEnd="?android:attr/listChoiceIndicatorMultiple"
                 />
