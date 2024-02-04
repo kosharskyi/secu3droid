@@ -31,6 +31,7 @@ import androidx.lifecycle.asLiveData
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.filter
 import kotlinx.coroutines.flow.map
+import kotlinx.coroutines.flow.sample
 import org.secu3.android.Secu3Repository
 import org.secu3.android.models.packets.input.SensorsPacket
 import org.secu3.android.utils.LifeTimePrefs
@@ -41,9 +42,6 @@ import javax.inject.Inject
 class DashboardViewModel @Inject constructor(private val secu3Repository: Secu3Repository,
                                              private val mPrefs: LifeTimePrefs) : ViewModel() {
 
-    val connectionStatusLiveData: LiveData<Boolean>
-        get() = secu3Repository.connectionStatusLiveData
-
     fun isBluetoothDeviceAddressNotSelected(): Boolean {
         return mPrefs.bluetoothDeviceName.isNullOrBlank()
     }
@@ -53,7 +51,7 @@ class DashboardViewModel @Inject constructor(private val secu3Repository: Secu3R
     }
 
     val packetLiveData: LiveData<SensorsPacket>
-        get() = secu3Repository.receivedPacketFlow.filter { it is SensorsPacket }.map {
+        get() = secu3Repository.receivedPacketFlow.filter { it is SensorsPacket }.sample(500).map {
             (it as SensorsPacket).also { sensorsPacket -> sensorsPacket.speedSensorPulses = mPrefs.speedPulses }
         }.asLiveData()
 

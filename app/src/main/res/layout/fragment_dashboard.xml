@@ -23,341 +23,211 @@
               http://secu-3.org
               email: vetalkosharskiy@gmail.com
 -->
-<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+<androidx.constraintlayout.widget.ConstraintLayout
+    xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     xmlns:app="http://schemas.android.com/apk/res-auto"
-    android:orientation="vertical">
+    >
 
-    <com.google.android.material.appbar.AppBarLayout
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:backgroundTint="@color/colorPrimary"
-        >
-
-        <com.google.android.material.appbar.MaterialToolbar
-            android:id="@+id/toolbar"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            app:title="@string/app_name"
-            />
-
-    </com.google.android.material.appbar.AppBarLayout>
-
-    <ScrollView
-        android:layout_width="match_parent"
-        android:layout_height="0dp"
-        android:layout_weight="1"
-        >
-
-        <TableLayout
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content">
-
-            <TableRow
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:padding="16dp"
-                >
-
-                <LinearLayout
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:orientation="vertical"
-                    android:layout_weight="1"
-                    >
-
-                    <TextView
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:text="@string/sensor_dat_speed_title"
-                        android:layout_gravity="center_horizontal"
-                        />
-
-                    <TextView
-                        android:id="@+id/speed"
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:layout_gravity="center_horizontal"
-                        android:padding="8dp"
-                        android:textSize="20sp"
-                        android:fontFamily="sans-serif-medium"
-                        android:text="0 km/h"
-                        tools:text="100 km/h"
-                        />
-
-                </LinearLayout>
-
-
-                <LinearLayout
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:orientation="vertical"
-                    android:layout_weight="1"
-                    >
-
-                    <TextView
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:text="@string/sensor_dat_rpm_title"
-                        android:layout_gravity="center_horizontal"
-                        />
-
-                    <TextView
-                        android:id="@+id/rpm"
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:layout_gravity="center_horizontal"
-                        android:padding="8dp"
-                        android:textSize="20sp"
-                        android:fontFamily="sans-serif-medium"
-                        android:text="0 rpm"
-                        tools:text="2100 rpm"
-                        />
-
-                </LinearLayout>
-
-            </TableRow>
-
-
-
-            <TableRow
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:padding="16dp"
-                >
-
-                <LinearLayout
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:orientation="vertical"
-                    android:layout_weight="1"
-                    >
-
-                    <TextView
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:layout_gravity="center_horizontal"
-                        android:text="@string/sensor_dat_temperature_title"
-                        />
-
-                    <TextView
-                        android:id="@+id/temperature"
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:layout_gravity="center_horizontal"
-                        android:padding="8dp"
-                        android:textSize="20sp"
-                        android:fontFamily="sans-serif-medium"
-                        android:text="0"
-                        tools:text="90"
-                        />
-
-                </LinearLayout>
-
-
-                <LinearLayout
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:orientation="vertical"
-                    android:layout_weight="1"
-                    >
-
-                    <TextView
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:layout_gravity="center_horizontal"
-                        android:text="@string/sensor_dat_voltage_title"
-                        />
-
-                    <TextView
-                        android:id="@+id/voltage"
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:layout_gravity="center_horizontal"
-                        android:padding="8dp"
-                        android:textSize="20sp"
-                        android:fontFamily="sans-serif-medium"
-                        android:text="0"
-                        tools:text="14.1 V"
-                        />
-
-                </LinearLayout>
-
-            </TableRow>
-
-
-
-            <TableRow
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:padding="16dp"
-                >
-
-                <LinearLayout
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:orientation="vertical"
-                    android:layout_weight="1"
-                    >
-
-                    <TextView
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:layout_gravity="center_horizontal"
-                        android:text="Odometer"
-                        />
-
-                    <TextView
-                        android:id="@+id/odometer"
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:layout_gravity="center_horizontal"
-                        android:padding="8dp"
-                        android:textSize="20sp"
-                        android:fontFamily="sans-serif-medium"
-                        android:text="0"
-                        tools:text="1225633"
-                        />
-
-                </LinearLayout>
-
-
-                <LinearLayout
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:orientation="vertical"
-                    android:layout_weight="1"
-                    >
-
-                    <TextView
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:layout_gravity="center_horizontal"
-                        android:text="Manometer"
-                        />
-
-                    <TextView
-                        android:id="@+id/manometer"
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:layout_gravity="center_horizontal"
-                        android:padding="8dp"
-                        android:textSize="20sp"
-                        android:fontFamily="sans-serif-medium"
-                        android:text="0 kPa"
-                        tools:text="20 kPa"
-                        />
-
-                </LinearLayout>
-
-            </TableRow>
-
-
-
-            <TableRow
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:padding="16dp"
-                >
-
-                <LinearLayout
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:orientation="horizontal"
-                    android:layout_weight="1"
-                    android:padding="16dp"
-                    android:background="#bebebe"
-                    >
-
-                    <ImageView
-                        android:id="@+id/led_online"
-                        android:layout_width="wrap_content"
-                        android:layout_height="16dp"
-                        android:src="@drawable/car"
-                        android:visibility="gone"
-                        tools:visibility="visible"
-                        android:layout_weight="1"
-                        />
-
-                    <ImageView
-                        android:id="@+id/led_check_engine"
-                        android:layout_width="wrap_content"
-                        android:layout_height="16dp"
-                        android:src="@drawable/indicators_check_engine_landscape"
-                        android:visibility="gone"
-                        tools:visibility="visible"
-                        android:layout_weight="1"
-
-                        />
-
-                    <ImageView
-                        android:id="@+id/led_gasoline"
-                        android:layout_width="wrap_content"
-                        android:layout_height="16dp"
-                        android:src="@drawable/indicators_gasoline_landscape"
-                        android:visibility="gone"
-                        tools:visibility="visible"
-                        android:layout_weight="1"
-
-                        />
-
-                    <ImageView
-                        android:id="@+id/led_eco"
-                        android:layout_width="wrap_content"
-                        android:layout_height="16dp"
-                        android:src="@drawable/indicators_eco_landscape"
-                        android:visibility="gone"
-                        tools:visibility="visible"
-                        android:layout_weight="1"
-                        />
-
-                    <ImageView
-                        android:id="@+id/led_power"
-                        android:layout_width="wrap_content"
-                        android:layout_height="16dp"
-                        android:src="@drawable/indicators_pwr_landscape"
-                        android:visibility="gone"
-                        tools:visibility="visible"
-                        android:layout_weight="1"
-                        />
-
-                    <ImageView
-                        android:id="@+id/led_choke"
-                        android:layout_width="wrap_content"
-                        android:layout_height="16dp"
-                        android:src="@drawable/indicators_choke_landscape"
-                        android:visibility="gone"
-                        tools:visibility="visible"
-                        android:layout_weight="1"
-                        />
-
-
-                    <ImageView
-                        android:id="@+id/led_fan"
-                        android:layout_width="wrap_content"
-                        android:layout_height="16dp"
-                        android:src="@drawable/indicators_fan_landscape"
-                        android:visibility="gone"
-                        tools:visibility="visible"
-                        android:layout_weight="1"
-                        />
-
-                </LinearLayout>
-
-            </TableRow>
-
-        </TableLayout>
-
-    </ScrollView>
-
-    <TextView
-        android:id="@+id/connection_status"
+    <com.github.anastr.speedviewlib.SpeedView
+        android:id="@+id/speed"
         android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:layout_gravity="center_horizontal"
-        tools:text="disconnected"
+        android:layout_height="0dp"
+        android:layout_marginTop="16dp"
+        app:layout_constraintTop_toTopOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintBottom_toTopOf="@id/indicators"
+        app:sv_speedometerWidth="10dp"
+        app:sv_indicatorWidth="10dp"
+        app:sv_tickNumber="23"
+        app:sv_maxSpeed="220"
+        app:sv_centerCircleRadius="14dp"
+        app:sv_speedTextPosition="TOP_CENTER"
+        app:sv_speedTextPadding="35dp"
+        app:sv_speedTextSize="24sp"
+        app:sv_speedTextFormat="INTEGER"
+        app:sv_unitUnderSpeedText="true"
+        app:sv_withTremble="false"
         />
 
-</LinearLayout>
+    <TextView
+        android:id="@+id/odometer"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        app:layout_constraintStart_toStartOf="@id/speed"
+        app:layout_constraintEnd_toEndOf="@id/speed"
+        app:layout_constraintBottom_toBottomOf="@id/speed"
+        android:layout_marginBottom="8dp"
+        android:textSize="22sp"
+        tools:text="0000000,00 Km"
+        />
+
+    <com.github.anastr.speedviewlib.SpeedView
+        android:id="@+id/temperature"
+        android:layout_width="wrap_content"
+        android:layout_height="0dp"
+        app:layout_constraintTop_toTopOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintBottom_toTopOf="@id/voltage"
+        android:layout_margin="8dp"
+        app:sv_speedometerWidth="10dp"
+        app:sv_indicatorWidth="5dp"
+        app:sv_maxSpeed="120"
+        app:sv_minSpeed="20"
+        app:sv_tickNumber="11"
+        app:sv_tickRotation="false"
+        app:sv_speedTextPosition="TOP_CENTER"
+        app:sv_speedometerMode="BOTTOM_LEFT"
+        app:sv_unit="@string/units_degrees_celcius"
+        app:sv_withTremble="false"
+        />
+
+    <com.github.anastr.speedviewlib.SpeedView
+        android:id="@+id/voltage"
+        android:layout_width="wrap_content"
+        android:layout_height="0dp"
+        app:layout_constraintTop_toBottomOf="@id/temperature"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintBottom_toTopOf="@id/indicators"
+        android:layout_margin="8dp"
+        app:sv_speedometerWidth="10dp"
+        app:sv_indicatorWidth="5dp"
+        app:sv_minSpeed="8"
+        app:sv_maxSpeed="18"
+        app:sv_tickNumber="11"
+        app:sv_tickRotation="false"
+        app:sv_speedometerMode="TOP_LEFT"
+        app:sv_withTremble="false"
+        app:sv_unit="@string/units_volts"
+        app:sv_unitSpeedInterval="4dp"
+        />
+
+    <com.github.anastr.speedviewlib.SpeedView
+        android:id="@+id/rpm"
+        android:layout_width="wrap_content"
+        android:layout_height="0dp"
+        app:layout_constraintTop_toTopOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintBottom_toTopOf="@id/map"
+        android:layout_margin="8dp"
+        app:sv_speedometerWidth="10dp"
+        app:sv_indicatorWidth="5dp"
+        app:sv_minSpeed="0"
+        app:sv_maxSpeed="8000"
+        app:sv_tickNumber="9"
+        app:sv_tickRotation="false"
+        app:sv_speedTextPosition="TOP_CENTER"
+        app:sv_speedometerMode="BOTTOM_RIGHT"
+        app:sv_withTremble="false"
+        app:sv_unit="@string/units_rpm"
+        app:sv_unitSpeedInterval="4dp"
+        app:sv_speedTextFormat="INTEGER"
+        />
+
+    <com.github.anastr.speedviewlib.SpeedView
+        android:id="@+id/map"
+        android:layout_width="wrap_content"
+        android:layout_height="0dp"
+        app:layout_constraintTop_toBottomOf="@id/rpm"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintBottom_toTopOf="@id/indicators"
+        android:layout_margin="8dp"
+        app:sv_speedometerWidth="10dp"
+        app:sv_indicatorWidth="5dp"
+        app:sv_minSpeed="10"
+        app:sv_maxSpeed="110"
+        app:sv_tickNumber="11"
+        app:sv_tickRotation="false"
+        app:sv_speedometerMode="TOP_RIGHT"
+        app:sv_withTremble="false"
+        app:sv_unit="@string/units_pressure_kpa"
+        app:sv_unitSpeedInterval="4dp"
+        />
+
+    <LinearLayout
+        android:id="@+id/indicators"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        app:layout_constraintBottom_toBottomOf="parent"
+        android:orientation="horizontal"
+        android:padding="16dp"
+        android:background="#bebebe"
+        >
+
+        <ImageView
+            android:id="@+id/led_online"
+            android:layout_width="wrap_content"
+            android:layout_height="16dp"
+            android:src="@drawable/car"
+            android:layout_weight="1"
+            />
+
+        <ImageView
+            android:id="@+id/led_check_engine"
+            android:layout_width="wrap_content"
+            android:layout_height="16dp"
+            android:src="@drawable/indicators_check_engine_landscape"
+            android:visibility="gone"
+            tools:visibility="visible"
+            android:layout_weight="1"
+            app:tint="@color/red"
+            />
+
+        <ImageView
+            android:id="@+id/led_gasoline"
+            android:layout_width="wrap_content"
+            android:layout_height="16dp"
+            android:src="@drawable/indicators_gasoline_landscape"
+            android:visibility="gone"
+            tools:visibility="visible"
+            android:layout_weight="1"
+
+            />
+
+        <ImageView
+            android:id="@+id/led_eco"
+            android:layout_width="wrap_content"
+            android:layout_height="16dp"
+            android:src="@drawable/indicators_eco_landscape"
+            android:visibility="gone"
+            tools:visibility="visible"
+            android:layout_weight="1"
+            />
+
+        <ImageView
+            android:id="@+id/led_power"
+            android:layout_width="wrap_content"
+            android:layout_height="16dp"
+            android:src="@drawable/indicators_pwr_landscape"
+            android:visibility="gone"
+            tools:visibility="visible"
+            android:layout_weight="1"
+            />
+
+        <ImageView
+            android:id="@+id/led_choke"
+            android:layout_width="wrap_content"
+            android:layout_height="16dp"
+            android:src="@drawable/indicators_choke_landscape"
+            android:visibility="gone"
+            tools:visibility="visible"
+            android:layout_weight="1"
+            />
+
+
+        <ImageView
+            android:id="@+id/led_fan"
+            android:layout_width="wrap_content"
+            android:layout_height="16dp"
+            android:src="@drawable/indicators_fan_landscape"
+            android:visibility="gone"
+            tools:visibility="visible"
+            android:layout_weight="1"
+            />
+
+    </LinearLayout>
+
+</androidx.constraintlayout.widget.ConstraintLayout>

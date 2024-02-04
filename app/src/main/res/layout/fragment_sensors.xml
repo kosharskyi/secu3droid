@@ -33,387 +33,54 @@
     tools:context=".ui.sensors.SensorsFragment"
     >
 
-    <ScrollView
+    <androidx.core.widget.NestedScrollView
         android:layout_width="match_parent"
-        android:layout_height="0dp"
-        app:layout_constraintBottom_toBottomOf="parent"
-        app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintHorizontal_bias="1.0"
-        app:layout_constraintStart_toStartOf="parent"
+        android:layout_height="match_parent"
         app:layout_constraintTop_toTopOf="parent"
-        app:layout_constraintVertical_bias="1.0"
         >
 
-        <androidx.appcompat.widget.LinearLayoutCompat
-            android:id="@+id/sensor_data"
+        <LinearLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:layout_marginHorizontal="8dp"
             android:orientation="vertical"
             >
 
-
-            <include
-                android:id="@+id/rpm"
-                layout="@layout/view_sensor_item"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                />
-
-            <include
-                android:id="@+id/pressure"
-                layout="@layout/view_sensor_item"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                />
-
-            <include
-                android:id="@+id/voltage"
-                layout="@layout/view_sensor_item"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                />
-
-            <include
-                android:id="@+id/temperature"
-                layout="@layout/view_sensor_item"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                />
-
-            <include
-                android:id="@+id/adv_angle"
-                layout="@layout/view_sensor_item"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                />
-
-            <include
-                android:id="@+id/map2"
-                layout="@layout/view_sensor_item"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                />
-
-            <include
-                android:id="@+id/map_diff"
-                layout="@layout/view_sensor_item"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                />
-
-            <include
-                android:id="@+id/mapDot"
-                layout="@layout/view_sensor_item"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                />
-
-            <include
-                android:id="@+id/knock_value"
-                layout="@layout/view_sensor_item"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                />
-
-            <include
-                android:id="@+id/knock_retard"
-                layout="@layout/view_sensor_item"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                />
-
-            <include
-                android:id="@+id/maf"
-                layout="@layout/view_sensor_item"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                />
-
-            <include
-                android:id="@+id/air_flow"
-                layout="@layout/view_sensor_item"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                />
-
-            <include
-                android:id="@+id/air_temp"
-                layout="@layout/view_sensor_item"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                />
-
-            <include
-                android:id="@+id/tps"
-                layout="@layout/view_sensor_item"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                />
-
-            <include
-                android:id="@+id/tps_dot"
-                layout="@layout/view_sensor_item"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                />
-
-            <include
-                android:id="@+id/add1"
-                layout="@layout/view_sensor_item"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                />
-
-            <include
-                android:id="@+id/add2"
-                layout="@layout/view_sensor_item"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                />
-
-            <include
-                android:id="@+id/choke_position"
-                layout="@layout/view_sensor_item"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                />
-
-            <include
-                android:id="@+id/gas_dose_position"
-                layout="@layout/view_sensor_item"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                />
-
-            <include
-                android:id="@+id/grts"
-                layout="@layout/view_sensor_item"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                />
-
-            <include
-                android:id="@+id/synth_load"
-                layout="@layout/view_sensor_item"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                />
-
-            <include
-                android:id="@+id/speed"
-                layout="@layout/view_sensor_item"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                />
-
-            <include
-                android:id="@+id/distance"
-                layout="@layout/view_sensor_item"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                />
-
-            <include
-                android:id="@+id/fuel_inj"
-                layout="@layout/view_sensor_item"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                />
-
-            <include
-                android:id="@+id/consFuel"
-                layout="@layout/view_sensor_item"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                />
-
-            <include
-                android:id="@+id/inj_pw"
-                layout="@layout/view_sensor_item"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                />
-
-            <include
-                android:id="@+id/injDuty"
-                layout="@layout/view_sensor_item"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                />
-
-            <include
-                android:id="@+id/begin_inj_phase"
-                layout="@layout/view_sensor_item"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                />
-
-            <include
-                android:id="@+id/end_Inj_phase"
-                layout="@layout/view_sensor_item"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                />
-
-            <include
-                android:id="@+id/lambda_corr"
-                layout="@layout/view_sensor_item"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                />
-
-            <include
-                android:id="@+id/lambda_corr2"
-                layout="@layout/view_sensor_item"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                />
-
-            <include
-                android:id="@+id/afr"
-                layout="@layout/view_sensor_item"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                />
-
-            <include
-                android:id="@+id/afr2"
-                layout="@layout/view_sensor_item"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                />
-
-            <include
-                android:id="@+id/afr_table"
-                layout="@layout/view_sensor_item"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                />
-
-            <include
-                android:id="@+id/tmp2"
-                layout="@layout/view_sensor_item"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                />
-
-            <include
-                android:id="@+id/ftls"
-                layout="@layout/view_sensor_item"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                />
-
-            <include
-                android:id="@+id/egts"
-                layout="@layout/view_sensor_item"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                />
-
-            <include
-                android:id="@+id/ops"
-                layout="@layout/view_sensor_item"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                />
-
-            <include
-                android:id="@+id/vent_duty"
-                layout="@layout/view_sensor_item"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                />
-
-            <include
-                android:id="@+id/fts"
-                layout="@layout/view_sensor_item"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                />
-
-            <!--<include
-                android:id="@+id/afr_difference"
-                layout="@layout/view_sensor_item"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                />
-
-            <include
-                android:id="@+id/afr_difference2"
-                layout="@layout/view_sensor_item"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                /> -->
-
-            <!--000000000000000000000000000000000000000000000000000-->
-            <include
-                android:id="@+id/status_gas_dos_throttle_fl_fuel"
-                layout="@layout/view_status_sensors"
+            <androidx.recyclerview.widget.RecyclerView
+                android:id="@+id/gauges_list"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:layout_marginTop="8dp"
+                app:layoutManager="androidx.recyclerview.widget.GridLayoutManager"
+                app:spanCount="2"
+                android:paddingStart="8dp"
+                android:paddingEnd="8dp"
+                android:nestedScrollingEnabled="false"
                 />
 
-            <include
-                android:id="@+id/status_power_valve_starter_ae"
-                layout="@layout/view_status_sensors"
+            <androidx.recyclerview.widget.RecyclerView
+                android:id="@+id/indicators_list"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:layout_marginTop="8dp"
+                app:layoutManager="androidx.recyclerview.widget.GridLayoutManager"
+                app:spanCount="2"
+                android:paddingStart="8dp"
+                android:paddingEnd="8dp"
+                android:nestedScrollingEnabled="false"
                 />
 
-            <include
-                android:id="@+id/status_cooling_fan_check_engine_rev_lim_fuel_cut"
-                layout="@layout/view_status_sensors"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:layout_marginTop="8dp"
-                />
+        </LinearLayout>
 
-            <include
-                android:id="@+id/status_flood_clear_sys_lock_ign_input"
-                layout="@layout/view_status_sensors"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:layout_marginTop="8dp"
-                />
+    </androidx.core.widget.NestedScrollView>
 
-            <include
-                android:id="@+id/status_cond_epas_afterstr_enr_"
-                layout="@layout/view_status_sensors"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:layout_marginTop="8dp"
-                />
-
-            <include
-                android:id="@+id/status_closed_loop_reserv_reserv"
-                layout="@layout/view_status_sensors"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:layout_marginTop="8dp"
-                />
-
-            <include
-                android:id="@+id/status_uni1_uni2_uni3"
-                layout="@layout/view_status_sensors"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:layout_marginTop="8dp"
-                />
-
-            <include
-                android:id="@+id/status_uni4_uni5_uni6"
-                layout="@layout/view_status_sensors"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:layout_marginTop="8dp"
-                />
-
-        </androidx.appcompat.widget.LinearLayoutCompat>
-
-    </ScrollView>
+    <com.google.android.material.floatingactionbutton.FloatingActionButton
+        android:id="@+id/fab"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintBottom_toBottomOf="parent"
+        android:layout_margin="16dp"
+        android:src="@drawable/ic_plus"
+        app:tint="@color/white"
+        app:backgroundTint="@color/colorPrimaryVariant"
+        />
 
 </androidx.constraintlayout.widget.ConstraintLayout>

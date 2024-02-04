@@ -77,6 +77,8 @@ def lifecycle_version = "2.7.0"
 dependencies {
     implementation fileTree(dir: 'libs', include: ['*.jar'])
 
+    implementation 'com.github.anastr:speedviewlib:1.6.1'
+
     implementation "androidx.fragment:fragment-ktx:$fragment_version"
 
     implementation libs.kotlin.stdlib
@@ -112,7 +114,7 @@ dependencies {
 
 
     // Import the Firebase BoM
-    implementation platform('com.google.firebase:firebase-bom:32.7.0')
+    implementation platform('com.google.firebase:firebase-bom:32.7.1')
 
     // When using the BoM, you don't specify versions in Firebase library dependencies
 

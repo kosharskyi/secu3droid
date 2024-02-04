@@ -25,14 +25,18 @@
 package org.secu3.android.utils
 
 import android.content.Context
+import android.util.DisplayMetrics
+import android.util.TypedValue
 import android.view.View
 import android.view.animation.AccelerateDecelerateInterpolator
 import android.view.inputmethod.InputMethodManager
 import android.widget.ImageView
 import androidx.appcompat.app.AppCompatActivity
+import androidx.core.util.TypedValueCompat
 import androidx.fragment.app.Fragment
 import java.io.File
 import java.text.DecimalFormat
+import kotlin.math.roundToInt
 
 
 fun View.gone() {
@@ -97,4 +101,12 @@ fun Int.setBitValue(value: Boolean, bitNumber: Int): Int {
     } else {
         1.shl(bitNumber).inv().and(this)
     }
+}
+
+fun Context.dpToPx(dp: Int): Int {
+    return TypedValueCompat.dpToPx(dp.toFloat(), resources.displayMetrics).roundToInt()
+}
+
+fun Context.pxToDp(px: Int): Int {
+    return TypedValueCompat.pxToDp(px.toFloat(), resources.displayMetrics).roundToInt()
 }
