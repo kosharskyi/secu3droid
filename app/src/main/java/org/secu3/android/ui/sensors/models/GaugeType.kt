@@ -257,23 +257,23 @@ enum class GaugeType (val title: Int, val minValue: Float, val maxValue: Float, 
         Section(0f, 0.222f, R.color.gauge_lt_red, -1f),
         Section(0.222f, 0.8f, R.color.gauge_lt_yellow, -1f),
         Section(0.8f, 1.0f, R.color.gauge_lt_red, -1f),
-    ));
+    )),
 
-//    AFR_DIFF(R.string.sensors_frag_afr_difference_label, -9.0f, 9.0f, R.string.units_afr, false, listOf(
-//        Section(0f, 0.361f, R.color.gauge_blue, -1f),
-//        Section(0.361f, 0.45f, R.color.gauge_yellow, -1f),
-//        Section(0.45f, 0.55f, R.color.gauge_green, -1f),
-//        Section(0.55f, 0.639f, R.color.gauge_yellow, -1f),
-//        Section(0.639f, 1.0f, R.color.gauge_red, -1f),
-//    )),
-//
-//    AFR_DIFF2(R.string.sensors_frag_afr_difference2_label, -9.0f, 9.0f, R.string.units_afr, false, listOf(
-//        Section(0f, 0.361f, R.color.gauge_blue, -1f),
-//        Section(0.361f, 0.45f, R.color.gauge_yellow, -1f),
-//        Section(0.45f, 0.55f, R.color.gauge_green, -1f),
-//        Section(0.55f, 0.639f, R.color.gauge_yellow, -1f),
-//        Section(0.639f, 1.0f, R.color.gauge_red, -1f),
-//    ));
+    AFR_DIFF(R.string.sensors_frag_afr_difference_label, -9.0f, 9.0f, R.string.units_afr, false, 10, listOf(
+        Section(0f, 0.361f, R.color.gauge_blue, -1f),
+        Section(0.361f, 0.45f, R.color.gauge_yellow, -1f),
+        Section(0.45f, 0.55f, R.color.gauge_green, -1f),
+        Section(0.55f, 0.639f, R.color.gauge_yellow, -1f),
+        Section(0.639f, 1.0f, R.color.gauge_red, -1f),
+    )),
+
+    AFR_DIFF2(R.string.sensors_frag_afr_difference2_label, -9.0f, 9.0f, R.string.units_afr, false, 10, listOf(
+        Section(0f, 0.361f, R.color.gauge_blue, -1f),
+        Section(0.361f, 0.45f, R.color.gauge_yellow, -1f),
+        Section(0.45f, 0.55f, R.color.gauge_green, -1f),
+        Section(0.55f, 0.639f, R.color.gauge_yellow, -1f),
+        Section(0.639f, 1.0f, R.color.gauge_red, -1f),
+    ));
 
 
     fun getSections(context: Context, width: Float): List<Section> {

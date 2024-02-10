@@ -83,8 +83,14 @@ class SensorsRepository @Inject constructor(private val mPrefs: LifeTimePrefs)  
             GaugeType.EGO_CORR2 -> String.format(Locale.US, "%.1f", it.lambda[1])
             GaugeType.WBO_AFR2 -> String.format(Locale.US, "%.1f", it.sensAfr[1])
             GaugeType.WBO_AFR_TABL -> String.format(Locale.US, "%.2f", it.corrAfr)
-//            GaugeType.AFR_DIFF -> String.format(Locale.US, "%.2f", it.lambda_mx)
-//            GaugeType.AFR_DIFF2 -> TODO()
+            GaugeType.AFR_DIFF -> {
+                val difAfr = it.sensAfr[0] - it.corrAfr
+                String.format(Locale.US, "%.2f", difAfr)
+            }
+            GaugeType.AFR_DIFF2 -> {
+                val difAfr = it.sensAfr[1] - it.corrAfr
+                String.format(Locale.US, "%.2f", difAfr)
+            }
         }
 
         return GaugeItem(type, value)
