@@ -51,9 +51,10 @@ class DashboardViewModel @Inject constructor(private val secu3Repository: Secu3R
     }
 
     val packetLiveData: LiveData<SensorsPacket>
-        get() = secu3Repository.receivedPacketFlow.filter { it is SensorsPacket }.sample(500).map {
-            (it as SensorsPacket).also { sensorsPacket -> sensorsPacket.speedSensorPulses = mPrefs.speedPulses }
-        }.asLiveData()
+        get() = secu3Repository.receivedPacketFlow
+            .filter { it is SensorsPacket }
+            .sample(500)
+            .map { (it as SensorsPacket) }.asLiveData()
 
     val statusLiveData: LiveData<Boolean>
         get() = secu3Repository.connectionStatusLiveData

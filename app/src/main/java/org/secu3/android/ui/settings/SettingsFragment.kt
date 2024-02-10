@@ -47,8 +47,6 @@ class SettingsFragment : PreferenceFragmentCompat(), OnSharedPreferenceChangeLis
                 findPreference<ListPreference>(getString(R.string.pref_bluetooth_device_key))?.summary = getString(R.string.pref_bluetooth_device_summary, it)
             }
         }
-
-        findPreference<Preference>(getString(R.string.pref_speed_pulse_key))?.summary = sharedPref.getString(getString(R.string.pref_speed_pulse_key), getString(R.string.defaultSpeedPulse))
     }
 
     private fun updatePreferenceList() { // update bluetooth device summary
@@ -102,9 +100,6 @@ class SettingsFragment : PreferenceFragmentCompat(), OnSharedPreferenceChangeLis
             getString(R.string.pref_log_csv_delimeter_key) -> {
                 updatePreferenceSummary()
                 updatePreferenceList()
-            }
-            getString(R.string.pref_speed_pulse_key) -> {
-                updatePreferenceSummary()
             }
         }
     }

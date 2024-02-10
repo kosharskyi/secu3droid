@@ -26,7 +26,6 @@
 
 <resources>       
     <string name="pref_connection_retries_key" translatable="false">connectionRetries</string>
-    <string name="pref_speed_pulse_key" translatable="false">speedPulses</string>
     <string name="pref_bluetooth_device_key" translatable="false">bluetoothDeviceName</string>
     <string name="pref_upload_immediately_key" translatable="false">uploadImmediately</string>
     <string name="pref_write_log_key" translatable="false">writeLog</string>
@@ -35,7 +34,6 @@
     <string name="pref_log_csv_delimeter_key" translatable="false">logCsvDelimeter</string>
     <string name="pref_about_key" translatable="false">about</string>
     <string name="defaultConnectionRetries" translatable="false">5</string>
-    <string name="defaultSpeedPulse" translatable="false">6000</string>
     <string name="pref_night_mode_key" translatable="false">nightMode</string>
     <string name="pref_keep_screen_key" translatable="false">flagKeepScreenOn</string>
     <string name="pref_wakelock_key" translatable="false">wakelock</string>

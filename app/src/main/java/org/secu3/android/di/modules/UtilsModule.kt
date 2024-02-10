@@ -43,23 +43,4 @@ object UtilsModule {
     fun getBluetoothManager(@ApplicationContext context: Context): BluetoothManager {
         return context.getSystemService(Context.BLUETOOTH_SERVICE) as BluetoothManager
     }
-
-//    @Singleton
-//    @Provides
-//    fun getOkHttpClient(apiManager: ApiManager): OkHttpClient {
-//        return apiManager.okHttpClient
-//    }
-//
-//    @Provides
-//    fun getApiService(apiManager: ApiManager): ApiService {
-//        return apiManager.getApiService()
-//    }
-
-//    @Singleton
-//    @Provides
-//    fun getAppDatabase(@ApplicationContext context: Context): AppDatabase {
-//        return Room.databaseBuilder(context, AppDatabase::class.java, "medcard24-patient")
-//                .addMigrations(*migrations())
-//                .build()
-//    }
 }

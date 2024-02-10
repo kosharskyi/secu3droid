@@ -422,12 +422,7 @@ data class UniOutParamPacket(
             CONDITION_UBAT -> return value.toFloat() / VOLTAGE_MULTIPLIER
             CONDITION_CARB -> return value.toFloat()
             CONDITION_VSPD -> {
-                val periodS = value / 312500.0f // Period in seconds
-
-                var speed: Float = periodDistance / periodS * 3600.0f / 1000.0f // Kph
-
-                if (speed > 999.9f) speed = 999.9f
-                return speed
+                return value.div(32.0f).coerceAtMost(999.9f)
             }
             CONDITION_AIRFL -> return value.toFloat()
             CONDITION_TMR, CONDITION_ITTMR, CONDITION_ESTMR -> return value.toFloat() / 100.0f
@@ -455,7 +450,7 @@ data class UniOutParamPacket(
             CONDITION_MAP -> return (value * MAP_MULTIPLIER).roundToInt()
             CONDITION_UBAT -> return (value * VOLTAGE_MULTIPLIER).roundToInt()
             CONDITION_CARB -> return value.roundToInt()
-            CONDITION_VSPD -> return value.roundToInt() // FIXME: 05.01.21 need proper implementation
+            CONDITION_VSPD -> return value.times(32.0f).roundToInt()
             CONDITION_AIRFL -> return value.roundToInt()
             CONDITION_TMR, CONDITION_ITTMR, CONDITION_ESTMR -> return (value * 100.0f).roundToInt()
             CONDITION_CPOS -> return (value * CHOKE_MULTIPLIER).roundToInt()

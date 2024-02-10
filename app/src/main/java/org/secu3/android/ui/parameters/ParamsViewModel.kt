@@ -253,7 +253,6 @@ class ParamsViewModel @Inject constructor(private val secu3Repository: Secu3Repo
                 .map { it as UniOutParamPacket }
                 .sample(1000)
                 .collect {
-                    it.speedSensorPulses = prefs.speedPulses
                     emit(it)
                     secu3Repository.sendNewTask(Task.Secu3ReadSensors)
                 }

@@ -32,12 +32,6 @@
 		android:key="@string/pref_bluetooth_device_key" 	
 		android:summary="@string/pref_bluetooth_device_summary" />
 
-	<EditTextPreference
-	    android:key="@string/pref_speed_pulse_key"
-	    android:title="@string/pref_speed_pulse_title"
-	    android:defaultValue="@string/defaultSpeedPulse"	    
-	    android:inputType="numberDecimal"/>
-
 	<CheckBoxPreference
 		android:key="@string/pref_write_log_key"
 		android:title="@string/pref_write_log_title"

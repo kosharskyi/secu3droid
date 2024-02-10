@@ -81,14 +81,11 @@ class LifeTimePrefs @Inject constructor(@ApplicationContext private val ctx: Con
         get() = mPrefs.getString(ctx.getString(R.string.pref_connection_retries_key), ctx.getString(R.string.defaultConnectionRetries))!!.toInt()
         set(value) = mPrefs.edit().putString(ctx.getString(R.string.pref_connection_retries_key), value.toString()).apply()
 
-    val speedPulses: Int
-        get() = mPrefs.getString(ctx.getString(R.string.pref_speed_pulse_key), ctx.getString(R.string.defaultSpeedPulse))!!.toInt()
-
     var gaugesEnabled: List<GaugeType>
         get() {
             val gauges = mPrefs.getString("gauges_enabled", defaultGauges)?.split(",") ?: defaultGauges.split(",")
 
-            return gauges.map { GaugeType.valueOf(it) }
+            return gauges.filter { it.isNotEmpty() }.map { GaugeType.valueOf(it) }
         }
 
         set(values) {

@@ -61,14 +61,6 @@ abstract class BaseSecu3Packet {
         return v
     }
 
-
-
-    var speedSensorPulses: Int = 0
-
-    val periodDistance: Float
-        get() = (1000.0f / speedSensorPulses)
-
-
     companion object {
 
         const val INPUT_PACKET_SYMBOL = '@'
