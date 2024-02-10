@@ -1,6 +1,6 @@
 /*
  *    SecuDroid  - An open source, free manager for SECU-3 engine control unit
- *    Copyright (C) 2024 Vitaliy O. Kosharskyi. Ukraine, Kyiv
+ *    Copyright (C) 2024 Vitalii O. Kosharskyi. Ukraine, Kyiv
  *
  *    SECU-3  - An open source, free engine control unit
  *    Copyright (C) 2007-2024 Alexey A. Shabelnikov. Ukraine, Kyiv
@@ -32,7 +32,6 @@ import android.view.ViewGroup
 import android.widget.ArrayAdapter
 import androidx.lifecycle.lifecycleScope
 import androidx.lifecycle.withResumed
-import androidx.lifecycle.withStarted
 import kotlinx.coroutines.launch
 import org.secu3.android.R
 import org.secu3.android.databinding.FragmentAccelerationBinding
@@ -105,6 +104,21 @@ class AccelerationFragment : BaseParamFragment() {
 
                     mViewModel.isSendAllowed = true
                 }
+
+                mViewModel.savePacketLiveData.observe(viewLifecycleOwner) { isSendClicked ->
+                    if (isSendClicked.not()) {
+                        return@observe
+                    }
+
+                    if (isResumed.not()) {
+                        return@observe
+                    }
+
+                    packet?.let {
+                        mViewModel.savePacket(false)
+                        mViewModel.sendPacket(it)
+                    }
+                }
             }
         }
     }
@@ -115,31 +129,22 @@ class AccelerationFragment : BaseParamFragment() {
 
             accelTpsdotThreshold.addOnValueChangeListener {
                 packet?.injAeTpsdotThrd = it
-                packet?.let { it1 -> mViewModel.sendPacket(it1) }
             }
 
             coldAccelMultiplier.addOnValueChangeListener {
                 packet?.injAeColdaccMult = it
-                packet?.let { it1 -> mViewModel.sendPacket(it1) }
             }
 
             aeDecayTime.addOnValueChangeListener {
                 packet?.injAeDecayTime = it
-                packet?.let { it1 -> mViewModel.sendPacket(it1) }
             }
 
             aeType.setOnItemClickListener { _, _, position, _ ->
-                packet?.apply {
-                    injAeType = position
-                    mViewModel.sendPacket(this)
-                }
+                packet?.injAeType = position
             }
 
             aeTime.addOnValueChangeListener {
-                packet?.apply {
-                    injAeTime = it
-                    mViewModel.sendPacket(this)
-                }
+                packet?.injAeTime = it
             }
 
             aeBalance.addOnChangeListener { _, value, fromUser ->
@@ -147,38 +152,23 @@ class AccelerationFragment : BaseParamFragment() {
                     return@addOnChangeListener
                 }
 
-                packet?.apply {
-                    injAeBallance = value
-                    mViewModel.sendPacket(this)
-                }
+                packet?.injAeBallance = value
             }
 
             aeMapdoeThrd.addOnValueChangeListener {
-                packet?.apply {
-                    injAeMapdotThrd = it
-                    mViewModel.sendPacket(this)
-                }
+                packet?.injAeMapdotThrd = it
             }
 
             wallwetModel.setOnItemClickListener { _, _, position, _ ->
-                packet?.apply {
-                    wallwetModel = position
-                    mViewModel.sendPacket(this)
-                }
+                packet?.wallwetModel = position
             }
 
             xTauStartThrd.addOnValueChangeListener {
-                packet?.apply {
-                    injXtauSThrd = it.toFloat()
-                    mViewModel.sendPacket(this)
-                }
+                packet?.injXtauSThrd = it.toFloat()
             }
 
             xTauFinishThrd.addOnValueChangeListener {
-                packet?.apply {
-                    injXtauFThrd = it.toFloat()
-                    mViewModel.sendPacket(this)
-                }
+                packet?.injXtauFThrd = it.toFloat()
             }
 
             accelTpsdotThreshold.setOnClickListener { intParamClick(it as IntParamView) }

@@ -1,6 +1,6 @@
 /*
  *    SecuDroid  - An open source, free manager for SECU-3 engine control unit
- *    Copyright (C) 2024 Vitaliy O. Kosharskyi. Ukraine, Kyiv
+ *    Copyright (C) 2024 Vitalii O. Kosharskyi. Ukraine, Kyiv
  *
  *    SECU-3  - An open source, free engine control unit
  *    Copyright (C) 2007-2024 Alexey A. Shabelnikov. Ukraine, Kyiv
@@ -107,6 +107,21 @@ class CkpsFragment : BaseParamFragment() {
 
                     mViewModel.isSendAllowed = true
                 }
+
+                mViewModel.savePacketLiveData.observe(viewLifecycleOwner) { isSendClicked ->
+                    if (isSendClicked.not()) {
+                        return@observe
+                    }
+
+                    if (isResumed.not()) {
+                        return@observe
+                    }
+
+                    packet?.let {
+                        mViewModel.savePacket(false)
+                        mViewModel.sendPacket(it)
+                    }
+                }
             }
         }
     }
@@ -129,56 +144,44 @@ class CkpsFragment : BaseParamFragment() {
 
             ckpsEdgeGroup.setOnCheckedChangeListener { _, checkedId ->
                 packet?.ckpsEdge = checkedId == R.id.ckps_edge_rising
-                packet?.let { it1 -> mViewModel.sendPacket(it1) }
             }
 
             refSEdgeGroup.setOnCheckedChangeListener { _, checkedId ->
                 packet?.refsEdge = checkedId == R.id.ref_s_edge_rising
-                packet?.let { it1 -> mViewModel.sendPacket(it1) }
             }
 
             sparkRisingEdgeForCdi.setOnCheckedChangeListener { _, isChecked ->
                 packet?.risingSpark = isChecked
-                packet?.let { it1 -> mViewModel.sendPacket(it1) }
             }
             mergeSignalsToSingleOutput.setOnCheckedChangeListener { _, isChecked ->
                 packet?.mergeOuts = isChecked
-                packet?.let { it1 -> mViewModel.sendPacket(it1) }
             }
 
             numberOfWheelsTeeth.addOnValueChangeListener {
                 packet?.ckpsCogsNum = it
-                packet?.let { it1 -> mViewModel.sendPacket(it1) }
             }
             numberOfMissingTeeth.addOnValueChangeListener {
                 packet?.ckpsMissNum = it
-                packet?.let { it1 -> mViewModel.sendPacket(it1) }
             }
 
             teethBeforeTdc.setOnItemClickListener { _, _, position, _ ->
                 packet?.ckpsCogsBtdc = teethBeforeTdcList[position]
-                packet?.let { it1 -> mViewModel.sendPacket(it1) }
             }
             numberOfCylinders.setOnItemClickListener { _, _, position, _ ->
                 packet?.ckpsEngineCyl = numberOfCylinderList[position]
-                packet?.let { it1 -> mViewModel.sendPacket(it1) }
             }
             durationIngDriverPulseTeeth.addOnValueChangeListener {
                 packet?.ckpsIgnitCogs = it
-                packet?.let { it1 -> mViewModel.sendPacket(it1) }
             }
             hallSensorInterrupterDegree.addOnValueChangeListener {
                 packet?.hallWndWidth = it
-                packet?.let { it1 -> mViewModel.sendPacket(it1) }
             }
             degreesBeforeTDC.addOnValueChangeListener {
                 packet?.hallDegreesBtdc = it
-                packet?.let { it1 -> mViewModel.sendPacket(it1) }
             }
 
             useCamSensorAsReference.setOnCheckedChangeListener { _, isChecked ->
                 packet?.useCamRef = isChecked
-                packet?.let { it1 -> mViewModel.sendPacket(it1) }
             }
 
             numberOfWheelsTeeth.setOnClickListener { intParamClick(it as IntParamView) }

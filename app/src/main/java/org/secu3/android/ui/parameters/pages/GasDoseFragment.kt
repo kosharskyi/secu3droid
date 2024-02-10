@@ -1,6 +1,6 @@
 /*
  *    SecuDroid  - An open source, free manager for SECU-3 engine control unit
- *    Copyright (C) 2024 Vitaliy O. Kosharskyi. Ukraine, Kyiv
+ *    Copyright (C) 2024 Vitalii O. Kosharskyi. Ukraine, Kyiv
  *
  *    SECU-3  - An open source, free engine control unit
  *    Copyright (C) 2007-2024 Alexey A. Shabelnikov. Ukraine, Kyiv
@@ -64,13 +64,6 @@ class GasDoseFragment : BaseParamFragment() {
             mBinding.frequencyOfPulses.setAdapter(it)
         }
 
-        mViewModel.fwInfoLiveData.observe(viewLifecycleOwner) {
-            if (it.isGdControlEnabled.not()) {
-                mBinding.gasDoseParamGroup.gone()
-                mBinding.gasDoseEmptyText.visible()
-            }
-        }
-
         lifecycleScope.launch {
             withResumed {
                 mViewModel.gasDoseLiveData.observe(viewLifecycleOwner) {
@@ -82,7 +75,7 @@ class GasDoseFragment : BaseParamFragment() {
                     mBinding.apply {
 
                         progressBar.gone()
-                        params.visible()
+                        gasDoseParamGroup.visible()
 
                         numOfSmSteps.value = it.steps
                         stoichiometricRatio.value = it.lambdaStoichval
@@ -100,6 +93,21 @@ class GasDoseFragment : BaseParamFragment() {
 
                     mViewModel.isSendAllowed = true
                 }
+
+                mViewModel.savePacketLiveData.observe(viewLifecycleOwner) { isSendClicked ->
+                    if (isSendClicked.not()) {
+                        return@observe
+                    }
+
+                    if (isResumed.not()) {
+                        return@observe
+                    }
+
+                    packet?.let {
+                        mViewModel.savePacket(false)
+                        mViewModel.sendPacket(it)
+                    }
+                }
             }
         }
     }
@@ -110,36 +118,29 @@ class GasDoseFragment : BaseParamFragment() {
 
             numOfSmSteps.addOnValueChangeListener {
                 packet?.steps = it
-                packet?.let { it1 -> mViewModel.sendPacket(it1) }
             }
 
             stoichiometricRatio.addOnValueChangeListener {
                 packet?.lambdaStoichval = it
-                packet?.let { it1 -> mViewModel.sendPacket(it1) }
             }
 
             closingOnFuelCut.addOnValueChangeListener {
                 packet?.fcClosing = it
-                packet?.let { it1 -> mViewModel.sendPacket(it1) }
             }
 
             correctionLimitPositive.addOnValueChangeListener {
                 packet?.lambdaCorrLimitP = it
-                packet?.let { it1 -> mViewModel.sendPacket(it1) }
             }
             correctionLimitNegative.addOnValueChangeListener {
                 packet?.lambdaCorrLimitM = it
-                packet?.let { it1 -> mViewModel.sendPacket(it1) }
             }
 
             frequencyOfPulses.setOnItemClickListener { _, _, position, _ ->
                 packet?.freq = position
-                packet?.let { it1 -> mViewModel.sendPacket(it1) }
             }
 
             maximumSTEPFrequencyAtInit.setOnCheckedChangeListener { _, isChecked ->
                 packet?.maxFreqInit = if (isChecked) 1 else 0
-                packet?.let { it1 -> mViewModel.sendPacket(it1) }
             }
 
 

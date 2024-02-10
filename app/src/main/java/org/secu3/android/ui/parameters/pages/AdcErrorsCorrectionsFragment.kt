@@ -1,6 +1,6 @@
 /*
  *    SecuDroid  - An open source, free manager for SECU-3 engine control unit
- *    Copyright (C) 2024 Vitaliy O. Kosharskyi. Ukraine, Kyiv
+ *    Copyright (C) 2024 Vitalii O. Kosharskyi. Ukraine, Kyiv
  *
  *    SECU-3  - An open source, free engine control unit
  *    Copyright (C) 2007-2024 Alexey A. Shabelnikov. Ukraine, Kyiv
@@ -108,6 +108,21 @@ class AdcErrorsCorrectionsFragment : BaseParamFragment() {
 
                     mViewModel.isSendAllowed = true
                 }
+
+                mViewModel.savePacketLiveData.observe(viewLifecycleOwner) { isSendClicked ->
+                    if (isSendClicked.not()) {
+                        return@observe
+                    }
+
+                    if (isResumed.not()) {
+                        return@observe
+                    }
+
+                    packet?.let {
+                        mViewModel.savePacket(false)
+                        mViewModel.sendPacket(it)
+                    }
+                }
             }
         }
     }
@@ -117,117 +132,91 @@ class AdcErrorsCorrectionsFragment : BaseParamFragment() {
         mBinding.apply {
             mapFactor.addOnValueChangeListener {
                 packet?.mapAdcFactor = it
-                packet?.let { it1 -> mViewModel.sendPacket(it1) }
             }
             mapCorrection.addOnValueChangeListener {
                 packet?.mapAdcCorrection = it
-                packet?.let { it1 -> mViewModel.sendPacket(it1) }
             }
 
             voltageFactor.addOnValueChangeListener {
                 packet?.ubatAdcFactor = it
-                packet?.let { it1 -> mViewModel.sendPacket(it1) }
             }
             voltageCorrection.addOnValueChangeListener {
                 packet?.ubatAdcCorrection = it
-                packet?.let { it1 -> mViewModel.sendPacket(it1) }
             }
             ctsFactor.addOnValueChangeListener {
                 packet?.tempAdcFactor = it
-                packet?.let { it1 -> mViewModel.sendPacket(it1) }
             }
             ctsCorrection.addOnValueChangeListener {
                 packet?.tempAdcCorrection = it
-                packet?.let { it1 -> mViewModel.sendPacket(it1) }
             }
             tpsFactor.addOnValueChangeListener {
                 packet?.tpsAdcFactor = it
-                packet?.let { it1 -> mViewModel.sendPacket(it1) }
             }
 
             tpsCorrection.addOnValueChangeListener {
                 packet?.tpsAdcCorrection = it
-                packet?.let { it1 -> mViewModel.sendPacket(it1) }
             }
 
             add1Factor.addOnValueChangeListener {
                 packet?.ai1AdcFactor = it
-                packet?.let { it1 -> mViewModel.sendPacket(it1) }
             }
 
             add1Correction.addOnValueChangeListener {
                 packet?.ai1AdcCorrection = it
-                packet?.let { it1 -> mViewModel.sendPacket(it1) }
             }
 
             add2Factor.addOnValueChangeListener {
                 packet?.ai2AdcFactor = it
-                packet?.let { it1 -> mViewModel.sendPacket(it1) }
             }
             add2Correction.addOnValueChangeListener {
                 packet?.ai2AdcCorrection = it
-                packet?.let { it1 -> mViewModel.sendPacket(it1) }
             }
 
             add3Factor.addOnValueChangeListener {
                 packet?.ai3AdcFactor = it
-                packet?.let { it1 -> mViewModel.sendPacket(it1) }
             }
             add3Correction.addOnValueChangeListener {
                 packet?.ai3AdcCorrection = it
-                packet?.let { it1 -> mViewModel.sendPacket(it1) }
             }
 
             add4Factor.addOnValueChangeListener {
                 packet?.ai4AdcFactor = it
-                packet?.let { it1 -> mViewModel.sendPacket(it1) }
             }
             add4Correction.addOnValueChangeListener {
                 packet?.ai4AdcCorrection = it
-                packet?.let { it1 -> mViewModel.sendPacket(it1) }
             }
 
             add5Factor.addOnValueChangeListener {
                 packet?.ai5AdcFactor = it
-                packet?.let { it1 -> mViewModel.sendPacket(it1) }
             }
             add5Correction.addOnValueChangeListener {
                 packet?.ai5AdcCorrection = it
-                packet?.let { it1 -> mViewModel.sendPacket(it1) }
             }
 
             add6Factor.addOnValueChangeListener {
                 packet?.ai6AdcFactor = it
-                packet?.let { it1 -> mViewModel.sendPacket(it1) }
             }
             add6Correction.addOnValueChangeListener {
                 packet?.ai6AdcCorrection = it
-                packet?.let { it1 -> mViewModel.sendPacket(it1) }
             }
 
             add7Factor.addOnValueChangeListener {
                 packet?.ai7AdcFactor = it
-                packet?.let { it1 -> mViewModel.sendPacket(it1) }
             }
+
             add7Correction.addOnValueChangeListener {
                 packet?.ai7AdcCorrection = it
-                packet?.let { it1 -> mViewModel.sendPacket(it1) }
             }
 
             add8Factor.addOnValueChangeListener {
                 packet?.ai8AdcFactor = it
-                packet?.let { it1 -> mViewModel.sendPacket(it1) }
             }
             add8Correction.addOnValueChangeListener {
                 packet?.ai8AdcCorrection = it
-                packet?.let { it1 -> mViewModel.sendPacket(it1) }
             }
 
             multiplyCorrAndKoef.setOnCheckedChangeListener { _, isChecked ->
-                packet?.apply {
-                    adcCompMode = isChecked
-                    mViewModel.sendPacket(this)
-                }
+                packet?.adcCompMode = isChecked
             }
 
             mapFactor.setOnClickListener { floatParamClick(it as FloatParamView) }

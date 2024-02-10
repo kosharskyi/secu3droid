@@ -1,6 +1,6 @@
 /*
  *    SecuDroid  - An open source, free manager for SECU-3 engine control unit
- *    Copyright (C) 2024 Vitaliy O. Kosharskyi. Ukraine, Kyiv
+ *    Copyright (C) 2024 Vitalii O. Kosharskyi. Ukraine, Kyiv
  *
  *    SECU-3  - An open source, free engine control unit
  *    Copyright (C) 2007-2024 Alexey A. Shabelnikov. Ukraine, Kyiv
@@ -138,6 +138,21 @@ class LambdaControlFragment : BaseParamFragment() {
 
                     mViewModel.isSendAllowed = true
                 }
+
+                mViewModel.savePacketLiveData.observe(viewLifecycleOwner) { isSendClicked ->
+                    if (isSendClicked.not()) {
+                        return@observe
+                    }
+
+                    if (isResumed.not()) {
+                        return@observe
+                    }
+
+                    packet?.let {
+                        mViewModel.savePacket(false)
+                        mViewModel.sendPacket(it)
+                    }
+                }
             }
         }
     }
@@ -148,170 +163,122 @@ class LambdaControlFragment : BaseParamFragment() {
 
             sensorType.setOnItemClickListener { _, _, position, _ ->
                 packet?.senstype = position
-                packet?.let { it1 -> mViewModel.sendPacket(it1) }
             }
 
             numberOfStrokesPerStep.addOnValueChangeListener {
                 packet?.strPerStp = it
-                packet?.let { it1 -> mViewModel.sendPacket(it1) }
             }
 
             numberOfMsPerStep.addOnValueChangeListener {
                 packet?.msPerStp = it
-                packet?.let { it1 -> mViewModel.sendPacket(it1) }
             }
 
             sizePositiveCorrectionStep.addOnValueChangeListener {
                 packet?.stepSizeP = it
-                packet?.let { it1 -> mViewModel.sendPacket(it1) }
             }
 
             sizeNegativeCorrectionStep.addOnValueChangeListener {
                 packet?.stepSizeM = it
-                packet?.let { it1 -> mViewModel.sendPacket(it1) }
             }
 
             correctionLimitPositive.addOnValueChangeListener {
                 packet?.corrLimitP = it
-                packet?.let { it1 -> mViewModel.sendPacket(it1) }
             }
 
             correctionLimitNegative.addOnValueChangeListener {
                 packet?.corrLimitM = it
-                packet?.let { it1 -> mViewModel.sendPacket(it1) }
             }
 
             switchPoint.addOnValueChangeListener {
                 packet?.swtPoint = it
-                packet?.let { it1 -> mViewModel.sendPacket(it1) }
             }
 
             ctsActivationThreshold.addOnValueChangeListener {
                 packet?.tempThrd = it
-                packet?.let { it1 -> mViewModel.sendPacket(it1) }
             }
 
             rpmActivationThreshold.addOnValueChangeListener {
                 packet?.rpmThrd = it
-                packet?.let { it1 -> mViewModel.sendPacket(it1) }
             }
 
             activationAfterStartIn.addOnValueChangeListener {
                 packet?.activDelay = it
-                packet?.let { it1 -> mViewModel.sendPacket(it1) }
             }
 
             switchPointDeadband.addOnValueChangeListener {
                 packet?.deadBand = it
-                packet?.let { it1 -> mViewModel.sendPacket(it1) }
             }
 
             determineHeatingUsingVoltage.setOnCheckedChangeListener { _, isChecked ->
                 packet?.determineLambdaHeatingByVoltage = isChecked
-                packet?.let { it1 -> mViewModel.sendPacket(it1) }
             }
 
             lambdaCorrectioinOnIdling.setOnCheckedChangeListener { _, isChecked ->
                 packet?.lambdaCorrectionOnIdling = isChecked
-                packet?.let { it1 -> mViewModel.sendPacket(it1) }
             }
 
             stoichiomRatioFor2Fuel.addOnValueChangeListener {
                 packet?.gdStoichval = it
-                packet?.let { it1 -> mViewModel.sendPacket(it1) }
             }
 
             heatingTimeWithoutPwmOnCold.addOnValueChangeListener {
                 packet?.heatingTime0 = it
-                packet?.let { it1 -> mViewModel.sendPacket(it1) }
             }
 
             heatingTimeWithoutPwmOnHot.addOnValueChangeListener {
                 packet?.heatingTime1 = it
-                packet?.let { it1 -> mViewModel.sendPacket(it1) }
             }
 
             coldHotTemperatureThreshold.addOnValueChangeListener {
                 packet?.temperThrd = it
-                packet?.let { it1 -> mViewModel.sendPacket(it1) }
             }
 
             turnOnTimeInPwmMode.addOnValueChangeListener {
                 packet?.heatingAct = it
-                packet?.let { it1 -> mViewModel.sendPacket(it1) }
             }
 
             airFlowThresholdForTurningHeatingOff.addOnValueChangeListener {
                 packet?.aflowThrd = it.toFloat()
-                packet?.let { it1 -> mViewModel.sendPacket(it1) }
             }
 
             heatingBeforeCranking.setOnCheckedChangeListener { _, isChecked ->
                 packet?.heatingBeforeCranking = isChecked
-                packet?.let { it1 -> mViewModel.sendPacket(it1) }
             }
 
             lambdaChanel1.setOnCheckedChangeListener { _, isChecked ->
-                packet?.apply {
-                    lambdaChanel1 = isChecked
-                    mViewModel.sendPacket(this)
-                }
+                packet?.lambdaChanel1 = isChecked
             }
 
             lambdaChanel2.setOnCheckedChangeListener { _, isChecked ->
-                packet?.apply {
-                    lambdaChanel2 = isChecked
-                    mViewModel.sendPacket(this)
-                }
+                packet?.lambdaChanel2 = isChecked
             }
 
             lambdaChanel3.setOnCheckedChangeListener { _, isChecked ->
-                packet?.apply {
-                    lambdaChanel3 = isChecked
-                    mViewModel.sendPacket(this)
-                }
+                packet?.lambdaChanel3 = isChecked
             }
 
             lambdaChanel4.setOnCheckedChangeListener { _, isChecked ->
-                packet?.apply {
-                    lambdaChanel4 = isChecked
-                    mViewModel.sendPacket(this)
-                }
+                packet?.lambdaChanel4 = isChecked
             }
 
             lambdaChanel5.setOnCheckedChangeListener { _, isChecked ->
-                packet?.apply {
-                    lambdaChanel5 = isChecked
-                    mViewModel.sendPacket(this)
-                }
+                packet?.lambdaChanel5 = isChecked
             }
 
             lambdaChanel6.setOnCheckedChangeListener { _, isChecked ->
-                packet?.apply {
-                    lambdaChanel6 = isChecked
-                    mViewModel.sendPacket(this)
-                }
+                packet?.lambdaChanel6 = isChecked
             }
 
             lambdaChanel7.setOnCheckedChangeListener { _, isChecked ->
-                packet?.apply {
-                    lambdaChanel7 = isChecked
-                    mViewModel.sendPacket(this)
-                }
+                packet?.lambdaChanel7 = isChecked
             }
 
             lambdaChanel8.setOnCheckedChangeListener { _, isChecked ->
-                packet?.apply {
-                    lambdaChanel8 = isChecked
-                    mViewModel.sendPacket(this)
-                }
+                packet?.lambdaChanel8 = isChecked
             }
 
             mixSensorsValue.setOnCheckedChangeListener { _, isChecked ->
-                packet?.apply {
-                    mixSenorsValue = isChecked
-                    mViewModel.sendPacket(this)
-                }
+                packet?.mixSenorsValue = isChecked
             }
 
 

@@ -1,6 +1,6 @@
 /*
  *    SecuDroid  - An open source, free manager for SECU-3 engine control unit
- *    Copyright (C) 2024 Vitaliy O. Kosharskyi. Ukraine, Kyiv
+ *    Copyright (C) 2024 Vitalii O. Kosharskyi. Ukraine, Kyiv
  *
  *    SECU-3  - An open source, free engine control unit
  *    Copyright (C) 2007-2024 Alexey A. Shabelnikov. Ukraine, Kyiv
@@ -30,7 +30,6 @@ import android.view.View
 import android.view.ViewGroup
 import androidx.lifecycle.lifecycleScope
 import androidx.lifecycle.withResumed
-import androidx.lifecycle.withStarted
 import kotlinx.coroutines.launch
 import org.secu3.android.databinding.FragmentAnglesBinding
 import org.secu3.android.models.packets.out.params.AnglesParamPacket
@@ -87,6 +86,21 @@ class AnglesFragment : BaseParamFragment() {
 
                     mViewModel.isSendAllowed = true
                 }
+
+                mViewModel.savePacketLiveData.observe(viewLifecycleOwner) { isSendClicked ->
+                    if (isSendClicked.not()) {
+                        return@observe
+                    }
+
+                    if (isResumed.not()) {
+                        return@observe
+                    }
+
+                    packet?.let {
+                        mViewModel.savePacket(false)
+                        mViewModel.sendPacket(it)
+                    }
+                }
             }
         }
     }
@@ -96,55 +110,37 @@ class AnglesFragment : BaseParamFragment() {
         mBinding.apply {
             maxAdvanceAngle.addOnValueChangeListener {
                 packet?.maxAngle = it
-                packet?.let { it1 -> mViewModel.sendPacket(it1) }
             }
             minAdvanceAngle.addOnValueChangeListener {
                 packet?.minAngle = it
-                packet?.let { it1 -> mViewModel.sendPacket(it1) }
             }
             angleDecreaseSpeed.addOnValueChangeListener {
                 packet?.angleDecSpeed = it
-                packet?.let { it1 -> mViewModel.sendPacket(it1) }
             }
             angleIncreaseSpeed.addOnValueChangeListener {
                 packet?.angleIncSpeed = it
-                packet?.let { it1 -> mViewModel.sendPacket(it1) }
             }
             octaneCorrection.addOnValueChangeListener {
                 packet?.angleCorrection = it
-                packet?.let { it1 -> mViewModel.sendPacket(it1) }
             }
             zeroAdvAngle.setOnCheckedChangeListener { _, isChecked ->
                 packet?.zeroAdvAngle = if (isChecked) 1 else 0
-                packet?.let { it1 -> mViewModel.sendPacket(it1) }
             }
 
             ignTimingWhenShifting.addOnValueChangeListener {
-                packet?.apply {
-                    shift_ingtim = it
-                    mViewModel.sendPacket(this)
-                }
+                packet?.shift_ingtim = it
             }
 
             alwaysUseWorkingModeAngleMap.setOnCheckedChangeListener { _, isChecked ->
-                packet?.apply {
-                    alwaysUseIgnitionMap = isChecked
-                    mViewModel.sendPacket(this)
-                }
+                packet?.alwaysUseIgnitionMap = isChecked
             }
 
             applyManualTimingCorr.setOnCheckedChangeListener { _, isChecked ->
-                packet?.apply {
-                    applyManualTimingCorrOnIdl = isChecked
-                    mViewModel.sendPacket(this)
-                }
+                packet?.applyManualTimingCorrOnIdl = isChecked
             }
 
             zeroAdvOctaneCorr.setOnCheckedChangeListener { _, isChecked ->
-                packet?.apply {
-                    zeroAdvAngleWithCorr = isChecked
-                    mViewModel.sendPacket(this)
-                }
+                packet?.zeroAdvAngleWithCorr = isChecked
             }
 
             maxAdvanceAngle.setOnClickListener { floatParamClick(it as FloatParamView) }

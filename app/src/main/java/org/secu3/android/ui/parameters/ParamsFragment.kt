@@ -1,6 +1,6 @@
 /*
  *    SecuDroid  - An open source, free manager for SECU-3 engine control unit
- *    Copyright (C) 2024 Vitaliy O. Kosharskyi. Ukraine, Kyiv
+ *    Copyright (C) 2024 Vitalii O. Kosharskyi. Ukraine, Kyiv
  *
  *    SECU-3  - An open source, free engine control unit
  *    Copyright (C) 2007-2024 Alexey A. Shabelnikov. Ukraine, Kyiv
@@ -30,6 +30,7 @@ import android.view.View
 import android.view.ViewGroup
 import androidx.fragment.app.Fragment
 import androidx.fragment.app.viewModels
+import androidx.navigation.fragment.findNavController
 import com.google.android.material.tabs.TabLayoutMediator
 import dagger.hilt.android.AndroidEntryPoint
 import org.secu3.android.R
@@ -54,7 +55,7 @@ class ParamsFragment : Fragment() {
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
 
-        mBinding.toolbar.setNavigationOnClickListener { activity?.onBackPressed() }
+        initToolbar()
 
         mViewModel.connectionStatusLiveData.observe(viewLifecycleOwner) {
             if (it) {
@@ -65,6 +66,25 @@ class ParamsFragment : Fragment() {
         }
 
         initPager()
+    }
+
+    private fun initToolbar() {
+        mBinding.toolbar.apply {
+            setNavigationOnClickListener {
+                findNavController().popBackStack()
+            }
+
+            inflateMenu(R.menu.fragment_params_menu)
+            setOnMenuItemClickListener {
+                when (it.itemId) {
+                    R.id.save_packet -> {
+                        mViewModel.savePacket(true)
+                        true
+                    }
+                    else -> false
+                }
+            }
+        }
     }
 
     private fun initPager() {

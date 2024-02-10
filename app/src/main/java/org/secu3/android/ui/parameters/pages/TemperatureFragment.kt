@@ -1,6 +1,6 @@
 /*
  *    SecuDroid  - An open source, free manager for SECU-3 engine control unit
- *    Copyright (C) 2024 Vitaliy O. Kosharskyi. Ukraine, Kyiv
+ *    Copyright (C) 2024 Vitalii O. Kosharskyi. Ukraine, Kyiv
  *
  *    SECU-3  - An open source, free engine control unit
  *    Copyright (C) 2007-2024 Alexey A. Shabelnikov. Ukraine, Kyiv
@@ -84,6 +84,21 @@ class TemperatureFragment : BaseParamFragment() {
 
                     mViewModel.isSendAllowed = true
                 }
+
+                mViewModel.savePacketLiveData.observe(viewLifecycleOwner) { isSendClicked ->
+                    if (isSendClicked.not()) {
+                        return@observe
+                    }
+
+                    if (isResumed.not()) {
+                        return@observe
+                    }
+
+                    packet?.let {
+                        mViewModel.savePacket(false)
+                        mViewModel.sendPacket(it)
+                    }
+                }
             }
         }
     }
@@ -93,45 +108,35 @@ class TemperatureFragment : BaseParamFragment() {
         mBinding.apply {
             ventilatorTurnOn.addOnValueChangeListener {
                 packet?.ventOn = it
-                packet?.let { it1 -> mViewModel.sendPacket(it1) }
             }
             ventilatorTurnOff.addOnValueChangeListener {
                 packet?.ventOff = it
-                packet?.let { it1 -> mViewModel.sendPacket(it1) }
             }
 
             useSensor.setOnCheckedChangeListener { _, isChecked ->
                 packet?.coolantUse = isChecked
-                packet?.let { it1 -> mViewModel.sendPacket(it1) }
             }
             controlCoolingPwm.setOnCheckedChangeListener { _, isChecked ->
                 packet?.ventPwm = isChecked
-                packet?.let { it1 -> mViewModel.sendPacket(it1) }
             }
             useSensorsCurveTable.setOnCheckedChangeListener { _, isChecked ->
                 packet?.coolantMap = isChecked
-                packet?.let { it1 -> mViewModel.sendPacket(it1) }
             }
 
             pwmFrequency.addOnValueChangeListener {
                 packet?.ventPwmFrq = it
-                packet?.let { it1 -> mViewModel.sendPacket(it1) }
             }
             airCondOnThreshold.addOnValueChangeListener {
                 packet?.condPvtOn = it
-                packet?.let { it1 -> mViewModel.sendPacket(it1) }
             }
             airCondOffThreshold.addOnValueChangeListener {
                 packet?.condPvtOff = it
-                packet?.let { it1 -> mViewModel.sendPacket(it1) }
             }
             airCondOnMinRpmThreshold.addOnValueChangeListener {
                 packet?.condMinRpm = it
-                packet?.let { it1 -> mViewModel.sendPacket(it1) }
             }
             coolingFansTimer.addOnValueChangeListener {
                 packet?.ventTmr = it
-                packet?.let { it1 -> mViewModel.sendPacket(it1) }
             }
 
             ventilatorTurnOn.setOnClickListener { floatParamClick(it as FloatParamView) }

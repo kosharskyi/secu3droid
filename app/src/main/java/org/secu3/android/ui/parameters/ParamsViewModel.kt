@@ -1,6 +1,6 @@
 /*
  *    SecuDroid  - An open source, free manager for SECU-3 engine control unit
- *    Copyright (C) 2024 Vitaliy O. Kosharskyi. Ukraine, Kyiv
+ *    Copyright (C) 2024 Vitalii O. Kosharskyi. Ukraine, Kyiv
  *
  *    SECU-3  - An open source, free engine control unit
  *    Copyright (C) 2007-2024 Alexey A. Shabelnikov. Ukraine, Kyiv
@@ -27,12 +27,15 @@ package org.secu3.android.ui.parameters
 import androidx.lifecycle.LiveData
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.asLiveData
+import androidx.lifecycle.viewModelScope
 import dagger.hilt.android.lifecycle.HiltViewModel
+import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.filter
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.sample
+import kotlinx.coroutines.launch
 import org.secu3.android.Secu3Repository
 import org.secu3.android.models.packets.base.BaseOutputPacket
 import org.secu3.android.models.packets.input.FirmwareInfoPacket
@@ -229,6 +232,7 @@ class ParamsViewModel @Inject constructor(private val secu3Repository: Secu3Repo
                 .sample(1000)
                 .collect {
                     emit(it)
+                    secu3Repository.sendNewTask(Task.Secu3ReadSensors)
                 }
         }.asLiveData()
 
@@ -326,11 +330,23 @@ class ParamsViewModel @Inject constructor(private val secu3Repository: Secu3Repo
         }.asLiveData()
 
 
+
+
+    private val mSavePacketFlow = MutableSharedFlow<Boolean>()
+    val savePacketLiveData: LiveData<Boolean>
+        get() = mSavePacketFlow.asLiveData()
+
     fun sendPacket(packet: BaseOutputPacket) {
         if (isSendAllowed.not()) {
             return
         }
         secu3Repository.sendOutPacket(packet)
+    }
+
+    fun savePacket(isNeedSavePacket: Boolean) {
+        viewModelScope.launch {
+            mSavePacketFlow.emit(isNeedSavePacket)
+        }
     }
 
 }

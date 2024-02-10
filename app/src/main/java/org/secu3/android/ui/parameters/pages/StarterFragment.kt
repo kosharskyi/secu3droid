@@ -1,6 +1,6 @@
 /*
  *    SecuDroid  - An open source, free manager for SECU-3 engine control unit
- *    Copyright (C) 2024 Vitaliy O. Kosharskyi. Ukraine, Kyiv
+ *    Copyright (C) 2024 Vitalii O. Kosharskyi. Ukraine, Kyiv
  *
  *    SECU-3  - An open source, free engine control unit
  *    Copyright (C) 2007-2024 Alexey A. Shabelnikov. Ukraine, Kyiv
@@ -78,6 +78,21 @@ class StarterFragment : BaseParamFragment() {
 
             mViewModel.isSendAllowed = true
         }
+
+        mViewModel.savePacketLiveData.observe(viewLifecycleOwner) { isSendClicked ->
+            if (isSendClicked.not()) {
+                return@observe
+            }
+
+            if (isResumed.not()) {
+                return@observe
+            }
+
+            packet?.let {
+                mViewModel.savePacket(false)
+                mViewModel.sendPacket(it)
+            }
+        }
     }
 
 
@@ -86,61 +101,42 @@ class StarterFragment : BaseParamFragment() {
         mBinding.apply {
             starterBlockingRpm.addOnValueChangeListener {
                 packet?.starterOff = it
-                packet?.let { it1 -> mViewModel.sendPacket(it1) }
             }
             switchCrankMapRpm.addOnValueChangeListener {
                 packet?.smapAbandon = it
-                packet?.let { it1 -> mViewModel.sendPacket(it1) }
             }
             timeCrankToRunPositionCold.addOnValueChangeListener {
                 packet?.crankToRunTime = it
-                packet?.let { it1 -> mViewModel.sendPacket(it1) }
             }
             timeCrankToRunPositionHot.addOnValueChangeListener {
                 packet?.injCrankToRun_time1 = it
-                packet?.let { it1 -> mViewModel.sendPacket(it1) }
             }
             afterstartEnrichmentTimePetrol.addOnValueChangeListener {
                 packet?.injAftstrStroke = it
-                packet?.let { it1 -> mViewModel.sendPacket(it1) }
             }
             afterstartEnrichmentTimeGas.addOnValueChangeListener {
                 packet?.injAftStrokes1 = it
-                packet?.let { it1 -> mViewModel.sendPacket(it1) }
             }
             primePulseCold.addOnValueChangeListener {
                 packet?.injPrimeCold = it
-                packet?.let { it1 -> mViewModel.sendPacket(it1) }
             }
             primePulseHot.addOnValueChangeListener {
                 packet?.injPrimeHot = it
-                packet?.let { it1 -> mViewModel.sendPacket(it1) }
             }
             primePulseDelay.addOnValueChangeListener {
                 packet?.injPrimeDelay = it
-                packet?.let { it1 -> mViewModel.sendPacket(it1) }
             }
             floodClearModeThreshold.addOnValueChangeListener {
                 packet?.injFloodclearTps = it
-                packet?.let { it1 -> mViewModel.sendPacket(it1) }
             }
             stblStrCountdown.addOnValueChangeListener {
-                packet?.apply {
-                    stblStrCnt = it
-                    mViewModel.sendPacket(this)
-                }
+                packet?.stblStrCnt = it
             }
             allowStartOnFloodClearMode.setOnCheckedChangeListener { _, isChecked ->
-                packet?.apply {
-                    allowStartOnClearFlood = isChecked
-                    mViewModel.sendPacket(this)
-                }
+                packet?.allowStartOnClearFlood = isChecked
             }
             limitMaxInjPwOnCranking.setOnCheckedChangeListener { _, isChecked ->
-                packet?.apply {
-                    limitMaxInjPwOnCranking = isChecked
-                    mViewModel.sendPacket(this)
-                }
+                packet?.limitMaxInjPwOnCranking = isChecked
             }
 
             starterBlockingRpm.setOnClickListener { intParamClick(it as IntParamView) }

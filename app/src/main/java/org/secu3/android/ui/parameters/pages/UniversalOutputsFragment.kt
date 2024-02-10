@@ -1,6 +1,6 @@
 /*
  *    SecuDroid  - An open source, free manager for SECU-3 engine control unit
- *    Copyright (C) 2024 Vitaliy O. Kosharskyi. Ukraine, Kyiv
+ *    Copyright (C) 2024 Vitalii O. Kosharskyi. Ukraine, Kyiv
  *
  *    SECU-3  - An open source, free engine control unit
  *    Copyright (C) 2007-2024 Alexey A. Shabelnikov. Ukraine, Kyiv
@@ -78,6 +78,9 @@ class UniversalOutputsFragment : BaseParamFragment() {
 
         initDropdowns()
 
+        initViews()
+
+
         lifecycleScope.launch {
             withResumed {
                 mViewModel.uniOutLiveData.observe(viewLifecycleOwner) {
@@ -95,7 +98,6 @@ class UniversalOutputsFragment : BaseParamFragment() {
                             isChecked = it.output1Cond1Inversion
                             setOnCheckedChangeListener { _, isChecked ->
                                 it.output1Cond1Inversion = isChecked
-                                mViewModel.sendPacket(it)
                             }
                         }
                         output1Condition1On.value = it.output1OnThrd1
@@ -116,7 +118,6 @@ class UniversalOutputsFragment : BaseParamFragment() {
                             isChecked = it.output1Cond2Inversion
                             setOnCheckedChangeListener { _, isChecked ->
                                 it.output1Cond2Inversion = isChecked
-                                mViewModel.sendPacket(it)
                             }
                         }
                         output1Condition2On.value = it.output1OnThrd2
@@ -137,7 +138,6 @@ class UniversalOutputsFragment : BaseParamFragment() {
                             isChecked = it.output2Cond1Inversion
                             setOnCheckedChangeListener { _, isChecked ->
                                 it.output2Cond1Inversion = isChecked
-                                mViewModel.sendPacket(it)
                             }
                         }
                         output2Condition1On.value = it.output2OnThrd1
@@ -159,7 +159,6 @@ class UniversalOutputsFragment : BaseParamFragment() {
                             isChecked = it.output2Cond2Inversion
                             setOnCheckedChangeListener { _, isChecked ->
                                 it.output2Cond2Inversion = isChecked
-                                mViewModel.sendPacket(it)
                             }
                         }
                         output2Condition2On.value = it.output2OnThrd2
@@ -171,7 +170,6 @@ class UniversalOutputsFragment : BaseParamFragment() {
                             isChecked = it.output3Cond1Inversion
                             setOnCheckedChangeListener { _, isChecked ->
                                 it.output3Cond1Inversion = isChecked
-                                mViewModel.sendPacket(it)
                             }
                         }
                         output3Condition1On.value = it.output3OnThrd1
@@ -192,7 +190,6 @@ class UniversalOutputsFragment : BaseParamFragment() {
                             isChecked = it.output3Cond2Inversion
                             setOnCheckedChangeListener { _, isChecked ->
                                 it.output3Cond2Inversion = isChecked
-                                mViewModel.sendPacket(it)
                             }
                         }
                         output3Condition2On.value = it.output3OnThrd2
@@ -205,7 +202,6 @@ class UniversalOutputsFragment : BaseParamFragment() {
                             isChecked = it.output4Cond1Inversion
                             setOnCheckedChangeListener { _, isChecked ->
                                 it.output4Cond1Inversion = isChecked
-                                mViewModel.sendPacket(it)
                             }
                         }
                         output4Condition1On.value = it.output4OnThrd1
@@ -226,7 +222,6 @@ class UniversalOutputsFragment : BaseParamFragment() {
                             isChecked = it.output4Cond2Inversion
                             setOnCheckedChangeListener { _, isChecked ->
                                 it.output4Cond2Inversion = isChecked
-                                mViewModel.sendPacket(it)
                             }
                         }
                         output4Condition2On.value = it.output4OnThrd2
@@ -239,7 +234,6 @@ class UniversalOutputsFragment : BaseParamFragment() {
                             isChecked = it.output5Cond1Inversion
                             setOnCheckedChangeListener { _, isChecked ->
                                 it.output5Cond1Inversion = isChecked
-                                mViewModel.sendPacket(it)
                             }
                         }
                         output5Condition1On.value = it.output5OnThrd1
@@ -260,7 +254,6 @@ class UniversalOutputsFragment : BaseParamFragment() {
                             isChecked = it.output5Cond2Inversion
                             setOnCheckedChangeListener { _, isChecked ->
                                 it.output5Cond2Inversion = isChecked
-                                mViewModel.sendPacket(it)
                             }
                         }
                         output5Condition2On.value = it.output5OnThrd2
@@ -273,7 +266,6 @@ class UniversalOutputsFragment : BaseParamFragment() {
                             isChecked = it.output6Cond1Inversion
                             setOnCheckedChangeListener { _, isChecked ->
                                 it.output6Cond1Inversion = isChecked
-                                mViewModel.sendPacket(it)
                             }
                         }
                         output6Condition1On.value = it.output6OnThrd1
@@ -294,7 +286,6 @@ class UniversalOutputsFragment : BaseParamFragment() {
                             isChecked = it.output6Cond2Inversion
                             setOnCheckedChangeListener { _, isChecked ->
                                 it.output6Cond2Inversion = isChecked
-                                mViewModel.sendPacket(it)
                             }
                         }
                         output6Condition2On.value = it.output6OnThrd2
@@ -302,9 +293,22 @@ class UniversalOutputsFragment : BaseParamFragment() {
 
                     }
 
-                    initViews()
-
                     mViewModel.isSendAllowed = true
+                }
+
+                mViewModel.savePacketLiveData.observe(viewLifecycleOwner) { isSendClicked ->
+                    if (isSendClicked.not()) {
+                        return@observe
+                    }
+
+                    if (isResumed.not()) {
+                        return@observe
+                    }
+
+                    packet?.let {
+                        mViewModel.savePacket(false)
+                        mViewModel.sendPacket(it)
+                    }
                 }
             }
         }
@@ -480,8 +484,6 @@ class UniversalOutputsFragment : BaseParamFragment() {
                 }
 
                 output1Condition2Group.isGone = position == 4
-
-                packet?.let { it1 -> mViewModel.sendPacket(it1) }
             }
             output1Condition2.setOnItemClickListener { _, _, position, _ ->
                 packet?.output1Condition2 = position
@@ -494,7 +496,6 @@ class UniversalOutputsFragment : BaseParamFragment() {
                 } else {
                     packet?.logicFunction_1_2 = position
                 }
-                packet?.let { it1 -> mViewModel.sendPacket(it1) }
             }
 
             output2Condition1.setOnItemClickListener { _, _, position, _ ->
@@ -510,7 +511,6 @@ class UniversalOutputsFragment : BaseParamFragment() {
 
                 output2Condition2Group.isGone = position == 4
 
-                packet?.let { it1 -> mViewModel.sendPacket(it1) }
             }
             output2Condition2.setOnItemClickListener { _, _, position, _ ->
                 packet?.output2Condition2 = position
@@ -530,7 +530,6 @@ class UniversalOutputsFragment : BaseParamFragment() {
 
                 output3Condition2Group.isGone = position == 4
 
-                packet?.let { it1 -> mViewModel.sendPacket(it1) }
             }
             output3Condition2.setOnItemClickListener { _, _, position, _ ->
                 packet?.output3Condition2 = position
@@ -550,7 +549,6 @@ class UniversalOutputsFragment : BaseParamFragment() {
 
                 output4Condition2Group.isGone = position == 4
 
-                packet?.let { it1 -> mViewModel.sendPacket(it1) }
             }
             output4Condition2.setOnItemClickListener { _, _, position, _ ->
                 packet?.output4Condition2 = position
@@ -570,7 +568,6 @@ class UniversalOutputsFragment : BaseParamFragment() {
 
                 output5Condition2Group.isGone = position == 4
 
-                packet?.let { it1 -> mViewModel.sendPacket(it1) }
             }
             output5Condition2.setOnItemClickListener { _, _, position, _ ->
                 packet?.output5Condition2 = position
@@ -590,7 +587,6 @@ class UniversalOutputsFragment : BaseParamFragment() {
 
                 output6Condition2Group.isGone = position == 4
 
-                packet?.let { it1 -> mViewModel.sendPacket(it1) }
             }
             output6Condition2.setOnItemClickListener { _, _, position, _ ->
                 packet?.output6Condition2 = position
@@ -600,120 +596,96 @@ class UniversalOutputsFragment : BaseParamFragment() {
 
             output1Condition1On.addOnValueChangeListener {
                 packet?.output1OnThrd1 = it
-                packet?.let { it1 -> mViewModel.sendPacket(it1) }
             }
             output1Condition1Off.addOnValueChangeListener {
                 packet?.output1OffThrd1 = it
-                packet?.let { it1 -> mViewModel.sendPacket(it1) }
             }
 
             output1Condition2On.addOnValueChangeListener {
                 packet?.output1OnThrd2 = it
-                packet?.let { it1 -> mViewModel.sendPacket(it1) }
             }
             output1Condition2Off.addOnValueChangeListener {
                 packet?.output1OffThrd2 = it
-                packet?.let { it1 -> mViewModel.sendPacket(it1) }
             }
 
 
 
             output2Condition1On.addOnValueChangeListener {
                 packet?.output2OnThrd1 = it
-                packet?.let { it1 -> mViewModel.sendPacket(it1) }
             }
             output2Condition1Off.addOnValueChangeListener {
                 packet?.output2OffThrd1 = it
-                packet?.let { it1 -> mViewModel.sendPacket(it1) }
             }
 
             output2Condition2On.addOnValueChangeListener {
                 packet?.output2OnThrd2 = it
-                packet?.let { it1 -> mViewModel.sendPacket(it1) }
             }
             output2Condition2Off.addOnValueChangeListener {
                 packet?.output2OffThrd2 = it
-                packet?.let { it1 -> mViewModel.sendPacket(it1) }
             }
 
 
 
             output3Condition1On.addOnValueChangeListener {
                 packet?.output3OnThrd1 = it
-                packet?.let { it1 -> mViewModel.sendPacket(it1) }
             }
             output3Condition1Off.addOnValueChangeListener {
                 packet?.output3OffThrd1 = it
-                packet?.let { it1 -> mViewModel.sendPacket(it1) }
             }
 
             output3Condition2On.addOnValueChangeListener {
                 packet?.output3OnThrd2 = it
-                packet?.let { it1 -> mViewModel.sendPacket(it1) }
             }
             output3Condition2Off.addOnValueChangeListener {
                 packet?.output3OffThrd2 = it
-                packet?.let { it1 -> mViewModel.sendPacket(it1) }
             }
 
 
 
             output4Condition1On.addOnValueChangeListener {
                 packet?.output4OnThrd1 = it
-                packet?.let { it1 -> mViewModel.sendPacket(it1) }
             }
             output4Condition1Off.addOnValueChangeListener {
                 packet?.output4OffThrd1 = it
-                packet?.let { it1 -> mViewModel.sendPacket(it1) }
             }
 
             output4Condition2On.addOnValueChangeListener {
                 packet?.output4OnThrd2 = it
-                packet?.let { it1 -> mViewModel.sendPacket(it1) }
             }
             output4Condition2Off.addOnValueChangeListener {
                 packet?.output4OffThrd2 = it
-                packet?.let { it1 -> mViewModel.sendPacket(it1) }
             }
 
 
 
             output5Condition1On.addOnValueChangeListener {
                 packet?.output5OnThrd1 = it
-                packet?.let { it1 -> mViewModel.sendPacket(it1) }
             }
             output5Condition1Off.addOnValueChangeListener {
                 packet?.output5OffThrd1 = it
-                packet?.let { it1 -> mViewModel.sendPacket(it1) }
             }
 
             output5Condition2On.addOnValueChangeListener {
                 packet?.output5OnThrd2 = it
-                packet?.let { it1 -> mViewModel.sendPacket(it1) }
             }
             output5Condition2Off.addOnValueChangeListener {
                 packet?.output5OffThrd2 = it
-                packet?.let { it1 -> mViewModel.sendPacket(it1) }
             }
 
 
 
             output6Condition1On.addOnValueChangeListener {
                 packet?.output6OnThrd1 = it
-                packet?.let { it1 -> mViewModel.sendPacket(it1) }
             }
             output6Condition1Off.addOnValueChangeListener {
                 packet?.output6OffThrd1 = it
-                packet?.let { it1 -> mViewModel.sendPacket(it1) }
             }
 
             output6Condition2On.addOnValueChangeListener {
                 packet?.output6OnThrd2 = it
-                packet?.let { it1 -> mViewModel.sendPacket(it1) }
             }
             output6Condition2Off.addOnValueChangeListener {
                 packet?.output6OffThrd2 = it
-                packet?.let { it1 -> mViewModel.sendPacket(it1) }
             }
 
 

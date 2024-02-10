@@ -1,6 +1,6 @@
 /*
  *    SecuDroid  - An open source, free manager for SECU-3 engine control unit
- *    Copyright (C) 2024 Vitaliy O. Kosharskyi. Ukraine, Kyiv
+ *    Copyright (C) 2024 Vitalii O. Kosharskyi. Ukraine, Kyiv
  *
  *    SECU-3  - An open source, free engine control unit
  *    Copyright (C) 2007-2024 Alexey A. Shabelnikov. Ukraine, Kyiv
@@ -121,6 +121,21 @@ class KnockFragment : BaseParamFragment() {
 
                     mViewModel.isSendAllowed = true
                 }
+
+                mViewModel.savePacketLiveData.observe(viewLifecycleOwner) { isSendClicked ->
+                    if (isSendClicked.not()) {
+                        return@observe
+                    }
+
+                    if (isResumed.not()) {
+                        return@observe
+                    }
+
+                    packet?.let {
+                        mViewModel.savePacket(false)
+                        mViewModel.sendPacket(it)
+                    }
+                }
             }
         }
     }
@@ -131,111 +146,74 @@ class KnockFragment : BaseParamFragment() {
 
             enableSensor.setOnCheckedChangeListener { _, checkedId ->
                 packet?.useKnockChannel = if (checkedId) 1 else 0
-                packet?.let { it1 -> mViewModel.sendPacket(it1) }
             }
 
             phaseWindowBegin.addOnValueChangeListener {
                 packet?.kWndBeginAngle = it
-                packet?.let { it1 -> mViewModel.sendPacket(it1) }
             }
             phaseWindowEnd.addOnValueChangeListener {
                 packet?.kWndEndAngle = it
-                packet?.let { it1 -> mViewModel.sendPacket(it1) }
             }
 
             bpfFrequency.setOnItemClickListener { _, _, position, _ ->
                 packet?.bpfFrequency = position
-                packet?.let { it1 -> mViewModel.sendPacket(it1) }
             }
             integrationTimeConstant.setOnItemClickListener { _, _, position, _ ->
                 packet?.intTimeCost = position
-                packet?.let { it1 -> mViewModel.sendPacket(it1) }
             }
 
             angleDisplacementStep.addOnValueChangeListener {
                 packet?.retardStep = it
-                packet?.let { it1 -> mViewModel.sendPacket(it1) }
             }
             angleRecoveryStep.addOnValueChangeListener {
                 packet?.advanceStep = it
-                packet?.let { it1 -> mViewModel.sendPacket(it1) }
             }
             maxAngleDisplacement.addOnValueChangeListener {
                 packet?.maxRetard = it
-                packet?.let { it1 -> mViewModel.sendPacket(it1) }
             }
 
             knockThreshold.addOnValueChangeListener {
                 packet?.threshold = it
-                packet?.let { it1 -> mViewModel.sendPacket(it1) }
             }
 
             angleRecoveryDelay.addOnValueChangeListener {
                 packet?.recoveryDelay = it
-                packet?.let { it1 -> mViewModel.sendPacket(it1) }
             }
 
             knockCh1.setOnCheckedChangeListener { _, isChecked ->
-                packet?.apply {
-                    selectKnockChanel(0, isChecked)
-                    mViewModel.sendPacket(this)
-                }
+                packet?.selectKnockChanel(0, isChecked)
             }
 
             knockCh2.setOnCheckedChangeListener { _, isChecked ->
-                packet?.apply {
-                    selectKnockChanel(1, isChecked)
-                    mViewModel.sendPacket(this)
-                }
+                packet?.selectKnockChanel(1, isChecked)
             }
 
             knockCh3.setOnCheckedChangeListener { _, isChecked ->
-                packet?.apply {
-                    selectKnockChanel(2, isChecked)
-                    mViewModel.sendPacket(this)
-                }
+                packet?.selectKnockChanel(2, isChecked)
             }
 
             knockCh4.setOnCheckedChangeListener { _, isChecked ->
-                packet?.apply {
-                    selectKnockChanel(3, isChecked)
-                    mViewModel.sendPacket(this)
-                }
+                packet?.selectKnockChanel(3, isChecked)
             }
 
             knockCh5.setOnCheckedChangeListener { _, isChecked ->
-                packet?.apply {
-                    selectKnockChanel(4, isChecked)
-                    mViewModel.sendPacket(this)
-                }
+                packet?.selectKnockChanel(4, isChecked)
             }
 
             knockCh6.setOnCheckedChangeListener { _, isChecked ->
-                packet?.apply {
-                    selectKnockChanel(5, isChecked)
-                    mViewModel.sendPacket(this)
-                }
+                packet?.selectKnockChanel(5, isChecked)
             }
 
             knockCh7.setOnCheckedChangeListener { _, isChecked ->
-                packet?.apply {
-                    selectKnockChanel(6, isChecked)
-                    mViewModel.sendPacket(this)
-                }
+                packet?.selectKnockChanel(6, isChecked)
             }
 
             knockCh8.setOnCheckedChangeListener { _, isChecked ->
-                packet?.apply {
-                    selectKnockChanel(7, isChecked)
-                    mViewModel.sendPacket(this)
-                }
+                packet?.selectKnockChanel(7, isChecked)
             }
 
             knockControlThreshold.addOnValueChangeListener {
-                packet?.apply {
-                    knkctlThrd = it
-                    mViewModel.sendPacket(this)
-                }
+                packet?.knkctlThrd = it
             }
 
 

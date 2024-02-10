@@ -1,6 +1,6 @@
 /*
  *    SecuDroid  - An open source, free manager for SECU-3 engine control unit
- *    Copyright (C) 2024 Vitaliy O. Kosharskyi. Ukraine, Kyiv
+ *    Copyright (C) 2024 Vitalii O. Kosharskyi. Ukraine, Kyiv
  *
  *    SECU-3  - An open source, free engine control unit
  *    Copyright (C) 2007-2024 Alexey A. Shabelnikov. Ukraine, Kyiv
@@ -110,6 +110,21 @@ class FuelCutoffkFragment : BaseParamFragment() {
 
                     mViewModel.isSendAllowed = true
                 }
+
+                mViewModel.savePacketLiveData.observe(viewLifecycleOwner) { isSendClicked ->
+                    if (isSendClicked.not()) {
+                        return@observe
+                    }
+
+                    if (isResumed.not()) {
+                        return@observe
+                    }
+
+                    packet?.let {
+                        mViewModel.savePacket(false)
+                        mViewModel.sendPacket(it)
+                    }
+                }
             }
         }
     }
@@ -120,71 +135,53 @@ class FuelCutoffkFragment : BaseParamFragment() {
         mBinding.apply {
             idleCutoffLowerThrd.addOnValueChangeListener {
                 packet?.ieLot = it
-                packet?.let { it1 -> mViewModel.sendPacket(it1) }
             }
             idleCutoffUpperThrd.addOnValueChangeListener {
                 packet?.ieHit = it
-                packet?.let { it1 -> mViewModel.sendPacket(it1) }
             }
 
             idleCutoffLowerThrdGas.addOnValueChangeListener {
                 packet?.ieLotG = it
-                packet?.let { it1 -> mViewModel.sendPacket(it1) }
             }
             idleCutoffUpperThrdGas.addOnValueChangeListener {
                 packet?.ieHitG = it
-                packet?.let { it1 -> mViewModel.sendPacket(it1) }
             }
             cutoffDelay.addOnValueChangeListener {
                 packet?.shutoffDelay = it
-                packet?.let { it1 -> mViewModel.sendPacket(it1) }
             }
             powerValveTurnOnThrd.addOnValueChangeListener {
                 packet?.feOnThresholds = it
-                packet?.let { it1 -> mViewModel.sendPacket(it1) }
             }
             tpsThreshold.addOnValueChangeListener {
                 packet?.tpsThreshold = it
-                packet?.let { it1 -> mViewModel.sendPacket(it1) }
             }
 
             inversionOfThrottlePositionSwitch.setOnCheckedChangeListener { _, isChecked ->
                 packet?.carbInvers = if (isChecked) 1 else 0
-                packet?.let { it1 -> mViewModel.sendPacket(it1) }
             }
 
             fuelCutMapThreshold.addOnValueChangeListener {
                 packet?.fuelcutMapThrd = it
-                packet?.let { it1 -> mViewModel.sendPacket(it1) }
             }
 
             fuelCutCtsThreshold.addOnValueChangeListener {
                 packet?.fuelcutCtsThrd = it
-                packet?.let { it1 -> mViewModel.sendPacket(it1) }
             }
 
             revLimitingLowerThrd.addOnValueChangeListener {
                 packet?.revlimLot = it
-                packet?.let { it1 -> mViewModel.sendPacket(it1) }
             }
 
             revLimitingUpperThrd.addOnValueChangeListener {
                 packet?.revlimHit = it
-                packet?.let { it1 -> mViewModel.sendPacket(it1) }
             }
 
             useUnioutCond.onItemClickListener = AdapterView.OnItemClickListener { _, _, position, _ ->
-                packet?.apply {
-                    fuelcut_uni = uniOutItems.keys.elementAt(position)
-                    mViewModel.sendPacket(this)
-                }
+                packet?.fuelcut_uni = uniOutItems.keys.elementAt(position)
             }
 
             useUnioutCondForIgnCutoff.onItemClickListener = AdapterView.OnItemClickListener { _, _, position, _ ->
-                packet?.apply {
-                    igncut_uni = uniOutItems.keys.elementAt(position)
-                    mViewModel.sendPacket(this)
-                }
+                packet?.igncut_uni = uniOutItems.keys.elementAt(position)
             }
 
             idleCutoffLowerThrd.setOnClickListener { intParamClick(it as IntParamView) }

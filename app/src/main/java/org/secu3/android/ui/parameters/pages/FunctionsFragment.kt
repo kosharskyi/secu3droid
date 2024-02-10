@@ -1,6 +1,6 @@
 /*
  *    SecuDroid  - An open source, free manager for SECU-3 engine control unit
- *    Copyright (C) 2024 Vitaliy O. Kosharskyi. Ukraine, Kyiv
+ *    Copyright (C) 2024 Vitalii O. Kosharskyi. Ukraine, Kyiv
  *
  *    SECU-3  - An open source, free engine control unit
  *    Copyright (C) 2007-2024 Alexey A. Shabelnikov. Ukraine, Kyiv
@@ -137,7 +137,22 @@ class FunctionsFragment : BaseParamFragment() {
 
                     initViews()
 
-                    mViewModel.isSendAllowed = false
+                    mViewModel.isSendAllowed = true
+                }
+
+                mViewModel.savePacketLiveData.observe(viewLifecycleOwner) { isSendClicked ->
+                    if (isSendClicked.not()) {
+                        return@observe
+                    }
+
+                    if (isResumed.not()) {
+                        return@observe
+                    }
+
+                    funSetPacket?.let {
+                        mViewModel.savePacket(false)
+                        mViewModel.sendPacket(it)
+                    }
                 }
             }
         }
@@ -189,86 +204,63 @@ class FunctionsFragment : BaseParamFragment() {
         mBinding.apply {
             lowerLoadValue.addOnValueChangeListener {
                 funSetPacket?.loadLower = it
-                funSetPacket?.let { it1 -> mViewModel.sendPacket(it1) }
             }
             upperLoadValue.addOnValueChangeListener {
                 funSetPacket?.loadUpper = it
-                funSetPacket?.let { it1 -> mViewModel.sendPacket(it1) }
             }
             useLoadGrid.setOnCheckedChangeListener { buttonView, isChecked ->
-                funSetPacket?.apply {
-                    useLoadGrid = isChecked
-                    mViewModel.sendPacket(this)
-                }
+                funSetPacket?.useLoadGrid = isChecked
             }
 
             mapCurveOffset.addOnValueChangeListener {
                 funSetPacket?.mapCurveOffset = it
-                funSetPacket?.let { it1 -> mViewModel.sendPacket(it1) }
             }
             mapCurveGradient.addOnValueChangeListener {
                 funSetPacket?.mapCurveGradient = it
-                funSetPacket?.let { it1 -> mViewModel.sendPacket(it1) }
             }
             tpsCurveOffset.addOnValueChangeListener {
                 funSetPacket?.tpsCurveOffset = it
-                funSetPacket?.let { it1 -> mViewModel.sendPacket(it1) }
             }
             tpsCurveGradient.addOnValueChangeListener {
                 funSetPacket?.tpsCurveGradient = it
-                funSetPacket?.let { it1 -> mViewModel.sendPacket(it1) }
             }
             map2CurveOffset.addOnValueChangeListener {
                 funSetPacket?.map2CurveOffset = it
-                funSetPacket?.let { it1 -> mViewModel.sendPacket(it1) }
             }
             map2CurveGradient.addOnValueChangeListener {
                 funSetPacket?.map2CurveGradient = it
-                funSetPacket?.let { it1 -> mViewModel.sendPacket(it1) }
             }
 
             mapsSet.onItemClickListener = AdapterView.OnItemClickListener { _, _, position, _ ->
                 funSetPacket?.fnGasoline = position
-                funSetPacket?.let { it1 -> mViewModel.sendPacket(it1) }
             }
 
             mapsSetForGas.onItemClickListener = AdapterView.OnItemClickListener { _, _, position, _ ->
                 funSetPacket?.fnGas = position
-                funSetPacket?.let { it1 -> mViewModel.sendPacket(it1) }
             }
 
             loadMeasurement.onItemClickListener = AdapterView.OnItemClickListener { _, _, position, _ ->
                 funSetPacket?.loadSrcCfg = position
-                funSetPacket?.let { it1 -> mViewModel.sendPacket(it1) }
             }
 
             mapselPetrol.onItemClickListener = AdapterView.OnItemClickListener { _, _, position, _ ->
                 funSetPacket?.mapselUniPetrol = mapselItems.keys.elementAt(position)
-                funSetPacket?.let { it1 -> mViewModel.sendPacket(it1) }
             }
 
             mapselGas.onItemClickListener = AdapterView.OnItemClickListener { _, _, position, _ ->
                 funSetPacket?.mapselUniGas = mapselItems.keys.elementAt(position)
-                funSetPacket?.let { it1 -> mViewModel.sendPacket(it1) }
             }
 
             barometricCorrection.onItemClickListener = AdapterView.OnItemClickListener { _, _, position, _ ->
                 funSetPacket?.barocorrType = position
-                funSetPacket?.let { it1 -> mViewModel.sendPacket(it1) }
             }
 
             ve2MapFunc.onItemClickListener = AdapterView.OnItemClickListener { _, _, position, _ ->
-                funSetPacket?.apply {
-                    ve2MapFunc = position
-                    mViewModel.sendPacket(this)
-                }
+                funSetPacket?.ve2MapFunc = position
             }
 
             gasVCondition.onItemClickListener = AdapterView.OnItemClickListener { _, _, position, _ ->
-                funSetPacket?.apply {
-                    gasVUni = mapselItems.keys.elementAt(position)
-                    mViewModel.sendPacket(this)
-                }
+                funSetPacket?.gasVUni = mapselItems.keys.elementAt(position)
             }
 
 

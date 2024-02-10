@@ -89,55 +89,55 @@ data class AdcCorrectionsParamPacket(
         }
 
         data += tpsAdcFactor.times(FACTOR_DIVIDER).roundToInt().write2Bytes()
-        data += tpsAdcCorrection.unaryMinus().div(ADC_DISCRETE).roundToInt().let {
+        tpsAdcCorrection.unaryMinus().div(ADC_DISCRETE).roundToInt().let {
             val factor = if (adcCompMode) tpsAdcFactor else 1.0f
             data += FACTOR_DIVIDER.times(0.5f - it.times(factor)).roundToInt().write4Bytes()
         }
 
         data += ai1AdcFactor.times(FACTOR_DIVIDER).roundToInt().write2Bytes()
-        data += ai1AdcCorrection.unaryMinus().div(ADC_DISCRETE).roundToInt().let {
+        ai1AdcCorrection.unaryMinus().div(ADC_DISCRETE).roundToInt().let {
             val factor = if (adcCompMode) ai1AdcFactor else 1.0f
             data += FACTOR_DIVIDER.times(0.5f - it.times(factor)).roundToInt().write4Bytes()
         }
 
         data += ai2AdcFactor.times(FACTOR_DIVIDER).roundToInt().write2Bytes()
-        data += ai2AdcCorrection.unaryMinus().div(ADC_DISCRETE).roundToInt().let {
+        ai2AdcCorrection.unaryMinus().div(ADC_DISCRETE).roundToInt().let {
             val factor = if (adcCompMode) ai2AdcFactor else 1.0f
             data += FACTOR_DIVIDER.times(0.5f - it.times(factor)).roundToInt().write4Bytes()
         }
 
         data += ai3AdcFactor.times(FACTOR_DIVIDER).roundToInt().write2Bytes()
-        data += ai3AdcCorrection.unaryMinus().div(ADC_DISCRETE).roundToInt().let {
+        ai3AdcCorrection.unaryMinus().div(ADC_DISCRETE).roundToInt().let {
             val factor = if (adcCompMode) ai3AdcFactor else 1.0f
             data += FACTOR_DIVIDER.times(0.5f - it.times(factor)).roundToInt().write4Bytes()
         }
 
         data += ai4AdcFactor.times(FACTOR_DIVIDER).roundToInt().write2Bytes()
-        data += ai4AdcCorrection.unaryMinus().div(ADC_DISCRETE).roundToInt().let {
+        ai4AdcCorrection.unaryMinus().div(ADC_DISCRETE).roundToInt().let {
             val factor = if (adcCompMode) ai4AdcFactor else 1.0f
             data += FACTOR_DIVIDER.times(0.5f - it.times(factor)).roundToInt().write4Bytes()
         }
 
         data += ai5AdcFactor.times(FACTOR_DIVIDER).roundToInt().write2Bytes()
-        data += ai5AdcCorrection.unaryMinus().div(ADC_DISCRETE).roundToInt().let {
+        ai5AdcCorrection.unaryMinus().div(ADC_DISCRETE).roundToInt().let {
             val factor = if (adcCompMode) ai5AdcFactor else 1.0f
             data += FACTOR_DIVIDER.times(0.5f - it.times(factor)).roundToInt().write4Bytes()
         }
 
         data += ai6AdcFactor.times(FACTOR_DIVIDER).roundToInt().write2Bytes()
-        data += ai6AdcCorrection.unaryMinus().div(ADC_DISCRETE).roundToInt().let {
+        ai6AdcCorrection.unaryMinus().div(ADC_DISCRETE).roundToInt().let {
             val factor = if (adcCompMode) ai6AdcFactor else 1.0f
             data += FACTOR_DIVIDER.times(0.5f - it.times(factor)).roundToInt().write4Bytes()
         }
 
         data += ai7AdcFactor.times(FACTOR_DIVIDER).roundToInt().write2Bytes()
-        data += ai7AdcCorrection.unaryMinus().div(ADC_DISCRETE).roundToInt().let {
+        ai7AdcCorrection.unaryMinus().div(ADC_DISCRETE).roundToInt().let {
             val factor = if (adcCompMode) ai7AdcFactor else 1.0f
             data += FACTOR_DIVIDER.times(0.5f - it.times(factor)).roundToInt().write4Bytes()
         }
 
         data += ai8AdcFactor.times(FACTOR_DIVIDER).roundToInt().write2Bytes()
-        data += ai8AdcCorrection.unaryMinus().div(ADC_DISCRETE).roundToInt().let {
+        ai8AdcCorrection.unaryMinus().div(ADC_DISCRETE).roundToInt().let {
             val factor = if (adcCompMode) ai8AdcFactor else 1.0f
             data += FACTOR_DIVIDER.times(0.5f - it.times(factor)).roundToInt().write4Bytes()
         }
@@ -187,7 +187,7 @@ data class AdcCorrectionsParamPacket(
                 ai1AdcCorrection *= ADC_DISCRETE
             }
 
-            ai2AdcFactor = data.get2Bytes(32).toFloat() / FACTOR_DIVIDER
+            ai2AdcFactor = data.get2Bytes(33).toFloat() / FACTOR_DIVIDER
             data.get4Bytes(35).toFloat().let {
                 ai2AdcCorrection = ((it / FACTOR_DIVIDER) - 0.5f) / ai2AdcFactor
                 ai2AdcCorrection *= ADC_DISCRETE
