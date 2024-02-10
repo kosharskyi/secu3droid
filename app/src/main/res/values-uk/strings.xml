@@ -297,7 +297,7 @@
     <string name="sensors_frag_fan_duty_label">Скважність Вент., %:</string>
     <string name="sensors_frag_map_dot_label">Швидкість ДАТ, %/сек:</string>
     <string name="sensors_frag_fuel_temp_label">Температура палива, °C:</string>
-    <string name="sensors_frag_ego_correction2_label">Лямбда-коррекція 2, %:</string>
+    <string name="sensors_frag_ego_correction2_label">Лямбда-корекція 2, %:</string>
     <string name="sensors_frag_afr_difference_label">Різність AFR</string>
     <string name="sensors_frag_afr_difference2_label">Різність AFR2</string>
     <string name="sensors_frag_begin_inj_phase_label">Фаза початку вприску</string>

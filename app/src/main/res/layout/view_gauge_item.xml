@@ -64,6 +64,7 @@
             app:sv_unitSpeedInterval="5dp"
             app:sv_speedTextPadding="1dp"
             app:sv_withTremble="false"
+            app:sv_tickRotation="false"
             />
 
     </androidx.constraintlayout.widget.ConstraintLayout>

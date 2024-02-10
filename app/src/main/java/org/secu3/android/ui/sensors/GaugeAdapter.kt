@@ -85,6 +85,7 @@ class GaugeAdapter(val onClick:(GaugeType) -> Unit) : ListAdapter<GaugeItem, Gau
                     maxSpeed = 10_000f // to prevent exception if new min value is bigger than old max value
                     minSpeed = item.type.minValue
                     maxSpeed = item.type.maxValue
+                    tickNumber = item.type.tickCount
 
                     val sections = item.type.getSections(context!!, speedometerWidth)
                     clearSections()
