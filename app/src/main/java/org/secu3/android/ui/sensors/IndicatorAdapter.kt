@@ -62,21 +62,21 @@ class IndicatorAdapter(val onClick:(IndicatorType) -> Unit) : ListAdapter<Indica
         fun bind(item: IndicatorItem) {
             binding.apply {
 
-//                root.setOnClickListener {
-//                    val popup = PopupMenu(root.context, root)
-//                    val inflater: MenuInflater = popup.menuInflater
-//                    inflater.inflate(R.menu.gauge_actions_menu, popup.menu)
-//                    popup.show()
-//                    popup.setOnMenuItemClickListener {
-//                        when (it.itemId) {
-//                            R.id.delete_gauge -> {
-//                                onClick(item.type)
-//                                true
-//                            }
-//                            else -> false
-//                        }
-//                    }
-//                }
+                root.setOnClickListener {
+                    val popup = PopupMenu(root.context, root)
+                    val inflater: MenuInflater = popup.menuInflater
+                    inflater.inflate(R.menu.indicator_actions_menu, popup.menu)
+                    popup.show()
+                    popup.setOnMenuItemClickListener {
+                        when (it.itemId) {
+                            R.id.delete_indicator -> {
+                                onClick(item.type)
+                                true
+                            }
+                            else -> false
+                        }
+                    }
+                }
 
                 indicatorName.text = item.type.toString().replace("_", " ")
                 if (item.isActive) {

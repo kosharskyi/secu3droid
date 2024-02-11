@@ -97,8 +97,7 @@ class SensorsRepository @Inject constructor(private val mPrefs: LifeTimePrefs)  
     }
 
     suspend fun convertToIndicatorItemList(packet: SensorsPacket) = withContext(Dispatchers.IO) {
-//        mPrefs.indicatorsEnabled.map { getIndicatorItem(it, packet) }
-        IndicatorType.entries.map { getIndicatorItem(it, packet) }
+        mPrefs.indicatorsEnabled.map { getIndicatorItem(it, packet) }
     }
 
     private fun getIndicatorItem(type: IndicatorType, packet: SensorsPacket): IndicatorItem {

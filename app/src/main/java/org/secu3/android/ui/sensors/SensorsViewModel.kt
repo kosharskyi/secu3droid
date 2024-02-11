@@ -101,7 +101,7 @@ class SensorsViewModel @Inject constructor(private val secu3Repository: Secu3Rep
         secuLogger.stopLogging()
     }
 
-    fun getGaugesAvaliableToAdd(): List<GaugeType> {
+    fun getGaugesAvailableToAdd(): List<GaugeType> {
         return GaugeType.entries.filter { it !in mPrefs.gaugesEnabled }
     }
 
@@ -118,6 +118,18 @@ class SensorsViewModel @Inject constructor(private val secu3Repository: Secu3Rep
             val gauges = gaugesEnabled.toMutableList()
             gauges.remove(gauge)
             gaugesEnabled = gauges
+        }
+    }
+
+    fun getIndicatorsAvailableToAdd(): List<IndicatorType> {
+        return IndicatorType.entries.filter { it !in mPrefs.indicatorsEnabled }
+    }
+
+    fun addIndicator(indicator: IndicatorType) {
+        mPrefs.apply {
+            val indicators = indicatorsEnabled.toMutableList()
+            indicators.add(indicator)
+            indicatorsEnabled = indicators
         }
     }
 

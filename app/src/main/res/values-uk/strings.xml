@@ -343,6 +343,7 @@
     <string name="service_working_in_background">Secu3Droid працює у фоні</string>
     <string name="exit">Вихід</string>
     <string name="select_gauge_to_add">Додати прилад</string>
+    <string name="select_indicator_to_add">Додати індикатор</string>
 
 </resources>
 

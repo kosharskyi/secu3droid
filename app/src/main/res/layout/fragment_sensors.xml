@@ -71,6 +71,41 @@
 
     </androidx.core.widget.NestedScrollView>
 
+
+
+    <com.google.android.material.floatingactionbutton.FloatingActionButton
+        android:id="@+id/fab_add_indicator"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        app:layout_constraintBottom_toTopOf="@id/fab_add_gauge"
+        app:layout_constraintEnd_toEndOf="@id/fab"
+        app:layout_constraintStart_toStartOf="@id/fab"
+        android:layout_margin="8dp"
+        app:fabSize="mini"
+        android:src="@drawable/ic_indicator"
+        app:tint="@color/white"
+        app:backgroundTint="@color/gauge_blue"
+        android:visibility="gone"
+        tools:visibility="visible"
+        />
+
+
+    <com.google.android.material.floatingactionbutton.FloatingActionButton
+        android:id="@+id/fab_add_gauge"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        app:layout_constraintBottom_toTopOf="@id/fab"
+        app:layout_constraintEnd_toEndOf="@id/fab"
+        app:layout_constraintStart_toStartOf="@id/fab"
+        android:layout_margin="8dp"
+        app:fabSize="mini"
+        android:src="@drawable/ic_gauge"
+        app:tint="@color/white"
+        app:backgroundTint="@color/gauge_blue"
+        android:visibility="gone"
+        tools:visibility="visible"
+        />
+
     <com.google.android.material.floatingactionbutton.FloatingActionButton
         android:id="@+id/fab"
         android:layout_width="wrap_content"

@@ -30,6 +30,7 @@ import androidx.fragment.app.Fragment
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
+import android.view.animation.AccelerateDecelerateInterpolator
 import androidx.fragment.app.viewModels
 import com.google.android.material.dialog.MaterialAlertDialogBuilder
 import org.secu3.android.R
@@ -51,7 +52,15 @@ class SensorsFragment : Fragment() {
         super.onViewCreated(view, savedInstanceState)
 
         mBinding?.apply {
-            fab.setOnClickListener { onFabClick() }
+            fab.setOnClickListener { addFabClick() }
+            fabAddGauge.setOnClickListener {
+                addGaugeClick()
+                disableFabs()
+            }
+            fabAddIndicator.setOnClickListener {
+                addIndicatorClick()
+                disableFabs()
+            }
 
             gaugesList.adapter = GaugeAdapter {
                 mViewModel.deleteGauge(it)
@@ -70,87 +79,65 @@ class SensorsFragment : Fragment() {
         mViewModel.indicatorLiveData.observe(viewLifecycleOwner) {
             (mBinding?.indicatorsList?.adapter as? IndicatorAdapter)?.submitList(it)
         }
-
-//        mViewModel.sensorsLiveData.observe(viewLifecycleOwner) {
-//            mBinding?.apply {
-//
-//                distance.title.text = getString(R.string.sensors_frag_distance_label)
-//                distance.value.text = String.format(Locale.US, "%.1f", it.distance)
-//
-//                /**State sensors*/
-//
-//                statusGasDosThrottleFlFuel.status1.text = getString(R.string.sensors_frag_status_gas_valve_label)
-//                statusGasDosThrottleFlFuel.status1.setBackgroundColor(if(it.gasBit > 0) Color.GREEN else Color.LTGRAY)
-//
-//                statusGasDosThrottleFlFuel.status2.text = getString(R.string.sensors_frag_status_throttle_label)
-//                statusGasDosThrottleFlFuel.status2.setBackgroundColor(if(it.carbBit > 0) Color.GREEN else Color.LTGRAY)
-//
-//                statusGasDosThrottleFlFuel.status3.text = getString(R.string.sensors_frag_status_fl_fuel_label)
-//                statusGasDosThrottleFlFuel.status3.setBackgroundColor(if(it.ephhValveBit > 0) Color.GREEN else Color.LTGRAY)
-//
-//                statusPowerValveStarterAe.status1.text = getString(R.string.sensors_frag_status_power_valve_label)
-//                statusPowerValveStarterAe.status1.setBackgroundColor(if(it.epmValveBit > 0) Color.GREEN else Color.LTGRAY)
-//                statusPowerValveStarterAe.status2.text = getString(R.string.sensors_frag_status_starter_blocking_label)
-//                statusPowerValveStarterAe.status2.setBackgroundColor(if(it.starterBlockBit > 0) Color.GREEN else Color.LTGRAY)
-//                statusPowerValveStarterAe.status3.text = getString(R.string.sensors_frag_status_ae_label)
-//                statusPowerValveStarterAe.status3.setBackgroundColor(if(it.accelerationEnrichment > 0) Color.GREEN else Color.LTGRAY)
-//
-//                statusCoolingFanCheckEngineRevLimFuelCut.status1.text =
-//                    getString(R.string.sensors_frag_status_cooling_fan_label)
-//                statusCoolingFanCheckEngineRevLimFuelCut.status1.setBackgroundColor(if(it.coolFanBit > 0) Color.GREEN else Color.LTGRAY)
-//                statusCoolingFanCheckEngineRevLimFuelCut.status2.text =
-//                    getString(R.string.sensors_frag_status_check_engine_label)
-//                statusCoolingFanCheckEngineRevLimFuelCut.status2.setBackgroundColor(if(it.checkEngineBit > 0) Color.GREEN else Color.LTGRAY)
-//                statusCoolingFanCheckEngineRevLimFuelCut.status3.text =
-//                    getString(R.string.sensors_frag_status_rev_lim_fuel_cut_label)
-//                statusCoolingFanCheckEngineRevLimFuelCut.status3.setBackgroundColor(if(it.fc_revlim > 0) Color.GREEN else Color.LTGRAY)
-//
-//                statusFloodClearSysLockIgnInput.status1.text =
-//                    getString(R.string.sensors_frag_status_flood_clear_mode_label)
-//                statusFloodClearSysLockIgnInput.status1.setBackgroundColor(if(it.floodclear > 0) Color.GREEN else Color.LTGRAY)
-//                statusFloodClearSysLockIgnInput.status2.text =
-//                    getString(R.string.sensors_frag_status_system_locked_label)
-//                statusFloodClearSysLockIgnInput.status2.setBackgroundColor(if(it.sys_locked > 0) Color.GREEN else Color.LTGRAY)
-//                statusFloodClearSysLockIgnInput.status3.text = getString(R.string.sensors_frag_status_input_ign_label)
-//                statusFloodClearSysLockIgnInput.status3.setBackgroundColor(if(it.ign_i > 0) Color.GREEN else Color.LTGRAY)
-//
-//                statusCondEpasAfterstrEnr.status1.text = getString(R.string.sensors_frag_status_input_cond_label)
-//                statusCondEpasAfterstrEnr.status1.setBackgroundColor(if(it.cond_i > 0) Color.GREEN else Color.LTGRAY)
-//                statusCondEpasAfterstrEnr.status2.text = getString(R.string.sensors_frag_status_input_epas_label)
-//                statusCondEpasAfterstrEnr.status2.setBackgroundColor(if(it.epas_i > 0) Color.GREEN else Color.LTGRAY)
-//                statusCondEpasAfterstrEnr.status3.text = getString(R.string.sensors_frag_status_afterstart_enr_label)
-//                statusCondEpasAfterstrEnr.status3.setBackgroundColor(if(it.aftstr_enr > 0) Color.GREEN else Color.LTGRAY)
-//
-//                statusClosedLoopReservReserv.status1.text =
-//                    getString(R.string.sensors_frag_status_iac_closed_loop_label)
-//                statusClosedLoopReservReserv.status1.setBackgroundColor(if(it.iac_closed_loop > 0) Color.GREEN else Color.LTGRAY)
-//
-//                statusUni1Uni2Uni3.status1.text = getString(R.string.sensors_frag_status_univ_out_1_label)
-//                statusUni1Uni2Uni3.status1.setBackgroundColor(if(it.uniOut0Bit > 0) Color.GREEN else Color.LTGRAY)
-//                statusUni1Uni2Uni3.status2.text = getString(R.string.sensors_frag_status_univ_out_2_label)
-//                statusUni1Uni2Uni3.status2.setBackgroundColor(if(it.uniOut1Bit > 0) Color.GREEN else Color.LTGRAY)
-//                statusUni1Uni2Uni3.status3.text = getString(R.string.sensors_frag_status_univ_out_3_label)
-//                statusUni1Uni2Uni3.status3.setBackgroundColor(if(it.uniOut2Bit > 0) Color.GREEN else Color.LTGRAY)
-//
-//                statusUni4Uni5Uni6.status1.text = getString(R.string.sensors_frag_status_univ_out_4_label)
-//                statusUni4Uni5Uni6.status1.setBackgroundColor(if(it.uniOut3Bit > 0) Color.GREEN else Color.LTGRAY)
-//                statusUni4Uni5Uni6.status2.text = getString(R.string.sensors_frag_status_univ_out_5_label)
-//                statusUni4Uni5Uni6.status2.setBackgroundColor(if(it.uniOut4Bit > 0) Color.GREEN else Color.LTGRAY)
-//                statusUni4Uni5Uni6.status3.text = getString(R.string.sensors_frag_status_univ_out_6_label)
-//                statusUni4Uni5Uni6.status3.setBackgroundColor(if(it.uniOut5Bit > 0) Color.GREEN else Color.LTGRAY)
-//            }
-//        }
     }
 
-    private fun onFabClick() {
+    private fun addFabClick() {
+        mBinding?.apply {
+            if (fabAddGauge.isShown || fabAddIndicator.isShown) {
+                fab.animate()
+                    .rotation(0f)
+                    .setDuration(500)
+                    .setInterpolator(AccelerateDecelerateInterpolator())
+                    .start()
+                disableFabs()
+                return
+            }
 
-        val gauges = mViewModel.getGaugesAvaliableToAdd()
+            fab.animate()
+                .rotation(135f)
+                .setDuration(500)
+                .setInterpolator(AccelerateDecelerateInterpolator())
+                .start()
+            enableFabs()
+        }
+    }
+
+    private fun enableFabs() {
+        mBinding?.apply {
+            fabAddGauge.show()
+            fabAddIndicator.show()
+        }
+    }
+
+    private fun disableFabs() {
+        mBinding?.apply {
+            fabAddGauge.hide()
+            fabAddIndicator.hide()
+        }
+    }
+
+    private fun addGaugeClick() {
+
+        val gauges = mViewModel.getGaugesAvailableToAdd()
         val gaugesNames = gauges.map { it.title }.map { getString(it) }.toTypedArray()
 
         MaterialAlertDialogBuilder(requireContext())
             .setTitle(getString(R.string.select_gauge_to_add))
             .setItems(gaugesNames) { dialog, which ->
                 mViewModel.addGauge(gauges[which])
+            }.show()
+    }
+
+    private fun addIndicatorClick() {
+
+        val indicators = mViewModel.getIndicatorsAvailableToAdd()
+//        val indicatorsNames = indicators.map { it.name }.map { getString(it) }.toTypedArray()  // Fixme: add names to indicators
+        val indicatorsNames = indicators.map { it.name }.toTypedArray()
+
+        MaterialAlertDialogBuilder(requireContext())
+            .setTitle(getString(R.string.select_indicator_to_add))
+            .setItems(indicatorsNames) { dialog, which ->
+                mViewModel.addIndicator(indicators[which])
             }.show()
     }
 
