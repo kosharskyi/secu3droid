@@ -344,6 +344,9 @@
     <string name="exit">Вихід</string>
     <string name="select_gauge_to_add">Додати прилад</string>
     <string name="select_indicator_to_add">Додати індикатор</string>
+    <string name="save">Зберегти</string>
+    <string name="delete">Видалити</string>
+    <string name="packet_sent">Пакет відправлено</string>
 
 </resources>
 

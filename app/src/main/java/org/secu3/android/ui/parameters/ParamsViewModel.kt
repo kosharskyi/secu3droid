@@ -24,11 +24,14 @@
  */
 package org.secu3.android.ui.parameters
 
+import android.content.Context
+import android.widget.Toast
 import androidx.lifecycle.LiveData
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.asLiveData
 import androidx.lifecycle.viewModelScope
 import dagger.hilt.android.lifecycle.HiltViewModel
+import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.filter
 import kotlinx.coroutines.flow.first
@@ -36,6 +39,7 @@ import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.sample
 import kotlinx.coroutines.launch
+import org.secu3.android.R
 import org.secu3.android.Secu3Repository
 import org.secu3.android.models.packets.base.BaseOutputPacket
 import org.secu3.android.models.packets.input.FirmwareInfoPacket
@@ -58,12 +62,13 @@ import org.secu3.android.models.packets.out.params.SecurityParamPacket
 import org.secu3.android.models.packets.out.params.StarterParamPacket
 import org.secu3.android.models.packets.out.params.TemperatureParamPacket
 import org.secu3.android.models.packets.out.params.UniOutParamPacket
-import org.secu3.android.utils.LifeTimePrefs
 import org.secu3.android.utils.Task
 import javax.inject.Inject
 
 @HiltViewModel
-class ParamsViewModel @Inject constructor(private val secu3Repository: Secu3Repository, private val prefs: LifeTimePrefs) : ViewModel() {
+class ParamsViewModel @Inject constructor(
+    @ApplicationContext private val context: Context, // TODO: move this out
+    private val secu3Repository: Secu3Repository) : ViewModel() {
 
     var isSendAllowed: Boolean = false
 
@@ -341,6 +346,7 @@ class ParamsViewModel @Inject constructor(private val secu3Repository: Secu3Repo
             return
         }
         secu3Repository.sendOutPacket(packet)
+        Toast.makeText(context, context.getString(R.string.packet_sent), Toast.LENGTH_SHORT).show()  // TODO: move this out
     }
 
     fun savePacket(isNeedSavePacket: Boolean) {

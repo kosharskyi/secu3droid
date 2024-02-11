@@ -508,5 +508,6 @@
     <string name="select_indicator_to_add">Select indicator to add</string>
     <string name="save">Save</string>
     <string name="delete">Delete</string>
+    <string name="packet_sent">Packet sent</string>
 
 </resources>

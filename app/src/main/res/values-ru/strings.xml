@@ -347,6 +347,9 @@
     <string name="exit">Выход</string>
     <string name="select_gauge_to_add">Добавить прибор</string>
     <string name="select_indicator_to_add">Добавить индикатор</string>
+    <string name="save">Сохранить</string>
+    <string name="delete">Удалить</string>
+    <string name="packet_sent">Пакет отправлен</string>
 
 
 </resources>
