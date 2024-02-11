@@ -101,7 +101,7 @@ class LifeTimePrefs @Inject constructor(@ApplicationContext private val ctx: Con
         get() {
             val indicators = mPrefs.getString("indicators_enabled", defaultIndicators)?.split(",") ?: defaultIndicators.split(",")
 
-            return indicators.map { IndicatorType.valueOf(it) }
+            return indicators.filter { it.isNotEmpty() }.map { IndicatorType.valueOf(it) }
         }
 
         set(values) {

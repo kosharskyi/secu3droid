@@ -52,14 +52,14 @@ class SensorsFragment : Fragment() {
         super.onViewCreated(view, savedInstanceState)
 
         mBinding?.apply {
-            fab.setOnClickListener { addFabClick() }
+            fab.setOnClickListener { onFabClick() }
             fabAddGauge.setOnClickListener {
                 addGaugeClick()
-                disableFabs()
+                onFabClick()
             }
             fabAddIndicator.setOnClickListener {
                 addIndicatorClick()
-                disableFabs()
+                onFabClick()
             }
 
             gaugesList.adapter = GaugeAdapter {
@@ -81,7 +81,7 @@ class SensorsFragment : Fragment() {
         }
     }
 
-    private fun addFabClick() {
+    private fun onFabClick() {
         mBinding?.apply {
             if (fabAddGauge.isShown || fabAddIndicator.isShown) {
                 fab.animate()
