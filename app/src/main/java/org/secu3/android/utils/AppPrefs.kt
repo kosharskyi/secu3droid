@@ -1,6 +1,6 @@
 /*
  *    SecuDroid  - An open source, free manager for SECU-3 engine control unit
- *    Copyright (C) 2024 Vitaliy O. Kosharskyi. Ukraine, Kyiv
+ *    Copyright (C) 2024 Vitalii O. Kosharskyi. Ukraine, Kyiv
  *
  *    SECU-3  - An open source, free engine control unit
  *    Copyright (C) 2007-2024 Alexey A. Shabelnikov. Ukraine, Kyiv
@@ -22,40 +22,27 @@
  *                    http://secu-3.org
  *                    email: vetalkosharskiy@gmail.com
  */
-package org.secu3.android.di.modules
 
+package org.secu3.android.utils
 
-import android.app.DownloadManager
-import android.bluetooth.BluetoothManager
 import android.content.Context
-import dagger.Module
-import dagger.Provides
-import dagger.hilt.InstallIn
+import android.content.Context.MODE_PRIVATE
+import android.content.SharedPreferences
 import dagger.hilt.android.qualifiers.ApplicationContext
-import dagger.hilt.components.SingletonComponent
-import org.secu3.android.network.ApiManager
-import org.secu3.android.network.ApiService
+import org.threeten.bp.LocalDateTime
+import javax.inject.Inject
 import javax.inject.Singleton
 
-@InstallIn(SingletonComponent::class)
-@Module
-object UtilsModule {
+@Singleton
+class AppPrefs @Inject constructor(@ApplicationContext private val ctx: Context) {
 
-    @Singleton
-    @Provides
-    fun getApiService(apiManager: ApiManager): ApiService {
-        return apiManager.apiService
-    }
+    private var mPrefs: SharedPreferences = ctx.getSharedPreferences("app_shared_prefs", MODE_PRIVATE)
 
-    @Singleton
-    @Provides
-    fun getBluetoothManager(@ApplicationContext context: Context): BluetoothManager {
-        return context.getSystemService(Context.BLUETOOTH_SERVICE) as BluetoothManager
-    }
 
-    @Singleton
-    @Provides
-    fun getDownloadManager(@ApplicationContext context: Context): DownloadManager {
-        return context.getSystemService(Context.DOWNLOAD_SERVICE) as DownloadManager
-    }
+    var lastAppVersionCheck: LocalDateTime
+        get() {
+            return mPrefs.getString("last_app_version_check_stamp", LocalDateTime.MIN.toString()).let { LocalDateTime.parse(it) }
+        }
+        set(value) = mPrefs.edit().putString("last_app_version_check_stamp", value.toString()).apply()
+
 }

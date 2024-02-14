@@ -41,6 +41,7 @@ import dagger.hilt.android.AndroidEntryPoint
 import org.secu3.android.R
 import org.secu3.android.SecuConnectionService
 import org.secu3.android.databinding.FragmentMainMenuBinding
+import org.secu3.android.network.models.GitHubRelease
 import org.secu3.android.ui.settings.SettingsActivity
 
 @AndroidEntryPoint
@@ -107,6 +108,10 @@ class MainFragment : Fragment() {
             }
         }
 
+        mViewModel.newReleaseAvailable.observe(viewLifecycleOwner) {
+            showNewVersionDialog(it)
+        }
+
         mViewModel.connectionStatusLiveData.observe(viewLifecycleOwner) {
             if (it) {
                 mBinding?.carStatus?.setColorFilter(Color.GREEN)
@@ -114,6 +119,18 @@ class MainFragment : Fragment() {
                 mBinding?.carStatus?.setColorFilter(Color.RED)
             }
         }
+    }
+
+    private fun showNewVersionDialog(release: GitHubRelease) {
+        MaterialAlertDialogBuilder(requireContext())
+            .setTitle(getString(R.string.new_version_available))
+            .setMessage(getString(R.string.the_version_is_available_do_you_want_to_download, release.tagName))
+            .setPositiveButton(getString(R.string.download)) { _, _ ->
+                mViewModel.downloadRelease(release)
+            }
+            .setNeutralButton(getString(R.string.remind_me_later)) { _, _ ->
+                // do nothing
+            }.show()
     }
 
     private fun showDiagnosticAlert() {

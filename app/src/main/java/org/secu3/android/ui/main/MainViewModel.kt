@@ -27,14 +27,23 @@ package org.secu3.android.ui.main
 
 import androidx.lifecycle.LiveData
 import androidx.lifecycle.ViewModel
+import androidx.lifecycle.asLiveData
 import dagger.hilt.android.lifecycle.HiltViewModel
+import kotlinx.coroutines.flow.flow
 import org.secu3.android.Secu3Repository
 import org.secu3.android.models.packets.input.FirmwareInfoPacket
+import org.secu3.android.network.models.GitHubRelease
+import org.secu3.android.utils.AppPrefs
 import org.secu3.android.utils.Task
+import org.threeten.bp.Duration
+import org.threeten.bp.LocalDateTime
 import javax.inject.Inject
 
 @HiltViewModel
-class MainViewModel @Inject constructor(private val secu3Repository: Secu3Repository) : ViewModel() {
+class MainViewModel @Inject constructor(
+    private val secu3Repository: Secu3Repository,
+    private val mainRepository: MainRepository,
+    private val appPrefs: AppPrefs) : ViewModel() {
 
 
     val connectionStatusLiveData: LiveData<Boolean>
@@ -43,7 +52,18 @@ class MainViewModel @Inject constructor(private val secu3Repository: Secu3Reposi
     val firmware: FirmwareInfoPacket?
         get() = secu3Repository.fwInfo
 
-    val firmwareLiveData: LiveData<FirmwareInfoPacket> = secu3Repository.firmwareLiveData
+    val newReleaseAvailable: LiveData<GitHubRelease>
+        get() = flow {
+            val now = LocalDateTime.now()
+            val duration = Duration.between(appPrefs.lastAppVersionCheck, now)
+
+            if (duration.toDays() > 0) {
+                mainRepository.getNewRelease()?.let {
+                    emit(it)
+                    appPrefs.lastAppVersionCheck = now
+                }
+            }
+        }.asLiveData()
 
     init {
         secu3Repository.startConnect()
@@ -55,5 +75,9 @@ class MainViewModel @Inject constructor(private val secu3Repository: Secu3Reposi
 
     fun closeConnection() {
         secu3Repository.disable()
+    }
+
+    fun downloadRelease(release: GitHubRelease) {
+        mainRepository.downloadReleaseFile(release)
     }
 }

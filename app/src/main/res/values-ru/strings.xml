@@ -350,6 +350,10 @@
     <string name="save">Сохранить</string>
     <string name="delete">Удалить</string>
     <string name="packet_sent">Пакет отправлен</string>
+    <string name="new_version_available">Доступна новая версия</string>
+    <string name="the_version_is_available_do_you_want_to_download">Версия %1$s уже доступна.\nЖелаете скачать?</string>
+    <string name="download">Скачать</string>
+    <string name="remind_me_later">Напомнить позже</string>
 
 
 </resources>
