@@ -31,7 +31,7 @@ import android.os.Environment
 import org.secu3.android.BuildConfig
 import org.secu3.android.network.ApiService
 import org.secu3.android.network.models.GitHubRelease
-import retrofit2.Response
+import org.secu3.android.utils.toResult
 import javax.inject.Inject
 import kotlin.math.min
 
@@ -39,25 +39,6 @@ class MainRepository @Inject constructor(
     private val apiService: ApiService,
     private val downloadManager: DownloadManager
 ) {
-
-    suspend fun <T : Any> Response<T>.toResult(): Result<T> {
-        return try {
-            if (isSuccessful) {
-                val body = body()
-                if (body != null) {
-                    Result.success(body)
-                } else {
-                    Result.failure(NullPointerException("Response body is null"))
-                }
-            } else {
-                val errorBody = errorBody()?.string()
-                val message = errorBody ?: message()
-                Result.failure(Throwable("Unsuccessful response: $message"))
-            }
-        } catch (e: Exception) {
-            Result.failure(e)
-        }
-    }
 
     suspend fun getNewRelease(): GitHubRelease? {
         apiService.getLatestRelease().toResult().onSuccess { release ->
@@ -91,9 +72,7 @@ class MainRepository @Inject constructor(
             setNotificationVisibility(DownloadManager.Request.VISIBILITY_VISIBLE_NOTIFY_COMPLETED)
             setDestinationInExternalPublicDir(Environment.DIRECTORY_DOWNLOADS, asset.name)
         }
-        val id = downloadManager.enqueue(request)
-
-
+        downloadManager.enqueue(request)
     }
 
 }

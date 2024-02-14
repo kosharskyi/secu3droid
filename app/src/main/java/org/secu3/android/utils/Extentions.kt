@@ -25,8 +25,6 @@
 package org.secu3.android.utils
 
 import android.content.Context
-import android.util.DisplayMetrics
-import android.util.TypedValue
 import android.view.View
 import android.view.animation.AccelerateDecelerateInterpolator
 import android.view.inputmethod.InputMethodManager
@@ -34,6 +32,7 @@ import android.widget.ImageView
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.util.TypedValueCompat
 import androidx.fragment.app.Fragment
+import retrofit2.Response
 import java.io.File
 import java.text.DecimalFormat
 import kotlin.math.roundToInt
@@ -109,4 +108,23 @@ fun Context.dpToPx(dp: Int): Int {
 
 fun Context.pxToDp(px: Int): Int {
     return TypedValueCompat.pxToDp(px.toFloat(), resources.displayMetrics).roundToInt()
+}
+
+suspend fun <T : Any> Response<T>.toResult(): Result<T> {
+    return try {
+        if (isSuccessful) {
+            val body = body()
+            if (body != null) {
+                Result.success(body)
+            } else {
+                Result.failure(NullPointerException("Response body is null"))
+            }
+        } else {
+            val errorBody = errorBody()?.string()
+            val message = errorBody ?: message()
+            Result.failure(Throwable("Unsuccessful response: $message"))
+        }
+    } catch (e: Exception) {
+        Result.failure(e)
+    }
 }
