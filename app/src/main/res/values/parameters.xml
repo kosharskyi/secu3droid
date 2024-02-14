@@ -77,6 +77,7 @@
     <string name="idlreg_min_iac_position_title">Minimum IAC position</string>
     <string name="idlreg_max_iac_position_title">Maximum IAC position</string>
     <string name="idlreg_use_closed_loop_on_gas_title">Use closed loop on gas</string>
+    <string name="idlreg_works_together_with_iac_reg_title">Ign.tim. idling regulator works together with IAC regulator</string>
 
 
     <string name="funset_lower_pressure_title">Lower pressure value</string>

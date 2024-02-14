@@ -40,6 +40,7 @@
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintBottom_toBottomOf="parent"
+        tools:visibility="gone"
         />
 
     <ScrollView
@@ -47,6 +48,7 @@
         android:layout_width="match_parent"
         android:layout_height="match_parent"
         android:visibility="gone"
+        tools:visibility="visible"
         >
 
         <LinearLayout
@@ -414,6 +416,18 @@
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:text="@string/idlreg_use_closed_loop_on_gas_title"
+                android:button="@null"
+                android:drawableEnd="?android:attr/listChoiceIndicatorMultiple"
+                />
+
+            <!-- ************************************************************* -->
+
+
+            <CheckBox
+                android:id="@+id/idl_reg_works_with_IAC"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="@string/idlreg_works_together_with_iac_reg_title"
                 android:button="@null"
                 android:drawableEnd="?android:attr/listChoiceIndicatorMultiple"
                 />

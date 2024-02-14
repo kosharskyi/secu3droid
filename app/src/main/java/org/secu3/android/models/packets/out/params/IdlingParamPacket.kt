@@ -92,6 +92,12 @@ data class IdlingParamPacket(
             idlFlags = idlFlags.setBitValue(value, 5)
         }
 
+    var idlRegWorksWithIAC: Boolean // Ign. time idling regulator works together with IAC regulator
+        get() = idlFlags.getBitValue(6) > 0
+        set(value) {
+            idlFlags = idlFlags.setBitValue(value, 6)
+        }
+
 
     companion object {
 

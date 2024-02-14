@@ -72,10 +72,11 @@
     <string name="idlreg_second_transient_threshold_title">Поріг 2-го пер. режима</string>
     <string name="idlreg_integrator_rpm_limit_title">Обмеж. оберт. інтегр.</string>
     <string name="idlreg_pressure_load_on_idling_title">Режимна точка ДАТ</string>
-    <string name="idlreg_min_iac_position_title">Мін. положення РДВ</string>
-    <string name="idlreg_max_iac_position_title">Макс. положення РДВ</string>
-    <string name="idlreg_iac_dead_band_title">Зона нечутливості РДВ</string>
+    <string name="idlreg_min_iac_position_title">Мін. положення РДП</string>
+    <string name="idlreg_max_iac_position_title">Макс. положення РДП</string>
+    <string name="idlreg_iac_dead_band_title">Зона нечутливості РДП</string>
     <string name="idlreg_use_closed_loop_on_gas_title">Використовувати closed loop на газу</string>
+    <string name="idlreg_works_together_with_iac_reg_title">Не відключати КВЗ РХХ під час роботи РДП РХХ</string>
 
 
 

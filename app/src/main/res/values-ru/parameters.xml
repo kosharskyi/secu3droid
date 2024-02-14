@@ -76,6 +76,7 @@
     <string name="idlreg_min_iac_position_title">Мин. положение РДВ</string>
     <string name="idlreg_max_iac_position_title">Макс. положение РДВ</string>
     <string name="idlreg_use_closed_loop_on_gas_title">Использовать closed loop на газу</string>
+    <string name="idlreg_works_together_with_iac_reg_title">Не отключать УОЗ РХХ по время работы РДВ РХХ</string>
 
 
 

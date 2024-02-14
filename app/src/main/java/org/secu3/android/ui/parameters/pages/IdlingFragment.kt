@@ -103,6 +103,7 @@ class IdlingFragment : BaseParamFragment() {
                         iacDeadBand.value = it.iacRegDb
 
                         useClosedLoopOnGas.isChecked = it.useClosedLoopOnGas
+                        idlRegWorksWithIAC.isChecked = it.idlRegWorksWithIAC
                     }
 
                     initViews()
@@ -224,6 +225,10 @@ class IdlingFragment : BaseParamFragment() {
 
             useClosedLoopOnGas.setOnCheckedChangeListener { _, isChecked ->
                 packet?.useClosedLoopOnGas = isChecked
+            }
+
+            idlRegWorksWithIAC.setOnCheckedChangeListener { _, isChecked ->
+                packet?.idlRegWorksWithIAC = isChecked
             }
 
             positiveRegFactor.setOnClickListener { floatParamClick(it as FloatParamView) }
