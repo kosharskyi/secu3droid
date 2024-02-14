@@ -39,7 +39,7 @@ import org.secu3.android.models.packets.base.BaseSecu3Packet
 import org.secu3.android.models.packets.base.BaseSecu3Packet.Companion.END_PACKET_SYMBOL
 import org.secu3.android.models.packets.base.BaseSecu3Packet.Companion.MAX_PACKET_SIZE
 import org.secu3.android.models.packets.out.ChangeModePacket
-import org.secu3.android.utils.LifeTimePrefs
+import org.secu3.android.utils.UserPrefs
 import org.secu3.android.utils.PacketUtils
 import org.secu3.android.utils.Task
 import java.io.BufferedReader
@@ -59,7 +59,7 @@ import javax.inject.Singleton
 
 @Singleton
 class Secu3Manager @Inject constructor(
-    private val prefs: LifeTimePrefs,
+    private val prefs: UserPrefs,
     private val bluetoothManager: BluetoothManager
     ) {
 

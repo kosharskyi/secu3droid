@@ -35,7 +35,7 @@ import javax.inject.Inject
 import javax.inject.Singleton
 
 @Singleton
-class LifeTimePrefs @Inject constructor(@ApplicationContext private val ctx: Context) {
+class UserPrefs @Inject constructor(@ApplicationContext private val ctx: Context) {
 
     private var mPrefs: SharedPreferences = PreferenceManager.getDefaultSharedPreferences(ctx)
 
@@ -72,10 +72,6 @@ class LifeTimePrefs @Inject constructor(@ApplicationContext private val ctx: Con
     var bluetoothDeviceName: String?
         get() = mPrefs.getString(ctx.getString(R.string.pref_bluetooth_device_key), null);
         set(value) = mPrefs.edit().putString(ctx.getString(R.string.pref_bluetooth_device_key), value).apply()
-
-    var uploadImmediately: Boolean
-        get() = mPrefs.getBoolean(ctx.getString(R.string.pref_upload_immediately_key), false);
-        set(value) = mPrefs.edit().putBoolean(ctx.getString(R.string.pref_upload_immediately_key), value).apply()
 
     var connectionRetries: Int
         get() = mPrefs.getString(ctx.getString(R.string.pref_connection_retries_key), ctx.getString(R.string.defaultConnectionRetries))!!.toInt()

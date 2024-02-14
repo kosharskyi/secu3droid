@@ -27,7 +27,6 @@
 <resources>       
     <string name="pref_connection_retries_key" translatable="false">connectionRetries</string>
     <string name="pref_bluetooth_device_key" translatable="false">bluetoothDeviceName</string>
-    <string name="pref_upload_immediately_key" translatable="false">uploadImmediately</string>
     <string name="pref_write_log_key" translatable="false">writeLog</string>
     <string name="pref_write_binary_log_key" translatable="false">writeBinaryLog</string>
     <string name="pref_log_csv_write_title_key" translatable="false">logCsvTitle</string>

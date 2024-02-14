@@ -39,7 +39,7 @@ import javax.inject.Inject
 import javax.inject.Singleton
 
 @Singleton
-class SecuLogger @Inject constructor(private val prefs: LifeTimePrefs, private val fileHelper: FileHelper) {
+class SecuLogger @Inject constructor(private val prefs: UserPrefs, private val fileHelper: FileHelper) {
 
     private var mLogFile: File? = null
     private var mMark: Int = 0

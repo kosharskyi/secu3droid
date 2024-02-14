@@ -34,13 +34,13 @@ import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.sample
 import org.secu3.android.Secu3Repository
 import org.secu3.android.models.packets.input.SensorsPacket
-import org.secu3.android.utils.LifeTimePrefs
+import org.secu3.android.utils.UserPrefs
 import org.secu3.android.utils.Task
 import javax.inject.Inject
 
 @HiltViewModel
 class DashboardViewModel @Inject constructor(private val secu3Repository: Secu3Repository,
-                                             private val mPrefs: LifeTimePrefs) : ViewModel() {
+                                             private val mPrefs: UserPrefs) : ViewModel() {
 
     fun isBluetoothDeviceAddressNotSelected(): Boolean {
         return mPrefs.bluetoothDeviceName.isNullOrBlank()

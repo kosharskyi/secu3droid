@@ -30,12 +30,12 @@ import android.bluetooth.BluetoothDevice
 import android.bluetooth.BluetoothManager
 import androidx.lifecycle.ViewModel
 import dagger.hilt.android.lifecycle.HiltViewModel
-import org.secu3.android.utils.LifeTimePrefs
+import org.secu3.android.utils.UserPrefs
 import javax.inject.Inject
 
 @HiltViewModel
 class BluetoothStatusViewModel @Inject constructor(
-    private val mPrefs: LifeTimePrefs,
+    private val mPrefs: UserPrefs,
     private val bluetoothManager: BluetoothManager
 ): ViewModel() {
 

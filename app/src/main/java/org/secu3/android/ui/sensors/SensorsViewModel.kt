@@ -38,14 +38,14 @@ import org.secu3.android.ui.sensors.models.GaugeItem
 import org.secu3.android.ui.sensors.models.GaugeType
 import org.secu3.android.ui.sensors.models.IndicatorItem
 import org.secu3.android.ui.sensors.models.IndicatorType
-import org.secu3.android.utils.LifeTimePrefs
+import org.secu3.android.utils.UserPrefs
 import org.secu3.android.utils.SecuLogger
 import org.secu3.android.utils.Task
 import javax.inject.Inject
 
 @HiltViewModel
 class SensorsViewModel @Inject constructor(private val secu3Repository: Secu3Repository,
-                                           private val mPrefs: LifeTimePrefs,
+                                           private val mPrefs: UserPrefs,
                                            private val secuLogger: SecuLogger,
                                            private val repository: SensorsRepository
                                            ) : ViewModel() {

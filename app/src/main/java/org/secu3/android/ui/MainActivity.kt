@@ -32,14 +32,14 @@ import androidx.appcompat.app.AppCompatActivity
 import dagger.hilt.android.AndroidEntryPoint
 import org.secu3.android.R
 import org.secu3.android.SecuConnectionService
-import org.secu3.android.utils.LifeTimePrefs
+import org.secu3.android.utils.UserPrefs
 import javax.inject.Inject
 
 @AndroidEntryPoint
 class MainActivity : AppCompatActivity() {
 
     @Inject
-    lateinit var prefs: LifeTimePrefs
+    lateinit var prefs: UserPrefs
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)

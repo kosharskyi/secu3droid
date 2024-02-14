@@ -33,7 +33,7 @@ import org.secu3.android.models.packets.base.BaseOutputPacket
 import org.secu3.android.models.packets.base.BaseSecu3Packet
 import org.secu3.android.models.packets.input.FirmwareInfoPacket
 import org.secu3.android.models.packets.input.SensorsPacket
-import org.secu3.android.utils.LifeTimePrefs
+import org.secu3.android.utils.UserPrefs
 import org.secu3.android.utils.SecuLogger
 import org.secu3.android.utils.Task
 import org.threeten.bp.LocalDateTime
@@ -42,7 +42,7 @@ import javax.inject.Singleton
 
 @Singleton
 class Secu3Repository @Inject constructor(private val secu3Manager: Secu3Manager,
-                                          private val mPrefs: LifeTimePrefs,
+                                          private val mPrefs: UserPrefs,
                                           private val bluetoothManager: BluetoothManager,
                                           private val secuLogger: SecuLogger,
 ) {

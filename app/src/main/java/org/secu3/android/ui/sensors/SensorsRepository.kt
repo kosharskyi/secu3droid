@@ -32,11 +32,11 @@ import org.secu3.android.ui.sensors.models.GaugeItem
 import org.secu3.android.ui.sensors.models.GaugeType
 import org.secu3.android.ui.sensors.models.IndicatorItem
 import org.secu3.android.ui.sensors.models.IndicatorType
-import org.secu3.android.utils.LifeTimePrefs
+import org.secu3.android.utils.UserPrefs
 import java.util.Locale
 import javax.inject.Inject
 
-class SensorsRepository @Inject constructor(private val mPrefs: LifeTimePrefs)  {
+class SensorsRepository @Inject constructor(private val mPrefs: UserPrefs)  {
 
     suspend fun convertToGaugeItemList(packet: SensorsPacket) = withContext(Dispatchers.IO) {
         mPrefs.gaugesEnabled.map { getGaugeItem(it, packet) }
