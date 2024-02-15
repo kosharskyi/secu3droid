@@ -2,7 +2,7 @@
   "formatVersion": 1,
   "database": {
     "version": 1,
-    "identityHash": "007eb86e5dae42974b9c632b0c37df94",
+    "identityHash": "e0021acfa134dfad97d14eb1c5d1884a",
     "entities": [
       {
         "tableName": "gauge_item_state",
@@ -48,15 +48,6 @@
             ],
             "orders": [],
             "createSql": "CREATE UNIQUE INDEX IF NOT EXISTS `index_gauge_item_state_gauge_type` ON `${TABLE_NAME}` (`gauge_type`)"
-          },
-          {
-            "name": "index_gauge_item_state_idx",
-            "unique": true,
-            "columnNames": [
-              "idx"
-            ],
-            "orders": [],
-            "createSql": "CREATE UNIQUE INDEX IF NOT EXISTS `index_gauge_item_state_idx` ON `${TABLE_NAME}` (`idx`)"
           }
         ],
         "foreignKeys": []
@@ -65,7 +56,7 @@
     "views": [],
     "setupQueries": [
       "CREATE TABLE IF NOT EXISTS room_master_table (id INTEGER PRIMARY KEY,identity_hash TEXT)",
-      "INSERT OR REPLACE INTO room_master_table (id,identity_hash) VALUES(42, '007eb86e5dae42974b9c632b0c37df94')"
+      "INSERT OR REPLACE INTO room_master_table (id,identity_hash) VALUES(42, 'e0021acfa134dfad97d14eb1c5d1884a')"
     ]
   }
 }

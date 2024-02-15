@@ -150,4 +150,8 @@ class SensorsRepository @Inject constructor(
 
         return IndicatorItem(type, value)
     }
+
+    suspend fun updateGauges(swipedList: List<GaugeState>) = withContext(Dispatchers.IO) {
+        db.gaugeStateDao().updateAll(swipedList)
+    }
 }

@@ -26,23 +26,28 @@
 package org.secu3.android.ui.sensors
 
 import android.os.Bundle
-import androidx.fragment.app.Fragment
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import android.view.animation.AccelerateDecelerateInterpolator
+import androidx.fragment.app.Fragment
 import androidx.fragment.app.viewModels
+import androidx.recyclerview.widget.ItemTouchHelper
+import androidx.recyclerview.widget.RecyclerView
 import com.google.android.material.dialog.MaterialAlertDialogBuilder
 import org.secu3.android.R
 import org.secu3.android.databinding.FragmentSensorsBinding
 import org.secu3.android.ui.sensors.models.GaugeType
 import org.secu3.android.utils.Task
 
+
 class SensorsFragment : Fragment() {
 
     private val mViewModel: SensorsViewModel by viewModels( ownerProducer = { requireParentFragment() } )
 
     private var mBinding: FragmentSensorsBinding? = null
+
+    private var isDragging = false
 
     override fun onCreateView(inflater: LayoutInflater, container: ViewGroup?, savedInstanceState: Bundle?): View? {
         mBinding = FragmentSensorsBinding.inflate(inflater, container, false)
@@ -63,6 +68,7 @@ class SensorsFragment : Fragment() {
                 onFabClick()
             }
 
+            touchHelper.attachToRecyclerView(gaugesList)
             gaugesList.adapter = GaugeAdapter {
                 mViewModel.deleteGauge(it)
             }
@@ -74,6 +80,9 @@ class SensorsFragment : Fragment() {
 
 
         mViewModel.gaugesLiveData.observe(viewLifecycleOwner) {
+            if (isDragging) {
+                return@observe
+            }
             (mBinding?.gaugesList?.adapter as? GaugeAdapter)?.submitList(it)
         }
 
@@ -153,4 +162,53 @@ class SensorsFragment : Fragment() {
         super.onDestroyView()
         mBinding = null
     }
+
+    private val touchHelper = ItemTouchHelper(object : ItemTouchHelper.Callback() {
+        override fun getMovementFlags(recyclerView: RecyclerView, viewHolder: RecyclerView.ViewHolder): Int {
+            return makeFlag(ItemTouchHelper.ACTION_STATE_DRAG,
+                ItemTouchHelper.UP or ItemTouchHelper.DOWN or ItemTouchHelper.END or ItemTouchHelper.START
+            )
+        }
+
+        override fun onMove(
+            recyclerView: RecyclerView,
+            viewHolder: RecyclerView.ViewHolder,
+            target: RecyclerView.ViewHolder
+        ): Boolean {
+            val startIndex = viewHolder.adapterPosition
+            val targetIndex = target.adapterPosition
+
+            val adapter = mBinding?.gaugesList?.adapter as GaugeAdapter
+            val listItems = adapter.currentList.toMutableList()
+
+            val gauge = listItems[startIndex]
+            listItems.removeAt(startIndex)
+            listItems.add(targetIndex, gauge)
+
+            val swipedItems = listItems.mapIndexed { index, gaugeItem ->
+                gaugeItem.state.idx = index
+                gaugeItem
+            }
+
+            adapter.submitList(swipedItems)
+            mViewModel.itemsSwiped(swipedItems.map { it.state })
+
+            return true
+        }
+
+        override fun onSelectedChanged(viewHolder: RecyclerView.ViewHolder?, actionState: Int) {
+            super.onSelectedChanged(viewHolder, actionState)
+            isDragging = actionState == ItemTouchHelper.ACTION_STATE_DRAG
+        }
+
+        override fun onSwiped(viewHolder: RecyclerView.ViewHolder, direction: Int) {
+            // ignore
+        }
+
+        override fun clearView(recyclerView: RecyclerView, viewHolder: RecyclerView.ViewHolder) {
+            super.clearView(recyclerView, viewHolder)
+            isDragging = false
+        }
+
+    })
 }

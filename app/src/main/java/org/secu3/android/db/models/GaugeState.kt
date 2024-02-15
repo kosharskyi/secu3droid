@@ -33,8 +33,7 @@ import org.secu3.android.ui.sensors.models.GaugeType
 
 @Entity("gauge_item_state",
     indices = [
-        Index(value = ["gauge_type"], unique = true),
-        Index(value = ["idx"], unique = true)
+        Index(value = ["gauge_type"], unique = true)
     ]
 )
 data class GaugeState(
@@ -45,7 +44,7 @@ data class GaugeState(
     @ColumnInfo("gauge_type")
     val gaugeType: GaugeType,
 
-    val idx: Int, // Position in list
+    var idx: Int, // Position in list
 
     @ColumnInfo("is_numeric_view")
     val isNumericView: Boolean = false,

@@ -28,16 +28,24 @@ package org.secu3.android.ui.main
 import android.app.DownloadManager
 import android.net.Uri
 import android.os.Environment
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.withContext
 import org.secu3.android.BuildConfig
+import org.secu3.android.db.AppDatabase
+import org.secu3.android.db.models.GaugeState
 import org.secu3.android.network.ApiService
 import org.secu3.android.network.models.GitHubRelease
+import org.secu3.android.ui.sensors.models.GaugeType
+import org.secu3.android.utils.AppPrefs
 import org.secu3.android.utils.toResult
 import javax.inject.Inject
 import kotlin.math.min
 
 class MainRepository @Inject constructor(
     private val apiService: ApiService,
-    private val downloadManager: DownloadManager
+    private val downloadManager: DownloadManager,
+    private val appPrefs: AppPrefs,
+    private val db: AppDatabase
 ) {
 
     suspend fun getNewRelease(): GitHubRelease? {
@@ -73,6 +81,21 @@ class MainRepository @Inject constructor(
             setDestinationInExternalPublicDir(Environment.DIRECTORY_DOWNLOADS, asset.name)
         }
         downloadManager.enqueue(request)
+    }
+
+    suspend fun checkAndInitDb() = withContext(Dispatchers.IO) {
+        if (appPrefs.isDbInitNeed) {
+            val items = listOf(
+                GaugeState(0, GaugeType.RPM, 0),
+                GaugeState(0, GaugeType.MAP, 1),
+                GaugeState(0, GaugeType.VOLTAGE, 2),
+                GaugeState(0, GaugeType.TEMPERATURE, 3),
+            )
+
+            db.gaugeStateDao().insertAll(items)
+
+            appPrefs.isDbInitNeed = false
+        }
     }
 
 }

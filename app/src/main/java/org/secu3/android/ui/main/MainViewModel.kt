@@ -28,8 +28,10 @@ package org.secu3.android.ui.main
 import androidx.lifecycle.LiveData
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.asLiveData
+import androidx.lifecycle.viewModelScope
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.flow
+import kotlinx.coroutines.launch
 import org.secu3.android.Secu3Repository
 import org.secu3.android.models.packets.input.FirmwareInfoPacket
 import org.secu3.android.network.models.GitHubRelease
@@ -66,7 +68,10 @@ class MainViewModel @Inject constructor(
         }.asLiveData()
 
     init {
-        secu3Repository.startConnect()
+        viewModelScope.launch {
+            mainRepository.checkAndInitDb()
+            secu3Repository.startConnect()
+        }
     }
 
     fun sendNewTask(task: Task) {

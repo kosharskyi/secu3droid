@@ -65,4 +65,10 @@ class AppPrefs @Inject constructor(@ApplicationContext private val ctx: Context)
         , IndicatorType.POWER_VALVE, IndicatorType.STARTER_BLOCKING, IndicatorType.AE, IndicatorType.COOLING_FAN,
         IndicatorType.CHECK_ENGINE, IndicatorType.REV_LIM_FUEL_CUT, IndicatorType.FLOOD_CLEAR_MODE)
         .map { it.toString() }.joinToString(",")
+
+    var isDbInitNeed: Boolean
+        get() = mPrefs.getBoolean("need_db_init", true)
+        set(value) {
+            mPrefs.edit().putBoolean("need_db_init", value).apply()
+        }
 }

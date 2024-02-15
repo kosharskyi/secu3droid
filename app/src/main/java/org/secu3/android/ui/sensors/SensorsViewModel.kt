@@ -35,6 +35,7 @@ import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.sample
 import kotlinx.coroutines.launch
 import org.secu3.android.Secu3Repository
+import org.secu3.android.db.models.GaugeState
 import org.secu3.android.models.packets.input.AdcRawDatPacket
 import org.secu3.android.models.packets.input.SensorsPacket
 import org.secu3.android.ui.sensors.models.GaugeItem
@@ -148,6 +149,12 @@ class SensorsViewModel @Inject constructor(private val secu3Repository: Secu3Rep
             val indicators = indicatorsEnabled.toMutableList()
             indicators.remove(indicator)
             indicatorsEnabled = indicators
+        }
+    }
+
+    fun itemsSwiped(swipedList: List<GaugeState>) {
+        viewModelScope.launch {
+            repository.updateGauges(swipedList)
         }
     }
 }
