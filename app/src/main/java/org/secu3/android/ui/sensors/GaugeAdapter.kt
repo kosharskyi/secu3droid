@@ -57,7 +57,11 @@ class GaugeAdapter(val onClick:(GaugeType) -> Unit) : ListAdapter<GaugeItem, Gau
 
     inner class GaugeViewHolder(private val binding: ViewGaugeItemBinding) : ViewHolder(binding.root) {
 
+        private lateinit var gaugeType: GaugeType
+
         fun bind(item: GaugeItem) {
+            gaugeType = item.state.gaugeType
+
             binding.apply {
 
                 root.setOnClickListener {
@@ -68,7 +72,7 @@ class GaugeAdapter(val onClick:(GaugeType) -> Unit) : ListAdapter<GaugeItem, Gau
                     popup.setOnMenuItemClickListener {
                         when (it.itemId) {
                             R.id.delete_gauge -> {
-                                onClick(item.type)
+                                onClick(gaugeType)
                                 true
                             }
                             else -> false
@@ -76,22 +80,22 @@ class GaugeAdapter(val onClick:(GaugeType) -> Unit) : ListAdapter<GaugeItem, Gau
                     }
                 }
 
-                gaugeName.text = root.context.getString(item.type.title)
+                gaugeName.text = root.context.getString(gaugeType.title)
 
                 gauge.apply {
 
                     setSpeedAt(item.value.toFloat())
-                    unit = context.getString(item.type.units)
+                    unit = context.getString(gaugeType.units)
                     maxSpeed = 10_000f // to prevent exception if new min value is bigger than old max value
-                    minSpeed = item.type.minValue
-                    maxSpeed = item.type.maxValue
-                    tickNumber = item.type.tickCount
+                    minSpeed = gaugeType.minValue
+                    maxSpeed = gaugeType.maxValue
+                    tickNumber = gaugeType.tickCount
 
-                    val sections = item.type.getSections(context!!, speedometerWidth)
+                    val sections = gaugeType.getSections(context!!, speedometerWidth)
                     clearSections()
                     addSections(sections)
 
-                    if (item.type.isInteger) {
+                    if (gaugeType.isInteger) {
                         speedTextListener = { speed -> speed.toInt().toString() }
                     } else {
                         speedTextListener = { speed -> "%.1f".format(Locale.US, speed) }
@@ -104,7 +108,7 @@ class GaugeAdapter(val onClick:(GaugeType) -> Unit) : ListAdapter<GaugeItem, Gau
 
     object GaugeItemDiffCallback : DiffUtil.ItemCallback<GaugeItem>() {
         override fun areItemsTheSame(oldItem: GaugeItem, newItem: GaugeItem): Boolean {
-            return oldItem.type == newItem.type
+            return oldItem.state == newItem.state
         }
 
         override fun areContentsTheSame(oldItem: GaugeItem, newItem: GaugeItem): Boolean {

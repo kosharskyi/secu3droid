@@ -25,7 +25,9 @@
 
 package org.secu3.android.ui.sensors.models
 
+import org.secu3.android.db.models.GaugeState
+
 data class GaugeItem(
-    val type: GaugeType,
+    val state: GaugeState,
     val value: String
 )

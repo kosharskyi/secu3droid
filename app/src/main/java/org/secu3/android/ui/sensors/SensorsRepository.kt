@@ -115,7 +115,7 @@ class SensorsRepository @Inject constructor(
             }
         }
 
-        return GaugeItem(state.gaugeType, value)
+        return GaugeItem(state, value)
     }
 
     suspend fun convertToIndicatorItemList(packet: SensorsPacket) = withContext(Dispatchers.IO) {
