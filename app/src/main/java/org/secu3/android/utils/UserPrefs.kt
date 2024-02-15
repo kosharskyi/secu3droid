@@ -29,8 +29,6 @@ import android.content.SharedPreferences
 import androidx.preference.PreferenceManager
 import dagger.hilt.android.qualifiers.ApplicationContext
 import org.secu3.android.R
-import org.secu3.android.ui.sensors.models.GaugeType
-import org.secu3.android.ui.sensors.models.IndicatorType
 import javax.inject.Inject
 import javax.inject.Singleton
 
@@ -76,38 +74,4 @@ class UserPrefs @Inject constructor(@ApplicationContext private val ctx: Context
     var connectionRetries: Int
         get() = mPrefs.getString(ctx.getString(R.string.pref_connection_retries_key), ctx.getString(R.string.defaultConnectionRetries))!!.toInt()
         set(value) = mPrefs.edit().putString(ctx.getString(R.string.pref_connection_retries_key), value.toString()).apply()
-
-    var gaugesEnabled: List<GaugeType>
-        get() {
-            val gauges = mPrefs.getString("gauges_enabled", defaultGauges)?.split(",") ?: defaultGauges.split(",")
-
-            return gauges.filter { it.isNotEmpty() }.map { GaugeType.valueOf(it) }
-        }
-
-        set(values) {
-            val gauges = values.map { it.toString() }.joinToString(",")
-
-            mPrefs.edit().putString("gauges_enabled", gauges).apply()
-        }
-
-    private val defaultGauges: String = listOf(GaugeType.RPM, GaugeType.MAP, GaugeType.VOLTAGE, GaugeType.TEMPERATURE)
-        .map { it.toString() }.joinToString(",")
-
-    var indicatorsEnabled: List<IndicatorType>
-        get() {
-            val indicators = mPrefs.getString("indicators_enabled", defaultIndicators)?.split(",") ?: defaultIndicators.split(",")
-
-            return indicators.filter { it.isNotEmpty() }.map { IndicatorType.valueOf(it) }
-        }
-
-        set(values) {
-            val indicators = values.map { it.toString() }.joinToString(",")
-
-            mPrefs.edit().putString("indicators_enabled", indicators).apply()
-        }
-
-    private val defaultIndicators: String = listOf(IndicatorType.GAS_VALVE, IndicatorType.THROTTLE, IndicatorType.FI_FUEL
-        , IndicatorType.POWER_VALVE, IndicatorType.STARTER_BLOCKING, IndicatorType.AE, IndicatorType.COOLING_FAN,
-        IndicatorType.CHECK_ENGINE, IndicatorType.REV_LIM_FUEL_CUT, IndicatorType.FLOOD_CLEAR_MODE)
-        .map { it.toString() }.joinToString(",")
 }
