@@ -35,6 +35,7 @@ import androidx.fragment.app.viewModels
 import com.google.android.material.dialog.MaterialAlertDialogBuilder
 import org.secu3.android.R
 import org.secu3.android.databinding.FragmentSensorsBinding
+import org.secu3.android.ui.sensors.models.GaugeType
 import org.secu3.android.utils.Task
 
 class SensorsFragment : Fragment() {
@@ -54,7 +55,7 @@ class SensorsFragment : Fragment() {
         mBinding?.apply {
             fab.setOnClickListener { onFabClick() }
             fabAddGauge.setOnClickListener {
-                addGaugeClick()
+                mViewModel.addGaugeClick()
                 onFabClick()
             }
             fabAddIndicator.setOnClickListener {
@@ -78,6 +79,10 @@ class SensorsFragment : Fragment() {
 
         mViewModel.indicatorLiveData.observe(viewLifecycleOwner) {
             (mBinding?.indicatorsList?.adapter as? IndicatorAdapter)?.submitList(it)
+        }
+
+        mViewModel.showAddGaugeLiveData.observe(viewLifecycleOwner) {
+            showGaugeSelectDialog(it)
         }
     }
 
@@ -116,9 +121,7 @@ class SensorsFragment : Fragment() {
         }
     }
 
-    private fun addGaugeClick() {
-
-        val gauges = mViewModel.getGaugesAvailableToAdd()
+    private fun showGaugeSelectDialog(gauges: List<GaugeType>) {
         val gaugesNames = gauges.map { it.title }.map { getString(it) }.toTypedArray()
 
         MaterialAlertDialogBuilder(requireContext())

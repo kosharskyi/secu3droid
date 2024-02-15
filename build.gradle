@@ -10,6 +10,7 @@ plugins {
     alias libs.plugins.kotlin.parcelize apply false
     alias libs.plugins.navigation.safeargs apply false
     alias libs.plugins.kotlin.ksp.plugin apply false
+    alias libs.plugins.room.plugin apply false
     id 'com.google.gms.google-services' version '4.4.0' apply false
     id 'com.google.dagger.hilt.android' version '2.50' apply false
 

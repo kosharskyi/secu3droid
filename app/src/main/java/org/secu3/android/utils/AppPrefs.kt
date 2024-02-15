@@ -47,23 +47,6 @@ class AppPrefs @Inject constructor(@ApplicationContext private val ctx: Context)
         }
         set(value) = mPrefs.edit().putString("last_app_version_check_stamp", value.toString()).apply()
 
-
-    var gaugesEnabled: List<GaugeType>
-        get() {
-            val gauges = mPrefs.getString("gauges_enabled", defaultGauges)?.split(",") ?: defaultGauges.split(",")
-
-            return gauges.filter { it.isNotEmpty() }.map { GaugeType.valueOf(it) }
-        }
-
-        set(values) {
-            val gauges = values.map { it.toString() }.joinToString(",")
-
-            mPrefs.edit().putString("gauges_enabled", gauges).apply()
-        }
-
-    private val defaultGauges: String = listOf(GaugeType.RPM, GaugeType.MAP, GaugeType.VOLTAGE, GaugeType.TEMPERATURE)
-        .map { it.toString() }.joinToString(",")
-
     var indicatorsEnabled: List<IndicatorType>
         get() {
             val indicators = mPrefs.getString("indicators_enabled", defaultIndicators)?.split(",") ?: defaultIndicators.split(",")

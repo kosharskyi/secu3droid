@@ -22,6 +22,13 @@ dependencyResolutionManagement {
             library("navigation-ui-ktx", 'androidx.navigation', 'navigation-ui-ktx').versionRef('navigation')
 
             version('dagger', '2.50')
+
+            version('room', '2.6.1')
+            plugin('room-plugin', 'androidx.room').versionRef('room')
+            library("room-runtime", "androidx.room", "room-runtime").versionRef('room')
+            library("room-ktx", "androidx.room", "room-ktx").versionRef('room')
+            library("room-compiler", "androidx.room", "room-compiler").versionRef('room')
+            library("room-testing", "androidx.room", "room-testing").versionRef('room')
         }
     }
 

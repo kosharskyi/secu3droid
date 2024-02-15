@@ -25,8 +25,11 @@
 
 package org.secu3.android.ui.sensors
 
+import androidx.room.withTransaction
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
+import org.secu3.android.db.AppDatabase
+import org.secu3.android.db.models.GaugeState
 import org.secu3.android.models.packets.input.SensorsPacket
 import org.secu3.android.ui.sensors.models.GaugeItem
 import org.secu3.android.ui.sensors.models.GaugeType
@@ -37,15 +40,32 @@ import java.util.Locale
 import javax.inject.Inject
 
 class SensorsRepository @Inject constructor(
-    private val mPrefs: AppPrefs
+    private val mPrefs: AppPrefs,
+    private val db: AppDatabase,
 )  {
 
-    suspend fun convertToGaugeItemList(packet: SensorsPacket) = withContext(Dispatchers.IO) {
-        mPrefs.gaugesEnabled.map { getGaugeItem(it, packet) }
+    suspend fun getStoredGaugeStates(): List<GaugeState> = withContext(Dispatchers.IO) {
+        db.gaugeStateDao().getAll()
     }
 
-    private fun getGaugeItem(type: GaugeType, it: SensorsPacket): GaugeItem {
-        val value = when (type) {
+    suspend fun addGauge(gaugeType: GaugeType) = withContext(Dispatchers.IO)  {
+        db.withTransaction {
+            val maxIdx = db.gaugeStateDao().getMaxIdx()?.inc() ?: 0
+            val state = GaugeState(0, gaugeType, maxIdx, false)
+            db.gaugeStateDao().insert(state)
+        }
+    }
+
+    suspend fun deleteGauge(gaugeType: GaugeType) = withContext(Dispatchers.IO)  {
+        db.gaugeStateDao().deleteGauge(gaugeType)
+    }
+
+    suspend fun convertToGaugeItemList(packet: SensorsPacket) = withContext(Dispatchers.IO) {
+        db.gaugeStateDao().getAllOrderByIdx().map { getGaugeItem(it, packet) }
+    }
+
+    private fun getGaugeItem(state: GaugeState, it: SensorsPacket): GaugeItem {
+        val value = when (state.gaugeType) {
             GaugeType.RPM -> it.rpm.toString()
             GaugeType.MAP -> String.format(Locale.US, "%.1f", it.map)
             GaugeType.VOLTAGE -> String.format(Locale.US, "%.1f", it.voltage)
@@ -95,7 +115,7 @@ class SensorsRepository @Inject constructor(
             }
         }
 
-        return GaugeItem(type, value)
+        return GaugeItem(state.gaugeType, value)
     }
 
     suspend fun convertToIndicatorItemList(packet: SensorsPacket) = withContext(Dispatchers.IO) {

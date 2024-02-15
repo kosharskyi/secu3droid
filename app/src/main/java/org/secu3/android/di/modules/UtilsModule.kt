@@ -28,11 +28,13 @@ package org.secu3.android.di.modules
 import android.app.DownloadManager
 import android.bluetooth.BluetoothManager
 import android.content.Context
+import androidx.room.Room
 import dagger.Module
 import dagger.Provides
 import dagger.hilt.InstallIn
 import dagger.hilt.android.qualifiers.ApplicationContext
 import dagger.hilt.components.SingletonComponent
+import org.secu3.android.db.AppDatabase
 import org.secu3.android.network.ApiManager
 import org.secu3.android.network.ApiService
 import javax.inject.Singleton
@@ -40,6 +42,14 @@ import javax.inject.Singleton
 @InstallIn(SingletonComponent::class)
 @Module
 object UtilsModule {
+
+    @Singleton
+    @Provides
+    fun getAppDatabase(@ApplicationContext context: Context): AppDatabase {
+        return Room.databaseBuilder(context, AppDatabase::class.java, "secu3droid.db")
+            .createFromAsset("database/secu3droid.db")
+            .build()
+    }
 
     @Singleton
     @Provides
