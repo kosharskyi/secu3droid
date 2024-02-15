@@ -114,8 +114,8 @@ dependencies {
     implementation "com.squareup.okhttp3:logging-interceptor:3.9.0"
 
     //Dagger 2
-    implementation "com.google.dagger:hilt-android:$dagger_version"
-    ksp "com.google.dagger:hilt-compiler:$dagger_version"
+    implementation libs.dagger.hilt.android
+    ksp libs.dagger.hilt.compiler
 
     implementation platform('com.google.firebase:firebase-bom:32.7.1')
     implementation 'com.google.firebase:firebase-analytics-ktx'
@@ -125,12 +125,12 @@ dependencies {
 
     testImplementation 'junit:junit:4.13.2'
     testImplementation libs.room.testing
-    testImplementation "com.google.dagger:hilt-android-testing:$dagger_version"
-    kspTest "com.google.dagger:hilt-compiler:$dagger_version"
+    testImplementation libs.dagger.hilt.testing
+    kspTest libs.dagger.hilt.compiler
 
 
     androidTestImplementation 'androidx.test.ext:junit:1.1.5'
     androidTestImplementation 'androidx.test.espresso:espresso-core:3.5.1'
-    androidTestImplementation "com.google.dagger:hilt-android-testing:$dagger_version"
-    kspAndroidTest "com.google.dagger:hilt-compiler:$dagger_version"
+    androidTestImplementation libs.dagger.hilt.testing
+    kspAndroidTest libs.dagger.hilt.compiler
 }
