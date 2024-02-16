@@ -127,8 +127,11 @@ class SensorsTabsFragment : Fragment() {
             })
 
             logStart.setOnClickListener {
-                logMarkBtnsGroup.visible()
-                logStart.gone()
+                logMark1.show()
+                logMark2.show()
+                logMark3.show()
+                logStop.show()
+                logStart.hide()
                 mViewModel.startWriteLog()
             }
 
@@ -145,8 +148,11 @@ class SensorsTabsFragment : Fragment() {
             }
 
             logStop.setOnClickListener {
-                logMarkBtnsGroup.gone()
-                logStart.visible()
+                logMark1.hide()
+                logMark2.hide()
+                logMark3.hide()
+                logStop.hide()
+                logStart.show()
                 mViewModel.stopWriteLog()
             }
         }
