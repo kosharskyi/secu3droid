@@ -25,7 +25,9 @@
 
 package org.secu3.android.ui.sensors.models
 
+import org.secu3.android.db.models.IndicatorState
+
 data class IndicatorItem(
-    val type: IndicatorType,
+    val state: IndicatorState,
     val isActive: Boolean
 )

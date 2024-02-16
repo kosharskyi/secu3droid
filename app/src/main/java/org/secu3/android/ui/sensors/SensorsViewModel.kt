@@ -51,7 +51,6 @@ import javax.inject.Inject
 @HiltViewModel
 class SensorsViewModel @Inject constructor(private val secu3Repository: Secu3Repository,
                                            private val mUserPrefs: UserPrefs,
-                                           private val mAppPrefs: AppPrefs,
                                            private val secuLogger: SecuLogger,
                                            private val repository: SensorsRepository
                                            ) : ViewModel() {
@@ -80,6 +79,10 @@ class SensorsViewModel @Inject constructor(private val secu3Repository: Secu3Rep
     private val showAddGaugeFlow = MutableSharedFlow<List<GaugeType>>()
     val showAddGaugeLiveData: LiveData<List<GaugeType>>
         get() = showAddGaugeFlow.asLiveData()
+
+    private val showAddIndicatorFlow = MutableSharedFlow<List<IndicatorType>>()
+    val showAddIndicatorLiveData: LiveData<List<IndicatorType>>
+        get() = showAddIndicatorFlow.asLiveData()
 
 
     fun sendNewTask(task: Task) {
@@ -132,23 +135,23 @@ class SensorsViewModel @Inject constructor(private val secu3Repository: Secu3Rep
         }
     }
 
-    fun getIndicatorsAvailableToAdd(): List<IndicatorType> {
-        return IndicatorType.entries.filter { it !in mAppPrefs.indicatorsEnabled }
+    fun addIndicatorClick() {
+        viewModelScope.launch {
+            val storedIndicators = repository.getStoredIndicatorStates().map { it.indicatorType }
+            val indicators = IndicatorType.entries.filter { it !in storedIndicators }
+            showAddIndicatorFlow.emit(indicators)
+        }
     }
 
     fun addIndicator(indicator: IndicatorType) {
-        mAppPrefs.apply {
-            val indicators = indicatorsEnabled.toMutableList()
-            indicators.add(indicator)
-            indicatorsEnabled = indicators
+        viewModelScope.launch {
+            repository.addIndicator(indicator)
         }
     }
 
     fun deleteIndicator(indicator: IndicatorType) {
-        mAppPrefs.apply {
-            val indicators = indicatorsEnabled.toMutableList()
-            indicators.remove(indicator)
-            indicatorsEnabled = indicators
+        viewModelScope.launch {
+            repository.deleteIndicator(indicator)
         }
     }
 

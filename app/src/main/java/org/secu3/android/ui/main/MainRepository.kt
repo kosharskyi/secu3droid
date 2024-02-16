@@ -33,9 +33,11 @@ import kotlinx.coroutines.withContext
 import org.secu3.android.BuildConfig
 import org.secu3.android.db.AppDatabase
 import org.secu3.android.db.models.GaugeState
+import org.secu3.android.db.models.IndicatorState
 import org.secu3.android.network.ApiService
 import org.secu3.android.network.models.GitHubRelease
 import org.secu3.android.ui.sensors.models.GaugeType
+import org.secu3.android.ui.sensors.models.IndicatorType
 import org.secu3.android.utils.AppPrefs
 import org.secu3.android.utils.toResult
 import javax.inject.Inject
@@ -85,14 +87,29 @@ class MainRepository @Inject constructor(
 
     suspend fun checkAndInitDb() = withContext(Dispatchers.IO) {
         if (appPrefs.isDbInitNeed) {
-            val items = listOf(
+            val gauges = listOf(
                 GaugeState(0, GaugeType.RPM, 0),
                 GaugeState(0, GaugeType.MAP, 1),
                 GaugeState(0, GaugeType.VOLTAGE, 2),
                 GaugeState(0, GaugeType.TEMPERATURE, 3),
             )
 
-            db.gaugeStateDao().insertAll(items)
+            db.gaugeStateDao().insertAll(gauges)
+
+            val indicators = listOf(
+                IndicatorState(0, IndicatorType.GAS_VALVE, 0),
+                IndicatorState(0, IndicatorType.THROTTLE, 1),
+                IndicatorState(0, IndicatorType.FI_FUEL, 2),
+                IndicatorState(0, IndicatorType.POWER_VALVE, 3),
+                IndicatorState(0, IndicatorType.STARTER_BLOCKING, 4),
+                IndicatorState(0, IndicatorType.AE, 5),
+                IndicatorState(0, IndicatorType.COOLING_FAN, 6),
+                IndicatorState(0, IndicatorType.CHECK_ENGINE, 7),
+                IndicatorState(0, IndicatorType.REV_LIM_FUEL_CUT, 8),
+                IndicatorState(0, IndicatorType.FLOOD_CLEAR_MODE, 9)
+            )
+
+            db.indicatorStateDao().insertAll(indicators)
 
             appPrefs.isDbInitNeed = false
         }

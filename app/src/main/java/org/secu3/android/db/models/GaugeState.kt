@@ -31,7 +31,7 @@ import androidx.room.Index
 import androidx.room.PrimaryKey
 import org.secu3.android.ui.sensors.models.GaugeType
 
-@Entity("gauge_item_state",
+@Entity("gauge_state",
     indices = [
         Index(value = ["gauge_type"], unique = true)
     ]

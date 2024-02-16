@@ -34,19 +34,19 @@ import org.secu3.android.ui.sensors.models.GaugeType
 @Dao
 interface GaugeStateDao : BaseDao<GaugeState> {
 
-    @Query("SELECT * FROM gauge_item_state")
+    @Query("SELECT * FROM gauge_state")
     suspend fun getAll(): List<GaugeState>
 
-    @Query("SELECT * FROM gauge_item_state ORDER BY idx")
+    @Query("SELECT * FROM gauge_state ORDER BY idx")
     suspend fun getAllOrderByIdx(): List<GaugeState>
 
-    @Query("SELECT * FROM gauge_item_state WHERE gauge_type = :gaugeType")
+    @Query("SELECT * FROM gauge_state WHERE gauge_type = :gaugeType")
     suspend fun getByGaugeType(gaugeType: GaugeType): GaugeState?
 
-    @Query("SELECT MAX(idx) FROM gauge_item_state")
+    @Query("SELECT MAX(idx) FROM gauge_state")
     suspend fun getMaxIdx(): Int?
 
-    @Query("UPDATE gauge_item_state SET idx = idx - 1 WHERE idx > :missingIdx")
+    @Query("UPDATE gauge_state SET idx = idx - 1 WHERE idx > :missingIdx")
     suspend fun updateIdxGreaterThan(missingIdx: Int)
 
     @Transaction

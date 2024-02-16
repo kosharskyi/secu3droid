@@ -30,6 +30,7 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import org.secu3.android.db.AppDatabase
 import org.secu3.android.db.models.GaugeState
+import org.secu3.android.db.models.IndicatorState
 import org.secu3.android.models.packets.input.SensorsPacket
 import org.secu3.android.ui.sensors.models.GaugeItem
 import org.secu3.android.ui.sensors.models.GaugeType
@@ -118,12 +119,28 @@ class SensorsRepository @Inject constructor(
         return GaugeItem(state, value)
     }
 
-    suspend fun convertToIndicatorItemList(packet: SensorsPacket) = withContext(Dispatchers.IO) {
-        mPrefs.indicatorsEnabled.map { getIndicatorItem(it, packet) }
+    suspend fun getStoredIndicatorStates(): List<IndicatorState> = withContext(Dispatchers.IO) {
+        db.indicatorStateDao().getAll()
     }
 
-    private fun getIndicatorItem(type: IndicatorType, packet: SensorsPacket): IndicatorItem {
-        val value = when (type) {
+    suspend fun addIndicator(indicatorType: IndicatorType) = withContext(Dispatchers.IO)  {
+        db.withTransaction {
+            val maxIdx = db.indicatorStateDao().getMaxIdx()?.inc() ?: 0
+            val state = IndicatorState(0, indicatorType, maxIdx)
+            db.indicatorStateDao().insert(state)
+        }
+    }
+
+    suspend fun deleteIndicator(indicatorType: IndicatorType) = withContext(Dispatchers.IO)  {
+        db.indicatorStateDao().deleteIndicator(indicatorType)
+    }
+
+    suspend fun convertToIndicatorItemList(packet: SensorsPacket) = withContext(Dispatchers.IO) {
+        db.indicatorStateDao().getAllOrderByIdx().map { getIndicatorItem(it, packet) }
+    }
+
+    private fun getIndicatorItem(state: IndicatorState, packet: SensorsPacket): IndicatorItem {
+        val value = when (state.indicatorType) {
             IndicatorType.GAS_VALVE -> packet.gasBit > 0
             IndicatorType.THROTTLE -> packet.carbBit > 0
             IndicatorType.FI_FUEL -> packet.gasBit > 0
@@ -148,7 +165,7 @@ class SensorsRepository @Inject constructor(
             IndicatorType.UNIV_OUT6 -> packet.uniOut5Bit > 0
         }
 
-        return IndicatorItem(type, value)
+        return IndicatorItem(state, value)
     }
 
     suspend fun updateGauges(swipedList: List<GaugeState>) = withContext(Dispatchers.IO) {

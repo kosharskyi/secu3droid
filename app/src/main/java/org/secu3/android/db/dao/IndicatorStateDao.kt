@@ -23,20 +23,36 @@
  *                    email: vetalkosharskiy@gmail.com
  */
 
-package org.secu3.android.db
+package org.secu3.android.db.dao
 
-import androidx.room.Database
-import androidx.room.RoomDatabase
-import org.secu3.android.db.dao.GaugeStateDao
-import org.secu3.android.db.dao.IndicatorStateDao
-import org.secu3.android.db.models.GaugeState
+import androidx.room.Dao
+import androidx.room.Query
+import androidx.room.Transaction
 import org.secu3.android.db.models.IndicatorState
+import org.secu3.android.ui.sensors.models.IndicatorType
 
-@Database(entities = [GaugeState::class, IndicatorState::class], version = 1)
-abstract class AppDatabase : RoomDatabase() {
+@Dao
+interface IndicatorStateDao : BaseDao<IndicatorState>{
 
-    abstract fun gaugeStateDao(): GaugeStateDao
+    @Query("SELECT * FROM indicator_state")
+    suspend fun getAll(): List<IndicatorState>
 
-    abstract fun indicatorStateDao(): IndicatorStateDao
+    @Query("SELECT * FROM indicator_state ORDER BY idx")
+    suspend fun getAllOrderByIdx(): List<IndicatorState>
 
+    @Query("SELECT * FROM indicator_state WHERE indicator_type = :indicatorType")
+    suspend fun getByIndicatorType(indicatorType: IndicatorType): IndicatorState?
+
+    @Query("SELECT MAX(idx) FROM indicator_state")
+    suspend fun getMaxIdx(): Int?
+
+    @Query("UPDATE indicator_state SET idx = idx - 1 WHERE idx > :missingIdx")
+    suspend fun updateIdxGreaterThan(missingIdx: Int)
+
+    @Transaction
+    suspend fun deleteIndicator(indicatorType: IndicatorType) {
+        val state = getByIndicatorType(indicatorType) ?: return
+        delete(state)
+        updateIdxGreaterThan(state.idx)
+    }
 }

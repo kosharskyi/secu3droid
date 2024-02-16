@@ -23,20 +23,28 @@
  *                    email: vetalkosharskiy@gmail.com
  */
 
-package org.secu3.android.db
+package org.secu3.android.db.models
 
-import androidx.room.Database
-import androidx.room.RoomDatabase
-import org.secu3.android.db.dao.GaugeStateDao
-import org.secu3.android.db.dao.IndicatorStateDao
-import org.secu3.android.db.models.GaugeState
-import org.secu3.android.db.models.IndicatorState
+import androidx.room.ColumnInfo
+import androidx.room.Entity
+import androidx.room.Index
+import androidx.room.PrimaryKey
+import org.secu3.android.ui.sensors.models.IndicatorType
 
-@Database(entities = [GaugeState::class, IndicatorState::class], version = 1)
-abstract class AppDatabase : RoomDatabase() {
 
-    abstract fun gaugeStateDao(): GaugeStateDao
+@Entity("indicator_state",
+    indices = [
+        Index(value = ["indicator_type"], unique = true)
+    ]
+)
+data class IndicatorState(
 
-    abstract fun indicatorStateDao(): IndicatorStateDao
+    @PrimaryKey(autoGenerate = true)
+    val id: Int = 0,
 
-}
+    @ColumnInfo("indicator_type")
+    val indicatorType: IndicatorType,
+
+    var idx: Int, // Position in list
+
+)

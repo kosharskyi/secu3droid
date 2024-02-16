@@ -70,7 +70,7 @@ class IndicatorAdapter(val onClick:(IndicatorType) -> Unit) : ListAdapter<Indica
                     popup.setOnMenuItemClickListener {
                         when (it.itemId) {
                             R.id.delete_indicator -> {
-                                onClick(item.type)
+                                onClick(item.state.indicatorType)
                                 true
                             }
                             else -> false
@@ -78,7 +78,7 @@ class IndicatorAdapter(val onClick:(IndicatorType) -> Unit) : ListAdapter<Indica
                     }
                 }
 
-                indicatorName.text = root.context.getString(item.type.title)
+                indicatorName.text = root.context.getString(item.state.indicatorType.title)
                 if (item.isActive) {
                     root.setCardBackgroundColor(Color.GREEN)
                 } else {
@@ -90,7 +90,7 @@ class IndicatorAdapter(val onClick:(IndicatorType) -> Unit) : ListAdapter<Indica
 
     object IndicatorItemDiffCallback : DiffUtil.ItemCallback<IndicatorItem>() {
         override fun areItemsTheSame(oldItem: IndicatorItem, newItem: IndicatorItem): Boolean {
-            return oldItem.type == newItem.type
+            return oldItem.state == newItem.state
         }
 
         override fun areContentsTheSame(oldItem: IndicatorItem, newItem: IndicatorItem): Boolean {
