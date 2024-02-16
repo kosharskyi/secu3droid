@@ -37,8 +37,7 @@ import org.secu3.android.models.packets.input.FirmwareInfoPacket
 import org.secu3.android.network.models.GitHubRelease
 import org.secu3.android.utils.AppPrefs
 import org.secu3.android.utils.Task
-import org.threeten.bp.Duration
-import org.threeten.bp.LocalDateTime
+import org.threeten.bp.LocalDate
 import javax.inject.Inject
 
 @HiltViewModel
@@ -56,14 +55,13 @@ class MainViewModel @Inject constructor(
 
     val newReleaseAvailable: LiveData<GitHubRelease>
         get() = flow {
-            val now = LocalDateTime.now()
-            val duration = Duration.between(appPrefs.lastAppVersionCheck, now)
+            val now = LocalDate.now()
 
-            if (duration.toDays() > 0) {
+            if (appPrefs.lastAppVersionCheck.isBefore(now)) {
                 mainRepository.getNewRelease()?.let {
                     emit(it)
-                    appPrefs.lastAppVersionCheck = now
                 }
+                appPrefs.lastAppVersionCheck = now
             }
         }.asLiveData()
 

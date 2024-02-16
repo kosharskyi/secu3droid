@@ -143,8 +143,7 @@ class SensorsFragment : Fragment() {
     private fun addIndicatorClick() {
 
         val indicators = mViewModel.getIndicatorsAvailableToAdd()
-//        val indicatorsNames = indicators.map { it.name }.map { getString(it) }.toTypedArray()  // Fixme: add names to indicators
-        val indicatorsNames = indicators.map { it.name }.toTypedArray()
+        val indicatorsNames = indicators.map { it.title }.map { getString(it) }.toTypedArray()
 
         MaterialAlertDialogBuilder(requireContext())
             .setTitle(getString(R.string.select_indicator_to_add))

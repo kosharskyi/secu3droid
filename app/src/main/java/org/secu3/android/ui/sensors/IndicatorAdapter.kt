@@ -78,7 +78,7 @@ class IndicatorAdapter(val onClick:(IndicatorType) -> Unit) : ListAdapter<Indica
                     }
                 }
 
-                indicatorName.text = item.type.toString().replace("_", " ")
+                indicatorName.text = root.context.getString(item.type.title)
                 if (item.isActive) {
                     root.setCardBackgroundColor(Color.GREEN)
                 } else {
