@@ -34,25 +34,51 @@ import androidx.recyclerview.widget.ListAdapter
 import androidx.recyclerview.widget.RecyclerView.ViewHolder
 import org.secu3.android.R
 import org.secu3.android.databinding.ViewGaugeItemBinding
+import org.secu3.android.databinding.ViewNumericGaugeItemBinding
+import org.secu3.android.db.models.GaugeState
 import org.secu3.android.ui.sensors.models.GaugeItem
 import org.secu3.android.ui.sensors.models.GaugeType
 import java.util.Locale
 
-class GaugeAdapter(val onClick:(GaugeType) -> Unit) : ListAdapter<GaugeItem, GaugeAdapter.GaugeViewHolder>(GaugeItemDiffCallback) {
+class GaugeAdapter(val onSwitchViewClick: (GaugeState) -> Unit,
+                   val onDeleteClick:(GaugeType) -> Unit) : ListAdapter<GaugeItem, ViewHolder>(GaugeItemDiffCallback) {
 
     private var mInflater: LayoutInflater? = null
 
-    override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): GaugeViewHolder {
+    private val GAUGE_VIEW_TYPE = 0
+    private val NUMERIC_VIEW_TYPE = 1
+
+    override fun getItemViewType(position: Int): Int {
+
+        val item = getItem(position)
+
+        if (item.state.isNumericView) {
+            return NUMERIC_VIEW_TYPE
+        }
+
+        return GAUGE_VIEW_TYPE
+    }
+
+    override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): ViewHolder {
         mInflater ?: let {
             mInflater = LayoutInflater.from(parent.context)
         }
-        val binding = ViewGaugeItemBinding.inflate(mInflater!!, parent, false)
 
-        return GaugeViewHolder(binding)
+
+        if (viewType == GAUGE_VIEW_TYPE) {
+            val binding = ViewGaugeItemBinding.inflate(mInflater!!, parent, false)
+            return GaugeViewHolder(binding)
+        }
+
+        val binding = ViewNumericGaugeItemBinding.inflate(mInflater!!, parent, false)
+
+        return NumericGaugeViewHolder(binding)
+
     }
 
-    override fun onBindViewHolder(holder: GaugeViewHolder, position: Int) {
-        holder.bind(getItem(position))
+    override fun onBindViewHolder(holder: ViewHolder, position: Int) {
+        (holder as? GaugeViewHolder)?.bind(getItem(position))
+        (holder as? NumericGaugeViewHolder)?.bind(getItem(position))
     }
 
     inner class GaugeViewHolder(private val binding: ViewGaugeItemBinding) : ViewHolder(binding.root) {
@@ -71,8 +97,12 @@ class GaugeAdapter(val onClick:(GaugeType) -> Unit) : ListAdapter<GaugeItem, Gau
                     popup.show()
                     popup.setOnMenuItemClickListener {
                         when (it.itemId) {
+                            R.id.switch_gauge_view -> {
+                                onSwitchViewClick(item.state)
+                                true
+                            }
                             R.id.delete_gauge -> {
-                                onClick(gaugeType)
+                                onDeleteClick(gaugeType)
                                 true
                             }
                             else -> false
@@ -101,6 +131,45 @@ class GaugeAdapter(val onClick:(GaugeType) -> Unit) : ListAdapter<GaugeItem, Gau
                         speedTextListener = { speed -> "%.1f".format(Locale.US, speed) }
                     }
                 }
+            }
+
+        }
+    }
+
+    inner class NumericGaugeViewHolder(private val binding: ViewNumericGaugeItemBinding) : ViewHolder(binding.root) {
+
+        private lateinit var gaugeType: GaugeType
+
+        fun bind(item: GaugeItem) {
+            gaugeType = item.state.gaugeType
+
+            binding.apply {
+
+                root.setOnClickListener {
+                    val popup = PopupMenu(root.context, root)
+                    val inflater: MenuInflater = popup.menuInflater
+                    inflater.inflate(R.menu.gauge_actions_menu, popup.menu)
+                    popup.show()
+                    popup.setOnMenuItemClickListener {
+                        when (it.itemId) {
+                            R.id.switch_gauge_view -> {
+                                onSwitchViewClick(item.state)
+                                true
+                            }
+                            R.id.delete_gauge -> {
+                                onDeleteClick(gaugeType)
+                                true
+                            }
+                            else -> false
+                        }
+                    }
+                }
+
+                gaugeName.text = root.context.getString(gaugeType.title)
+
+                value.text = item.value
+
+                units.text = root.context.getString(gaugeType.units)
             }
 
         }

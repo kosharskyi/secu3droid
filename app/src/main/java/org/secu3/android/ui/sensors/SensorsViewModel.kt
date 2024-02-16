@@ -135,6 +135,12 @@ class SensorsViewModel @Inject constructor(private val secu3Repository: Secu3Rep
         }
     }
 
+    fun updateGaugeState(gaugeState: GaugeState) {
+        viewModelScope.launch {
+            repository.updateGauges(listOf(gaugeState))
+        }
+    }
+
     fun addIndicatorClick() {
         viewModelScope.launch {
             val storedIndicators = repository.getStoredIndicatorStates().map { it.indicatorType }

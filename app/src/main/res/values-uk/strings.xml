@@ -351,6 +351,7 @@
     <string name="the_version_is_available_do_you_want_to_download">Версія %1$s вже доступна.\nБажаєте завантажити?</string>
     <string name="download">Завантажити</string>
     <string name="remind_me_later">Нагадати пізніше</string>
+    <string name="switch_view">Перемкнути вигляд</string>
 
 </resources>
 

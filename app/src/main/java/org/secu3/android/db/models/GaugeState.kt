@@ -47,6 +47,6 @@ data class GaugeState(
     var idx: Int, // Position in list
 
     @ColumnInfo("is_numeric_view")
-    val isNumericView: Boolean = false,
+    var isNumericView: Boolean = false,
 
 )

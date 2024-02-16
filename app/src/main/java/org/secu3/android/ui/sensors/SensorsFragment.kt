@@ -70,7 +70,10 @@ class SensorsFragment : Fragment() {
             }
 
             touchHelper.attachToRecyclerView(gaugesList)
-            gaugesList.adapter = GaugeAdapter {
+            gaugesList.adapter = GaugeAdapter(onSwitchViewClick = {
+                it.isNumericView = it.isNumericView.not()
+                mViewModel.updateGaugeState(it)
+            }) {
                 mViewModel.deleteGauge(it)
             }
 

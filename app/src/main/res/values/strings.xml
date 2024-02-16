@@ -513,5 +513,6 @@
     <string name="the_version_is_available_do_you_want_to_download">The version %1$s is available.\nDo you want to download?</string>
     <string name="download">Download</string>
     <string name="remind_me_later">Remind me later</string>
+    <string name="switch_view">Switch view</string>
 
 </resources>
