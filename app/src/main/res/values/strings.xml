@@ -515,5 +515,6 @@
     <string name="remind_me_later">Remind me later</string>
     <string name="switch_view">Switch view</string>
     <string name="enable_old_sensors_view">Enable old sensors view</string>
+    <string name="columns_count">Columns count</string>
 
 </resources>

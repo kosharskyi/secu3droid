@@ -32,6 +32,7 @@ import android.view.ViewGroup
 import android.view.animation.AccelerateDecelerateInterpolator
 import androidx.fragment.app.Fragment
 import androidx.fragment.app.viewModels
+import androidx.recyclerview.widget.GridLayoutManager
 import androidx.recyclerview.widget.ItemTouchHelper
 import androidx.recyclerview.widget.RecyclerView
 import com.google.android.material.dialog.MaterialAlertDialogBuilder
@@ -69,7 +70,7 @@ class SensorsFragment : Fragment() {
                 onFabClick()
             }
 
-            touchHelper.attachToRecyclerView(gaugesList)
+            gaugeTouchHelper.attachToRecyclerView(gaugesList)
             gaugesList.adapter = GaugeAdapter(onSwitchViewClick = {
                 it.isNumericView = it.isNumericView.not()
                 mViewModel.updateGaugeState(it)
@@ -77,7 +78,7 @@ class SensorsFragment : Fragment() {
                 mViewModel.deleteGauge(it)
             }
 
-            touchHelper.attachToRecyclerView(indicatorsList)
+            indicatorTouchHelper.attachToRecyclerView(indicatorsList)
             indicatorsList.adapter = IndicatorAdapter {
                 mViewModel.deleteIndicator(it)
             }
@@ -165,6 +166,13 @@ class SensorsFragment : Fragment() {
     override fun onResume() {
         super.onResume()
         mViewModel.sendNewTask(Task.Secu3ReadSensors)
+
+        mBinding?.apply {
+            mViewModel.columnsCount.let {
+                (gaugesList.layoutManager as GridLayoutManager).spanCount = it
+                (indicatorsList.layoutManager as GridLayoutManager).spanCount = it
+            }
+        }
     }
 
     override fun onDestroyView() {
@@ -172,7 +180,7 @@ class SensorsFragment : Fragment() {
         mBinding = null
     }
 
-    private val touchHelper = ItemTouchHelper(object : ItemTouchHelper.Callback() {
+    private val gaugeTouchHelper = ItemTouchHelper(object : ItemTouchHelper.Callback() {
         override fun getMovementFlags(recyclerView: RecyclerView, viewHolder: RecyclerView.ViewHolder): Int {
             return makeFlag(ItemTouchHelper.ACTION_STATE_DRAG,
                 ItemTouchHelper.UP or ItemTouchHelper.DOWN or ItemTouchHelper.END or ItemTouchHelper.START
@@ -185,8 +193,23 @@ class SensorsFragment : Fragment() {
             target: RecyclerView.ViewHolder
         ): Boolean {
 
-            onGaugeMove(recyclerView, viewHolder, target)
-            onIndicatorMove(recyclerView, viewHolder, target)
+            val startIndex = viewHolder.adapterPosition
+            val targetIndex = target.adapterPosition
+
+            val adapter = mBinding?.gaugesList?.adapter as GaugeAdapter
+            val listItems = adapter.currentList.toMutableList()
+
+            val gauge = listItems[startIndex]
+            listItems.removeAt(startIndex)
+            listItems.add(targetIndex, gauge)
+
+            val swipedItems = listItems.mapIndexed { index, gaugeItem ->
+                gaugeItem.state.idx = index
+                gaugeItem
+            }
+
+            adapter.submitList(swipedItems)
+            mViewModel.gaugesSwiped(swipedItems.map { it.state })
 
             return true
         }
@@ -207,51 +230,51 @@ class SensorsFragment : Fragment() {
 
     })
 
-    private fun onGaugeMove(recyclerView: RecyclerView, viewHolder: RecyclerView.ViewHolder, target: RecyclerView.ViewHolder) {
-        if (recyclerView.id != mBinding?.gaugesList?.id) {
-            return
+    private val indicatorTouchHelper = ItemTouchHelper(object : ItemTouchHelper.Callback() {
+        override fun getMovementFlags(recyclerView: RecyclerView, viewHolder: RecyclerView.ViewHolder): Int {
+            return makeFlag(ItemTouchHelper.ACTION_STATE_DRAG,
+                ItemTouchHelper.UP or ItemTouchHelper.DOWN or ItemTouchHelper.END or ItemTouchHelper.START
+            )
         }
 
-        val startIndex = viewHolder.adapterPosition
-        val targetIndex = target.adapterPosition
+        override fun onMove(
+            recyclerView: RecyclerView,
+            viewHolder: RecyclerView.ViewHolder,
+            target: RecyclerView.ViewHolder
+        ): Boolean {
+            val startIndex = viewHolder.adapterPosition
+            val targetIndex = target.adapterPosition
 
-        val adapter = mBinding?.gaugesList?.adapter as GaugeAdapter
-        val listItems = adapter.currentList.toMutableList()
+            val adapter = mBinding?.indicatorsList?.adapter as IndicatorAdapter
+            val listItems = adapter.currentList.toMutableList()
 
-        val gauge = listItems[startIndex]
-        listItems.removeAt(startIndex)
-        listItems.add(targetIndex, gauge)
+            val indicator = listItems[startIndex]
+            listItems.removeAt(startIndex)
+            listItems.add(targetIndex, indicator)
 
-        val swipedItems = listItems.mapIndexed { index, gaugeItem ->
-            gaugeItem.state.idx = index
-            gaugeItem
+            val swipedItems = listItems.mapIndexed { index, indicatorItem ->
+                indicatorItem.state.idx = index
+                indicatorItem
+            }
+
+            adapter.submitList(swipedItems)
+            mViewModel.indicatorsSwiped(swipedItems.map { it.state })
+            return true
         }
 
-        adapter.submitList(swipedItems)
-        mViewModel.gaugesSwiped(swipedItems.map { it.state })
-    }
-
-    private fun onIndicatorMove(recyclerView: RecyclerView, viewHolder: RecyclerView.ViewHolder, target: RecyclerView.ViewHolder) {
-        if (recyclerView.id != mBinding?.indicatorsList?.id) {
-            return
+        override fun onSelectedChanged(viewHolder: RecyclerView.ViewHolder?, actionState: Int) {
+            super.onSelectedChanged(viewHolder, actionState)
+            isDragging = actionState == ItemTouchHelper.ACTION_STATE_DRAG
         }
 
-        val startIndex = viewHolder.adapterPosition
-        val targetIndex = target.adapterPosition
-
-        val adapter = mBinding?.indicatorsList?.adapter as IndicatorAdapter
-        val listItems = adapter.currentList.toMutableList()
-
-        val indicator = listItems[startIndex]
-        listItems.removeAt(startIndex)
-        listItems.add(targetIndex, indicator)
-
-        val swipedItems = listItems.mapIndexed { index, indicatorItem ->
-            indicatorItem.state.idx = index
-            indicatorItem
+        override fun onSwiped(viewHolder: RecyclerView.ViewHolder, direction: Int) {
+            // ignore
         }
 
-        adapter.submitList(swipedItems)
-        mViewModel.indicatorsSwiped(swipedItems.map { it.state })
-    }
+        override fun clearView(recyclerView: RecyclerView, viewHolder: RecyclerView.ViewHolder) {
+            super.clearView(recyclerView, viewHolder)
+            isDragging = false
+        }
+
+    })
 }

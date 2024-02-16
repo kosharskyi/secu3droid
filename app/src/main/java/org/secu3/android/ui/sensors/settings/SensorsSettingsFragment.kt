@@ -30,6 +30,9 @@ import androidx.fragment.app.Fragment
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
+import android.widget.AdapterView
+import android.widget.AdapterView.OnItemSelectedListener
+import android.widget.ArrayAdapter
 import androidx.navigation.fragment.findNavController
 import dagger.hilt.android.AndroidEntryPoint
 import org.secu3.android.R
@@ -60,14 +63,33 @@ class SensorsSettingsFragment : Fragment() {
                 findNavController().popBackStack()
             }
 
-            oldSensorsCheckbox.isChecked = mPrefs.oldSensorViewEnabled
-            oldSensorsCheckbox.setOnCheckedChangeListener { buttonView, isChecked ->
-                mPrefs.oldSensorViewEnabled = isChecked
+            oldSensorsCheckbox.apply {
+                isChecked = mPrefs.oldSensorViewEnabled
+                setOnCheckedChangeListener { buttonView, isChecked ->
+                    mPrefs.oldSensorViewEnabled = isChecked
+                }
             }
 
             oldSensorsTitle.setOnClickListener {
                 oldSensorsCheckbox.performClick()
             }
+
+            val items = IntRange(2, 8).toList()
+
+            columnsCountSpinner.apply {
+                adapter = ArrayAdapter(requireContext(), android.R.layout.simple_dropdown_item_1line, items.map { it.toString() })
+                setSelection(items.indexOf(mPrefs.columnsCount))
+                onItemSelectedListener = object : OnItemSelectedListener {
+                    override fun onItemSelected(parent: AdapterView<*>?, view: View?, position: Int, id: Long) {
+                        mPrefs.columnsCount = items[position]
+                    }
+
+                    override fun onNothingSelected(parent: AdapterView<*>?) {
+                        // Ignore
+                    }
+                }
+            }
+
 
         }
 
