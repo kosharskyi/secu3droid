@@ -74,6 +74,7 @@ class SensorsFragment : Fragment() {
                 mViewModel.deleteGauge(it)
             }
 
+            touchHelper.attachToRecyclerView(indicatorsList)
             indicatorsList.adapter = IndicatorAdapter {
                 mViewModel.deleteIndicator(it)
             }
@@ -88,6 +89,9 @@ class SensorsFragment : Fragment() {
         }
 
         mViewModel.indicatorLiveData.observe(viewLifecycleOwner) {
+            if (isDragging) {
+                return@observe
+            }
             (mBinding?.indicatorsList?.adapter as? IndicatorAdapter)?.submitList(it)
         }
 
@@ -177,23 +181,9 @@ class SensorsFragment : Fragment() {
             viewHolder: RecyclerView.ViewHolder,
             target: RecyclerView.ViewHolder
         ): Boolean {
-            val startIndex = viewHolder.adapterPosition
-            val targetIndex = target.adapterPosition
 
-            val adapter = mBinding?.gaugesList?.adapter as GaugeAdapter
-            val listItems = adapter.currentList.toMutableList()
-
-            val gauge = listItems[startIndex]
-            listItems.removeAt(startIndex)
-            listItems.add(targetIndex, gauge)
-
-            val swipedItems = listItems.mapIndexed { index, gaugeItem ->
-                gaugeItem.state.idx = index
-                gaugeItem
-            }
-
-            adapter.submitList(swipedItems)
-            mViewModel.itemsSwiped(swipedItems.map { it.state })
+            onGaugeMove(recyclerView, viewHolder, target)
+            onIndicatorMove(recyclerView, viewHolder, target)
 
             return true
         }
@@ -213,4 +203,52 @@ class SensorsFragment : Fragment() {
         }
 
     })
+
+    private fun onGaugeMove(recyclerView: RecyclerView, viewHolder: RecyclerView.ViewHolder, target: RecyclerView.ViewHolder) {
+        if (recyclerView.id != mBinding?.gaugesList?.id) {
+            return
+        }
+
+        val startIndex = viewHolder.adapterPosition
+        val targetIndex = target.adapterPosition
+
+        val adapter = mBinding?.gaugesList?.adapter as GaugeAdapter
+        val listItems = adapter.currentList.toMutableList()
+
+        val gauge = listItems[startIndex]
+        listItems.removeAt(startIndex)
+        listItems.add(targetIndex, gauge)
+
+        val swipedItems = listItems.mapIndexed { index, gaugeItem ->
+            gaugeItem.state.idx = index
+            gaugeItem
+        }
+
+        adapter.submitList(swipedItems)
+        mViewModel.gaugesSwiped(swipedItems.map { it.state })
+    }
+
+    private fun onIndicatorMove(recyclerView: RecyclerView, viewHolder: RecyclerView.ViewHolder, target: RecyclerView.ViewHolder) {
+        if (recyclerView.id != mBinding?.indicatorsList?.id) {
+            return
+        }
+
+        val startIndex = viewHolder.adapterPosition
+        val targetIndex = target.adapterPosition
+
+        val adapter = mBinding?.indicatorsList?.adapter as IndicatorAdapter
+        val listItems = adapter.currentList.toMutableList()
+
+        val indicator = listItems[startIndex]
+        listItems.removeAt(startIndex)
+        listItems.add(targetIndex, indicator)
+
+        val swipedItems = listItems.mapIndexed { index, indicatorItem ->
+            indicatorItem.state.idx = index
+            indicatorItem
+        }
+
+        adapter.submitList(swipedItems)
+        mViewModel.indicatorsSwiped(swipedItems.map { it.state })
+    }
 }
