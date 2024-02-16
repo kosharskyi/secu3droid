@@ -40,7 +40,7 @@
     <string name="about_copyright_2">Copyright © %d Secu3Droid Project</string>
     <string name="about_app_desc">Secu3Droid це застосунок для налаштування системи управління двигуном Secu-3. Secu-3 це безкоштовна система управління двигуном з відкритими вихідними кодами <a href="http://secu-3.org"><b>http://secu-3.org</b></a>"</string>
     <string name="about_license">Це програмне забезпечення з відкритим вихідним кодом розповсюджується безкоштовно у відповідності з умовами<a href="http://www.gnu.org/licenses/gpl-3.0-standalone.html"><b>GNU General Public License</b></a>.</string>
-    <string name="about_sources">Вихідний код доступний з Git-репозиторію на вебсайті проекту https://github.com/kosharskiy/secu3droid</string>
+    <string name="about_sources">Вихідний код доступний з Git-репозиторію на вебсайті проекту https://github.com/kosharskyi/secu3droid</string>
 
     <string name="permission_rationale_title">Потрібно надати дозволи</string>
     <string name="permission_rationale_message">Застосунок не збирає і не використовує ваші геодані. Це обмеження операційної системи, запитувати дозволи на геодані разом із блютузом</string>

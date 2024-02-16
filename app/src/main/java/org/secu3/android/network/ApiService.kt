@@ -31,10 +31,10 @@ import retrofit2.http.GET
 
 interface ApiService {
 
-    @GET("/repos/kosharskiy/secu3droid/releases")
+    @GET("/repos/kosharskyi/secu3droid/releases")
     suspend fun getReleases(): Result<List<GitHubRelease>>
 
-    @GET("/repos/kosharskiy/secu3droid/releases/latest")
+    @GET("/repos/kosharskyi/secu3droid/releases/latest")
     suspend fun getLatestRelease(): Response<GitHubRelease>
 
 }
