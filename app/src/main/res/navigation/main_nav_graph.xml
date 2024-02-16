@@ -63,7 +63,20 @@
         android:name="org.secu3.android.ui.sensors.SensorsTabsFragment"
         android:label="Sensors Fragment"
         tools:layout="@layout/fragment_sensors_tabs"
-        />
+        >
+
+        <action
+            android:id="@+id/action_open_settings"
+            app:destination="@id/sensors_settings"
+            />
+
+    </fragment>
+
+    <fragment
+        android:id="@+id/sensors_settings"
+        android:name="org.secu3.android.ui.sensors.settings.SensorsSettingsFragment"
+        android:label="Sensors Settings"
+        tools:layout="@layout/fragment_sensors_setings"/>
 
     <fragment
         android:id="@+id/dashboardFragment"

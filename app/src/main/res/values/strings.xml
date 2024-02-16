@@ -514,5 +514,6 @@
     <string name="download">Download</string>
     <string name="remind_me_later">Remind me later</string>
     <string name="switch_view">Switch view</string>
+    <string name="enable_old_sensors_view">Enable old sensors view</string>
 
 </resources>

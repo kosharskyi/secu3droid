@@ -71,6 +71,10 @@ class UserPrefs @Inject constructor(@ApplicationContext private val ctx: Context
         get() = mPrefs.getString(ctx.getString(R.string.pref_bluetooth_device_key), null);
         set(value) = mPrefs.edit().putString(ctx.getString(R.string.pref_bluetooth_device_key), value).apply()
 
+    var oldSensorViewEnabled: Boolean
+        get() = mPrefs.getBoolean("old_sensors_view", false)
+        set(value) = mPrefs.edit().putBoolean("old_sensors_view", value).apply()
+
     var connectionRetries: Int
         get() = mPrefs.getString(ctx.getString(R.string.pref_connection_retries_key), ctx.getString(R.string.defaultConnectionRetries))!!.toInt()
         set(value) = mPrefs.edit().putString(ctx.getString(R.string.pref_connection_retries_key), value.toString()).apply()

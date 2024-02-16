@@ -28,10 +28,10 @@ package org.secu3.android.ui.sensors
 import androidx.fragment.app.Fragment
 import androidx.viewpager2.adapter.FragmentStateAdapter
 
-class SensorsPagerAdapter(fragment: Fragment): FragmentStateAdapter(fragment) {
+class SensorsPagerAdapter(fragment: Fragment, val isOldViewEnabled: Boolean): FragmentStateAdapter(fragment) {
 
     private val pages = listOf(
-        SensorsFragment(),
+        if (isOldViewEnabled) OldSensorsFragment() else SensorsFragment(),
         RawSensorsFragment()
     )
 

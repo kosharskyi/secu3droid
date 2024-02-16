@@ -40,8 +40,10 @@ import dagger.hilt.android.AndroidEntryPoint
 import org.secu3.android.R
 import org.secu3.android.databinding.FragmentSensorsTabsBinding
 import org.secu3.android.utils.Task
+import org.secu3.android.utils.UserPrefs
 import org.secu3.android.utils.gone
 import org.secu3.android.utils.visible
+import javax.inject.Inject
 
 @AndroidEntryPoint
 class SensorsTabsFragment : Fragment() {
@@ -49,6 +51,9 @@ class SensorsTabsFragment : Fragment() {
     private lateinit var mBinding: FragmentSensorsTabsBinding
 
     private val mViewModel: SensorsViewModel by viewModels()
+
+    @Inject
+    internal lateinit var mPrefs: UserPrefs
 
     override fun onCreateView(inflater: LayoutInflater, container: ViewGroup?, savedInstanceState: Bundle?): View? {
         mBinding = FragmentSensorsTabsBinding.inflate(layoutInflater)
@@ -65,6 +70,8 @@ class SensorsTabsFragment : Fragment() {
     override fun onResume() {
         super.onResume()
         mBinding.apply {
+            viewPager.adapter = SensorsPagerAdapter(this@SensorsTabsFragment, mPrefs.oldSensorViewEnabled)
+
             toolbar.setNavigationOnClickListener { findNavController().popBackStack() }
             logStart.isVisible = mViewModel.isLoggerEnabled && mViewModel.isLoggerStarted.not()
             logMarkBtnsGroup.isVisible = mViewModel.isLoggerEnabled && mViewModel.isLoggerStarted
@@ -75,7 +82,20 @@ class SensorsTabsFragment : Fragment() {
 
         mBinding.apply {
 
-            viewPager.adapter = SensorsPagerAdapter(this@SensorsTabsFragment)
+            toolbar.apply {
+                inflateMenu(R.menu.fragment_sensors_tabs_menu)
+                setOnMenuItemClickListener {
+                    when (it.itemId) {
+                        R.id.settings -> {
+                            findNavController().navigate(SensorsTabsFragmentDirections.actionOpenSettings())
+                            true
+                        }
+                        else -> false
+                    }
+                }
+            }
+
+            viewPager.adapter = SensorsPagerAdapter(this@SensorsTabsFragment, mPrefs.oldSensorViewEnabled)
 
             TabLayoutMediator(tabLayout, viewPager) { tab, position ->
                 when (position) {

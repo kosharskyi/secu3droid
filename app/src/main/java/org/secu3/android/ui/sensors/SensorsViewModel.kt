@@ -61,6 +61,9 @@ class SensorsViewModel @Inject constructor(private val secu3Repository: Secu3Rep
     val isLoggerStarted: Boolean
         get() = secuLogger.isLoggerStarted
 
+    val sensorsLiveData: LiveData<SensorsPacket>
+        get() = secu3Repository.receivedPacketFlow.sample(500).filter { it is SensorsPacket }
+            .map { it as SensorsPacket }.asLiveData()
 
     val gaugesLiveData: LiveData<List<GaugeItem>>
         get() = secu3Repository.receivedPacketFlow.sample(500).filter { it is SensorsPacket }

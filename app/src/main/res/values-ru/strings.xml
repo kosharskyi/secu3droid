@@ -355,6 +355,7 @@
     <string name="download">Скачать</string>
     <string name="remind_me_later">Напомнить позже</string>
     <string name="switch_view">Переключить вид</string>
+    <string name="enable_old_sensors_view">Включить старый вид экрана сенсоров</string>
 
 
 </resources>
