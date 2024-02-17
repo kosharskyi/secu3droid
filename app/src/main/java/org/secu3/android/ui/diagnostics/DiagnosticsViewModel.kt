@@ -61,7 +61,7 @@ class DiagnosticsViewModel @Inject constructor(private val secu3Repository: Secu
             }
         }
 
-        secu3Repository.sendNewTask(Task.Secu3EnterDiagnostics)
+        secu3Repository.sendNewTask(Task.Secu3OpComEnterDiagnostics)
     }
 
     val firmwareLiveData: LiveData<FirmwareInfoPacket>
@@ -82,7 +82,7 @@ class DiagnosticsViewModel @Inject constructor(private val secu3Repository: Secu
 
 
     fun leaveDiagnostic() {
-        secu3Repository.sendNewTask(Task.Secu3LeaveDiagnostics)
+        secu3Repository.sendNewTask(Task.Secu3OpComLeaveDiagnostics)
         secu3Repository.sendNewTask(Task.Secu3ReadSensors)
     }
 

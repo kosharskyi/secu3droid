@@ -32,19 +32,23 @@ import androidx.lifecycle.asLiveData
 import androidx.lifecycle.viewModelScope
 import dagger.hilt.android.lifecycle.HiltViewModel
 import dagger.hilt.android.qualifiers.ApplicationContext
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.filter
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.sample
+import kotlinx.coroutines.flow.takeWhile
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 import org.secu3.android.R
 import org.secu3.android.Secu3Repository
 import org.secu3.android.models.packets.base.BaseOutputPacket
 import org.secu3.android.models.packets.input.FirmwareInfoPacket
 import org.secu3.android.models.FnName
 import org.secu3.android.models.packets.input.FnNameDatPacket
+import org.secu3.android.models.packets.out.OpCompNc
 import org.secu3.android.models.packets.out.params.AccelerationParamPacket
 import org.secu3.android.models.packets.out.params.AdcCorrectionsParamPacket
 import org.secu3.android.models.packets.out.params.AnglesParamPacket
@@ -346,6 +350,22 @@ class ParamsViewModel @Inject constructor(
             return
         }
         secu3Repository.sendOutPacket(packet)
+
+        viewModelScope.launch(Dispatchers.IO) {
+            val opCompNc = secu3Repository.receivedPacketFlow.filter { it is OpCompNc }
+                .map { it as OpCompNc }
+                .filter { it.isEepromParamSave }
+                .first()
+
+            if (opCompNc.isEepromParamSave) {
+                withContext(Dispatchers.Main) {
+                    Toast.makeText(context, context.getString(R.string.packet_saved), Toast.LENGTH_SHORT).show()  // TODO: move this out
+                }
+            }
+        }
+
+        secu3Repository.sendNewTask(Task.Secu3OpComSaveEeprom)
+
         Toast.makeText(context, context.getString(R.string.packet_sent), Toast.LENGTH_SHORT).show()  // TODO: move this out
     }
 

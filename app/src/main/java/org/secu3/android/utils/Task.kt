@@ -80,8 +80,9 @@ sealed class Task {
 
 
 
-    object Secu3EnterDiagnostics : Task()
-    object Secu3LeaveDiagnostics : Task()
+    object Secu3OpComEnterDiagnostics : Task()
+    object Secu3OpComLeaveDiagnostics : Task()
+    object Secu3OpComSaveEeprom : Task()
 
 
 
@@ -96,8 +97,9 @@ sealed class Task {
             Secu3ReadGasDoseParam,Secu3ReadFnNameDat -> ChangeModePacket.getPacket(this)
 
 
-            Secu3EnterDiagnostics -> OpCompNc.getEnterDiagPacket()
-            Secu3LeaveDiagnostics -> OpCompNc.getLeaveDiagPacket()
+            Secu3OpComEnterDiagnostics -> OpCompNc.getEnterDiagCommand()
+            Secu3OpComLeaveDiagnostics -> OpCompNc.getLeaveDiagCommand()
+            Secu3OpComSaveEeprom -> OpCompNc.getSaveEepromCommand()
         }
     }
 
