@@ -57,12 +57,12 @@
 
         <ImageView
             android:id="@+id/car_status"
-            android:layout_width="80dp"
+            android:layout_width="56dp"
             android:layout_height="wrap_content"
             app:layout_constraintTop_toTopOf="parent"
             app:layout_constraintEnd_toEndOf="parent"
-            android:padding="16dp"
-            android:src="@drawable/car"
+            android:padding="8dp"
+            android:src="@drawable/ic_car"
             android:adjustViewBounds="true"
             app:tint="@android:color/holo_red_light"
             />

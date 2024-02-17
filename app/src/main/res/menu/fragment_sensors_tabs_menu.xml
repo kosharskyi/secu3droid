@@ -28,6 +28,14 @@
     xmlns:app="http://schemas.android.com/apk/res-auto">
 
     <item
+        android:id="@+id/connection_status"
+        android:icon="@drawable/ic_car"
+        app:tint="@color/red"
+        android:title="Connection status"
+        app:showAsAction="always"
+        />
+
+    <item
         android:id="@+id/settings"
         android:title="@string/title_activity_settings"
         android:icon="@drawable/ic_settings_24"

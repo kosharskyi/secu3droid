@@ -65,6 +65,9 @@ class SensorsViewModel @Inject constructor(private val secu3Repository: Secu3Rep
     val columnsCount: Int
         get() = mUserPrefs.columnsCount
 
+    val connectionStatusLiveData: LiveData<Boolean>
+        get() = secu3Repository.connectionStatusLiveData
+
     val sensorsLiveData: LiveData<SensorsPacket>
         get() = secu3Repository.receivedPacketFlow.sample(500).filter { it is SensorsPacket }
             .map { it as SensorsPacket }.asLiveData()

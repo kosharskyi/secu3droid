@@ -25,10 +25,14 @@
 
 package org.secu3.android.ui.sensors
 
+import android.graphics.Color
+import android.graphics.PorterDuff
 import android.os.Bundle
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
+import androidx.core.content.ContextCompat
+import androidx.core.graphics.drawable.DrawableCompat
 import androidx.core.view.isVisible
 import androidx.fragment.app.Fragment
 import androidx.fragment.app.viewModels
@@ -48,7 +52,7 @@ import javax.inject.Inject
 @AndroidEntryPoint
 class SensorsTabsFragment : Fragment() {
 
-    private lateinit var mBinding: FragmentSensorsTabsBinding
+    private var mBinding: FragmentSensorsTabsBinding? = null
 
     private val mViewModel: SensorsViewModel by viewModels()
 
@@ -57,7 +61,7 @@ class SensorsTabsFragment : Fragment() {
 
     override fun onCreateView(inflater: LayoutInflater, container: ViewGroup?, savedInstanceState: Bundle?): View? {
         mBinding = FragmentSensorsTabsBinding.inflate(layoutInflater)
-        return mBinding.root
+        return mBinding?.root
     }
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
@@ -65,11 +69,30 @@ class SensorsTabsFragment : Fragment() {
 
         init()
 
+        mViewModel.connectionStatusLiveData.observe(viewLifecycleOwner) {
+            val color = if (it) {
+                ContextCompat.getColor(requireContext(), R.color.gauge_dark_green)
+            } else {
+                ContextCompat.getColor(requireContext(), R.color.gauge_red)
+            }
+
+            mBinding?.toolbar?.menu?.findItem(R.id.connection_status)?.apply {
+                val iconDrawable = icon ?: return@apply
+
+                // Tint the icon with the desired color
+                DrawableCompat.setTint(iconDrawable, color)
+                DrawableCompat.setTintMode(iconDrawable, PorterDuff.Mode.SRC_IN)
+
+                // Set the tinted icon to the menu item
+                icon = iconDrawable
+            }
+        }
+
     }
 
     override fun onResume() {
         super.onResume()
-        mBinding.apply {
+        mBinding?.apply {
             viewPager.adapter = SensorsPagerAdapter(this@SensorsTabsFragment, mPrefs.oldSensorViewEnabled)
 
             toolbar.setNavigationOnClickListener { findNavController().popBackStack() }
@@ -80,7 +103,7 @@ class SensorsTabsFragment : Fragment() {
 
     private fun init() {
 
-        mBinding.apply {
+        mBinding?.apply {
 
             toolbar.apply {
                 inflateMenu(R.menu.fragment_sensors_tabs_menu)
@@ -156,5 +179,10 @@ class SensorsTabsFragment : Fragment() {
                 mViewModel.stopWriteLog()
             }
         }
+    }
+
+    override fun onDestroyView() {
+        super.onDestroyView()
+        mBinding = null
     }
 }

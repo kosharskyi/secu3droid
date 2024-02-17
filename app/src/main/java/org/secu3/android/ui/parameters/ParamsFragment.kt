@@ -24,10 +24,14 @@
  */
 package org.secu3.android.ui.parameters
 
+import android.graphics.Color
+import android.graphics.PorterDuff
 import android.os.Bundle
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
+import androidx.core.content.ContextCompat
+import androidx.core.graphics.drawable.DrawableCompat
 import androidx.fragment.app.Fragment
 import androidx.fragment.app.viewModels
 import androidx.navigation.fragment.findNavController
@@ -58,10 +62,21 @@ class ParamsFragment : Fragment() {
         initToolbar()
 
         mViewModel.connectionStatusLiveData.observe(viewLifecycleOwner) {
-            if (it) {
-                mBinding.paramsConnectionStatus.text = getString(R.string.status_online)
+            val color = if (it) {
+                ContextCompat.getColor(requireContext(), R.color.gauge_dark_green)
             } else {
-                mBinding.paramsConnectionStatus.text = getString(R.string.status_offline)
+                ContextCompat.getColor(requireContext(), R.color.gauge_red)
+            }
+
+            mBinding?.toolbar?.menu?.findItem(R.id.connection_status)?.apply {
+                val iconDrawable = icon ?: return@apply
+
+                // Tint the icon with the desired color
+                DrawableCompat.setTint(iconDrawable, color)
+                DrawableCompat.setTintMode(iconDrawable, PorterDuff.Mode.SRC_IN)
+
+                // Set the tinted icon to the menu item
+                icon = iconDrawable
             }
         }
 

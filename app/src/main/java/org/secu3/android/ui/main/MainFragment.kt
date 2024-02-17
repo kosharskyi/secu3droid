@@ -33,6 +33,7 @@ import android.view.View
 import android.view.ViewGroup
 import android.widget.Toast
 import androidx.activity.addCallback
+import androidx.core.content.ContextCompat
 import androidx.fragment.app.Fragment
 import androidx.fragment.app.viewModels
 import androidx.navigation.fragment.findNavController
@@ -114,9 +115,9 @@ class MainFragment : Fragment() {
 
         mViewModel.connectionStatusLiveData.observe(viewLifecycleOwner) {
             if (it) {
-                mBinding?.carStatus?.setColorFilter(Color.GREEN)
+                mBinding?.carStatus?.setColorFilter(ContextCompat.getColor(requireContext(), R.color.gauge_dark_green))
             } else {
-                mBinding?.carStatus?.setColorFilter(Color.RED)
+                mBinding?.carStatus?.setColorFilter(ContextCompat.getColor(requireContext(), R.color.gauge_red))
             }
         }
     }
