@@ -65,14 +65,6 @@
         app:layout_constraintBottom_toBottomOf="parent"
         />
 
-    <androidx.constraintlayout.widget.Group
-        android:id="@+id/log_mark_btns_group"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        app:constraint_referenced_ids="log_mark_1,log_mark_2,log_mark_3,log_stop"
-        android:visibility="gone"
-        />
-
     <com.google.android.material.floatingactionbutton.FloatingActionButton
         android:id="@+id/log_mark_1"
         android:layout_width="wrap_content"
@@ -84,6 +76,7 @@
         app:srcCompat="@drawable/ic_number_one_24"
         app:tint="@color/white"
         app:fabSize="mini"
+        tools:visibility="gone"
         />
 
     <com.google.android.material.floatingactionbutton.FloatingActionButton
@@ -97,6 +90,7 @@
         app:srcCompat="@drawable/ic_number_two_24"
         app:tint="@color/white"
         app:fabSize="mini"
+        tools:visibility="gone"
         />
 
     <com.google.android.material.floatingactionbutton.FloatingActionButton
@@ -110,6 +104,7 @@
         app:srcCompat="@drawable/ic_number_three_24"
         app:tint="@color/white"
         app:fabSize="mini"
+        tools:visibility="gone"
         />
 
     <com.google.android.material.floatingactionbutton.FloatingActionButton
@@ -122,6 +117,7 @@
         android:backgroundTint="@android:color/holo_red_light"
         app:srcCompat="@drawable/ic_stop_24"
         app:tint="@color/white"
+        tools:visibility="gone"
         />
 
     <com.google.android.material.floatingactionbutton.ExtendedFloatingActionButton
@@ -134,7 +130,6 @@
         app:backgroundTint="#40b6fb"
         android:text="@string/log_start_writing"
         android:textColor="@color/white"
-        android:visibility="gone"
         tools:visibility="visible"
         />
 

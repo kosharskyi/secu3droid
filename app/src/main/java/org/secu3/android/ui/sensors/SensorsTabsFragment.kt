@@ -96,8 +96,33 @@ class SensorsTabsFragment : Fragment() {
             viewPager.adapter = SensorsPagerAdapter(this@SensorsTabsFragment, mPrefs.oldSensorViewEnabled)
 
             toolbar.setNavigationOnClickListener { findNavController().popBackStack() }
-            logStart.isVisible = mViewModel.isLoggerEnabled && mViewModel.isLoggerStarted.not()
-            logMarkBtnsGroup.isVisible = mViewModel.isLoggerEnabled && mViewModel.isLoggerStarted
+
+            if (mViewModel.isLoggerEnabled && mViewModel.isLoggerStarted) {
+                showLogMarks()
+                logStart.hide()
+            } else {
+                hideLogMarks()
+                logStart.show()
+
+            }
+        }
+    }
+
+    private fun hideLogMarks() {
+        mBinding?.apply {
+            logMark1.hide()
+            logMark2.hide()
+            logMark3.hide()
+            logStop.hide()
+        }
+    }
+
+    private fun showLogMarks() {
+        mBinding?.apply {
+            logMark1.show()
+            logMark2.show()
+            logMark3.show()
+            logStop.show()
         }
     }
 
