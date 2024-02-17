@@ -97,13 +97,16 @@ class SensorsTabsFragment : Fragment() {
 
             toolbar.setNavigationOnClickListener { findNavController().popBackStack() }
 
+            if (mViewModel.isLoggerEnabled && mViewModel.isLoggerStarted.not()) {
+                logStart.show()
+            } else {
+                logStart.hide()
+            }
+
             if (mViewModel.isLoggerEnabled && mViewModel.isLoggerStarted) {
                 showLogMarks()
-                logStart.hide()
             } else {
                 hideLogMarks()
-                logStart.show()
-
             }
         }
     }
