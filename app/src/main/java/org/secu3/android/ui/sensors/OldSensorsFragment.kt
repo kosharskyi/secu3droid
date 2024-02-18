@@ -68,104 +68,104 @@ class OldSensorsFragment : Fragment() {
                 advAngle.title.text = getString(R.string.sensors_frag_advance_angle_label)
                 advAngle.value.text = String.format(Locale.US, "%.1f", it.currentAngle)
 
-                knockRetard.title.text = getString(R.string.sensors_frag_knock_retard_label)
+                knockRetard.title.text = "${getString(R.string.sensors_frag_knock_retard_label)}, ${getString(R.string.units_degree_word)}:"
                 knockRetard.value.text = String.format(Locale.US, "%.1f", it.knockRetard)
 
-                knockValue.title.text = getString(R.string.sensors_frag_knock_signal_label)
+                knockValue.title.text = "${getString(R.string.sensors_frag_knock_signal_label)}, ${getString(R.string.units_curve_n)}:"
                 knockValue.value.text = String.format(Locale.US, "%.3f", it.knockValue)
 
-                airFlow.title.text = getString(R.string.sensors_frag_air_flow_label)
+                airFlow.title.text = "${getString(R.string.sensors_frag_air_flow_label)}, ${getString(R.string.units_curve_n)}:"
                 airFlow.value.text = it.airflow.toString()
 
-                tps.title.text = getString(R.string.sensors_frag_throttle_gate_label)
+                tps.title.text = "${getString(R.string.sensors_frag_throttle_gate_label)}, ${getString(R.string.units_percents)}:"
                 tps.value.text = String.format(Locale.US, "%.1f", it.tps)
 
-                add1.title.text = getString(R.string.sensors_frag_input_1_label)
+                add1.title.text = "${getString(R.string.sensors_frag_input_1_label)}, ${getString(R.string.units_volts)}:"
                 add1.value.text = String.format(Locale.US, "%.3f", it.addI1)
 
-                add2.title.text = getString(R.string.sensors_frag_input_2_label)
+                add2.title.text = "${getString(R.string.sensors_frag_input_2_label)}, ${getString(R.string.units_volts)}:"
                 add2.value.text = String.format(Locale.US, "%.3f", it.addI2)
 
                 chokePosition.title.text = getString(R.string.sensors_frag_iac_valve_label)
                 chokePosition.value.text = String.format(Locale.US, "%.1f", it.chokePosition)
 
-                gasDosePosition.title.text = getString(R.string.sensors_frag_gas_dispenser_label)
+                gasDosePosition.title.text = "${getString(R.string.sensors_frag_gas_dispenser_label)}, ${getString(R.string.units_percents)}:"
                 gasDosePosition.value.text = it.gasDosePosition.toString()
 
                 synthLoad.title.text = getString(R.string.sensors_frag_synthetic_load_label)
                 synthLoad.value.text = String.format(Locale.US, "%.1f", it.load)
 
-                speed.title.text = getString(R.string.sensors_frag_vehicle_speed_label)
+                speed.title.text = "${getString(R.string.sensors_frag_vehicle_speed_label)}, ${getString(R.string.units_km_h)}:"
                 speed.value.text = String.format(Locale.US, "%.1f", it.speed)
 
-                distance.title.text = getString(R.string.sensors_frag_distance_label)
+                distance.title.text = "${getString(R.string.sensors_frag_distance_label)}, ${getString(R.string.units_km)}:"
                 distance.value.text = String.format(Locale.US, "%.1f", it.distance)
 
-                fuelInj.title.text = getString(R.string.sensors_frag_fuel_consumption_hz_label)
+                fuelInj.title.text = "${getString(R.string.sensors_frag_fuel_consumption_hz_label)}, ${getString(R.string.units_hertz)}:"
                 fuelInj.value.text = it.fuelFlowFrequency.toString()
 
-                airTemp.title.text = getString(R.string.sensors_frag_intake_air_temp_label)
+                airTemp.title.text = "${getString(R.string.sensors_frag_intake_air_temp_label)}, ${getString(R.string.units_degrees_celcius)}:"
                 airTemp.value.text = String.format(Locale.US, "%.1f", it.airtempSensor)
 
-                lambdaCorr.title.text = getString(R.string.sensors_frag_ego_correction_label)
+                lambdaCorr.title.text = "${getString(R.string.sensors_frag_ego_correction_label)}, ${getString(R.string.units_percents)}:"
                 lambdaCorr.value.text = String.format(Locale.US, "%.2f", it.lambda[0])
 
-                injPw.title.text = getString(R.string.sensors_frag_injection_pw_label)
+                injPw.title.text = "${getString(R.string.sensors_frag_injection_pw_label)}, ${getString(R.string.units_ms)}:"
                 injPw.value.text = String.format(Locale.US, "%.2f", it.injPw)
 
-                tpsDot.title.text = getString(R.string.sensors_frag_tps_dot_label)
+                tpsDot.title.text = "${getString(R.string.sensors_frag_tps_dot_label)}, ${getString(R.string.units_percent_per_second)}:"
                 tpsDot.value.text = it.tpsdot.toString()
 
-                map2.title.text = getString(R.string.sensors_frag_map2_label)
+                map2.title.text = "${getString(R.string.sensors_frag_map2_label)}, ${getString(R.string.units_pressure_kpa)}:"
                 map2.value.text = String.format(Locale.US, "%.1f", it.map2)
 
-                mapDiff.title.text = getString(R.string.sensors_frag_diff_pressure_label)
+                mapDiff.title.text = "${getString(R.string.sensors_frag_diff_pressure_label)}, ${getString(R.string.units_pressure_kpa)}:"
                 mapDiff.value.text = String.format(Locale.US, "%.1f", it.mapd)
 
-                tmp2.title.text = getString(R.string.sensors_frag_iat2_label)
+                tmp2.title.text = "${getString(R.string.sensors_frag_iat2_label)}, ${getString(R.string.units_afr)}:"
                 tmp2.value.text = String.format(Locale.US, "%.1f", it.tmp2)
 
                 afr.title.text = getString(R.string.sensors_frag_wbo_afr_label)
                 afr.value.text = String.format(Locale.US, "%.1f", it.sensAfr[0])
 
-                consFuel.title.text = getString(R.string.sensors_frag_fuel_consumption_label)
+                consFuel.title.text = "${getString(R.string.sensors_frag_fuel_consumption_label)}, ${getString(R.string.units_l_per_100km)}:"
                 consFuel.value.text = String.format(Locale.US, "%.2f", it.cons_fuel)
 
-                grts.title.text = getString(R.string.sensors_frag_grts_label)
+                grts.title.text = "${getString(R.string.sensors_frag_grts_label)}, ${getString(R.string.units_degrees_celcius)}:"
                 grts.value.text = String.format(Locale.US, "%.1f", it.grts)
 
-                ftls.title.text = getString(R.string.sensors_frag_fuel_level_label)
+                ftls.title.text = "${getString(R.string.sensors_frag_fuel_level_label)}, ${getString(R.string.units_liter)}:"
                 ftls.value.text = String.format(Locale.US, "%.1f", it.ftls)
 
-                egts.title.text = getString(R.string.sensors_frag_exhaust_gas_temp_label)
+                egts.title.text = "${getString(R.string.sensors_frag_exhaust_gas_temp_label)}, ${getString(R.string.units_degrees_celcius)}:"
                 egts.value.text = String.format(Locale.US, "%.1f", it.egts)
 
-                ops.title.text = getString(R.string.sensors_frag_oil_pressure_label)
+                ops.title.text = "${getString(R.string.sensors_frag_oil_pressure_label)}, ${getString(R.string.units_kg_per_cm2)}:"
                 ops.value.text = String.format(Locale.US, "%.1f", it.ops)
 
-                injDuty.title.text = getString(R.string.sensors_frag_injector_duty_label)
+                injDuty.title.text = "${getString(R.string.sensors_frag_injector_duty_label)}, ${getString(R.string.units_percents)}:"
                 injDuty.value.text = String.format(Locale.US, "%.1f", it.sens_injDuty)
 
-                maf.title.text = getString(R.string.sensors_frag_maf_label)
+                maf.title.text = "${getString(R.string.sensors_frag_maf_label)}, ${getString(R.string.units_gram_per_second)}:"
                 maf.value.text = String.format(Locale.US, "%.1f", it.sens_maf)
 
-                ventDuty.title.text = getString(R.string.sensors_frag_fan_duty_label)
+                ventDuty.title.text = "${getString(R.string.sensors_frag_fan_duty_label)}, ${getString(R.string.units_percents)}:"
                 ventDuty.value.text = it.ventDuty.toString()
 
-                mapDot.title.text = getString(R.string.sensors_frag_map_dot_label)
+                mapDot.title.text = "${getString(R.string.sensors_frag_map_dot_label)}, ${getString(R.string.units_percent_per_second)}:"
                 mapDot.value.text = it.mapdot.toString()
 
-                fts.title.text = getString(R.string.sensors_frag_fuel_temp_label)
+                fts.title.text = "${getString(R.string.sensors_frag_fuel_temp_label)}, ${getString(R.string.units_degrees_celcius)}:"
                 fts.value.text = String.format(Locale.US, "%.1f", it.fts)
 
-                lambdaCorr2.title.text = getString(R.string.sensors_frag_ego_correction2_label)
+                lambdaCorr2.title.text = "${getString(R.string.sensors_frag_ego_correction2_label)}, ${getString(R.string.units_percents)}:"
                 lambdaCorr2.value.text = String.format(Locale.US, "%.1f", it.lambda[1])
 
-                /*afrDifference.title.text = getString(R.string.sensors_frag_afr_difference_label)
-                afrDifference.value.text = ""
+                afrDifference.title.text = getString(R.string.sensors_frag_afr_difference_label)
+                afrDifference.value.text = String.format(Locale.US, "%.2f", it.sensAfr[0] - it.corrAfr)
 
                 afrDifference2.title.text = getString(R.string.sensors_frag_afr_difference2_label)
-                afrDifference2.value.text = ""*/
+                afrDifference2.value.text = String.format(Locale.US, "%.2f", it.sensAfr[1] - it.corrAfr)
 
                 beginInjPhase.title.text = getString(R.string.sensors_frag_begin_inj_phase_label)
                 beginInjPhase.value.text = String.format(Locale.US, "%.1f", it.injTimBegin)
