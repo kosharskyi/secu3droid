@@ -338,19 +338,16 @@ class ParamsViewModel @Inject constructor(
                 }
         }.asLiveData()
 
-
-
-
-    private val mSavePacketFlow = MutableSharedFlow<Boolean>()
-    val savePacketLiveData: LiveData<Boolean>
-        get() = mSavePacketFlow.asLiveData()
-
     fun sendPacket(packet: BaseOutputPacket) {
         if (isSendAllowed.not()) {
             return
         }
         secu3Repository.sendOutPacket(packet)
 
+        Toast.makeText(context, context.getString(R.string.packet_sent), Toast.LENGTH_SHORT).show()  // TODO: move this out
+    }
+
+    fun savePacket() {
         viewModelScope.launch(Dispatchers.IO) {
             val opCompNc = secu3Repository.receivedPacketFlow.filter { it is OpCompNc }
                 .map { it as OpCompNc }
@@ -365,14 +362,6 @@ class ParamsViewModel @Inject constructor(
         }
 
         secu3Repository.sendNewTask(Task.Secu3OpComSaveEeprom)
-
-        Toast.makeText(context, context.getString(R.string.packet_sent), Toast.LENGTH_SHORT).show()  // TODO: move this out
-    }
-
-    fun savePacket(isNeedSavePacket: Boolean) {
-        viewModelScope.launch {
-            mSavePacketFlow.emit(isNeedSavePacket)
-        }
     }
 
 }

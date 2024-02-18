@@ -93,7 +93,7 @@ class ParamsFragment : Fragment() {
             setOnMenuItemClickListener {
                 when (it.itemId) {
                     R.id.save_packet -> {
-                        mViewModel.savePacket(true)
+                        mViewModel.savePacket()
                         true
                     }
                     else -> false

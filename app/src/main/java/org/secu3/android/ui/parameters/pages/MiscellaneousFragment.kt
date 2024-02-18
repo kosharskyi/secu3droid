@@ -116,21 +116,6 @@ class MiscellaneousFragment : BaseParamFragment() {
 
                     mViewModel.isSendAllowed = true
                 }
-
-                mViewModel.savePacketLiveData.observe(viewLifecycleOwner) { isSendClicked ->
-                    if (isSendClicked.not()) {
-                        return@observe
-                    }
-
-                    if (isResumed.not()) {
-                        return@observe
-                    }
-
-                    packet?.let {
-                        mViewModel.savePacket(false)
-                        mViewModel.sendPacket(it)
-                    }
-                }
             }
         }
     }
@@ -141,59 +126,76 @@ class MiscellaneousFragment : BaseParamFragment() {
 
             dataTransmitionSpeed.setOnItemClickListener { _, _, position, _ ->
                 packet?.uartDivisor = position
+                packet?.let { it1 -> mViewModel.sendPacket(it1) }
             }
 
             dataPacketsTransmissionPeriod.addOnValueChangeListener {
                 packet?.uartPeriodTms = it
+                packet?.let { it1 -> mViewModel.sendPacket(it1) }
             }
 
             enableCutoffOfIgnitionCheckbox.setOnCheckedChangeListener { _, checkedId ->
                 packet?.ignCutoff = if (checkedId) 1 else 0
+                packet?.let { it1 -> mViewModel.sendPacket(it1) }
             }
 
             enableCutoffOfIgnition.addOnValueChangeListener {
                 packet?.ignCutoffThrd = it
+                packet?.let { it1 -> mViewModel.sendPacket(it1) }
             }
             startRelToTdc.addOnValueChangeListener {
                 packet?.hopStartAng = it
+                packet?.let { it1 -> mViewModel.sendPacket(it1) }
             }
 
             duration.addOnValueChangeListener {
                 packet?.hopDuratAng = it
+                packet?.let { it1 -> mViewModel.sendPacket(it1) }
             }
 
             turnOffFuelPumpAfterGas.setOnCheckedChangeListener { _, isChecked ->
                 packet?.offPumpOnGas = isChecked
+                packet?.let { it1 -> mViewModel.sendPacket(it1) }
             }
             turnOffInjectorsAfterGas.setOnCheckedChangeListener { _, isChecked ->
                 packet?.offInjOnGas = isChecked
+                packet?.let { it1 -> mViewModel.sendPacket(it1) }
             }
             turnOffInjectorsAfterPetrol.setOnCheckedChangeListener { _, isChecked ->
                 packet?.offInjOnPetrol = isChecked
+                packet?.let { it1 -> mViewModel.sendPacket(it1) }
             }
 
             evapStartingAirFlow.addOnValueChangeListener {
                 packet?.evapAfbegin = it
+                packet?.let { it1 -> mViewModel.sendPacket(it1) }
             }
 
             evapEndingAirFlow.addOnValueChangeListener {
                 packet?.evapAfEnd = it
+                packet?.let { it1 -> mViewModel.sendPacket(it1) }
             }
 
             fuelPumpWorkingTime.addOnValueChangeListener {
                 packet?.fpTimeoutStrt = it
+                packet?.let { it1 -> mViewModel.sendPacket(it1) }
             }
 
             pwmfrq0.addOnValueChangeListener {
                 packet?.pwmFrq0 = it
+                packet?.let { it1 -> mViewModel.sendPacket(it1) }
             }
 
             pwmfrq1.addOnValueChangeListener {
                 packet?.pwmFrq1 = it
+                packet?.let { it1 -> mViewModel.sendPacket(it1) }
             }
 
             numberVssPulses.addOnValueChangeListener {
-                packet?.vssPeriodDist = it
+                packet?.apply {
+                    vssPeriodDist = it
+                    mViewModel.sendPacket(this)
+                }
             }
 
 

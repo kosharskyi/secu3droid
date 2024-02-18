@@ -81,21 +81,6 @@ class SecurityFragment : BaseParamFragment() {
 
                     mViewModel.isSendAllowed = true
                 }
-
-                mViewModel.savePacketLiveData.observe(viewLifecycleOwner) { isSendClicked ->
-                    if (isSendClicked.not()) {
-                        return@observe
-                    }
-
-                    if (isResumed.not()) {
-                        return@observe
-                    }
-
-//                    packet?.let {
-//                        mViewModel.savePacket(false)
-//                        mViewModel.sendPacket(it)
-//                    }
-                }
             }
         }
     }

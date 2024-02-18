@@ -104,21 +104,6 @@ class AccelerationFragment : BaseParamFragment() {
 
                     mViewModel.isSendAllowed = true
                 }
-
-                mViewModel.savePacketLiveData.observe(viewLifecycleOwner) { isSendClicked ->
-                    if (isSendClicked.not()) {
-                        return@observe
-                    }
-
-                    if (isResumed.not()) {
-                        return@observe
-                    }
-
-                    packet?.let {
-                        mViewModel.savePacket(false)
-                        mViewModel.sendPacket(it)
-                    }
-                }
             }
         }
     }
@@ -129,22 +114,31 @@ class AccelerationFragment : BaseParamFragment() {
 
             accelTpsdotThreshold.addOnValueChangeListener {
                 packet?.injAeTpsdotThrd = it
+                packet?.let { it1 -> mViewModel.sendPacket(it1) }
             }
 
             coldAccelMultiplier.addOnValueChangeListener {
                 packet?.injAeColdaccMult = it
+                packet?.let { it1 -> mViewModel.sendPacket(it1) }
             }
 
             aeDecayTime.addOnValueChangeListener {
                 packet?.injAeDecayTime = it
+                packet?.let { it1 -> mViewModel.sendPacket(it1) }
             }
 
             aeType.setOnItemClickListener { _, _, position, _ ->
-                packet?.injAeType = position
+                packet?.apply {
+                    injAeType = position
+                    mViewModel.sendPacket(this)
+                }
             }
 
             aeTime.addOnValueChangeListener {
-                packet?.injAeTime = it
+                packet?.apply {
+                    injAeTime = it
+                    mViewModel.sendPacket(this)
+                }
             }
 
             aeBalance.addOnChangeListener { _, value, fromUser ->
@@ -152,23 +146,38 @@ class AccelerationFragment : BaseParamFragment() {
                     return@addOnChangeListener
                 }
 
-                packet?.injAeBallance = value
+                packet?.apply {
+                    injAeBallance = value
+                    mViewModel.sendPacket(this)
+                }
             }
 
             aeMapdoeThrd.addOnValueChangeListener {
-                packet?.injAeMapdotThrd = it
+                packet?.apply {
+                    injAeMapdotThrd = it
+                    mViewModel.sendPacket(this)
+                }
             }
 
             wallwetModel.setOnItemClickListener { _, _, position, _ ->
-                packet?.wallwetModel = position
+                packet?.apply {
+                    wallwetModel = position
+                    mViewModel.sendPacket(this)
+                }
             }
 
             xTauStartThrd.addOnValueChangeListener {
-                packet?.injXtauSThrd = it.toFloat()
+                packet?.apply {
+                    injXtauSThrd = it.toFloat()
+                    mViewModel.sendPacket(this)
+                }
             }
 
             xTauFinishThrd.addOnValueChangeListener {
-                packet?.injXtauFThrd = it.toFloat()
+                packet?.apply {
+                    injXtauFThrd = it.toFloat()
+                    mViewModel.sendPacket(this)
+                }
             }
 
             accelTpsdotThreshold.setOnClickListener { intParamClick(it as IntParamView) }

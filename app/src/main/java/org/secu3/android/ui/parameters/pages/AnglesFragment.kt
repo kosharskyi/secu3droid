@@ -86,21 +86,6 @@ class AnglesFragment : BaseParamFragment() {
 
                     mViewModel.isSendAllowed = true
                 }
-
-                mViewModel.savePacketLiveData.observe(viewLifecycleOwner) { isSendClicked ->
-                    if (isSendClicked.not()) {
-                        return@observe
-                    }
-
-                    if (isResumed.not()) {
-                        return@observe
-                    }
-
-                    packet?.let {
-                        mViewModel.savePacket(false)
-                        mViewModel.sendPacket(it)
-                    }
-                }
             }
         }
     }
@@ -110,37 +95,55 @@ class AnglesFragment : BaseParamFragment() {
         mBinding.apply {
             maxAdvanceAngle.addOnValueChangeListener {
                 packet?.maxAngle = it
+                packet?.let { it1 -> mViewModel.sendPacket(it1) }
             }
             minAdvanceAngle.addOnValueChangeListener {
                 packet?.minAngle = it
+                packet?.let { it1 -> mViewModel.sendPacket(it1) }
             }
             angleDecreaseSpeed.addOnValueChangeListener {
                 packet?.angleDecSpeed = it
+                packet?.let { it1 -> mViewModel.sendPacket(it1) }
             }
             angleIncreaseSpeed.addOnValueChangeListener {
                 packet?.angleIncSpeed = it
+                packet?.let { it1 -> mViewModel.sendPacket(it1) }
             }
             octaneCorrection.addOnValueChangeListener {
                 packet?.angleCorrection = it
+                packet?.let { it1 -> mViewModel.sendPacket(it1) }
             }
             zeroAdvAngle.setOnCheckedChangeListener { _, isChecked ->
                 packet?.zeroAdvAngle = if (isChecked) 1 else 0
+                packet?.let { it1 -> mViewModel.sendPacket(it1) }
             }
 
             ignTimingWhenShifting.addOnValueChangeListener {
-                packet?.shift_ingtim = it
+                packet?.apply {
+                    shift_ingtim = it
+                    mViewModel.sendPacket(this)
+                }
             }
 
             alwaysUseWorkingModeAngleMap.setOnCheckedChangeListener { _, isChecked ->
-                packet?.alwaysUseIgnitionMap = isChecked
+                packet?.apply {
+                    alwaysUseIgnitionMap = isChecked
+                    mViewModel.sendPacket(this)
+                }
             }
 
             applyManualTimingCorr.setOnCheckedChangeListener { _, isChecked ->
-                packet?.applyManualTimingCorrOnIdl = isChecked
+                packet?.apply {
+                    applyManualTimingCorrOnIdl = isChecked
+                    mViewModel.sendPacket(this)
+                }
             }
 
             zeroAdvOctaneCorr.setOnCheckedChangeListener { _, isChecked ->
-                packet?.zeroAdvAngleWithCorr = isChecked
+                packet?.apply {
+                    zeroAdvAngleWithCorr = isChecked
+                    mViewModel.sendPacket(this)
+                }
             }
 
             maxAdvanceAngle.setOnClickListener { floatParamClick(it as FloatParamView) }

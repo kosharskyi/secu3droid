@@ -78,21 +78,6 @@ class StarterFragment : BaseParamFragment() {
 
             mViewModel.isSendAllowed = true
         }
-
-        mViewModel.savePacketLiveData.observe(viewLifecycleOwner) { isSendClicked ->
-            if (isSendClicked.not()) {
-                return@observe
-            }
-
-            if (isResumed.not()) {
-                return@observe
-            }
-
-            packet?.let {
-                mViewModel.savePacket(false)
-                mViewModel.sendPacket(it)
-            }
-        }
     }
 
 
@@ -101,42 +86,61 @@ class StarterFragment : BaseParamFragment() {
         mBinding.apply {
             starterBlockingRpm.addOnValueChangeListener {
                 packet?.starterOff = it
+                packet?.let { it1 -> mViewModel.sendPacket(it1) }
             }
             switchCrankMapRpm.addOnValueChangeListener {
                 packet?.smapAbandon = it
+                packet?.let { it1 -> mViewModel.sendPacket(it1) }
             }
             timeCrankToRunPositionCold.addOnValueChangeListener {
                 packet?.crankToRunTime = it
+                packet?.let { it1 -> mViewModel.sendPacket(it1) }
             }
             timeCrankToRunPositionHot.addOnValueChangeListener {
                 packet?.injCrankToRun_time1 = it
+                packet?.let { it1 -> mViewModel.sendPacket(it1) }
             }
             afterstartEnrichmentTimePetrol.addOnValueChangeListener {
                 packet?.injAftstrStroke = it
+                packet?.let { it1 -> mViewModel.sendPacket(it1) }
             }
             afterstartEnrichmentTimeGas.addOnValueChangeListener {
                 packet?.injAftStrokes1 = it
+                packet?.let { it1 -> mViewModel.sendPacket(it1) }
             }
             primePulseCold.addOnValueChangeListener {
                 packet?.injPrimeCold = it
+                packet?.let { it1 -> mViewModel.sendPacket(it1) }
             }
             primePulseHot.addOnValueChangeListener {
                 packet?.injPrimeHot = it
+                packet?.let { it1 -> mViewModel.sendPacket(it1) }
             }
             primePulseDelay.addOnValueChangeListener {
                 packet?.injPrimeDelay = it
+                packet?.let { it1 -> mViewModel.sendPacket(it1) }
             }
             floodClearModeThreshold.addOnValueChangeListener {
                 packet?.injFloodclearTps = it
+                packet?.let { it1 -> mViewModel.sendPacket(it1) }
             }
             stblStrCountdown.addOnValueChangeListener {
-                packet?.stblStrCnt = it
+                packet?.apply {
+                    stblStrCnt = it
+                    mViewModel.sendPacket(this)
+                }
             }
             allowStartOnFloodClearMode.setOnCheckedChangeListener { _, isChecked ->
-                packet?.allowStartOnClearFlood = isChecked
+                packet?.apply {
+                    allowStartOnClearFlood = isChecked
+                    mViewModel.sendPacket(this)
+                }
             }
             limitMaxInjPwOnCranking.setOnCheckedChangeListener { _, isChecked ->
-                packet?.limitMaxInjPwOnCranking = isChecked
+                packet?.apply {
+                    limitMaxInjPwOnCranking = isChecked
+                    mViewModel.sendPacket(this)
+                }
             }
 
             starterBlockingRpm.setOnClickListener { intParamClick(it as IntParamView) }

@@ -98,21 +98,6 @@ class ChokeControlFragment : BaseParamFragment() {
 
                     mViewModel.isSendAllowed = true
                 }
-
-                mViewModel.savePacketLiveData.observe(viewLifecycleOwner) { isSendClicked ->
-                    if (isSendClicked.not()) {
-                        return@observe
-                    }
-
-                    if (isResumed.not()) {
-                        return@observe
-                    }
-
-                    packet?.let {
-                        mViewModel.savePacket(false)
-                        mViewModel.sendPacket(it)
-                    }
-                }
             }
         }
     }
@@ -123,38 +108,48 @@ class ChokeControlFragment : BaseParamFragment() {
 
             numSmSteps.addOnValueChangeListener {
                 packet?.smSteps = it
+                packet?.let { it1 -> mViewModel.sendPacket(it1) }
             }
 
             regulatorFactor.addOnValueChangeListener {
                 packet?.rpmIf = it
+                packet?.let { it1 -> mViewModel.sendPacket(it1) }
             }
             crankingMapLastingCold.addOnValueChangeListener {
                 packet?.corrTime0 = it
+                packet?.let { it1 -> mViewModel.sendPacket(it1) }
             }
 
             crankingMapLastingHot.addOnValueChangeListener {
                 packet?.corrTime1 = it
+                packet?.let { it1 -> mViewModel.sendPacket(it1) }
             }
 
             useClosedLoopRpmRegulator.setOnCheckedChangeListener { _, isChecked ->
                 packet?.useClosedLoopRmpRegulator = isChecked
+                packet?.let { it1 -> mViewModel.sendPacket(it1) }
             }
             dontUseRpmRegulatorOnGas.setOnCheckedChangeListener { _, isChecked ->
                 packet?.dontUseRpmRegOnGas = isChecked
+                packet?.let { it1 -> mViewModel.sendPacket(it1) }
             }
             useThrottlePosInChokeInit.setOnCheckedChangeListener { _, isChecked ->
                 packet?.useThrottlePosInChokeInit = isChecked
+                packet?.let { it1 -> mViewModel.sendPacket(it1) }
             }
             maximumSTEPFrequencyAtInit.setOnCheckedChangeListener { _, isChecked ->
                 packet?.maxSTEPfreqAtInit = isChecked
+                packet?.let { it1 -> mViewModel.sendPacket(it1) }
             }
 
             freqOfPulses.setOnItemClickListener { _, _, position, _ ->
                 packet?.smFreq = position
+                packet?.let { it1 -> mViewModel.sendPacket(it1) }
             }
 
             timeFromCrankToRun.addOnValueChangeListener {
                 packet?.injCrankToRunTime = it
+                packet?.let { it1 -> mViewModel.sendPacket(it1) }
             }
 
 

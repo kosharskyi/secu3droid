@@ -110,21 +110,6 @@ class IdlingFragment : BaseParamFragment() {
 
                     mViewModel.isSendAllowed = true
                 }
-
-                mViewModel.savePacketLiveData.observe(viewLifecycleOwner) { isSendClicked ->
-                    if (isSendClicked.not()) {
-                        return@observe
-                    }
-
-                    if (isResumed.not()) {
-                        return@observe
-                    }
-
-                    packet?.let {
-                        mViewModel.savePacket(false)
-                        mViewModel.sendPacket(it)
-                    }
-                }
             }
         }
     }
@@ -135,92 +120,121 @@ class IdlingFragment : BaseParamFragment() {
         mBinding.apply {
             positiveRegFactor.addOnValueChangeListener {
                 packet?.iFac1 = it
+                packet?.let { it1 -> mViewModel.sendPacket(it1) }
             }
             negativeRegFactor.addOnValueChangeListener {
                 packet?.iFac2 = it
+                packet?.let { it1 -> mViewModel.sendPacket(it1) }
             }
             maxRegLimit.addOnValueChangeListener {
                 packet?.idlregMaxAngle = it
+                packet?.let { it1 -> mViewModel.sendPacket(it1) }
             }
             minRegLimit.addOnValueChangeListener {
                 packet?.idlregMinAngle = it
+                packet?.let { it1 -> mViewModel.sendPacket(it1) }
             }
             goalRpm.addOnValueChangeListener {
                 packet?.idlingRpm = it
+                packet?.let { it1 -> mViewModel.sendPacket(it1) }
             }
             rpmDeadBand.addOnValueChangeListener {
                 packet?.minefr = it
+                packet?.let { it1 -> mViewModel.sendPacket(it1) }
             }
             regulatorOnTemp.addOnValueChangeListener {
                 packet?.idlregTurnOnTemp = it
+                packet?.let { it1 -> mViewModel.sendPacket(it1) }
             }
 
             useRegulator.setOnCheckedChangeListener { _, isChecked ->
                 packet?.useRegulator = isChecked
+                packet?.let { it1 -> mViewModel.sendPacket(it1) }
             }
             useRegulatorOnGas.setOnCheckedChangeListener { _, isChecked ->
                 packet?.useRegulatorOnGas = isChecked
+                packet?.let { it1 -> mViewModel.sendPacket(it1) }
             }
             proportionalRegulator.setOnCheckedChangeListener { _, isChecked ->
                 packet?.pRegMode = isChecked
+                packet?.let { it1 -> mViewModel.sendPacket(it1) }
             }
             useClosedLoop.setOnCheckedChangeListener { _, isChecked ->
                 packet?.useClosedLoop = isChecked
+                packet?.let { it1 -> mViewModel.sendPacket(it1) }
             }
 
             iacAddAfterExit.addOnValueChangeListener {
                 packet?.idlToRunAdd = it
+                packet?.let { it1 -> mViewModel.sendPacket(it1) }
             }
 
             useThrassmap.setOnCheckedChangeListener { _, isChecked ->
-                packet?.useThrassmap = isChecked
+                packet?.apply {
+                    useThrassmap = isChecked
+                    mViewModel.sendPacket(this)
+                }
             }
 
             rpmAddOnRun.addOnValueChangeListener {
                 packet?.rpmOnRunAdd = it
+                packet?.let { it1 -> mViewModel.sendPacket(it1) }
             }
 
             proportionalPositive.addOnValueChangeListener {
                 packet?.idlRegP0 = it
+                packet?.let { it1 -> mViewModel.sendPacket(it1) }
             }
 
             integralPositive.addOnValueChangeListener {
                 packet?.idlRegI0 = it
+                packet?.let { it1 -> mViewModel.sendPacket(it1) }
             }
             proportionalNegative.addOnValueChangeListener {
                 packet?.idlRegP1 = it
+                packet?.let { it1 -> mViewModel.sendPacket(it1) }
             }
 
             integralNegative.addOnValueChangeListener {
                 packet?.idlRegI1 = it
+                packet?.let { it1 -> mViewModel.sendPacket(it1) }
             }
 
             transientThreshold1.addOnValueChangeListener {
                 packet?.coefThrd1 = it
+                packet?.let { it1 -> mViewModel.sendPacket(it1) }
             }
 
             transientThreshold2.addOnValueChangeListener {
                 packet?.coefThrd2 = it
+                packet?.let { it1 -> mViewModel.sendPacket(it1) }
             }
 
             integratorRpmLimit.addOnValueChangeListener {
                 packet?.integratorRpmLim = it
+                packet?.let { it1 -> mViewModel.sendPacket(it1) }
             }
 
             pressureLoadOnIdling.addOnValueChangeListener {
                 packet?.mapValue = it
+                packet?.let { it1 -> mViewModel.sendPacket(it1) }
             }
 
             minIacPosition.addOnValueChangeListener {
                 packet?.iacMinPos = it
+                packet?.let { it1 -> mViewModel.sendPacket(it1) }
             }
 
             maxIacPosition.addOnValueChangeListener {
                 packet?.iacMaxPos = it
+                packet?.let { it1 -> mViewModel.sendPacket(it1) }
             }
 
             iacDeadBand.addOnValueChangeListener {
-                packet?.iacRegDb = it
+                packet?.apply {
+                    iacRegDb = it
+                    mViewModel.sendPacket(this)
+                }
             }
 
             useClosedLoopOnGas.setOnCheckedChangeListener { _, isChecked ->
