@@ -33,20 +33,17 @@ import androidx.lifecycle.viewModelScope
 import dagger.hilt.android.lifecycle.HiltViewModel
 import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.filter
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.flow.map
-import kotlinx.coroutines.flow.sample
-import kotlinx.coroutines.flow.takeWhile
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import org.secu3.android.R
 import org.secu3.android.Secu3Repository
+import org.secu3.android.models.FnName
 import org.secu3.android.models.packets.base.BaseOutputPacket
 import org.secu3.android.models.packets.input.FirmwareInfoPacket
-import org.secu3.android.models.FnName
 import org.secu3.android.models.packets.input.FnNameDatPacket
 import org.secu3.android.models.packets.out.OpCompNc
 import org.secu3.android.models.packets.out.params.AccelerationParamPacket
@@ -87,40 +84,37 @@ class ParamsViewModel @Inject constructor(
     val starterLiveData: LiveData<StarterParamPacket>
         get() = flow {
             secu3Repository.sendNewTask(Task.Secu3ReadStarterParam)
-            secu3Repository.receivedPacketFlow
+            val packet = secu3Repository.receivedPacketFlow
                 .filter { it is StarterParamPacket }
                 .map { it as StarterParamPacket }
-                .sample(1000)
-                .collect {
-                    emit(it)
-                    secu3Repository.sendNewTask(Task.Secu3ReadSensors)
-                }
+                .first()
+
+            emit(packet)
+            secu3Repository.sendNewTask(Task.Secu3ReadSensors)
         }.asLiveData()
 
     val anglesLiveData: LiveData<AnglesParamPacket>
         get() = flow {
             secu3Repository.sendNewTask(Task.Secu3ReadAnglesParam)
-            secu3Repository.receivedPacketFlow
+            val packet = secu3Repository.receivedPacketFlow
                 .filter { it is AnglesParamPacket }
                 .map { it as AnglesParamPacket }
-                .sample(1000)
-                .collect {
-                    emit(it)
-                    secu3Repository.sendNewTask(Task.Secu3ReadSensors)
-                }
+                .first()
+
+            emit(packet)
+            secu3Repository.sendNewTask(Task.Secu3ReadSensors)
         }.asLiveData()
 
     val idlingLiveData: LiveData<IdlingParamPacket>
         get() = flow {
             secu3Repository.sendNewTask(Task.Secu3ReadIdlingParam)
-            secu3Repository.receivedPacketFlow
+            val packet = secu3Repository.receivedPacketFlow
                 .filter { it is IdlingParamPacket }
                 .map { it as IdlingParamPacket }
-                .sample(1000)
-                .collect {
-                    emit(it)
-                    secu3Repository.sendNewTask(Task.Secu3ReadSensors)
-                }
+                .first()
+
+            emit(packet)
+            secu3Repository.sendNewTask(Task.Secu3ReadSensors)
         }.asLiveData()
 
     val fnNameLiveData: LiveData<FnNameDatPacket>
@@ -144,131 +138,121 @@ class ParamsViewModel @Inject constructor(
 
     val funsetLiveData: LiveData<FunSetParamPacket>
         get() = flow {
-            secu3Repository.receivedPacketFlow
+            val packet = secu3Repository.receivedPacketFlow
                 .filter { it is FunSetParamPacket }
                 .map { it as FunSetParamPacket }
-                .sample(1000)
-                .collect {
-                    emit(it)
-                    secu3Repository.sendNewTask(Task.Secu3ReadSensors)
-                }
+                .first()
+
+            emit(packet)
+            secu3Repository.sendNewTask(Task.Secu3ReadSensors)
         }.asLiveData()
 
     val temperatureLiveData: LiveData<TemperatureParamPacket>
         get() = flow {
             secu3Repository.sendNewTask(Task.Secu3ReadTemperatureParam)
-            secu3Repository.receivedPacketFlow
+            val packet = secu3Repository.receivedPacketFlow
                 .filter { it is TemperatureParamPacket }
                 .map { it as TemperatureParamPacket }
-                .sample(1000)
-                .collect {
-                    emit(it)
-                    secu3Repository.sendNewTask(Task.Secu3ReadSensors)
-                }
+                .first()
+
+            emit(packet)
+            secu3Repository.sendNewTask(Task.Secu3ReadSensors)
         }.asLiveData()
 
     val carburLiveData: LiveData<CarburParamPacket>
         get() = flow {
             secu3Repository.sendNewTask(Task.Secu3ReadCarburParam)
-            secu3Repository.receivedPacketFlow
+            val packet = secu3Repository.receivedPacketFlow
                 .filter { it is CarburParamPacket }
                 .map { it as CarburParamPacket }
-                .sample(1000)
-                .collect {
-                    emit(it)
-                    secu3Repository.sendNewTask(Task.Secu3ReadSensors)
-                }
+                .first()
+
+            emit(packet)
+            secu3Repository.sendNewTask(Task.Secu3ReadSensors)
         }.asLiveData()
 
     val adcCorrectionsLiveData: LiveData<AdcCorrectionsParamPacket>
         get() = flow {
             secu3Repository.sendNewTask(Task.Secu3ReadAdcErrorsCorrectionsParam)
-            secu3Repository.receivedPacketFlow
+            val packet = secu3Repository.receivedPacketFlow
                 .filter { it is AdcCorrectionsParamPacket }
                 .map { it as AdcCorrectionsParamPacket }
-                .sample(1000)
-                .collect {
-                    emit(it)
-                    secu3Repository.sendNewTask(Task.Secu3ReadSensors)
-                }
+                .first()
+
+            emit(packet)
+            secu3Repository.sendNewTask(Task.Secu3ReadSensors)
         }.asLiveData()
 
     val ckpsLiveData: LiveData<CkpsParamPacket>
         get() = flow {
             secu3Repository.sendNewTask(Task.Secu3ReadCkpsParam)
-            secu3Repository.receivedPacketFlow
+            val packet = secu3Repository.receivedPacketFlow
                 .filter { it is CkpsParamPacket }
                 .map { it as CkpsParamPacket }
-                .sample(1000)
-                .collect {
-                    emit(it)
-                    secu3Repository.sendNewTask(Task.Secu3ReadSensors)
-                }
+                .first()
+
+            emit(packet)
+            secu3Repository.sendNewTask(Task.Secu3ReadSensors)
         }.asLiveData()
 
     val knockLiveData: LiveData<KnockParamPacket>
         get() = flow {
             secu3Repository.sendNewTask(Task.Secu3ReadKnockParam)
-            secu3Repository.receivedPacketFlow
+            val packet = secu3Repository.receivedPacketFlow
                 .filter { it is KnockParamPacket }
                 .map { it as KnockParamPacket }
-                .sample(1000)
-                .collect {
-                    emit(it)
-                    secu3Repository.sendNewTask(Task.Secu3ReadSensors)
-                }
+                .first()
+
+            emit(packet)
+            secu3Repository.sendNewTask(Task.Secu3ReadSensors)
         }.asLiveData()
 
     val miscellaneousLiveData: LiveData<MiscellaneousParamPacket>
         get() = flow {
             secu3Repository.sendNewTask(Task.Secu3ReadMiscellaneousParam)
-            secu3Repository.receivedPacketFlow
+            val packet = secu3Repository.receivedPacketFlow
                 .filter { it is MiscellaneousParamPacket }
                 .map { it as MiscellaneousParamPacket }
-                .sample(1000)
-                .collect {
-                    emit(it)
-                    secu3Repository.sendNewTask(Task.Secu3ReadSensors)
-                }
+                .first()
+
+            emit(packet)
+            secu3Repository.sendNewTask(Task.Secu3ReadSensors)
         }.asLiveData()
 
     val chokeLiveData: LiveData<ChokeControlParPacket>
         get() = flow {
             secu3Repository.sendNewTask(Task.Secu3ReadChokeControlParam)
-            secu3Repository.receivedPacketFlow
+            val packet = secu3Repository.receivedPacketFlow
                 .filter { it is ChokeControlParPacket }
                 .map { it as ChokeControlParPacket }
-                .sample(1000)
-                .collect {
-                    emit(it)
-                    secu3Repository.sendNewTask(Task.Secu3ReadSensors)
-                }
+                .first()
+
+            emit(packet)
+            secu3Repository.sendNewTask(Task.Secu3ReadSensors)
         }.asLiveData()
 
     val securityLiveData: LiveData<SecurityParamPacket>
         get() = flow {
             secu3Repository.sendNewTask(Task.Secu3ReadSecurityParam)
-            secu3Repository.receivedPacketFlow
+            val packet = secu3Repository.receivedPacketFlow
                 .filter { it is SecurityParamPacket }
                 .map { it as SecurityParamPacket }
-                .sample(1000)
-                .collect {
-                    emit(it)
-                    secu3Repository.sendNewTask(Task.Secu3ReadSensors)
-                }
+                .first()
+
+            emit(packet)
+            secu3Repository.sendNewTask(Task.Secu3ReadSensors)
         }.asLiveData()
 
     val uniOutLiveData: LiveData<UniOutParamPacket>
         get() = flow {
             secu3Repository.sendNewTask(Task.Secu3ReadUniversalOutputsParam)
-            secu3Repository.receivedPacketFlow
+            val packet = secu3Repository.receivedPacketFlow
                 .filter { it is UniOutParamPacket }
                 .map { it as UniOutParamPacket }
-                .sample(1000)
-                .collect {
-                    emit(it)
-                    secu3Repository.sendNewTask(Task.Secu3ReadSensors)
-                }
+                .first()
+
+            emit(packet)
+            secu3Repository.sendNewTask(Task.Secu3ReadSensors)
         }.asLiveData()
 
     val fuelInjectionLiveData: LiveData<InjctrParPacket>
@@ -277,16 +261,16 @@ class ParamsViewModel @Inject constructor(
                 return@flow
             }
             secu3Repository.sendNewTask(Task.Secu3ReadFuelInjectionParam)
-            secu3Repository.receivedPacketFlow
+            val packet = secu3Repository.receivedPacketFlow
                 .filter { it is InjctrParPacket }
                 .map { it as InjctrParPacket }
-                .sample(1000)
-                .collect {
-                    it.isAtMega644 = secu3Repository.fwInfo?.isATMEGA644 ?: true
-                    emit(it)
-                    secu3Repository.sendNewTask(Task.Secu3ReadSensors)
-                }
+                .first()
+
+            packet.isAtMega644 = secu3Repository.fwInfo?.isATMEGA644 ?: true
+            emit(packet)
+            secu3Repository.sendNewTask(Task.Secu3ReadSensors)
         }.asLiveData()
+
     val lambdaLiveData: LiveData<LambdaParamPacket>
         get() = flow {
             val fw = secu3Repository.fwInfo ?: return@flow
@@ -294,15 +278,15 @@ class ParamsViewModel @Inject constructor(
                 return@flow
             }
             secu3Repository.sendNewTask(Task.Secu3ReadLambdaParam)
-            secu3Repository.receivedPacketFlow
+            val packet = secu3Repository.receivedPacketFlow
                 .filter { it is LambdaParamPacket }
                 .map { it as LambdaParamPacket }
-                .sample(1000)
-                .collect {
-                    emit(it)
-                    secu3Repository.sendNewTask(Task.Secu3ReadSensors)
-                }
+                .first()
+
+            emit(packet)
+            secu3Repository.sendNewTask(Task.Secu3ReadSensors)
         }.asLiveData()
+
     val accelerationLiveData: LiveData<AccelerationParamPacket>
         get() = flow {
             val fw = secu3Repository.fwInfo ?: return@flow
@@ -310,14 +294,13 @@ class ParamsViewModel @Inject constructor(
                 return@flow
             }
             secu3Repository.sendNewTask(Task.Secu3ReadAccelerationParam)
-            secu3Repository.receivedPacketFlow
+            val packet = secu3Repository.receivedPacketFlow
                 .filter { it is AccelerationParamPacket }
                 .map { it as AccelerationParamPacket }
-                .sample(1000)
-                .collect {
-                    emit(it)
-                    secu3Repository.sendNewTask(Task.Secu3ReadSensors)
-                }
+                .first()
+
+            emit(packet)
+            secu3Repository.sendNewTask(Task.Secu3ReadSensors)
         }.asLiveData()
 
     val gasDoseLiveData: LiveData<GasDoseParamPacket>
@@ -328,14 +311,13 @@ class ParamsViewModel @Inject constructor(
             }
 
             secu3Repository.sendNewTask(Task.Secu3ReadGasDoseParam)
-            secu3Repository.receivedPacketFlow
+            val packet = secu3Repository.receivedPacketFlow
                 .filter { it is GasDoseParamPacket }
                 .map { it as GasDoseParamPacket }
-                .sample(1000)
-                .collect {
-                    emit(it)
-                    secu3Repository.sendNewTask(Task.Secu3ReadSensors)
-                }
+                .first()
+
+            emit(packet)
+            secu3Repository.sendNewTask(Task.Secu3ReadSensors)
         }.asLiveData()
 
     fun sendPacket(packet: BaseOutputPacket) {
@@ -361,7 +343,8 @@ class ParamsViewModel @Inject constructor(
             }
         }
 
+        Toast.makeText(context, context.getString(R.string.saving), Toast.LENGTH_SHORT).show()  // TODO: move this out
+        
         secu3Repository.sendNewTask(Task.Secu3OpComSaveEeprom)
     }
-
 }

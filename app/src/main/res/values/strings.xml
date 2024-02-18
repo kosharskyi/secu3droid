@@ -517,5 +517,6 @@
     <string name="enable_old_sensors_view">Enable old sensors view</string>
     <string name="columns_count">Columns count</string>
     <string name="packet_saved">Packet saved</string>
+    <string name="saving">Saving</string>
 
 </resources>

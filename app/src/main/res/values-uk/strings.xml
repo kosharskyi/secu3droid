@@ -355,6 +355,7 @@
     <string name="enable_old_sensors_view">Ввімкнути старий вигляд екрану сенсорів</string>
     <string name="columns_count">Кількість колонок</string>
     <string name="packet_saved">Пакет збережено</string>
+    <string name="saving">Збереження</string>
 
 </resources>
 
