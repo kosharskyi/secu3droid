@@ -53,7 +53,7 @@ class SensorsRepository @Inject constructor(
         db.withTransaction {
             val maxIdx = db.gaugeStateDao().getMaxIdx()?.inc() ?: 0
             val state = GaugeState(0, gaugeType, maxIdx, false)
-            db.gaugeStateDao().insert(state)
+            db.gaugeStateDao().insertOrIgnore(state)
         }
     }
 
@@ -127,7 +127,7 @@ class SensorsRepository @Inject constructor(
         db.withTransaction {
             val maxIdx = db.indicatorStateDao().getMaxIdx()?.inc() ?: 0
             val state = IndicatorState(0, indicatorType, maxIdx)
-            db.indicatorStateDao().insert(state)
+            db.indicatorStateDao().insertOrIgnore(state)
         }
     }
 

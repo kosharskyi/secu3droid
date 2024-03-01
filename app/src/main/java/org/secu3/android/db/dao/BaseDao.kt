@@ -27,12 +27,16 @@ package org.secu3.android.db.dao
 
 import androidx.room.Delete
 import androidx.room.Insert
+import androidx.room.OnConflictStrategy
 import androidx.room.Update
 
 interface BaseDao<T> {
 
     @Insert
     fun insert(item: T): Long
+
+    @Insert(onConflict = OnConflictStrategy.IGNORE)
+    fun insertOrIgnore(item: T): Long
 
     @Insert
     fun insertAll(items: List<T>)
