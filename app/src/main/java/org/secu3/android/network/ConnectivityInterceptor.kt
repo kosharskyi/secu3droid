@@ -25,41 +25,26 @@
 
 package org.secu3.android.network
 
-import okhttp3.OkHttpClient
-import okhttp3.logging.HttpLoggingInterceptor
-import org.secu3.android.BuildConfig
+import okhttp3.Interceptor
+import okhttp3.Protocol
+import okhttp3.Response
+import okhttp3.ResponseBody
 import org.secu3.android.utils.NetworkHelper
-import retrofit2.Retrofit
-import retrofit2.converter.gson.GsonConverterFactory
-import javax.inject.Inject
-import javax.inject.Singleton
 
+class ConnectivityInterceptor (private val networkHelper: NetworkHelper) : Interceptor {
 
-@Singleton
-class ApiManager @Inject constructor(private val networkHelper: NetworkHelper){
-
-    private val loggingInterceptor: HttpLoggingInterceptor
-        get() {
-            val interceptor = HttpLoggingInterceptor()
-            if (BuildConfig.DEBUG) {
-                interceptor.setLevel(HttpLoggingInterceptor.Level.BODY)
-            }
-
-            return interceptor
+    override fun intercept(chain: Interceptor.Chain): Response {
+        if (networkHelper.isNetworkAvailable().not()) {
+            return Response.Builder()
+                .code(600) // Internal server error
+                .message("No internet connection")
+                .body(ResponseBody.create(null, "Empty body from interceptor"))
+                .protocol(Protocol.HTTP_1_1)
+                .request(chain.request())
+                .build()
         }
 
-    private val okHttpClient: OkHttpClient
-        get() = OkHttpClient.Builder()
-            .addInterceptor(loggingInterceptor)
-            .addInterceptor(ConnectivityInterceptor(networkHelper))
-            .build()
-
-    private var retrofit = Retrofit.Builder()
-        .client(okHttpClient)
-        .baseUrl("https://api.github.com/")
-        .addConverterFactory(GsonConverterFactory.create())
-        .build()
-
-    val apiService = retrofit.create(ApiService::class.java)
-
+        val builder = chain.request().newBuilder()
+        return chain.proceed(builder.build())
+    }
 }

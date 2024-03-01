@@ -23,43 +23,30 @@
  *                    email: vetalkosharskiy@gmail.com
  */
 
-package org.secu3.android.network
+package org.secu3.android.utils
 
-import okhttp3.OkHttpClient
-import okhttp3.logging.HttpLoggingInterceptor
-import org.secu3.android.BuildConfig
-import org.secu3.android.utils.NetworkHelper
-import retrofit2.Retrofit
-import retrofit2.converter.gson.GsonConverterFactory
+import android.content.Context
+import android.net.ConnectivityManager
+import android.net.NetworkCapabilities
+import android.os.Build
+import dagger.hilt.android.qualifiers.ApplicationContext
 import javax.inject.Inject
 import javax.inject.Singleton
 
-
 @Singleton
-class ApiManager @Inject constructor(private val networkHelper: NetworkHelper){
+class NetworkHelper @Inject constructor(@ApplicationContext context: Context) {
 
-    private val loggingInterceptor: HttpLoggingInterceptor
-        get() {
-            val interceptor = HttpLoggingInterceptor()
-            if (BuildConfig.DEBUG) {
-                interceptor.setLevel(HttpLoggingInterceptor.Level.BODY)
-            }
+    private val connectivityManager = context.getSystemService(Context.CONNECTIVITY_SERVICE) as ConnectivityManager
 
-            return interceptor
+    fun isNetworkAvailable(): Boolean {
+        return if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
+            val network = connectivityManager.activeNetwork
+            val capabilities = connectivityManager.getNetworkCapabilities(network)
+            capabilities?.hasCapability(NetworkCapabilities.NET_CAPABILITY_INTERNET) == true
+        } else {
+            val networkInfo = connectivityManager.activeNetworkInfo
+            networkInfo != null && networkInfo.isConnected
         }
-
-    private val okHttpClient: OkHttpClient
-        get() = OkHttpClient.Builder()
-            .addInterceptor(loggingInterceptor)
-            .addInterceptor(ConnectivityInterceptor(networkHelper))
-            .build()
-
-    private var retrofit = Retrofit.Builder()
-        .client(okHttpClient)
-        .baseUrl("https://api.github.com/")
-        .addConverterFactory(GsonConverterFactory.create())
-        .build()
-
-    val apiService = retrofit.create(ApiService::class.java)
+    }
 
 }

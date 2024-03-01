@@ -110,7 +110,7 @@ fun Context.pxToDp(px: Int): Int {
     return TypedValueCompat.pxToDp(px.toFloat(), resources.displayMetrics).roundToInt()
 }
 
-suspend fun <T : Any> Response<T>.toResult(): Result<T> {
+fun <T : Any> Response<T>.toResult(): Result<T> {
     return try {
         if (isSuccessful) {
             val body = body()
