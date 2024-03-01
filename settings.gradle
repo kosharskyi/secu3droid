@@ -6,35 +6,6 @@ pluginManagement {
     }
 }
 dependencyResolutionManagement {
-    versionCatalogs {
-        libs {
-
-            version('kotlin', '1.9.22') // NOTE: Do NOT forget to update KSP version as well
-            version('kotlin-ksp', '1.9.22-1.0.16')
-            plugin("kotlin-ksp-plugin", "com.google.devtools.ksp").versionRef('kotlin-ksp')
-            plugin("kotlin-android", "org.jetbrains.kotlin.android").versionRef('kotlin')
-            plugin("kotlin-parcelize", "org.jetbrains.kotlin.plugin.parcelize").versionRef('kotlin')
-            library("kotlin-stdlib", 'org.jetbrains.kotlin', 'kotlin-stdlib-jdk7').versionRef('kotlin')
-
-            version('navigation', '2.7.6')
-            plugin('navigation-safeargs', 'androidx.navigation.safeargs.kotlin').versionRef('navigation')
-            library("navigation-fragment-ktx", 'androidx.navigation', 'navigation-fragment-ktx').versionRef('navigation')
-            library("navigation-ui-ktx", 'androidx.navigation', 'navigation-ui-ktx').versionRef('navigation')
-
-            version('dagger', '2.50')
-            plugin('dagger-hilt-plugin', 'com.google.dagger.hilt.android').versionRef('dagger')
-            library("dagger-hilt-android", "com.google.dagger", "hilt-android").versionRef('dagger')
-            library("dagger-hilt-compiler", "com.google.dagger", "hilt-compiler").versionRef('dagger')
-            library("dagger-hilt-testing", "com.google.dagger", "hilt-android-testing").versionRef('dagger')
-
-            version('room', '2.6.1')
-            plugin('room-plugin', 'androidx.room').versionRef('room')
-            library("room-runtime", "androidx.room", "room-runtime").versionRef('room')
-            library("room-ktx", "androidx.room", "room-ktx").versionRef('room')
-            library("room-compiler", "androidx.room", "room-compiler").versionRef('room')
-            library("room-testing", "androidx.room", "room-testing").versionRef('room')
-        }
-    }
 
     repositoriesMode.set(RepositoriesMode.FAIL_ON_PROJECT_REPOS)
     repositories {
