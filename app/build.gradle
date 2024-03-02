@@ -81,20 +81,19 @@ dependencies {
     implementation fileTree(dir: 'libs', include: ['*.jar'])
 
     implementation libs.kotlin.stdlib
-    implementation 'androidx.core:core-ktx:1.12.0'
-    implementation 'androidx.appcompat:appcompat:1.6.1'
-    implementation "androidx.fragment:fragment-ktx:1.6.2"
-    implementation 'androidx.annotation:annotation:1.7.1'
+    implementation libs.core.ktx
+    implementation libs.appcompat
+    implementation libs.fragment.ktx
+    implementation libs.annotation
 
-    implementation 'androidx.preference:preference-ktx:1.2.1'
-    implementation 'androidx.constraintlayout:constraintlayout:2.1.4'
-    implementation 'androidx.lifecycle:lifecycle-extensions:2.2.0'
-    implementation "androidx.viewpager2:viewpager2:1.0.0"
+    implementation libs.preference.ktx
+    implementation libs.constraintlayout
+    implementation libs.lifecycle.extensions
+    implementation libs.viewpager2
 
-    def lifecycle_version = "2.7.0"
-    implementation "androidx.lifecycle:lifecycle-viewmodel-ktx:$lifecycle_version"
-    implementation "androidx.lifecycle:lifecycle-runtime-ktx:$lifecycle_version"
-    implementation "androidx.lifecycle:lifecycle-livedata-ktx:$lifecycle_version"
+    implementation libs.lifecycle.viewmodel.ktx
+    implementation libs.lifecycle.runtime.ktx
+    implementation libs.lifecycle.livedata.ktx
 
     implementation libs.navigation.fragment.ktx
     implementation libs.navigation.ui.ktx
@@ -103,34 +102,33 @@ dependencies {
     implementation libs.room.ktx
     ksp libs.room.compiler
 
-    implementation 'com.google.android.material:material:1.11.0'
-    implementation 'com.google.code.gson:gson:2.10.1'
+    implementation libs.material
+    implementation libs.gson
 
-    implementation 'com.jakewharton.threetenabp:threetenabp:1.4.6'
+    implementation libs.threetenabp
 
-    def retrofit = "2.9.0"
-    implementation "com.squareup.retrofit2:converter-gson:$retrofit"
-    implementation "com.squareup.retrofit2:retrofit:$retrofit"
-    implementation "com.squareup.okhttp3:logging-interceptor:3.9.0"
+    implementation libs.converter.gson
+    implementation libs.retrofit
+    implementation libs.logging.interceptor
 
     //Dagger 2
     implementation libs.dagger.hilt.android
     ksp libs.dagger.hilt.compiler
 
-    implementation platform('com.google.firebase:firebase-bom:32.7.1')
-    implementation 'com.google.firebase:firebase-analytics-ktx'
-    implementation 'com.google.firebase:firebase-crashlytics-ktx'
+    implementation platform(libs.firebase.bom)
+    implementation libs.firebase.analytics
+    implementation libs.firebase.crashlytics
 
-    implementation 'com.github.anastr:speedviewlib:1.6.1'
+    implementation libs.speedviewlib
 
-    testImplementation 'junit:junit:4.13.2'
+    testImplementation libs.junit
     testImplementation libs.room.testing
     testImplementation libs.dagger.hilt.testing
     kspTest libs.dagger.hilt.compiler
 
 
-    androidTestImplementation 'androidx.test.ext:junit:1.1.5'
-    androidTestImplementation 'androidx.test.espresso:espresso-core:3.5.1'
+    androidTestImplementation libs.ext.junit
+    androidTestImplementation libs.espresso.core
     androidTestImplementation libs.dagger.hilt.testing
     kspAndroidTest libs.dagger.hilt.compiler
 }
