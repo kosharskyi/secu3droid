@@ -104,6 +104,8 @@ class IdlingFragment : BaseParamFragment() {
 
                         useClosedLoopOnGas.isChecked = it.useClosedLoopOnGas
                         idlRegWorksWithIAC.isChecked = it.idlRegWorksWithIAC
+
+                        differentialCoef.value = it.idlRegD
                     }
 
                     initViews()
@@ -245,6 +247,13 @@ class IdlingFragment : BaseParamFragment() {
                 packet?.idlRegWorksWithIAC = isChecked
             }
 
+            differentialCoef.addOnValueChangeListener {
+                packet?.idlRegD = it
+                packet?.let { it1 -> mViewModel.sendPacket(it1) }
+            }
+
+
+
             positiveRegFactor.setOnClickListener { floatParamClick(it as FloatParamView) }
             negativeRegFactor.setOnClickListener { floatParamClick(it as FloatParamView) }
             maxRegLimit.setOnClickListener { floatParamClick(it as FloatParamView) }
@@ -263,8 +272,11 @@ class IdlingFragment : BaseParamFragment() {
             transientThreshold2.setOnClickListener { floatParamClick(it as FloatParamView) }
             integratorRpmLimit.setOnClickListener { intParamClick(it as IntParamView) }
             pressureLoadOnIdling.setOnClickListener { floatParamClick(it as FloatParamView) }
+
             minIacPosition.setOnClickListener { floatParamClick(it as FloatParamView) }
             maxIacPosition.setOnClickListener { floatParamClick(it as FloatParamView) }
+
+            differentialCoef.setOnClickListener { floatParamClick(it as FloatParamView) }
         }
     }
 

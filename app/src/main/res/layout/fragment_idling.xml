@@ -434,6 +434,19 @@
 
             <!-- ************************************************************* -->
 
+            <org.secu3.android.ui.parameters.views.FloatParamView
+                android:id="@+id/differential_coef"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                app:title="@string/idlreg_integral_negative_title"
+                app:units="@string/units_coef"
+                app:float_value="0.0"
+                app:value_precision="three"
+                app:float_min_value="0.0"
+                app:float_max_value="5.0"
+                app:float_step="0.005"
+                />
+
         </LinearLayout>
 
     </ScrollView>
