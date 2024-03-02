@@ -97,6 +97,8 @@
     <string name="funset_mapsel0_condition_for_gas">Умова MAPSEL0 для газу</string>
     <string name="funset_ve2_map_func_title">Функція 2-ї табл. наповн.</string>
     <string name="funset_gas_v_uni_title">Умова GAS_V</string>
+    <string name="funset_gas_pressure_sensor_offset_title">Зсув кривої ДТГ</string>
+    <string name="funset_gas_pressure_sensor_gradient_title">Нахил кривої ДТГ</string>
 
 
     <string name="temper_fan_on_title">Поріг активації вентилятора</string>

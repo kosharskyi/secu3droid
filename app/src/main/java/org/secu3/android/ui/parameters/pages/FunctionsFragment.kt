@@ -133,6 +133,9 @@ class FunctionsFragment : BaseParamFragment() {
 
                         ve2MapFunc.setText(ve2MapFuncItems[it.ve2MapFunc], false)
                         gasVCondition.setText(mapselItems[it.gasVUni], false)
+
+                        gasPressureCurveOffset.value = it.gpsCurveOffset
+                        gasPressureCurveGradient.value = it.gpsCurveGradient
                     }
 
                     initViews()
@@ -271,6 +274,19 @@ class FunctionsFragment : BaseParamFragment() {
                 }
             }
 
+            gasPressureCurveOffset.addOnValueChangeListener {
+                funSetPacket?.apply {
+                    gpsCurveOffset = it
+                    mViewModel.sendPacket(this)
+                }
+            }
+            gasPressureCurveGradient.addOnValueChangeListener {
+                funSetPacket?.apply {
+                    gpsCurveGradient = it
+                    mViewModel.sendPacket(this)
+                }
+            }
+
 
             lowerLoadValue.setOnClickListener { floatParamClick(it as FloatParamView) }
             upperLoadValue.setOnClickListener { floatParamClick(it as FloatParamView) }
@@ -280,6 +296,9 @@ class FunctionsFragment : BaseParamFragment() {
             tpsCurveGradient.setOnClickListener { floatParamClick(it as FloatParamView) }
             map2CurveOffset.setOnClickListener { floatParamClick(it as FloatParamView) }
             map2CurveGradient.setOnClickListener { floatParamClick(it as FloatParamView) }
+
+            gasPressureCurveOffset.setOnClickListener { floatParamClick(it as FloatParamView) }
+            gasPressureCurveGradient.setOnClickListener { floatParamClick(it as FloatParamView) }
         }
     }
 }
