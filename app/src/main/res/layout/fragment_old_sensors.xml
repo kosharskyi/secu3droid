@@ -347,6 +347,13 @@
                 />
 
             <include
+                android:id="@+id/gas_pressure_sensor"
+                layout="@layout/view_sensor_item"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                />
+
+            <include
                 android:id="@+id/status_gas_dos_throttle_fl_fuel"
                 layout="@layout/view_status_sensors"
                 android:layout_width="match_parent"

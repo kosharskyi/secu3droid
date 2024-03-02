@@ -57,7 +57,7 @@ class OldSensorsFragment : Fragment() {
                 rpm.value.text = it.rpm.toString()
 
                 pressure.title.text = getString(R.string.sensors_frag_absolute_pressure_label)
-                pressure.value.text = String.format(Locale.US, "%.1f", it.map)
+                pressure.value.text = String.format(Locale.US, "%.2f", it.map)
 
                 voltage.title.text = getString(R.string.sensors_frag_voltage_label)
                 voltage.value.text = String.format(Locale.US, "%.1f", it.voltage)
@@ -178,6 +178,9 @@ class OldSensorsFragment : Fragment() {
 
                 afr2.title.text = getString(R.string.sensors_frag_wbo_afr_2_label)
                 afr2.value.text = String.format(Locale.US, "%.1f", it.sensAfr[1])
+
+                gasPressureSensor.title.text = "${getString(R.string.sensors_frag_gas_pressure_label)}, ${getString(R.string.units_pressure_kpa)}:"
+                gasPressureSensor.value.text = String.format(Locale.US, "%.1f", it.gasPressureSensor)
 
                 /**State sensors*/
 

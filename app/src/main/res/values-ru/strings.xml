@@ -309,6 +309,7 @@
     <string name="sensors_frag_end_inj_phase_label">Фаза конца впрыска</string>
     <string name="wbo_afr_tabl">Воздух/топливо табл.</string>
     <string name="sensors_frag_wbo_afr_2_label">Воздух/топливо ШДК2</string>
+    <string name="sensors_frag_gas_pressure_label">Давление газа</string>
     <string name="sensors_frag_status_gas_valve_label">Газовый клапан</string>
     <string name="sensors_frag_status_throttle_label">Дроссель</string>
     <string name="sensors_frag_status_fl_fuel_label">Топл. при ПХХ</string>

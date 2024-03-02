@@ -468,6 +468,7 @@
     <string name="sensors_frag_end_inj_phase_label">End inj. phase</string>
     <string name="wbo_afr_tabl">WBO AFR TABL.</string>
     <string name="sensors_frag_wbo_afr_2_label">WBO AFR 2</string>
+    <string name="sensors_frag_gas_pressure_label">Gas pressure</string>
     <string name="sensors_frag_status_gas_valve_label">Gas valve</string>
     <string name="sensors_frag_status_throttle_label">Throttle</string>
     <string name="sensors_frag_status_fl_fuel_label">Fl fuel</string>

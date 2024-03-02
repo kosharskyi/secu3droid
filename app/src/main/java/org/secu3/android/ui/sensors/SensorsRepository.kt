@@ -114,6 +114,8 @@ class SensorsRepository @Inject constructor(
                 val difAfr = it.sensAfr[1] - it.corrAfr
                 String.format(Locale.US, "%.2f", difAfr)
             }
+
+            GaugeType.GAS_PRESSURE_SENS -> String.format(Locale.US, "%.2f", it.gasPressureSensor)
         }
 
         return GaugeItem(state, value)
