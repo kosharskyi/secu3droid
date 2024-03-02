@@ -32,7 +32,9 @@ data class SecurityParamPacket(
     var btFlags: Int = 0,
 
     var iButton0: String = "000000",
-    var iButton1: String = "000000"
+    var iButton1: String = "000000",
+
+    var btType: Int = 0 // Bluetooth chip type: 0 - BC417, 1 - BK3231, 2 - BK3231S(JDY-31), 3 - BC352(HC-05), 4 - BK3432, 5 - BK3431S
 
 ) : BaseOutputPacket() {
 
@@ -51,9 +53,6 @@ data class SecurityParamPacket(
     val checkFwCrc: Boolean                             //Check firmware CRC (time consuming operation)
         get() = btFlags.getBitValue(4) > 0
 
-    val btType: Int                                     // Bluetooth chip type: 0 - BC417, 1 - BK3231
-        get() = btFlags.getBitValue(5)
-
     override fun pack(): String {
         var data = "$OUTPUT_PACKET_SYMBOL$DESCRIPTOR"
 
@@ -61,6 +60,8 @@ data class SecurityParamPacket(
 
         data += iButton0
         data += iButton1
+
+        data += btType.toChar()
 
         data += unhandledParams
 
@@ -77,12 +78,13 @@ data class SecurityParamPacket(
             btFlags = data[4].code
             iButton0 = data.substring(5, 11)
             iButton1 = data.substring(11, 17)
+            btType = data[17].code
 
-            if (data.length == 17) {
+            if (data.length == 18) {
                 return@apply
             }
 
-            unhandledParams = data.substring(17)
+            unhandledParams = data.substring(18)
         }
 
     }

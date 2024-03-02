@@ -59,6 +59,9 @@ data class FunSetParamPacket(
     var mafload_const: Float = 0f, //calculated in manager before send
     var tps_raw: Float = 0f,        //for TPS learning
 
+    var gpsCurveOffset: Float = 0f,     // Gas Pressure Sensor
+    var gpsCurveGradient: Float = 0f,   // Gas Pressure Sensor
+
     ): BaseOutputPacket() {
 
     override fun pack(): String {
@@ -92,6 +95,9 @@ data class FunSetParamPacket(
 
         data += injCylDisp.times(16384.0f).roundToInt().write2Bytes()
         data += mafload_const.toInt().write4Bytes()
+
+        data += gpsCurveOffset.div(ADC_DISCRETE).roundToInt().write2Bytes()
+        data += gpsCurveGradient.times(128.0f).times(MAP_MULTIPLIER).times(ADC_DISCRETE).roundToInt().write2Bytes()
 
         data += unhandledParams
 
@@ -145,11 +151,14 @@ data class FunSetParamPacket(
             mafload_const = data.get4Bytes(29).toFloat()
             tps_raw = data.get2Bytes(33).times(ADC_DISCRETE)
 
-            if (data.length == 35) {
+            map2CurveOffset = data.get2Bytes(35).toFloat() * ADC_DISCRETE
+            map2CurveGradient = data.get2Bytes(37).toFloat() / (MAP_MULTIPLIER * ADC_DISCRETE * 128.0f)
+
+            if (data.length == 39) {
                 return@apply
             }
 
-            unhandledParams = data.substring(35)
+            unhandledParams = data.substring(39)
         }
 
     }

@@ -101,6 +101,8 @@ data class SensorsPacket(
     var corrAfr: Float = 0f,                // Current value of air to fuel ration from AFR map
     var tchrg: Float = 0f,                  // Corrected value of MAT; charge temp
 
+    var gasPressureSensor: Float = 0f,
+
 ) : BaseSecu3Packet(){
 
     private var isSpeedUnitKm = true
@@ -319,7 +321,6 @@ data class SensorsPacket(
             tpsdot = data.get2Bytes(57).toShort()
 
             map2 = data.get2Bytes(59).toFloat() / MAP_MULTIPLIER
-            mapd = map2 - map
 
             tmp2 = data.get2Bytes(61).toShort().toFloat().div(TEMPERATURE_MULTIPLIER).coerceIn(-99.9f, 999.0f)
 
@@ -393,6 +394,9 @@ data class SensorsPacket(
 
             //Corrected MAT
             tchrg = data.get2Bytes(102).toShort().toFloat().div(TEMPERATURE_MULTIPLIER).coerceIn(-99.9f, 999.0f)
+
+            gasPressureSensor = data.get2Bytes(104).toFloat() / MAP_MULTIPLIER
+            mapd = gasPressureSensor - map
         }
 
 
