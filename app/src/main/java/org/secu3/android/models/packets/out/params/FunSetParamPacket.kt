@@ -73,7 +73,7 @@ data class FunSetParamPacket(
         data += map2CurveOffset.div(ADC_DISCRETE).roundToInt().write2Bytes()
         data += map2CurveGradient.times(128.0f).times(MAP_MULTIPLIER).times(ADC_DISCRETE).roundToInt().write2Bytes()
         data += tpsCurveOffset.div(ADC_DISCRETE).roundToInt().write2Bytes()
-        data += tpsCurveGradient.times(128.0f).times(MAP_MULTIPLIER * 64f).times(ADC_DISCRETE).roundToInt().write2Bytes()
+        data += tpsCurveGradient.times(128.0f).times(TPS_MULTIPLIER * 64f).times(ADC_DISCRETE).roundToInt().write2Bytes()
 
         data += loadSrcCfg.toChar()
         data += mapselUni.toChar()
