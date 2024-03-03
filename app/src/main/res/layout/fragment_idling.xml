@@ -438,7 +438,7 @@
                 android:id="@+id/differential_coef"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                app:title="@string/idlreg_integral_negative_title"
+                app:title="@string/idlreg_differential_title"
                 app:units="@string/units_coef"
                 app:float_value="0.0"
                 app:value_precision="three"

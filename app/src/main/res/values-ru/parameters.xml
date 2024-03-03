@@ -292,6 +292,7 @@
     <string name="raw_status_addi2_title">ADD_IO2: %.2f В</string>
     <string name="idlreg_proportional_negative_title">Пропорциональный (-)</string>
     <string name="idlreg_integral_negative_title">Интегральный (-)</string>
+    <string name="idlreg_differential_title">Дифференциальный</string>
     <string name="knock_par_select_knock_sensor_title">Выбор датчика детонации</string>
     <string name="knock_par_knock_threshold_control_title">Порог контроля детонации</string>
     <string name="injctr_par_max_inj_pw_title">Макс. длительность впрыска</string>

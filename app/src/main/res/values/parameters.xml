@@ -70,6 +70,7 @@
     <string name="idlreg_integral_positive_title">Integral (+)</string>
     <string name="idlreg_proportional_negative_title">Proportional (-)</string>
     <string name="idlreg_integral_negative_title">Integral (-)</string>
+    <string name="idlreg_differential_title">Differential</string>
     <string name="idlreg_first_transient_threshold_title">1-st transient threshold</string>
     <string name="idlreg_second_transient_threshold_title">2-nd transient threshold</string>
     <string name="idlreg_integrator_rpm_limit_title">Integrator RPM limit</string>
