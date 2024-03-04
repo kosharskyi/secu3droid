@@ -276,6 +276,8 @@ class IdlingFragment : BaseParamFragment() {
             minIacPosition.setOnClickListener { floatParamClick(it as FloatParamView) }
             maxIacPosition.setOnClickListener { floatParamClick(it as FloatParamView) }
 
+            iacDeadBand.setOnClickListener { intParamClick(it as IntParamView) }
+
             differentialCoef.setOnClickListener { floatParamClick(it as FloatParamView) }
         }
     }
