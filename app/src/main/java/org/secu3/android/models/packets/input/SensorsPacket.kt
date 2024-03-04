@@ -53,7 +53,7 @@ data class SensorsPacket(
 
 
     //corrections
-    val serviceFlags: Int = 0,
+    var serviceFlags: Int = 0,
     var strtAalt: Float = 0f,         // advance angle from start map
     var idleAalt: Float = 0f,         // advance angle from idle map
     var workAalt: Float = 0f,        // advance angle from work map
@@ -185,39 +185,57 @@ data class SensorsPacket(
     // ServiceFlags
     var knkret_use: Boolean
         get() = serviceFlags.getBitValue(0) > 0
-        set(value) { serviceFlags.setBitValue(value, 0) }
+        set(value) {
+            serviceFlags = serviceFlags.setBitValue(value, 0)
+        }
 
     var strtUse: Boolean
         get() = serviceFlags.getBitValue(1) > 0
-        set(value) { serviceFlags.setBitValue(value, 1) }
+        set(value) {
+            serviceFlags = serviceFlags.setBitValue(value, 1)
+        }
 
     var idleUse: Boolean
         get() = serviceFlags.getBitValue(2) > 0
-        set(value) { serviceFlags.setBitValue(value, 2) }
+        set(value) {
+            serviceFlags = serviceFlags.setBitValue(value, 2)
+        }
 
     var workUse: Boolean
         get() = serviceFlags.getBitValue(3) > 0
-        set(value) { serviceFlags.setBitValue(value, 3) }
+        set(value) {
+            serviceFlags = serviceFlags.setBitValue(value, 3)
+        }
 
     var tempUse: Boolean
         get() = serviceFlags.getBitValue(4) > 0
-        set(value) { serviceFlags.setBitValue(value, 4) }
+        set(value) {
+            serviceFlags = serviceFlags.setBitValue(value, 4)
+        }
 
     var airtUse: Boolean
         get() = serviceFlags.getBitValue(5) > 0
-        set(value) { serviceFlags.setBitValue(value, 5) }
+        set(value) {
+            serviceFlags = serviceFlags.setBitValue(value, 5)
+        }
 
     var idlregUse: Boolean
         get() = serviceFlags.getBitValue(6) > 0
-        set(value) { serviceFlags.setBitValue(value, 6) }
+        set(value) {
+            serviceFlags = serviceFlags.setBitValue(value, 6)
+        }
 
     var octanUse: Boolean
         get() = serviceFlags.getBitValue(7) > 0
-        set(value) { serviceFlags.setBitValue(value, 7) }
+        set(value) {
+            serviceFlags = serviceFlags.setBitValue(value, 7)
+        }
 
     var rigidUse: Boolean
         get() = serviceFlags.getBitValue(8) > 0
-        set(value) { serviceFlags.setBitValue(value, 8) }
+        set(value) {
+            serviceFlags = serviceFlags.setBitValue(value, 8)
+        }
 
 
 
@@ -359,7 +377,7 @@ data class SensorsPacket(
 
             data[71].code.takeIf { it != 255 }?.toFloat()?.let {
                 rigidUse = true
-                rigidArg = 1.0f + it.div(256.0f / 7.0f)
+                rigidArg = it.div(256.0f)
             }
 
             //Gas reducer's temperature
