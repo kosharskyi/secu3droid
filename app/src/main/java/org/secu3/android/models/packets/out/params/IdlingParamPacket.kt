@@ -125,7 +125,7 @@ data class IdlingParamPacket(
             mapValue = data.get2Bytes(30).toFloat() / MAP_MULTIPLIER
             iacMinPos = data[32].code.toFloat() / 2
             iacMaxPos = data[33].code.toFloat() / 2
-            iacRegDb = data.get2Bytes(34) / 2
+            iacRegDb = data.get2Bytes(34)
             idlRegD = data.get2Bytes(36).toFloat() / 256
 
             if (data.length == 38) {
@@ -159,7 +159,7 @@ data class IdlingParamPacket(
         data += mapValue.times(MAP_MULTIPLIER).roundToInt().write2Bytes()
         data += iacMinPos.times(2).roundToInt().toChar()
         data += iacMaxPos.times(2).roundToInt().toChar()
-        data += iacRegDb.times(2).write2Bytes()
+        data += iacRegDb.write2Bytes()
         data += idlRegD.times(256).roundToInt().write2Bytes()
 
         data += unhandledParams
