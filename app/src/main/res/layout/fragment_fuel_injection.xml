@@ -39,6 +39,7 @@
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintBottom_toBottomOf="parent"
+        tools:visibility="gone"
         />
 
     <ScrollView
@@ -47,6 +48,7 @@
         android:layout_height="match_parent"
         android:fillViewport="true"
         android:visibility="gone"
+        tools:visibility="visible"
         >
 
         <androidx.constraintlayout.widget.ConstraintLayout
@@ -254,9 +256,9 @@
                 app:units="@string/units_ms"
                 app:float_value="0"
                 app:value_precision="two"
-                app:float_max_value="6.50"
-                app:float_min_value="0.10"
-                app:float_step="0.03"
+                app:float_max_value="100.0"
+                app:float_min_value="0.0"
+                app:float_step="0.10"
                 />
 
             <!-- ************************************************************* -->
@@ -442,9 +444,9 @@
                 app:units="@string/units_ms"
                 app:float_value="0"
                 app:value_precision="two"
-                app:float_max_value="6.50"
-                app:float_min_value="0.10"
-                app:float_step="0.03"
+                app:float_max_value="100.0"
+                app:float_min_value="0.0"
+                app:float_step="0.10"
                 />
 
             <!-- ************************************************************* -->

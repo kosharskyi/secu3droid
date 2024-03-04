@@ -157,21 +157,21 @@ data class InjctrParPacket(
     private val discrete: Float
         get() {
             if (isAtMega644) {
-                return 3.2f
+                return 4.0f
             }
-            return 4.0f
+            return 3.2f
         }
 
     var minPw0: Float
-        get() = minPw.and(0xFF).toFloat().times(discrete).div(1000.0f).times(8.0f)
+        get() = minPw.and(0xFF).toFloat().times(8.0f).times(discrete).div(1000.0f)
         set(value) {
-            minPw = value.div(8.0f).times(1000.0f).div(discrete).toInt().or(minPw.and(0xFF00))
+            minPw = value.times(1000.0f).div(discrete).div(8.0f).roundToInt().or(minPw.and(0xFF00))
         }
 
     var minPw1: Float
-        get() = minPw.shr(8).toFloat().times(discrete).div(1000.0f).times(8.0f)
+        get() = minPw.shr(8).toFloat().times(8.0f).times(discrete).div(1000.0f)
         set(value) {
-            minPw = value.div(8.0f).times(1000.0f).div(discrete).toInt().shl(8).or(minPw.and(0x00FF))
+            minPw = value.times(1000.0f).div(discrete).div(8.0f).roundToInt().shl(8).or(minPw.and(0x00FF))
         }
 
 
@@ -298,8 +298,8 @@ data class InjctrParPacket(
         const val INJCFG_SIMULTANEOUS = 1;   //N injectors, all injectors work simultaneously
         const val INJCFG_2BANK_ALTERN = 2;   //N injectors split into 2 banks, banks work alternately
         const val INJCFG_SEMISEQUENTIAL = 3; //N injectors, injectors work in pairs
-        const val INJCFG_FULLSEQUENTIAL = 4; //N injectors, each injector works 1 time per cycle
-        const val INJCFG_SEMISEQSEPAR  = 5;  //N injectors, injectors work in pairs, each injector has its own separate output
+        const val INJCFG_SEMISEQSEPAR  = 4;  //N injectors, injectors work in pairs, each injector has its own separate output
+        const val INJCFG_FULLSEQUENTIAL = 5; //N injectors, each injector works 1 time per cycle
 
         fun parse(data: String) = InjctrParPacket().apply {
 
@@ -334,8 +334,8 @@ data class InjctrParPacket(
 
             mafloadConst = data.get4Bytes(41)
 
-            injMaxPw[0] = data.get2Bytes(45).toFloat().div(1000.0f / 3.2f)
-            injMaxPw[1] = data.get2Bytes(47).toFloat().div(1000.0f / 3.2f)
+            injMaxPw[0] = data.get2Bytes(45).toFloat().times(3.2f / 1000.0f)
+            injMaxPw[1] = data.get2Bytes(47).toFloat().times(3.2f / 1000.0f)
 
             if (data.length == 49) {
                 return@apply
