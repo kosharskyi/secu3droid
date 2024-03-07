@@ -112,15 +112,6 @@
         <item>Несправність датчика на вході ADD_I8</item>
     </string-array>
 
-    <string-array name="fuel_inject_config_types">
-        <item>Моно-впорскування</item>
-        <item>Одночасний</item>
-        <item>2 банка попер.</item>
-        <item>Попарно-паралельний</item>
-        <item>ПП окрем.кан.</item>
-        <item>Розподілене</item>
-    </string-array>
-
     <string-array name="logical_functions">
         <item>АБО</item>
         <item>I</item>

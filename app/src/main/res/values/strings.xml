@@ -165,15 +165,6 @@
         <item>ADD_I8 input\'s sensor failure</item>
     </string-array>
 
-    <string-array name="fuel_inject_config_types">
-        <item>Throttle-body</item>
-        <item>Simultaneous</item>
-        <item>2 banks altern</item>
-        <item>Semi-sequential</item>
-        <item>SS sep.chan</item>
-        <item>Full sequential</item>
-    </string-array>
-
     <string-array name="logical_functions">
         <item>OR</item>
         <item>AND</item>

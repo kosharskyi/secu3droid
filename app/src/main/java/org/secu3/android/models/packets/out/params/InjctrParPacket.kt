@@ -24,6 +24,8 @@
  */
 package org.secu3.android.models.packets.out.params
 
+import androidx.annotation.StringRes
+import org.secu3.android.R
 import org.secu3.android.models.packets.base.BaseOutputPacket
 import org.secu3.android.utils.getBitValue
 import org.secu3.android.utils.setBitValue
@@ -225,24 +227,24 @@ data class InjctrParPacket(
 
     private fun injNum(config: Int): Int {
         return when (config) {
-            INJCFG_THROTTLEBODY -> 1
-            INJCFG_SIMULTANEOUS -> ckpsEngineCyl
-            INJCFG_2BANK_ALTERN -> ckpsEngineCyl
-            INJCFG_SEMISEQUENTIAL -> ckpsEngineCyl
-            INJCFG_SEMISEQSEPAR -> ckpsEngineCyl
-            INJCFG_FULLSEQUENTIAL -> ckpsEngineCyl
+            InjConfig.THROTTLEBODY.id -> 1
+            InjConfig.SIMULTANEOUS.id -> ckpsEngineCyl
+            InjConfig.TWO_BANK_ALTERN.id -> ckpsEngineCyl
+            InjConfig.SEMISEQUENTIAL.id -> ckpsEngineCyl
+            InjConfig.SEMISEQSEPAR.id -> ckpsEngineCyl
+            InjConfig.FULLSEQUENTIAL.id -> ckpsEngineCyl
             else -> ckpsEngineCyl
         }
     }
 
     private fun bnkNum(config: Int): Int {
         return when (config) {
-            INJCFG_THROTTLEBODY -> 1
-            INJCFG_SIMULTANEOUS -> 1
-            INJCFG_2BANK_ALTERN -> 2
-            INJCFG_SEMISEQUENTIAL -> ckpsEngineCyl / 2
-            INJCFG_SEMISEQSEPAR -> ckpsEngineCyl / 2
-            INJCFG_FULLSEQUENTIAL -> ckpsEngineCyl
+             InjConfig.THROTTLEBODY.id -> 1
+            InjConfig.SIMULTANEOUS.id -> 1
+            InjConfig.TWO_BANK_ALTERN.id -> 2
+            InjConfig.SEMISEQUENTIAL.id -> ckpsEngineCyl / 2
+            InjConfig.SEMISEQSEPAR.id -> ckpsEngineCyl / 2
+            InjConfig.FULLSEQUENTIAL.id -> ckpsEngineCyl
             else -> ckpsEngineCyl
         }
     }
@@ -285,6 +287,15 @@ data class InjctrParPacket(
         return result
     }
 
+    enum class InjConfig (val id: Int, @StringRes val strId: Int) {
+        THROTTLEBODY(0, R.string.injctr_par_inj_config_throttlebody),  //single injector for N cylinders
+        SIMULTANEOUS(1, R.string.injctr_par_inj_config_simultaneous),   //N injectors, all injectors work simultaneously
+        TWO_BANK_ALTERN(2, R.string.injctr_par_inj_config_2banks_altern),   //N injectors split into 2 banks, banks work alternately
+        SEMISEQUENTIAL(3, R.string.injctr_par_inj_config_semi_sequential), //N injectors, injectors work in pairs
+        SEMISEQSEPAR(5, R.string.injctr_par_inj_config_ss_sep_channel),  //N injectors, injectors work in pairs, each injector has its own separate output
+        FULLSEQUENTIAL(4, R.string.injctr_par_inj_config_full_sequential) //N injectors, each injector works 1 time per cycle
+    }
+
     companion object {
 
         internal const val DESCRIPTOR = ';'
@@ -293,13 +304,6 @@ data class InjctrParPacket(
             0.710f, //petrol density (0.710 g/cc)
             0.536f  //LPG density (0.536 g/cc)
         )
-
-        const val INJCFG_THROTTLEBODY  = 0;  //single injector for N cylinders
-        const val INJCFG_SIMULTANEOUS = 1;   //N injectors, all injectors work simultaneously
-        const val INJCFG_2BANK_ALTERN = 2;   //N injectors split into 2 banks, banks work alternately
-        const val INJCFG_SEMISEQUENTIAL = 3; //N injectors, injectors work in pairs
-        const val INJCFG_SEMISEQSEPAR  = 4;  //N injectors, injectors work in pairs, each injector has its own separate output
-        const val INJCFG_FULLSEQUENTIAL = 5; //N injectors, each injector works 1 time per cycle
 
         fun parse(data: String) = InjctrParPacket().apply {
 

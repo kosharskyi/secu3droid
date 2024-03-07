@@ -211,6 +211,12 @@
     <string name="injctr_par_diff_press_for_pw_corr_from_gps_title">Дифф.давление для корр.по ДДГ</string>
     <string name="injctr_par_switch_between_injectors_rows_title">Переключать ряды форсунок</string>
     <string name="injctr_par_inj_timing_specifies">Фазу впрыска определяет</string>
+    <string name="injctr_par_inj_config_throttlebody">Моновпрыск</string>
+    <string name="injctr_par_inj_config_simultaneous">Одновременный</string>
+    <string name="injctr_par_inj_config_2banks_altern">2 банка попер.</string>
+    <string name="injctr_par_inj_config_semi_sequential">Попарно-паралельный</string>
+    <string name="injctr_par_inj_config_ss_sep_channel">ПП разд.кан.</string>
+    <string name="injctr_par_inj_config_full_sequential">Распределенный</string>
 
 
 

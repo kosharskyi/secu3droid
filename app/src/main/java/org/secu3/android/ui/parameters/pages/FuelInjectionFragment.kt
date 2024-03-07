@@ -49,10 +49,6 @@ class FuelInjectionFragment : BaseParamFragment() {
     private val mInjViewModel: FuelInjectionViewModel by viewModels()
     private lateinit var mBinding: FragmentFuelInjectionBinding
 
-    private val mConfigList: List<String> by lazy {
-        resources.getStringArray(R.array.fuel_inject_config_types).toList()
-    }
-
     private val mInjTimingSpecifiesList: List<String> by lazy {
         resources.getStringArray(R.array.inj_timing_specifies).toList()
     }
@@ -116,7 +112,12 @@ class FuelInjectionFragment : BaseParamFragment() {
 
                         injectorFlowRate.value = it.flowRate[0]
 
-                        injectionConfiguration.setText(mConfigList[it.config0], false)
+                        val configText = InjctrParPacket.InjConfig.entries.first { injConfig ->
+                            injConfig.id == it.config0
+                        }.let { injConfig ->
+                            getString(injConfig.strId)
+                        }
+                        injectionConfiguration.setText(configText, false)
 
                         injectorTiming.value = it.timing[0]
                         crankingInjectionTiming.value = it.timingCrk[0]
@@ -131,7 +132,12 @@ class FuelInjectionFragment : BaseParamFragment() {
 
                         injectorFlowRateG.value = it.flowRate[1]
 
-                        injectionConfigurationG.setText(mConfigList[it.config1], false)
+                        val configTextG = InjctrParPacket.InjConfig.entries.first { injConfig ->
+                            injConfig.id == it.config1
+                        }.let { injConfig ->
+                            getString(injConfig.strId)
+                        }
+                        injectionConfigurationG.setText(configTextG, false)
 
                         injectorTimingG.value = it.timing[1]
                         crankingInjectionTimingG.value = it.timingCrk[1]
@@ -159,8 +165,10 @@ class FuelInjectionFragment : BaseParamFragment() {
     }
 
     private fun initDropdowns() {
+        val injConfigList = InjctrParPacket.InjConfig.entries.map { it.strId }
+
         mBinding.injectionConfiguration.apply {
-            ArrayAdapter(requireContext(), R.layout.list_item, mConfigList).also {
+            ArrayAdapter(requireContext(), R.layout.list_item, injConfigList).also {
                 setAdapter(it)
             }
             inputType = InputType.TYPE_NULL
@@ -179,7 +187,7 @@ class FuelInjectionFragment : BaseParamFragment() {
 
 
         mBinding.injectionConfigurationG.apply {
-            ArrayAdapter(requireContext(), R.layout.list_item, mConfigList).also {
+            ArrayAdapter(requireContext(), R.layout.list_item, injConfigList).also {
                 setAdapter(it)
             }
             inputType = InputType.TYPE_NULL
@@ -212,8 +220,10 @@ class FuelInjectionFragment : BaseParamFragment() {
             }
 
             injectionConfiguration.setOnItemClickListener { _, _, position, _ ->
-                packet.config0 = position
-                packet.let { it1 -> mViewModel.sendPacket(it1) }
+                packet.apply {
+                    config0 = InjctrParPacket.InjConfig.entries[position].id
+                    mViewModel.sendPacket(this)
+                }
             }
 
             numOfSquirtsCycle.setOnItemClickListener { _, _, position, _ ->

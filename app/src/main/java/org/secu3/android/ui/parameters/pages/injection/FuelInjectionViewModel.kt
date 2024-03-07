@@ -29,12 +29,7 @@ import androidx.lifecycle.LiveData
 import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.ViewModel
 import org.secu3.android.models.packets.out.params.InjctrParPacket
-import org.secu3.android.models.packets.out.params.InjctrParPacket.Companion.INJCFG_2BANK_ALTERN
-import org.secu3.android.models.packets.out.params.InjctrParPacket.Companion.INJCFG_FULLSEQUENTIAL
-import org.secu3.android.models.packets.out.params.InjctrParPacket.Companion.INJCFG_SEMISEQSEPAR
-import org.secu3.android.models.packets.out.params.InjctrParPacket.Companion.INJCFG_SEMISEQUENTIAL
-import org.secu3.android.models.packets.out.params.InjctrParPacket.Companion.INJCFG_SIMULTANEOUS
-import org.secu3.android.models.packets.out.params.InjctrParPacket.Companion.INJCFG_THROTTLEBODY
+import org.secu3.android.models.packets.out.params.InjctrParPacket.InjConfig.*
 
 class FuelInjectionViewModel: ViewModel() {
 
@@ -50,7 +45,7 @@ class FuelInjectionViewModel: ViewModel() {
         val config = if (fi == 0) packet.config0 else packet.config1
 
         //Fill squirts number list depending of selected configuration and number of engine cylinders
-        if (config == INJCFG_THROTTLEBODY || config == INJCFG_SIMULTANEOUS) {
+        if (config == THROTTLEBODY.id || config == SIMULTANEOUS.id) {
 
             when (packet.ckpsEngineCyl) {
                 1 -> {
@@ -87,7 +82,7 @@ class FuelInjectionViewModel: ViewModel() {
             }
         }
 
-        if (config == INJCFG_2BANK_ALTERN) {
+        if (config == TWO_BANK_ALTERN.id) {
 
             when (packet.ckpsEngineCyl) {
                 1, 2, 3, 5 -> mSqrnum[fi].value = listOf()
@@ -99,7 +94,7 @@ class FuelInjectionViewModel: ViewModel() {
             }
         }
 
-        if (config == INJCFG_SEMISEQUENTIAL || config == INJCFG_SEMISEQSEPAR) {
+        if (config == SEMISEQUENTIAL.id || config == SEMISEQSEPAR.id) {
             when (packet.ckpsEngineCyl) {
                 1, 3, 5 -> mSqrnum[fi].value = listOf()
                 2 -> mSqrnum[fi].value = listOf(
@@ -121,7 +116,7 @@ class FuelInjectionViewModel: ViewModel() {
             }
         }
 
-        if (config == INJCFG_FULLSEQUENTIAL) {
+        if (config == FULLSEQUENTIAL.id) {
             mSqrnum[fi].value = listOf(Pair(packet.ckpsEngineCyl, packet.ckpsEngineCyl.toString()))
         }
     }
