@@ -277,8 +277,10 @@ class FuelInjectionFragment : BaseParamFragment() {
             }
 
             injectionConfigurationG.setOnItemClickListener { _, _, position, _ ->
-                packet.config1 = position
-                packet.let { it1 -> mViewModel.sendPacket(it1) }
+                packet.apply {
+                    config1 = InjctrParPacket.InjConfig.entries[position].id
+                    mViewModel.sendPacket(this)
+                }
             }
 
             numOfSquirtsCycleG.setOnItemClickListener { _, _, position, _ ->
