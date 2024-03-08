@@ -76,17 +76,25 @@
         android:src="@drawable/ic_minus"
         />
 
-    <TextView
+    <com.google.android.material.textfield.TextInputLayout
         android:id="@+id/value"
         android:layout_width="0dp"
-        android:layout_height="0dp"
+        android:layout_height="wrap_content"
         app:layout_constraintTop_toTopOf="@id/decrement"
         app:layout_constraintStart_toEndOf="@id/decrement"
         app:layout_constraintEnd_toStartOf="@id/increment"
         app:layout_constraintBottom_toBottomOf="@id/decrement"
-        android:gravity="center"
-        tools:text="@tools:sample/lorem"
-        />
+        android:inputType="number|numberDecimal"
+        >
+
+        <com.google.android.material.textfield.TextInputEditText
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:gravity="center_horizontal"
+            tools:text="@tools:sample/lorem"
+            />
+
+    </com.google.android.material.textfield.TextInputLayout>
 
     <ImageButton
         android:id="@+id/increment"

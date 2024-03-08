@@ -25,7 +25,9 @@
 package org.secu3.android.ui.parameters.dialogs
 
 import android.os.Bundle
+import android.text.InputType
 import android.view.View
+import androidx.core.widget.doAfterTextChanged
 import androidx.lifecycle.LiveData
 import androidx.lifecycle.MutableLiveData
 
@@ -60,28 +62,41 @@ class ParamIntEditDialogFragment : ParamBaseEditDialogFragment() {
 
         mBinding.apply {
             parameterTitle.text = paramTitle
-            value.text = currentValue.toString()
 
+            value.editText?.apply {
+                setText(currentValue.toString())
+                inputType = InputType.TYPE_CLASS_NUMBER
+
+                doAfterTextChanged {
+                    if (it.toString().isEmpty()) {
+                        ok.isEnabled = false
+                        return@doAfterTextChanged
+                    }
+
+                    currentValue = it.toString().toInt()
+
+                    val isValueCorrect = currentValue in minValue..maxValue
+
+                    ok.isEnabled = isValueCorrect
+
+                    if (isValueCorrect.not()) {
+                        value.isErrorEnabled = true
+                        value.error = " "
+                    } else {
+                        value.isErrorEnabled = false
+                        value.error = null
+                    }
+                }
+            }
 
             increment.setOnClickListener {
-                var resValue = currentValue.plus(stepValue)
-
-                if (resValue > maxValue) {
-                    resValue = maxValue
-                }
-
-                currentValue = resValue
-                value.text = currentValue.toString()
+                currentValue = currentValue.plus(stepValue).coerceIn(minValue, maxValue)
+                value.editText?.setText(currentValue.toString())
             }
+
             decrement.setOnClickListener {
-                var resValue = currentValue.minus(stepValue)
-
-                if (resValue < minValue) {
-                    resValue = minValue
-                }
-
-                currentValue = resValue
-                value.text = currentValue.toString()
+                currentValue = currentValue.minus(stepValue).coerceIn(minValue, maxValue)
+                value.editText?.setText(currentValue.toString())
             }
 
             ok.setOnClickListener {

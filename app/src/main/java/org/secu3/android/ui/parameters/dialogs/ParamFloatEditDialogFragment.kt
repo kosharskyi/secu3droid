@@ -25,10 +25,13 @@
 package org.secu3.android.ui.parameters.dialogs
 
 import android.os.Bundle
+import android.text.InputType
 import android.view.View
+import androidx.core.text.isDigitsOnly
+import androidx.core.widget.doAfterTextChanged
 import androidx.lifecycle.LiveData
 import androidx.lifecycle.MutableLiveData
-
+import java.util.Locale
 
 
 class ParamFloatEditDialogFragment : ParamBaseEditDialogFragment() {
@@ -63,27 +66,46 @@ class ParamFloatEditDialogFragment : ParamBaseEditDialogFragment() {
 
         mBinding.apply {
             parameterTitle.text = paramTitle
-            value.text = formatStr.format(currentValue)
 
+            value.editText?.apply {
+                setText(formatStr.format(Locale.US, currentValue))
+                inputType = InputType.TYPE_CLASS_NUMBER or InputType.TYPE_NUMBER_FLAG_DECIMAL
+
+                doAfterTextChanged {
+                    val valueStr = it.toString()
+                    if (valueStr.isEmpty()) {
+                        ok.isEnabled = false
+                        return@doAfterTextChanged
+                    }
+
+                    if (valueStr.length == 1 && valueStr.isDigitsOnly().not()) {
+                        ok.isEnabled = false
+                        return@doAfterTextChanged
+                    }
+
+                    currentValue = valueStr.toFloat()
+
+                    val isValueCorrect = currentValue in minValue..maxValue
+
+                    ok.isEnabled = isValueCorrect
+
+                    if (isValueCorrect.not()) {
+                        value.isErrorEnabled = true
+                        value.error = " "
+                    } else {
+                        value.isErrorEnabled = false
+                        value.error = null
+                    }
+                }
+            }
 
             increment.setOnClickListener {
-                var resValue = currentValue.plus(stepValue)
-
-                if (resValue > maxValue) {
-                    resValue = maxValue
-                }
-                currentValue = resValue
-                value.text = formatStr.format(currentValue)
+                currentValue = currentValue.plus(stepValue).coerceIn(minValue, maxValue)
+                value.editText?.setText(formatStr.format(Locale.US, currentValue))
             }
             decrement.setOnClickListener {
-                var resValue = currentValue.minus(stepValue)
-
-                if (resValue < minValue) {
-                    resValue = minValue
-                }
-                currentValue = resValue
-
-                value.text = formatStr.format(currentValue)
+                currentValue = currentValue.minus(stepValue).coerceIn(minValue, maxValue)
+                value.editText?.setText(formatStr.format(Locale.US,currentValue))
             }
 
             ok.setOnClickListener {
