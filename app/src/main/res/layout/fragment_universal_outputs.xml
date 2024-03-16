@@ -99,7 +99,7 @@
                         android:id="@+id/output1_group"
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
-                        app:constraint_referenced_ids="output1_logical_function_title,output1_condition1_title,output1_condition1_inversion,output1_condition1_on,output1_condition1_off,output1_condition2_title,output1_condition2_inversion,output1_condition2_on,output1_condition2_off"
+                        app:constraint_referenced_ids="output1_inversion,output1_logical_function_title,output1_condition1_title,output1_condition1_inversion,output1_condition1_on,output1_condition1_off,output1_condition2_title,output1_condition2_inversion,output1_condition2_on,output1_condition2_off"
                         android:visibility="gone"
                         tools:visibility="visible"
                         />
@@ -171,13 +171,27 @@
 
                     <!-- ************************************************************* -->
 
+                    <CheckBox
+                        android:id="@+id/output1_inversion"
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        app:layout_constraintTop_toBottomOf="@id/output1_condition1_off"
+                        app:layout_constraintStart_toStartOf="parent"
+                        app:layout_constraintEnd_toEndOf="parent"
+                        android:text="@string/unioutput_inverse_result_title"
+                        android:button="@null"
+                        android:drawableEnd="?android:attr/listChoiceIndicatorMultiple"
+                        />
+
+                    <!-- ************************************************************* -->
+
                     <com.google.android.material.textfield.TextInputLayout
                         android:id="@+id/output1_logical_function_title"
                         android:theme="@style/Theme.MaterialComponents.DayNight.NoActionBar"
                         style="@style/Widget.MaterialComponents.TextInputLayout.OutlinedBox.ExposedDropdownMenu"
                         android:layout_width="0dp"
                         android:layout_height="wrap_content"
-                        app:layout_constraintTop_toBottomOf="@id/output1_condition1_off"
+                        app:layout_constraintTop_toBottomOf="@id/output1_inversion"
                         app:layout_constraintStart_toStartOf="parent"
                         app:layout_constraintEnd_toEndOf="parent"
                         android:layout_marginTop="16dp"
@@ -323,7 +337,7 @@
                         android:id="@+id/output2_group"
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
-                        app:constraint_referenced_ids="output2_logical_function_title,output2_condition1_title,output2_condition1_inversion,output2_condition1_on,output2_condition1_off,output2_condition2_title,output2_condition2_inversion,output2_condition2_on,output2_condition2_off"
+                        app:constraint_referenced_ids="output2_inversion,output2_logical_function_title,output2_condition1_title,output2_condition1_inversion,output2_condition1_on,output2_condition1_off,output2_condition2_title,output2_condition2_inversion,output2_condition2_on,output2_condition2_off"
                         android:visibility="gone"
                         tools:visibility="visible"
                         />
@@ -395,13 +409,27 @@
 
                     <!-- ************************************************************* -->
 
+                    <CheckBox
+                        android:id="@+id/output2_inversion"
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        app:layout_constraintTop_toBottomOf="@id/output2_condition1_off"
+                        app:layout_constraintStart_toStartOf="parent"
+                        app:layout_constraintEnd_toEndOf="parent"
+                        android:text="@string/unioutput_inverse_result_title"
+                        android:button="@null"
+                        android:drawableEnd="?android:attr/listChoiceIndicatorMultiple"
+                        />
+
+                    <!-- ************************************************************* -->
+
                     <com.google.android.material.textfield.TextInputLayout
                         android:id="@+id/output2_logical_function_title"
                         android:theme="@style/Theme.MaterialComponents.DayNight.NoActionBar"
                         style="@style/Widget.MaterialComponents.TextInputLayout.OutlinedBox.ExposedDropdownMenu"
                         android:layout_width="0dp"
                         android:layout_height="wrap_content"
-                        app:layout_constraintTop_toBottomOf="@id/output2_condition1_off"
+                        app:layout_constraintTop_toBottomOf="@id/output2_inversion"
                         app:layout_constraintStart_toStartOf="parent"
                         app:layout_constraintEnd_toEndOf="parent"
                         android:layout_marginTop="16dp"
@@ -529,7 +557,7 @@
                         android:id="@+id/output3_group"
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
-                        app:constraint_referenced_ids="output3_logical_function_title,output3_condition1_title,output3_condition1_inversion,output3_condition1_on,output3_condition1_off,output3_condition2_title,output3_condition2_inversion,output3_condition2_on,output3_condition2_off"
+                        app:constraint_referenced_ids="output3_inversion,output3_logical_function_title,output3_condition1_title,output3_condition1_inversion,output3_condition1_on,output3_condition1_off,output3_condition2_title,output3_condition2_inversion,output3_condition2_on,output3_condition2_off"
                         android:visibility="gone"
                         tools:visibility="visible"
                         />
@@ -601,6 +629,20 @@
 
                     <!-- ************************************************************* -->
 
+                    <CheckBox
+                        android:id="@+id/output3_inversion"
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        app:layout_constraintTop_toBottomOf="@id/output3_condition1_off"
+                        app:layout_constraintStart_toStartOf="parent"
+                        app:layout_constraintEnd_toEndOf="parent"
+                        android:text="@string/unioutput_inverse_result_title"
+                        android:button="@null"
+                        android:drawableEnd="?android:attr/listChoiceIndicatorMultiple"
+                        />
+
+                    <!-- ************************************************************* -->
+
 
                     <com.google.android.material.textfield.TextInputLayout
                         android:id="@+id/output3_logical_function_title"
@@ -608,7 +650,7 @@
                         style="@style/Widget.MaterialComponents.TextInputLayout.OutlinedBox.ExposedDropdownMenu"
                         android:layout_width="0dp"
                         android:layout_height="wrap_content"
-                        app:layout_constraintTop_toBottomOf="@id/output3_condition1_off"
+                        app:layout_constraintTop_toBottomOf="@id/output3_inversion"
                         app:layout_constraintStart_toStartOf="parent"
                         app:layout_constraintEnd_toEndOf="parent"
                         android:layout_marginTop="16dp"
@@ -738,7 +780,7 @@
                         android:id="@+id/output4_group"
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
-                        app:constraint_referenced_ids="output4_logical_function_title,output4_condition1_title,output4_condition1_inversion,output4_condition1_on,output4_condition1_off,output4_condition2_title,output4_condition2_inversion,output4_condition2_on,output4_condition2_off"
+                        app:constraint_referenced_ids="output4_inversion,output4_logical_function_title,output4_condition1_title,output4_condition1_inversion,output4_condition1_on,output4_condition1_off,output4_condition2_title,output4_condition2_inversion,output4_condition2_on,output4_condition2_off"
                         android:visibility="gone"
                         tools:visibility="visible"
                         />
@@ -810,6 +852,19 @@
 
                     <!-- ************************************************************* -->
 
+                    <CheckBox
+                        android:id="@+id/output4_inversion"
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        app:layout_constraintTop_toBottomOf="@id/output4_condition1_off"
+                        app:layout_constraintStart_toStartOf="parent"
+                        app:layout_constraintEnd_toEndOf="parent"
+                        android:text="@string/unioutput_inverse_result_title"
+                        android:button="@null"
+                        android:drawableEnd="?android:attr/listChoiceIndicatorMultiple"
+                        />
+
+                    <!-- ************************************************************* -->
 
                     <com.google.android.material.textfield.TextInputLayout
                         android:id="@+id/output4_logical_function_title"
@@ -817,7 +872,7 @@
                         style="@style/Widget.MaterialComponents.TextInputLayout.OutlinedBox.ExposedDropdownMenu"
                         android:layout_width="0dp"
                         android:layout_height="wrap_content"
-                        app:layout_constraintTop_toBottomOf="@id/output4_condition1_off"
+                        app:layout_constraintTop_toBottomOf="@id/output4_inversion"
                         app:layout_constraintStart_toStartOf="parent"
                         app:layout_constraintEnd_toEndOf="parent"
                         android:layout_marginTop="16dp"
@@ -947,7 +1002,7 @@
                         android:id="@+id/output5_group"
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
-                        app:constraint_referenced_ids="output5_logical_function_title,output5_condition1_title,output5_condition1_inversion,output5_condition1_on,output5_condition1_off,output5_condition2_title,output5_condition2_inversion,output5_condition2_on,output5_condition2_off"
+                        app:constraint_referenced_ids="output5_inversion,output5_logical_function_title,output5_condition1_title,output5_condition1_inversion,output5_condition1_on,output5_condition1_off,output5_condition2_title,output5_condition2_inversion,output5_condition2_on,output5_condition2_off"
                         android:visibility="gone"
                         tools:visibility="visible"
                         />
@@ -1019,6 +1074,20 @@
 
                     <!-- ************************************************************* -->
 
+                    <CheckBox
+                        android:id="@+id/output5_inversion"
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        app:layout_constraintTop_toBottomOf="@id/output5_condition1_off"
+                        app:layout_constraintStart_toStartOf="parent"
+                        app:layout_constraintEnd_toEndOf="parent"
+                        android:text="@string/unioutput_inverse_result_title"
+                        android:button="@null"
+                        android:drawableEnd="?android:attr/listChoiceIndicatorMultiple"
+                        />
+
+                    <!-- ************************************************************* -->
+
 
                     <com.google.android.material.textfield.TextInputLayout
                         android:id="@+id/output5_logical_function_title"
@@ -1026,7 +1095,7 @@
                         style="@style/Widget.MaterialComponents.TextInputLayout.OutlinedBox.ExposedDropdownMenu"
                         android:layout_width="0dp"
                         android:layout_height="wrap_content"
-                        app:layout_constraintTop_toBottomOf="@id/output5_condition1_off"
+                        app:layout_constraintTop_toBottomOf="@id/output5_inversion"
                         app:layout_constraintStart_toStartOf="parent"
                         app:layout_constraintEnd_toEndOf="parent"
                         android:layout_marginTop="16dp"
@@ -1156,7 +1225,7 @@
                         android:id="@+id/output6_group"
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
-                        app:constraint_referenced_ids="output6_logical_function_title,output6_condition1_title,output6_condition1_inversion,output6_condition1_on,output6_condition1_off,output6_condition2_title,output6_condition2_inversion,output6_condition2_on,output6_condition2_off"
+                        app:constraint_referenced_ids="output6_inversion,output6_logical_function_title,output6_condition1_title,output6_condition1_inversion,output6_condition1_on,output6_condition1_off,output6_condition2_title,output6_condition2_inversion,output6_condition2_on,output6_condition2_off"
                         android:visibility="gone"
                         tools:visibility="visible"
                         />
@@ -1227,6 +1296,20 @@
 
                     <!-- ************************************************************* -->
 
+                    <CheckBox
+                        android:id="@+id/output6_inversion"
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        app:layout_constraintTop_toBottomOf="@id/output6_condition1_off"
+                        app:layout_constraintStart_toStartOf="parent"
+                        app:layout_constraintEnd_toEndOf="parent"
+                        android:text="@string/unioutput_inverse_result_title"
+                        android:button="@null"
+                        android:drawableEnd="?android:attr/listChoiceIndicatorMultiple"
+                        />
+
+                    <!-- ************************************************************* -->
+
 
                     <com.google.android.material.textfield.TextInputLayout
                         android:id="@+id/output6_logical_function_title"
@@ -1234,7 +1317,7 @@
                         style="@style/Widget.MaterialComponents.TextInputLayout.OutlinedBox.ExposedDropdownMenu"
                         android:layout_width="0dp"
                         android:layout_height="wrap_content"
-                        app:layout_constraintTop_toBottomOf="@id/output6_condition1_off"
+                        app:layout_constraintTop_toBottomOf="@id/output6_inversion"
                         app:layout_constraintStart_toStartOf="parent"
                         app:layout_constraintEnd_toEndOf="parent"
                         android:layout_marginTop="16dp"

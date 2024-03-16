@@ -123,6 +123,7 @@ class UniversalOutputsFragment : BaseParamFragment() {
                         output1Condition1Inversion.isChecked = it.output1Cond1Inversion
                         output1Condition1On.value = it.output1OnThrd1
                         output1Condition1Off.value = it.output1OffThrd1
+                        output1Inversion.isChecked = it.output1Inversion
 
                         it.output1LogicFunc.let { logicFunc ->
                             if (packet?.output1Use == true) {
@@ -155,6 +156,7 @@ class UniversalOutputsFragment : BaseParamFragment() {
                         output2Condition1Inversion.isChecked = it.output2Cond1Inversion
                         output2Condition1On.value = it.output2OnThrd1
                         output2Condition1Off.value = it.output2OffThrd1
+                        output2Inversion.isChecked = it.output2Inversion
 
                         it.output2LogicFunc.let { logicFunc ->
                             if (packet?.output2Use == true) {
@@ -179,6 +181,7 @@ class UniversalOutputsFragment : BaseParamFragment() {
                         output3Condition1Inversion.isChecked = it.output3Cond1Inversion
                         output3Condition1On.value = it.output3OnThrd1
                         output3Condition1Off.value = it.output3OffThrd1
+                        output3Inversion.isChecked = it.output3Inversion
 
                         it.output3LogicFunc.let { logicFunc ->
                             if (packet?.output3Use == true) {
@@ -203,6 +206,7 @@ class UniversalOutputsFragment : BaseParamFragment() {
                         output4Condition1Inversion.isChecked = it.output4Cond1Inversion
                         output4Condition1On.value = it.output4OnThrd1
                         output4Condition1Off.value = it.output4OffThrd1
+                        output4Inversion.isChecked = it.output4Inversion
 
                         it.output4LogicFunc.let { logicFunc ->
                             if (packet?.output4Use == true) {
@@ -227,6 +231,7 @@ class UniversalOutputsFragment : BaseParamFragment() {
                         output5Condition1Inversion.isChecked = it.output5Cond1Inversion
                         output5Condition1On.value = it.output5OnThrd1
                         output5Condition1Off.value = it.output5OffThrd1
+                        output5Inversion.isChecked = it.output5Inversion
 
                         it.output5LogicFunc.let { logicFunc ->
                             if (packet?.output5Use == true) {
@@ -251,6 +256,7 @@ class UniversalOutputsFragment : BaseParamFragment() {
                         output6Condition1Inversion.isChecked = it.output6Cond1Inversion
                         output6Condition1On.value = it.output6OnThrd1
                         output6Condition1Off.value = it.output6OffThrd1
+                        output6Inversion.isChecked = it.output6Inversion
 
                         it.output6LogicFunc.let { logicFunc ->
                             if (packet?.output6Use == true) {
@@ -567,6 +573,52 @@ class UniversalOutputsFragment : BaseParamFragment() {
                     mViewModel.sendPacket(this)
                 }
             }
+
+
+
+            output1Inversion.setOnCheckedChangeListener { _, isChecked ->
+                packet?.apply {
+                    output1Inversion = isChecked
+                    mViewModel.sendPacket(this)
+                }
+            }
+
+            output2Inversion.setOnCheckedChangeListener { _, isChecked ->
+                packet?.apply {
+                    output2Inversion = isChecked
+                    mViewModel.sendPacket(this)
+                }
+            }
+
+            output3Inversion.setOnCheckedChangeListener { _, isChecked ->
+                packet?.apply {
+                    output3Inversion = isChecked
+                    mViewModel.sendPacket(this)
+                }
+            }
+
+            output4Inversion.setOnCheckedChangeListener { _, isChecked ->
+                packet?.apply {
+                    output4Inversion = isChecked
+                    mViewModel.sendPacket(this)
+                }
+            }
+
+            output5Inversion.setOnCheckedChangeListener { _, isChecked ->
+                packet?.apply {
+                    output5Inversion = isChecked
+                    mViewModel.sendPacket(this)
+                }
+            }
+
+            output6Inversion.setOnCheckedChangeListener { _, isChecked ->
+                packet?.apply {
+                    output6Inversion = isChecked
+                    mViewModel.sendPacket(this)
+                }
+            }
+
+
 
             output1Condition1.setOnItemClickListener { _, _, position, _ ->
                 packet?.output1Condition1 = mCondition1List[position].id

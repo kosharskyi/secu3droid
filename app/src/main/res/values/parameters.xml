@@ -182,6 +182,7 @@
     <string name="unioutput4_use_title">Output 4</string>
     <string name="unioutput5_use_title">Output 5</string>
     <string name="unioutput6_use_title">Output 6</string>
+    <string name="unioutput_inverse_result_title">Inversion of the final result</string>
     <string name="unioutput1_condition_1_inverse_title">Inverse</string>
     <string name="unioutput1_condition_1_title">Condition 1 for output 1</string>
     <string name="unioutput1_condition1_on_value_title">ON value</string>
