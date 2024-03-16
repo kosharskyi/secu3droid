@@ -176,6 +176,12 @@
     <string name="secur_par_always_load_params_from_flash_title">Always load parameters from flash</string>
     <string name="secur_par_check_firmware_integrity_title">Check firmware integrity</string>
 
+    <string name="unioutput1_use_title">Output 1</string>
+    <string name="unioutput2_use_title">Output 2</string>
+    <string name="unioutput3_use_title">Output 3</string>
+    <string name="unioutput4_use_title">Output 4</string>
+    <string name="unioutput5_use_title">Output 5</string>
+    <string name="unioutput6_use_title">Output 6</string>
     <string name="unioutput1_condition_1_inverse_title">Inverse</string>
     <string name="unioutput1_condition_1_title">Condition 1 for output 1</string>
     <string name="unioutput1_condition1_on_value_title">ON value</string>

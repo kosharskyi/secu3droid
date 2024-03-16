@@ -155,6 +155,17 @@ data class UniOutParamPacket(
         set(value) {
             rawOutput1Flags = rawOutput1Flags.setBitValue(value, 1)
         }
+    var output1Use: Boolean
+        get() = rawOutput1Flags.getBitValue(2) > 0
+        set(value) {
+            rawOutput1Flags = rawOutput1Flags.setBitValue(value, 2)
+        }
+
+    var output1Inversion: Boolean
+        get() = rawOutput1Flags.getBitValue(3) > 0
+        set(value) {
+            rawOutput1Flags = rawOutput1Flags.setBitValue(value, 3)
+        }
 
     var output1LogicFunc: Int
         get() = rawOutput1Flags shr 4
@@ -201,6 +212,18 @@ data class UniOutParamPacket(
             rawOutput2Flags = rawOutput2Flags.setBitValue(value, 1)
         }
 
+    var output2Use: Boolean
+        get() = rawOutput2Flags.getBitValue(2) > 0
+        set(value) {
+            rawOutput2Flags = rawOutput2Flags.setBitValue(value, 2)
+        }
+
+    var output2Inversion: Boolean
+        get() = rawOutput2Flags.getBitValue(3) > 0
+        set(value) {
+            rawOutput2Flags = rawOutput2Flags.setBitValue(value, 3)
+        }
+
     var output2LogicFunc: Int
         get() = rawOutput2Flags shr 4
         set(value) {
@@ -244,6 +267,18 @@ data class UniOutParamPacket(
         get() = rawOutput3Flags.getBitValue(1) > 0
         set(value) {
             rawOutput3Flags = rawOutput3Flags.setBitValue(value, 1)
+        }
+
+    var output3Use: Boolean
+        get() = rawOutput3Flags.getBitValue(2) > 0
+        set(value) {
+            rawOutput3Flags = rawOutput3Flags.setBitValue(value, 2)
+        }
+
+    var output3Inversion: Boolean
+        get() = rawOutput3Flags.getBitValue(3) > 0
+        set(value) {
+            rawOutput3Flags = rawOutput3Flags.setBitValue(value, 3)
         }
 
     var output3LogicFunc: Int
@@ -292,6 +327,18 @@ data class UniOutParamPacket(
             rawOutput4Flags = rawOutput4Flags.setBitValue(value, 1)
         }
 
+    var output4Use: Boolean
+    get() = rawOutput4Flags.getBitValue(2) > 0
+    set(value) {
+        rawOutput4Flags = rawOutput4Flags.setBitValue(value, 2)
+    }
+
+    var output4Inversion: Boolean
+    get() = rawOutput4Flags.getBitValue(3) > 0
+    set(value) {
+        rawOutput4Flags = rawOutput3Flags.setBitValue(value, 3)
+    }
+
     var output4LogicFunc: Int
         get() = rawOutput4Flags shr 4
         set(value) {
@@ -337,6 +384,18 @@ data class UniOutParamPacket(
         set(value) {
             rawOutput5Flags = rawOutput5Flags.setBitValue(value, 1)
         }
+
+    var output5Use: Boolean
+    get() = rawOutput5Flags.getBitValue(2) > 0
+    set(value) {
+        rawOutput5Flags = rawOutput5Flags.setBitValue(value, 2)
+    }
+
+    var output5Inversion: Boolean
+    get() = rawOutput5Flags.getBitValue(3) > 0
+    set(value) {
+        rawOutput5Flags = rawOutput5Flags.setBitValue(value, 3)
+    }
 
     var output5LogicFunc: Int
         get() = rawOutput5Flags shr 4
@@ -384,6 +443,18 @@ data class UniOutParamPacket(
         set(value) {
             rawOutput6Flags = rawOutput6Flags.setBitValue(value, 1)
         }
+
+    var output6Use: Boolean
+    get() = rawOutput6Flags.getBitValue(2) > 0
+    set(value) {
+        rawOutput6Flags = rawOutput6Flags.setBitValue(value, 2)
+    }
+
+    var output6Inversion: Boolean
+    get() = rawOutput6Flags.getBitValue(3) > 0
+    set(value) {
+        rawOutput6Flags = rawOutput6Flags.setBitValue(value, 3)
+    }
 
     var output6LogicFunc: Int
         get() = rawOutput5Flags shr 4
