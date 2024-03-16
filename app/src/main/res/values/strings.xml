@@ -173,65 +173,42 @@
         <item>NONE</item>
     </string-array>
 
-    <string-array name="uniout_spinner_conditions1">
-        <item>Coolant temperature (°C)</item>
-        <item>RPM (min-1)</item>
-        <item>MAP (kPa)</item>
-        <item>Board voltage (V)</item>
-        <item>Carburetor limit switch (logic)</item>
-        <item>Vehicle speed (Km/h)</item>
-        <item>Air flow (0..16)</item>
-        <item>Timer on ignition turn on (sec)</item>
-        <item>Timer on engine turn on (sec)</item>
-        <item>Choke/IAC position (\%%)</item>
-        <item>OIC (°CS)</item>
-        <item>Knock signal (V)</item>
-        <item>TPS (\%%)</item>
-        <item>Intake ATS (°C)</item>
-        <item>Analog input 1(V)</item>
-        <item>Analog input 2(V)</item>
-        <item>Gas valve input (logic)</item>
-        <item>Injector PW (ms)</item>
-        <item>CE state</item>
-        <item>Timer on/off 1 cond. (sec)</item>
-        <item>Analog input 3(V)</item>
-        <item>Analog input 4(V)</item>
-        <item>Analog input 5(V)</item>
-        <item>Analog input 6(V)</item>
-        <item>Analog input 7(V)</item>
-        <item>Analog input 8(V)</item>
-    </string-array>
-
-    <string-array name="uniout_spinner_conditions2">
-        <item>Coolant temperature (°C)</item>
-        <item>RPM (min-1)</item>
-        <item>MAP (kPa)</item>
-        <item>Board voltage (V)</item>
-        <item>Carburetor limit switch (logic)</item>
-        <item>Vehicle speed (Km/h)</item>
-        <item>Air flow (0..16)</item>
-        <item>Timer (seconds)</item>
-        <item>Timer on ignition turn on (sec)</item>
-        <item>Timer on engine turn on (sec)</item>
-        <item>Choke/IAC position (\%%)</item>
-        <item>OIC (°CS)</item>
-        <item>Knock signal (V)</item>
-        <item>TPS (\%%)</item>
-        <item>Intake ATS (°C)</item>
-        <item>Analog input 1(V)</item>
-        <item>Analog input 2(V)</item>
-        <item>Gas valve input (logic)</item>
-        <item>Injector PW (ms)</item>
-        <item>CE state</item>
-        <item>Timer on/off 1 cond. (sec)</item>
-        <item>Analog input 3(V)</item>
-        <item>Analog input 4(V)</item>
-        <item>Looper tmr. 1 cond. (sec.)</item>
-        <item>Analog input 5(V)</item>
-        <item>Analog input 6(V)</item>
-        <item>Analog input 7(V)</item>
-        <item>Analog input 8(V)</item>
-    </string-array>
+    <string name="uniout_condition_cts">Coolant temperature (°C)</string>
+    <string name="uniout_condition_rpm">RPM (min-1)</string>
+    <string name="uniout_condition_map">MAP (kPa)</string>
+    <string name="uniout_condition_ubat">Board voltage (V)</string>
+    <string name="uniout_condition_carb">Carburetor limit switch (logic)</string>
+    <string name="uniout_condition_vspd">Vehicle speed (Km/h)</string>
+    <string name="uniout_condition_airfl">Air flow (0..16)</string>
+    <string name="uniout_condition_tmr">Timer (seconds)</string>
+    <string name="uniout_condition_ittmr">Timer on ignition turn on (sec)</string>
+    <string name="uniout_condition_estmr">Timer on engine turn on (sec)</string>
+    <string name="uniout_condition_cpos">Choke/IAC position (\%%)</string>
+    <string name="uniout_condition_aang">Ignition timing (°CS)</string>
+    <string name="uniout_condition_klev">Knock signal (V)</string>
+    <string name="uniout_condition_tps">TPS (\%%)</string>
+    <string name="uniout_condition_ats">Intake ATS (°C)</string>
+    <string name="uniout_condition_ai1">Analog input 1(V)</string>
+    <string name="uniout_condition_ai2">Analog input 2(V)</string>
+    <string name="uniout_condition_gasv">Gas valve input (logic)</string>
+    <string name="uniout_condition_ipw">Injector PW (ms)</string>
+    <string name="uniout_condition_ce">CE state</string>
+    <string name="uniout_condition_oftmr">Timer on/off 1 cond. (sec)</string>
+    <string name="uniout_condition_ai3">Analog input 3(V)</string>
+    <string name="uniout_condition_ai4">Analog input 4(V)</string>
+    <string name="uniout_condition_looptmr">Looper tmr. 1 cond. (sec.)</string>
+    <string name="uniout_condition_ai5">Analog input 5(V)</string>
+    <string name="uniout_condition_ai6">Analog input 6(V)</string>
+    <string name="uniout_condition_ai7">Analog input 7(V)</string>
+    <string name="uniout_condition_ai8">Analog input 8(V)</string>
+    <string name="uniout_condition_grts">GRTS (°C)</string>
+    <string name="uniout_condition_map2">MAP2 (kPa)</string>
+    <string name="uniout_condition_temp2">TEMP2 (°C)</string>
+    <string name="uniout_condition_input1">INPUT1 (logic)</string>
+    <string name="uniout_condition_input2">INPUT2 (logic)</string>
+    <string name="uniout_condition_maf">MAF (g/sec)</string>
+    <string name="uniout_condition_tps_dot">TPS dot (\%%/sec)</string>
+    <string name="uniout_condition_gps">GPS (kPa)</string>
 
     <string name="title_activity_diagnostics">Diagnostics</string>
     <string name="diagnostics_not_supported_title">Diagnostics option disabled in your firmware or Secu-3 device not connected</string>

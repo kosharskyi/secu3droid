@@ -120,65 +120,42 @@
         <item>Відсутня</item>
     </string-array>
 
-    <string-array name="uniout_spinner_conditions1">
-        <item>ДТОР (°C)</item>
-        <item>Обороти (хв-1)</item>
-        <item>ДАТ (кПа)</item>
-        <item>Напруга (В)</item>
-        <item>Кінцевик карбюратора (логiч.)</item>
-        <item>Швидкість (км/год)</item>
-        <item>Витрата повітря (0..16)</item>
-        <item>Таймер по включенню запалювання (сек)</item>
-        <item>Таймер по включенню двигуна (сек)</item>
-        <item>Положення ПЗ/РХХ (\%%)</item>
-        <item>КВЗ (°КВ)</item>
-        <item>Детонація (В)</item>
-        <item>ДПДЗ (\%%)</item>
-        <item>ДТП (°C)</item>
-        <item>Аналоговий вхід 1(В)</item>
-        <item>Аналоговий вхід 2(В)</item>
-        <item>Газовий клапан (логiч)</item>
-        <item>Тривалість уприскування (мс)</item>
-        <item>Стан CE</item>
-        <item>Таймер по включенню/виключенню 1 умови (сек)</item>
-        <item>Аналоговий вхід 3(В)</item>
-        <item>Аналоговий вхід 4(В)</item>
-        <item>Аналоговий вхід 5(В)</item>
-        <item>Аналоговий вхід 6(В)</item>
-        <item>Аналоговий вхід 7(В)</item>
-        <item>Аналоговий вхід 8(В)</item>
-    </string-array>
-
-    <string-array name="uniout_spinner_conditions2">
-        <item>ДТОР (°C)</item>
-        <item>Обороти (хв-1)</item>
-        <item>ДАТ (кПа)</item>
-        <item>Напруга (В)</item>
-        <item>Кінцевик карбюратора (логiч.)</item>
-        <item>Швидкість (км/год)</item>
-        <item>Витрата повітря (0..16)</item>
-        <item>Таймер (секунд)</item>
-        <item>Таймер по включенню запалювання (сек)</item>
-        <item>Таймер по включенню двигуна (сек)</item>
-        <item>Положення ПЗ/РХХ (\%%)</item>
-        <item>КВЗ (°КВ)</item>
-        <item>Детонація (В)</item>
-        <item>ДПДЗ (\%%)</item>
-        <item>ДТП (°C)</item>
-        <item>Аналоговий вхід 1(В)</item>
-        <item>Аналоговий вхід 2(В)</item>
-        <item>Газовий клапан (логiч)</item>
-        <item>Тривалість уприскування (мс)</item>
-        <item>Стан CE</item>
-        <item>Таймер по включенню/виключенню 1 умови (сек)</item>
-        <item>Аналоговий вхід 3(В)</item>
-        <item>Аналоговий вхід 4(В)</item>
-        <item>Looper tmr. 1 cond. (sec.) не перекладено</item>
-        <item>Аналоговий вхід 5(В)</item>
-        <item>Аналоговий вхід 6(В)</item>
-        <item>Аналоговий вхід 7(В)</item>
-        <item>Аналоговий вхід 8(В)</item>
-    </string-array>
+    <string name="uniout_condition_cts">ДТОР (°C)</string>
+    <string name="uniout_condition_rpm">Оберти (хв-1)</string>
+    <string name="uniout_condition_map">ДАТ (кПа)</string>
+    <string name="uniout_condition_ubat">Напруга (В)</string>
+    <string name="uniout_condition_carb">Кінцевик карбюратора (логiч.)</string>
+    <string name="uniout_condition_vspd">Швидкість (км/год)</string>
+    <string name="uniout_condition_airfl">Витрата повітря (0..16)</string>
+    <string name="uniout_condition_tmr">Таймер (секунд)</string>
+    <string name="uniout_condition_ittmr">Таймер по включенню запалювання (сек)</string>
+    <string name="uniout_condition_estmr">Таймер по включенню двигуна (сек)</string>
+    <string name="uniout_condition_cpos">Положення ПЗ/РХХ (\%%)</string>
+    <string name="uniout_condition_aang">КВЗ (°КВ)</string>
+    <string name="uniout_condition_klev">Детонація (В)</string>
+    <string name="uniout_condition_tps">ДПДЗ (\%%)</string>
+    <string name="uniout_condition_ats">ДТП (°C)</string>
+    <string name="uniout_condition_ai1">Аналоговий вхід 1(В)</string>
+    <string name="uniout_condition_ai2">Аналоговий вхід 2(В)</string>
+    <string name="uniout_condition_gasv">Газовий клапан (логiч)</string>
+    <string name="uniout_condition_ipw">Тривалість уприскування (мс)</string>
+    <string name="uniout_condition_ce">Стан CE</string>
+    <string name="uniout_condition_oftmr">Таймер по включенню/виключенню 1 умови (сек)</string>
+    <string name="uniout_condition_ai3">Аналоговий вхід 3(В)</string>
+    <string name="uniout_condition_ai4">Аналоговий вхід 4(В)</string>
+    <string name="uniout_condition_looptmr">Зацикл. таймер 1 умов. (сек.)</string>
+    <string name="uniout_condition_ai5">Аналоговий вхід 5(В)</string>
+    <string name="uniout_condition_ai6">Аналоговий вхід 6(В)</string>
+    <string name="uniout_condition_ai7">Аналоговий вхід 7(В)</string>
+    <string name="uniout_condition_ai8">Аналоговий вхід 8(В)</string>
+    <string name="uniout_condition_grts">ДТ Газ. Ред (°C)</string>
+    <string name="uniout_condition_map2">ДАТ2 (кПа)</string>
+    <string name="uniout_condition_temp2">TEMP2 (°C)</string>
+    <string name="uniout_condition_input1">INPUT1 (логіч.)</string>
+    <string name="uniout_condition_input2">INPUT2 (логіч.)</string>
+    <string name="uniout_condition_maf">ДМВП (г/сек)</string>
+    <string name="uniout_condition_tps_dot">Швидкість ДЗ (\%%/сек)</string>
+    <string name="uniout_condition_gps">ДДГ (кПа)</string>
 
     <string name="title_activity_diagnostics">Діагностика</string>
     <string name="diagnostics_not_supported_title">Режим діагностики відключений в прошивці або не встановлено з\'єднання з Secu-3</string>

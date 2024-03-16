@@ -38,6 +38,7 @@ import kotlinx.coroutines.launch
 import org.secu3.android.R
 import org.secu3.android.databinding.FragmentUniversalOutputsBinding
 import org.secu3.android.models.packets.out.params.UniOutParamPacket
+import org.secu3.android.models.packets.out.params.UniOutParamPacket.*
 import org.secu3.android.ui.parameters.views.FloatParamView
 import org.secu3.android.utils.UnioutTabConfigurator
 import org.secu3.android.utils.gone
@@ -55,12 +56,20 @@ class UniversalOutputsFragment : BaseParamFragment() {
 
     private var packet: UniOutParamPacket? = null
 
-    private val mCondition1List: List<String> by lazy {
-        resources.getStringArray(R.array.uniout_spinner_conditions1).toList()
+    private val mCondition1List: List<CONDITION> by lazy {
+        UniOutParamPacket.CONDITION.entries.filter { it.condition1 }
     }
 
-    private val mCondition2List: List<String> by lazy {
-        resources.getStringArray(R.array.uniout_spinner_conditions2).toList()
+    private val mCondition2List: List<CONDITION> by lazy {
+        UniOutParamPacket.CONDITION.entries.filter { it.condition2 }
+    }
+
+    private val mCondition1ListText: List<String> by lazy {
+        mCondition1List.map { getString(it.strId) }
+    }
+
+    private val mCondition2ListText: List<String> by lazy {
+        mCondition2List.map { getString(it.strId) }
     }
 
     private val mLogicalFunctionsList: List<String> by lazy {
@@ -89,7 +98,7 @@ class UniversalOutputsFragment : BaseParamFragment() {
                         progressBar.gone()
                         params.visible()
 
-                        output1Condition1.setText(mCondition1List[it.output1Condition1], false)
+                        output1Condition1.setText(getConditionText(it.output1Condition1), false)
                         output1Condition1Inversion.apply {
                             isChecked = it.output1Cond1Inversion
                             setOnCheckedChangeListener { _, isChecked ->
@@ -110,7 +119,7 @@ class UniversalOutputsFragment : BaseParamFragment() {
                             output1LogicalFunction.setText(mLogicalFunctionsList[logicFunc], false)
                         }
 
-                        output1Condition2.setText(mCondition1List[it.output1Condition2], false)
+                        output1Condition2.setText(getConditionText(it.output1Condition2), false)
                         output1Condition2Inversion.apply {
                             isChecked = it.output1Cond2Inversion
                             setOnCheckedChangeListener { _, isChecked ->
@@ -131,7 +140,7 @@ class UniversalOutputsFragment : BaseParamFragment() {
                         }
 
 
-                        output2Condition1.setText(mCondition1List[it.output2Condition1], false)
+                        output2Condition1.setText(getConditionText(it.output2Condition1), false)
                         output2Condition1Inversion.apply {
                             isChecked = it.output2Cond1Inversion
                             setOnCheckedChangeListener { _, isChecked ->
@@ -153,7 +162,7 @@ class UniversalOutputsFragment : BaseParamFragment() {
                             output2LogicalFunction.setText(mLogicalFunctionsList[logicFunc], false)
                         }
 
-                        output2Condition2.setText(mCondition1List[it.output2Condition2], false)
+                        output2Condition2.setText(getConditionText(it.output2Condition2), false)
                         output2Condition2Inversion.apply {
                             isChecked = it.output2Cond2Inversion
                             setOnCheckedChangeListener { _, isChecked ->
@@ -165,7 +174,7 @@ class UniversalOutputsFragment : BaseParamFragment() {
                         output2Condition2Off.value = it.output2OffThrd2
 
 
-                        output3Condition1.setText(mCondition1List[it.output3Condition1], false)
+                        output3Condition1.setText(getConditionText(it.output3Condition1), false)
                         output3Condition1Inversion.apply {
                             isChecked = it.output3Cond1Inversion
                             setOnCheckedChangeListener { _, isChecked ->
@@ -186,7 +195,7 @@ class UniversalOutputsFragment : BaseParamFragment() {
                             output3LogicalFunction.setText(mLogicalFunctionsList[logicFunc], false)
                         }
 
-                        output3Condition2.setText(mCondition1List[it.output2Condition2], false)
+                        output3Condition2.setText(getConditionText(it.output2Condition2), false)
                         output3Condition2Inversion.apply {
                             isChecked = it.output3Cond2Inversion
                             setOnCheckedChangeListener { _, isChecked ->
@@ -199,7 +208,7 @@ class UniversalOutputsFragment : BaseParamFragment() {
 
 
 
-                        output4Condition1.setText(mCondition1List[it.output4Condition1], false)
+                        output4Condition1.setText(getConditionText(it.output4Condition1), false)
                         output4Condition1Inversion.apply {
                             isChecked = it.output4Cond1Inversion
                             setOnCheckedChangeListener { _, isChecked ->
@@ -220,7 +229,7 @@ class UniversalOutputsFragment : BaseParamFragment() {
                             output4LogicalFunction.setText(mLogicalFunctionsList[logicFunc], false)
                         }
 
-                        output4Condition2.setText(mCondition1List[it.output4Condition2], false)
+                        output4Condition2.setText(getConditionText(it.output4Condition2), false)
                         output4Condition2Inversion.apply {
                             isChecked = it.output4Cond2Inversion
                             setOnCheckedChangeListener { _, isChecked ->
@@ -233,7 +242,7 @@ class UniversalOutputsFragment : BaseParamFragment() {
 
 
 
-                        output5Condition1.setText(mCondition1List[it.output5Condition1], false)
+                        output5Condition1.setText(getConditionText(it.output5Condition1), false)
                         output5Condition1Inversion.apply {
                             isChecked = it.output5Cond1Inversion
                             setOnCheckedChangeListener { _, isChecked ->
@@ -254,7 +263,7 @@ class UniversalOutputsFragment : BaseParamFragment() {
                             output5LogicalFunction.setText(mLogicalFunctionsList[logicFunc], false)
                         }
 
-                        output5Condition2.setText(mCondition1List[it.output5Condition2], false)
+                        output5Condition2.setText(getConditionText(it.output5Condition2), false)
                         output5Condition2Inversion.apply {
                             isChecked = it.output5Cond2Inversion
                             setOnCheckedChangeListener { _, isChecked ->
@@ -267,7 +276,7 @@ class UniversalOutputsFragment : BaseParamFragment() {
 
 
 
-                        output6Condition1.setText(mCondition1List[it.output6Condition1], false)
+                        output6Condition1.setText(getConditionText(it.output6Condition1), false)
                         output6Condition1Inversion.apply {
                             isChecked = it.output6Cond1Inversion
                             setOnCheckedChangeListener { _, isChecked ->
@@ -288,7 +297,7 @@ class UniversalOutputsFragment : BaseParamFragment() {
                             output6LogicalFunction.setText(mLogicalFunctionsList[logicFunc], false)
                         }
 
-                        output6Condition2.setText(mCondition1List[it.output6Condition2], false)
+                        output6Condition2.setText(getConditionText(it.output6Condition2), false)
                         output6Condition2Inversion.apply {
                             isChecked = it.output6Cond2Inversion
                             setOnCheckedChangeListener { _, isChecked ->
@@ -309,17 +318,24 @@ class UniversalOutputsFragment : BaseParamFragment() {
         }
     }
 
+    private fun getConditionText(conditionId: Int): String {
+        return CONDITION.entries.first { condition ->
+            condition.id ==  conditionId
+        }.strId.let { resId ->
+            getString(resId)
+        }
+    }
     private fun initDropdowns() {
         mBinding.output1Condition1.apply {
             inputType = InputType.TYPE_NULL
-            ArrayAdapter(requireContext(), R.layout.list_item, mCondition1List).also {
+            ArrayAdapter(requireContext(), R.layout.list_item, mCondition1ListText).also {
                 setAdapter(it)
             }
         }
 
         mBinding.output1Condition2.apply {
             inputType = InputType.TYPE_NULL
-            ArrayAdapter(requireContext(), R.layout.list_item, mCondition2List).also {
+            ArrayAdapter(requireContext(), R.layout.list_item, mCondition2ListText).also {
                 setAdapter(it)
             }
         }
@@ -346,14 +362,14 @@ class UniversalOutputsFragment : BaseParamFragment() {
 
         mBinding.output2Condition1.apply {
             inputType = InputType.TYPE_NULL
-            ArrayAdapter(requireContext(), R.layout.list_item, mCondition1List).also {
+            ArrayAdapter(requireContext(), R.layout.list_item, mCondition1ListText).also {
                 setAdapter(it)
             }
         }
 
         mBinding.output2Condition2.apply {
             inputType = InputType.TYPE_NULL
-            ArrayAdapter(requireContext(), R.layout.list_item, mCondition2List).also {
+            ArrayAdapter(requireContext(), R.layout.list_item, mCondition2ListText).also {
                 setAdapter(it)
             }
         }
@@ -370,14 +386,14 @@ class UniversalOutputsFragment : BaseParamFragment() {
 
         mBinding.output3Condition1.apply {
             inputType = InputType.TYPE_NULL
-            ArrayAdapter(requireContext(), R.layout.list_item, mCondition1List).also {
+            ArrayAdapter(requireContext(), R.layout.list_item, mCondition1ListText).also {
                 setAdapter(it)
             }
         }
 
         mBinding.output3Condition2.apply {
             inputType = InputType.TYPE_NULL
-            ArrayAdapter(requireContext(), R.layout.list_item, mCondition2List).also {
+            ArrayAdapter(requireContext(), R.layout.list_item, mCondition2ListText).also {
                 setAdapter(it)
             }
         }
@@ -394,14 +410,14 @@ class UniversalOutputsFragment : BaseParamFragment() {
 
         mBinding.output4Condition1.apply {
             inputType = InputType.TYPE_NULL
-            ArrayAdapter(requireContext(), R.layout.list_item, mCondition1List).also {
+            ArrayAdapter(requireContext(), R.layout.list_item, mCondition1ListText).also {
                 setAdapter(it)
             }
         }
 
         mBinding.output4Condition2.apply {
             inputType = InputType.TYPE_NULL
-            ArrayAdapter(requireContext(), R.layout.list_item, mCondition2List).also {
+            ArrayAdapter(requireContext(), R.layout.list_item, mCondition2ListText).also {
                 setAdapter(it)
             }
         }
@@ -418,14 +434,14 @@ class UniversalOutputsFragment : BaseParamFragment() {
 
         mBinding.output5Condition1.apply {
             inputType = InputType.TYPE_NULL
-            ArrayAdapter(requireContext(), R.layout.list_item, mCondition1List).also {
+            ArrayAdapter(requireContext(), R.layout.list_item, mCondition1ListText).also {
                 setAdapter(it)
             }
         }
 
         mBinding.output5Condition2.apply {
             inputType = InputType.TYPE_NULL
-            ArrayAdapter(requireContext(), R.layout.list_item, mCondition2List).also {
+            ArrayAdapter(requireContext(), R.layout.list_item, mCondition2ListText).also {
                 setAdapter(it)
             }
         }
@@ -442,14 +458,14 @@ class UniversalOutputsFragment : BaseParamFragment() {
 
         mBinding.output6Condition1.apply {
             inputType = InputType.TYPE_NULL
-            ArrayAdapter(requireContext(), R.layout.list_item, mCondition1List).also {
+            ArrayAdapter(requireContext(), R.layout.list_item, mCondition1ListText).also {
                 setAdapter(it)
             }
         }
 
         mBinding.output6Condition2.apply {
             inputType = InputType.TYPE_NULL
-            ArrayAdapter(requireContext(), R.layout.list_item, mCondition2List).also {
+            ArrayAdapter(requireContext(), R.layout.list_item, mCondition2ListText).also {
                 setAdapter(it)
             }
         }
@@ -468,7 +484,7 @@ class UniversalOutputsFragment : BaseParamFragment() {
         mBinding.apply {
 
             output1Condition1.setOnItemClickListener { _, _, position, _ ->
-                packet?.output1Condition1 = position
+                packet?.output1Condition1 = mCondition1List[position].id
                 mUnioutConfigurator.configureViews(position, output1Condition1On, output1Condition1Off)
             }
             output1LogicalFunction.setOnItemClickListener { _, _, position, _ ->
@@ -483,7 +499,7 @@ class UniversalOutputsFragment : BaseParamFragment() {
                 packet?.let { it1 -> mViewModel.sendPacket(it1) }
             }
             output1Condition2.setOnItemClickListener { _, _, position, _ ->
-                packet?.output1Condition2 = position
+                packet?.output1Condition2 = mCondition2List[position].id
                 mUnioutConfigurator.configureViews(position, output1Condition2On, output1Condition2Off)
             }
 
@@ -497,7 +513,7 @@ class UniversalOutputsFragment : BaseParamFragment() {
             }
 
             output2Condition1.setOnItemClickListener { _, _, position, _ ->
-                packet?.output2Condition1 = position
+                packet?.output2Condition1 = mCondition1List[position].id
                 mUnioutConfigurator.configureViews(position, output2Condition1On, output2Condition1Off)
             }
             output2LogicalFunction.setOnItemClickListener { _, _, position, _ ->
@@ -512,12 +528,12 @@ class UniversalOutputsFragment : BaseParamFragment() {
                 packet?.let { it1 -> mViewModel.sendPacket(it1) }
             }
             output2Condition2.setOnItemClickListener { _, _, position, _ ->
-                packet?.output2Condition2 = position
+                packet?.output2Condition2 = mCondition2List[position].id
                 mUnioutConfigurator.configureViews(position, output2Condition2On, output2Condition2Off)
             }
 
             output3Condition1.setOnItemClickListener { _, _, position, _ ->
-                packet?.output3Condition1 = position
+                packet?.output3Condition1 = mCondition1List[position].id
                 mUnioutConfigurator.configureViews(position, output3Condition1On, output3Condition1Off)
             }
             output3LogicalFunction.setOnItemClickListener { _, _, position, _ ->
@@ -532,12 +548,12 @@ class UniversalOutputsFragment : BaseParamFragment() {
                 packet?.let { it1 -> mViewModel.sendPacket(it1) }
             }
             output3Condition2.setOnItemClickListener { _, _, position, _ ->
-                packet?.output3Condition2 = position
+                packet?.output3Condition2 = mCondition2List[position].id
                 mUnioutConfigurator.configureViews(position, output3Condition2On, output3Condition2Off)
             }
 
             output4Condition1.setOnItemClickListener { _, _, position, _ ->
-                packet?.output4Condition1 = position
+                packet?.output4Condition1 = mCondition1List[position].id
                 mUnioutConfigurator.configureViews(position, output4Condition1On, output4Condition1Off)
             }
             output4LogicalFunction.setOnItemClickListener { _, _, position, _ ->
@@ -552,12 +568,12 @@ class UniversalOutputsFragment : BaseParamFragment() {
                 packet?.let { it1 -> mViewModel.sendPacket(it1) }
             }
             output4Condition2.setOnItemClickListener { _, _, position, _ ->
-                packet?.output4Condition2 = position
+                packet?.output4Condition2 = mCondition2List[position].id
                 mUnioutConfigurator.configureViews(position, output4Condition2On, output4Condition2Off)
             }
 
             output5Condition1.setOnItemClickListener { _, _, position, _ ->
-                packet?.output5Condition1 = position
+                packet?.output5Condition1 = mCondition1List[position].id
                 mUnioutConfigurator.configureViews(position, output5Condition1On, output5Condition1Off)
             }
             output5LogicalFunction.setOnItemClickListener { _, _, position, _ ->
@@ -572,12 +588,12 @@ class UniversalOutputsFragment : BaseParamFragment() {
                 packet?.let { it1 -> mViewModel.sendPacket(it1) }
             }
             output5Condition2.setOnItemClickListener { _, _, position, _ ->
-                packet?.output5Condition2 = position
+                packet?.output5Condition2 = mCondition2List[position].id
                 mUnioutConfigurator.configureViews(position, output5Condition2On, output5Condition2Off)
             }
 
             output6Condition1.setOnItemClickListener { _, _, position, _ ->
-                packet?.output6Condition1 = position
+                packet?.output6Condition1 = mCondition1List[position].id
                 mUnioutConfigurator.configureViews(position, output6Condition1On, output6Condition1Off)
             }
             output6LogicalFunction.setOnItemClickListener { _, _, position, _ ->
@@ -592,7 +608,7 @@ class UniversalOutputsFragment : BaseParamFragment() {
                 packet?.let { it1 -> mViewModel.sendPacket(it1) }
             }
             output6Condition2.setOnItemClickListener { _, _, position, _ ->
-                packet?.output6Condition2 = position
+                packet?.output6Condition2 = mCondition2List[position].id
                 mUnioutConfigurator.configureViews(position, output6Condition2On, output6Condition2Off)
             }
 

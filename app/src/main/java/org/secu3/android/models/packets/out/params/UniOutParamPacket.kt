@@ -24,6 +24,8 @@
  */
 package org.secu3.android.models.packets.out.params
 
+import androidx.annotation.StringRes
+import org.secu3.android.R
 import org.secu3.android.models.packets.base.BaseOutputPacket
 import org.secu3.android.utils.getBitValue
 import org.secu3.android.utils.setBitValue
@@ -415,59 +417,126 @@ data class UniOutParamPacket(
 
 
     private fun decodeCondVal(value: Int, condition: Int): Float {
-        when (condition) {
-            CONDITION_COOLANT_TEMPER -> return value.toFloat() / TEMPERATURE_MULTIPLIER
-            CONDITION_RPM -> return value.toFloat()
-            CONDITION_MAP -> return value.toFloat() / MAP_MULTIPLIER
-            CONDITION_UBAT -> return value.toFloat() / VOLTAGE_MULTIPLIER
-            CONDITION_CARB -> return value.toFloat()
-            CONDITION_VSPD -> {
-                return value.div(32.0f).coerceAtMost(999.9f)
+        return when (condition) {
+            CONDITION.COOLANT_TEMPER.id -> value.toFloat() / TEMPERATURE_MULTIPLIER
+            CONDITION.RPM.id -> value.toFloat()
+            CONDITION.MAP.id -> value.toFloat() / MAP_MULTIPLIER
+            CONDITION.UBAT.id -> value.toFloat() / VOLTAGE_MULTIPLIER
+            CONDITION.CARB.id -> value.toFloat()
+            CONDITION.VSPD.id -> {
+                value.div(32.0f).coerceAtMost(999.9f)
             }
-            CONDITION_AIRFL -> return value.toFloat()
-            CONDITION_TMR, CONDITION_ITTMR, CONDITION_ESTMR -> return value.toFloat() / 100.0f
-            CONDITION_CPOS -> return value.toFloat() / CHOKE_MULTIPLIER
-            CONDITION_AANG -> return value.toFloat() / ANGLE_DIVIDER
-            CONDITION_KLEV -> return value.toFloat() * ADC_DISCRETE
-            CONDITION_TPS -> return value.toFloat() / TPS_MULTIPLIER
-            CONDITION_ATS -> return value.toFloat() / TEMPERATURE_MULTIPLIER
+            CONDITION.AIRFL.id -> value.toFloat()
+            CONDITION.TMR.id, CONDITION.ITTMR.id, CONDITION.ESTMR.id -> value.toFloat() / 100.0f
+            CONDITION.CPOS.id -> value.toFloat() / CHOKE_MULTIPLIER
+            CONDITION.AANG.id -> value.toFloat() / ANGLE_DIVIDER
+            CONDITION.KLEV.id -> value.toFloat() * ADC_DISCRETE
+            CONDITION.TPS.id -> value.toFloat() / TPS_MULTIPLIER
+            CONDITION.ATS.id -> value.toFloat() / TEMPERATURE_MULTIPLIER
 
-            CONDITION_AI1, CONDITION_AI2, CONDITION_AI3, CONDITION_AI4, CONDITION_AI5, CONDITION_AI6, CONDITION_AI7, CONDITION_AI8 -> return value.toFloat() * ADC_DISCRETE
+            CONDITION.AI1.id, CONDITION.AI2.id, CONDITION.AI3.id, CONDITION.AI4.id, CONDITION.AI5.id, CONDITION.AI6.id, CONDITION.AI7.id, CONDITION.AI8.id -> value.toFloat() * ADC_DISCRETE
 
-            CONDITION_GASV -> return value.toFloat()
-            CONDITION_IPW -> return (value.toFloat() * 3.2f) / 1000.0f
-            CONDITION_CE -> return value.toFloat()
-            CONDITION_OFTMR, CONDITION_LOOPTMR -> return value.toFloat() / 100.0f
+            CONDITION.GASV.id -> value.toFloat()
+            CONDITION.IPW.id -> (value.toFloat() * 3.2f) / 1000.0f
+            CONDITION.CE.id -> value.toFloat()
+            CONDITION.OFTMR.id, CONDITION.LOOPTMR.id -> value.toFloat() / 100.0f
+
+            CONDITION.GRTS.id -> value.toFloat().div(TEMPERATURE_MULTIPLIER)
+
+            CONDITION.MAP2.id -> value.toFloat().div(MAP_MULTIPLIER)
+
+            CONDITION.TMP2.id -> value.toFloat().div(TEMPERATURE_MULTIPLIER)
+
+            CONDITION.INPUT1.id -> value.toFloat()
+
+            CONDITION.INPUT2.id -> value.toFloat()
+
+            CONDITION.MAF.id -> value.toFloat().div(MAFS_MULT)
+
+            CONDITION.TPSDOT.id -> value.toFloat()
+
+            else -> 0f
         }
-
-        return 0f
     }
 
     private fun encodeCondVal(value: Float, condition: Int): Int {
-        when (condition) {
-            CONDITION_COOLANT_TEMPER -> return (value * TEMPERATURE_MULTIPLIER).roundToInt()
-            CONDITION_RPM -> return value.roundToInt()
-            CONDITION_MAP -> return (value * MAP_MULTIPLIER).roundToInt()
-            CONDITION_UBAT -> return (value * VOLTAGE_MULTIPLIER).roundToInt()
-            CONDITION_CARB -> return value.roundToInt()
-            CONDITION_VSPD -> return value.times(32.0f).roundToInt()
-            CONDITION_AIRFL -> return value.roundToInt()
-            CONDITION_TMR, CONDITION_ITTMR, CONDITION_ESTMR -> return (value * 100.0f).roundToInt()
-            CONDITION_CPOS -> return (value * CHOKE_MULTIPLIER).roundToInt()
-            CONDITION_AANG -> return (value * ANGLE_DIVIDER).roundToInt()
-            CONDITION_KLEV -> return (value / ADC_DISCRETE).roundToInt()
-            CONDITION_TPS -> return (value * TPS_MULTIPLIER).roundToInt()
-            CONDITION_ATS -> return (value * TEMPERATURE_MULTIPLIER).roundToInt()
+        return when (condition) {
+            CONDITION.COOLANT_TEMPER.id -> (value * TEMPERATURE_MULTIPLIER).roundToInt()
+            CONDITION.RPM.id -> value.roundToInt()
+            CONDITION.MAP.id -> (value * MAP_MULTIPLIER).roundToInt()
+            CONDITION.UBAT.id -> (value * VOLTAGE_MULTIPLIER).roundToInt()
+            CONDITION.CARB.id -> value.roundToInt()
+            CONDITION.VSPD.id -> value.times(32.0f).roundToInt()
+            CONDITION.AIRFL.id -> value.roundToInt()
+            CONDITION.TMR.id, CONDITION.ITTMR.id, CONDITION.ESTMR.id -> (value * 100.0f).roundToInt()
+            CONDITION.CPOS.id -> (value * CHOKE_MULTIPLIER).roundToInt()
+            CONDITION.AANG.id -> (value * ANGLE_DIVIDER).roundToInt()
+            CONDITION.KLEV.id -> (value * 1.0f.div(ADC_DISCRETE)).roundToInt()
+            CONDITION.TPS.id -> (value * TPS_MULTIPLIER).roundToInt()
+            CONDITION.ATS.id -> (value * TEMPERATURE_MULTIPLIER).roundToInt()
 
-            CONDITION_AI1, CONDITION_AI2, CONDITION_AI3, CONDITION_AI4, CONDITION_AI5, CONDITION_AI6, CONDITION_AI7, CONDITION_AI8 -> return (value / ADC_DISCRETE).roundToInt()
+            CONDITION.AI1.id, CONDITION.AI2.id, CONDITION.AI3.id, CONDITION.AI4.id, CONDITION.AI5.id, CONDITION.AI6.id, CONDITION.AI7.id, CONDITION.AI8.id -> (value * 1.0f.div(ADC_DISCRETE)).roundToInt()
 
-            CONDITION_GASV -> return value.roundToInt()
-            CONDITION_IPW -> return ((value * 1000.0f) / 3.2f).roundToInt()
-            CONDITION_CE -> return value.roundToInt()
-            CONDITION_OFTMR, CONDITION_LOOPTMR -> return (value * 100.0f).roundToInt()
+            CONDITION.GASV.id -> value.roundToInt()
+            CONDITION.IPW.id -> ((value * 1000.0f) / 3.2f).roundToInt()
+            CONDITION.CE.id -> value.roundToInt()
+            CONDITION.OFTMR.id, CONDITION.LOOPTMR.id -> (value * 100.0f).roundToInt()
+
+            CONDITION.GRTS.id -> value.times(TEMPERATURE_MULTIPLIER).roundToInt()
+
+            CONDITION.MAP2.id -> value.times(MAP_MULTIPLIER).roundToInt()
+
+            CONDITION.TMP2.id -> value.times(TEMPERATURE_MULTIPLIER).roundToInt()
+
+            CONDITION.INPUT1.id -> value.roundToInt()
+
+            CONDITION.INPUT2.id -> value.roundToInt()
+
+            CONDITION.MAF.id -> value.times(MAFS_MULT).roundToInt()
+
+            CONDITION.TPSDOT.id -> value.roundToInt() // %/s
+
+            else -> 0
         }
+    }
 
-        return 0
+    enum class CONDITION (val id: Int, val condition1: Boolean, val condition2: Boolean, @StringRes val strId: Int) {
+        COOLANT_TEMPER(0, true, true, R.string.uniout_condition_cts), // Coolant temperature
+        RPM(1, true, true, R.string.uniout_condition_rpm), // RPM
+        MAP(2, true, true, R.string.uniout_condition_map), // MAP
+        UBAT(3, true, true, R.string.uniout_condition_ubat), // Board voltage
+        CARB(4, true, true, R.string.uniout_condition_carb), // Throttle position limit switch
+        VSPD(5, true, true, R.string.uniout_condition_vspd), // Vehicle speed
+        AIRFL(6, true, true, R.string.uniout_condition_airfl), // Air flow
+        TMR(7, false, true, R.string.uniout_condition_tmr), // Timer, allowed only for 2nd condition
+        ITTMR(8, true, true, R.string.uniout_condition_ittmr), // Timer, triggered after turning on of ignition
+        ESTMR(9, true, true, R.string.uniout_condition_estmr), // Timer, triggered after starting of engine
+        CPOS(10, true, true, R.string.uniout_condition_cpos), // Choke position
+        AANG(11, true, true, R.string.uniout_condition_aang), // Advance angle
+        KLEV(12, true, true, R.string.uniout_condition_klev), // Knock signal level
+        TPS(13, true, true, R.string.uniout_condition_tps), // Throttle position sensor
+        ATS(14, true, true, R.string.uniout_condition_ats), // Intake air temperature sensor
+        AI1(15, true, true, R.string.uniout_condition_ai1), // Analog input 1
+        AI2(16, true, true, R.string.uniout_condition_ai2), // Analog input 2
+        GASV(17, true, true, R.string.uniout_condition_gasv), // Gas valve input
+        IPW(18, true, true, R.string.uniout_condition_ipw), // Injector pulse width
+        CE(19, true, true, R.string.uniout_condition_ce), // CE state
+        OFTMR(20, true, true, R.string.uniout_condition_oftmr), // On/Off delay timer
+        AI3(21, true, true, R.string.uniout_condition_ai3), // Analog input 3
+        AI4(22, true, true, R.string.uniout_condition_ai3), // Analog input 4
+        LOOPTMR(23, false, true, R.string.uniout_condition_looptmr), // Looper timer 1 condition
+        AI5(24, true, true, R.string.uniout_condition_ai5), // Analog input 5
+        AI6(25, true, true, R.string.uniout_condition_ai6), // Analog input 6
+        AI7(26, true, true, R.string.uniout_condition_ai7), // Analog input 7
+        AI8(27, true, true, R.string.uniout_condition_ai8), // Analog input 8
+        GRTS(28, true, true, R.string.uniout_condition_grts),     //GRTS
+        MAP2(29, true, true, R.string.uniout_condition_map2),     //MAP2
+        TMP2(30, true, true, R.string.uniout_condition_temp2),     //TMP2
+        INPUT1(31, true, true, R.string.uniout_condition_input1),   //INPUT1
+        INPUT2(32, true, true, R.string.uniout_condition_input2),   //INPUT2
+        MAF(33, true, true, R.string.uniout_condition_maf),      //MAF
+        TPSDOT(34, true, true, R.string.uniout_condition_tps_dot),   //TPS dot
+        GPS(35, true, true, R.string.uniout_condition_gps),   //TPS dot
     }
 
 
@@ -479,38 +548,6 @@ data class UniOutParamPacket(
         const val LF_2ND = 3
         const val LF_NONE = 15
         const val LF_COUNT = 5
-
-
-        private const val CONDITIONS_COUNTER = 27
-        const val CONDITION_COOLANT_TEMPER = 0 // Coolant temperature
-        const val CONDITION_RPM = 1 // RPM
-        const val CONDITION_MAP = 2 // MAP
-        const val CONDITION_UBAT = 3 // Board voltage
-        const val CONDITION_CARB = 4 // Throttle position limit switch
-        const val CONDITION_VSPD = 5 // Vehicle speed
-        const val CONDITION_AIRFL = 6 // Air flow
-        const val CONDITION_TMR = 7 // Timer, allowed only for 2nd condition
-        const val CONDITION_ITTMR = 8 // Timer, triggered after turning on of ignition
-        const val CONDITION_ESTMR = 9 // Timer, triggered after starting of engine
-        const val CONDITION_CPOS = 10 // Choke position
-        const val CONDITION_AANG = 11 // Advance angle
-        const val CONDITION_KLEV = 12 // Knock signal level
-        const val CONDITION_TPS = 13 // Throttle position sensor
-        const val CONDITION_ATS = 14 // Intake air temperature sensor
-        const val CONDITION_AI1 = 15 // Analog input 1
-        const val CONDITION_AI2 = 16 // Analog input 2
-        const val CONDITION_GASV = 17 // Gas valve input
-        const val CONDITION_IPW = 18 // Injector pulse width
-        const val CONDITION_CE = 19 // CE state
-        const val CONDITION_OFTMR = 20 // On/Off delay timer
-        const val CONDITION_AI3 = 21 // Analog input 3
-        const val CONDITION_AI4 = 22 // Analog input 4
-        const val CONDITION_LOOPTMR = 23 // Looper timer 1 condition
-        const val CONDITION_AI5 = 24 // Analog input 5
-        const val CONDITION_AI6 = 25 // Analog input 6
-        const val CONDITION_AI7 = 26 // Analog input 7
-        const val CONDITION_AI8 = 27 // Analog input 8
-
 
         const val UNI_OUTPUT_NUM = 6
 
