@@ -60,7 +60,6 @@ class MainViewModel @Inject constructor(
             if (appPrefs.lastAppVersionCheck.isBefore(now)) {
                 mainRepository.getNewRelease()?.let {
                     emit(it)
-                    appPrefs.lastAppVersionCheck = now
                 }
             }
         }.asLiveData()

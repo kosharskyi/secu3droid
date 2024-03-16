@@ -40,6 +40,7 @@ import org.secu3.android.ui.sensors.models.GaugeType
 import org.secu3.android.ui.sensors.models.IndicatorType
 import org.secu3.android.utils.AppPrefs
 import org.secu3.android.utils.toResult
+import org.threeten.bp.LocalDate
 import javax.inject.Inject
 import kotlin.math.min
 
@@ -51,22 +52,29 @@ class MainRepository @Inject constructor(
 ) {
 
     suspend fun getNewRelease(): GitHubRelease? {
-        apiService.getLatestRelease().toResult().onSuccess { release ->
-            val remoteVersion = release.tagName.split(".").map { it.toInt() }
+        try {
+            apiService.getLatestRelease().toResult().onSuccess { release ->
 
-            val versionName = if (BuildConfig.DEBUG) {
-                BuildConfig.VERSION_NAME.split("-")[0]
-            } else {
-                BuildConfig.VERSION_NAME
-            }
+                appPrefs.lastAppVersionCheck = LocalDate.now()
 
-            val localVersion = versionName.split(".").map { it.toInt() }
+                val remoteVersion = release.tagName.split(".").map { it.toInt() }
 
-            for (i in 0 until min(remoteVersion.size, localVersion.size)) {
-                if (remoteVersion[i] > localVersion[i]) {
-                    return release
+                val versionName = if (BuildConfig.DEBUG) {
+                    BuildConfig.VERSION_NAME.split("-")[0]
+                } else {
+                    BuildConfig.VERSION_NAME
+                }
+
+                val localVersion = versionName.split(".").map { it.toInt() }
+
+                for (i in 0 until min(remoteVersion.size, localVersion.size)) {
+                    if (remoteVersion[i] > localVersion[i]) {
+                        return release
+                    }
                 }
             }
+        } catch (e: Exception) {
+            return null
         }
 
         return null
