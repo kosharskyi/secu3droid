@@ -108,8 +108,9 @@ dependencies {
     implementation libs.threetenabp
 
     implementation libs.converter.gson
-    implementation libs.retrofit
+    implementation libs.okhttp
     implementation libs.logging.interceptor
+    implementation libs.retrofit
 
     //Dagger 2
     implementation libs.dagger.hilt.android

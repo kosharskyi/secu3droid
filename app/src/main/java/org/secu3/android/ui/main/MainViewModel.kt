@@ -32,6 +32,7 @@ import androidx.lifecycle.viewModelScope
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.launch
+import org.secu3.android.BuildConfig
 import org.secu3.android.Secu3Repository
 import org.secu3.android.models.packets.input.FirmwareInfoPacket
 import org.secu3.android.network.models.GitHubRelease
@@ -57,7 +58,7 @@ class MainViewModel @Inject constructor(
         get() = flow {
             val now = LocalDate.now()
 
-            if (appPrefs.lastAppVersionCheck.isBefore(now)) {
+            if (BuildConfig.DEBUG || appPrefs.lastAppVersionCheck.isBefore(now)) {
                 mainRepository.getNewRelease()?.let {
                     emit(it)
                 }
