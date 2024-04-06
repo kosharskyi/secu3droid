@@ -44,7 +44,7 @@ class SecurityFragment : BaseParamFragment() {
 
     private lateinit var mBinding: FragmentSecurityBinding
 
-    private val btTypes = listOf("BC417", "BK3231")
+    private val btTypes = listOf("BC417", "BK3231", "BK3231S(JDY-31)", "BC352(HC-05)", "BK3432", "BK3431S")
 
     override fun onCreateView(inflater: LayoutInflater, container: ViewGroup?, savedInstanceState: Bundle?): View? {
         mBinding = FragmentSecurityBinding.inflate(inflater, container, false)
