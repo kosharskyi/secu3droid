@@ -69,6 +69,7 @@ class SensorsRepository @Inject constructor(
         val value = when (state.gaugeType) {
             GaugeType.RPM -> it.rpm.toString()
             GaugeType.MAP -> String.format(Locale.US, "%.1f", it.map)
+            GaugeType.MAP_TURBO -> String.format(Locale.US, "%.1f", it.map)
             GaugeType.VOLTAGE -> String.format(Locale.US, "%.1f", it.voltage)
             GaugeType.CURRENT_ANGLE -> String.format(Locale.US, "%.2f", it.currentAngle)
             GaugeType.TEMPERATURE -> String.format(Locale.US, "%.1f", it.temperature)

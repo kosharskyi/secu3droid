@@ -45,6 +45,12 @@ enum class GaugeType (val title: Int, val minValue: Float, val maxValue: Float, 
         Section(.75f, 1f, R.color.gauge_gray, -1f),
     )),
 
+    MAP_TURBO(R.string.sensors_frag_absolute_pressure_turbo_label, 0f, 250f, R.string.units_pressure_kpa, false, 11, listOf(
+        Section(0f, .25f, R.color.gauge_gray, -1f),
+        Section(.25f, .75f, R.color.gauge_green, -1f),
+        Section(.75f, 1f, R.color.gauge_gray, -1f),
+    )),
+
     VOLTAGE(R.string.sensors_frag_voltage_label, 2.0f, 18.0f, R.string.units_volts, false, 9, listOf(
         Section(0f, 0.5f, R.color.gauge_red, -1f),
         Section(0.5f, 0.81f, R.color.gauge_green, -1f),
