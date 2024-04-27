@@ -165,7 +165,7 @@ class FuelInjectionFragment : BaseParamFragment() {
     }
 
     private fun initDropdowns() {
-        val injConfigList = InjctrParPacket.InjConfig.entries.map { it.strId }
+        val injConfigList = InjctrParPacket.InjConfig.entries.map { getString(it.strId) }
 
         mBinding.injectionConfiguration.apply {
             ArrayAdapter(requireContext(), R.layout.list_item, injConfigList).also {

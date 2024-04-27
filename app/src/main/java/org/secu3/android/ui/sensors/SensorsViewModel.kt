@@ -69,21 +69,21 @@ class SensorsViewModel @Inject constructor(private val secu3Repository: Secu3Rep
         get() = secu3Repository.connectionStatusLiveData
 
     val sensorsLiveData: LiveData<SensorsPacket>
-        get() = secu3Repository.receivedPacketFlow.sample(500).filter { it is SensorsPacket }
+        get() = secu3Repository.receivedPacketFlow.sample(100).filter { it is SensorsPacket }
             .map { it as SensorsPacket }.asLiveData()
 
     val gaugesLiveData: LiveData<List<GaugeItem>>
-        get() = secu3Repository.receivedPacketFlow.sample(500).filter { it is SensorsPacket }
+        get() = secu3Repository.receivedPacketFlow.sample(100).filter { it is SensorsPacket }
             .map { it as SensorsPacket }.map { repository.convertToGaugeItemList(it) }.asLiveData()
 
 
     val indicatorLiveData: LiveData<List<IndicatorItem>>
-        get() = secu3Repository.receivedPacketFlow.sample(500).filter { it is SensorsPacket }
+        get() = secu3Repository.receivedPacketFlow.sample(100).filter { it is SensorsPacket }
             .map { it as SensorsPacket }.map { repository.convertToIndicatorItemList(it) }.asLiveData()
 
 
     val rawSensorsLiveData: LiveData<AdcRawDatPacket>
-        get() = secu3Repository.receivedPacketFlow.sample(500).filter { it is AdcRawDatPacket }
+        get() = secu3Repository.receivedPacketFlow.sample(100).filter { it is AdcRawDatPacket }
             .map { it as AdcRawDatPacket }.asLiveData()
 
     private val showAddGaugeFlow = MutableSharedFlow<List<GaugeType>>()
