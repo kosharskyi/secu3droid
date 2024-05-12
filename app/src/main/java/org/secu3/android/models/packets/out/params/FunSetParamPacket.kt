@@ -151,8 +151,8 @@ data class FunSetParamPacket(
             mafload_const = data.get4Bytes(29).toFloat()
             tps_raw = data.get2Bytes(33).times(ADC_DISCRETE)
 
-            map2CurveOffset = data.get2Bytes(35).toFloat() * ADC_DISCRETE
-            map2CurveGradient = data.get2Bytes(37).toFloat() / (MAP_MULTIPLIER * ADC_DISCRETE * 128.0f)
+            gpsCurveOffset = data.get2Bytes(35).toFloat() * ADC_DISCRETE
+            gpsCurveGradient = data.get2Bytes(37).toFloat() / (MAP_MULTIPLIER * ADC_DISCRETE * 128.0f)
 
             if (data.length == 39) {
                 return@apply
