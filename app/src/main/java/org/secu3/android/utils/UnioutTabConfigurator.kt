@@ -148,7 +148,10 @@ class UnioutTabConfigurator @Inject constructor() {
                 secondView.configure(0.25f, 500.0f,0.25f, 2, secondValue ?: 90.0f)
             }
 
-            CONDITION.GPS -> TODO()
+            CONDITION.GPS -> {
+                firstView.configure(0.25f, 500.0f,0.25f, 2, firstValue ?: 95.0f)
+                secondView.configure(0.25f, 500.0f,0.25f, 2, secondValue ?: 90.0f)
+            }
         }
     }
 
