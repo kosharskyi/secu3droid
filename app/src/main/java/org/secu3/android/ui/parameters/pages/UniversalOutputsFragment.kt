@@ -119,10 +119,17 @@ class UniversalOutputsFragment : BaseParamFragment() {
                         output6Use.isChecked = it.output6Use
                         output6Group.isVisible = it.output6Use
 
-                        output1Condition1.setText(getConditionText(it.output1Condition1), false)
+                        mCondition1List.first { condition -> condition.id == it.output1Condition1 }.let { condition ->
+                            output1Condition1.setText(getString(condition.strId), false)
+                            mUnioutConfigurator.configureViews(
+                                condition,
+                                output1Condition1On,
+                                output1Condition1Off,
+                                it.output1OnThrd1,
+                                it.output1OffThrd1)
+                        }
+
                         output1Condition1Inversion.isChecked = it.output1Cond1Inversion
-                        output1Condition1On.value = it.output1OnThrd1
-                        output1Condition1Off.value = it.output1OffThrd1
                         output1Inversion.isChecked = it.output1Inversion
 
                         it.output1LogicFunc.let { logicFunc ->
@@ -137,10 +144,18 @@ class UniversalOutputsFragment : BaseParamFragment() {
                             output1LogicalFunction.setText(mLogicalFunctionsList[logicFunc], false)
                         }
 
-                        output1Condition2.setText(getConditionText(it.output1Condition2), false)
+                        mCondition2List.first { condition -> condition.id == it.output1Condition2 }.let { condition ->
+                            output1Condition2.setText(getString(condition.strId), false)
+                            mUnioutConfigurator.configureViews(
+                                condition,
+                                output1Condition2On,
+                                output1Condition2Off,
+                                it.output1OnThrd2,
+                                it.output1OffThrd2
+                                )
+                        }
+
                         output1Condition2Inversion.isChecked = it.output1Cond2Inversion
-                        output1Condition2On.value = it.output1OnThrd2
-                        output1Condition2Off.value = it.output1OffThrd2
 
 
                         it.logicFunction_1_2.let { logicFunc ->
@@ -152,10 +167,17 @@ class UniversalOutputsFragment : BaseParamFragment() {
                         }
 
 
-                        output2Condition1.setText(getConditionText(it.output2Condition1), false)
+                        mCondition1List.first { condition -> condition.id == it.output2Condition1 }.let { condition ->
+                            output2Condition1.setText(getString(condition.strId), false)
+                            mUnioutConfigurator.configureViews(
+                                condition,
+                                output2Condition1On,
+                                output2Condition1Off,
+                                it.output2OnThrd1,
+                                it.output2OffThrd1
+                                )
+                        }
                         output2Condition1Inversion.isChecked = it.output2Cond1Inversion
-                        output2Condition1On.value = it.output2OnThrd1
-                        output2Condition1Off.value = it.output2OffThrd1
                         output2Inversion.isChecked = it.output2Inversion
 
                         it.output2LogicFunc.let { logicFunc ->
@@ -171,16 +193,30 @@ class UniversalOutputsFragment : BaseParamFragment() {
                             output2LogicalFunction.setText(mLogicalFunctionsList[logicFunc], false)
                         }
 
-                        output2Condition2.setText(getConditionText(it.output2Condition2), false)
+                        mCondition2List.first { condition -> condition.id == it.output2Condition2 }.let { condition ->
+                            output2Condition2.setText(getString(condition.strId), false)
+                            mUnioutConfigurator.configureViews(
+                                condition,
+                                output2Condition2On,
+                                output2Condition2Off,
+                                it.output2OnThrd2,
+                                it.output2OffThrd2
+                                )
+                        }
                         output2Condition2Inversion.isChecked = it.output2Cond2Inversion
-                        output2Condition2On.value = it.output2OnThrd2
-                        output2Condition2Off.value = it.output2OffThrd2
 
 
-                        output3Condition1.setText(getConditionText(it.output3Condition1), false)
+                        mCondition1List.first { condition -> condition.id == it.output3Condition1 }.let { condition ->
+                            output3Condition1.setText(getString(condition.strId), false)
+                            mUnioutConfigurator.configureViews(
+                                condition,
+                                output3Condition1On,
+                                output3Condition1Off,
+                                it.output3OnThrd1,
+                                it.output3OffThrd1
+                                )
+                        }
                         output3Condition1Inversion.isChecked = it.output3Cond1Inversion
-                        output3Condition1On.value = it.output3OnThrd1
-                        output3Condition1Off.value = it.output3OffThrd1
                         output3Inversion.isChecked = it.output3Inversion
 
                         it.output3LogicFunc.let { logicFunc ->
@@ -195,17 +231,31 @@ class UniversalOutputsFragment : BaseParamFragment() {
                             output3LogicalFunction.setText(mLogicalFunctionsList[logicFunc], false)
                         }
 
-                        output3Condition2.setText(getConditionText(it.output2Condition2), false)
+                        mCondition2List.first { condition -> condition.id == it.output3Condition2 }.let { condition ->
+                            output3Condition2.setText(getString(condition.strId), false)
+                            mUnioutConfigurator.configureViews(
+                                condition,
+                                output3Condition2On,
+                                output3Condition2Off,
+                                it.output3OnThrd2,
+                                it.output3OffThrd2
+                                )
+                        }
                         output3Condition2Inversion.isChecked = it.output3Cond2Inversion
-                        output3Condition2On.value = it.output3OnThrd2
-                        output3Condition2Off.value = it.output3OffThrd2
 
 
 
-                        output4Condition1.setText(getConditionText(it.output4Condition1), false)
+                        mCondition1List.first { condition -> condition.id == it.output4Condition1 }.let { condition ->
+                            output4Condition1.setText(getString(condition.strId), false)
+                            mUnioutConfigurator.configureViews(
+                                condition,
+                                output4Condition1On,
+                                output4Condition1Off,
+                                it.output4OnThrd1,
+                                it.output4OffThrd1
+                                )
+                        }
                         output4Condition1Inversion.isChecked = it.output4Cond1Inversion
-                        output4Condition1On.value = it.output4OnThrd1
-                        output4Condition1Off.value = it.output4OffThrd1
                         output4Inversion.isChecked = it.output4Inversion
 
                         it.output4LogicFunc.let { logicFunc ->
@@ -220,17 +270,31 @@ class UniversalOutputsFragment : BaseParamFragment() {
                             output4LogicalFunction.setText(mLogicalFunctionsList[logicFunc], false)
                         }
 
-                        output4Condition2.setText(getConditionText(it.output4Condition2), false)
+                        mCondition2List.first { condition -> condition.id == it.output4Condition2 }.let { condition ->
+                            output4Condition2.setText(getString(condition.strId), false)
+                            mUnioutConfigurator.configureViews(
+                                condition,
+                                output4Condition2On,
+                                output4Condition2Off,
+                                it.output4OnThrd2,
+                                it.output4OffThrd2
+                                )
+                        }
                         output4Condition2Inversion.isChecked = it.output4Cond2Inversion
-                        output4Condition2On.value = it.output4OnThrd2
-                        output4Condition2Off.value = it.output4OffThrd2
 
 
 
-                        output5Condition1.setText(getConditionText(it.output5Condition1), false)
+                        mCondition1List.first { condition -> condition.id == it.output5Condition1 }.let { condition ->
+                            output5Condition1.setText(getString(condition.strId), false)
+                            mUnioutConfigurator.configureViews(
+                                condition,
+                                output5Condition1On,
+                                output5Condition1Off,
+                                it.output5OnThrd1,
+                                it.output5OffThrd1
+                                )
+                        }
                         output5Condition1Inversion.isChecked = it.output5Cond1Inversion
-                        output5Condition1On.value = it.output5OnThrd1
-                        output5Condition1Off.value = it.output5OffThrd1
                         output5Inversion.isChecked = it.output5Inversion
 
                         it.output5LogicFunc.let { logicFunc ->
@@ -245,17 +309,31 @@ class UniversalOutputsFragment : BaseParamFragment() {
                             output5LogicalFunction.setText(mLogicalFunctionsList[logicFunc], false)
                         }
 
-                        output5Condition2.setText(getConditionText(it.output5Condition2), false)
+                        mCondition2List.first { condition -> condition.id == it.output5Condition2 }.let { condition ->
+                            output5Condition2.setText(getString(condition.strId), false)
+                            mUnioutConfigurator.configureViews(
+                                condition,
+                                output5Condition2On,
+                                output5Condition2Off,
+                                it.output5OnThrd2,
+                                it.output5OffThrd2
+                                )
+                        }
                         output5Condition2Inversion.isChecked = it.output5Cond2Inversion
-                        output5Condition2On.value = it.output5OnThrd2
-                        output5Condition2Off.value = it.output5OffThrd2
 
 
 
-                        output6Condition1.setText(getConditionText(it.output6Condition1), false)
+                        mCondition1List.first { condition -> condition.id == it.output6Condition1 }.let { condition ->
+                            output6Condition1.setText(getString(condition.strId), false)
+                            mUnioutConfigurator.configureViews(
+                                condition,
+                                output6Condition1On,
+                                output6Condition1Off,
+                                it.output6OnThrd1,
+                                it.output6OffThrd1
+                                )
+                        }
                         output6Condition1Inversion.isChecked = it.output6Cond1Inversion
-                        output6Condition1On.value = it.output6OnThrd1
-                        output6Condition1Off.value = it.output6OffThrd1
                         output6Inversion.isChecked = it.output6Inversion
 
                         it.output6LogicFunc.let { logicFunc ->
@@ -270,10 +348,17 @@ class UniversalOutputsFragment : BaseParamFragment() {
                             output6LogicalFunction.setText(mLogicalFunctionsList[logicFunc], false)
                         }
 
-                        output6Condition2.setText(getConditionText(it.output6Condition2), false)
+                        mCondition2List.first { condition -> condition.id == it.output6Condition2 }.let { condition ->
+                            output6Condition2.setText(getString(condition.strId), false)
+                            mUnioutConfigurator.configureViews(
+                                condition,
+                                output6Condition2On,
+                                output6Condition2Off,
+                                it.output6OnThrd2,
+                                it.output6OffThrd2
+                                )
+                        }
                         output6Condition2Inversion.isChecked = it.output6Cond2Inversion
-                        output6Condition2On.value = it.output6OnThrd2
-                        output6Condition2Off.value = it.output6OffThrd2
                     }
 
                     mViewModel.isSendAllowed = true
@@ -282,13 +367,6 @@ class UniversalOutputsFragment : BaseParamFragment() {
         }
     }
 
-    private fun getConditionText(conditionId: Int): String {
-        return CONDITION.entries.first { condition ->
-            condition.id ==  conditionId
-        }.strId.let { resId ->
-            getString(resId)
-        }
-    }
     private fun initDropdowns() {
         mBinding.output1Condition1.apply {
             inputType = InputType.TYPE_NULL
@@ -621,8 +699,9 @@ class UniversalOutputsFragment : BaseParamFragment() {
 
 
             output1Condition1.setOnItemClickListener { _, _, position, _ ->
-                packet?.output1Condition1 = mCondition1List[position].id
-                mUnioutConfigurator.configureViews(position, output1Condition1On, output1Condition1Off)
+                val condition = mCondition1List[position]
+                packet?.output1Condition1 = condition.id
+                mUnioutConfigurator.configureViews(condition, output1Condition1On, output1Condition1Off)
             }
             output1LogicalFunction.setOnItemClickListener { _, _, position, _ ->
                 packet?.apply {
@@ -638,8 +717,9 @@ class UniversalOutputsFragment : BaseParamFragment() {
                 }
             }
             output1Condition2.setOnItemClickListener { _, _, position, _ ->
-                packet?.output1Condition2 = mCondition2List[position].id
-                mUnioutConfigurator.configureViews(position, output1Condition2On, output1Condition2Off)
+                val condition = mCondition2List[position]
+                packet?.output1Condition2 = condition.id
+                mUnioutConfigurator.configureViews(condition, output1Condition2On, output1Condition2Off)
             }
 
             logicalFunction12.setOnItemClickListener { _, _, position, _ ->
@@ -652,8 +732,9 @@ class UniversalOutputsFragment : BaseParamFragment() {
             }
 
             output2Condition1.setOnItemClickListener { _, _, position, _ ->
-                packet?.output2Condition1 = mCondition1List[position].id
-                mUnioutConfigurator.configureViews(position, output2Condition1On, output2Condition1Off)
+                val condition = mCondition1List[position]
+                packet?.output2Condition1 = condition.id
+                mUnioutConfigurator.configureViews(condition, output2Condition1On, output2Condition1Off)
             }
             output2LogicalFunction.setOnItemClickListener { _, _, position, _ ->
                 packet?.apply {
@@ -673,13 +754,15 @@ class UniversalOutputsFragment : BaseParamFragment() {
                 }
             }
             output2Condition2.setOnItemClickListener { _, _, position, _ ->
-                packet?.output2Condition2 = mCondition2List[position].id
-                mUnioutConfigurator.configureViews(position, output2Condition2On, output2Condition2Off)
+                val condition = mCondition2List[position]
+                packet?.output2Condition2 = condition.id
+                mUnioutConfigurator.configureViews(condition, output2Condition2On, output2Condition2Off)
             }
 
             output3Condition1.setOnItemClickListener { _, _, position, _ ->
-                packet?.output3Condition1 = mCondition1List[position].id
-                mUnioutConfigurator.configureViews(position, output3Condition1On, output3Condition1Off)
+                val condition = mCondition1List[position]
+                packet?.output3Condition1 = condition.id
+                mUnioutConfigurator.configureViews(condition, output3Condition1On, output3Condition1Off)
             }
             output3LogicalFunction.setOnItemClickListener { _, _, position, _ ->
                 packet?.apply {
@@ -695,13 +778,15 @@ class UniversalOutputsFragment : BaseParamFragment() {
                 }
             }
             output3Condition2.setOnItemClickListener { _, _, position, _ ->
-                packet?.output3Condition2 = mCondition2List[position].id
-                mUnioutConfigurator.configureViews(position, output3Condition2On, output3Condition2Off)
+                val condition = mCondition2List[position]
+                packet?.output3Condition2 = condition.id
+                mUnioutConfigurator.configureViews(condition, output3Condition2On, output3Condition2Off)
             }
 
             output4Condition1.setOnItemClickListener { _, _, position, _ ->
-                packet?.output4Condition1 = mCondition1List[position].id
-                mUnioutConfigurator.configureViews(position, output4Condition1On, output4Condition1Off)
+                val condition = mCondition1List[position]
+                packet?.output4Condition1 = condition.id
+                mUnioutConfigurator.configureViews(condition, output4Condition1On, output4Condition1Off)
             }
             output4LogicalFunction.setOnItemClickListener { _, _, position, _ ->
                 packet?.apply {
@@ -717,13 +802,15 @@ class UniversalOutputsFragment : BaseParamFragment() {
                 }
             }
             output4Condition2.setOnItemClickListener { _, _, position, _ ->
-                packet?.output4Condition2 = mCondition2List[position].id
-                mUnioutConfigurator.configureViews(position, output4Condition2On, output4Condition2Off)
+                val condition = mCondition2List[position]
+                packet?.output4Condition2 = condition.id
+                mUnioutConfigurator.configureViews(condition, output4Condition2On, output4Condition2Off)
             }
 
             output5Condition1.setOnItemClickListener { _, _, position, _ ->
-                packet?.output5Condition1 = mCondition1List[position].id
-                mUnioutConfigurator.configureViews(position, output5Condition1On, output5Condition1Off)
+                val condition = mCondition1List[position]
+                packet?.output5Condition1 = condition.id
+                mUnioutConfigurator.configureViews(condition, output5Condition1On, output5Condition1Off)
             }
             output5LogicalFunction.setOnItemClickListener { _, _, position, _ ->
                 packet?.apply {
@@ -739,13 +826,15 @@ class UniversalOutputsFragment : BaseParamFragment() {
                 }
             }
             output5Condition2.setOnItemClickListener { _, _, position, _ ->
-                packet?.output5Condition2 = mCondition2List[position].id
-                mUnioutConfigurator.configureViews(position, output5Condition2On, output5Condition2Off)
+                val condition = mCondition2List[position]
+                packet?.output5Condition2 = condition.id
+                mUnioutConfigurator.configureViews(condition, output5Condition2On, output5Condition2Off)
             }
 
             output6Condition1.setOnItemClickListener { _, _, position, _ ->
-                packet?.output6Condition1 = mCondition1List[position].id
-                mUnioutConfigurator.configureViews(position, output6Condition1On, output6Condition1Off)
+                val condition = mCondition1List[position]
+                packet?.output6Condition1 = condition.id
+                mUnioutConfigurator.configureViews(condition, output6Condition1On, output6Condition1Off)
             }
             output6LogicalFunction.setOnItemClickListener { _, _, position, _ ->
                 packet?.apply {
@@ -761,8 +850,9 @@ class UniversalOutputsFragment : BaseParamFragment() {
                 }
             }
             output6Condition2.setOnItemClickListener { _, _, position, _ ->
-                packet?.output6Condition2 = mCondition2List[position].id
-                mUnioutConfigurator.configureViews(position, output6Condition2On, output6Condition2Off)
+                val condition = mCondition2List[position]
+                packet?.output6Condition2 = condition.id
+                mUnioutConfigurator.configureViews(condition, output6Condition2On, output6Condition2Off)
             }
 
 

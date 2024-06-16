@@ -32,125 +32,123 @@ import javax.inject.Inject
 class UnioutTabConfigurator @Inject constructor() {
 
 
-    fun configureViews(condition: Int, first: FloatParamView, second: FloatParamView) {
-
-        if (condition !in 0..CONDITION.entries.size) {
-            return
-        }
+    fun configureViews(condition: CONDITION, firstView: FloatParamView, secondView: FloatParamView, firstValue: Float? = null, secondValue: Float? = null) {
 
         when (condition) {
-            CONDITION.COOLANT_TEMPER.id -> {
-                first.configure(-40.0f, 180.0f,0.25f, 2, 55.0f)
-                second.configure(-40.0f, 180.0f,0.25f, 2, 50.0f)
+            CONDITION.COOLANT_TEMPER -> {
+                firstView.configure(-40.0f, 180.0f,0.25f, 2, firstValue ?: 55.0f)
+                secondView.configure(-40.0f, 180.0f,0.25f, 2, secondValue ?: 50.0f)
             }
-            CONDITION.RPM.id -> {
-                first.configure(50.0f, 2000.0f,10.0f, 0, 1500.0f)
-                second.configure(50.0f, 2000.0f,10.0f, 0, 1200.0f)
+            CONDITION.RPM -> {
+                firstView.configure(50.0f, 2000.0f,10.0f, 0, firstValue ?: 1500.0f)
+                secondView.configure(50.0f, 2000.0f,10.0f, 0, secondValue ?: 1200.0f)
             }
-            CONDITION.MAP.id -> {
-                first.configure(0.25f, 500.0f,0.25f, 2, 95.0f)
-                second.configure(0.25f, 500.0f,0.25f, 2, 90.0f)
+            CONDITION.MAP -> {
+                firstView.configure(0.25f, 500.0f,0.25f, 2, firstValue ?: 95.0f)
+                secondView.configure(0.25f, 500.0f,0.25f, 2, secondValue ?: 90.0f)
             }
-            CONDITION.UBAT.id -> {
-                first.configure(5.0f, 16.0f,0.1f, 1, 10.0f)
-                second.configure(5.0f, 16.0f,0.1f, 1, 10.5f)
+            CONDITION.UBAT -> {
+                firstView.configure(5.0f, 16.0f,0.1f, 1, firstValue ?: 10.0f)
+                secondView.configure(5.0f, 16.0f,0.1f, 1, secondValue ?: 10.5f)
             }
-            CONDITION.CARB.id -> {
-                first.configure(0.0f, 1.0f,1.0f, 0, 0.0f)
-                second.configure(0.0f, 1.0f,1.0f, 0, 1.0f)
+            CONDITION.CARB -> {
+                firstView.configure(0.0f, 1.0f,1.0f, 0, firstValue ?: 0.0f)
+                secondView.configure(0.0f, 1.0f,1.0f, 0, secondValue ?: 1.0f)
             }
-            CONDITION.VSPD.id -> {
-                first.configure(5.0f, 250.0f,0.1f, 1, 70.0f)
-                second.configure(5.0f, 250.0f,0.1f, 1, 65.0f)
+            CONDITION.VSPD -> {
+                firstView.configure(5.0f, 250.0f,0.1f, 1, firstValue ?: 70.0f)
+                secondView.configure(5.0f, 250.0f,0.1f, 1, secondValue ?: 65.0f)
             }
-            CONDITION.AIRFL.id -> {
-                first.configure(0.0f, 16.0f,1.0f, 0, 13.0f)
-                second.configure(0.0f, 16.0f,1.0f, 0, 12.0f)
+            CONDITION.AIRFL -> {
+                firstView.configure(0.0f, 16.0f,1.0f, 0, firstValue ?: 13.0f)
+                secondView.configure(0.0f, 16.0f,1.0f, 0, secondValue ?: 12.0f)
             }
-            CONDITION.TMR.id, CONDITION.ITTMR.id, CONDITION.ESTMR.id -> {
-                first.configure(0.0f, 600.0f,0.1f, 1, 0.0f)
-                second.configure(0.0f, 600.0f,0.1f, 1, 5.0f)
+            CONDITION.TMR, CONDITION.ITTMR, CONDITION.ESTMR -> {
+                firstView.configure(0.0f, 600.0f,0.1f, 1, firstValue ?: 0.0f)
+                secondView.configure(0.0f, 600.0f,0.1f, 1, secondValue ?: 5.0f)
             }
-            CONDITION.CPOS.id -> {
-                first.configure(0.0f, 100.0f,0.5f, 1, 60.0f)
-                second.configure(0.0f, 100.0f,0.5f, 1, 55.0f)
+            CONDITION.CPOS -> {
+                firstView.configure(0.0f, 100.0f,0.5f, 1, firstValue ?: 60.0f)
+                secondView.configure(0.0f, 100.0f,0.5f, 1, secondValue ?: 55.0f)
             }
-            CONDITION.AANG.id -> {
-                first.configure(-15.0f, 65.0f,0.1f, 1, 55.0f)
-                second.configure(-15.0f, 65.0f,0.1f, 1, 53.0f)
+            CONDITION.AANG -> {
+                firstView.configure(-15.0f, 65.0f,0.1f, 1, firstValue ?: 55.0f)
+                secondView.configure(-15.0f, 65.0f,0.1f, 1, secondValue ?: 53.0f)
             }
-            CONDITION.KLEV.id -> {
-                first.configure(0.0f, 5.0f,0.01f, 2, 2.5f)
-                second.configure(0.0f, 5.0f,0.01f, 2, 2.45f)
+            CONDITION.KLEV -> {
+                firstView.configure(0.0f, 5.0f,0.01f, 2, firstValue ?: 2.5f)
+                secondView.configure(0.0f, 5.0f,0.01f, 2, secondValue ?: 2.45f)
             }
-            CONDITION.TPS.id -> {
-                first.configure(0.0f, 100.0f,0.5f, 1, 30.0f)
-                second.configure(0.0f, 100.0f,0.5f, 1, 29.0f)
+            CONDITION.TPS -> {
+                firstView.configure(0.0f, 100.0f,0.5f, 1, firstValue ?: 30.0f)
+                secondView.configure(0.0f, 100.0f,0.5f, 1, secondValue ?: 29.0f)
             }
-            CONDITION.ATS.id -> {
-                first.configure(-40.0f, 180.0f,0.25f, 2, 55.0f)
-                second.configure(-40.0f, 180.0f,0.25f, 2, 50.0f)
+            CONDITION.ATS -> {
+                firstView.configure(-40.0f, 180.0f,0.25f, 2, firstValue ?: 55.0f)
+                secondView.configure(-40.0f, 180.0f,0.25f, 2, secondValue ?: 50.0f)
             }
-            CONDITION.AI1.id, CONDITION.AI2.id, CONDITION.AI3.id, CONDITION.AI4.id,
-            CONDITION.AI5.id, CONDITION.AI6.id, CONDITION.AI7.id, CONDITION.AI8.id -> {
-                first.configure(0.0f, 5.0f,0.01f, 2, 2.5f)
-                second.configure(0.0f, 5.0f,0.01f, 2, 2.48f)
+            CONDITION.AI1, CONDITION.AI2, CONDITION.AI3, CONDITION.AI4,
+            CONDITION.AI5, CONDITION.AI6, CONDITION.AI7, CONDITION.AI8 -> {
+                firstView.configure(0.0f, 5.0f,0.01f, 2, firstValue ?: 2.5f)
+                secondView.configure(0.0f, 5.0f,0.01f, 2, secondValue ?: 2.48f)
             }
-            CONDITION.GASV.id -> {
-                first.configure(0.0f, 1.0f,1.0f, 0, 0.0f)
-                second.configure(0.0f, 1.0f,1.0f, 0, 1.0f)
+            CONDITION.GASV -> {
+                firstView.configure(0.0f, 1.0f,1.0f, 0, firstValue ?: 0.0f)
+                secondView.configure(0.0f, 1.0f,1.0f, 0, secondValue ?: 1.0f)
             }
-            CONDITION.IPW.id -> {
-                first.configure(0.01f, 200.0f,0.01f, 2, 20.0f)
-                second.configure(0.01f, 200.0f,0.01f, 2, 19.9f)
+            CONDITION.IPW -> {
+                firstView.configure(0.01f, 200.0f,0.01f, 2, firstValue ?: 20.0f)
+                secondView.configure(0.01f, 200.0f,0.01f, 2, secondValue ?: 19.9f)
             }
-            CONDITION.CE.id -> {
-                first.configure(0.0f, 1.0f,1.0f, 0, 0.0f)
-                second.configure(0.0f, 1.0f,1.0f, 0, 1.0f)
+            CONDITION.CE -> {
+                firstView.configure(0.0f, 1.0f,1.0f, 0, firstValue ?: 0.0f)
+                secondView.configure(0.0f, 1.0f,1.0f, 0, secondValue ?: 1.0f)
             }
-            CONDITION.OFTMR.id -> {
-                first.configure(0.0f, 600.0f,0.1f, 1, 0.0f)
-                second.configure(0.0f, 600.0f,0.1f, 1, 5.0f)
+            CONDITION.OFTMR -> {
+                firstView.configure(0.0f, 600.0f,0.1f, 1, firstValue ?: 0.0f)
+                secondView.configure(0.0f, 600.0f,0.1f, 1, secondValue ?: 5.0f)
             }
-            CONDITION.LOOPTMR.id -> {
-                first.configure(0.0f, 600.0f,0.1f, 1, 1.0f)
-                second.configure(0.0f, 600.0f,0.1f, 1, 5.0f)
-            }
-
-            CONDITION.GRTS.id -> {
-                first.configure(-40.0f, 300.0f,0.25f, 2, 55.0f)
-                second.configure(-40.0f, 300.0f,0.25f, 2, 50.0f)
+            CONDITION.LOOPTMR -> {
+                firstView.configure(0.0f, 600.0f,0.1f, 1, firstValue ?: 1.0f)
+                secondView.configure(0.0f, 600.0f,0.1f, 1, secondValue ?: 5.0f)
             }
 
-            CONDITION.MAP2.id -> {
-                first.configure(0.25f, 500.0f,0.25f, 2, 95.0f)
-                second.configure(0.25f, 500.0f,0.25f, 2, 90.0f)
+            CONDITION.GRTS -> {
+                firstView.configure(-40.0f, 300.0f,0.25f, 2, firstValue ?: 55.0f)
+                secondView.configure(-40.0f, 300.0f,0.25f, 2, secondValue ?: 50.0f)
             }
 
-            CONDITION.TMP2.id -> {
-                first.configure(-40.0f, 300.0f,0.25f, 2, 55.0f)
-                first.configure(-40.0f, 300.0f,0.25f, 2, 50.0f)
+            CONDITION.MAP2 -> {
+                firstView.configure(0.25f, 500.0f,0.25f, 2, firstValue ?: 95.0f)
+                secondView.configure(0.25f, 500.0f,0.25f, 2, secondValue ?: 90.0f)
             }
 
-            CONDITION.INPUT1.id -> {
-                first.configure(0.0f, 1.0f,1.0f, 0, 0.0f)
-                first.configure(0.0f, 1.0f,1.0f, 0, 1.0f)
+            CONDITION.TMP2 -> {
+                firstView.configure(-40.0f, 300.0f,0.25f, 2, firstValue ?: 55.0f)
+                firstView.configure(-40.0f, 300.0f,0.25f, 2, secondValue ?: 50.0f)
             }
 
-            CONDITION.INPUT2.id -> {
-                first.configure(0.0f, 1.0f,1.0f, 0, 0.0f)
-                first.configure(0.0f, 1.0f,1.0f, 0, 1.0f)
+            CONDITION.INPUT1 -> {
+                firstView.configure(0.0f, 1.0f,1.0f, 0, firstValue ?: 0.0f)
+                firstView.configure(0.0f, 1.0f,1.0f, 0, secondValue ?: 1.0f)
             }
 
-            CONDITION.MAF.id -> {
-                first.configure(0.25f, 650.0f,0.10f, 2, 95.0f)
-                second.configure(0.25f, 650.0f,0.10f, 2, 90.0f)
+            CONDITION.INPUT2 -> {
+                firstView.configure(0.0f, 1.0f,1.0f, 0, firstValue ?: 0.0f)
+                firstView.configure(0.0f, 1.0f,1.0f, 0, secondValue ?: 1.0f)
             }
 
-            CONDITION.TPSDOT.id -> {
-                first.configure(0.25f, 500.0f,0.25f, 2, 95.0f)
-                second.configure(0.25f, 500.0f,0.25f, 2, 90.0f)
+            CONDITION.MAF -> {
+                firstView.configure(0.25f, 650.0f,0.10f, 2, firstValue ?: 95.0f)
+                secondView.configure(0.25f, 650.0f,0.10f, 2, secondValue ?: 90.0f)
             }
+
+            CONDITION.TPSDOT -> {
+                firstView.configure(0.25f, 500.0f,0.25f, 2, firstValue ?: 95.0f)
+                secondView.configure(0.25f, 500.0f,0.25f, 2, secondValue ?: 90.0f)
+            }
+
+            CONDITION.GPS -> TODO()
         }
     }
 
