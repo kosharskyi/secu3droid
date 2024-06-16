@@ -30,6 +30,8 @@ import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import android.widget.ArrayAdapter
+import androidx.core.view.isInvisible
+import androidx.core.view.isVisible
 import androidx.lifecycle.lifecycleScope
 import androidx.lifecycle.withResumed
 import kotlinx.coroutines.launch
@@ -90,13 +92,18 @@ class AccelerationFragment : BaseParamFragment() {
 
                         aeType.setText(accelEnrichmentTypesList[it.injAeType], false)
 
+                        aeTime.isInvisible = it.injAeType == 0
                         aeTime.value = it.injAeTime
 
                         aeBalance.value = it.injAeBallance
                         aeMapdoeThrd.value = it.injAeMapdotThrd
 
                         wallwetModel.setText(wallwetModelList[it.wallwetModel], false)
+
+                        xTauStartThrd.isVisible = it.wallwetModel > 0
                         xTauStartThrd.value = it.injXtauSThrd.toInt()
+
+                        xTauFinishThrd.isVisible = it.wallwetModel > 0
                         xTauFinishThrd.value = it.injXtauFThrd.toInt()
                     }
 
@@ -128,6 +135,8 @@ class AccelerationFragment : BaseParamFragment() {
             }
 
             aeType.setOnItemClickListener { _, _, position, _ ->
+                aeTime.isInvisible = position == 0
+
                 packet?.apply {
                     injAeType = position
                     mViewModel.sendPacket(this)
@@ -160,6 +169,9 @@ class AccelerationFragment : BaseParamFragment() {
             }
 
             wallwetModel.setOnItemClickListener { _, _, position, _ ->
+                xTauStartThrd.isVisible = position > 0
+                xTauFinishThrd.isVisible = position > 0
+
                 packet?.apply {
                     wallwetModel = position
                     mViewModel.sendPacket(this)

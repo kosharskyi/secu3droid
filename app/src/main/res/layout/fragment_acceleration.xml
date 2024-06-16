@@ -39,6 +39,7 @@
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintBottom_toBottomOf="parent"
+        tools:visibility="gone"
         />
 
     <ScrollView
@@ -46,6 +47,7 @@
         android:layout_width="match_parent"
         android:layout_height="match_parent"
         android:visibility="gone"
+        tools:visibility="visible"
         >
 
         <LinearLayout
@@ -78,7 +80,7 @@
                 app:title="@string/accel_par_coldacc_mult_title"
                 app:units="@string/units_percents"
                 app:int_value="0"
-                app:int_max_value="299"
+                app:int_max_value="600"
                 app:int_min_value="100"
                 app:int_step="1"
                 />
@@ -134,6 +136,7 @@
             <TextView
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
+                android:layout_marginTop="24dp"
                 android:text="@string/accel_par_ae_ballance_title"
                 />
 
