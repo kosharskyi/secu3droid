@@ -4,12 +4,12 @@ kotlin-ksp = "2.0.0-1.0.21"
 core-ktx = "1.13.1"
 appcompat = "1.7.0"
 
-annotation = "1.8.0"
+annotation = "1.8.2"
 constraintlayout = "2.1.4"
-firebase-bom = "33.1.0"
-fragment-ktx = "1.8.0"
+firebase-bom = "33.1.2"
+fragment-ktx = "1.8.2"
 lifecycle-extensions = "2.2.0"
-lifecycle-viewmodel-ktx = "2.8.2"
+lifecycle-viewmodel-ktx = "2.8.4"
 material = "1.12.0"
 navigation = "2.7.7"
 dagger = "2.51.1"
@@ -23,8 +23,8 @@ speedviewlib = "1.6.1"
 threetenabp = "1.4.7"
 
 junit = "4.13.2"
-androidx-junit = "1.1.5"
-espresso-core = "3.5.1"
+androidx-junit = "1.2.1"
+espresso-core = "3.6.1"
 
 
 [libraries]
