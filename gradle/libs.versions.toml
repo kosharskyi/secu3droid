@@ -1,17 +1,17 @@
 [versions]
-kotlin = "2.0.0" # NOTE: Do NOT forget to update KSP version as well
-kotlin-ksp = "2.0.0-1.0.21"
+kotlin = "2.0.20" # NOTE: Do NOT forget to update KSP version as well
+kotlin-ksp = "2.0.20-1.0.25"
 core-ktx = "1.13.1"
 appcompat = "1.7.0"
 
 annotation = "1.8.2"
 constraintlayout = "2.1.4"
-firebase-bom = "33.1.2"
-fragment-ktx = "1.8.2"
+firebase-bom = "33.2.0"
+fragment-ktx = "1.8.3"
 lifecycle-extensions = "2.2.0"
-lifecycle-viewmodel-ktx = "2.8.4"
+lifecycle-viewmodel-ktx = "2.8.5"
 material = "1.12.0"
-navigation = "2.7.7"
+navigation = "2.8.0"
 dagger = "2.51.1"
 preference-ktx = "1.2.1"
 room = "2.6.1"
