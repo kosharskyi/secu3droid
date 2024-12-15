@@ -74,6 +74,15 @@ data class DiagInputPacket(
     val de: Boolean
         get() = bits.getBitValue(5) > 0
 
+    val ign_i: Boolean
+        get() = bits.getBitValue(6) > 0
+
+    val cond_i: Boolean
+        get() = bits.getBitValue(7) > 0
+
+    val epas_i: Boolean     //for SECU-3i
+        get() = bits.getBitValue(8) > 0
+
     companion object {
 
         internal const val DESCRIPTOR = '='

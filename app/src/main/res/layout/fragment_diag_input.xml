@@ -473,11 +473,67 @@
 
         <!-- ************************************************************* -->
 
+        <CheckBox
+            android:id="@+id/cond_i"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            app:layout_constraintTop_toBottomOf="@id/de"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintEnd_toEndOf="parent"
+            android:text="COND_I"
+            android:button="@null"
+            android:drawableEnd="?android:attr/listChoiceIndicatorMultiple"
+            android:clickable="false"
+            android:focusable="false"
+            android:focusableInTouchMode="false"
+            android:drawableTint="@color/colorPrimaryVariant"
+            />
+
+        <!-- ************************************************************* -->
+
+
+        <CheckBox
+            android:id="@+id/epas_i"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            app:layout_constraintTop_toBottomOf="@id/cond_i"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintEnd_toEndOf="parent"
+            android:text="EPAS_I"
+            android:button="@null"
+            android:drawableEnd="?android:attr/listChoiceIndicatorMultiple"
+            android:clickable="false"
+            android:focusable="false"
+            android:focusableInTouchMode="false"
+            android:drawableTint="@color/colorPrimaryVariant"
+            />
+
+        <!-- ************************************************************* -->
+
+
+        <CheckBox
+            android:id="@+id/ign_i"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            app:layout_constraintTop_toBottomOf="@id/epas_i"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintEnd_toEndOf="parent"
+            android:text="IGN_I"
+            android:button="@null"
+            android:drawableEnd="?android:attr/listChoiceIndicatorMultiple"
+            android:clickable="false"
+            android:focusable="false"
+            android:focusableInTouchMode="false"
+            android:drawableTint="@color/colorPrimaryVariant"
+            />
+
+        <!-- ************************************************************* -->
+
         <TextView
             android:id="@+id/add5_title"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            app:layout_constraintTop_toBottomOf="@id/de"
+            app:layout_constraintTop_toBottomOf="@id/ign_i"
             app:layout_constraintStart_toStartOf="parent"
             android:layout_marginTop="16dp"
             android:text="ADD_IO5"
@@ -598,6 +654,24 @@
             android:text="@string/units_volts"
             />
 
+
+        <!-- ************************************************************* -->
+
+        <CheckBox
+            android:id="@+id/gpa4_i"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            app:layout_constraintTop_toBottomOf="@id/add8_units"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintEnd_toEndOf="parent"
+            android:text="GPA4_I"
+            android:button="@null"
+            android:drawableEnd="?android:attr/listChoiceIndicatorMultiple"
+            android:clickable="false"
+            android:focusable="false"
+            android:focusableInTouchMode="false"
+            android:drawableTint="@color/colorPrimaryVariant"
+            />
 
         <!-- ************************************************************* -->
 

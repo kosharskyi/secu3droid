@@ -58,130 +58,139 @@ class DiagOutputFragment : Fragment() {
             checkBlDeTachOutputs()
         }
 
-        mBinding.ignOut1.setOnCheckedChangeListener { _, isChecked ->
-            mViewModel.outputPacket.ignOut1 = isChecked
-            mViewModel.sendDiagOutPacket()
-        }
-        mBinding.ignOut2.setOnCheckedChangeListener { _, isChecked ->
-            mViewModel.outputPacket.ignOut2 = isChecked
-            mViewModel.sendDiagOutPacket()
-        }
-        mBinding.ignOut3.setOnCheckedChangeListener { _, isChecked ->
-            mViewModel.outputPacket.ignOut3 = isChecked
-            mViewModel.sendDiagOutPacket()
-        }
-        mBinding.ignOut4.setOnCheckedChangeListener { _, isChecked ->
-            mViewModel.outputPacket.ignOut4 = isChecked
-            mViewModel.sendDiagOutPacket()
-        }
-        mBinding.ignOut5.setOnCheckedChangeListener { _, isChecked ->
-            mViewModel.outputPacket.ignOut5 = isChecked
-            mViewModel.sendDiagOutPacket()
-        }
+        mBinding.apply {
+            ignOut1.setOnCheckedChangeListener { _, isChecked ->
+                mViewModel.outputPacket.ignOut1 = isChecked
+                mViewModel.sendDiagOutPacket()
+            }
+            ignOut2.setOnCheckedChangeListener { _, isChecked ->
+                mViewModel.outputPacket.ignOut2 = isChecked
+                mViewModel.sendDiagOutPacket()
+            }
+            ignOut3.setOnCheckedChangeListener { _, isChecked ->
+                mViewModel.outputPacket.ignOut3 = isChecked
+                mViewModel.sendDiagOutPacket()
+            }
+            ignOut4.setOnCheckedChangeListener { _, isChecked ->
+                mViewModel.outputPacket.ignOut4 = isChecked
+                mViewModel.sendDiagOutPacket()
+            }
+            ignOut5.setOnCheckedChangeListener { _, isChecked ->
+                mViewModel.outputPacket.ignOut5 = isChecked
+                mViewModel.sendDiagOutPacket()
+            }
 
-        mBinding.addIo1.setOnCheckedChangeListener { _, isChecked ->
-            mViewModel.outputPacket.addIo1 = isChecked
-            mViewModel.sendDiagOutPacket()
-        }
-        mBinding.addIo2.setOnCheckedChangeListener { _, isChecked ->
-            mViewModel.outputPacket.addIo2 = isChecked
-            mViewModel.sendDiagOutPacket()
-        }
+            addIo1.setOnCheckedChangeListener { _, isChecked ->
+                mViewModel.outputPacket.addIo1 = isChecked
+                mViewModel.sendDiagOutPacket()
+            }
+            addIo2.setOnCheckedChangeListener { _, isChecked ->
+                mViewModel.outputPacket.addIo2 = isChecked
+                mViewModel.sendDiagOutPacket()
+            }
 
-        mBinding.ie.setOnCheckedChangeListener { _, isChecked ->
-            mViewModel.outputPacket.ie = isChecked
-            mViewModel.sendDiagOutPacket()
-        }
-        mBinding.fe.setOnCheckedChangeListener { _, isChecked ->
-            mViewModel.outputPacket.fe = isChecked
-            mViewModel.sendDiagOutPacket()
-        }
-        mBinding.ecf.setOnCheckedChangeListener { _, isChecked ->
-            mViewModel.outputPacket.ecf = isChecked
-            mViewModel.sendDiagOutPacket()
-        }
-        mBinding.ce.setOnCheckedChangeListener { _, isChecked ->
-            mViewModel.outputPacket.ce = isChecked
-            mViewModel.sendDiagOutPacket()
-        }
-        mBinding.stBlock.setOnCheckedChangeListener { _, isChecked ->
-            mViewModel.outputPacket.stBlock = isChecked
-            mViewModel.sendDiagOutPacket()
-        }
-        mBinding.bl.setOnCheckedChangeListener { _, isChecked ->
-            mViewModel.outputPacket.bl = isChecked
-            mViewModel.sendDiagOutPacket()
-        }
-        mBinding.de.setOnCheckedChangeListener { _, isChecked ->
-            mViewModel.outputPacket.de = isChecked
-            mViewModel.sendDiagOutPacket()
-        }
+            ie.setOnCheckedChangeListener { _, isChecked ->
+                mViewModel.outputPacket.ie = isChecked
+                mViewModel.sendDiagOutPacket()
+            }
+            fe.setOnCheckedChangeListener { _, isChecked ->
+                mViewModel.outputPacket.fe = isChecked
+                mViewModel.sendDiagOutPacket()
+            }
+            ecf.setOnCheckedChangeListener { _, isChecked ->
+                mViewModel.outputPacket.ecf = isChecked
+                mViewModel.sendDiagOutPacket()
+            }
+            ce.setOnCheckedChangeListener { _, isChecked ->
+                mViewModel.outputPacket.ce = isChecked
+                mViewModel.sendDiagOutPacket()
+            }
+            stBlock.setOnCheckedChangeListener { _, isChecked ->
+                mViewModel.outputPacket.stBlock = isChecked
+                mViewModel.sendDiagOutPacket()
+            }
+            bl.setOnCheckedChangeListener { _, isChecked ->
+                mViewModel.outputPacket.bl = isChecked
+                mViewModel.sendDiagOutPacket()
+            }
+            de.setOnCheckedChangeListener { _, isChecked ->
+                mViewModel.outputPacket.de = isChecked
+                mViewModel.sendDiagOutPacket()
+            }
 
-        mBinding.injO1.setOnCheckedChangeListener { _, isChecked ->
-            mViewModel.outputPacket.injO1 = isChecked
-            mViewModel.sendDiagOutPacket()
-        }
-        mBinding.injO2.setOnCheckedChangeListener { _, isChecked ->
-            mViewModel.outputPacket.injO2 = isChecked
-            mViewModel.sendDiagOutPacket()
-        }
-        mBinding.injO3.setOnCheckedChangeListener { _, isChecked ->
-            mViewModel.outputPacket.injO3 = isChecked
-            mViewModel.sendDiagOutPacket()
-        }
-        mBinding.injO4.setOnCheckedChangeListener { _, isChecked ->
-            mViewModel.outputPacket.injO4 = isChecked
-            mViewModel.sendDiagOutPacket()
-        }
-        mBinding.injO5.setOnCheckedChangeListener { _, isChecked ->
-            mViewModel.outputPacket.injO5 = isChecked
-            mViewModel.sendDiagOutPacket()
-        }
+            injO1.setOnCheckedChangeListener { _, isChecked ->
+                mViewModel.outputPacket.injO1 = isChecked
+                mViewModel.sendDiagOutPacket()
+            }
+            injO2.setOnCheckedChangeListener { _, isChecked ->
+                mViewModel.outputPacket.injO2 = isChecked
+                mViewModel.sendDiagOutPacket()
+            }
+            injO3.setOnCheckedChangeListener { _, isChecked ->
+                mViewModel.outputPacket.injO3 = isChecked
+                mViewModel.sendDiagOutPacket()
+            }
+            injO4.setOnCheckedChangeListener { _, isChecked ->
+                mViewModel.outputPacket.injO4 = isChecked
+                mViewModel.sendDiagOutPacket()
+            }
+            injO5.setOnCheckedChangeListener { _, isChecked ->
+                mViewModel.outputPacket.injO5 = isChecked
+                mViewModel.sendDiagOutPacket()
+            }
 
-        mBinding.stblO.setOnCheckedChangeListener { _, isChecked ->
-            mViewModel.outputPacket.stblO = isChecked
-            mViewModel.sendDiagOutPacket()
-        }
-        mBinding.celO.setOnCheckedChangeListener { _, isChecked ->
-            mViewModel.outputPacket.celO = isChecked
-            mViewModel.sendDiagOutPacket()
-        }
-        mBinding.fpmpO.setOnCheckedChangeListener { _, isChecked ->
-            mViewModel.outputPacket.fpmpO = isChecked
-            mViewModel.sendDiagOutPacket()
-        }
-        mBinding.pwrrO.setOnCheckedChangeListener { _, isChecked ->
-            mViewModel.outputPacket.pwrrO = isChecked
-            mViewModel.sendDiagOutPacket()
-        }
-        mBinding.evapO.setOnCheckedChangeListener { _, isChecked ->
-            mViewModel.outputPacket.evapO = isChecked
-            mViewModel.sendDiagOutPacket()
-        }
-        mBinding.o2shO.setOnCheckedChangeListener { _, isChecked ->
-            mViewModel.outputPacket.o2shO = isChecked
-            mViewModel.sendDiagOutPacket()
-        }
-        mBinding.condO.setOnCheckedChangeListener { _, isChecked ->
-            mViewModel.outputPacket.condO = isChecked
-            mViewModel.sendDiagOutPacket()
-        }
-        mBinding.addO2.setOnCheckedChangeListener { _, isChecked ->
-            mViewModel.outputPacket.addO2 = isChecked
-            mViewModel.sendDiagOutPacket()
-        }
+            stblO.setOnCheckedChangeListener { _, isChecked ->
+                mViewModel.outputPacket.stblO = isChecked
+                mViewModel.sendDiagOutPacket()
+            }
+            celO.setOnCheckedChangeListener { _, isChecked ->
+                mViewModel.outputPacket.celO = isChecked
+                mViewModel.sendDiagOutPacket()
+            }
+            fpmpO.setOnCheckedChangeListener { _, isChecked ->
+                mViewModel.outputPacket.fpmpO = isChecked
+                mViewModel.sendDiagOutPacket()
+            }
+            pwrrO.setOnCheckedChangeListener { _, isChecked ->
+                mViewModel.outputPacket.pwrrO = isChecked
+                mViewModel.sendDiagOutPacket()
+            }
+            evapO.setOnCheckedChangeListener { _, isChecked ->
+                mViewModel.outputPacket.evapO = isChecked
+                mViewModel.sendDiagOutPacket()
+            }
+            o2shO.setOnCheckedChangeListener { _, isChecked ->
+                mViewModel.outputPacket.o2shO = isChecked
+                mViewModel.sendDiagOutPacket()
+            }
+            condO.setOnCheckedChangeListener { _, isChecked ->
+                mViewModel.outputPacket.condO = isChecked
+                mViewModel.sendDiagOutPacket()
+            }
+            addO2.setOnCheckedChangeListener { _, isChecked ->
+                mViewModel.outputPacket.addO2 = isChecked
+                mViewModel.sendDiagOutPacket()
+            }
 
-        mBinding.tachO.setOnCheckedChangeListener { _, isChecked ->
-            mViewModel.outputPacket.tachO = isChecked
-            mViewModel.sendDiagOutPacket()
+            tachO.setOnCheckedChangeListener { _, isChecked ->
+                mViewModel.outputPacket.tachO = isChecked
+                mViewModel.sendDiagOutPacket()
+            }
+
+            gpa6O.setOnCheckedChangeListener { _, isChecked ->
+                mViewModel.outputPacket.tachO = isChecked
+                mViewModel.sendDiagOutPacket()
+            }
         }
 
         checkBlDeTachOutputs()
     }
 
     private fun checkBlDeTachOutputs() {
-        mBinding.bl.isVisible = mViewModel.outputPacket.enableBlDeTesting
-        mBinding.de.isVisible = mViewModel.outputPacket.enableBlDeTesting
-        mBinding.tachO.isVisible = mViewModel.outputPacket.enableTachOtesting
+        mBinding.apply {
+            bl.isVisible = mViewModel.outputPacket.enableBlDeTesting
+            de.isVisible = mViewModel.outputPacket.enableBlDeTesting
+            tachO.isVisible = mViewModel.outputPacket.enableTachOtesting
+        }
     }
 }

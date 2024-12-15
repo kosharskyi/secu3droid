@@ -473,6 +473,21 @@
 
         <!-- ************************************************************* -->
 
+        <CheckBox
+            android:id="@+id/gpa6_o"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            app:layout_constraintTop_toBottomOf="@id/tach_o"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintEnd_toEndOf="parent"
+            android:text="GPA6_O"
+            android:button="@null"
+            android:drawableEnd="?android:attr/listChoiceIndicatorMultiple"
+            tools:checked="true"
+            />
+
+        <!-- ************************************************************* -->
+
     </androidx.constraintlayout.widget.ConstraintLayout>
 
 </ScrollView>
