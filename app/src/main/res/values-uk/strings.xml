@@ -298,6 +298,14 @@
     <string name="sensors_frag_status_check_engine_label">Check Engine</string>
     <string name="sensors_frag_status_rev_lim_fuel_cut_label">Відсікання палива по звор.</string>
     <string name="sensors_frag_status_ae_label">Збагач. при прискор.</string>
+    <string name="sensors_frag_status_gpa4_input_label">Вхід GPA4_I</string>
+    <string name="sensors_frag_status_input1_label">Вхід INPUT1</string>
+    <string name="sensors_frag_status_input2_label">Вхід INPUT2</string>
+    <string name="sensors_frag_status_auto_i_label">Вхід AUTO_I</string>
+    <string name="sensors_frag_status_mapsel0_label">Вхід MAPSEL0</string>
+    <string name="sensors_frag_status_refprs_i_label">Вхід REFPRS_I</string>
+    <string name="sensors_frag_status_altrn_i_label">Вхід ALTRN_I</string>
+    
     <string name="raw_sensors_frag_map_sensor_label">Датчик абсолютного Тиску, В:</string>
     <string name="raw_sensors_frag_voltage_label">Напруга бортовох мережі, В:</string>
     <string name="raw_sensors_frag_coolant_sensor_label">Датчик температури ОР, В:</string>

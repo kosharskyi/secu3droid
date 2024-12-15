@@ -241,6 +241,33 @@ data class SensorsPacket(
 
 
 
+
+    //Additional flags
+    val corrIdlve: Int
+        get() = additionalFlags.getBitValue(0)
+
+    val sensGpa4i: Int      // GPA4_I input (digital)
+        get() = additionalFlags.getBitValue(1)
+
+    val sensInput1: Int      // INPUT 1
+        get() = additionalFlags.getBitValue(2)
+
+    val sensInput2: Int      // INPUT 2
+        get() = additionalFlags.getBitValue(3)
+
+    val sensAutoI: Int      // AUTO_I
+        get() = additionalFlags.getBitValue(4)
+
+    val sensMapsel0: Int      // MAPSEL0
+        get() = additionalFlags.getBitValue(5)
+
+    val sensRefprs_i: Int      // REFPRS_I
+        get() = additionalFlags.getBitValue(6)
+
+    val sensAltrn_i: Int      // ALTRN_I
+        get() = additionalFlags.getBitValue(7)
+
+
     companion object {
 
         private const val fffConst = 1600

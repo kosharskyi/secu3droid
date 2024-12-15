@@ -460,6 +460,13 @@
     <string name="sensors_frag_status_check_engine_label">Check Engine</string>
     <string name="sensors_frag_status_rev_lim_fuel_cut_label">Rev. lim. fuel cut.</string>
     <string name="sensors_frag_status_ae_label">AE.</string>
+    <string name="sensors_frag_status_gpa4_input_label">GPA4_I input</string>
+    <string name="sensors_frag_status_input1_label">INPUT1 input</string>
+    <string name="sensors_frag_status_input2_label">INPUT2 input</string>
+    <string name="sensors_frag_status_auto_i_label">AUTO_I input</string>
+    <string name="sensors_frag_status_mapsel0_label">MAPSEL0 input</string>
+    <string name="sensors_frag_status_refprs_i_label">REFPRS_I input</string>
+    <string name="sensors_frag_status_altrn_i_label">ALTRN_I input</string>
     <string name="raw_sensors_frag_map_sensor_label">MAP sensor, V:</string>
     <string name="raw_sensors_frag_voltage_label">Voltage, V:</string>
     <string name="raw_sensors_frag_coolant_sensor_label">Coolant sensor, V:</string>

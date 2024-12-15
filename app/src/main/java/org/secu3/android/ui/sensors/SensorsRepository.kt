@@ -166,6 +166,13 @@ class SensorsRepository @Inject constructor(
             IndicatorType.UNIV_OUT4 -> packet.uniOut3Bit > 0
             IndicatorType.UNIV_OUT5 -> packet.uniOut4Bit > 0
             IndicatorType.UNIV_OUT6 -> packet.uniOut5Bit > 0
+            IndicatorType.GPA4_I -> packet.sensGpa4i > 0
+            IndicatorType.INPUT1 -> packet.sensInput1 > 0
+            IndicatorType.INPUT2 -> packet.sensInput2 > 0
+            IndicatorType.AUTO_I -> packet.sensAutoI > 0
+            IndicatorType.MAPSEL0 -> packet.sensMapsel0 > 0
+            IndicatorType.REFPRS_I -> packet.sensRefprs_i > 0
+            IndicatorType.ALTRN_I -> packet.sensAltrn_i > 0
         }
 
         return IndicatorItem(state, value)
