@@ -34,6 +34,7 @@ import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.sample
 import org.secu3.android.Secu3Repository
 import org.secu3.android.models.packets.input.SensorsPacket
+import org.secu3.android.ui.sensors.models.GaugeType
 import org.secu3.android.utils.UserPrefs
 import org.secu3.android.utils.Task
 import javax.inject.Inject
@@ -42,6 +43,36 @@ import javax.inject.Inject
 class DashboardViewModel @Inject constructor(private val secu3Repository: Secu3Repository,
                                              private val mPrefs: UserPrefs) : ViewModel() {
 
+    val packetLiveData: LiveData<DashboardViewData>
+        get() = secu3Repository.receivedPacketFlow
+            .filter { it is SensorsPacket }
+            .sample(500)
+            .map { (it as SensorsPacket) }
+            .map {
+                DashboardViewData(
+                    it.rpm.toFloat(), it.temperature, it.speed, it.map, it.voltage,
+                    it.checkEngineBit > 0,
+                    it.gasBit > 0,
+                    it.ephhValveBit > 0,
+                    it.epmValveBit > 0,
+                    it.carbBit > 0,
+                    it.coolFanBit > 0,
+
+                )
+            }.asLiveData()
+
+    val statusLiveData: LiveData<Boolean>
+        get() = secu3Repository.connectionStatusLiveData
+
+    val dashboardConfig: DashboardConfig = mPrefs.dashboardConfig ?: DashboardConfig(
+        GaugeConfig(GaugeType.RPM, ),
+        GaugeConfig(GaugeType.TEMPERATURE),
+        GaugeConfig(GaugeType.VEHICLE_SPEED),
+        GaugeConfig(GaugeType.MAP),
+        GaugeConfig(GaugeType.VOLTAGE)
+    )
+
+
     fun isBluetoothDeviceAddressNotSelected(): Boolean {
         return mPrefs.bluetoothDeviceName.isNullOrBlank()
     }
@@ -49,14 +80,5 @@ class DashboardViewModel @Inject constructor(private val secu3Repository: Secu3R
     fun setTask(task: Task) {
         secu3Repository.sendNewTask(task)
     }
-
-    val packetLiveData: LiveData<SensorsPacket>
-        get() = secu3Repository.receivedPacketFlow
-            .filter { it is SensorsPacket }
-            .sample(500)
-            .map { (it as SensorsPacket) }.asLiveData()
-
-    val statusLiveData: LiveData<Boolean>
-        get() = secu3Repository.connectionStatusLiveData
 
 }

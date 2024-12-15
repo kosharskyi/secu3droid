@@ -32,7 +32,7 @@
     >
 
     <com.github.anastr.speedviewlib.SpeedView
-        android:id="@+id/speed"
+        android:id="@+id/center"
         android:layout_width="wrap_content"
         android:layout_height="0dp"
         android:layout_marginTop="16dp"
@@ -57,21 +57,21 @@
         android:id="@+id/odometer"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        app:layout_constraintStart_toStartOf="@id/speed"
-        app:layout_constraintEnd_toEndOf="@id/speed"
-        app:layout_constraintBottom_toBottomOf="@id/speed"
+        app:layout_constraintStart_toStartOf="@id/center"
+        app:layout_constraintEnd_toEndOf="@id/center"
+        app:layout_constraintBottom_toBottomOf="@id/center"
         android:layout_marginBottom="8dp"
         android:textSize="22sp"
         tools:text="0000000,00 Km"
         />
 
     <com.github.anastr.speedviewlib.SpeedView
-        android:id="@+id/temperature"
+        android:id="@+id/top_rigth"
         android:layout_width="wrap_content"
         android:layout_height="0dp"
         app:layout_constraintTop_toTopOf="parent"
         app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintBottom_toTopOf="@id/voltage"
+        app:layout_constraintBottom_toTopOf="@id/bottom_right"
         android:layout_margin="8dp"
         app:sv_speedometerWidth="10dp"
         app:sv_indicatorWidth="5dp"
@@ -86,10 +86,10 @@
         />
 
     <com.github.anastr.speedviewlib.SpeedView
-        android:id="@+id/voltage"
+        android:id="@+id/bottom_right"
         android:layout_width="wrap_content"
         android:layout_height="0dp"
-        app:layout_constraintTop_toBottomOf="@id/temperature"
+        app:layout_constraintTop_toBottomOf="@id/top_rigth"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintBottom_toTopOf="@id/indicators"
         android:layout_margin="8dp"
@@ -106,12 +106,12 @@
         />
 
     <com.github.anastr.speedviewlib.SpeedView
-        android:id="@+id/rpm"
+        android:id="@+id/top_left"
         android:layout_width="wrap_content"
         android:layout_height="0dp"
         app:layout_constraintTop_toTopOf="parent"
         app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintBottom_toTopOf="@id/map"
+        app:layout_constraintBottom_toTopOf="@id/bottom_left"
         android:layout_margin="8dp"
         app:sv_speedometerWidth="10dp"
         app:sv_indicatorWidth="5dp"
@@ -128,10 +128,10 @@
         />
 
     <com.github.anastr.speedviewlib.SpeedView
-        android:id="@+id/map"
+        android:id="@+id/bottom_left"
         android:layout_width="wrap_content"
         android:layout_height="0dp"
-        app:layout_constraintTop_toBottomOf="@id/rpm"
+        app:layout_constraintTop_toBottomOf="@id/top_left"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintBottom_toTopOf="@id/indicators"
         android:layout_margin="8dp"

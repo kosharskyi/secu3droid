@@ -26,7 +26,6 @@ package org.secu3.android.ui.dashboard
 
 import android.content.Context
 import android.content.pm.ActivityInfo
-import android.graphics.Color
 import android.os.Bundle
 import android.view.LayoutInflater
 import android.view.View
@@ -36,19 +35,13 @@ import androidx.core.content.ContextCompat
 import androidx.core.view.isVisible
 import androidx.fragment.app.Fragment
 import androidx.fragment.app.viewModels
-import com.github.anastr.speedviewlib.components.Section
 import dagger.hilt.android.AndroidEntryPoint
 import org.secu3.android.R
 import org.secu3.android.databinding.FragmentDashboardBinding
-import org.secu3.android.models.packets.input.SensorsPacket
-import org.secu3.android.ui.sensors.models.GaugeType
 import org.secu3.android.utils.Task
 
 @AndroidEntryPoint
 class DashBoardFragment : Fragment() {
-
-    private var time: Long = 0
-    private var delta = 0f
 
     private var mBinding: FragmentDashboardBinding? = null
 
@@ -69,34 +62,63 @@ class DashBoardFragment : Fragment() {
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
 
+
         mBinding?.apply {
-            speed.clearSections()
-            speed.addSections(
-                Section(0.0f, 1f, Color.GREEN, width = speed.speedometerWidth)
-            )
 
-            rpm.clearSections()
-            rpm.addSections(GaugeType.RPM.getSections(requireContext(), speed.speedometerWidth))
+            with(mViewModel.dashboardConfig.center) {
+                center.clearSections()
+                center.tickNumber = type.tickCount
+                center.minSpeed = min
+                center.maxSpeed = max
+                center.unit = getString(type.units)
+                center.addSections(
+                    type.getSections(requireContext(), center.speedometerWidth)
+                )
+            }
 
-            voltage.clearSections()
-            voltage.addSections(
-                Section(0.0f, 0.22f, Color.RED, width = speed.speedometerWidth),
-                Section(0.22f, 0.67f, Color.GREEN, width = speed.speedometerWidth),
-                Section(0.67f, 1f, Color.RED, width = speed.speedometerWidth)
-            )
+            with(mViewModel.dashboardConfig.topLeft) {
+                topLeft.clearSections()
+                topLeft.minSpeed = min
+                topLeft.tickNumber = type.tickCount
+                topLeft.maxSpeed = max
+                topLeft.unit = getString(type.units)
+                topLeft.addSections(
+                    type.getSections(requireContext(), center.speedometerWidth)
+                )
+            }
 
-            temperature.clearSections()
-            temperature.addSections(
-                Section(0.0f, 0.8f, Color.GRAY, width = speed.speedometerWidth),
-                Section(0.8f, 1f, Color.RED, width = speed.speedometerWidth)
-            )
+            with(mViewModel.dashboardConfig.bottomRight) {
+                bottomRight.clearSections()
+                bottomRight.minSpeed = min
+                bottomRight.tickNumber = type.tickCount
+                bottomRight.maxSpeed = max
+                bottomRight.unit = getString(type.units)
+                bottomRight.addSections(
+                    type.getSections(requireContext(), center.speedometerWidth)
+                )
+            }
 
-            map.clearSections()
-            map.addSections(
-                Section(0.0f, 0.2f, Color.GRAY, width = speed.speedometerWidth),
-                Section(0.2f, 0.8f, Color.GREEN, width = speed.speedometerWidth),
-                Section(0.8f, 1f, Color.RED, width = speed.speedometerWidth)
-            )
+             with(mViewModel.dashboardConfig.topRight) {
+                 topRigth.clearSections()
+                 topRigth.minSpeed = min
+                 topRigth.tickNumber = type.tickCount
+                 topRigth.maxSpeed = max
+                 topRigth.unit = getString(type.units)
+                 topRigth.addSections(
+                     type.getSections(requireContext(), center.speedometerWidth)
+                 )
+             }
+
+            with(mViewModel.dashboardConfig.bottomLeft) {
+                bottomLeft.clearSections()
+                bottomLeft.minSpeed = min
+                bottomLeft.tickNumber = type.tickCount
+                bottomLeft.maxSpeed = max
+                bottomLeft.unit = getString(type.units)
+                bottomLeft.addSections(
+                    type.getSections(requireContext(), center.speedometerWidth)
+                )
+            }
         }
 
         if (mViewModel.isBluetoothDeviceAddressNotSelected()) {
@@ -124,32 +146,26 @@ class DashBoardFragment : Fragment() {
         mViewModel.setTask(Task.Secu3ReadSensors)
     }
 
-    private fun updatePacket(packet: SensorsPacket) {
-        if (time != 0L) {
-            delta = ((System.currentTimeMillis() - time) / 1000.0).toFloat()
-        }
-
-        time = System.currentTimeMillis()
+    private fun updatePacket(data: DashboardViewData) {
 
         mBinding?.apply {
 
-            speed.setSpeedAt(packet.speed)
-            odometer.text = "%.2f km".format(packet.distance)
+            topLeft.setSpeedAt(data.topLeft)
+            topRigth.setSpeedAt(data.topRight)
 
-            map.setSpeedAt(packet.map)
+            center.setSpeedAt(data.center)
 
-            temperature.setSpeedAt(packet.temperature)
+            bottomLeft.setSpeedAt(data.bottomLeft)
+            bottomRight.setSpeedAt(data.bottomRight)
 
-            voltage.setSpeedAt(packet.voltage)
+//            odometer.text = "%.2f km".format(data.distance)
 
-            rpm.setSpeedAt(packet.rpm.toFloat())
-
-            ledCheckEngine.isVisible = packet.checkEngineBit > 0
-            ledGasoline.isVisible = packet.gasBit > 0
-            ledEco.isVisible = packet.ephhValveBit > 0
-            ledPower.isVisible = packet.epmValveBit > 0
-            ledChoke.isVisible = packet.carbBit > 0
-            ledFan.isVisible = packet.coolFanBit > 0
+            ledCheckEngine.isVisible = data.ledCheckEngine
+            ledGasoline.isVisible = data.ledGasoline
+            ledEco.isVisible = data.ledEco
+            ledPower.isVisible = data.ledPower
+            ledChoke.isVisible = data.ledChoke
+            ledFan.isVisible = data.ledFan
         }
     }
 
