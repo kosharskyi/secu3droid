@@ -46,20 +46,12 @@ class DashboardViewModel @Inject constructor(private val secu3Repository: Secu3R
     val packetLiveData: LiveData<DashboardViewData>
         get() = secu3Repository.receivedPacketFlow
             .filter { it is SensorsPacket }
-            .sample(500)
+            .sample(300)
             .map { (it as SensorsPacket) }
             .map {
-                DashboardViewData(
-                    it.rpm.toFloat(), it.temperature, it.speed, it.map, it.voltage,
-                    it.checkEngineBit > 0,
-                    it.gasBit > 0,
-                    it.ephhValveBit > 0,
-                    it.epmValveBit > 0,
-                    it.carbBit > 0,
-                    it.coolFanBit > 0,
-
-                )
-            }.asLiveData()
+                DashboardViewData.inflate(dashboardConfig, it)
+            }
+            .asLiveData()
 
     val statusLiveData: LiveData<Boolean>
         get() = secu3Repository.connectionStatusLiveData
@@ -72,6 +64,9 @@ class DashboardViewModel @Inject constructor(private val secu3Repository: Secu3R
         GaugeConfig(GaugeType.VOLTAGE)
     )
 
+    fun saveConfig() {
+        mPrefs.dashboardConfig = dashboardConfig
+    }
 
     fun isBluetoothDeviceAddressNotSelected(): Boolean {
         return mPrefs.bluetoothDeviceName.isNullOrBlank()

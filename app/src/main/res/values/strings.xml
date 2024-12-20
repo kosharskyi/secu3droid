@@ -484,6 +484,7 @@
     <string name="service_working_in_background">Secu3Droid working in background</string>
     <string name="exit">Exit</string>
     <string name="select_gauge_to_add">Select gauge to add</string>
+    <string name="select_gauge">Select another gauge</string>
     <string name="select_indicator_to_add">Select indicator to add</string>
     <string name="save">Save</string>
     <string name="delete">Delete</string>

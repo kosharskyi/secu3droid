@@ -30,6 +30,7 @@ import android.content.Context
 import androidx.core.content.ContextCompat
 import com.github.anastr.speedviewlib.components.Section
 import org.secu3.android.R
+import org.secu3.android.models.packets.input.SensorsPacket
 
 enum class GaugeType (val title: Int, val minValue: Float, val maxValue: Float, val units: Int, val isInteger: Boolean, val tickCount: Int, private val sections: List<Section> = listOf()) {
 
@@ -290,6 +291,61 @@ enum class GaugeType (val title: Int, val minValue: Float, val maxValue: Float, 
     fun getSections(context: Context, width: Float): List<Section> {
         return sections.map {
             Section(it.startOffset, it.endOffset, ContextCompat.getColor(context, it.color), width)
+        }
+    }
+
+    fun getGaugeItem(packet: SensorsPacket): Float {
+        return when (this) {
+            RPM -> packet.rpm.toFloat()
+            MAP -> packet.map
+            MAP_TURBO -> packet.map
+            VOLTAGE -> packet.voltage
+            CURRENT_ANGLE -> packet.currentAngle
+            TEMPERATURE -> packet.temperature
+            ADD1 -> packet.addI1
+            ADD2 -> packet.addI2
+            INJ_PW -> packet.injPw
+            IAT -> packet.airtempSensor
+            EGO_CORR -> packet.lambda[0]
+            CHOKE_POSITION -> packet.chokePosition
+            AIR_FLOW -> packet.airflow.toFloat()
+            VEHICLE_SPEED -> packet.speed
+            TPS_DOT -> packet.tpsdot.toFloat()
+            MAP2 ->packet.map2
+            DIFF_PRESSURE -> packet.mapd
+            IAT2 -> packet.tmp2
+            FUEL_CONSUMPTION -> packet.cons_fuel
+            KNOCK_RETARD -> packet.knockRetard
+            KNOCK_SIGNAL -> packet.knockValue
+            WBO_AFR -> packet.sensAfr[0]
+            IAC_VALVE -> packet.tps
+            GAS_DISPENSER -> packet.gasDosePosition
+            SYNTHETIC_LOAD -> packet.load
+            BEGIN_INJ_PHASE -> packet.injTimBegin
+            END_INJ_PHASE -> packet.injTimEnd
+            FUEL_CONSUMPTION_HZ -> packet.fuelFlowFrequency
+            GRTS -> packet.grts
+            FUEL_LEVEL -> packet.ftls
+            EXHAUST_GAS_TEMP -> packet.egts
+            OIL_PRESSURE -> packet.ops
+            INJ_DUTY -> packet.sens_injDuty
+            MAF -> packet.sens_maf
+            FAN_DUTY -> packet.ventDuty
+            MAP_DOT -> packet.mapdot.toFloat()
+            FUEL_TEMP -> packet.fts
+            EGO_CORR2 -> packet.lambda[1]
+            WBO_AFR2 -> packet.sensAfr[1]
+            WBO_AFR_TABL -> packet.corrAfr
+            AFR_DIFF -> {
+                val difAfr = packet.sensAfr[0] - packet.corrAfr
+                difAfr
+            }
+            AFR_DIFF2 -> {
+                val difAfr = packet.sensAfr[1] - packet.corrAfr
+                difAfr
+            }
+
+            GAS_PRESSURE_SENS -> packet.gasPressureSensor
         }
     }
 }

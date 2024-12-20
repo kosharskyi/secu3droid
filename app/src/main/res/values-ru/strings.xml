@@ -326,6 +326,7 @@
     <string name="service_working_in_background">Secu3Droid работает в фоне</string>
     <string name="exit">Выход</string>
     <string name="select_gauge_to_add">Добавить прибор</string>
+    <string name="select_gauge">Заменить прибор на</string>
     <string name="select_indicator_to_add">Добавить индикатор</string>
     <string name="save">Сохранить</string>
     <string name="delete">Удалить</string>

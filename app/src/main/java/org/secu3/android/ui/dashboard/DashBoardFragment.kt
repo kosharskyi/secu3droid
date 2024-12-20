@@ -35,9 +35,12 @@ import androidx.core.content.ContextCompat
 import androidx.core.view.isVisible
 import androidx.fragment.app.Fragment
 import androidx.fragment.app.viewModels
+import com.github.anastr.speedviewlib.SpeedView
+import com.google.android.material.dialog.MaterialAlertDialogBuilder
 import dagger.hilt.android.AndroidEntryPoint
 import org.secu3.android.R
 import org.secu3.android.databinding.FragmentDashboardBinding
+import org.secu3.android.ui.sensors.models.GaugeType
 import org.secu3.android.utils.Task
 
 @AndroidEntryPoint
@@ -59,6 +62,49 @@ class DashBoardFragment : Fragment() {
     }
 
 
+    private fun showGaugeSelectDialog(view: SpeedView) {
+        val gaugesNames = GaugeType.entries.map { it.title }.map { getString(it) }.toTypedArray()
+
+        MaterialAlertDialogBuilder(requireContext())
+            .setTitle(getString(R.string.select_gauge))
+            .setItems(gaugesNames) { dialog, which ->
+
+                val gauge = GaugeType.entries[which]
+
+                mBinding?.apply {
+                    val config = when (view) {
+                        center -> { mViewModel.dashboardConfig.center }
+                        topLeft -> { mViewModel.dashboardConfig.topLeft }
+                        topRigth -> { mViewModel.dashboardConfig.topRight }
+                        bottomLeft -> { mViewModel.dashboardConfig.bottomLeft }
+                        bottomRight -> { mViewModel.dashboardConfig.bottomRight }
+                        else -> null
+                    }
+
+                    config?.let {
+                        it.type = gauge
+                        mViewModel.saveConfig()
+                        initGauge(view, it)
+                    }
+                }
+            }.show()
+    }
+
+
+    private fun initGauge(view: SpeedView, gaugeConfig: GaugeConfig) {
+        with(gaugeConfig) {
+            view.clearSections()
+            view.tickNumber = type.tickCount
+            view.minSpeed = min
+            view.maxSpeed = max
+            view.unit = getString(type.units)
+            view.addSections(
+                type.getSections(requireContext(), mBinding!!.center.speedometerWidth)
+            )
+
+        }
+    }
+
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
 
@@ -66,58 +112,39 @@ class DashBoardFragment : Fragment() {
         mBinding?.apply {
 
             with(mViewModel.dashboardConfig.center) {
-                center.clearSections()
-                center.tickNumber = type.tickCount
-                center.minSpeed = min
-                center.maxSpeed = max
-                center.unit = getString(type.units)
-                center.addSections(
-                    type.getSections(requireContext(), center.speedometerWidth)
-                )
+                initGauge(center, this)
+
+                center.setOnClickListener {
+                    showGaugeSelectDialog(it as SpeedView)
+                }
             }
 
             with(mViewModel.dashboardConfig.topLeft) {
-                topLeft.clearSections()
-                topLeft.minSpeed = min
-                topLeft.tickNumber = type.tickCount
-                topLeft.maxSpeed = max
-                topLeft.unit = getString(type.units)
-                topLeft.addSections(
-                    type.getSections(requireContext(), center.speedometerWidth)
-                )
+                initGauge(topLeft, this)
+                topLeft.setOnClickListener {
+                    showGaugeSelectDialog(it as SpeedView)
+                }
+            }
+
+            with(mViewModel.dashboardConfig.topRight) {
+                initGauge(topRigth, this)
+                topRigth.setOnClickListener {
+                    showGaugeSelectDialog(it as SpeedView)
+                }
             }
 
             with(mViewModel.dashboardConfig.bottomRight) {
-                bottomRight.clearSections()
-                bottomRight.minSpeed = min
-                bottomRight.tickNumber = type.tickCount
-                bottomRight.maxSpeed = max
-                bottomRight.unit = getString(type.units)
-                bottomRight.addSections(
-                    type.getSections(requireContext(), center.speedometerWidth)
-                )
+                initGauge(bottomRight, this)
+                bottomRight.setOnClickListener {
+                    showGaugeSelectDialog(it as SpeedView)
+                }
             }
 
-             with(mViewModel.dashboardConfig.topRight) {
-                 topRigth.clearSections()
-                 topRigth.minSpeed = min
-                 topRigth.tickNumber = type.tickCount
-                 topRigth.maxSpeed = max
-                 topRigth.unit = getString(type.units)
-                 topRigth.addSections(
-                     type.getSections(requireContext(), center.speedometerWidth)
-                 )
-             }
-
             with(mViewModel.dashboardConfig.bottomLeft) {
-                bottomLeft.clearSections()
-                bottomLeft.minSpeed = min
-                bottomLeft.tickNumber = type.tickCount
-                bottomLeft.maxSpeed = max
-                bottomLeft.unit = getString(type.units)
-                bottomLeft.addSections(
-                    type.getSections(requireContext(), center.speedometerWidth)
-                )
+                initGauge(bottomLeft, this)
+                bottomLeft.setOnClickListener {
+                    showGaugeSelectDialog(it as SpeedView)
+                }
             }
         }
 
