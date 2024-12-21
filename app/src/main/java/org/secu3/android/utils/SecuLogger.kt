@@ -155,35 +155,37 @@ class SecuLogger @Inject constructor(private val prefs: UserPrefs, private val f
     private fun writeBinaryLog(packet: SensorsPacket) {
         val now = LocalTime.now()
 
-        val buf = ByteBuffer.allocate(228).also {
+        val buf = ByteBuffer.allocate(233).also {
             it.order(ByteOrder.LITTLE_ENDIAN)
         }
 
         val alignByte = 0xCC.toByte()
 
-        var sensorsFlags = 0
-        sensorsFlags = sensorsFlags.setBitValue(packet.carbBit > 0, 15)
-        sensorsFlags = sensorsFlags.setBitValue(packet.gasBit > 0, 14)
-        sensorsFlags = sensorsFlags.setBitValue(packet.ephhValveBit > 0, 13)
-        sensorsFlags = sensorsFlags.setBitValue(packet.epmValveBit > 0, 12)
-        sensorsFlags = sensorsFlags.setBitValue(packet.coolFanBit > 0, 11)
-        sensorsFlags = sensorsFlags.setBitValue(packet.starterBlockBit > 0, 10)
-        sensorsFlags = sensorsFlags.setBitValue(packet.accelerationEnrichment > 0, 9)
-        sensorsFlags = sensorsFlags.setBitValue(packet.fc_revlim > 0, 8)
-        sensorsFlags = sensorsFlags.setBitValue(packet.floodclear > 0, 7)
-        sensorsFlags = sensorsFlags.setBitValue(packet.sys_locked > 0, 6)
-        sensorsFlags = sensorsFlags.setBitValue(packet.checkEngineBit > 0, 5)
-        sensorsFlags = sensorsFlags.setBitValue(packet.ign_i > 0, 4)
-        sensorsFlags = sensorsFlags.setBitValue(packet.cond_i > 0, 3)
-        sensorsFlags = sensorsFlags.setBitValue(packet.epas_i > 0, 2)
-        sensorsFlags = sensorsFlags.setBitValue(packet.aftstr_enr > 0, 1)
-        sensorsFlags = sensorsFlags.setBitValue(packet.iac_closed_loop > 0, 0)
+        var flags = 0
+        flags = flags.setBitValue(packet.carbBit > 0, 15)
+        flags = flags.setBitValue(packet.gasBit > 0, 14)
+        flags = flags.setBitValue(packet.ephhValveBit > 0, 13)
+        flags = flags.setBitValue(packet.epmValveBit > 0, 12)
+        flags = flags.setBitValue(packet.coolFanBit > 0, 11)
+        flags = flags.setBitValue(packet.starterBlockBit > 0, 10)
+        flags = flags.setBitValue(packet.accelerationEnrichment > 0, 9)
+        flags = flags.setBitValue(packet.fc_revlim > 0, 8)
+        flags = flags.setBitValue(packet.floodclear > 0, 7)
+        flags = flags.setBitValue(packet.sys_locked > 0, 6)
+        flags = flags.setBitValue(packet.checkEngineBit > 0, 5)
+        flags = flags.setBitValue(packet.ign_i > 0, 4)
+        flags = flags.setBitValue(packet.cond_i > 0, 3)
+        flags = flags.setBitValue(packet.epas_i > 0, 2)
+        flags = flags.setBitValue(packet.aftstr_enr > 0, 1)
+        flags = flags.setBitValue(packet.iac_closed_loop > 0, 0)
+
+        var flags1 = packet.additionalFlags shr 1
 
         buf.apply {
             put(now.hour.toByte())
             put(now.minute.toByte())
             put(now.second.toByte())
-            put(alignByte)           // align bit
+            put(alignByte)           // align byte
             putShort(now.nano.div(1000000).toShort()) // milliseconds
             putShort(packet.rpm.toShort())
             putFloat(packet.currentAngle)
@@ -193,8 +195,11 @@ class SecuLogger @Inject constructor(private val prefs: UserPrefs, private val f
             putFloat(packet.knockValue)
             putFloat(packet.knockRetard)
             put(packet.airflow.toByte())
-            put(alignByte)           // align bit
-            putShort(sensorsFlags.toShort())
+            put(alignByte)           // align byte
+            put(alignByte)           // align byte
+            put(alignByte)           // align byte
+            putShort(flags.toShort())
+            putShort(flags1.toShort())
             putFloat(packet.tps)
             putFloat(packet.addI1)
             putFloat(packet.addI2)
@@ -244,6 +249,7 @@ class SecuLogger @Inject constructor(private val prefs: UserPrefs, private val f
             putFloat(packet.corrAfr)
             putFloat(packet.tchrg)
             putFloat(packet.gasPressureSensor)
+//            putFloat(packet.fps) // TODO: update capacity
             put(mMark.toByte())
             put(alignByte)
             putShort(packet.serviceFlags.toShort())
