@@ -42,7 +42,6 @@ import org.secu3.android.utils.AppPrefs
 import org.secu3.android.utils.toResult
 import org.threeten.bp.LocalDate
 import javax.inject.Inject
-import kotlin.math.min
 
 class MainRepository @Inject constructor(
     private val apiService: ApiService,
@@ -57,7 +56,7 @@ class MainRepository @Inject constructor(
 
                 appPrefs.lastAppVersionCheck = LocalDate.now()
 
-                val remoteVersion = release.tagName.split(".").map { it.toInt() }
+                val remoteVersion = Version.parse(release.tagName)
 
                 val versionName = if (BuildConfig.DEBUG) {
                     BuildConfig.VERSION_NAME.split("-")[0]
@@ -65,13 +64,13 @@ class MainRepository @Inject constructor(
                     BuildConfig.VERSION_NAME
                 }
 
-                val localVersion = versionName.split(".").map { it.toInt() }
+                val localVersion = Version.parse(versionName)
 
-                for (i in 0 until min(remoteVersion.size, localVersion.size)) {
-                    if (remoteVersion[i] > localVersion[i]) {
-                        return release
-                    }
+                if (remoteVersion <= localVersion) {
+                    return null
                 }
+
+                return release
             }
         } catch (e: Exception) {
             return null
