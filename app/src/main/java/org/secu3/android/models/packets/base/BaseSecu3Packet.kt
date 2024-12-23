@@ -26,12 +26,10 @@ package org.secu3.android.models.packets.base
 
 abstract class BaseSecu3Packet {
 
-    var packetCrc: UByteArray = UByteArray(2)
-
     protected var unhandledParams: String = ""
 
     protected fun String.get2Bytes(startIndex: Int): Int {
-        if (startIndex + 2 > length) {
+        if (startIndex + 1 >= length) {
             throw IllegalArgumentException("Packet too short; request ${startIndex + 2} but length is $length")
         }
 
@@ -39,14 +37,14 @@ abstract class BaseSecu3Packet {
     }
 
     protected fun String.get3Bytes(startIndex: Int): Int {
-        if (startIndex + 3 > length) {
+        if (startIndex + 2 >= length) {
             throw IllegalArgumentException("Packet too short; request ${startIndex + 3} but length is $length")
         }
         return this.substring(startIndex, startIndex + 3).binToInt()
     }
 
     protected fun String.get4Bytes(startIndex: Int): Int {
-        if (startIndex + 4 > length) {
+        if (startIndex + 3 >= length) {
             throw IllegalArgumentException("Packet too short; request ${startIndex + 4} but length is $length")
         }
         return this.substring(startIndex, startIndex + 4).binToInt()

@@ -29,6 +29,7 @@ import androidx.lifecycle.LiveData
 import androidx.lifecycle.asLiveData
 import kotlinx.coroutines.*
 import kotlinx.coroutines.flow.*
+import org.secu3.android.connection.BtConnectionManager
 import org.secu3.android.models.packets.base.BaseOutputPacket
 import org.secu3.android.models.packets.base.BaseSecu3Packet
 import org.secu3.android.models.packets.input.FirmwareInfoPacket
@@ -41,7 +42,7 @@ import javax.inject.Inject
 import javax.inject.Singleton
 
 @Singleton
-class Secu3Repository @Inject constructor(private val secu3Manager: Secu3Manager,
+class Secu3Repository @Inject constructor(private val secu3Manager: BtConnectionManager,
                                           private val mPrefs: UserPrefs,
                                           private val bluetoothManager: BluetoothManager,
                                           private val secuLogger: SecuLogger,
@@ -84,11 +85,11 @@ class Secu3Repository @Inject constructor(private val secu3Manager: Secu3Manager
 
 
     fun sendNewTask(task: Task) {
-        secu3Manager.addPacket(task.getPacket())
+        secu3Manager.sendData(task.getPacket())
     }
 
     fun sendOutPacket(packet: BaseOutputPacket) {
-        secu3Manager.addPacket(packet)
+        secu3Manager.sendData(packet)
     }
 
 
@@ -98,7 +99,7 @@ class Secu3Repository @Inject constructor(private val secu3Manager: Secu3Manager
 
     fun disable() {
         tryToConnect = false
-        secu3Manager.disable()
+        secu3Manager.stopConnection()
     }
 
     init {
@@ -139,18 +140,12 @@ class Secu3Repository @Inject constructor(private val secu3Manager: Secu3Manager
                     continue
                 }
 
-                if (secu3Manager.connectedThread == null) {
-                    secu3Manager.start()
+                if (secu3Manager.isRunning.not() && secu3Manager.connectionAttempts == 0) {
+                    secu3Manager.startConnection()
                     delay(2000)
                     continue
                 }
 
-                secu3Manager.connectedThread?.mmSocket?.let {
-                    if (it.isConnected.not()) {
-                        secu3Manager.disable()
-                        secu3Manager.start()
-                    }
-                }
                 delay(2000)
             }
         }

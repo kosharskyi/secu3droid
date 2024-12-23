@@ -60,7 +60,19 @@ data class RawPacket(val data: String)  {
         return try {
             val packetData = data.substring(0, data.length - 2)
 
-            val packet = when (packetData[1]) {
+            val packetCrc = ubyteArrayOf(
+                data[data.lastIndex].code.toUByte(),
+                data[data.lastIndex - 1].code.toUByte()
+            )
+
+            val checksum = PacketUtils.calculateChecksum(data.substring(2, data.length - 2))
+
+            if (packetCrc[0] != checksum[0] && packetCrc[1] != checksum[1]) {
+                Log.e("RawPacket", "checksum is not valid")
+                return null
+            }
+
+            return when (packetData[1]) {
                 SensorsPacket.DESCRIPTOR -> SensorsPacket.parse(packetData)
                 FirmwareInfoPacket.DESCRIPTOR -> FirmwareInfoPacket.parse(packetData)
                 AdcRawDatPacket.DESCRIPTOR -> AdcRawDatPacket.parse(data, firmwarePacket)
@@ -91,23 +103,6 @@ data class RawPacket(val data: String)  {
 
                 else -> null
             }
-
-            packet?.apply {
-                packetCrc[0] = data[data.lastIndex - 1].code.toUByte()
-                packetCrc[1] = data[data.lastIndex].code.toUByte()
-            }
-
-            if (packet != null) {
-                val checksum = PacketUtils.calculateChecksum(data.substring(2, data.length - 2))
-
-                if (packet.packetCrc[0] == checksum[1] && packet.packetCrc[1] == checksum[0]) {
-                    return packet
-                } else {
-                    Log.e("RawPacket", "checksum is not valid")
-                }
-            }
-
-            return null
         } catch (e: IllegalArgumentException) {
             e.printStackTrace()
             null
