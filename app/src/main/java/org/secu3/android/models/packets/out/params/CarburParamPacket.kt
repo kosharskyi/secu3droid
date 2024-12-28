@@ -56,7 +56,7 @@ data class CarburParamPacket(
         data += ieLotG.write2Bytes()
         data += ieHitG.write2Bytes()
         data += shutoffDelay.times(100).roundToInt().toChar()
-        data += tpsThreshold.times(TPS_MULTIPLIER).roundToInt().toChar()
+        data += tpsThreshold.times(TPS_MULTIPLIER).roundToInt().write2Bytes()
         data += fuelcutMapThrd.times(MAP_MULTIPLIER).roundToInt().write2Bytes()
         data += fuelcutCtsThrd.times(TEMPERATURE_MULTIPLIER).roundToInt().write2Bytes()
         data += revlimLot.write2Bytes()
@@ -82,20 +82,20 @@ data class CarburParamPacket(
             ieLotG = data.get2Bytes(9)
             ieHitG = data.get2Bytes(11)
             shutoffDelay = data[13].code.toFloat() / 100
-            tpsThreshold = data[14].code.toFloat() / TPS_MULTIPLIER
-            fuelcutMapThrd = data.get2Bytes(15).toFloat() / MAP_MULTIPLIER
-            fuelcutCtsThrd = data.get2Bytes(17).toFloat() / TEMPERATURE_MULTIPLIER
-            revlimLot = data.get2Bytes(19)
-            revlimHit = data.get2Bytes(21)
+            tpsThreshold = data.get2Bytes(14).toFloat() / TPS_MULTIPLIER
+            fuelcutMapThrd = data.get2Bytes(16).toFloat() / MAP_MULTIPLIER
+            fuelcutCtsThrd = data.get2Bytes(18).toFloat() / TEMPERATURE_MULTIPLIER
+            revlimLot = data.get2Bytes(20)
+            revlimHit = data.get2Bytes(22)
 
-            fuelcut_uni = data[23].code
-            igncut_uni = data[24].code
+            fuelcut_uni = data[24].code
+            igncut_uni = data[25].code
 
-            if (data.length == 25) {
+            if (data.length == 26) {
                 return@apply
             }
 
-            unhandledParams = data.substring(25)
+            unhandledParams = data.substring(26)
         }
     }
 }

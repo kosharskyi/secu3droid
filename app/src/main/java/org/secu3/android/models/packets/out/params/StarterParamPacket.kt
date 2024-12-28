@@ -69,17 +69,17 @@ data class StarterParamPacket(
             injPrimeCold = data.get2Bytes(9).toFloat() * 32 / 10000
             injPrimeHot = data.get2Bytes(11).toFloat() * 32 / 10000
             injPrimeDelay = data[13].code.toFloat() / 10
-            injFloodclearTps = data[14].code.toFloat() / 2f
-            injAftStrokes1 = data[15].code * 4
-            stblStrCnt = data[16].code
-            strtFlags = data[17].code
-            injCrankToRun_time1 = data.get2Bytes(18).toFloat() / 100
+            injFloodclearTps = data.get2Bytes(14).toFloat() / TPS_MULTIPLIER
+            injAftStrokes1 = data[16].code * 4
+            stblStrCnt = data[17].code
+            strtFlags = data[18].code
+            injCrankToRun_time1 = data.get2Bytes(19).toFloat() / 100
 
-            if (data.length == 20) {
+            if (data.length == 21) {
                 return@apply
             }
 
-            unhandledParams = data.substring(20)
+            unhandledParams = data.substring(21)
         }
     }
 
@@ -93,7 +93,7 @@ data class StarterParamPacket(
         data += injPrimeCold.times(10000).div(32).roundToInt().write2Bytes()
         data += injPrimeHot.times(10000).div(32).roundToInt().write2Bytes()
         data += injPrimeDelay.times(10).roundToInt().toChar()
-        data += injFloodclearTps.times(2).roundToInt().toChar()
+        data += injFloodclearTps.times(TPS_MULTIPLIER).roundToInt().write2Bytes()
         data += injAftStrokes1.div(4).toChar()
         data += stblStrCnt.toChar()
         data += strtFlags.toChar()
