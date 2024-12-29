@@ -387,9 +387,9 @@
     <string name="empty_logs_list">You have no recorded logs yet</string>
     <string name="log_start_writing">Start writing</string>
     <string name="stop">Stop</string>
-    <string name="mark_1">Mark 1</string>
-    <string name="mark_2">Mark 2</string>
-    <string name="mark_3">Mark 3</string>
+    <string name="mark_1">Insert mark 1</string>
+    <string name="mark_2">Insert mark 2</string>
+    <string name="mark_3">Insert mark 3</string>
     <string name="dialog_confirm_delete_log_file_title">Delete log file</string>
     <string name="dialog_confirm_delete_log_message">Are you sure want to delete log file?</string>
     <string name="sensors">Sensors</string>

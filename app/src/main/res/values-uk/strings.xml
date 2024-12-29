@@ -225,9 +225,9 @@
     <string name="empty_logs_list">У вас поки що немає записаних логів</string>
     <string name="log_start_writing">Почати запис</string>
     <string name="stop">Стоп</string>
-    <string name="mark_1">Мркр 1</string>
-    <string name="mark_2">Мркр 2</string>
-    <string name="mark_3">Мркр 3</string>
+    <string name="mark_1">Вставити маркер 1</string>
+    <string name="mark_2">Вставити маркер 2</string>
+    <string name="mark_3">Вставити маркер 3</string>
     <string name="dialog_confirm_delete_log_file_title">Видалити файл логу</string>
     <string name="dialog_confirm_delete_log_message">Ви впевнені що хочете видалити файл логу?</string>
     <string name="sensors">Датчики</string>
