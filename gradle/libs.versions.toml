@@ -15,6 +15,7 @@ navigation = "2.8.5"
 dagger = "2.54"
 preference-ktx = "1.2.1"
 room = "2.6.1"
+usb-serial-for-android = "3.8.1"
 viewpager2 = "1.1.0"
 gson = "2.11.0"
 retrofit = "2.11.0"
@@ -36,6 +37,7 @@ annotation = { module = "androidx.annotation:annotation", version.ref = "annotat
 constraintlayout = { module = "androidx.constraintlayout:constraintlayout", version.ref = "constraintlayout" }
 fragment-ktx = { module = "androidx.fragment:fragment-ktx", version.ref = "fragment-ktx" }
 preference-ktx = { module = "androidx.preference:preference-ktx", version.ref = "preference-ktx" }
+usb-serial-for-android = { module = "com.github.mik3y:usb-serial-for-android", version.ref = "usb-serial-for-android" }
 viewpager2 = { module = "androidx.viewpager2:viewpager2", version.ref = "viewpager2" }
 
 

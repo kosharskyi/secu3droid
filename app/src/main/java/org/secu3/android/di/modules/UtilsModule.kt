@@ -28,6 +28,7 @@ package org.secu3.android.di.modules
 import android.app.DownloadManager
 import android.bluetooth.BluetoothManager
 import android.content.Context
+import android.hardware.usb.UsbManager
 import androidx.room.Room
 import dagger.Module
 import dagger.Provides
@@ -60,6 +61,12 @@ object UtilsModule {
     @Provides
     fun getBluetoothManager(@ApplicationContext context: Context): BluetoothManager {
         return context.getSystemService(Context.BLUETOOTH_SERVICE) as BluetoothManager
+    }
+
+    @Singleton
+    @Provides
+    fun getUsbManager(@ApplicationContext context: Context): UsbManager {
+        return context.getSystemService(Context.USB_SERVICE) as UsbManager
     }
 
     @Singleton

@@ -127,6 +127,7 @@ dependencies {
     testImplementation libs.dagger.hilt.testing
     kspTest libs.dagger.hilt.compiler
 
+    implementation libs.usb.serial.for.android
 
     androidTestImplementation libs.ext.junit
     androidTestImplementation libs.espresso.core

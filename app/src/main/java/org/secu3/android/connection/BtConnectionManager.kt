@@ -202,7 +202,7 @@ class BtConnectionManager @Inject constructor(
         sendData(ChangeModePacket.getPacket(Task.Secu3ReadFirmwareInfo))
     }
 
-    fun sendData(packet: BaseOutputPacket) {
+    fun sendData(sendPacket: BaseOutputPacket) {
         scope.launch {
 
             val endTime = LocalTime.now().plusSeconds(10)
@@ -219,7 +219,7 @@ class BtConnectionManager @Inject constructor(
                 val outputStream = bluetoothSocket?.outputStream ?: throw IOException("Output stream is null")
                 val writer = outputStream.bufferedWriter(StandardCharsets.ISO_8859_1)
 
-                var packet = packet.pack()
+                var packet = sendPacket.pack()
 
                 val checksum = PacketUtils.calculateChecksum(packet.substring(2, packet.length))
 
@@ -232,7 +232,7 @@ class BtConnectionManager @Inject constructor(
 
                 writer.append(escaped)
 
-                sleep(20)
+                delay(20)
                 writer.flush()
 //                println("Data sent: $data")
             } catch (e: IOException) {
