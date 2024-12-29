@@ -32,7 +32,6 @@ import android.util.Log
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
-import kotlinx.coroutines.cancel
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableSharedFlow
@@ -50,14 +49,13 @@ import org.threeten.bp.LocalTime
 import java.io.BufferedReader
 import java.io.IOException
 import java.io.InputStreamReader
-import java.lang.Thread.sleep
 import java.nio.charset.StandardCharsets
 import java.util.UUID
 import javax.inject.Inject
 import javax.inject.Singleton
 
 @Singleton
-class BtConnectionManager @Inject constructor(
+class BtConnection @Inject constructor(
     private val prefs: UserPrefs,
     private val bluetoothManager: BluetoothManager
 ) {
@@ -75,6 +73,9 @@ class BtConnectionManager @Inject constructor(
 
     var isRunning = false
         private set
+
+    val isConnected: Boolean
+        get() = bluetoothSocket?.isConnected == true
 
     private val mReceivedPacketFlow = MutableSharedFlow<RawPacket>()
     val receivedPacketFlow: Flow<RawPacket>
@@ -94,7 +95,6 @@ class BtConnectionManager @Inject constructor(
 
     fun stopConnection() {
         isRunning = false
-        scope.cancel()
         disconnect()
     }
 
@@ -103,22 +103,22 @@ class BtConnectionManager @Inject constructor(
 
         if (connectionAttempts >= maxConnectionAttempts) {
             isRunning = false
-            println("Max connection attempts reached. Stopping connection attempts.")
+            Log.i(this.javaClass.simpleName, "Max connection attempts reached. Stopping connection attempts.")
             return
         }
 
         connectionAttempts++
-        println("Attempting to connect: $connectionAttempts/$maxConnectionAttempts")
+        Log.d(this.javaClass.simpleName, "Attempting to connect: $connectionAttempts/$maxConnectionAttempts")
 
         scope.launch {
             try {
                 connectToDevice()
 
-                println("Connected to device")
+                Log.i(this.javaClass.simpleName, "Connected to device")
                 listenForDisconnection()
                 startReadingData()
             } catch (e: IOException) {
-                println("Connection failed: ${e.message}")
+                Log.e(this.javaClass.simpleName, "Connection failed: ${e.message}")
                 delay(2000)
                 reconnect()
             }

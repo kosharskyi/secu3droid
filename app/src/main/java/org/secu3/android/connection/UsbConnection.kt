@@ -25,21 +25,14 @@
 
 package org.secu3.android.connection
 
-import android.app.PendingIntent
-import android.content.BroadcastReceiver
-import android.content.Context
-import android.content.Intent
-import android.content.IntentFilter
 import android.hardware.usb.UsbDevice
 import android.hardware.usb.UsbManager
 import android.util.Log
 import com.hoho.android.usbserial.driver.UsbSerialPort
 import com.hoho.android.usbserial.driver.UsbSerialProber
-import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
-import kotlinx.coroutines.cancel
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableSharedFlow
@@ -48,19 +41,16 @@ import org.secu3.android.models.RawPacket
 import org.secu3.android.models.packets.base.BaseOutputPacket
 import org.secu3.android.models.packets.base.BaseSecu3Packet
 import org.secu3.android.models.packets.base.BaseSecu3Packet.Companion.END_PACKET_SYMBOL
-import org.secu3.android.models.packets.base.BaseSecu3Packet.Companion.MAX_PACKET_SIZE
 import org.secu3.android.models.packets.out.ChangeModePacket
 import org.secu3.android.utils.PacketUtils
 import org.secu3.android.utils.Task
 import org.threeten.bp.LocalTime
 import java.io.IOException
-import java.nio.charset.StandardCharsets
 import javax.inject.Inject
 import javax.inject.Singleton
 
 @Singleton
-class UsbConnectionManager @Inject constructor(
-    @ApplicationContext private val context: Context,
+class UsbConnection @Inject constructor(
     private val usbManager: UsbManager
 ) {
 
@@ -68,7 +58,12 @@ class UsbConnectionManager @Inject constructor(
         private set
 
     private var usbSerialPort: UsbSerialPort? = null
+
     var isRunning = false
+        private set
+
+    val isConnected: Boolean
+        get() = usbSerialPort?.isOpen == true
 
     private val scope = CoroutineScope(Dispatchers.IO + SupervisorJob())
 
@@ -76,32 +71,15 @@ class UsbConnectionManager @Inject constructor(
     val receivedPacketFlow: Flow<RawPacket>
         get() = mReceivedPacketFlow
 
-    private val usbPermissionActionReceiver = object : BroadcastReceiver() {
-        override fun onReceive(context: Context, intent: Intent) {
-            if (ACTION_USB_PERMISSION == intent.action) {
-                synchronized(this) {
-                    val device = intent.getParcelableExtra<android.hardware.usb.UsbDevice>(android.hardware.usb.UsbManager.EXTRA_DEVICE)
-                    if (intent.getBooleanExtra(android.hardware.usb.UsbManager.EXTRA_PERMISSION_GRANTED, false)) {
-                        device?.let { connectToDevice(it) }
-                    } else {
-                        println("Permission denied for device $device")
-                    }
-                }
-            }
-        }
-    }
 
-    fun startConnection() {
-        val filter = IntentFilter(ACTION_USB_PERMISSION)
-        context.registerReceiver(usbPermissionActionReceiver, filter, Context.RECEIVER_NOT_EXPORTED)
+
+    fun startConnection(device: UsbDevice) {
         isRunning = true
         reconnect()
     }
 
     fun stopConnection() {
         isRunning = false
-        scope.cancel()
-        context.unregisterReceiver(usbPermissionActionReceiver)
         disconnect()
     }
 
@@ -124,24 +102,18 @@ class UsbConnectionManager @Inject constructor(
     }
 
     private fun findAndRequestPermission() {
-        val usbManager = context.getSystemService(Context.USB_SERVICE) as android.hardware.usb.UsbManager
         val availableDrivers = UsbSerialProber.getDefaultProber().findAllDrivers(usbManager)
 
         val driver = availableDrivers.firstOrNull()
             ?: throw IllegalStateException("No USB devices found")
 
         val device = driver.device
-        if (!usbManager.hasPermission(device)) {
-            val permissionIntent = PendingIntent.getBroadcast(
-                context, 0, Intent(ACTION_USB_PERMISSION), PendingIntent.FLAG_IMMUTABLE
-            )
-            usbManager.requestPermission(device, permissionIntent)
-        } else {
+        if (usbManager.hasPermission(device)) {
             connectToDevice(device)
         }
     }
 
-    private fun connectToDevice(device: android.hardware.usb.UsbDevice) {
+    private fun connectToDevice(device: UsbDevice) {
         val connection = usbManager.openDevice(device)
             ?: throw IllegalStateException("Could not open connection to USB device")
 
@@ -165,13 +137,13 @@ class UsbConnectionManager @Inject constructor(
     private fun startReadingData() {
         scope.launch {
             try {
-                val packetBuffer = IntArray(2048) // Збільшений розмір для великих пакетів
+                val packetBuffer = IntArray(2048)
                 val startMarker: Char = BaseSecu3Packet.INPUT_PACKET_SYMBOL
                 val endMarker: Char = END_PACKET_SYMBOL
                 var idx = 0
 
                 while (isRunning && usbSerialPort?.isOpen == true) {
-                    val buffer = ByteArray(256) // Збільшений буфер для читання
+                    val buffer = ByteArray(256)
                     val bytesRead = usbSerialPort?.read(buffer, 1000) ?: continue
 
                     if (bytesRead <= 0) continue
@@ -241,10 +213,8 @@ class UsbConnectionManager @Inject constructor(
 
                 val buffer = escaped.toByteArray(Charsets.ISO_8859_1)
 
-                // Формуємо масив беззнакових байтів
                 val unsignedBuffer = ByteArray(buffer.size) { i -> (buffer[i].toInt() and 0xFF).toByte() }
 
-                // Відправляємо через USB
                 usbSerialPort?.write(unsignedBuffer, 1000) ?: throw IllegalStateException("Output stream is null")
             } catch (e: IOException) {
                 println("Error while sending data: ${e.message}")
@@ -252,7 +222,5 @@ class UsbConnectionManager @Inject constructor(
         }
     }
 
-    companion object {
-        private const val ACTION_USB_PERMISSION = "com.example.USB_PERMISSION"
-    }
+
 }

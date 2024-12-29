@@ -23,18 +23,49 @@
  *                    email: vetalkosharskiy@gmail.com
  */
 
-package org.secu3.android.ui.firmware
+package org.secu3.android.ui
 
-import androidx.lifecycle.LiveData
+import android.hardware.usb.UsbDevice
+import android.hardware.usb.UsbManager
 import androidx.lifecycle.ViewModel
 import dagger.hilt.android.lifecycle.HiltViewModel
 import org.secu3.android.Secu3Connection
-import org.secu3.android.models.packets.input.FirmwareInfoPacket
+import org.secu3.android.utils.UserPrefs
 import javax.inject.Inject
 
 @HiltViewModel
-class FirmwareDialogViewModel @Inject constructor(private val secu3Connection: Secu3Connection) : ViewModel() {
+class MainActivityViewModel @Inject constructor(
+    private val secu3Connection: Secu3Connection,
+    val usbManager: UsbManager,
+    val prefs: UserPrefs,
+) : ViewModel() {
 
-    val firmwareLiveData: LiveData<FirmwareInfoPacket> = secu3Connection.firmwareLiveData
+    fun newUsbDeviceAttached(device: UsbDevice) {
+        with(secu3Connection) {
+            if (isConnectionRunning.not()) {
+                startUsbConnection(device)
+                return
+            }
+
+            if (isUsbRunning && isUsbConnected.not()) {
+                startUsbConnection(device)
+                return
+            }
+
+            if (isBtRunning && isBtConnected.not()) {
+                startUsbConnection(device)
+                return
+            }
+
+            if (isUsbConnected) {
+                // TODO: make up this case
+            }
+
+            if (isBtConnected) {
+                // TODO: make up this case
+            }
+        }
+
+    }
 
 }

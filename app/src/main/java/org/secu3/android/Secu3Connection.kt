@@ -25,11 +25,13 @@
 package org.secu3.android
 
 import android.bluetooth.BluetoothManager
+import android.hardware.usb.UsbDevice
 import androidx.lifecycle.LiveData
 import androidx.lifecycle.asLiveData
 import kotlinx.coroutines.*
 import kotlinx.coroutines.flow.*
-import org.secu3.android.connection.BtConnectionManager
+import org.secu3.android.connection.BtConnection
+import org.secu3.android.connection.UsbConnection
 import org.secu3.android.models.packets.base.BaseOutputPacket
 import org.secu3.android.models.packets.base.BaseSecu3Packet
 import org.secu3.android.models.packets.input.FirmwareInfoPacket
@@ -42,18 +44,18 @@ import javax.inject.Inject
 import javax.inject.Singleton
 
 @Singleton
-class Secu3Repository @Inject constructor(private val secu3Manager: BtConnectionManager,
+class Secu3Connection @Inject constructor(private val usbConnection: UsbConnection,
+                                          private val btConnection: BtConnection,
                                           private val mPrefs: UserPrefs,
                                           private val bluetoothManager: BluetoothManager,
                                           private val secuLogger: SecuLogger,
 ) {
 
-    private val repositoryJob = Job()
-    private val repositoryScope = CoroutineScope(Dispatchers.Default + repositoryJob)
+
+    private val connectionScope = CoroutineScope(Dispatchers.Default + Job())
 
 
     private var lastPacketReceivedTimetamp = LocalDateTime.now().minusMinutes(1)
-    private var tryToConnect = false
 
     private val connectionStatus = flow {
         while (lastPacketReceivedTimetamp.isAfter(LocalDateTime.now().minusMinutes(10))) {
@@ -73,7 +75,7 @@ class Secu3Repository @Inject constructor(private val secu3Manager: BtConnection
 
     var fwInfo: FirmwareInfoPacket? = null
 
-    val receivedPacketFlow: Flow<BaseSecu3Packet> = secu3Manager.receivedPacketFlow.map {
+    val receivedPacketFlow: Flow<BaseSecu3Packet> = merge(usbConnection.receivedPacketFlow, btConnection.receivedPacketFlow).map {
         withContext(Dispatchers.IO) {
             it.parse(fwInfo)
         }
@@ -84,33 +86,80 @@ class Secu3Repository @Inject constructor(private val secu3Manager: BtConnection
         .asLiveData()
 
 
+    val isConnectionRunning: Boolean
+        get() = usbConnection.isRunning || btConnection.isRunning
+
+    val isBtRunning: Boolean
+        get() = btConnection.isRunning
+
+    val isUsbRunning: Boolean
+        get() = usbConnection.isRunning
+
+    val isConnected: Boolean
+        get() = usbConnection.isConnected || btConnection.isConnected
+
+    val isUsbConnected: Boolean
+        get() = usbConnection.isConnected
+
+    val isBtConnected: Boolean
+        get() = btConnection.isConnected
+
     fun sendNewTask(task: Task) {
-        secu3Manager.sendData(task.getPacket())
+        if (isUsbConnected) {
+            usbConnection.sendData(task.getPacket())
+        }
+
+        if (isBtConnected) {
+            btConnection.sendData(task.getPacket())
+        }
     }
 
     fun sendOutPacket(packet: BaseOutputPacket) {
-        secu3Manager.sendData(packet)
+        if (isUsbConnected) {
+            usbConnection.sendData(packet)
+        }
+
+        if (isBtConnected) {
+            btConnection.sendData(packet)
+        }
     }
 
 
     fun startConnect() {
-        tryToConnect = true
+        mPrefs.bluetoothDeviceName?.takeIf {  it.isNotEmpty() }?.let {
+            if (bluetoothManager.adapter.isEnabled.not()) {
+                return
+            }
+            startBtConnection()
+        }
+    }
+
+    fun startUsbConnection(device: UsbDevice) {
+        btConnection.stopConnection()
+        usbConnection.stopConnection()
+        usbConnection.startConnection(device)
+    }
+
+    fun startBtConnection() {
+        usbConnection.stopConnection()
+        btConnection.stopConnection()
+        btConnection.startConnection()
     }
 
     fun disable() {
-        tryToConnect = false
-        secu3Manager.stopConnection()
+        usbConnection.stopConnection()
+        btConnection.stopConnection()
     }
 
     init {
 
-        repositoryScope.launch {
-            secu3Manager.receivedPacketFlow.collect {
+        connectionScope.launch {
+            receivedPacketFlow.collect {
                 lastPacketReceivedTimetamp = LocalDateTime.now()
             }
         }
 
-        repositoryScope.launch {
+        connectionScope.launch {
             receivedPacketFlow.filter { it is SensorsPacket }
                 .map { it as SensorsPacket }
                 .collect {
@@ -120,34 +169,34 @@ class Secu3Repository @Inject constructor(private val secu3Manager: BtConnection
                 }
         }
 
-        repositoryScope.launch {
+        connectionScope.launch {
             fwInfo = receivedPacketFlow.first { it is FirmwareInfoPacket } as FirmwareInfoPacket
         }
 
-        repositoryScope.launch {
-            while (lastPacketReceivedTimetamp.isAfter(LocalDateTime.now().minusMinutes(10))) {
-                delay(1000)
-
-                if (tryToConnect.not()) {
-                    continue
-                }
-
-                if (mPrefs.bluetoothDeviceName.isNullOrBlank()) {
-                    continue
-                }
-
-                if (bluetoothManager.adapter.isEnabled.not()) {
-                    continue
-                }
-
-                if (secu3Manager.isRunning.not() && secu3Manager.connectionAttempts == 0) {
-                    secu3Manager.startConnection()
-                    delay(2000)
-                    continue
-                }
-
-                delay(2000)
-            }
-        }
+//        repositoryScope.launch {
+//            while (lastPacketReceivedTimetamp.isAfter(LocalDateTime.now().minusMinutes(10))) {
+//                delay(1000)
+//
+//                if (tryToConnect.not()) {
+//                    continue
+//                }
+//
+//                if (mPrefs.bluetoothDeviceName.isNullOrBlank()) {
+//                    continue
+//                }
+//
+//                if (bluetoothManager.adapter.isEnabled.not()) {
+//                    continue
+//                }
+//
+//                if (usbConnection.isRunning.not() && usbConnection.connectionAttempts == 0) {
+//                    usbConnection.startConnection()
+//                    delay(2000)
+//                    continue
+//                }
+//
+//                delay(2000)
+//            }
+//        }
     }
 }

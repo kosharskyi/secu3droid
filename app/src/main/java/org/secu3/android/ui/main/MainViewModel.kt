@@ -33,7 +33,7 @@ import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.launch
 import org.secu3.android.BuildConfig
-import org.secu3.android.Secu3Repository
+import org.secu3.android.Secu3Connection
 import org.secu3.android.models.packets.input.FirmwareInfoPacket
 import org.secu3.android.network.models.GitHubRelease
 import org.secu3.android.utils.AppPrefs
@@ -43,16 +43,16 @@ import javax.inject.Inject
 
 @HiltViewModel
 class MainViewModel @Inject constructor(
-    private val secu3Repository: Secu3Repository,
+    private val secu3Connection: Secu3Connection,
     private val mainRepository: MainRepository,
     private val appPrefs: AppPrefs) : ViewModel() {
 
 
     val connectionStatusLiveData: LiveData<Boolean>
-        get() = secu3Repository.connectionStatusLiveData
+        get() = secu3Connection.connectionStatusLiveData
 
     val firmware: FirmwareInfoPacket?
-        get() = secu3Repository.fwInfo
+        get() = secu3Connection.fwInfo
 
     val newReleaseAvailable: LiveData<GitHubRelease>
         get() = flow {
@@ -68,16 +68,16 @@ class MainViewModel @Inject constructor(
     init {
         viewModelScope.launch {
             mainRepository.checkAndInitDb()
-            secu3Repository.startConnect()
+            secu3Connection.startConnect()
         }
     }
 
     fun sendNewTask(task: Task) {
-        secu3Repository.sendNewTask(task)
+        secu3Connection.sendNewTask(task)
     }
 
     fun closeConnection() {
-        secu3Repository.disable()
+        secu3Connection.disable()
     }
 
     fun downloadRelease(release: GitHubRelease) {

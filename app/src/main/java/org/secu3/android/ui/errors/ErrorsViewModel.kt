@@ -31,32 +31,32 @@ import androidx.lifecycle.asLiveData
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.filter
 import kotlinx.coroutines.flow.map
-import org.secu3.android.Secu3Repository
+import org.secu3.android.Secu3Connection
 import org.secu3.android.models.packets.input.CheckEngineErrorsPacket
 import org.secu3.android.models.packets.input.CheckEngineSavedErrorsPacket
 import org.secu3.android.utils.Task
 import javax.inject.Inject
 
 @HiltViewModel
-class ErrorsViewModel @Inject constructor(private val secu3Repository: Secu3Repository) : ViewModel() {
+class ErrorsViewModel @Inject constructor(private val secu3Connection: Secu3Connection) : ViewModel() {
 
     init {
         sendNewTask(Task.Secu3ReadEcuSavedErrors)
     }
 
     val connectionStatusLiveData: LiveData<Boolean>
-        get() = secu3Repository.connectionStatusLiveData
+        get() = secu3Connection.connectionStatusLiveData
 
     val checkEngineLiveData: LiveData<CheckEngineErrorsPacket>
-        get() = secu3Repository.receivedPacketFlow.filter { it is CheckEngineErrorsPacket }
+        get() = secu3Connection.receivedPacketFlow.filter { it is CheckEngineErrorsPacket }
             .map { it as CheckEngineErrorsPacket }.asLiveData()
 
     val checkEngineSavedLiveData: LiveData<CheckEngineSavedErrorsPacket>
-        get() = secu3Repository.receivedPacketFlow.filter { it is CheckEngineSavedErrorsPacket }
+        get() = secu3Connection.receivedPacketFlow.filter { it is CheckEngineSavedErrorsPacket }
             .map { it as CheckEngineSavedErrorsPacket }.asLiveData()
 
 
     fun sendNewTask(task: Task) {
-        secu3Repository.sendNewTask(task)
+        secu3Connection.sendNewTask(task)
     }
 }

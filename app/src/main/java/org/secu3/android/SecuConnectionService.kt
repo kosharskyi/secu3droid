@@ -29,7 +29,7 @@ import javax.inject.Inject
 class SecuConnectionService : LifecycleService() {
 
     @Inject
-    internal lateinit var secu3Repository: Secu3Repository
+    internal lateinit var secu3Connection: Secu3Connection
 
     @Inject
     internal lateinit var mLogger: SecuLogger
@@ -39,7 +39,7 @@ class SecuConnectionService : LifecycleService() {
     override fun onCreate() {
         super.onCreate()
 
-        secu3Repository.connectionStatusLiveData.observe(this) {
+        secu3Connection.connectionStatusLiveData.observe(this) {
             if (it) {
                 lostConnectionJob?.cancel()
                 lostConnectionJob = null
@@ -101,7 +101,7 @@ class SecuConnectionService : LifecycleService() {
     }
 
     override fun onDestroy() {
-        secu3Repository.disable()
+        secu3Connection.disable()
         mLogger.stopLogging()
         ServiceCompat.stopForeground(this@SecuConnectionService, ServiceCompat.STOP_FOREGROUND_REMOVE)
         super.onDestroy()
