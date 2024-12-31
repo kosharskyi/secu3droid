@@ -23,7 +23,7 @@
  *                    email: vetalkosharskiy@gmail.com
  */
 
-package org.secu3.android.ui.main
+package org.secu3.android.ui.home
 
 import androidx.lifecycle.LiveData
 import androidx.lifecycle.ViewModel
@@ -42,9 +42,9 @@ import org.threeten.bp.LocalDate
 import javax.inject.Inject
 
 @HiltViewModel
-class MainViewModel @Inject constructor(
+class HomeViewModel @Inject constructor(
     private val secu3Connection: Secu3Connection,
-    private val mainRepository: MainRepository,
+    private val homeRepository: HomeRepository,
     private val appPrefs: AppPrefs) : ViewModel() {
 
 
@@ -59,7 +59,7 @@ class MainViewModel @Inject constructor(
             val now = LocalDate.now()
 
             if (BuildConfig.DEBUG || appPrefs.lastAppVersionCheck.isBefore(now)) {
-                mainRepository.getNewRelease()?.let {
+                homeRepository.getNewRelease()?.let {
                     emit(it)
                 }
             }
@@ -67,7 +67,7 @@ class MainViewModel @Inject constructor(
 
     init {
         viewModelScope.launch {
-            mainRepository.checkAndInitDb()
+            homeRepository.checkAndInitDb()
             secu3Connection.startConnect()
         }
     }
@@ -81,6 +81,6 @@ class MainViewModel @Inject constructor(
     }
 
     fun downloadRelease(release: GitHubRelease) {
-        mainRepository.downloadReleaseFile(release)
+        homeRepository.downloadReleaseFile(release)
     }
 }

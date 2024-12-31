@@ -23,10 +23,9 @@
  *                    email: vetalkosharskiy@gmail.com
  */
 
-package org.secu3.android.ui.main
+package org.secu3.android.ui.home
 
 import android.content.Intent
-import android.graphics.Color
 import android.os.Bundle
 import android.view.LayoutInflater
 import android.view.View
@@ -41,16 +40,16 @@ import com.google.android.material.dialog.MaterialAlertDialogBuilder
 import dagger.hilt.android.AndroidEntryPoint
 import org.secu3.android.R
 import org.secu3.android.SecuConnectionService
-import org.secu3.android.databinding.FragmentMainMenuBinding
+import org.secu3.android.databinding.FragmentHomeBinding
 import org.secu3.android.network.models.GitHubRelease
 import org.secu3.android.ui.settings.SettingsActivity
 
 @AndroidEntryPoint
-class MainFragment : Fragment() {
+class HomeFragment : Fragment() {
 
-    private var mBinding: FragmentMainMenuBinding? = null
+    private var mBinding: FragmentHomeBinding? = null
 
-    private val mViewModel: MainViewModel by viewModels()
+    private val mViewModel: HomeViewModel by viewModels()
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -62,7 +61,7 @@ class MainFragment : Fragment() {
     }
 
     override fun onCreateView(inflater: LayoutInflater, container: ViewGroup?, savedInstanceState: Bundle?): View? {
-        mBinding = FragmentMainMenuBinding.inflate(inflater, container, false)
+        mBinding = FragmentHomeBinding.inflate(inflater, container, false)
         return mBinding?.root
     }
 
@@ -77,23 +76,23 @@ class MainFragment : Fragment() {
 
             carStatus.setOnClickListener {
                 mViewModel.firmware ?: return@setOnClickListener
-                findNavController().navigate(MainFragmentDirections.actionOpenFirmwareDialog())
+                findNavController().navigate(HomeFragmentDirections.actionOpenFirmwareDialog())
             }
 
             dashboard.setOnClickListener {
-                findNavController().navigate(MainFragmentDirections.actionOpenDashboard())
+                findNavController().navigate(HomeFragmentDirections.actionOpenDashboard())
             }
 
             sensors.setOnClickListener {
-                findNavController().navigate(MainFragmentDirections.actionOpenSensors())
+                findNavController().navigate(HomeFragmentDirections.actionOpenSensors())
             }
 
             ecuParams.setOnClickListener {
-                findNavController().navigate(MainFragmentDirections.actionOpenParameters())
+                findNavController().navigate(HomeFragmentDirections.actionOpenParameters())
             }
 
             secuCheckEngine.setOnClickListener {
-                findNavController().navigate(MainFragmentDirections.actionOpenSecuErrors())
+                findNavController().navigate(HomeFragmentDirections.actionOpenSecuErrors())
             }
 
             secuDiagnostics.setOnClickListener {
@@ -101,7 +100,7 @@ class MainFragment : Fragment() {
             }
 
             secuLogs.setOnClickListener {
-                findNavController().navigate(MainFragmentDirections.actionOpenSecuLogs())
+                findNavController().navigate(HomeFragmentDirections.actionOpenSecuLogs())
             }
 
             appSettings.setOnClickListener {
@@ -140,7 +139,7 @@ class MainFragment : Fragment() {
             .setPositiveButton(android.R.string.ok) { _, _ ->
 
                 if (mViewModel.firmware?.isDiagnosticsEnabled == true) {
-                    findNavController().navigate(MainFragmentDirections.actionOpenSecuDiagnostic())
+                    findNavController().navigate(HomeFragmentDirections.actionOpenSecuDiagnostic())
                     return@setPositiveButton
                 }
 

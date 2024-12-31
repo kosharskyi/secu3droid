@@ -23,7 +23,7 @@
  *                    email: vetalkosharskiy@gmail.com
  */
 
-package org.secu3.android.ui.main
+package org.secu3.android.ui.home
 
 import android.app.DownloadManager
 import android.net.Uri
@@ -43,7 +43,7 @@ import org.secu3.android.utils.toResult
 import org.threeten.bp.LocalDate
 import javax.inject.Inject
 
-class MainRepository @Inject constructor(
+class HomeRepository @Inject constructor(
     private val apiService: ApiService,
     private val downloadManager: DownloadManager,
     private val appPrefs: AppPrefs,

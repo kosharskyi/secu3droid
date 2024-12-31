@@ -3,7 +3,7 @@
     xmlns:app="http://schemas.android.com/apk/res-auto"
     xmlns:tools="http://schemas.android.com/tools"
     android:id="@+id/main_nav_graph"
-    app:startDestination="@id/btStatusFragment"
+    app:startDestination="@id/homeFragment"
     >
 
     <fragment
@@ -15,16 +15,16 @@
 
         <action
             android:id="@+id/action_open_main_menu"
-            app:destination="@id/mainMenuFragment"
+            app:destination="@id/homeFragment"
             />
 
     </fragment>
 
     <fragment
-        android:id="@+id/mainMenuFragment"
-        android:name="org.secu3.android.ui.main.MainFragment"
-        android:label="fragment_main_menu"
-        tools:layout="@layout/fragment_main_menu">
+        android:id="@+id/homeFragment"
+        android:name="org.secu3.android.ui.home.HomeFragment"
+        android:label="fragment_home_fragment"
+        tools:layout="@layout/fragment_home">
 
         <action
             android:id="@+id/action_open_dashboard"
