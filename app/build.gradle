@@ -2,6 +2,7 @@ plugins {
     id 'com.android.application'
     id 'org.jetbrains.kotlin.android'
     id 'org.jetbrains.kotlin.plugin.parcelize'
+    id 'org.jetbrains.kotlin.plugin.compose'
     id 'com.google.devtools.ksp'
     id 'com.google.gms.google-services'
     id 'dagger.hilt.android.plugin'
@@ -58,6 +59,7 @@ android {
 
     buildFeatures{
         viewBinding = true
+        compose = true
     }
 
     compileOptions {
@@ -104,6 +106,13 @@ dependencies {
 
     implementation libs.material
     implementation libs.gson
+
+    implementation(platform(libs.compose.bom))
+    androidTestImplementation(platform(libs.compose.bom))
+    implementation libs.compose.ui
+    implementation libs.compose.material
+    implementation libs.compose.ui.tooling
+    implementation libs.compose.runtime
 
     implementation libs.threetenabp
 
