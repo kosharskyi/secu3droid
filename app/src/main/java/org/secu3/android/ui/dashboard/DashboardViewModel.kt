@@ -54,7 +54,7 @@ class DashboardViewModel @Inject constructor(private val secu3Connection: Secu3C
             .asLiveData()
 
     val statusLiveData: LiveData<Boolean>
-        get() = secu3Connection.connectionStatusLiveData
+        get() = secu3Connection.isConnectedLiveData
 
     val dashboardConfig: DashboardConfig = mPrefs.dashboardConfig ?: DashboardConfig(
         GaugeConfig(GaugeType.RPM, ),

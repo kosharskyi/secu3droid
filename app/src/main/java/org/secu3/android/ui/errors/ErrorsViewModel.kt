@@ -45,7 +45,7 @@ class ErrorsViewModel @Inject constructor(private val secu3Connection: Secu3Conn
     }
 
     val connectionStatusLiveData: LiveData<Boolean>
-        get() = secu3Connection.connectionStatusLiveData
+        get() = secu3Connection.isConnectedLiveData
 
     val checkEngineLiveData: LiveData<CheckEngineErrorsPacket>
         get() = secu3Connection.receivedPacketFlow.filter { it is CheckEngineErrorsPacket }

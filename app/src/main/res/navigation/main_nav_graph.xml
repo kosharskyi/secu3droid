@@ -3,8 +3,22 @@
     xmlns:app="http://schemas.android.com/apk/res-auto"
     xmlns:tools="http://schemas.android.com/tools"
     android:id="@+id/main_nav_graph"
-    app:startDestination="@id/homeFragment"
+    app:startDestination="@id/startScreenFragment"
     >
+
+    <fragment
+        android:id="@+id/startScreenFragment"
+        android:name="org.secu3.android.ui.start.StartScreenFragment"
+        android:label="Start Screen Fragment"
+        tools:layout="@layout/fragment_start_screen"
+        >
+
+        <action
+            android:id="@+id/open_homeFragment"
+            app:destination="@id/homeFragment"
+            />
+
+    </fragment>
 
     <fragment
         android:id="@+id/btStatusFragment"

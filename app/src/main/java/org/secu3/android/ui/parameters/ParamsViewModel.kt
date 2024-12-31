@@ -74,7 +74,7 @@ class ParamsViewModel @Inject constructor(
     var isSendAllowed: Boolean = false
 
     val connectionStatusLiveData: LiveData<Boolean>
-        get() = secu3Connection.connectionStatusLiveData
+        get() = secu3Connection.isConnectedLiveData
 
     val fwInfoPacket: FirmwareInfoPacket?
         get() = secu3Connection.fwInfo

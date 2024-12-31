@@ -57,7 +57,7 @@ class Secu3Connection @Inject constructor(private val usbConnection: UsbConnecti
 
     private var lastPacketReceivedTimetamp = LocalDateTime.now().minusMinutes(1)
 
-    private val connectionStatus = flow {
+    val isConnectedFlow = flow {
         while (lastPacketReceivedTimetamp.isAfter(LocalDateTime.now().minusMinutes(10))) {
             delay(500)
 
@@ -71,7 +71,7 @@ class Secu3Connection @Inject constructor(private val usbConnection: UsbConnecti
         emit(false)
     }
 
-    val connectionStatusLiveData = connectionStatus.asLiveData()
+    val isConnectedLiveData = isConnectedFlow.asLiveData()
 
     var fwInfo: FirmwareInfoPacket? = null
 

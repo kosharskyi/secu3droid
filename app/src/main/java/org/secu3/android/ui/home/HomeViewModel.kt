@@ -49,7 +49,7 @@ class HomeViewModel @Inject constructor(
 
 
     val connectionStatusLiveData: LiveData<Boolean>
-        get() = secu3Connection.connectionStatusLiveData
+        get() = secu3Connection.isConnectedLiveData
 
     val firmware: FirmwareInfoPacket?
         get() = secu3Connection.fwInfo

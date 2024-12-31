@@ -39,7 +39,7 @@ class SecuConnectionService : LifecycleService() {
     override fun onCreate() {
         super.onCreate()
 
-        secu3Connection.connectionStatusLiveData.observe(this) {
+        secu3Connection.isConnectedLiveData.observe(this) {
             if (it) {
                 lostConnectionJob?.cancel()
                 lostConnectionJob = null

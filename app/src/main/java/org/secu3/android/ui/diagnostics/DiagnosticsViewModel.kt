@@ -87,7 +87,7 @@ class DiagnosticsViewModel @Inject constructor(private val secu3Connection: Secu
     }
 
     val connectionStatusLiveData: LiveData<Boolean>
-        get() = secu3Connection.connectionStatusLiveData
+        get() = secu3Connection.isConnectedLiveData
 
     val diagInputLiveData: LiveData<DiagInputPacket>
         get() = secu3Connection.receivedPacketFlow.filter { it is DiagInputPacket }.map {
