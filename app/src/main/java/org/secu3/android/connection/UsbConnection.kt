@@ -44,6 +44,7 @@ import org.secu3.android.models.packets.base.BaseSecu3Packet.Companion.END_PACKE
 import org.secu3.android.models.packets.out.ChangeModePacket
 import org.secu3.android.utils.PacketUtils
 import org.secu3.android.utils.Task
+import org.secu3.android.utils.UserPrefs
 import org.threeten.bp.LocalTime
 import java.io.IOException
 import javax.inject.Inject
@@ -51,8 +52,12 @@ import javax.inject.Singleton
 
 @Singleton
 class UsbConnection @Inject constructor(
-    private val usbManager: UsbManager
+    private val usbManager: UsbManager,
+    private val prefs: UserPrefs
 ) {
+
+    private val maxConnectionAttempts: Int
+        get() = prefs.connectionRetries
 
     var connectionAttempts = 0
         private set
@@ -86,15 +91,22 @@ class UsbConnection @Inject constructor(
     private fun reconnect() {
         if (!isRunning) return
 
-        println("Attempting to connect")
+        if (connectionAttempts >= maxConnectionAttempts) {
+            isRunning = false
+            Log.i(this.javaClass.simpleName, "Max connection attempts reached. Stopping connection attempts.")
+            return
+        }
+
+        connectionAttempts++
+        Log.d(this.javaClass.simpleName, "Attempting to connect: $connectionAttempts/$maxConnectionAttempts")
 
         scope.launch {
             try {
                 findAndRequestPermission()
-                println("Connected to USB device")
+                Log.d(this.javaClass.simpleName, "Connected to USB device")
                 startReadingData()
             } catch (e: Exception) {
-                println("Connection failed: ${e.message}")
+                Log.e(this.javaClass.simpleName, "Connection failed: ${e.message}")
                 delay(2000)
                 reconnect()
             }
@@ -130,7 +142,7 @@ class UsbConnection @Inject constructor(
             usbSerialPort?.close()
             usbSerialPort = null
         } catch (e: Exception) {
-            println("Error while disconnecting: ${e.message}")
+            Log.e(this.javaClass.simpleName, "Error while disconnecting: ${e.message}")
         }
     }
 
@@ -160,7 +172,7 @@ class UsbConnection @Inject constructor(
                             if (idx < packetBuffer.size) {
                                 packetBuffer[idx++] = unsignedByte
                             } else {
-                                println("Packet buffer overflow, resetting.")
+                                Log.d(this.javaClass.simpleName, "Packet buffer overflow, resetting.")
                                 idx = 0
                             }
                         } else {
@@ -169,7 +181,7 @@ class UsbConnection @Inject constructor(
                                 val line = String(escaped.map { it.toByte() }.toByteArray(), Charsets.ISO_8859_1)
                                 mReceivedPacketFlow.emit(RawPacket(line))
                             } else {
-                                println("Incomplete packet received, skipping.")
+                                Log.d(this.javaClass.simpleName, "Incomplete packet received, skipping.")
                             }
                             idx = 0
                         }
@@ -177,7 +189,7 @@ class UsbConnection @Inject constructor(
                 }
                 connectionAttempts = 0
             } catch (e: Exception) {
-                println("Error while reading data: ${e.message}")
+                Log.e(this.javaClass.simpleName, "Error while reading data: ${e.message}")
                 connectionAttempts = 0
                 reconnect()
             }
@@ -217,7 +229,7 @@ class UsbConnection @Inject constructor(
 
                 usbSerialPort?.write(unsignedBuffer, 1000) ?: throw IllegalStateException("Output stream is null")
             } catch (e: IOException) {
-                println("Error while sending data: ${e.message}")
+                Log.e(this.javaClass.simpleName, "Error while sending data: ${e.message}")
             }
         }
     }

@@ -175,6 +175,11 @@ class BtConnection @Inject constructor(
                 var idx = 0
 
                 while (isRunning && bluetoothSocket?.isConnected == true) {
+                    if (idx >= packetBuffer.size) {
+                        Log.d(this.javaClass.simpleName, "Packet buffer overflow, resetting.")
+                        idx = 0
+                    }
+
                     val char = reader.read().takeIf { it != -1 }?.toChar() ?: continue
                     if (char == startMarker) {
                         idx = 0
