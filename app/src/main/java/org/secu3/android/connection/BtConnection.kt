@@ -144,7 +144,7 @@ class BtConnection @Inject constructor(
             bluetoothSocket?.close()
             bluetoothSocket = null
         } catch (e: IOException) {
-            println("Error while disconnecting: ${e.message}")
+            Log.e(this.javaClass.simpleName, "Error while disconnecting: ${e.message}")
         }
     }
 
@@ -154,10 +154,10 @@ class BtConnection @Inject constructor(
                 while (isRunning && bluetoothSocket?.isConnected == true) {
                     delay(1000)
                 }
-                println("Connection lost")
+                Log.i(this.javaClass.simpleName, "Connection lost")
                 reconnect()
             } catch (e: Exception) {
-                println("Error during listening: ${e.message}")
+                Log.e(this.javaClass.simpleName, "Error during listening: ${e.message}")
                 reconnect()
             }
         }
@@ -193,7 +193,7 @@ class BtConnection @Inject constructor(
                 }
                 connectionAttempts = 0
             } catch (e: IOException) {
-                println("Error while reading data: ${e.message}")
+                Log.e(this.javaClass.simpleName, "Error while reading data: ${e.message}")
                 connectionAttempts = 0
                 reconnect()
             }
@@ -234,9 +234,8 @@ class BtConnection @Inject constructor(
 
                 delay(20)
                 writer.flush()
-//                println("Data sent: $data")
             } catch (e: IOException) {
-                println("Error while sending data: ${e.message}")
+                Log.e(this.javaClass.simpleName, "Error while sending data: ${e.message}")
             }
         }
     }

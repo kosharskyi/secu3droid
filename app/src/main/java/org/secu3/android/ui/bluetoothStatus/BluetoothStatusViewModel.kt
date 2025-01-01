@@ -28,16 +28,31 @@ package org.secu3.android.ui.bluetoothStatus
 import android.bluetooth.BluetoothAdapter
 import android.bluetooth.BluetoothDevice
 import android.bluetooth.BluetoothManager
+import androidx.lifecycle.LiveData
 import androidx.lifecycle.ViewModel
+import androidx.lifecycle.asLiveData
+import androidx.lifecycle.viewModelScope
 import dagger.hilt.android.lifecycle.HiltViewModel
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.launch
+import org.secu3.android.Secu3Connection
 import org.secu3.android.utils.UserPrefs
 import javax.inject.Inject
 
 @HiltViewModel
 class BluetoothStatusViewModel @Inject constructor(
     private val mPrefs: UserPrefs,
-    private val bluetoothManager: BluetoothManager
+    private val bluetoothManager: BluetoothManager,
+    private val secu3Connection: Secu3Connection,
 ): ViewModel() {
+
+    private val isConnectionInProgressFlow = MutableStateFlow(false)
+    val isConnectionInProgressLiveData: LiveData<Boolean>
+        get() = isConnectionInProgressFlow.asLiveData()
+
+    val isConnectedLiveData: LiveData<Boolean>
+        get() = secu3Connection.isConnectedFlow.asLiveData()
 
     private val bluetoothAdapter: BluetoothAdapter by lazy { bluetoothManager.adapter }
 
@@ -62,5 +77,21 @@ class BluetoothStatusViewModel @Inject constructor(
         get() {
             return isBtEnabled() && !isBtDeviceAddressNotSelected() && isBtDeviceNotExist().not()
         }
+
+    fun startConnection() {
+        viewModelScope.launch {
+            isConnectionInProgressFlow.emit(true)
+            secu3Connection.startConnect()
+
+            while (secu3Connection.isConnectionRunning && secu3Connection.isConnected.not()) {
+
+                delay(2000)
+            }
+
+            delay(1000) // to prevent change button state too fast in case of success
+
+            isConnectionInProgressFlow.emit(false)
+        }
+    }
 
 }

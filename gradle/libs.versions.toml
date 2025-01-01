@@ -33,6 +33,7 @@ usb-serial-for-android = "3.8.1"
 junit = "4.13.2"
 androidx-junit = "1.2.1"
 espresso-core = "3.6.1"
+runtime-livedata = "1.7.6"
 
 
 [libraries]
@@ -74,6 +75,8 @@ compose-ui = { group = "androidx.compose.ui", name = "ui" }
 compose-material = { group = "androidx.compose.material", name = "material" }
 compose-ui-tooling = { group = "androidx.compose.ui", name = "ui-tooling"}
 compose-runtime = { group = "androidx.compose.runtime", name = "runtime" }
+compose-viewmodel = { group = "androidx.lifecycle", name = "lifecycle-viewmodel-compose" }
+compose-livedata = { group = "androidx.compose.runtime", name = "runtime-livedata"}
 
 dagger-hilt-android = { group = "com.google.dagger", name = "hilt-android", version.ref = "dagger" }
 dagger-hilt-compiler = { group = "com.google.dagger", name = "hilt-compiler", version.ref = "dagger" }

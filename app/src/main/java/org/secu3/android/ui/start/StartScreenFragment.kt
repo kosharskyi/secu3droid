@@ -39,37 +39,34 @@ import android.view.ViewGroup
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.shape.CircleShape
-import androidx.compose.material.Button
 import androidx.compose.material.MaterialTheme
-import androidx.compose.material.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.livedata.observeAsState
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.ComposeView
+import androidx.compose.ui.unit.dp
 import androidx.core.content.ContextCompat
-import androidx.fragment.app.activityViewModels
 import androidx.fragment.app.viewModels
+import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.fragment.findNavController
 import com.google.android.material.dialog.MaterialAlertDialogBuilder
 import dagger.hilt.android.AndroidEntryPoint
 import org.secu3.android.R
-import org.secu3.android.ui.MainActivityViewModel
 import org.secu3.android.ui.bluetoothStatus.BluetoothStatusViewModel
 import org.secu3.android.ui.settings.SettingsActivity
 
 @AndroidEntryPoint
 class StartScreenFragment : Fragment() {
 
-    private val viewModel: MainActivityViewModel by activityViewModels()
-
-    private val btViewModel: BluetoothStatusViewModel by viewModels()
+    private val viewModel: BluetoothStatusViewModel by viewModels()
 
     override fun onCreateView(inflater: LayoutInflater, container: ViewGroup?, savedInstanceState: Bundle?): View? {
 
         return ComposeView(requireContext()).apply {
             setContent {
-                StartScreen()
+                StartScreen(viewModel)
             }
         }
     }
@@ -85,20 +82,37 @@ class StartScreenFragment : Fragment() {
     }
 
     @Composable
-    fun StartScreen() {
-        MaterialTheme {
-        Box(
-            modifier = Modifier.fillMaxSize(),
-            contentAlignment = Alignment.Center
-        ) {
-            Button(
-                onClick = { checkBluetoothPermissionsAndConnect() },
-                shape = CircleShape
-            ) {
-                Text("Connect")
+    fun StartScreen(viewModel: BluetoothStatusViewModel = viewModel()) {
+        val isInProgress = viewModel.isConnectionInProgressLiveData.observeAsState()
+
+        isInProgress.value?.let {
+
+            MaterialTheme {
+                Box(
+                    modifier = Modifier.fillMaxSize(),
+                    contentAlignment = Alignment.Center
+                ) {
+                    CircularButton(
+                        textNormal = "Connect",
+                        textInProgress = "Connecting...",
+                        isInProgress = it,
+                        onClick = {
+                            connectBtnClicked(it)
+                        },
+                        size = 200.dp,
+                        borderColor = Color.Gray,
+                        progressSegmentColor = Color.Cyan,
+                        textColor = Color.Black
+                    )
+                }
             }
         }
-        }
+    }
+
+    private fun connectBtnClicked(isInProgress: Boolean) {
+        if (isInProgress) return
+
+        checkBluetoothPermissionsAndConnect()
     }
 
     private val permissionRequest = registerForActivityResult(ActivityResultContracts.RequestMultiplePermissions()) {
@@ -142,9 +156,9 @@ class StartScreenFragment : Fragment() {
     private fun checkBtConfig() {
 
         when {
-            btViewModel.isBtEnabled().not() -> enableBt()
-            btViewModel.isBtDeviceAddressNotSelected() -> showNoBtDeviceDialog()
-            btViewModel.isBtDeviceNotExist() -> showBtDeviceNotValidDialog()
+            viewModel.isBtEnabled().not() -> enableBt()
+            viewModel.isBtDeviceAddressNotSelected() -> showNoBtDeviceDialog()
+            viewModel.isBtDeviceNotExist() -> showBtDeviceNotValidDialog()
             else -> viewModel.startConnection()
         }
 

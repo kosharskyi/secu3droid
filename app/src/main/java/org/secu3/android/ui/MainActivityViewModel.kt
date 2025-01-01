@@ -42,12 +42,7 @@ class MainActivityViewModel @Inject constructor(
     val prefs: UserPrefs,
 ) : ViewModel() {
 
-    val isConnectedLiveData: LiveData<Boolean>
-        get() = secu3Connection.isConnectedFlow.asLiveData()
 
-    fun startConnection() {
-        secu3Connection.startConnect()
-    }
 
     fun newUsbDeviceAttached(device: UsbDevice) {
         with(secu3Connection) {

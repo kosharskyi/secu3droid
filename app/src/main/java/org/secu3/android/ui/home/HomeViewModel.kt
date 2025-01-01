@@ -68,7 +68,6 @@ class HomeViewModel @Inject constructor(
     init {
         viewModelScope.launch {
             homeRepository.checkAndInitDb()
-            secu3Connection.startConnect()
         }
     }
 
