@@ -3,12 +3,16 @@ package org.secu3.android.ui.start
 import androidx.compose.animation.core.*
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material.Text
+import androidx.compose.material.ripple
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.graphics.drawscope.rotate
@@ -34,14 +38,23 @@ fun CircularButton(
     Box(
         modifier = modifier
             .size(size)
-            .clickable { onClick() },
+            .clip(CircleShape)
+            .clickable(
+                interactionSource = remember { MutableInteractionSource() },
+                indication = ripple(bounded = true),
+                onClick = onClick,
+            )
+        ,
+
         contentAlignment = Alignment.Center
     ) {
         Canvas(modifier = Modifier.matchParentSize()) {
+            val inset = borderWidth.toPx() / 2
             // Static circle (common for both states)
             drawCircle(
                 color = borderColor,
-                style = Stroke(width = borderWidth.toPx())
+                style = Stroke(width = borderWidth.toPx()),
+                radius = size.toPx() / 2 - inset
             )
         }
 

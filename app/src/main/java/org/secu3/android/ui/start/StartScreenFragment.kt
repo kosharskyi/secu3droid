@@ -195,10 +195,10 @@ class StartScreenFragment : Fragment() {
         super.onActivityResult(requestCode, resultCode, data)
         if (requestCode == REQUEST_ENABLE_BT) {
             if (resultCode == RESULT_OK) {
-                // Bluetooth включений
+                // Bluetooth enabled
                 checkBluetoothPermissionsAndConnect()
             } else {
-                // Користувач відмовився увімкнути Bluetooth
+                // User refused to enable Bluetooth
             }
         }
     }
