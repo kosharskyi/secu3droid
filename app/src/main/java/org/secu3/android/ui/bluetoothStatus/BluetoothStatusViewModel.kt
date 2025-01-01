@@ -36,7 +36,7 @@ import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.launch
-import org.secu3.android.Secu3Connection
+import org.secu3.android.connection.Secu3Connection
 import org.secu3.android.utils.UserPrefs
 import javax.inject.Inject
 

@@ -34,7 +34,7 @@ import kotlinx.coroutines.flow.filter
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.sample
 import kotlinx.coroutines.launch
-import org.secu3.android.Secu3Connection
+import org.secu3.android.connection.Secu3Connection
 import org.secu3.android.db.models.GaugeState
 import org.secu3.android.db.models.IndicatorState
 import org.secu3.android.models.packets.input.AdcRawDatPacket

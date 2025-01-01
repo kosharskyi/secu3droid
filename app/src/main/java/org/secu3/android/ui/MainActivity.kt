@@ -39,7 +39,7 @@ import androidx.activity.viewModels
 import androidx.appcompat.app.AppCompatActivity
 import dagger.hilt.android.AndroidEntryPoint
 import org.secu3.android.R
-import org.secu3.android.SecuConnectionService
+import org.secu3.android.connection.SecuConnectionService
 
 @AndroidEntryPoint
 class MainActivity : AppCompatActivity() {

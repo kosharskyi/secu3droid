@@ -39,7 +39,7 @@ import androidx.navigation.fragment.findNavController
 import com.google.android.material.dialog.MaterialAlertDialogBuilder
 import dagger.hilt.android.AndroidEntryPoint
 import org.secu3.android.R
-import org.secu3.android.SecuConnectionService
+import org.secu3.android.connection.SecuConnectionService
 import org.secu3.android.databinding.FragmentHomeBinding
 import org.secu3.android.network.models.GitHubRelease
 import org.secu3.android.ui.settings.SettingsActivity

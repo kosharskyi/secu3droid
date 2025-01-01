@@ -40,7 +40,7 @@ import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import org.secu3.android.R
-import org.secu3.android.Secu3Connection
+import org.secu3.android.connection.Secu3Connection
 import org.secu3.android.models.FnName
 import org.secu3.android.models.packets.base.BaseOutputPacket
 import org.secu3.android.models.packets.input.FirmwareInfoPacket

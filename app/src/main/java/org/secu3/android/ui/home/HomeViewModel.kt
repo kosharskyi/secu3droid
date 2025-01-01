@@ -33,7 +33,7 @@ import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.launch
 import org.secu3.android.BuildConfig
-import org.secu3.android.Secu3Connection
+import org.secu3.android.connection.Secu3Connection
 import org.secu3.android.models.packets.input.FirmwareInfoPacket
 import org.secu3.android.network.models.GitHubRelease
 import org.secu3.android.utils.AppPrefs

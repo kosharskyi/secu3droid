@@ -1,9 +1,9 @@
 /*
  *    SecuDroid  - An open source, free manager for SECU-3 engine control unit
- *    Copyright (C) 2024 Vitaliy O. Kosharskyi. Ukraine, Kyiv
+ *    Copyright (C) 2025 Vitalii O. Kosharskyi. Ukraine, Kyiv
  *
  *    SECU-3  - An open source, free engine control unit
- *    Copyright (C) 2007-2024 Alexey A. Shabelnikov. Ukraine, Kyiv
+ *    Copyright (C) 2007-2025 Alexey A. Shabelnikov. Ukraine, Kyiv
  *
  *    This program is free software: you can redistribute it and/or modify
  *    it under the terms of the GNU General Public License as published by
@@ -22,7 +22,7 @@
  *                    http://secu-3.org
  *                    email: vetalkosharskiy@gmail.com
  */
-package org.secu3.android
+package org.secu3.android.connection
 
 import android.bluetooth.BluetoothManager
 import android.hardware.usb.UsbDevice
@@ -30,8 +30,6 @@ import androidx.lifecycle.LiveData
 import androidx.lifecycle.asLiveData
 import kotlinx.coroutines.*
 import kotlinx.coroutines.flow.*
-import org.secu3.android.connection.BtConnection
-import org.secu3.android.connection.UsbConnection
 import org.secu3.android.models.packets.base.BaseOutputPacket
 import org.secu3.android.models.packets.base.BaseSecu3Packet
 import org.secu3.android.models.packets.input.FirmwareInfoPacket

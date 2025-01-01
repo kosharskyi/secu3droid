@@ -31,7 +31,7 @@ import androidx.lifecycle.asLiveData
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.filter
 import kotlinx.coroutines.flow.map
-import org.secu3.android.Secu3Connection
+import org.secu3.android.connection.Secu3Connection
 import org.secu3.android.models.packets.input.CheckEngineErrorsPacket
 import org.secu3.android.models.packets.input.CheckEngineSavedErrorsPacket
 import org.secu3.android.utils.Task
