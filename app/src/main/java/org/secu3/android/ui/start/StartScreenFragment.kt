@@ -37,9 +37,17 @@ import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import androidx.activity.result.contract.ActivityResultContracts
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.wrapContentSize
+import androidx.compose.material.Icon
 import androidx.compose.material.MaterialTheme
+import androidx.compose.material.Surface
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Settings
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.livedata.observeAsState
 import androidx.compose.ui.Alignment
@@ -88,22 +96,41 @@ class StartScreenFragment : Fragment() {
         isInProgress.value?.let {
 
             MaterialTheme {
-                Box(
-                    modifier = Modifier.fillMaxSize(),
-                    contentAlignment = Alignment.Center
-                ) {
-                    CircularButton(
-                        textNormal = "Connect",
-                        textInProgress = "Connecting...",
-                        isInProgress = it,
-                        onClick = {
-                            connectBtnClicked(it)
-                        },
-                        size = 200.dp,
-                        borderColor = Color.Gray,
-                        progressSegmentColor = Color.Cyan,
-                        textColor = Color.Black
-                    )
+                Surface {
+                    Box(
+                        modifier = Modifier.wrapContentSize(Alignment.TopEnd)
+                            .padding(16.dp)
+                            .clickable {
+                                startActivity(Intent(requireContext(), SettingsActivity::class.java))
+                            },
+                    ) {
+                        Icon(
+                            imageVector = Icons.Default.Settings,
+                            contentDescription = "Settings icon",
+                            modifier = Modifier
+                                .size(32.dp)
+                                ,
+                            tint = Color.Black
+                        )
+                    }
+
+                    Box(
+                        modifier = Modifier.fillMaxSize(),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        CircularButton(
+                            textNormal = "Connect",
+                            textInProgress = "Connecting...",
+                            isInProgress = it,
+                            onClick = {
+                                connectBtnClicked(it)
+                            },
+                            size = 200.dp,
+                            borderColor = Color.Gray,
+                            progressSegmentColor = Color.Cyan,
+                            textColor = Color.Black
+                        )
+                    }
                 }
             }
         }

@@ -13,6 +13,8 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.graphics.drawscope.rotate
@@ -43,9 +45,7 @@ fun CircularButton(
                 interactionSource = remember { MutableInteractionSource() },
                 indication = ripple(bounded = true),
                 onClick = onClick,
-            )
-        ,
-
+            ),
         contentAlignment = Alignment.Center
     ) {
         Canvas(modifier = Modifier.matchParentSize()) {
@@ -72,13 +72,17 @@ fun CircularButton(
 
             // Rotating segment
             Canvas(modifier = Modifier.matchParentSize()) {
+                val inset = borderWidth.toPx() / 2
+                
                 rotate(rotationAngle) {
                     drawArc(
                         color = progressSegmentColor,
                         startAngle = 270f,
                         sweepAngle = 60f, // The size of the segment
                         useCenter = false,
-                        style = Stroke(width = progressSegmentWidth.toPx())
+                        style = Stroke(width = progressSegmentWidth.toPx()),
+                        topLeft = Offset(inset, inset),
+                        size = Size(size.toPx() - inset * 2, size.toPx() - inset * 2)
                     )
                 }
             }
