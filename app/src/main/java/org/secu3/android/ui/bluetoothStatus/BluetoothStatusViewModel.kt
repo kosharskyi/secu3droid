@@ -83,7 +83,7 @@ class BluetoothStatusViewModel @Inject constructor(
             isConnectionInProgressFlow.emit(true)
             secu3Connection.startConnect()
 
-            while (secu3Connection.isConnectionRunning && secu3Connection.isConnected.not()) {
+            while (secu3Connection.isConnectionRunning && secu3Connection.isConnected.not() && secu3Connection.fwInfo == null) {
 
                 delay(2000)
             }
