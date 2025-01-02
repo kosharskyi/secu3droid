@@ -79,6 +79,25 @@ class Secu3Connection @Inject constructor(private val usbConnection: UsbConnecti
         }
     }.filterNotNull()
 
+    val connectionStateFlow: Flow<ConnectionState>
+        get() = flow {
+            if (isConnected) {
+                emit(Connected)
+            }
+
+            if (isConnected.not()) {
+                emit(Disconnected)
+            }
+
+            if (isConnectionRunning && isConnected.not()) {
+                emit(InProgress)
+            }
+
+            merge(usbConnection.connectionStateFlow, btConnection.connectionStateFlow).collect {
+                emit(it)
+            }
+        }
+
     val firmwareLiveData: LiveData<FirmwareInfoPacket> = receivedPacketFlow.filter { it is FirmwareInfoPacket }
         .map { it as FirmwareInfoPacket }
         .asLiveData()

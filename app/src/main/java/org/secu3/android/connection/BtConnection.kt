@@ -81,7 +81,17 @@ class BtConnection @Inject constructor(
     val receivedPacketFlow: Flow<RawPacket>
         get() = mReceivedPacketFlow
 
+    private val mConnectionStateFlow = MutableSharedFlow<ConnectionState>(replay = 1)
+    val connectionStateFlow: Flow<ConnectionState>
+        get() = mConnectionStateFlow
+
     private val scope = CoroutineScope(Dispatchers.IO + SupervisorJob())
+
+    init {
+        scope.launch {
+            mConnectionStateFlow.emit(Disconnected)
+        }
+    }
 
     fun startConnection() {
         val deviceName = pairedDeviceName
@@ -103,21 +113,36 @@ class BtConnection @Inject constructor(
 
         if (connectionAttempts >= maxConnectionAttempts) {
             isRunning = false
-            Log.i(this.javaClass.simpleName, "Max connection attempts reached. Stopping connection attempts.")
+            scope.launch {
+                mConnectionStateFlow.emit(Disconnected)
+                mConnectionStateFlow.emit(ConnectionTimeout)
+                Log.i(this.javaClass.simpleName, "Max connection attempts reached. Stopping connection attempts.")
+            }
             return
+        }
+
+        scope.launch {
+            mConnectionStateFlow.emit(InProgress)
         }
 
         connectionAttempts++
         Log.d(this.javaClass.simpleName, "Attempting to connect: $connectionAttempts/$maxConnectionAttempts")
+        if (connectionAttempts > 1) {
+            scope.launch {
+                mConnectionStateFlow.emit(ConnectionAttempt(connectionAttempts))
+            }
+        }
 
         scope.launch {
             try {
                 connectToDevice()
 
+                mConnectionStateFlow.emit(Connected)
                 Log.i(this.javaClass.simpleName, "Connected to device")
                 listenForDisconnection()
                 startReadingData()
             } catch (e: IOException) {
+                mConnectionStateFlow.emit(ConnectionFailed(e))
                 Log.e(this.javaClass.simpleName, "Connection failed: ${e.message}")
                 delay(2000)
                 reconnect()
@@ -140,11 +165,15 @@ class BtConnection @Inject constructor(
     }
 
     private fun disconnect() {
-        try {
-            bluetoothSocket?.close()
-            bluetoothSocket = null
-        } catch (e: IOException) {
-            Log.e(this.javaClass.simpleName, "Error while disconnecting: ${e.message}")
+        scope.launch {
+            try {
+                mConnectionStateFlow.emit(Disconnected)
+                bluetoothSocket?.close()
+                bluetoothSocket = null
+            } catch (e: IOException) {
+                mConnectionStateFlow.emit(ConnectionError(e))
+                Log.e(this.javaClass.simpleName, "Error while disconnecting: ${e.message}")
+            }
         }
     }
 
@@ -155,8 +184,10 @@ class BtConnection @Inject constructor(
                     delay(1000)
                 }
                 Log.i(this.javaClass.simpleName, "Connection lost")
+                mConnectionStateFlow.emit(Disconnected)
                 reconnect()
             } catch (e: Exception) {
+                mConnectionStateFlow.emit(ConnectionError(e))
                 Log.e(this.javaClass.simpleName, "Error during listening: ${e.message}")
                 reconnect()
             }

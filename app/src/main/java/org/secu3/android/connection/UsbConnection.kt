@@ -76,7 +76,15 @@ class UsbConnection @Inject constructor(
     val receivedPacketFlow: Flow<RawPacket>
         get() = mReceivedPacketFlow
 
+    private val mConnectionStateFlow = MutableSharedFlow<ConnectionState>(replay = 1)
+    val connectionStateFlow: Flow<ConnectionState>
+        get() = mConnectionStateFlow
 
+    init {
+        scope.launch {
+            mConnectionStateFlow.emit(Disconnected)
+        }
+    }
 
     fun startConnection(device: UsbDevice) {
         isRunning = true
@@ -92,20 +100,37 @@ class UsbConnection @Inject constructor(
         if (!isRunning) return
 
         if (connectionAttempts >= maxConnectionAttempts) {
-            isRunning = false
-            Log.i(this.javaClass.simpleName, "Max connection attempts reached. Stopping connection attempts.")
+            scope.launch {
+                mConnectionStateFlow.emit(Disconnected)
+                mConnectionStateFlow.emit(ConnectionTimeout)
+                Log.i(this.javaClass.simpleName, "Max connection attempts reached. Stopping connection attempts.")
+            }
             return
+        }
+
+        scope.launch {
+            mConnectionStateFlow.emit(InProgress)
         }
 
         connectionAttempts++
         Log.d(this.javaClass.simpleName, "Attempting to connect: $connectionAttempts/$maxConnectionAttempts")
+        if (connectionAttempts > 1) {
+            scope.launch {
+                mConnectionStateFlow.emit(ConnectionAttempt(connectionAttempts))
+            }
+        }
 
         scope.launch {
             try {
                 findAndRequestPermission()
+
+                mConnectionStateFlow.emit(Connected)
                 Log.d(this.javaClass.simpleName, "Connected to USB device")
+
+                listenForDisconnection()
                 startReadingData()
             } catch (e: Exception) {
+                mConnectionStateFlow.emit(ConnectionFailed(e))
                 Log.e(this.javaClass.simpleName, "Connection failed: ${e.message}")
                 delay(2000)
                 reconnect()
@@ -138,11 +163,15 @@ class UsbConnection @Inject constructor(
     }
 
     private fun disconnect() {
-        try {
-            usbSerialPort?.close()
-            usbSerialPort = null
-        } catch (e: Exception) {
-            Log.e(this.javaClass.simpleName, "Error while disconnecting: ${e.message}")
+        scope.launch {
+            try {
+                mConnectionStateFlow.emit(Disconnected)
+                usbSerialPort?.close()
+                usbSerialPort = null
+            } catch (e: Exception) {
+                mConnectionStateFlow.emit(ConnectionError(e))
+                Log.e(this.javaClass.simpleName, "Error while disconnecting: ${e.message}")
+            }
         }
     }
 
@@ -196,6 +225,23 @@ class UsbConnection @Inject constructor(
         }
 
         sendData(ChangeModePacket.getPacket(Task.Secu3ReadFirmwareInfo))
+    }
+
+    private fun listenForDisconnection() {
+        scope.launch {
+            try {
+                while (isRunning && usbSerialPort?.isOpen == true) {
+                    delay(1000)
+                }
+                Log.i(this.javaClass.simpleName, "Connection lost")
+                mConnectionStateFlow.emit(Disconnected)
+                reconnect()
+            } catch (e: Exception) {
+                mConnectionStateFlow.emit(ConnectionError(e))
+                Log.e(this.javaClass.simpleName, "Error during listening: ${e.message}")
+                reconnect()
+            }
+        }
     }
 
     fun sendData(packet: BaseOutputPacket) {
