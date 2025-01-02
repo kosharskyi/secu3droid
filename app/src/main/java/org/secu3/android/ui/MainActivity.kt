@@ -77,7 +77,6 @@ class MainActivity : AppCompatActivity() {
         super.onResume()
 
         handleKeepScreenOn()
-        handleSecuConnectionService()
     }
 
     private fun deviceAttached(device: UsbDevice) {
@@ -100,18 +99,7 @@ class MainActivity : AppCompatActivity() {
         }
     }
 
-    private fun handleSecuConnectionService() {
-        val intent = Intent(this, SecuConnectionService::class.java)
-        if (viewModel.prefs.isWakeLockEnabled) {
-            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-                startForegroundService(intent)
-            } else {
-                startService(intent)
-            }
-        } else {
-            stopService(intent)
-        }
-    }
+
 
     override fun onDestroy() {
         super.onDestroy()

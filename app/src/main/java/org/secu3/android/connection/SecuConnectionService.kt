@@ -35,17 +35,15 @@ import android.content.Context
 import android.content.Intent
 import android.content.pm.ServiceInfo
 import android.os.Build
+import android.util.Log
 import androidx.core.app.NotificationCompat
 import androidx.core.app.NotificationCompat.PRIORITY_LOW
 import androidx.core.app.NotificationCompat.VISIBILITY_PRIVATE
 import androidx.core.app.ServiceCompat
 import androidx.lifecycle.LifecycleService
-import androidx.lifecycle.lifecycleScope
+import androidx.lifecycle.asLiveData
 import dagger.hilt.android.AndroidEntryPoint
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.Job
-import kotlinx.coroutines.delay
-import kotlinx.coroutines.launch
+import kotlinx.coroutines.flow.debounce
 import org.secu3.android.R
 import org.secu3.android.ui.MainActivity
 import org.secu3.android.utils.SecuLogger
@@ -60,22 +58,19 @@ class SecuConnectionService : LifecycleService() {
     @Inject
     internal lateinit var mLogger: SecuLogger
 
-    private var lostConnectionJob: Job? = null
-
     override fun onCreate() {
         super.onCreate()
 
-        secu3Connection.isConnectedLiveData.observe(this) {
-            if (it) {
-                lostConnectionJob?.cancel()
-                lostConnectionJob = null
-            } else {
-                lostConnectionJob?.let {
-                    return@observe
-                }
-                lostConnectionJob = lifecycleScope.launch(Dispatchers.IO) {
-                    delay(20000)
-                    stopSelf()
+        if (secu3Connection.isConnected.not()) {
+            return
+        }
+
+        secu3Connection.connectionStateFlow.debounce(20000).asLiveData().observe(this) {
+            Log.e("SecuConnectionService", "Connection state: $it")
+            when (it) {
+                Disconnected -> stopSelf()
+                else -> {
+                    // ignore
                 }
             }
         }

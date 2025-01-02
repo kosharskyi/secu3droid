@@ -69,6 +69,7 @@ class Secu3Connection @Inject constructor(private val usbConnection: UsbConnecti
         emit(false)
     }
 
+    // TODO: consider use connection state instead
     val isConnectedLiveData = isConnectedFlow.asLiveData()
 
     var fwInfo: FirmwareInfoPacket? = null

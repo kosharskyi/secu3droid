@@ -38,6 +38,7 @@ import org.secu3.android.models.packets.input.FirmwareInfoPacket
 import org.secu3.android.network.models.GitHubRelease
 import org.secu3.android.utils.AppPrefs
 import org.secu3.android.utils.Task
+import org.secu3.android.utils.UserPrefs
 import org.threeten.bp.LocalDate
 import javax.inject.Inject
 
@@ -45,7 +46,9 @@ import javax.inject.Inject
 class HomeViewModel @Inject constructor(
     private val secu3Connection: Secu3Connection,
     private val homeRepository: HomeRepository,
-    private val appPrefs: AppPrefs) : ViewModel() {
+    private val appPrefs: AppPrefs,
+    val prefs: UserPrefs,
+    ) : ViewModel() {
 
 
     val connectionStatusLiveData: LiveData<Boolean>

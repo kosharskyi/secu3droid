@@ -26,6 +26,7 @@
 package org.secu3.android.ui.home
 
 import android.content.Intent
+import android.os.Build
 import android.os.Bundle
 import android.view.LayoutInflater
 import android.view.View
@@ -33,6 +34,7 @@ import android.view.ViewGroup
 import android.widget.Toast
 import androidx.activity.addCallback
 import androidx.core.content.ContextCompat
+import androidx.core.content.ContextCompat.startForegroundService
 import androidx.fragment.app.Fragment
 import androidx.fragment.app.viewModels
 import androidx.navigation.fragment.findNavController
@@ -121,6 +123,12 @@ class HomeFragment : Fragment() {
         }
     }
 
+    override fun onResume() {
+        super.onResume()
+
+        handleSecuConnectionService()
+    }
+
     private fun showNewVersionDialog(release: GitHubRelease) {
         MaterialAlertDialogBuilder(requireContext())
             .setTitle(getString(R.string.new_version_available))
@@ -146,6 +154,19 @@ class HomeFragment : Fragment() {
                 Toast.makeText(context, R.string.diagnostics_not_supported_title, Toast.LENGTH_LONG).show()
 
             }.setNegativeButton(android.R.string.cancel, null).create().show()
+    }
+
+    private fun handleSecuConnectionService() {
+        val intent = Intent(requireContext(), SecuConnectionService::class.java)
+        if (mViewModel.prefs.isWakeLockEnabled) {
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+                requireActivity().startForegroundService(intent)
+            } else {
+                requireActivity().startService(intent)
+            }
+        } else {
+            requireActivity().stopService(intent)
+        }
     }
 
     private fun exit() {
