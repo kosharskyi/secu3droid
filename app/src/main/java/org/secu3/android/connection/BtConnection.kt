@@ -116,8 +116,8 @@ class BtConnection @Inject constructor(
             scope.launch {
                 mConnectionStateFlow.emit(Disconnected)
                 mConnectionStateFlow.emit(ConnectionTimeout)
-                Log.i(this.javaClass.simpleName, "Max connection attempts reached. Stopping connection attempts.")
             }
+            Log.i(this.javaClass.simpleName, "Max connection attempts reached. Stopping connection attempts.")
             return
         }
 
@@ -139,7 +139,6 @@ class BtConnection @Inject constructor(
 
                 mConnectionStateFlow.emit(Connected)
                 Log.i(this.javaClass.simpleName, "Connected to device")
-                listenForDisconnection()
                 startReadingData()
             } catch (e: IOException) {
                 mConnectionStateFlow.emit(ConnectionFailed(e))
@@ -173,23 +172,6 @@ class BtConnection @Inject constructor(
             } catch (e: IOException) {
                 mConnectionStateFlow.emit(ConnectionError(e))
                 Log.e(this.javaClass.simpleName, "Error while disconnecting: ${e.message}")
-            }
-        }
-    }
-
-    private fun listenForDisconnection() {
-        scope.launch {
-            try {
-                while (isRunning && bluetoothSocket?.isConnected == true) {
-                    delay(1000)
-                }
-                Log.i(this.javaClass.simpleName, "Connection lost")
-                mConnectionStateFlow.emit(Disconnected)
-                reconnect()
-            } catch (e: Exception) {
-                mConnectionStateFlow.emit(ConnectionError(e))
-                Log.e(this.javaClass.simpleName, "Error during listening: ${e.message}")
-                reconnect()
             }
         }
     }

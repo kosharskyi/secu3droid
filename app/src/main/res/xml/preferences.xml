@@ -59,6 +59,13 @@
         android:defaultValue="false"
         />
 
+    <EditTextPreference
+        android:key="@string/pref_connection_retries_key"
+        android:title="@string/pref_connection_retries_title"
+        android:defaultValue="@string/defaultConnectionRetries"
+        android:inputType="numberDecimal"
+        android:summary="@string/pref_connection_retries_summary" />
+
     <CheckBoxPreference
         android:key="@string/pref_keep_screen_key"
         android:title="@string/pref_keep_screen_title"

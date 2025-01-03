@@ -127,7 +127,6 @@ class UsbConnection @Inject constructor(
                 mConnectionStateFlow.emit(Connected)
                 Log.d(this.javaClass.simpleName, "Connected to USB device")
 
-                listenForDisconnection()
                 startReadingData()
             } catch (e: Exception) {
                 mConnectionStateFlow.emit(ConnectionFailed(e))
@@ -225,23 +224,6 @@ class UsbConnection @Inject constructor(
         }
 
         sendData(ChangeModePacket.getPacket(Task.Secu3ReadFirmwareInfo))
-    }
-
-    private fun listenForDisconnection() {
-        scope.launch {
-            try {
-                while (isRunning && usbSerialPort?.isOpen == true) {
-                    delay(1000)
-                }
-                Log.i(this.javaClass.simpleName, "Connection lost")
-                mConnectionStateFlow.emit(Disconnected)
-                reconnect()
-            } catch (e: Exception) {
-                mConnectionStateFlow.emit(ConnectionError(e))
-                Log.e(this.javaClass.simpleName, "Error during listening: ${e.message}")
-                reconnect()
-            }
-        }
     }
 
     fun sendData(packet: BaseOutputPacket) {

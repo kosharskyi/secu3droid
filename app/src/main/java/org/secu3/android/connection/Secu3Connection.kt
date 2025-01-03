@@ -190,31 +190,5 @@ class Secu3Connection @Inject constructor(private val usbConnection: UsbConnecti
         connectionScope.launch {
             fwInfo = receivedPacketFlow.first { it is FirmwareInfoPacket } as FirmwareInfoPacket
         }
-
-//        repositoryScope.launch {
-//            while (lastPacketReceivedTimetamp.isAfter(LocalDateTime.now().minusMinutes(10))) {
-//                delay(1000)
-//
-//                if (tryToConnect.not()) {
-//                    continue
-//                }
-//
-//                if (mPrefs.bluetoothDeviceName.isNullOrBlank()) {
-//                    continue
-//                }
-//
-//                if (bluetoothManager.adapter.isEnabled.not()) {
-//                    continue
-//                }
-//
-//                if (usbConnection.isRunning.not() && usbConnection.connectionAttempts == 0) {
-//                    usbConnection.startConnection()
-//                    delay(2000)
-//                    continue
-//                }
-//
-//                delay(2000)
-//            }
-//        }
     }
 }
