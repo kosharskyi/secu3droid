@@ -34,7 +34,6 @@ import android.view.ViewGroup
 import android.widget.Toast
 import androidx.activity.addCallback
 import androidx.core.content.ContextCompat
-import androidx.core.content.ContextCompat.startForegroundService
 import androidx.fragment.app.Fragment
 import androidx.fragment.app.viewModels
 import androidx.navigation.fragment.findNavController
@@ -61,7 +60,7 @@ class HomeFragment : Fragment() {
 
         // This callback will only be called when MainMenuFragment is at least Started.
         requireActivity().onBackPressedDispatcher.addCallback(this) {
-            requireActivity().finish()
+            exit()
         }
     }
 
@@ -187,7 +186,6 @@ class HomeFragment : Fragment() {
     private fun exit() {
         requireActivity().stopService(Intent(requireContext(), SecuConnectionService::class.java))
         mViewModel.closeConnection()
-        activity?.finishAndRemoveTask()
     }
 
     override fun onDestroyView() {

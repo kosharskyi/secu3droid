@@ -49,8 +49,9 @@ class HomeViewModel @Inject constructor(
     private val homeRepository: HomeRepository,
     private val appPrefs: AppPrefs,
     val prefs: UserPrefs,
-    ) : ViewModel() {
+) : ViewModel() {
 
+    var isUserTapExit = false
 
     val connectionStatusLiveData: LiveData<ConnectionState>
         get() = secu3Connection.connectionStateFlow.asLiveData()
@@ -80,6 +81,7 @@ class HomeViewModel @Inject constructor(
     }
 
     fun closeConnection() {
+        isUserTapExit = true
         secu3Connection.disable()
     }
 
