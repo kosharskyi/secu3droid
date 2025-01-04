@@ -37,14 +37,9 @@ import androidx.activity.result.contract.ActivityResultContracts
 import androidx.core.content.ContextCompat
 import androidx.fragment.app.Fragment
 import androidx.fragment.app.viewModels
-import androidx.lifecycle.Lifecycle
-import androidx.lifecycle.lifecycleScope
-import androidx.lifecycle.repeatOnLifecycle
-import androidx.lifecycle.withResumed
 import androidx.navigation.fragment.findNavController
 import com.google.android.material.dialog.MaterialAlertDialogBuilder
 import dagger.hilt.android.AndroidEntryPoint
-import kotlinx.coroutines.launch
 import org.secu3.android.R
 import org.secu3.android.databinding.FragmentBluetoothStatusBinding
 import org.secu3.android.ui.settings.SettingsActivity
@@ -57,7 +52,7 @@ class BluetoothStatusFragment : Fragment() {
 
     private lateinit var mBinding: FragmentBluetoothStatusBinding
 
-    private val mViewModel: BluetoothStatusViewModel by viewModels()
+    private val mViewModel: StartScreenViewModel by viewModels()
 
     override fun onCreateView(inflater: LayoutInflater, container: ViewGroup?, savedInstanceState: Bundle?): View? {
         mBinding = FragmentBluetoothStatusBinding.inflate(inflater, container, false)

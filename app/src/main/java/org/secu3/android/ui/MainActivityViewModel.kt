@@ -27,11 +27,9 @@ package org.secu3.android.ui
 
 import android.hardware.usb.UsbDevice
 import android.hardware.usb.UsbManager
-import androidx.lifecycle.LiveData
 import androidx.lifecycle.ViewModel
-import androidx.lifecycle.asLiveData
 import dagger.hilt.android.lifecycle.HiltViewModel
-import org.secu3.android.Secu3Connection
+import org.secu3.android.connection.Secu3Connection
 import org.secu3.android.utils.UserPrefs
 import javax.inject.Inject
 
@@ -42,34 +40,5 @@ class MainActivityViewModel @Inject constructor(
     val prefs: UserPrefs,
 ) : ViewModel() {
 
-
-
-    fun newUsbDeviceAttached(device: UsbDevice) {
-        with(secu3Connection) {
-            if (isConnectionRunning.not()) {
-                startUsbConnection(device)
-                return
-            }
-
-            if (isUsbRunning && isUsbConnected.not()) {
-                startUsbConnection(device)
-                return
-            }
-
-            if (isBtRunning && isBtConnected.not()) {
-                startUsbConnection(device)
-                return
-            }
-
-            if (isUsbConnected) {
-                // TODO: make up this case
-            }
-
-            if (isBtConnected) {
-                // TODO: make up this case
-            }
-        }
-
-    }
 
 }

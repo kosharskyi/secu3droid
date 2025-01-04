@@ -121,16 +121,6 @@ class Secu3Connection @Inject constructor(private val usbConnection: UsbConnecti
         }
     }
 
-
-    fun startConnect() {
-        mPrefs.bluetoothDeviceName?.takeIf {  it.isNotEmpty() }?.let {
-            if (bluetoothManager.adapter.isEnabled.not()) {
-                return
-            }
-            startBtConnection()
-        }
-    }
-
     fun startUsbConnection(device: UsbDevice) {
         btConnection.stopConnection()
         usbConnection.stopConnection()
@@ -138,9 +128,14 @@ class Secu3Connection @Inject constructor(private val usbConnection: UsbConnecti
     }
 
     fun startBtConnection() {
-        usbConnection.stopConnection()
-        btConnection.stopConnection()
-        btConnection.startConnection()
+        mPrefs.bluetoothDeviceName?.takeIf {  it.isNotEmpty() }?.let {
+            if (bluetoothManager.adapter.isEnabled.not()) {
+                return
+            }
+            usbConnection.stopConnection()
+            btConnection.stopConnection()
+            btConnection.startConnection()
+        }
     }
 
     fun disable() {

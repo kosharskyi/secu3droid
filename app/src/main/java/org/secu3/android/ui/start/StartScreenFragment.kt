@@ -27,15 +27,22 @@ package org.secu3.android.ui.start
 
 import android.Manifest
 import android.app.Activity.RESULT_OK
+import android.app.PendingIntent
 import android.bluetooth.BluetoothAdapter
+import android.content.BroadcastReceiver
+import android.content.Context
 import android.content.Intent
+import android.content.IntentFilter
 import android.content.pm.PackageManager
+import android.hardware.usb.UsbDevice
+import android.hardware.usb.UsbManager
 import android.os.Build
 import android.os.Bundle
 import androidx.fragment.app.Fragment
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
+import android.widget.Toast
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Box
@@ -62,13 +69,40 @@ import androidx.navigation.fragment.findNavController
 import com.google.android.material.dialog.MaterialAlertDialogBuilder
 import dagger.hilt.android.AndroidEntryPoint
 import org.secu3.android.R
-import org.secu3.android.ui.bluetoothStatus.BluetoothStatusViewModel
+import org.secu3.android.connection.Connected
+import org.secu3.android.ui.bluetoothStatus.StartScreenViewModel
 import org.secu3.android.ui.settings.SettingsActivity
 
 @AndroidEntryPoint
 class StartScreenFragment : Fragment() {
 
-    private val viewModel: BluetoothStatusViewModel by viewModels()
+    private val viewModel: StartScreenViewModel by viewModels()
+
+    private val usbDeviceActionReceiver = object : BroadcastReceiver() {
+        override fun onReceive(context: Context, intent: Intent) {
+            if (ACTION_USB_ATTACHED == intent.action) {
+                val usbDevice = intent.getParcelableExtra<UsbDevice>(UsbManager.EXTRA_DEVICE)
+                usbDevice?.let { viewModel.newUsbDeviceAttached(it) }
+                Toast.makeText(requireContext(), "Device attached", Toast.LENGTH_SHORT).show()
+            }
+            if (ACTION_USB_DETACHED == intent.action) {
+                val usbDevice = intent.getParcelableExtra<UsbDevice>(UsbManager.EXTRA_DEVICE)
+                usbDevice?.let { viewModel.newUsbDeviceDetached() }
+                Toast.makeText(requireContext(), "Device detached", Toast.LENGTH_SHORT).show()
+            }
+
+            if (ACTION_USB_PERMISSION == intent.action) {
+                val device = intent.getParcelableExtra<UsbDevice>(UsbManager.EXTRA_DEVICE) ?: return
+                val permissionGranted = intent.getBooleanExtra(UsbManager.EXTRA_PERMISSION_GRANTED, false)
+                if (permissionGranted) {
+                    Toast.makeText(context, "Permission granted for device: ${device.deviceName}", Toast.LENGTH_SHORT).show()
+                    viewModel.startConnection(device)
+                } else {
+                    Toast.makeText(context, "Permission denied for USB device", Toast.LENGTH_SHORT).show()
+                }
+            }
+        }
+    }
 
     override fun onCreateView(inflater: LayoutInflater, container: ViewGroup?, savedInstanceState: Bundle?): View? {
 
@@ -89,16 +123,25 @@ class StartScreenFragment : Fragment() {
         }
     }
 
+    override fun onResume() {
+        super.onResume()
+        requireContext().registerReceiver(usbDeviceActionReceiver, IntentFilter(ACTION_USB_ATTACHED))
+    }
+
+    override fun onPause() {
+        super.onPause()
+        requireContext().unregisterReceiver(usbDeviceActionReceiver)
+    }
+
     @Composable
-    fun StartScreen(viewModel: BluetoothStatusViewModel = viewModel()) {
+    fun StartScreen(viewModel: StartScreenViewModel = viewModel()) {
         val isInProgress = viewModel.isConnectionInProgressLiveData.observeAsState()
-
         isInProgress.value?.let {
-
             MaterialTheme {
                 Surface {
                     Box(
-                        modifier = Modifier.wrapContentSize(Alignment.TopEnd)
+                        modifier = Modifier
+                            .wrapContentSize(Alignment.TopEnd)
                             .padding(16.dp)
                             .clickable {
                                 startActivity(Intent(requireContext(), SettingsActivity::class.java))
@@ -113,7 +156,6 @@ class StartScreenFragment : Fragment() {
                             tint = Color.Black
                         )
                     }
-
                     Box(
                         modifier = Modifier.fillMaxSize(),
                         contentAlignment = Alignment.Center
@@ -139,7 +181,26 @@ class StartScreenFragment : Fragment() {
     private fun connectBtnClicked(isInProgress: Boolean) {
         if (isInProgress) return
 
+        viewModel.usbDevice?.let {
+            checkUsbPermissionsAndConnect(it)
+            return
+        }
+
         checkBluetoothPermissionsAndConnect()
+    }
+
+    private fun checkUsbPermissionsAndConnect(usbDevice: UsbDevice) {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
+            val usbManager = requireContext().getSystemService(Context.USB_SERVICE) as UsbManager
+            if (usbManager.hasPermission(usbDevice)) {
+                viewModel.startConnection(usbDevice)
+            } else {
+                val permissionIntent = PendingIntent.getBroadcast(requireContext(),0, Intent(ACTION_USB_PERMISSION), PendingIntent.FLAG_IMMUTABLE)
+                usbManager.requestPermission(usbDevice, permissionIntent)
+            }
+        } else {
+            viewModel.startConnection(usbDevice)
+        }
     }
 
     private val permissionRequest = registerForActivityResult(ActivityResultContracts.RequestMultiplePermissions()) {
@@ -186,7 +247,7 @@ class StartScreenFragment : Fragment() {
             viewModel.isBtEnabled().not() -> enableBt()
             viewModel.isBtDeviceAddressNotSelected() -> showNoBtDeviceDialog()
             viewModel.isBtDeviceNotExist() -> showBtDeviceNotValidDialog()
-            else -> viewModel.startConnection()
+            else -> viewModel.startConnection(null)
         }
 
     }
@@ -232,5 +293,8 @@ class StartScreenFragment : Fragment() {
 
     companion object {
         private const val REQUEST_ENABLE_BT = 243135
+        private const val ACTION_USB_ATTACHED = "android.hardware.usb.action.USB_DEVICE_ATTACHED"
+        private const val ACTION_USB_DETACHED = "android.hardware.usb.action.USB_DEVICE_DETACHED"
+        private const val ACTION_USB_PERMISSION = "org.secu3.android.USB_PERMISSION"
     }
 }

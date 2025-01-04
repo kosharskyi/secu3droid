@@ -28,6 +28,7 @@ package org.secu3.android.ui.bluetoothStatus
 import android.bluetooth.BluetoothAdapter
 import android.bluetooth.BluetoothDevice
 import android.bluetooth.BluetoothManager
+import android.hardware.usb.UsbDevice
 import androidx.lifecycle.LiveData
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.asLiveData
@@ -36,12 +37,13 @@ import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.launch
+import org.secu3.android.connection.ConnectionState
 import org.secu3.android.connection.Secu3Connection
 import org.secu3.android.utils.UserPrefs
 import javax.inject.Inject
 
 @HiltViewModel
-class BluetoothStatusViewModel @Inject constructor(
+class StartScreenViewModel @Inject constructor(
     private val mPrefs: UserPrefs,
     private val bluetoothManager: BluetoothManager,
     private val secu3Connection: Secu3Connection,
@@ -51,10 +53,16 @@ class BluetoothStatusViewModel @Inject constructor(
     val isConnectionInProgressLiveData: LiveData<Boolean>
         get() = isConnectionInProgressFlow.asLiveData()
 
-    val isConnectedLiveData: LiveData<Boolean>
-        get() = secu3Connection.isConnectedFlow.asLiveData()
+    val isConnectedLiveData: LiveData<ConnectionState>
+        get() = secu3Connection.connectionStateFlow.asLiveData()
 
     private val bluetoothAdapter: BluetoothAdapter by lazy { bluetoothManager.adapter }
+
+    var usbDevice: UsbDevice? = null
+    private val mUsbDeviceAttachedFlow = MutableStateFlow<UsbDevice?>(null)
+    val mUsbDeviceAttachedLiveData: LiveData<UsbDevice?>
+        get() = mUsbDeviceAttachedFlow.asLiveData()
+
 
     fun isBtEnabled(): Boolean {
         return bluetoothAdapter.isEnabled
@@ -78,10 +86,15 @@ class BluetoothStatusViewModel @Inject constructor(
             return isBtEnabled() && !isBtDeviceAddressNotSelected() && isBtDeviceNotExist().not()
         }
 
-    fun startConnection() {
+    fun startConnection(device: UsbDevice?) {
         viewModelScope.launch {
             isConnectionInProgressFlow.emit(true)
-            secu3Connection.startConnect()
+
+            if (device != null) {
+                secu3Connection.startUsbConnection(device)
+            } else {
+                secu3Connection.startBtConnection()
+            }
 
             while (secu3Connection.isConnectionRunning && secu3Connection.isConnected.not() && secu3Connection.fwInfo == null) {
 
@@ -91,6 +104,20 @@ class BluetoothStatusViewModel @Inject constructor(
             delay(1000) // to prevent change button state too fast in case of success
 
             isConnectionInProgressFlow.emit(false)
+        }
+    }
+
+    fun newUsbDeviceAttached(usbDevice: UsbDevice) {
+        viewModelScope.launch {
+            this@StartScreenViewModel.usbDevice = usbDevice
+            mUsbDeviceAttachedFlow.emit(usbDevice)
+        }
+    }
+
+    fun newUsbDeviceDetached() {
+        viewModelScope.launch {
+            usbDevice = null
+            mUsbDeviceAttachedFlow.emit(null)
         }
     }
 
