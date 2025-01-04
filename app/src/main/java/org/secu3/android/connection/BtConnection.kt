@@ -87,12 +87,6 @@ class BtConnection @Inject constructor(
 
     private val scope = CoroutineScope(Dispatchers.IO + SupervisorJob())
 
-    init {
-        scope.launch {
-            mConnectionStateFlow.emit(Disconnected)
-        }
-    }
-
     fun startConnection() {
         val deviceName = pairedDeviceName
         if (deviceName == null || deviceName.isBlank()) {

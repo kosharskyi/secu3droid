@@ -65,12 +65,12 @@ class Secu3Connection @Inject constructor(private val usbConnection: UsbConnecti
                 emit(Connected)
             }
 
-            if (isConnected.not()) {
-                emit(Disconnected)
-            }
-
             if (isConnectionRunning && isConnected.not()) {
                 emit(InProgress)
+            }
+
+            if (isConnectionRunning.not()) {
+                emit(Disconnected)
             }
 
             merge(usbConnection.connectionStateFlow, btConnection.connectionStateFlow).collect {
