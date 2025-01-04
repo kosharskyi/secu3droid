@@ -42,6 +42,9 @@ import com.google.android.material.tabs.TabLayout.OnTabSelectedListener
 import com.google.android.material.tabs.TabLayoutMediator
 import dagger.hilt.android.AndroidEntryPoint
 import org.secu3.android.R
+import org.secu3.android.connection.Connected
+import org.secu3.android.connection.Disconnected
+import org.secu3.android.connection.InProgress
 import org.secu3.android.databinding.FragmentSensorsTabsBinding
 import org.secu3.android.utils.Task
 import org.secu3.android.utils.UserPrefs
@@ -70,10 +73,19 @@ class SensorsTabsFragment : Fragment() {
         init()
 
         mViewModel.connectionStatusLiveData.observe(viewLifecycleOwner) {
-            val color = if (it) {
-                ContextCompat.getColor(requireContext(), R.color.gauge_dark_green)
-            } else {
-                ContextCompat.getColor(requireContext(), R.color.gauge_red)
+            val color = when (it) {
+                Connected -> {
+                    ContextCompat.getColor(requireContext(), R.color.gauge_dark_green)
+                }
+                InProgress -> {
+                    ContextCompat.getColor(requireContext(), R.color.gauge_dark_yellow)
+                }
+                Disconnected -> {
+                    ContextCompat.getColor(requireContext(), R.color.gauge_red)
+                }
+                else -> {
+                    return@observe
+                }
             }
 
             mBinding?.toolbar?.menu?.findItem(R.id.connection_status)?.apply {

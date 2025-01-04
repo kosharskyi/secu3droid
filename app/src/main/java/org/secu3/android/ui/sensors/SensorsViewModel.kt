@@ -34,6 +34,7 @@ import kotlinx.coroutines.flow.filter
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.sample
 import kotlinx.coroutines.launch
+import org.secu3.android.connection.ConnectionState
 import org.secu3.android.connection.Secu3Connection
 import org.secu3.android.db.models.GaugeState
 import org.secu3.android.db.models.IndicatorState
@@ -65,8 +66,8 @@ class SensorsViewModel @Inject constructor(private val secu3Connection: Secu3Con
     val columnsCount: Int
         get() = mUserPrefs.columnsCount
 
-    val connectionStatusLiveData: LiveData<Boolean>
-        get() = secu3Connection.isConnectedLiveData
+    val connectionStatusLiveData: LiveData<ConnectionState>
+        get() = secu3Connection.connectionStateFlow.asLiveData()
 
     val sensorsLiveData: LiveData<SensorsPacket>
         get() = secu3Connection.receivedPacketFlow.sample(100).filter { it is SensorsPacket }

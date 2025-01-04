@@ -23,6 +23,7 @@
 
     <string name="msg_bluetooth_disabled">Bluetooth відключений</string>
     <string name="status_offline">Відключено</string>
+    <string name="status_connecting">Підключається</string>
     <string name="status_online">Підключено</string>
     <string name="title_activity_errors">Помилки</string>
     <string name="title_activity_settings">Налаштування</string>

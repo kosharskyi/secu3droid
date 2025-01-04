@@ -37,7 +37,6 @@ import org.secu3.android.models.packets.input.SensorsPacket
 import org.secu3.android.utils.UserPrefs
 import org.secu3.android.utils.SecuLogger
 import org.secu3.android.utils.Task
-import org.threeten.bp.LocalDateTime
 import javax.inject.Inject
 import javax.inject.Singleton
 
@@ -51,26 +50,6 @@ class Secu3Connection @Inject constructor(private val usbConnection: UsbConnecti
 
 
     private val connectionScope = CoroutineScope(Dispatchers.Default + Job())
-
-
-    private var lastPacketReceivedTimetamp = LocalDateTime.now().minusMinutes(1)
-
-    val isConnectedFlow = flow {
-        while (lastPacketReceivedTimetamp.isAfter(LocalDateTime.now().minusMinutes(10))) {
-            delay(500)
-
-            if (lastPacketReceivedTimetamp.isBefore(LocalDateTime.now().minusSeconds(5))) {
-                emit(false)
-            } else {
-                emit(true)
-            }
-        }
-
-        emit(false)
-    }
-
-    // TODO: consider use connection state instead
-    val isConnectedLiveData = isConnectedFlow.asLiveData()
 
     var fwInfo: FirmwareInfoPacket? = null
 
@@ -170,12 +149,6 @@ class Secu3Connection @Inject constructor(private val usbConnection: UsbConnecti
     }
 
     init {
-
-        connectionScope.launch {
-            receivedPacketFlow.collect {
-                lastPacketReceivedTimetamp = LocalDateTime.now()
-            }
-        }
 
         connectionScope.launch {
             receivedPacketFlow.filter { it is SensorsPacket }

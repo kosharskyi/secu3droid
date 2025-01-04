@@ -33,6 +33,7 @@ import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.launch
 import org.secu3.android.BuildConfig
+import org.secu3.android.connection.ConnectionState
 import org.secu3.android.connection.Secu3Connection
 import org.secu3.android.models.packets.input.FirmwareInfoPacket
 import org.secu3.android.network.models.GitHubRelease
@@ -51,8 +52,8 @@ class HomeViewModel @Inject constructor(
     ) : ViewModel() {
 
 
-    val connectionStatusLiveData: LiveData<Boolean>
-        get() = secu3Connection.isConnectedLiveData
+    val connectionStatusLiveData: LiveData<ConnectionState>
+        get() = secu3Connection.connectionStateFlow.asLiveData()
 
     val firmware: FirmwareInfoPacket?
         get() = secu3Connection.fwInfo

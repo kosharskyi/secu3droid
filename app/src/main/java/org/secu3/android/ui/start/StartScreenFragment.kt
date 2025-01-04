@@ -83,7 +83,7 @@ class StartScreenFragment : Fragment() {
         super.onViewCreated(view, savedInstanceState)
 
         viewModel.isConnectedLiveData.observe(viewLifecycleOwner) {
-            if (it) {
+            if (it is Connected) {
                 findNavController().navigate(StartScreenFragmentDirections.openHomeFragment())
             }
         }

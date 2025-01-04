@@ -40,6 +40,7 @@ import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import org.secu3.android.R
+import org.secu3.android.connection.ConnectionState
 import org.secu3.android.connection.Secu3Connection
 import org.secu3.android.models.FnName
 import org.secu3.android.models.packets.base.BaseOutputPacket
@@ -73,8 +74,8 @@ class ParamsViewModel @Inject constructor(
 
     var isSendAllowed: Boolean = false
 
-    val connectionStatusLiveData: LiveData<Boolean>
-        get() = secu3Connection.isConnectedLiveData
+    val connectionStatusLiveData: LiveData<ConnectionState>
+        get() = secu3Connection.connectionStateFlow.asLiveData()
 
     val fwInfoPacket: FirmwareInfoPacket?
         get() = secu3Connection.fwInfo

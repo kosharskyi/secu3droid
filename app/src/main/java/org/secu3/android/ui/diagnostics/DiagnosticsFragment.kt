@@ -28,12 +28,16 @@ import android.os.Bundle
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
+import androidx.core.content.ContextCompat
 import androidx.fragment.app.Fragment
 import androidx.navigation.fragment.findNavController
 import androidx.navigation.navGraphViewModels
 import com.google.android.material.tabs.TabLayoutMediator
 import dagger.hilt.android.AndroidEntryPoint
 import org.secu3.android.R
+import org.secu3.android.connection.Connected
+import org.secu3.android.connection.Disconnected
+import org.secu3.android.connection.InProgress
 import org.secu3.android.databinding.FragmentDiagnosticsBinding
 
 @AndroidEntryPoint
@@ -52,10 +56,19 @@ class DiagnosticsFragment : Fragment() {
         super.onViewCreated(view, savedInstanceState)
 
         mViewModel.connectionStatusLiveData.observe(viewLifecycleOwner) {
-            if (it) {
-                mBinding.connectionStatus.text = getString(R.string.status_online)
-            } else {
-                mBinding.connectionStatus.text = getString(R.string.status_offline)
+            when (it) {
+                Connected -> {
+                    mBinding.connectionStatus.text = getString(R.string.status_online)
+                }
+                InProgress -> {
+                    mBinding.connectionStatus.text = getString(R.string.status_connecting)
+                }
+                Disconnected -> {
+                    mBinding.connectionStatus.text = getString(R.string.status_offline)
+                }
+                else -> {
+                    // do nothing
+                }
             }
         }
 

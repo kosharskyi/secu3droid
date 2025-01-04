@@ -32,6 +32,7 @@ import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.filter
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.sample
+import org.secu3.android.connection.ConnectionState
 import org.secu3.android.connection.Secu3Connection
 import org.secu3.android.models.packets.input.SensorsPacket
 import org.secu3.android.ui.sensors.models.GaugeType
@@ -53,8 +54,8 @@ class DashboardViewModel @Inject constructor(private val secu3Connection: Secu3C
             }
             .asLiveData()
 
-    val statusLiveData: LiveData<Boolean>
-        get() = secu3Connection.isConnectedLiveData
+    val statusLiveData: LiveData<ConnectionState>
+        get() = secu3Connection.connectionStateFlow.asLiveData()
 
     val dashboardConfig: DashboardConfig = mPrefs.dashboardConfig ?: DashboardConfig(
         GaugeConfig(GaugeType.RPM, ),

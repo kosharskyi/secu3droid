@@ -31,6 +31,7 @@ import androidx.lifecycle.asLiveData
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.filter
 import kotlinx.coroutines.flow.map
+import org.secu3.android.connection.ConnectionState
 import org.secu3.android.connection.Secu3Connection
 import org.secu3.android.models.packets.input.CheckEngineErrorsPacket
 import org.secu3.android.models.packets.input.CheckEngineSavedErrorsPacket
@@ -44,8 +45,8 @@ class ErrorsViewModel @Inject constructor(private val secu3Connection: Secu3Conn
         sendNewTask(Task.Secu3ReadEcuSavedErrors)
     }
 
-    val connectionStatusLiveData: LiveData<Boolean>
-        get() = secu3Connection.isConnectedLiveData
+    val connectionStatusLiveData: LiveData<ConnectionState>
+        get() = secu3Connection.connectionStateFlow.asLiveData()
 
     val checkEngineLiveData: LiveData<CheckEngineErrorsPacket>
         get() = secu3Connection.receivedPacketFlow.filter { it is CheckEngineErrorsPacket }

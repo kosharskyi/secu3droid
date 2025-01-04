@@ -41,6 +41,9 @@ import androidx.navigation.fragment.findNavController
 import com.google.android.material.dialog.MaterialAlertDialogBuilder
 import dagger.hilt.android.AndroidEntryPoint
 import org.secu3.android.R
+import org.secu3.android.connection.Connected
+import org.secu3.android.connection.Disconnected
+import org.secu3.android.connection.InProgress
 import org.secu3.android.connection.SecuConnectionService
 import org.secu3.android.databinding.FragmentHomeBinding
 import org.secu3.android.network.models.GitHubRelease
@@ -115,10 +118,22 @@ class HomeFragment : Fragment() {
         }
 
         mViewModel.connectionStatusLiveData.observe(viewLifecycleOwner) {
-            if (it) {
-                mBinding?.carStatus?.setColorFilter(ContextCompat.getColor(requireContext(), R.color.gauge_dark_green))
-            } else {
-                mBinding?.carStatus?.setColorFilter(ContextCompat.getColor(requireContext(), R.color.gauge_red))
+            when (it) {
+                Connected -> {
+                    mBinding?.carStatus?.setColorFilter(ContextCompat.getColor(requireContext(), R.color.gauge_dark_green))
+                }
+                InProgress -> {
+                    mBinding?.carStatus?.setColorFilter(ContextCompat.getColor(requireContext(), R.color.gauge_dark_yellow))
+                }
+                Disconnected -> {
+                    mBinding?.carStatus?.setColorFilter(ContextCompat.getColor(requireContext(), R.color.gauge_red))
+                    if (mViewModel.isUserTapExit) {
+                        findNavController().popBackStack()
+                    }
+                }
+                else -> {
+                    // do nothing
+                }
             }
         }
     }

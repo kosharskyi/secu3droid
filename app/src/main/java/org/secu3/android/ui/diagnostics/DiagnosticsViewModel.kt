@@ -29,6 +29,7 @@ import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.filter
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.launch
+import org.secu3.android.connection.ConnectionState
 import org.secu3.android.connection.Secu3Connection
 import org.secu3.android.models.packets.input.DiagInputPacket
 import org.secu3.android.models.packets.out.DiagOutputPacket
@@ -86,8 +87,8 @@ class DiagnosticsViewModel @Inject constructor(private val secu3Connection: Secu
         secu3Connection.sendNewTask(Task.Secu3ReadSensors)
     }
 
-    val connectionStatusLiveData: LiveData<Boolean>
-        get() = secu3Connection.isConnectedLiveData
+    val connectionStatusLiveData: LiveData<ConnectionState>
+        get() = secu3Connection.connectionStateFlow.asLiveData()
 
     val diagInputLiveData: LiveData<DiagInputPacket>
         get() = secu3Connection.receivedPacketFlow.filter { it is DiagInputPacket }.map {

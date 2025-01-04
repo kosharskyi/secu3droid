@@ -35,10 +35,14 @@ import androidx.core.content.ContextCompat
 import androidx.core.view.isVisible
 import androidx.fragment.app.Fragment
 import androidx.fragment.app.viewModels
+import androidx.navigation.fragment.findNavController
 import com.github.anastr.speedviewlib.SpeedView
 import com.google.android.material.dialog.MaterialAlertDialogBuilder
 import dagger.hilt.android.AndroidEntryPoint
 import org.secu3.android.R
+import org.secu3.android.connection.Connected
+import org.secu3.android.connection.Disconnected
+import org.secu3.android.connection.InProgress
 import org.secu3.android.databinding.FragmentDashboardBinding
 import org.secu3.android.ui.sensors.models.GaugeType
 import org.secu3.android.utils.Task
@@ -157,13 +161,20 @@ class DashBoardFragment : Fragment() {
         }
 
         mViewModel.statusLiveData.observe(viewLifecycleOwner) {
-            val color = if (it) {
-                ContextCompat.getColor(requireContext(), R.color.gauge_green)
-            } else {
-                ContextCompat.getColor(requireContext(), R.color.gauge_red)
+            when (it) {
+                Connected -> {
+                    mBinding?.ledOnline?.setColorFilter(ContextCompat.getColor(requireContext(), R.color.gauge_dark_green))
+                }
+                InProgress -> {
+                    mBinding?.ledOnline?.setColorFilter(ContextCompat.getColor(requireContext(), R.color.gauge_dark_yellow))
+                }
+                Disconnected -> {
+                    mBinding?.ledOnline?.setColorFilter(ContextCompat.getColor(requireContext(), R.color.gauge_red))
+                }
+                else -> {
+                    // do nothing
+                }
             }
-
-            mBinding?.ledOnline?.setColorFilter(color)
         }
     }
 
