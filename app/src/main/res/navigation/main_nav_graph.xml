@@ -10,25 +10,10 @@
         android:id="@+id/startScreenFragment"
         android:name="org.secu3.android.ui.start.StartScreenFragment"
         android:label="Start Screen Fragment"
-        tools:layout="@layout/fragment_start_screen"
         >
 
         <action
             android:id="@+id/open_homeFragment"
-            app:destination="@id/homeFragment"
-            />
-
-    </fragment>
-
-    <fragment
-        android:id="@+id/btStatusFragment"
-        android:name="org.secu3.android.ui.bluetoothStatus.BluetoothStatusFragment"
-        android:label="Bt status Fragment"
-        tools:layout="@layout/fragment_bluetooth_status"
-        >
-
-        <action
-            android:id="@+id/action_open_main_menu"
             app:destination="@id/homeFragment"
             />
 
