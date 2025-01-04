@@ -111,33 +111,28 @@ class BtConnection @Inject constructor(
     private fun reconnect() {
         if (!isRunning) return
 
-        if (connectionAttempts >= maxConnectionAttempts) {
-            isRunning = false
-            scope.launch {
+        scope.launch {
+            if (connectionAttempts >= maxConnectionAttempts) {
+                isRunning = false
+
                 mConnectionStateFlow.emit(Disconnected)
                 mConnectionStateFlow.emit(ConnectionTimeout)
+
+                Log.i(this.javaClass.simpleName, "Max connection attempts reached. Stopping connection attempts.")
+                return@launch
             }
-            Log.i(this.javaClass.simpleName, "Max connection attempts reached. Stopping connection attempts.")
-            return
-        }
 
-        scope.launch {
             mConnectionStateFlow.emit(InProgress)
-        }
 
-        connectionAttempts++
-        Log.d(this.javaClass.simpleName, "Attempting to connect: $connectionAttempts/$maxConnectionAttempts")
-        if (connectionAttempts > 1) {
-            scope.launch {
+            connectionAttempts++
+            Log.d(this.javaClass.simpleName, "Attempting to connect: $connectionAttempts/$maxConnectionAttempts")
+            if (connectionAttempts > 1) {
                 mConnectionStateFlow.emit(ConnectionAttempt(connectionAttempts))
             }
-        }
 
-        scope.launch {
             try {
                 connectToDevice()
 
-                mConnectionStateFlow.emit(Connected)
                 Log.i(this.javaClass.simpleName, "Connected to device")
                 startReadingData()
             } catch (e: IOException) {
@@ -178,6 +173,7 @@ class BtConnection @Inject constructor(
 
     private fun startReadingData() {
         scope.launch {
+            mConnectionStateFlow.emit(Connected)
             try {
                 val inputStream = bluetoothSocket?.inputStream ?: throw IOException("Input stream is null")
                 val reader = BufferedReader(InputStreamReader(inputStream, StandardCharsets.ISO_8859_1))

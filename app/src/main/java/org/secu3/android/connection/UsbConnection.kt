@@ -1,9 +1,9 @@
 /*
  *    SecuDroid  - An open source, free manager for SECU-3 engine control unit
- *    Copyright (C) 2024 Vitalii O. Kosharskyi. Ukraine, Kyiv
+ *    Copyright (C) 2025 Vitalii O. Kosharskyi. Ukraine, Kyiv
  *
  *    SECU-3  - An open source, free engine control unit
- *    Copyright (C) 2007-2024 Alexey A. Shabelnikov. Ukraine, Kyiv
+ *    Copyright (C) 2007-2025 Alexey A. Shabelnikov. Ukraine, Kyiv
  *
  *    This program is free software: you can redistribute it and/or modify
  *    it under the terms of the GNU General Public License as published by
@@ -25,11 +25,17 @@
 
 package org.secu3.android.connection
 
+import android.app.PendingIntent
+import android.content.BroadcastReceiver
+import android.content.Context
+import android.content.Intent
+import android.content.IntentFilter
 import android.hardware.usb.UsbDevice
 import android.hardware.usb.UsbManager
 import android.util.Log
 import com.hoho.android.usbserial.driver.UsbSerialPort
 import com.hoho.android.usbserial.driver.UsbSerialProber
+import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
@@ -41,6 +47,7 @@ import org.secu3.android.models.RawPacket
 import org.secu3.android.models.packets.base.BaseOutputPacket
 import org.secu3.android.models.packets.base.BaseSecu3Packet
 import org.secu3.android.models.packets.base.BaseSecu3Packet.Companion.END_PACKET_SYMBOL
+import org.secu3.android.models.packets.base.BaseSecu3Packet.Companion.MAX_PACKET_SIZE
 import org.secu3.android.models.packets.out.ChangeModePacket
 import org.secu3.android.utils.PacketUtils
 import org.secu3.android.utils.Task
@@ -52,8 +59,9 @@ import javax.inject.Singleton
 
 @Singleton
 class UsbConnection @Inject constructor(
+    @ApplicationContext private val context: Context,
     private val usbManager: UsbManager,
-    private val prefs: UserPrefs
+    private val prefs: UserPrefs,
 ) {
 
     private val maxConnectionAttempts: Int
@@ -80,53 +88,67 @@ class UsbConnection @Inject constructor(
     val connectionStateFlow: Flow<ConnectionState>
         get() = mConnectionStateFlow
 
-    init {
-        scope.launch {
-            mConnectionStateFlow.emit(Disconnected)
+    private val usbPermissionActionReceiver = object : BroadcastReceiver() {
+        override fun onReceive(context: Context, intent: Intent) {
+            if (ACTION_USB_PERMISSION == intent.action) {
+                synchronized(this) {
+                    val device = intent.getParcelableExtra<UsbDevice>(UsbManager.EXTRA_DEVICE)
+                    if (intent.getBooleanExtra(UsbManager.EXTRA_PERMISSION_GRANTED, false)) {
+                        device?.let { connectToDevice(it) }
+                    } else {
+                        Log.d(this.javaClass.simpleName, "Permission denied for device $device")
+                    }
+                }
+            }
         }
     }
 
     fun startConnection(device: UsbDevice) {
+        val filter = IntentFilter(ACTION_USB_PERMISSION)
+        context.registerReceiver(usbPermissionActionReceiver, filter, Context.RECEIVER_NOT_EXPORTED)
         isRunning = true
         reconnect()
     }
 
     fun stopConnection() {
+        scope.launch {
+            mConnectionStateFlow.emit(Disconnected)
+        }
         isRunning = false
+        try {
+            context.unregisterReceiver(usbPermissionActionReceiver)
+        } catch (e: Exception) {
+            // ignore
+        }
         disconnect()
     }
 
     private fun reconnect() {
         if (!isRunning) return
 
-        if (connectionAttempts >= maxConnectionAttempts) {
-            scope.launch {
+        scope.launch {
+
+            if (connectionAttempts >= maxConnectionAttempts) {
+                isRunning = false
+
                 mConnectionStateFlow.emit(Disconnected)
                 mConnectionStateFlow.emit(ConnectionTimeout)
+
                 Log.i(this.javaClass.simpleName, "Max connection attempts reached. Stopping connection attempts.")
+                return@launch
             }
-            return
-        }
 
-        scope.launch {
             mConnectionStateFlow.emit(InProgress)
-        }
 
-        connectionAttempts++
-        Log.d(this.javaClass.simpleName, "Attempting to connect: $connectionAttempts/$maxConnectionAttempts")
-        if (connectionAttempts > 1) {
-            scope.launch {
+            connectionAttempts++
+            Log.d(this.javaClass.simpleName, "Attempting to connect: $connectionAttempts/$maxConnectionAttempts")
+            if (connectionAttempts > 1) {
                 mConnectionStateFlow.emit(ConnectionAttempt(connectionAttempts))
             }
-        }
 
-        scope.launch {
             try {
                 findAndRequestPermission()
-
-                mConnectionStateFlow.emit(Connected)
                 Log.d(this.javaClass.simpleName, "Connected to USB device")
-
                 startReadingData()
             } catch (e: Exception) {
                 mConnectionStateFlow.emit(ConnectionFailed(e))
@@ -144,7 +166,12 @@ class UsbConnection @Inject constructor(
             ?: throw IllegalStateException("No USB devices found")
 
         val device = driver.device
-        if (usbManager.hasPermission(device)) {
+        if (!usbManager.hasPermission(device)) {
+            val permissionIntent = PendingIntent.getBroadcast(
+                context, 0, Intent(ACTION_USB_PERMISSION), PendingIntent.FLAG_IMMUTABLE
+            )
+            usbManager.requestPermission(device, permissionIntent)
+        } else {
             connectToDevice(device)
         }
     }
@@ -176,14 +203,16 @@ class UsbConnection @Inject constructor(
 
     private fun startReadingData() {
         scope.launch {
+            mConnectionStateFlow.emit(Connected)
+
             try {
-                val packetBuffer = IntArray(2048)
+                val packetBuffer = IntArray(MAX_PACKET_SIZE)
                 val startMarker: Char = BaseSecu3Packet.INPUT_PACKET_SYMBOL
                 val endMarker: Char = END_PACKET_SYMBOL
                 var idx = 0
 
                 while (isRunning && usbSerialPort?.isOpen == true) {
-                    val buffer = ByteArray(256)
+                    val buffer = ByteArray(MAX_PACKET_SIZE)
                     val bytesRead = usbSerialPort?.read(buffer, 1000) ?: continue
 
                     if (bytesRead <= 0) continue
@@ -262,5 +291,7 @@ class UsbConnection @Inject constructor(
         }
     }
 
-
+    companion object {
+        private const val ACTION_USB_PERMISSION = "com.example.USB_PERMISSION"
+    }
 }
