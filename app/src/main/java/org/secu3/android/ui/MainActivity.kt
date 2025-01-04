@@ -24,6 +24,8 @@
  */
 package org.secu3.android.ui
 
+import android.app.ComponentCaller
+import android.content.Intent
 import android.os.Bundle
 import android.view.WindowManager
 import androidx.activity.viewModels
@@ -54,5 +56,11 @@ class MainActivity : AppCompatActivity() {
         } else {
             window.clearFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON)
         }
+    }
+
+    override fun onNewIntent(intent: Intent, caller: ComponentCaller) {
+        super.onNewIntent(intent, caller)
+
+        // do nothing
     }
 }

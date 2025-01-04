@@ -126,6 +126,8 @@ class StartScreenFragment : Fragment() {
     override fun onResume() {
         super.onResume()
         requireContext().registerReceiver(usbDeviceActionReceiver, IntentFilter(ACTION_USB_ATTACHED))
+        requireContext().registerReceiver(usbDeviceActionReceiver, IntentFilter(ACTION_USB_DETACHED))
+//        requireContext().registerReceiver(usbDeviceActionReceiver, IntentFilter(ACTION_USB_PERMISSION))
     }
 
     override fun onPause() {

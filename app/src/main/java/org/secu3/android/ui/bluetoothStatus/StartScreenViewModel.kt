@@ -107,9 +107,9 @@ class StartScreenViewModel @Inject constructor(
         }
     }
 
-    fun newUsbDeviceAttached(usbDevice: UsbDevice) {
+    fun newUsbDeviceAttached(device: UsbDevice) {
         viewModelScope.launch {
-            this@StartScreenViewModel.usbDevice = usbDevice
+            usbDevice = device
             mUsbDeviceAttachedFlow.emit(usbDevice)
         }
     }
