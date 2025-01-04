@@ -76,7 +76,7 @@ class Secu3Connection @Inject constructor(private val usbConnection: UsbConnecti
             merge(usbConnection.connectionStateFlow, btConnection.connectionStateFlow).collect {
                 emit(it)
             }
-        }
+        }.distinctUntilChanged()
 
     val firmwareLiveData: LiveData<FirmwareInfoPacket> = receivedPacketFlow.filter { it is FirmwareInfoPacket }
         .map { it as FirmwareInfoPacket }
@@ -141,6 +141,7 @@ class Secu3Connection @Inject constructor(private val usbConnection: UsbConnecti
     fun disable() {
         usbConnection.stopConnection()
         btConnection.stopConnection()
+        fwInfo = null
     }
 
     init {

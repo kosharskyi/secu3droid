@@ -76,7 +76,7 @@ class UsbConnection @Inject constructor(
     val receivedPacketFlow: Flow<RawPacket>
         get() = mReceivedPacketFlow
 
-    private val mConnectionStateFlow = MutableSharedFlow<ConnectionState>(replay = 1)
+    private val mConnectionStateFlow = MutableSharedFlow<ConnectionState>()
     val connectionStateFlow: Flow<ConnectionState>
         get() = mConnectionStateFlow
 
