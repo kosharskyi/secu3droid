@@ -499,5 +499,7 @@
     <string name="columns_count">Columns count</string>
     <string name="packet_saved">Packet saved</string>
     <string name="saving">Saving</string>
+    <string name="disconnect_device">Disconnect Device</string>
+    <string name="disconnect_device_msg">Are you sure you want to disconnect the device?</string>
 
 </resources>

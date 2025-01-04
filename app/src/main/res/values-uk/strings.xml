@@ -338,6 +338,8 @@
     <string name="columns_count">Кількість колонок</string>
     <string name="packet_saved">Пакет збережено</string>
     <string name="saving">Збереження</string>
+    <string name="disconnect_device">Відключення пристрою</string>
+    <string name="disconnect_device_msg">Ви впевнені, що хочете відключити пристрій?</string>
 
 </resources>
 

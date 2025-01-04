@@ -184,8 +184,17 @@ class HomeFragment : Fragment() {
     }
 
     private fun exit() {
-        requireActivity().stopService(Intent(requireContext(), SecuConnectionService::class.java))
-        mViewModel.closeConnection()
+        MaterialAlertDialogBuilder(requireContext()).apply {
+            setTitle(getString(R.string.disconnect_device))
+            setIcon(android.R.drawable.ic_dialog_alert)
+            setMessage(getString(R.string.disconnect_device_msg))
+            setPositiveButton(android.R.string.ok) { _, _ ->
+                requireActivity().stopService(Intent(requireContext(), SecuConnectionService::class.java))
+                mViewModel.closeConnection()
+            }
+            setNegativeButton(android.R.string.cancel, null)
+            show()
+        }
     }
 
     override fun onDestroyView() {
