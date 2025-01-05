@@ -1,9 +1,9 @@
 /*
  *    SecuDroid  - An open source, free manager for SECU-3 engine control unit
- *    Copyright (C) 2024 Vitaliy O. Kosharskyi. Ukraine, Kyiv
+ *    Copyright (C) 2025 Vitalii O. Kosharskyi. Ukraine, Kyiv
  *
  *    SECU-3  - An open source, free engine control unit
- *    Copyright (C) 2007-2024 Alexey A. Shabelnikov. Ukraine, Kyiv
+ *    Copyright (C) 2007-2025 Alexey A. Shabelnikov. Ukraine, Kyiv
  *
  *    This program is free software: you can redistribute it and/or modify
  *    it under the terms of the GNU General Public License as published by
@@ -28,6 +28,7 @@ package org.secu3.android.ui.start
 import android.bluetooth.BluetoothAdapter
 import android.bluetooth.BluetoothDevice
 import android.bluetooth.BluetoothManager
+import android.content.pm.PackageManager
 import android.hardware.usb.UsbDevice
 import android.hardware.usb.UsbManager
 import androidx.lifecycle.LiveData
@@ -47,8 +48,9 @@ import javax.inject.Inject
 class StartScreenViewModel @Inject constructor(
     private val mPrefs: UserPrefs,
     private val bluetoothManager: BluetoothManager,
-    val usbManager: UsbManager,
     private val secu3Connection: Secu3Connection,
+    private val packageManager: PackageManager,
+    val usbManager: UsbManager,
 ): ViewModel() {
 
     private val isConnectionInProgressFlow = MutableStateFlow(false)
@@ -66,8 +68,13 @@ class StartScreenViewModel @Inject constructor(
         get() = mUsbDeviceAttachedFlow.asLiveData()
 
 
+    val isUsbHostSupported: Boolean
+        get() = packageManager.hasSystemFeature(PackageManager.FEATURE_USB_HOST)
+
     init {
-        usbManager.deviceList.values.firstOrNull()?.let { newUsbDeviceAttached(it) }
+        if (isUsbHostSupported) {
+            usbManager.deviceList.values.firstOrNull()?.let { newUsbDeviceAttached(it) }
+        }
     }
 
     fun isBtEnabled(): Boolean {

@@ -121,16 +121,24 @@ class StartScreenFragment : Fragment() {
 
     override fun onResume() {
         super.onResume()
-        requireContext().registerReceiver(usbDeviceActionReceiver, IntentFilter(ACTION_USB_ATTACHED))
-        requireContext().registerReceiver(usbDeviceActionReceiver, IntentFilter(ACTION_USB_DETACHED))
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
-            requireContext().registerReceiver(usbDeviceActionReceiver, IntentFilter(ACTION_USB_PERMISSION), Context.RECEIVER_NOT_EXPORTED)
+        if (viewModel.isUsbHostSupported) {
+            requireContext().registerReceiver(usbDeviceActionReceiver, IntentFilter(ACTION_USB_ATTACHED))
+            requireContext().registerReceiver(usbDeviceActionReceiver, IntentFilter(ACTION_USB_DETACHED))
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+                requireContext().registerReceiver(
+                    usbDeviceActionReceiver,
+                    IntentFilter(ACTION_USB_PERMISSION),
+                    Context.RECEIVER_NOT_EXPORTED
+                )
+            }
         }
     }
 
     override fun onPause() {
         super.onPause()
-        requireContext().unregisterReceiver(usbDeviceActionReceiver)
+        if (viewModel.isUsbHostSupported) {
+            requireContext().unregisterReceiver(usbDeviceActionReceiver)
+        }
     }
 
     @Composable
