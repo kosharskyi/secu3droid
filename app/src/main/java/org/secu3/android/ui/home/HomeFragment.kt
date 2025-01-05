@@ -33,7 +33,9 @@ import android.view.View
 import android.view.ViewGroup
 import android.widget.Toast
 import androidx.activity.addCallback
+import androidx.browser.customtabs.CustomTabsIntent
 import androidx.core.content.ContextCompat
+import androidx.core.net.toUri
 import androidx.fragment.app.Fragment
 import androidx.fragment.app.viewModels
 import androidx.navigation.fragment.findNavController
@@ -150,6 +152,10 @@ class HomeFragment : Fragment() {
             .setPositiveButton(getString(R.string.download)) { _, _ ->
                 mViewModel.downloadRelease(release)
             }
+            .setNegativeButton(getString(R.string.what_s_new)) { _, _ ->
+                val intent = CustomTabsIntent.Builder().build()
+                intent.launchUrl(requireContext(), release.htmlUrl.toUri())
+            }
             .setNeutralButton(getString(R.string.remind_me_later)) { _, _ ->
                 // do nothing
             }.show()
@@ -186,7 +192,6 @@ class HomeFragment : Fragment() {
     private fun exit() {
         MaterialAlertDialogBuilder(requireContext()).apply {
             setTitle(getString(R.string.disconnect_device))
-            setIcon(android.R.drawable.ic_dialog_alert)
             setMessage(getString(R.string.disconnect_device_msg))
             setPositiveButton(android.R.string.ok) { _, _ ->
                 requireActivity().stopService(Intent(requireContext(), SecuConnectionService::class.java))

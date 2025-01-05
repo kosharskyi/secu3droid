@@ -343,6 +343,7 @@
     <string name="saving">Сохранение</string>
     <string name="disconnect_device">Отключение устройства</string>
     <string name="disconnect_device_msg">Вы уверены, что хотите отключить устройство?</string>
+    <string name="what_s_new">Что нового</string>
 
 
 </resources>

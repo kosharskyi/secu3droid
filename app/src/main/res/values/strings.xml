@@ -501,5 +501,6 @@
     <string name="saving">Saving</string>
     <string name="disconnect_device">Disconnect Device</string>
     <string name="disconnect_device_msg">Are you sure you want to disconnect the device?</string>
+    <string name="what_s_new">What\'s new</string>
 
 </resources>

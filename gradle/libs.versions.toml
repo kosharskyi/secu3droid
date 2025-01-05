@@ -18,6 +18,7 @@ preference-ktx = "1.2.1"
 room = "2.6.1"
 viewpager2 = "1.1.0"
 material = "1.12.0"
+browser = "1.8.0"
 
 compose = "1.9.3"
 compose-bom = "2024.12.01"
@@ -56,6 +57,8 @@ lifecycle-extensions = { module = "androidx.lifecycle:lifecycle-extensions", ver
 lifecycle-livedata-ktx = { module = "androidx.lifecycle:lifecycle-livedata-ktx", version.ref = "lifecycle-viewmodel-ktx" }
 lifecycle-runtime-ktx = { module = "androidx.lifecycle:lifecycle-runtime-ktx", version.ref = "lifecycle-viewmodel-ktx" }
 lifecycle-viewmodel-ktx = { module = "androidx.lifecycle:lifecycle-viewmodel-ktx", version.ref = "lifecycle-viewmodel-ktx" }
+
+androidx-browser = { module = "androidx.browser:browser", version.ref = "browser" }
 
 room-runtime = { group = "androidx.room", name = "room-runtime", version.ref = "room" }
 room-ktx = { group = "androidx.room", name = "room-ktx", version.ref = "room" }
