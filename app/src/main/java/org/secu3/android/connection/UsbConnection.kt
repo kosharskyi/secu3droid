@@ -25,17 +25,11 @@
 
 package org.secu3.android.connection
 
-import android.app.PendingIntent
-import android.content.BroadcastReceiver
-import android.content.Context
-import android.content.Intent
-import android.content.IntentFilter
 import android.hardware.usb.UsbDevice
 import android.hardware.usb.UsbManager
 import android.util.Log
 import com.hoho.android.usbserial.driver.UsbSerialPort
 import com.hoho.android.usbserial.driver.UsbSerialProber
-import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
@@ -59,7 +53,6 @@ import javax.inject.Singleton
 
 @Singleton
 class UsbConnection @Inject constructor(
-    @ApplicationContext private val context: Context,
     private val usbManager: UsbManager,
     private val prefs: UserPrefs,
 ) {
@@ -88,25 +81,11 @@ class UsbConnection @Inject constructor(
     val connectionStateFlow: Flow<ConnectionState>
         get() = mConnectionStateFlow
 
-    private val usbPermissionActionReceiver = object : BroadcastReceiver() {
-        override fun onReceive(context: Context, intent: Intent) {
-            if (ACTION_USB_PERMISSION == intent.action) {
-                synchronized(this) {
-                    val device = intent.getParcelableExtra<UsbDevice>(UsbManager.EXTRA_DEVICE)
-                    if (intent.getBooleanExtra(UsbManager.EXTRA_PERMISSION_GRANTED, false)) {
-                        device?.let { connectToDevice(it) }
-                    } else {
-                        Log.d(this.javaClass.simpleName, "Permission denied for device $device")
-                    }
-                }
-            }
-        }
-    }
+    private var currentDevice: UsbDevice? = null
 
     fun startConnection(device: UsbDevice) {
-        val filter = IntentFilter(ACTION_USB_PERMISSION)
-        context.registerReceiver(usbPermissionActionReceiver, filter, Context.RECEIVER_NOT_EXPORTED)
         isRunning = true
+        currentDevice = device
         reconnect()
     }
 
@@ -115,11 +94,6 @@ class UsbConnection @Inject constructor(
             mConnectionStateFlow.emit(Disconnected)
         }
         isRunning = false
-        try {
-            context.unregisterReceiver(usbPermissionActionReceiver)
-        } catch (e: Exception) {
-            // ignore
-        }
         disconnect()
     }
 
@@ -130,6 +104,7 @@ class UsbConnection @Inject constructor(
 
             if (connectionAttempts >= maxConnectionAttempts) {
                 isRunning = false
+                currentDevice = null
 
                 mConnectionStateFlow.emit(Disconnected)
                 mConnectionStateFlow.emit(ConnectionTimeout)
@@ -146,8 +121,10 @@ class UsbConnection @Inject constructor(
                 mConnectionStateFlow.emit(ConnectionAttempt(connectionAttempts))
             }
 
+            currentDevice ?: return@launch
+
             try {
-                findAndRequestPermission()
+                connectToDevice(currentDevice!!)
                 Log.d(this.javaClass.simpleName, "Connected to USB device")
                 startReadingData()
             } catch (e: Exception) {
@@ -159,24 +136,12 @@ class UsbConnection @Inject constructor(
         }
     }
 
-    private fun findAndRequestPermission() {
-        val availableDrivers = UsbSerialProber.getDefaultProber().findAllDrivers(usbManager)
+    private fun connectToDevice(usbDevice: UsbDevice) {
 
-        val driver = availableDrivers.firstOrNull()
-            ?: throw IllegalStateException("No USB devices found")
+        val device = usbManager.deviceList.values.firstOrNull {
+            it.deviceId == usbDevice.deviceId
+        }?: throw IllegalStateException("No USB devices found")
 
-        val device = driver.device
-        if (!usbManager.hasPermission(device)) {
-            val permissionIntent = PendingIntent.getBroadcast(
-                context, 0, Intent(ACTION_USB_PERMISSION), PendingIntent.FLAG_IMMUTABLE
-            )
-            usbManager.requestPermission(device, permissionIntent)
-        } else {
-            connectToDevice(device)
-        }
-    }
-
-    private fun connectToDevice(device: UsbDevice) {
         val connection = usbManager.openDevice(device)
             ?: throw IllegalStateException("Could not open connection to USB device")
 
@@ -189,6 +154,7 @@ class UsbConnection @Inject constructor(
     }
 
     private fun disconnect() {
+        currentDevice = null
         scope.launch {
             try {
                 mConnectionStateFlow.emit(Disconnected)

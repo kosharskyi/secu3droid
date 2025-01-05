@@ -23,7 +23,7 @@
  *                    email: vetalkosharskiy@gmail.com
  */
 
-package org.secu3.android.ui.bluetoothStatus
+package org.secu3.android.ui.start
 
 import android.bluetooth.BluetoothAdapter
 import android.bluetooth.BluetoothDevice

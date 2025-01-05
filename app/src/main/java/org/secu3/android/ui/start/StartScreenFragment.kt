@@ -43,7 +43,6 @@ import androidx.fragment.app.Fragment
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
-import android.widget.Toast
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Box
@@ -71,7 +70,6 @@ import com.google.android.material.dialog.MaterialAlertDialogBuilder
 import dagger.hilt.android.AndroidEntryPoint
 import org.secu3.android.R
 import org.secu3.android.connection.Connected
-import org.secu3.android.ui.bluetoothStatus.StartScreenViewModel
 import org.secu3.android.ui.settings.SettingsActivity
 
 @AndroidEntryPoint
@@ -91,13 +89,12 @@ class StartScreenFragment : Fragment() {
             }
 
             if (ACTION_USB_PERMISSION == intent.action) {
-                val device = intent.getParcelableExtra<UsbDevice>(UsbManager.EXTRA_DEVICE) ?: return
-                val permissionGranted = intent.getBooleanExtra(UsbManager.EXTRA_PERMISSION_GRANTED, false)
-                if (permissionGranted) {
-                    Toast.makeText(context, "Permission granted for device: ${device.deviceName}", Toast.LENGTH_SHORT).show()
-                    viewModel.startConnection(device)
+                Log.d(this.javaClass.simpleName, "ACTION_USB_PERMISSION RECEIVED")
+                val device = intent.getParcelableExtra<UsbDevice>(UsbManager.EXTRA_DEVICE)
+                if (intent.getBooleanExtra(UsbManager.EXTRA_PERMISSION_GRANTED, false)) {
+                    device?.let { viewModel.startConnection(it) }
                 } else {
-                    Toast.makeText(context, "Permission denied for USB device", Toast.LENGTH_SHORT).show()
+                    Log.d(this.javaClass.simpleName, "Permission denied for device $device")
                 }
             }
         }
