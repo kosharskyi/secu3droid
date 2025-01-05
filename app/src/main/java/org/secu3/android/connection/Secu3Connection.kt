@@ -123,6 +123,9 @@ class Secu3Connection @Inject constructor(private val usbConnection: UsbConnecti
 
     fun startUsbConnection(device: UsbDevice) {
         btConnection.stopConnection()
+
+        listenForFwInfo()
+
         usbConnection.stopConnection()
         usbConnection.startConnection(device)
     }
@@ -134,6 +137,9 @@ class Secu3Connection @Inject constructor(private val usbConnection: UsbConnecti
             }
             usbConnection.stopConnection()
             btConnection.stopConnection()
+
+            listenForFwInfo()
+
             btConnection.startConnection()
         }
     }
@@ -142,6 +148,12 @@ class Secu3Connection @Inject constructor(private val usbConnection: UsbConnecti
         usbConnection.stopConnection()
         btConnection.stopConnection()
         fwInfo = null
+    }
+
+    private fun listenForFwInfo() {
+        connectionScope.launch {
+            fwInfo = receivedPacketFlow.first { it is FirmwareInfoPacket } as FirmwareInfoPacket
+        }
     }
 
     init {
@@ -154,10 +166,6 @@ class Secu3Connection @Inject constructor(private val usbConnection: UsbConnecti
                         secuLogger.logPacket(it)
                     }
                 }
-        }
-
-        connectionScope.launch {
-            fwInfo = receivedPacketFlow.first { it is FirmwareInfoPacket } as FirmwareInfoPacket
         }
     }
 }
