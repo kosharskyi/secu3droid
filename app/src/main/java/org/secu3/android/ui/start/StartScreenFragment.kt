@@ -177,14 +177,14 @@ class StartScreenFragment : Fragment() {
                             textColor = Color.Black,
                             modifier = Modifier.align(Alignment.Center)
                         )
+                    }
 
-                        val device = viewModel.mUsbDeviceAttachedLiveData.observeAsState()
-                        device.value?.let {
-                            Text(
-                                stringResource(R.string.usb_device_detected), modifier = Modifier
-                                    .padding(16.dp)
-                                    .align(Alignment.BottomCenter))
-                        }
+                    val device = viewModel.mUsbDeviceAttachedLiveData.observeAsState()
+                    device.value?.let {
+                        Text(
+                            stringResource(R.string.usb_device_detected), modifier = Modifier
+                                .padding(16.dp)
+                                .align(Alignment.BottomCenter))
                     }
                 }
             }
