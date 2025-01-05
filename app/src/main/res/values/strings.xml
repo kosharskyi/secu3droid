@@ -503,5 +503,6 @@
     <string name="disconnect_device_msg">Are you sure you want to disconnect the device?</string>
     <string name="what_s_new">What\'s new</string>
     <string name="connect">Connect</string>
+    <string name="usb_device_detected">USB device detected</string>
 
 </resources>

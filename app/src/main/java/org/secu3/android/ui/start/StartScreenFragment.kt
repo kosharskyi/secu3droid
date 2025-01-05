@@ -180,9 +180,10 @@ class StartScreenFragment : Fragment() {
 
                         val device = viewModel.mUsbDeviceAttachedLiveData.observeAsState()
                         device.value?.let {
-                            Text("USB device detected", modifier = Modifier
-                                .padding(16.dp)
-                                .align(Alignment.BottomCenter))
+                            Text(
+                                stringResource(R.string.usb_device_detected), modifier = Modifier
+                                    .padding(16.dp)
+                                    .align(Alignment.BottomCenter))
                         }
                     }
                 }

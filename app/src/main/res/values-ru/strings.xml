@@ -345,6 +345,7 @@
     <string name="disconnect_device_msg">Вы уверены, что хотите отключить устройство?</string>
     <string name="what_s_new">Что нового</string>
     <string name="connect">Подключиться</string>
+    <string name="usb_device_detected">Обнаружено USB устройство</string>
 
 
 </resources>
