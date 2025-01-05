@@ -126,7 +126,9 @@ class StartScreenFragment : Fragment() {
         super.onResume()
         requireContext().registerReceiver(usbDeviceActionReceiver, IntentFilter(ACTION_USB_ATTACHED))
         requireContext().registerReceiver(usbDeviceActionReceiver, IntentFilter(ACTION_USB_DETACHED))
-//        requireContext().registerReceiver(usbDeviceActionReceiver, IntentFilter(ACTION_USB_PERMISSION))
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+            requireContext().registerReceiver(usbDeviceActionReceiver, IntentFilter(ACTION_USB_PERMISSION), Context.RECEIVER_NOT_EXPORTED)
+        }
     }
 
     override fun onPause() {
@@ -193,12 +195,13 @@ class StartScreenFragment : Fragment() {
 
     private fun checkUsbPermissionsAndConnect(usbDevice: UsbDevice) {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
-            val usbManager = requireContext().getSystemService(Context.USB_SERVICE) as UsbManager
-            if (usbManager.hasPermission(usbDevice)) {
+            if (viewModel.usbManager.hasPermission(usbDevice)) {
+                Log.d(this.javaClass.simpleName, "Permission already granted for USB device: ${usbDevice.deviceName}")
                 viewModel.startConnection(usbDevice)
             } else {
+                Log.d(this.javaClass.simpleName, "Requesting permission for USB device: ${usbDevice.deviceName}")
                 val permissionIntent = PendingIntent.getBroadcast(requireContext(),0, Intent(ACTION_USB_PERMISSION), PendingIntent.FLAG_IMMUTABLE)
-                usbManager.requestPermission(usbDevice, permissionIntent)
+                viewModel.usbManager.requestPermission(usbDevice, permissionIntent)
             }
         } else {
             viewModel.startConnection(usbDevice)
