@@ -38,6 +38,7 @@ import android.hardware.usb.UsbDevice
 import android.hardware.usb.UsbManager
 import android.os.Build
 import android.os.Bundle
+import android.util.Log
 import androidx.fragment.app.Fragment
 import android.view.LayoutInflater
 import android.view.View
@@ -49,10 +50,10 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.layout.wrapContentSize
 import androidx.compose.material.Icon
 import androidx.compose.material.MaterialTheme
 import androidx.compose.material.Surface
+import androidx.compose.material.Text
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Settings
 import androidx.compose.runtime.Composable
@@ -83,12 +84,10 @@ class StartScreenFragment : Fragment() {
             if (ACTION_USB_ATTACHED == intent.action) {
                 val usbDevice = intent.getParcelableExtra<UsbDevice>(UsbManager.EXTRA_DEVICE)
                 usbDevice?.let { viewModel.newUsbDeviceAttached(it) }
-                Toast.makeText(requireContext(), "Device attached", Toast.LENGTH_SHORT).show()
             }
             if (ACTION_USB_DETACHED == intent.action) {
                 val usbDevice = intent.getParcelableExtra<UsbDevice>(UsbManager.EXTRA_DEVICE)
                 usbDevice?.let { viewModel.newUsbDeviceDetached() }
-                Toast.makeText(requireContext(), "Device detached", Toast.LENGTH_SHORT).show()
             }
 
             if (ACTION_USB_PERMISSION == intent.action) {
@@ -137,31 +136,26 @@ class StartScreenFragment : Fragment() {
 
     @Composable
     fun StartScreen(viewModel: StartScreenViewModel = viewModel()) {
-        val isInProgress = viewModel.isConnectionInProgressLiveData.observeAsState()
-        isInProgress.value?.let {
-            MaterialTheme {
-                Surface {
-                    Box(
+
+        MaterialTheme {
+            Surface {
+                Box(modifier = Modifier.fillMaxSize()) {
+
+                    Icon(
+                        imageVector = Icons.Default.Settings,
+                        contentDescription = "Settings icon",
                         modifier = Modifier
-                            .wrapContentSize(Alignment.TopEnd)
+                            .size(64.dp)
                             .padding(16.dp)
+                            .align(Alignment.TopEnd)
                             .clickable {
                                 startActivity(Intent(requireContext(), SettingsActivity::class.java))
                             },
-                    ) {
-                        Icon(
-                            imageVector = Icons.Default.Settings,
-                            contentDescription = "Settings icon",
-                            modifier = Modifier
-                                .size(32.dp)
-                                ,
-                            tint = Color.Black
-                        )
-                    }
-                    Box(
-                        modifier = Modifier.fillMaxSize(),
-                        contentAlignment = Alignment.Center
-                    ) {
+                        tint = Color.Black
+                    )
+
+                    val isInProgress = viewModel.isConnectionInProgressLiveData.observeAsState()
+                    isInProgress.value?.let {
                         CircularButton(
                             textNormal = "Connect",
                             textInProgress = "Connecting...",
@@ -172,8 +166,14 @@ class StartScreenFragment : Fragment() {
                             size = 200.dp,
                             borderColor = Color.Gray,
                             progressSegmentColor = Color.Cyan,
-                            textColor = Color.Black
+                            textColor = Color.Black,
+                            modifier = Modifier.align(Alignment.Center)
                         )
+
+                        val device = viewModel.mUsbDeviceAttachedLiveData.observeAsState()
+                        device.value?.let {
+                            Text("USB device detected", modifier = Modifier.padding(16.dp).align(Alignment.BottomCenter))
+                        }
                     }
                 }
             }

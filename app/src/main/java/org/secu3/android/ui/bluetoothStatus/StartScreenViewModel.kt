@@ -29,6 +29,7 @@ import android.bluetooth.BluetoothAdapter
 import android.bluetooth.BluetoothDevice
 import android.bluetooth.BluetoothManager
 import android.hardware.usb.UsbDevice
+import android.hardware.usb.UsbManager
 import androidx.lifecycle.LiveData
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.asLiveData
@@ -46,6 +47,7 @@ import javax.inject.Inject
 class StartScreenViewModel @Inject constructor(
     private val mPrefs: UserPrefs,
     private val bluetoothManager: BluetoothManager,
+    val usbManager: UsbManager,
     private val secu3Connection: Secu3Connection,
 ): ViewModel() {
 
@@ -64,6 +66,10 @@ class StartScreenViewModel @Inject constructor(
         get() = mUsbDeviceAttachedFlow.asLiveData()
 
 
+    init {
+        usbManager.deviceList.values.firstOrNull()?.let { newUsbDeviceAttached(it) }
+    }
+
     fun isBtEnabled(): Boolean {
         return bluetoothAdapter.isEnabled
     }
@@ -80,11 +86,6 @@ class StartScreenViewModel @Inject constructor(
 
         return bluetoothDevice == null
     }
-
-    val isBtConfigured: Boolean
-        get() {
-            return isBtEnabled() && !isBtDeviceAddressNotSelected() && isBtDeviceNotExist().not()
-        }
 
     fun startConnection(device: UsbDevice?) {
         viewModelScope.launch {
