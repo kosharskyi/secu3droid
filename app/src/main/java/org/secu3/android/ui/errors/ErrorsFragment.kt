@@ -33,6 +33,9 @@ import androidx.fragment.app.Fragment
 import androidx.fragment.app.viewModels
 import dagger.hilt.android.AndroidEntryPoint
 import org.secu3.android.R
+import org.secu3.android.connection.Connected
+import org.secu3.android.connection.Disconnected
+import org.secu3.android.connection.InProgress
 import org.secu3.android.databinding.FragmentErrorsBinding
 import org.secu3.android.models.CheckEngineError
 import org.secu3.android.utils.Task
@@ -59,10 +62,19 @@ class ErrorsFragment : Fragment() {
         errors = resources.getStringArray(R.array.errors_ecu_errors_names).map { CheckEngineError(it) }
 
         mViewModel.connectionStatusLiveData.observe(viewLifecycleOwner) {
-            if (it) {
-                mBinding.connectionStatus.text = getString(R.string.status_online)
-            } else {
-                mBinding.connectionStatus.text = getString(R.string.status_offline)
+            when (it) {
+                Connected -> {
+                    mBinding.connectionStatus.text = getString(R.string.status_online)
+                }
+                InProgress -> {
+                    mBinding.connectionStatus.text = getString(R.string.status_connecting)
+                }
+                Disconnected -> {
+                    mBinding.connectionStatus.text = getString(R.string.status_offline)
+                }
+                else -> {
+                    // do nothing
+                }
             }
         }
 

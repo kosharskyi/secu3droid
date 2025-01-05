@@ -23,7 +23,7 @@
  *                    email: vetalkosharskiy@gmail.com
  */
 
-package org.secu3.android.ui.main
+package org.secu3.android.ui.home
 
 import androidx.lifecycle.LiveData
 import androidx.lifecycle.ViewModel
@@ -33,33 +33,38 @@ import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.launch
 import org.secu3.android.BuildConfig
-import org.secu3.android.Secu3Repository
+import org.secu3.android.connection.ConnectionState
+import org.secu3.android.connection.Secu3Connection
 import org.secu3.android.models.packets.input.FirmwareInfoPacket
 import org.secu3.android.network.models.GitHubRelease
 import org.secu3.android.utils.AppPrefs
 import org.secu3.android.utils.Task
+import org.secu3.android.utils.UserPrefs
 import org.threeten.bp.LocalDate
 import javax.inject.Inject
 
 @HiltViewModel
-class MainViewModel @Inject constructor(
-    private val secu3Repository: Secu3Repository,
-    private val mainRepository: MainRepository,
-    private val appPrefs: AppPrefs) : ViewModel() {
+class HomeViewModel @Inject constructor(
+    private val secu3Connection: Secu3Connection,
+    private val homeRepository: HomeRepository,
+    private val appPrefs: AppPrefs,
+    val prefs: UserPrefs,
+) : ViewModel() {
 
+    var isUserTapExit = false
 
-    val connectionStatusLiveData: LiveData<Boolean>
-        get() = secu3Repository.connectionStatusLiveData
+    val connectionStatusLiveData: LiveData<ConnectionState>
+        get() = secu3Connection.connectionStateFlow.asLiveData()
 
     val firmware: FirmwareInfoPacket?
-        get() = secu3Repository.fwInfo
+        get() = secu3Connection.fwInfo
 
     val newReleaseAvailable: LiveData<GitHubRelease>
         get() = flow {
             val now = LocalDate.now()
 
             if (BuildConfig.DEBUG || appPrefs.lastAppVersionCheck.isBefore(now)) {
-                mainRepository.getNewRelease()?.let {
+                homeRepository.getNewRelease()?.let {
                     emit(it)
                 }
             }
@@ -67,20 +72,20 @@ class MainViewModel @Inject constructor(
 
     init {
         viewModelScope.launch {
-            mainRepository.checkAndInitDb()
-            secu3Repository.startConnect()
+            homeRepository.checkAndInitDb()
         }
     }
 
     fun sendNewTask(task: Task) {
-        secu3Repository.sendNewTask(task)
+        secu3Connection.sendNewTask(task)
     }
 
     fun closeConnection() {
-        secu3Repository.disable()
+        isUserTapExit = true
+        secu3Connection.disable()
     }
 
     fun downloadRelease(release: GitHubRelease) {
-        mainRepository.downloadReleaseFile(release)
+        homeRepository.downloadReleaseFile(release)
     }
 }

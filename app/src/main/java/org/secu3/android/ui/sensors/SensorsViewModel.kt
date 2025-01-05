@@ -34,7 +34,8 @@ import kotlinx.coroutines.flow.filter
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.sample
 import kotlinx.coroutines.launch
-import org.secu3.android.Secu3Repository
+import org.secu3.android.connection.ConnectionState
+import org.secu3.android.connection.Secu3Connection
 import org.secu3.android.db.models.GaugeState
 import org.secu3.android.db.models.IndicatorState
 import org.secu3.android.models.packets.input.AdcRawDatPacket
@@ -49,7 +50,7 @@ import org.secu3.android.utils.Task
 import javax.inject.Inject
 
 @HiltViewModel
-class SensorsViewModel @Inject constructor(private val secu3Repository: Secu3Repository,
+class SensorsViewModel @Inject constructor(private val secu3Connection: Secu3Connection,
                                            private val mUserPrefs: UserPrefs,
                                            private val secuLogger: SecuLogger,
                                            private val repository: SensorsRepository
@@ -65,25 +66,25 @@ class SensorsViewModel @Inject constructor(private val secu3Repository: Secu3Rep
     val columnsCount: Int
         get() = mUserPrefs.columnsCount
 
-    val connectionStatusLiveData: LiveData<Boolean>
-        get() = secu3Repository.connectionStatusLiveData
+    val connectionStatusLiveData: LiveData<ConnectionState>
+        get() = secu3Connection.connectionStateFlow.asLiveData()
 
     val sensorsLiveData: LiveData<SensorsPacket>
-        get() = secu3Repository.receivedPacketFlow.sample(100).filter { it is SensorsPacket }
+        get() = secu3Connection.receivedPacketFlow.sample(100).filter { it is SensorsPacket }
             .map { it as SensorsPacket }.asLiveData()
 
     val gaugesLiveData: LiveData<List<GaugeItem>>
-        get() = secu3Repository.receivedPacketFlow.sample(100).filter { it is SensorsPacket }
+        get() = secu3Connection.receivedPacketFlow.sample(100).filter { it is SensorsPacket }
             .map { it as SensorsPacket }.map { repository.convertToGaugeItemList(it) }.asLiveData()
 
 
     val indicatorLiveData: LiveData<List<IndicatorItem>>
-        get() = secu3Repository.receivedPacketFlow.sample(100).filter { it is SensorsPacket }
+        get() = secu3Connection.receivedPacketFlow.sample(100).filter { it is SensorsPacket }
             .map { it as SensorsPacket }.map { repository.convertToIndicatorItemList(it) }.asLiveData()
 
 
     val rawSensorsLiveData: LiveData<AdcRawDatPacket>
-        get() = secu3Repository.receivedPacketFlow.sample(100).filter { it is AdcRawDatPacket }
+        get() = secu3Connection.receivedPacketFlow.sample(100).filter { it is AdcRawDatPacket }
             .map { it as AdcRawDatPacket }.asLiveData()
 
     private val showAddGaugeFlow = MutableSharedFlow<List<GaugeType>>()
@@ -96,7 +97,7 @@ class SensorsViewModel @Inject constructor(private val secu3Repository: Secu3Rep
 
 
     fun sendNewTask(task: Task) {
-        secu3Repository.sendNewTask(task)
+        secu3Connection.sendNewTask(task)
     }
 
 

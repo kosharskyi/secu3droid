@@ -1,9 +1,9 @@
 /*
  *    SecuDroid  - An open source, free manager for SECU-3 engine control unit
- *    Copyright (C) 2024 Vitalii O. Kosharskyi. Ukraine, Kyiv
+ *    Copyright (C) 2025 Vitalii O. Kosharskyi. Ukraine, Kyiv
  *
  *    SECU-3  - An open source, free engine control unit
- *    Copyright (C) 2007-2024 Alexey A. Shabelnikov. Ukraine, Kyiv
+ *    Copyright (C) 2007-2025 Alexey A. Shabelnikov. Ukraine, Kyiv
  *
  *    This program is free software: you can redistribute it and/or modify
  *    it under the terms of the GNU General Public License as published by
@@ -23,18 +23,17 @@
  *                    email: vetalkosharskiy@gmail.com
  */
 
-package org.secu3.android.ui.firmware
+package org.secu3.android.connection
 
-import androidx.lifecycle.LiveData
-import androidx.lifecycle.ViewModel
-import dagger.hilt.android.lifecycle.HiltViewModel
-import org.secu3.android.connection.Secu3Connection
-import org.secu3.android.models.packets.input.FirmwareInfoPacket
-import javax.inject.Inject
+sealed class ConnectionState()
 
-@HiltViewModel
-class FirmwareDialogViewModel @Inject constructor(private val secu3Connection: Secu3Connection) : ViewModel() {
+data object Connected : ConnectionState()
+data object InProgress : ConnectionState()
+data object Disconnected : ConnectionState()
+data class ConnectionAttempt(val currentAttempt: Int) : ConnectionState()
+data object ConnectionCanceled : ConnectionState()
 
-    val firmwareLiveData: LiveData<FirmwareInfoPacket> = secu3Connection.firmwareLiveData
+data object ConnectionTimeout : ConnectionState()
 
-}
+data class ConnectionError(val e: Exception) : ConnectionState()
+data class ConnectionFailed(val e: Exception) : ConnectionState()

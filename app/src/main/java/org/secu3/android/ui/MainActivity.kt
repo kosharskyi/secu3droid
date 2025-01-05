@@ -24,53 +24,43 @@
  */
 package org.secu3.android.ui
 
+import android.app.ComponentCaller
 import android.content.Intent
-import android.os.Build
 import android.os.Bundle
 import android.view.WindowManager
+import androidx.activity.viewModels
 import androidx.appcompat.app.AppCompatActivity
 import dagger.hilt.android.AndroidEntryPoint
 import org.secu3.android.R
-import org.secu3.android.SecuConnectionService
-import org.secu3.android.utils.UserPrefs
-import javax.inject.Inject
 
 @AndroidEntryPoint
 class MainActivity : AppCompatActivity() {
 
-    @Inject
-    lateinit var prefs: UserPrefs
+    private val viewModel: MainActivityViewModel by viewModels()
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_main)
+
     }
 
     override fun onResume() {
         super.onResume()
 
         handleKeepScreenOn()
-        handleSecuConnectionService()
     }
 
     private fun handleKeepScreenOn() {
-        if (prefs.isKeepScreenAliveActive) {
+        if (viewModel.prefs.isKeepScreenAliveActive) {
             window.addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON)
         } else {
             window.clearFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON)
         }
     }
 
-    private fun handleSecuConnectionService() {
-        val intent = Intent(this, SecuConnectionService::class.java)
-        if (prefs.isWakeLockEnabled) {
-            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-                startForegroundService(intent)
-            } else {
-                startService(intent)
-            }
-        } else {
-            stopService(intent)
-        }
+    override fun onNewIntent(intent: Intent, caller: ComponentCaller) {
+        super.onNewIntent(intent, caller)
+
+        // do nothing
     }
 }

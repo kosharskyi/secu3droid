@@ -23,29 +23,22 @@
  *                    email: vetalkosharskiy@gmail.com
  */
 
-package org.secu3.android.ui.main
+package org.secu3.android.ui
 
-data class Version(val major: Int, val minor: Int, val patch: Int = 0) : Comparable<Version> {
-    companion object {
-        fun parse(version: String): Version {
-            val parts = version.split(".")
-            require(parts.size in 2..3) { "Version must have two or three parts: major.minor[.patch]" }
-            val major = parts[0].toInt()
-            val minor = parts[1].toInt()
-            val patch = if (parts.size == 3) parts[2].toInt() else 0
-            return Version(major, minor, patch)
-        }
-    }
+import android.hardware.usb.UsbDevice
+import android.hardware.usb.UsbManager
+import androidx.lifecycle.ViewModel
+import dagger.hilt.android.lifecycle.HiltViewModel
+import org.secu3.android.connection.Secu3Connection
+import org.secu3.android.utils.UserPrefs
+import javax.inject.Inject
 
-    override fun compareTo(other: Version): Int {
-        return when {
-            this.major != other.major -> this.major - other.major
-            this.minor != other.minor -> this.minor - other.minor
-            else -> this.patch - other.patch
-        }
-    }
+@HiltViewModel
+class MainActivityViewModel @Inject constructor(
+    private val secu3Connection: Secu3Connection,
+    val usbManager: UsbManager,
+    val prefs: UserPrefs,
+) : ViewModel() {
 
-    override fun toString(): String {
-        return "$major.$minor.$patch"
-    }
+
 }

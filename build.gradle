@@ -3,6 +3,7 @@
 plugins {
     id 'com.android.application' version '8.7.3' apply false
     alias libs.plugins.kotlin.android apply false
+    alias(libs.plugins.kotlin.compose) apply false
     alias libs.plugins.kotlin.parcelize apply false
     alias libs.plugins.navigation.safeargs apply false
     alias libs.plugins.kotlin.ksp.plugin apply false

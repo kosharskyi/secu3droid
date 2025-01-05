@@ -32,7 +32,6 @@ import android.util.Log
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
-import kotlinx.coroutines.cancel
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableSharedFlow
@@ -50,14 +49,13 @@ import org.threeten.bp.LocalTime
 import java.io.BufferedReader
 import java.io.IOException
 import java.io.InputStreamReader
-import java.lang.Thread.sleep
 import java.nio.charset.StandardCharsets
 import java.util.UUID
 import javax.inject.Inject
 import javax.inject.Singleton
 
 @Singleton
-class BtConnectionManager @Inject constructor(
+class BtConnection @Inject constructor(
     private val prefs: UserPrefs,
     private val bluetoothManager: BluetoothManager
 ) {
@@ -76,9 +74,16 @@ class BtConnectionManager @Inject constructor(
     var isRunning = false
         private set
 
+    val isConnected: Boolean
+        get() = bluetoothSocket?.isConnected == true
+
     private val mReceivedPacketFlow = MutableSharedFlow<RawPacket>()
     val receivedPacketFlow: Flow<RawPacket>
         get() = mReceivedPacketFlow
+
+    private val mConnectionStateFlow = MutableSharedFlow<ConnectionState>()
+    val connectionStateFlow: Flow<ConnectionState>
+        get() = mConnectionStateFlow
 
     private val scope = CoroutineScope(Dispatchers.IO + SupervisorJob())
 
@@ -94,31 +99,39 @@ class BtConnectionManager @Inject constructor(
 
     fun stopConnection() {
         isRunning = false
-        scope.cancel()
         disconnect()
     }
 
     private fun reconnect() {
         if (!isRunning) return
 
-        if (connectionAttempts >= maxConnectionAttempts) {
-            isRunning = false
-            println("Max connection attempts reached. Stopping connection attempts.")
-            return
-        }
-
-        connectionAttempts++
-        println("Attempting to connect: $connectionAttempts/$maxConnectionAttempts")
-
         scope.launch {
+            if (connectionAttempts >= maxConnectionAttempts) {
+                isRunning = false
+
+                mConnectionStateFlow.emit(Disconnected)
+                mConnectionStateFlow.emit(ConnectionTimeout)
+
+                Log.i(this.javaClass.simpleName, "Max connection attempts reached. Stopping connection attempts.")
+                return@launch
+            }
+
+            mConnectionStateFlow.emit(InProgress)
+
+            connectionAttempts++
+            Log.d(this.javaClass.simpleName, "Attempting to connect: $connectionAttempts/$maxConnectionAttempts")
+            if (connectionAttempts > 1) {
+                mConnectionStateFlow.emit(ConnectionAttempt(connectionAttempts))
+            }
+
             try {
                 connectToDevice()
 
-                println("Connected to device")
-                listenForDisconnection()
+                Log.i(this.javaClass.simpleName, "Connected to device")
                 startReadingData()
             } catch (e: IOException) {
-                println("Connection failed: ${e.message}")
+                mConnectionStateFlow.emit(ConnectionFailed(e))
+                Log.e(this.javaClass.simpleName, "Connection failed: ${e.message}")
                 delay(2000)
                 reconnect()
             }
@@ -140,31 +153,21 @@ class BtConnectionManager @Inject constructor(
     }
 
     private fun disconnect() {
-        try {
-            bluetoothSocket?.close()
-            bluetoothSocket = null
-        } catch (e: IOException) {
-            println("Error while disconnecting: ${e.message}")
-        }
-    }
-
-    private fun listenForDisconnection() {
         scope.launch {
             try {
-                while (isRunning && bluetoothSocket?.isConnected == true) {
-                    delay(1000)
-                }
-                println("Connection lost")
-                reconnect()
-            } catch (e: Exception) {
-                println("Error during listening: ${e.message}")
-                reconnect()
+                mConnectionStateFlow.emit(Disconnected)
+                bluetoothSocket?.close()
+                bluetoothSocket = null
+            } catch (e: IOException) {
+                mConnectionStateFlow.emit(ConnectionError(e))
+                Log.e(this.javaClass.simpleName, "Error while disconnecting: ${e.message}")
             }
         }
     }
 
     private fun startReadingData() {
         scope.launch {
+            mConnectionStateFlow.emit(Connected)
             try {
                 val inputStream = bluetoothSocket?.inputStream ?: throw IOException("Input stream is null")
                 val reader = BufferedReader(InputStreamReader(inputStream, StandardCharsets.ISO_8859_1))
@@ -175,6 +178,11 @@ class BtConnectionManager @Inject constructor(
                 var idx = 0
 
                 while (isRunning && bluetoothSocket?.isConnected == true) {
+                    if (idx >= packetBuffer.size) {
+                        Log.d(this.javaClass.simpleName, "Packet buffer overflow, resetting.")
+                        idx = 0
+                    }
+
                     val char = reader.read().takeIf { it != -1 }?.toChar() ?: continue
                     if (char == startMarker) {
                         idx = 0
@@ -193,7 +201,7 @@ class BtConnectionManager @Inject constructor(
                 }
                 connectionAttempts = 0
             } catch (e: IOException) {
-                println("Error while reading data: ${e.message}")
+                Log.e(this.javaClass.simpleName, "Error while reading data: ${e.message}")
                 connectionAttempts = 0
                 reconnect()
             }
@@ -202,7 +210,7 @@ class BtConnectionManager @Inject constructor(
         sendData(ChangeModePacket.getPacket(Task.Secu3ReadFirmwareInfo))
     }
 
-    fun sendData(packet: BaseOutputPacket) {
+    fun sendData(sendPacket: BaseOutputPacket) {
         scope.launch {
 
             val endTime = LocalTime.now().plusSeconds(10)
@@ -219,7 +227,7 @@ class BtConnectionManager @Inject constructor(
                 val outputStream = bluetoothSocket?.outputStream ?: throw IOException("Output stream is null")
                 val writer = outputStream.bufferedWriter(StandardCharsets.ISO_8859_1)
 
-                var packet = packet.pack()
+                var packet = sendPacket.pack()
 
                 val checksum = PacketUtils.calculateChecksum(packet.substring(2, packet.length))
 
@@ -232,11 +240,10 @@ class BtConnectionManager @Inject constructor(
 
                 writer.append(escaped)
 
-                sleep(20)
+                delay(20)
                 writer.flush()
-//                println("Data sent: $data")
             } catch (e: IOException) {
-                println("Error while sending data: ${e.message}")
+                Log.e(this.javaClass.simpleName, "Error while sending data: ${e.message}")
             }
         }
     }

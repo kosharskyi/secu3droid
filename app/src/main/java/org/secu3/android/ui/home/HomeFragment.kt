@@ -23,46 +23,51 @@
  *                    email: vetalkosharskiy@gmail.com
  */
 
-package org.secu3.android.ui.main
+package org.secu3.android.ui.home
 
 import android.content.Intent
-import android.graphics.Color
+import android.os.Build
 import android.os.Bundle
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import android.widget.Toast
 import androidx.activity.addCallback
+import androidx.browser.customtabs.CustomTabsIntent
 import androidx.core.content.ContextCompat
+import androidx.core.net.toUri
 import androidx.fragment.app.Fragment
 import androidx.fragment.app.viewModels
 import androidx.navigation.fragment.findNavController
 import com.google.android.material.dialog.MaterialAlertDialogBuilder
 import dagger.hilt.android.AndroidEntryPoint
 import org.secu3.android.R
-import org.secu3.android.SecuConnectionService
-import org.secu3.android.databinding.FragmentMainMenuBinding
+import org.secu3.android.connection.Connected
+import org.secu3.android.connection.Disconnected
+import org.secu3.android.connection.InProgress
+import org.secu3.android.connection.SecuConnectionService
+import org.secu3.android.databinding.FragmentHomeBinding
 import org.secu3.android.network.models.GitHubRelease
 import org.secu3.android.ui.settings.SettingsActivity
 
 @AndroidEntryPoint
-class MainFragment : Fragment() {
+class HomeFragment : Fragment() {
 
-    private var mBinding: FragmentMainMenuBinding? = null
+    private var mBinding: FragmentHomeBinding? = null
 
-    private val mViewModel: MainViewModel by viewModels()
+    private val mViewModel: HomeViewModel by viewModels()
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
         // This callback will only be called when MainMenuFragment is at least Started.
         requireActivity().onBackPressedDispatcher.addCallback(this) {
-            requireActivity().finish()
+            exit()
         }
     }
 
     override fun onCreateView(inflater: LayoutInflater, container: ViewGroup?, savedInstanceState: Bundle?): View? {
-        mBinding = FragmentMainMenuBinding.inflate(inflater, container, false)
+        mBinding = FragmentHomeBinding.inflate(inflater, container, false)
         return mBinding?.root
     }
 
@@ -77,23 +82,23 @@ class MainFragment : Fragment() {
 
             carStatus.setOnClickListener {
                 mViewModel.firmware ?: return@setOnClickListener
-                findNavController().navigate(MainFragmentDirections.actionOpenFirmwareDialog())
+                findNavController().navigate(HomeFragmentDirections.actionOpenFirmwareDialog())
             }
 
             dashboard.setOnClickListener {
-                findNavController().navigate(MainFragmentDirections.actionOpenDashboard())
+                findNavController().navigate(HomeFragmentDirections.actionOpenDashboard())
             }
 
             sensors.setOnClickListener {
-                findNavController().navigate(MainFragmentDirections.actionOpenSensors())
+                findNavController().navigate(HomeFragmentDirections.actionOpenSensors())
             }
 
             ecuParams.setOnClickListener {
-                findNavController().navigate(MainFragmentDirections.actionOpenParameters())
+                findNavController().navigate(HomeFragmentDirections.actionOpenParameters())
             }
 
             secuCheckEngine.setOnClickListener {
-                findNavController().navigate(MainFragmentDirections.actionOpenSecuErrors())
+                findNavController().navigate(HomeFragmentDirections.actionOpenSecuErrors())
             }
 
             secuDiagnostics.setOnClickListener {
@@ -101,7 +106,7 @@ class MainFragment : Fragment() {
             }
 
             secuLogs.setOnClickListener {
-                findNavController().navigate(MainFragmentDirections.actionOpenSecuLogs())
+                findNavController().navigate(HomeFragmentDirections.actionOpenSecuLogs())
             }
 
             appSettings.setOnClickListener {
@@ -114,12 +119,30 @@ class MainFragment : Fragment() {
         }
 
         mViewModel.connectionStatusLiveData.observe(viewLifecycleOwner) {
-            if (it) {
-                mBinding?.carStatus?.setColorFilter(ContextCompat.getColor(requireContext(), R.color.gauge_dark_green))
-            } else {
-                mBinding?.carStatus?.setColorFilter(ContextCompat.getColor(requireContext(), R.color.gauge_red))
+            when (it) {
+                Connected -> {
+                    mBinding?.carStatus?.setColorFilter(ContextCompat.getColor(requireContext(), R.color.gauge_dark_green))
+                }
+                InProgress -> {
+                    mBinding?.carStatus?.setColorFilter(ContextCompat.getColor(requireContext(), R.color.gauge_dark_yellow))
+                }
+                Disconnected -> {
+                    mBinding?.carStatus?.setColorFilter(ContextCompat.getColor(requireContext(), R.color.gauge_red))
+                    if (mViewModel.isUserTapExit) {
+                        findNavController().popBackStack()
+                    }
+                }
+                else -> {
+                    // do nothing
+                }
             }
         }
+    }
+
+    override fun onResume() {
+        super.onResume()
+
+        handleSecuConnectionService()
     }
 
     private fun showNewVersionDialog(release: GitHubRelease) {
@@ -128,6 +151,10 @@ class MainFragment : Fragment() {
             .setMessage(getString(R.string.the_version_is_available_do_you_want_to_download, release.tagName))
             .setPositiveButton(getString(R.string.download)) { _, _ ->
                 mViewModel.downloadRelease(release)
+            }
+            .setNegativeButton(getString(R.string.what_s_new)) { _, _ ->
+                val intent = CustomTabsIntent.Builder().build()
+                intent.launchUrl(requireContext(), release.htmlUrl.toUri())
             }
             .setNeutralButton(getString(R.string.remind_me_later)) { _, _ ->
                 // do nothing
@@ -140,7 +167,7 @@ class MainFragment : Fragment() {
             .setPositiveButton(android.R.string.ok) { _, _ ->
 
                 if (mViewModel.firmware?.isDiagnosticsEnabled == true) {
-                    findNavController().navigate(MainFragmentDirections.actionOpenSecuDiagnostic())
+                    findNavController().navigate(HomeFragmentDirections.actionOpenSecuDiagnostic())
                     return@setPositiveButton
                 }
 
@@ -149,10 +176,30 @@ class MainFragment : Fragment() {
             }.setNegativeButton(android.R.string.cancel, null).create().show()
     }
 
+    private fun handleSecuConnectionService() {
+        val intent = Intent(requireContext(), SecuConnectionService::class.java)
+        if (mViewModel.prefs.isWakeLockEnabled) {
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+                requireActivity().startForegroundService(intent)
+            } else {
+                requireActivity().startService(intent)
+            }
+        } else {
+            requireActivity().stopService(intent)
+        }
+    }
+
     private fun exit() {
-        requireActivity().stopService(Intent(requireContext(), SecuConnectionService::class.java))
-        mViewModel.closeConnection()
-        activity?.finishAndRemoveTask()
+        MaterialAlertDialogBuilder(requireContext()).apply {
+            setTitle(getString(R.string.disconnect_device))
+            setMessage(getString(R.string.disconnect_device_msg))
+            setPositiveButton(android.R.string.ok) { _, _ ->
+                requireActivity().stopService(Intent(requireContext(), SecuConnectionService::class.java))
+                mViewModel.closeConnection()
+            }
+            setNegativeButton(android.R.string.cancel, null)
+            show()
+        }
     }
 
     override fun onDestroyView() {

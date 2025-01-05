@@ -24,6 +24,7 @@
 
     <string name="msg_bluetooth_disabled">Bluetooth отключен</string>
     <string name="status_offline">Отключено</string>
+    <string name="status_connecting">Подключение</string>
     <string name="status_online">Подключено</string>
     <string name="title_activity_errors">Ошибки</string>
     <string name="menu_dashboard">Приборная панель</string>
@@ -340,6 +341,9 @@
     <string name="columns_count">Количество колонок</string>
     <string name="packet_saved">Пакет сохранен</string>
     <string name="saving">Сохранение</string>
+    <string name="disconnect_device">Отключение устройства</string>
+    <string name="disconnect_device_msg">Вы уверены, что хотите отключить устройство?</string>
+    <string name="what_s_new">Что нового</string>
 
 
 </resources>

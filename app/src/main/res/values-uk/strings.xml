@@ -23,6 +23,7 @@
 
     <string name="msg_bluetooth_disabled">Bluetooth відключений</string>
     <string name="status_offline">Відключено</string>
+    <string name="status_connecting">Підключається</string>
     <string name="status_online">Підключено</string>
     <string name="title_activity_errors">Помилки</string>
     <string name="title_activity_settings">Налаштування</string>
@@ -337,6 +338,9 @@
     <string name="columns_count">Кількість колонок</string>
     <string name="packet_saved">Пакет збережено</string>
     <string name="saving">Збереження</string>
+    <string name="disconnect_device">Відключення пристрою</string>
+    <string name="disconnect_device_msg">Ви впевнені, що хочете відключити пристрій?</string>
+    <string name="what_s_new">Що нового</string>
 
 </resources>
 
