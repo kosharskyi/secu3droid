@@ -61,6 +61,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.ComposeView
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.core.content.ContextCompat
 import androidx.fragment.app.viewModels
@@ -164,8 +165,8 @@ class StartScreenFragment : Fragment() {
                     val isInProgress = viewModel.isConnectionInProgressLiveData.observeAsState()
                     isInProgress.value?.let {
                         CircularButton(
-                            textNormal = "Connect",
-                            textInProgress = "Connecting...",
+                            textNormal = stringResource(R.string.connect),
+                            textInProgress = stringResource(R.string.status_connecting),
                             isInProgress = it,
                             onClick = {
                                 connectBtnClicked(it)
@@ -179,7 +180,9 @@ class StartScreenFragment : Fragment() {
 
                         val device = viewModel.mUsbDeviceAttachedLiveData.observeAsState()
                         device.value?.let {
-                            Text("USB device detected", modifier = Modifier.padding(16.dp).align(Alignment.BottomCenter))
+                            Text("USB device detected", modifier = Modifier
+                                .padding(16.dp)
+                                .align(Alignment.BottomCenter))
                         }
                     }
                 }

@@ -341,6 +341,7 @@
     <string name="disconnect_device">Відключення пристрою</string>
     <string name="disconnect_device_msg">Ви впевнені, що хочете відключити пристрій?</string>
     <string name="what_s_new">Що нового</string>
+    <string name="connect">Підключитися</string>
 
 </resources>
 
