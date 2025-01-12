@@ -135,6 +135,18 @@ class StartScreenViewModel @Inject constructor(
         mPrefs.bluetoothDeviceName = device.name
     }
 
+    fun enableProgress() {
+        viewModelScope.launch {
+            isConnectionInProgressFlow.emit(true)
+        }
+    }
+
+    fun disableProgress() {
+        viewModelScope.launch {
+            isConnectionInProgressFlow.emit(false)
+        }
+    }
+
     fun startConnection(device: UsbDevice?) {
         viewModelScope.launch {
             isConnectionInProgressFlow.emit(true)

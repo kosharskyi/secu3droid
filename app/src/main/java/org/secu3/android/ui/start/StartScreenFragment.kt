@@ -130,6 +130,28 @@ class StartScreenFragment : Fragment() {
                     viewModel.discoveredBtDevices.find { device -> device.address == it.address } ?: viewModel.discoveredBtDevices.add(it)
                 }
             }
+
+            if (intent.action == BluetoothDevice.ACTION_BOND_STATE_CHANGED) {
+                val device: BluetoothDevice? =
+                    intent.getParcelableExtra(BluetoothDevice.EXTRA_DEVICE)
+
+                device?.let {
+
+                    when (it.bondState) {
+                        BluetoothDevice.BOND_BONDED -> {
+                            viewModel.setBtDevice(it)
+                            viewModel.startConnection(null)
+                        }
+                        BluetoothDevice.BOND_BONDING -> {
+                            viewModel.enableProgress()
+                        }
+                        else -> {
+                            viewModel.disableProgress()
+                        }
+                    }
+
+                }
+            }
         }
     }
 
@@ -167,6 +189,7 @@ class StartScreenFragment : Fragment() {
         }
 
         requireContext().registerReceiver(btDeviceDiscoveryReceiver, IntentFilter(BluetoothDevice.ACTION_FOUND))
+        requireContext().registerReceiver(btDeviceDiscoveryReceiver, IntentFilter(BluetoothDevice.ACTION_BOND_STATE_CHANGED))
     }
 
     override fun onPause() {
@@ -238,7 +261,9 @@ class StartScreenFragment : Fragment() {
                             androidx.compose.material3.Text(
                                 text = stringResource(R.string.select_a_device_from_the_list),
                                 style = androidx.compose.material3.MaterialTheme.typography.titleLarge,
-                                modifier = Modifier.padding(horizontal = 16.dp).padding(bottom = 16.dp)
+                                modifier = Modifier
+                                    .padding(horizontal = 16.dp)
+                                    .padding(bottom = 16.dp)
                             )
                             HorizontalDivider()
 
@@ -263,8 +288,13 @@ class StartScreenFragment : Fragment() {
                                             }
                                         },
                                         modifier = Modifier.clickable {
-                                            viewModel.setBtDevice(device)
-                                            viewModel.startConnection(null)
+                                            if (device.bondState == BluetoothDevice.BOND_BONDED) {
+                                                viewModel.setBtDevice(device)
+                                                viewModel.startConnection(null)
+                                            } else {
+                                                viewModel.enableProgress()
+                                                device.createBond()
+                                            }
                                             viewModel.showBottomSheet.value = false
                                         }
                                     )
