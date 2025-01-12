@@ -346,6 +346,8 @@
     <string name="what_s_new">Что нового</string>
     <string name="connect">Подключиться</string>
     <string name="usb_device_detected">Обнаружено USB устройство</string>
+    <string name="unknown_device">Неизвестное устройство</string>
+    <string name="select_a_device_from_the_list">Выберите устройство из списка</string>
 
 
 </resources>

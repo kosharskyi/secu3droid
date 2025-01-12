@@ -504,5 +504,7 @@
     <string name="what_s_new">What\'s new</string>
     <string name="connect">Connect</string>
     <string name="usb_device_detected">USB device detected</string>
+    <string name="unknown_device">Unknown Device</string>
+    <string name="select_a_device_from_the_list">Select a device from the list</string>
 
 </resources>

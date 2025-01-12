@@ -31,6 +31,10 @@ import android.bluetooth.BluetoothManager
 import android.content.pm.PackageManager
 import android.hardware.usb.UsbDevice
 import android.hardware.usb.UsbManager
+import android.location.LocationManager
+import android.os.Build
+import androidx.compose.runtime.mutableStateListOf
+import androidx.compose.runtime.mutableStateOf
 import androidx.lifecycle.LiveData
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.asLiveData
@@ -48,6 +52,7 @@ import javax.inject.Inject
 class StartScreenViewModel @Inject constructor(
     private val mPrefs: UserPrefs,
     private val bluetoothManager: BluetoothManager,
+    private val locationManager: LocationManager,
     private val secu3Connection: Secu3Connection,
     private val packageManager: PackageManager,
     val usbManager: UsbManager,
@@ -71,6 +76,10 @@ class StartScreenViewModel @Inject constructor(
     val isUsbHostSupported: Boolean
         get() = packageManager.hasSystemFeature(PackageManager.FEATURE_USB_HOST)
 
+    val showBottomSheet = mutableStateOf(false)
+
+    val discoveredBtDevices = mutableStateListOf<BluetoothDevice>()
+
     init {
         if (isUsbHostSupported) {
             usbManager.deviceList.values.firstOrNull()?.let { newUsbDeviceAttached(it) }
@@ -81,17 +90,49 @@ class StartScreenViewModel @Inject constructor(
         return bluetoothAdapter.isEnabled
     }
 
-    fun isBtDeviceAddressNotSelected(): Boolean {
-        return mPrefs.bluetoothDeviceName.isNullOrBlank()
+    fun isLocationEnabled(): Boolean {
+        val version = Build.VERSION.SDK_INT
+        if (version < Build.VERSION_CODES.P || version >= Build.VERSION_CODES.R) {
+            return true
+        }
+
+        return locationManager.isLocationEnabled
     }
 
-    fun isBtDeviceNotExist(): Boolean {
+    fun startBtDiscovery() {
+        bluetoothAdapter.apply {
+            if (isEnabled.not()) return
 
-        val btAddress = mPrefs.bluetoothDeviceName ?: return false
+            if (isDiscovering) {
+                cancelDiscovery()
+            }
 
-        val bluetoothDevice: BluetoothDevice? = bluetoothAdapter.bondedDevices.firstOrNull { it.name == btAddress }
+            bondedDevices.forEach { device ->
+                discoveredBtDevices.add(device)
+            }
+
+            startDiscovery()
+        }
+    }
+
+    fun cancelBtDiscovery() {
+        bluetoothAdapter.cancelDiscovery()
+    }
+
+    fun isBtDeviceAddressNotSelected(): Boolean {
+        val btName = mPrefs.bluetoothDeviceName.takeIf { it.isNullOrEmpty().not() } ?: return true
+
+        val bluetoothDevice: BluetoothDevice? = bluetoothAdapter.bondedDevices.firstOrNull { it.name == btName }
+
+        if (bluetoothDevice == null) {
+            mPrefs.bluetoothDeviceName = null
+        }
 
         return bluetoothDevice == null
+    }
+
+    fun setBtDevice(device: BluetoothDevice) {
+        mPrefs.bluetoothDeviceName = device.name
     }
 
     fun startConnection(device: UsbDevice?) {

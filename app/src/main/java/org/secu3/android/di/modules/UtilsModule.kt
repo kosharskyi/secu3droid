@@ -30,6 +30,7 @@ import android.bluetooth.BluetoothManager
 import android.content.Context
 import android.content.pm.PackageManager
 import android.hardware.usb.UsbManager
+import android.location.LocationManager
 import androidx.room.Room
 import dagger.Module
 import dagger.Provides
@@ -62,6 +63,12 @@ object UtilsModule {
     @Provides
     fun getBluetoothManager(@ApplicationContext context: Context): BluetoothManager {
         return context.getSystemService(Context.BLUETOOTH_SERVICE) as BluetoothManager
+    }
+
+    @Singleton
+    @Provides
+    fun getLocationManager(@ApplicationContext context: Context): LocationManager {
+        return context.getSystemService(Context.LOCATION_SERVICE) as LocationManager
     }
 
     @Singleton

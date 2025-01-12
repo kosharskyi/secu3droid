@@ -29,6 +29,7 @@ import android.Manifest
 import android.app.Activity.RESULT_OK
 import android.app.PendingIntent
 import android.bluetooth.BluetoothAdapter
+import android.bluetooth.BluetoothDevice
 import android.content.BroadcastReceiver
 import android.content.Context
 import android.content.Intent
@@ -38,31 +39,47 @@ import android.hardware.usb.UsbDevice
 import android.hardware.usb.UsbManager
 import android.os.Build
 import android.os.Bundle
+import android.provider.Settings
 import android.util.Log
 import androidx.fragment.app.Fragment
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import androidx.activity.result.contract.ActivityResultContracts
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.items
 import androidx.compose.material.Icon
 import androidx.compose.material.MaterialTheme
 import androidx.compose.material.Surface
 import androidx.compose.material.Text
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Bluetooth
 import androidx.compose.material.icons.filled.Settings
+import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.HorizontalDivider
+import androidx.compose.material3.ListItem
+import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
 import androidx.compose.runtime.livedata.observeAsState
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.ComposeView
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import androidx.core.content.ContextCompat
 import androidx.fragment.app.viewModels
 import androidx.lifecycle.viewmodel.compose.viewModel
@@ -101,6 +118,21 @@ class StartScreenFragment : Fragment() {
         }
     }
 
+    private val btDeviceDiscoveryReceiver = object : BroadcastReceiver() {
+        override fun onReceive(context: Context, intent: Intent) {
+            Log.e(this.javaClass.simpleName, "onReceive")
+            if (intent.action == BluetoothDevice.ACTION_FOUND) {
+                Log.e(this.javaClass.simpleName, "ACTION_FOUND")
+                val device: BluetoothDevice? =
+                    intent.getParcelableExtra(BluetoothDevice.EXTRA_DEVICE)
+                device?.takeIf { it.name.isNullOrEmpty().not() }?.let {
+                    Log.e(this.javaClass.simpleName, "Device found: ${it.name}")
+                    viewModel.discoveredBtDevices.find { device -> device.address == it.address } ?: viewModel.discoveredBtDevices.add(it)
+                }
+            }
+        }
+    }
+
     override fun onCreateView(inflater: LayoutInflater, container: ViewGroup?, savedInstanceState: Bundle?): View? {
 
         return ComposeView(requireContext()).apply {
@@ -133,6 +165,8 @@ class StartScreenFragment : Fragment() {
                 )
             }
         }
+
+        requireContext().registerReceiver(btDeviceDiscoveryReceiver, IntentFilter(BluetoothDevice.ACTION_FOUND))
     }
 
     override fun onPause() {
@@ -140,10 +174,15 @@ class StartScreenFragment : Fragment() {
         if (viewModel.isUsbHostSupported) {
             requireContext().unregisterReceiver(usbDeviceActionReceiver)
         }
+
+        requireContext().unregisterReceiver(btDeviceDiscoveryReceiver)
     }
 
+    @OptIn(ExperimentalMaterial3Api::class)
     @Composable
     fun StartScreen(viewModel: StartScreenViewModel = viewModel()) {
+
+        var showBottomSheet by remember { viewModel.showBottomSheet }
 
         MaterialTheme {
             Surface {
@@ -186,6 +225,54 @@ class StartScreenFragment : Fragment() {
                                 .padding(16.dp)
                                 .align(Alignment.BottomCenter))
                     }
+
+                    if (showBottomSheet) {
+
+                        ModalBottomSheet(
+                            onDismissRequest = {
+                                showBottomSheet = false
+                                viewModel.discoveredBtDevices.clear()
+                                viewModel.cancelBtDiscovery()
+                            }
+                        ) {
+                            androidx.compose.material3.Text(
+                                text = stringResource(R.string.select_a_device_from_the_list),
+                                style = androidx.compose.material3.MaterialTheme.typography.titleLarge,
+                                modifier = Modifier.padding(horizontal = 16.dp).padding(bottom = 16.dp)
+                            )
+                            HorizontalDivider()
+
+                            val devices = remember { viewModel.discoveredBtDevices }
+
+                            LazyColumn(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                            ) {
+                                items(devices, key = { it.address }) { device ->
+                                    ListItem(
+                                        headlineContent = {
+                                            Row {
+                                                Image(Icons.Default.Bluetooth, contentDescription = "Bluetooth icon",
+                                                    modifier = Modifier
+                                                        .padding(end = 8.dp)
+                                                        .align(Alignment.CenterVertically))
+                                                Column {
+                                                    androidx.compose.material3.Text(device.name ?: device.alias ?: stringResource(R.string.unknown_device))
+                                                    androidx.compose.material3.Text(device.address, fontSize = 12.sp, color = androidx.compose.material3.MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f)) // Відображення MAC-адреси()
+                                                }
+                                            }
+                                        },
+                                        modifier = Modifier.clickable {
+                                            viewModel.setBtDevice(device)
+                                            viewModel.startConnection(null)
+                                            viewModel.showBottomSheet.value = false
+                                        }
+                                    )
+                                    HorizontalDivider(modifier = Modifier.padding(horizontal = 16.dp))
+                                }
+                            }
+                        }
+                    }
                 }
             }
         }
@@ -218,11 +305,13 @@ class StartScreenFragment : Fragment() {
     }
 
     private val permissionRequest = registerForActivityResult(ActivityResultContracts.RequestMultiplePermissions()) {
-        val isDeclined = it.values.any { isGranted -> isGranted.not() }
+        val isGranted = it.values.all { isGranted -> isGranted }
 
-        if (isDeclined.not()) {
-            checkBtConfig()
+        if (isGranted.not()) {
+            return@registerForActivityResult
         }
+
+        checkBtConfig()
     }
 
     private fun checkBluetoothPermissionsAndConnect() {
@@ -233,6 +322,13 @@ class StartScreenFragment : Fragment() {
             permissions.add(Manifest.permission.BLUETOOTH_SCAN)
         } else {
             permissions.add(Manifest.permission.BLUETOOTH)
+            permissions.add(Manifest.permission.ACCESS_FINE_LOCATION)
+            permissions.add(Manifest.permission.ACCESS_COARSE_LOCATION)
+        }
+
+        if (Build.VERSION.SDK_INT == Build.VERSION_CODES.Q) {
+            // required only for Android 10
+            permissions.add(Manifest.permission.ACCESS_BACKGROUND_LOCATION)
         }
 
         val deniedPermissions = permissions.filter { ContextCompat.checkSelfPermission(requireContext(), it) == PackageManager.PERMISSION_DENIED }
@@ -259,33 +355,19 @@ class StartScreenFragment : Fragment() {
 
         when {
             viewModel.isBtEnabled().not() -> enableBt()
-            viewModel.isBtDeviceAddressNotSelected() -> showNoBtDeviceDialog()
-            viewModel.isBtDeviceNotExist() -> showBtDeviceNotValidDialog()
+            viewModel.isLocationEnabled().not() -> enableLocation()
+            viewModel.isBtDeviceAddressNotSelected() -> {
+                viewModel.showBottomSheet.value = true
+                viewModel.startBtDiscovery()
+            }
             else -> viewModel.startConnection(null)
         }
 
     }
 
-    private fun showBtDeviceNotValidDialog() {
-        MaterialAlertDialogBuilder(requireContext())
-            .setTitle(R.string.select_bluetooth_device)
-            .setMessage(R.string.bluetooth_device_not_valid)
-            .setPositiveButton(android.R.string.ok) { _, _ ->
-                startActivity(Intent(context, SettingsActivity::class.java))
-            }
-            .setNegativeButton(android.R.string.cancel, null)
-            .show()
-    }
-
-    private fun showNoBtDeviceDialog() {
-        MaterialAlertDialogBuilder(requireContext())
-            .setTitle(R.string.select_bluetooth_device)
-            .setMessage(R.string.choose_bluetooth_adapter)
-            .setPositiveButton(android.R.string.ok) { _, _ ->
-                startActivity(Intent(context, SettingsActivity::class.java))
-            }
-            .setNegativeButton(android.R.string.cancel, null)
-            .show()
+    private fun enableLocation() {
+        val intent = Intent(Settings.ACTION_LOCATION_SOURCE_SETTINGS)
+        startActivity(intent)
     }
 
     private fun enableBt() {

@@ -24,11 +24,9 @@
  */
 package org.secu3.android.ui.settings
 
-import android.bluetooth.BluetoothAdapter
 import android.content.SharedPreferences
 import android.content.SharedPreferences.OnSharedPreferenceChangeListener
 import android.os.Bundle
-import androidx.preference.ListPreference
 import androidx.preference.Preference
 import androidx.preference.PreferenceFragmentCompat
 import androidx.preference.PreferenceManager
@@ -36,28 +34,10 @@ import org.secu3.android.R
 
 class SettingsFragment : PreferenceFragmentCompat(), OnSharedPreferenceChangeListener {
 
-    private var bluetoothAdapter: BluetoothAdapter? = null
+
     private lateinit var sharedPref: SharedPreferences
 
-    private fun updatePreferenceSummary() {
-        val deviceAddress = sharedPref.getString(getString(R.string.pref_bluetooth_device_key), null)
-
-        if (BluetoothAdapter.checkBluetoothAddress(deviceAddress)) {
-            bluetoothAdapter?.getRemoteDevice(deviceAddress)?.name?.let {
-                findPreference<ListPreference>(getString(R.string.pref_bluetooth_device_key))?.summary = getString(R.string.pref_bluetooth_device_summary, it)
-            }
-        }
-    }
-
-    private fun updatePreferenceList() { // update bluetooth device summary
-        updatePreferenceSummary()
-
-        findPreference<ListPreference>(getString(R.string.pref_bluetooth_device_key))?.apply {
-            val devices = bluetoothAdapter?.bondedDevices?.map { device -> device.name }?.toTypedArray()
-            this.entryValues = devices
-            this.entries = devices
-        }
-
+    private fun updatePreferenceList() {
         findPreference<Preference>(getString(R.string.pref_connection_retries_key))?.let {
             val maxConnRetries = sharedPref.getString(getString(R.string.pref_connection_retries_key), getString(R.string.defaultConnectionRetries))
             it.summary = getString(R.string.pref_connection_retries_summary, maxConnRetries)
@@ -69,8 +49,6 @@ class SettingsFragment : PreferenceFragmentCompat(), OnSharedPreferenceChangeLis
         addPreferencesFromResource(R.xml.preferences)
 
         sharedPref = PreferenceManager.getDefaultSharedPreferences(requireContext())
-
-        bluetoothAdapter = BluetoothAdapter.getDefaultAdapter()
 
         findPreference<Preference>(getString(R.string.pref_about_key))?.let {
             it.onPreferenceClickListener = Preference.OnPreferenceClickListener {
@@ -93,12 +71,7 @@ class SettingsFragment : PreferenceFragmentCompat(), OnSharedPreferenceChangeLis
 
     override fun onSharedPreferenceChanged(sharedPreferences: SharedPreferences?, key: String?) {
         when (key) {
-            getString(R.string.pref_bluetooth_device_key) -> {
-                updatePreferenceSummary()
-                updatePreferenceList()
-            }
-            getString(R.string.pref_log_csv_delimeter_key) -> {
-                updatePreferenceSummary()
+            getString(R.string.pref_connection_retries_key) -> {
                 updatePreferenceList()
             }
         }
