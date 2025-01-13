@@ -47,6 +47,9 @@
     <string name="permission_rationale_title">Необходимо дать разрешения</string>
     <string name="permission_rationale_message">Приложение не собирает и не использует ваши геоданные. Это ограничения операционной системы, запрашивать разрешения на геоданные вместе с блютузом</string>
 
+    <string name="download_manager_permission_rationale_title">Необходимо дать разрешение на скачивание</string>
+    <string name="download_manager_permission_rationale_message">Это ограничения операционной системы, запрашивать разрешение на доступ к хранилищу для скачивания файлов</string>
+
     <string-array name="diagnostics_fragments_title">
         <item>Входы</item>
         <item>Выходы</item>
