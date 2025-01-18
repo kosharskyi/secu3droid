@@ -41,11 +41,11 @@ import javax.inject.Inject
 import javax.inject.Singleton
 
 @Singleton
-class Secu3Connection @Inject constructor(private val usbConnection: UsbConnection,
-                                          private val btConnection: BtConnection,
-                                          private val mPrefs: UserPrefs,
-                                          private val bluetoothManager: BluetoothManager,
-                                          private val secuLogger: SecuLogger,
+class Secu3ConnectionManager @Inject constructor(private val usbConnection: UsbConnection,
+                                                 private val btConnection: BtConnection,
+                                                 private val mPrefs: UserPrefs,
+                                                 private val bluetoothManager: BluetoothManager,
+                                                 private val secuLogger: SecuLogger,
 ) {
 
 

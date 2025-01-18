@@ -57,35 +57,18 @@ import javax.inject.Singleton
 @Singleton
 class BtConnection @Inject constructor(
     private val prefs: UserPrefs,
-    private val bluetoothManager: BluetoothManager
-) {
+    bluetoothManager: BluetoothManager
+) : Connection(prefs) {
 
     private val bluetoothAdapter: BluetoothAdapter? = bluetoothManager.adapter
     private var bluetoothSocket: BluetoothSocket? = null
-    var connectionAttempts = 0
-        private set
 
     private val pairedDeviceName: String?
         get() = prefs.bluetoothDeviceName
 
-    private val maxConnectionAttempts: Int
-        get() = prefs.connectionRetries
-
-    var isRunning = false
-        private set
-
-    val isConnected: Boolean
+    override val isConnected: Boolean
         get() = bluetoothSocket?.isConnected == true
 
-    private val mReceivedPacketFlow = MutableSharedFlow<RawPacket>()
-    val receivedPacketFlow: Flow<RawPacket>
-        get() = mReceivedPacketFlow
-
-    private val mConnectionStateFlow = MutableSharedFlow<ConnectionState>()
-    val connectionStateFlow: Flow<ConnectionState>
-        get() = mConnectionStateFlow
-
-    private val scope = CoroutineScope(Dispatchers.IO + SupervisorJob())
 
     fun startConnection() {
         val deviceName = pairedDeviceName
@@ -95,11 +78,6 @@ class BtConnection @Inject constructor(
         isRunning = true
         connectionAttempts = 0
         reconnect()
-    }
-
-    fun stopConnection() {
-        isRunning = false
-        disconnect()
     }
 
     private fun reconnect() {
@@ -152,7 +130,7 @@ class BtConnection @Inject constructor(
         }
     }
 
-    private fun disconnect() {
+    override fun disconnect() {
         scope.launch {
             try {
                 mConnectionStateFlow.emit(Disconnected)

@@ -54,32 +54,14 @@ import javax.inject.Singleton
 @Singleton
 class UsbConnection @Inject constructor(
     private val usbManager: UsbManager,
-    private val prefs: UserPrefs,
-) {
-
-    private val maxConnectionAttempts: Int
-        get() = prefs.connectionRetries
-
-    var connectionAttempts = 0
-        private set
+    prefs: UserPrefs,
+) : Connection(prefs) {
 
     private var usbSerialPort: UsbSerialPort? = null
 
-    var isRunning = false
-        private set
-
-    val isConnected: Boolean
+    override val isConnected: Boolean
         get() = usbSerialPort?.isOpen == true
 
-    private val scope = CoroutineScope(Dispatchers.IO + SupervisorJob())
-
-    private val mReceivedPacketFlow = MutableSharedFlow<RawPacket>()
-    val receivedPacketFlow: Flow<RawPacket>
-        get() = mReceivedPacketFlow
-
-    private val mConnectionStateFlow = MutableSharedFlow<ConnectionState>()
-    val connectionStateFlow: Flow<ConnectionState>
-        get() = mConnectionStateFlow
 
     private var currentDevice: UsbDevice? = null
 
@@ -87,14 +69,6 @@ class UsbConnection @Inject constructor(
         isRunning = true
         currentDevice = device
         reconnect()
-    }
-
-    fun stopConnection() {
-        scope.launch {
-            mConnectionStateFlow.emit(Disconnected)
-        }
-        isRunning = false
-        disconnect()
     }
 
     private fun reconnect() {
@@ -153,7 +127,7 @@ class UsbConnection @Inject constructor(
         usbSerialPort?.setParameters(115200, 8, UsbSerialPort.STOPBITS_1, UsbSerialPort.PARITY_NONE)
     }
 
-    private fun disconnect() {
+    override fun disconnect() {
         currentDevice = null
         scope.launch {
             try {
@@ -255,9 +229,5 @@ class UsbConnection @Inject constructor(
                 Log.e(this.javaClass.simpleName, "Error while sending data: ${e.message}")
             }
         }
-    }
-
-    companion object {
-        private const val ACTION_USB_PERMISSION = "com.example.USB_PERMISSION"
     }
 }

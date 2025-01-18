@@ -33,7 +33,7 @@ import kotlinx.coroutines.flow.filter
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.sample
 import org.secu3.android.connection.ConnectionState
-import org.secu3.android.connection.Secu3Connection
+import org.secu3.android.connection.Secu3ConnectionManager
 import org.secu3.android.models.packets.input.SensorsPacket
 import org.secu3.android.ui.sensors.models.GaugeType
 import org.secu3.android.utils.UserPrefs
@@ -41,11 +41,11 @@ import org.secu3.android.utils.Task
 import javax.inject.Inject
 
 @HiltViewModel
-class DashboardViewModel @Inject constructor(private val secu3Connection: Secu3Connection,
+class DashboardViewModel @Inject constructor(private val secu3ConnectionManager: Secu3ConnectionManager,
                                              private val mPrefs: UserPrefs) : ViewModel() {
 
     val packetLiveData: LiveData<DashboardViewData>
-        get() = secu3Connection.receivedPacketFlow
+        get() = secu3ConnectionManager.receivedPacketFlow
             .filter { it is SensorsPacket }
             .sample(300)
             .map { (it as SensorsPacket) }
@@ -55,7 +55,7 @@ class DashboardViewModel @Inject constructor(private val secu3Connection: Secu3C
             .asLiveData()
 
     val statusLiveData: LiveData<ConnectionState>
-        get() = secu3Connection.connectionStateFlow.asLiveData()
+        get() = secu3ConnectionManager.connectionStateFlow.asLiveData()
 
     val dashboardConfig: DashboardConfig = mPrefs.dashboardConfig ?: DashboardConfig(
         GaugeConfig(GaugeType.RPM, ),
@@ -74,7 +74,7 @@ class DashboardViewModel @Inject constructor(private val secu3Connection: Secu3C
     }
 
     fun setTask(task: Task) {
-        secu3Connection.sendNewTask(task)
+        secu3ConnectionManager.sendNewTask(task)
     }
 
 }

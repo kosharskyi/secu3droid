@@ -25,17 +25,16 @@
 
 package org.secu3.android.ui
 
-import android.hardware.usb.UsbDevice
 import android.hardware.usb.UsbManager
 import androidx.lifecycle.ViewModel
 import dagger.hilt.android.lifecycle.HiltViewModel
-import org.secu3.android.connection.Secu3Connection
+import org.secu3.android.connection.Secu3ConnectionManager
 import org.secu3.android.utils.UserPrefs
 import javax.inject.Inject
 
 @HiltViewModel
 class MainActivityViewModel @Inject constructor(
-    private val secu3Connection: Secu3Connection,
+    private val secu3ConnectionManager: Secu3ConnectionManager,
     val usbManager: UsbManager,
     val prefs: UserPrefs,
 ) : ViewModel() {

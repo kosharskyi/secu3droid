@@ -44,7 +44,7 @@ import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.launch
 import org.secu3.android.connection.ConnectionState
-import org.secu3.android.connection.Secu3Connection
+import org.secu3.android.connection.Secu3ConnectionManager
 import org.secu3.android.utils.UserPrefs
 import javax.inject.Inject
 
@@ -53,7 +53,7 @@ class StartScreenViewModel @Inject constructor(
     private val mPrefs: UserPrefs,
     private val bluetoothManager: BluetoothManager,
     private val locationManager: LocationManager,
-    private val secu3Connection: Secu3Connection,
+    private val secu3ConnectionManager: Secu3ConnectionManager,
     private val packageManager: PackageManager,
     val usbManager: UsbManager,
 ): ViewModel() {
@@ -63,7 +63,7 @@ class StartScreenViewModel @Inject constructor(
         get() = isConnectionInProgressFlow.asLiveData()
 
     val isConnectedLiveData: LiveData<ConnectionState>
-        get() = secu3Connection.connectionStateFlow.asLiveData()
+        get() = secu3ConnectionManager.connectionStateFlow.asLiveData()
 
     private val bluetoothAdapter: BluetoothAdapter by lazy { bluetoothManager.adapter }
 
@@ -152,12 +152,12 @@ class StartScreenViewModel @Inject constructor(
             isConnectionInProgressFlow.emit(true)
 
             if (device != null) {
-                secu3Connection.startUsbConnection(device)
+                secu3ConnectionManager.startUsbConnection(device)
             } else {
-                secu3Connection.startBtConnection()
+                secu3ConnectionManager.startBtConnection()
             }
 
-            while (secu3Connection.isConnectionRunning && secu3Connection.isConnected.not() && secu3Connection.fwInfo == null) {
+            while (secu3ConnectionManager.isConnectionRunning && secu3ConnectionManager.isConnected.not() && secu3ConnectionManager.fwInfo == null) {
 
                 delay(2000)
             }

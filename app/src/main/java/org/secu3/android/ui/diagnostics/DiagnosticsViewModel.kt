@@ -30,7 +30,7 @@ import kotlinx.coroutines.flow.filter
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.launch
 import org.secu3.android.connection.ConnectionState
-import org.secu3.android.connection.Secu3Connection
+import org.secu3.android.connection.Secu3ConnectionManager
 import org.secu3.android.models.packets.input.DiagInputPacket
 import org.secu3.android.models.packets.out.DiagOutputPacket
 import org.secu3.android.models.packets.input.FirmwareInfoPacket
@@ -39,15 +39,15 @@ import org.secu3.android.utils.Task
 import javax.inject.Inject
 
 @HiltViewModel
-class DiagnosticsViewModel @Inject constructor(private val secu3Connection: Secu3Connection) : ViewModel() {
+class DiagnosticsViewModel @Inject constructor(private val secu3ConnectionManager: Secu3ConnectionManager) : ViewModel() {
 
-    val outputPacket = DiagOutputPacket(secu3Connection.fwInfo!!)
+    val outputPacket = DiagOutputPacket(secu3ConnectionManager.fwInfo!!)
 
     private var isDiagModeActive = false
 
     init {
         viewModelScope.launch {
-            secu3Connection.receivedPacketFlow.filter { it is OpCompNc }.map {
+            secu3ConnectionManager.receivedPacketFlow.filter { it is OpCompNc }.map {
                 it as OpCompNc
             }.collect {
                 if (it.opCode == 7) {
@@ -57,16 +57,16 @@ class DiagnosticsViewModel @Inject constructor(private val secu3Connection: Secu
 
                 if (it.opCode == 6) {
                     isDiagModeActive = true
-                    secu3Connection.sendNewTask(Task.Secu3DiagInput)
+                    secu3ConnectionManager.sendNewTask(Task.Secu3DiagInput)
                 }
             }
         }
 
-        secu3Connection.sendNewTask(Task.Secu3OpComEnterDiagnostics)
+        secu3ConnectionManager.sendNewTask(Task.Secu3OpComEnterDiagnostics)
     }
 
     val firmwareLiveData: LiveData<FirmwareInfoPacket>
-        get() = secu3Connection.firmwareLiveData
+        get() = secu3ConnectionManager.firmwareLiveData
 
     private val mConfirmExit = MutableLiveData<Boolean>()
     val confirmExit: LiveData<Boolean>
@@ -83,21 +83,21 @@ class DiagnosticsViewModel @Inject constructor(private val secu3Connection: Secu
 
 
     fun leaveDiagnostic() {
-        secu3Connection.sendNewTask(Task.Secu3OpComLeaveDiagnostics)
-        secu3Connection.sendNewTask(Task.Secu3ReadSensors)
+        secu3ConnectionManager.sendNewTask(Task.Secu3OpComLeaveDiagnostics)
+        secu3ConnectionManager.sendNewTask(Task.Secu3ReadSensors)
     }
 
     val connectionStatusLiveData: LiveData<ConnectionState>
-        get() = secu3Connection.connectionStateFlow.asLiveData()
+        get() = secu3ConnectionManager.connectionStateFlow.asLiveData()
 
     val diagInputLiveData: LiveData<DiagInputPacket>
-        get() = secu3Connection.receivedPacketFlow.filter { it is DiagInputPacket }.map {
+        get() = secu3ConnectionManager.receivedPacketFlow.filter { it is DiagInputPacket }.map {
             isDiagModeActive = true
             it as DiagInputPacket
         }.asLiveData()
 
 
     fun sendDiagOutPacket() {
-        secu3Connection.sendOutPacket(outputPacket)
+        secu3ConnectionManager.sendOutPacket(outputPacket)
     }
 }

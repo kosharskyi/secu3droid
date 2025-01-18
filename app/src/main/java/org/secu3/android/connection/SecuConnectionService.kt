@@ -53,7 +53,7 @@ import javax.inject.Inject
 class SecuConnectionService : LifecycleService() {
 
     @Inject
-    internal lateinit var secu3Connection: Secu3Connection
+    internal lateinit var secu3ConnectionManager: Secu3ConnectionManager
 
     @Inject
     internal lateinit var mLogger: SecuLogger
@@ -61,11 +61,11 @@ class SecuConnectionService : LifecycleService() {
     override fun onCreate() {
         super.onCreate()
 
-        if (secu3Connection.isConnected.not()) {
+        if (secu3ConnectionManager.isConnected.not()) {
             return
         }
 
-        secu3Connection.connectionStateFlow.debounce(20000).asLiveData().observe(this) {
+        secu3ConnectionManager.connectionStateFlow.debounce(20000).asLiveData().observe(this) {
             Log.e("SecuConnectionService", "Connection state: $it")
             when (it) {
                 Disconnected -> stopSelf()
@@ -122,7 +122,7 @@ class SecuConnectionService : LifecycleService() {
     }
 
     override fun onDestroy() {
-        secu3Connection.disable()
+        secu3ConnectionManager.disable()
         mLogger.stopLogging()
         ServiceCompat.stopForeground(this@SecuConnectionService, ServiceCompat.STOP_FOREGROUND_REMOVE)
         super.onDestroy()

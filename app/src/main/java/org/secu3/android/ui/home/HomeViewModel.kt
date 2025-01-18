@@ -34,7 +34,7 @@ import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.launch
 import org.secu3.android.BuildConfig
 import org.secu3.android.connection.ConnectionState
-import org.secu3.android.connection.Secu3Connection
+import org.secu3.android.connection.Secu3ConnectionManager
 import org.secu3.android.models.packets.input.FirmwareInfoPacket
 import org.secu3.android.network.models.GitHubRelease
 import org.secu3.android.utils.AppPrefs
@@ -45,7 +45,7 @@ import javax.inject.Inject
 
 @HiltViewModel
 class HomeViewModel @Inject constructor(
-    private val secu3Connection: Secu3Connection,
+    private val secu3ConnectionManager: Secu3ConnectionManager,
     private val homeRepository: HomeRepository,
     private val appPrefs: AppPrefs,
     val prefs: UserPrefs,
@@ -54,10 +54,10 @@ class HomeViewModel @Inject constructor(
     var isUserTapExit = false
 
     val connectionStatusLiveData: LiveData<ConnectionState>
-        get() = secu3Connection.connectionStateFlow.asLiveData()
+        get() = secu3ConnectionManager.connectionStateFlow.asLiveData()
 
     val firmware: FirmwareInfoPacket?
-        get() = secu3Connection.fwInfo
+        get() = secu3ConnectionManager.fwInfo
 
     val newReleaseAvailable: LiveData<GitHubRelease> = flow {
         val now = LocalDate.now()
@@ -76,12 +76,12 @@ class HomeViewModel @Inject constructor(
     }
 
     fun sendNewTask(task: Task) {
-        secu3Connection.sendNewTask(task)
+        secu3ConnectionManager.sendNewTask(task)
     }
 
     fun closeConnection() {
         isUserTapExit = true
-        secu3Connection.disable()
+        secu3ConnectionManager.disable()
     }
 
     fun downloadRelease(release: GitHubRelease) {
