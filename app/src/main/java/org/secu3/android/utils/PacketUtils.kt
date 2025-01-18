@@ -107,6 +107,10 @@ object PacketUtils {
             crc22[0] = (crc22[0] + char.code.toUByte()).toUByte()
             crc22[1] = (crc22[1] + crc22[0]).toUByte()
         }
+
+        crc22[0] = (crc22[0] + packet.length.toUByte()).toUByte()
+        crc22[1] = (crc22[1] + crc22[0]).toUByte()
+
         return crc22
     }
 }
