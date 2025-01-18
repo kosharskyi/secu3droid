@@ -286,6 +286,11 @@ enum class GaugeType (val title: Int, val minValue: Float, val maxValue: Float, 
         Section(0f, .25f, R.color.gauge_gray, -1f),
         Section(.25f, .75f, R.color.gauge_green, -1f),
         Section(.75f, 1f, R.color.gauge_gray, -1f),
+    )),
+
+    FUEL_PRESSURE_SENS(R.string.sensors_frag_fuel_pressure_label,  0.0f, 700f, R.string.units_pressure_kpa, false, 20, listOf(
+        Section(0f, .4f, R.color.gauge_lt_red, -1f),
+        Section(.4f, 1f, R.color.gauge_green, -1f),
     ));
 
     fun getSections(context: Context, width: Float): List<Section> {
@@ -346,6 +351,8 @@ enum class GaugeType (val title: Int, val minValue: Float, val maxValue: Float, 
             }
 
             GAS_PRESSURE_SENS -> packet.gasPressureSensor
+
+            FUEL_PRESSURE_SENS -> packet.fuelPressureSensor
         }
     }
 }

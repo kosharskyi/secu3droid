@@ -99,6 +99,8 @@
     <string name="funset_gas_v_uni_title">GAS_V condition</string>
     <string name="funset_gas_pressure_sensor_offset_title">GPS Sensor Curve offset</string>
     <string name="funset_gas_pressure_sensor_gradient_title">GPS sensor curve gradient</string>
+    <string name="funset_fuel_pressure_sensor_offset_title">FPS Sensor Curve offset</string>
+    <string name="funset_fuel_pressure_sensor_gradient_title">FPS sensor curve gradient</string>
 
 
     <string name="temper_fan_on_title">Fan turn on threshold</string>

@@ -136,6 +136,9 @@ class FunctionsFragment : BaseParamFragment() {
 
                         gasPressureCurveOffset.value = it.gpsCurveOffset
                         gasPressureCurveGradient.value = it.gpsCurveGradient
+
+                        fuelPressureCurveOffset.value = it.fpsCurveOffset
+                        fuelPressureCurveGradient.value = it.fpsCurveGradient
                     }
 
                     initViews()
@@ -287,6 +290,19 @@ class FunctionsFragment : BaseParamFragment() {
                 }
             }
 
+            fuelPressureCurveOffset.addOnValueChangeListener {
+                funSetPacket?.apply {
+                    fpsCurveOffset = it
+                    mViewModel.sendPacket(this)
+                }
+            }
+            fuelPressureCurveGradient.addOnValueChangeListener {
+                funSetPacket?.apply {
+                    fpsCurveGradient = it
+                    mViewModel.sendPacket(this)
+                }
+            }
+
 
             lowerLoadValue.setOnClickListener { floatParamClick(it as FloatParamView) }
             upperLoadValue.setOnClickListener { floatParamClick(it as FloatParamView) }
@@ -299,6 +315,9 @@ class FunctionsFragment : BaseParamFragment() {
 
             gasPressureCurveOffset.setOnClickListener { floatParamClick(it as FloatParamView) }
             gasPressureCurveGradient.setOnClickListener { floatParamClick(it as FloatParamView) }
+
+            fuelPressureCurveOffset.setOnClickListener { floatParamClick(it as FloatParamView) }
+            fuelPressureCurveGradient.setOnClickListener { floatParamClick(it as FloatParamView) }
         }
     }
 }

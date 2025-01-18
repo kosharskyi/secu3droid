@@ -62,6 +62,9 @@ data class FunSetParamPacket(
     var gpsCurveOffset: Float = 0f,     // Gas Pressure Sensor
     var gpsCurveGradient: Float = 0f,   // Gas Pressure Sensor
 
+    var fpsCurveOffset: Float = 0f,     // Fuel Pressure Sensor
+    var fpsCurveGradient: Float = 0f,   // Fuel Pressure Sensor
+
     ): BaseOutputPacket() {
 
     override fun pack(): String {
@@ -98,6 +101,9 @@ data class FunSetParamPacket(
 
         data += gpsCurveOffset.div(ADC_DISCRETE).roundToInt().write2Bytes()
         data += gpsCurveGradient.times(128.0f).times(MAP_MULTIPLIER).times(ADC_DISCRETE).roundToInt().write2Bytes()
+
+        data += fpsCurveOffset.div(ADC_DISCRETE).roundToInt().write2Bytes()
+        data += fpsCurveGradient.times(128.0f).times(MAP_MULTIPLIER).times(ADC_DISCRETE).roundToInt().write2Bytes()
 
         data += unhandledParams
 
@@ -154,11 +160,14 @@ data class FunSetParamPacket(
             gpsCurveOffset = data.get2Bytes(35).toFloat() * ADC_DISCRETE
             gpsCurveGradient = data.get2Bytes(37).toFloat() / (MAP_MULTIPLIER * ADC_DISCRETE * 128.0f)
 
-            if (data.length == 39) {
+            fpsCurveOffset = data.get2Bytes(39).toFloat() * ADC_DISCRETE
+            fpsCurveGradient = data.get2Bytes(41).toFloat() / (MAP_MULTIPLIER * ADC_DISCRETE * 128.0f)
+
+            if (data.length == 43) {
                 return@apply
             }
 
-            unhandledParams = data.substring(39)
+            unhandledParams = data.substring(43)
         }
 
     }

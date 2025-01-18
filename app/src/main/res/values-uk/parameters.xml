@@ -99,6 +99,8 @@
     <string name="funset_gas_v_uni_title">Умова GAS_V</string>
     <string name="funset_gas_pressure_sensor_offset_title">Зсув кривої ДТГ</string>
     <string name="funset_gas_pressure_sensor_gradient_title">Нахил кривої ДТГ</string>
+    <string name="funset_fuel_pressure_sensor_offset_title">Зсув кривої ДТП</string>
+    <string name="funset_fuel_pressure_sensor_gradient_title">Нахил кривої ДТП</string>
 
 
     <string name="temper_fan_on_title">Поріг активації вентилятора</string>

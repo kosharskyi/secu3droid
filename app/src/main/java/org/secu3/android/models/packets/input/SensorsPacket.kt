@@ -105,6 +105,8 @@ data class SensorsPacket(
 
     var additionalFlags: Int = 0,
 
+    var fuelPressureSensor: Float = 0f,
+
 ) : BaseSecu3Packet(){
 
     private var isSpeedUnitKm = true
@@ -446,6 +448,8 @@ data class SensorsPacket(
             mapd = gasPressureSensor - map
 
             additionalFlags = data[107].code
+
+            fuelPressureSensor = data.get2Bytes(108).toFloat() / MAP_MULTIPLIER
         }
 
 
