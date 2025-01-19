@@ -85,10 +85,7 @@ class ParamsViewModel @Inject constructor(
     val starterLiveData: LiveData<StarterParamPacket>
         get() = flow {
             secu3ConnectionManager.sendNewTask(Task.Secu3ReadStarterParam)
-            val packet = secu3ConnectionManager.receivedPacketFlow
-                .filter { it is StarterParamPacket }
-                .map { it as StarterParamPacket }
-                .first()
+            val packet = secu3ConnectionManager.receivedPacketFlow.first { it is StarterParamPacket } as StarterParamPacket
 
             emit(packet)
             secu3ConnectionManager.sendNewTask(Task.Secu3ReadSensors)
@@ -97,10 +94,7 @@ class ParamsViewModel @Inject constructor(
     val anglesLiveData: LiveData<AnglesParamPacket>
         get() = flow {
             secu3ConnectionManager.sendNewTask(Task.Secu3ReadAnglesParam)
-            val packet = secu3ConnectionManager.receivedPacketFlow
-                .filter { it is AnglesParamPacket }
-                .map { it as AnglesParamPacket }
-                .first()
+            val packet = secu3ConnectionManager.receivedPacketFlow.first { it is AnglesParamPacket } as AnglesParamPacket
 
             emit(packet)
             secu3ConnectionManager.sendNewTask(Task.Secu3ReadSensors)
@@ -109,10 +103,7 @@ class ParamsViewModel @Inject constructor(
     val idlingLiveData: LiveData<IdlingParamPacket>
         get() = flow {
             secu3ConnectionManager.sendNewTask(Task.Secu3ReadIdlingParam)
-            val packet = secu3ConnectionManager.receivedPacketFlow
-                .filter { it is IdlingParamPacket }
-                .map { it as IdlingParamPacket }
-                .first()
+            val packet = secu3ConnectionManager.receivedPacketFlow.first { it is IdlingParamPacket } as IdlingParamPacket
 
             emit(packet)
             secu3ConnectionManager.sendNewTask(Task.Secu3ReadSensors)
@@ -139,10 +130,7 @@ class ParamsViewModel @Inject constructor(
 
     val funsetLiveData: LiveData<FunSetParamPacket>
         get() = flow {
-            val packet = secu3ConnectionManager.receivedPacketFlow
-                .filter { it is FunSetParamPacket }
-                .map { it as FunSetParamPacket }
-                .first()
+            val packet = secu3ConnectionManager.receivedPacketFlow.first { it is FunSetParamPacket } as FunSetParamPacket
 
             emit(packet)
             secu3ConnectionManager.sendNewTask(Task.Secu3ReadSensors)
@@ -151,10 +139,7 @@ class ParamsViewModel @Inject constructor(
     val temperatureLiveData: LiveData<TemperatureParamPacket>
         get() = flow {
             secu3ConnectionManager.sendNewTask(Task.Secu3ReadTemperatureParam)
-            val packet = secu3ConnectionManager.receivedPacketFlow
-                .filter { it is TemperatureParamPacket }
-                .map { it as TemperatureParamPacket }
-                .first()
+            val packet = secu3ConnectionManager.receivedPacketFlow.first { it is TemperatureParamPacket } as TemperatureParamPacket
 
             emit(packet)
             secu3ConnectionManager.sendNewTask(Task.Secu3ReadSensors)
@@ -163,10 +148,7 @@ class ParamsViewModel @Inject constructor(
     val carburLiveData: LiveData<CarburParamPacket>
         get() = flow {
             secu3ConnectionManager.sendNewTask(Task.Secu3ReadCarburParam)
-            val packet = secu3ConnectionManager.receivedPacketFlow
-                .filter { it is CarburParamPacket }
-                .map { it as CarburParamPacket }
-                .first()
+            val packet = secu3ConnectionManager.receivedPacketFlow.first { it is CarburParamPacket } as CarburParamPacket
 
             emit(packet)
             secu3ConnectionManager.sendNewTask(Task.Secu3ReadSensors)
@@ -175,10 +157,7 @@ class ParamsViewModel @Inject constructor(
     val adcCorrectionsLiveData: LiveData<AdcCorrectionsParamPacket>
         get() = flow {
             secu3ConnectionManager.sendNewTask(Task.Secu3ReadAdcErrorsCorrectionsParam)
-            val packet = secu3ConnectionManager.receivedPacketFlow
-                .filter { it is AdcCorrectionsParamPacket }
-                .map { it as AdcCorrectionsParamPacket }
-                .first()
+            val packet = secu3ConnectionManager.receivedPacketFlow.first { it is AdcCorrectionsParamPacket } as AdcCorrectionsParamPacket
 
             emit(packet)
             secu3ConnectionManager.sendNewTask(Task.Secu3ReadSensors)
@@ -187,10 +166,7 @@ class ParamsViewModel @Inject constructor(
     val ckpsLiveData: LiveData<CkpsParamPacket>
         get() = flow {
             secu3ConnectionManager.sendNewTask(Task.Secu3ReadCkpsParam)
-            val packet = secu3ConnectionManager.receivedPacketFlow
-                .filter { it is CkpsParamPacket }
-                .map { it as CkpsParamPacket }
-                .first()
+            val packet = secu3ConnectionManager.receivedPacketFlow.first { it is CkpsParamPacket } as CkpsParamPacket
 
             emit(packet)
             secu3ConnectionManager.sendNewTask(Task.Secu3ReadSensors)
@@ -199,10 +175,7 @@ class ParamsViewModel @Inject constructor(
     val knockLiveData: LiveData<KnockParamPacket>
         get() = flow {
             secu3ConnectionManager.sendNewTask(Task.Secu3ReadKnockParam)
-            val packet = secu3ConnectionManager.receivedPacketFlow
-                .filter { it is KnockParamPacket }
-                .map { it as KnockParamPacket }
-                .first()
+            val packet = secu3ConnectionManager.receivedPacketFlow.first { it is KnockParamPacket } as KnockParamPacket
 
             emit(packet)
             secu3ConnectionManager.sendNewTask(Task.Secu3ReadSensors)
@@ -211,10 +184,7 @@ class ParamsViewModel @Inject constructor(
     val miscellaneousLiveData: LiveData<MiscellaneousParamPacket>
         get() = flow {
             secu3ConnectionManager.sendNewTask(Task.Secu3ReadMiscellaneousParam)
-            val packet = secu3ConnectionManager.receivedPacketFlow
-                .filter { it is MiscellaneousParamPacket }
-                .map { it as MiscellaneousParamPacket }
-                .first()
+            val packet = secu3ConnectionManager.receivedPacketFlow.first { it is MiscellaneousParamPacket } as MiscellaneousParamPacket
 
             emit(packet)
             secu3ConnectionManager.sendNewTask(Task.Secu3ReadSensors)
@@ -223,10 +193,7 @@ class ParamsViewModel @Inject constructor(
     val chokeLiveData: LiveData<ChokeControlParPacket>
         get() = flow {
             secu3ConnectionManager.sendNewTask(Task.Secu3ReadChokeControlParam)
-            val packet = secu3ConnectionManager.receivedPacketFlow
-                .filter { it is ChokeControlParPacket }
-                .map { it as ChokeControlParPacket }
-                .first()
+            val packet = secu3ConnectionManager.receivedPacketFlow.first { it is ChokeControlParPacket } as ChokeControlParPacket
 
             emit(packet)
             secu3ConnectionManager.sendNewTask(Task.Secu3ReadSensors)
@@ -235,10 +202,7 @@ class ParamsViewModel @Inject constructor(
     val securityLiveData: LiveData<SecurityParamPacket>
         get() = flow {
             secu3ConnectionManager.sendNewTask(Task.Secu3ReadSecurityParam)
-            val packet = secu3ConnectionManager.receivedPacketFlow
-                .filter { it is SecurityParamPacket }
-                .map { it as SecurityParamPacket }
-                .first()
+            val packet = secu3ConnectionManager.receivedPacketFlow.first { it is SecurityParamPacket } as SecurityParamPacket
 
             emit(packet)
             secu3ConnectionManager.sendNewTask(Task.Secu3ReadSensors)
@@ -247,10 +211,7 @@ class ParamsViewModel @Inject constructor(
     val uniOutLiveData: LiveData<UniOutParamPacket>
         get() = flow {
             secu3ConnectionManager.sendNewTask(Task.Secu3ReadUniversalOutputsParam)
-            val packet = secu3ConnectionManager.receivedPacketFlow
-                .filter { it is UniOutParamPacket }
-                .map { it as UniOutParamPacket }
-                .first()
+            val packet = secu3ConnectionManager.receivedPacketFlow.first { it is UniOutParamPacket } as UniOutParamPacket
 
             emit(packet)
             secu3ConnectionManager.sendNewTask(Task.Secu3ReadSensors)
@@ -262,10 +223,7 @@ class ParamsViewModel @Inject constructor(
                 return@flow
             }
             secu3ConnectionManager.sendNewTask(Task.Secu3ReadFuelInjectionParam)
-            val packet = secu3ConnectionManager.receivedPacketFlow
-                .filter { it is InjctrParPacket }
-                .map { it as InjctrParPacket }
-                .first()
+            val packet = secu3ConnectionManager.receivedPacketFlow.first { it is InjctrParPacket } as InjctrParPacket
 
             packet.isAtMega644 = secu3ConnectionManager.fwInfo?.isATMEGA644 ?: true
             emit(packet)
