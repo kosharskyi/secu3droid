@@ -98,7 +98,7 @@ class ParamsFragment : Fragment() {
     private fun initToolbar() {
         mBinding.toolbar.apply {
             setNavigationOnClickListener {
-                findNavController().popBackStack()
+                findNavController().navigateUp()
             }
 
             inflateMenu(R.menu.fragment_params_menu)

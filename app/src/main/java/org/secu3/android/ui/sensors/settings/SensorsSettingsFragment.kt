@@ -60,7 +60,7 @@ class SensorsSettingsFragment : Fragment() {
         mBinding?.apply {
 
             toolbar.setNavigationOnClickListener {
-                findNavController().popBackStack()
+                findNavController().navigateUp()
             }
 
             oldSensorsCheckbox.apply {

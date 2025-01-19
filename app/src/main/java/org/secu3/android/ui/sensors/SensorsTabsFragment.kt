@@ -107,7 +107,7 @@ class SensorsTabsFragment : Fragment() {
         mBinding?.apply {
             viewPager.adapter = SensorsPagerAdapter(this@SensorsTabsFragment, mPrefs.oldSensorViewEnabled)
 
-            toolbar.setNavigationOnClickListener { findNavController().popBackStack() }
+            toolbar.setNavigationOnClickListener { findNavController().navigateUp() }
 
             if (mViewModel.isLoggerEnabled && mViewModel.isLoggerStarted.not()) {
                 logStart.show()
