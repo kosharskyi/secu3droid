@@ -124,6 +124,13 @@
         <item>Відсутня</item>
     </string-array>
 
+    <string-array name="ltft_mode_items">
+        <item>Вимкнено</item>
+        <item>Бензин</item>
+        <item>Газ</item>
+        <item>Бензин + Газ</item>
+    </string-array>
+
     <string name="uniout_condition_cts">ДТОР (°C)</string>
     <string name="uniout_condition_rpm">Оберти (хв-1)</string>
     <string name="uniout_condition_map">ДАТ (кПа)</string>
@@ -217,6 +224,7 @@
         <item>Лямбда контроль</item>
         <item>Прискорення</item>
         <item>Доз. газу</item>
+        <item>LTFT</item>
     </string-array>
     <string name="maximum_step_frequency_at_init">Максимальна частота при ініц.</string>
     <string name="sensors_tab_title">Датчики</string>

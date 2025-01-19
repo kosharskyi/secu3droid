@@ -126,6 +126,13 @@
         <item>VE1+VE2</item>
     </string-array>
 
+    <string-array name="ltft_mode_items">
+        <item>Off</item>
+        <item>Petrol</item>
+        <item>Gas</item>
+        <item>Petrol + Gas</item>
+    </string-array>
+
     <string-array name="csv_delimeters" translatable="false">
         <item>\",\" Comma</item>
         <item>\";\" Semicolon</item>
@@ -386,6 +393,7 @@
         <item>Lambda control</item>
         <item>Acceleration</item>
         <item>Gas dose</item>
+        <item>LTFT</item>
     </string-array>
     <string name="idlreg_iac_dead_band_title">IAC dead band</string>
     <string name="empty_logs_list">You have no recorded logs yet</string>

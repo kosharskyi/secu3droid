@@ -279,6 +279,22 @@
     <string name="gasdose_par_stoich_ratio">Stochiometric ratio</string>
     <string name="gasdose_par_closing_on_fuel_cut">Closing on fuel cut</string>
 
+    <string name="ltft_par_mode_title">Use of LTFT</string>
+    <string name="ltft_par_lower_clt_threshold_title">Lower CLT threshold for LTFT</string>
+    <string name="ltft_par_upper_clt_threshold_title">Upper CLT threshold for LTFT</string>
+    <string name="ltft_par_upper_iat_threshold_title">Upper IAT threshold for LTFT</string>
+    <string name="ltft_par_learning__gradient_factor_title">Learning gradient/alignment factor</string>
+    <string name="ltft_par_abs_gas_pressure_treshold_title">Abs. gas pressure threshold for LTFT</string>
+    <string name="ltft_par_diff_gas_pressure_treshold_title">Diff. gas pressure threshold for LTFT</string>
+    <string name="ltft_par_bottom_limit_correction_title">Bottom limit of LTFT correction</string>
+    <string name="ltft_par_top_limit_correction_title">Top limit of LTFT correction</string>
+    <string name="ltft_par_lower_rpm_threshold_title">Lower RPM threshold for LTFT</string>
+    <string name="ltft_par_upper_rpm_threshold_title">Upper RPM threshold for LTFT</string>
+    <string name="ltft_par_lower_load_threshold_title">Lower load threshold for LTFT</string>
+    <string name="ltft_par_upper_load_threshold_title">Upper load threshold for LTFT</string>
+    <string name="ltft_par_negative_insensitivity_threshold_title">Negative insensitivity LTFT threshold</string>
+    <string name="ltft_par_positive_insensitivity_threshold_title">Positive insensitivity LTFT threshold</string>
+
     <string name="status_rpm_title">RPM: %d min-1\n</string>
     <string name="status_map_title">Pressure: %.2f kPa\n</string>
     <string name="status_voltage_title">Voltage: %.2f V\n</string>

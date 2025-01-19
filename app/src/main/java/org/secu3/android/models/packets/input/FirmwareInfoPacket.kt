@@ -35,6 +35,7 @@ data class FirmwareInfoPacket(
     var version: IntArray = IntArray(2)
 ) : BaseSecu3Packet() {
 
+    // From tables.c file; line 447
     val isObdSupported: Boolean
         get() = options.getBitValue(COPT_OBD_SUPPORT) > 0
 

@@ -43,6 +43,7 @@ import org.secu3.android.models.packets.out.params.IdlingParamPacket
 import org.secu3.android.models.packets.out.params.InjctrParPacket
 import org.secu3.android.models.packets.out.params.KnockParamPacket
 import org.secu3.android.models.packets.out.params.LambdaParamPacket
+import org.secu3.android.models.packets.out.params.LtftParamPacket
 import org.secu3.android.models.packets.out.params.MiscellaneousParamPacket
 import org.secu3.android.models.packets.out.params.SecurityParamPacket
 import org.secu3.android.models.packets.out.params.StarterParamPacket
@@ -89,6 +90,7 @@ data class ChangeModePacket(
                 Task.Secu3ReadLambdaParam -> ChangeModePacket(LambdaParamPacket.DESCRIPTOR)
                 Task.Secu3ReadAccelerationParam -> ChangeModePacket(AccelerationParamPacket.DESCRIPTOR)
                 Task.Secu3ReadGasDoseParam -> ChangeModePacket(GasDoseParamPacket.DESCRIPTOR)
+                Task.Secu3ReadLtftParam -> ChangeModePacket(LtftParamPacket.DESCRIPTOR)
 
                 Task.Secu3ReadFnNameDat -> ChangeModePacket(FnNameDatPacket.DESCRIPTOR)
                 else -> ChangeModePacket(SensorsPacket.DESCRIPTOR)

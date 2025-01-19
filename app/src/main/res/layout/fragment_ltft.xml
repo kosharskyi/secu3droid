@@ -1,0 +1,339 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  ~    SecuDroid  - An open source, free manager for SECU-3 engine control unit
+  ~    Copyright (C) 2025 Vitalii O. Kosharskyi. Ukraine, Kyiv
+  ~
+  ~    SECU-3  - An open source, free engine control unit
+  ~    Copyright (C) 2007-2025 Alexey A. Shabelnikov. Ukraine, Kyiv
+  ~
+  ~    This program is free software: you can redistribute it and/or modify
+  ~    it under the terms of the GNU General Public License as published by
+  ~    the Free Software Foundation, either version 3 of the License, or
+  ~    (at your option) any later version.
+  ~
+  ~    This program is distributed in the hope that it will be useful,
+  ~    but WITHOUT ANY WARRANTY; without even the implied warranty of
+  ~    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+  ~    GNU General Public License for more details.
+  ~
+  ~    You should have received a copy of the GNU General Public License
+  ~    along with this program.  If not, see <http://www.gnu.org/licenses/>.
+  ~
+  ~    contacts:
+  ~                    http://secu-3.org
+  ~                    email: vetalkosharskiy@gmail.com
+  -->
+<androidx.constraintlayout.widget.ConstraintLayout
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    tools:context=".ui.parameters.pages.LtftFragment"
+    >
+
+    <ProgressBar
+        android:id="@+id/progress_bar"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        app:layout_constraintTop_toTopOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintBottom_toBottomOf="parent"
+        tools:visibility="gone"
+        />
+
+    <ScrollView
+        android:id="@+id/params"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:visibility="gone"
+        tools:visibility="visible"
+        >
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical"
+            android:padding="16dp"
+            >
+
+            <!-- ************************************************************* -->
+
+            <com.google.android.material.textfield.TextInputLayout
+                android:id="@+id/ltft_mode_title"
+                android:theme="@style/Theme.MaterialComponents.DayNight.NoActionBar"
+                style="@style/Widget.MaterialComponents.TextInputLayout.OutlinedBox.ExposedDropdownMenu"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="16dp"
+                android:hint="@string/funset_maps_set_for_gasoline">
+
+                <AutoCompleteTextView
+                    android:id="@+id/ltft_mode"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:inputType="none"
+                    />
+
+            </com.google.android.material.textfield.TextInputLayout>
+
+
+            <!-- ************************************************************* -->
+
+
+            <org.secu3.android.ui.parameters.views.FloatParamView
+                android:id="@+id/ltft_lower_clt_threshold"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="16dp"
+                app:title="@string/ltft_par_lower_clt_threshold_title"
+                app:units="@string/units_degrees_celcius"
+                app:float_value="0"
+                app:value_precision="two"
+                app:float_min_value="0.0"
+                app:float_max_value="270.0"
+                app:float_step="0.25"
+                />
+
+
+            <!-- ************************************************************* -->
+
+
+            <org.secu3.android.ui.parameters.views.FloatParamView
+                android:id="@+id/ltft_upper_clt_threshold"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="16dp"
+                app:title="@string/ltft_par_upper_clt_threshold_title"
+                app:units="@string/units_degrees_celcius"
+                app:float_value="0"
+                app:value_precision="two"
+                app:float_min_value="0.0"
+                app:float_max_value="270.0"
+                app:float_step="0.25"
+                />
+
+
+            <!-- ************************************************************* -->
+
+
+            <org.secu3.android.ui.parameters.views.FloatParamView
+                android:id="@+id/ltft_upper_iat_threshold"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="16dp"
+                app:title="@string/ltft_par_upper_iat_threshold_title"
+                app:units="@string/units_degrees_celcius"
+                app:float_value="0"
+                app:value_precision="two"
+                app:float_min_value="0.0"
+                app:float_max_value="270.0"
+                app:float_step="0.25"
+                />
+
+
+            <!-- ************************************************************* -->
+
+
+            <org.secu3.android.ui.parameters.views.FloatParamView
+                android:id="@+id/ltft_learning_gradient_factor"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="16dp"
+                app:title="@string/ltft_par_learning__gradient_factor_title"
+                app:units="@string/units_empty"
+                app:float_value="0"
+                app:value_precision="three"
+                app:float_min_value="0.0"
+                app:float_max_value="0.99"
+                app:float_step="0.005"
+                />
+
+
+            <!-- ************************************************************* -->
+
+
+            <org.secu3.android.ui.parameters.views.FloatParamView
+                android:id="@+id/ltft_abs_gas_pressure_treshold"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="16dp"
+                app:title="@string/ltft_par_abs_gas_pressure_treshold_title"
+                app:units="@string/units_pressure_kpa"
+                app:float_value="0"
+                app:value_precision="one"
+                app:float_min_value="0.0"
+                app:float_max_value="500.0"
+                app:float_step="0.1"
+                />
+
+
+            <!-- ************************************************************* -->
+
+
+            <org.secu3.android.ui.parameters.views.FloatParamView
+                android:id="@+id/ltft_diff_gas_pressure_treshold"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="16dp"
+                app:title="@string/ltft_par_diff_gas_pressure_treshold_title"
+                app:units="@string/units_pressure_kpa"
+                app:float_value="0"
+                app:value_precision="one"
+                app:float_min_value="0.0"
+                app:float_max_value="500.0"
+                app:float_step="0.1"
+                />
+
+
+            <!-- ************************************************************* -->
+
+
+            <org.secu3.android.ui.parameters.views.FloatParamView
+                android:id="@+id/ltft_bottom_limit_correction"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="16dp"
+                app:title="@string/ltft_par_bottom_limit_correction_title"
+                app:units="@string/units_percents"
+                app:float_value="0"
+                app:value_precision="one"
+                app:float_min_value="-24.6"
+                app:float_max_value="0.0"
+                app:float_step="0.1"
+                />
+
+
+            <!-- ************************************************************* -->
+
+
+            <org.secu3.android.ui.parameters.views.FloatParamView
+                android:id="@+id/ltft_top_limit_correction"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="16dp"
+                app:title="@string/ltft_par_top_limit_correction_title"
+                app:units="@string/units_percents"
+                app:float_value="0"
+                app:value_precision="one"
+                app:float_min_value="0.0"
+                app:float_max_value="24.6"
+                app:float_step="0.1"
+                />
+
+
+            <!-- ************************************************************* -->
+
+
+            <org.secu3.android.ui.parameters.views.IntParamView
+                android:id="@+id/ltft_lower_rpm_threshold"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="16dp"
+                app:title="@string/ltft_par_lower_rpm_threshold_title"
+                app:units="@string/units_rpm"
+                app:int_value="0"
+                app:int_min_value="0"
+                app:int_max_value="25000"
+                app:int_step="10"
+                />
+
+
+            <!-- ************************************************************* -->
+
+
+            <org.secu3.android.ui.parameters.views.IntParamView
+                android:id="@+id/ltft_upper_rpm_threshold"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="16dp"
+                app:title="@string/ltft_par_upper_rpm_threshold_title"
+                app:units="@string/units_rpm"
+                app:int_value="0"
+                app:int_min_value="0"
+                app:int_max_value="25000"
+                app:int_step="10"
+                />
+
+
+            <!-- ************************************************************* -->
+
+
+            <org.secu3.android.ui.parameters.views.FloatParamView
+                android:id="@+id/ltft_lower_load_threshold"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="16dp"
+                app:title="@string/ltft_par_lower_load_threshold_title"
+                app:units="@string/units_pressure_kpa"
+                app:float_value="0"
+                app:value_precision="two"
+                app:float_min_value="0.0"
+                app:float_max_value="500.0"
+                app:float_step="1.0"
+                />
+
+
+            <!-- ************************************************************* -->
+
+
+            <org.secu3.android.ui.parameters.views.FloatParamView
+                android:id="@+id/ltft_upper_load_threshold"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="16dp"
+                app:title="@string/ltft_par_upper_load_threshold_title"
+                app:units="@string/units_pressure_kpa"
+                app:float_value="0"
+                app:value_precision="two"
+                app:float_min_value="0.0"
+                app:float_max_value="500.0"
+                app:float_step="1.0"
+                />
+
+
+            <!-- ************************************************************* -->
+
+
+            <org.secu3.android.ui.parameters.views.FloatParamView
+                android:id="@+id/ltft_negative_insensitivity_threshold"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="16dp"
+                app:title="@string/ltft_par_negative_insensitivity_threshold_title"
+                app:units="@string/units_percents"
+                app:float_value="0"
+                app:value_precision="one"
+                app:float_min_value="0.0"
+                app:float_max_value="10.0"
+                app:float_step="0.1"
+                />
+
+
+            <!-- ************************************************************* -->
+
+
+            <org.secu3.android.ui.parameters.views.FloatParamView
+                android:id="@+id/ltft_positive_insensitivity_threshold"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="16dp"
+                app:title="@string/ltft_par_positive_insensitivity_threshold_title"
+                app:units="@string/units_percents"
+                app:float_value="0"
+                app:value_precision="one"
+                app:float_min_value="0.0"
+                app:float_max_value="10.0"
+                app:float_step="0.1"
+                />
+
+
+            <!-- ************************************************************* -->
+
+
+        </LinearLayout>
+
+    </ScrollView>
+
+</androidx.constraintlayout.widget.ConstraintLayout>

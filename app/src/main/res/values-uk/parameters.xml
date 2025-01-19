@@ -280,6 +280,22 @@
     <string name="gasdose_par_stoich_ratio">Стехіометрич. співвідношення</string>
     <string name="gasdose_par_closing_on_fuel_cut">Прикрття дозат. на ПХХ</string>
 
+    <string name="ltft_par_mode_title">Використовувати корекції</string>
+    <string name="ltft_par_lower_clt_threshold_title">Нижній поріг ДТОР дозволу адаптації</string>
+    <string name="ltft_par_upper_clt_threshold_title">Верхній поріг ДТОР дозволу адаптації</string>
+    <string name="ltft_par_upper_iat_threshold_title">Верхній поріг ДТП дозволу адаптації</string>
+    <string name="ltft_par_learning__gradient_factor_title">Градієнт таблиці адаптації/коеф. вирівн.</string>
+    <string name="ltft_par_abs_gas_pressure_treshold_title">Абс. тиск газу дозволу адаптації</string>
+    <string name="ltft_par_diff_gas_pressure_treshold_title">Дифф. тиск газу дозволу адаптації</string>
+    <string name="ltft_par_bottom_limit_correction_title">Обмеження LTFT корекції знизу</string>
+    <string name="ltft_par_top_limit_correction_title">Обмеження LTFT корекції зверху</string>
+    <string name="ltft_par_lower_rpm_threshold_title">Нижній поріг обертів адаптації</string>
+    <string name="ltft_par_upper_rpm_threshold_title">Верхній поріг обертів адаптації</string>
+    <string name="ltft_par_lower_load_threshold_title">Нижній поріг навантаження адаптації</string>
+    <string name="ltft_par_upper_load_threshold_title">Верхній поріг навантаження адаптації</string>
+    <string name="ltft_par_negative_insensitivity_threshold_title">Негативний поріг нечутливості</string>
+    <string name="ltft_par_positive_insensitivity_threshold_title">Позитивний поріг нечутливості</string>
+
 
 
     <string name="status_rpm_title">Оберти: %d хв-1\n</string>

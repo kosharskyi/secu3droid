@@ -32,11 +32,11 @@ data class LtftParamPacket(
 
     var mode: Int = 0,
 
-    var leartClt: Float = 0.0f,  // Celsius
+    var learnClt: Float = 0.0f,  // Celsius
 
-    var leartCltUp: Float = 0.0f,    // Celsius
+    var learnCltUp: Float = 0.0f,    // Celsius
 
-    var leartIatUp: Float = 0.0f,    // Celsius
+    var learnIatUp: Float = 0.0f,    // Celsius
 
     var learnGrad: Float = 0.0f,
 
@@ -67,9 +67,9 @@ data class LtftParamPacket(
 
         data += mode.toChar()
 
-        data += leartClt.times(TEMPERATURE_MULTIPLIER).roundToInt().write2Bytes()
-        data += leartCltUp.times(TEMPERATURE_MULTIPLIER).roundToInt().write2Bytes()
-        data += leartIatUp.times(TEMPERATURE_MULTIPLIER).roundToInt().write2Bytes()
+        data += learnClt.times(TEMPERATURE_MULTIPLIER).roundToInt().write2Bytes()
+        data += learnCltUp.times(TEMPERATURE_MULTIPLIER).roundToInt().write2Bytes()
+        data += learnIatUp.times(TEMPERATURE_MULTIPLIER).roundToInt().write2Bytes()
         data += learnGrad.times(256).roundToInt().toChar()
         data += learnGpa.times(MAP_MULTIPLIER).roundToInt().write2Bytes()
         data += learnGpd.times(MAP_MULTIPLIER).roundToInt().write2Bytes()
@@ -93,9 +93,9 @@ data class LtftParamPacket(
 
             mode = data[2].code
 
-            leartClt = data.get2Bytes(3).toFloat().div(TEMPERATURE_MULTIPLIER)
-            leartCltUp = data.get2Bytes(5).toFloat().div(TEMPERATURE_MULTIPLIER)
-            leartIatUp = data.get2Bytes(7).toFloat().div(TEMPERATURE_MULTIPLIER)
+            learnClt = data.get2Bytes(3).toFloat().div(TEMPERATURE_MULTIPLIER)
+            learnCltUp = data.get2Bytes(5).toFloat().div(TEMPERATURE_MULTIPLIER)
+            learnIatUp = data.get2Bytes(7).toFloat().div(TEMPERATURE_MULTIPLIER)
             learnGrad = data[9].code.toFloat().div(256.0f)
             learnGpa = data.get2Bytes(10).toFloat().div(MAP_MULTIPLIER)
             learnGpd = data.get2Bytes(12).toFloat().div(MAP_MULTIPLIER)
@@ -105,8 +105,8 @@ data class LtftParamPacket(
             learnRpm1 = data.get2Bytes(18)
             learnLoad0 = data.get2Bytes(20).toFloat().div(MAP_MULTIPLIER)
             learnLoad1 = data.get2Bytes(22).toFloat().div(MAP_MULTIPLIER)
-            deadBand0 = data[24].code.toFloat().div(512.0f) * 100.0f
-            deadBand1 = data[25].code.toFloat().div(512.0f) * 100.0f
+            deadBand0 = data[24].code.toFloat().div(512.0f).times(100.0f)
+            deadBand1 = data[25].code.toFloat().div(512.0f).times(100.0f)
 
         }
 
