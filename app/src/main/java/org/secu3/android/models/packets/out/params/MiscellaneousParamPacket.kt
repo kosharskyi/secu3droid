@@ -106,7 +106,7 @@ data class MiscellaneousParamPacket(
 
         internal const val DESCRIPTOR = 'z'
 
-        fun parse(data: String) = MiscellaneousParamPacket().apply {
+        fun parse(data: IntArray) = MiscellaneousParamPacket().apply {
             uartDivisor = data.get2Bytes()
             uartPeriodTms = data.get1Byte() * 10
             ignCutoff = data.get1Byte()

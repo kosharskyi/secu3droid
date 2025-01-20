@@ -85,7 +85,7 @@ data class TemperatureParamPacket(
 
         internal const val DESCRIPTOR = 'j'
 
-        fun parse(data: String) = TemperatureParamPacket().apply {
+        fun parse(data: IntArray) = TemperatureParamPacket().apply {
 
             tmpFlags = data.get1Byte()
             ventOn = data.get2Bytes().toShort().toFloat().div(TEMPERATURE_MULTIPLIER)

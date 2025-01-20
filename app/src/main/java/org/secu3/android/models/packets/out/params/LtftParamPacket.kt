@@ -90,7 +90,7 @@ data class LtftParamPacket(
 
         internal const val DESCRIPTOR = 'O'
 
-        fun parse(data: String) = LtftParamPacket().apply {
+        fun parse(data: IntArray) = LtftParamPacket().apply {
 
             mode = data.get1Byte()
 

@@ -47,7 +47,7 @@ data class AdcRawDatPacket(
 
         internal const val DESCRIPTOR = 's'
 
-        fun parse(data: String, firmwarePacket: FirmwareInfoPacket?) = AdcRawDatPacket().apply {
+        fun parse(data: IntArray, firmwarePacket: FirmwareInfoPacket?) = AdcRawDatPacket().apply {
             map = data.get2Bytes().toShort().toFloat() / VOLTAGE_MULTIPLIER
             voltage = data.get2Bytes().toShort().toFloat() / VOLTAGE_MULTIPLIER
             temperature = data.get2Bytes().toShort().toFloat() / VOLTAGE_MULTIPLIER

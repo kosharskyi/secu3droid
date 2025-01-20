@@ -156,7 +156,7 @@ class SecuLogger @Inject constructor(private val prefs: UserPrefs, private val f
         val now = LocalTime.now()
 
         // Float = 4 bytes; Int = 4 bytes; Byte = 1 byte; Short = 2 bytes
-        val buf = ByteBuffer.allocate(233).also {
+        val buf = ByteBuffer.allocate(236).also {
             it.order(ByteOrder.LITTLE_ENDIAN)
         }
 

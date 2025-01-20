@@ -186,7 +186,7 @@ data class LambdaParamPacket(
 
         internal const val DESCRIPTOR = '-'
 
-        fun parse(data: String) = LambdaParamPacket().apply {
+        fun parse(data: IntArray) = LambdaParamPacket().apply {
 
             strPerStp = data.get1Byte()
 

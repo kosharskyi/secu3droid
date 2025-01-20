@@ -55,25 +55,25 @@ import org.secu3.android.models.packets.out.params.TemperatureParamPacket
 import org.secu3.android.models.packets.out.params.UniOutParamPacket
 import org.secu3.android.utils.PacketUtils
 
-data class RawPacket(val data: String)  {
+data class RawPacket(val data: IntArray)  {
 
     fun parse(firmwarePacket: FirmwareInfoPacket?): BaseSecu3Packet? {
         return try {
-            val packetData = data.substring(0, data.length - 2)
+            val packetData = data.sliceArray(0 until data.size - 2)
 
             val packetCrc = ubyteArrayOf(
-                data[data.lastIndex].code.toUByte(),
-                data[data.lastIndex - 1].code.toUByte()
+                data[data.lastIndex].toUByte(),
+                data[data.lastIndex - 1].toUByte()
             )
 
-            val checksum = PacketUtils.calculateChecksum(data.substring(2, data.length - 2))
+            val checksum = PacketUtils.calculateChecksum(data.sliceArray(2 until data.size - 2))
 
             if (packetCrc[0] != checksum[0] && packetCrc[1] != checksum[1]) {
                 Log.e("RawPacket", "checksum is not valid")
                 return null
             }
 
-            return when (packetData[1]) {
+            return when (packetData[1].toChar()) {
                 SensorsPacket.DESCRIPTOR -> SensorsPacket.parse(packetData)
                 FirmwareInfoPacket.DESCRIPTOR -> FirmwareInfoPacket.parse(packetData)
                 AdcRawDatPacket.DESCRIPTOR -> AdcRawDatPacket.parse(data, firmwarePacket)

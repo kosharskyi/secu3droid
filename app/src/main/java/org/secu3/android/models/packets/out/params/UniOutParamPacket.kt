@@ -624,7 +624,7 @@ data class UniOutParamPacket(
 
         internal const val DESCRIPTOR = '&'
 
-        fun parse(data: String) = UniOutParamPacket().apply {
+        fun parse(data: IntArray) = UniOutParamPacket().apply {
 
             rawOutput1Flags = data.get1Byte()
             output1Condition1 = data.get1Byte()

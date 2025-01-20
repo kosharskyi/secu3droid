@@ -74,7 +74,7 @@ data class CarburParamPacket(
 
         internal const val DESCRIPTOR = 'k'
 
-        fun parse(data: String) = CarburParamPacket().apply {
+        fun parse(data: IntArray) = CarburParamPacket().apply {
             ieLot = data.get2Bytes()
             ieHit = data.get2Bytes()
             carbInvers = data.get1Byte()

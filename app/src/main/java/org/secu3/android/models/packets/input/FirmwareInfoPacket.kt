@@ -133,7 +133,7 @@ data class FirmwareInfoPacket(
 
         private const val FIRMWARE_INFO_SIZE = 48
 
-        fun parse(data: String) = FirmwareInfoPacket().apply {
+        fun parse(data: IntArray) = FirmwareInfoPacket().apply {
             tag = data.getString(FIRMWARE_INFO_SIZE).toByteArray(StandardCharsets.ISO_8859_1).toString(Charset.forName("IBM866"))
             options = data.get4Bytes()
             val ver = data.get1Byte();

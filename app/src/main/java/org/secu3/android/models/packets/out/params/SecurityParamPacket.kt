@@ -74,7 +74,7 @@ data class SecurityParamPacket(
 
         private const val IBTN_KEY_SIZE = 6
 
-        fun parse(data: String) = SecurityParamPacket().apply {
+        fun parse(data: IntArray) = SecurityParamPacket().apply {
             data.get1Byte()
             data.get1Byte()
             btFlags = data.get1Byte()

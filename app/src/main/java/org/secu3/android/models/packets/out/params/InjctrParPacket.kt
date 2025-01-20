@@ -305,7 +305,7 @@ data class InjctrParPacket(
             0.536f  //LPG density (0.536 g/cc)
         )
 
-        fun parse(data: String) = InjctrParPacket().apply {
+        fun parse(data: IntArray) = InjctrParPacket().apply {
 
             flags = data.get1Byte()
 

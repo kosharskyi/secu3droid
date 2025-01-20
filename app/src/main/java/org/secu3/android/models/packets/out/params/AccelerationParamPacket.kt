@@ -70,7 +70,7 @@ data class AccelerationParamPacket(
 
         internal const val DESCRIPTOR = '|'
 
-        fun parse(data: String) = AccelerationParamPacket().apply {
+        fun parse(data: IntArray) = AccelerationParamPacket().apply {
 
             injAeTpsdotThrd = data.get1Byte()
             data.get2Bytes().let {

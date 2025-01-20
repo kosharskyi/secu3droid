@@ -119,7 +119,7 @@ class ParamsViewModel @Inject constructor(
 
                 val packet = secu3ConnectionManager.receivedPacketFlow.first { it is FnNameDatPacket } as FnNameDatPacket
 
-                fnNameDatPacket = fnNameDatPacket?: packet.also {
+                fnNameDatPacket = fnNameDatPacket ?: packet.also {
                     it.fnNameList = MutableList(packet.tablesNumber) { FnName(-1, "placeholder name") }
                 }
 

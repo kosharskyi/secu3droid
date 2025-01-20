@@ -104,7 +104,7 @@ data class IdlingParamPacket(
 
         internal const val DESCRIPTOR = 'l'
 
-        fun parse(data: String) = IdlingParamPacket().apply {
+        fun parse(data: IntArray) = IdlingParamPacket().apply {
             idlFlags = data.get1Byte()
             iFac1 = data.get2Bytes().toShort().toFloat() / 256
             iFac2 = data.get2Bytes().toShort().toFloat() / 256

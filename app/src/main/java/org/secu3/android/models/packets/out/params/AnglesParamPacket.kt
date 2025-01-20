@@ -58,7 +58,7 @@ data class AnglesParamPacket(
 
         internal const val DESCRIPTOR = 'm'
 
-        fun parse(data: String) = AnglesParamPacket().apply {
+        fun parse(data: IntArray) = AnglesParamPacket().apply {
             maxAngle = data.get2Bytes().toShort().toFloat() / ANGLE_DIVIDER
             minAngle = data.get2Bytes().toShort().toFloat() / ANGLE_DIVIDER
             angleCorrection = data.get2Bytes().toShort().toFloat() / ANGLE_DIVIDER

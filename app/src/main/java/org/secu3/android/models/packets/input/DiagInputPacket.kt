@@ -87,7 +87,7 @@ data class DiagInputPacket(
 
         internal const val DESCRIPTOR = '='
 
-        fun parse(data: String) = DiagInputPacket().apply {
+        fun parse(data: IntArray) = DiagInputPacket().apply {
             flags = data.get1Byte()
             voltage = data.get2Bytes().toFloat() / VOLTAGE_MULTIPLIER
             map = data.get2Bytes().toFloat() / VOLTAGE_MULTIPLIER

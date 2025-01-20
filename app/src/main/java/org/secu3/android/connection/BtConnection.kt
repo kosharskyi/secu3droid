@@ -153,19 +153,18 @@ class BtConnection @Inject constructor(
                         idx = 0
                     }
 
-                    val char = reader.read().takeIf { it != -1 }?.toChar() ?: continue
+                    val char = reader.read().takeIf { it != -1 } ?: continue
                     if (char == startMarker) {
                         idx = 0
                     }
 
                     if (char != endMarker) {
-                        packetBuffer[idx++] = char.code
+                        packetBuffer[idx++] = char
                     }
 
                     if (char == endMarker) {
                         val escaped = PacketUtils.EscRxPacket(packetBuffer.sliceArray(IntRange(0, idx - 1)))
-                        val line = String(escaped, 0, escaped.size)
-                        mReceivedPacketFlow.emit(RawPacket(line))
+                        mReceivedPacketFlow.emit(RawPacket(escaped))
                         idx = 0
                     }
                 }

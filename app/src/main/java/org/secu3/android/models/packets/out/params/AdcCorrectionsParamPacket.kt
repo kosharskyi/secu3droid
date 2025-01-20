@@ -154,7 +154,7 @@ data class AdcCorrectionsParamPacket(
         private const val FACTOR_DIVIDER = 16384
         private const val ADC_DISCRETE = 0.0025f
 
-        fun parse(data: String) = AdcCorrectionsParamPacket().apply {
+        fun parse(data: IntArray) = AdcCorrectionsParamPacket().apply {
             adcFlags = data.get1Byte()
 
             mapAdcFactor = data.get2Bytes().toFloat() / FACTOR_DIVIDER

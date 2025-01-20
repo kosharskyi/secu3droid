@@ -13,9 +13,9 @@ abstract class Connection (
     private val prefs: UserPrefs
 ) {
 
-    protected val INPUT_PACKET_SYMBOL = '@'
-    protected val OUTPUT_PACKET_SYMBOL = '!'
-    protected val END_PACKET_SYMBOL = '\r'
+    protected val INPUT_PACKET_SYMBOL = 0x40    // '@'
+    protected val OUTPUT_PACKET_SYMBOL = 0x21   // '!'
+    protected val END_PACKET_SYMBOL = 0x0D      // '\r'
 
     protected val scope = CoroutineScope(Dispatchers.IO + SupervisorJob())
 

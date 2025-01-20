@@ -63,7 +63,7 @@ data class GasDoseParamPacket(
 
         internal const val DESCRIPTOR = '*'
 
-        fun parse(data: String) = GasDoseParamPacket().apply {
+        fun parse(data: IntArray) = GasDoseParamPacket().apply {
             steps = data.get2Bytes()
             testing = data.get1Byte()       //fake parameter (actually it is command)
             manualPositionD = data.get1Byte()   //fake parameter, not used in outgoing paket

@@ -87,7 +87,7 @@ data class KnockParamPacket(
 
         internal const val DESCRIPTOR = 'w'
 
-        fun parse(data: String) = KnockParamPacket().apply {
+        fun parse(data: IntArray) = KnockParamPacket().apply {
             useKnockChannel = data.get1Byte()
             bpfFrequency = data.get1Byte()
             kWndBeginAngle = data.get2Bytes().toShort().toFloat() / ANGLE_DIVIDER

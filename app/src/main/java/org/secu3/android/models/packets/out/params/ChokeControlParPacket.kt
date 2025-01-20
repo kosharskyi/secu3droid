@@ -96,7 +96,7 @@ data class ChokeControlParPacket(
 
         internal const val DESCRIPTOR = '%'
 
-        fun parse(data: String) = ChokeControlParPacket().apply {
+        fun parse(data: IntArray) = ChokeControlParPacket().apply {
 
             smSteps = data.get2Bytes()
             data.get1Byte()     // testing fake param

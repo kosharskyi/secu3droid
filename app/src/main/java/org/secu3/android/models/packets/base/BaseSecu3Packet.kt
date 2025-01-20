@@ -28,71 +28,73 @@ abstract class BaseSecu3Packet {
 
     protected var currentIndex = 2  // ignores @ and ! and descriptor
 
-    protected var unhandledParams: String = ""
+    protected var unhandledParams: IntArray = intArrayOf()
         private set
 
-    protected fun String.get1Byte(): Int {
-        if (currentIndex >= length) {
-            throw IllegalArgumentException("Packet too short; request $currentIndex but length is $length")
+    protected fun IntArray.get1Byte(): Int {
+        if (currentIndex >= size) {
+            throw IllegalArgumentException("Packet too short; request $currentIndex but length is $size")
         }
 
-        return this[currentIndex++].code
+        return this[currentIndex++] and 0xFF
     }
 
-    protected fun String.get2Bytes(): Int {
-        if (currentIndex + 1 >= length) {
-            throw IllegalArgumentException("Packet too short; request ${currentIndex + 2} but length is $length")
+    protected fun IntArray.get2Bytes(): Int {
+        if (currentIndex + 1 >= size) {
+            throw IllegalArgumentException("Packet too short; request ${currentIndex + 2} but length is $size")
         }
 
-        return this.substring(currentIndex, currentIndex + 2).binToInt().also {
+        return this.sliceArray(currentIndex until currentIndex + 2).binToInt().also {
             currentIndex += 2
         }
     }
 
-    protected fun String.get3Bytes(): Int {
-        if (currentIndex + 2 >= length) {
-            throw IllegalArgumentException("Packet too short; request ${currentIndex + 3} but length is $length")
+    protected fun IntArray.get3Bytes(): Int {
+        if (currentIndex + 2 >= size) {
+            throw IllegalArgumentException("Packet too short; request ${currentIndex + 3} but length is $size")
         }
 
-        return this.substring(currentIndex, currentIndex + 3).binToInt().also {
+        return this.sliceArray(currentIndex until currentIndex + 3).binToInt().also {
             currentIndex += 3
         }
     }
 
-    protected fun String.get4Bytes(): Int {
-        if (currentIndex + 3 >= length) {
-            throw IllegalArgumentException("Packet too short; request ${currentIndex + 4} but length is $length")
+    protected fun IntArray.get4Bytes(): Int {
+        if (currentIndex + 3 >= size) {
+            throw IllegalArgumentException("Packet too short; request ${currentIndex + 4} but length is $size")
         }
 
-        return this.substring(currentIndex, currentIndex + 4).binToInt().also {
+        return this.sliceArray(currentIndex until currentIndex + 4).binToInt().also {
             currentIndex += 4
         }
     }
 
-    protected fun String.getString(length: Int): String {
-        if (currentIndex + length > this.length) {
-            throw IllegalArgumentException("Packet too short; request ${currentIndex + length} but length is $length")
+    protected fun IntArray.getString(length: Int): String {
+        if (currentIndex + length > size) {
+            throw IllegalArgumentException("Packet too short; request ${currentIndex + length} but length is $size")
         }
 
-        return this.substring(currentIndex, currentIndex + length).also {
+        val array = this.sliceArray(currentIndex until currentIndex + length).map { it.toByte() }.toByteArray()
+
+        return String(array, Charsets.ISO_8859_1).also {
             currentIndex += length
         }
     }
 
-    protected fun String.setUnhandledParams() {
+    protected fun IntArray.setUnhandledParams() {
 
-        if (currentIndex >= length) {
+        if (currentIndex >= size) {
             return
         }
 
-        unhandledParams = this.substring(currentIndex)
+        unhandledParams = this.sliceArray(currentIndex until size)
     }
 
-    private fun String.binToInt(): Int {
+    private fun IntArray.binToInt(): Int {
         var v = 0
         for (element in this) {
             v = v shl 8
-            v = v or element.code
+            v = v or element
         }
         return v
     }

@@ -276,7 +276,7 @@ data class SensorsPacket(
 
         internal const val DESCRIPTOR = 'q'
 
-        fun parse(data: String) = SensorsPacket().apply {
+        fun parse(data: IntArray) = SensorsPacket().apply {
             rpm = data.get2Bytes()
             map = data.get2Bytes().toFloat() / MAP_MULTIPLIER
             voltage = data.get2Bytes().toFloat() / VOLTAGE_MULTIPLIER

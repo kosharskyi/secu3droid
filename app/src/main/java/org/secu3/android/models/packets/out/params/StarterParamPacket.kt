@@ -61,7 +61,7 @@ data class StarterParamPacket(
 
         internal const val DESCRIPTOR = 'o'
 
-        fun parse(data: String) = StarterParamPacket().apply {
+        fun parse(data: IntArray) = StarterParamPacket().apply {
             starterOff = data.get2Bytes()
             smapAbandon = data.get2Bytes()
             crankToRunTime = data.get2Bytes().toFloat() / 100

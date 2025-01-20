@@ -41,7 +41,7 @@ data class CheckEngineSavedErrorsPacket(
 
         internal const val DESCRIPTOR = 'x'
 
-        fun parse(data: String) = CheckEngineSavedErrorsPacket().apply {
+        fun parse(data: IntArray) = CheckEngineSavedErrorsPacket().apply {
             errors = data.get4Bytes()
         }
 

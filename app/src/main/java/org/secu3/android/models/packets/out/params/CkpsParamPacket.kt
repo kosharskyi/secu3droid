@@ -101,7 +101,7 @@ data class CkpsParamPacket(
 
         internal const val DESCRIPTOR = 't'
 
-        fun parse(data: String) = CkpsParamPacket().apply {
+        fun parse(data: IntArray) = CkpsParamPacket().apply {
             ckpsCogsBtdc = data.get1Byte()
             ckpsIgnitCogs = data.get1Byte()
             ckpsEngineCyl = data.get1Byte()

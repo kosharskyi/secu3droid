@@ -132,7 +132,7 @@ data class FunSetParamPacket(
 
         internal const val DESCRIPTOR = 'n'
 
-        fun parse(data: String) = FunSetParamPacket().apply {
+        fun parse(data: IntArray) = FunSetParamPacket().apply {
 
             fnGasoline = data.get1Byte()
             fnGas = data.get1Byte()

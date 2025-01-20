@@ -150,16 +150,16 @@ class UsbConnection @Inject constructor(
                     if (bytesRead <= 0) continue
 
                     for (i in 0 until bytesRead) {
-                        val unsignedByte = buffer[i].toInt() and 0xFF
-                        val char = unsignedByte.toChar()
+                        val byte = buffer[i].toInt() and 0xFF
 
-                        if (char == startMarker) {
+
+                        if (byte == startMarker) {
                             idx = 0
                         }
 
-                        if (char != endMarker) {
+                        if (byte != endMarker) {
                             if (idx < packetBuffer.size) {
-                                packetBuffer[idx++] = unsignedByte
+                                packetBuffer[idx++] = byte
                             } else {
                                 Log.d(this.javaClass.simpleName, "Packet buffer overflow, resetting.")
                                 idx = 0
@@ -167,8 +167,7 @@ class UsbConnection @Inject constructor(
                         } else {
                             if (idx > 2) {
                                 val escaped = PacketUtils.EscRxPacket(packetBuffer.sliceArray(0 until idx))
-                                val line = String(escaped.map { it.toByte() }.toByteArray(), Charsets.ISO_8859_1)
-                                mReceivedPacketFlow.emit(RawPacket(line))
+                                mReceivedPacketFlow.emit(RawPacket(escaped))
                             } else {
                                 Log.d(this.javaClass.simpleName, "Incomplete packet received, skipping.")
                             }
