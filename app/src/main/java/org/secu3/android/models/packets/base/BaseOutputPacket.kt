@@ -26,24 +26,24 @@ package org.secu3.android.models.packets.base
 
 abstract class BaseOutputPacket : BaseSecu3Packet() {
 
-    abstract fun pack(): String
+    abstract fun pack(): IntArray
 
-    protected fun Int.write2Bytes(): String {
-        var data = ""
+    protected fun Int.write2Bytes(): IntArray {
+        var data = intArrayOf()
 
-        data += this.shr(8).and(0xFF).toChar()
-        data += this.and(0xFF).toChar()
+        data += this.shr(8).and(0xFF)
+        data += this.and(0xFF)
 
         return data
     }
 
-    protected fun Int.write4Bytes(): String {
-        var data = ""
+    protected fun Int.write4Bytes(): IntArray {
+        var data = intArrayOf()
 
-        data += this.shr(24).and(0xFF).toChar()
-        data += this.shr(16).and(0xFF).toChar()
-        data += this.shr(8).and(0xFF).toChar()
-        data += this.and(0xFF).toChar()
+        data += this.shr(24).and(0xFF)
+        data += this.shr(16).and(0xFF)
+        data += this.shr(8).and(0xFF)
+        data += this.and(0xFF)
 
         return data
     }

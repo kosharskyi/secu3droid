@@ -43,23 +43,25 @@ data class AccelerationParamPacket(
 
 ) : BaseOutputPacket() {
 
-    override fun pack(): String {
-        var data = "$DESCRIPTOR"
+    override fun pack(): IntArray {
+        var data = intArrayOf(
+            DESCRIPTOR.code,
+        )
 
-        data += injAeTpsdotThrd.toChar()
+        data += injAeTpsdotThrd
 
         data += injAeColdaccMult.toFloat().div(100).minus(1.0f).times(128f).roundToInt().write2Bytes()
 
-        data += injAeDecayTime.toChar()
+        data += injAeDecayTime
 
-        data += injAeType.toChar()
-        data += injAeTime.toChar()
+        data += injAeType
+        data += injAeTime
 
-        data += injAeBallance.times(2.56f).roundToInt().coerceAtMost(255).toChar()
-        data += injAeMapdotThrd.toChar()
-        data += injXtauSThrd.roundToInt().unaryMinus().toChar()
-        data += injXtauFThrd.roundToInt().unaryMinus().toChar()
-        data += wallwetModel.toChar()
+        data += injAeBallance.times(2.56f).roundToInt().coerceAtMost(255)
+        data += injAeMapdotThrd
+        data += injXtauSThrd.roundToInt().unaryMinus()
+        data += injXtauFThrd.roundToInt().unaryMinus()
+        data += wallwetModel
 
         data += unhandledParams
 

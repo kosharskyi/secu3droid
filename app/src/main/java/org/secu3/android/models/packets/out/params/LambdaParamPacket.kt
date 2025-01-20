@@ -145,13 +145,13 @@ data class LambdaParamPacket(
             lambdaSelectedChanel = lambdaSelectedChanel.setBitValue(value,7)
         }
 
-    override fun pack(): String {
-        var data = "$DESCRIPTOR"
+    override fun pack(): IntArray {
+        var data = intArrayOf(DESCRIPTOR.code)
 
-        data += strPerStp.toChar()
+        data += strPerStp
 
-        data += stepSizeP.div(100).times(512).roundToInt().toChar()
-        data += stepSizeM.div(100).times(512).roundToInt().toChar()
+        data += stepSizeP.div(100).times(512).roundToInt()
+        data += stepSizeM.div(100).times(512).roundToInt()
 
         data += corrLimitP.div(100).times(512).roundToInt().write2Bytes()
         data += corrLimitM.div(100).times(512).roundToInt().write2Bytes()
@@ -160,22 +160,22 @@ data class LambdaParamPacket(
         data += tempThrd.times(TEMPERATURE_MULTIPLIER).roundToInt().write2Bytes()
         data += rpmThrd.write2Bytes()
 
-        data += activDelay.toChar()
+        data += activDelay
 
         data += deadBand.div(ADC_DISCRETE).roundToInt().write2Bytes()
-        data += senstype.toChar()
-        data += msPerStp.div(10).toChar()
-        data += flags.toChar()
+        data += senstype
+        data += msPerStp.div(10)
+        data += flags
         data += gdStoichval.times(128.0f).roundToInt().write2Bytes()
 
-        data += heatingTime0.toChar()
-        data += heatingTime1.toChar()
-        data += temperThrd.toChar()
-        data += heatingAct.times(100).roundToInt().toChar()
+        data += heatingTime0
+        data += heatingTime1
+        data += temperThrd
+        data += heatingAct.times(100).roundToInt()
 
         data += aflowThrd.div(32).roundToInt().write2Bytes()
 
-        data += lambdaSelectedChanel.toChar()
+        data += lambdaSelectedChanel
 
         data += unhandledParams
 

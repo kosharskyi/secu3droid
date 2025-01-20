@@ -41,18 +41,18 @@ data class GasDoseParamPacket(
 
 ): BaseOutputPacket() {
 
-    override fun pack(): String {
-        var data = "$DESCRIPTOR"
+    override fun pack(): IntArray {
+        var data = intArrayOf(DESCRIPTOR.code)
 
         data += steps.write2Bytes()
-        data += testing.toChar()            //fake parameter (actually it is command)
-        data += manualPositionD.toChar()    //fake parameter, not used in outgoing paket
-        data += fcClosing.times(GAS_DOSE_MULTIPLIER).roundToInt().toChar()
+        data += testing            //fake parameter (actually it is command)
+        data += manualPositionD    //fake parameter, not used in outgoing paket
+        data += fcClosing.times(GAS_DOSE_MULTIPLIER).roundToInt()
         data += lambdaCorrLimitP.times(512.0f).div(100).roundToInt().write2Bytes()
         data += lambdaCorrLimitM.times(512.0f).div(100).roundToInt().write2Bytes()
         data += lambdaStoichval.times(AFR_MULTIPLIER).roundToInt().write2Bytes()
-        data += freq.toChar()
-        data += maxFreqInit.toChar()
+        data += freq
+        data += maxFreqInit
 
         data += unhandledParams
 

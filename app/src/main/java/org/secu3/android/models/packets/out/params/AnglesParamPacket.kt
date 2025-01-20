@@ -72,16 +72,18 @@ data class AnglesParamPacket(
         }
     }
 
-    override fun pack(): String {
-        var data = "$DESCRIPTOR"
+    override fun pack(): IntArray {
+        var data = intArrayOf(
+            DESCRIPTOR.code
+        )
 
         data += maxAngle.times(ANGLE_DIVIDER).roundToInt().write2Bytes()
         data += minAngle.times(ANGLE_DIVIDER).roundToInt().write2Bytes()
         data += angleCorrection.times(ANGLE_DIVIDER).roundToInt().write2Bytes()
         data += angleDecSpeed.times(ANGLE_DIVIDER).roundToInt().write2Bytes()
         data += angleIncSpeed.times(ANGLE_DIVIDER).roundToInt().write2Bytes()
-        data += zeroAdvAngle.toChar()
-        data += igntimFlags.toChar()
+        data += zeroAdvAngle
+        data += igntimFlags
         data += shift_ingtim.times(ANGLE_DIVIDER).roundToInt().write2Bytes()
 
         data += unhandledParams

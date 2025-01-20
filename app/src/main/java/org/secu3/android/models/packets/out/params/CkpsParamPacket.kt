@@ -79,15 +79,15 @@ data class CkpsParamPacket(
             hallFlags = hallFlags.setBitValue(value, 4)
         }
 
-    override fun pack(): String {
-        var data = "$DESCRIPTOR"
+    override fun pack(): IntArray {
+        var data = intArrayOf(DESCRIPTOR.code)
 
-        data += ckpsCogsBtdc.toChar()
-        data += ckpsIgnitCogs.toChar()
-        data += ckpsEngineCyl.toChar()
-        data += ckpsCogsNum.toChar()
-        data += ckpsMissNum.toChar()
-        data += hallFlags.toChar()
+        data += ckpsCogsBtdc
+        data += ckpsIgnitCogs
+        data += ckpsEngineCyl
+        data += ckpsCogsNum
+        data += ckpsMissNum
+        data += hallFlags
 
         data += hallWndWidth.times(ANGLE_DIVIDER).roundToInt().write2Bytes()
         data += hallDegreesBtdc.times(ANGLE_DIVIDER).roundToInt().write2Bytes()

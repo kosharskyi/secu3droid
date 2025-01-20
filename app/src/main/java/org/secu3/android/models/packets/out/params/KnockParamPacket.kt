@@ -58,24 +58,24 @@ data class KnockParamPacket(
         }
     }
 
-    override fun pack(): String {
-        var data = "$DESCRIPTOR"
+    override fun pack(): IntArray {
+        var data = intArrayOf(DESCRIPTOR.code)
 
-        data += useKnockChannel.toChar()
-        data += bpfFrequency.toChar()
+        data += useKnockChannel
+        data += bpfFrequency
 
         data += kWndBeginAngle.times(ANGLE_DIVIDER).roundToInt().write2Bytes()
         data += kWndEndAngle.times(ANGLE_DIVIDER).roundToInt().write2Bytes()
-        data += intTimeCost.toChar()
+        data += intTimeCost
 
         data += retardStep.times(ANGLE_DIVIDER).roundToInt().write2Bytes()
         data += advanceStep.times(ANGLE_DIVIDER).roundToInt().write2Bytes()
         data += maxRetard.times(ANGLE_DIVIDER).roundToInt().write2Bytes()
         data += threshold.times(VOLTAGE_MULTIPLIER).roundToInt().write2Bytes()
 
-        data += recoveryDelay.toChar()
+        data += recoveryDelay
 
-        data += selectedChanels.toChar()
+        data += selectedChanels
         data += knkctlThrd.times(TEMPERATURE_MULTIPLIER).roundToInt().write2Bytes()
 
         data += unhandledParams

@@ -132,10 +132,10 @@ data class IdlingParamPacket(
         }
     }
 
-    override fun pack(): String {
-        var data = "$DESCRIPTOR"
+    override fun pack(): IntArray {
+        var data = intArrayOf(DESCRIPTOR.code)
 
-        data += idlFlags.toChar()
+        data += idlFlags
         data += iFac1.times(256).roundToInt().write2Bytes()
         data += iFac2.times(256).roundToInt().write2Bytes()
         data += minefr.write2Bytes()
@@ -143,18 +143,18 @@ data class IdlingParamPacket(
         data += idlregMinAngle.times(ANGLE_DIVIDER).roundToInt().write2Bytes()
         data += idlregMaxAngle.times(ANGLE_DIVIDER).roundToInt().write2Bytes()
         data += idlregTurnOnTemp.times(TEMPERATURE_MULTIPLIER).roundToInt().write2Bytes()
-        data += idlToRunAdd.times(2.0f).roundToInt().toChar()
-        data += rpmOnRunAdd.div(10).toChar()
+        data += idlToRunAdd.times(2.0f).roundToInt()
+        data += rpmOnRunAdd.div(10)
         data += idlRegP0.times(256).roundToInt().write2Bytes()
         data += idlRegP1.times(256).roundToInt().write2Bytes()
         data += idlRegI0.times(256).roundToInt().write2Bytes()
         data += idlRegI1.times(256).roundToInt().write2Bytes()
-        data += coefThrd1.minus(1.0f).times(128).roundToInt().toChar()
-        data += coefThrd2.minus(1.0f).times(128).roundToInt().toChar()
-        data += integratorRpmLim.div(10).toChar()
+        data += coefThrd1.minus(1.0f).times(128).roundToInt()
+        data += coefThrd2.minus(1.0f).times(128).roundToInt()
+        data += integratorRpmLim.div(10)
         data += mapValue.times(MAP_MULTIPLIER).roundToInt().write2Bytes()
-        data += iacMinPos.times(2).roundToInt().toChar()
-        data += iacMaxPos.times(2).roundToInt().toChar()
+        data += iacMinPos.times(2).roundToInt()
+        data += iacMaxPos.times(2).roundToInt()
         data += iacRegDb.write2Bytes()
         data += idlRegD.times(256).roundToInt().write2Bytes()
 

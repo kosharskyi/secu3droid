@@ -194,24 +194,22 @@ class BtConnection @Inject constructor(
 
             try {
                 val outputStream = bluetoothSocket?.outputStream ?: throw IOException("Output stream is null")
-                val writer = outputStream.bufferedWriter(StandardCharsets.ISO_8859_1)
 
-                var packet = "$OUTPUT_PACKET_SYMBOL${sendPacket.pack()}"
+                var packet = intArrayOf(OUTPUT_PACKET_SYMBOL) + sendPacket.pack()
 
-                val checksum = PacketUtils.calculateChecksum(packet.substring(2, packet.length))
+                val checksum = PacketUtils.calculateChecksum(packet.sliceArray(2 until packet.size))
 
-                packet += checksum[1].toInt().toChar()
-                packet += checksum[0].toInt().toChar()
+                packet += checksum[1].toInt()
+                packet += checksum[0].toInt()
 
-                Log.e(this.javaClass.simpleName, packet)
+                Log.e(this.javaClass.simpleName, packet.toString())
 
                 var escaped = PacketUtils.EscTxPacket(packet)
                 escaped += END_PACKET_SYMBOL
 
-                writer.append(escaped)
+                outputStream.write(escaped.map { it.toByte() }.toByteArray())
 
                 delay(20)
-                writer.flush()
             } catch (e: IOException) {
                 Log.e(this.javaClass.simpleName, "Error while sending data: ${e.message}")
             }

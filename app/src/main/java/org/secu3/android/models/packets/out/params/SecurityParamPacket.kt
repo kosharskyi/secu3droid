@@ -53,15 +53,15 @@ data class SecurityParamPacket(
     val checkFwCrc: Boolean                             //Check firmware CRC (time consuming operation)
         get() = btFlags.getBitValue(4) > 0
 
-    override fun pack(): String {
-        var data = "$DESCRIPTOR"
+    override fun pack(): IntArray {
+        var data = intArrayOf(DESCRIPTOR.code)
 
-        data += btFlags.toChar()
+        data += btFlags
 
-        data += iButton0
-        data += iButton1
+        data += iButton0.map { it.code }.toIntArray()
+        data += iButton1.map { it.code }.toIntArray()
 
-        data += btType.toChar()
+        data += btType
 
         data += unhandledParams
 

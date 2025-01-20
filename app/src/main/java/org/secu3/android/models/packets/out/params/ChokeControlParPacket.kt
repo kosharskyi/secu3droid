@@ -72,19 +72,21 @@ data class ChokeControlParPacket(
             flags = flags.setBitValue(value, 3)
         }
 
-    override fun pack(): String {
-        var data = "$DESCRIPTOR"
+    override fun pack(): IntArray {
+        var data = intArrayOf(
+            DESCRIPTOR.code
+        )
 
         data += smSteps.write2Bytes()
 
-        data += testing.toChar()
-        data += manualPositionD.toChar()
+        data += testing
+        data += manualPositionD
 
         data += rpmIf.times(1024.0f).roundToInt().write2Bytes()
         data += corrTime0.times(100).roundToInt().write2Bytes()
         data += corrTime1.times(100).roundToInt().write2Bytes()
-        data += flags.toChar()
-        data += smFreq.toChar()
+        data += flags
+        data += smFreq
         data += injCrankToRunTime.times(100).roundToInt().write2Bytes()
 
         data += unhandledParams

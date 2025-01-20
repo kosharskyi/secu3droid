@@ -85,59 +85,59 @@ data class UniOutParamPacket(
 
 ) : BaseOutputPacket() {
 
-    override fun pack(): String {
-        var data = "$DESCRIPTOR"
+    override fun pack(): IntArray {
+        var data = intArrayOf(DESCRIPTOR.code)
 
-        data += rawOutput1Flags.toChar()
-        data += output1Condition1.toChar()
-        data += output1Condition2.toChar()
+        data += rawOutput1Flags
+        data += output1Condition1
+        data += output1Condition2
         data += rawOutput1OnThrd1.write2Bytes()
         data += rawOutput1OffThrd1.write2Bytes()
         data += rawOutput1OnThrd2.write2Bytes()
         data += rawOutput1OffThrd2.write2Bytes()
 
-        data += rawOutput2Flags.toChar()
-        data += output2Condition1.toChar()
-        data += output2Condition2.toChar()
+        data += rawOutput2Flags
+        data += output2Condition1
+        data += output2Condition2
         data += rawOutput2OnThrd1.write2Bytes()
         data += rawOutput2OffThrd1.write2Bytes()
         data += rawOutput2OnThrd2.write2Bytes()
         data += rawOutput2OffThrd2.write2Bytes()
 
-        data += rawOutput3Flags.toChar()
-        data += output3Condition1.toChar()
-        data += output3Condition2.toChar()
+        data += rawOutput3Flags
+        data += output3Condition1
+        data += output3Condition2
         data += rawOutput3OnThrd1.write2Bytes()
         data += rawOutput3OffThrd1.write2Bytes()
         data += rawOutput3OnThrd2.write2Bytes()
         data += rawOutput3OffThrd2.write2Bytes()
 
-        data += rawOutput4Flags.toChar()
-        data += output4Condition1.toChar()
-        data += output4Condition2.toChar()
+        data += rawOutput4Flags
+        data += output4Condition1
+        data += output4Condition2
         data += rawOutput4OnThrd1.write2Bytes()
         data += rawOutput4OffThrd1.write2Bytes()
         data += rawOutput4OnThrd2.write2Bytes()
         data += rawOutput4OffThrd2.write2Bytes()
 
-        data += rawOutput5Flags.toChar()
-        data += output5Condition1.toChar()
-        data += output5Condition2.toChar()
+        data += rawOutput5Flags
+        data += output5Condition1
+        data += output5Condition2
         data += rawOutput5OnThrd1.write2Bytes()
         data += rawOutput5OffThrd1.write2Bytes()
         data += rawOutput5OnThrd2.write2Bytes()
         data += rawOutput5OffThrd2.write2Bytes()
 
-        data += rawOutput6Flags.toChar()
-        data += output6Condition1.toChar()
-        data += output6Condition2.toChar()
+        data += rawOutput6Flags
+        data += output6Condition1
+        data += output6Condition2
         data += rawOutput6OnThrd1.write2Bytes()
         data += rawOutput6OffThrd1.write2Bytes()
         data += rawOutput6OnThrd2.write2Bytes()
         data += rawOutput6OffThrd2.write2Bytes()
 
 
-        data += logicFunction_1_2.toChar()
+        data += logicFunction_1_2
 
         data += unhandledParams
 

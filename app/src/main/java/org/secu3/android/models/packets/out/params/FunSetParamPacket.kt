@@ -67,11 +67,11 @@ data class FunSetParamPacket(
 
     ): BaseOutputPacket() {
 
-    override fun pack(): String {
-        var data = "$DESCRIPTOR"
+    override fun pack(): IntArray {
+        var data = intArrayOf(DESCRIPTOR.code)
 
-        data += fnGasoline.toChar()
-        data += fnGas.toChar()
+        data += fnGasoline
+        data += fnGas
         data += loadLower.times(MAP_MULTIPLIER).roundToInt().write2Bytes()
         data += loadUpper.times(MAP_MULTIPLIER).roundToInt().write2Bytes()
         data += mapCurveOffset.div(ADC_DISCRETE).roundToInt().write2Bytes()
@@ -81,20 +81,20 @@ data class FunSetParamPacket(
         data += tpsCurveOffset.div(ADC_DISCRETE).roundToInt().write2Bytes()
         data += tpsCurveGradient.times(128.0f).times(TPS_MULTIPLIER * 64f).times(ADC_DISCRETE).roundToInt().write2Bytes()
 
-        data += loadSrcCfg.toChar()
-        data += mapselUni.toChar()
-        data += barocorrType.toChar()
-        data += funcFlags.toChar()
+        data += loadSrcCfg
+        data += mapselUni
+        data += barocorrType
+        data += funcFlags
 
-        data += ve2MapFunc.toChar()
+        data += ve2MapFunc
 
         if (gasVUni == UNI_OUTPUT_NUM) {
             data += 0xF
         } else {
-            data += gasVUni.toChar()
+            data += gasVUni
         }
 
-        data += 0.toChar() // stub for cyl_num
+        data += 0 // stub for cyl_num
 
         data += injCylDisp.times(16384.0f).roundToInt().write2Bytes()
         data += mafload_const.toInt().write4Bytes()

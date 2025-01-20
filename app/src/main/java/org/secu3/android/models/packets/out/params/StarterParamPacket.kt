@@ -79,20 +79,20 @@ data class StarterParamPacket(
         }
     }
 
-    override fun pack(): String {
-        var data = "$DESCRIPTOR"
+    override fun pack(): IntArray {
+        var data = intArrayOf(DESCRIPTOR.code)
 
         data += starterOff.write2Bytes()
         data += smapAbandon.write2Bytes()
         data += crankToRunTime.times(100).roundToInt().write2Bytes()
-        data += injAftstrStroke.div(4).toChar()
+        data += injAftstrStroke.div(4)
         data += injPrimeCold.times(10000).div(32).roundToInt().write2Bytes()
         data += injPrimeHot.times(10000).div(32).roundToInt().write2Bytes()
-        data += injPrimeDelay.times(10).roundToInt().toChar()
+        data += injPrimeDelay.times(10).roundToInt()
         data += injFloodclearTps.times(TPS_MULTIPLIER).roundToInt().write2Bytes()
-        data += injAftStrokes1.div(4).toChar()
-        data += stblStrCnt.toChar()
-        data += strtFlags.toChar()
+        data += injAftStrokes1.div(4)
+        data += stblStrCnt
+        data += strtFlags
         data += injCrankToRun_time1.times(100).roundToInt().write2Bytes()
 
         data += unhandledParams

@@ -46,24 +46,24 @@ data class CarburParamPacket(
 
 ) : BaseOutputPacket() {
 
-    override fun pack(): String {
-        var data = "$DESCRIPTOR"
+    override fun pack(): IntArray {
+        var data = intArrayOf(DESCRIPTOR.code)
 
         data += ieLot.write2Bytes()
         data += ieHit.write2Bytes()
-        data += carbInvers.toChar()
+        data += carbInvers
         data += feOnThresholds.times(MAP_MULTIPLIER).roundToInt().write2Bytes()
         data += ieLotG.write2Bytes()
         data += ieHitG.write2Bytes()
-        data += shutoffDelay.times(100).roundToInt().toChar()
+        data += shutoffDelay.times(100).roundToInt()
         data += tpsThreshold.times(TPS_MULTIPLIER).roundToInt().write2Bytes()
         data += fuelcutMapThrd.times(MAP_MULTIPLIER).roundToInt().write2Bytes()
         data += fuelcutCtsThrd.times(TEMPERATURE_MULTIPLIER).roundToInt().write2Bytes()
         data += revlimLot.write2Bytes()
         data += revlimHit.write2Bytes()
 
-        data += fuelcut_uni.toChar()
-        data += igncut_uni.toChar()
+        data += fuelcut_uni
+        data += igncut_uni
 
         data += unhandledParams
 

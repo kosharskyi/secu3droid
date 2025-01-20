@@ -61,25 +61,25 @@ data class LtftParamPacket(
     var deadBand1: Float = 0.0f,    // %
 ) : BaseOutputPacket() {
 
-    override fun pack(): String {
+    override fun pack(): IntArray {
 
-        var data = "$DESCRIPTOR"
+        var data = intArrayOf(DESCRIPTOR.code)
 
-        data += mode.toChar()
+        data += mode
         data += learnClt.times(TEMPERATURE_MULTIPLIER).roundToInt().write2Bytes()
         data += learnCltUp.times(TEMPERATURE_MULTIPLIER).roundToInt().write2Bytes()
         data += learnIatUp.times(TEMPERATURE_MULTIPLIER).roundToInt().write2Bytes()
-        data += learnGrad.times(256).roundToInt().toChar()
+        data += learnGrad.times(256).roundToInt()
         data += learnGpa.times(MAP_MULTIPLIER).roundToInt().write2Bytes()
         data += learnGpd.times(MAP_MULTIPLIER).roundToInt().write2Bytes()
-        data += min.div(100.0f / 512.0f).toInt().toUByte().toInt().toChar()
-        data += max.div(100.0f / 512.0f).roundToInt().toChar()
+        data += min.div(100.0f / 512.0f).toInt().toUByte().toInt()
+        data += max.div(100.0f / 512.0f).roundToInt()
         data += learnRpm0.write2Bytes()
         data += learnRpm1.write2Bytes()
         data += learnLoad0.times(MAP_MULTIPLIER).roundToInt().write2Bytes()
         data += learnLoad1.times(MAP_MULTIPLIER).roundToInt().write2Bytes()
-        data += deadBand0.div(100.0f).times(512.0f).roundToInt().toChar()
-        data += deadBand1.div(100.0f).times(512.0f).roundToInt().toChar()
+        data += deadBand0.div(100.0f).times(512.0f).roundToInt()
+        data += deadBand1.div(100.0f).times(512.0f).roundToInt()
 
         data += unhandledParams
 

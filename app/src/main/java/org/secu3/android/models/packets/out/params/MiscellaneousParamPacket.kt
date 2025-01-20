@@ -75,22 +75,22 @@ data class MiscellaneousParamPacket(
             flpmpFlags = flpmpFlags.setBitValue(value, 2)
         }
 
-    override fun pack(): String {
-        var data = "$DESCRIPTOR"
+    override fun pack(): IntArray {
+        var data = intArrayOf(DESCRIPTOR.code)
 
         data += uartDivisor.write2Bytes()
-        data += uartPeriodTms.div(10).toChar()
-        data += ignCutoff.toChar()
+        data += uartPeriodTms.div(10)
+        data += ignCutoff
         data += ignCutoffThrd.write2Bytes()
 
         data += hopStartAng.times(ANGLE_DIVIDER).write2Bytes()
         data += hopDuratAng.times(ANGLE_DIVIDER).write2Bytes()
-        data += flpmpFlags.toChar()
+        data += flpmpFlags
 
         data += evapAfbegin.div(32).write2Bytes()
         data += evapAfEnd.times(32).times(1048576.0f).roundToInt().write2Bytes()
 
-        data += fpTimeoutStrt.times(10).roundToInt().toChar()
+        data += fpTimeoutStrt.times(10).roundToInt()
 
         data += 1.0.div(pwmFrq0.toFloat()).times(524288.0f).roundToInt().write2Bytes()
         data += 1.0.div(pwmFrq1.toFloat()).times(524288.0f).roundToInt().write2Bytes()

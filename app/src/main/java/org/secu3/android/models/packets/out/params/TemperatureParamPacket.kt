@@ -41,10 +41,10 @@ data class TemperatureParamPacket(
 
     ) : BaseOutputPacket() {
 
-    override fun pack(): String {
-        var data = "$DESCRIPTOR"
+    override fun pack(): IntArray {
+        var data = intArrayOf(DESCRIPTOR.code)
 
-        data += tmpFlags.toChar()
+        data += tmpFlags
 
         data += ventOn.times(TEMPERATURE_MULTIPLIER).roundToInt().write2Bytes()
         data += ventOff.times(TEMPERATURE_MULTIPLIER).roundToInt().write2Bytes()

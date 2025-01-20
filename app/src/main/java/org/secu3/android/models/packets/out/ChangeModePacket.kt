@@ -52,16 +52,24 @@ import org.secu3.android.models.packets.out.params.UniOutParamPacket
 import org.secu3.android.utils.Task
 
 data class ChangeModePacket(
-    val descriptor: Char
+    val nextDescriptor: Char
 ) : BaseOutputPacket() {
 
-    override fun pack(): String {
-        val stubByte = 0.toUByte().toInt().toChar()
-        return "h$descriptor$stubByte"
+    override fun pack(): IntArray {
+        val stubByte = 0.toUByte().toInt()
+
+        val data = intArrayOf(
+            DESCRIPTOR.code,
+            nextDescriptor.code,
+            stubByte
+        )
+        return data
     }
 
 
     companion object {
+
+        internal const val DESCRIPTOR = 'h'
 
         fun getPacket(task: Task): ChangeModePacket {
 

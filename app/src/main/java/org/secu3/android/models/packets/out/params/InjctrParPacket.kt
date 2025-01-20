@@ -64,13 +64,13 @@ data class InjctrParPacket(
 
 ) : BaseOutputPacket() {
 
-    override fun pack(): String {
-        var data = "$DESCRIPTOR"
+    override fun pack(): IntArray {
+        var data = intArrayOf(DESCRIPTOR.code)
 
-        data += flags.toChar()
+        data += flags
 
-        data += config[0].toChar()
-        data += config[1].toChar()
+        data += config[0]
+        data += config[1]
 
         data += flowRate[0].times(64).roundToInt().write2Bytes()
         data += flowRate[1].times(64).roundToInt().write2Bytes()
@@ -80,7 +80,7 @@ data class InjctrParPacket(
         data += sdIglConst[0].write4Bytes()
         data += sdIglConst[1].write4Bytes()
 
-        data += ckpsEngineCyl.toChar()
+        data += ckpsEngineCyl
 
         data += timing[0].times(PARINJTIM_DIVIDER).write2Bytes()
         data += timing[1].times(PARINJTIM_DIVIDER).write2Bytes()
@@ -88,7 +88,7 @@ data class InjctrParPacket(
         data += timingCrk[0].times(PARINJTIM_DIVIDER).write2Bytes()
         data += timingCrk[1].times(PARINJTIM_DIVIDER).write2Bytes()
 
-        data += angleSpec.toChar()
+        data += angleSpec
 
         data += fffConst.toFloat().div(1000f*60f).times(65536f).roundToInt().write2Bytes()
 

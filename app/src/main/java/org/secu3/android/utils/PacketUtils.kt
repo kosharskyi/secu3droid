@@ -73,42 +73,42 @@ object PacketUtils {
         return buf.sliceArray(IntRange(0, idx - 1))
     }
 
-    fun EscTxPacket(packetBuffer: String): String {
-        val buf = ArrayList<Int>(packetBuffer.length - 3)
+    fun EscTxPacket(packetBuffer: IntArray): IntArray {
+        val buf = ArrayList<Int>(packetBuffer.size - 3)
         for (i in packetBuffer.indices) {
-            if (i >= 2 && i < packetBuffer.length - 1) {
-                if (packetBuffer[i].code == FIBEGIN) {
+            if (i >= 2 && i < packetBuffer.size - 1) {
+                if (packetBuffer[i] == FIBEGIN) {
                     buf.add(FESC)
                     buf.add(TFIBEGIN)
                     continue
-                } else if (packetBuffer[i].code == FIOEND) {
+                } else if (packetBuffer[i] == FIOEND) {
                     buf.add(FESC)
                     buf.add(TFIOEND)
                     continue
-                } else if (packetBuffer[i].code == FESC) {
+                } else if (packetBuffer[i] == FESC) {
                     buf.add(FESC)
                     buf.add(TFESC)
                     continue
                 }
             }
-            buf.add(packetBuffer[i].code)
+            buf.add(packetBuffer[i])
         }
         val outBuf = IntArray(buf.size)
         for (i in buf.indices) {
             outBuf[i] = buf[i]
         }
-        return String(outBuf, 0, outBuf.size)
+        return outBuf
     }
 
-    fun calculateChecksum(packet: String): UByteArray {
+    fun calculateChecksum(packet: IntArray): UByteArray {
         val crc22 = UByteArray(2) { 0u }
 
-        for (char in packet) {
-            crc22[0] = (crc22[0] + char.code.toUByte()).toUByte()
+        for (i in packet) {
+            crc22[0] = (crc22[0] + i.toUByte()).toUByte()
             crc22[1] = (crc22[1] + crc22[0]).toUByte()
         }
 
-        crc22[0] = (crc22[0] + packet.length.toUByte()).toUByte()
+        crc22[0] = (crc22[0] + packet.size.toUByte()).toUByte()
         crc22[1] = (crc22[1] + crc22[0]).toUByte()
 
         return crc22

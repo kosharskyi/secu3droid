@@ -201,23 +201,21 @@ class UsbConnection @Inject constructor(
 
             try {
 
-                var packet = "$OUTPUT_PACKET_SYMBOL${sendPacket.pack()}"
+                var packet = intArrayOf(OUTPUT_PACKET_SYMBOL) + sendPacket.pack()
 
-                val checksum = PacketUtils.calculateChecksum(packet.substring(2, packet.length))
+                val checksum = PacketUtils.calculateChecksum(packet.sliceArray(2 until packet.size))
 
-                packet += checksum[1].toInt().toChar()
-                packet += checksum[0].toInt().toChar()
+                packet += checksum[1].toInt()
+                packet += checksum[0].toInt()
 
-                Log.e(this.javaClass.simpleName, packet)
+                Log.e(this.javaClass.simpleName, packet.toString())
 
                 var escaped = PacketUtils.EscTxPacket(packet)
                 escaped += END_PACKET_SYMBOL
 
-                val buffer = escaped.toByteArray(Charsets.ISO_8859_1)
+                val buffer = escaped.map { it.toByte() }.toByteArray()
 
-                val unsignedBuffer = ByteArray(buffer.size) { i -> (buffer[i].toInt() and 0xFF).toByte() }
-
-                usbSerialPort?.write(unsignedBuffer, 1000) ?: throw IllegalStateException("Output stream is null")
+                usbSerialPort?.write(buffer, 1000) ?: throw IllegalStateException("Output stream is null")
             } catch (e: IOException) {
                 Log.e(this.javaClass.simpleName, "Error while sending data: ${e.message}")
             }

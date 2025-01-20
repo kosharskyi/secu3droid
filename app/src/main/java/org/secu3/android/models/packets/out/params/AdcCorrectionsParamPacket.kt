@@ -65,10 +65,13 @@ data class AdcCorrectionsParamPacket(
             adcFlags = adcFlags.setBitValue(value, 0)
         }
 
-    override fun pack(): String {
-        var data = "$DESCRIPTOR"
+    override fun pack(): IntArray {
 
-        data += adcFlags.toChar()
+        var data = intArrayOf(
+            DESCRIPTOR.code
+        )
+
+        data += adcFlags
 
         data += mapAdcFactor.times(FACTOR_DIVIDER).roundToInt().write2Bytes()
         mapAdcCorrection.unaryMinus().div(ADC_DISCRETE).roundToInt().let {
