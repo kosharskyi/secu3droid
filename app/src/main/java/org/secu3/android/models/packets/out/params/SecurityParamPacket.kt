@@ -72,21 +72,17 @@ data class SecurityParamPacket(
 
         internal const val DESCRIPTOR = '#'
 
-        internal const val IBTN_KEY_SIZE = 6
+        private const val IBTN_KEY_SIZE = 6
 
         fun parse(data: String) = SecurityParamPacket().apply {
-            btFlags = data[4].code
-            iButton0 = data.substring(5, 11)
-            iButton1 = data.substring(11, 17)
-            btType = data[17].code
+            data.get1Byte()
+            data.get1Byte()
+            btFlags = data.get1Byte()
+            iButton0 = data.getString(IBTN_KEY_SIZE)
+            iButton1 = data.getString(IBTN_KEY_SIZE)
+            btType = data.get1Byte()
 
-            if (data.length == 18) {
-                return@apply
-            }
-
-            unhandledParams = data.substring(18)
+            data.setUnhandledParams()
         }
-
     }
-
 }

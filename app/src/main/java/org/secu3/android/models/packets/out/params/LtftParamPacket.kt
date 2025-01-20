@@ -92,28 +92,24 @@ data class LtftParamPacket(
 
         fun parse(data: String) = LtftParamPacket().apply {
 
-            mode = data[2].code
+            mode = data.get1Byte()
 
-            learnClt = data.get2Bytes(3).toFloat().div(TEMPERATURE_MULTIPLIER)
-            learnCltUp = data.get2Bytes(5).toFloat().div(TEMPERATURE_MULTIPLIER)
-            learnIatUp = data.get2Bytes(7).toFloat().div(TEMPERATURE_MULTIPLIER)
-            learnGrad = data[9].code.toFloat().div(256.0f)
-            learnGpa = data.get2Bytes(10).toFloat().div(MAP_MULTIPLIER)
-            learnGpd = data.get2Bytes(12).toFloat().div(MAP_MULTIPLIER)
-            min = data[14].code.toByte().toFloat().div(512.0f / 100.0f)     // toByte because value is signed
-            max = data[15].code.toFloat().div(512.0f / 100.0f)
-            learnRpm0 = data.get2Bytes(16)
-            learnRpm1 = data.get2Bytes(18)
-            learnLoad0 = data.get2Bytes(20).toFloat().div(MAP_MULTIPLIER)
-            learnLoad1 = data.get2Bytes(22).toFloat().div(MAP_MULTIPLIER)
-            deadBand0 = data[24].code.toFloat().div(512.0f).times(100.0f)
-            deadBand1 = data[25].code.toFloat().div(512.0f).times(100.0f)
+            learnClt = data.get2Bytes().toFloat().div(TEMPERATURE_MULTIPLIER)
+            learnCltUp = data.get2Bytes().toFloat().div(TEMPERATURE_MULTIPLIER)
+            learnIatUp = data.get2Bytes().toFloat().div(TEMPERATURE_MULTIPLIER)
+            learnGrad = data.get1Byte().toFloat().div(256.0f)
+            learnGpa = data.get2Bytes().toFloat().div(MAP_MULTIPLIER)
+            learnGpd = data.get2Bytes().toFloat().div(MAP_MULTIPLIER)
+            min = data.get1Byte().toByte().toFloat().div(512.0f / 100.0f)     // toByte because value is signed
+            max = data.get1Byte().toFloat().div(512.0f / 100.0f)
+            learnRpm0 = data.get2Bytes()
+            learnRpm1 = data.get2Bytes()
+            learnLoad0 = data.get2Bytes().toFloat().div(MAP_MULTIPLIER)
+            learnLoad1 = data.get2Bytes().toFloat().div(MAP_MULTIPLIER)
+            deadBand0 = data.get1Byte().toFloat().div(512.0f).times(100.0f)
+            deadBand1 = data.get1Byte().toFloat().div(512.0f).times(100.0f)
 
-            if (data.length == 26) {
-                return@apply
-            }
-
-            unhandledParams = data.substring(26)
+            data.setUnhandledParams()
         }
     }
 

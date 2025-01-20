@@ -98,22 +98,17 @@ data class ChokeControlParPacket(
 
         fun parse(data: String) = ChokeControlParPacket().apply {
 
-            smSteps = data.get2Bytes(2)
-            // testing fake param
-            // manual position fake param
-            rpmIf = data.get2Bytes(6).toFloat() / 1024.0f
-            corrTime0 = data.get2Bytes(8).toFloat() / 100
-            corrTime1 = data.get2Bytes(10).toFloat() / 100
-            flags = data[12].code
-            smFreq = data[13].code
-            injCrankToRunTime = data.get2Bytes(14).toFloat() / 100
+            smSteps = data.get2Bytes()
+            data.get1Byte()     // testing fake param
+            data.get1Byte()     // manual position fake param
+            rpmIf = data.get2Bytes().toFloat() / 1024.0f
+            corrTime0 = data.get2Bytes().toFloat() / 100
+            corrTime1 = data.get2Bytes().toFloat() / 100
+            flags = data.get1Byte()
+            smFreq = data.get1Byte()
+            injCrankToRunTime = data.get2Bytes().toFloat() / 100
 
-
-            if (data.length == 16) {
-                return@apply
-            }
-
-            unhandledParams = data.substring(16)
+            data.setUnhandledParams()
         }
     }
 }

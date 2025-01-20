@@ -72,26 +72,22 @@ data class AccelerationParamPacket(
 
         fun parse(data: String) = AccelerationParamPacket().apply {
 
-            injAeTpsdotThrd = data[2].code
-            data.get2Bytes(3).let {
+            injAeTpsdotThrd = data.get1Byte()
+            data.get2Bytes().let {
                 injAeColdaccMult = it.toShort().toFloat().plus(128.0f).div(128.0f).times(100.0f).toInt()
             }
-            injAeDecayTime = data[5].code
+            injAeDecayTime = data.get1Byte()
 
-            injAeType = data[6].code
-            injAeTime = data[7].code
+            injAeType = data.get1Byte()
+            injAeTime = data.get1Byte()
 
-            injAeBallance = data[8].code.toFloat().div(2.56f)   //multiply by 100% and divide by 256
-            injAeMapdotThrd = data[9].code
-            injXtauSThrd = -data[10].code.toFloat()
-            injXtauFThrd = -data[11].code.toFloat()
-            wallwetModel = data[12].code
+            injAeBallance = data.get1Byte().toFloat().div(2.56f)   //multiply by 100% and divide by 256
+            injAeMapdotThrd = data.get1Byte()
+            injXtauSThrd = -data.get1Byte().toFloat()
+            injXtauFThrd = -data.get1Byte().toFloat()
+            wallwetModel = data.get1Byte()
 
-            if (data.length == 13) {
-                return@apply
-            }
-
-            unhandledParams = data.substring(13)
+            data.setUnhandledParams()
         }
     }
 

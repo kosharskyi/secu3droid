@@ -88,27 +88,27 @@ data class DiagInputPacket(
         internal const val DESCRIPTOR = '='
 
         fun parse(data: String) = DiagInputPacket().apply {
-            flags = data[2].code
-            voltage = data.get2Bytes(3).toFloat() / VOLTAGE_MULTIPLIER
-            map = data.get2Bytes(5).toFloat() / VOLTAGE_MULTIPLIER
-            temperature = data.get2Bytes(7).toShort().toFloat() / VOLTAGE_MULTIPLIER
+            flags = data.get1Byte()
+            voltage = data.get2Bytes().toFloat() / VOLTAGE_MULTIPLIER
+            map = data.get2Bytes().toFloat() / VOLTAGE_MULTIPLIER
+            temperature = data.get2Bytes().toShort().toFloat() / VOLTAGE_MULTIPLIER
 
-            addI1 = data.get2Bytes(9).toFloat() / VOLTAGE_MULTIPLIER
-            addI2 = data.get2Bytes(11).toFloat() / VOLTAGE_MULTIPLIER
-            addI3 = data.get2Bytes(13).toFloat() / VOLTAGE_MULTIPLIER
-            addI4 = data.get2Bytes(15).toFloat() / VOLTAGE_MULTIPLIER
+            addI1 = data.get2Bytes().toFloat() / VOLTAGE_MULTIPLIER
+            addI2 = data.get2Bytes().toFloat() / VOLTAGE_MULTIPLIER
+            addI3 = data.get2Bytes().toFloat() / VOLTAGE_MULTIPLIER
+            addI4 = data.get2Bytes().toFloat() / VOLTAGE_MULTIPLIER
 
-            addI5 = data.get2Bytes(17).toFloat() / VOLTAGE_MULTIPLIER
-            addI6 = data.get2Bytes(19).toFloat() / VOLTAGE_MULTIPLIER
-            addI7 = data.get2Bytes(21).toFloat() / VOLTAGE_MULTIPLIER
-            addI8 = data.get2Bytes(23).toFloat() / VOLTAGE_MULTIPLIER
+            addI5 = data.get2Bytes().toFloat() / VOLTAGE_MULTIPLIER
+            addI6 = data.get2Bytes().toFloat() / VOLTAGE_MULTIPLIER
+            addI7 = data.get2Bytes().toFloat() / VOLTAGE_MULTIPLIER
+            addI8 = data.get2Bytes().toFloat() / VOLTAGE_MULTIPLIER
 
-            carb = data.get2Bytes(25).toFloat() / VOLTAGE_MULTIPLIER
+            carb = data.get2Bytes().toFloat() / VOLTAGE_MULTIPLIER
 
-            ks1 = data.get2Bytes(27).toFloat() / VOLTAGE_MULTIPLIER
-            ks2 = data.get2Bytes(29).toFloat() / VOLTAGE_MULTIPLIER
+            ks1 = data.get2Bytes().toFloat() / VOLTAGE_MULTIPLIER
+            ks2 = data.get2Bytes().toFloat() / VOLTAGE_MULTIPLIER
 
-            bits = data.get2Bytes(31)
+            bits = data.get2Bytes()
 
         }
 

@@ -134,40 +134,36 @@ data class FunSetParamPacket(
 
         fun parse(data: String) = FunSetParamPacket().apply {
 
-            fnGasoline = data[2].code
-            fnGas = data[3].code
-            loadLower = data.get2Bytes(4).toFloat() / MAP_MULTIPLIER
-            loadUpper = data.get2Bytes(6).toFloat() / MAP_MULTIPLIER
-            mapCurveOffset = data.get2Bytes(8).toFloat() * ADC_DISCRETE
-            mapCurveGradient = data.get2Bytes(10).toFloat() / (MAP_MULTIPLIER * ADC_DISCRETE * 128.0f)
-            map2CurveOffset = data.get2Bytes(12).toFloat() * ADC_DISCRETE
-            map2CurveGradient = data.get2Bytes(14).toFloat() / (MAP_MULTIPLIER * ADC_DISCRETE * 128.0f)
-            tpsCurveOffset = data.get2Bytes(16).toFloat() * ADC_DISCRETE
-            tpsCurveGradient = data.get2Bytes(18).toFloat() / (TPS_MULTIPLIER.times(64) * ADC_DISCRETE * 128.0f)
-            loadSrcCfg = data[20].code
-            mapselUni = data[21].code
-            barocorrType = data[22].code
-            funcFlags = data[23].code
+            fnGasoline = data.get1Byte()
+            fnGas = data.get1Byte()
+            loadLower = data.get2Bytes().toFloat() / MAP_MULTIPLIER
+            loadUpper = data.get2Bytes().toFloat() / MAP_MULTIPLIER
+            mapCurveOffset = data.get2Bytes().toFloat() * ADC_DISCRETE
+            mapCurveGradient = data.get2Bytes().toFloat() / (MAP_MULTIPLIER * ADC_DISCRETE * 128.0f)
+            map2CurveOffset = data.get2Bytes().toFloat() * ADC_DISCRETE
+            map2CurveGradient = data.get2Bytes().toFloat() / (MAP_MULTIPLIER * ADC_DISCRETE * 128.0f)
+            tpsCurveOffset = data.get2Bytes().toFloat() * ADC_DISCRETE
+            tpsCurveGradient = data.get2Bytes().toFloat() / (TPS_MULTIPLIER.times(64) * ADC_DISCRETE * 128.0f)
+            loadSrcCfg = data.get1Byte()
+            mapselUni = data.get1Byte()
+            barocorrType = data.get1Byte()
+            funcFlags = data.get1Byte()
 
-            ve2MapFunc = data[24].code
-            gasVUni = data[25].code
+            ve2MapFunc = data.get1Byte()
+            gasVUni = data.get1Byte()
 
-            ckpsEngineCyl = data[26].code
-            injCylDisp = data.get2Bytes(27).toFloat().div(16384.0f)
-            mafload_const = data.get4Bytes(29).toFloat()
-            tps_raw = data.get2Bytes(33).times(ADC_DISCRETE)
+            ckpsEngineCyl = data.get1Byte()
+            injCylDisp = data.get2Bytes().toFloat().div(16384.0f)
+            mafload_const = data.get4Bytes().toFloat()
+            tps_raw = data.get2Bytes().times(ADC_DISCRETE)
 
-            gpsCurveOffset = data.get2Bytes(35).toFloat() * ADC_DISCRETE
-            gpsCurveGradient = data.get2Bytes(37).toFloat() / (MAP_MULTIPLIER * ADC_DISCRETE * 128.0f)
+            gpsCurveOffset = data.get2Bytes().toFloat() * ADC_DISCRETE
+            gpsCurveGradient = data.get2Bytes().toFloat() / (MAP_MULTIPLIER * ADC_DISCRETE * 128.0f)
 
-            fpsCurveOffset = data.get2Bytes(39).toFloat() * ADC_DISCRETE
-            fpsCurveGradient = data.get2Bytes(41).toFloat() / (MAP_MULTIPLIER * ADC_DISCRETE * 128.0f)
+            fpsCurveOffset = data.get2Bytes().toFloat() * ADC_DISCRETE
+            fpsCurveGradient = data.get2Bytes().toFloat() / (MAP_MULTIPLIER * ADC_DISCRETE * 128.0f)
 
-            if (data.length == 43) {
-                return@apply
-            }
-
-            unhandledParams = data.substring(43)
+            data.setUnhandledParams()
         }
 
     }

@@ -26,28 +26,66 @@ package org.secu3.android.models.packets.base
 
 abstract class BaseSecu3Packet {
 
+    protected var currentIndex = 2  // ignores @ and ! and descriptor
+
     protected var unhandledParams: String = ""
+        private set
 
-    protected fun String.get2Bytes(startIndex: Int): Int {
-        if (startIndex + 1 >= length) {
-            throw IllegalArgumentException("Packet too short; request ${startIndex + 2} but length is $length")
+    protected fun String.get1Byte(): Int {
+        if (currentIndex >= length) {
+            throw IllegalArgumentException("Packet too short; request $currentIndex but length is $length")
         }
 
-        return this.substring(startIndex, startIndex + 2).binToInt()
+        return this[currentIndex++].code
     }
 
-    protected fun String.get3Bytes(startIndex: Int): Int {
-        if (startIndex + 2 >= length) {
-            throw IllegalArgumentException("Packet too short; request ${startIndex + 3} but length is $length")
+    protected fun String.get2Bytes(): Int {
+        if (currentIndex + 1 >= length) {
+            throw IllegalArgumentException("Packet too short; request ${currentIndex + 2} but length is $length")
         }
-        return this.substring(startIndex, startIndex + 3).binToInt()
+
+        return this.substring(currentIndex, currentIndex + 2).binToInt().also {
+            currentIndex += 2
+        }
     }
 
-    protected fun String.get4Bytes(startIndex: Int): Int {
-        if (startIndex + 3 >= length) {
-            throw IllegalArgumentException("Packet too short; request ${startIndex + 4} but length is $length")
+    protected fun String.get3Bytes(): Int {
+        if (currentIndex + 2 >= length) {
+            throw IllegalArgumentException("Packet too short; request ${currentIndex + 3} but length is $length")
         }
-        return this.substring(startIndex, startIndex + 4).binToInt()
+
+        return this.substring(currentIndex, currentIndex + 3).binToInt().also {
+            currentIndex += 3
+        }
+    }
+
+    protected fun String.get4Bytes(): Int {
+        if (currentIndex + 3 >= length) {
+            throw IllegalArgumentException("Packet too short; request ${currentIndex + 4} but length is $length")
+        }
+
+        return this.substring(currentIndex, currentIndex + 4).binToInt().also {
+            currentIndex += 4
+        }
+    }
+
+    protected fun String.getString(length: Int): String {
+        if (currentIndex + length > this.length) {
+            throw IllegalArgumentException("Packet too short; request ${currentIndex + length} but length is $length")
+        }
+
+        return this.substring(currentIndex, currentIndex + length).also {
+            currentIndex += length
+        }
+    }
+
+    protected fun String.setUnhandledParams() {
+
+        if (currentIndex >= length) {
+            return
+        }
+
+        unhandledParams = this.substring(currentIndex)
     }
 
     private fun String.binToInt(): Int {

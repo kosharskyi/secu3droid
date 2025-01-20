@@ -87,23 +87,18 @@ data class TemperatureParamPacket(
 
         fun parse(data: String) = TemperatureParamPacket().apply {
 
-            tmpFlags = data[2].code
-            ventOn = data.get2Bytes(3).toShort().toFloat().div(TEMPERATURE_MULTIPLIER)
-            ventOff = data.get2Bytes(5).toShort().toFloat().div(TEMPERATURE_MULTIPLIER)
-            data.get2Bytes(7).let {
+            tmpFlags = data.get1Byte()
+            ventOn = data.get2Bytes().toShort().toFloat().div(TEMPERATURE_MULTIPLIER)
+            ventOff = data.get2Bytes().toShort().toFloat().div(TEMPERATURE_MULTIPLIER)
+            data.get2Bytes().let {
                 ventPwmFrq = (1f / (( it.toDouble() / 524288))).roundToInt()
             }
-            condPvtOn = data.get2Bytes(9).toFloat() * ADC_DISCRETE
-            condPvtOff = data.get2Bytes(11).toFloat() * ADC_DISCRETE
-            condMinRpm = data.get2Bytes(13)
-            ventTmr = data.get2Bytes(15) / 100
+            condPvtOn = data.get2Bytes().toFloat() * ADC_DISCRETE
+            condPvtOff = data.get2Bytes().toFloat() * ADC_DISCRETE
+            condMinRpm = data.get2Bytes()
+            ventTmr = data.get2Bytes() / 100
 
-
-            if (data.length == 17) {
-                return@apply
-            }
-
-            unhandledParams = data.substring(17)
+            data.setUnhandledParams()
         }
     }
 

@@ -155,86 +155,81 @@ data class AdcCorrectionsParamPacket(
         private const val ADC_DISCRETE = 0.0025f
 
         fun parse(data: String) = AdcCorrectionsParamPacket().apply {
-            adcFlags = data[2].code
+            adcFlags = data.get1Byte()
 
-            mapAdcFactor = data.get2Bytes(3).toFloat() / FACTOR_DIVIDER
-            data.get4Bytes(5).toFloat().let {
+            mapAdcFactor = data.get2Bytes().toFloat() / FACTOR_DIVIDER
+            data.get4Bytes().toFloat().let {
                 mapAdcCorrection = ((it / FACTOR_DIVIDER) - 0.5f) / mapAdcFactor
                 mapAdcCorrection *= ADC_DISCRETE
             }
 
-            ubatAdcFactor = data.get2Bytes(9).toFloat() / FACTOR_DIVIDER
-            data.get4Bytes(11).toFloat().let {
+            ubatAdcFactor = data.get2Bytes().toFloat() / FACTOR_DIVIDER
+            data.get4Bytes().toFloat().let {
                 ubatAdcCorrection = ((it / FACTOR_DIVIDER) - 0.5f) / ubatAdcFactor
                 ubatAdcCorrection *= ADC_DISCRETE
             }
 
-            tempAdcFactor = data.get2Bytes(15).toFloat() / FACTOR_DIVIDER
-            data.get4Bytes(17).toFloat().let {
+            tempAdcFactor = data.get2Bytes().toFloat() / FACTOR_DIVIDER
+            data.get4Bytes().toFloat().let {
                 tempAdcCorrection = ((it / FACTOR_DIVIDER) - 0.5f) / tempAdcFactor
                 tempAdcCorrection *= ADC_DISCRETE
             }
 
-            tpsAdcFactor = data.get2Bytes(21).toFloat() / FACTOR_DIVIDER
-            data.get4Bytes(23).toFloat().let {
+            tpsAdcFactor = data.get2Bytes().toFloat() / FACTOR_DIVIDER
+            data.get4Bytes().toFloat().let {
                 tpsAdcCorrection = ((it / FACTOR_DIVIDER) - 0.5f) / tpsAdcFactor
                 tpsAdcCorrection *= ADC_DISCRETE
             }
 
-            ai1AdcFactor = data.get2Bytes(27).toFloat() / FACTOR_DIVIDER
-            data.get4Bytes(29).toFloat().let {
+            ai1AdcFactor = data.get2Bytes().toFloat() / FACTOR_DIVIDER
+            data.get4Bytes().toFloat().let {
                 ai1AdcCorrection = ((it / FACTOR_DIVIDER) - 0.5f) / ai1AdcFactor
                 ai1AdcCorrection *= ADC_DISCRETE
             }
 
-            ai2AdcFactor = data.get2Bytes(33).toFloat() / FACTOR_DIVIDER
-            data.get4Bytes(35).toFloat().let {
+            ai2AdcFactor = data.get2Bytes().toFloat() / FACTOR_DIVIDER
+            data.get4Bytes().toFloat().let {
                 ai2AdcCorrection = ((it / FACTOR_DIVIDER) - 0.5f) / ai2AdcFactor
                 ai2AdcCorrection *= ADC_DISCRETE
             }
 
-            ai3AdcFactor = data.get2Bytes(39).toFloat() / FACTOR_DIVIDER
-            data.get4Bytes(41).toFloat().let {
+            ai3AdcFactor = data.get2Bytes().toFloat() / FACTOR_DIVIDER
+            data.get4Bytes().toFloat().let {
                 ai3AdcCorrection = ((it / FACTOR_DIVIDER) - 0.5f) /ai3AdcFactor
                 ai3AdcCorrection *= ADC_DISCRETE
             }
 
-            ai4AdcFactor = data.get2Bytes(45).toFloat() / FACTOR_DIVIDER
-            data.get4Bytes(47).toFloat().let {
+            ai4AdcFactor = data.get2Bytes().toFloat() / FACTOR_DIVIDER
+            data.get4Bytes().toFloat().let {
                 ai4AdcCorrection = ((it / FACTOR_DIVIDER) - 0.5f) / ai4AdcFactor
                 ai4AdcCorrection *= ADC_DISCRETE
             }
 
-            ai5AdcFactor = data.get2Bytes(51).toFloat() / FACTOR_DIVIDER
-            data.get4Bytes(53).toFloat().let {
+            ai5AdcFactor = data.get2Bytes().toFloat() / FACTOR_DIVIDER
+            data.get4Bytes().toFloat().let {
                 ai5AdcCorrection = ((it / FACTOR_DIVIDER) - 0.5f) / ai5AdcFactor
                 ai5AdcCorrection *= ADC_DISCRETE
             }
 
-            ai6AdcFactor = data.get2Bytes(57).toFloat() / FACTOR_DIVIDER
-            data.get4Bytes(59).toFloat().let {
+            ai6AdcFactor = data.get2Bytes().toFloat() / FACTOR_DIVIDER
+            data.get4Bytes().toFloat().let {
                 ai6AdcCorrection = ((it / FACTOR_DIVIDER) - 0.5f) / ai6AdcFactor
                 ai6AdcCorrection *= ADC_DISCRETE
             }
 
-            ai7AdcFactor = data.get2Bytes(63).toFloat() / FACTOR_DIVIDER
-            data.get4Bytes(65).toFloat().let {
+            ai7AdcFactor = data.get2Bytes().toFloat() / FACTOR_DIVIDER
+            data.get4Bytes().toFloat().let {
                 ai7AdcCorrection = ((it / FACTOR_DIVIDER) - 0.5f) / ai7AdcFactor
                 ai7AdcCorrection *= ADC_DISCRETE
             }
 
-            ai8AdcFactor = data.get2Bytes(69).toFloat() / FACTOR_DIVIDER
-            data.get4Bytes(71).toFloat().let {
+            ai8AdcFactor = data.get2Bytes().toFloat() / FACTOR_DIVIDER
+            data.get4Bytes().toFloat().let {
                 ai8AdcCorrection = ((it / FACTOR_DIVIDER) - 0.5f) / ai8AdcFactor
                 ai8AdcCorrection *= ADC_DISCRETE
             }
 
-            if (data.length == 75) {
-                return@apply
-            }
-
-            unhandledParams = data.substring(75)
-
+            data.setUnhandledParams()
         }
     }
 }

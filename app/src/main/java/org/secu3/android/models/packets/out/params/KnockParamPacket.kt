@@ -88,25 +88,21 @@ data class KnockParamPacket(
         internal const val DESCRIPTOR = 'w'
 
         fun parse(data: String) = KnockParamPacket().apply {
-            useKnockChannel = data[2].code
-            bpfFrequency = data[3].code
-            kWndBeginAngle = data.get2Bytes(4).toShort().toFloat() / ANGLE_DIVIDER
-            kWndEndAngle = data.get2Bytes(6).toShort().toFloat() / ANGLE_DIVIDER
-            intTimeCost = data[8].code
+            useKnockChannel = data.get1Byte()
+            bpfFrequency = data.get1Byte()
+            kWndBeginAngle = data.get2Bytes().toShort().toFloat() / ANGLE_DIVIDER
+            kWndEndAngle = data.get2Bytes().toShort().toFloat() / ANGLE_DIVIDER
+            intTimeCost = data.get1Byte()
 
-            retardStep = data.get2Bytes(9).toFloat() / ANGLE_DIVIDER
-            advanceStep = data.get2Bytes(11).toFloat() / ANGLE_DIVIDER
-            maxRetard = data.get2Bytes(13).toFloat() / ANGLE_DIVIDER
-            threshold = data.get2Bytes(15).toFloat() / VOLTAGE_MULTIPLIER
-            recoveryDelay = data[17].code
-            selectedChanels = data[18].code
-            knkctlThrd = data.get2Bytes(19).toFloat() / TEMPERATURE_MULTIPLIER
+            retardStep = data.get2Bytes().toFloat() / ANGLE_DIVIDER
+            advanceStep = data.get2Bytes().toFloat() / ANGLE_DIVIDER
+            maxRetard = data.get2Bytes().toFloat() / ANGLE_DIVIDER
+            threshold = data.get2Bytes().toFloat() / VOLTAGE_MULTIPLIER
+            recoveryDelay = data.get1Byte()
+            selectedChanels = data.get1Byte()
+            knkctlThrd = data.get2Bytes().toFloat() / TEMPERATURE_MULTIPLIER
 
-            if (data.length == 21) {
-                return@apply
-            }
-
-            unhandledParams = data.substring(21)
+            data.setUnhandledParams()
         }
     }
 }

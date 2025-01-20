@@ -12,24 +12,24 @@ abstract class Connection (
     private val prefs: UserPrefs
 ) {
 
-    internal val scope = CoroutineScope(Dispatchers.IO + SupervisorJob())
+    protected val scope = CoroutineScope(Dispatchers.IO + SupervisorJob())
 
-    internal val maxConnectionAttempts: Int
+    protected val maxConnectionAttempts: Int
         get() = prefs.connectionRetries
 
     var connectionAttempts = 0
-        internal set
+        protected set
 
     var isRunning = false
-        internal set
+        protected set
 
     abstract val isConnected: Boolean
 
-    internal val mReceivedPacketFlow = MutableSharedFlow<RawPacket>()
+    protected val mReceivedPacketFlow = MutableSharedFlow<RawPacket>()
     val receivedPacketFlow: Flow<RawPacket>
         get() = mReceivedPacketFlow
 
-    internal val mConnectionStateFlow = MutableSharedFlow<ConnectionState>()
+    protected val mConnectionStateFlow = MutableSharedFlow<ConnectionState>()
     val connectionStateFlow: Flow<ConnectionState>
         get() = mConnectionStateFlow
 
@@ -39,6 +39,6 @@ abstract class Connection (
         disconnect()
     }
 
-    abstract internal fun disconnect()
+    protected abstract fun disconnect()
 
 }

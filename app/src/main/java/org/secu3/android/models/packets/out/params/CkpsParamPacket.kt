@@ -102,20 +102,16 @@ data class CkpsParamPacket(
         internal const val DESCRIPTOR = 't'
 
         fun parse(data: String) = CkpsParamPacket().apply {
-            ckpsCogsBtdc = data[2].code
-            ckpsIgnitCogs = data[3].code
-            ckpsEngineCyl = data[4].code
-            ckpsCogsNum = data[5].code
-            ckpsMissNum = data[6].code
-            hallFlags = data[7].code
-            hallWndWidth = data.get2Bytes(8).toFloat() / ANGLE_DIVIDER
-            hallDegreesBtdc = data.get2Bytes(10).toFloat() / ANGLE_DIVIDER
+            ckpsCogsBtdc = data.get1Byte()
+            ckpsIgnitCogs = data.get1Byte()
+            ckpsEngineCyl = data.get1Byte()
+            ckpsCogsNum = data.get1Byte()
+            ckpsMissNum = data.get1Byte()
+            hallFlags = data.get1Byte()
+            hallWndWidth = data.get2Bytes().toFloat() / ANGLE_DIVIDER
+            hallDegreesBtdc = data.get2Bytes().toFloat() / ANGLE_DIVIDER
 
-            if (data.length == 12) {
-                return@apply
-            }
-
-            unhandledParams = data.substring(12)
+            data.setUnhandledParams()
         }
     }
 }

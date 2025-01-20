@@ -62,24 +62,20 @@ data class StarterParamPacket(
         internal const val DESCRIPTOR = 'o'
 
         fun parse(data: String) = StarterParamPacket().apply {
-            starterOff = data.get2Bytes(2)
-            smapAbandon = data.get2Bytes(4)
-            crankToRunTime = data.get2Bytes(6).toFloat() / 100
-            injAftstrStroke = data[8].code * 4
-            injPrimeCold = data.get2Bytes(9).toFloat() * 32 / 10000
-            injPrimeHot = data.get2Bytes(11).toFloat() * 32 / 10000
-            injPrimeDelay = data[13].code.toFloat() / 10
-            injFloodclearTps = data.get2Bytes(14).toFloat() / TPS_MULTIPLIER
-            injAftStrokes1 = data[16].code * 4
-            stblStrCnt = data[17].code
-            strtFlags = data[18].code
-            injCrankToRun_time1 = data.get2Bytes(19).toFloat() / 100
+            starterOff = data.get2Bytes()
+            smapAbandon = data.get2Bytes()
+            crankToRunTime = data.get2Bytes().toFloat() / 100
+            injAftstrStroke = data.get1Byte() * 4
+            injPrimeCold = data.get2Bytes().toFloat() * 32 / 10000
+            injPrimeHot = data.get2Bytes().toFloat() * 32 / 10000
+            injPrimeDelay = data.get1Byte().toFloat() / 10
+            injFloodclearTps = data.get2Bytes().toFloat() / TPS_MULTIPLIER
+            injAftStrokes1 = data.get1Byte() * 4
+            stblStrCnt = data.get1Byte()
+            strtFlags = data.get1Byte()
+            injCrankToRun_time1 = data.get2Bytes().toFloat() / 100
 
-            if (data.length == 21) {
-                return@apply
-            }
-
-            unhandledParams = data.substring(21)
+            data.setUnhandledParams()
         }
     }
 

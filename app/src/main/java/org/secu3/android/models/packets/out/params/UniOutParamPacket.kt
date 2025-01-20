@@ -626,62 +626,58 @@ data class UniOutParamPacket(
 
         fun parse(data: String) = UniOutParamPacket().apply {
 
-            rawOutput1Flags = data[2].code
-            output1Condition1 = data[3].code
-            output1Condition2 = data[4].code
-            rawOutput1OnThrd1 = data.get2Bytes(5)
-            rawOutput1OffThrd1 = data.get2Bytes(7)
-            rawOutput1OnThrd2 = data.get2Bytes(9)
-            rawOutput1OffThrd2 = data.get2Bytes(11)
+            rawOutput1Flags = data.get1Byte()
+            output1Condition1 = data.get1Byte()
+            output1Condition2 = data.get1Byte()
+            rawOutput1OnThrd1 = data.get2Bytes()
+            rawOutput1OffThrd1 = data.get2Bytes()
+            rawOutput1OnThrd2 = data.get2Bytes()
+            rawOutput1OffThrd2 = data.get2Bytes()
 
-            rawOutput2Flags = data[13].code
-            output2Condition1 = data[14].code
-            output2Condition2 = data[15].code
-            rawOutput2OnThrd1 = data.get2Bytes(16)
-            rawOutput2OffThrd1 = data.get2Bytes(18)
-            rawOutput2OnThrd2 = data.get2Bytes(20)
-            rawOutput2OffThrd2 = data.get2Bytes(22)
+            rawOutput2Flags = data.get1Byte()
+            output2Condition1 = data.get1Byte()
+            output2Condition2 = data.get1Byte()
+            rawOutput2OnThrd1 = data.get2Bytes()
+            rawOutput2OffThrd1 = data.get2Bytes()
+            rawOutput2OnThrd2 = data.get2Bytes()
+            rawOutput2OffThrd2 = data.get2Bytes()
 
-            rawOutput3Flags = data[24].code
-            output3Condition1 = data[25].code
-            output3Condition2 = data[26].code
-            rawOutput3OnThrd1 = data.get2Bytes(27)
-            rawOutput3OffThrd1 = data.get2Bytes(29)
-            rawOutput3OnThrd2 = data.get2Bytes(31)
-            rawOutput3OffThrd2 = data.get2Bytes(33)
+            rawOutput3Flags = data.get1Byte()
+            output3Condition1 = data.get1Byte()
+            output3Condition2 = data.get1Byte()
+            rawOutput3OnThrd1 = data.get2Bytes()
+            rawOutput3OffThrd1 = data.get2Bytes()
+            rawOutput3OnThrd2 = data.get2Bytes()
+            rawOutput3OffThrd2 = data.get2Bytes()
 
-            rawOutput4Flags = data[35].code
-            output4Condition1 = data[36].code
-            output4Condition2 = data[37].code
-            rawOutput4OnThrd1 = data.get2Bytes(38)
-            rawOutput4OffThrd1 = data.get2Bytes(40)
-            rawOutput4OnThrd2 = data.get2Bytes(42)
-            rawOutput4OffThrd2 = data.get2Bytes(44)
+            rawOutput4Flags = data.get1Byte()
+            output4Condition1 = data.get1Byte()
+            output4Condition2 = data.get1Byte()
+            rawOutput4OnThrd1 = data.get2Bytes()
+            rawOutput4OffThrd1 = data.get2Bytes()
+            rawOutput4OnThrd2 = data.get2Bytes()
+            rawOutput4OffThrd2 = data.get2Bytes()
 
-            rawOutput5Flags = data[46].code
-            output5Condition1 = data[47].code
-            output5Condition2 = data[48].code
-            rawOutput5OnThrd1 = data.get2Bytes(49)
-            rawOutput5OffThrd1 = data.get2Bytes(51)
-            rawOutput5OnThrd2 = data.get2Bytes(53)
-            rawOutput5OffThrd2 = data.get2Bytes(55)
+            rawOutput5Flags = data.get1Byte()
+            output5Condition1 = data.get1Byte()
+            output5Condition2 = data.get1Byte()
+            rawOutput5OnThrd1 = data.get2Bytes()
+            rawOutput5OffThrd1 = data.get2Bytes()
+            rawOutput5OnThrd2 = data.get2Bytes()
+            rawOutput5OffThrd2 = data.get2Bytes()
 
-            rawOutput6Flags = data[57].code
-            output6Condition1 = data[58].code
-            output6Condition2 = data[59].code
-            rawOutput6OnThrd1 = data.get2Bytes(60)
-            rawOutput6OffThrd1 = data.get2Bytes(62)
-            rawOutput6OnThrd2 = data.get2Bytes(64)
-            rawOutput6OffThrd2 = data.get2Bytes(66)
+            rawOutput6Flags = data.get1Byte()
+            output6Condition1 = data.get1Byte()
+            output6Condition2 = data.get1Byte()
+            rawOutput6OnThrd1 = data.get2Bytes()
+            rawOutput6OffThrd1 = data.get2Bytes()
+            rawOutput6OnThrd2 = data.get2Bytes()
+            rawOutput6OffThrd2 = data.get2Bytes()
 
 
-            logicFunction_1_2 = data[68].code
+            logicFunction_1_2 = data.get1Byte()
 
-            if (data.length == 69) {
-                return@apply
-            }
-
-            unhandledParams = data.substring(69)
+            data.setUnhandledParams()
         }
     }
 }

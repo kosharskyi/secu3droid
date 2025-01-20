@@ -188,40 +188,35 @@ data class LambdaParamPacket(
 
         fun parse(data: String) = LambdaParamPacket().apply {
 
-            strPerStp = data[2].code
+            strPerStp = data.get1Byte()
 
-            stepSizeP = data[3].code.toFloat() / 512 * 100
-            stepSizeM = data[4].code.toFloat() / 512 * 100
+            stepSizeP = data.get1Byte().toFloat() / 512 * 100
+            stepSizeM = data.get1Byte().toFloat() / 512 * 100
 
-            corrLimitP = data.get2Bytes(5).toFloat() / 512 * 100
-            corrLimitM = data.get2Bytes(7).toFloat() / 512 * 100
+            corrLimitP = data.get2Bytes().toFloat() / 512 * 100
+            corrLimitM = data.get2Bytes().toFloat() / 512 * 100
 
-            swtPoint = data.get2Bytes(9).toFloat() * ADC_DISCRETE
-            tempThrd = data.get2Bytes(11).toFloat() / TEMPERATURE_MULTIPLIER
-            rpmThrd = data.get2Bytes(13)
+            swtPoint = data.get2Bytes().toFloat() * ADC_DISCRETE
+            tempThrd = data.get2Bytes().toFloat() / TEMPERATURE_MULTIPLIER
+            rpmThrd = data.get2Bytes()
 
-            activDelay = data[15].code
+            activDelay = data.get1Byte()
 
-            deadBand = data.get2Bytes(16).toFloat() * ADC_DISCRETE
-            senstype = data[18].code
-            msPerStp = data[19].code * 10
-            flags = data[20].code
-            gdStoichval = data.get2Bytes(21).toFloat() / 128.0f
+            deadBand = data.get2Bytes().toFloat() * ADC_DISCRETE
+            senstype = data.get1Byte()
+            msPerStp = data.get1Byte() * 10
+            flags = data.get1Byte()
+            gdStoichval = data.get2Bytes().toFloat() / 128.0f
 
-            heatingTime0 = data[23].code
-            heatingTime1 = data[24].code
-            temperThrd = data[25].code
-            heatingAct = data[26].code.toFloat() / 100
-            aflowThrd = data.get2Bytes(27).toFloat() * 32.0f
+            heatingTime0 = data.get1Byte()
+            heatingTime1 = data.get1Byte()
+            temperThrd = data.get1Byte()
+            heatingAct = data.get1Byte().toFloat() / 100
+            aflowThrd = data.get2Bytes().toFloat() * 32.0f
 
-            lambdaSelectedChanel = data[29].code
+            lambdaSelectedChanel = data.get1Byte()
 
-            if (data.length == 30) {
-                return@apply
-            }
-
-            unhandledParams = data.substring(30)
-
+            data.setUnhandledParams()
         }
     }
 }
