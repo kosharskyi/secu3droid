@@ -207,12 +207,13 @@ class BtConnection @Inject constructor(
 
                 var packet = sendPacket.pack()
 
+                Log.e(this.javaClass.simpleName, packet)
+
                 val checksum = PacketUtils.calculateChecksum(packet.substring(2, packet.length))
 
                 packet += checksum[1].toInt().toChar()
                 packet += checksum[0].toInt().toChar()
 
-                Log.e(this.javaClass.simpleName, packet)
                 var escaped = PacketUtils.EscTxPacket(packet)
                 escaped += END_PACKET_SYMBOL
 
