@@ -133,7 +133,7 @@ data class IdlingParamPacket(
     }
 
     override fun pack(): String {
-        var data = "$OUTPUT_PACKET_SYMBOL$DESCRIPTOR"
+        var data = "$DESCRIPTOR"
 
         data += idlFlags.toChar()
         data += iFac1.times(256).roundToInt().write2Bytes()

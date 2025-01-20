@@ -42,7 +42,7 @@ data class TemperatureParamPacket(
     ) : BaseOutputPacket() {
 
     override fun pack(): String {
-        var data = "$OUTPUT_PACKET_SYMBOL$DESCRIPTOR"
+        var data = "$DESCRIPTOR"
 
         data += tmpFlags.toChar()
 

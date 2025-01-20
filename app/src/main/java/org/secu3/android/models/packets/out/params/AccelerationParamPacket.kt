@@ -44,7 +44,7 @@ data class AccelerationParamPacket(
 ) : BaseOutputPacket() {
 
     override fun pack(): String {
-        var data = "$OUTPUT_PACKET_SYMBOL$DESCRIPTOR"
+        var data = "$DESCRIPTOR"
 
         data += injAeTpsdotThrd.toChar()
 

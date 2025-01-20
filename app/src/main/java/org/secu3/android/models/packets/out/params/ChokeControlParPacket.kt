@@ -73,7 +73,7 @@ data class ChokeControlParPacket(
         }
 
     override fun pack(): String {
-        var data = "$OUTPUT_PACKET_SYMBOL$DESCRIPTOR"
+        var data = "$DESCRIPTOR"
 
         data += smSteps.write2Bytes()
 

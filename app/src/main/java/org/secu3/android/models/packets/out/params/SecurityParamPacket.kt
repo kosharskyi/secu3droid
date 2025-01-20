@@ -54,7 +54,7 @@ data class SecurityParamPacket(
         get() = btFlags.getBitValue(4) > 0
 
     override fun pack(): String {
-        var data = "$OUTPUT_PACKET_SYMBOL$DESCRIPTOR"
+        var data = "$DESCRIPTOR"
 
         data += btFlags.toChar()
 

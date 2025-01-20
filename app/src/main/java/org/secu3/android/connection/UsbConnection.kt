@@ -30,18 +30,10 @@ import android.hardware.usb.UsbManager
 import android.util.Log
 import com.hoho.android.usbserial.driver.UsbSerialPort
 import com.hoho.android.usbserial.driver.UsbSerialProber
-import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.delay
-import kotlinx.coroutines.flow.Flow
-import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.launch
 import org.secu3.android.models.RawPacket
 import org.secu3.android.models.packets.base.BaseOutputPacket
-import org.secu3.android.models.packets.base.BaseSecu3Packet
-import org.secu3.android.models.packets.base.BaseSecu3Packet.Companion.END_PACKET_SYMBOL
-import org.secu3.android.models.packets.base.BaseSecu3Packet.Companion.MAX_PACKET_SIZE
 import org.secu3.android.models.packets.out.ChangeModePacket
 import org.secu3.android.utils.PacketUtils
 import org.secu3.android.utils.Task
@@ -144,11 +136,11 @@ class UsbConnection @Inject constructor(
     private fun startReadingData() {
         scope.launch {
             mConnectionStateFlow.emit(Connected)
-
             try {
                 val packetBuffer = IntArray(MAX_PACKET_SIZE)
-                val startMarker: Char = BaseSecu3Packet.INPUT_PACKET_SYMBOL
-                val endMarker: Char = END_PACKET_SYMBOL
+                val startMarker = INPUT_PACKET_SYMBOL
+                val endMarker = END_PACKET_SYMBOL
+
                 var idx = 0
 
                 while (isRunning && usbSerialPort?.isOpen == true) {
@@ -195,8 +187,9 @@ class UsbConnection @Inject constructor(
         sendData(ChangeModePacket.getPacket(Task.Secu3ReadFirmwareInfo))
     }
 
-    fun sendData(packet: BaseOutputPacket) {
+    override fun sendData(sendPacket: BaseOutputPacket) {
         scope.launch {
+
             val endTime = LocalTime.now().plusSeconds(10)
 
             while (LocalTime.now().isBefore(endTime) && (isRunning.not() || usbSerialPort?.isOpen != true)) {
@@ -209,7 +202,7 @@ class UsbConnection @Inject constructor(
 
             try {
 
-                var packet = packet.pack()
+                var packet = "$OUTPUT_PACKET_SYMBOL${sendPacket.pack()}"
 
                 val checksum = PacketUtils.calculateChecksum(packet.substring(2, packet.length))
 
@@ -217,6 +210,7 @@ class UsbConnection @Inject constructor(
                 packet += checksum[0].toInt().toChar()
 
                 Log.e(this.javaClass.simpleName, packet)
+
                 var escaped = PacketUtils.EscTxPacket(packet)
                 escaped += END_PACKET_SYMBOL
 

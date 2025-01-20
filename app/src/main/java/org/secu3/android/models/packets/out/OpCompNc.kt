@@ -35,7 +35,7 @@ data class OpCompNc(
 ) : BaseOutputPacket() {
     
     override fun pack(): String {
-        return "${OUTPUT_PACKET_SYMBOL}$DESCRIPTOR${opData.toChar()}${opCode.toChar()}"
+        return "$DESCRIPTOR${opData.toChar()}${opCode.toChar()}"
     }
 
     val isEepromParamSave: Boolean

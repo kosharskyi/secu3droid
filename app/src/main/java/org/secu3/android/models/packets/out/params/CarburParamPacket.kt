@@ -47,7 +47,7 @@ data class CarburParamPacket(
 ) : BaseOutputPacket() {
 
     override fun pack(): String {
-        var data = "$OUTPUT_PACKET_SYMBOL$DESCRIPTOR"
+        var data = "$DESCRIPTOR"
 
         data += ieLot.write2Bytes()
         data += ieHit.write2Bytes()

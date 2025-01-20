@@ -86,7 +86,7 @@ data class UniOutParamPacket(
 ) : BaseOutputPacket() {
 
     override fun pack(): String {
-        var data = "$OUTPUT_PACKET_SYMBOL$DESCRIPTOR"
+        var data = "$DESCRIPTOR"
 
         data += rawOutput1Flags.toChar()
         data += output1Condition1.toChar()

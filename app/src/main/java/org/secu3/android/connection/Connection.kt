@@ -6,11 +6,16 @@ import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableSharedFlow
 import org.secu3.android.models.RawPacket
+import org.secu3.android.models.packets.base.BaseOutputPacket
 import org.secu3.android.utils.UserPrefs
 
 abstract class Connection (
     private val prefs: UserPrefs
 ) {
+
+    protected val INPUT_PACKET_SYMBOL = '@'
+    protected val OUTPUT_PACKET_SYMBOL = '!'
+    protected val END_PACKET_SYMBOL = '\r'
 
     protected val scope = CoroutineScope(Dispatchers.IO + SupervisorJob())
 
@@ -39,6 +44,12 @@ abstract class Connection (
         disconnect()
     }
 
+    abstract fun sendData(sendPacket: BaseOutputPacket)
+
     protected abstract fun disconnect()
+
+    companion object {
+        internal const val MAX_PACKET_SIZE = 250
+    }
 
 }

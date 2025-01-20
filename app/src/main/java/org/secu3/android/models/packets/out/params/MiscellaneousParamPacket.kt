@@ -76,7 +76,7 @@ data class MiscellaneousParamPacket(
         }
 
     override fun pack(): String {
-        var data = "$OUTPUT_PACKET_SYMBOL$DESCRIPTOR"
+        var data = "$DESCRIPTOR"
 
         data += uartDivisor.write2Bytes()
         data += uartPeriodTms.div(10).toChar()

@@ -73,7 +73,7 @@ data class AnglesParamPacket(
     }
 
     override fun pack(): String {
-        var data = "$OUTPUT_PACKET_SYMBOL$DESCRIPTOR"
+        var data = "$DESCRIPTOR"
 
         data += maxAngle.times(ANGLE_DIVIDER).roundToInt().write2Bytes()
         data += minAngle.times(ANGLE_DIVIDER).roundToInt().write2Bytes()

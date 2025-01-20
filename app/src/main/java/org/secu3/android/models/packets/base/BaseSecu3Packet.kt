@@ -98,11 +98,6 @@ abstract class BaseSecu3Packet {
     }
 
     companion object {
-
-        const val INPUT_PACKET_SYMBOL = '@'
-        const val OUTPUT_PACKET_SYMBOL = '!'
-        const val END_PACKET_SYMBOL = '\r'
-
         internal const val VOLTAGE_MULTIPLIER: Int = 400
         internal const val MAP_MULTIPLIER: Int = 64
         internal const val TEMPERATURE_MULTIPLIER: Int = 4
@@ -123,7 +118,5 @@ abstract class BaseSecu3Packet {
         internal const val INJPWCOEF_MULT = 4096.0f;
         internal const val MAFS_MULT = 64.0f;
         internal const val FTS_MULT = 4.0f;
-
-        const val MAX_PACKET_SIZE = 250
     }
 }

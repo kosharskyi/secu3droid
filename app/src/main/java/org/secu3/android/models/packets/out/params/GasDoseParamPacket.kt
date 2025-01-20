@@ -42,7 +42,7 @@ data class GasDoseParamPacket(
 ): BaseOutputPacket() {
 
     override fun pack(): String {
-        var data = "$OUTPUT_PACKET_SYMBOL$DESCRIPTOR"
+        var data = "$DESCRIPTOR"
 
         data += steps.write2Bytes()
         data += testing.toChar()            //fake parameter (actually it is command)

@@ -63,7 +63,7 @@ data class LtftParamPacket(
 
     override fun pack(): String {
 
-        var data = "$OUTPUT_PACKET_SYMBOL$DESCRIPTOR"
+        var data = "$DESCRIPTOR"
 
         data += mode.toChar()
         data += learnClt.times(TEMPERATURE_MULTIPLIER).roundToInt().write2Bytes()

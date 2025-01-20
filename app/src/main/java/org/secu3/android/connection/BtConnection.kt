@@ -29,18 +29,10 @@ import android.bluetooth.BluetoothAdapter
 import android.bluetooth.BluetoothManager
 import android.bluetooth.BluetoothSocket
 import android.util.Log
-import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.delay
-import kotlinx.coroutines.flow.Flow
-import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.launch
 import org.secu3.android.models.RawPacket
 import org.secu3.android.models.packets.base.BaseOutputPacket
-import org.secu3.android.models.packets.base.BaseSecu3Packet
-import org.secu3.android.models.packets.base.BaseSecu3Packet.Companion.END_PACKET_SYMBOL
-import org.secu3.android.models.packets.base.BaseSecu3Packet.Companion.MAX_PACKET_SIZE
 import org.secu3.android.models.packets.out.ChangeModePacket
 import org.secu3.android.utils.PacketUtils
 import org.secu3.android.utils.Task
@@ -147,11 +139,11 @@ class BtConnection @Inject constructor(
         scope.launch {
             mConnectionStateFlow.emit(Connected)
             try {
+                val packetBuffer = IntArray(MAX_PACKET_SIZE)
+                val startMarker = INPUT_PACKET_SYMBOL
+                val endMarker = END_PACKET_SYMBOL
                 val inputStream = bluetoothSocket?.inputStream ?: throw IOException("Input stream is null")
                 val reader = BufferedReader(InputStreamReader(inputStream, StandardCharsets.ISO_8859_1))
-                val packetBuffer = IntArray(MAX_PACKET_SIZE)
-                val startMarker = BaseSecu3Packet.INPUT_PACKET_SYMBOL
-                val endMarker = END_PACKET_SYMBOL
 
                 var idx = 0
 
@@ -188,7 +180,7 @@ class BtConnection @Inject constructor(
         sendData(ChangeModePacket.getPacket(Task.Secu3ReadFirmwareInfo))
     }
 
-    fun sendData(sendPacket: BaseOutputPacket) {
+    override fun sendData(sendPacket: BaseOutputPacket) {
         scope.launch {
 
             val endTime = LocalTime.now().plusSeconds(10)
@@ -205,14 +197,14 @@ class BtConnection @Inject constructor(
                 val outputStream = bluetoothSocket?.outputStream ?: throw IOException("Output stream is null")
                 val writer = outputStream.bufferedWriter(StandardCharsets.ISO_8859_1)
 
-                var packet = sendPacket.pack()
-
-                Log.e(this.javaClass.simpleName, packet)
+                var packet = "$OUTPUT_PACKET_SYMBOL${sendPacket.pack()}"
 
                 val checksum = PacketUtils.calculateChecksum(packet.substring(2, packet.length))
 
                 packet += checksum[1].toInt().toChar()
                 packet += checksum[0].toInt().toChar()
+
+                Log.e(this.javaClass.simpleName, packet)
 
                 var escaped = PacketUtils.EscTxPacket(packet)
                 escaped += END_PACKET_SYMBOL
