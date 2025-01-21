@@ -24,11 +24,13 @@
  */
 package org.secu3.android.ui.diagnostics
 
+import android.graphics.PorterDuff
 import android.os.Bundle
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import androidx.core.content.ContextCompat
+import androidx.core.graphics.drawable.DrawableCompat
 import androidx.fragment.app.Fragment
 import androidx.navigation.fragment.findNavController
 import androidx.navigation.navGraphViewModels
@@ -56,36 +58,49 @@ class DiagnosticsFragment : Fragment() {
         super.onViewCreated(view, savedInstanceState)
 
         mViewModel.connectionStatusLiveData.observe(viewLifecycleOwner) {
-            when (it) {
+            val color = when (it) {
                 Connected -> {
-                    mBinding.connectionStatus.text = getString(R.string.status_online)
+                    ContextCompat.getColor(requireContext(), R.color.gauge_dark_green)
                 }
                 InProgress -> {
-                    mBinding.connectionStatus.text = getString(R.string.status_connecting)
+                    ContextCompat.getColor(requireContext(), R.color.gauge_dark_yellow)
                 }
                 Disconnected -> {
-                    mBinding.connectionStatus.text = getString(R.string.status_offline)
+                    ContextCompat.getColor(requireContext(), R.color.gauge_red)
                 }
                 else -> {
-                    // do nothing
+                    return@observe
                 }
+            }
+
+            mBinding.toolbar.menu?.findItem(R.id.connection_status)?.apply {
+                val iconDrawable = icon ?: return@apply
+
+                // Tint the icon with the desired color
+                DrawableCompat.setTint(iconDrawable, color)
+                DrawableCompat.setTintMode(iconDrawable, PorterDuff.Mode.SRC_IN)
+
+                // Set the tinted icon to the menu item
+                icon = iconDrawable
             }
         }
 
         mViewModel.confirmExit.observe(viewLifecycleOwner) {
-            activity?.onBackPressed()
+            findNavController().navigateUp()
         }
 
         mBinding.toolbar.apply {
             setNavigationOnClickListener {
-                activity?.onBackPressed()
+                findNavController().navigateUp()
             }
 
             inflateMenu(R.menu.fragment_diagnostics_menu)
 
             setOnMenuItemClickListener {
                 when (it.itemId) {
-                    R.id.diag_additional_settings -> this@DiagnosticsFragment.findNavController().navigate(DiagnosticsFragmentDirections.actionDiagnosticToAdditional())
+                    R.id.diag_additional_settings -> {
+                        findNavController().navigate(DiagnosticsFragmentDirections.actionDiagnosticToAdditional())
+                    }
                 }
                 return@setOnMenuItemClickListener true
             }

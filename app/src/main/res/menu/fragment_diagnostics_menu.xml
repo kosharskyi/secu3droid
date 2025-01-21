@@ -1,10 +1,21 @@
 <?xml version="1.0" encoding="utf-8"?>
-<menu xmlns:android="http://schemas.android.com/apk/res/android">
+<menu
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto">
+
+    <item
+        android:id="@+id/connection_status"
+        android:icon="@drawable/ic_car"
+        app:tint="@color/red"
+        android:title="Connection status"
+        app:showAsAction="always"
+        android:orderInCategory="100"
+        />
 
     <item
         android:id="@+id/diag_additional_settings"
         android:title="Additional"
-        android:orderInCategory="100"
+        android:orderInCategory="200"
         />
 
 </menu>
