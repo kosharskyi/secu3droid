@@ -77,6 +77,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.ComposeView
+import androidx.compose.ui.platform.ViewCompositionStrategy
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -159,6 +160,7 @@ class StartScreenFragment : Fragment() {
 
         return ComposeView(requireContext()).apply {
             setContent {
+                setViewCompositionStrategy(ViewCompositionStrategy.DisposeOnDetachedFromWindow)
                 StartScreen(viewModel)
             }
         }
@@ -320,17 +322,13 @@ class StartScreenFragment : Fragment() {
     }
 
     private fun checkUsbPermissionsAndConnect(usbDevice: UsbDevice) {
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
-            if (viewModel.usbManager.hasPermission(usbDevice)) {
-                Log.d(this.javaClass.simpleName, "Permission already granted for USB device: ${usbDevice.deviceName}")
-                viewModel.startConnection(usbDevice)
-            } else {
-                Log.d(this.javaClass.simpleName, "Requesting permission for USB device: ${usbDevice.deviceName}")
-                val permissionIntent = PendingIntent.getBroadcast(requireContext(),0, Intent(ACTION_USB_PERMISSION), PendingIntent.FLAG_IMMUTABLE)
-                viewModel.usbManager.requestPermission(usbDevice, permissionIntent)
-            }
-        } else {
+        if (viewModel.usbManager.hasPermission(usbDevice)) {
+            Log.d(this.javaClass.simpleName, "Permission already granted for USB device: ${usbDevice.deviceName}")
             viewModel.startConnection(usbDevice)
+        } else {
+            Log.d(this.javaClass.simpleName, "Requesting permission for USB device: ${usbDevice.deviceName}")
+            val permissionIntent = PendingIntent.getBroadcast(requireContext(),0, Intent(ACTION_USB_PERMISSION), PendingIntent.FLAG_IMMUTABLE)
+            viewModel.usbManager.requestPermission(usbDevice, permissionIntent)
         }
     }
 

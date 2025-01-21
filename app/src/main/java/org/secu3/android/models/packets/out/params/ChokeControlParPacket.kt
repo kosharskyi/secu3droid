@@ -72,19 +72,21 @@ data class ChokeControlParPacket(
             flags = flags.setBitValue(value, 3)
         }
 
-    override fun pack(): String {
-        var data = "$OUTPUT_PACKET_SYMBOL$DESCRIPTOR"
+    override fun pack(): IntArray {
+        var data = intArrayOf(
+            DESCRIPTOR.code
+        )
 
         data += smSteps.write2Bytes()
 
-        data += testing.toChar()
-        data += manualPositionD.toChar()
+        data += testing
+        data += manualPositionD
 
         data += rpmIf.times(1024.0f).roundToInt().write2Bytes()
         data += corrTime0.times(100).roundToInt().write2Bytes()
         data += corrTime1.times(100).roundToInt().write2Bytes()
-        data += flags.toChar()
-        data += smFreq.toChar()
+        data += flags
+        data += smFreq
         data += injCrankToRunTime.times(100).roundToInt().write2Bytes()
 
         data += unhandledParams
@@ -96,24 +98,19 @@ data class ChokeControlParPacket(
 
         internal const val DESCRIPTOR = '%'
 
-        fun parse(data: String) = ChokeControlParPacket().apply {
+        fun parse(data: IntArray) = ChokeControlParPacket().apply {
 
-            smSteps = data.get2Bytes(2)
-            // testing fake param
-            // manual position fake param
-            rpmIf = data.get2Bytes(6).toFloat() / 1024.0f
-            corrTime0 = data.get2Bytes(8).toFloat() / 100
-            corrTime1 = data.get2Bytes(10).toFloat() / 100
-            flags = data[12].code
-            smFreq = data[13].code
-            injCrankToRunTime = data.get2Bytes(14).toFloat() / 100
+            smSteps = data.get2Bytes()
+            data.get1Byte()     // testing fake param
+            data.get1Byte()     // manual position fake param
+            rpmIf = data.get2Bytes().toFloat() / 1024.0f
+            corrTime0 = data.get2Bytes().toFloat() / 100
+            corrTime1 = data.get2Bytes().toFloat() / 100
+            flags = data.get1Byte()
+            smFreq = data.get1Byte()
+            injCrankToRunTime = data.get2Bytes().toFloat() / 100
 
-
-            if (data.length == 16) {
-                return@apply
-            }
-
-            unhandledParams = data.substring(16)
+            data.setUnhandledParams()
         }
     }
 }

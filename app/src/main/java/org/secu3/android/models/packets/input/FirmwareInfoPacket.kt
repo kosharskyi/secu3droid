@@ -35,6 +35,7 @@ data class FirmwareInfoPacket(
     var version: IntArray = IntArray(2)
 ) : BaseSecu3Packet() {
 
+    // From tables.c file; line 447
     val isObdSupported: Boolean
         get() = options.getBitValue(COPT_OBD_SUPPORT) > 0
 
@@ -130,11 +131,14 @@ data class FirmwareInfoPacket(
 
         internal const val DESCRIPTOR = 'y'
 
-        fun parse(data: String) = FirmwareInfoPacket().apply {
-            tag = data.substring(2, 50).toByteArray(StandardCharsets.ISO_8859_1).toString(Charset.forName("IBM866"))
-            options = data.get4Bytes(50)
-            version[0] = data[54].code.and(0x0F)  // minor
-            version[1] = data[54].code.shr(4)  // major
+        private const val FIRMWARE_INFO_SIZE = 48
+
+        fun parse(data: IntArray) = FirmwareInfoPacket().apply {
+            tag = data.getString(FIRMWARE_INFO_SIZE).toByteArray(StandardCharsets.ISO_8859_1).toString(Charset.forName("IBM866"))
+            options = data.get4Bytes()
+            val ver = data.get1Byte();
+            version[0] = ver.and(0x0F)  // minor
+            version[1] = ver.shr(4)  // major
         }
 
         private const val COPT_OBD_SUPPORT = 0

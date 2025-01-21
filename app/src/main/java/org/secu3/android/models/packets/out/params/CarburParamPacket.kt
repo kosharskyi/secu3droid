@@ -46,24 +46,24 @@ data class CarburParamPacket(
 
 ) : BaseOutputPacket() {
 
-    override fun pack(): String {
-        var data = "$OUTPUT_PACKET_SYMBOL$DESCRIPTOR"
+    override fun pack(): IntArray {
+        var data = intArrayOf(DESCRIPTOR.code)
 
         data += ieLot.write2Bytes()
         data += ieHit.write2Bytes()
-        data += carbInvers.toChar()
+        data += carbInvers
         data += feOnThresholds.times(MAP_MULTIPLIER).roundToInt().write2Bytes()
         data += ieLotG.write2Bytes()
         data += ieHitG.write2Bytes()
-        data += shutoffDelay.times(100).roundToInt().toChar()
-        data += tpsThreshold.times(TPS_MULTIPLIER).roundToInt().toChar()
+        data += shutoffDelay.times(100).roundToInt()
+        data += tpsThreshold.times(TPS_MULTIPLIER).roundToInt().write2Bytes()
         data += fuelcutMapThrd.times(MAP_MULTIPLIER).roundToInt().write2Bytes()
         data += fuelcutCtsThrd.times(TEMPERATURE_MULTIPLIER).roundToInt().write2Bytes()
         data += revlimLot.write2Bytes()
         data += revlimHit.write2Bytes()
 
-        data += fuelcut_uni.toChar()
-        data += igncut_uni.toChar()
+        data += fuelcut_uni
+        data += igncut_uni
 
         data += unhandledParams
 
@@ -74,28 +74,24 @@ data class CarburParamPacket(
 
         internal const val DESCRIPTOR = 'k'
 
-        fun parse(data: String) = CarburParamPacket().apply {
-            ieLot = data.get2Bytes(2)
-            ieHit = data.get2Bytes(4)
-            carbInvers = data[6].code
-            feOnThresholds = data.get2Bytes(7).toFloat() / MAP_MULTIPLIER
-            ieLotG = data.get2Bytes(9)
-            ieHitG = data.get2Bytes(11)
-            shutoffDelay = data[13].code.toFloat() / 100
-            tpsThreshold = data[14].code.toFloat() / TPS_MULTIPLIER
-            fuelcutMapThrd = data.get2Bytes(15).toFloat() / MAP_MULTIPLIER
-            fuelcutCtsThrd = data.get2Bytes(17).toFloat() / TEMPERATURE_MULTIPLIER
-            revlimLot = data.get2Bytes(19)
-            revlimHit = data.get2Bytes(21)
+        fun parse(data: IntArray) = CarburParamPacket().apply {
+            ieLot = data.get2Bytes()
+            ieHit = data.get2Bytes()
+            carbInvers = data.get1Byte()
+            feOnThresholds = data.get2Bytes().toFloat() / MAP_MULTIPLIER
+            ieLotG = data.get2Bytes()
+            ieHitG = data.get2Bytes()
+            shutoffDelay = data.get1Byte().toFloat() / 100
+            tpsThreshold = data.get2Bytes().toFloat() / TPS_MULTIPLIER
+            fuelcutMapThrd = data.get2Bytes().toFloat() / MAP_MULTIPLIER
+            fuelcutCtsThrd = data.get2Bytes().toFloat() / TEMPERATURE_MULTIPLIER
+            revlimLot = data.get2Bytes()
+            revlimHit = data.get2Bytes()
 
-            fuelcut_uni = data[23].code
-            igncut_uni = data[24].code
+            fuelcut_uni = data.get1Byte()
+            igncut_uni = data.get1Byte()
 
-            if (data.length == 25) {
-                return@apply
-            }
-
-            unhandledParams = data.substring(25)
+            data.setUnhandledParams()
         }
     }
 }

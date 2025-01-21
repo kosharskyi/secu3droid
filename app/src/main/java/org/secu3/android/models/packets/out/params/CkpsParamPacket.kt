@@ -45,7 +45,9 @@ data class CkpsParamPacket(
 
     var hallWndWidth: Float = 0f,
 
-    var hallDegreesBtdc: Float = 0f
+    var hallDegreesBtdc: Float = 0f,
+
+    var mttf: Float = 0f    // missing teeth detection factor
 
 ) : BaseOutputPacket() {
 
@@ -79,18 +81,19 @@ data class CkpsParamPacket(
             hallFlags = hallFlags.setBitValue(value, 4)
         }
 
-    override fun pack(): String {
-        var data = "$OUTPUT_PACKET_SYMBOL$DESCRIPTOR"
+    override fun pack(): IntArray {
+        var data = intArrayOf(DESCRIPTOR.code)
 
-        data += ckpsCogsBtdc.toChar()
-        data += ckpsIgnitCogs.toChar()
-        data += ckpsEngineCyl.toChar()
-        data += ckpsCogsNum.toChar()
-        data += ckpsMissNum.toChar()
-        data += hallFlags.toChar()
+        data += ckpsCogsBtdc
+        data += ckpsIgnitCogs
+        data += ckpsEngineCyl
+        data += ckpsCogsNum
+        data += ckpsMissNum
+        data += hallFlags
 
         data += hallWndWidth.times(ANGLE_DIVIDER).roundToInt().write2Bytes()
         data += hallDegreesBtdc.times(ANGLE_DIVIDER).roundToInt().write2Bytes()
+        data += mttf.times(256.0f).roundToInt().write2Bytes()
 
         data += unhandledParams
 
@@ -101,21 +104,18 @@ data class CkpsParamPacket(
 
         internal const val DESCRIPTOR = 't'
 
-        fun parse(data: String) = CkpsParamPacket().apply {
-            ckpsCogsBtdc = data[2].code
-            ckpsIgnitCogs = data[3].code
-            ckpsEngineCyl = data[4].code
-            ckpsCogsNum = data[5].code
-            ckpsMissNum = data[6].code
-            hallFlags = data[7].code
-            hallWndWidth = data.get2Bytes(8).toFloat() / ANGLE_DIVIDER
-            hallDegreesBtdc = data.get2Bytes(10).toFloat() / ANGLE_DIVIDER
+        fun parse(data: IntArray) = CkpsParamPacket().apply {
+            ckpsCogsBtdc = data.get1Byte()
+            ckpsIgnitCogs = data.get1Byte()
+            ckpsEngineCyl = data.get1Byte()
+            ckpsCogsNum = data.get1Byte()
+            ckpsMissNum = data.get1Byte()
+            hallFlags = data.get1Byte()
+            hallWndWidth = data.get2Bytes().toFloat() / ANGLE_DIVIDER
+            hallDegreesBtdc = data.get2Bytes().toFloat() / ANGLE_DIVIDER
+            mttf = data.get2Bytes().toFloat() / 256.0f
 
-            if (data.length == 12) {
-                return@apply
-            }
-
-            unhandledParams = data.substring(12)
+            data.setUnhandledParams()
         }
     }
 }

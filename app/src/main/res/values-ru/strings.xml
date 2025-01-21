@@ -115,6 +115,11 @@
         <item>Неисправность датчика на входе ADD_I6</item>
         <item>Неисправность датчика на входе ADD_I7</item>
         <item>Неисправность датчика на входе ADD_I8</item>
+        <item>Очень низкое давление масла</item>
+        <item>Данные таблиц в EEPROM повреждены (CRC)</item>
+        <item>Превышение предела производительности форсунки</item>
+        <item>Данные таблицы обучения в EEPROM повреждены</item>
+        <item>Отказ шагового двигателя РХХ</item>
     </string-array>
 
     <string-array name="logical_functions">
@@ -123,6 +128,13 @@
         <item>ИСКЛ. ИЛИ</item>
         <item>2-е условие</item>
         <item>Отсутствует</item>
+    </string-array>
+
+    <string-array name="ltft_mode_items">
+        <item>Выключено</item>
+        <item>Бензин</item>
+        <item>Газ</item>
+        <item>Бензин + Газ</item>
     </string-array>
 
     <string name="uniout_condition_cts">ДТОЖ (°C)</string>
@@ -218,6 +230,7 @@
         <item>Лямбда контроль</item>
         <item>Ускорение</item>
         <item>Доз. газа</item>
+        <item>LTFT</item>
     </string-array>
     <string name="maximum_step_frequency_at_init">Максимальная частота при иниц.</string>
 
@@ -283,6 +296,7 @@
     <string name="wbo_afr_tabl">Воздух/топливо табл.</string>
     <string name="sensors_frag_wbo_afr_2_label">Воздух/топливо ШДК2</string>
     <string name="sensors_frag_gas_pressure_label">Давление газа</string>
+    <string name="sensors_frag_fuel_pressure_label">Давление топлива</string>
     <string name="sensors_frag_status_gas_valve_label">Газовый клапан</string>
     <string name="sensors_frag_status_throttle_label">Дроссель</string>
     <string name="sensors_frag_status_fl_fuel_label">Топл. при ПХХ</string>
@@ -351,6 +365,7 @@
     <string name="usb_device_detected">Обнаружено USB устройство</string>
     <string name="unknown_device">Неизвестное устройство</string>
     <string name="select_a_device_from_the_list">Выберите устройство из списка</string>
+    <string name="clear_all_errors">Удалить все ошибки</string>
 
 
 </resources>

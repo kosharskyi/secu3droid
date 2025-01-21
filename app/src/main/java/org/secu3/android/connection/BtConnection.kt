@@ -29,20 +29,11 @@ import android.bluetooth.BluetoothAdapter
 import android.bluetooth.BluetoothManager
 import android.bluetooth.BluetoothSocket
 import android.util.Log
-import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.delay
-import kotlinx.coroutines.flow.Flow
-import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.launch
 import org.secu3.android.models.RawPacket
 import org.secu3.android.models.packets.base.BaseOutputPacket
-import org.secu3.android.models.packets.base.BaseSecu3Packet
-import org.secu3.android.models.packets.base.BaseSecu3Packet.Companion.END_PACKET_SYMBOL
-import org.secu3.android.models.packets.base.BaseSecu3Packet.Companion.MAX_PACKET_SIZE
 import org.secu3.android.models.packets.out.ChangeModePacket
-import org.secu3.android.utils.PacketUtils
 import org.secu3.android.utils.Task
 import org.secu3.android.utils.UserPrefs
 import org.threeten.bp.LocalTime
@@ -147,11 +138,11 @@ class BtConnection @Inject constructor(
         scope.launch {
             mConnectionStateFlow.emit(Connected)
             try {
+                val packetBuffer = IntArray(MAX_PACKET_SIZE)
+                val startMarker = INPUT_PACKET_SYMBOL
+                val endMarker = END_PACKET_SYMBOL
                 val inputStream = bluetoothSocket?.inputStream ?: throw IOException("Input stream is null")
                 val reader = BufferedReader(InputStreamReader(inputStream, StandardCharsets.ISO_8859_1))
-                val packetBuffer = IntArray(MAX_PACKET_SIZE)
-                val startMarker = BaseSecu3Packet.INPUT_PACKET_SYMBOL
-                val endMarker = END_PACKET_SYMBOL
 
                 var idx = 0
 
@@ -161,19 +152,22 @@ class BtConnection @Inject constructor(
                         idx = 0
                     }
 
-                    val char = reader.read().takeIf { it != -1 }?.toChar() ?: continue
+                    val char = reader.read().takeIf { it != -1 } ?: continue
                     if (char == startMarker) {
                         idx = 0
                     }
 
                     if (char != endMarker) {
-                        packetBuffer[idx++] = char.code
+                        packetBuffer[idx++] = char
                     }
 
                     if (char == endMarker) {
-                        val escaped = PacketUtils.EscRxPacket(packetBuffer.sliceArray(IntRange(0, idx - 1)))
-                        val line = String(escaped, 0, escaped.size)
-                        mReceivedPacketFlow.emit(RawPacket(line))
+                        val escaped = escRxPacket(packetBuffer.sliceArray(IntRange(0, idx - 1)))
+
+                        if (isChecksumValid(escaped)) {
+                            mReceivedPacketFlow.emit(RawPacket(escaped))
+                        }
+
                         idx = 0
                     }
                 }
@@ -188,7 +182,7 @@ class BtConnection @Inject constructor(
         sendData(ChangeModePacket.getPacket(Task.Secu3ReadFirmwareInfo))
     }
 
-    fun sendData(sendPacket: BaseOutputPacket) {
+    override fun sendData(sendPacket: BaseOutputPacket) {
         scope.launch {
 
             val endTime = LocalTime.now().plusSeconds(10)
@@ -203,23 +197,22 @@ class BtConnection @Inject constructor(
 
             try {
                 val outputStream = bluetoothSocket?.outputStream ?: throw IOException("Output stream is null")
-                val writer = outputStream.bufferedWriter(StandardCharsets.ISO_8859_1)
 
-                var packet = sendPacket.pack()
+                var packet = intArrayOf(OUTPUT_PACKET_SYMBOL) + sendPacket.pack()
 
-                val checksum = PacketUtils.calculateChecksum(packet.substring(2, packet.length))
+                val checksum = calculateChecksum(packet.sliceArray(2 until packet.size))
 
-                packet += checksum[1].toInt().toChar()
-                packet += checksum[0].toInt().toChar()
+                packet += checksum[1].toInt()
+                packet += checksum[0].toInt()
 
-                Log.e(this.javaClass.simpleName, packet)
-                var escaped = PacketUtils.EscTxPacket(packet)
+                Log.e(this.javaClass.simpleName, packet.toString())
+
+                var escaped = escTxPacket(packet)
                 escaped += END_PACKET_SYMBOL
 
-                writer.append(escaped)
+                outputStream.write(escaped.map { it.toByte() }.toByteArray())
 
                 delay(20)
-                writer.flush()
             } catch (e: IOException) {
                 Log.e(this.javaClass.simpleName, "Error while sending data: ${e.message}")
             }

@@ -47,20 +47,20 @@ data class AdcRawDatPacket(
 
         internal const val DESCRIPTOR = 's'
 
-        fun parse(data: String, firmwarePacket: FirmwareInfoPacket?) = AdcRawDatPacket().apply {
-            map = data.get2Bytes(2).toShort().toFloat() / VOLTAGE_MULTIPLIER
-            voltage = data.get2Bytes(4).toShort().toFloat() / VOLTAGE_MULTIPLIER
-            temperature = data.get2Bytes(6).toShort().toFloat() / VOLTAGE_MULTIPLIER
-            knockValue = data.get2Bytes(8).toShort().toFloat() / VOLTAGE_MULTIPLIER
-            tps = data.get2Bytes(10).toShort().toFloat() / VOLTAGE_MULTIPLIER
-            addI1 = data.get2Bytes(12).toShort().toFloat() / VOLTAGE_MULTIPLIER
-            addI2 = data.get2Bytes(14).toShort().toFloat() / VOLTAGE_MULTIPLIER
-            addI3 = data.get2Bytes(16).toShort().toFloat() / VOLTAGE_MULTIPLIER
-            addI4 = data.get2Bytes(18).toShort().toFloat() / VOLTAGE_MULTIPLIER
-            addI5 = data.get2Bytes(20).toShort().toFloat() / VOLTAGE_MULTIPLIER
-            addI6 = data.get2Bytes(22).toShort().toFloat() / VOLTAGE_MULTIPLIER
-            addI7 = data.get2Bytes(24).toShort().toFloat() / VOLTAGE_MULTIPLIER
-            addI8 = data.get2Bytes(26).toShort().toFloat() / VOLTAGE_MULTIPLIER
+        fun parse(data: IntArray, firmwarePacket: FirmwareInfoPacket?) = AdcRawDatPacket().apply {
+            map = data.get2Bytes().toShort().toFloat() / VOLTAGE_MULTIPLIER
+            voltage = data.get2Bytes().toShort().toFloat() / VOLTAGE_MULTIPLIER
+            temperature = data.get2Bytes().toShort().toFloat() / VOLTAGE_MULTIPLIER
+            knockValue = data.get2Bytes().toShort().toFloat() / VOLTAGE_MULTIPLIER
+            tps = data.get2Bytes().toShort().toFloat() / VOLTAGE_MULTIPLIER
+            addI1 = data.get2Bytes().toShort().toFloat() / VOLTAGE_MULTIPLIER
+            addI2 = data.get2Bytes().toShort().toFloat() / VOLTAGE_MULTIPLIER
+            addI3 = data.get2Bytes().toShort().toFloat() / VOLTAGE_MULTIPLIER
+            addI4 = data.get2Bytes().toShort().toFloat() / VOLTAGE_MULTIPLIER
+            addI5 = data.get2Bytes().toShort().toFloat() / VOLTAGE_MULTIPLIER
+            addI6 = data.get2Bytes().toShort().toFloat() / VOLTAGE_MULTIPLIER
+            addI7 = data.get2Bytes().toShort().toFloat() / VOLTAGE_MULTIPLIER
+            addI8 = data.get2Bytes().toShort().toFloat() / VOLTAGE_MULTIPLIER
         }
     }
 }

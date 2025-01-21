@@ -99,6 +99,8 @@
     <string name="funset_gas_v_uni_title">Условие GAS_V</string>
     <string name="funset_gas_pressure_sensor_offset_title">Смещение кривой ДДГ</string>
     <string name="funset_gas_pressure_sensor_gradient_title">Наклон кривой ДДГ</string>
+    <string name="funset_fuel_pressure_sensor_offset_title">Смещение кривой ДДT</string>
+    <string name="funset_fuel_pressure_sensor_gradient_title">Наклон кривой ДДT</string>
 
 
     <string name="temper_fan_on_title">Порог включения вентилятора</string>
@@ -142,6 +144,7 @@
     <string name="ckps_ignition_pulse_delay_title">Длительность импульса запуска коммутатора в зубьях шкива</string>
     <string name="ckps_hall_wnd_width_title">Ширина окна в шторке датчика Холла в градусах по коленвалу</string>
     <string name="ckps_degrees_before_tdc_title">Кол-во градусов до ВМТ</string>
+    <string name="ckps_missing_teeths_detection_factor_title">Коэффициент обнаружения отсутствующих зубьев</string>
     <string name="ckps_use_cam_sensor_title">Использовать ДФ как ДНО</string>
 
 
@@ -274,6 +277,22 @@
 
     <string name="gasdose_par_stoich_ratio">Стехиометрич. соотношение</string>
     <string name="gasdose_par_closing_on_fuel_cut">Прикрытие дозат. на ПХХ</string>
+
+    <string name="ltft_par_mode_title">Использовать коррекции</string>
+    <string name="ltft_par_lower_clt_threshold_title">Нижний порог ДТОЖ разрешения адаптации</string>
+    <string name="ltft_par_upper_clt_threshold_title">Верхний порог ДТОЖ разрешения адаптации</string>
+    <string name="ltft_par_upper_iat_threshold_title">Верхний порог ДТВ разрешения адаптации</string>
+    <string name="ltft_par_learning__gradient_factor_title">Градиент таблицы адаптации/коэфф. выравн.</string>
+    <string name="ltft_par_abs_gas_pressure_treshold_title">Абс. давление газа разрешения адаптации</string>
+    <string name="ltft_par_diff_gas_pressure_treshold_title">Дифф. давления газа разрешения адаптации</string>
+    <string name="ltft_par_bottom_limit_correction_title">Ограничение LTFT коррекции снизу</string>
+    <string name="ltft_par_top_limit_correction_title">Ограничение LTFT коррекции сверху</string>
+    <string name="ltft_par_lower_rpm_threshold_title">Нижний порог оборотов адаптации</string>
+    <string name="ltft_par_upper_rpm_threshold_title">Верхний порог оборотов адаптации</string>
+    <string name="ltft_par_lower_load_threshold_title">Нижний порог нагрузки адаптации</string>
+    <string name="ltft_par_upper_load_threshold_title">Верхний порог нагрузки адаптации</string>
+    <string name="ltft_par_negative_insensitivity_threshold_title">Отрицательный порог нечувствительности</string>
+    <string name="ltft_par_positive_insensitivity_threshold_title">Положительный порог нечувствительности</string>
 
 
 

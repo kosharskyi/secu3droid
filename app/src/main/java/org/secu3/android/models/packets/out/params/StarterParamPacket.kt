@@ -61,42 +61,38 @@ data class StarterParamPacket(
 
         internal const val DESCRIPTOR = 'o'
 
-        fun parse(data: String) = StarterParamPacket().apply {
-            starterOff = data.get2Bytes(2)
-            smapAbandon = data.get2Bytes(4)
-            crankToRunTime = data.get2Bytes(6).toFloat() / 100
-            injAftstrStroke = data[8].code * 4
-            injPrimeCold = data.get2Bytes(9).toFloat() * 32 / 10000
-            injPrimeHot = data.get2Bytes(11).toFloat() * 32 / 10000
-            injPrimeDelay = data[13].code.toFloat() / 10
-            injFloodclearTps = data[14].code.toFloat() / 2f
-            injAftStrokes1 = data[15].code * 4
-            stblStrCnt = data[16].code
-            strtFlags = data[17].code
-            injCrankToRun_time1 = data.get2Bytes(18).toFloat() / 100
+        fun parse(data: IntArray) = StarterParamPacket().apply {
+            starterOff = data.get2Bytes()
+            smapAbandon = data.get2Bytes()
+            crankToRunTime = data.get2Bytes().toFloat() / 100
+            injAftstrStroke = data.get1Byte() * 4
+            injPrimeCold = data.get2Bytes().toFloat() * 32 / 10000
+            injPrimeHot = data.get2Bytes().toFloat() * 32 / 10000
+            injPrimeDelay = data.get1Byte().toFloat() / 10
+            injFloodclearTps = data.get2Bytes().toFloat() / TPS_MULTIPLIER
+            injAftStrokes1 = data.get1Byte() * 4
+            stblStrCnt = data.get1Byte()
+            strtFlags = data.get1Byte()
+            injCrankToRun_time1 = data.get2Bytes().toFloat() / 100
 
-            if (data.length == 20) {
-                return@apply
-            }
-
-            unhandledParams = data.substring(20)
+            data.setUnhandledParams()
         }
     }
 
-    override fun pack(): String {
-        var data = "$OUTPUT_PACKET_SYMBOL$DESCRIPTOR"
+    override fun pack(): IntArray {
+        var data = intArrayOf(DESCRIPTOR.code)
 
         data += starterOff.write2Bytes()
         data += smapAbandon.write2Bytes()
         data += crankToRunTime.times(100).roundToInt().write2Bytes()
-        data += injAftstrStroke.div(4).toChar()
+        data += injAftstrStroke.div(4)
         data += injPrimeCold.times(10000).div(32).roundToInt().write2Bytes()
         data += injPrimeHot.times(10000).div(32).roundToInt().write2Bytes()
-        data += injPrimeDelay.times(10).roundToInt().toChar()
-        data += injFloodclearTps.times(2).roundToInt().toChar()
-        data += injAftStrokes1.div(4).toChar()
-        data += stblStrCnt.toChar()
-        data += strtFlags.toChar()
+        data += injPrimeDelay.times(10).roundToInt()
+        data += injFloodclearTps.times(TPS_MULTIPLIER).roundToInt().write2Bytes()
+        data += injAftStrokes1.div(4)
+        data += stblStrCnt
+        data += strtFlags
         data += injCrankToRun_time1.times(100).roundToInt().write2Bytes()
 
         data += unhandledParams

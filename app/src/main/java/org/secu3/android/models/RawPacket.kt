@@ -25,11 +25,10 @@
 
 package org.secu3.android.models
 
-import android.util.Log
 import org.secu3.android.models.packets.input.AdcRawDatPacket
 import org.secu3.android.models.packets.base.BaseSecu3Packet
 import org.secu3.android.models.packets.input.CheckEngineErrorsPacket
-import org.secu3.android.models.packets.input.CheckEngineSavedErrorsPacket
+import org.secu3.android.models.packets.out.CheckEngineSavedErrorsPacket
 import org.secu3.android.models.packets.input.DiagInputPacket
 import org.secu3.android.models.packets.input.FirmwareInfoPacket
 import org.secu3.android.models.packets.input.FnNameDatPacket
@@ -47,32 +46,20 @@ import org.secu3.android.models.packets.out.params.IdlingParamPacket
 import org.secu3.android.models.packets.out.params.InjctrParPacket
 import org.secu3.android.models.packets.out.params.KnockParamPacket
 import org.secu3.android.models.packets.out.params.LambdaParamPacket
+import org.secu3.android.models.packets.out.params.LtftParamPacket
 import org.secu3.android.models.packets.out.params.MiscellaneousParamPacket
 import org.secu3.android.models.packets.out.params.SecurityParamPacket
 import org.secu3.android.models.packets.out.params.StarterParamPacket
 import org.secu3.android.models.packets.out.params.TemperatureParamPacket
 import org.secu3.android.models.packets.out.params.UniOutParamPacket
-import org.secu3.android.utils.PacketUtils
 
-data class RawPacket(val data: String)  {
+data class RawPacket(val data: IntArray)  {
 
     fun parse(firmwarePacket: FirmwareInfoPacket?): BaseSecu3Packet? {
         return try {
-            val packetData = data.substring(0, data.length - 2)
+            val packetData = data.sliceArray(0 until data.size - 2)
 
-            val packetCrc = ubyteArrayOf(
-                data[data.lastIndex].code.toUByte(),
-                data[data.lastIndex - 1].code.toUByte()
-            )
-
-            val checksum = PacketUtils.calculateChecksum(data.substring(2, data.length - 2))
-
-            if (packetCrc[0] != checksum[0] && packetCrc[1] != checksum[1]) {
-                Log.e("RawPacket", "checksum is not valid")
-                return null
-            }
-
-            return when (packetData[1]) {
+            return when (packetData[1].toChar()) {
                 SensorsPacket.DESCRIPTOR -> SensorsPacket.parse(packetData)
                 FirmwareInfoPacket.DESCRIPTOR -> FirmwareInfoPacket.parse(packetData)
                 AdcRawDatPacket.DESCRIPTOR -> AdcRawDatPacket.parse(data, firmwarePacket)
@@ -97,6 +84,7 @@ data class RawPacket(val data: String)  {
                 LambdaParamPacket.DESCRIPTOR -> LambdaParamPacket.parse(packetData)
                 AccelerationParamPacket.DESCRIPTOR -> AccelerationParamPacket.parse(packetData)
                 GasDoseParamPacket.DESCRIPTOR -> GasDoseParamPacket.parse(packetData)
+                LtftParamPacket.DESCRIPTOR -> LtftParamPacket.parse(packetData)
 
                 FnNameDatPacket.DESCRIPTOR -> FnNameDatPacket.parse(packetData)
                 OpCompNc.DESCRIPTOR -> OpCompNc.parse(packetData)

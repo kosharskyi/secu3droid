@@ -41,18 +41,18 @@ data class GasDoseParamPacket(
 
 ): BaseOutputPacket() {
 
-    override fun pack(): String {
-        var data = "$OUTPUT_PACKET_SYMBOL$DESCRIPTOR"
+    override fun pack(): IntArray {
+        var data = intArrayOf(DESCRIPTOR.code)
 
         data += steps.write2Bytes()
-        data += testing.toChar()
-        data += manualPositionD.toChar()
-        data += fcClosing.times(GAS_DOSE_MULTIPLIER).roundToInt().toChar()
+        data += testing            //fake parameter (actually it is command)
+        data += manualPositionD    //fake parameter, not used in outgoing paket
+        data += fcClosing.times(GAS_DOSE_MULTIPLIER).roundToInt()
         data += lambdaCorrLimitP.times(512.0f).div(100).roundToInt().write2Bytes()
         data += lambdaCorrLimitM.times(512.0f).div(100).roundToInt().write2Bytes()
         data += lambdaStoichval.times(AFR_MULTIPLIER).roundToInt().write2Bytes()
-        data += freq.toChar()
-        data += maxFreqInit.toChar()
+        data += freq
+        data += maxFreqInit
 
         data += unhandledParams
 
@@ -63,20 +63,18 @@ data class GasDoseParamPacket(
 
         internal const val DESCRIPTOR = '*'
 
-        fun parse(data: String) = GasDoseParamPacket().apply {
-            steps = data.get2Bytes(2)
-            fcClosing = data[6].code.toFloat() / GAS_DOSE_MULTIPLIER
-            lambdaCorrLimitP = data.get2Bytes(7).toFloat().times(100.0f).div(512.0f)
-            lambdaCorrLimitM = data.get2Bytes(9).toFloat().times(100.0f).div(512.0f)
-            lambdaStoichval = data.get2Bytes(11).toFloat() / AFR_MULTIPLIER
-            freq = data[13].code
-            maxFreqInit = data[14].code
+        fun parse(data: IntArray) = GasDoseParamPacket().apply {
+            steps = data.get2Bytes()
+            testing = data.get1Byte()       //fake parameter (actually it is command)
+            manualPositionD = data.get1Byte()   //fake parameter, not used in outgoing paket
+            fcClosing = data.get1Byte().toFloat() / GAS_DOSE_MULTIPLIER
+            lambdaCorrLimitP = data.get2Bytes().toFloat().times(100.0f).div(512.0f)
+            lambdaCorrLimitM = data.get2Bytes().toFloat().times(100.0f).div(512.0f)
+            lambdaStoichval = data.get2Bytes().toFloat() / AFR_MULTIPLIER
+            freq = data.get1Byte()
+            maxFreqInit = data.get1Byte()
 
-            if (data.length == 15) {
-                return@apply
-            }
-
-            unhandledParams = data.substring(15)
+            data.setUnhandledParams()
         }
     }
 }

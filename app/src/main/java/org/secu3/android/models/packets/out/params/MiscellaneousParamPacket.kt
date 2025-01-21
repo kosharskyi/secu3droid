@@ -75,22 +75,22 @@ data class MiscellaneousParamPacket(
             flpmpFlags = flpmpFlags.setBitValue(value, 2)
         }
 
-    override fun pack(): String {
-        var data = "$OUTPUT_PACKET_SYMBOL$DESCRIPTOR"
+    override fun pack(): IntArray {
+        var data = intArrayOf(DESCRIPTOR.code)
 
         data += uartDivisor.write2Bytes()
-        data += uartPeriodTms.div(10).toChar()
-        data += ignCutoff.toChar()
+        data += uartPeriodTms.div(10)
+        data += ignCutoff
         data += ignCutoffThrd.write2Bytes()
 
         data += hopStartAng.times(ANGLE_DIVIDER).write2Bytes()
         data += hopDuratAng.times(ANGLE_DIVIDER).write2Bytes()
-        data += flpmpFlags.toChar()
+        data += flpmpFlags
 
         data += evapAfbegin.div(32).write2Bytes()
         data += evapAfEnd.times(32).times(1048576.0f).roundToInt().write2Bytes()
 
-        data += fpTimeoutStrt.times(10).roundToInt().toChar()
+        data += fpTimeoutStrt.times(10).roundToInt()
 
         data += 1.0.div(pwmFrq0.toFloat()).times(524288.0f).roundToInt().write2Bytes()
         data += 1.0.div(pwmFrq1.toFloat()).times(524288.0f).roundToInt().write2Bytes()
@@ -106,26 +106,26 @@ data class MiscellaneousParamPacket(
 
         internal const val DESCRIPTOR = 'z'
 
-        fun parse(data: String) = MiscellaneousParamPacket().apply {
-            uartDivisor = data.get2Bytes(2)
-            uartPeriodTms = data[4].code * 10
-            ignCutoff = data[5].code
-            ignCutoffThrd = data.get2Bytes(6)
-            hopStartAng = data.get2Bytes(8).div(ANGLE_DIVIDER)
-            hopDuratAng = data.get2Bytes(10).div(ANGLE_DIVIDER)
-            flpmpFlags = data[12].code
-            evapAfbegin = data.get2Bytes(13) * 32
-            evapAfslope = data.get2Bytes(15).toFloat().div(1048576.0f).div(32)
-            fpTimeoutStrt = data[17].code.toFloat() / 10
+        fun parse(data: IntArray) = MiscellaneousParamPacket().apply {
+            uartDivisor = data.get2Bytes()
+            uartPeriodTms = data.get1Byte() * 10
+            ignCutoff = data.get1Byte()
+            ignCutoffThrd = data.get2Bytes()
+            hopStartAng = data.get2Bytes().div(ANGLE_DIVIDER)
+            hopDuratAng = data.get2Bytes().div(ANGLE_DIVIDER)
+            flpmpFlags = data.get1Byte()
+            evapAfbegin = data.get2Bytes() * 32
+            evapAfslope = data.get2Bytes().toFloat().div(1048576.0f).div(32)
+            fpTimeoutStrt = data.get1Byte().toFloat() / 10
 
-            pwmFrq0 = data.get2Bytes(18).let {
+            pwmFrq0 = data.get2Bytes().let {
                 if (it == 0) {
                     5000
                 } else {
                     1.0.div(it.toFloat().div(524288.0f)).roundToInt()
                 }
             }
-            pwmFrq1 = data.get2Bytes(20).let {
+            pwmFrq1 = data.get2Bytes().let {
                 if (it == 0) {
                     5000
                 } else {
@@ -134,15 +134,11 @@ data class MiscellaneousParamPacket(
             }
 
             //Number of VSS pulses per 1km
-            vssPeriodDist = data.get2Bytes(22).let {
+            vssPeriodDist = data.get2Bytes().let {
                 ((1000.0f * 32768.0f) / it).toInt()
             }
 
-            if (data.length == 24) {
-                return@apply
-            }
-
-            unhandledParams = data.substring(24)
+            data.setUnhandledParams()
         }
     }
 

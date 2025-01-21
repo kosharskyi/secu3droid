@@ -64,13 +64,13 @@ data class InjctrParPacket(
 
 ) : BaseOutputPacket() {
 
-    override fun pack(): String {
-        var data = "$OUTPUT_PACKET_SYMBOL$DESCRIPTOR"
+    override fun pack(): IntArray {
+        var data = intArrayOf(DESCRIPTOR.code)
 
-        data += flags.toChar()
+        data += flags
 
-        data += config[0].toChar()
-        data += config[1].toChar()
+        data += config[0]
+        data += config[1]
 
         data += flowRate[0].times(64).roundToInt().write2Bytes()
         data += flowRate[1].times(64).roundToInt().write2Bytes()
@@ -80,7 +80,7 @@ data class InjctrParPacket(
         data += sdIglConst[0].write4Bytes()
         data += sdIglConst[1].write4Bytes()
 
-        data += ckpsEngineCyl.toChar()
+        data += ckpsEngineCyl
 
         data += timing[0].times(PARINJTIM_DIVIDER).write2Bytes()
         data += timing[1].times(PARINJTIM_DIVIDER).write2Bytes()
@@ -88,7 +88,7 @@ data class InjctrParPacket(
         data += timingCrk[0].times(PARINJTIM_DIVIDER).write2Bytes()
         data += timingCrk[1].times(PARINJTIM_DIVIDER).write2Bytes()
 
-        data += angleSpec.toChar()
+        data += angleSpec
 
         data += fffConst.toFloat().div(1000f*60f).times(65536f).roundToInt().write2Bytes()
 
@@ -305,47 +305,43 @@ data class InjctrParPacket(
             0.536f  //LPG density (0.536 g/cc)
         )
 
-        fun parse(data: String) = InjctrParPacket().apply {
+        fun parse(data: IntArray) = InjctrParPacket().apply {
 
-            flags = data[2].code
+            flags = data.get1Byte()
 
-            config[0] = data[3].code
-            config[1] = data[4].code
+            config[0] = data.get1Byte()
+            config[1] = data.get1Byte()
             
-            flowRate[0] = data.get2Bytes(5).toFloat() / 64
-            flowRate[1] = data.get2Bytes(7).toFloat() / 64
+            flowRate[0] = data.get2Bytes().toFloat() / 64
+            flowRate[1] = data.get2Bytes().toFloat() / 64
             
-            cylDisp = data.get2Bytes(9).toFloat() / 16384
+            cylDisp = data.get2Bytes().toFloat() / 16384
 
-            sdIglConst[0] = data.get4Bytes(11)
-            sdIglConst[1] = data.get4Bytes(15)
+            sdIglConst[0] = data.get4Bytes()
+            sdIglConst[1] = data.get4Bytes()
 
-            ckpsEngineCyl = data[19].code
+            ckpsEngineCyl = data.get1Byte()
 
-            timing[0] = data.get2Bytes(20) / PARINJTIM_DIVIDER
-            timing[1] = data.get2Bytes(22) / PARINJTIM_DIVIDER
+            timing[0] = data.get2Bytes() / PARINJTIM_DIVIDER
+            timing[1] = data.get2Bytes() / PARINJTIM_DIVIDER
 
-            timingCrk[0] = data.get2Bytes(24) / PARINJTIM_DIVIDER
-            timingCrk[1] = data.get2Bytes(26) / PARINJTIM_DIVIDER
+            timingCrk[0] = data.get2Bytes() / PARINJTIM_DIVIDER
+            timingCrk[1] = data.get2Bytes() / PARINJTIM_DIVIDER
 
-            angleSpec = data[28].code
+            angleSpec = data.get1Byte()
 
-            fffConst = data.get2Bytes(29).toFloat().div(65536f).times(1000*60).roundToInt()
-            minPw = data.get2Bytes(31)
+            fffConst = data.get2Bytes().toFloat().div(65536f).times(1000*60).roundToInt()
+            minPw = data.get2Bytes()
 
-            injMafConst[0] = data.get4Bytes(33)
-            injMafConst[1] = data.get4Bytes(37)
+            injMafConst[0] = data.get4Bytes()
+            injMafConst[1] = data.get4Bytes()
 
-            mafloadConst = data.get4Bytes(41)
+            mafloadConst = data.get4Bytes()
 
-            injMaxPw[0] = data.get2Bytes(45).toFloat().times(3.2f / 1000.0f)
-            injMaxPw[1] = data.get2Bytes(47).toFloat().times(3.2f / 1000.0f)
+            injMaxPw[0] = data.get2Bytes().toFloat().times(3.2f / 1000.0f)
+            injMaxPw[1] = data.get2Bytes().toFloat().times(3.2f / 1000.0f)
 
-            if (data.length == 49) {
-                return@apply
-            }
-
-            unhandledParams = data.substring(49)
+            data.setUnhandledParams()
         }
     }
 }

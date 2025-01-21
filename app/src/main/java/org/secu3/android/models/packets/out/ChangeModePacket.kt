@@ -43,6 +43,7 @@ import org.secu3.android.models.packets.out.params.IdlingParamPacket
 import org.secu3.android.models.packets.out.params.InjctrParPacket
 import org.secu3.android.models.packets.out.params.KnockParamPacket
 import org.secu3.android.models.packets.out.params.LambdaParamPacket
+import org.secu3.android.models.packets.out.params.LtftParamPacket
 import org.secu3.android.models.packets.out.params.MiscellaneousParamPacket
 import org.secu3.android.models.packets.out.params.SecurityParamPacket
 import org.secu3.android.models.packets.out.params.StarterParamPacket
@@ -51,16 +52,24 @@ import org.secu3.android.models.packets.out.params.UniOutParamPacket
 import org.secu3.android.utils.Task
 
 data class ChangeModePacket(
-    val descriptor: Char
+    val nextDescriptor: Char
 ) : BaseOutputPacket() {
 
-    override fun pack(): String {
-        val stubByte = 0.toUByte().toInt().toChar()
-        return "${OUTPUT_PACKET_SYMBOL}h$descriptor$stubByte"
+    override fun pack(): IntArray {
+        val stubByte = 0.toUByte().toInt()
+
+        val data = intArrayOf(
+            DESCRIPTOR.code,
+            nextDescriptor.code,
+            stubByte
+        )
+        return data
     }
 
 
     companion object {
+
+        internal const val DESCRIPTOR = 'h'
 
         fun getPacket(task: Task): ChangeModePacket {
 
@@ -69,7 +78,7 @@ data class ChangeModePacket(
                 Task.Secu3ReadSensors -> ChangeModePacket(SensorsPacket.DESCRIPTOR)
                 Task.Secu3ReadRawSensors -> ChangeModePacket(AdcRawDatPacket.DESCRIPTOR)
                 Task.Secu3ReadEcuErrors -> ChangeModePacket(CheckEngineErrorsPacket.DESCRIPTOR)
-                Task.Secu3ReadEcuSavedErrors -> ChangeModePacket(CheckEngineErrorsPacket.DESCRIPTOR)
+                Task.Secu3ReadEcuSavedErrors -> ChangeModePacket(CheckEngineSavedErrorsPacket.DESCRIPTOR)
                 Task.Secu3DiagInput -> ChangeModePacket(DiagInputPacket.DESCRIPTOR)
 
                 Task.Secu3ReadStarterParam -> ChangeModePacket(StarterParamPacket.DESCRIPTOR)
@@ -89,6 +98,7 @@ data class ChangeModePacket(
                 Task.Secu3ReadLambdaParam -> ChangeModePacket(LambdaParamPacket.DESCRIPTOR)
                 Task.Secu3ReadAccelerationParam -> ChangeModePacket(AccelerationParamPacket.DESCRIPTOR)
                 Task.Secu3ReadGasDoseParam -> ChangeModePacket(GasDoseParamPacket.DESCRIPTOR)
+                Task.Secu3ReadLtftParam -> ChangeModePacket(LtftParamPacket.DESCRIPTOR)
 
                 Task.Secu3ReadFnNameDat -> ChangeModePacket(FnNameDatPacket.DESCRIPTOR)
                 else -> ChangeModePacket(SensorsPacket.DESCRIPTOR)

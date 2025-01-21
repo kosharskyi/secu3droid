@@ -58,12 +58,13 @@ data class FnNameDatPacket(
         private const val F_NAME_SIZE = 16          //!< number of symbols in names of tables' sets
         internal const val DESCRIPTOR = 'p'
 
-        fun parse(data: String) = FnNameDatPacket().apply {
-            tablesNumber = data[2].code
+        fun parse(data: IntArray) = FnNameDatPacket().apply {
+            tablesNumber = data.get1Byte()
+            val index = data.get1Byte()
 
-            val name = data.substring(4, 4 +  F_NAME_SIZE).toByteArray(StandardCharsets.ISO_8859_1).toString(Charset.forName("IBM866"))
+            val name = data.getString(F_NAME_SIZE)
 
-            fnName = FnName(data[3].code, name)
+            fnName = FnName(index, name)
         }
 
     }

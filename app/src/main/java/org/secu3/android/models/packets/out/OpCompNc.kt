@@ -34,8 +34,12 @@ data class OpCompNc(
 
 ) : BaseOutputPacket() {
     
-    override fun pack(): String {
-        return "${OUTPUT_PACKET_SYMBOL}$DESCRIPTOR${opData.toChar()}${opCode.toChar()}"
+    override fun pack(): IntArray {
+        return intArrayOf(
+            DESCRIPTOR.code,
+            opData,
+            opCode
+        )
     }
 
     val isEepromParamSave: Boolean
@@ -56,7 +60,7 @@ data class OpCompNc(
         internal const val DESCRIPTOR = 'u'
 
 
-        fun parse(data: String) = OpCompNc(data[2].code, data[3].code)
+        fun parse(data: IntArray) = OpCompNc(data[2], data[3])
         
         fun getEnterDiagCommand() = OpCompNc(0, DIAGNOST_ENTER)
         fun getLeaveDiagCommand() = OpCompNc(0, DIAGNOST_LEAVE)

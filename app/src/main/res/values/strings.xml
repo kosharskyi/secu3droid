@@ -126,6 +126,13 @@
         <item>VE1+VE2</item>
     </string-array>
 
+    <string-array name="ltft_mode_items">
+        <item>Off</item>
+        <item>Petrol</item>
+        <item>Gas</item>
+        <item>Petrol + Gas</item>
+    </string-array>
+
     <string-array name="csv_delimeters" translatable="false">
         <item>\",\" Comma</item>
         <item>\";\" Semicolon</item>
@@ -167,6 +174,11 @@
         <item>ADD_I6 input\'s sensor failure</item>
         <item>ADD_I7 input\'s sensor failure</item>
         <item>ADD_I8 input\'s sensor failure</item>
+        <item>Oil pressure is very low</item>
+        <item>Tables in EEPROM are broken (CRC)</item>
+        <item>Reaching limit of injector\'s duty</item>
+        <item>LTFT map data in EEPROM is currupted</item>
+        <item>Stepper IAC fault</item>
     </string-array>
 
     <string-array name="logical_functions">
@@ -386,6 +398,7 @@
         <item>Lambda control</item>
         <item>Acceleration</item>
         <item>Gas dose</item>
+        <item>LTFT</item>
     </string-array>
     <string name="idlreg_iac_dead_band_title">IAC dead band</string>
     <string name="empty_logs_list">You have no recorded logs yet</string>
@@ -442,6 +455,7 @@
     <string name="wbo_afr_tabl">WBO AFR TABL.</string>
     <string name="sensors_frag_wbo_afr_2_label">WBO AFR 2</string>
     <string name="sensors_frag_gas_pressure_label">Gas pressure</string>
+    <string name="sensors_frag_fuel_pressure_label">Fuel pressure</string>
     <string name="sensors_frag_status_gas_valve_label">Gas valve</string>
     <string name="sensors_frag_status_throttle_label">Throttle</string>
     <string name="sensors_frag_status_fl_fuel_label">Fl fuel</string>
@@ -509,5 +523,6 @@
     <string name="usb_device_detected">USB device detected</string>
     <string name="unknown_device">Unknown Device</string>
     <string name="select_a_device_from_the_list">Select a device from the list</string>
+    <string name="clear_all_errors">Clear all errors</string>
 
 </resources>

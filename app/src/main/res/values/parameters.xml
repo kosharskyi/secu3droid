@@ -99,6 +99,8 @@
     <string name="funset_gas_v_uni_title">GAS_V condition</string>
     <string name="funset_gas_pressure_sensor_offset_title">GPS Sensor Curve offset</string>
     <string name="funset_gas_pressure_sensor_gradient_title">GPS sensor curve gradient</string>
+    <string name="funset_fuel_pressure_sensor_offset_title">FPS Sensor Curve offset</string>
+    <string name="funset_fuel_pressure_sensor_gradient_title">FPS sensor curve gradient</string>
 
 
     <string name="temper_fan_on_title">Fan turn on threshold</string>
@@ -142,6 +144,7 @@
     <string name="ckps_ignition_pulse_delay_title">Duration of igniter\'s pulse driver in teeth of wheel</string>
     <string name="ckps_hall_wnd_width_title">Hall sensor shutter\'s window width in degrees of crankshaft</string>
     <string name="ckps_degrees_before_tdc_title">Degrees before TDC</string>
+    <string name="ckps_missing_teeths_detection_factor_title">Missing teeth detection factor</string>
     <string name="ckps_use_cam_sensor_title">Use cam sensor as reference</string>
 
     <string name="miscel_baudrate_title">Data transmission baudrate</string>
@@ -276,6 +279,22 @@
 
     <string name="gasdose_par_stoich_ratio">Stochiometric ratio</string>
     <string name="gasdose_par_closing_on_fuel_cut">Closing on fuel cut</string>
+
+    <string name="ltft_par_mode_title">Use of LTFT</string>
+    <string name="ltft_par_lower_clt_threshold_title">Lower CLT threshold for LTFT</string>
+    <string name="ltft_par_upper_clt_threshold_title">Upper CLT threshold for LTFT</string>
+    <string name="ltft_par_upper_iat_threshold_title">Upper IAT threshold for LTFT</string>
+    <string name="ltft_par_learning__gradient_factor_title">Learning gradient/alignment factor</string>
+    <string name="ltft_par_abs_gas_pressure_treshold_title">Abs. gas pressure threshold for LTFT</string>
+    <string name="ltft_par_diff_gas_pressure_treshold_title">Diff. gas pressure threshold for LTFT</string>
+    <string name="ltft_par_bottom_limit_correction_title">Bottom limit of LTFT correction</string>
+    <string name="ltft_par_top_limit_correction_title">Top limit of LTFT correction</string>
+    <string name="ltft_par_lower_rpm_threshold_title">Lower RPM threshold for LTFT</string>
+    <string name="ltft_par_upper_rpm_threshold_title">Upper RPM threshold for LTFT</string>
+    <string name="ltft_par_lower_load_threshold_title">Lower load threshold for LTFT</string>
+    <string name="ltft_par_upper_load_threshold_title">Upper load threshold for LTFT</string>
+    <string name="ltft_par_negative_insensitivity_threshold_title">Negative insensitivity LTFT threshold</string>
+    <string name="ltft_par_positive_insensitivity_threshold_title">Positive insensitivity LTFT threshold</string>
 
     <string name="status_rpm_title">RPM: %d min-1\n</string>
     <string name="status_map_title">Pressure: %.2f kPa\n</string>

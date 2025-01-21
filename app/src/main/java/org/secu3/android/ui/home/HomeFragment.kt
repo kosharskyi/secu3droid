@@ -131,7 +131,7 @@ class HomeFragment : Fragment() {
                 Disconnected -> {
                     mBinding?.carStatus?.setColorFilter(ContextCompat.getColor(requireContext(), R.color.gauge_red))
                     if (mViewModel.isUserTapExit) {
-                        findNavController().popBackStack()
+                        findNavController().navigateUp()
                     }
                 }
                 else -> {
@@ -222,6 +222,13 @@ class HomeFragment : Fragment() {
     }
 
     private fun exit() {
+
+        if (mViewModel.isConnectionRunning.not()) {
+            requireActivity().stopService(Intent(requireContext(), SecuConnectionService::class.java))
+            findNavController().navigateUp()
+            return
+        }
+
         MaterialAlertDialogBuilder(requireContext()).apply {
             setTitle(getString(R.string.disconnect_device))
             setMessage(getString(R.string.disconnect_device_msg))

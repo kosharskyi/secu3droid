@@ -53,6 +53,9 @@ class HomeViewModel @Inject constructor(
 
     var isUserTapExit = false
 
+    val isConnectionRunning: Boolean
+        get() = secu3ConnectionManager.isConnectionRunning
+
     val connectionStatusLiveData: LiveData<ConnectionState>
         get() = secu3ConnectionManager.connectionStateFlow.asLiveData()
 

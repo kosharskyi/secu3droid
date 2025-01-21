@@ -155,7 +155,8 @@ class SecuLogger @Inject constructor(private val prefs: UserPrefs, private val f
     private fun writeBinaryLog(packet: SensorsPacket) {
         val now = LocalTime.now()
 
-        val buf = ByteBuffer.allocate(233).also {
+        // Float = 4 bytes; Int = 4 bytes; Byte = 1 byte; Short = 2 bytes
+        val buf = ByteBuffer.allocate(236).also {
             it.order(ByteOrder.LITTLE_ENDIAN)
         }
 
@@ -249,7 +250,8 @@ class SecuLogger @Inject constructor(private val prefs: UserPrefs, private val f
             putFloat(packet.corrAfr)
             putFloat(packet.tchrg)
             putFloat(packet.gasPressureSensor)
-//            putFloat(packet.fps) // TODO: update capacity
+            putFloat(packet.fuelPressureSensor)
+            // TODO: update capacity if new field is added
             put(mMark.toByte())
             put(alignByte)
             putShort(packet.serviceFlags.toShort())
@@ -350,6 +352,7 @@ class SecuLogger @Inject constructor(private val prefs: UserPrefs, private val f
             " %5.2f".format(Locale.US, corrAfr),
             " %5.1f".format(Locale.US, tchrg),
             " %6.2f".format(Locale.US, gasPressureSensor),
+            " %7.2f".format(Locale.US, fuelPressureSensor),
             " %01d".format(Locale.US, mark),
             " %5d".format(Locale.US, serviceFlags),
             " $ceBits"
@@ -446,6 +449,7 @@ class SecuLogger @Inject constructor(private val prefs: UserPrefs, private val f
             "AFRMap",
             "Tchrg",
             "GPS",
+            "FPS",
             "LogMarks",
             "ServFlag",
             "CECodes"

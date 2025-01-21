@@ -59,7 +59,7 @@ class SecuLogsFragment : Fragment() {
 
         mBinding?.apply {
             toolbar.setNavigationOnClickListener {
-                findNavController().popBackStack()
+                findNavController().navigateUp()
             }
 
             initList()

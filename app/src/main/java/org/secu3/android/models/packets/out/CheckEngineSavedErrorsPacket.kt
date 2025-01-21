@@ -1,9 +1,9 @@
 /*
  *    SecuDroid  - An open source, free manager for SECU-3 engine control unit
- *    Copyright (C) 2024 Vitalii O. Kosharskyi. Ukraine, Kyiv
+ *    Copyright (C) 2025 Vitalii O. Kosharskyi. Ukraine, Kyiv
  *
  *    SECU-3  - An open source, free engine control unit
- *    Copyright (C) 2007-2024 Alexey A. Shabelnikov. Ukraine, Kyiv
+ *    Copyright (C) 2007-2025 Alexey A. Shabelnikov. Ukraine, Kyiv
  *
  *    This program is free software: you can redistribute it and/or modify
  *    it under the terms of the GNU General Public License as published by
@@ -22,27 +22,31 @@
  *                    http://secu-3.org
  *                    email: vetalkosharskiy@gmail.com
  */
-package org.secu3.android.models.packets.input
+package org.secu3.android.models.packets.out
 
-import org.secu3.android.models.packets.base.BaseSecu3Packet
+import org.secu3.android.models.packets.base.BaseOutputPacket
 
 data class CheckEngineSavedErrorsPacket(
 
     var errors: Int = 0
 
-) : BaseSecu3Packet() {
+) : BaseOutputPacket() {
 
     fun isError(errorBit: Int): Boolean {
         val flags = errors shr errorBit
         return flags and 0x01 != 0
     }
 
+    override fun pack(): IntArray {
+        return intArrayOf(DESCRIPTOR.code) + errors.write4Bytes()
+    }
+
     companion object {
 
         internal const val DESCRIPTOR = 'x'
 
-        fun parse(data: String) = CheckEngineSavedErrorsPacket().apply {
-            errors = data.get4Bytes(2)
+        fun parse(data: IntArray) = CheckEngineSavedErrorsPacket().apply {
+            errors = data.get4Bytes()
         }
 
     }

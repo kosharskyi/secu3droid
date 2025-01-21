@@ -39,6 +39,7 @@
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintBottom_toBottomOf="parent"
+        tools:visibility="gone"
         />
 
     <ScrollView
@@ -46,6 +47,7 @@
         android:layout_width="match_parent"
         android:layout_height="match_parent"
         android:visibility="gone"
+        tools:visibility="visible"
         >
 
         <LinearLayout
@@ -164,7 +166,7 @@
                 app:units=""
                 app:int_value="0"
                 app:int_min_value="0"
-                app:int_max_value="2"
+                app:int_max_value="6"
                 app:int_step="1"
                 />
 
@@ -265,7 +267,27 @@
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:text="@string/ckps_use_cam_sensor_title"
+                android:button="@null"
+                android:drawableEnd="?android:attr/listChoiceIndicatorMultiple"
                 />
+
+            <!-- ************************************************************* -->
+
+            <org.secu3.android.ui.parameters.views.FloatParamView
+                android:id="@+id/missing_teeth_detection_factor"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="16dp"
+                app:title="@string/ckps_missing_teeths_detection_factor_title"
+                app:units="@string/units_empty"
+                app:float_value="1.0"
+                app:value_precision="two"
+                app:float_min_value="1.0"
+                app:float_max_value="8.0"
+                app:float_step="0.01"
+                />
+
+            <!-- ************************************************************* -->
 
         </LinearLayout>
 

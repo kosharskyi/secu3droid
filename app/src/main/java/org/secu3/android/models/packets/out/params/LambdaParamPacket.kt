@@ -145,13 +145,13 @@ data class LambdaParamPacket(
             lambdaSelectedChanel = lambdaSelectedChanel.setBitValue(value,7)
         }
 
-    override fun pack(): String {
-        var data = "$OUTPUT_PACKET_SYMBOL$DESCRIPTOR"
+    override fun pack(): IntArray {
+        var data = intArrayOf(DESCRIPTOR.code)
 
-        data += strPerStp.toChar()
+        data += strPerStp
 
-        data += stepSizeP.div(100).times(512).roundToInt().toChar()
-        data += stepSizeM.div(100).times(512).roundToInt().toChar()
+        data += stepSizeP.div(100).times(512).roundToInt()
+        data += stepSizeM.div(100).times(512).roundToInt()
 
         data += corrLimitP.div(100).times(512).roundToInt().write2Bytes()
         data += corrLimitM.div(100).times(512).roundToInt().write2Bytes()
@@ -160,22 +160,22 @@ data class LambdaParamPacket(
         data += tempThrd.times(TEMPERATURE_MULTIPLIER).roundToInt().write2Bytes()
         data += rpmThrd.write2Bytes()
 
-        data += activDelay.toChar()
+        data += activDelay
 
         data += deadBand.div(ADC_DISCRETE).roundToInt().write2Bytes()
-        data += senstype.toChar()
-        data += msPerStp.div(10).toChar()
-        data += flags.toChar()
+        data += senstype
+        data += msPerStp.div(10)
+        data += flags
         data += gdStoichval.times(128.0f).roundToInt().write2Bytes()
 
-        data += heatingTime0.toChar()
-        data += heatingTime1.toChar()
-        data += temperThrd.toChar()
-        data += heatingAct.times(100).roundToInt().toChar()
+        data += heatingTime0
+        data += heatingTime1
+        data += temperThrd
+        data += heatingAct.times(100).roundToInt()
 
         data += aflowThrd.div(32).roundToInt().write2Bytes()
 
-        data += lambdaSelectedChanel.toChar()
+        data += lambdaSelectedChanel
 
         data += unhandledParams
 
@@ -186,42 +186,37 @@ data class LambdaParamPacket(
 
         internal const val DESCRIPTOR = '-'
 
-        fun parse(data: String) = LambdaParamPacket().apply {
+        fun parse(data: IntArray) = LambdaParamPacket().apply {
 
-            strPerStp = data[2].code
+            strPerStp = data.get1Byte()
 
-            stepSizeP = data[3].code.toFloat() / 512 * 100
-            stepSizeM = data[4].code.toFloat() / 512 * 100
+            stepSizeP = data.get1Byte().toFloat() / 512 * 100
+            stepSizeM = data.get1Byte().toFloat() / 512 * 100
 
-            corrLimitP = data.get2Bytes(5).toFloat() / 512 * 100
-            corrLimitM = data.get2Bytes(7).toFloat() / 512 * 100
+            corrLimitP = data.get2Bytes().toFloat() / 512 * 100
+            corrLimitM = data.get2Bytes().toFloat() / 512 * 100
 
-            swtPoint = data.get2Bytes(9).toFloat() * ADC_DISCRETE
-            tempThrd = data.get2Bytes(11).toFloat() / TEMPERATURE_MULTIPLIER
-            rpmThrd = data.get2Bytes(13)
+            swtPoint = data.get2Bytes().toFloat() * ADC_DISCRETE
+            tempThrd = data.get2Bytes().toFloat() / TEMPERATURE_MULTIPLIER
+            rpmThrd = data.get2Bytes()
 
-            activDelay = data[15].code
+            activDelay = data.get1Byte()
 
-            deadBand = data.get2Bytes(16).toFloat() * ADC_DISCRETE
-            senstype = data[18].code
-            msPerStp = data[19].code * 10
-            flags = data[20].code
-            gdStoichval = data.get2Bytes(21).toFloat() / 128.0f
+            deadBand = data.get2Bytes().toFloat() * ADC_DISCRETE
+            senstype = data.get1Byte()
+            msPerStp = data.get1Byte() * 10
+            flags = data.get1Byte()
+            gdStoichval = data.get2Bytes().toFloat() / 128.0f
 
-            heatingTime0 = data[23].code
-            heatingTime1 = data[24].code
-            temperThrd = data[25].code
-            heatingAct = data[26].code.toFloat() / 100
-            aflowThrd = data.get2Bytes(27).toFloat() * 32.0f
+            heatingTime0 = data.get1Byte()
+            heatingTime1 = data.get1Byte()
+            temperThrd = data.get1Byte()
+            heatingAct = data.get1Byte().toFloat() / 100
+            aflowThrd = data.get2Bytes().toFloat() * 32.0f
 
-            lambdaSelectedChanel = data[29].code
+            lambdaSelectedChanel = data.get1Byte()
 
-            if (data.length == 30) {
-                return@apply
-            }
-
-            unhandledParams = data.substring(30)
-
+            data.setUnhandledParams()
         }
     }
 }

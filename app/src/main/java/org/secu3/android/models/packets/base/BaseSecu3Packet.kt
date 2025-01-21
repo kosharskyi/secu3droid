@@ -26,49 +26,84 @@ package org.secu3.android.models.packets.base
 
 abstract class BaseSecu3Packet {
 
-    protected var unhandledParams: String = ""
+    protected var currentIndex = 2  // ignores @ and ! and descriptor
 
-    protected fun String.get2Bytes(startIndex: Int): Int {
-        if (startIndex + 1 >= length) {
-            throw IllegalArgumentException("Packet too short; request ${startIndex + 2} but length is $length")
+    protected var unhandledParams: IntArray = intArrayOf()
+        private set
+
+    protected fun IntArray.get1Byte(): Int {
+        if (currentIndex >= size) {
+            throw IllegalArgumentException("Packet too short; request $currentIndex but length is $size")
         }
 
-        return this.substring(startIndex, startIndex + 2).binToInt()
+        return this[currentIndex++] and 0xFF
     }
 
-    protected fun String.get3Bytes(startIndex: Int): Int {
-        if (startIndex + 2 >= length) {
-            throw IllegalArgumentException("Packet too short; request ${startIndex + 3} but length is $length")
+    protected fun IntArray.get2Bytes(): Int {
+        if (currentIndex + 1 >= size) {
+            throw IllegalArgumentException("Packet too short; request ${currentIndex + 2} but length is $size")
         }
-        return this.substring(startIndex, startIndex + 3).binToInt()
-    }
 
-    protected fun String.get4Bytes(startIndex: Int): Int {
-        if (startIndex + 3 >= length) {
-            throw IllegalArgumentException("Packet too short; request ${startIndex + 4} but length is $length")
+        return this.sliceArray(currentIndex until currentIndex + 2).binToInt().also {
+            currentIndex += 2
         }
-        return this.substring(startIndex, startIndex + 4).binToInt()
     }
 
-    private fun String.binToInt(): Int {
+    protected fun IntArray.get3Bytes(): Int {
+        if (currentIndex + 2 >= size) {
+            throw IllegalArgumentException("Packet too short; request ${currentIndex + 3} but length is $size")
+        }
+
+        return this.sliceArray(currentIndex until currentIndex + 3).binToInt().also {
+            currentIndex += 3
+        }
+    }
+
+    protected fun IntArray.get4Bytes(): Int {
+        if (currentIndex + 3 >= size) {
+            throw IllegalArgumentException("Packet too short; request ${currentIndex + 4} but length is $size")
+        }
+
+        return this.sliceArray(currentIndex until currentIndex + 4).binToInt().also {
+            currentIndex += 4
+        }
+    }
+
+    protected fun IntArray.getString(length: Int): String {
+        if (currentIndex + length > size) {
+            throw IllegalArgumentException("Packet too short; request ${currentIndex + length} but length is $size")
+        }
+
+        val array = this.sliceArray(currentIndex until currentIndex + length).map { it.toByte() }.toByteArray()
+
+        return String(array, Charsets.ISO_8859_1).also {
+            currentIndex += length
+        }
+    }
+
+    protected fun IntArray.setUnhandledParams() {
+
+        if (currentIndex >= size) {
+            return
+        }
+
+        unhandledParams = this.sliceArray(currentIndex until size)
+    }
+
+    private fun IntArray.binToInt(): Int {
         var v = 0
         for (element in this) {
             v = v shl 8
-            v = v or element.code
+            v = v or element
         }
         return v
     }
 
     companion object {
-
-        const val INPUT_PACKET_SYMBOL = '@'
-        const val OUTPUT_PACKET_SYMBOL = '!'
-        const val END_PACKET_SYMBOL = '\r'
-
         internal const val VOLTAGE_MULTIPLIER: Int = 400
         internal const val MAP_MULTIPLIER: Int = 64
         internal const val TEMPERATURE_MULTIPLIER: Int = 4
-        internal const val TPS_MULTIPLIER: Int = 2
+        internal const val TPS_MULTIPLIER: Int = 64
         internal const val GAS_DOSE_MULTIPLIER: Int = 2
         internal const val ANGLE_DIVIDER: Int = 32
         internal const val PARINJTIM_DIVIDER: Int = 16
@@ -85,7 +120,5 @@ abstract class BaseSecu3Packet {
         internal const val INJPWCOEF_MULT = 4096.0f;
         internal const val MAFS_MULT = 64.0f;
         internal const val FTS_MULT = 4.0f;
-
-        const val MAX_PACKET_SIZE = 250
     }
 }

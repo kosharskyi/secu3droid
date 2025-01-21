@@ -62,13 +62,16 @@ data class FunSetParamPacket(
     var gpsCurveOffset: Float = 0f,     // Gas Pressure Sensor
     var gpsCurveGradient: Float = 0f,   // Gas Pressure Sensor
 
+    var fpsCurveOffset: Float = 0f,     // Fuel Pressure Sensor
+    var fpsCurveGradient: Float = 0f,   // Fuel Pressure Sensor
+
     ): BaseOutputPacket() {
 
-    override fun pack(): String {
-        var data = "$OUTPUT_PACKET_SYMBOL$DESCRIPTOR"
+    override fun pack(): IntArray {
+        var data = intArrayOf(DESCRIPTOR.code)
 
-        data += fnGasoline.toChar()
-        data += fnGas.toChar()
+        data += fnGasoline
+        data += fnGas
         data += loadLower.times(MAP_MULTIPLIER).roundToInt().write2Bytes()
         data += loadUpper.times(MAP_MULTIPLIER).roundToInt().write2Bytes()
         data += mapCurveOffset.div(ADC_DISCRETE).roundToInt().write2Bytes()
@@ -78,26 +81,29 @@ data class FunSetParamPacket(
         data += tpsCurveOffset.div(ADC_DISCRETE).roundToInt().write2Bytes()
         data += tpsCurveGradient.times(128.0f).times(TPS_MULTIPLIER * 64f).times(ADC_DISCRETE).roundToInt().write2Bytes()
 
-        data += loadSrcCfg.toChar()
-        data += mapselUni.toChar()
-        data += barocorrType.toChar()
-        data += funcFlags.toChar()
+        data += loadSrcCfg
+        data += mapselUni
+        data += barocorrType
+        data += funcFlags
 
-        data += ve2MapFunc.toChar()
+        data += ve2MapFunc
 
         if (gasVUni == UNI_OUTPUT_NUM) {
             data += 0xF
         } else {
-            data += gasVUni.toChar()
+            data += gasVUni
         }
 
-        data += 0.toChar() // stub for cyl_num
+        data += 0 // stub for cyl_num
 
         data += injCylDisp.times(16384.0f).roundToInt().write2Bytes()
         data += mafload_const.toInt().write4Bytes()
 
         data += gpsCurveOffset.div(ADC_DISCRETE).roundToInt().write2Bytes()
         data += gpsCurveGradient.times(128.0f).times(MAP_MULTIPLIER).times(ADC_DISCRETE).roundToInt().write2Bytes()
+
+        data += fpsCurveOffset.div(ADC_DISCRETE).roundToInt().write2Bytes()
+        data += fpsCurveGradient.times(128.0f).times(MAP_MULTIPLIER).times(ADC_DISCRETE).roundToInt().write2Bytes()
 
         data += unhandledParams
 
@@ -126,39 +132,38 @@ data class FunSetParamPacket(
 
         internal const val DESCRIPTOR = 'n'
 
-        fun parse(data: String) = FunSetParamPacket().apply {
+        fun parse(data: IntArray) = FunSetParamPacket().apply {
 
-            fnGasoline = data[2].code
-            fnGas = data[3].code
-            loadLower = data.get2Bytes(4).toFloat() / MAP_MULTIPLIER
-            loadUpper = data.get2Bytes(6).toFloat() / MAP_MULTIPLIER
-            mapCurveOffset = data.get2Bytes(8).toFloat() * ADC_DISCRETE
-            mapCurveGradient = data.get2Bytes(10).toFloat() / (MAP_MULTIPLIER * ADC_DISCRETE * 128.0f)
-            map2CurveOffset = data.get2Bytes(12).toFloat() * ADC_DISCRETE
-            map2CurveGradient = data.get2Bytes(14).toFloat() / (MAP_MULTIPLIER * ADC_DISCRETE * 128.0f)
-            tpsCurveOffset = data.get2Bytes(16).toFloat() * ADC_DISCRETE
-            tpsCurveGradient = data.get2Bytes(18).toFloat() / (TPS_MULTIPLIER.times(64) * ADC_DISCRETE * 128.0f)
-            loadSrcCfg = data[20].code
-            mapselUni = data[21].code
-            barocorrType = data[22].code
-            funcFlags = data[23].code
+            fnGasoline = data.get1Byte()
+            fnGas = data.get1Byte()
+            loadLower = data.get2Bytes().toFloat() / MAP_MULTIPLIER
+            loadUpper = data.get2Bytes().toFloat() / MAP_MULTIPLIER
+            mapCurveOffset = data.get2Bytes().toFloat() * ADC_DISCRETE
+            mapCurveGradient = data.get2Bytes().toFloat() / (MAP_MULTIPLIER * ADC_DISCRETE * 128.0f)
+            map2CurveOffset = data.get2Bytes().toFloat() * ADC_DISCRETE
+            map2CurveGradient = data.get2Bytes().toFloat() / (MAP_MULTIPLIER * ADC_DISCRETE * 128.0f)
+            tpsCurveOffset = data.get2Bytes().toFloat() * ADC_DISCRETE
+            tpsCurveGradient = data.get2Bytes().toFloat() / (TPS_MULTIPLIER.times(64) * ADC_DISCRETE * 128.0f)
+            loadSrcCfg = data.get1Byte()
+            mapselUni = data.get1Byte()
+            barocorrType = data.get1Byte()
+            funcFlags = data.get1Byte()
 
-            ve2MapFunc = data[24].code
-            gasVUni = data[25].code
+            ve2MapFunc = data.get1Byte()
+            gasVUni = data.get1Byte()
 
-            ckpsEngineCyl = data[26].code
-            injCylDisp = data.get2Bytes(27).toFloat().div(16384.0f)
-            mafload_const = data.get4Bytes(29).toFloat()
-            tps_raw = data.get2Bytes(33).times(ADC_DISCRETE)
+            ckpsEngineCyl = data.get1Byte()
+            injCylDisp = data.get2Bytes().toFloat().div(16384.0f)
+            mafload_const = data.get4Bytes().toFloat()
+            tps_raw = data.get2Bytes().times(ADC_DISCRETE)
 
-            gpsCurveOffset = data.get2Bytes(35).toFloat() * ADC_DISCRETE
-            gpsCurveGradient = data.get2Bytes(37).toFloat() / (MAP_MULTIPLIER * ADC_DISCRETE * 128.0f)
+            gpsCurveOffset = data.get2Bytes().toFloat() * ADC_DISCRETE
+            gpsCurveGradient = data.get2Bytes().toFloat() / (MAP_MULTIPLIER * ADC_DISCRETE * 128.0f)
 
-            if (data.length == 39) {
-                return@apply
-            }
+            fpsCurveOffset = data.get2Bytes().toFloat() * ADC_DISCRETE
+            fpsCurveGradient = data.get2Bytes().toFloat() / (MAP_MULTIPLIER * ADC_DISCRETE * 128.0f)
 
-            unhandledParams = data.substring(39)
+            data.setUnhandledParams()
         }
 
     }

@@ -41,10 +41,10 @@ data class TemperatureParamPacket(
 
     ) : BaseOutputPacket() {
 
-    override fun pack(): String {
-        var data = "$OUTPUT_PACKET_SYMBOL$DESCRIPTOR"
+    override fun pack(): IntArray {
+        var data = intArrayOf(DESCRIPTOR.code)
 
-        data += tmpFlags.toChar()
+        data += tmpFlags
 
         data += ventOn.times(TEMPERATURE_MULTIPLIER).roundToInt().write2Bytes()
         data += ventOff.times(TEMPERATURE_MULTIPLIER).roundToInt().write2Bytes()
@@ -85,25 +85,20 @@ data class TemperatureParamPacket(
 
         internal const val DESCRIPTOR = 'j'
 
-        fun parse(data: String) = TemperatureParamPacket().apply {
+        fun parse(data: IntArray) = TemperatureParamPacket().apply {
 
-            tmpFlags = data[2].code
-            ventOn = data.get2Bytes(3).toShort().toFloat().div(TEMPERATURE_MULTIPLIER)
-            ventOff = data.get2Bytes(5).toShort().toFloat().div(TEMPERATURE_MULTIPLIER)
-            data.get2Bytes(7).let {
+            tmpFlags = data.get1Byte()
+            ventOn = data.get2Bytes().toShort().toFloat().div(TEMPERATURE_MULTIPLIER)
+            ventOff = data.get2Bytes().toShort().toFloat().div(TEMPERATURE_MULTIPLIER)
+            data.get2Bytes().let {
                 ventPwmFrq = (1f / (( it.toDouble() / 524288))).roundToInt()
             }
-            condPvtOn = data.get2Bytes(9).toFloat() * ADC_DISCRETE
-            condPvtOff = data.get2Bytes(11).toFloat() * ADC_DISCRETE
-            condMinRpm = data.get2Bytes(13)
-            ventTmr = data.get2Bytes(15) / 100
+            condPvtOn = data.get2Bytes().toFloat() * ADC_DISCRETE
+            condPvtOff = data.get2Bytes().toFloat() * ADC_DISCRETE
+            condMinRpm = data.get2Bytes()
+            ventTmr = data.get2Bytes() / 100
 
-
-            if (data.length == 17) {
-                return@apply
-            }
-
-            unhandledParams = data.substring(17)
+            data.setUnhandledParams()
         }
     }
 
