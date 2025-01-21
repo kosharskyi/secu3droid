@@ -28,7 +28,7 @@ package org.secu3.android.models
 import org.secu3.android.models.packets.input.AdcRawDatPacket
 import org.secu3.android.models.packets.base.BaseSecu3Packet
 import org.secu3.android.models.packets.input.CheckEngineErrorsPacket
-import org.secu3.android.models.packets.input.CheckEngineSavedErrorsPacket
+import org.secu3.android.models.packets.out.CheckEngineSavedErrorsPacket
 import org.secu3.android.models.packets.input.DiagInputPacket
 import org.secu3.android.models.packets.input.FirmwareInfoPacket
 import org.secu3.android.models.packets.input.FnNameDatPacket

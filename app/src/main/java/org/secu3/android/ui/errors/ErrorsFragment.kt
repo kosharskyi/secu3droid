@@ -25,10 +25,13 @@
 
 package org.secu3.android.ui.errors
 
+import android.graphics.PorterDuff
 import android.os.Bundle
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
+import androidx.core.content.ContextCompat
+import androidx.core.graphics.drawable.DrawableCompat
 import androidx.fragment.app.Fragment
 import androidx.fragment.app.viewModels
 import androidx.navigation.fragment.findNavController
@@ -58,24 +61,35 @@ class ErrorsFragment : Fragment() {
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
 
-        mBinding.toolbar.setNavigationOnClickListener { findNavController().navigateUp() }
+        initToolbar()
 
         errors = resources.getStringArray(R.array.errors_ecu_errors_names).map { CheckEngineError(it) }
 
         mViewModel.connectionStatusLiveData.observe(viewLifecycleOwner) {
-            when (it) {
+            val color = when (it) {
                 Connected -> {
-                    mBinding.connectionStatus.text = getString(R.string.status_online)
+                    ContextCompat.getColor(requireContext(), R.color.gauge_dark_green)
                 }
                 InProgress -> {
-                    mBinding.connectionStatus.text = getString(R.string.status_connecting)
+                    ContextCompat.getColor(requireContext(), R.color.gauge_dark_yellow)
                 }
                 Disconnected -> {
-                    mBinding.connectionStatus.text = getString(R.string.status_offline)
+                    ContextCompat.getColor(requireContext(), R.color.gauge_red)
                 }
                 else -> {
-                    // do nothing
+                    return@observe
                 }
+            }
+
+            mBinding.toolbar.menu?.findItem(R.id.connection_status)?.apply {
+                val iconDrawable = icon ?: return@apply
+
+                // Tint the icon with the desired color
+                DrawableCompat.setTint(iconDrawable, color)
+                DrawableCompat.setTintMode(iconDrawable, PorterDuff.Mode.SRC_IN)
+
+                // Set the tinted icon to the menu item
+                icon = iconDrawable
             }
         }
 
@@ -98,5 +112,24 @@ class ErrorsFragment : Fragment() {
 
         mBinding.errorsRecyclerView.adapter = ErrorsAdapter(errors)
 
+    }
+
+    private fun initToolbar() {
+        mBinding.toolbar.apply {
+            setNavigationOnClickListener {
+                findNavController().navigateUp()
+            }
+
+            inflateMenu(R.menu.fragment_ce_menu)
+            setOnMenuItemClickListener {
+                when (it.itemId) {
+                    R.id.clear_errors -> {
+                        mViewModel.clearErrors()
+                        true
+                    }
+                    else -> false
+                }
+            }
+        }
     }
 }

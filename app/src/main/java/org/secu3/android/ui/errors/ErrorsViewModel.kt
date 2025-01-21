@@ -28,15 +28,18 @@ package org.secu3.android.ui.errors
 import androidx.lifecycle.LiveData
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.asLiveData
+import androidx.lifecycle.viewModelScope
+import androidx.lifecycle.viewmodel.compose.viewModel
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.filter
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.flow.map
+import kotlinx.coroutines.launch
 import org.secu3.android.connection.ConnectionState
 import org.secu3.android.connection.Secu3ConnectionManager
 import org.secu3.android.models.packets.input.CheckEngineErrorsPacket
-import org.secu3.android.models.packets.input.CheckEngineSavedErrorsPacket
+import org.secu3.android.models.packets.out.CheckEngineSavedErrorsPacket
 import org.secu3.android.utils.Task
 import javax.inject.Inject
 
@@ -47,16 +50,30 @@ class ErrorsViewModel @Inject constructor(private val secu3ConnectionManager: Se
         get() = secu3ConnectionManager.connectionStateFlow.asLiveData()
 
     val checkEngineSavedLiveData: LiveData<CheckEngineSavedErrorsPacket>
-        get() = flow {
-            secu3ConnectionManager.sendNewTask(Task.Secu3ReadEcuSavedErrors)
-
-            val packet = secu3ConnectionManager.receivedPacketFlow.first { it is CheckEngineSavedErrorsPacket } as CheckEngineSavedErrorsPacket
-
-            emit(packet)
-            secu3ConnectionManager.sendNewTask(Task.Secu3ReadEcuErrors)
-        }.asLiveData()
+        get() = secu3ConnectionManager.receivedPacketFlow.filter { it is CheckEngineSavedErrorsPacket }
+            .map { it as CheckEngineSavedErrorsPacket }.asLiveData()
 
     val checkEngineLiveData: LiveData<CheckEngineErrorsPacket>
         get() = secu3ConnectionManager.receivedPacketFlow.filter { it is CheckEngineErrorsPacket }
             .map { it as CheckEngineErrorsPacket }.asLiveData()
+
+    init {
+        waitSavedErrors()
+    }
+
+    private fun waitSavedErrors() {
+        viewModelScope.launch {
+            secu3ConnectionManager.sendNewTask(Task.Secu3ReadEcuSavedErrors)
+
+            secu3ConnectionManager.receivedPacketFlow.first { it is CheckEngineSavedErrorsPacket }.let {
+                secu3ConnectionManager.sendNewTask(Task.Secu3ReadEcuErrors)
+            }
+        }
+    }
+
+    fun clearErrors() {
+        waitSavedErrors()
+        secu3ConnectionManager.sendOutPacket(CheckEngineSavedErrorsPacket())
+    }
+
 }
