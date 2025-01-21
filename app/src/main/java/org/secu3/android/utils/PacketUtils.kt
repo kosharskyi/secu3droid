@@ -31,22 +31,19 @@ object PacketUtils {
 
     // There are several special reserved symbols in binary mode: 0x21, 0x40,
     // 0x0D, 0x0A
-    const val FIBEGIN = 0x21 // '!' indicates beginning of the
+    private const val FOBEGIN = 0x21 // '!' indicates beginning of the outgoing packet
 
-    // ingoing packet
-    private const val FOBEGIN = 0x40 // '@' indicates beginning of the
+    private const val FIBEGIN = 0x40 // '@' indicates beginning of the ingoing packet
 
-    // outgoing packet
-    private const val FIOEND = 0x0D // '\r' indicates ending of the
+    private const val FIOEND = 0x0D // '\r' indicates ending of the ingoing/outgoing packet
 
-    // ingoing/outgoing packet
     private const val FESC = 0x0A // '\n' Packet escape (FESC)
 
     // Following bytes are used only in escape sequeces and may appear in the
     // data without any problems
-    private const val TFIBEGIN = 0x81 // Transposed FIBEGIN
+    private const val TFOBEGIN = 0x81 // Transposed FOBEGIN
 
-    private const val TFOBEGIN = 0x82 // Transposed FOBEGIN
+    private const val TFIBEGIN = 0x82 // Transposed FIBEGIN
 
     private const val TFIOEND = 0x83 // Transposed FIOEND
 
@@ -64,7 +61,7 @@ object PacketUtils {
             if (esc) {
                 esc = false
                 when(packetBuffer[i]) {
-                    TFOBEGIN -> buf[idx++] = FOBEGIN
+                    TFIBEGIN -> buf[idx++] = FIBEGIN
                     TFIOEND -> buf[idx++] = FIOEND
                     TFESC -> buf[idx++] = FESC
                 }
@@ -77,9 +74,9 @@ object PacketUtils {
         val buf = ArrayList<Int>(packetBuffer.size - 3)
         for (i in packetBuffer.indices) {
             if (i >= 2 && i < packetBuffer.size - 1) {
-                if (packetBuffer[i] == FIBEGIN) {
+                if (packetBuffer[i] == FOBEGIN) {
                     buf.add(FESC)
-                    buf.add(TFIBEGIN)
+                    buf.add(TFOBEGIN)
                     continue
                 } else if (packetBuffer[i] == FIOEND) {
                     buf.add(FESC)
