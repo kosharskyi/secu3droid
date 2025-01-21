@@ -29,11 +29,10 @@ import androidx.lifecycle.LiveData
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.asLiveData
 import androidx.lifecycle.viewModelScope
-import androidx.lifecycle.viewmodel.compose.viewModel
 import dagger.hilt.android.lifecycle.HiltViewModel
+import kotlinx.coroutines.flow.distinctUntilChangedBy
 import kotlinx.coroutines.flow.filter
 import kotlinx.coroutines.flow.first
-import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.launch
 import org.secu3.android.connection.ConnectionState
@@ -55,7 +54,7 @@ class ErrorsViewModel @Inject constructor(private val secu3ConnectionManager: Se
 
     val checkEngineLiveData: LiveData<CheckEngineErrorsPacket>
         get() = secu3ConnectionManager.receivedPacketFlow.filter { it is CheckEngineErrorsPacket }
-            .map { it as CheckEngineErrorsPacket }.asLiveData()
+            .map { it as CheckEngineErrorsPacket }.distinctUntilChangedBy { it.errors }.asLiveData()
 
     init {
         waitSavedErrors()
