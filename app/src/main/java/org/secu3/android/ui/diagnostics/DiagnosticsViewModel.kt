@@ -81,12 +81,6 @@ class DiagnosticsViewModel @Inject constructor(private val secu3ConnectionManage
     val enableBlDe: LiveData<Boolean>
         get() = mEnableBlDe
 
-
-    fun leaveDiagnostic() {
-        secu3ConnectionManager.sendNewTask(Task.Secu3OpComLeaveDiagnostics)
-        secu3ConnectionManager.sendNewTask(Task.Secu3ReadSensors)
-    }
-
     val connectionStatusLiveData: LiveData<ConnectionState>
         get() = secu3ConnectionManager.connectionStateFlow.asLiveData()
 
@@ -99,5 +93,15 @@ class DiagnosticsViewModel @Inject constructor(private val secu3ConnectionManage
 
     fun sendDiagOutPacket() {
         secu3ConnectionManager.sendOutPacket(outputPacket)
+    }
+
+    private fun leaveDiagnostic() {
+        secu3ConnectionManager.sendNewTask(Task.Secu3OpComLeaveDiagnostics)
+        secu3ConnectionManager.sendNewTask(Task.Secu3ReadSensors)
+    }
+
+    override fun onCleared() {
+        super.onCleared()
+        leaveDiagnostic()
     }
 }

@@ -109,11 +109,6 @@ class DiagnosticsFragment : Fragment() {
         initPager()
     }
 
-    override fun onDestroy() {
-        mViewModel.leaveDiagnostic()
-        super.onDestroy()
-    }
-
     private fun initPager() {
         mBinding.diagnosticsPager.adapter = DiagnosticsPagerAdapter(this)
 
