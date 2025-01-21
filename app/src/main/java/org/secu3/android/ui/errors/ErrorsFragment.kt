@@ -31,6 +31,7 @@ import android.view.View
 import android.view.ViewGroup
 import androidx.fragment.app.Fragment
 import androidx.fragment.app.viewModels
+import androidx.navigation.fragment.findNavController
 import dagger.hilt.android.AndroidEntryPoint
 import org.secu3.android.R
 import org.secu3.android.connection.Connected
@@ -57,7 +58,7 @@ class ErrorsFragment : Fragment() {
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
 
-        mBinding.toolbar.setNavigationOnClickListener { activity?.onBackPressed() }
+        mBinding.toolbar.setNavigationOnClickListener { findNavController().navigateUp() }
 
         errors = resources.getStringArray(R.array.errors_ecu_errors_names).map { CheckEngineError(it) }
 
@@ -85,7 +86,6 @@ class ErrorsFragment : Fragment() {
             }
 
             mBinding.errorsRecyclerView.adapter?.notifyDataSetChanged()
-            mViewModel.sendNewTask(Task.Secu3ReadEcuErrors)
         }
 
         mViewModel.checkEngineLiveData.observe(viewLifecycleOwner) {

@@ -115,6 +115,11 @@
         <item>Неисправность датчика на входе ADD_I6</item>
         <item>Неисправность датчика на входе ADD_I7</item>
         <item>Неисправность датчика на входе ADD_I8</item>
+        <item>Очень низкое давление масла</item>
+        <item>Данные таблиц в EEPROM повреждены (CRC)</item>
+        <item>Превышение предела производительности форсунки</item>
+        <item>Данные таблицы обучения в EEPROM повреждены</item>
+        <item>Отказ шагового двигателя РХХ</item>
     </string-array>
 
     <string-array name="logical_functions">

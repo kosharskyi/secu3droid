@@ -31,6 +31,7 @@ import org.secu3.android.models.packets.input.FirmwareInfoPacket
 import org.secu3.android.models.packets.input.FnNameDatPacket
 import org.secu3.android.models.packets.input.SensorsPacket
 import org.secu3.android.models.packets.base.BaseOutputPacket
+import org.secu3.android.models.packets.input.CheckEngineSavedErrorsPacket
 import org.secu3.android.models.packets.out.params.AccelerationParamPacket
 import org.secu3.android.models.packets.out.params.AdcCorrectionsParamPacket
 import org.secu3.android.models.packets.out.params.AnglesParamPacket
@@ -78,7 +79,7 @@ data class ChangeModePacket(
                 Task.Secu3ReadSensors -> ChangeModePacket(SensorsPacket.DESCRIPTOR)
                 Task.Secu3ReadRawSensors -> ChangeModePacket(AdcRawDatPacket.DESCRIPTOR)
                 Task.Secu3ReadEcuErrors -> ChangeModePacket(CheckEngineErrorsPacket.DESCRIPTOR)
-                Task.Secu3ReadEcuSavedErrors -> ChangeModePacket(CheckEngineErrorsPacket.DESCRIPTOR)
+                Task.Secu3ReadEcuSavedErrors -> ChangeModePacket(CheckEngineSavedErrorsPacket.DESCRIPTOR)
                 Task.Secu3DiagInput -> ChangeModePacket(DiagInputPacket.DESCRIPTOR)
 
                 Task.Secu3ReadStarterParam -> ChangeModePacket(StarterParamPacket.DESCRIPTOR)
