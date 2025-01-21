@@ -250,10 +250,10 @@ class DiagOutputPacket(private val fwInfo: FirmwareInfoPacket) : BaseOutputPacke
         )
 
         data += out.write4Bytes()
-//        data += data.write2Bytes(frq)
+        data += frq.write2Bytes()
 
-//        data += duty.toChar()
-//        data += chan.toChar()
+        data += duty.write1Byte()
+        data += chan.write1Byte()
 
         return data
     }
@@ -263,6 +263,4 @@ class DiagOutputPacket(private val fwInfo: FirmwareInfoPacket) : BaseOutputPacke
         internal const val DESCRIPTOR = '^'
 
     }
-
-
 }

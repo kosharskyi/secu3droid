@@ -28,6 +28,10 @@ abstract class BaseOutputPacket : BaseSecu3Packet() {
 
     abstract fun pack(): IntArray
 
+    protected fun Int.write1Byte(): IntArray {
+        return intArrayOf(this.and(0xFF))
+    }
+
     protected fun Int.write2Bytes(): IntArray {
         var data = intArrayOf()
 
