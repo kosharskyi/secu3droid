@@ -320,17 +320,13 @@ class StartScreenFragment : Fragment() {
     }
 
     private fun checkUsbPermissionsAndConnect(usbDevice: UsbDevice) {
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
-            if (viewModel.usbManager.hasPermission(usbDevice)) {
-                Log.d(this.javaClass.simpleName, "Permission already granted for USB device: ${usbDevice.deviceName}")
-                viewModel.startConnection(usbDevice)
-            } else {
-                Log.d(this.javaClass.simpleName, "Requesting permission for USB device: ${usbDevice.deviceName}")
-                val permissionIntent = PendingIntent.getBroadcast(requireContext(),0, Intent(ACTION_USB_PERMISSION), PendingIntent.FLAG_IMMUTABLE)
-                viewModel.usbManager.requestPermission(usbDevice, permissionIntent)
-            }
-        } else {
+        if (viewModel.usbManager.hasPermission(usbDevice)) {
+            Log.d(this.javaClass.simpleName, "Permission already granted for USB device: ${usbDevice.deviceName}")
             viewModel.startConnection(usbDevice)
+        } else {
+            Log.d(this.javaClass.simpleName, "Requesting permission for USB device: ${usbDevice.deviceName}")
+            val permissionIntent = PendingIntent.getBroadcast(requireContext(),0, Intent(ACTION_USB_PERMISSION), PendingIntent.FLAG_IMMUTABLE)
+            viewModel.usbManager.requestPermission(usbDevice, permissionIntent)
         }
     }
 
