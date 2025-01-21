@@ -34,7 +34,6 @@ import kotlinx.coroutines.launch
 import org.secu3.android.models.RawPacket
 import org.secu3.android.models.packets.base.BaseOutputPacket
 import org.secu3.android.models.packets.out.ChangeModePacket
-import org.secu3.android.utils.PacketUtils
 import org.secu3.android.utils.Task
 import org.secu3.android.utils.UserPrefs
 import org.threeten.bp.LocalTime
@@ -163,8 +162,12 @@ class BtConnection @Inject constructor(
                     }
 
                     if (char == endMarker) {
-                        val escaped = PacketUtils.EscRxPacket(packetBuffer.sliceArray(IntRange(0, idx - 1)))
-                        mReceivedPacketFlow.emit(RawPacket(escaped))
+                        val escaped = escRxPacket(packetBuffer.sliceArray(IntRange(0, idx - 1)))
+
+                        if (isChecksumValid(escaped)) {
+                            mReceivedPacketFlow.emit(RawPacket(escaped))
+                        }
+
                         idx = 0
                     }
                 }
@@ -197,14 +200,14 @@ class BtConnection @Inject constructor(
 
                 var packet = intArrayOf(OUTPUT_PACKET_SYMBOL) + sendPacket.pack()
 
-                val checksum = PacketUtils.calculateChecksum(packet.sliceArray(2 until packet.size))
+                val checksum = calculateChecksum(packet.sliceArray(2 until packet.size))
 
                 packet += checksum[1].toInt()
                 packet += checksum[0].toInt()
 
                 Log.e(this.javaClass.simpleName, packet.toString())
 
-                var escaped = PacketUtils.EscTxPacket(packet)
+                var escaped = escTxPacket(packet)
                 escaped += END_PACKET_SYMBOL
 
                 outputStream.write(escaped.map { it.toByte() }.toByteArray())

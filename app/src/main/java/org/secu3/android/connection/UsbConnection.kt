@@ -35,7 +35,6 @@ import kotlinx.coroutines.launch
 import org.secu3.android.models.RawPacket
 import org.secu3.android.models.packets.base.BaseOutputPacket
 import org.secu3.android.models.packets.out.ChangeModePacket
-import org.secu3.android.utils.PacketUtils
 import org.secu3.android.utils.Task
 import org.secu3.android.utils.UserPrefs
 import org.threeten.bp.LocalTime
@@ -166,8 +165,11 @@ class UsbConnection @Inject constructor(
                             }
                         } else {
                             if (idx > 2) {
-                                val escaped = PacketUtils.EscRxPacket(packetBuffer.sliceArray(0 until idx))
-                                mReceivedPacketFlow.emit(RawPacket(escaped))
+                                val escaped = escRxPacket(packetBuffer.sliceArray(0 until idx))
+
+                                if (isChecksumValid(escaped)) {
+                                    mReceivedPacketFlow.emit(RawPacket(escaped))
+                                }
                             } else {
                                 Log.d(this.javaClass.simpleName, "Incomplete packet received, skipping.")
                             }
@@ -203,14 +205,14 @@ class UsbConnection @Inject constructor(
 
                 var packet = intArrayOf(OUTPUT_PACKET_SYMBOL) + sendPacket.pack()
 
-                val checksum = PacketUtils.calculateChecksum(packet.sliceArray(2 until packet.size))
+                val checksum = calculateChecksum(packet.sliceArray(2 until packet.size))
 
                 packet += checksum[1].toInt()
                 packet += checksum[0].toInt()
 
                 Log.e(this.javaClass.simpleName, packet.toString())
 
-                var escaped = PacketUtils.EscTxPacket(packet)
+                var escaped = escTxPacket(packet)
                 escaped += END_PACKET_SYMBOL
 
                 val buffer = escaped.map { it.toByte() }.toByteArray()
