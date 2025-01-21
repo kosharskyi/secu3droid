@@ -24,19 +24,22 @@
  */
 package org.secu3.android.models.packets.out
 
-import org.secu3.android.models.packets.input.FirmwareInfoPacket
 import org.secu3.android.models.packets.base.BaseOutputPacket
 import org.secu3.android.utils.getBitValue
 import org.secu3.android.utils.setBitValue
 
-class DiagOutputPacket(private val fwInfo: FirmwareInfoPacket) : BaseOutputPacket() {
+class DiagOutputPacket : BaseOutputPacket() {
 
     private var out: Int = 0
     private var frq: Int = 0
     private var duty: Int = 0
     private var chan: Int = 0
 
+    //SECU-3T (13 values):
+    // IGN_OUT1, IGN_OUT2, IGN_OUT3, IGN_OUT4, IE, FE, ECF, CE, ST_BLOCK, ADD_O1, ADD_O2, BL, DE
 
+    //SECU-3i (23 values):
+    // IGN_O1, IGN_O2, IGN_O3, IGN_O4, IGN_O5, ECF, INJ_O1, INJ_O2, INJ_O3, INJ_O4, INJ_O5, BL, DE, STBL_O, CEL_O, FPMP_O, PWRR_O, EVAP_O, O2SH_O, COND_O, ADD_O2, TACH_O, GPA6_O
 
 
     var ignOut1: Boolean
@@ -83,13 +86,12 @@ class DiagOutputPacket(private val fwInfo: FirmwareInfoPacket) : BaseOutputPacke
 
 
 
-    private val ecfBitPosition: Int
-        get() = if (fwInfo.isSecu3T) 6 else 5
+
 
     var ecf: Boolean
-        get() = out.getBitValue(ecfBitPosition) > 0
+        get() = out.getBitValue(6) > 0
         set(value) {
-            out = out.setBitValue(value, ecfBitPosition)
+            out = out.setBitValue(value, 6)
         }
 
     var ce: Boolean
@@ -119,6 +121,13 @@ class DiagOutputPacket(private val fwInfo: FirmwareInfoPacket) : BaseOutputPacke
 
 
 
+
+
+    var ecf0: Boolean
+        get() = out.getBitValue(5) > 0
+        set(value) {
+            out = out.setBitValue(value, 5)
+        }
 
     var injO1: Boolean
         get() = out.getBitValue(6) > 0
@@ -151,20 +160,6 @@ class DiagOutputPacket(private val fwInfo: FirmwareInfoPacket) : BaseOutputPacke
         }
 
 
-
-
-    var enableBlDeTesting: Boolean
-        get() = out.getBitValue(12) > 0
-        set(value) {
-            if (value) {
-                out = (1 shl 12).or(out)
-                out = (1 shl 14).or(out)
-            } else {
-                out = (1 shl 12).inv().and(out)
-                out = (1 shl 14).inv().and(out)
-            }
-        }
-
     var bl: Boolean
         get() = out.getBitValue(11) > 0
         set(value) {
@@ -172,9 +167,9 @@ class DiagOutputPacket(private val fwInfo: FirmwareInfoPacket) : BaseOutputPacke
         }
 
     var de: Boolean
-        get() = out.getBitValue(13) > 0
+        get() = out.getBitValue(12) > 0
         set(value) {
-            out = out.setBitValue(value, 13)
+            out = out.setBitValue(value, 12)
         }
 
 
@@ -182,65 +177,63 @@ class DiagOutputPacket(private val fwInfo: FirmwareInfoPacket) : BaseOutputPacke
 
 
     var stblO: Boolean
+        get() = out.getBitValue(13) > 0
+        set(value) {
+            out = out.setBitValue(value, 13)
+        }
+
+    var celO: Boolean
+        get() = out.getBitValue(14) > 0
+        set(value) {
+            out = out.setBitValue(value, 14)
+        }
+
+    var fpmpO: Boolean
         get() = out.getBitValue(15) > 0
         set(value) {
             out = out.setBitValue(value, 15)
         }
 
-    var celO: Boolean
+    var pwrrO: Boolean
         get() = out.getBitValue(16) > 0
         set(value) {
             out = out.setBitValue(value, 16)
         }
 
-    var fpmpO: Boolean
+    var evapO: Boolean
         get() = out.getBitValue(17) > 0
         set(value) {
             out = out.setBitValue(value, 17)
         }
 
-    var pwrrO: Boolean
+    var o2shO: Boolean
         get() = out.getBitValue(18) > 0
         set(value) {
             out = out.setBitValue(value, 18)
         }
 
-    var evapO: Boolean
+    var condO: Boolean
         get() = out.getBitValue(19) > 0
         set(value) {
             out = out.setBitValue(value, 19)
         }
 
-    var o2shO: Boolean
+    var addO2: Boolean
         get() = out.getBitValue(20) > 0
         set(value) {
             out = out.setBitValue(value, 20)
         }
 
-    var condO: Boolean
+    var tachO: Boolean          // special
         get() = out.getBitValue(21) > 0
         set(value) {
             out = out.setBitValue(value, 21)
         }
 
-    var addO2: Boolean
+    var gpa6_O: Boolean          // special
         get() = out.getBitValue(22) > 0
         set(value) {
             out = out.setBitValue(value, 22)
-        }
-
-
-    var tachO: Boolean
-        get() = out.getBitValue(23) > 0
-        set(value) {
-            out = out.setBitValue(value, 23)
-        }
-
-
-    var enableTachOtesting: Boolean
-        get() = out.getBitValue(24) > 0
-        set(value) {
-            out = out.setBitValue(value, 24)
         }
 
 

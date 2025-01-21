@@ -85,10 +85,6 @@ class DiagnosticsFragment : Fragment() {
             }
         }
 
-        mViewModel.confirmExit.observe(viewLifecycleOwner) {
-            findNavController().navigateUp()
-        }
-
         mBinding.toolbar.apply {
             setNavigationOnClickListener {
                 findNavController().navigateUp()

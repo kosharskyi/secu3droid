@@ -53,21 +53,20 @@ class DiagnosticAdditionalDialogFragment : DialogFragment() {
         super.onViewCreated(view, savedInstanceState)
 
         mBinding.apply {
-            mViewModel.outputPacket.let {
-                enableTachO.isChecked = it.enableTachOtesting
-                enableBlDe.isChecked = it.enableBlDeTesting
 
-                okBtn.setOnClickListener { _ ->
-                    it.enableBlDeTesting = enableBlDe.isChecked
-                    it.enableTachOtesting = enableTachO.isChecked
-                    mViewModel.toggleBlDe()
-                    dismiss()
-                }
-                cancelBtn.setOnClickListener { dismiss() }
+            enableTachO.isChecked = mViewModel.enableTachO.value ?: false
+            enableBlDe.isChecked = mViewModel.enableBlDe.value ?: false
+
+            okBtn.setOnClickListener { _ ->
+                mViewModel.enableBlDe(enableBlDe.isChecked)
+                mViewModel.enableTachO(enableTachO.isChecked)
+                dismiss()
             }
+            cancelBtn.setOnClickListener { dismiss() }
+
         }
 
-        mViewModel.firmwareLiveData.observe(viewLifecycleOwner) {
+        mViewModel.firmwareInfo?.let {
             mBinding.enableTachO.isVisible = it.isSecu3T.not()
         }
 

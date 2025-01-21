@@ -41,7 +41,7 @@ import javax.inject.Inject
 @HiltViewModel
 class DiagnosticsViewModel @Inject constructor(private val secu3ConnectionManager: Secu3ConnectionManager) : ViewModel() {
 
-    val outputPacket = DiagOutputPacket(secu3ConnectionManager.fwInfo!!)
+    val outputPacket = DiagOutputPacket()
 
     private var isDiagModeActive = false
 
@@ -52,7 +52,6 @@ class DiagnosticsViewModel @Inject constructor(private val secu3ConnectionManage
             }.collect {
                 if (it.opCode == 7) {
                     isDiagModeActive = false
-                    mConfirmExit.value = true
                 }
 
                 if (it.opCode == 6) {
@@ -65,17 +64,12 @@ class DiagnosticsViewModel @Inject constructor(private val secu3ConnectionManage
         secu3ConnectionManager.sendNewTask(Task.Secu3OpComEnterDiagnostics)
     }
 
-    val firmwareLiveData: LiveData<FirmwareInfoPacket>
-        get() = secu3ConnectionManager.firmwareLiveData
+    val firmwareInfo: FirmwareInfoPacket?
+        get() = secu3ConnectionManager.fwInfo
 
-    private val mConfirmExit = MutableLiveData<Boolean>()
-    val confirmExit: LiveData<Boolean>
-        get() = mConfirmExit
-
-
-    fun toggleBlDe() {
-        mEnableBlDe.value = true
-    }
+    private val mEnableTachO = MutableLiveData<Boolean>()
+    val enableTachO: LiveData<Boolean>
+        get() = mEnableTachO
 
     private val mEnableBlDe = MutableLiveData<Boolean>()
     val enableBlDe: LiveData<Boolean>
@@ -91,6 +85,14 @@ class DiagnosticsViewModel @Inject constructor(private val secu3ConnectionManage
         }.asLiveData()
 
 
+    fun enableTachO(enable: Boolean) {
+        mEnableTachO.value = enable
+    }
+
+    fun enableBlDe(enable: Boolean) {
+        mEnableBlDe.value = enable
+    }
+
     fun sendDiagOutPacket() {
         secu3ConnectionManager.sendOutPacket(outputPacket)
     }
@@ -101,7 +103,7 @@ class DiagnosticsViewModel @Inject constructor(private val secu3ConnectionManage
     }
 
     override fun onCleared() {
-        super.onCleared()
         leaveDiagnostic()
+        super.onCleared()
     }
 }

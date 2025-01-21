@@ -49,13 +49,22 @@ class DiagOutputFragment : Fragment() {
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
 
-        mViewModel.firmwareLiveData.observe(viewLifecycleOwner) {
-            mBinding.secu3t.isVisible = it.isSecu3T
-            mBinding.secu3i.isVisible = it.isSecu3T.not()
+        mViewModel.firmwareInfo?.let {
+            mBinding.apply {
+                secu3t.isVisible = it.isSecu3T
+                secu3i.isVisible = it.isSecu3T.not()
+            }
         }
 
         mViewModel.enableBlDe.observe(viewLifecycleOwner) {
-            checkBlDeTachOutputs()
+            mBinding.apply {
+                bl.isEnabled = it
+                de.isEnabled = it
+            }
+        }
+
+        mViewModel.enableTachO.observe(viewLifecycleOwner) {
+            mBinding.tachO.isVisible = it
         }
 
         mBinding.apply {
@@ -99,6 +108,10 @@ class DiagOutputFragment : Fragment() {
             }
             ecf.setOnCheckedChangeListener { _, isChecked ->
                 mViewModel.outputPacket.ecf = isChecked
+                mViewModel.sendDiagOutPacket()
+            }
+            ecf0.setOnCheckedChangeListener { _, isChecked ->
+                mViewModel.outputPacket.ecf0 = isChecked
                 mViewModel.sendDiagOutPacket()
             }
             ce.setOnCheckedChangeListener { _, isChecked ->
@@ -181,16 +194,6 @@ class DiagOutputFragment : Fragment() {
                 mViewModel.outputPacket.tachO = isChecked
                 mViewModel.sendDiagOutPacket()
             }
-        }
-
-        checkBlDeTachOutputs()
-    }
-
-    private fun checkBlDeTachOutputs() {
-        mBinding.apply {
-            bl.isVisible = mViewModel.outputPacket.enableBlDeTesting
-            de.isVisible = mViewModel.outputPacket.enableBlDeTesting
-            tachO.isVisible = mViewModel.outputPacket.enableTachOtesting
         }
     }
 }

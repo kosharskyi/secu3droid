@@ -20,18 +20,17 @@
             android:id="@+id/secu3i"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            app:constraint_referenced_ids="ign_out5,inj_o1,inj_o2,inj_o3,inj_o4,inj_o5,stbl_o,cel_o,fpmp_o,pwrr_o,evap_o,o2sh_o,cond_o,add_o2,tach_o"
+            app:constraint_referenced_ids="ign_out5,ecf0,inj_o1,inj_o2,inj_o3,inj_o4,inj_o5,stbl_o,cel_o,fpmp_o,pwrr_o,evap_o,o2sh_o,cond_o,add_o2,tach_o,gpa6_o"
             android:visibility="gone"
-            tools:visibility="visible"
-
             />
 
         <androidx.constraintlayout.widget.Group
             android:id="@+id/secu3t"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            app:constraint_referenced_ids="add_io1,add_io2,ie,fe, st_block,ce"
+            app:constraint_referenced_ids="ecf,add_io1,add_io2,ie,fe,st_block,ce"
             android:visibility="gone"
+            tools:visibility="visible"
             />
 
         <CheckBox
@@ -192,6 +191,20 @@
             />
 
 
+        <!-- ************************************************************* -->
+
+        <CheckBox
+            android:id="@+id/ecf0"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            app:layout_constraintTop_toBottomOf="@id/fe"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintEnd_toEndOf="parent"
+            android:text="ECF0"
+            android:button="@null"
+            android:drawableEnd="?android:attr/listChoiceIndicatorMultiple"
+            tools:checked="true"
+            />
 
 
         <!-- ************************************************************* -->
@@ -200,7 +213,7 @@
             android:id="@+id/inj_o1"
             android:layout_width="0dp"
             android:layout_height="wrap_content"
-            app:layout_constraintTop_toBottomOf="@id/ecf"
+            app:layout_constraintTop_toBottomOf="@id/ecf0"
             app:layout_constraintStart_toStartOf="parent"
             app:layout_constraintEnd_toEndOf="parent"
             android:text="INJ_O1"
@@ -277,7 +290,7 @@
             android:id="@+id/ce"
             android:layout_width="0dp"
             android:layout_height="wrap_content"
-            app:layout_constraintTop_toBottomOf="@id/inj_o5"
+            app:layout_constraintTop_toBottomOf="@id/ecf"
             app:layout_constraintStart_toStartOf="parent"
             app:layout_constraintEnd_toEndOf="parent"
             android:text="CE"
@@ -315,6 +328,7 @@
             android:text="BL"
             android:button="@null"
             android:drawableEnd="?android:attr/listChoiceIndicatorMultiple"
+            android:enabled="false"
             tools:checked="true"
             />
 
@@ -330,6 +344,7 @@
             android:text="DE"
             android:button="@null"
             android:drawableEnd="?android:attr/listChoiceIndicatorMultiple"
+            android:enabled="false"
             tools:checked="true"
             />
 
