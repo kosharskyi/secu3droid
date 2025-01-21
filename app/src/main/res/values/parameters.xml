@@ -144,6 +144,7 @@
     <string name="ckps_ignition_pulse_delay_title">Duration of igniter\'s pulse driver in teeth of wheel</string>
     <string name="ckps_hall_wnd_width_title">Hall sensor shutter\'s window width in degrees of crankshaft</string>
     <string name="ckps_degrees_before_tdc_title">Degrees before TDC</string>
+    <string name="ckps_missing_teeths_detection_factor_title">Missing teeth detection factor</string>
     <string name="ckps_use_cam_sensor_title">Use cam sensor as reference</string>
 
     <string name="miscel_baudrate_title">Data transmission baudrate</string>

@@ -32,7 +32,6 @@ import android.view.ViewGroup
 import android.widget.ArrayAdapter
 import androidx.lifecycle.lifecycleScope
 import androidx.lifecycle.withResumed
-import androidx.lifecycle.withStarted
 import kotlinx.coroutines.launch
 import org.secu3.android.R
 import org.secu3.android.databinding.FragmentCkpsBinding
@@ -50,6 +49,7 @@ class CkpsFragment : BaseParamFragment() {
 
     private val teethBeforeTdcList = IntRange(12, 55).toList()
     private val numberOfCylinderList = listOf(2,4,6,8)
+    private val defaultMttfValuesList = listOf(0.0f, 1.5f, 2.5f, 3.0f, 4.0f, 5.0f, 6.0f) // 0 - is stub
 
     override fun onCreateView(inflater: LayoutInflater, container: ViewGroup?, savedInstanceState: Bundle?): View? {
         mBinding = FragmentCkpsBinding.inflate(inflater, container, false)
@@ -101,6 +101,8 @@ class CkpsFragment : BaseParamFragment() {
                         degreesBeforeTDC.value = it.hallDegreesBtdc
 
                         useCamSensorAsReference.isChecked = it.useCamRef
+
+                        missingTeethDetectionFactor.value = it.mttf
                     }
 
                     initViews()
@@ -151,8 +153,14 @@ class CkpsFragment : BaseParamFragment() {
                 packet?.let { it1 -> mViewModel.sendPacket(it1) }
             }
             numberOfMissingTeeth.addOnValueChangeListener {
-                packet?.ckpsMissNum = it
-                packet?.let { it1 -> mViewModel.sendPacket(it1) }
+                packet?.apply {
+                    ckpsMissNum = it
+                    if (it > 0) {
+                        mttf = defaultMttfValuesList[it]
+                        mBinding.missingTeethDetectionFactor.value = mttf
+                    }
+                    mViewModel.sendPacket(this)
+                }
             }
 
             teethBeforeTdc.setOnItemClickListener { _, _, position, _ ->
@@ -181,11 +189,17 @@ class CkpsFragment : BaseParamFragment() {
                 packet?.let { it1 -> mViewModel.sendPacket(it1) }
             }
 
+            missingTeethDetectionFactor.addOnValueChangeListener {
+                packet?.mttf = it
+                packet?.let { it1 -> mViewModel.sendPacket(it1) }
+            }
+
             numberOfWheelsTeeth.setOnClickListener { intParamClick(it as IntParamView) }
             numberOfMissingTeeth.setOnClickListener { intParamClick(it as IntParamView) }
             durationIngDriverPulseTeeth.setOnClickListener { intParamClick(it as IntParamView) }
             hallSensorInterrupterDegree.setOnClickListener { floatParamClick(it as FloatParamView) }
             degreesBeforeTDC.setOnClickListener { floatParamClick(it as FloatParamView) }
+            missingTeethDetectionFactor.setOnClickListener { floatParamClick(it as FloatParamView) }
         }
     }
 }

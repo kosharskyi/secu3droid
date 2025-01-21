@@ -145,6 +145,7 @@
     <string name="ckps_ignition_pulse_delay_title">Тривалість імпульсу запуску комутатора в зубах шківа</string>
     <string name="ckps_hall_wnd_width_title">Ширина вікна в шторці датчика Холла в градусах по коленвалу</string>
     <string name="ckps_degrees_before_tdc_title">Кількість градусів до ВМТ</string>
+    <string name="ckps_missing_teeths_detection_factor_title">Коефіції визначення відсутніх зубів</string>
     <string name="ckps_use_cam_sensor_title">Використовувати ДФ як ДПВ</string>
 
 
