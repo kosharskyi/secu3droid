@@ -86,10 +86,21 @@ class DiagnosticsViewModel @Inject constructor(private val secu3ConnectionManage
 
 
     fun enableTachO(enable: Boolean) {
+        if (enable.not()) {
+            outputPacket.tachO = false
+            sendDiagOutPacket()
+        }
+
         mEnableTachO.value = enable
     }
 
     fun enableBlDe(enable: Boolean) {
+        if (enable.not()) {
+            outputPacket.bl = false
+            outputPacket.de = false
+            sendDiagOutPacket()
+        }
+
         mEnableBlDe.value = enable
     }
 

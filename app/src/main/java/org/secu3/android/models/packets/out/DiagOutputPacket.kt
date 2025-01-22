@@ -27,12 +27,13 @@ package org.secu3.android.models.packets.out
 import org.secu3.android.models.packets.base.BaseOutputPacket
 import org.secu3.android.utils.getBitValue
 import org.secu3.android.utils.setBitValue
+import kotlin.math.roundToInt
 
 class DiagOutputPacket : BaseOutputPacket() {
 
-    private var out: Int = 0
-    private var frq: Int = 0
-    private var duty: Int = 0
+    var out: Int = 0
+    private var frq: Float = 10.0f
+    private var duty: Float = 0.0f
     private var chan: Int = 0
 
     //SECU-3T (13 values):
@@ -164,12 +165,14 @@ class DiagOutputPacket : BaseOutputPacket() {
         get() = out.getBitValue(11) > 0
         set(value) {
             out = out.setBitValue(value, 11)
+            out = out.setBitValue(value, 12)
         }
 
     var de: Boolean
-        get() = out.getBitValue(12) > 0
+        get() = out.getBitValue(13) > 0
         set(value) {
-            out = out.setBitValue(value, 12)
+            out = out.setBitValue(value, 13)
+            out = out.setBitValue(value, 14)
         }
 
 
@@ -177,63 +180,64 @@ class DiagOutputPacket : BaseOutputPacket() {
 
 
     var stblO: Boolean
-        get() = out.getBitValue(13) > 0
-        set(value) {
-            out = out.setBitValue(value, 13)
-        }
-
-    var celO: Boolean
-        get() = out.getBitValue(14) > 0
-        set(value) {
-            out = out.setBitValue(value, 14)
-        }
-
-    var fpmpO: Boolean
         get() = out.getBitValue(15) > 0
         set(value) {
             out = out.setBitValue(value, 15)
         }
 
-    var pwrrO: Boolean
+    var celO: Boolean
         get() = out.getBitValue(16) > 0
         set(value) {
             out = out.setBitValue(value, 16)
         }
 
-    var evapO: Boolean
+    var fpmpO: Boolean
         get() = out.getBitValue(17) > 0
         set(value) {
             out = out.setBitValue(value, 17)
         }
 
-    var o2shO: Boolean
+    var pwrrO: Boolean
         get() = out.getBitValue(18) > 0
         set(value) {
             out = out.setBitValue(value, 18)
         }
 
-    var condO: Boolean
+    var evapO: Boolean
         get() = out.getBitValue(19) > 0
         set(value) {
             out = out.setBitValue(value, 19)
         }
 
-    var addO2: Boolean
+    var o2shO: Boolean
         get() = out.getBitValue(20) > 0
         set(value) {
             out = out.setBitValue(value, 20)
         }
 
-    var tachO: Boolean          // special
+    var condO: Boolean
         get() = out.getBitValue(21) > 0
         set(value) {
             out = out.setBitValue(value, 21)
         }
 
-    var gpa6_O: Boolean          // special
+    var addO2: Boolean
         get() = out.getBitValue(22) > 0
         set(value) {
             out = out.setBitValue(value, 22)
+        }
+
+    var tachO: Boolean          // special
+        get() = out.getBitValue(23) > 0
+        set(value) {
+            out = out.setBitValue(value, 23)
+            out = out.setBitValue(value, 24)
+        }
+
+    var gpa6_O: Boolean          // special
+        get() = out.getBitValue(25) > 0
+        set(value) {
+            out = out.setBitValue(value, 25)
         }
 
 
@@ -243,9 +247,9 @@ class DiagOutputPacket : BaseOutputPacket() {
         )
 
         data += out.write4Bytes()
-        data += frq.write2Bytes()
+        data += 1.0f.div(frq).times(524288.0f).roundToInt().write2Bytes()
 
-        data += duty.write1Byte()
+        data += duty.div(100.0f).times(255.0f).roundToInt().write1Byte()
         data += chan.write1Byte()
 
         return data

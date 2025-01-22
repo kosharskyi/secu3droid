@@ -161,7 +161,7 @@ class BtConnection @Inject constructor(
                         packetBuffer[idx++] = char
                     }
 
-                    if (char == endMarker) {
+                    if (idx > 4 && char == endMarker) {
                         val escaped = escRxPacket(packetBuffer.sliceArray(IntRange(0, idx - 1)))
 
                         if (isChecksumValid(escaped)) {
