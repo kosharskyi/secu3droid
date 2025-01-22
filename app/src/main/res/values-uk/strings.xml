@@ -361,6 +361,8 @@
     <string name="unknown_device">Невідомий пристрій</string>
     <string name="select_a_device_from_the_list">Виберіть пристрій зі списку</string>
     <string name="clear_all_errors">Видалити всі помилки</string>
+    <string name="name">Ім\'я</string>
+    <string name="password">Пароль</string>
 
 </resources>
 

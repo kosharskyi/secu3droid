@@ -39,6 +39,7 @@
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintBottom_toBottomOf="parent"
+        tools:visibility="gone"
         />
 
     <ScrollView
@@ -46,6 +47,7 @@
         android:layout_width="match_parent"
         android:layout_height="match_parent"
         android:visibility="gone"
+        tools:visibility="visible"
         >
 
         <LinearLayout
@@ -55,41 +57,173 @@
             android:padding="16dp"
             >
 
-            <com.google.android.material.textfield.TextInputLayout
-                android:id="@+id/bluetooth_type_title"
-                android:theme="@style/Theme.MaterialComponents.DayNight.NoActionBar"
-                style="@style/Widget.MaterialComponents.TextInputLayout.OutlinedBox.ExposedDropdownMenu"
+            <com.google.android.material.card.MaterialCardView
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:layout_marginTop="16dp"
-                android:hint="Bluetooth type">
+                android:layout_margin="8dp"
+                app:cardCornerRadius="10dp"
+                app:cardBackgroundColor="@color/colorPrimary"
+                >
 
-                <AutoCompleteTextView
-                    android:id="@+id/bluetooth_type"
+                <LinearLayout
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:inputType="none"
-                    />
+                    android:orientation="vertical"
+                    android:padding="16dp"
+                    >
 
-            </com.google.android.material.textfield.TextInputLayout>
+                    <com.google.android.material.textfield.TextInputLayout
+                        android:id="@+id/bluetooth_type_title"
+                        android:theme="@style/Theme.MaterialComponents.DayNight.NoActionBar"
+                        style="@style/Widget.MaterialComponents.TextInputLayout.OutlinedBox.ExposedDropdownMenu"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="16dp"
+                        android:hint="Bluetooth type">
+
+                        <AutoCompleteTextView
+                            android:id="@+id/bluetooth_type"
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:inputType="none"
+                            />
+
+                    </com.google.android.material.textfield.TextInputLayout>
+
+                    <!-- ************************************************************* -->
+
+                    <CheckBox
+                        android:id="@+id/use_bluetooth"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:text="@string/secur_par_use_bluetooth_title"
+                        />
+
+                    <!-- ************************************************************* -->
+
+                    <com.google.android.material.textfield.TextInputLayout
+                        android:id="@+id/bluetooth_name_title"
+                        android:theme="@style/Theme.MaterialComponents.DayNight.NoActionBar"
+                        style="@style/Widget.MaterialComponents.TextInputLayout.OutlinedBox"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="16dp"
+                        android:enabled="false"
+                        android:hint="@string/name">
+
+                        <com.google.android.material.textfield.TextInputEditText
+                            android:id="@+id/bluetooth_name"
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:inputType="text"
+                            />
+
+                    </com.google.android.material.textfield.TextInputLayout>
+
+                    <!-- ************************************************************* -->
+
+                    <com.google.android.material.textfield.TextInputLayout
+                        android:id="@+id/bluetooth_password_title"
+                        android:theme="@style/Theme.MaterialComponents.DayNight.NoActionBar"
+                        style="@style/Widget.MaterialComponents.TextInputLayout.OutlinedBox"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="16dp"
+                        android:enabled="false"
+                        android:hint="@string/password">
+
+                        <com.google.android.material.textfield.TextInputEditText
+                            android:id="@+id/bluetooth_password"
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:inputType="number"
+                            />
+
+                    </com.google.android.material.textfield.TextInputLayout>
+
+                    <com.google.android.material.button.MaterialButton
+                        android:id="@+id/bluetooth_apply"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="16dp"
+                        android:layout_gravity="end"
+                        android:enabled="false"
+                        android:text="Apply"
+                        style="@style/Widget.MaterialComponents.Button.TextButton"
+                        />
+
+                </LinearLayout>
+
+            </com.google.android.material.card.MaterialCardView>
 
             <!-- ************************************************************* -->
 
-            <CheckBox
-                android:id="@+id/use_bluetooth"
+            <com.google.android.material.card.MaterialCardView
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:text="@string/secur_par_use_bluetooth_title"
-                />
+                android:layout_margin="8dp"
+                app:cardCornerRadius="10dp"
+                app:cardBackgroundColor="@color/colorPrimary"
+                >
+
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="vertical"
+                    android:padding="16dp"
+                    >
+
+                    <CheckBox
+                        android:id="@+id/use_immobilizer"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:text="@string/secur_par_use_immobilizer_title"
+                        />
+
+                    <com.google.android.material.textfield.TextInputLayout
+                        android:id="@+id/immobilizer_key1_title"
+                        android:theme="@style/Theme.MaterialComponents.DayNight.NoActionBar"
+                        style="@style/Widget.MaterialComponents.TextInputLayout.OutlinedBox"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:enabled="false"
+                        android:hint="Key 1">
+
+                        <com.google.android.material.textfield.TextInputEditText
+                            android:id="@+id/immobilizer_key1"
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:inputType="text"
+                            />
+
+                    </com.google.android.material.textfield.TextInputLayout>
+
+                    <!-- ************************************************************* -->
+
+                    <com.google.android.material.textfield.TextInputLayout
+                        android:id="@+id/immobilizer_key2_title"
+                        android:theme="@style/Theme.MaterialComponents.DayNight.NoActionBar"
+                        style="@style/Widget.MaterialComponents.TextInputLayout.OutlinedBox"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="16dp"
+                        android:enabled="false"
+                        android:hint="Key 2">
+
+                        <com.google.android.material.textfield.TextInputEditText
+                            android:id="@+id/immobilizer_key2"
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:inputType="text"
+                            />
+
+                    </com.google.android.material.textfield.TextInputLayout>
+
+                </LinearLayout>
+
+            </com.google.android.material.card.MaterialCardView>
 
             <!-- ************************************************************* -->
-
-            <CheckBox
-                android:id="@+id/use_immobilizer"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:text="@string/secur_par_use_immobilizer_title"
-                />
 
             <!-- ************************************************************* -->
 
@@ -100,6 +234,7 @@
                 app:layout_constraintTop_toBottomOf="@id/use_immobilizer"
                 app:layout_constraintStart_toStartOf="parent"
                 android:text="@string/secur_par_always_load_params_from_flash_title"
+                android:enabled="false"
                 />
 
             <!-- ************************************************************* -->
@@ -111,6 +246,7 @@
                 app:layout_constraintTop_toBottomOf="@id/load_params_from_flash"
                 app:layout_constraintStart_toStartOf="parent"
                 android:text="@string/secur_par_check_firmware_integrity_title"
+                android:enabled="false"
                 />
 
         </LinearLayout>

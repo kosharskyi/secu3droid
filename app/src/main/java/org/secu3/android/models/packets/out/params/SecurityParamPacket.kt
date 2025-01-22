@@ -26,6 +26,7 @@ package org.secu3.android.models.packets.out.params
 
 import org.secu3.android.models.packets.base.BaseOutputPacket
 import org.secu3.android.utils.getBitValue
+import org.secu3.android.utils.setBitValue
 
 data class SecurityParamPacket(
 
@@ -38,14 +39,20 @@ data class SecurityParamPacket(
 
 ) : BaseOutputPacket() {
 
-    val useBt: Boolean                                  // specifies to use or not to use bluetooth
+    var useBt: Boolean                                  // specifies to use or not to use bluetooth
         get() = btFlags.getBitValue(0) > 0
+        set(value) {
+            btFlags = btFlags.setBitValue(value, 0)
+        }
 
     val setBtBaudRate: Boolean                          // indicates that bluetooth baud rate has to be set during start up
         get() = btFlags.getBitValue(1) > 0
 
-    val useImmobilizer: Boolean                         // specifies to use or not to use immobilizer
+    var useImmobilizer: Boolean                         // specifies to use or not to use immobilizer
         get() = btFlags.getBitValue(2) > 0
+        set(value) {
+            btFlags = btFlags.setBitValue(value, 2)
+        }
 
     val useReserveParams: Boolean                       // Use reserve parameters instead of parameters stored in the EEPROM
         get() = btFlags.getBitValue(3) > 0

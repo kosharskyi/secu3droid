@@ -30,12 +30,14 @@ import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import android.widget.ArrayAdapter
+import androidx.core.widget.addTextChangedListener
 import androidx.lifecycle.lifecycleScope
 import androidx.lifecycle.withResumed
 import androidx.lifecycle.withStarted
 import kotlinx.coroutines.launch
 import org.secu3.android.R
 import org.secu3.android.databinding.FragmentSecurityBinding
+import org.secu3.android.models.packets.out.params.SecurityParamPacket
 import org.secu3.android.utils.gone
 import org.secu3.android.utils.visible
 
@@ -45,6 +47,8 @@ class SecurityFragment : BaseParamFragment() {
     private lateinit var mBinding: FragmentSecurityBinding
 
     private val btTypes = listOf("BC417", "BK3231", "BK3231S(JDY-31)", "BC352(HC-05)", "BK3432", "BK3431S")
+
+    private var packet: SecurityParamPacket? = null
 
     override fun onCreateView(inflater: LayoutInflater, container: ViewGroup?, savedInstanceState: Bundle?): View? {
         mBinding = FragmentSecurityBinding.inflate(inflater, container, false)
@@ -65,6 +69,8 @@ class SecurityFragment : BaseParamFragment() {
 
                     mViewModel.isSendAllowed = false
 
+                    packet = it
+
                     mBinding.apply {
 
                         progressBar.gone()
@@ -73,15 +79,51 @@ class SecurityFragment : BaseParamFragment() {
                         bluetoothType.setText(btTypes[it.btType], false)
 
                         useBluetooth.isChecked = it.useBt
+                        bluetoothNameTitle.isEnabled = it.useBt
+                        bluetoothPasswordTitle.isEnabled = it.useBt
+
                         useImmobilizer.isChecked = it.useImmobilizer
 
                         loadParamsFromFlash.isChecked = it.useReserveParams
                         checkFirmwareIntegrity.isChecked = it.checkFwCrc
                     }
 
+                    initViews()
+
                     mViewModel.isSendAllowed = true
                 }
             }
+        }
+    }
+
+    private fun initViews() {
+        mBinding.apply {
+
+            bluetoothName.addTextChangedListener {
+                validateNameAndPassword()
+            }
+
+            bluetoothPassword.addTextChangedListener {
+                validateNameAndPassword()
+            }
+
+            useBluetooth.setOnCheckedChangeListener { _, isChecked ->
+                bluetoothName.isEnabled = isChecked
+                bluetoothPassword.isEnabled = isChecked
+            }
+
+            useImmobilizer.setOnCheckedChangeListener { _, isChecked ->
+//                packet?.apply {
+//                    useImmobilizer = isChecked
+//                    mViewModel.sendPacket(this)
+//                }
+            }
+        }
+    }
+
+    private fun validateNameAndPassword() {
+        mBinding.apply {
+            bluetoothApply.isEnabled = bluetoothName.text.toString().isNotEmpty() && bluetoothPassword.text.toString().length >= 4
         }
     }
 }

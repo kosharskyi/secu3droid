@@ -364,6 +364,8 @@
     <string name="unknown_device">Неизвестное устройство</string>
     <string name="select_a_device_from_the_list">Выберите устройство из списка</string>
     <string name="clear_all_errors">Удалить все ошибки</string>
+    <string name="name">Имя</string>
+    <string name="password">Пароль</string>
 
 
 </resources>
