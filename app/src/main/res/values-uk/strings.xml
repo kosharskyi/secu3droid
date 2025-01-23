@@ -363,6 +363,8 @@
     <string name="clear_all_errors">Видалити всі помилки</string>
     <string name="name">Ім\'я</string>
     <string name="password">Пароль</string>
+    <string name="test_signal_frequency_hz">Частота тест. сигналу</string>
+    <string name="test_signal_duty">Скважність тест. сигналу</string>
 
 </resources>
 

@@ -366,6 +366,8 @@
     <string name="clear_all_errors">Удалить все ошибки</string>
     <string name="name">Имя</string>
     <string name="password">Пароль</string>
+    <string name="test_signal_frequency_hz">Частота тест. сигнала</string>
+    <string name="test_signal_duty">Скважность тест. сигнала</string>
 
 
 </resources>

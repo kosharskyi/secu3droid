@@ -32,9 +32,9 @@ import kotlin.math.roundToInt
 class DiagOutputPacket : BaseOutputPacket() {
 
     var out: Int = 0
-    private var frq: Float = 10.0f
-    private var duty: Float = 0.0f
-    private var chan: Int = 0
+    var frq: Float = 10.0f
+    var duty: Float = 0.0f
+    var chan: Int = 0
 
     //SECU-3T (13 values):
     // IGN_OUT1, IGN_OUT2, IGN_OUT3, IGN_OUT4, IE, FE, ECF, CE, ST_BLOCK, ADD_O1, ADD_O2, BL, DE

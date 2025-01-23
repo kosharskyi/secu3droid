@@ -81,7 +81,6 @@ class LtftFragment : BaseParamFragment() {
 
             ltftMode.onItemClickListener = AdapterView.OnItemClickListener { _, _, position, _ ->
                 packet?.mode = position
-                Toast.makeText(requireContext(), "${modeItems[position]}", Toast.LENGTH_SHORT).show()
                 packet?.let { pckt -> mViewModel.sendPacket(pckt) }
             }
 

@@ -25,14 +25,19 @@
 package org.secu3.android.ui.diagnostics
 
 import android.os.Bundle
+import android.text.InputType
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
+import android.widget.AdapterView
+import android.widget.ArrayAdapter
 import androidx.core.view.isVisible
 import androidx.fragment.app.Fragment
 import androidx.navigation.navGraphViewModels
 import org.secu3.android.R
 import org.secu3.android.databinding.FragmentDiagInputBinding
+import org.secu3.android.ui.parameters.dialogs.ParamFloatEditDialogFragment
+import org.secu3.android.ui.parameters.views.FloatParamView
 
 
 class DiagInputFragment : Fragment() {
@@ -40,6 +45,9 @@ class DiagInputFragment : Fragment() {
     private lateinit var mBinding: FragmentDiagInputBinding
 
     private val mViewModel: DiagnosticsViewModel by navGraphViewModels(R.id.diagnosticsFragment, factoryProducer = { defaultViewModelProviderFactory })
+
+    private val secu3TchannelValues = listOf("NONE", "IGN_OUT1", "IGN_OUT2", "IGN_OUT3", "IGN_OUT4", "IE", "FE", "ECF", "CE", "ST_BLOCK", "ADD_IO1", "ADD_IO2", "BL", "DE")
+    private val secu3IChannelValues = listOf("NONE", "IGN_OUT1", "IGN_OUT2", "IGN_OUT3", "IGN_OUT4", "IGN_OUT5", "ECF", "INJ_O1", "INJ_O2", "INJ_O3", "INJ_O4", "INJ_O5", "BL", "DE", "STBL_O", "CEL_O", "FPMP_O", "PWRR_O", "EVAP_O", "O2SH_0", "COND_O", "ADD_O2", "TACH_O", "GPA6_O")
 
     override fun onCreateView(inflater: LayoutInflater, container: ViewGroup?, savedInstanceState: Bundle?): View? {
         mBinding = FragmentDiagInputBinding.inflate(inflater, container, false)
@@ -52,6 +60,36 @@ class DiagInputFragment : Fragment() {
         mViewModel.firmwareInfo?.let {
             mBinding.apply {
                 secu3iGroup.isVisible = it.isSecu3T.not()
+
+                val chList = if (it.isSecu3T) secu3TchannelValues else secu3IChannelValues
+
+                selectOutput.inputType = InputType.TYPE_NULL
+                ArrayAdapter(requireContext(), R.layout.list_item, chList).also {
+                    selectOutput.setAdapter(it)
+                    selectOutput.setText(chList[0], false)
+                }
+                selectOutput.onItemClickListener = AdapterView.OnItemClickListener { _, _, position, _ ->
+                    mViewModel.outputPacket.chan = position
+                    mViewModel.sendDiagOutPacket()
+                }
+
+                freq.addOnValueChangeListener {
+                    mViewModel.outputPacket.frq = it
+                    if (mViewModel.outputPacket.chan > 0) {
+                        mViewModel.sendDiagOutPacket()
+                    }
+                }
+                freq.setOnClickListener { floatParamClick(it as FloatParamView) }
+
+
+                duty.addOnValueChangeListener {
+                    mViewModel.outputPacket.duty = it
+                    if (mViewModel.outputPacket.chan > 0) {
+                        mViewModel.sendDiagOutPacket()
+                    }
+                }
+                duty.setOnClickListener { floatParamClick(it as FloatParamView) }
+
             }
         }
 
@@ -83,6 +121,19 @@ class DiagInputFragment : Fragment() {
                 add6.value = it.addI6
                 add7.value = it.addI7
                 add8.value = it.addI8
+            }
+        }
+    }
+
+    // NOTE: make sure you've changed this method in [BaseParamFragment.kt]
+    private fun floatParamClick(view: FloatParamView) {
+        view.apply {
+            ParamFloatEditDialogFragment.newInstance(value, title, step, maxValue, minValue, precision).also {
+                it.newValueLiveData.observe(viewLifecycleOwner) { result ->
+                    value = result
+                }
+
+                it.show(childFragmentManager, it::class.java.simpleName)
             }
         }
     }

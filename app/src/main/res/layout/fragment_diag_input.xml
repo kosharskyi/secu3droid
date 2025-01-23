@@ -42,7 +42,7 @@
             android:id="@+id/secu3i_group"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            app:constraint_referenced_ids="add3,add4,add5,add6,add7,add8,ign_i,cond_i,epas_i,gpa4_i"
+            app:constraint_referenced_ids="add5,add6,add7,add8,ign_i,cond_i,epas_i,gpa4_i"
             android:visibility="gone"
             tools:visibility="visible"
             />
@@ -277,7 +277,7 @@
             app:layout_constraintEnd_toEndOf="parent"
             android:button="@null"
             android:drawableEnd="?android:attr/listChoiceIndicatorMultiple"
-            android:text="BL"
+            android:text="BL jmp"
             android:clickable="false"
             android:focusable="false"
             android:focusableInTouchMode="false"
@@ -294,7 +294,7 @@
             app:layout_constraintTop_toBottomOf="@id/bl"
             app:layout_constraintStart_toStartOf="parent"
             app:layout_constraintEnd_toEndOf="parent"
-            android:text="DE"
+            android:text="DE jmp"
             android:button="@null"
             android:drawableEnd="?android:attr/listChoiceIndicatorMultiple"
             android:clickable="false"
@@ -435,6 +435,70 @@
 
         <!-- ************************************************************* -->
 
+
+        <com.google.android.material.card.MaterialCardView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            app:layout_constraintTop_toBottomOf="@id/gpa4_i"
+            app:cardCornerRadius="10dp"
+            app:cardBackgroundColor="@color/colorPrimary"
+            >
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="vertical"
+                >
+
+                <com.google.android.material.textfield.TextInputLayout
+                    android:id="@+id/select_output_title"
+                    android:theme="@style/Theme.MaterialComponents.DayNight.NoActionBar"
+                    style="@style/Widget.MaterialComponents.TextInputLayout.OutlinedBox.ExposedDropdownMenu"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="16dp">
+
+                    <AutoCompleteTextView
+                        android:id="@+id/select_output"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:inputType="none"
+                        />
+
+                </com.google.android.material.textfield.TextInputLayout>
+
+                <org.secu3.android.ui.parameters.views.FloatParamView
+                    android:id="@+id/freq"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="16dp"
+                    app:title="@string/test_signal_frequency_hz"
+                    app:float_value="10.0"
+                    app:value_precision="one"
+                    app:float_min_value="10.0"
+                    app:float_max_value="5000.0"
+                    app:float_step="0.1"
+                    app:units="@string/units_hertz"
+                    />
+
+
+                <org.secu3.android.ui.parameters.views.FloatParamView
+                    android:id="@+id/duty"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="16dp"
+                    app:title="@string/test_signal_duty"
+                    app:float_value="50.0"
+                    app:value_precision="one"
+                    app:float_min_value="0.0"
+                    app:float_max_value="100.0"
+                    app:float_step="0.5"
+                    app:units="@string/units_percents"
+                    />
+
+            </LinearLayout>
+
+        </com.google.android.material.card.MaterialCardView>
 
     </androidx.constraintlayout.widget.ConstraintLayout>
 

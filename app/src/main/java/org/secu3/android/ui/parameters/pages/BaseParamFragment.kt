@@ -49,6 +49,7 @@ abstract class BaseParamFragment : Fragment() {
         }
     }
 
+    // NOTE: make sure you've changed this method in [DiagInputFragment.kt]
     protected fun floatParamClick(view: FloatParamView) {
         view.apply {
             ParamFloatEditDialogFragment.newInstance(value, title, step, maxValue, minValue, precision).also {
