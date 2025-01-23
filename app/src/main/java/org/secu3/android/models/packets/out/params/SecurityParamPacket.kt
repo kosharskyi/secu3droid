@@ -30,10 +30,13 @@ import org.secu3.android.utils.setBitValue
 
 data class SecurityParamPacket(
 
+    var btName: String = "",    // max length 8 character
+    var btPass: String = "",    // max length 8 character
+
     var btFlags: Int = 0,
 
-    var iButton0: String = "000000",
-    var iButton1: String = "000000",
+    var iButton0: List<Int> = emptyList(),
+    var iButton1: List<Int> = emptyList(),
 
     var btType: Int = 0 // Bluetooth chip type: 0 - BC417, 1 - BK3231, 2 - BK3231S(JDY-31), 3 - BC352(HC-05), 4 - BK3432, 5 - BK3431S
 
@@ -63,10 +66,23 @@ data class SecurityParamPacket(
     override fun pack(): IntArray {
         var data = intArrayOf(DESCRIPTOR.code)
 
+        val nameLength = btName.length.coerceIn(0, 8)
+        val passLength = btPass.length.coerceIn(0, 8)
+
+        if (nameLength > 0 && passLength >= 4) {
+            data += nameLength
+            data += passLength
+            data += btName.substring(0, nameLength).map { it.code }.toIntArray()
+            data += btPass.substring(0, passLength).map { it.code }.toIntArray()
+        } else {
+            data += 0
+            data += 0
+        }
+
         data += btFlags
 
-        data += iButton0.map { it.code }.toIntArray()
-        data += iButton1.map { it.code }.toIntArray()
+        data += iButton0
+        data += iButton1
 
         data += btType
 
@@ -82,11 +98,28 @@ data class SecurityParamPacket(
         private const val IBTN_KEY_SIZE = 6
 
         fun parse(data: IntArray) = SecurityParamPacket().apply {
-            data.get1Byte()
-            data.get1Byte()
+            //Number of characters in name (must be zero)
+            val numNam = data.get1Byte()
+            if (numNam > 0) {
+                throw IllegalArgumentException("Bt name is not empty")
+            }
+
+            //Number of characters in password (must be zero)
+            val numPass = data.get1Byte()
+            if (numPass > 0) {
+                throw IllegalArgumentException("Bt password is not empty")
+            }
+
             btFlags = data.get1Byte()
-            iButton0 = data.getString(IBTN_KEY_SIZE)
-            iButton1 = data.getString(IBTN_KEY_SIZE)
+
+            for (i in 0 until IBTN_KEY_SIZE) {
+                iButton0 += data.get1Byte()
+            }
+
+            for (i in 0 until IBTN_KEY_SIZE) {
+                iButton1 += data.get1Byte()
+            }
+
             btType = data.get1Byte()
 
             data.setUnhandledParams()

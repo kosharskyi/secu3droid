@@ -194,6 +194,7 @@
                             android:layout_width="match_parent"
                             android:layout_height="wrap_content"
                             android:inputType="text"
+                            android:maxLength="12"
                             />
 
                     </com.google.android.material.textfield.TextInputLayout>
@@ -215,6 +216,7 @@
                             android:layout_width="match_parent"
                             android:layout_height="wrap_content"
                             android:inputType="text"
+                            android:maxLength="12"
                             />
 
                     </com.google.android.material.textfield.TextInputLayout>

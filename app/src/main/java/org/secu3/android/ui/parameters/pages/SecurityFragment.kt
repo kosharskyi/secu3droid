@@ -29,16 +29,18 @@ import android.text.InputType
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
+import android.widget.AdapterView
 import android.widget.ArrayAdapter
 import androidx.core.widget.addTextChangedListener
 import androidx.lifecycle.lifecycleScope
 import androidx.lifecycle.withResumed
-import androidx.lifecycle.withStarted
 import kotlinx.coroutines.launch
 import org.secu3.android.R
 import org.secu3.android.databinding.FragmentSecurityBinding
 import org.secu3.android.models.packets.out.params.SecurityParamPacket
 import org.secu3.android.utils.gone
+import org.secu3.android.utils.hexToString
+import org.secu3.android.utils.toHexString
 import org.secu3.android.utils.visible
 
 
@@ -58,10 +60,22 @@ class SecurityFragment : BaseParamFragment() {
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
 
-        mBinding.bluetoothType.inputType = InputType.TYPE_NULL
-        ArrayAdapter(requireContext(), R.layout.list_item, btTypes).also {
-            mBinding.bluetoothType.setAdapter(it)
+        mBinding.apply {
+            bluetoothType.inputType = InputType.TYPE_NULL
+            ArrayAdapter(requireContext(), R.layout.list_item, btTypes).also {
+                bluetoothType.setAdapter(it)
+            }
+
+            bluetoothApply.setOnClickListener {
+                packet?.copy(
+                    btName = bluetoothName.text.toString(),
+                    btPass = bluetoothPassword.text.toString(),
+                )?.let {
+                    mViewModel.sendPacket(it)
+                }
+            }
         }
+
 
         lifecycleScope.launch {
             withResumed {
@@ -83,6 +97,10 @@ class SecurityFragment : BaseParamFragment() {
                         bluetoothPasswordTitle.isEnabled = it.useBt
 
                         useImmobilizer.isChecked = it.useImmobilizer
+                        immobilizerKey2Title.isEnabled = it.useImmobilizer
+                        immobilizerKey1Title.isEnabled = it.useImmobilizer
+                        immobilizerKey1.setText(it.iButton0.toHexString())
+                        immobilizerKey2.setText(it.iButton1.toHexString())
 
                         loadParamsFromFlash.isChecked = it.useReserveParams
                         checkFirmwareIntegrity.isChecked = it.checkFwCrc
@@ -99,6 +117,10 @@ class SecurityFragment : BaseParamFragment() {
     private fun initViews() {
         mBinding.apply {
 
+            bluetoothType.onItemClickListener = AdapterView.OnItemClickListener { _, _, position, _ ->
+                packet?.btType = position
+            }
+
             bluetoothName.addTextChangedListener {
                 validateNameAndPassword()
             }
@@ -108,15 +130,47 @@ class SecurityFragment : BaseParamFragment() {
             }
 
             useBluetooth.setOnCheckedChangeListener { _, isChecked ->
-                bluetoothName.isEnabled = isChecked
-                bluetoothPassword.isEnabled = isChecked
+                packet?.apply {
+                    useBt = isChecked
+                    mViewModel.sendPacket(this)
+                    bluetoothName.isEnabled = isChecked
+                    bluetoothPassword.isEnabled = isChecked
+                }
             }
 
             useImmobilizer.setOnCheckedChangeListener { _, isChecked ->
-//                packet?.apply {
-//                    useImmobilizer = isChecked
-//                    mViewModel.sendPacket(this)
-//                }
+                packet?.apply {
+                    useImmobilizer = isChecked
+                    immobilizerKey1Title.isEnabled = isChecked
+                    immobilizerKey2Title.isEnabled = isChecked
+                    mViewModel.sendPacket(this)
+                }
+            }
+
+            immobilizerKey1.addTextChangedListener {
+                val key = it.toString()
+
+                if (key.length < 12) {
+                    return@addTextChangedListener
+                }
+
+                packet?.apply {
+                    packet?.iButton0 = key.hexToString()
+                    mViewModel.sendPacket(this)
+                }
+            }
+
+            immobilizerKey2.addTextChangedListener {
+                val key = it.toString()
+
+                if (key.length < 12) {
+                    return@addTextChangedListener
+                }
+
+                packet?.apply {
+                    packet?.iButton1 = key.hexToString()
+                    mViewModel.sendPacket(this)
+                }
             }
         }
     }

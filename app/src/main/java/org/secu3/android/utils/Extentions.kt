@@ -110,6 +110,21 @@ fun Context.pxToDp(px: Int): Int {
     return TypedValueCompat.pxToDp(px.toFloat(), resources.displayMetrics).roundToInt()
 }
 
+fun List<Int>.toHexString(): String {
+    return this
+        .map { "%02X".format(it and 0xFF) }
+        .reversed()
+        .joinToString("")
+}
+
+fun String.hexToString(): List<Int> {
+    require(length % 2 == 0) { "Hex string length must be even" }
+
+    return chunked(2)
+        .reversed()
+        .map { it.toInt(16) }
+}
+
 fun <T : Any> Response<T>.toResult(): Result<T> {
     return try {
         if (isSuccessful) {
