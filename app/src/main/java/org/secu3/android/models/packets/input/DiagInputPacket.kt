@@ -39,13 +39,13 @@ data class DiagInputPacket(
 
     var addI1: Float = 0f,                // ADD_I1 voltage
     var addI2: Float = 0f,                // ADD_I2 voltage
-    var addI3: Float = 0f,                // ADD_I3 voltage
-    var addI4: Float = 0f,                // ADD_I4 voltage
+    var addI3: Float = 0f,                // ADD_I3 voltage (SECU-3i)
+    var addI4: Float = 0f,                // ADD_I4 voltage (SECU-3i)
 
-    var addI5: Float = 0f,                // ADD_I5 voltage
-    var addI6: Float = 0f,                // ADD_I6 voltage
-    var addI7: Float = 0f,                // ADD_I7 voltage
-    var addI8: Float = 0f,                // ADD_I8 voltage
+    var addI5: Float = 0f,                // ADD_I5 voltage (SECU-3i)
+    var addI6: Float = 0f,                // ADD_I6 voltage (SECU-3i)
+    var addI7: Float = 0f,                // ADD_I7 voltage (SECU-3i)
+    var addI8: Float = 0f,                // ADD_I8 voltage (SECU-3i)
 
     var carb: Float = 0f,
 
@@ -74,14 +74,17 @@ data class DiagInputPacket(
     val de: Boolean
         get() = bits.getBitValue(5) > 0
 
-    val ign_i: Boolean
+    val ign_i: Boolean      //for SECU-3i
         get() = bits.getBitValue(6) > 0
 
-    val cond_i: Boolean
+    val cond_i: Boolean     //for SECU-3i
         get() = bits.getBitValue(7) > 0
 
     val epas_i: Boolean     //for SECU-3i
         get() = bits.getBitValue(8) > 0
+
+    val gpa4_i: Boolean     //for SECU-3i
+        get() = bits.getBitValue(9) > 0
 
     companion object {
 

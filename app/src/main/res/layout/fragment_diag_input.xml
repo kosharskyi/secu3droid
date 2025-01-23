@@ -1,28 +1,28 @@
 <?xml version="1.0" encoding="utf-8"?>
 <!--
-   SecuDroid  - An open source, free manager for SECU-3 engine control unit
-   Copyright (C) 2020 Vitaliy O. Kosharskiy. Ukraine, Kharkiv
-
-   SECU-3  - An open source, free engine control unit
-   Copyright (C) 2007 Alexey A. Shabelnikov. Ukraine, Kyiv
-
-   This program is free software: you can redistribute it and/or modify
-   it under the terms of the GNU General Public License as published by
-   the Free Software Foundation, either version 3 of the License, or
-   (at your option) any later version.
-
-   This program is distributed in the hope that it will be useful,
-   but WITHOUT ANY WARRANTY; without even the implied warranty of
-   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-   GNU General Public License for more details.
-
-   You should have received a copy of the GNU General Public License
-   along with this program.  If not, see <http://www.gnu.org/licenses/>.
-
-   contacts:
-              http://secu-3.org
-              email: vetalkosharskiy@gmail.com
--->
+  ~    SecuDroid  - An open source, free manager for SECU-3 engine control unit
+  ~    Copyright (C) 2025 Vitalii O. Kosharskyi. Ukraine, Kyiv
+  ~
+  ~    SECU-3  - An open source, free engine control unit
+  ~    Copyright (C) 2007-2025 Alexey A. Shabelnikov. Ukraine, Kyiv
+  ~
+  ~    This program is free software: you can redistribute it and/or modify
+  ~    it under the terms of the GNU General Public License as published by
+  ~    the Free Software Foundation, either version 3 of the License, or
+  ~    (at your option) any later version.
+  ~
+  ~    This program is distributed in the hope that it will be useful,
+  ~    but WITHOUT ANY WARRANTY; without even the implied warranty of
+  ~    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+  ~    GNU General Public License for more details.
+  ~
+  ~    You should have received a copy of the GNU General Public License
+  ~    along with this program.  If not, see <http://www.gnu.org/licenses/>.
+  ~
+  ~    contacts:
+  ~                    http://secu-3.org
+  ~                    email: vetalkosharskiy@gmail.com
+  -->
 <ScrollView
     xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:tools="http://schemas.android.com/tools"
@@ -38,320 +38,152 @@
         android:padding="16dp"
         >
 
-        <TextView
-            android:id="@+id/voltage_title"
+        <androidx.constraintlayout.widget.Group
+            android:id="@+id/secu3i_group"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            app:layout_constraintTop_toTopOf="parent"
-            app:layout_constraintStart_toStartOf="parent"
-            android:text="Voltage"
+            app:constraint_referenced_ids="add3,add4,add5,add6,add7,add8,ign_i,cond_i,epas_i,gpa4_i"
+            android:visibility="gone"
+            tools:visibility="visible"
             />
 
-        <TextView
+        <org.secu3.android.ui.parameters.views.FloatParamView
             android:id="@+id/voltage"
-            android:layout_width="wrap_content"
+            android:layout_width="match_parent"
             android:layout_height="wrap_content"
             app:layout_constraintTop_toTopOf="parent"
-            app:layout_constraintEnd_toEndOf="parent"
-            android:textAppearance="?android:attr/textAppearanceLarge"
-            android:text="0.000"
+            android:layout_marginTop="16dp"
+            app:float_value="0.000"
+            app:units="@string/units_volts"
+            app:value_precision="three"
+            app:title="Voltage"
             />
 
-        <TextView
-            android:id="@+id/voltage_units"
-            android:layout_width="wrap_content"
+        <!-- ************************************************************* -->
+
+        <org.secu3.android.ui.parameters.views.FloatParamView
+            android:id="@+id/map"
+            android:layout_width="match_parent"
             android:layout_height="wrap_content"
             app:layout_constraintTop_toBottomOf="@id/voltage"
-            app:layout_constraintEnd_toEndOf="parent"
-            android:text="@string/units_volts"
+            android:layout_marginTop="16dp"
+            app:float_value="0.000"
+            app:units="@string/units_volts"
+            app:value_precision="three"
+            app:title="MAP_S"
             />
-
 
         <!-- ************************************************************* -->
 
-        <TextView
-            android:id="@+id/map_title"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            app:layout_constraintTop_toBottomOf="@id/voltage_units"
-            app:layout_constraintStart_toStartOf="parent"
-            android:layout_marginTop="16dp"
-            android:text="MAP_S"
-            />
-
-        <TextView
-            android:id="@+id/map"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            app:layout_constraintTop_toTopOf="@id/map_title"
-            app:layout_constraintEnd_toEndOf="parent"
-            android:textAppearance="?android:attr/textAppearanceLarge"
-            android:text="0.000"
-            />
-
-        <TextView
-            android:id="@+id/map_units"
-            android:layout_width="wrap_content"
+        <org.secu3.android.ui.parameters.views.FloatParamView
+            android:id="@+id/temp"
+            android:layout_width="match_parent"
             android:layout_height="wrap_content"
             app:layout_constraintTop_toBottomOf="@id/map"
-            app:layout_constraintEnd_toEndOf="parent"
-            android:text="@string/units_volts"
+            android:layout_marginTop="16dp"
+            app:float_value="0.000"
+            app:units="@string/units_volts"
+            app:value_precision="three"
+            app:title="TEMP"
             />
-
 
         <!-- ************************************************************* -->
 
-        <TextView
-            android:id="@+id/temp_title"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            app:layout_constraintTop_toBottomOf="@id/map_units"
-            app:layout_constraintStart_toStartOf="parent"
-            android:layout_marginTop="16dp"
-            android:text="TEMP"
-            />
-
-        <TextView
-            android:id="@+id/temp"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            app:layout_constraintTop_toTopOf="@id/temp_title"
-            app:layout_constraintEnd_toEndOf="parent"
-            android:textAppearance="?android:attr/textAppearanceLarge"
-            android:text="0.000"
-            />
-
-        <TextView
-            android:id="@+id/temp_units"
-            android:layout_width="wrap_content"
+        <org.secu3.android.ui.parameters.views.FloatParamView
+            android:id="@+id/add1"
+            android:layout_width="match_parent"
             android:layout_height="wrap_content"
             app:layout_constraintTop_toBottomOf="@id/temp"
-            app:layout_constraintEnd_toEndOf="parent"
-            android:text="@string/units_volts"
+            android:layout_marginTop="16dp"
+            app:float_value="0.000"
+            app:units="@string/units_volts"
+            app:value_precision="three"
+            app:title="ADD_IO1"
             />
-
 
         <!-- ************************************************************* -->
 
-        <TextView
-            android:id="@+id/add1_title"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            app:layout_constraintTop_toBottomOf="@id/temp_units"
-            app:layout_constraintStart_toStartOf="parent"
-            android:layout_marginTop="16dp"
-            android:text="ADD_IO1"
-            />
-
-        <TextView
-            android:id="@+id/add1"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            app:layout_constraintTop_toTopOf="@id/add1_title"
-            app:layout_constraintEnd_toEndOf="parent"
-            android:textAppearance="?android:attr/textAppearanceLarge"
-            android:text="0.000"
-            />
-
-        <TextView
-            android:id="@+id/add1_units"
-            android:layout_width="wrap_content"
+        <org.secu3.android.ui.parameters.views.FloatParamView
+            android:id="@+id/add2"
+            android:layout_width="match_parent"
             android:layout_height="wrap_content"
             app:layout_constraintTop_toBottomOf="@id/add1"
-            app:layout_constraintEnd_toEndOf="parent"
-            android:text="@string/units_volts"
+            android:layout_marginTop="16dp"
+            app:float_value="0.000"
+            app:units="@string/units_volts"
+            app:value_precision="three"
+            app:title="ADD_IO2"
             />
-
 
         <!-- ************************************************************* -->
 
-        <TextView
-            android:id="@+id/add2_title"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            app:layout_constraintTop_toBottomOf="@id/add1_units"
-            app:layout_constraintStart_toStartOf="parent"
-            android:layout_marginTop="16dp"
-            android:text="ADD_IO2"
-            />
-
-        <TextView
-            android:id="@+id/add2"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            app:layout_constraintTop_toTopOf="@id/add2_title"
-            app:layout_constraintEnd_toEndOf="parent"
-            android:textAppearance="?android:attr/textAppearanceLarge"
-            android:text="0.000"
-            />
-
-        <TextView
-            android:id="@+id/add2_units"
-            android:layout_width="wrap_content"
+        <org.secu3.android.ui.parameters.views.FloatParamView
+            android:id="@+id/add3"
+            android:layout_width="match_parent"
             android:layout_height="wrap_content"
             app:layout_constraintTop_toBottomOf="@id/add2"
-            app:layout_constraintEnd_toEndOf="parent"
-            android:text="@string/units_volts"
+            android:layout_marginTop="16dp"
+            app:float_value="0.000"
+            app:units="@string/units_volts"
+            app:value_precision="three"
+            app:title="ADD_IO3"
             />
-
 
         <!-- ************************************************************* -->
 
-        <TextView
-            android:id="@+id/add3_title"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            app:layout_constraintTop_toBottomOf="@id/add2_units"
-            app:layout_constraintStart_toStartOf="parent"
-            android:layout_marginTop="16dp"
-            android:text="ADD_IO3"
-            />
-
-        <TextView
-            android:id="@+id/add3"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            app:layout_constraintTop_toTopOf="@id/add3_title"
-            app:layout_constraintEnd_toEndOf="parent"
-            android:textAppearance="?android:attr/textAppearanceLarge"
-            android:text="0.000"
-            />
-
-        <TextView
-            android:id="@+id/add3_units"
-            android:layout_width="wrap_content"
+        <org.secu3.android.ui.parameters.views.FloatParamView
+            android:id="@+id/add4"
+            android:layout_width="match_parent"
             android:layout_height="wrap_content"
             app:layout_constraintTop_toBottomOf="@id/add3"
-            app:layout_constraintEnd_toEndOf="parent"
-            android:text="@string/units_volts"
+            android:layout_marginTop="16dp"
+            app:float_value="0.000"
+            app:units="@string/units_volts"
+            app:value_precision="three"
+            app:title="ADD_IO4"
             />
-
 
         <!-- ************************************************************* -->
 
-        <TextView
-            android:id="@+id/add4_title"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            app:layout_constraintTop_toBottomOf="@id/add3_units"
-            app:layout_constraintStart_toStartOf="parent"
-            android:layout_marginTop="16dp"
-            android:text="ADD_IO4"
-            />
-
-        <TextView
-            android:id="@+id/add4"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            app:layout_constraintTop_toTopOf="@id/add4_title"
-            app:layout_constraintEnd_toEndOf="parent"
-            android:textAppearance="?android:attr/textAppearanceLarge"
-            android:text="0.000"
-            />
-
-        <TextView
-            android:id="@+id/add4_units"
-            android:layout_width="wrap_content"
+        <org.secu3.android.ui.parameters.views.FloatParamView
+            android:id="@+id/carb"
+            android:layout_width="match_parent"
             android:layout_height="wrap_content"
             app:layout_constraintTop_toBottomOf="@id/add4"
-            app:layout_constraintEnd_toEndOf="parent"
-            android:text="@string/units_volts"
+            android:layout_marginTop="16dp"
+            app:float_value="0.000"
+            app:units="@string/units_volts"
+            app:value_precision="three"
+            app:title="CARB"
             />
 
 
         <!-- ************************************************************* -->
 
-        <TextView
-            android:id="@+id/carb_title"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            app:layout_constraintTop_toBottomOf="@id/add4_units"
-            app:layout_constraintStart_toStartOf="parent"
-            android:layout_marginTop="16dp"
-            android:text="CARB"
-            />
-
-        <TextView
-            android:id="@+id/carb"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            app:layout_constraintTop_toTopOf="@id/carb_title"
-            app:layout_constraintEnd_toEndOf="parent"
-            android:textAppearance="?android:attr/textAppearanceLarge"
-            android:text="0.000"
-            />
-
-        <TextView
-            android:id="@+id/carb_units"
-            android:layout_width="wrap_content"
+        <org.secu3.android.ui.parameters.views.FloatParamView
+            android:id="@+id/ks1"
+            android:layout_width="match_parent"
             android:layout_height="wrap_content"
             app:layout_constraintTop_toBottomOf="@id/carb"
-            app:layout_constraintEnd_toEndOf="parent"
-            android:text="@string/units_volts"
+            android:layout_marginTop="16dp"
+            app:float_value="0.000"
+            app:units="@string/units_volts"
+            app:value_precision="three"
+            app:title="KS_1"
             />
-
 
         <!-- ************************************************************* -->
 
-        <TextView
-            android:id="@+id/ks1_title"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            app:layout_constraintTop_toBottomOf="@id/carb_units"
-            app:layout_constraintStart_toStartOf="parent"
-            android:layout_marginTop="16dp"
-            android:text="KS_1"
-            />
-
-        <TextView
-            android:id="@+id/ks1"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            app:layout_constraintTop_toTopOf="@id/ks1_title"
-            app:layout_constraintEnd_toEndOf="parent"
-            android:textAppearance="?android:attr/textAppearanceLarge"
-            android:text="0.000"
-            />
-
-        <TextView
-            android:id="@+id/ks1_units"
-            android:layout_width="wrap_content"
+        <org.secu3.android.ui.parameters.views.FloatParamView
+            android:id="@+id/ks2"
+            android:layout_width="match_parent"
             android:layout_height="wrap_content"
             app:layout_constraintTop_toBottomOf="@id/ks1"
-            app:layout_constraintEnd_toEndOf="parent"
-            android:text="@string/units_volts"
-            />
-
-
-        <!-- ************************************************************* -->
-
-        <TextView
-            android:id="@+id/ks2_title"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            app:layout_constraintTop_toBottomOf="@id/ks1_units"
-            app:layout_constraintStart_toStartOf="parent"
             android:layout_marginTop="16dp"
-            android:text="KS_2"
-            />
-
-        <TextView
-            android:id="@+id/ks2"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            app:layout_constraintTop_toTopOf="@id/ks2_title"
-            app:layout_constraintEnd_toEndOf="parent"
-            android:textAppearance="?android:attr/textAppearanceLarge"
-            android:text="0.000"
-            />
-
-        <TextView
-            android:id="@+id/ks2_units"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            app:layout_constraintTop_toBottomOf="@id/ks2"
-            app:layout_constraintEnd_toEndOf="parent"
-            android:text="@string/units_volts"
+            app:float_value="0.000"
+            app:units="@string/units_volts"
+            app:value_precision="three"
+            app:title="KS_2"
             />
 
 
@@ -361,7 +193,7 @@
             android:id="@+id/gas_v"
             android:layout_width="0dp"
             android:layout_height="wrap_content"
-            app:layout_constraintTop_toBottomOf="@id/ks2_units"
+            app:layout_constraintTop_toBottomOf="@id/ks2"
             app:layout_constraintStart_toStartOf="parent"
             app:layout_constraintEnd_toEndOf="parent"
             android:text="GAS_V"
@@ -529,131 +361,59 @@
 
         <!-- ************************************************************* -->
 
-        <TextView
-            android:id="@+id/add5_title"
-            android:layout_width="wrap_content"
+        <org.secu3.android.ui.parameters.views.FloatParamView
+            android:id="@+id/add5"
+            android:layout_width="match_parent"
             android:layout_height="wrap_content"
             app:layout_constraintTop_toBottomOf="@id/ign_i"
-            app:layout_constraintStart_toStartOf="parent"
             android:layout_marginTop="16dp"
-            android:text="ADD_IO5"
+            app:float_value="0.000"
+            app:units="@string/units_volts"
+            app:value_precision="three"
+            app:title="ADD_IO5"
             />
 
-        <TextView
-            android:id="@+id/add5"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            app:layout_constraintTop_toTopOf="@id/add5_title"
-            app:layout_constraintEnd_toEndOf="parent"
-            android:textAppearance="?android:attr/textAppearanceLarge"
-            android:text="0.000"
-            />
+        <!-- ************************************************************* -->
 
-        <TextView
-            android:id="@+id/add5_units"
-            android:layout_width="wrap_content"
+        <org.secu3.android.ui.parameters.views.FloatParamView
+            android:id="@+id/add6"
+            android:layout_width="match_parent"
             android:layout_height="wrap_content"
             app:layout_constraintTop_toBottomOf="@id/add5"
-            app:layout_constraintEnd_toEndOf="parent"
-            android:text="@string/units_volts"
+            android:layout_marginTop="16dp"
+            app:float_value="0.000"
+            app:units="@string/units_volts"
+            app:value_precision="three"
+            app:title="ADD_IO6"
             />
-
 
         <!-- ************************************************************* -->
 
-        <TextView
-            android:id="@+id/add6_title"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            app:layout_constraintTop_toBottomOf="@id/add5_units"
-            app:layout_constraintStart_toStartOf="parent"
-            android:layout_marginTop="16dp"
-            android:text="ADD_IO6"
-            />
-
-        <TextView
-            android:id="@+id/add6"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            app:layout_constraintTop_toTopOf="@id/add6_title"
-            app:layout_constraintEnd_toEndOf="parent"
-            android:textAppearance="?android:attr/textAppearanceLarge"
-            android:text="0.000"
-            />
-
-        <TextView
-            android:id="@+id/add6_units"
-            android:layout_width="wrap_content"
+        <org.secu3.android.ui.parameters.views.FloatParamView
+            android:id="@+id/add7"
+            android:layout_width="match_parent"
             android:layout_height="wrap_content"
             app:layout_constraintTop_toBottomOf="@id/add6"
-            app:layout_constraintEnd_toEndOf="parent"
-            android:text="@string/units_volts"
+            android:layout_marginTop="16dp"
+            app:float_value="0.000"
+            app:units="@string/units_volts"
+            app:value_precision="three"
+            app:title="ADD_IO7"
             />
-
 
         <!-- ************************************************************* -->
 
-        <TextView
-            android:id="@+id/add7_title"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            app:layout_constraintTop_toBottomOf="@id/add6_units"
-            app:layout_constraintStart_toStartOf="parent"
-            android:layout_marginTop="16dp"
-            android:text="ADD_IO7"
-            />
-
-        <TextView
-            android:id="@+id/add7"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            app:layout_constraintTop_toTopOf="@id/add7_title"
-            app:layout_constraintEnd_toEndOf="parent"
-            android:textAppearance="?android:attr/textAppearanceLarge"
-            android:text="0.000"
-            />
-
-        <TextView
-            android:id="@+id/add7_units"
-            android:layout_width="wrap_content"
+        <org.secu3.android.ui.parameters.views.FloatParamView
+            android:id="@+id/add8"
+            android:layout_width="match_parent"
             android:layout_height="wrap_content"
             app:layout_constraintTop_toBottomOf="@id/add7"
-            app:layout_constraintEnd_toEndOf="parent"
-            android:text="@string/units_volts"
-            />
-
-
-        <!-- ************************************************************* -->
-
-        <TextView
-            android:id="@+id/add8_title"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            app:layout_constraintTop_toBottomOf="@id/add7_units"
-            app:layout_constraintStart_toStartOf="parent"
             android:layout_marginTop="16dp"
-            android:text="ADD_IO8"
+            app:float_value="0.000"
+            app:units="@string/units_volts"
+            app:value_precision="three"
+            app:title="ADD_IO8"
             />
-
-        <TextView
-            android:id="@+id/add8"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            app:layout_constraintTop_toTopOf="@id/add8_title"
-            app:layout_constraintEnd_toEndOf="parent"
-            android:textAppearance="?android:attr/textAppearanceLarge"
-            android:text="0.000"
-            />
-
-        <TextView
-            android:id="@+id/add8_units"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            app:layout_constraintTop_toBottomOf="@id/add8"
-            app:layout_constraintEnd_toEndOf="parent"
-            android:text="@string/units_volts"
-            />
-
 
         <!-- ************************************************************* -->
 
@@ -661,7 +421,7 @@
             android:id="@+id/gpa4_i"
             android:layout_width="0dp"
             android:layout_height="wrap_content"
-            app:layout_constraintTop_toBottomOf="@id/add8_units"
+            app:layout_constraintTop_toBottomOf="@id/add8"
             app:layout_constraintStart_toStartOf="parent"
             app:layout_constraintEnd_toEndOf="parent"
             android:text="GPA4_I"

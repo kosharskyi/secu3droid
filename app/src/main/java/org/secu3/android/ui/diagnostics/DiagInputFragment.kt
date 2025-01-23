@@ -28,6 +28,7 @@ import android.os.Bundle
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
+import androidx.core.view.isVisible
 import androidx.fragment.app.Fragment
 import androidx.navigation.navGraphViewModels
 import org.secu3.android.R
@@ -48,18 +49,24 @@ class DiagInputFragment : Fragment() {
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
 
+        mViewModel.firmwareInfo?.let {
+            mBinding.apply {
+                secu3iGroup.isVisible = it.isSecu3T.not()
+            }
+        }
+
         mViewModel.diagInputLiveData.observe(viewLifecycleOwner) {
             mBinding.apply {
-                voltage.text = "%.3f".format(it.voltage)
-                map.text = "%.3f".format(it.map)
-                temp.text = "%.3f".format(it.temperature)
-                add1.text = "%.3f".format(it.addI1)
-                add2.text = "%.3f".format(it.addI2)
-                add3.text = "%.3f".format(it.addI3)
-                add4.text = "%.3f".format(it.addI4)
-                carb.text = "%.3f".format(it.carb)
-                ks1.text = "%.3f".format(it.ks1)
-                ks2.text = "%.3f".format(it.ks2)
+                voltage.value = it.voltage
+                map.value = it.map
+                temp.value = it.temperature
+                add1.value = it.addI1
+                add2.value = it.addI2
+                add3.value = it.addI3
+                add4.value = it.addI4
+                carb.value = it.carb
+                ks1.value = it.ks1
+                ks2.value = it.ks2
 
                 gasV.isChecked = it.gasV
                 ckps.isChecked = it.ckps
@@ -70,12 +77,12 @@ class DiagInputFragment : Fragment() {
                 condI.isChecked = it.cond_i
                 epasI.isChecked = it.epas_i
                 ignI.isChecked = it.ign_i
-//                gpa4I.isChecked = it.
+                gpa4I.isChecked = it.gpa4_i
 
-                add5.text = "%.3f".format(it.addI5)
-                add6.text = "%.3f".format(it.addI6)
-                add7.text = "%.3f".format(it.addI7)
-                add8.text = "%.3f".format(it.addI8)
+                add5.value = it.addI5
+                add6.value = it.addI6
+                add7.value = it.addI7
+                add8.value = it.addI8
             }
         }
     }

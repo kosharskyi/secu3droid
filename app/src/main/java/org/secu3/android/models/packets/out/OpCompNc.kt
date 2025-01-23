@@ -47,15 +47,21 @@ data class OpCompNc(
 
     companion object {
 
-        private const val EEPROM_PARAM_SAVE: Int    = 1;
-        private const val CE_SAVE_ERRORS: Int       = 2;
-        private const val READ_FW_SIG_INFO: Int     = 3;
-        private const val LOAD_TABLSET: Int         = 4;  //realtime tables
-        private const val SAVE_TABLSET: Int         = 5;  //realtime tables
-        private const val DIAGNOST_ENTER: Int       = 6;  //enter diagnostic mode
-        private const val DIAGNOST_LEAVE: Int       = 7;  //leave diagnostic mode
-        private const val RESET_EEPROM: Int         = 0xCF;//reset EEPROM
-        private const val BL_CONFIRM: Int           = 0xCB; //boot loader entering confirmation
+        private const val EEPROM_PARAM_SAVE: Int    = 1
+        private const val CE_SAVE_ERRORS: Int       = 2
+        private const val READ_FW_SIG_INFO: Int     = 3
+        private const val LOAD_TABLSET: Int         = 4  //realtime tables
+        private const val SAVE_TABLSET: Int         = 5  //realtime tables
+        private const val DIAGNOST_ENTER: Int       = 6  //enter diagnostic mode
+        private const val DIAGNOST_LEAVE: Int       = 7  //leave diagnostic mode
+        private const val RESET_EEPROM: Int         = 0xCF //reset EEPROM
+        private const val BL_CONFIRM: Int           = 0xCB //boot loader entering confirmation
+        private const val OPCODE_BL_MANSTART        = 0xC8 //boot loader started manually (using a jumper)
+        private const val OPDATA_BL_MANSTART        = 0x8C //data for OPCODE_BL_MANSTART
+        private const val OPCODE_RESET_LTFT         = 0xCA //Reset LTFT map
+        private const val OPDATA_RESET_LTFT         = 0xBB //Reset LTFT map
+        private const val OPCODE_SAVE_LTFT          = 9  //save LTFT
+
 
         internal const val DESCRIPTOR = 'u'
 
