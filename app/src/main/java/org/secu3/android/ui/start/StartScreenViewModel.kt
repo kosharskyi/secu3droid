@@ -80,6 +80,11 @@ class StartScreenViewModel @Inject constructor(
 
     val discoveredBtDevices = mutableStateListOf<BluetoothDevice>()
 
+    val isXiaomi = Build.MANUFACTURER.equals("Xiaomi", ignoreCase = true) ||
+            Build.BRAND.equals("Xiaomi", ignoreCase = true) ||
+            Build.BRAND.equals("POCO", ignoreCase = true) ||
+            Build.MODEL.contains("POCO", ignoreCase = true)
+
     init {
         if (isUsbHostSupported) {
             usbManager.deviceList.values.firstOrNull()?.let { newUsbDeviceAttached(it) }

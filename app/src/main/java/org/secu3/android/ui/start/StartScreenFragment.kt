@@ -348,6 +348,11 @@ class StartScreenFragment : Fragment() {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
             permissions.add(Manifest.permission.BLUETOOTH_CONNECT)
             permissions.add(Manifest.permission.BLUETOOTH_SCAN)
+
+            if (viewModel.isXiaomi && Build.VERSION.SDK_INT == Build.VERSION_CODES.S) {
+                permissions.add(Manifest.permission.BLUETOOTH)
+            }
+
         } else {
             permissions.add(Manifest.permission.BLUETOOTH)
             permissions.add(Manifest.permission.ACCESS_FINE_LOCATION)
