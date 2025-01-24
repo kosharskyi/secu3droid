@@ -18,6 +18,13 @@ jobs:
         uses: actions/checkout@v4.1.7
       - run: echo "The ${{ github.repository }} repository has been cloned."
 
+      - name: Create keystore.properties
+        run: |
+          echo "KEY_ALIAS=debug" > keystore.properties
+          echo "KEY_PASSWORD=debug" >> keystore.properties
+          echo "KEYSTORE_PATH=keystore.jks" >> keystore.properties
+          echo "KEYSTORE_PASSWORD=debug" >> keystore.properties
+
       - run: echo "Setting up JDK"
       - name: set up JDK 11
         uses: actions/setup-java@v4.2.1
