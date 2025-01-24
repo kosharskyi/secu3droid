@@ -1,0 +1,37 @@
+name: release-build
+
+on:
+  push:
+    branches:
+      - master
+
+env:
+  gradleFlags: --parallel --stacktrace --no-configuration-cache --no-daemon
+
+jobs:
+  build:
+    name: Build
+    runs-on: ubuntu-latest
+    steps:
+
+      - name: Checkout
+        uses: actions/checkout@v4.1.7
+      - run: echo "The ${{ github.repository }} repository has been cloned."
+
+      - run: echo "Setting up JDK"
+      - name: set up JDK 11
+        uses: actions/setup-java@v4.2.1
+        with:
+          java-version: '17'
+          distribution: 'temurin'
+          cache: gradle
+
+
+      - name: Grant execute permission for gradlew
+        run: chmod +x ./gradlew
+
+      - run: echo "Building Debug APK."
+      - name: Build with Gradle
+        run: ./gradlew app:assembleDebug
+
+      - run: echo "Build status report=${{ job.status }}."
