@@ -63,6 +63,10 @@ abstract class Connection (
 
 
     fun stopConnection() {
+        if (isRunning.not()) {
+            return
+        }
+
         isRunning = false
         disconnect()
     }

@@ -311,7 +311,10 @@ class StartScreenFragment : Fragment() {
     }
 
     private fun connectBtnClicked(isInProgress: Boolean) {
-        if (isInProgress) return
+        if (isInProgress) {
+            viewModel.cancelConnection()
+            return
+        }
 
         viewModel.usbDevice?.let {
             checkUsbPermissionsAndConnect(it)

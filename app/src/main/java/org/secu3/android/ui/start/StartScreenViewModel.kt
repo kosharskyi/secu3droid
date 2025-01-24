@@ -163,14 +163,15 @@ class StartScreenViewModel @Inject constructor(
             }
 
             while (secu3ConnectionManager.isConnectionRunning && secu3ConnectionManager.isConnected.not() && secu3ConnectionManager.fwInfo == null) {
-
-                delay(2000)
+                delay(300)
             }
-
-            delay(1000) // to prevent change button state too fast in case of success
 
             isConnectionInProgressFlow.emit(false)
         }
+    }
+
+    fun cancelConnection() {
+        secu3ConnectionManager.stopConnection()
     }
 
     fun newUsbDeviceAttached(device: UsbDevice) {

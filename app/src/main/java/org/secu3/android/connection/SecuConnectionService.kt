@@ -122,7 +122,7 @@ class SecuConnectionService : LifecycleService() {
     }
 
     override fun onDestroy() {
-        secu3ConnectionManager.disable()
+        secu3ConnectionManager.stopConnection()
         mLogger.stopLogging()
         ServiceCompat.stopForeground(this@SecuConnectionService, ServiceCompat.STOP_FOREGROUND_REMOVE)
         super.onDestroy()

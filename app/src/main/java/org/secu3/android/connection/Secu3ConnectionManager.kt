@@ -144,7 +144,7 @@ class Secu3ConnectionManager @Inject constructor(private val usbConnection: UsbC
         }
     }
 
-    fun disable() {
+    fun stopConnection() {
         usbConnection.stopConnection()
         btConnection.stopConnection()
         fwInfo = null

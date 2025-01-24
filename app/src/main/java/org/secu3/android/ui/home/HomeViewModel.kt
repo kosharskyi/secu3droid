@@ -84,7 +84,7 @@ class HomeViewModel @Inject constructor(
 
     fun closeConnection() {
         isUserTapExit = true
-        secu3ConnectionManager.disable()
+        secu3ConnectionManager.stopConnection()
     }
 
     fun downloadRelease(release: GitHubRelease) {
