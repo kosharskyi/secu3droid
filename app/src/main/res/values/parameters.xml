@@ -79,6 +79,8 @@
     <string name="idlreg_max_iac_position_title">Maximum IAC position</string>
     <string name="idlreg_use_closed_loop_on_gas_title">Use closed loop on gas</string>
     <string name="idlreg_works_together_with_iac_reg_title">Ign.tim. idling regulator works together with IAC regulator</string>
+    <string name="idlreg_rigidity_load_coef_title">Coeff. of load in the argument of idl. rigidity map</string>
+    <string name="idlreg_rigidity_rpm_coef_title">Coeff. of rpm in the argument of idl. rigidity map</string>
 
 
     <string name="funset_lower_pressure_title">Lower pressure value</string>
@@ -97,10 +99,12 @@
     <string name="funset_mapsel0_condition_for_gas">MAPSEL0 condition for gas</string>
     <string name="funset_ve2_map_func_title">Function of 2nd VE map</string>
     <string name="funset_gas_v_uni_title">GAS_V condition</string>
-    <string name="funset_gas_pressure_sensor_offset_title">GPS Sensor Curve offset</string>
+    <string name="funset_gas_pressure_sensor_offset_title">GPS Sensor curve offset</string>
     <string name="funset_gas_pressure_sensor_gradient_title">GPS sensor curve gradient</string>
-    <string name="funset_fuel_pressure_sensor_offset_title">FPS Sensor Curve offset</string>
+    <string name="funset_fuel_pressure_sensor_offset_title">FPS Sensor curve offset</string>
     <string name="funset_fuel_pressure_sensor_gradient_title">FPS sensor curve gradient</string>
+    <string name="funset_apps_offset_title">APPS curve offset</string>
+    <string name="funset_apps_gradient_title">APPS curve gradient</string>
 
 
     <string name="temper_fan_on_title">Fan turn on threshold</string>

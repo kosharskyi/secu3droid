@@ -54,6 +54,9 @@ data class IdlingParamPacket(
     var iacRegDb: Int = 0,
     var idlRegD: Float = 0f,
 
+    var irrKLoad: Float = 0f,
+    var irrKRpm: Float = 0f,
+
 
     ) : BaseOutputPacket() {
 
@@ -128,6 +131,9 @@ data class IdlingParamPacket(
             iacRegDb = data.get2Bytes()
             idlRegD = data.get2Bytes().toFloat() / 256
 
+            irrKLoad = data.get2Bytes().toFloat() / 32.0f
+            irrKRpm = data.get2Bytes().toFloat() / 32.0f
+
             data.setUnhandledParams()
         }
     }
@@ -157,6 +163,9 @@ data class IdlingParamPacket(
         data += iacMaxPos.times(2).roundToInt()
         data += iacRegDb.write2Bytes()
         data += idlRegD.times(256).roundToInt().write2Bytes()
+
+        data += irrKLoad.times(32.0f).roundToInt().write2Bytes()
+        data += irrKRpm.times(32.0f).roundToInt().write2Bytes()
 
         data += unhandledParams
 

@@ -65,6 +65,11 @@ data class FunSetParamPacket(
     var fpsCurveOffset: Float = 0f,     // Fuel Pressure Sensor
     var fpsCurveGradient: Float = 0f,   // Fuel Pressure Sensor
 
+    var apps1CurveOffset: Float = 0f,     // Accelerator pedal position sensor
+    var apps1CurveGradient: Float = 0f,   // APPS
+    var apps1Raw: Int = 0,              // Redundant: for APPS1 learning
+
+
     ): BaseOutputPacket() {
 
     override fun pack(): IntArray {
@@ -104,6 +109,9 @@ data class FunSetParamPacket(
 
         data += fpsCurveOffset.div(ADC_DISCRETE).roundToInt().write2Bytes()
         data += fpsCurveGradient.times(128.0f).times(MAP_MULTIPLIER).times(ADC_DISCRETE).roundToInt().write2Bytes()
+
+        data += apps1CurveOffset.div(ADC_DISCRETE).roundToInt().write2Bytes()
+        data += apps1CurveGradient.times(128.0f).times(APPS_MULT * 2).times(ADC_DISCRETE).roundToInt().write2Bytes()
 
         data += unhandledParams
 
@@ -162,6 +170,9 @@ data class FunSetParamPacket(
 
             fpsCurveOffset = data.get2Bytes().toFloat() * ADC_DISCRETE
             fpsCurveGradient = data.get2Bytes().toFloat() / (MAP_MULTIPLIER * ADC_DISCRETE * 128.0f)
+
+            apps1CurveOffset = data.get2Bytes().toFloat() * ADC_DISCRETE
+            apps1CurveGradient = data.get2Bytes().toFloat() / ((APPS_MULT * 2) * ADC_DISCRETE * 128.0f)
 
             data.setUnhandledParams()
         }

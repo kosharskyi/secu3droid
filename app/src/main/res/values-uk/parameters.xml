@@ -77,7 +77,11 @@
     <string name="idlreg_iac_dead_band_title">Зона нечутливості РДП</string>
     <string name="idlreg_use_closed_loop_on_gas_title">Використовувати closed loop на газу</string>
     <string name="idlreg_works_together_with_iac_reg_title">Не відключати КВЗ РХХ під час роботи РДП РХХ</string>
-
+    <string name="idlreg_proportional_negative_title">Пропорційний (-)</string>
+    <string name="idlreg_integral_negative_title">" Інтегральний (-)"</string>
+    <string name="idlreg_differential_title">Диференційний</string>
+    <string name="idlreg_rigidity_load_coef_title">Коефіцієнт навантаження в аргументі таблиці жорсткості РХХ</string>
+    <string name="idlreg_rigidity_rpm_coef_title">Коефіцієнт обертів в аргументі таблиці жорсткості РХХ</string>
 
 
 
@@ -101,6 +105,8 @@
     <string name="funset_gas_pressure_sensor_gradient_title">Нахил кривої ДТГ</string>
     <string name="funset_fuel_pressure_sensor_offset_title">Зсув кривої ДТП</string>
     <string name="funset_fuel_pressure_sensor_gradient_title">Нахил кривої ДТП</string>
+    <string name="funset_apps_offset_title">Зсув кривої ДППА</string>
+    <string name="funset_apps_gradient_title">Нахил кривої ДППА</string>
 
 
     <string name="temper_fan_on_title">Поріг активації вентилятора</string>
@@ -174,7 +180,6 @@
     <string name="choke_use_throttle_position_in_choke_init_title">Використовувати полож.дросс.при ініц.</string>
     <string name="choke_time_from_crank_to_run_position_for_choke_title">Час переходу ПЗ в робоче положення</string>
     <string name="choke_frequency_of_pulses">Частота імпульсів</string>
-    <string name="injctr_par_inj_timing_specifies">Фазу вприскування визначає</string>
 
 
     <string name="secur_par_use_bluetooth_title">Використовувати Bluetooth</string>
@@ -228,34 +233,27 @@
     <string name="injctr_par_inj_config_semi_sequential">Попарно-паралельний</string>
     <string name="injctr_par_inj_config_ss_sep_channel">ПП окрем.кан.</string>
     <string name="injctr_par_inj_config_full_sequential">Розподілене</string>
+    <string name="injctr_par_inj_timing_specifies">Фазу вприскування визначає</string>
+    <string name="injctr_par_max_inj_pw_title">Макс. тривалість вприскування</string>
 
     <string name="lambda_par_sensor_type_title">Тип сенсора</string>
     <string name="lambda_par_strokes_per_step_title">"Кількість тактів на крок</string>
     <string name="lambda_par_ms_per_step_title">"Кількість мс на крок</string>
-
     <string name="lambda_par_step_size_positive_title">Розмір \'+\' кроку корекції</string>
     <string name="lambda_par_step_size_negative_title">Розмір \'-\' кроку корекції</string>
-
     <string name="lambda_par_correction_positive_limit_title">Максимальне значення корекції (+)</string>
     <string name="lambda_par_correction_negative_limit_title">Максимальне значення корекції (-)</string>
-
     <string name="lambda_par_switch_point_title">Поріг перемикання</string>
-
     <string name="lambda_par_temp_threshold_title">Поріг активації по ДТОР</string>
-
     <string name="lambda_par_rpm_threshold_title">Поріг активації по оборотам</string>
-
     <string name="lambda_par_activation_delay_title">Активація після запуску</string>
-
     <string name="lambda_par_switch_point_deadband_title">Мертва зона перемикання +/-</string>
     <string name="lambda_par_determine_heating_voltage_title">Визначати прогрів по напрузі</string>
     <string name="lambda_par_correction_on_idling_title">Корегувати суміш на ХХ</string>
     <string name="lambda_par_stoichiom_ratio_for_gas_title">Стехіом.співвідношення для газа</string>
     <string name="lambda_control_sensors_heating_title">Керування підігрівом ДК</string>
-
     <string name="lambda_par_heating_time_without_pwm_on_cold_title">Час прогріву без ШІМ на холодному двигуні</string>
     <string name="lambda_par_heating_time_without_pwm_on_hot_title">Час прогріву без ШІМ на гарячому двигуні</string>
-
     <string name="lambda_par_hot_cold_temperature_threshold_title">Температурний поріг (холодний/гарячий)</string>
     <string name="lambda_par_turn_on_time_in_pwm_mode_title">Тривалість ввімкнення нагрівача при ШІМ</string>
     <string name="lambda_par_air_flow_threshold_for_turning_heating_off_title">Поріг вимкнення по споживанню повітря</string>
@@ -265,6 +263,13 @@
     <string name="accel_par_tpsdot_threshold_title">Поріг по ДПДЗ</string>
     <string name="accel_par_coldacc_mult_title">Коефіцієнт ДТОР при холодному двигуні</string>
     <string name="accel_par_ae_decay_time_title">Час затухання</string>
+    <string name="accel_par_ae_type_title">Тип збагачення</string>
+    <string name="accel_par_ae_time_title">Тривалість збагачення</string>
+    <string name="accel_par_ae_ballance_title">Баланс збагачення ДАТ/ДПДЗ</string>
+    <string name="accel_par_ae_mapdot_thrd_title">Поріг по ДАТ</string>
+    <string name="accel_par_fuel_film_model_title">Модель паливної плівки</string>
+    <string name="accel_par_start_transition_title">Початок переходу</string>
+    <string name="accel_par_finish_transition_title">Кінець переходу</string>
 
     <string name="knock_par_use_knock_sensor_title">Дозволити контроль детонації</string>
     <string name="knock_par_knock_filter_frequency_title">Частота ПФ</string>
@@ -276,6 +281,8 @@
     <string name="knock_par_maximal_angle_displacement_title">Максимальне зміщення КВЗ</string>
     <string name="knock_par_knock_threshold_title">Поріг детонації</string>
     <string name="knock_par_angle_recovery_delay_title">Затримка відновлення КВЗ</string>
+    <string name="knock_par_select_knock_sensor_title">Вибір датчика детонації</string>
+    <string name="knock_par_knock_threshold_control_title">Поріг контроля Детонації</string>
 
 
     <string name="gasdose_par_stoich_ratio">Стехіометрич. співвідношення</string>
@@ -325,19 +332,6 @@
     <string name="raw_status_tps_title">ДПДЗ: %.2f В\n</string>
     <string name="raw_status_addi1_title">ADD_IO1: %.2f В\n</string>
     <string name="raw_status_addi2_title">ADD_IO2: %.2f В</string>
-    <string name="idlreg_proportional_negative_title">Пропорційний (-)</string>
-    <string name="idlreg_integral_negative_title">" Інтегральний (-)"</string>
-    <string name="idlreg_differential_title">Диференційний</string>
-    <string name="knock_par_select_knock_sensor_title">Вибір датчика детонації</string>
-    <string name="knock_par_knock_threshold_control_title">Поріг контроля Детонації</string>
-    <string name="injctr_par_max_inj_pw_title">Макс. тривалість вприскування</string>
-    <string name="accel_par_ae_type_title">Тип збагачення</string>
-    <string name="accel_par_ae_time_title">Тривалість збагачення</string>
-    <string name="accel_par_ae_ballance_title">Баланс збагачення ДАТ/ДПДЗ</string>
-    <string name="accel_par_ae_mapdot_thrd_title">Поріг по ДАТ</string>
-    <string name="accel_par_fuel_film_model_title">Модель паливної плівки</string>
-    <string name="accel_par_start_transition_title">Початок переходу</string>
-    <string name="accel_par_finish_transition_title">Кінець переходу</string>
 
     <string name="adc_cor_multiply_corr_and_koef_title">Множити корр. на коеф.</string>
 </resources>

@@ -118,6 +118,7 @@ class SensorsRepository @Inject constructor(
 
             GaugeType.GAS_PRESSURE_SENS -> String.format(Locale.US, "%.2f", it.gasPressureSensor)
             GaugeType.FUEL_PRESSURE_SENS -> String.format(Locale.US, "%.2f", it.fuelPressureSensor)
+            GaugeType.APPS1 -> String.format(Locale.US, "%.1f", it.apps1)
         }
 
         return GaugeItem(state, value)

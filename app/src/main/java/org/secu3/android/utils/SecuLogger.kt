@@ -156,7 +156,7 @@ class SecuLogger @Inject constructor(private val prefs: UserPrefs, private val f
         val now = LocalTime.now()
 
         // Float = 4 bytes; Int = 4 bytes; Byte = 1 byte; Short = 2 bytes
-        val buf = ByteBuffer.allocate(236).also {
+        val buf = ByteBuffer.allocate(240).also {
             it.order(ByteOrder.LITTLE_ENDIAN)
         }
 
@@ -251,6 +251,7 @@ class SecuLogger @Inject constructor(private val prefs: UserPrefs, private val f
             putFloat(packet.tchrg)
             putFloat(packet.gasPressureSensor)
             putFloat(packet.fuelPressureSensor)
+            putFloat(packet.apps1)
             // TODO: update capacity if new field is added
             put(mMark.toByte())
             put(alignByte)
@@ -353,6 +354,7 @@ class SecuLogger @Inject constructor(private val prefs: UserPrefs, private val f
             " %5.1f".format(Locale.US, tchrg),
             " %6.2f".format(Locale.US, gasPressureSensor),
             " %7.2f".format(Locale.US, fuelPressureSensor),
+            " %5.1f".format(Locale.US, apps1),
             " %01d".format(Locale.US, mark),
             " %5d".format(Locale.US, serviceFlags),
             " $ceBits"
@@ -450,6 +452,7 @@ class SecuLogger @Inject constructor(private val prefs: UserPrefs, private val f
             "Tchrg",
             "GPS",
             "FPS",
+            "APPS (%)",
             "LogMarks",
             "ServFlag",
             "CECodes"

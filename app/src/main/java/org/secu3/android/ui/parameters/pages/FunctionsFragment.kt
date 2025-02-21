@@ -139,6 +139,9 @@ class FunctionsFragment : BaseParamFragment() {
 
                         fuelPressureCurveOffset.value = it.fpsCurveOffset
                         fuelPressureCurveGradient.value = it.fpsCurveGradient
+
+                        appsCurveOffset.value = it.apps1CurveOffset
+                        appsCurveGradient.value = it.apps1CurveGradient
                     }
 
                     initViews()
@@ -303,6 +306,19 @@ class FunctionsFragment : BaseParamFragment() {
                 }
             }
 
+            appsCurveOffset.addOnValueChangeListener {
+                funSetPacket?.apply {
+                    apps1CurveOffset = it
+                    mViewModel.sendPacket(this)
+                }
+            }
+            appsCurveGradient.addOnValueChangeListener {
+                funSetPacket?.apply {
+                    apps1CurveGradient = it
+                    mViewModel.sendPacket(this)
+                }
+            }
+
 
             lowerLoadValue.setOnClickListener { floatParamClick(it as FloatParamView) }
             upperLoadValue.setOnClickListener { floatParamClick(it as FloatParamView) }
@@ -318,6 +334,9 @@ class FunctionsFragment : BaseParamFragment() {
 
             fuelPressureCurveOffset.setOnClickListener { floatParamClick(it as FloatParamView) }
             fuelPressureCurveGradient.setOnClickListener { floatParamClick(it as FloatParamView) }
+
+            appsCurveOffset.setOnClickListener { floatParamClick(it as FloatParamView) }
+            appsCurveGradient.setOnClickListener { floatParamClick(it as FloatParamView) }
         }
     }
 }

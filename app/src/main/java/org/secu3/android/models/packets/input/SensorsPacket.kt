@@ -107,6 +107,8 @@ data class SensorsPacket(
 
     var fuelPressureSensor: Float = 0f,
 
+    var apps1: Float = 0f,                     // Accelerator pedal position
+
 ) : BaseSecu3Packet(){
 
     private var isSpeedUnitKm = true
@@ -450,6 +452,8 @@ data class SensorsPacket(
             additionalFlags = data.get1Byte()
 
             fuelPressureSensor = data.get2Bytes().toFloat() / MAP_MULTIPLIER
+
+            apps1 = data.get2Bytes().toFloat() / APPS_MULT
         }
 
 

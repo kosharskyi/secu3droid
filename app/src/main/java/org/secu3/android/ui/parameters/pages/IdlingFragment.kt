@@ -106,6 +106,9 @@ class IdlingFragment : BaseParamFragment() {
                         idlRegWorksWithIAC.isChecked = it.idlRegWorksWithIAC
 
                         differentialCoef.value = it.idlRegD
+
+                        idlRigidityLoadCoef.value = it.irrKLoad
+                        idlRigidityRpmCoef.value = it.irrKRpm
                     }
 
                     initViews()
@@ -252,6 +255,15 @@ class IdlingFragment : BaseParamFragment() {
                 packet?.let { it1 -> mViewModel.sendPacket(it1) }
             }
 
+            idlRigidityLoadCoef.addOnValueChangeListener {
+                packet?.irrKLoad = it
+                packet?.let { it1 -> mViewModel.sendPacket(it1) }
+            }
+
+            idlRigidityRpmCoef.addOnValueChangeListener {
+                packet?.irrKRpm = it
+                packet?.let { it1 -> mViewModel.sendPacket(it1) }
+            }
 
 
             positiveRegFactor.setOnClickListener { floatParamClick(it as FloatParamView) }
@@ -279,6 +291,9 @@ class IdlingFragment : BaseParamFragment() {
             iacDeadBand.setOnClickListener { intParamClick(it as IntParamView) }
 
             differentialCoef.setOnClickListener { floatParamClick(it as FloatParamView) }
+
+            idlRigidityLoadCoef.setOnClickListener { floatParamClick(it as FloatParamView) }
+            idlRigidityRpmCoef.setOnClickListener { floatParamClick(it as FloatParamView) }
         }
     }
 

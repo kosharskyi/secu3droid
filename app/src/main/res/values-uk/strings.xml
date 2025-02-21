@@ -293,6 +293,7 @@
     <string name="sensors_frag_wbo_afr_2_label">Повітря/паливо ШДК2</string>
     <string name="sensors_frag_gas_pressure_label">Тиск газу</string>
     <string name="sensors_frag_fuel_pressure_label">Тиск палива</string>
+    <string name="sensors_frag_acceleration_pedal_sensor_label">ДППА</string>
     <string name="sensors_frag_status_gas_valve_label">Газовий клапан</string>
     <string name="sensors_frag_status_throttle_label">Дросель</string>
     <string name="sensors_frag_status_fl_fuel_label">Паливо при ПХХ</string>
