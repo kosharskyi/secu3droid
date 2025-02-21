@@ -39,8 +39,8 @@
     <string name="pref_write_binary_log_title">Write log in binary format (s3l)</string>
     <string name="pref_log_csv_write_title">Title in csv log file</string>
     <string name="pref_log_csv_delimeter_title">Log delimeter character</string>
-    <string name="pref_wakelock_title">Wakelock</string>
-    <string name="pref_wakelock_summary">CPU is always running while Secu-3Droid started</string>
+    <string name="pref_wakelock_title">Allow app to run in the background</string>
+    <string name="pref_wakelock_summary">Prevents disconnection and allows continuous log recording</string>
     <string name="pref_keep_screen_title">Keep screen active</string>
     <string name="pref_keep_screen_summary">Disable screen blank while connected to Secu</string>
     <string name="pref_about_title">About</string>
@@ -177,6 +177,7 @@
         <item>Reaching limit of injector\'s duty</item>
         <item>LTFT map data in EEPROM is currupted</item>
         <item>Stepper IAC fault</item>
+        <item>Accelerator pedal position sensors failure</item>
     </string-array>
 
     <string-array name="logical_functions">
