@@ -355,6 +355,7 @@ class SecuLogger @Inject constructor(private val prefs: UserPrefs, private val f
             " %6.2f".format(Locale.US, gasPressureSensor),
             " %7.2f".format(Locale.US, fuelPressureSensor),
             " %5.1f".format(Locale.US, apps1),
+            // TODO: update titles if new field is added
             " %01d".format(Locale.US, mark),
             " %5d".format(Locale.US, serviceFlags),
             " $ceBits"
