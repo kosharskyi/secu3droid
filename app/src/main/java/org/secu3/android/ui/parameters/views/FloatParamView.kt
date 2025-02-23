@@ -96,6 +96,7 @@ class FloatParamView @JvmOverloads constructor(
             2 -> "%.2f".format(value)
             3 -> "%.3f".format(value)
             4 -> "%.4f".format(value)
+            5 -> "%.5f".format(value)
             else -> value.toString()
         }
     }

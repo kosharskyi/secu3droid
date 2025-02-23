@@ -300,6 +300,18 @@
     <string name="ltft_par_negative_insensitivity_threshold_title">Negative insensitivity LTFT threshold</string>
     <string name="ltft_par_positive_insensitivity_threshold_title">Positive insensitivity LTFT threshold</string>
 
+    <string name="el_throttle_pid_p_title">Throttle PID P</string>
+    <string name="el_throttle_pid_i_title">Throttle PID I</string>
+    <string name="el_throttle_pid_d_title">Throttle PID D</string>
+    <string name="el_throttle_negative_max_title">Max. negative output duty</string>
+    <string name="el_throttle_positive_max_title">Max. positive output duty</string>
+    <string name="el_throttle_period_pid_calling_title">period of calling of PID code</string>
+    <string name="el_throttle_friction_torque_open_title">PWM duty to compensate static friction torque (opening)</string>
+    <string name="el_throttle_friction_torque_close_title">PWM duty to compensate static friction torque (closing)</string>
+    <string name="el_throttle_friqtion_torque_thrd_title">Threshold for applying static friction torque compensation</string>
+    <string name="el_throttle_max_addition_from_idl_reg_title">Max. addition from idling regulator</string>
+    <string name="el_throttle_home_position_title">Home position</string>
+
     <string name="status_rpm_title">RPM: %d min-1\n</string>
     <string name="status_map_title">Pressure: %.2f kPa\n</string>
     <string name="status_voltage_title">Voltage: %.2f V\n</string>

@@ -78,6 +78,8 @@ sealed class Task {
 
     object Secu3ReadLtftParam : Task()
 
+    object Secu3ReadDbwParam : Task()
+
     object Secu3ReadFnNameDat : Task()
 
 
@@ -96,7 +98,7 @@ sealed class Task {
             Secu3ReadTemperatureParam, Secu3ReadCarburParam, Secu3ReadAdcErrorsCorrectionsParam, Secu3ReadCkpsParam,
             Secu3ReadKnockParam, Secu3ReadMiscellaneousParam, Secu3ReadChokeControlParam, Secu3ReadSecurityParam,
             Secu3ReadUniversalOutputsParam, Secu3ReadFuelInjectionParam, Secu3ReadLambdaParam, Secu3ReadAccelerationParam,
-            Secu3ReadGasDoseParam,Secu3ReadLtftParam,Secu3ReadFnNameDat -> ChangeModePacket.getPacket(this)
+            Secu3ReadGasDoseParam,Secu3ReadLtftParam,Secu3ReadDbwParam,Secu3ReadFnNameDat -> ChangeModePacket.getPacket(this)
 
 
             Secu3OpComEnterDiagnostics -> OpCompNc.getEnterDiagCommand()

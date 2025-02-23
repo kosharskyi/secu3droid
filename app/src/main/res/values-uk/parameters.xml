@@ -304,6 +304,17 @@
     <string name="ltft_par_negative_insensitivity_threshold_title">Негативний поріг нечутливості</string>
     <string name="ltft_par_positive_insensitivity_threshold_title">Позитивний поріг нечутливості</string>
 
+    <string name="el_throttle_pid_p_title">П-коеф. ПІД заслінки</string>
+    <string name="el_throttle_pid_i_title">І-коеф. ПІД заслінки</string>
+    <string name="el_throttle_pid_d_title">Д-коеф. ПІД заслінки</string>
+    <string name="el_throttle_negative_max_title">Макс. скважність на закриття заслінки</string>
+    <string name="el_throttle_positive_max_title">Макс. скважність на відкриття заслінки</string>
+    <string name="el_throttle_period_pid_calling_title">Період виклику коду ПІД-регулятора</string>
+    <string name="el_throttle_friction_torque_open_title">Скважність компенсації моменту тертя спокою(відкр)</string>
+    <string name="el_throttle_friction_torque_close_title">Скважність компенсації моменту тертя спокою(закр)</string>
+    <string name="el_throttle_friqtion_torque_thrd_title">Поріг врахування моменту тертя спокою</string>
+    <string name="el_throttle_max_addition_from_idl_reg_title">Максимальна добавка від РХХ</string>
+    <string name="el_throttle_home_position_title">Домашнє положення</string>
 
 
     <string name="status_rpm_title">Оберти: %d хв-1\n</string>

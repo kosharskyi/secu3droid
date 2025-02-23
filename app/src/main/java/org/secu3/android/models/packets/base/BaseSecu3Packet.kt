@@ -121,5 +121,6 @@ abstract class BaseSecu3Packet {
         internal const val MAFS_MULT = 64.0f;
         internal const val FTS_MULT = 4.0f;
         internal const val APPS_MULT = 64
+        internal const val ETCPID_MULT = 4096.0f
     }
 }

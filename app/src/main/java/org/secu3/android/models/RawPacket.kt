@@ -40,6 +40,7 @@ import org.secu3.android.models.packets.out.params.AnglesParamPacket
 import org.secu3.android.models.packets.out.params.CarburParamPacket
 import org.secu3.android.models.packets.out.params.ChokeControlParPacket
 import org.secu3.android.models.packets.out.params.CkpsParamPacket
+import org.secu3.android.models.packets.out.params.DbwParamPacket
 import org.secu3.android.models.packets.out.params.FunSetParamPacket
 import org.secu3.android.models.packets.out.params.GasDoseParamPacket
 import org.secu3.android.models.packets.out.params.IdlingParamPacket
@@ -85,6 +86,7 @@ data class RawPacket(val data: IntArray)  {
                 AccelerationParamPacket.DESCRIPTOR -> AccelerationParamPacket.parse(packetData)
                 GasDoseParamPacket.DESCRIPTOR -> GasDoseParamPacket.parse(packetData)
                 LtftParamPacket.DESCRIPTOR -> LtftParamPacket.parse(packetData)
+                DbwParamPacket.DESCRIPTOR -> DbwParamPacket.parse(packetData)
 
                 FnNameDatPacket.DESCRIPTOR -> FnNameDatPacket.parse(packetData)
                 OpCompNc.DESCRIPTOR -> OpCompNc.parse(packetData)

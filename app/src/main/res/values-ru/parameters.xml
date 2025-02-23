@@ -311,6 +311,18 @@
     <string name="ltft_par_positive_insensitivity_threshold_title">Положительный порог нечувствительности</string>
 
 
+    <string name="el_throttle_pid_p_title">П-коэфф. ПИД заслонки</string>
+    <string name="el_throttle_pid_i_title">И-коэфф. ПИД заслонки</string>
+    <string name="el_throttle_pid_d_title">Д-коэфф. ПИД заслонки</string>
+    <string name="el_throttle_negative_max_title">Макс. скважность на закрытие заслонки</string>
+    <string name="el_throttle_positive_max_title">Макс. скважность на открытие заслонки</string>
+    <string name="el_throttle_period_pid_calling_title">Период вызова кода ПИД-регулятора</string>
+    <string name="el_throttle_friction_torque_open_title">Скважность компенсации момента трения покоя(откр)</string>
+    <string name="el_throttle_friction_torque_close_title">Скважность компенсации момента трения покоя(закр)</string>
+    <string name="el_throttle_friqtion_torque_thrd_title">Порог учета момента трения покоя</string>
+    <string name="el_throttle_max_addition_from_idl_reg_title">Максимальная добавка от РХХ</string>
+    <string name="el_throttle_home_position_title">Домашнее положение</string>
+
 
     <string name="status_rpm_title">Обороты: %d мин-1\n</string>
     <string name="status_map_title">Абсолютное давление: %.2f кПа\n</string>

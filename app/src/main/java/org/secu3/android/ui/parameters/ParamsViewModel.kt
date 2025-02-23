@@ -53,6 +53,7 @@ import org.secu3.android.models.packets.out.params.AnglesParamPacket
 import org.secu3.android.models.packets.out.params.CarburParamPacket
 import org.secu3.android.models.packets.out.params.ChokeControlParPacket
 import org.secu3.android.models.packets.out.params.CkpsParamPacket
+import org.secu3.android.models.packets.out.params.DbwParamPacket
 import org.secu3.android.models.packets.out.params.FunSetParamPacket
 import org.secu3.android.models.packets.out.params.GasDoseParamPacket
 import org.secu3.android.models.packets.out.params.IdlingParamPacket
@@ -288,6 +289,17 @@ class ParamsViewModel @Inject constructor(
             emit(packet)
             secu3ConnectionManager.sendNewTask(Task.Secu3ReadSensors)
         }.asLiveData()
+
+    val dbwLiveData: LiveData<DbwParamPacket>
+        get() = flow {
+            secu3ConnectionManager.sendNewTask(Task.Secu3ReadDbwParam)
+            val packet = secu3ConnectionManager.receivedPacketFlow.first { it is DbwParamPacket } as DbwParamPacket
+
+            emit(packet)
+            secu3ConnectionManager.sendNewTask(Task.Secu3ReadSensors)
+        }.asLiveData()
+
+
 
     fun sendPacket(packet: BaseOutputPacket) {
         if (isSendAllowed.not()) {
