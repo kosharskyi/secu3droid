@@ -398,7 +398,9 @@
         <item>Acceleration</item>
         <item>Gas dose</item>
         <item>LTFT</item>
+        <item>El. throttle</item>
     </string-array>
+
     <string name="idlreg_iac_dead_band_title">IAC dead band</string>
     <string name="empty_logs_list">You have no recorded logs yet</string>
     <string name="log_start_writing">Start writing</string>

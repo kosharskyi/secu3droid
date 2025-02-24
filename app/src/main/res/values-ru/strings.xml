@@ -230,6 +230,7 @@
         <item>Ускорение</item>
         <item>Доз. газа</item>
         <item>LTFT</item>
+        <item>Эл. дроссель</item>
     </string-array>
     <string name="maximum_step_frequency_at_init">Максимальная частота при иниц.</string>
 

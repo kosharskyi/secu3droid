@@ -229,6 +229,7 @@
         <item>Прискорення</item>
         <item>Доз. газу</item>
         <item>LTFT</item>
+        <item>Ел. дросель</item>
     </string-array>
     <string name="maximum_step_frequency_at_init">Максимальна частота при ініц.</string>
     <string name="sensors_tab_title">Датчики</string>
