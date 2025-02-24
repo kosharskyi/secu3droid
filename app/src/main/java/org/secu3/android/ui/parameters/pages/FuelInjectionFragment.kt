@@ -362,4 +362,8 @@ class FuelInjectionFragment : BaseParamFragment() {
             pulsesPerLitterOfFuel.setOnClickListener { intParamClick(it as IntParamView) }
         }
     }
+
+    override fun tabTitle(): Int {
+        return R.string.params_tab_fuel_injection_title
+    }
 }

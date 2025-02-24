@@ -160,4 +160,7 @@ class LtftFragment : BaseParamFragment() {
         }
     }
 
+    override fun tabTitle(): Int {
+        return R.string.params_tab_ltft_title
+    }
 }

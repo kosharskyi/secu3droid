@@ -78,6 +78,10 @@ class ParametersPagerAdapter(fragment: Fragment, fwInfoPacket: FirmwareInfoPacke
         }
         pages = list
     }
+
+    val titles: List<Int>
+        get() = pages.map { it.tabTitle() }
+
     override fun getItemCount(): Int {
         return pages.size
     }

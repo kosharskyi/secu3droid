@@ -31,6 +31,7 @@ import android.view.ViewGroup
 import androidx.lifecycle.lifecycleScope
 import androidx.lifecycle.withResumed
 import kotlinx.coroutines.launch
+import org.secu3.android.R
 import org.secu3.android.databinding.FragmentAnglesBinding
 import org.secu3.android.models.packets.out.params.AnglesParamPacket
 import org.secu3.android.ui.parameters.views.FloatParamView
@@ -153,5 +154,9 @@ class AnglesFragment : BaseParamFragment() {
             octaneCorrection.setOnClickListener { floatParamClick(it as FloatParamView) }
             ignTimingWhenShifting.setOnClickListener { floatParamClick(it as FloatParamView) }
         }
+    }
+
+    override fun tabTitle(): Int {
+        return R.string.params_tab_angles_title
     }
 }

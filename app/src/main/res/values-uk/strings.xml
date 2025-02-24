@@ -210,27 +210,27 @@
     <string name="units_gram_per_second">г/сек</string>
     <string name="units_kg_per_cm2">кг/см2</string>
 
-    <string-array name="params_tab_titles">
-        <item>Запуск</item>
-        <item>КВЗ</item>
-        <item>Регулятор ХХ</item>
-        <item>Функції</item>
-        <item>Температура</item>
-        <item>Карбюратор</item>
-        <item>Корекція АЦП </item>
-        <item>ДПКВ</item>
-        <item>Детонація</item>
-        <item>Інше</item>
-        <item>Управління ПЗ</item>
-        <item>Безпека</item>
-        <item>Універсальні виходи</item>
-        <item>Уприскування</item>
-        <item>Лямбда контроль</item>
-        <item>Прискорення</item>
-        <item>Доз. газу</item>
-        <item>LTFT</item>
-        <item>Ел. дросель</item>
-    </string-array>
+    <string name="params_tab_start_title">Запуск</string>
+    <string name="params_tab_angles_title">КВЗ</string>
+    <string name="params_tab_idling_title">Регулятор ХХ</string>
+    <string name="params_tab_functions_title">Функції</string>
+    <string name="params_tab_temperature_title">Температура</string>
+    <string name="params_tab_fuel_cutoff_title">Карбюратор</string>
+    <string name="params_tab_adc_errors_corr_title">Корекція АЦП</string>
+    <string name="params_tab_ckps_title">ДПКВ</string>
+    <string name="params_tab_knock_title">Детонація</string>
+    <string name="params_tab_miscellaneous_title">Інше</string>
+    <string name="params_tab_choke_control_title">Управління ПЗ</string>
+    <string name="params_tab_security_title">Безпека</string>
+    <string name="params_tab_universal_outputs_title">Універсальні виходи</string>
+    <string name="params_tab_fuel_injection_title">Уприскування</string>
+    <string name="params_tab_lambda_control_title">Лямбда контроль</string>
+    <string name="params_tab_acceleration_title">Прискорення</string>
+    <string name="params_tab_gas_dose_title">Доз. газу</string>
+    <string name="params_tab_ltft_title">LTFT</string>
+    <string name="params_tab_el_throttle_title">Ел. дросель</string>
+
+
     <string name="maximum_step_frequency_at_init">Максимальна частота при ініц.</string>
     <string name="sensors_tab_title">Датчики</string>
     <string name="enable_bluetooth_to_start_work">Ввімкніть Bluetooth для початку роботи та натисніть \"Спробувати знову\"</string>

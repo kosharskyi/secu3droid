@@ -180,4 +180,8 @@ class SecurityFragment : BaseParamFragment() {
             bluetoothApply.isEnabled = bluetoothName.text.toString().isNotEmpty() && bluetoothPassword.text.toString().length >= 4
         }
     }
+
+    override fun tabTitle(): Int {
+        return R.string.params_tab_security_title
+    }
 }

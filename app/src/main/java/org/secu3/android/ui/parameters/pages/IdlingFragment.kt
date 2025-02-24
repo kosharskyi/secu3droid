@@ -32,6 +32,7 @@ import androidx.lifecycle.lifecycleScope
 import androidx.lifecycle.withResumed
 import androidx.lifecycle.withStarted
 import kotlinx.coroutines.launch
+import org.secu3.android.R
 import org.secu3.android.databinding.FragmentIdlingBinding
 import org.secu3.android.models.packets.out.params.IdlingParamPacket
 import org.secu3.android.ui.parameters.views.FloatParamView
@@ -297,4 +298,7 @@ class IdlingFragment : BaseParamFragment() {
         }
     }
 
+    override fun tabTitle(): Int {
+        return R.string.params_tab_idling_title
+    }
 }

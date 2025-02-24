@@ -201,4 +201,8 @@ class AccelerationFragment : BaseParamFragment() {
             xTauFinishThrd.setOnClickListener { intParamClick(it as IntParamView) }
         }
     }
+
+    override fun tabTitle(): Int {
+        return R.string.params_tab_acceleration_title
+    }
 }

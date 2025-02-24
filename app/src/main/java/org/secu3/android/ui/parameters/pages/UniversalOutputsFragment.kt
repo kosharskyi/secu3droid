@@ -1007,4 +1007,7 @@ class UniversalOutputsFragment : BaseParamFragment() {
         }
     }
 
+    override fun tabTitle(): Int {
+        return R.string.params_tab_universal_outputs_title
+    }
 }

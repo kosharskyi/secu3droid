@@ -62,4 +62,6 @@ abstract class BaseParamFragment : Fragment() {
         }
     }
 
+    abstract fun tabTitle(): Int
+
 }

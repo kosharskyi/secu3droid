@@ -4,6 +4,7 @@ import android.os.Bundle
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
+import org.secu3.android.R
 import org.secu3.android.databinding.FragmentDbwBinding
 import org.secu3.android.models.packets.out.params.DbwParamPacket
 import org.secu3.android.ui.parameters.views.FloatParamView
@@ -112,4 +113,7 @@ class DbwFragment : BaseParamFragment() {
         }
     }
 
+    override fun tabTitle(): Int {
+        return R.string.params_tab_el_throttle_title
+    }
 }

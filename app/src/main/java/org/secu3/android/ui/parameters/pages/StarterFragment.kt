@@ -28,6 +28,7 @@ import android.os.Bundle
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
+import org.secu3.android.R
 import org.secu3.android.databinding.FragmentStarterBinding
 import org.secu3.android.models.packets.out.params.StarterParamPacket
 import org.secu3.android.ui.parameters.views.FloatParamView
@@ -155,5 +156,9 @@ class StarterFragment : BaseParamFragment() {
             floodClearModeThreshold.setOnClickListener { floatParamClick(it as FloatParamView) }
             stblStrCountdown.setOnClickListener { intParamClick(it as IntParamView) }
         }
+    }
+
+    override fun tabTitle(): Int {
+        return R.string.params_tab_start_title
     }
 }

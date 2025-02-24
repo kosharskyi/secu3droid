@@ -379,27 +379,26 @@
         <item>19.98</item>
     </string-array>
 
-    <string-array name="params_tab_titles">
-        <item>Start</item>
-        <item>Angles</item>
-        <item>Idling</item>
-        <item>Functions</item>
-        <item>Temperature</item>
-        <item>Fuel cutoff</item>
-        <item>ADC Errors Corr.</item>
-        <item>CKPS</item>
-        <item>Knock</item>
-        <item>Miscellaneous</item>
-        <item>Choke control</item>
-        <item>Security</item>
-        <item>Universal outputs</item>
-        <item>Fuel injection</item>
-        <item>Lambda control</item>
-        <item>Acceleration</item>
-        <item>Gas dose</item>
-        <item>LTFT</item>
-        <item>El. throttle</item>
-    </string-array>
+    <string name="params_tab_start_title">Start</string>
+    <string name="params_tab_angles_title">Angles</string>
+    <string name="params_tab_idling_title">Idling</string>
+    <string name="params_tab_functions_title">Functions</string>
+    <string name="params_tab_temperature_title">Temperature</string>
+    <string name="params_tab_fuel_cutoff_title">Fuel cutoff</string>
+    <string name="params_tab_adc_errors_corr_title">ADC Errors Corr.</string>
+    <string name="params_tab_ckps_title">CKPS</string>
+    <string name="params_tab_knock_title">Knock</string>
+    <string name="params_tab_miscellaneous_title">Miscellaneous</string>
+    <string name="params_tab_choke_control_title">Choke control</string>
+    <string name="params_tab_security_title">Security</string>
+    <string name="params_tab_universal_outputs_title">Universal outputs</string>
+    <string name="params_tab_fuel_injection_title">Fuel injection</string>
+    <string name="params_tab_lambda_control_title">Lambda control</string>
+    <string name="params_tab_acceleration_title">Acceleration</string>
+    <string name="params_tab_gas_dose_title">Gas dose</string>
+    <string name="params_tab_ltft_title">LTFT</string>
+    <string name="params_tab_el_throttle_title">El. throttle</string>
+
 
     <string name="idlreg_iac_dead_band_title">IAC dead band</string>
     <string name="empty_logs_list">You have no recorded logs yet</string>

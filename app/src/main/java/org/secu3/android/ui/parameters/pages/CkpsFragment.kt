@@ -202,4 +202,8 @@ class CkpsFragment : BaseParamFragment() {
             missingTeethDetectionFactor.setOnClickListener { floatParamClick(it as FloatParamView) }
         }
     }
+
+    override fun tabTitle(): Int {
+        return R.string.params_tab_ckps_title
+    }
 }

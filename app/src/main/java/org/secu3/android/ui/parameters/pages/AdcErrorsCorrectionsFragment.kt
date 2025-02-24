@@ -32,6 +32,7 @@ import androidx.lifecycle.lifecycleScope
 import androidx.lifecycle.withResumed
 import androidx.lifecycle.withStarted
 import kotlinx.coroutines.launch
+import org.secu3.android.R
 import org.secu3.android.databinding.FragmentAdcErrorsCorrectionsBinding
 import org.secu3.android.models.packets.out.params.AdcCorrectionsParamPacket
 import org.secu3.android.ui.parameters.views.FloatParamView
@@ -256,5 +257,9 @@ class AdcErrorsCorrectionsFragment : BaseParamFragment() {
             add8Factor.setOnClickListener { floatParamClick(it as FloatParamView) }
             add8Correction.setOnClickListener { floatParamClick(it as FloatParamView) }
         }
+    }
+
+    override fun tabTitle(): Int {
+        return R.string.params_tab_adc_errors_corr_title
     }
 }

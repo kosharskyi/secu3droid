@@ -32,6 +32,7 @@ import androidx.lifecycle.lifecycleScope
 import androidx.lifecycle.withResumed
 import androidx.lifecycle.withStarted
 import kotlinx.coroutines.launch
+import org.secu3.android.R
 import org.secu3.android.databinding.FragmentTemperatureBinding
 import org.secu3.android.models.packets.out.params.TemperatureParamPacket
 import org.secu3.android.ui.parameters.views.FloatParamView
@@ -144,4 +145,7 @@ class TemperatureFragment : BaseParamFragment() {
         }
     }
 
+    override fun tabTitle(): Int {
+        return R.string.params_tab_temperature_title
+    }
 }

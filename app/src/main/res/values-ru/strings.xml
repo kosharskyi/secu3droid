@@ -211,27 +211,27 @@
     <string name="units_gram_per_second">г/сек</string>
     <string name="units_kg_per_cm2">кг/см2</string>
 
-    <string-array name="params_tab_titles">
-        <item>Запуск</item>
-        <item>УОЗ</item>
-        <item>Регулятор ХХ</item>
-        <item>Функции</item>
-        <item>Температура</item>
-        <item>Отсечка топлива</item>
-        <item>Коррекция АЦП</item>
-        <item>ДПКВ</item>
-        <item>Детонация</item>
-        <item>Прочее</item>
-        <item>Управление ВЗ</item>
-        <item>Безопасность</item>
-        <item>Универсальные выходы</item>
-        <item>Впрыск</item>
-        <item>Лямбда контроль</item>
-        <item>Ускорение</item>
-        <item>Доз. газа</item>
-        <item>LTFT</item>
-        <item>Эл. дроссель</item>
-    </string-array>
+    <string name="params_tab_start_title">Запуск</string>
+    <string name="params_tab_angles_title">УОЗ</string>
+    <string name="params_tab_idling_title">Регулятор ХХ</string>
+    <string name="params_tab_functions_title">Функции</string>
+    <string name="params_tab_temperature_title">Температура</string>
+    <string name="params_tab_fuel_cutoff_title">Отсечка топлива</string>
+    <string name="params_tab_adc_errors_corr_title">Коррекция АЦП</string>
+    <string name="params_tab_ckps_title">ДПКВ</string>
+    <string name="params_tab_knock_title">Детонация</string>
+    <string name="params_tab_miscellaneous_title">Прочее</string>
+    <string name="params_tab_choke_control_title">Управление ВЗ</string>
+    <string name="params_tab_security_title">Безопасность</string>
+    <string name="params_tab_universal_outputs_title">Универсальные выходы</string>
+    <string name="params_tab_fuel_injection_title">Впрыск</string>
+    <string name="params_tab_lambda_control_title">Лямбда контроль</string>
+    <string name="params_tab_acceleration_title">Ускорение</string>
+    <string name="params_tab_gas_dose_title">Доз. газа</string>
+    <string name="params_tab_ltft_title">LTFT</string>
+    <string name="params_tab_el_throttle_title">Эл. дроссель</string>
+
+
     <string name="maximum_step_frequency_at_init">Максимальная частота при иниц.</string>
 
     <string name="sensors_tab_title">Датчики</string>

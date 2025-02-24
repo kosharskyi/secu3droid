@@ -201,4 +201,8 @@ class FuelCutoffkFragment : BaseParamFragment() {
             revLimitingUpperThrd.setOnClickListener { intParamClick(it as IntParamView) }
         }
     }
+
+    override fun tabTitle(): Int {
+        return R.string.params_tab_fuel_cutoff_title
+    }
 }

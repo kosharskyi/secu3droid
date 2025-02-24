@@ -336,4 +336,8 @@ class LambdaControlFragment : BaseParamFragment() {
             airFlowThresholdForTurningHeatingOff.setOnClickListener { intParamClick(it as IntParamView) }
         }
     }
+
+    override fun tabTitle(): Int {
+        return R.string.params_tab_lambda_control_title
+    }
 }

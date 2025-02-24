@@ -251,4 +251,8 @@ class KnockFragment : BaseParamFragment() {
             knockControlThreshold.setOnClickListener { floatParamClick(it as FloatParamView) }
         }
     }
+
+    override fun tabTitle(): Int {
+        return R.string.params_tab_knock_title
+    }
 }

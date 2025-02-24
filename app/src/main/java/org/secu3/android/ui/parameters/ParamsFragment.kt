@@ -24,7 +24,6 @@
  */
 package org.secu3.android.ui.parameters
 
-import android.graphics.Color
 import android.graphics.PorterDuff
 import android.os.Bundle
 import android.view.LayoutInflater
@@ -49,10 +48,6 @@ class ParamsFragment : Fragment() {
     private val mViewModel: ParamsViewModel by viewModels()
 
     private lateinit var mBinding: FragmentParamsBinding
-
-    private val tabTitles: List<String> by lazy {
-        resources.getStringArray(R.array.params_tab_titles).toList()
-    }
 
     override fun onCreateView(inflater: LayoutInflater, container: ViewGroup?, savedInstanceState: Bundle?): View? {
         mBinding = FragmentParamsBinding.inflate(layoutInflater)
@@ -116,9 +111,12 @@ class ParamsFragment : Fragment() {
 
     private fun initPager() {
 
+        val paramsAdapter = ParametersPagerAdapter(this@ParamsFragment, mViewModel.fwInfoPacket)
+        val tabTitles = paramsAdapter.titles.map { getString(it) }
+
         mBinding.apply {
             paramsPager.apply {
-                adapter = ParametersPagerAdapter(this@ParamsFragment, mViewModel.fwInfoPacket)
+                adapter = paramsAdapter
                 offscreenPageLimit = 2
             }
 
