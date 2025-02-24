@@ -72,7 +72,7 @@ class ParametersPagerAdapter(fragment: Fragment, fwInfoPacket: FirmwareInfoPacke
                 list.add(LtftFragment())
             }
 
-            if (it.isSecu3T) {
+            if (it.isSecu3T.not()) {
                 list.add(DbwFragment())
             }
         }
