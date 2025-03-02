@@ -6,21 +6,21 @@ appcompat = "1.7.0"
 
 dagger = "2.55"
 
-firebase-bom = "33.9.0"
+firebase-bom = "33.10.0"
 
 annotation = "1.9.1"
-constraintlayout = "2.2.0"
+constraintlayout = "2.2.1"
 fragment-ktx = "1.8.6"
 lifecycle-extensions = "2.2.0"
 lifecycle-viewmodel-ktx = "2.8.7"
-navigation = "2.8.7"
+navigation = "2.8.8"
 preference-ktx = "1.2.1"
 room = "2.6.1"
 viewpager2 = "1.1.0"
 material = "1.12.0"
 browser = "1.8.0"
 
-compose = "1.10.0"
+compose = "1.10.1"
 compose-bom = "2025.02.00"
 material3-android = "1.3.1"
 
