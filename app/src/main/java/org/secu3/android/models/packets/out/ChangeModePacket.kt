@@ -105,8 +105,6 @@ data class ChangeModePacket(
                 Task.Secu3ReadFnNameDat -> ChangeModePacket(FnNameDatPacket.DESCRIPTOR)
                 else -> ChangeModePacket(SensorsPacket.DESCRIPTOR)
             }
-
         }
-
     }
 }
