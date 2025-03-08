@@ -108,7 +108,7 @@ class OldSensorsFragment : Fragment() {
                 airTemp.value.text = String.format(Locale.US, "%.1f", it.airtempSensor)
 
                 lambdaCorr.title.text = "${getString(R.string.sensors_frag_ego_correction_label)}, ${getString(R.string.units_percents)}:"
-                lambdaCorr.value.text = String.format(Locale.US, "%.2f", it.lambda[0])
+                lambdaCorr.value.text = String.format(Locale.US, "%.2f", it.lambdaCorr)
 
                 injPw.title.text = "${getString(R.string.sensors_frag_injection_pw_label)}, ${getString(R.string.units_ms)}:"
                 injPw.value.text = String.format(Locale.US, "%.2f", it.injPw)
@@ -126,7 +126,7 @@ class OldSensorsFragment : Fragment() {
                 tmp2.value.text = String.format(Locale.US, "%.1f", it.tmp2)
 
                 afr.title.text = getString(R.string.sensors_frag_wbo_afr_label)
-                afr.value.text = String.format(Locale.US, "%.1f", it.sensAfr[0])
+                afr.value.text = String.format(Locale.US, "%.1f", it.afr)
 
                 consFuel.title.text = "${getString(R.string.sensors_frag_fuel_consumption_label)}, ${getString(R.string.units_l_per_100km)}:"
                 consFuel.value.text = String.format(Locale.US, "%.2f", it.cons_fuel)
@@ -147,7 +147,7 @@ class OldSensorsFragment : Fragment() {
                 injDuty.value.text = String.format(Locale.US, "%.1f", it.sens_injDuty)
 
                 maf.title.text = "${getString(R.string.sensors_frag_maf_label)}, ${getString(R.string.units_gram_per_second)}:"
-                maf.value.text = String.format(Locale.US, "%.1f", it.sens_maf)
+                maf.value.text = String.format(Locale.US, "%.1f", it.maf)
 
                 ventDuty.title.text = "${getString(R.string.sensors_frag_fan_duty_label)}, ${getString(R.string.units_percents)}:"
                 ventDuty.value.text = it.ventDuty.toString()
@@ -159,13 +159,13 @@ class OldSensorsFragment : Fragment() {
                 fts.value.text = String.format(Locale.US, "%.1f", it.fts)
 
                 lambdaCorr2.title.text = "${getString(R.string.sensors_frag_ego_correction2_label)}, ${getString(R.string.units_percents)}:"
-                lambdaCorr2.value.text = String.format(Locale.US, "%.1f", it.lambda[1])
+                lambdaCorr2.value.text = String.format(Locale.US, "%.1f", it.lambdaCorr2)
 
                 afrDifference.title.text = getString(R.string.sensors_frag_afr_difference_label)
-                afrDifference.value.text = String.format(Locale.US, "%.2f", it.sensAfr[0] - it.corrAfr)
+                afrDifference.value.text = String.format(Locale.US, "%.2f", it.afr - it.afrMap)
 
                 afrDifference2.title.text = getString(R.string.sensors_frag_afr_difference2_label)
-                afrDifference2.value.text = String.format(Locale.US, "%.2f", it.sensAfr[1] - it.corrAfr)
+                afrDifference2.value.text = String.format(Locale.US, "%.2f", it.afr2 - it.afrMap)
 
                 beginInjPhase.title.text = getString(R.string.sensors_frag_begin_inj_phase_label)
                 beginInjPhase.value.text = String.format(Locale.US, "%.1f", it.injTimBegin)
@@ -174,10 +174,10 @@ class OldSensorsFragment : Fragment() {
                 endInjPhase.value.text = String.format(Locale.US, "%.1f", it.injTimEnd)
 
                 afrTable.title.text = getString(R.string.wbo_afr_tabl)
-                afrTable.value.text = String.format(Locale.US, "%.2f", it.corrAfr)
+                afrTable.value.text = String.format(Locale.US, "%.2f", it.afrMap)
 
                 afr2.title.text = getString(R.string.sensors_frag_wbo_afr_2_label)
-                afr2.value.text = String.format(Locale.US, "%.1f", it.sensAfr[1])
+                afr2.value.text = String.format(Locale.US, "%.1f", it.afr2)
 
                 gasPressureSensor.title.text = "${getString(R.string.sensors_frag_gas_pressure_label)}, ${getString(R.string.units_pressure_kpa)}:"
                 gasPressureSensor.value.text = String.format(Locale.US, "%.1f", it.gasPressureSensor)

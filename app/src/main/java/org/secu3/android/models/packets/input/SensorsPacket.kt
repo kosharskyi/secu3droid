@@ -62,7 +62,8 @@ data class SensorsPacket(
     var idlregAac: Float = 0f,        // advance angle correction from idling RPM regulator
     var octanAac: Float = 0f,         // octane correction value
 
-    var lambda: FloatArray = FloatArray(2),           // lambda correction
+    var lambdaCorr: Float = 0f,           // lambda correction
+    var lambdaCorr2: Float = 0f,           // lambda correction
     var injPw: Float = 0f,            // injector pulse width
     var tpsdot: Short = 0,           // TPS opening/closing speed
 
@@ -72,7 +73,8 @@ data class SensorsPacket(
 
     var tmp2: Float = 0f,
 
-    var sensAfr: FloatArray = FloatArray(2),              // #if defined(FUEL_INJECT) || defined(CARB_AFR) || defined(GD_CONTROL)
+    var afr: Float = 0f,              // #if defined(FUEL_INJECT) || defined(CARB_AFR) || defined(GD_CONTROL)
+    var afr2: Float = 0f,              // #if defined(FUEL_INJECT) || defined(CARB_AFR) || defined(GD_CONTROL)
 
     var load: Float = 0f,
     var baroPress: Float = 0f,
@@ -89,7 +91,7 @@ data class SensorsPacket(
     var ops: Float = 0f,                   //oil pressure
 
     var sens_injDuty: Float = 0f,               //injector's duty in % (value * 2)
-    var sens_maf: Float = 0f,                   //Air flow (g/sec) * 64 from the MAF sensor
+    var maf: Float = 0f,                   //Air flow (g/sec) * 64 from the MAF sensor
     var ventDuty: Float = 0f,                   //PWM duty of cooling fan
 
     var uniOutput: Int = 0,                   //states of universal outputs
@@ -98,7 +100,7 @@ data class SensorsPacket(
     var cons_fuel: Float = 0f,              //consumed fuel, L * 1024
 
     var lambda_mx: Float = 0f,              //mix of 2 lambda sensors
-    var corrAfr: Float = 0f,                // Current value of air to fuel ration from AFR map
+    var afrMap: Float = 0f,                // Current value of air to fuel ration from AFR map
     var tchrg: Float = 0f,                  // Corrected value of MAT; charge temp
 
     var gasPressureSensor: Float = 0f,
@@ -364,7 +366,7 @@ data class SensorsPacket(
                 octanUse = true
             }
 
-            lambda[0] = data.get2Bytes().toShort().toFloat().div(512.0f).times(100.0f)  //obtain value in %
+            lambdaCorr = data.get2Bytes().toShort().toFloat().div(512.0f).times(100.0f)  //obtain value in %
 
             // Injector PW(ms)
             injPw = data.get2Bytes().toFloat().times(3.2f).div(1000.0f)
@@ -376,7 +378,7 @@ data class SensorsPacket(
             tmp2 = data.get2Bytes().toShort().toFloat().div(TEMPERATURE_MULTIPLIER).coerceIn(-99.9f, 999.0f)
 
 
-            sensAfr[0] = data.get2Bytes().toFloat() / AFR_MULTIPLIER
+            afr = data.get2Bytes().toFloat() / AFR_MULTIPLIER
             load = data.get2Bytes().toFloat() / LOAD_PHYSICAL_MAGNITUDE_MULTIPLIER
             baroPress = data.get2Bytes().toFloat() / MAP_MULTIPLIER
 
@@ -424,7 +426,7 @@ data class SensorsPacket(
             sens_injDuty = data.get1Byte().toFloat() / 2.0f
 
             //mass air flow (g/sec)
-            sens_maf = data.get2Bytes().toFloat() / MAFS_MULT
+            maf = data.get2Bytes().toFloat() / MAFS_MULT
             ventDuty = data.get1Byte().toFloat().div(2.0f)
 
             uniOutput = data.get1Byte()
@@ -433,15 +435,15 @@ data class SensorsPacket(
             fts = data.get2Bytes().toFloat()  / FTS_MULT
             cons_fuel = data.get3Bytes().toFloat() / 1024.0f //consumed fuel
 
-            sensAfr[1] = data.get2Bytes().toFloat() / AFR_MULTIPLIER
+            afr2 = data.get2Bytes().toFloat() / AFR_MULTIPLIER
 
-            lambda[1] = data.get2Bytes().toShort().toFloat().div(512.0f).times(100.0f)  //obtain value in %
+            lambdaCorr2 = data.get2Bytes().toShort().toFloat().div(512.0f).times(100.0f)  //obtain value in %
 
             //mixed voltages from two EGO sensors
             lambda_mx = data.get2Bytes().times(ADC_DISCRETE)
 
             //AFR value from map
-            corrAfr = data.get2Bytes().toFloat().div(AFR_MULTIPLIER)
+            afrMap = data.get2Bytes().toFloat().div(AFR_MULTIPLIER)
 
             //Corrected MAT
             tchrg = data.get2Bytes().toShort().toFloat().div(TEMPERATURE_MULTIPLIER).coerceIn(-99.9f, 999.0f)

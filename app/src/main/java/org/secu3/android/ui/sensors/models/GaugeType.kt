@@ -317,7 +317,7 @@ enum class GaugeType (val title: Int, val minValue: Float, val maxValue: Float, 
             ADD2 -> packet.addI2
             INJ_PW -> packet.injPw
             IAT -> packet.airtempSensor
-            EGO_CORR -> packet.lambda[0]
+            EGO_CORR -> packet.lambdaCorr
             CHOKE_POSITION -> packet.chokePosition
             AIR_FLOW -> packet.airflow.toFloat()
             VEHICLE_SPEED -> packet.speed
@@ -328,7 +328,7 @@ enum class GaugeType (val title: Int, val minValue: Float, val maxValue: Float, 
             FUEL_CONSUMPTION -> packet.cons_fuel
             KNOCK_RETARD -> packet.knockRetard
             KNOCK_SIGNAL -> packet.knockValue
-            WBO_AFR -> packet.sensAfr[0]
+            WBO_AFR -> packet.afr
             IAC_VALVE -> packet.tps
             GAS_DISPENSER -> packet.gasDosePosition
             SYNTHETIC_LOAD -> packet.load
@@ -340,19 +340,19 @@ enum class GaugeType (val title: Int, val minValue: Float, val maxValue: Float, 
             EXHAUST_GAS_TEMP -> packet.egts
             OIL_PRESSURE -> packet.ops
             INJ_DUTY -> packet.sens_injDuty
-            MAF -> packet.sens_maf
+            MAF -> packet.maf
             FAN_DUTY -> packet.ventDuty
             MAP_DOT -> packet.mapdot.toFloat()
             FUEL_TEMP -> packet.fts
-            EGO_CORR2 -> packet.lambda[1]
-            WBO_AFR2 -> packet.sensAfr[1]
-            WBO_AFR_TABL -> packet.corrAfr
+            EGO_CORR2 -> packet.lambdaCorr2
+            WBO_AFR2 -> packet.afr2
+            WBO_AFR_TABL -> packet.afrMap
             AFR_DIFF -> {
-                val difAfr = packet.sensAfr[0] - packet.corrAfr
+                val difAfr = packet.afr - packet.afrMap
                 difAfr
             }
             AFR_DIFF2 -> {
-                val difAfr = packet.sensAfr[1] - packet.corrAfr
+                val difAfr = packet.afr2 - packet.afrMap
                 difAfr
             }
 

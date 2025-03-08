@@ -77,7 +77,7 @@ class SensorsRepository @Inject constructor(
             GaugeType.ADD2 -> String.format(Locale.US, "%.3f", it.addI2)
             GaugeType.INJ_PW -> String.format(Locale.US, "%.2f", it.injPw)
             GaugeType.IAT -> String.format(Locale.US, "%.1f", it.airtempSensor)
-            GaugeType.EGO_CORR -> String.format(Locale.US, "%.2f", it.lambda[0])
+            GaugeType.EGO_CORR -> String.format(Locale.US, "%.2f", it.lambdaCorr)
             GaugeType.CHOKE_POSITION -> String.format(Locale.US, "%.1f", it.chokePosition)
             GaugeType.AIR_FLOW -> it.airflow.toString()
             GaugeType.VEHICLE_SPEED -> String.format(Locale.US, "%.1f", it.speed)
@@ -88,7 +88,7 @@ class SensorsRepository @Inject constructor(
             GaugeType.FUEL_CONSUMPTION -> String.format(Locale.US, "%.2f", it.cons_fuel)
             GaugeType.KNOCK_RETARD -> String.format(Locale.US, "%.1f", it.knockRetard)
             GaugeType.KNOCK_SIGNAL -> String.format(Locale.US, "%.3f", it.knockValue)
-            GaugeType.WBO_AFR -> String.format(Locale.US, "%.1f", it.sensAfr[0])
+            GaugeType.WBO_AFR -> String.format(Locale.US, "%.1f", it.afr)
             GaugeType.IAC_VALVE -> String.format(Locale.US, "%.1f", it.tps)
             GaugeType.GAS_DISPENSER -> it.gasDosePosition.toString()
             GaugeType.SYNTHETIC_LOAD -> String.format(Locale.US, "%.1f", it.load)
@@ -100,19 +100,19 @@ class SensorsRepository @Inject constructor(
             GaugeType.EXHAUST_GAS_TEMP -> String.format(Locale.US, "%.1f", it.egts)
             GaugeType.OIL_PRESSURE -> String.format(Locale.US, "%.1f", it.ops)
             GaugeType.INJ_DUTY -> String.format(Locale.US, "%.1f", it.sens_injDuty)
-            GaugeType.MAF -> String.format(Locale.US, "%.1f", it.sens_maf)
+            GaugeType.MAF -> String.format(Locale.US, "%.1f", it.maf)
             GaugeType.FAN_DUTY -> it.ventDuty.toString()
             GaugeType.MAP_DOT -> it.mapdot.toString()
             GaugeType.FUEL_TEMP -> String.format(Locale.US, "%.1f", it.fts)
-            GaugeType.EGO_CORR2 -> String.format(Locale.US, "%.1f", it.lambda[1])
-            GaugeType.WBO_AFR2 -> String.format(Locale.US, "%.1f", it.sensAfr[1])
-            GaugeType.WBO_AFR_TABL -> String.format(Locale.US, "%.2f", it.corrAfr)
+            GaugeType.EGO_CORR2 -> String.format(Locale.US, "%.1f", it.lambdaCorr2)
+            GaugeType.WBO_AFR2 -> String.format(Locale.US, "%.1f", it.afr2)
+            GaugeType.WBO_AFR_TABL -> String.format(Locale.US, "%.2f", it.afrMap)
             GaugeType.AFR_DIFF -> {
-                val difAfr = it.sensAfr[0] - it.corrAfr
+                val difAfr = it.afr - it.afrMap
                 String.format(Locale.US, "%.2f", difAfr)
             }
             GaugeType.AFR_DIFF2 -> {
-                val difAfr = it.sensAfr[1] - it.corrAfr
+                val difAfr = it.afr2 - it.afrMap
                 String.format(Locale.US, "%.2f", difAfr)
             }
 

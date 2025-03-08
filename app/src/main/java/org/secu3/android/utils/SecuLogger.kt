@@ -218,13 +218,13 @@ class SecuLogger @Inject constructor(private val prefs: UserPrefs, private val f
             putFloat(packet.airtAalt)
             putFloat(packet.idlregAac)
             putFloat(packet.octanAac)
-            putFloat(packet.lambda[0])
+            putFloat(packet.lambdaCorr)
             putFloat(packet.injPw)
             putInt(packet.tpsdot.toInt())
             putFloat(packet.map2)
             putFloat(packet.tmp2)
             putFloat(packet.mapd)
-            putFloat(packet.sensAfr[0])
+            putFloat(packet.afr)
             putFloat(packet.load)
             putFloat(packet.baroPress)
             putFloat(packet.injTimBegin)
@@ -236,7 +236,7 @@ class SecuLogger @Inject constructor(private val prefs: UserPrefs, private val f
             putFloat(packet.sens_injDuty)
             putFloat(packet.rigidArg)
             putInt(packet.rxlaf)
-            putFloat(packet.sens_maf)
+            putFloat(packet.maf)
             putFloat(packet.ventDuty)
             put(packet.uniOutput.toByte())
             put(alignByte)
@@ -245,9 +245,9 @@ class SecuLogger @Inject constructor(private val prefs: UserPrefs, private val f
             putInt(packet.mapdot.toInt())
             putFloat(packet.fts)
             putFloat(packet.cons_fuel)
-            putFloat(packet.lambda[1])
-            putFloat(packet.sensAfr[1])
-            putFloat(packet.corrAfr)
+            putFloat(packet.lambdaCorr2)
+            putFloat(packet.afr2)
+            putFloat(packet.afrMap)
             putFloat(packet.tchrg)
             putFloat(packet.gasPressureSensor)
             putFloat(packet.fuelPressureSensor)
@@ -324,13 +324,13 @@ class SecuLogger @Inject constructor(private val prefs: UserPrefs, private val f
             " %6.2f".format(Locale.US, airtAalt),
             " %6.2f".format(Locale.US, idlregAac),
             " %6.2f".format(Locale.US, octanAac),
-            " %6.2f".format(Locale.US, lambda[0]),
+            " %6.2f".format(Locale.US, lambdaCorr),
             " %6.2f".format(Locale.US, injPw),
             " %5d".format(Locale.US, tpsdot),
             " %6.2f".format(Locale.US, map2),
             " %6.2f".format(Locale.US, tmp2),
             " %7.2f".format(Locale.US, mapd),
-            " %5.2f".format(Locale.US, sensAfr[0]),
+            " %5.2f".format(Locale.US, afr),
             " %6.2f".format(Locale.US, load),
             " %6.2f".format(Locale.US, baroPress),
             " %5.1f".format(Locale.US, injTimBegin),
@@ -342,15 +342,15 @@ class SecuLogger @Inject constructor(private val prefs: UserPrefs, private val f
             " %5.1f".format(Locale.US, sens_injDuty),
             " %4.2f".format(Locale.US, rigidArg),
             " %7d".format(Locale.US, rxlaf),
-            " %6.2f".format(Locale.US, sens_maf),
+            " %6.2f".format(Locale.US, maf),
             " %5.1f".format(Locale.US, ventDuty),
             " %2d".format(Locale.US, uniOutput),
             " %5d".format(Locale.US, mapdot),
             " %5.1f".format(Locale.US, fts),
             " %9.3f".format(Locale.US, cons_fuel),
-            " %6.2f".format(Locale.US, lambda[1]),
-            " %5.2f".format(Locale.US, sensAfr[1]),
-            " %5.2f".format(Locale.US, corrAfr),
+            " %6.2f".format(Locale.US, lambdaCorr2),
+            " %5.2f".format(Locale.US, afr2),
+            " %5.2f".format(Locale.US, afrMap),
             " %5.1f".format(Locale.US, tchrg),
             " %6.2f".format(Locale.US, gasPressureSensor),
             " %7.2f".format(Locale.US, fuelPressureSensor),
