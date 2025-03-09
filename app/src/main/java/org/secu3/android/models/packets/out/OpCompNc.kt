@@ -24,15 +24,17 @@
  */
 package org.secu3.android.models.packets.out
 
-import org.secu3.android.models.packets.base.BaseOutputPacket
+import org.secu3.android.models.packets.base.Secu3Packet
+import org.secu3.android.models.packets.base.InputPacket
+import org.secu3.android.models.packets.base.OutputPacket
 
 data class OpCompNc(
 
-    val opData: Int,
+    var opData: Int = 0,
 
-    val opCode: Int
+    var opCode: Int = 0
 
-) : BaseOutputPacket() {
+) : Secu3Packet(), InputPacket, OutputPacket {
     
     override fun pack(): IntArray {
         return intArrayOf(
@@ -44,6 +46,13 @@ data class OpCompNc(
 
     val isEepromParamSave: Boolean
         get() = opCode == EEPROM_PARAM_SAVE
+
+    override fun parse(data: IntArray): InputPacket {
+        opData = data[2]
+        opCode = data[3]
+
+        return this
+    }
 
     companion object {
 
@@ -65,9 +74,6 @@ data class OpCompNc(
 
         internal const val DESCRIPTOR = 'u'
 
-
-        fun parse(data: IntArray) = OpCompNc(data[2], data[3])
-        
         fun getEnterDiagCommand() = OpCompNc(0, DIAGNOST_ENTER)
         fun getLeaveDiagCommand() = OpCompNc(0, DIAGNOST_LEAVE)
 

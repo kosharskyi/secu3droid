@@ -24,7 +24,9 @@
  */
 package org.secu3.android.models.packets.out.params
 
-import org.secu3.android.models.packets.base.BaseOutputPacket
+import org.secu3.android.models.packets.base.Secu3Packet
+import org.secu3.android.models.packets.base.InputPacket
+import org.secu3.android.models.packets.base.OutputPacket
 import org.secu3.android.utils.getBitValue
 import org.secu3.android.utils.setBitValue
 import kotlin.math.roundToInt
@@ -68,7 +70,7 @@ data class LambdaParamPacket(
 
     var lambdaSelectedChanel: Int = 0,
 
-) : BaseOutputPacket() {
+    ) : Secu3Packet(), InputPacket, OutputPacket {
 
     var determineLambdaHeatingByVoltage: Boolean
         get() = flags.getBitValue(0) > 0
@@ -182,41 +184,45 @@ data class LambdaParamPacket(
         return data
     }
 
+    override fun parse(data: IntArray): InputPacket {
+
+        strPerStp = data.get1Byte()
+
+        stepSizeP = data.get1Byte().toFloat() / 512 * 100
+        stepSizeM = data.get1Byte().toFloat() / 512 * 100
+
+        corrLimitP = data.get2Bytes().toFloat() / 512 * 100
+        corrLimitM = data.get2Bytes().toFloat() / 512 * 100
+
+        swtPoint = data.get2Bytes().toFloat() * ADC_DISCRETE
+        tempThrd = data.get2Bytes().toFloat() / TEMPERATURE_MULTIPLIER
+        rpmThrd = data.get2Bytes()
+
+        activDelay = data.get1Byte()
+
+        deadBand = data.get2Bytes().toFloat() * ADC_DISCRETE
+        senstype = data.get1Byte()
+        msPerStp = data.get1Byte() * 10
+        flags = data.get1Byte()
+        gdStoichval = data.get2Bytes().toFloat() / 128.0f
+
+        heatingTime0 = data.get1Byte()
+        heatingTime1 = data.get1Byte()
+        temperThrd = data.get1Byte()
+        heatingAct = data.get1Byte().toFloat() / 100
+        aflowThrd = data.get2Bytes().toFloat() * 32.0f
+
+        lambdaSelectedChanel = data.get1Byte()
+
+        data.setUnhandledParams()
+
+        return this
+    }
+
+
     companion object {
 
         internal const val DESCRIPTOR = '-'
 
-        fun parse(data: IntArray) = LambdaParamPacket().apply {
-
-            strPerStp = data.get1Byte()
-
-            stepSizeP = data.get1Byte().toFloat() / 512 * 100
-            stepSizeM = data.get1Byte().toFloat() / 512 * 100
-
-            corrLimitP = data.get2Bytes().toFloat() / 512 * 100
-            corrLimitM = data.get2Bytes().toFloat() / 512 * 100
-
-            swtPoint = data.get2Bytes().toFloat() * ADC_DISCRETE
-            tempThrd = data.get2Bytes().toFloat() / TEMPERATURE_MULTIPLIER
-            rpmThrd = data.get2Bytes()
-
-            activDelay = data.get1Byte()
-
-            deadBand = data.get2Bytes().toFloat() * ADC_DISCRETE
-            senstype = data.get1Byte()
-            msPerStp = data.get1Byte() * 10
-            flags = data.get1Byte()
-            gdStoichval = data.get2Bytes().toFloat() / 128.0f
-
-            heatingTime0 = data.get1Byte()
-            heatingTime1 = data.get1Byte()
-            temperThrd = data.get1Byte()
-            heatingAct = data.get1Byte().toFloat() / 100
-            aflowThrd = data.get2Bytes().toFloat() * 32.0f
-
-            lambdaSelectedChanel = data.get1Byte()
-
-            data.setUnhandledParams()
-        }
     }
 }

@@ -22,36 +22,13 @@
  *                    http://secu-3.org
  *                    email: vetalkosharskiy@gmail.com
  */
-package org.secu3.android.models.packets.out
 
-import org.secu3.android.models.packets.base.Secu3Packet
-import org.secu3.android.models.packets.base.InputPacket
-import org.secu3.android.models.packets.base.OutputPacket
+package org.secu3.android.models.packets.base
 
-data class CheckEngineSavedErrorsPacket(
+import org.secu3.android.models.packets.input.FirmwareInfoPacket
 
-    var errors: Int = 0
+interface InputPacket {
 
-) : Secu3Packet(), OutputPacket, InputPacket {
+    abstract fun parse(data: IntArray): InputPacket
 
-    fun isError(errorBit: Int): Boolean {
-        val flags = errors shr errorBit
-        return flags and 0x01 != 0
-    }
-
-    override fun pack(): IntArray {
-        return intArrayOf(DESCRIPTOR.code) + errors.write4Bytes()
-    }
-
-    override fun parse(data: IntArray): InputPacket {
-        errors = data.get4Bytes()
-
-        return this
-    }
-
-    companion object {
-
-        internal const val DESCRIPTOR = 'x'
-
-    }
 }

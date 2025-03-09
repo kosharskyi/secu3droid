@@ -30,8 +30,8 @@ import androidx.lifecycle.LiveData
 import androidx.lifecycle.asLiveData
 import kotlinx.coroutines.*
 import kotlinx.coroutines.flow.*
-import org.secu3.android.models.packets.base.BaseOutputPacket
-import org.secu3.android.models.packets.base.BaseSecu3Packet
+import org.secu3.android.models.packets.base.OutputPacket
+import org.secu3.android.models.packets.base.InputPacket
 import org.secu3.android.models.packets.input.FirmwareInfoPacket
 import org.secu3.android.models.packets.input.SensorsPacket
 import org.secu3.android.utils.UserPrefs
@@ -53,7 +53,7 @@ class Secu3ConnectionManager @Inject constructor(private val usbConnection: UsbC
 
     var fwInfo: FirmwareInfoPacket? = null
 
-    val receivedPacketFlow: Flow<BaseSecu3Packet> = merge(usbConnection.receivedPacketFlow, btConnection.receivedPacketFlow).map {
+    val receivedPacketFlow: Flow<InputPacket> = merge(usbConnection.receivedPacketFlow, btConnection.receivedPacketFlow).map {
         withContext(Dispatchers.IO) {
             it.parse(fwInfo)
         }
@@ -111,7 +111,7 @@ class Secu3ConnectionManager @Inject constructor(private val usbConnection: UsbC
         }
     }
 
-    fun sendOutPacket(packet: BaseOutputPacket) {
+    fun sendOutPacket(packet: OutputPacket) {
         if (isUsbConnected) {
             usbConnection.sendData(packet)
         }

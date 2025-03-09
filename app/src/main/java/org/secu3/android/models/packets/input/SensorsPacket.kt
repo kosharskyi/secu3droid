@@ -24,7 +24,8 @@
  */
 package org.secu3.android.models.packets.input
 
-import org.secu3.android.models.packets.base.BaseSecu3Packet
+import org.secu3.android.models.packets.base.Secu3Packet
+import org.secu3.android.models.packets.base.InputPacket
 import org.secu3.android.utils.getBitValue
 import org.secu3.android.utils.setBitValue
 
@@ -111,7 +112,7 @@ data class SensorsPacket(
 
     var apps1: Float = 0f,                     // Accelerator pedal position
 
-) : BaseSecu3Packet(){
+) : Secu3Packet(), InputPacket{
 
     private var isSpeedUnitKm = true
     var isAddI2Enabled = false
@@ -274,189 +275,191 @@ data class SensorsPacket(
         get() = additionalFlags.getBitValue(7)
 
 
+    override fun parse(data: IntArray): InputPacket {
+        rpm = data.get2Bytes()
+        map = data.get2Bytes().toFloat() / MAP_MULTIPLIER
+        voltage = data.get2Bytes().toFloat() / VOLTAGE_MULTIPLIER
+
+        temperature = data.get2Bytes().toShort().toFloat().div(TEMPERATURE_MULTIPLIER).coerceIn(-99.9f, 999.0f)
+        currentAngle = data.get2Bytes().toShort().toFloat() / ANGLE_DIVIDER
+        knockValue = data.get2Bytes().toFloat() * ADC_DISCRETE
+
+        data.get2Bytes().takeIf { it != 32767 }?.toFloat()?.let {
+            knockRetard = it.div(ANGLE_DIVIDER)
+            knkret_use = true
+        }
+
+        airflow = data.get1Byte()
+
+        sensorsFlags = data.get2Bytes()
+
+        tps = data.get2Bytes().toFloat() / TPS_MULTIPLIER
+
+        addI1 = data.get2Bytes().toFloat() * ADC_DISCRETE
+        addI2 = data.get2Bytes().toFloat() * ADC_DISCRETE
+
+        ecuErrors = data.get4Bytes()
+        chokePosition = data.get1Byte().toFloat() / CHOKE_MULTIPLIER
+        gasDosePosition = data.get1Byte().toFloat() / GAS_DOSE_MULTIPLIER
+
+        data.get2Bytes().toFloat().div(32.0f).coerceAtMost(999.9f).let {
+            speed = it
+            if (isSpeedUnitKm.not()) {
+                speed /= 1.609344f
+            }
+        }
+        data.get3Bytes().toFloat().div(125.0f).coerceAtMost(99999.99f).let {
+            distance = it
+            if (isSpeedUnitKm.not()) {
+                distance /= 1.609344f
+            }
+        }
+
+        fuelFlowFrequency = data.get2Bytes().toFloat().div(256.0f)
+
+        //calculate value of fuel flow in L/100km
+        if (speed > .0f) {
+            inj_ffd = fuelFlowFrequency.div(speed).times((3600.0f * 100.0f).div(fffConst)).coerceIn(0f, 999.999f)
+        }
+
+        inj_ffh = 3600.0f * fuelFlowFrequency / fffConst  //consumption in L/h
+
+
+        data.get2Bytes().takeIf { it != 0x7FFF }?.let {
+            airtempSensor = it.toShort().toFloat().div(TEMPERATURE_MULTIPLIER).coerceIn(-99.9f, 999.0f)
+            isAddI2Enabled = true
+        }
+
+        data.get2Bytes().takeIf { it != 32767 }?.let {
+            strtAalt = it.toShort().toFloat().div(ANGLE_DIVIDER)
+            strtUse = true
+        }
+
+        data.get2Bytes().takeIf { it != 32767 }?.let {
+            idleAalt = it.toShort().toFloat().div(ANGLE_DIVIDER)
+            idleUse = true
+        }
+        data.get2Bytes().takeIf { it != 32767 }?.let {
+            workAalt = it.toShort().toFloat().div(ANGLE_DIVIDER)
+            workUse = true
+        }
+
+        data.get2Bytes().takeIf { it != 32767 }?.let {
+            tempAalt = it.toShort().toFloat().div(ANGLE_DIVIDER)
+            tempUse = true
+        }
+        data.get2Bytes().takeIf { it != 32767 }?.let {
+            airtAalt = it.toShort().toFloat().div(ANGLE_DIVIDER)
+            airtUse = true
+        }
+        data.get2Bytes().takeIf { it != 32767 }?.let {
+            idlregAac = it.toShort().toFloat().div(ANGLE_DIVIDER)
+            idlregUse = true
+        }
+        data.get2Bytes().takeIf { it != 32767 }?.let {
+            octanAac = it.toShort().toFloat().div(ANGLE_DIVIDER)
+            octanUse = true
+        }
+
+        lambdaCorr = data.get2Bytes().toShort().toFloat().div(512.0f).times(100.0f)  //obtain value in %
+
+        // Injector PW(ms)
+        injPw = data.get2Bytes().toFloat().times(3.2f).div(1000.0f)
+
+        tpsdot = data.get2Bytes().toShort()
+
+        map2 = data.get2Bytes().toFloat() / MAP_MULTIPLIER
+
+        tmp2 = data.get2Bytes().toShort().toFloat().div(TEMPERATURE_MULTIPLIER).coerceIn(-99.9f, 999.0f)
+
+
+        afr = data.get2Bytes().toFloat() / AFR_MULTIPLIER
+        load = data.get2Bytes().toFloat() / LOAD_PHYSICAL_MAGNITUDE_MULTIPLIER
+        baroPress = data.get2Bytes().toFloat() / MAP_MULTIPLIER
+
+
+        //inj.timing with info
+        iit = data.get2Bytes()
+        val mode = iit shr 14 and 0x3
+        val inj_timing = (iit and 0x3FFF).toFloat() / 16.0f //inj.timing in crankshaft degrees
+        val inj_pw_degr: Float = 360.0f / (1000.0f * 60.0f) * rpm * injPw //inj. PW in crankshaft degrees
+        if (mode == 0)
+        { //begin
+            injTimBegin = inj_timing;
+            injTimEnd = inj_timing - inj_pw_degr;
+        }
+        else if (mode == 1)
+        { //middle
+            injTimBegin = inj_timing + (inj_pw_degr / 2);
+            injTimEnd = inj_timing - (inj_pw_degr / 2);
+        }
+        else
+        {//end
+            injTimBegin = inj_timing + inj_pw_degr;
+            injTimEnd = inj_timing;
+        }
+        if (injTimBegin > 720.0f)
+            injTimBegin -= 720.0f;
+        if (injTimEnd < 0)
+            injTimEnd += 720.0f;
+
+
+
+        data.get1Byte().takeIf { it != 255 }?.toFloat()?.let {
+            rigidUse = true
+            rigidArg = it.div(256.0f)
+        }
+
+        //Gas reducer's temperature
+        grts = data.get2Bytes().toShort().toFloat().div(TEMPERATURE_MULTIPLIER).coerceIn(-99.9f, 999.0f)           // gas reducer's temperature
+
+        rxlaf = data.get2Bytes().times(32)           // RxL air flow
+        ftls = data.get2Bytes().toFloat().div(FTLS_MULT)  // fuel tank level
+        egts = data.get2Bytes().toFloat().div(EGTS_MULT)  // exhaust gas temperature
+        ops = data.get2Bytes().toFloat().div(OPS_MULT)    // oil pressure
+
+        sens_injDuty = data.get1Byte().toFloat() / 2.0f
+
+        //mass air flow (g/sec)
+        maf = data.get2Bytes().toFloat() / MAFS_MULT
+        ventDuty = data.get1Byte().toFloat().div(2.0f)
+
+        uniOutput = data.get1Byte()
+
+        mapdot = data.get2Bytes().toShort()
+        fts = data.get2Bytes().toFloat()  / FTS_MULT
+        cons_fuel = data.get3Bytes().toFloat() / 1024.0f //consumed fuel
+
+        afr2 = data.get2Bytes().toFloat() / AFR_MULTIPLIER
+
+        lambdaCorr2 = data.get2Bytes().toShort().toFloat().div(512.0f).times(100.0f)  //obtain value in %
+
+        //mixed voltages from two EGO sensors
+        lambda_mx = data.get2Bytes().times(ADC_DISCRETE)
+
+        //AFR value from map
+        afrMap = data.get2Bytes().toFloat().div(AFR_MULTIPLIER)
+
+        //Corrected MAT
+        tchrg = data.get2Bytes().toShort().toFloat().div(TEMPERATURE_MULTIPLIER).coerceIn(-99.9f, 999.0f)
+
+        gasPressureSensor = data.get2Bytes().toFloat() / MAP_MULTIPLIER
+        mapd = gasPressureSensor - map
+
+        additionalFlags = data.get1Byte()
+
+        fuelPressureSensor = data.get2Bytes().toFloat() / MAP_MULTIPLIER
+
+        apps1 = data.get2Bytes().toFloat() / APPS_MULT
+
+        return this
+    }
+
     companion object {
 
         private const val fffConst = 1600
 
         internal const val DESCRIPTOR = 'q'
-
-        fun parse(data: IntArray) = SensorsPacket().apply {
-            rpm = data.get2Bytes()
-            map = data.get2Bytes().toFloat() / MAP_MULTIPLIER
-            voltage = data.get2Bytes().toFloat() / VOLTAGE_MULTIPLIER
-
-            temperature = data.get2Bytes().toShort().toFloat().div(TEMPERATURE_MULTIPLIER).coerceIn(-99.9f, 999.0f)
-            currentAngle = data.get2Bytes().toShort().toFloat() / ANGLE_DIVIDER
-            knockValue = data.get2Bytes().toFloat() * ADC_DISCRETE
-
-            data.get2Bytes().takeIf { it != 32767 }?.toFloat()?.let {
-                knockRetard = it.div(ANGLE_DIVIDER)
-                knkret_use = true
-            }
-
-            airflow = data.get1Byte()
-
-            sensorsFlags = data.get2Bytes()
-
-            tps = data.get2Bytes().toFloat() / TPS_MULTIPLIER
-
-            addI1 = data.get2Bytes().toFloat() * ADC_DISCRETE
-            addI2 = data.get2Bytes().toFloat() * ADC_DISCRETE
-
-            ecuErrors = data.get4Bytes()
-            chokePosition = data.get1Byte().toFloat() / CHOKE_MULTIPLIER
-            gasDosePosition = data.get1Byte().toFloat() / GAS_DOSE_MULTIPLIER
-
-            data.get2Bytes().toFloat().div(32.0f).coerceAtMost(999.9f).let {
-                speed = it
-                if (isSpeedUnitKm.not()) {
-                    speed /= 1.609344f
-                }
-            }
-            data.get3Bytes().toFloat().div(125.0f).coerceAtMost(99999.99f).let {
-                distance = it
-                if (isSpeedUnitKm.not()) {
-                    distance /= 1.609344f
-                }
-            }
-
-            fuelFlowFrequency = data.get2Bytes().toFloat().div(256.0f)
-
-            //calculate value of fuel flow in L/100km
-            if (speed > .0f) {
-                inj_ffd = fuelFlowFrequency.div(speed).times((3600.0f * 100.0f).div(fffConst)).coerceIn(0f, 999.999f)
-            }
-
-            inj_ffh = 3600.0f * fuelFlowFrequency / fffConst  //consumption in L/h
-
-
-            data.get2Bytes().takeIf { it != 0x7FFF }?.let {
-                airtempSensor = it.toShort().toFloat().div(TEMPERATURE_MULTIPLIER).coerceIn(-99.9f, 999.0f)
-                isAddI2Enabled = true
-            }
-
-            data.get2Bytes().takeIf { it != 32767 }?.let {
-                strtAalt = it.toShort().toFloat().div(ANGLE_DIVIDER)
-                strtUse = true
-            }
-
-            data.get2Bytes().takeIf { it != 32767 }?.let {
-                idleAalt = it.toShort().toFloat().div(ANGLE_DIVIDER)
-                idleUse = true
-            }
-            data.get2Bytes().takeIf { it != 32767 }?.let {
-                workAalt = it.toShort().toFloat().div(ANGLE_DIVIDER)
-                workUse = true
-            }
-
-            data.get2Bytes().takeIf { it != 32767 }?.let {
-                tempAalt = it.toShort().toFloat().div(ANGLE_DIVIDER)
-                tempUse = true
-            }
-            data.get2Bytes().takeIf { it != 32767 }?.let {
-                airtAalt = it.toShort().toFloat().div(ANGLE_DIVIDER)
-                airtUse = true
-            }
-            data.get2Bytes().takeIf { it != 32767 }?.let {
-                idlregAac = it.toShort().toFloat().div(ANGLE_DIVIDER)
-                idlregUse = true
-            }
-            data.get2Bytes().takeIf { it != 32767 }?.let {
-                octanAac = it.toShort().toFloat().div(ANGLE_DIVIDER)
-                octanUse = true
-            }
-
-            lambdaCorr = data.get2Bytes().toShort().toFloat().div(512.0f).times(100.0f)  //obtain value in %
-
-            // Injector PW(ms)
-            injPw = data.get2Bytes().toFloat().times(3.2f).div(1000.0f)
-
-            tpsdot = data.get2Bytes().toShort()
-
-            map2 = data.get2Bytes().toFloat() / MAP_MULTIPLIER
-
-            tmp2 = data.get2Bytes().toShort().toFloat().div(TEMPERATURE_MULTIPLIER).coerceIn(-99.9f, 999.0f)
-
-
-            afr = data.get2Bytes().toFloat() / AFR_MULTIPLIER
-            load = data.get2Bytes().toFloat() / LOAD_PHYSICAL_MAGNITUDE_MULTIPLIER
-            baroPress = data.get2Bytes().toFloat() / MAP_MULTIPLIER
-
-
-            //inj.timing with info
-            iit = data.get2Bytes()
-            val mode = iit shr 14 and 0x3
-            val inj_timing = (iit and 0x3FFF).toFloat() / 16.0f //inj.timing in crankshaft degrees
-            val inj_pw_degr: Float = 360.0f / (1000.0f * 60.0f) * rpm * injPw //inj. PW in crankshaft degrees
-            if (mode == 0)
-            { //begin
-                injTimBegin = inj_timing;
-                injTimEnd = inj_timing - inj_pw_degr;
-            }
-            else if (mode == 1)
-            { //middle
-                injTimBegin = inj_timing + (inj_pw_degr / 2);
-                injTimEnd = inj_timing - (inj_pw_degr / 2);
-            }
-            else
-            {//end
-                injTimBegin = inj_timing + inj_pw_degr;
-                injTimEnd = inj_timing;
-            }
-            if (injTimBegin > 720.0f)
-                injTimBegin -= 720.0f;
-            if (injTimEnd < 0)
-                injTimEnd += 720.0f;
-
-
-
-            data.get1Byte().takeIf { it != 255 }?.toFloat()?.let {
-                rigidUse = true
-                rigidArg = it.div(256.0f)
-            }
-
-            //Gas reducer's temperature
-            grts = data.get2Bytes().toShort().toFloat().div(TEMPERATURE_MULTIPLIER).coerceIn(-99.9f, 999.0f)           // gas reducer's temperature
-
-            rxlaf = data.get2Bytes().times(32)           // RxL air flow
-            ftls = data.get2Bytes().toFloat().div(FTLS_MULT)  // fuel tank level
-            egts = data.get2Bytes().toFloat().div(EGTS_MULT)  // exhaust gas temperature
-            ops = data.get2Bytes().toFloat().div(OPS_MULT)    // oil pressure
-
-            sens_injDuty = data.get1Byte().toFloat() / 2.0f
-
-            //mass air flow (g/sec)
-            maf = data.get2Bytes().toFloat() / MAFS_MULT
-            ventDuty = data.get1Byte().toFloat().div(2.0f)
-
-            uniOutput = data.get1Byte()
-
-            mapdot = data.get2Bytes().toShort()
-            fts = data.get2Bytes().toFloat()  / FTS_MULT
-            cons_fuel = data.get3Bytes().toFloat() / 1024.0f //consumed fuel
-
-            afr2 = data.get2Bytes().toFloat() / AFR_MULTIPLIER
-
-            lambdaCorr2 = data.get2Bytes().toShort().toFloat().div(512.0f).times(100.0f)  //obtain value in %
-
-            //mixed voltages from two EGO sensors
-            lambda_mx = data.get2Bytes().times(ADC_DISCRETE)
-
-            //AFR value from map
-            afrMap = data.get2Bytes().toFloat().div(AFR_MULTIPLIER)
-
-            //Corrected MAT
-            tchrg = data.get2Bytes().toShort().toFloat().div(TEMPERATURE_MULTIPLIER).coerceIn(-99.9f, 999.0f)
-
-            gasPressureSensor = data.get2Bytes().toFloat() / MAP_MULTIPLIER
-            mapd = gasPressureSensor - map
-
-            additionalFlags = data.get1Byte()
-
-            fuelPressureSensor = data.get2Bytes().toFloat() / MAP_MULTIPLIER
-
-            apps1 = data.get2Bytes().toFloat() / APPS_MULT
-        }
 
 
         private const val BITNUMBER_EPHH_VALVE = 0

@@ -24,7 +24,9 @@
  */
 package org.secu3.android.models.packets.out.params
 
-import org.secu3.android.models.packets.base.BaseOutputPacket
+import org.secu3.android.models.packets.base.Secu3Packet
+import org.secu3.android.models.packets.base.InputPacket
+import org.secu3.android.models.packets.base.OutputPacket
 import org.secu3.android.utils.getBitValue
 import org.secu3.android.utils.setBitValue
 import kotlin.math.roundToInt
@@ -39,7 +41,7 @@ data class TemperatureParamPacket(
     var condMinRpm: Int = 0,
     var ventTmr: Int = 0,
 
-    ) : BaseOutputPacket() {
+    ) : Secu3Packet(), InputPacket, OutputPacket {
 
     override fun pack(): IntArray {
         var data = intArrayOf(DESCRIPTOR.code)
@@ -81,25 +83,24 @@ data class TemperatureParamPacket(
         }
 
 
-    companion object {
-
-        internal const val DESCRIPTOR = 'j'
-
-        fun parse(data: IntArray) = TemperatureParamPacket().apply {
-
-            tmpFlags = data.get1Byte()
-            ventOn = data.get2Bytes().toShort().toFloat().div(TEMPERATURE_MULTIPLIER)
-            ventOff = data.get2Bytes().toShort().toFloat().div(TEMPERATURE_MULTIPLIER)
-            data.get2Bytes().let {
-                ventPwmFrq = (1f / (( it.toDouble() / 524288))).roundToInt()
-            }
-            condPvtOn = data.get2Bytes().toFloat() * ADC_DISCRETE
-            condPvtOff = data.get2Bytes().toFloat() * ADC_DISCRETE
-            condMinRpm = data.get2Bytes()
-            ventTmr = data.get2Bytes() / 100
-
-            data.setUnhandledParams()
+    override fun parse(data: IntArray): InputPacket {
+        tmpFlags = data.get1Byte()
+        ventOn = data.get2Bytes().toShort().toFloat().div(TEMPERATURE_MULTIPLIER)
+        ventOff = data.get2Bytes().toShort().toFloat().div(TEMPERATURE_MULTIPLIER)
+        data.get2Bytes().let {
+            ventPwmFrq = (1f / (( it.toDouble() / 524288))).roundToInt()
         }
+        condPvtOn = data.get2Bytes().toFloat() * ADC_DISCRETE
+        condPvtOff = data.get2Bytes().toFloat() * ADC_DISCRETE
+        condMinRpm = data.get2Bytes()
+        ventTmr = data.get2Bytes() / 100
+
+        data.setUnhandledParams()
+
+        return this
     }
 
+    companion object {
+        internal const val DESCRIPTOR = 'j'
+    }
 }

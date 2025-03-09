@@ -24,12 +24,13 @@
  */
 package org.secu3.android.models.packets.out
 
-import org.secu3.android.models.packets.base.BaseOutputPacket
+import org.secu3.android.models.packets.base.Secu3Packet
+import org.secu3.android.models.packets.base.OutputPacket
 import org.secu3.android.utils.getBitValue
 import org.secu3.android.utils.setBitValue
 import kotlin.math.roundToInt
 
-class DiagOutputPacket : BaseOutputPacket() {
+class DiagOutputPacket : Secu3Packet(), OutputPacket {
 
     var out: Int = 0
     var frq: Float = 10.0f

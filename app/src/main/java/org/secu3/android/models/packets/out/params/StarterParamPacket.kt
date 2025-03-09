@@ -24,7 +24,9 @@
  */
 package org.secu3.android.models.packets.out.params
 
-import org.secu3.android.models.packets.base.BaseOutputPacket
+import org.secu3.android.models.packets.base.Secu3Packet
+import org.secu3.android.models.packets.base.InputPacket
+import org.secu3.android.models.packets.base.OutputPacket
 import org.secu3.android.utils.getBitValue
 import org.secu3.android.utils.setBitValue
 import kotlin.math.roundToInt
@@ -43,7 +45,7 @@ data class StarterParamPacket(
     var strtFlags: Int = 0,
     var injCrankToRun_time1: Float = 0f
 
-) : BaseOutputPacket(){
+) : Secu3Packet(), InputPacket, OutputPacket{
 
     var allowStartOnClearFlood: Boolean
         get() = strtFlags.getBitValue(0) > 0
@@ -57,26 +59,23 @@ data class StarterParamPacket(
         }
 
 
-    companion object {
+    override fun parse(data: IntArray): InputPacket {
+        starterOff = data.get2Bytes()
+        smapAbandon = data.get2Bytes()
+        crankToRunTime = data.get2Bytes().toFloat() / 100
+        injAftstrStroke = data.get1Byte() * 4
+        injPrimeCold = data.get2Bytes().toFloat() * 32 / 10000
+        injPrimeHot = data.get2Bytes().toFloat() * 32 / 10000
+        injPrimeDelay = data.get1Byte().toFloat() / 10
+        injFloodclearTps = data.get2Bytes().toFloat() / TPS_MULTIPLIER
+        injAftStrokes1 = data.get1Byte() * 4
+        stblStrCnt = data.get1Byte()
+        strtFlags = data.get1Byte()
+        injCrankToRun_time1 = data.get2Bytes().toFloat() / 100
 
-        internal const val DESCRIPTOR = 'o'
+        data.setUnhandledParams()
 
-        fun parse(data: IntArray) = StarterParamPacket().apply {
-            starterOff = data.get2Bytes()
-            smapAbandon = data.get2Bytes()
-            crankToRunTime = data.get2Bytes().toFloat() / 100
-            injAftstrStroke = data.get1Byte() * 4
-            injPrimeCold = data.get2Bytes().toFloat() * 32 / 10000
-            injPrimeHot = data.get2Bytes().toFloat() * 32 / 10000
-            injPrimeDelay = data.get1Byte().toFloat() / 10
-            injFloodclearTps = data.get2Bytes().toFloat() / TPS_MULTIPLIER
-            injAftStrokes1 = data.get1Byte() * 4
-            stblStrCnt = data.get1Byte()
-            strtFlags = data.get1Byte()
-            injCrankToRun_time1 = data.get2Bytes().toFloat() / 100
-
-            data.setUnhandledParams()
-        }
+        return this
     }
 
     override fun pack(): IntArray {
@@ -98,5 +97,9 @@ data class StarterParamPacket(
         data += unhandledParams
 
         return data
+    }
+
+    companion object {
+        internal const val DESCRIPTOR = 'o'
     }
 }

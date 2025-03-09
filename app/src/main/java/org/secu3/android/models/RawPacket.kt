@@ -26,7 +26,7 @@
 package org.secu3.android.models
 
 import org.secu3.android.models.packets.input.AdcRawDatPacket
-import org.secu3.android.models.packets.base.BaseSecu3Packet
+import org.secu3.android.models.packets.base.InputPacket
 import org.secu3.android.models.packets.input.CheckEngineErrorsPacket
 import org.secu3.android.models.packets.out.CheckEngineSavedErrorsPacket
 import org.secu3.android.models.packets.input.DiagInputPacket
@@ -56,43 +56,43 @@ import org.secu3.android.models.packets.out.params.UniOutParamPacket
 
 data class RawPacket(val data: IntArray)  {
 
-    fun parse(firmwarePacket: FirmwareInfoPacket?): BaseSecu3Packet? {
+    fun parse(firmwarePacket: FirmwareInfoPacket?): InputPacket? {
         return try {
             val packetData = data.sliceArray(0 until data.size - 2)
 
             return when (packetData[1].toChar()) {
-                SensorsPacket.DESCRIPTOR -> SensorsPacket.parse(packetData)
-                FirmwareInfoPacket.DESCRIPTOR -> FirmwareInfoPacket.parse(packetData)
-                AdcRawDatPacket.DESCRIPTOR -> AdcRawDatPacket.parse(data, firmwarePacket)
-                CheckEngineErrorsPacket.DESCRIPTOR -> CheckEngineErrorsPacket.parse(packetData)
-                CheckEngineSavedErrorsPacket.DESCRIPTOR -> CheckEngineSavedErrorsPacket.parse(packetData)
-                DiagInputPacket.DESCRIPTOR -> DiagInputPacket.parse(packetData)
+                SensorsPacket.DESCRIPTOR -> SensorsPacket()
+                FirmwareInfoPacket.DESCRIPTOR -> FirmwareInfoPacket()
+                AdcRawDatPacket.DESCRIPTOR -> AdcRawDatPacket()
+                CheckEngineErrorsPacket.DESCRIPTOR -> CheckEngineErrorsPacket()
+                CheckEngineSavedErrorsPacket.DESCRIPTOR -> CheckEngineSavedErrorsPacket()
+                DiagInputPacket.DESCRIPTOR -> DiagInputPacket()
 
-                StarterParamPacket.DESCRIPTOR -> StarterParamPacket.parse(packetData)
-                AnglesParamPacket.DESCRIPTOR -> AnglesParamPacket.parse(packetData)
-                IdlingParamPacket.DESCRIPTOR -> IdlingParamPacket.parse(packetData)
-                FunSetParamPacket.DESCRIPTOR -> FunSetParamPacket.parse(packetData)
-                TemperatureParamPacket.DESCRIPTOR -> TemperatureParamPacket.parse(packetData)
-                CarburParamPacket.DESCRIPTOR -> CarburParamPacket.parse(packetData)
-                AdcCorrectionsParamPacket.DESCRIPTOR -> AdcCorrectionsParamPacket.parse(packetData)
-                CkpsParamPacket.DESCRIPTOR -> CkpsParamPacket.parse(packetData)
-                KnockParamPacket.DESCRIPTOR -> KnockParamPacket.parse(packetData)
-                MiscellaneousParamPacket.DESCRIPTOR -> MiscellaneousParamPacket.parse(packetData)
-                ChokeControlParPacket.DESCRIPTOR -> ChokeControlParPacket.parse(packetData)
-                SecurityParamPacket.DESCRIPTOR -> SecurityParamPacket.parse(packetData)
-                UniOutParamPacket.DESCRIPTOR -> UniOutParamPacket.parse(packetData)
-                InjctrParPacket.DESCRIPTOR -> InjctrParPacket.parse(packetData)
-                LambdaParamPacket.DESCRIPTOR -> LambdaParamPacket.parse(packetData)
-                AccelerationParamPacket.DESCRIPTOR -> AccelerationParamPacket.parse(packetData)
-                GasDoseParamPacket.DESCRIPTOR -> GasDoseParamPacket.parse(packetData)
-                LtftParamPacket.DESCRIPTOR -> LtftParamPacket.parse(packetData)
-                DbwParamPacket.DESCRIPTOR -> DbwParamPacket.parse(packetData)
+                StarterParamPacket.DESCRIPTOR -> StarterParamPacket()
+                AnglesParamPacket.DESCRIPTOR -> AnglesParamPacket()
+                IdlingParamPacket.DESCRIPTOR -> IdlingParamPacket()
+                FunSetParamPacket.DESCRIPTOR -> FunSetParamPacket()
+                TemperatureParamPacket.DESCRIPTOR -> TemperatureParamPacket()
+                CarburParamPacket.DESCRIPTOR -> CarburParamPacket()
+                AdcCorrectionsParamPacket.DESCRIPTOR -> AdcCorrectionsParamPacket()
+                CkpsParamPacket.DESCRIPTOR -> CkpsParamPacket()
+                KnockParamPacket.DESCRIPTOR -> KnockParamPacket()
+                MiscellaneousParamPacket.DESCRIPTOR -> MiscellaneousParamPacket()
+                ChokeControlParPacket.DESCRIPTOR -> ChokeControlParPacket()
+                SecurityParamPacket.DESCRIPTOR -> SecurityParamPacket()
+                UniOutParamPacket.DESCRIPTOR -> UniOutParamPacket()
+                InjctrParPacket.DESCRIPTOR -> InjctrParPacket()
+                LambdaParamPacket.DESCRIPTOR -> LambdaParamPacket()
+                AccelerationParamPacket.DESCRIPTOR -> AccelerationParamPacket()
+                GasDoseParamPacket.DESCRIPTOR -> GasDoseParamPacket()
+                LtftParamPacket.DESCRIPTOR -> LtftParamPacket()
+                DbwParamPacket.DESCRIPTOR -> DbwParamPacket()
 
-                FnNameDatPacket.DESCRIPTOR -> FnNameDatPacket.parse(packetData)
-                OpCompNc.DESCRIPTOR -> OpCompNc.parse(packetData)
+                FnNameDatPacket.DESCRIPTOR -> FnNameDatPacket()
+                OpCompNc.DESCRIPTOR -> OpCompNc()
 
                 else -> null
-            }
+            }?.parse(packetData)
         } catch (e: IllegalArgumentException) {
             e.printStackTrace()
             null

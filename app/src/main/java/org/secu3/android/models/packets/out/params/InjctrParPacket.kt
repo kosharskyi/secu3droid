@@ -26,7 +26,9 @@ package org.secu3.android.models.packets.out.params
 
 import androidx.annotation.StringRes
 import org.secu3.android.R
-import org.secu3.android.models.packets.base.BaseOutputPacket
+import org.secu3.android.models.packets.base.Secu3Packet
+import org.secu3.android.models.packets.base.InputPacket
+import org.secu3.android.models.packets.base.OutputPacket
 import org.secu3.android.utils.getBitValue
 import org.secu3.android.utils.setBitValue
 import kotlin.math.roundToInt
@@ -62,7 +64,7 @@ data class InjctrParPacket(
     var injMaxPw: FloatArray = FloatArray(2),
 
 
-) : BaseOutputPacket() {
+    ) : Secu3Packet(), InputPacket, OutputPacket {
 
     override fun pack(): IntArray {
         var data = intArrayOf(DESCRIPTOR.code)
@@ -239,7 +241,7 @@ data class InjctrParPacket(
 
     private fun bnkNum(config: Int): Int {
         return when (config) {
-             InjConfig.THROTTLEBODY.id -> 1
+            InjConfig.THROTTLEBODY.id -> 1
             InjConfig.SIMULTANEOUS.id -> 1
             InjConfig.TWO_BANK_ALTERN.id -> 2
             InjConfig.SEMISEQUENTIAL.id -> ckpsEngineCyl / 2
@@ -247,6 +249,46 @@ data class InjctrParPacket(
             InjConfig.FULLSEQUENTIAL.id -> ckpsEngineCyl
             else -> ckpsEngineCyl
         }
+    }
+
+    override fun parse(data: IntArray): InputPacket {
+        flags = data.get1Byte()
+
+        config[0] = data.get1Byte()
+        config[1] = data.get1Byte()
+
+        flowRate[0] = data.get2Bytes().toFloat() / 64
+        flowRate[1] = data.get2Bytes().toFloat() / 64
+
+        cylDisp = data.get2Bytes().toFloat() / 16384
+
+        sdIglConst[0] = data.get4Bytes()
+        sdIglConst[1] = data.get4Bytes()
+
+        ckpsEngineCyl = data.get1Byte()
+
+        timing[0] = data.get2Bytes() / PARINJTIM_DIVIDER
+        timing[1] = data.get2Bytes() / PARINJTIM_DIVIDER
+
+        timingCrk[0] = data.get2Bytes() / PARINJTIM_DIVIDER
+        timingCrk[1] = data.get2Bytes() / PARINJTIM_DIVIDER
+
+        angleSpec = data.get1Byte()
+
+        fffConst = data.get2Bytes().toFloat().div(65536f).times(1000*60).roundToInt()
+        minPw = data.get2Bytes()
+
+        injMafConst[0] = data.get4Bytes()
+        injMafConst[1] = data.get4Bytes()
+
+        mafloadConst = data.get4Bytes()
+
+        injMaxPw[0] = data.get2Bytes().toFloat().times(3.2f / 1000.0f)
+        injMaxPw[1] = data.get2Bytes().toFloat().times(3.2f / 1000.0f)
+
+        data.setUnhandledParams()
+
+        return this
     }
 
     override fun equals(other: Any?): Boolean {
@@ -304,44 +346,5 @@ data class InjctrParPacket(
             0.710f, //petrol density (0.710 g/cc)
             0.536f  //LPG density (0.536 g/cc)
         )
-
-        fun parse(data: IntArray) = InjctrParPacket().apply {
-
-            flags = data.get1Byte()
-
-            config[0] = data.get1Byte()
-            config[1] = data.get1Byte()
-            
-            flowRate[0] = data.get2Bytes().toFloat() / 64
-            flowRate[1] = data.get2Bytes().toFloat() / 64
-            
-            cylDisp = data.get2Bytes().toFloat() / 16384
-
-            sdIglConst[0] = data.get4Bytes()
-            sdIglConst[1] = data.get4Bytes()
-
-            ckpsEngineCyl = data.get1Byte()
-
-            timing[0] = data.get2Bytes() / PARINJTIM_DIVIDER
-            timing[1] = data.get2Bytes() / PARINJTIM_DIVIDER
-
-            timingCrk[0] = data.get2Bytes() / PARINJTIM_DIVIDER
-            timingCrk[1] = data.get2Bytes() / PARINJTIM_DIVIDER
-
-            angleSpec = data.get1Byte()
-
-            fffConst = data.get2Bytes().toFloat().div(65536f).times(1000*60).roundToInt()
-            minPw = data.get2Bytes()
-
-            injMafConst[0] = data.get4Bytes()
-            injMafConst[1] = data.get4Bytes()
-
-            mafloadConst = data.get4Bytes()
-
-            injMaxPw[0] = data.get2Bytes().toFloat().times(3.2f / 1000.0f)
-            injMaxPw[1] = data.get2Bytes().toFloat().times(3.2f / 1000.0f)
-
-            data.setUnhandledParams()
-        }
     }
 }

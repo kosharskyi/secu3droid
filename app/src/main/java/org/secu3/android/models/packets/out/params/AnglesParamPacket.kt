@@ -24,7 +24,9 @@
  */
 package org.secu3.android.models.packets.out.params
 
-import org.secu3.android.models.packets.base.BaseOutputPacket
+import org.secu3.android.models.packets.base.Secu3Packet
+import org.secu3.android.models.packets.base.InputPacket
+import org.secu3.android.models.packets.base.OutputPacket
 import org.secu3.android.utils.getBitValue
 import org.secu3.android.utils.setBitValue
 import kotlin.math.roundToInt
@@ -39,7 +41,7 @@ data class AnglesParamPacket(
     var igntimFlags: Int = 0,   // Ignition timing flags
     var shift_ingtim: Float = 0f, // Shift ignition timing (degrees)
 
-) : BaseOutputPacket(){
+) : Secu3Packet(), InputPacket, OutputPacket{
 
     var alwaysUseIgnitionMap: Boolean           // Allways use working mode's ignition timing map
         get() = igntimFlags.getBitValue(0) > 0
@@ -54,22 +56,19 @@ data class AnglesParamPacket(
         set(value) { igntimFlags = igntimFlags.setBitValue(value, 2) }
 
 
-    companion object {
+    override fun parse(data: IntArray): InputPacket {
+        maxAngle = data.get2Bytes().toShort().toFloat() / ANGLE_DIVIDER
+        minAngle = data.get2Bytes().toShort().toFloat() / ANGLE_DIVIDER
+        angleCorrection = data.get2Bytes().toShort().toFloat() / ANGLE_DIVIDER
+        angleDecSpeed = data.get2Bytes().toShort().toFloat() / ANGLE_DIVIDER
+        angleIncSpeed = data.get2Bytes().toShort().toFloat() / ANGLE_DIVIDER
+        zeroAdvAngle = data.get1Byte()
+        igntimFlags = data.get1Byte()
+        shift_ingtim = data.get2Bytes().toFloat() / ANGLE_DIVIDER
 
-        internal const val DESCRIPTOR = 'm'
+        data.setUnhandledParams()
 
-        fun parse(data: IntArray) = AnglesParamPacket().apply {
-            maxAngle = data.get2Bytes().toShort().toFloat() / ANGLE_DIVIDER
-            minAngle = data.get2Bytes().toShort().toFloat() / ANGLE_DIVIDER
-            angleCorrection = data.get2Bytes().toShort().toFloat() / ANGLE_DIVIDER
-            angleDecSpeed = data.get2Bytes().toShort().toFloat() / ANGLE_DIVIDER
-            angleIncSpeed = data.get2Bytes().toShort().toFloat() / ANGLE_DIVIDER
-            zeroAdvAngle = data.get1Byte()
-            igntimFlags = data.get1Byte()
-            shift_ingtim = data.get2Bytes().toFloat() / ANGLE_DIVIDER
-
-            data.setUnhandledParams()
-        }
+        return this
     }
 
     override fun pack(): IntArray {
@@ -89,5 +88,9 @@ data class AnglesParamPacket(
         data += unhandledParams
 
         return data
+    }
+
+    companion object {
+        internal const val DESCRIPTOR = 'm'
     }
 }

@@ -24,7 +24,7 @@
  */
 package org.secu3.android.models.packets.base
 
-abstract class BaseSecu3Packet {
+abstract class Secu3Packet {
 
     protected var currentIndex = 2  // ignores @ and ! and descriptor
 
@@ -97,6 +97,30 @@ abstract class BaseSecu3Packet {
             v = v or element
         }
         return v
+    }
+
+    protected fun Int.write1Byte(): IntArray {
+        return intArrayOf(this.and(0xFF))
+    }
+
+    protected fun Int.write2Bytes(): IntArray {
+        var data = intArrayOf()
+
+        data += this.shr(8).and(0xFF)
+        data += this.and(0xFF)
+
+        return data
+    }
+
+    protected fun Int.write4Bytes(): IntArray {
+        var data = intArrayOf()
+
+        data += this.shr(24).and(0xFF)
+        data += this.shr(16).and(0xFF)
+        data += this.shr(8).and(0xFF)
+        data += this.and(0xFF)
+
+        return data
     }
 
     companion object {

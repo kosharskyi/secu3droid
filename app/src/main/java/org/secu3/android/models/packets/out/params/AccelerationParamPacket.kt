@@ -24,7 +24,9 @@
  */
 package org.secu3.android.models.packets.out.params
 
-import org.secu3.android.models.packets.base.BaseOutputPacket
+import org.secu3.android.models.packets.base.Secu3Packet
+import org.secu3.android.models.packets.base.InputPacket
+import org.secu3.android.models.packets.base.OutputPacket
 import kotlin.math.roundToInt
 
 data class AccelerationParamPacket(
@@ -41,7 +43,7 @@ data class AccelerationParamPacket(
     var wallwetModel: Int = 0,
 
 
-) : BaseOutputPacket() {
+    ) : Secu3Packet(), InputPacket, OutputPacket {
 
     override fun pack(): IntArray {
         var data = intArrayOf(
@@ -68,29 +70,31 @@ data class AccelerationParamPacket(
         return data
     }
 
+    override fun parse(data: IntArray): InputPacket {
+
+        injAeTpsdotThrd = data.get1Byte()
+        data.get2Bytes().let {
+            injAeColdaccMult = it.toShort().toFloat().plus(128.0f).div(128.0f).times(100.0f).toInt()
+        }
+        injAeDecayTime = data.get1Byte()
+
+        injAeType = data.get1Byte()
+        injAeTime = data.get1Byte()
+
+        injAeBallance = data.get1Byte().toFloat().div(2.56f)   //multiply by 100% and divide by 256
+        injAeMapdotThrd = data.get1Byte()
+        injXtauSThrd = -data.get1Byte().toFloat()
+        injXtauFThrd = -data.get1Byte().toFloat()
+        wallwetModel = data.get1Byte()
+
+        data.setUnhandledParams()
+
+        return this
+    }
+
     companion object {
 
         internal const val DESCRIPTOR = '|'
 
-        fun parse(data: IntArray) = AccelerationParamPacket().apply {
-
-            injAeTpsdotThrd = data.get1Byte()
-            data.get2Bytes().let {
-                injAeColdaccMult = it.toShort().toFloat().plus(128.0f).div(128.0f).times(100.0f).toInt()
-            }
-            injAeDecayTime = data.get1Byte()
-
-            injAeType = data.get1Byte()
-            injAeTime = data.get1Byte()
-
-            injAeBallance = data.get1Byte().toFloat().div(2.56f)   //multiply by 100% and divide by 256
-            injAeMapdotThrd = data.get1Byte()
-            injXtauSThrd = -data.get1Byte().toFloat()
-            injXtauFThrd = -data.get1Byte().toFloat()
-            wallwetModel = data.get1Byte()
-
-            data.setUnhandledParams()
-        }
     }
-
 }

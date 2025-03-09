@@ -24,7 +24,9 @@
  */
 package org.secu3.android.models.packets.out.params
 
-import org.secu3.android.models.packets.base.BaseOutputPacket
+import org.secu3.android.models.packets.base.Secu3Packet
+import org.secu3.android.models.packets.base.InputPacket
+import org.secu3.android.models.packets.base.OutputPacket
 import kotlin.math.roundToInt
 
 data class GasDoseParamPacket(
@@ -39,7 +41,7 @@ data class GasDoseParamPacket(
     var freq: Int = 0,
     var maxFreqInit: Int = 0,
 
-): BaseOutputPacket() {
+    ): Secu3Packet(), InputPacket, OutputPacket {
 
     override fun pack(): IntArray {
         var data = intArrayOf(DESCRIPTOR.code)
@@ -59,22 +61,27 @@ data class GasDoseParamPacket(
         return data
     }
 
+    override fun parse(data: IntArray): InputPacket {
+
+        steps = data.get2Bytes()
+        testing = data.get1Byte()       //fake parameter (actually it is command)
+        manualPositionD = data.get1Byte()   //fake parameter, not used in outgoing paket
+        fcClosing = data.get1Byte().toFloat() / GAS_DOSE_MULTIPLIER
+        lambdaCorrLimitP = data.get2Bytes().toFloat().times(100.0f).div(512.0f)
+        lambdaCorrLimitM = data.get2Bytes().toFloat().times(100.0f).div(512.0f)
+        lambdaStoichval = data.get2Bytes().toFloat() / AFR_MULTIPLIER
+        freq = data.get1Byte()
+        maxFreqInit = data.get1Byte()
+
+        data.setUnhandledParams()
+
+        return this
+    }
+
+
     companion object {
 
         internal const val DESCRIPTOR = '*'
 
-        fun parse(data: IntArray) = GasDoseParamPacket().apply {
-            steps = data.get2Bytes()
-            testing = data.get1Byte()       //fake parameter (actually it is command)
-            manualPositionD = data.get1Byte()   //fake parameter, not used in outgoing paket
-            fcClosing = data.get1Byte().toFloat() / GAS_DOSE_MULTIPLIER
-            lambdaCorrLimitP = data.get2Bytes().toFloat().times(100.0f).div(512.0f)
-            lambdaCorrLimitM = data.get2Bytes().toFloat().times(100.0f).div(512.0f)
-            lambdaStoichval = data.get2Bytes().toFloat() / AFR_MULTIPLIER
-            freq = data.get1Byte()
-            maxFreqInit = data.get1Byte()
-
-            data.setUnhandledParams()
-        }
     }
 }

@@ -24,7 +24,9 @@
  */
 package org.secu3.android.models.packets.out.params
 
-import org.secu3.android.models.packets.base.BaseOutputPacket
+import org.secu3.android.models.packets.base.Secu3Packet
+import org.secu3.android.models.packets.base.InputPacket
+import org.secu3.android.models.packets.base.OutputPacket
 import org.secu3.android.utils.getBitValue
 import org.secu3.android.utils.setBitValue
 import kotlin.math.roundToInt
@@ -49,7 +51,7 @@ data class CkpsParamPacket(
 
     var mttf: Float = 0f    // missing teeth detection factor
 
-) : BaseOutputPacket() {
+) : Secu3Packet(), InputPacket, OutputPacket {
 
     var risingSpark: Boolean
         get() = hallFlags.getBitValue(0) > 0
@@ -100,23 +102,24 @@ data class CkpsParamPacket(
         return data
     }
 
+    override fun parse(data: IntArray): InputPacket {
+        ckpsCogsBtdc = data.get1Byte()
+        ckpsIgnitCogs = data.get1Byte()
+        ckpsEngineCyl = data.get1Byte()
+        ckpsCogsNum = data.get1Byte()
+        ckpsMissNum = data.get1Byte()
+        hallFlags = data.get1Byte()
+        hallWndWidth = data.get2Bytes().toFloat() / ANGLE_DIVIDER
+        hallDegreesBtdc = data.get2Bytes().toFloat() / ANGLE_DIVIDER
+        mttf = data.get2Bytes().toFloat() / 256.0f
+
+        data.setUnhandledParams()
+
+        return this
+    }
+
     companion object {
-
         internal const val DESCRIPTOR = 't'
-
-        fun parse(data: IntArray) = CkpsParamPacket().apply {
-            ckpsCogsBtdc = data.get1Byte()
-            ckpsIgnitCogs = data.get1Byte()
-            ckpsEngineCyl = data.get1Byte()
-            ckpsCogsNum = data.get1Byte()
-            ckpsMissNum = data.get1Byte()
-            hallFlags = data.get1Byte()
-            hallWndWidth = data.get2Bytes().toFloat() / ANGLE_DIVIDER
-            hallDegreesBtdc = data.get2Bytes().toFloat() / ANGLE_DIVIDER
-            mttf = data.get2Bytes().toFloat() / 256.0f
-
-            data.setUnhandledParams()
-        }
     }
 }
 

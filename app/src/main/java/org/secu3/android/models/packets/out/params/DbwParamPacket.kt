@@ -25,7 +25,9 @@
 
 package org.secu3.android.models.packets.out.params
 
-import org.secu3.android.models.packets.base.BaseOutputPacket
+import org.secu3.android.models.packets.base.Secu3Packet
+import org.secu3.android.models.packets.base.InputPacket
+import org.secu3.android.models.packets.base.OutputPacket
 import kotlin.math.roundToInt
 
 data class DbwParamPacket (
@@ -43,7 +45,7 @@ data class DbwParamPacket (
     var homePosition_edited: Float = 0f // TODO: implement this later
 
 
-) : BaseOutputPacket() {
+) : Secu3Packet(), InputPacket, OutputPacket {
 
     override fun pack(): IntArray {
         var data = intArrayOf(DESCRIPTOR.code)
@@ -64,21 +66,27 @@ data class DbwParamPacket (
         return data
     }
 
+    override fun parse(data: IntArray): InputPacket {
+        etc_p = data.get2Bytes().toFloat().div(ETCPID_MULT)
+        etc_i = data.get2Bytes().toFloat().div(ETCPID_MULT)
+        etc_d = data.get2Bytes().toFloat().div(ETCPID_MULT)
+        etc_nmax_duty = data.get2Bytes().toFloat().div(2.0f)
+        etc_pmax_duty = data.get2Bytes().toFloat().div(2.0f)
+        pid_period = data.get2Bytes().toFloat().div(100.0f)
+        frictorq_open = data.get2Bytes().toFloat().div(16.0f)
+        frictorq_close = data.get2Bytes().toFloat().div(16.0f)
+        frictorq_thrd = data.get2Bytes().toFloat()
+        frictorq_idleadd_max = data.get2Bytes().toFloat().div(TPS_MULTIPLIER)
+
+//        data.setUnhandledParams()
+
+        return this
+    }
+
+
     companion object {
 
         internal const val DESCRIPTOR = 'P'
 
-        fun parse(data: IntArray) = DbwParamPacket().apply {
-            etc_p = data.get2Bytes().toFloat().div(ETCPID_MULT)
-            etc_i = data.get2Bytes().toFloat().div(ETCPID_MULT)
-            etc_d = data.get2Bytes().toFloat().div(ETCPID_MULT)
-            etc_nmax_duty = data.get2Bytes().toFloat().div(2.0f)
-            etc_pmax_duty = data.get2Bytes().toFloat().div(2.0f)
-            pid_period = data.get2Bytes().toFloat().div(100.0f)
-            frictorq_open = data.get2Bytes().toFloat().div(16.0f)
-            frictorq_close = data.get2Bytes().toFloat().div(16.0f)
-            frictorq_thrd = data.get2Bytes().toFloat()
-            frictorq_idleadd_max = data.get2Bytes().toFloat().div(TPS_MULTIPLIER)
-        }
     }
 }

@@ -24,7 +24,7 @@
  */
 package org.secu3.android.utils
 
-import org.secu3.android.models.packets.base.BaseOutputPacket
+import org.secu3.android.models.packets.base.OutputPacket
 import org.secu3.android.models.packets.out.ChangeModePacket
 import org.secu3.android.models.packets.out.OpCompNc
 
@@ -91,7 +91,7 @@ sealed class Task {
 
 
 
-    fun getPacket(): BaseOutputPacket {
+    fun getPacket(): OutputPacket {
         return when (this) {
             Secu3ReadFirmwareInfo, Secu3ReadSensors, Secu3ReadRawSensors, Secu3ReadEcuErrors, Secu3ReadEcuSavedErrors,
             Secu3DiagInput, Secu3ReadStarterParam, Secu3ReadAnglesParam, Secu3ReadIdlingParam, Secu3ReadFunsetParam,

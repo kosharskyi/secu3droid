@@ -24,7 +24,9 @@
  */
 package org.secu3.android.models.packets.out.params
 
-import org.secu3.android.models.packets.base.BaseOutputPacket
+import org.secu3.android.models.packets.base.Secu3Packet
+import org.secu3.android.models.packets.base.InputPacket
+import org.secu3.android.models.packets.base.OutputPacket
 import org.secu3.android.utils.getBitValue
 import org.secu3.android.utils.setBitValue
 import kotlin.math.roundToInt
@@ -45,7 +47,7 @@ data class MiscellaneousParamPacket(
     var pwmFrq1: Int = 0,
     var vssPeriodDist: Int = 0, //Number of VSS pulses per 1km
 
-    ) : BaseOutputPacket() {
+) : Secu3Packet(), InputPacket, OutputPacket {
 
     var evapAfEnd: Int
         get() {
@@ -102,44 +104,44 @@ data class MiscellaneousParamPacket(
         return data
     }
 
-    companion object {
+    override fun parse(data: IntArray): InputPacket {
+        uartDivisor = data.get2Bytes()
+        uartPeriodTms = data.get1Byte() * 10
+        ignCutoff = data.get1Byte()
+        ignCutoffThrd = data.get2Bytes()
+        hopStartAng = data.get2Bytes().div(ANGLE_DIVIDER)
+        hopDuratAng = data.get2Bytes().div(ANGLE_DIVIDER)
+        flpmpFlags = data.get1Byte()
+        evapAfbegin = data.get2Bytes() * 32
+        evapAfslope = data.get2Bytes().toFloat().div(1048576.0f).div(32)
+        fpTimeoutStrt = data.get1Byte().toFloat() / 10
 
-        internal const val DESCRIPTOR = 'z'
-
-        fun parse(data: IntArray) = MiscellaneousParamPacket().apply {
-            uartDivisor = data.get2Bytes()
-            uartPeriodTms = data.get1Byte() * 10
-            ignCutoff = data.get1Byte()
-            ignCutoffThrd = data.get2Bytes()
-            hopStartAng = data.get2Bytes().div(ANGLE_DIVIDER)
-            hopDuratAng = data.get2Bytes().div(ANGLE_DIVIDER)
-            flpmpFlags = data.get1Byte()
-            evapAfbegin = data.get2Bytes() * 32
-            evapAfslope = data.get2Bytes().toFloat().div(1048576.0f).div(32)
-            fpTimeoutStrt = data.get1Byte().toFloat() / 10
-
-            pwmFrq0 = data.get2Bytes().let {
-                if (it == 0) {
-                    5000
-                } else {
-                    1.0.div(it.toFloat().div(524288.0f)).roundToInt()
-                }
+        pwmFrq0 = data.get2Bytes().let {
+            if (it == 0) {
+                5000
+            } else {
+                1.0.div(it.toFloat().div(524288.0f)).roundToInt()
             }
-            pwmFrq1 = data.get2Bytes().let {
-                if (it == 0) {
-                    5000
-                } else {
-                    1.0.div(it.toFloat().div(524288.0f)).roundToInt()
-                }
-            }
-
-            //Number of VSS pulses per 1km
-            vssPeriodDist = data.get2Bytes().let {
-                ((1000.0f * 32768.0f) / it).toInt()
-            }
-
-            data.setUnhandledParams()
         }
+        pwmFrq1 = data.get2Bytes().let {
+            if (it == 0) {
+                5000
+            } else {
+                1.0.div(it.toFloat().div(524288.0f)).roundToInt()
+            }
+        }
+
+        //Number of VSS pulses per 1km
+        vssPeriodDist = data.get2Bytes().let {
+            ((1000.0f * 32768.0f) / it).toInt()
+        }
+
+        data.setUnhandledParams()
+
+        return this
     }
 
+    companion object {
+        internal const val DESCRIPTOR = 'z'
+    }
 }

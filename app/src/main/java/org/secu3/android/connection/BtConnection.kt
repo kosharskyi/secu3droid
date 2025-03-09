@@ -32,7 +32,7 @@ import android.util.Log
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import org.secu3.android.models.RawPacket
-import org.secu3.android.models.packets.base.BaseOutputPacket
+import org.secu3.android.models.packets.base.OutputPacket
 import org.secu3.android.models.packets.out.ChangeModePacket
 import org.secu3.android.utils.Task
 import org.secu3.android.utils.UserPrefs
@@ -182,7 +182,7 @@ class BtConnection @Inject constructor(
         sendData(ChangeModePacket.getPacket(Task.Secu3ReadFirmwareInfo))
     }
 
-    override fun sendData(sendPacket: BaseOutputPacket) {
+    override fun sendData(sendPacket: OutputPacket) {
         scope.launch {
 
             val endTime = LocalTime.now().plusSeconds(10)

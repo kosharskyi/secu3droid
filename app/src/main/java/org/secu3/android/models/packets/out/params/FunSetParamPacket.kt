@@ -24,7 +24,9 @@
  */
 package org.secu3.android.models.packets.out.params
 
-import org.secu3.android.models.packets.base.BaseOutputPacket
+import org.secu3.android.models.packets.base.Secu3Packet
+import org.secu3.android.models.packets.base.InputPacket
+import org.secu3.android.models.packets.base.OutputPacket
 import org.secu3.android.models.packets.out.params.UniOutParamPacket.Companion.UNI_OUTPUT_NUM
 import org.secu3.android.utils.getBitValue
 import org.secu3.android.utils.setBitValue
@@ -70,7 +72,7 @@ data class FunSetParamPacket(
     var apps1Raw: Int = 0,              // Redundant: for APPS1 learning
 
 
-    ): BaseOutputPacket() {
+): Secu3Packet(), InputPacket, OutputPacket {
 
     override fun pack(): IntArray {
         var data = intArrayOf(DESCRIPTOR.code)
@@ -136,46 +138,45 @@ data class FunSetParamPacket(
             funcFlags = funcFlags.setBitValue(value, 0)
         }
 
+    override fun parse(data: IntArray): InputPacket {
+        fnGasoline = data.get1Byte()
+        fnGas = data.get1Byte()
+        loadLower = data.get2Bytes().toFloat() / MAP_MULTIPLIER
+        loadUpper = data.get2Bytes().toFloat() / MAP_MULTIPLIER
+        mapCurveOffset = data.get2Bytes().toFloat() * ADC_DISCRETE
+        mapCurveGradient = data.get2Bytes().toFloat() / (MAP_MULTIPLIER * ADC_DISCRETE * 128.0f)
+        map2CurveOffset = data.get2Bytes().toFloat() * ADC_DISCRETE
+        map2CurveGradient = data.get2Bytes().toFloat() / (MAP_MULTIPLIER * ADC_DISCRETE * 128.0f)
+        tpsCurveOffset = data.get2Bytes().toFloat() * ADC_DISCRETE
+        tpsCurveGradient = data.get2Bytes().toFloat() / (TPS_MULTIPLIER.times(64) * ADC_DISCRETE * 128.0f)
+        loadSrcCfg = data.get1Byte()
+        mapselUni = data.get1Byte()
+        barocorrType = data.get1Byte()
+        funcFlags = data.get1Byte()
+
+        ve2MapFunc = data.get1Byte()
+        gasVUni = data.get1Byte()
+
+        ckpsEngineCyl = data.get1Byte()
+        injCylDisp = data.get2Bytes().toFloat().div(16384.0f)
+        mafload_const = data.get4Bytes().toFloat()
+        tps_raw = data.get2Bytes().times(ADC_DISCRETE)
+
+        gpsCurveOffset = data.get2Bytes().toFloat() * ADC_DISCRETE
+        gpsCurveGradient = data.get2Bytes().toFloat() / (MAP_MULTIPLIER * ADC_DISCRETE * 128.0f)
+
+        fpsCurveOffset = data.get2Bytes().toFloat() * ADC_DISCRETE
+        fpsCurveGradient = data.get2Bytes().toFloat() / (MAP_MULTIPLIER * ADC_DISCRETE * 128.0f)
+
+        apps1CurveOffset = data.get2Bytes().toFloat() * ADC_DISCRETE
+        apps1CurveGradient = data.get2Bytes().toFloat() / ((APPS_MULT * 2) * ADC_DISCRETE * 128.0f)
+
+        data.setUnhandledParams()
+
+        return this
+    }
+
     companion object {
-
         internal const val DESCRIPTOR = 'n'
-
-        fun parse(data: IntArray) = FunSetParamPacket().apply {
-
-            fnGasoline = data.get1Byte()
-            fnGas = data.get1Byte()
-            loadLower = data.get2Bytes().toFloat() / MAP_MULTIPLIER
-            loadUpper = data.get2Bytes().toFloat() / MAP_MULTIPLIER
-            mapCurveOffset = data.get2Bytes().toFloat() * ADC_DISCRETE
-            mapCurveGradient = data.get2Bytes().toFloat() / (MAP_MULTIPLIER * ADC_DISCRETE * 128.0f)
-            map2CurveOffset = data.get2Bytes().toFloat() * ADC_DISCRETE
-            map2CurveGradient = data.get2Bytes().toFloat() / (MAP_MULTIPLIER * ADC_DISCRETE * 128.0f)
-            tpsCurveOffset = data.get2Bytes().toFloat() * ADC_DISCRETE
-            tpsCurveGradient = data.get2Bytes().toFloat() / (TPS_MULTIPLIER.times(64) * ADC_DISCRETE * 128.0f)
-            loadSrcCfg = data.get1Byte()
-            mapselUni = data.get1Byte()
-            barocorrType = data.get1Byte()
-            funcFlags = data.get1Byte()
-
-            ve2MapFunc = data.get1Byte()
-            gasVUni = data.get1Byte()
-
-            ckpsEngineCyl = data.get1Byte()
-            injCylDisp = data.get2Bytes().toFloat().div(16384.0f)
-            mafload_const = data.get4Bytes().toFloat()
-            tps_raw = data.get2Bytes().times(ADC_DISCRETE)
-
-            gpsCurveOffset = data.get2Bytes().toFloat() * ADC_DISCRETE
-            gpsCurveGradient = data.get2Bytes().toFloat() / (MAP_MULTIPLIER * ADC_DISCRETE * 128.0f)
-
-            fpsCurveOffset = data.get2Bytes().toFloat() * ADC_DISCRETE
-            fpsCurveGradient = data.get2Bytes().toFloat() / (MAP_MULTIPLIER * ADC_DISCRETE * 128.0f)
-
-            apps1CurveOffset = data.get2Bytes().toFloat() * ADC_DISCRETE
-            apps1CurveGradient = data.get2Bytes().toFloat() / ((APPS_MULT * 2) * ADC_DISCRETE * 128.0f)
-
-            data.setUnhandledParams()
-        }
-
     }
 }

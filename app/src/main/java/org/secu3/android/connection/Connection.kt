@@ -7,7 +7,7 @@ import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableSharedFlow
 import org.secu3.android.models.RawPacket
-import org.secu3.android.models.packets.base.BaseOutputPacket
+import org.secu3.android.models.packets.base.OutputPacket
 import org.secu3.android.utils.UserPrefs
 import java.util.ArrayList
 
@@ -71,7 +71,7 @@ abstract class Connection (
         disconnect()
     }
 
-    abstract fun sendData(sendPacket: BaseOutputPacket)
+    abstract fun sendData(sendPacket: OutputPacket)
 
     protected abstract fun disconnect()
 

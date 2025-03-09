@@ -26,7 +26,9 @@ package org.secu3.android.models.packets.out.params
 
 import androidx.annotation.StringRes
 import org.secu3.android.R
-import org.secu3.android.models.packets.base.BaseOutputPacket
+import org.secu3.android.models.packets.base.Secu3Packet
+import org.secu3.android.models.packets.base.InputPacket
+import org.secu3.android.models.packets.base.OutputPacket
 import org.secu3.android.utils.getBitValue
 import org.secu3.android.utils.setBitValue
 import kotlin.math.roundToInt
@@ -83,7 +85,7 @@ data class UniOutParamPacket(
 
     var logicFunction_1_2: Int = 0
 
-) : BaseOutputPacket() {
+) : Secu3Packet(), InputPacket, OutputPacket {
 
     override fun pack(): IntArray {
         var data = intArrayOf(DESCRIPTOR.code)
@@ -328,16 +330,16 @@ data class UniOutParamPacket(
         }
 
     var output4Use: Boolean
-    get() = rawOutput4Flags.getBitValue(2) > 0
-    set(value) {
-        rawOutput4Flags = rawOutput4Flags.setBitValue(value, 2)
-    }
+        get() = rawOutput4Flags.getBitValue(2) > 0
+        set(value) {
+            rawOutput4Flags = rawOutput4Flags.setBitValue(value, 2)
+        }
 
     var output4Inversion: Boolean
-    get() = rawOutput4Flags.getBitValue(3) > 0
-    set(value) {
-        rawOutput4Flags = rawOutput3Flags.setBitValue(value, 3)
-    }
+        get() = rawOutput4Flags.getBitValue(3) > 0
+        set(value) {
+            rawOutput4Flags = rawOutput3Flags.setBitValue(value, 3)
+        }
 
     var output4LogicFunc: Int
         get() = rawOutput4Flags shr 4
@@ -386,16 +388,16 @@ data class UniOutParamPacket(
         }
 
     var output5Use: Boolean
-    get() = rawOutput5Flags.getBitValue(2) > 0
-    set(value) {
-        rawOutput5Flags = rawOutput5Flags.setBitValue(value, 2)
-    }
+        get() = rawOutput5Flags.getBitValue(2) > 0
+        set(value) {
+            rawOutput5Flags = rawOutput5Flags.setBitValue(value, 2)
+        }
 
     var output5Inversion: Boolean
-    get() = rawOutput5Flags.getBitValue(3) > 0
-    set(value) {
-        rawOutput5Flags = rawOutput5Flags.setBitValue(value, 3)
-    }
+        get() = rawOutput5Flags.getBitValue(3) > 0
+        set(value) {
+            rawOutput5Flags = rawOutput5Flags.setBitValue(value, 3)
+        }
 
     var output5LogicFunc: Int
         get() = rawOutput5Flags shr 4
@@ -445,16 +447,16 @@ data class UniOutParamPacket(
         }
 
     var output6Use: Boolean
-    get() = rawOutput6Flags.getBitValue(2) > 0
-    set(value) {
-        rawOutput6Flags = rawOutput6Flags.setBitValue(value, 2)
-    }
+        get() = rawOutput6Flags.getBitValue(2) > 0
+        set(value) {
+            rawOutput6Flags = rawOutput6Flags.setBitValue(value, 2)
+        }
 
     var output6Inversion: Boolean
-    get() = rawOutput6Flags.getBitValue(3) > 0
-    set(value) {
-        rawOutput6Flags = rawOutput6Flags.setBitValue(value, 3)
-    }
+        get() = rawOutput6Flags.getBitValue(3) > 0
+        set(value) {
+            rawOutput6Flags = rawOutput6Flags.setBitValue(value, 3)
+        }
 
     var output6LogicFunc: Int
         get() = rawOutput5Flags shr 4
@@ -611,6 +613,63 @@ data class UniOutParamPacket(
     }
 
 
+    override fun parse(data: IntArray): InputPacket {
+        rawOutput1Flags = data.get1Byte()
+        output1Condition1 = data.get1Byte()
+        output1Condition2 = data.get1Byte()
+        rawOutput1OnThrd1 = data.get2Bytes()
+        rawOutput1OffThrd1 = data.get2Bytes()
+        rawOutput1OnThrd2 = data.get2Bytes()
+        rawOutput1OffThrd2 = data.get2Bytes()
+
+        rawOutput2Flags = data.get1Byte()
+        output2Condition1 = data.get1Byte()
+        output2Condition2 = data.get1Byte()
+        rawOutput2OnThrd1 = data.get2Bytes()
+        rawOutput2OffThrd1 = data.get2Bytes()
+        rawOutput2OnThrd2 = data.get2Bytes()
+        rawOutput2OffThrd2 = data.get2Bytes()
+
+        rawOutput3Flags = data.get1Byte()
+        output3Condition1 = data.get1Byte()
+        output3Condition2 = data.get1Byte()
+        rawOutput3OnThrd1 = data.get2Bytes()
+        rawOutput3OffThrd1 = data.get2Bytes()
+        rawOutput3OnThrd2 = data.get2Bytes()
+        rawOutput3OffThrd2 = data.get2Bytes()
+
+        rawOutput4Flags = data.get1Byte()
+        output4Condition1 = data.get1Byte()
+        output4Condition2 = data.get1Byte()
+        rawOutput4OnThrd1 = data.get2Bytes()
+        rawOutput4OffThrd1 = data.get2Bytes()
+        rawOutput4OnThrd2 = data.get2Bytes()
+        rawOutput4OffThrd2 = data.get2Bytes()
+
+        rawOutput5Flags = data.get1Byte()
+        output5Condition1 = data.get1Byte()
+        output5Condition2 = data.get1Byte()
+        rawOutput5OnThrd1 = data.get2Bytes()
+        rawOutput5OffThrd1 = data.get2Bytes()
+        rawOutput5OnThrd2 = data.get2Bytes()
+        rawOutput5OffThrd2 = data.get2Bytes()
+
+        rawOutput6Flags = data.get1Byte()
+        output6Condition1 = data.get1Byte()
+        output6Condition2 = data.get1Byte()
+        rawOutput6OnThrd1 = data.get2Bytes()
+        rawOutput6OffThrd1 = data.get2Bytes()
+        rawOutput6OnThrd2 = data.get2Bytes()
+        rawOutput6OffThrd2 = data.get2Bytes()
+
+
+        logicFunction_1_2 = data.get1Byte()
+
+        data.setUnhandledParams()
+
+        return this
+    }
+
     companion object {
 
         const val LF_OR = 0
@@ -623,61 +682,5 @@ data class UniOutParamPacket(
         const val UNI_OUTPUT_NUM = 6
 
         internal const val DESCRIPTOR = '&'
-
-        fun parse(data: IntArray) = UniOutParamPacket().apply {
-
-            rawOutput1Flags = data.get1Byte()
-            output1Condition1 = data.get1Byte()
-            output1Condition2 = data.get1Byte()
-            rawOutput1OnThrd1 = data.get2Bytes()
-            rawOutput1OffThrd1 = data.get2Bytes()
-            rawOutput1OnThrd2 = data.get2Bytes()
-            rawOutput1OffThrd2 = data.get2Bytes()
-
-            rawOutput2Flags = data.get1Byte()
-            output2Condition1 = data.get1Byte()
-            output2Condition2 = data.get1Byte()
-            rawOutput2OnThrd1 = data.get2Bytes()
-            rawOutput2OffThrd1 = data.get2Bytes()
-            rawOutput2OnThrd2 = data.get2Bytes()
-            rawOutput2OffThrd2 = data.get2Bytes()
-
-            rawOutput3Flags = data.get1Byte()
-            output3Condition1 = data.get1Byte()
-            output3Condition2 = data.get1Byte()
-            rawOutput3OnThrd1 = data.get2Bytes()
-            rawOutput3OffThrd1 = data.get2Bytes()
-            rawOutput3OnThrd2 = data.get2Bytes()
-            rawOutput3OffThrd2 = data.get2Bytes()
-
-            rawOutput4Flags = data.get1Byte()
-            output4Condition1 = data.get1Byte()
-            output4Condition2 = data.get1Byte()
-            rawOutput4OnThrd1 = data.get2Bytes()
-            rawOutput4OffThrd1 = data.get2Bytes()
-            rawOutput4OnThrd2 = data.get2Bytes()
-            rawOutput4OffThrd2 = data.get2Bytes()
-
-            rawOutput5Flags = data.get1Byte()
-            output5Condition1 = data.get1Byte()
-            output5Condition2 = data.get1Byte()
-            rawOutput5OnThrd1 = data.get2Bytes()
-            rawOutput5OffThrd1 = data.get2Bytes()
-            rawOutput5OnThrd2 = data.get2Bytes()
-            rawOutput5OffThrd2 = data.get2Bytes()
-
-            rawOutput6Flags = data.get1Byte()
-            output6Condition1 = data.get1Byte()
-            output6Condition2 = data.get1Byte()
-            rawOutput6OnThrd1 = data.get2Bytes()
-            rawOutput6OffThrd1 = data.get2Bytes()
-            rawOutput6OnThrd2 = data.get2Bytes()
-            rawOutput6OffThrd2 = data.get2Bytes()
-
-
-            logicFunction_1_2 = data.get1Byte()
-
-            data.setUnhandledParams()
-        }
     }
 }

@@ -24,26 +24,29 @@
  */
 package org.secu3.android.models.packets.input
 
-import org.secu3.android.models.packets.base.BaseSecu3Packet
+import org.secu3.android.models.packets.base.Secu3Packet
+import org.secu3.android.models.packets.base.InputPacket
 
 data class CheckEngineErrorsPacket(
 
     var errors: Int = 0
 
-) : BaseSecu3Packet() {
+) : Secu3Packet(), InputPacket {
 
     fun isError(errorBit: Int): Boolean {
         val flags = errors shr errorBit
         return flags and 0x01 != 0
     }
 
+    override fun parse(data: IntArray): InputPacket {
+        errors = data.get4Bytes()
+
+        return this
+    }
+
     companion object {
 
         internal const val DESCRIPTOR = 'v'
-
-        fun parse(data: IntArray) = CheckEngineErrorsPacket().apply {
-            errors = data.get4Bytes()
-        }
 
     }
 }

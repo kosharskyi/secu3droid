@@ -24,7 +24,8 @@
  */
 package org.secu3.android.models.packets.input
 
-import org.secu3.android.models.packets.base.BaseSecu3Packet
+import org.secu3.android.models.packets.base.Secu3Packet
+import org.secu3.android.models.packets.base.InputPacket
 import org.secu3.android.utils.getBitValue
 
 data class DiagInputPacket(
@@ -54,7 +55,7 @@ data class DiagInputPacket(
 
     var bits: Int = 0
 
-) : BaseSecu3Packet() {
+) : Secu3Packet(), InputPacket {
 
     val gasV: Boolean
         get() = bits.getBitValue(0) > 0
@@ -86,35 +87,33 @@ data class DiagInputPacket(
     val gpa4_i: Boolean     //for SECU-3i
         get() = bits.getBitValue(9) > 0
 
-    companion object {
+    override fun parse(data: IntArray): InputPacket {
+        flags = data.get1Byte()
+        voltage = data.get2Bytes().toFloat() / VOLTAGE_MULTIPLIER
+        map = data.get2Bytes().toFloat() / VOLTAGE_MULTIPLIER
+        temperature = data.get2Bytes().toShort().toFloat() / VOLTAGE_MULTIPLIER
 
-        internal const val DESCRIPTOR = '='
+        addI1 = data.get2Bytes().toFloat() / VOLTAGE_MULTIPLIER
+        addI2 = data.get2Bytes().toFloat() / VOLTAGE_MULTIPLIER
+        addI3 = data.get2Bytes().toFloat() / VOLTAGE_MULTIPLIER
+        addI4 = data.get2Bytes().toFloat() / VOLTAGE_MULTIPLIER
 
-        fun parse(data: IntArray) = DiagInputPacket().apply {
-            flags = data.get1Byte()
-            voltage = data.get2Bytes().toFloat() / VOLTAGE_MULTIPLIER
-            map = data.get2Bytes().toFloat() / VOLTAGE_MULTIPLIER
-            temperature = data.get2Bytes().toShort().toFloat() / VOLTAGE_MULTIPLIER
+        addI5 = data.get2Bytes().toFloat() / VOLTAGE_MULTIPLIER
+        addI6 = data.get2Bytes().toFloat() / VOLTAGE_MULTIPLIER
+        addI7 = data.get2Bytes().toFloat() / VOLTAGE_MULTIPLIER
+        addI8 = data.get2Bytes().toFloat() / VOLTAGE_MULTIPLIER
 
-            addI1 = data.get2Bytes().toFloat() / VOLTAGE_MULTIPLIER
-            addI2 = data.get2Bytes().toFloat() / VOLTAGE_MULTIPLIER
-            addI3 = data.get2Bytes().toFloat() / VOLTAGE_MULTIPLIER
-            addI4 = data.get2Bytes().toFloat() / VOLTAGE_MULTIPLIER
+        carb = data.get2Bytes().toFloat() / VOLTAGE_MULTIPLIER
 
-            addI5 = data.get2Bytes().toFloat() / VOLTAGE_MULTIPLIER
-            addI6 = data.get2Bytes().toFloat() / VOLTAGE_MULTIPLIER
-            addI7 = data.get2Bytes().toFloat() / VOLTAGE_MULTIPLIER
-            addI8 = data.get2Bytes().toFloat() / VOLTAGE_MULTIPLIER
+        ks1 = data.get2Bytes().toFloat() / VOLTAGE_MULTIPLIER
+        ks2 = data.get2Bytes().toFloat() / VOLTAGE_MULTIPLIER
 
-            carb = data.get2Bytes().toFloat() / VOLTAGE_MULTIPLIER
+        bits = data.get2Bytes()
 
-            ks1 = data.get2Bytes().toFloat() / VOLTAGE_MULTIPLIER
-            ks2 = data.get2Bytes().toFloat() / VOLTAGE_MULTIPLIER
-
-            bits = data.get2Bytes()
-
-        }
-
+        return this
     }
 
+    companion object {
+        internal const val DESCRIPTOR = '='
+    }
 }

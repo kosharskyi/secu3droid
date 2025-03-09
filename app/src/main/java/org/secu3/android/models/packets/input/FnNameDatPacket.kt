@@ -25,9 +25,8 @@
 package org.secu3.android.models.packets.input
 
 import org.secu3.android.models.FnName
-import org.secu3.android.models.packets.base.BaseSecu3Packet
-import java.nio.charset.Charset
-import java.nio.charset.StandardCharsets
+import org.secu3.android.models.packets.base.Secu3Packet
+import org.secu3.android.models.packets.base.InputPacket
 
 data class FnNameDatPacket(
 
@@ -35,7 +34,7 @@ data class FnNameDatPacket(
 
     var fnName: FnName = FnName(-1, "")
 
-): BaseSecu3Packet() {
+): Secu3Packet(), InputPacket {
 
     var fnNameList: MutableList<FnName> = mutableListOf()
 
@@ -53,19 +52,21 @@ data class FnNameDatPacket(
             return true
         }
 
+    override fun parse(data: IntArray): InputPacket {
+        tablesNumber = data.get1Byte()
+        val index = data.get1Byte()
+
+        val name = data.getString(F_NAME_SIZE)
+
+        fnName = FnName(index, name)
+
+        return this
+    }
+
     companion object {
 
         private const val F_NAME_SIZE = 16          //!< number of symbols in names of tables' sets
         internal const val DESCRIPTOR = 'p'
-
-        fun parse(data: IntArray) = FnNameDatPacket().apply {
-            tablesNumber = data.get1Byte()
-            val index = data.get1Byte()
-
-            val name = data.getString(F_NAME_SIZE)
-
-            fnName = FnName(index, name)
-        }
 
     }
 

@@ -24,7 +24,9 @@
  */
 package org.secu3.android.models.packets.out.params
 
-import org.secu3.android.models.packets.base.BaseOutputPacket
+import org.secu3.android.models.packets.base.Secu3Packet
+import org.secu3.android.models.packets.base.InputPacket
+import org.secu3.android.models.packets.base.OutputPacket
 import org.secu3.android.utils.getBitValue
 import org.secu3.android.utils.setBitValue
 import kotlin.math.roundToInt
@@ -58,7 +60,7 @@ data class IdlingParamPacket(
     var irrKRpm: Float = 0f,
 
 
-    ) : BaseOutputPacket() {
+    ) : Secu3Packet(), InputPacket, OutputPacket {
 
     var useRegulator: Boolean
         get() = idlFlags.getBitValue(0) > 0
@@ -103,39 +105,36 @@ data class IdlingParamPacket(
         }
 
 
-    companion object {
+    override fun parse(data: IntArray): InputPacket {
+        idlFlags = data.get1Byte()
+        iFac1 = data.get2Bytes().toShort().toFloat() / 256
+        iFac2 = data.get2Bytes().toShort().toFloat() / 256
+        minefr = data.get2Bytes()
+        idlingRpm = data.get2Bytes()
+        idlregMinAngle = data.get2Bytes().toShort().toFloat() / ANGLE_DIVIDER
+        idlregMaxAngle = data.get2Bytes().toShort().toFloat() / ANGLE_DIVIDER
+        idlregTurnOnTemp = data.get2Bytes().toShort().toFloat() / TEMPERATURE_MULTIPLIER
+        idlToRunAdd = data.get1Byte().toFloat() / 2.0f
+        rpmOnRunAdd = data.get1Byte() * 10
+        idlRegP0 = data.get2Bytes().toFloat() / 256
+        idlRegP1 = data.get2Bytes().toFloat() / 256
+        idlRegI0 = data.get2Bytes().toFloat() / 256
+        idlRegI1 = data.get2Bytes().toFloat() / 256
+        coefThrd1 = data.get1Byte().toFloat().div(128).plus(1.0f)
+        coefThrd2 = data.get1Byte().toFloat().div(128).plus(1.0f)
+        integratorRpmLim = data.get1Byte().times(10)
+        mapValue = data.get2Bytes().toFloat() / MAP_MULTIPLIER
+        iacMinPos = data.get1Byte().toFloat() / 2
+        iacMaxPos = data.get1Byte().toFloat() / 2
+        iacRegDb = data.get2Bytes()
+        idlRegD = data.get2Bytes().toFloat() / 256
 
-        internal const val DESCRIPTOR = 'l'
+        irrKLoad = data.get2Bytes().toFloat() / 32.0f
+        irrKRpm = data.get2Bytes().toFloat() / 32.0f
 
-        fun parse(data: IntArray) = IdlingParamPacket().apply {
-            idlFlags = data.get1Byte()
-            iFac1 = data.get2Bytes().toShort().toFloat() / 256
-            iFac2 = data.get2Bytes().toShort().toFloat() / 256
-            minefr = data.get2Bytes()
-            idlingRpm = data.get2Bytes()
-            idlregMinAngle = data.get2Bytes().toShort().toFloat() / ANGLE_DIVIDER
-            idlregMaxAngle = data.get2Bytes().toShort().toFloat() / ANGLE_DIVIDER
-            idlregTurnOnTemp = data.get2Bytes().toShort().toFloat() / TEMPERATURE_MULTIPLIER
-            idlToRunAdd = data.get1Byte().toFloat() / 2.0f
-            rpmOnRunAdd = data.get1Byte() * 10
-            idlRegP0 = data.get2Bytes().toFloat() / 256
-            idlRegP1 = data.get2Bytes().toFloat() / 256
-            idlRegI0 = data.get2Bytes().toFloat() / 256
-            idlRegI1 = data.get2Bytes().toFloat() / 256
-            coefThrd1 = data.get1Byte().toFloat().div(128).plus(1.0f)
-            coefThrd2 = data.get1Byte().toFloat().div(128).plus(1.0f)
-            integratorRpmLim = data.get1Byte().times(10)
-            mapValue = data.get2Bytes().toFloat() / MAP_MULTIPLIER
-            iacMinPos = data.get1Byte().toFloat() / 2
-            iacMaxPos = data.get1Byte().toFloat() / 2
-            iacRegDb = data.get2Bytes()
-            idlRegD = data.get2Bytes().toFloat() / 256
+        data.setUnhandledParams()
 
-            irrKLoad = data.get2Bytes().toFloat() / 32.0f
-            irrKRpm = data.get2Bytes().toFloat() / 32.0f
-
-            data.setUnhandledParams()
-        }
+        return this
     }
 
     override fun pack(): IntArray {
@@ -170,5 +169,9 @@ data class IdlingParamPacket(
         data += unhandledParams
 
         return data
+    }
+
+    companion object {
+        internal const val DESCRIPTOR = 'l'
     }
 }

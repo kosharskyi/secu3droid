@@ -24,7 +24,8 @@
  */
 package org.secu3.android.models.packets.input
 
-import org.secu3.android.models.packets.base.BaseSecu3Packet
+import org.secu3.android.models.packets.base.Secu3Packet
+import org.secu3.android.models.packets.base.InputPacket
 import org.secu3.android.utils.getBitValue
 import java.nio.charset.Charset
 import java.nio.charset.StandardCharsets
@@ -33,7 +34,7 @@ data class FirmwareInfoPacket(
     var tag: String = "",
     var options: Int = 0,
     var version: IntArray = IntArray(2)
-) : BaseSecu3Packet() {
+) : Secu3Packet(), InputPacket {
 
     // From tables.c file; line 447
     val isObdSupported: Boolean
@@ -127,19 +128,22 @@ data class FirmwareInfoPacket(
         get() = options.getBitValue(COPT_CKPS_NPLUS1) > 0
 
 
+    override fun parse(data: IntArray): InputPacket {
+        tag = data.getString(FIRMWARE_INFO_SIZE).toByteArray(StandardCharsets.ISO_8859_1).toString(Charset.forName("IBM866"))
+        options = data.get4Bytes()
+        val ver = data.get1Byte();
+        version[0] = ver.and(0x0F)  // minor
+        version[1] = ver.shr(4)  // major
+
+        return this
+    }
+
     companion object {
 
         internal const val DESCRIPTOR = 'y'
 
         private const val FIRMWARE_INFO_SIZE = 48
 
-        fun parse(data: IntArray) = FirmwareInfoPacket().apply {
-            tag = data.getString(FIRMWARE_INFO_SIZE).toByteArray(StandardCharsets.ISO_8859_1).toString(Charset.forName("IBM866"))
-            options = data.get4Bytes()
-            val ver = data.get1Byte();
-            version[0] = ver.and(0x0F)  // minor
-            version[1] = ver.shr(4)  // major
-        }
 
         private const val COPT_OBD_SUPPORT = 0
         private const val COPT_ATMEGA1284 = 1

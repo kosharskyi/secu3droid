@@ -24,13 +24,14 @@
  */
 package org.secu3.android.models.packets.out
 
+import org.secu3.android.models.packets.base.Secu3Packet
 import org.secu3.android.models.packets.input.AdcRawDatPacket
 import org.secu3.android.models.packets.input.CheckEngineErrorsPacket
 import org.secu3.android.models.packets.input.DiagInputPacket
 import org.secu3.android.models.packets.input.FirmwareInfoPacket
 import org.secu3.android.models.packets.input.FnNameDatPacket
 import org.secu3.android.models.packets.input.SensorsPacket
-import org.secu3.android.models.packets.base.BaseOutputPacket
+import org.secu3.android.models.packets.base.OutputPacket
 import org.secu3.android.models.packets.out.params.AccelerationParamPacket
 import org.secu3.android.models.packets.out.params.AdcCorrectionsParamPacket
 import org.secu3.android.models.packets.out.params.AnglesParamPacket
@@ -54,7 +55,7 @@ import org.secu3.android.utils.Task
 
 data class ChangeModePacket(
     val nextDescriptor: Char
-) : BaseOutputPacket() {
+) : Secu3Packet(), OutputPacket {
 
     override fun pack(): IntArray {
         val stubByte = 0.toUByte().toInt()

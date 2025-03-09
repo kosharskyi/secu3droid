@@ -24,7 +24,9 @@
  */
 package org.secu3.android.models.packets.out.params
 
-import org.secu3.android.models.packets.base.BaseOutputPacket
+import org.secu3.android.models.packets.base.Secu3Packet
+import org.secu3.android.models.packets.base.InputPacket
+import org.secu3.android.models.packets.base.OutputPacket
 import org.secu3.android.utils.getBitValue
 import org.secu3.android.utils.setBitValue
 
@@ -40,7 +42,7 @@ data class SecurityParamPacket(
 
     var btType: Int = 0 // Bluetooth chip type: 0 - BC417, 1 - BK3231, 2 - BK3231S(JDY-31), 3 - BC352(HC-05), 4 - BK3432, 5 - BK3431S
 
-) : BaseOutputPacket() {
+) : Secu3Packet(), InputPacket, OutputPacket {
 
     var useBt: Boolean                                  // specifies to use or not to use bluetooth
         get() = btFlags.getBitValue(0) > 0
@@ -91,38 +93,40 @@ data class SecurityParamPacket(
         return data
     }
 
+    override fun parse(data: IntArray): InputPacket {
+        //Number of characters in name (must be zero)
+        val numNam = data.get1Byte()
+        if (numNam > 0) {
+            throw IllegalArgumentException("Bt name is not empty")
+        }
+
+        //Number of characters in password (must be zero)
+        val numPass = data.get1Byte()
+        if (numPass > 0) {
+            throw IllegalArgumentException("Bt password is not empty")
+        }
+
+        btFlags = data.get1Byte()
+
+        for (i in 0 until IBTN_KEY_SIZE) {
+            iButton0 += data.get1Byte()
+        }
+
+        for (i in 0 until IBTN_KEY_SIZE) {
+            iButton1 += data.get1Byte()
+        }
+
+        btType = data.get1Byte()
+
+        data.setUnhandledParams()
+
+        return this
+    }
+
     companion object {
 
         internal const val DESCRIPTOR = '#'
 
         private const val IBTN_KEY_SIZE = 6
-
-        fun parse(data: IntArray) = SecurityParamPacket().apply {
-            //Number of characters in name (must be zero)
-            val numNam = data.get1Byte()
-            if (numNam > 0) {
-                throw IllegalArgumentException("Bt name is not empty")
-            }
-
-            //Number of characters in password (must be zero)
-            val numPass = data.get1Byte()
-            if (numPass > 0) {
-                throw IllegalArgumentException("Bt password is not empty")
-            }
-
-            btFlags = data.get1Byte()
-
-            for (i in 0 until IBTN_KEY_SIZE) {
-                iButton0 += data.get1Byte()
-            }
-
-            for (i in 0 until IBTN_KEY_SIZE) {
-                iButton1 += data.get1Byte()
-            }
-
-            btType = data.get1Byte()
-
-            data.setUnhandledParams()
-        }
     }
 }

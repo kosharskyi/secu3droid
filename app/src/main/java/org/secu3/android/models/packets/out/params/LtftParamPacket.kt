@@ -25,7 +25,9 @@
 
 package org.secu3.android.models.packets.out.params
 
-import org.secu3.android.models.packets.base.BaseOutputPacket
+import org.secu3.android.models.packets.base.Secu3Packet
+import org.secu3.android.models.packets.base.InputPacket
+import org.secu3.android.models.packets.base.OutputPacket
 import kotlin.math.roundToInt
 
 data class LtftParamPacket(
@@ -59,7 +61,7 @@ data class LtftParamPacket(
     var deadBand0: Float = 0.0f,    // %
 
     var deadBand1: Float = 0.0f,    // %
-) : BaseOutputPacket() {
+) : Secu3Packet(), InputPacket, OutputPacket {
 
     override fun pack(): IntArray {
 
@@ -86,31 +88,33 @@ data class LtftParamPacket(
         return data
     }
 
+    override fun parse(data: IntArray): InputPacket {
+
+        mode = data.get1Byte()
+
+        learnClt = data.get2Bytes().toFloat().div(TEMPERATURE_MULTIPLIER)
+        learnCltUp = data.get2Bytes().toFloat().div(TEMPERATURE_MULTIPLIER)
+        learnIatUp = data.get2Bytes().toFloat().div(TEMPERATURE_MULTIPLIER)
+        learnGrad = data.get1Byte().toFloat().div(256.0f)
+        learnGpa = data.get2Bytes().toFloat().div(MAP_MULTIPLIER)
+        learnGpd = data.get2Bytes().toFloat().div(MAP_MULTIPLIER)
+        min = data.get1Byte().toByte().toFloat().div(512.0f / 100.0f)     // toByte because value is signed
+        max = data.get1Byte().toFloat().div(512.0f / 100.0f)
+        learnRpm0 = data.get2Bytes()
+        learnRpm1 = data.get2Bytes()
+        learnLoad0 = data.get2Bytes().toFloat().div(MAP_MULTIPLIER)
+        learnLoad1 = data.get2Bytes().toFloat().div(MAP_MULTIPLIER)
+        deadBand0 = data.get1Byte().toFloat().div(512.0f).times(100.0f)
+        deadBand1 = data.get1Byte().toFloat().div(512.0f).times(100.0f)
+
+        data.setUnhandledParams()
+
+        return this
+    }
+
     companion object {
 
         internal const val DESCRIPTOR = 'O'
 
-        fun parse(data: IntArray) = LtftParamPacket().apply {
-
-            mode = data.get1Byte()
-
-            learnClt = data.get2Bytes().toFloat().div(TEMPERATURE_MULTIPLIER)
-            learnCltUp = data.get2Bytes().toFloat().div(TEMPERATURE_MULTIPLIER)
-            learnIatUp = data.get2Bytes().toFloat().div(TEMPERATURE_MULTIPLIER)
-            learnGrad = data.get1Byte().toFloat().div(256.0f)
-            learnGpa = data.get2Bytes().toFloat().div(MAP_MULTIPLIER)
-            learnGpd = data.get2Bytes().toFloat().div(MAP_MULTIPLIER)
-            min = data.get1Byte().toByte().toFloat().div(512.0f / 100.0f)     // toByte because value is signed
-            max = data.get1Byte().toFloat().div(512.0f / 100.0f)
-            learnRpm0 = data.get2Bytes()
-            learnRpm1 = data.get2Bytes()
-            learnLoad0 = data.get2Bytes().toFloat().div(MAP_MULTIPLIER)
-            learnLoad1 = data.get2Bytes().toFloat().div(MAP_MULTIPLIER)
-            deadBand0 = data.get1Byte().toFloat().div(512.0f).times(100.0f)
-            deadBand1 = data.get1Byte().toFloat().div(512.0f).times(100.0f)
-
-            data.setUnhandledParams()
-        }
     }
-
 }

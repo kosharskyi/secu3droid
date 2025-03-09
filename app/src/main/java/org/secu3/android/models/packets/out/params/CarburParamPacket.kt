@@ -24,7 +24,9 @@
  */
 package org.secu3.android.models.packets.out.params
 
-import org.secu3.android.models.packets.base.BaseOutputPacket
+import org.secu3.android.models.packets.base.Secu3Packet
+import org.secu3.android.models.packets.base.InputPacket
+import org.secu3.android.models.packets.base.OutputPacket
 import kotlin.math.roundToInt
 
 data class CarburParamPacket(
@@ -44,7 +46,7 @@ data class CarburParamPacket(
     var fuelcut_uni: Int = 0,
     var igncut_uni: Int = 0,
 
-) : BaseOutputPacket() {
+    ) : Secu3Packet(), InputPacket, OutputPacket {
 
     override fun pack(): IntArray {
         var data = intArrayOf(DESCRIPTOR.code)
@@ -70,28 +72,29 @@ data class CarburParamPacket(
         return data
     }
 
+    override fun parse(data: IntArray): InputPacket {
+        ieLot = data.get2Bytes()
+        ieHit = data.get2Bytes()
+        carbInvers = data.get1Byte()
+        feOnThresholds = data.get2Bytes().toFloat() / MAP_MULTIPLIER
+        ieLotG = data.get2Bytes()
+        ieHitG = data.get2Bytes()
+        shutoffDelay = data.get1Byte().toFloat() / 100
+        tpsThreshold = data.get2Bytes().toFloat() / TPS_MULTIPLIER
+        fuelcutMapThrd = data.get2Bytes().toFloat() / MAP_MULTIPLIER
+        fuelcutCtsThrd = data.get2Bytes().toFloat() / TEMPERATURE_MULTIPLIER
+        revlimLot = data.get2Bytes()
+        revlimHit = data.get2Bytes()
+
+        fuelcut_uni = data.get1Byte()
+        igncut_uni = data.get1Byte()
+
+        data.setUnhandledParams()
+
+        return this
+    }
+
     companion object {
-
         internal const val DESCRIPTOR = 'k'
-
-        fun parse(data: IntArray) = CarburParamPacket().apply {
-            ieLot = data.get2Bytes()
-            ieHit = data.get2Bytes()
-            carbInvers = data.get1Byte()
-            feOnThresholds = data.get2Bytes().toFloat() / MAP_MULTIPLIER
-            ieLotG = data.get2Bytes()
-            ieHitG = data.get2Bytes()
-            shutoffDelay = data.get1Byte().toFloat() / 100
-            tpsThreshold = data.get2Bytes().toFloat() / TPS_MULTIPLIER
-            fuelcutMapThrd = data.get2Bytes().toFloat() / MAP_MULTIPLIER
-            fuelcutCtsThrd = data.get2Bytes().toFloat() / TEMPERATURE_MULTIPLIER
-            revlimLot = data.get2Bytes()
-            revlimHit = data.get2Bytes()
-
-            fuelcut_uni = data.get1Byte()
-            igncut_uni = data.get1Byte()
-
-            data.setUnhandledParams()
-        }
     }
 }

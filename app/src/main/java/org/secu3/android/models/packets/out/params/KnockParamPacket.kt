@@ -24,7 +24,9 @@
  */
 package org.secu3.android.models.packets.out.params
 
-import org.secu3.android.models.packets.base.BaseOutputPacket
+import org.secu3.android.models.packets.base.Secu3Packet
+import org.secu3.android.models.packets.base.InputPacket
+import org.secu3.android.models.packets.base.OutputPacket
 import org.secu3.android.utils.getBitValue
 import kotlin.math.roundToInt
 
@@ -44,7 +46,7 @@ data class KnockParamPacket(
     var selectedChanels: Int = 0,         //!< 1 bit per channel (cylinder). 0 - 1st KS, 1 - 2nd KS
     var knkctlThrd: Float = 0f,
 
-    ) : BaseOutputPacket() {
+    ) : Secu3Packet(), InputPacket, OutputPacket {
 
     fun isKnockChanelSelected(knockPosition: Int): Boolean {
         return selectedChanels.getBitValue(knockPosition) > 0
@@ -83,26 +85,28 @@ data class KnockParamPacket(
         return data
     }
 
+    override fun parse(data: IntArray): InputPacket {
+        useKnockChannel = data.get1Byte()
+        bpfFrequency = data.get1Byte()
+        kWndBeginAngle = data.get2Bytes().toShort().toFloat() / ANGLE_DIVIDER
+        kWndEndAngle = data.get2Bytes().toShort().toFloat() / ANGLE_DIVIDER
+        intTimeCost = data.get1Byte()
+
+        retardStep = data.get2Bytes().toFloat() / ANGLE_DIVIDER
+        advanceStep = data.get2Bytes().toFloat() / ANGLE_DIVIDER
+        maxRetard = data.get2Bytes().toFloat() / ANGLE_DIVIDER
+        threshold = data.get2Bytes().toFloat() / VOLTAGE_MULTIPLIER
+        recoveryDelay = data.get1Byte()
+        selectedChanels = data.get1Byte()
+        knkctlThrd = data.get2Bytes().toFloat() / TEMPERATURE_MULTIPLIER
+
+        data.setUnhandledParams()
+
+        return this
+    }
+
+
     companion object {
-
         internal const val DESCRIPTOR = 'w'
-
-        fun parse(data: IntArray) = KnockParamPacket().apply {
-            useKnockChannel = data.get1Byte()
-            bpfFrequency = data.get1Byte()
-            kWndBeginAngle = data.get2Bytes().toShort().toFloat() / ANGLE_DIVIDER
-            kWndEndAngle = data.get2Bytes().toShort().toFloat() / ANGLE_DIVIDER
-            intTimeCost = data.get1Byte()
-
-            retardStep = data.get2Bytes().toFloat() / ANGLE_DIVIDER
-            advanceStep = data.get2Bytes().toFloat() / ANGLE_DIVIDER
-            maxRetard = data.get2Bytes().toFloat() / ANGLE_DIVIDER
-            threshold = data.get2Bytes().toFloat() / VOLTAGE_MULTIPLIER
-            recoveryDelay = data.get1Byte()
-            selectedChanels = data.get1Byte()
-            knkctlThrd = data.get2Bytes().toFloat() / TEMPERATURE_MULTIPLIER
-
-            data.setUnhandledParams()
-        }
     }
 }

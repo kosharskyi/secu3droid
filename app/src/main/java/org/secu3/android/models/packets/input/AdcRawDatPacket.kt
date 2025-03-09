@@ -24,7 +24,8 @@
  */
 package org.secu3.android.models.packets.input
 
-import org.secu3.android.models.packets.base.BaseSecu3Packet
+import org.secu3.android.models.packets.base.Secu3Packet
+import org.secu3.android.models.packets.base.InputPacket
 
 data class AdcRawDatPacket(
     var map: Float = 0f,
@@ -41,26 +42,27 @@ data class AdcRawDatPacket(
     var addI7: Float = 0f,                // ADD_I7 voltage
     var addI8: Float = 0f,                // ADD_I8 voltage
 
-    ) : BaseSecu3Packet() {
+) : Secu3Packet(), InputPacket {
+
+    override fun parse(data: IntArray): InputPacket {
+        map = data.get2Bytes().toShort().toFloat() / VOLTAGE_MULTIPLIER
+        voltage = data.get2Bytes().toShort().toFloat() / VOLTAGE_MULTIPLIER
+        temperature = data.get2Bytes().toShort().toFloat() / VOLTAGE_MULTIPLIER
+        knockValue = data.get2Bytes().toShort().toFloat() / VOLTAGE_MULTIPLIER
+        tps = data.get2Bytes().toShort().toFloat() / VOLTAGE_MULTIPLIER
+        addI1 = data.get2Bytes().toShort().toFloat() / VOLTAGE_MULTIPLIER
+        addI2 = data.get2Bytes().toShort().toFloat() / VOLTAGE_MULTIPLIER
+        addI3 = data.get2Bytes().toShort().toFloat() / VOLTAGE_MULTIPLIER
+        addI4 = data.get2Bytes().toShort().toFloat() / VOLTAGE_MULTIPLIER
+        addI5 = data.get2Bytes().toShort().toFloat() / VOLTAGE_MULTIPLIER
+        addI6 = data.get2Bytes().toShort().toFloat() / VOLTAGE_MULTIPLIER
+        addI7 = data.get2Bytes().toShort().toFloat() / VOLTAGE_MULTIPLIER
+        addI8 = data.get2Bytes().toShort().toFloat() / VOLTAGE_MULTIPLIER
+
+        return this
+    }
 
     companion object {
-
         internal const val DESCRIPTOR = 's'
-
-        fun parse(data: IntArray, firmwarePacket: FirmwareInfoPacket?) = AdcRawDatPacket().apply {
-            map = data.get2Bytes().toShort().toFloat() / VOLTAGE_MULTIPLIER
-            voltage = data.get2Bytes().toShort().toFloat() / VOLTAGE_MULTIPLIER
-            temperature = data.get2Bytes().toShort().toFloat() / VOLTAGE_MULTIPLIER
-            knockValue = data.get2Bytes().toShort().toFloat() / VOLTAGE_MULTIPLIER
-            tps = data.get2Bytes().toShort().toFloat() / VOLTAGE_MULTIPLIER
-            addI1 = data.get2Bytes().toShort().toFloat() / VOLTAGE_MULTIPLIER
-            addI2 = data.get2Bytes().toShort().toFloat() / VOLTAGE_MULTIPLIER
-            addI3 = data.get2Bytes().toShort().toFloat() / VOLTAGE_MULTIPLIER
-            addI4 = data.get2Bytes().toShort().toFloat() / VOLTAGE_MULTIPLIER
-            addI5 = data.get2Bytes().toShort().toFloat() / VOLTAGE_MULTIPLIER
-            addI6 = data.get2Bytes().toShort().toFloat() / VOLTAGE_MULTIPLIER
-            addI7 = data.get2Bytes().toShort().toFloat() / VOLTAGE_MULTIPLIER
-            addI8 = data.get2Bytes().toShort().toFloat() / VOLTAGE_MULTIPLIER
-        }
     }
 }

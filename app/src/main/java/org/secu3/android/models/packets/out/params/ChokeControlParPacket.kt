@@ -24,7 +24,9 @@
  */
 package org.secu3.android.models.packets.out.params
 
-import org.secu3.android.models.packets.base.BaseOutputPacket
+import org.secu3.android.models.packets.base.Secu3Packet
+import org.secu3.android.models.packets.base.InputPacket
+import org.secu3.android.models.packets.base.OutputPacket
 import org.secu3.android.utils.getBitValue
 import org.secu3.android.utils.setBitValue
 import kotlin.math.roundToInt
@@ -46,7 +48,7 @@ data class ChokeControlParPacket(
 
     var injCrankToRunTime: Float = 0f
 
-) : BaseOutputPacket() {
+) : Secu3Packet(), InputPacket, OutputPacket {
 
     var useClosedLoopRmpRegulator: Boolean
         get() = flags.getBitValue(0) > 0
@@ -94,23 +96,23 @@ data class ChokeControlParPacket(
         return data
     }
 
+    override fun parse(data: IntArray): InputPacket {
+        smSteps = data.get2Bytes()
+        data.get1Byte()     // testing fake param
+        data.get1Byte()     // manual position fake param
+        rpmIf = data.get2Bytes().toFloat() / 1024.0f
+        corrTime0 = data.get2Bytes().toFloat() / 100
+        corrTime1 = data.get2Bytes().toFloat() / 100
+        flags = data.get1Byte()
+        smFreq = data.get1Byte()
+        injCrankToRunTime = data.get2Bytes().toFloat() / 100
+
+        data.setUnhandledParams()
+
+        return this
+    }
+
     companion object {
-
         internal const val DESCRIPTOR = '%'
-
-        fun parse(data: IntArray) = ChokeControlParPacket().apply {
-
-            smSteps = data.get2Bytes()
-            data.get1Byte()     // testing fake param
-            data.get1Byte()     // manual position fake param
-            rpmIf = data.get2Bytes().toFloat() / 1024.0f
-            corrTime0 = data.get2Bytes().toFloat() / 100
-            corrTime1 = data.get2Bytes().toFloat() / 100
-            flags = data.get1Byte()
-            smFreq = data.get1Byte()
-            injCrankToRunTime = data.get2Bytes().toFloat() / 100
-
-            data.setUnhandledParams()
-        }
     }
 }
