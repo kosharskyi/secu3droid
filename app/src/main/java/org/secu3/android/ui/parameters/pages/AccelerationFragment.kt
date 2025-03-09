@@ -49,9 +49,6 @@ class AccelerationFragment : BaseParamFragment() {
     private val accelEnrichmentTypesList: List<String> by lazy {
         resources.getStringArray(R.array.accel_enrichment_types).toList()
     }
-    private val wallwetModelList: List<String> by lazy {
-        resources.getStringArray(R.array.accel_wallwet_types).toList()
-    }
 
     private var packet: AccelerationParamPacket? = null
 
@@ -67,11 +64,6 @@ class AccelerationFragment : BaseParamFragment() {
             aeType.inputType = InputType.TYPE_NULL
             ArrayAdapter(requireContext(), R.layout.list_item, accelEnrichmentTypesList).also {
                 aeType.setAdapter(it)
-            }
-
-            wallwetModel.inputType = InputType.TYPE_NULL
-            ArrayAdapter(requireContext(), R.layout.list_item, wallwetModelList).also {
-                wallwetModel.setAdapter(it)
             }
         }
 
@@ -94,17 +86,6 @@ class AccelerationFragment : BaseParamFragment() {
 
                         aeTime.isInvisible = it.injAeType == 0
                         aeTime.value = it.injAeTime
-
-                        aeBalance.value = it.injAeBallance
-                        aeMapdoeThrd.value = it.injAeMapdotThrd
-
-                        wallwetModel.setText(wallwetModelList[it.wallwetModel], false)
-
-                        xTauStartThrd.isVisible = it.wallwetModel > 0
-                        xTauStartThrd.value = it.injXtauSThrd.toInt()
-
-                        xTauFinishThrd.isVisible = it.wallwetModel > 0
-                        xTauFinishThrd.value = it.injXtauFThrd.toInt()
                     }
 
                     initViews()
@@ -150,55 +131,10 @@ class AccelerationFragment : BaseParamFragment() {
                 }
             }
 
-            aeBalance.addOnChangeListener { _, value, fromUser ->
-                if (fromUser.not()) {
-                    return@addOnChangeListener
-                }
-
-                packet?.apply {
-                    injAeBallance = value
-                    mViewModel.sendPacket(this)
-                }
-            }
-
-            aeMapdoeThrd.addOnValueChangeListener {
-                packet?.apply {
-                    injAeMapdotThrd = it
-                    mViewModel.sendPacket(this)
-                }
-            }
-
-            wallwetModel.setOnItemClickListener { _, _, position, _ ->
-                xTauStartThrd.isVisible = position > 0
-                xTauFinishThrd.isVisible = position > 0
-
-                packet?.apply {
-                    wallwetModel = position
-                    mViewModel.sendPacket(this)
-                }
-            }
-
-            xTauStartThrd.addOnValueChangeListener {
-                packet?.apply {
-                    injXtauSThrd = it.toFloat()
-                    mViewModel.sendPacket(this)
-                }
-            }
-
-            xTauFinishThrd.addOnValueChangeListener {
-                packet?.apply {
-                    injXtauFThrd = it.toFloat()
-                    mViewModel.sendPacket(this)
-                }
-            }
-
             accelTpsdotThreshold.setOnClickListener { intParamClick(it as IntParamView) }
             coldAccelMultiplier.setOnClickListener { intParamClick(it as IntParamView) }
             aeDecayTime.setOnClickListener { intParamClick(it as IntParamView) }
             aeTime.setOnClickListener { intParamClick(it as IntParamView) }
-            aeMapdoeThrd.setOnClickListener { intParamClick(it as IntParamView) }
-            xTauStartThrd.setOnClickListener { intParamClick(it as IntParamView) }
-            xTauFinishThrd.setOnClickListener { intParamClick(it as IntParamView) }
         }
     }
 

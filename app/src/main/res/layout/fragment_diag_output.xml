@@ -20,7 +20,7 @@
             android:id="@+id/secu3i"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            app:constraint_referenced_ids="ign_out5,ecf0,inj_o1,inj_o2,inj_o3,inj_o4,inj_o5,stbl_o,cel_o,fpmp_o,pwrr_o,evap_o,o2sh_o,cond_o,add_o2,tach_o,gpa6_o"
+            app:constraint_referenced_ids="ign_out5,ecf0,inj_o1,inj_o2,inj_o3,inj_o4,inj_o5,stbl_o,cel_o,fpmp_o,pwrr_o,evap_o,o2sh_o,cond_o,add_o2,tach_o"
             android:visibility="gone"
             />
 
@@ -481,21 +481,6 @@
             app:layout_constraintStart_toStartOf="parent"
             app:layout_constraintEnd_toEndOf="parent"
             android:text="TACH_O"
-            android:button="@null"
-            android:drawableEnd="?android:attr/listChoiceIndicatorMultiple"
-            tools:checked="true"
-            />
-
-        <!-- ************************************************************* -->
-
-        <CheckBox
-            android:id="@+id/gpa6_o"
-            android:layout_width="0dp"
-            android:layout_height="wrap_content"
-            app:layout_constraintTop_toBottomOf="@id/tach_o"
-            app:layout_constraintStart_toStartOf="parent"
-            app:layout_constraintEnd_toEndOf="parent"
-            android:text="GPA6_O"
             android:button="@null"
             android:drawableEnd="?android:attr/listChoiceIndicatorMultiple"
             tools:checked="true"

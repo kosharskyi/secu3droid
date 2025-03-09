@@ -49,8 +49,6 @@ data class CkpsParamPacket(
 
     var hallDegreesBtdc: Float = 0f,
 
-    var mttf: Float = 0f    // missing teeth detection factor
-
 ) : Secu3Packet(), InputPacket, OutputPacket {
 
     var risingSpark: Boolean
@@ -95,7 +93,6 @@ data class CkpsParamPacket(
 
         data += hallWndWidth.times(ANGLE_DIVIDER).roundToInt().write2Bytes()
         data += hallDegreesBtdc.times(ANGLE_DIVIDER).roundToInt().write2Bytes()
-        data += mttf.times(256.0f).roundToInt().write2Bytes()
 
         data += unhandledParams
 
@@ -111,7 +108,6 @@ data class CkpsParamPacket(
         hallFlags = data.get1Byte()
         hallWndWidth = data.get2Bytes().toFloat() / ANGLE_DIVIDER
         hallDegreesBtdc = data.get2Bytes().toFloat() / ANGLE_DIVIDER
-        mttf = data.get2Bytes().toFloat() / 256.0f
 
         data.setUnhandledParams()
 

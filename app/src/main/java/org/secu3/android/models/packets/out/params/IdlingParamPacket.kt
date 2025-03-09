@@ -54,11 +54,6 @@ data class IdlingParamPacket(
     var iacMinPos: Float = 0f,
     var iacMaxPos: Float = 0f,
     var iacRegDb: Int = 0,
-    var idlRegD: Float = 0f,
-
-    var irrKLoad: Float = 0f,
-    var irrKRpm: Float = 0f,
-
 
     ) : Secu3Packet(), InputPacket, OutputPacket {
 
@@ -127,10 +122,6 @@ data class IdlingParamPacket(
         iacMinPos = data.get1Byte().toFloat() / 2
         iacMaxPos = data.get1Byte().toFloat() / 2
         iacRegDb = data.get2Bytes()
-        idlRegD = data.get2Bytes().toFloat() / 256
-
-        irrKLoad = data.get2Bytes().toFloat() / 32.0f
-        irrKRpm = data.get2Bytes().toFloat() / 32.0f
 
         data.setUnhandledParams()
 
@@ -161,10 +152,6 @@ data class IdlingParamPacket(
         data += iacMinPos.times(2).roundToInt()
         data += iacMaxPos.times(2).roundToInt()
         data += iacRegDb.write2Bytes()
-        data += idlRegD.times(256).roundToInt().write2Bytes()
-
-        data += irrKLoad.times(32.0f).roundToInt().write2Bytes()
-        data += irrKRpm.times(32.0f).roundToInt().write2Bytes()
 
         data += unhandledParams
 

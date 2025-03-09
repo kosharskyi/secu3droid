@@ -115,7 +115,6 @@ class DiagInputFragment : Fragment() {
                 condI.isChecked = it.cond_i
                 epasI.isChecked = it.epas_i
                 ignI.isChecked = it.ign_i
-                gpa4I.isChecked = it.gpa4_i
 
                 add5.value = it.addI5
                 add6.value = it.addI6

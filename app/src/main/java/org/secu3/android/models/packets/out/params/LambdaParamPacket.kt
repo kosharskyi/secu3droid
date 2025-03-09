@@ -68,8 +68,6 @@ data class LambdaParamPacket(
 
     var aflowThrd: Float = 0f,
 
-    var lambdaSelectedChanel: Int = 0,
-
     ) : Secu3Packet(), InputPacket, OutputPacket {
 
     var determineLambdaHeatingByVoltage: Boolean
@@ -94,57 +92,6 @@ data class LambdaParamPacket(
         get() = flags.getBitValue(3) > 0
         set(value) {
             flags = flags.setBitValue(value, 3)
-        }
-
-
-
-
-    var lambdaChanel1: Boolean
-        get() = lambdaSelectedChanel.getBitValue(0) > 0
-        set(value) {
-            lambdaSelectedChanel = lambdaSelectedChanel.setBitValue(value,0)
-        }
-
-    var lambdaChanel2: Boolean
-        get() = lambdaSelectedChanel.getBitValue(1) > 0
-        set(value) {
-            lambdaSelectedChanel = lambdaSelectedChanel.setBitValue(value,1)
-        }
-
-    var lambdaChanel3: Boolean
-        get() = lambdaSelectedChanel.getBitValue(2) > 0
-        set(value) {
-            lambdaSelectedChanel = lambdaSelectedChanel.setBitValue(value,2)
-        }
-
-    var lambdaChanel4: Boolean
-        get() = lambdaSelectedChanel.getBitValue(3) > 0
-        set(value) {
-            lambdaSelectedChanel = lambdaSelectedChanel.setBitValue(value,3)
-        }
-
-    var lambdaChanel5: Boolean
-        get() = lambdaSelectedChanel.getBitValue(4) > 0
-        set(value) {
-            lambdaSelectedChanel = lambdaSelectedChanel.setBitValue(value,4)
-        }
-
-    var lambdaChanel6: Boolean
-        get() = lambdaSelectedChanel.getBitValue(5) > 0
-        set(value) {
-            lambdaSelectedChanel = lambdaSelectedChanel.setBitValue(value,5)
-        }
-
-    var lambdaChanel7: Boolean
-        get() = lambdaSelectedChanel.getBitValue(6) > 0
-        set(value) {
-            lambdaSelectedChanel = lambdaSelectedChanel.setBitValue(value,6)
-        }
-
-    var lambdaChanel8: Boolean
-        get() = lambdaSelectedChanel.getBitValue(7) > 0
-        set(value) {
-            lambdaSelectedChanel = lambdaSelectedChanel.setBitValue(value,7)
         }
 
     override fun pack(): IntArray {
@@ -176,8 +123,6 @@ data class LambdaParamPacket(
         data += heatingAct.times(100).roundToInt()
 
         data += aflowThrd.div(32).roundToInt().write2Bytes()
-
-        data += lambdaSelectedChanel
 
         data += unhandledParams
 
@@ -211,8 +156,6 @@ data class LambdaParamPacket(
         temperThrd = data.get1Byte()
         heatingAct = data.get1Byte().toFloat() / 100
         aflowThrd = data.get2Bytes().toFloat() * 32.0f
-
-        lambdaSelectedChanel = data.get1Byte()
 
         data.setUnhandledParams()
 

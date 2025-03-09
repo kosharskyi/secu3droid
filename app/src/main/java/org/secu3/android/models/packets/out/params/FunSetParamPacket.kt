@@ -59,17 +59,6 @@ data class FunSetParamPacket(
     var ckpsEngineCyl: Int = 0, //used for calculations on SECU-3 Manager side
     var injCylDisp: Float = 0f,    //used for calculations on SECU-3 Manager side
     var mafload_const: Float = 0f, //calculated in manager before send
-    var tps_raw: Float = 0f,        //for TPS learning
-
-    var gpsCurveOffset: Float = 0f,     // Gas Pressure Sensor
-    var gpsCurveGradient: Float = 0f,   // Gas Pressure Sensor
-
-    var fpsCurveOffset: Float = 0f,     // Fuel Pressure Sensor
-    var fpsCurveGradient: Float = 0f,   // Fuel Pressure Sensor
-
-    var apps1CurveOffset: Float = 0f,     // Accelerator pedal position sensor
-    var apps1CurveGradient: Float = 0f,   // APPS
-    var apps1Raw: Int = 0,              // Redundant: for APPS1 learning
 
 
 ): Secu3Packet(), InputPacket, OutputPacket {
@@ -105,15 +94,6 @@ data class FunSetParamPacket(
 
         data += injCylDisp.times(16384.0f).roundToInt().write2Bytes()
         data += mafload_const.toInt().write4Bytes()
-
-        data += gpsCurveOffset.div(ADC_DISCRETE).roundToInt().write2Bytes()
-        data += gpsCurveGradient.times(128.0f).times(MAP_MULTIPLIER).times(ADC_DISCRETE).roundToInt().write2Bytes()
-
-        data += fpsCurveOffset.div(ADC_DISCRETE).roundToInt().write2Bytes()
-        data += fpsCurveGradient.times(128.0f).times(MAP_MULTIPLIER).times(ADC_DISCRETE).roundToInt().write2Bytes()
-
-        data += apps1CurveOffset.div(ADC_DISCRETE).roundToInt().write2Bytes()
-        data += apps1CurveGradient.times(128.0f).times(APPS_MULT * 2).times(ADC_DISCRETE).roundToInt().write2Bytes()
 
         data += unhandledParams
 
@@ -160,16 +140,6 @@ data class FunSetParamPacket(
         ckpsEngineCyl = data.get1Byte()
         injCylDisp = data.get2Bytes().toFloat().div(16384.0f)
         mafload_const = data.get4Bytes().toFloat()
-        tps_raw = data.get2Bytes().times(ADC_DISCRETE)
-
-        gpsCurveOffset = data.get2Bytes().toFloat() * ADC_DISCRETE
-        gpsCurveGradient = data.get2Bytes().toFloat() / (MAP_MULTIPLIER * ADC_DISCRETE * 128.0f)
-
-        fpsCurveOffset = data.get2Bytes().toFloat() * ADC_DISCRETE
-        fpsCurveGradient = data.get2Bytes().toFloat() / (MAP_MULTIPLIER * ADC_DISCRETE * 128.0f)
-
-        apps1CurveOffset = data.get2Bytes().toFloat() * ADC_DISCRETE
-        apps1CurveGradient = data.get2Bytes().toFloat() / ((APPS_MULT * 2) * ADC_DISCRETE * 128.0f)
 
         data.setUnhandledParams()
 

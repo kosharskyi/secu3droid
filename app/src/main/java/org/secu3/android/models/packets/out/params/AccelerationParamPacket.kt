@@ -36,12 +36,6 @@ data class AccelerationParamPacket(
     var injAeDecayTime: Int = 0,
     var injAeType: Int = 0,
     var injAeTime: Int = 0,
-    var injAeBallance: Float = 0f,
-    var injAeMapdotThrd: Int = 0,
-    var injXtauSThrd: Float = 0f,
-    var injXtauFThrd: Float = 0f,
-    var wallwetModel: Int = 0,
-
 
     ) : Secu3Packet(), InputPacket, OutputPacket {
 
@@ -59,12 +53,6 @@ data class AccelerationParamPacket(
         data += injAeType
         data += injAeTime
 
-        data += injAeBallance.times(2.56f).roundToInt().coerceAtMost(255)
-        data += injAeMapdotThrd
-        data += injXtauSThrd.roundToInt().unaryMinus()
-        data += injXtauFThrd.roundToInt().unaryMinus()
-        data += wallwetModel
-
         data += unhandledParams
 
         return data
@@ -80,12 +68,6 @@ data class AccelerationParamPacket(
 
         injAeType = data.get1Byte()
         injAeTime = data.get1Byte()
-
-        injAeBallance = data.get1Byte().toFloat().div(2.56f)   //multiply by 100% and divide by 256
-        injAeMapdotThrd = data.get1Byte()
-        injXtauSThrd = -data.get1Byte().toFloat()
-        injXtauFThrd = -data.get1Byte().toFloat()
-        wallwetModel = data.get1Byte()
 
         data.setUnhandledParams()
 

@@ -101,8 +101,6 @@ class CkpsFragment : BaseParamFragment() {
                         degreesBeforeTDC.value = it.hallDegreesBtdc
 
                         useCamSensorAsReference.isChecked = it.useCamRef
-
-                        missingTeethDetectionFactor.value = it.mttf
                     }
 
                     initViews()
@@ -155,10 +153,6 @@ class CkpsFragment : BaseParamFragment() {
             numberOfMissingTeeth.addOnValueChangeListener {
                 packet?.apply {
                     ckpsMissNum = it
-                    if (it > 0) {
-                        mttf = defaultMttfValuesList[it]
-                        mBinding.missingTeethDetectionFactor.value = mttf
-                    }
                     mViewModel.sendPacket(this)
                 }
             }
@@ -189,17 +183,11 @@ class CkpsFragment : BaseParamFragment() {
                 packet?.let { it1 -> mViewModel.sendPacket(it1) }
             }
 
-            missingTeethDetectionFactor.addOnValueChangeListener {
-                packet?.mttf = it
-                packet?.let { it1 -> mViewModel.sendPacket(it1) }
-            }
-
             numberOfWheelsTeeth.setOnClickListener { intParamClick(it as IntParamView) }
             numberOfMissingTeeth.setOnClickListener { intParamClick(it as IntParamView) }
             durationIngDriverPulseTeeth.setOnClickListener { intParamClick(it as IntParamView) }
             hallSensorInterrupterDegree.setOnClickListener { floatParamClick(it as FloatParamView) }
             degreesBeforeTDC.setOnClickListener { floatParamClick(it as FloatParamView) }
-            missingTeethDetectionFactor.setOnClickListener { floatParamClick(it as FloatParamView) }
         }
     }
 

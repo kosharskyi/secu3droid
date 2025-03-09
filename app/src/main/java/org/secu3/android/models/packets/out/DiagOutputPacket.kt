@@ -40,8 +40,8 @@ class DiagOutputPacket : Secu3Packet(), OutputPacket {
     //SECU-3T (13 values):
     // IGN_OUT1, IGN_OUT2, IGN_OUT3, IGN_OUT4, IE, FE, ECF, CE, ST_BLOCK, ADD_O1, ADD_O2, BL, DE
 
-    //SECU-3i (23 values):
-    // IGN_O1, IGN_O2, IGN_O3, IGN_O4, IGN_O5, ECF, INJ_O1, INJ_O2, INJ_O3, INJ_O4, INJ_O5, BL, DE, STBL_O, CEL_O, FPMP_O, PWRR_O, EVAP_O, O2SH_O, COND_O, ADD_O2, TACH_O, GPA6_O
+    //SECU-3i (22 values):
+    // IGN_O1, IGN_O2, IGN_O3, IGN_O4, IGN_O5, ECF, INJ_O1, INJ_O2, INJ_O3, INJ_O4, INJ_O5, BL, DE, STBL_O, CEL_O, FPMP_O, PWRR_O, EVAP_O, O2SH_O, COND_O, ADD_O2, TACH_O
 
 
     var ignOut1: Boolean
@@ -233,12 +233,6 @@ class DiagOutputPacket : Secu3Packet(), OutputPacket {
         set(value) {
             out = out.setBitValue(value, 23)
             out = out.setBitValue(value, 24)
-        }
-
-    var gpa6_O: Boolean          // special
-        get() = out.getBitValue(25) > 0
-        set(value) {
-            out = out.setBitValue(value, 25)
         }
 
 

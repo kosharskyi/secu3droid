@@ -42,7 +42,7 @@
             android:id="@+id/secu3i_group"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            app:constraint_referenced_ids="add5,add6,add7,add8,ign_i,cond_i,epas_i,gpa4_i"
+            app:constraint_referenced_ids="add5,add6,add7,add8,ign_i,cond_i,epas_i"
             android:visibility="gone"
             tools:visibility="visible"
             />
@@ -417,29 +417,11 @@
 
         <!-- ************************************************************* -->
 
-        <CheckBox
-            android:id="@+id/gpa4_i"
-            android:layout_width="0dp"
-            android:layout_height="wrap_content"
-            app:layout_constraintTop_toBottomOf="@id/add8"
-            app:layout_constraintStart_toStartOf="parent"
-            app:layout_constraintEnd_toEndOf="parent"
-            android:text="GPA4_I"
-            android:button="@null"
-            android:drawableEnd="?android:attr/listChoiceIndicatorMultiple"
-            android:clickable="false"
-            android:focusable="false"
-            android:focusableInTouchMode="false"
-            android:drawableTint="@color/colorPrimaryVariant"
-            />
-
-        <!-- ************************************************************* -->
-
 
         <com.google.android.material.card.MaterialCardView
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            app:layout_constraintTop_toBottomOf="@id/gpa4_i"
+            app:layout_constraintTop_toBottomOf="@id/add8"
             app:cardCornerRadius="10dp"
             app:cardBackgroundColor="@color/colorPrimary"
             >

@@ -84,9 +84,6 @@ data class DiagInputPacket(
     val epas_i: Boolean     //for SECU-3i
         get() = bits.getBitValue(8) > 0
 
-    val gpa4_i: Boolean     //for SECU-3i
-        get() = bits.getBitValue(9) > 0
-
     override fun parse(data: IntArray): InputPacket {
         flags = data.get1Byte()
         voltage = data.get2Bytes().toFloat() / VOLTAGE_MULTIPLIER

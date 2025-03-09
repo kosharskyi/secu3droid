@@ -127,22 +127,10 @@ enum class GaugeType (val title: Int, val minValue: Float, val maxValue: Float, 
         Section(.75f, 1f, R.color.gauge_gray, -1f),
     )),
 
-    DIFF_PRESSURE(R.string.sensors_frag_diff_pressure_label, 0.0f, 400f, R.string.units_pressure_kpa, false, 11, listOf(
-        Section(0f, .25f, R.color.gauge_gray, -1f),
-        Section(.25f, .75f, R.color.gauge_green, -1f),
-        Section(.75f, 1f, R.color.gauge_gray, -1f),
-    )),
-
     IAT2(R.string.sensors_frag_iat2_label, -40.0f, 120f, R.string.units_degrees_celcius, false, 9, listOf(
         Section(0f, 0.5625f, R.color.gauge_lt_purple, -1f),
         Section(0.5625f, 0.875f, R.color.gauge_gray, -1f),
         Section(0.875f, 1.0f, R.color.gauge_lt_red, -1f),
-    )),
-
-    FUEL_CONSUMPTION(R.string.sensors_frag_fuel_consumption_label, 0.0f, 50f, R.string.units_l_per_100km, false, 13, listOf(
-        Section(0f, 0.21f, R.color.gauge_green, -1f),
-        Section(0.21f, 0.4f, R.color.gauge_dark_yellow, -1f),
-        Section(0.4f, 1.0f, R.color.gauge_red, -1f),
     )),
 
     KNOCK_RETARD(R.string.sensors_frag_knock_retard_label, 0.0f, 30f, R.string.units_degree, false, 8, listOf(
@@ -232,71 +220,6 @@ enum class GaugeType (val title: Int, val minValue: Float, val maxValue: Float, 
         Section(0.1f, 0.7f, R.color.gauge_green, -1f),
         Section(0.7f, 0.9f, R.color.gauge_lt_yellow, -1f),
         Section(0.9f, 1.0f, R.color.gauge_lt_red, -1f),
-    )),
-
-    MAP_DOT(R.string.sensors_frag_map_dot_label, -500.0f, 500.0f, R.string.units_kpa_per_sec, true, 6, listOf(
-        Section(0f, 0.3f, R.color.gauge_red, -1f),
-        Section(0.3f, 0.45f, R.color.gauge_green, -1f),
-        Section(0.45f, 0.55f, R.color.gauge_blue, -1f),
-        Section(0.55f, 0.7f, R.color.gauge_green, -1f),
-        Section(0.7f, 1.0f, R.color.gauge_red, -1f),
-    )),
-
-    FUEL_TEMP(R.string.sensors_frag_fuel_temp_label, -40.0f, 120.0f, R.string.units_degrees_celcius, false, 9, listOf(
-        Section(0f, 0.56f, R.color.gauge_dark_blue, -1f),
-        Section(0.56f, 0.87f, R.color.gauge_gray, -1f),
-        Section(0.87f, 1.0f, R.color.gauge_red, -1f),
-    )),
-
-    EGO_CORR2(R.string.sensors_frag_ego_correction2_label, -50.0f, 50.0f, R.string.units_percents, false, 9, listOf(
-        Section(0f, 0.3f, R.color.gauge_red, -1f),
-        Section(0.3f, 0.7f, R.color.gauge_green, -1f),
-        Section(0.7f, 1.0f, R.color.gauge_red, -1f),
-    )),
-
-    WBO_AFR2(R.string.sensors_frag_wbo_afr_2_label, 6.0f, 24.0f, R.string.units_afr, false, 10, listOf(
-        Section(0f, 0.222f, R.color.gauge_lt_red, -1f),
-        Section(0.222f, 0.8f, R.color.gauge_lt_yellow, -1f),
-        Section(0.8f, 1.0f, R.color.gauge_lt_red, -1f),
-    )),
-
-    WBO_AFR_TABL(R.string.wbo_afr_tabl, 6.0f, 24.0f, R.string.units_afr, false, 10, listOf(
-        Section(0f, 0.222f, R.color.gauge_lt_red, -1f),
-        Section(0.222f, 0.8f, R.color.gauge_lt_yellow, -1f),
-        Section(0.8f, 1.0f, R.color.gauge_lt_red, -1f),
-    )),
-
-    AFR_DIFF(R.string.sensors_frag_afr_difference_label, -9.0f, 9.0f, R.string.units_afr, false, 10, listOf(
-        Section(0f, 0.361f, R.color.gauge_blue, -1f),
-        Section(0.361f, 0.45f, R.color.gauge_yellow, -1f),
-        Section(0.45f, 0.55f, R.color.gauge_green, -1f),
-        Section(0.55f, 0.639f, R.color.gauge_yellow, -1f),
-        Section(0.639f, 1.0f, R.color.gauge_red, -1f),
-    )),
-
-    AFR_DIFF2(R.string.sensors_frag_afr_difference2_label, -9.0f, 9.0f, R.string.units_afr, false, 10, listOf(
-        Section(0f, 0.361f, R.color.gauge_blue, -1f),
-        Section(0.361f, 0.45f, R.color.gauge_yellow, -1f),
-        Section(0.45f, 0.55f, R.color.gauge_green, -1f),
-        Section(0.55f, 0.639f, R.color.gauge_yellow, -1f),
-        Section(0.639f, 1.0f, R.color.gauge_red, -1f),
-    )),
-
-    GAS_PRESSURE_SENS(R.string.sensors_frag_gas_pressure_label,  0.0f, 400f, R.string.units_pressure_kpa, false, 11, listOf(
-        Section(0f, .25f, R.color.gauge_gray, -1f),
-        Section(.25f, .75f, R.color.gauge_green, -1f),
-        Section(.75f, 1f, R.color.gauge_gray, -1f),
-    )),
-
-    FUEL_PRESSURE_SENS(R.string.sensors_frag_fuel_pressure_label,  0.0f, 700f, R.string.units_pressure_kpa, false, 20, listOf(
-        Section(0f, .4f, R.color.gauge_lt_red, -1f),
-        Section(.4f, 1f, R.color.gauge_green, -1f),
-    )),
-
-    APPS1(R.string.sensors_frag_acceleration_pedal_sensor_label, 0.0f, 100.0f, R.string.units_percents, false, 16, listOf(
-        Section(0f, 0.1f, R.color.gauge_purple, -1f),
-        Section(0.1f, 0.9f, R.color.gauge_green, -1f),
-        Section(0.9f, 1.0f, R.color.gauge_red, -1f),
     ));
 
     fun getSections(context: Context, width: Float): List<Section> {
@@ -323,9 +246,7 @@ enum class GaugeType (val title: Int, val minValue: Float, val maxValue: Float, 
             VEHICLE_SPEED -> packet.speed
             TPS_DOT -> packet.tpsdot.toFloat()
             MAP2 ->packet.map2
-            DIFF_PRESSURE -> packet.mapd
             IAT2 -> packet.tmp2
-            FUEL_CONSUMPTION -> packet.cons_fuel
             KNOCK_RETARD -> packet.knockRetard
             KNOCK_SIGNAL -> packet.knockValue
             WBO_AFR -> packet.afr
@@ -342,24 +263,6 @@ enum class GaugeType (val title: Int, val minValue: Float, val maxValue: Float, 
             INJ_DUTY -> packet.sens_injDuty
             MAF -> packet.maf
             FAN_DUTY -> packet.ventDuty
-            MAP_DOT -> packet.mapdot.toFloat()
-            FUEL_TEMP -> packet.fts
-            EGO_CORR2 -> packet.lambdaCorr2
-            WBO_AFR2 -> packet.afr2
-            WBO_AFR_TABL -> packet.afrMap
-            AFR_DIFF -> {
-                val difAfr = packet.afr - packet.afrMap
-                difAfr
-            }
-            AFR_DIFF2 -> {
-                val difAfr = packet.afr2 - packet.afrMap
-                difAfr
-            }
-
-            GAS_PRESSURE_SENS -> packet.gasPressureSensor
-
-            FUEL_PRESSURE_SENS -> packet.fuelPressureSensor
-            APPS1 -> packet.apps1
         }
     }
 }

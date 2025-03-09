@@ -237,12 +237,6 @@ class DiagOutputFragment : Fragment() {
                 mViewModel.outputPacket.tachO = isChecked
                 mViewModel.sendDiagOutPacket()
             }
-
-            gpa6O.isChecked = mViewModel.outputPacket.gpa6_O
-            gpa6O.setOnCheckedChangeListener { _, isChecked ->
-                mViewModel.outputPacket.tachO = isChecked
-                mViewModel.sendDiagOutPacket()
-            }
         }
     }
 }

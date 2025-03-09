@@ -133,15 +133,6 @@ class FunctionsFragment : BaseParamFragment() {
 
                         ve2MapFunc.setText(ve2MapFuncItems[it.ve2MapFunc], false)
                         gasVCondition.setText(mapselItems[it.gasVUni], false)
-
-                        gasPressureCurveOffset.value = it.gpsCurveOffset
-                        gasPressureCurveGradient.value = it.gpsCurveGradient
-
-                        fuelPressureCurveOffset.value = it.fpsCurveOffset
-                        fuelPressureCurveGradient.value = it.fpsCurveGradient
-
-                        appsCurveOffset.value = it.apps1CurveOffset
-                        appsCurveGradient.value = it.apps1CurveGradient
                     }
 
                     initViews()
@@ -280,45 +271,6 @@ class FunctionsFragment : BaseParamFragment() {
                 }
             }
 
-            gasPressureCurveOffset.addOnValueChangeListener {
-                funSetPacket?.apply {
-                    gpsCurveOffset = it
-                    mViewModel.sendPacket(this)
-                }
-            }
-            gasPressureCurveGradient.addOnValueChangeListener {
-                funSetPacket?.apply {
-                    gpsCurveGradient = it
-                    mViewModel.sendPacket(this)
-                }
-            }
-
-            fuelPressureCurveOffset.addOnValueChangeListener {
-                funSetPacket?.apply {
-                    fpsCurveOffset = it
-                    mViewModel.sendPacket(this)
-                }
-            }
-            fuelPressureCurveGradient.addOnValueChangeListener {
-                funSetPacket?.apply {
-                    fpsCurveGradient = it
-                    mViewModel.sendPacket(this)
-                }
-            }
-
-            appsCurveOffset.addOnValueChangeListener {
-                funSetPacket?.apply {
-                    apps1CurveOffset = it
-                    mViewModel.sendPacket(this)
-                }
-            }
-            appsCurveGradient.addOnValueChangeListener {
-                funSetPacket?.apply {
-                    apps1CurveGradient = it
-                    mViewModel.sendPacket(this)
-                }
-            }
-
 
             lowerLoadValue.setOnClickListener { floatParamClick(it as FloatParamView) }
             upperLoadValue.setOnClickListener { floatParamClick(it as FloatParamView) }
@@ -328,15 +280,6 @@ class FunctionsFragment : BaseParamFragment() {
             tpsCurveGradient.setOnClickListener { floatParamClick(it as FloatParamView) }
             map2CurveOffset.setOnClickListener { floatParamClick(it as FloatParamView) }
             map2CurveGradient.setOnClickListener { floatParamClick(it as FloatParamView) }
-
-            gasPressureCurveOffset.setOnClickListener { floatParamClick(it as FloatParamView) }
-            gasPressureCurveGradient.setOnClickListener { floatParamClick(it as FloatParamView) }
-
-            fuelPressureCurveOffset.setOnClickListener { floatParamClick(it as FloatParamView) }
-            fuelPressureCurveGradient.setOnClickListener { floatParamClick(it as FloatParamView) }
-
-            appsCurveOffset.setOnClickListener { floatParamClick(it as FloatParamView) }
-            appsCurveGradient.setOnClickListener { floatParamClick(it as FloatParamView) }
         }
     }
 

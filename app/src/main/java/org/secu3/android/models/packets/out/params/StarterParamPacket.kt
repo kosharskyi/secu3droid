@@ -43,7 +43,6 @@ data class StarterParamPacket(
     var injAftStrokes1: Int = 0,
     var stblStrCnt: Int = 0,
     var strtFlags: Int = 0,
-    var injCrankToRun_time1: Float = 0f
 
 ) : Secu3Packet(), InputPacket, OutputPacket{
 
@@ -71,7 +70,6 @@ data class StarterParamPacket(
         injAftStrokes1 = data.get1Byte() * 4
         stblStrCnt = data.get1Byte()
         strtFlags = data.get1Byte()
-        injCrankToRun_time1 = data.get2Bytes().toFloat() / 100
 
         data.setUnhandledParams()
 
@@ -92,7 +90,6 @@ data class StarterParamPacket(
         data += injAftStrokes1.div(4)
         data += stblStrCnt
         data += strtFlags
-        data += injCrankToRun_time1.times(100).roundToInt().write2Bytes()
 
         data += unhandledParams
 

@@ -52,13 +52,4 @@ enum class IndicatorType (val title: Int){
     UNIV_OUT4(R.string.sensors_frag_status_univ_out_4_label),
     UNIV_OUT5(R.string.sensors_frag_status_univ_out_5_label),
     UNIV_OUT6(R.string.sensors_frag_status_univ_out_6_label),
-
-    GPA4_I(R.string.sensors_frag_status_gpa4_input_label),
-    INPUT1(R.string.sensors_frag_status_input1_label),
-    INPUT2(R.string.sensors_frag_status_input2_label),
-    AUTO_I(R.string.sensors_frag_status_auto_i_label),
-    MAPSEL0(R.string.sensors_frag_status_mapsel0_label),
-    REFPRS_I(R.string.sensors_frag_status_refprs_i_label),
-    ALTRN_I(R.string.sensors_frag_status_altrn_i_label),
-
 }

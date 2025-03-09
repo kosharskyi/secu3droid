@@ -1,9 +1,9 @@
 /*
  *    SecuDroid  - An open source, free manager for SECU-3 engine control unit
- *    Copyright (C) 2024 Vitalii O. Kosharskyi. Ukraine, Kyiv
+ *    Copyright (C) 2025 Vitalii O. Kosharskyi. Ukraine, Kyiv
  *
  *    SECU-3  - An open source, free engine control unit
- *    Copyright (C) 2007-2024 Alexey A. Shabelnikov. Ukraine, Kyiv
+ *    Copyright (C) 2007-2025 Alexey A. Shabelnikov. Ukraine, Kyiv
  *
  *    This program is free software: you can redistribute it and/or modify
  *    it under the terms of the GNU General Public License as published by
@@ -119,17 +119,11 @@ class OldSensorsFragment : Fragment() {
                 map2.title.text = "${getString(R.string.sensors_frag_map2_label)}, ${getString(R.string.units_pressure_kpa)}:"
                 map2.value.text = String.format(Locale.US, "%.1f", it.map2)
 
-                mapDiff.title.text = "${getString(R.string.sensors_frag_diff_pressure_label)}, ${getString(R.string.units_pressure_kpa)}:"
-                mapDiff.value.text = String.format(Locale.US, "%.1f", it.mapd)
-
                 tmp2.title.text = "${getString(R.string.sensors_frag_iat2_label)}, ${getString(R.string.units_afr)}:"
                 tmp2.value.text = String.format(Locale.US, "%.1f", it.tmp2)
 
                 afr.title.text = getString(R.string.sensors_frag_wbo_afr_label)
                 afr.value.text = String.format(Locale.US, "%.1f", it.afr)
-
-                consFuel.title.text = "${getString(R.string.sensors_frag_fuel_consumption_label)}, ${getString(R.string.units_l_per_100km)}:"
-                consFuel.value.text = String.format(Locale.US, "%.2f", it.cons_fuel)
 
                 grts.title.text = "${getString(R.string.sensors_frag_grts_label)}, ${getString(R.string.units_degrees_celcius)}:"
                 grts.value.text = String.format(Locale.US, "%.1f", it.grts)
@@ -152,35 +146,11 @@ class OldSensorsFragment : Fragment() {
                 ventDuty.title.text = "${getString(R.string.sensors_frag_fan_duty_label)}, ${getString(R.string.units_percents)}:"
                 ventDuty.value.text = it.ventDuty.toString()
 
-                mapDot.title.text = "${getString(R.string.sensors_frag_map_dot_label)}, ${getString(R.string.units_percent_per_second)}:"
-                mapDot.value.text = it.mapdot.toString()
-
-                fts.title.text = "${getString(R.string.sensors_frag_fuel_temp_label)}, ${getString(R.string.units_degrees_celcius)}:"
-                fts.value.text = String.format(Locale.US, "%.1f", it.fts)
-
-                lambdaCorr2.title.text = "${getString(R.string.sensors_frag_ego_correction2_label)}, ${getString(R.string.units_percents)}:"
-                lambdaCorr2.value.text = String.format(Locale.US, "%.1f", it.lambdaCorr2)
-
-                afrDifference.title.text = getString(R.string.sensors_frag_afr_difference_label)
-                afrDifference.value.text = String.format(Locale.US, "%.2f", it.afr - it.afrMap)
-
-                afrDifference2.title.text = getString(R.string.sensors_frag_afr_difference2_label)
-                afrDifference2.value.text = String.format(Locale.US, "%.2f", it.afr2 - it.afrMap)
-
                 beginInjPhase.title.text = getString(R.string.sensors_frag_begin_inj_phase_label)
                 beginInjPhase.value.text = String.format(Locale.US, "%.1f", it.injTimBegin)
 
                 endInjPhase.title.text = getString(R.string.sensors_frag_end_inj_phase_label)
                 endInjPhase.value.text = String.format(Locale.US, "%.1f", it.injTimEnd)
-
-                afrTable.title.text = getString(R.string.wbo_afr_tabl)
-                afrTable.value.text = String.format(Locale.US, "%.2f", it.afrMap)
-
-                afr2.title.text = getString(R.string.sensors_frag_wbo_afr_2_label)
-                afr2.value.text = String.format(Locale.US, "%.1f", it.afr2)
-
-                gasPressureSensor.title.text = "${getString(R.string.sensors_frag_gas_pressure_label)}, ${getString(R.string.units_pressure_kpa)}:"
-                gasPressureSensor.value.text = String.format(Locale.US, "%.1f", it.gasPressureSensor)
 
                 /**State sensors*/
 

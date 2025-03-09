@@ -53,14 +53,12 @@ import org.secu3.android.models.packets.out.params.AnglesParamPacket
 import org.secu3.android.models.packets.out.params.CarburParamPacket
 import org.secu3.android.models.packets.out.params.ChokeControlParPacket
 import org.secu3.android.models.packets.out.params.CkpsParamPacket
-import org.secu3.android.models.packets.out.params.DbwParamPacket
 import org.secu3.android.models.packets.out.params.FunSetParamPacket
 import org.secu3.android.models.packets.out.params.GasDoseParamPacket
 import org.secu3.android.models.packets.out.params.IdlingParamPacket
 import org.secu3.android.models.packets.out.params.InjctrParPacket
 import org.secu3.android.models.packets.out.params.KnockParamPacket
 import org.secu3.android.models.packets.out.params.LambdaParamPacket
-import org.secu3.android.models.packets.out.params.LtftParamPacket
 import org.secu3.android.models.packets.out.params.MiscellaneousParamPacket
 import org.secu3.android.models.packets.out.params.SecurityParamPacket
 import org.secu3.android.models.packets.out.params.StarterParamPacket
@@ -276,24 +274,6 @@ class ParamsViewModel @Inject constructor(
                 .filter { it is GasDoseParamPacket }
                 .map { it as GasDoseParamPacket }
                 .first()
-
-            emit(packet)
-            secu3ConnectionManager.sendNewTask(Task.Secu3ReadSensors)
-        }.asLiveData()
-
-    val ltftLiveData: LiveData<LtftParamPacket>
-        get() = flow {
-            secu3ConnectionManager.sendNewTask(Task.Secu3ReadLtftParam)
-            val packet = secu3ConnectionManager.receivedPacketFlow.first { it is LtftParamPacket } as LtftParamPacket
-
-            emit(packet)
-            secu3ConnectionManager.sendNewTask(Task.Secu3ReadSensors)
-        }.asLiveData()
-
-    val dbwLiveData: LiveData<DbwParamPacket>
-        get() = flow {
-            secu3ConnectionManager.sendNewTask(Task.Secu3ReadDbwParam)
-            val packet = secu3ConnectionManager.receivedPacketFlow.first { it is DbwParamPacket } as DbwParamPacket
 
             emit(packet)
             secu3ConnectionManager.sendNewTask(Task.Secu3ReadSensors)

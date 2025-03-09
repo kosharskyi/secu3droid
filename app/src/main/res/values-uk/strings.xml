@@ -69,13 +69,6 @@
         <item>По часу</item>
     </string-array>
 
-    <string-array name="accel_wallwet_types">
-        <item>Вимкнено</item>
-        <item>X-tau бензин</item>
-        <item>X-tau газ</item>
-        <item>X-tau бенз. і газ</item>
-    </string-array>
-
     <string-array name="load_measurement_items">
         <item>ДАТ</item>
         <item>ДАТ(баро)</item>
@@ -126,13 +119,6 @@
         <item>ВИКЛЮЧНЕ АБО</item>
         <item>2 умова</item>
         <item>Відсутня</item>
-    </string-array>
-
-    <string-array name="ltft_mode_items">
-        <item>Вимкнено</item>
-        <item>Бензин</item>
-        <item>Газ</item>
-        <item>Бензин + Газ</item>
     </string-array>
 
     <string name="uniout_condition_cts">ДТОР (°C)</string>
@@ -272,10 +258,8 @@
     <string name="sensors_frag_injection_pw_label">Тривалість вприску</string>
     <string name="sensors_frag_tps_dot_label">Швидкість ДЗ</string>
     <string name="sensors_frag_map2_label">ДАТ 2</string>
-    <string name="sensors_frag_diff_pressure_label">Диф. тиск</string>
     <string name="sensors_frag_iat2_label">ДТП 2</string>
     <string name="sensors_frag_wbo_afr_label">Повітря/паливо ШДК</string>
-    <string name="sensors_frag_fuel_consumption_label">Витрата палива</string>
     <string name="sensors_frag_grts_label">ДТГР</string>
     <string name="sensors_frag_fuel_level_label">Рівень палива</string>
     <string name="sensors_frag_exhaust_gas_temp_label">Темп. вихл. газів</string>
@@ -283,18 +267,8 @@
     <string name="sensors_frag_injector_duty_label">Навантаження форсунок</string>
     <string name="sensors_frag_maf_label">ДМВП</string>
     <string name="sensors_frag_fan_duty_label">Скважність Вент.</string>
-    <string name="sensors_frag_map_dot_label">Швидкість ДАТ</string>
-    <string name="sensors_frag_fuel_temp_label">Температура палива</string>
-    <string name="sensors_frag_ego_correction2_label">Лямбда-корекція 2</string>
-    <string name="sensors_frag_afr_difference_label">Різність AFR</string>
-    <string name="sensors_frag_afr_difference2_label">Різність AFR2</string>
     <string name="sensors_frag_begin_inj_phase_label">Фаза початку вприску</string>
     <string name="sensors_frag_end_inj_phase_label">Фаза кінця вприску</string>
-    <string name="wbo_afr_tabl">Повітря/паливо табл.</string>
-    <string name="sensors_frag_wbo_afr_2_label">Повітря/паливо ШДК2</string>
-    <string name="sensors_frag_gas_pressure_label">Тиск газу</string>
-    <string name="sensors_frag_fuel_pressure_label">Тиск палива</string>
-    <string name="sensors_frag_acceleration_pedal_sensor_label">ДППА</string>
     <string name="sensors_frag_status_gas_valve_label">Газовий клапан</string>
     <string name="sensors_frag_status_throttle_label">Дросель</string>
     <string name="sensors_frag_status_fl_fuel_label">Паливо при ПХХ</string>
@@ -317,13 +291,6 @@
     <string name="sensors_frag_status_check_engine_label">Check Engine</string>
     <string name="sensors_frag_status_rev_lim_fuel_cut_label">Відсікання палива по звор.</string>
     <string name="sensors_frag_status_ae_label">Збагач. при прискор.</string>
-    <string name="sensors_frag_status_gpa4_input_label">Вхід GPA4_I</string>
-    <string name="sensors_frag_status_input1_label">Вхід INPUT1</string>
-    <string name="sensors_frag_status_input2_label">Вхід INPUT2</string>
-    <string name="sensors_frag_status_auto_i_label">Вхід AUTO_I</string>
-    <string name="sensors_frag_status_mapsel0_label">Вхід MAPSEL0</string>
-    <string name="sensors_frag_status_refprs_i_label">Вхід REFPRS_I</string>
-    <string name="sensors_frag_status_altrn_i_label">Вхід ALTRN_I</string>
     
     <string name="raw_sensors_frag_map_sensor_label">Датчик абсолютного Тиску, В:</string>
     <string name="raw_sensors_frag_voltage_label">Напруга бортовох мережі, В:</string>

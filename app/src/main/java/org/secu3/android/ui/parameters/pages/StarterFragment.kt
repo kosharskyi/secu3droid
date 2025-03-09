@@ -63,7 +63,6 @@ class StarterFragment : BaseParamFragment() {
                 starterBlockingRpm.value = it.starterOff
                 switchCrankMapRpm.value = it.smapAbandon
                 timeCrankToRunPositionCold.value = it.crankToRunTime
-                timeCrankToRunPositionHot.value = it.injCrankToRun_time1
                 afterstartEnrichmentTimePetrol.value = it.injAftstrStroke
                 afterstartEnrichmentTimeGas.value = it.injAftStrokes1
                 primePulseCold.value = it.injPrimeCold
@@ -95,10 +94,6 @@ class StarterFragment : BaseParamFragment() {
             }
             timeCrankToRunPositionCold.addOnValueChangeListener {
                 packet?.crankToRunTime = it
-                packet?.let { it1 -> mViewModel.sendPacket(it1) }
-            }
-            timeCrankToRunPositionHot.addOnValueChangeListener {
-                packet?.injCrankToRun_time1 = it
                 packet?.let { it1 -> mViewModel.sendPacket(it1) }
             }
             afterstartEnrichmentTimePetrol.addOnValueChangeListener {
@@ -147,7 +142,6 @@ class StarterFragment : BaseParamFragment() {
             starterBlockingRpm.setOnClickListener { intParamClick(it as IntParamView) }
             switchCrankMapRpm.setOnClickListener { intParamClick(it as IntParamView) }
             timeCrankToRunPositionCold.setOnClickListener { floatParamClick(it as FloatParamView) }
-            timeCrankToRunPositionHot.setOnClickListener { floatParamClick(it as FloatParamView) }
             afterstartEnrichmentTimePetrol.setOnClickListener { intParamClick(it as IntParamView) }
             afterstartEnrichmentTimeGas.setOnClickListener { intParamClick(it as IntParamView) }
             primePulseCold.setOnClickListener { floatParamClick(it as FloatParamView) }

@@ -96,20 +96,6 @@
                 app:float_min_value="0.1"
                 />
 
-            <org.secu3.android.ui.parameters.views.FloatParamView
-                android:id="@+id/time_crank_to_run_position_hot"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:layout_marginTop="16dp"
-                app:title="@string/starter_dat_crank_to_run_time_hot_title"
-                app:units="@string/units_sec"
-                app:float_value="0"
-                app:value_precision="two"
-                app:float_step="0.1"
-                app:float_max_value="99"
-                app:float_min_value="0.1"
-                />
-
             <org.secu3.android.ui.parameters.views.IntParamView
                 android:id="@+id/afterstart_enrichment_time_petrol"
                 android:layout_width="match_parent"

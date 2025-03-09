@@ -83,9 +83,7 @@ class SensorsRepository @Inject constructor(
             GaugeType.VEHICLE_SPEED -> String.format(Locale.US, "%.1f", it.speed)
             GaugeType.TPS_DOT -> it.tpsdot.toString()
             GaugeType.MAP2 -> String.format(Locale.US, "%.1f", it.map2)
-            GaugeType.DIFF_PRESSURE -> String.format(Locale.US, "%.1f", it.mapd)
             GaugeType.IAT2 -> String.format(Locale.US, "%.1f", it.tmp2)
-            GaugeType.FUEL_CONSUMPTION -> String.format(Locale.US, "%.2f", it.cons_fuel)
             GaugeType.KNOCK_RETARD -> String.format(Locale.US, "%.1f", it.knockRetard)
             GaugeType.KNOCK_SIGNAL -> String.format(Locale.US, "%.3f", it.knockValue)
             GaugeType.WBO_AFR -> String.format(Locale.US, "%.1f", it.afr)
@@ -102,23 +100,6 @@ class SensorsRepository @Inject constructor(
             GaugeType.INJ_DUTY -> String.format(Locale.US, "%.1f", it.sens_injDuty)
             GaugeType.MAF -> String.format(Locale.US, "%.1f", it.maf)
             GaugeType.FAN_DUTY -> it.ventDuty.toString()
-            GaugeType.MAP_DOT -> it.mapdot.toString()
-            GaugeType.FUEL_TEMP -> String.format(Locale.US, "%.1f", it.fts)
-            GaugeType.EGO_CORR2 -> String.format(Locale.US, "%.1f", it.lambdaCorr2)
-            GaugeType.WBO_AFR2 -> String.format(Locale.US, "%.1f", it.afr2)
-            GaugeType.WBO_AFR_TABL -> String.format(Locale.US, "%.2f", it.afrMap)
-            GaugeType.AFR_DIFF -> {
-                val difAfr = it.afr - it.afrMap
-                String.format(Locale.US, "%.2f", difAfr)
-            }
-            GaugeType.AFR_DIFF2 -> {
-                val difAfr = it.afr2 - it.afrMap
-                String.format(Locale.US, "%.2f", difAfr)
-            }
-
-            GaugeType.GAS_PRESSURE_SENS -> String.format(Locale.US, "%.2f", it.gasPressureSensor)
-            GaugeType.FUEL_PRESSURE_SENS -> String.format(Locale.US, "%.2f", it.fuelPressureSensor)
-            GaugeType.APPS1 -> String.format(Locale.US, "%.1f", it.apps1)
         }
 
         return GaugeItem(state, value)
@@ -168,13 +149,6 @@ class SensorsRepository @Inject constructor(
             IndicatorType.UNIV_OUT4 -> packet.uniOut3Bit > 0
             IndicatorType.UNIV_OUT5 -> packet.uniOut4Bit > 0
             IndicatorType.UNIV_OUT6 -> packet.uniOut5Bit > 0
-            IndicatorType.GPA4_I -> packet.sensGpa4i > 0
-            IndicatorType.INPUT1 -> packet.sensInput1 > 0
-            IndicatorType.INPUT2 -> packet.sensInput2 > 0
-            IndicatorType.AUTO_I -> packet.sensAutoI > 0
-            IndicatorType.MAPSEL0 -> packet.sensMapsel0 > 0
-            IndicatorType.REFPRS_I -> packet.sensRefprs_i > 0
-            IndicatorType.ALTRN_I -> packet.sensAltrn_i > 0
         }
 
         return IndicatorItem(state, value)

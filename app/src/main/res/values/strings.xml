@@ -95,13 +95,6 @@
         <item>Time based</item>
     </string-array>
 
-    <string-array name="accel_wallwet_types">
-        <item>OFF</item>
-        <item>X-tau petrol</item>
-        <item>X-tau gas</item>
-        <item>X-tau pet. and gas</item>
-    </string-array>
-
     <string-array name="load_measurement_items">
         <item>MAP</item>
         <item>MAP(baro)</item>
@@ -122,13 +115,6 @@
         <item>VE1</item>
         <item>VE1*VE2</item>
         <item>VE1+VE2</item>
-    </string-array>
-
-    <string-array name="ltft_mode_items">
-        <item>Off</item>
-        <item>Petrol</item>
-        <item>Gas</item>
-        <item>Petrol + Gas</item>
     </string-array>
 
     <string-array name="csv_delimeters" translatable="false">
@@ -434,10 +420,8 @@
     <string name="sensors_frag_injection_pw_label">Injection PW</string>
     <string name="sensors_frag_tps_dot_label">TPS dot</string>
     <string name="sensors_frag_map2_label">MAP 2</string>
-    <string name="sensors_frag_diff_pressure_label">Diff. pressure</string>
     <string name="sensors_frag_iat2_label">IAT 2</string>
     <string name="sensors_frag_wbo_afr_label">WBO AFR</string>
-    <string name="sensors_frag_fuel_consumption_label">Fuel consumption</string>
     <string name="sensors_frag_grts_label">GRTS</string>
     <string name="sensors_frag_fuel_level_label">Fuel level</string>
     <string name="sensors_frag_exhaust_gas_temp_label">Exhaust gas temperature</string>
@@ -445,18 +429,8 @@
     <string name="sensors_frag_injector_duty_label">Injector duty</string>
     <string name="sensors_frag_maf_label">MAF</string>
     <string name="sensors_frag_fan_duty_label">Fan`s duty</string>
-    <string name="sensors_frag_map_dot_label">MAP dot</string>
-    <string name="sensors_frag_fuel_temp_label">Fuel temperature</string>
-    <string name="sensors_frag_ego_correction2_label">EGO correction</string>
-    <string name="sensors_frag_afr_difference_label">AFR difference</string>
-    <string name="sensors_frag_afr_difference2_label">AFR difference 2 </string>
     <string name="sensors_frag_begin_inj_phase_label">Begin inj. phase</string>
     <string name="sensors_frag_end_inj_phase_label">End inj. phase</string>
-    <string name="wbo_afr_tabl">WBO AFR TABL.</string>
-    <string name="sensors_frag_wbo_afr_2_label">WBO AFR 2</string>
-    <string name="sensors_frag_gas_pressure_label">Gas pressure</string>
-    <string name="sensors_frag_fuel_pressure_label">Fuel pressure</string>
-    <string name="sensors_frag_acceleration_pedal_sensor_label">APPS</string>
     <string name="sensors_frag_status_gas_valve_label">Gas valve</string>
     <string name="sensors_frag_status_throttle_label">Throttle</string>
     <string name="sensors_frag_status_fl_fuel_label">Fl fuel</string>
@@ -479,13 +453,6 @@
     <string name="sensors_frag_status_check_engine_label">Check Engine</string>
     <string name="sensors_frag_status_rev_lim_fuel_cut_label">Rev. lim. fuel cut.</string>
     <string name="sensors_frag_status_ae_label">AE.</string>
-    <string name="sensors_frag_status_gpa4_input_label">GPA4_I input</string>
-    <string name="sensors_frag_status_input1_label">INPUT1 input</string>
-    <string name="sensors_frag_status_input2_label">INPUT2 input</string>
-    <string name="sensors_frag_status_auto_i_label">AUTO_I input</string>
-    <string name="sensors_frag_status_mapsel0_label">MAPSEL0 input</string>
-    <string name="sensors_frag_status_refprs_i_label">REFPRS_I input</string>
-    <string name="sensors_frag_status_altrn_i_label">ALTRN_I input</string>
     <string name="raw_sensors_frag_map_sensor_label">MAP sensor, V:</string>
     <string name="raw_sensors_frag_voltage_label">Voltage, V:</string>
     <string name="raw_sensors_frag_coolant_sensor_label">Coolant sensor, V:</string>

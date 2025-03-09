@@ -64,18 +64,15 @@ data class SensorsPacket(
     var octanAac: Float = 0f,         // octane correction value
 
     var lambdaCorr: Float = 0f,           // lambda correction
-    var lambdaCorr2: Float = 0f,           // lambda correction
     var injPw: Float = 0f,            // injector pulse width
     var tpsdot: Short = 0,           // TPS opening/closing speed
 
     // if SECU-3T
     var map2: Float = 0f,
-    var mapd: Float = 0f,   //differential pressure
 
     var tmp2: Float = 0f,
 
     var afr: Float = 0f,              // #if defined(FUEL_INJECT) || defined(CARB_AFR) || defined(GD_CONTROL)
-    var afr2: Float = 0f,              // #if defined(FUEL_INJECT) || defined(CARB_AFR) || defined(GD_CONTROL)
 
     var load: Float = 0f,
     var baroPress: Float = 0f,
@@ -96,21 +93,6 @@ data class SensorsPacket(
     var ventDuty: Float = 0f,                   //PWM duty of cooling fan
 
     var uniOutput: Int = 0,                   //states of universal outputs
-    var mapdot: Short = 0,                 //MAPdot
-    var fts: Float = 0f,                    //fuel temperature
-    var cons_fuel: Float = 0f,              //consumed fuel, L * 1024
-
-    var lambda_mx: Float = 0f,              //mix of 2 lambda sensors
-    var afrMap: Float = 0f,                // Current value of air to fuel ration from AFR map
-    var tchrg: Float = 0f,                  // Corrected value of MAT; charge temp
-
-    var gasPressureSensor: Float = 0f,
-
-    var additionalFlags: Int = 0,
-
-    var fuelPressureSensor: Float = 0f,
-
-    var apps1: Float = 0f,                     // Accelerator pedal position
 
 ) : Secu3Packet(), InputPacket{
 
@@ -247,32 +229,6 @@ data class SensorsPacket(
         }
 
 
-
-
-    //Additional flags
-    val corrIdlve: Int
-        get() = additionalFlags.getBitValue(0)
-
-    val sensGpa4i: Int      // GPA4_I input (digital)
-        get() = additionalFlags.getBitValue(1)
-
-    val sensInput1: Int      // INPUT 1
-        get() = additionalFlags.getBitValue(2)
-
-    val sensInput2: Int      // INPUT 2
-        get() = additionalFlags.getBitValue(3)
-
-    val sensAutoI: Int      // AUTO_I
-        get() = additionalFlags.getBitValue(4)
-
-    val sensMapsel0: Int      // MAPSEL0
-        get() = additionalFlags.getBitValue(5)
-
-    val sensRefprs_i: Int      // REFPRS_I
-        get() = additionalFlags.getBitValue(6)
-
-    val sensAltrn_i: Int      // ALTRN_I
-        get() = additionalFlags.getBitValue(7)
 
 
     override fun parse(data: IntArray): InputPacket {
@@ -425,32 +381,6 @@ data class SensorsPacket(
         ventDuty = data.get1Byte().toFloat().div(2.0f)
 
         uniOutput = data.get1Byte()
-
-        mapdot = data.get2Bytes().toShort()
-        fts = data.get2Bytes().toFloat()  / FTS_MULT
-        cons_fuel = data.get3Bytes().toFloat() / 1024.0f //consumed fuel
-
-        afr2 = data.get2Bytes().toFloat() / AFR_MULTIPLIER
-
-        lambdaCorr2 = data.get2Bytes().toShort().toFloat().div(512.0f).times(100.0f)  //obtain value in %
-
-        //mixed voltages from two EGO sensors
-        lambda_mx = data.get2Bytes().times(ADC_DISCRETE)
-
-        //AFR value from map
-        afrMap = data.get2Bytes().toFloat().div(AFR_MULTIPLIER)
-
-        //Corrected MAT
-        tchrg = data.get2Bytes().toShort().toFloat().div(TEMPERATURE_MULTIPLIER).coerceIn(-99.9f, 999.0f)
-
-        gasPressureSensor = data.get2Bytes().toFloat() / MAP_MULTIPLIER
-        mapd = gasPressureSensor - map
-
-        additionalFlags = data.get1Byte()
-
-        fuelPressureSensor = data.get2Bytes().toFloat() / MAP_MULTIPLIER
-
-        apps1 = data.get2Bytes().toFloat() / APPS_MULT
 
         return this
     }

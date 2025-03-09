@@ -156,7 +156,7 @@ class SecuLogger @Inject constructor(private val prefs: UserPrefs, private val f
         val now = LocalTime.now()
 
         // Float = 4 bytes; Int = 4 bytes; Byte = 1 byte; Short = 2 bytes
-        val buf = ByteBuffer.allocate(240).also {
+        val buf = ByteBuffer.allocate(192).also {
             it.order(ByteOrder.LITTLE_ENDIAN)
         }
 
@@ -180,8 +180,6 @@ class SecuLogger @Inject constructor(private val prefs: UserPrefs, private val f
         flags = flags.setBitValue(packet.aftstr_enr > 0, 1)
         flags = flags.setBitValue(packet.iac_closed_loop > 0, 0)
 
-        var flags1 = packet.additionalFlags shr 1
-
         buf.apply {
             put(now.hour.toByte())
             put(now.minute.toByte())
@@ -197,10 +195,7 @@ class SecuLogger @Inject constructor(private val prefs: UserPrefs, private val f
             putFloat(packet.knockRetard)
             put(packet.airflow.toByte())
             put(alignByte)           // align byte
-            put(alignByte)           // align byte
-            put(alignByte)           // align byte
             putShort(flags.toShort())
-            putShort(flags1.toShort())
             putFloat(packet.tps)
             putFloat(packet.addI1)
             putFloat(packet.addI2)
@@ -223,7 +218,6 @@ class SecuLogger @Inject constructor(private val prefs: UserPrefs, private val f
             putInt(packet.tpsdot.toInt())
             putFloat(packet.map2)
             putFloat(packet.tmp2)
-            putFloat(packet.mapd)
             putFloat(packet.afr)
             putFloat(packet.load)
             putFloat(packet.baroPress)
@@ -242,16 +236,6 @@ class SecuLogger @Inject constructor(private val prefs: UserPrefs, private val f
             put(alignByte)
             put(alignByte)
             put(alignByte)
-            putInt(packet.mapdot.toInt())
-            putFloat(packet.fts)
-            putFloat(packet.cons_fuel)
-            putFloat(packet.lambdaCorr2)
-            putFloat(packet.afr2)
-            putFloat(packet.afrMap)
-            putFloat(packet.tchrg)
-            putFloat(packet.gasPressureSensor)
-            putFloat(packet.fuelPressureSensor)
-            putFloat(packet.apps1)
             // TODO: update capacity if new field is added
             put(mMark.toByte())
             put(alignByte)
@@ -298,13 +282,6 @@ class SecuLogger @Inject constructor(private val prefs: UserPrefs, private val f
             " %01d".format(Locale.US, ign_i),
             " %01d".format(Locale.US, cond_i),
             " %01d".format(Locale.US, epas_i),
-            " %01d".format(Locale.US, sensGpa4i),
-            " %01d".format(Locale.US, sensInput1),
-            " %01d".format(Locale.US, sensInput2),
-            " %01d".format(Locale.US, sensAutoI),
-            " %01d".format(Locale.US, sensMapsel0),
-            " %01d".format(Locale.US, sensRefprs_i),
-            " %01d".format(Locale.US, sensAltrn_i),
             " %01d".format(Locale.US, aftstr_enr),
             " %01d".format(Locale.US, iac_closed_loop),
             " %5.1f".format(Locale.US, tps),
@@ -329,7 +306,6 @@ class SecuLogger @Inject constructor(private val prefs: UserPrefs, private val f
             " %5d".format(Locale.US, tpsdot),
             " %6.2f".format(Locale.US, map2),
             " %6.2f".format(Locale.US, tmp2),
-            " %7.2f".format(Locale.US, mapd),
             " %5.2f".format(Locale.US, afr),
             " %6.2f".format(Locale.US, load),
             " %6.2f".format(Locale.US, baroPress),
@@ -345,16 +321,6 @@ class SecuLogger @Inject constructor(private val prefs: UserPrefs, private val f
             " %6.2f".format(Locale.US, maf),
             " %5.1f".format(Locale.US, ventDuty),
             " %2d".format(Locale.US, uniOutput),
-            " %5d".format(Locale.US, mapdot),
-            " %5.1f".format(Locale.US, fts),
-            " %9.3f".format(Locale.US, cons_fuel),
-            " %6.2f".format(Locale.US, lambdaCorr2),
-            " %5.2f".format(Locale.US, afr2),
-            " %5.2f".format(Locale.US, afrMap),
-            " %5.1f".format(Locale.US, tchrg),
-            " %6.2f".format(Locale.US, gasPressureSensor),
-            " %7.2f".format(Locale.US, fuelPressureSensor),
-            " %5.1f".format(Locale.US, apps1),
             // TODO: update titles if new field is added
             " %01d".format(Locale.US, mark),
             " %5d".format(Locale.US, serviceFlags),
@@ -397,13 +363,6 @@ class SecuLogger @Inject constructor(private val prefs: UserPrefs, private val f
             "Ign_i",
             "Cond_i",
             "Epas_I",
-            "Gpa4_i",
-            "Input1",
-            "Input2",
-            "Auto_i",
-            "Mapsel0",
-            "Refprs_i",
-            "Altrn_i",
             "AftStrEnr",
             "IacClLoop",
             "TPS",
@@ -428,7 +387,6 @@ class SecuLogger @Inject constructor(private val prefs: UserPrefs, private val f
             "TPSdot",
             "MAP2",
             "Tmp2",
-            "DiffMAP",
             "AFR",
             "SynLoad",
             "BaroPress",
@@ -444,16 +402,6 @@ class SecuLogger @Inject constructor(private val prefs: UserPrefs, private val f
             "MAF",
             "VentDuty",
             "UnivOuts",
-            "MAPdot",
-            "FTS",
-            "FuelConsumed",
-            "EGOcorr2",
-            "AFR2",
-            "AFRMap",
-            "Tchrg",
-            "GPS",
-            "FPS",
-            "APPS (%)",
             "LogMarks",
             "ServFlag",
             "CECodes"

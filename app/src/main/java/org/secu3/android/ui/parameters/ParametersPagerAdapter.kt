@@ -67,14 +67,6 @@ class ParametersPagerAdapter(fragment: Fragment, fwInfoPacket: FirmwareInfoPacke
             if (it.isGdControlEnabled) {
                 list.add(GasDoseFragment())
             }
-
-            if (it.isFuelInjectEnabled) {
-                list.add(LtftFragment())
-            }
-
-            if (it.isSecu3T.not()) {
-                list.add(DbwFragment())
-            }
         }
         pages = list
     }
