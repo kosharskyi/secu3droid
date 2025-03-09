@@ -263,6 +263,7 @@
     <string name="lambda_par_turn_on_time_in_pwm_mode_title">Длительность включения нагревателя при ШИМ</string>
     <string name="lambda_par_air_flow_threshold_for_turning_heating_off_title">Порог выключения по расходу воздуха</string>
     <string name="lambda_par_heating_before_cranking_title">Подогрев перед пуском</string>
+    <string name="lambda_par_select_an_oxygen_sensor">Выбор датчика кислорода</string>
 
 
     <string name="accel_par_tpsdot_threshold_title">Порог по ДПДЗ</string>

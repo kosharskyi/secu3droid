@@ -439,7 +439,7 @@
                 app:layout_constraintTop_toBottomOf="@id/heating_before_cranking"
                 app:layout_constraintStart_toStartOf="parent"
                 app:layout_constraintStart_toEndOf="parent"
-                android:text="В_бор датчика кислорода"
+                android:text="@string/lambda_par_select_an_oxygen_sensor"
                 />
 
             <LinearLayout
