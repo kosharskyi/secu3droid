@@ -240,7 +240,7 @@ class DiagOutputFragment : Fragment() {
 
             gpa6O.isChecked = mViewModel.outputPacket.gpa6_O
             gpa6O.setOnCheckedChangeListener { _, isChecked ->
-                mViewModel.outputPacket.tachO = isChecked
+                mViewModel.outputPacket.gpa6_O = isChecked
                 mViewModel.sendDiagOutPacket()
             }
         }
