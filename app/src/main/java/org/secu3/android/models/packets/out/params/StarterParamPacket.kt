@@ -66,7 +66,7 @@ data class StarterParamPacket(
         injPrimeCold = data.get2Bytes().toFloat() * 32 / 10000
         injPrimeHot = data.get2Bytes().toFloat() * 32 / 10000
         injPrimeDelay = data.get1Byte().toFloat() / 10
-        injFloodclearTps = data.get2Bytes().toFloat() / TPS_MULTIPLIER
+        injFloodclearTps = data.get1Byte().toFloat() / TPS_MULTIPLIER
         injAftStrokes1 = data.get1Byte() * 4
         stblStrCnt = data.get1Byte()
         strtFlags = data.get1Byte()
@@ -86,7 +86,7 @@ data class StarterParamPacket(
         data += injPrimeCold.times(10000).div(32).roundToInt().write2Bytes()
         data += injPrimeHot.times(10000).div(32).roundToInt().write2Bytes()
         data += injPrimeDelay.times(10).roundToInt()
-        data += injFloodclearTps.times(TPS_MULTIPLIER).roundToInt().write2Bytes()
+        data += injFloodclearTps.times(TPS_MULTIPLIER).roundToInt().write1Byte()
         data += injAftStrokes1.div(4)
         data += stblStrCnt
         data += strtFlags

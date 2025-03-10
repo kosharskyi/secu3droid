@@ -40,8 +40,6 @@ data class SecurityParamPacket(
     var iButton0: List<Int> = emptyList(),
     var iButton1: List<Int> = emptyList(),
 
-    var btType: Int = 0 // Bluetooth chip type: 0 - BC417, 1 - BK3231, 2 - BK3231S(JDY-31), 3 - BC352(HC-05), 4 - BK3432, 5 - BK3431S
-
 ) : Secu3Packet(), InputPacket, OutputPacket {
 
     var useBt: Boolean                                  // specifies to use or not to use bluetooth
@@ -86,8 +84,6 @@ data class SecurityParamPacket(
         data += iButton0
         data += iButton1
 
-        data += btType
-
         data += unhandledParams
 
         return data
@@ -115,8 +111,6 @@ data class SecurityParamPacket(
         for (i in 0 until IBTN_KEY_SIZE) {
             iButton1 += data.get1Byte()
         }
-
-        btType = data.get1Byte()
 
         data.setUnhandledParams()
 

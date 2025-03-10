@@ -127,7 +127,7 @@ abstract class Secu3Packet {
         internal const val VOLTAGE_MULTIPLIER: Int = 400
         internal const val MAP_MULTIPLIER: Int = 64
         internal const val TEMPERATURE_MULTIPLIER: Int = 4
-        internal const val TPS_MULTIPLIER: Int = 64
+        internal const val TPS_MULTIPLIER: Int = 2
         internal const val GAS_DOSE_MULTIPLIER: Int = 2
         internal const val ANGLE_DIVIDER: Int = 32
         internal const val PARINJTIM_DIVIDER: Int = 16

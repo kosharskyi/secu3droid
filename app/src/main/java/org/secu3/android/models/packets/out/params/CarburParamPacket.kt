@@ -58,7 +58,7 @@ data class CarburParamPacket(
         data += ieLotG.write2Bytes()
         data += ieHitG.write2Bytes()
         data += shutoffDelay.times(100).roundToInt()
-        data += tpsThreshold.times(TPS_MULTIPLIER).roundToInt().write2Bytes()
+        data += tpsThreshold.times(TPS_MULTIPLIER).roundToInt().write1Byte()
         data += fuelcutMapThrd.times(MAP_MULTIPLIER).roundToInt().write2Bytes()
         data += fuelcutCtsThrd.times(TEMPERATURE_MULTIPLIER).roundToInt().write2Bytes()
         data += revlimLot.write2Bytes()
@@ -80,7 +80,7 @@ data class CarburParamPacket(
         ieLotG = data.get2Bytes()
         ieHitG = data.get2Bytes()
         shutoffDelay = data.get1Byte().toFloat() / 100
-        tpsThreshold = data.get2Bytes().toFloat() / TPS_MULTIPLIER
+        tpsThreshold = data.get1Byte().toFloat() / TPS_MULTIPLIER
         fuelcutMapThrd = data.get2Bytes().toFloat() / MAP_MULTIPLIER
         fuelcutCtsThrd = data.get2Bytes().toFloat() / TEMPERATURE_MULTIPLIER
         revlimLot = data.get2Bytes()

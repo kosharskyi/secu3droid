@@ -249,7 +249,7 @@ data class SensorsPacket(
 
         sensorsFlags = data.get2Bytes()
 
-        tps = data.get2Bytes().toFloat() / TPS_MULTIPLIER
+        tps = data.get1Byte().toFloat() / TPS_MULTIPLIER
 
         addI1 = data.get2Bytes().toFloat() * ADC_DISCRETE
         addI2 = data.get2Bytes().toFloat() * ADC_DISCRETE

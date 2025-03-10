@@ -48,7 +48,7 @@ class SecurityFragment : BaseParamFragment() {
 
     private lateinit var mBinding: FragmentSecurityBinding
 
-    private val btTypes = listOf("BC417", "BK3231", "BK3231S(JDY-31)", "BC352(HC-05)", "BK3432", "BK3431S")
+    private val btTypes = listOf("BC417", "BK3231")
 
     private var packet: SecurityParamPacket? = null
 
@@ -90,7 +90,7 @@ class SecurityFragment : BaseParamFragment() {
                         progressBar.gone()
                         params.visible()
 
-                        bluetoothType.setText(btTypes[it.btType], false)
+//                        bluetoothType.setText(btTypes[it.btType], false)
 
                         useBluetooth.isChecked = it.useBt
                         bluetoothNameTitle.isEnabled = it.useBt
@@ -117,9 +117,9 @@ class SecurityFragment : BaseParamFragment() {
     private fun initViews() {
         mBinding.apply {
 
-            bluetoothType.onItemClickListener = AdapterView.OnItemClickListener { _, _, position, _ ->
-                packet?.btType = position
-            }
+//            bluetoothType.onItemClickListener = AdapterView.OnItemClickListener { _, _, position, _ ->
+//                packet?.btType = position
+//            }
 
             bluetoothName.addTextChangedListener {
                 validateNameAndPassword()
