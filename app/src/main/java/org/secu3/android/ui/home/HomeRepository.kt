@@ -25,72 +25,20 @@
 
 package org.secu3.android.ui.home
 
-import android.app.DownloadManager
-import android.net.Uri
-import android.os.Environment
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
-import org.secu3.android.BuildConfig
 import org.secu3.android.db.AppDatabase
 import org.secu3.android.db.models.GaugeState
 import org.secu3.android.db.models.IndicatorState
-import org.secu3.android.network.ApiService
-import org.secu3.android.network.models.GitHubRelease
 import org.secu3.android.ui.sensors.models.GaugeType
 import org.secu3.android.ui.sensors.models.IndicatorType
 import org.secu3.android.utils.AppPrefs
-import org.secu3.android.utils.toResult
-import org.threeten.bp.LocalDate
 import javax.inject.Inject
 
 class HomeRepository @Inject constructor(
-    private val apiService: ApiService,
-    private val downloadManager: DownloadManager,
     private val appPrefs: AppPrefs,
     private val db: AppDatabase
 ) {
-
-    suspend fun getNewRelease(): GitHubRelease? {
-        try {
-            apiService.getLatestRelease().toResult().onSuccess { release ->
-
-                appPrefs.lastAppVersionCheck = LocalDate.now()
-
-                val remoteVersion = Version.parse(release.tagName)
-
-                val versionName = if (BuildConfig.DEBUG) {
-                    BuildConfig.VERSION_NAME.split("-")[0]
-                } else {
-                    BuildConfig.VERSION_NAME
-                }
-
-                val localVersion = Version.parse(versionName)
-
-                if (remoteVersion <= localVersion) {
-                    return null
-                }
-
-                return release
-            }
-        } catch (e: Exception) {
-            return null
-        }
-
-        return null
-    }
-
-    fun downloadReleaseFile(release: GitHubRelease) {
-        val asset = release.assets.first { it.name.contains(".apk") }
-
-        val uri = Uri.parse(asset.browserDownloadUrl)
-
-        val request = DownloadManager.Request(uri).apply {
-            setTitle(asset.name)
-            setNotificationVisibility(DownloadManager.Request.VISIBILITY_VISIBLE_NOTIFY_COMPLETED)
-            setDestinationInExternalPublicDir(Environment.DIRECTORY_DOWNLOADS, asset.name)
-        }
-        downloadManager.enqueue(request)
-    }
 
     suspend fun checkAndInitDb() = withContext(Dispatchers.IO) {
         if (appPrefs.isDbInitNeed) {

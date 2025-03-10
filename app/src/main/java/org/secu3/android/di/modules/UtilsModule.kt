@@ -38,8 +38,6 @@ import dagger.hilt.InstallIn
 import dagger.hilt.android.qualifiers.ApplicationContext
 import dagger.hilt.components.SingletonComponent
 import org.secu3.android.db.AppDatabase
-import org.secu3.android.network.ApiManager
-import org.secu3.android.network.ApiService
 import javax.inject.Singleton
 
 @InstallIn(SingletonComponent::class)
@@ -51,12 +49,6 @@ object UtilsModule {
     fun getAppDatabase(@ApplicationContext context: Context): AppDatabase {
         return Room.databaseBuilder(context, AppDatabase::class.java, "secu3droid.db")
             .build()
-    }
-
-    @Singleton
-    @Provides
-    fun getApiService(apiManager: ApiManager): ApiService {
-        return apiManager.apiService
     }
 
     @Singleton
@@ -81,11 +73,5 @@ object UtilsModule {
     @Provides
     fun getPackageManager(@ApplicationContext context: Context): PackageManager {
         return context.packageManager
-    }
-
-    @Singleton
-    @Provides
-    fun getDownloadManager(@ApplicationContext context: Context): DownloadManager {
-        return context.getSystemService(Context.DOWNLOAD_SERVICE) as DownloadManager
     }
 }

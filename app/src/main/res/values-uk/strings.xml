@@ -314,10 +314,6 @@
     <string name="save">Зберегти</string>
     <string name="delete">Видалити</string>
     <string name="packet_sent">Пакет відправлено</string>
-    <string name="new_version_available">Доступна нова версія</string>
-    <string name="the_version_is_available_do_you_want_to_download">Версія %1$s вже доступна.\nБажаєте завантажити?</string>
-    <string name="download">Завантажити</string>
-    <string name="remind_me_later">Нагадати пізніше</string>
     <string name="switch_view">Перемкнути вигляд</string>
     <string name="enable_old_sensors_view">Ввімкнути старий вигляд екрану сенсорів</string>
     <string name="columns_count">Кількість колонок</string>
@@ -325,7 +321,6 @@
     <string name="saving">Збереження</string>
     <string name="disconnect_device">Відключення пристрою</string>
     <string name="disconnect_device_msg">Ви впевнені, що хочете відключити пристрій?</string>
-    <string name="what_s_new">Що нового</string>
     <string name="connect">Підключитися</string>
     <string name="usb_device_detected">Виявлено USB пристрій</string>
     <string name="unknown_device">Невідомий пристрій</string>

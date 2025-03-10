@@ -38,13 +38,6 @@ class AppPrefs @Inject constructor(@ApplicationContext private val ctx: Context)
 
     private var mPrefs: SharedPreferences = ctx.getSharedPreferences("app_shared_prefs", MODE_PRIVATE)
 
-
-    var lastAppVersionCheck: LocalDate
-        get() {
-            return mPrefs.getString("last_app_version_check_stamp", null)?.let { LocalDate.parse(it) } ?: LocalDate.of(2000, 1, 1)
-        }
-        set(value) = mPrefs.edit().putString("last_app_version_check_stamp", value.toString()).apply()
-
     var isDbInitNeed: Boolean
         get() = mPrefs.getBoolean("need_db_init", true)
         set(value) {
