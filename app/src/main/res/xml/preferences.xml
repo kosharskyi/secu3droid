@@ -47,12 +47,6 @@
 		android:entryValues="@array/csv_delimeters_values"
 		/>
 
-    <CheckBoxPreference
-        android:key="@string/pref_write_binary_log_key"
-        android:title="@string/pref_write_binary_log_title"
-        android:defaultValue="false"
-        />
-
     <EditTextPreference
         android:key="@string/pref_connection_retries_key"
         android:title="@string/pref_connection_retries_title"

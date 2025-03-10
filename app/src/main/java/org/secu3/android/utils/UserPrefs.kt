@@ -45,10 +45,6 @@ class UserPrefs @Inject constructor(@ApplicationContext private val ctx: Context
         get() = mPrefs.getBoolean(ctx.getString(R.string.pref_write_log_key), false)
         set(value) = mPrefs.edit().putBoolean(ctx.getString(R.string.pref_write_log_key), value).apply()
 
-    var isBinaryLogFormatEnabled: Boolean
-        get() = mPrefs.getBoolean(ctx.getString(R.string.pref_write_binary_log_key), false)
-        set(value) = mPrefs.edit().putBoolean(ctx.getString(R.string.pref_write_binary_log_key), value).apply()
-
     var isCsvTitleEnabled: Boolean
         get() = mPrefs.getBoolean(ctx.getString(R.string.pref_log_csv_write_title_key), false)
         set(value) = mPrefs.edit().putBoolean(ctx.getString(R.string.pref_log_csv_write_title_key), value).apply()

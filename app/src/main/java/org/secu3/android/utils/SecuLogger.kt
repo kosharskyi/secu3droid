@@ -62,11 +62,7 @@ class SecuLogger @Inject constructor(private val prefs: UserPrefs, private val f
             return
         }
 
-        mLogFile = if (prefs.isBinaryLogFormatEnabled) {
-            fileHelper.generateS3lFile
-        } else {
-            fileHelper.generateCsvFile
-        }
+        mLogFile = fileHelper.generateCsvFile
     }
 
     fun startLogging() {
@@ -142,109 +138,11 @@ class SecuLogger @Inject constructor(private val prefs: UserPrefs, private val f
                 return
             }
 
-            if (mLogFile?.extension == "s3l") {  // check the extension to prevent disabling binary format in setting during log writing
-                writeBinaryLog(sensorsPacket)
-            } else {
-                val csvString = sensorsPacket.scvString(mMark, mCsvDelimeter)
-                writeInCsv(csvString)
-            }
+            val csvString = sensorsPacket.scvString(mMark, mCsvDelimeter)
+            writeInCsv(csvString)
+
             mMark = 0
         }
-    }
-
-    private fun writeBinaryLog(packet: SensorsPacket) {
-        val now = LocalTime.now()
-
-        // Float = 4 bytes; Int = 4 bytes; Byte = 1 byte; Short = 2 bytes
-        val buf = ByteBuffer.allocate(192).also {
-            it.order(ByteOrder.LITTLE_ENDIAN)
-        }
-
-        val alignByte = 0xCC.toByte()
-
-        var flags = 0
-        flags = flags.setBitValue(packet.carbBit > 0, 15)
-        flags = flags.setBitValue(packet.gasBit > 0, 14)
-        flags = flags.setBitValue(packet.ephhValveBit > 0, 13)
-        flags = flags.setBitValue(packet.epmValveBit > 0, 12)
-        flags = flags.setBitValue(packet.coolFanBit > 0, 11)
-        flags = flags.setBitValue(packet.starterBlockBit > 0, 10)
-        flags = flags.setBitValue(packet.accelerationEnrichment > 0, 9)
-        flags = flags.setBitValue(packet.fc_revlim > 0, 8)
-        flags = flags.setBitValue(packet.floodclear > 0, 7)
-        flags = flags.setBitValue(packet.sys_locked > 0, 6)
-        flags = flags.setBitValue(packet.checkEngineBit > 0, 5)
-        flags = flags.setBitValue(packet.ign_i > 0, 4)
-        flags = flags.setBitValue(packet.cond_i > 0, 3)
-        flags = flags.setBitValue(packet.epas_i > 0, 2)
-        flags = flags.setBitValue(packet.aftstr_enr > 0, 1)
-        flags = flags.setBitValue(packet.iac_closed_loop > 0, 0)
-
-        buf.apply {
-            put(now.hour.toByte())
-            put(now.minute.toByte())
-            put(now.second.toByte())
-            put(alignByte)           // align byte
-            putShort(now.nano.div(1000000).toShort()) // milliseconds
-            putShort(packet.rpm.toShort())
-            putFloat(packet.currentAngle)
-            putFloat(packet.map)
-            putFloat(packet.voltage)
-            putFloat(packet.temperature)
-            putFloat(packet.knockValue)
-            putFloat(packet.knockRetard)
-            put(packet.airflow.toByte())
-            put(alignByte)           // align byte
-            putShort(flags.toShort())
-            putFloat(packet.tps)
-            putFloat(packet.addI1)
-            putFloat(packet.addI2)
-            putFloat(packet.chokePosition)
-            putFloat(packet.gasDosePosition)
-            putFloat(packet.speed)
-            putFloat(packet.distance)
-            putFloat(packet.inj_ffd.coerceIn(.0f, 999.999f))
-            putFloat(packet.fuelFlowFrequency)
-            putFloat(if (packet.isAddI2Enabled) packet.airtempSensor else 999.99f)    //magic number indicates that IAT is not used
-            putFloat(packet.strtAalt)
-            putFloat(packet.idleAalt)
-            putFloat(packet.workAalt)
-            putFloat(packet.tempAalt)
-            putFloat(packet.airtAalt)
-            putFloat(packet.idlregAac)
-            putFloat(packet.octanAac)
-            putFloat(packet.lambdaCorr)
-            putFloat(packet.injPw)
-            putInt(packet.tpsdot.toInt())
-            putFloat(packet.map2)
-            putFloat(packet.tmp2)
-            putFloat(packet.afr)
-            putFloat(packet.load)
-            putFloat(packet.baroPress)
-            putFloat(packet.injTimBegin)
-            putFloat(packet.injTimEnd)
-            putFloat(packet.grts)
-            putFloat(packet.ftls)
-            putFloat(packet.egts)
-            putFloat(packet.ops)
-            putFloat(packet.sens_injDuty)
-            putFloat(packet.rigidArg)
-            putInt(packet.rxlaf)
-            putFloat(packet.maf)
-            putFloat(packet.ventDuty)
-            put(packet.uniOutput.toByte())
-            put(alignByte)
-            put(alignByte)
-            put(alignByte)
-            // TODO: update capacity if new field is added
-            put(mMark.toByte())
-            put(alignByte)
-            putShort(packet.serviceFlags.toShort())
-            putInt(packet.ecuErrors)
-        }
-
-        buf.flip()
-        byteChanel?.write(buf)
     }
 
     private fun writeInCsv(csvString: String) {
@@ -261,69 +159,69 @@ class SecuLogger @Inject constructor(private val prefs: UserPrefs, private val f
 
         val values = listOf(
             now,
-            " %5d$delimeter%6.2f".format(Locale.US, rpm, currentAngle), // Locale.US to format float values with dots instead of comma
-            " %6.2f".format(Locale.US, map),
-            " %5.2f".format(Locale.US, voltage),
-            " %6.2f".format(Locale.US, temperature),
-            " %4.2f".format(Locale.US, knockValue),
-            " %5.2f".format(Locale.US, knockRetard),
-            " %2d".format(Locale.US, airflow),
-            " %01d".format(Locale.US, carbBit),
-            " %01d".format(Locale.US, gasBit),
-            " %01d".format(Locale.US, ephhValveBit),
-            " %01d".format(Locale.US, epmValveBit),
-            " %01d".format(Locale.US, coolFanBit),
-            " %01d".format(Locale.US, starterBlockBit),
-            " %01d".format(Locale.US, accelerationEnrichment),
-            " %01d".format(Locale.US, fc_revlim),
-            " %01d".format(Locale.US, floodclear),
-            " %01d".format(Locale.US, sys_locked),
-            " %01d".format(Locale.US, checkEngineBit),
-            " %01d".format(Locale.US, ign_i),
-            " %01d".format(Locale.US, cond_i),
-            " %01d".format(Locale.US, epas_i),
-            " %01d".format(Locale.US, aftstr_enr),
-            " %01d".format(Locale.US, iac_closed_loop),
-            " %5.1f".format(Locale.US, tps),
-            " %6.3f".format(Locale.US, addI1),
-            " %6.3f".format(Locale.US, addI2),
-            " %5.1f".format(Locale.US, chokePosition),
-            " %5.1f".format(Locale.US, gasDosePosition),
-            " %5.1f".format(Locale.US, speed),
-            " %7.2f".format(Locale.US, distance),
-            " %7.3f".format(Locale.US, inj_ffd),
-            " %7.3f".format(Locale.US, fuelFlowFrequency),
-            " %6.2f".format(Locale.US, if (isAddI2Enabled) airtempSensor else 999.99f), //magic number indicates that IAT is not used
-            " %6.2f".format(Locale.US, strtAalt),
-            " %6.2f".format(Locale.US, idleAalt),
-            " %6.2f".format(Locale.US, workAalt),
-            " %6.2f".format(Locale.US, tempAalt),
-            " %6.2f".format(Locale.US, airtAalt),
-            " %6.2f".format(Locale.US, idlregAac),
-            " %6.2f".format(Locale.US, octanAac),
-            " %6.2f".format(Locale.US, lambdaCorr),
-            " %6.2f".format(Locale.US, injPw),
-            " %5d".format(Locale.US, tpsdot),
-            " %6.2f".format(Locale.US, map2),
-            " %6.2f".format(Locale.US, tmp2),
-            " %5.2f".format(Locale.US, afr),
-            " %6.2f".format(Locale.US, load),
-            " %6.2f".format(Locale.US, baroPress),
-            " %5.1f".format(Locale.US, injTimBegin),
-            " %5.1f".format(Locale.US, injTimEnd),
-            " %5.1f".format(Locale.US, grts),
-            " %5.1f".format(Locale.US, ftls),
-            " %6.1f".format(Locale.US, egts),
-            " %4.2f".format(Locale.US, ops),
-            " %5.1f".format(Locale.US, sens_injDuty),
-            " %4.2f".format(Locale.US, rigidArg),
-            " %7d".format(Locale.US, rxlaf),
-            " %6.2f".format(Locale.US, maf),
-            " %5.1f".format(Locale.US, ventDuty),
-            " %2d".format(Locale.US, uniOutput),
-            // TODO: update titles if new field is added
-            " %01d".format(Locale.US, mark),
-            " %5d".format(Locale.US, serviceFlags),
+            " %05d$delimeter%6.2f".format(rpm, currentAngle), // Locale.US to format float values with dots instead of comma
+            " %6.2f".format(map),
+            " %5.2f".format(voltage),
+            " %6.2f".format(temperature),
+            " %4.2f".format(knockValue),
+            " %5.2f".format(knockRetard),
+            " %02d".format(airflow),
+            " %01d".format(carbBit),
+            " %01d".format(gasBit),
+            " %01d".format(ephhValveBit),
+            " %01d".format(epmValveBit),
+            " %01d".format(coolFanBit),
+            " %01d".format(starterBlockBit),
+            " %01d".format(accelerationEnrichment),
+            " %01d".format(fc_revlim),
+            " %01d".format(floodclear),
+            " %01d".format(sys_locked),
+            " %01d".format(checkEngineBit),
+            " %01d".format(ign_i),
+            " %01d".format(cond_i),
+            " %01d".format(epas_i),
+            " %01d".format(aftstr_enr),
+            " %01d".format(iac_closed_loop),
+            " %5.1f".format(tps),
+            " %6.3f".format(addI1),
+            " %6.3f".format(addI2),
+            " %5.1f".format(chokePosition),
+            " %5.1f".format(gasDosePosition),
+            " %5.1f".format(speed),
+            " %7.2f".format(distance),
+            " %7.3f".format(inj_ffd),
+            " %7.3f".format(fuelFlowFrequency),
+            " %6.2f".format(if (isAddI2Enabled) airtempSensor else 999.99f), //magic number indicates that IAT is not used
+            " %6.2f".format(strtAalt),
+            " %6.2f".format(idleAalt),
+            " %6.2f".format(workAalt),
+            " %6.2f".format(tempAalt),
+            " %6.2f".format(airtAalt),
+            " %6.2f".format(idlregAac),
+            " %6.2f".format(octanAac),
+            " %6.2f".format(lambdaCorr),
+            " %6.2f".format(injPw),
+            " %05d".format(tpsdot),
+            " %6.2f".format(map2),
+            " %6.2f".format(tmp2),
+            " %7.2f".format(mapd),
+            " %5.2f".format(afr),
+            " %6.2f".format(load),
+            " %6.2f".format(baroPress),
+            " %5.1f".format(injTimBegin),
+            " %5.1f".format(injTimEnd),
+            " %5.1f".format(grts),
+            " %5.1f".format(ftls),
+            " %6.1f".format(egts),
+            " %4.2f".format(ops),
+            " %5.1f".format(sens_injDuty),
+            " %4.2f".format(rigidArg),
+            " %07d".format(rxlaf),
+            " %6.2f".format(maf),
+            " %5.1f".format(ventDuty),
+            " %02d".format(uniOutput),
+            " %01d".format(mark),
+            " %05d".format(serviceFlags),
             " $ceBits"
         )
 
@@ -387,6 +285,7 @@ class SecuLogger @Inject constructor(private val prefs: UserPrefs, private val f
             "TPSdot",
             "MAP2",
             "Tmp2",
+            "DiffMAP",
             "AFR",
             "SynLoad",
             "BaroPress",

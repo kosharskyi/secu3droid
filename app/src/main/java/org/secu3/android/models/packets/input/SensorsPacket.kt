@@ -69,6 +69,7 @@ data class SensorsPacket(
 
     // if SECU-3T
     var map2: Float = 0f,
+    var mapd: Float = 0f,   //differential pressure
 
     var tmp2: Float = 0f,
 
@@ -325,6 +326,7 @@ data class SensorsPacket(
         tpsdot = data.get2Bytes().toShort()
 
         map2 = data.get2Bytes().toFloat() / MAP_MULTIPLIER
+        mapd = map2 - map
 
         tmp2 = data.get2Bytes().toShort().toFloat().div(TEMPERATURE_MULTIPLIER).coerceIn(-99.9f, 999.0f)
 

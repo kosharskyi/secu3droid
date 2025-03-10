@@ -59,12 +59,6 @@ class FileHelper @Inject constructor(@ApplicationContext private val context: Co
             return File(logsDir, "${name}.csv")
         }
 
-    val generateS3lFile: File
-        get() {
-            val name = LocalDateTime.now().format(dateTimeFormatter)
-            return File(logsDir, "${name}.s3l")
-        }
-
     fun getFileUri(file: File): Uri? {
         return try {
             FileProvider.getUriForFile(
