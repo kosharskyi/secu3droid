@@ -42,7 +42,7 @@ data class DbwParamPacket (
     var frictorq_close: Float = 0f,
     var frictorq_thrd: Float = 0f,
     var frictorq_idleadd_max: Float = 0f,
-    var homePosition_edited: Float = 0f // TODO: implement this later
+    var homePosition_edited: Float = 0f
 
 
 ) : Secu3Packet(), InputPacket, OutputPacket {
