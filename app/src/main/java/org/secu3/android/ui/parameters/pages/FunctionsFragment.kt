@@ -74,7 +74,6 @@ class FunctionsFragment : BaseParamFragment() {
         init()
         lifecycleScope.launch {
             withResumed {
-
                 mViewModel.fnNameLiveData.observe(viewLifecycleOwner) {
 
                     mViewModel.isSendAllowed = false
@@ -92,63 +91,67 @@ class FunctionsFragment : BaseParamFragment() {
                         mapsSetForGas.inputType = InputType.TYPE_NULL
                         val adapterGas = ArrayAdapter(requireContext(), R.layout.list_item, mapsSetList)
                         mapsSetForGas.setAdapter(adapterGas)
-                    }
-                }
 
-
-                mViewModel.funsetLiveData.observe(viewLifecycleOwner) {
-
-                    funSetPacket = it
-
-                    mBinding.apply {
-
-                        progressBar.gone()
-                        params.visible()
-
-                        fnNamePacket?.fnNameList?.map { fn -> fn.name }?.let { fnNames ->
-                            mapsSet.setText(fnNames[it.fnGasoline], false)
-                            mapsSetForGas.setText(fnNames[it.fnGas], false)
-                        }
-
-                        lowerLoadValue.value = it.loadLower
-                        upperLoadValue.value = it.loadUpper
-                        useLoadGrid.isChecked = it.useLoadGrid
-
-                        mapCurveOffset.value = it.mapCurveOffset
-                        mapCurveGradient.value = it.mapCurveGradient
-
-                        tpsCurveOffset.value = it.tpsCurveOffset
-                        tpsCurveGradient.value = it.tpsCurveGradient
-
-
-                        loadMeasurement.setText(loadMeasurementItems[it.loadSrcCfg], false)
-
-                        mapselPetrol.setText(mapselItems[it.mapselUniPetrol], false)
-                        mapselGas.setText(mapselItems[it.mapselUniGas], false)
-
-                        barometricCorrection.setText(barocorrItems[it.barocorrType], false)
-
-                        map2CurveOffset.value = it.map2CurveOffset
-                        map2CurveGradient.value = it.map2CurveGradient
-
-                        ve2MapFunc.setText(ve2MapFuncItems[it.ve2MapFunc], false)
-                        gasVCondition.setText(mapselItems[it.gasVUni], false)
-
-                        gasPressureCurveOffset.value = it.gpsCurveOffset
-                        gasPressureCurveGradient.value = it.gpsCurveGradient
-
-                        fuelPressureCurveOffset.value = it.fpsCurveOffset
-                        fuelPressureCurveGradient.value = it.fpsCurveGradient
-
-                        appsCurveOffset.value = it.apps1CurveOffset
-                        appsCurveGradient.value = it.apps1CurveGradient
                     }
 
-                    initViews()
-
-                    mViewModel.isSendAllowed = true
+                    receiveFunset()
                 }
             }
+        }
+    }
+
+    private fun receiveFunset() {
+        mViewModel.funsetLiveData.observe(viewLifecycleOwner) {
+
+            funSetPacket = it
+
+            mBinding.apply {
+
+                progressBar.gone()
+                params.visible()
+
+                fnNamePacket?.fnNameList?.map { fn -> fn.name }?.let { fnNames ->
+                    mapsSet.setText(fnNames[it.fnGasoline], false)
+                    mapsSetForGas.setText(fnNames[it.fnGas], false)
+                }
+
+                lowerLoadValue.value = it.loadLower
+                upperLoadValue.value = it.loadUpper
+                useLoadGrid.isChecked = it.useLoadGrid
+
+                mapCurveOffset.value = it.mapCurveOffset
+                mapCurveGradient.value = it.mapCurveGradient
+
+                tpsCurveOffset.value = it.tpsCurveOffset
+                tpsCurveGradient.value = it.tpsCurveGradient
+
+
+                loadMeasurement.setText(loadMeasurementItems[it.loadSrcCfg], false)
+
+                mapselPetrol.setText(mapselItems[it.mapselUniPetrol], false)
+                mapselGas.setText(mapselItems[it.mapselUniGas], false)
+
+                barometricCorrection.setText(barocorrItems[it.barocorrType], false)
+
+                map2CurveOffset.value = it.map2CurveOffset
+                map2CurveGradient.value = it.map2CurveGradient
+
+                ve2MapFunc.setText(ve2MapFuncItems[it.ve2MapFunc], false)
+                gasVCondition.setText(mapselItems[it.gasVUni], false)
+
+                gasPressureCurveOffset.value = it.gpsCurveOffset
+                gasPressureCurveGradient.value = it.gpsCurveGradient
+
+                fuelPressureCurveOffset.value = it.fpsCurveOffset
+                fuelPressureCurveGradient.value = it.fpsCurveGradient
+
+                appsCurveOffset.value = it.apps1CurveOffset
+                appsCurveGradient.value = it.apps1CurveGradient
+            }
+
+            initViews()
+
+            mViewModel.isSendAllowed = true
         }
     }
 

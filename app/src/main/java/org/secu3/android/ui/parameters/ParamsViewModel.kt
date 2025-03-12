@@ -124,14 +124,14 @@ class ParamsViewModel @Inject constructor(
                     it.fnNameList = MutableList(packet.tablesNumber) { FnName(-1, "placeholder name") }
                 }
 
-                fnNameDatPacket.fnNameList.set(packet.fnName.index, packet.fnName)
+                fnNameDatPacket.fnNameList[packet.fnName.index] = packet.fnName
             }
             emit(fnNameDatPacket)
-            secu3ConnectionManager.sendNewTask(Task.Secu3ReadFunsetParam)
         }.asLiveData()
 
     val funsetLiveData: LiveData<FunSetParamPacket>
         get() = flow {
+            secu3ConnectionManager.sendNewTask(Task.Secu3ReadFunsetParam)
             val packet = secu3ConnectionManager.receivedPacketFlow.first { it is FunSetParamPacket } as FunSetParamPacket
 
             emit(packet)

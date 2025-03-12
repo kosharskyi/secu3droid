@@ -48,6 +48,8 @@ sealed class Task {
 
     object Secu3ReadIdlingParam : Task()
 
+    object Secu3ReadFnNameDat : Task()
+
     object Secu3ReadFunsetParam : Task()
 
     object Secu3ReadTemperatureParam : Task()
@@ -80,9 +82,6 @@ sealed class Task {
 
     object Secu3ReadDbwParam : Task()
 
-    object Secu3ReadFnNameDat : Task()
-
-
 
     object Secu3OpComEnterDiagnostics : Task()
     object Secu3OpComLeaveDiagnostics : Task()
@@ -95,10 +94,10 @@ sealed class Task {
         return when (this) {
             Secu3ReadFirmwareInfo, Secu3ReadSensors, Secu3ReadRawSensors, Secu3ReadEcuErrors, Secu3ReadEcuSavedErrors,
             Secu3DiagInput, Secu3ReadStarterParam, Secu3ReadAnglesParam, Secu3ReadIdlingParam, Secu3ReadFunsetParam,
-            Secu3ReadTemperatureParam, Secu3ReadCarburParam, Secu3ReadAdcErrorsCorrectionsParam, Secu3ReadCkpsParam,
-            Secu3ReadKnockParam, Secu3ReadMiscellaneousParam, Secu3ReadChokeControlParam, Secu3ReadSecurityParam,
-            Secu3ReadUniversalOutputsParam, Secu3ReadFuelInjectionParam, Secu3ReadLambdaParam, Secu3ReadAccelerationParam,
-            Secu3ReadGasDoseParam,Secu3ReadLtftParam,Secu3ReadDbwParam,Secu3ReadFnNameDat -> ChangeModePacket.getPacket(this)
+            Secu3ReadFnNameDat, Secu3ReadTemperatureParam, Secu3ReadCarburParam, Secu3ReadAdcErrorsCorrectionsParam,
+            Secu3ReadCkpsParam, Secu3ReadKnockParam, Secu3ReadMiscellaneousParam, Secu3ReadChokeControlParam,
+            Secu3ReadSecurityParam, Secu3ReadUniversalOutputsParam, Secu3ReadFuelInjectionParam, Secu3ReadLambdaParam,
+            Secu3ReadAccelerationParam, Secu3ReadGasDoseParam, Secu3ReadLtftParam, Secu3ReadDbwParam -> ChangeModePacket.getPacket(this)
 
 
             Secu3OpComEnterDiagnostics -> OpCompNc.getEnterDiagCommand()

@@ -4,6 +4,9 @@ import android.os.Bundle
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
+import androidx.lifecycle.lifecycleScope
+import androidx.lifecycle.withResumed
+import kotlinx.coroutines.launch
 import org.secu3.android.R
 import org.secu3.android.databinding.FragmentDbwBinding
 import org.secu3.android.models.packets.out.params.DbwParamPacket
@@ -26,32 +29,36 @@ class DbwFragment : BaseParamFragment() {
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
 
-        mViewModel.dbwLiveData.observe(viewLifecycleOwner) {
+        lifecycleScope.launch {
+            withResumed {
+                mViewModel.dbwLiveData.observe(viewLifecycleOwner) {
 
-            mViewModel.isSendAllowed = false
+                    mViewModel.isSendAllowed = false
 
-            packet = it
+                    packet = it
 
-            binding?.apply {
+                    binding?.apply {
 
-                progressBar.gone()
-                params.visible()
+                        progressBar.gone()
+                        params.visible()
 
-                etcP.value = it.etc_p
-                etcI.value = it.etc_i
-                etcD.value = it.etc_d
-                nmaxDuty.value = it.etc_nmax_duty
-                pmaxDuty.value = it.etc_pmax_duty
-                pidPeriod.value = it.pid_period
-                frictionTorqueOpen.value = it.frictorq_open
-                frictionTorqueClose.value = it.frictorq_close
-                frictionThrd.value = it.frictorq_thrd
-                frictorqIddleAddMax.value = it.frictorq_idleadd_max
+                        etcP.value = it.etc_p
+                        etcI.value = it.etc_i
+                        etcD.value = it.etc_d
+                        nmaxDuty.value = it.etc_nmax_duty
+                        pmaxDuty.value = it.etc_pmax_duty
+                        pidPeriod.value = it.pid_period
+                        frictionTorqueOpen.value = it.frictorq_open
+                        frictionTorqueClose.value = it.frictorq_close
+                        frictionThrd.value = it.frictorq_thrd
+                        frictorqIddleAddMax.value = it.frictorq_idleadd_max
+                    }
+
+                    initViews()
+
+                    mViewModel.isSendAllowed = true
+                }
             }
-
-            initViews()
-
-            mViewModel.isSendAllowed = true
         }
     }
 
