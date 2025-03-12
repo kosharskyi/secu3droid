@@ -52,6 +52,7 @@ class DbwFragment : BaseParamFragment() {
                         frictionTorqueClose.value = it.frictorq_close
                         frictionThrd.value = it.frictorq_thrd
                         frictorqIddleAddMax.value = it.frictorq_idleadd_max
+                        homePosition.value = it.homePosition_edited
                     }
 
                     initViews()

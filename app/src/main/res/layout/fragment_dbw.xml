@@ -228,6 +228,22 @@
 
             <!-- ************************************************************* -->
 
+            <org.secu3.android.ui.parameters.views.FloatParamView
+                android:id="@+id/home_position"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="16dp"
+                app:title="@string/el_throttle_home_position_title"
+                app:units="@string/units_percents"
+                app:float_value="0"
+                app:value_precision="two"
+                app:float_min_value="0.0"
+                app:float_max_value="100.0"
+                />
+
+
+            <!-- ************************************************************* -->
+
         </LinearLayout>
 
     </ScrollView>
