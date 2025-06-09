@@ -23,8 +23,8 @@ android {
         applicationId "org.secu3.android"
         minSdkVersion 23
         targetSdkVersion 35
-        versionCode 49
-        versionName "0.15.4"
+        versionCode 50
+        versionName "0.15.5"
 
         testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
     }
