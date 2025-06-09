@@ -17,6 +17,10 @@
             app:destination="@id/homeFragment"
             />
 
+        <action
+            android:id="@+id/open_secuLogsFragment"
+            app:destination="@id/secuLogsFragment" />
+
     </fragment>
 
     <fragment
