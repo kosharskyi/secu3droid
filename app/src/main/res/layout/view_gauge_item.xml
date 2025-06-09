@@ -47,6 +47,8 @@
             app:layout_constraintTop_toTopOf="parent"
             app:layout_constraintStart_toStartOf="parent"
             app:layout_constraintEnd_toEndOf="parent"
+            android:breakStrategy="simple"
+            android:hyphenationFrequency="normal"
             android:gravity="center_horizontal"
             android:textSize="18sp"
             tools:text="@tools:sample/lorem"
