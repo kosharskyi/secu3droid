@@ -183,7 +183,7 @@
     <string name="choose_bluetooth_adapter">Выберите устройство Bluetooth в настройках</string>
 
 
-    <string name="units_rpm">мин-1</string>
+    <string name="units_rpm">Об.мин</string>
     <string name="units_liter">Л</string>
     <string name="units_cc_per_min">см3/мин</string>
     <string name="units_hertz">Гц</string>

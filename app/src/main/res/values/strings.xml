@@ -236,7 +236,7 @@
 
 
     <string name="units_empty" translatable="false"> </string>
-    <string name="units_rpm">min-1</string>
+    <string name="units_rpm">rpm</string>
     <string name="units_liter">L</string>
     <string name="units_cc_per_min">cc/min</string>
     <string name="units_hertz">Hz</string>
