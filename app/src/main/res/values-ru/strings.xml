@@ -271,7 +271,7 @@
     <string name="sensors_frag_distance_label">Пробег</string>
     <string name="sensors_frag_fuel_consumption_hz_label">Расход топлива</string>
     <string name="sensors_frag_intake_air_temp_label">Температура ДТВ</string>
-    <string name="sensors_frag_ego_correction_label">Лямбда-коррекция</string>
+    <string name="sensors_frag_ego_correction_label">Топл.Корр 1</string>
     <string name="sensors_frag_injection_pw_label">Длительность впрыска</string>
     <string name="sensors_frag_tps_dot_label">Скорость ДЗ</string>
     <string name="sensors_frag_map2_label">ДАД 2</string>
@@ -288,7 +288,7 @@
     <string name="sensors_frag_fan_duty_label">Скважность Вент.</string>
     <string name="sensors_frag_map_dot_label">Скорость ДАД</string>
     <string name="sensors_frag_fuel_temp_label">Температура топлива</string>
-    <string name="sensors_frag_ego_correction2_label">Лямбда-коррекция 2</string>
+    <string name="sensors_frag_ego_correction2_label">Топл.Корр 2</string>
     <string name="sensors_frag_afr_difference_label">Разность AFR</string>
     <string name="sensors_frag_afr_difference2_label">Разность AFR2</string>
     <string name="sensors_frag_begin_inj_phase_label">Фаза начала впрыска</string>

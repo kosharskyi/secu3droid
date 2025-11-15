@@ -430,7 +430,7 @@
     <string name="sensors_frag_distance_label">Distance</string>
     <string name="sensors_frag_fuel_consumption_hz_label">Fuel consumption</string>
     <string name="sensors_frag_intake_air_temp_label">Intake air temperature</string>
-    <string name="sensors_frag_ego_correction_label">EGO correction</string>
+    <string name="sensors_frag_ego_correction_label">EGO corr.1</string>
     <string name="sensors_frag_injection_pw_label">Injection PW</string>
     <string name="sensors_frag_tps_dot_label">TPS dot</string>
     <string name="sensors_frag_map2_label">MAP 2</string>
@@ -447,7 +447,7 @@
     <string name="sensors_frag_fan_duty_label">Fan`s duty</string>
     <string name="sensors_frag_map_dot_label">MAP dot</string>
     <string name="sensors_frag_fuel_temp_label">Fuel temperature</string>
-    <string name="sensors_frag_ego_correction2_label">EGO correction</string>
+    <string name="sensors_frag_ego_correction2_label">EGO corr.2</string>
     <string name="sensors_frag_afr_difference_label">AFR difference</string>
     <string name="sensors_frag_afr_difference2_label">AFR difference 2 </string>
     <string name="sensors_frag_begin_inj_phase_label">Begin inj. phase</string>
