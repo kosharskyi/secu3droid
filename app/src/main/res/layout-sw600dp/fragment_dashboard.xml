@@ -1,0 +1,249 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  ~    SecuDroid  - An open source, free manager for SECU-3 engine control unit
+  ~    Copyright (C) 2025 Vitalii O. Kosharskyi. Ukraine, Kyiv
+  ~
+  ~    SECU-3  - An open source, free engine control unit
+  ~    Copyright (C) 2007-2025 Alexey A. Shabelnikov. Ukraine, Kyiv
+  ~
+  ~    This program is free software: you can redistribute it and/or modify
+  ~    it under the terms of the GNU General Public License as published by
+  ~    the Free Software Foundation, either version 3 of the License, or
+  ~    (at your option) any later version.
+  ~
+  ~    This program is distributed in the hope that it will be useful,
+  ~    but WITHOUT ANY WARRANTY; without even the implied warranty of
+  ~    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+  ~    GNU General Public License for more details.
+  ~
+  ~    You should have received a copy of the GNU General Public License
+  ~    along with this program.  If not, see <http://www.gnu.org/licenses/>.
+  ~
+  ~    contacts:
+  ~                    http://secu-3.org
+  ~                    email: vetalkosharskiy@gmail.com
+  -->
+<androidx.constraintlayout.widget.ConstraintLayout
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:fitsSystemWindows="true"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    >
+
+    <com.github.anastr.speedviewlib.SpeedView
+        android:id="@+id/center"
+        android:layout_width="wrap_content"
+        android:layout_height="0dp"
+        android:layout_marginTop="16dp"
+        app:layout_constraintTop_toTopOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintBottom_toTopOf="@id/indicators"
+        app:sv_speedometerWidth="20dp"
+        app:sv_indicatorWidth="18dp"
+        app:sv_textSize="30sp"
+        app:sv_unitTextSize="35sp"
+        app:sv_speedTextSize="45sp"
+        app:sv_tickNumber="23"
+        app:sv_maxSpeed="220"
+        app:sv_centerCircleRadius="14dp"
+        app:sv_speedTextPosition="TOP_CENTER"
+        app:sv_speedTextPadding="100dp"
+        app:sv_speedTextFormat="INTEGER"
+        app:sv_unitUnderSpeedText="true"
+        app:sv_withTremble="false"
+        />
+
+    <TextView
+        android:id="@+id/odometer"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        app:layout_constraintStart_toStartOf="@id/center"
+        app:layout_constraintEnd_toEndOf="@id/center"
+        app:layout_constraintBottom_toBottomOf="@id/center"
+        android:layout_marginBottom="8dp"
+        android:textSize="35sp"
+        tools:text="0000000,00 Km"
+        />
+
+    <com.github.anastr.speedviewlib.SpeedView
+        android:id="@+id/top_rigth"
+        android:layout_width="wrap_content"
+        android:layout_height="0dp"
+        app:layout_constraintTop_toTopOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintBottom_toTopOf="@id/bottom_right"
+        android:layout_margin="4dp"
+        app:sv_speedometerWidth="20dp"
+        app:sv_indicatorWidth="15dp"
+        app:sv_textSize="25sp"
+        app:sv_unitTextSize="25sp"
+        app:sv_speedTextSize="25sp"
+        app:sv_maxSpeed="120"
+        app:sv_minSpeed="20"
+        app:sv_tickNumber="11"
+        app:sv_tickRotation="false"
+        app:sv_speedTextPosition="TOP_CENTER"
+        app:sv_speedometerMode="BOTTOM_LEFT"
+        app:sv_unit="@string/units_degrees_celcius"
+        app:sv_withTremble="false"
+        />
+
+    <com.github.anastr.speedviewlib.SpeedView
+        android:id="@+id/bottom_right"
+        android:layout_width="wrap_content"
+        android:layout_height="0dp"
+        app:layout_constraintTop_toBottomOf="@id/top_rigth"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintBottom_toTopOf="@id/indicators"
+        android:layout_margin="4dp"
+        app:sv_speedometerWidth="20dp"
+        app:sv_indicatorWidth="15dp"
+        app:sv_textSize="25sp"
+        app:sv_unitTextSize="25sp"
+        app:sv_speedTextSize="25sp"
+        app:sv_minSpeed="8"
+        app:sv_maxSpeed="18"
+        app:sv_tickNumber="11"
+        app:sv_tickRotation="false"
+        app:sv_speedometerMode="TOP_LEFT"
+        app:sv_withTremble="false"
+        app:sv_unit="@string/units_volts"
+        app:sv_unitSpeedInterval="4dp"
+        />
+
+    <com.github.anastr.speedviewlib.SpeedView
+        android:id="@+id/top_left"
+        android:layout_width="wrap_content"
+        android:layout_height="0dp"
+        app:layout_constraintTop_toTopOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintBottom_toTopOf="@id/bottom_left"
+        android:layout_margin="4dp"
+        app:sv_speedometerWidth="20dp"
+        app:sv_indicatorWidth="15dp"
+        app:sv_textSize="25sp"
+        app:sv_unitTextSize="25sp"
+        app:sv_speedTextSize="25sp"
+        app:sv_minSpeed="0"
+        app:sv_maxSpeed="8000"
+        app:sv_tickNumber="9"
+        app:sv_tickRotation="false"
+        app:sv_speedTextPosition="TOP_CENTER"
+        app:sv_speedometerMode="BOTTOM_RIGHT"
+        app:sv_withTremble="false"
+        app:sv_unit="@string/units_rpm"
+        app:sv_unitSpeedInterval="4dp"
+        app:sv_speedTextFormat="INTEGER"
+        />
+
+    <com.github.anastr.speedviewlib.SpeedView
+        android:id="@+id/bottom_left"
+        android:layout_width="wrap_content"
+        android:layout_height="0dp"
+        app:layout_constraintTop_toBottomOf="@id/top_left"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintBottom_toTopOf="@id/indicators"
+        android:layout_margin="4dp"
+        app:sv_speedometerWidth="20dp"
+        app:sv_indicatorWidth="15dp"
+        app:sv_textSize="25sp"
+        app:sv_unitTextSize="25sp"
+        app:sv_speedTextSize="25sp"
+        app:sv_minSpeed="10"
+        app:sv_maxSpeed="110"
+        app:sv_tickNumber="11"
+        app:sv_tickRotation="false"
+        app:sv_speedometerMode="TOP_RIGHT"
+        app:sv_withTremble="false"
+        app:sv_unit="@string/units_pressure_kpa"
+        app:sv_unitSpeedInterval="4dp"
+        />
+
+    <LinearLayout
+        android:id="@+id/indicators"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        app:layout_constraintBottom_toBottomOf="parent"
+        android:orientation="horizontal"
+        android:background="#C1C1C1"
+        android:gravity="center_vertical"
+        >
+
+        <ImageView
+            android:id="@+id/led_online"
+            android:layout_width="wrap_content"
+            android:layout_height="72dp"
+            app:srcCompat="@drawable/ic_car"
+            app:tint="@color/white"
+            android:layout_weight="1"
+            />
+
+        <ImageView
+            android:id="@+id/led_check_engine"
+            android:layout_width="wrap_content"
+            android:layout_height="32dp"
+            android:src="@drawable/indicators_check_engine_landscape"
+            android:visibility="gone"
+            tools:visibility="visible"
+            android:layout_weight="1"
+            app:tint="@color/red"
+            />
+
+        <ImageView
+            android:id="@+id/led_gasoline"
+            android:layout_width="wrap_content"
+            android:layout_height="32dp"
+            android:src="@drawable/indicators_gasoline_landscape"
+            android:visibility="gone"
+            tools:visibility="visible"
+            android:layout_weight="1"
+
+            />
+
+        <ImageView
+            android:id="@+id/led_eco"
+            android:layout_width="wrap_content"
+            android:layout_height="32dp"
+            android:src="@drawable/indicators_eco_landscape"
+            android:visibility="gone"
+            tools:visibility="visible"
+            android:layout_weight="1"
+            />
+
+        <ImageView
+            android:id="@+id/led_power"
+            android:layout_width="wrap_content"
+            android:layout_height="32dp"
+            android:src="@drawable/indicators_pwr_landscape"
+            android:visibility="gone"
+            tools:visibility="visible"
+            android:layout_weight="1"
+            />
+
+        <ImageView
+            android:id="@+id/led_choke"
+            android:layout_width="wrap_content"
+            android:layout_height="32dp"
+            android:src="@drawable/indicators_choke_landscape"
+            android:visibility="gone"
+            tools:visibility="visible"
+            android:layout_weight="1"
+            />
+
+
+        <ImageView
+            android:id="@+id/led_fan"
+            android:layout_width="wrap_content"
+            android:layout_height="32dp"
+            android:src="@drawable/indicators_fan_landscape"
+            android:visibility="gone"
+            tools:visibility="visible"
+            android:layout_weight="1"
+            />
+
+    </LinearLayout>
+
+</androidx.constraintlayout.widget.ConstraintLayout>

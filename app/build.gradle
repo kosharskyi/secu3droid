@@ -16,15 +16,15 @@ def keystoreProperties = new Properties()
 keystoreProperties.load(new FileInputStream(keystorePropertiesFile))
 
 android {
-    compileSdk = 35
-    buildToolsVersion = "36.0.0"
+    compileSdk = 36
+    buildToolsVersion = "36.1.0"
 
     defaultConfig {
         applicationId "org.secu3.android"
         minSdkVersion 23
-        targetSdkVersion 35
-        versionCode 50
-        versionName "0.15.5"
+        targetSdkVersion 36
+        versionCode 51
+        versionName "0.15.6"
 
         testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
     }
