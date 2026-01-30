@@ -84,7 +84,6 @@ class FirmwareDialogFragment : DialogFragment() {
         "isRev9Board: ${fw.isRev9Board}",
         "isStroboscopeEnabled: ${fw.isStroboscopeEnabled}",
         "isSmControlEnabled: ${fw.isSmControlEnabled}",
-        "isVRef5VEnabled: ${fw.isVRef5VEnabled}",
         "isHallSyncEnabled: ${fw.isHallSyncEnabled}",
         "isUartBinaryEnabled: ${fw.isUartBinaryEnabled}",
         "isCkps2ChignEnabled: ${fw.isCkps2ChignEnabled}",

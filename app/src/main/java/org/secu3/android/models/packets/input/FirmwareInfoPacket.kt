@@ -100,9 +100,6 @@ data class FirmwareInfoPacket(
     val isSmControlEnabled: Boolean
         get() = options.getBitValue(COPT_SM_CONTROL) > 0
 
-    val isVRef5VEnabled: Boolean
-        get() = options.getBitValue(COPT_VREF_5V) > 0
-
     val isHallSyncEnabled: Boolean
         get() = options.getBitValue(COPT_HALL_SYNC) > 0
 
@@ -168,7 +165,7 @@ data class FirmwareInfoPacket(
         private const val COPT_REV9_BOARD = 20
         private const val COPT_STROBOSCOPE = 21
         private const val COPT_SM_CONTROL = 22
-        private const val COPT_VREF_5V = 23
+        private const val COPT_EMPTY_FLAG = 23  // Previously removed vref_5v
         private const val COPT_HALL_SYNC = 24
         private const val COPT_UART_BINARY = 25     //obsolete, left for compatibility
         private const val COPT_CKPS_2CHIGN = 26
