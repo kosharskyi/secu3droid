@@ -44,9 +44,9 @@ abstract class Secu3Packet {
             throw IllegalArgumentException("Packet too short; request ${currentIndex + 2} but length is $size")
         }
 
-        return this.sliceArray(currentIndex until currentIndex + 2).binToInt().also {
-            currentIndex += 2
-        }
+        val v = ((this[currentIndex] and 0xFF) shl 8) or (this[currentIndex + 1] and 0xFF)
+        currentIndex += 2
+        return v
     }
 
     protected fun IntArray.get3Bytes(): Int {
@@ -54,9 +54,11 @@ abstract class Secu3Packet {
             throw IllegalArgumentException("Packet too short; request ${currentIndex + 3} but length is $size")
         }
 
-        return this.sliceArray(currentIndex until currentIndex + 3).binToInt().also {
-            currentIndex += 3
-        }
+        val v = ((this[currentIndex] and 0xFF) shl 16) or
+                ((this[currentIndex + 1] and 0xFF) shl 8) or
+                (this[currentIndex + 2] and 0xFF)
+        currentIndex += 3
+        return v
     }
 
     protected fun IntArray.get4Bytes(): Int {
@@ -64,9 +66,12 @@ abstract class Secu3Packet {
             throw IllegalArgumentException("Packet too short; request ${currentIndex + 4} but length is $size")
         }
 
-        return this.sliceArray(currentIndex until currentIndex + 4).binToInt().also {
-            currentIndex += 4
-        }
+        val v = ((this[currentIndex] and 0xFF) shl 24) or
+                ((this[currentIndex + 1] and 0xFF) shl 16) or
+                ((this[currentIndex + 2] and 0xFF) shl 8) or
+                (this[currentIndex + 3] and 0xFF)
+        currentIndex += 4
+        return v
     }
 
     protected fun IntArray.getString(length: Int): String {
@@ -88,15 +93,6 @@ abstract class Secu3Packet {
         }
 
         unhandledParams = this.sliceArray(currentIndex until size)
-    }
-
-    private fun IntArray.binToInt(): Int {
-        var v = 0
-        for (element in this) {
-            v = v shl 8
-            v = v or element
-        }
-        return v
     }
 
     protected fun Int.write1Byte(): IntArray {
