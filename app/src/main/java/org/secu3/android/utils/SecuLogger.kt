@@ -252,6 +252,7 @@ class SecuLogger @Inject constructor(private val prefs: UserPrefs, private val f
             putFloat(packet.gasPressureSensor)
             putFloat(packet.fuelPressureSensor)
             putFloat(packet.apps1)
+            putFloat(packet.ots)
             // TODO: update capacity if new field is added
             put(mMark.toByte())
             put(alignByte)
@@ -355,6 +356,7 @@ class SecuLogger @Inject constructor(private val prefs: UserPrefs, private val f
             " %6.2f".format(Locale.US, gasPressureSensor),
             " %7.2f".format(Locale.US, fuelPressureSensor),
             " %5.1f".format(Locale.US, apps1),
+            " %5.1f".format(Locale.US, ots),
             // TODO: update titles if new field is added
             " %01d".format(Locale.US, mark),
             " %5d".format(Locale.US, serviceFlags),
@@ -453,7 +455,8 @@ class SecuLogger @Inject constructor(private val prefs: UserPrefs, private val f
             "Tchrg",
             "GPS",
             "FPS",
-            "APPS (%)",
+            "APPS",
+            "OTS",
             "LogMarks",
             "ServFlag",
             "CECodes"

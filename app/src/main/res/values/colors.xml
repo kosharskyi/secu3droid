@@ -26,6 +26,10 @@
     <color name="gauge_blue">#2196F3</color>
     <color name="gauge_dark_blue">#1565C0</color>
 
+    <color name="gauge_ots_0">#8282B4</color>
+    <color name="gauge_ots_1">#787878</color>
+    <color name="gauge_ots_2">#E68282</color>
+
     <color name="gauge_lt_purple">#B39DDB</color>
     <color name="gauge_purple">#673AB7</color>
     <color name="gauge_dark_purple">#5E35B1</color>

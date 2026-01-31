@@ -297,6 +297,12 @@ enum class GaugeType (val title: Int, val minValue: Float, val maxValue: Float, 
         Section(0f, 0.1f, R.color.gauge_purple, -1f),
         Section(0.1f, 0.9f, R.color.gauge_green, -1f),
         Section(0.9f, 1.0f, R.color.gauge_red, -1f),
+    )),
+
+    OTS(R.string.sensors_frag_oil_temperature_sensor_label, -40.0f, 180.0f, R.string.units_degrees_celcius, false, 16, listOf(
+        Section(0f, 0.5f, R.color.gauge_ots_0, -1f),
+        Section(0.5f, 0.78f, R.color.gauge_ots_1, -1f),
+        Section(0.78f, 1.0f, R.color.gauge_ots_2, -1f),
     ));
 
     fun getSections(context: Context, width: Float): List<Section> {
@@ -360,6 +366,7 @@ enum class GaugeType (val title: Int, val minValue: Float, val maxValue: Float, 
 
             FUEL_PRESSURE_SENS -> packet.fuelPressureSensor
             APPS1 -> packet.apps1
+            OTS -> packet.ots
         }
     }
 }

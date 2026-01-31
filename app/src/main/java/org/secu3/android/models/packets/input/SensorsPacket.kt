@@ -111,6 +111,7 @@ data class SensorsPacket(
     var fuelPressureSensor: Float = 0f,
 
     var apps1: Float = 0f,                     // Accelerator pedal position
+    var ots: Float = 0f,                     // Oil temperature sensor
 
 ) : Secu3Packet(), InputPacket{
 
@@ -451,6 +452,8 @@ data class SensorsPacket(
         fuelPressureSensor = data.get2Bytes().toFloat() / MAP_MULTIPLIER
 
         apps1 = data.get2Bytes().toFloat() / APPS_MULT
+
+        ots = data.get2Bytes().toFloat() / FTS_MULT
 
         return this
     }
