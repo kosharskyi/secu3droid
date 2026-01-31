@@ -154,6 +154,7 @@ class FuelInjectionFragment : BaseParamFragment() {
                         useAirDensityCorrectionMap.isChecked = it.useAirDensity
                         diffPressForPwCorrGps.isChecked = it.useDifferentialPressure
                         switchBetweenInjectorsRows.isChecked = it.switchSecondInjRow
+                        fullSequentialAfterStart.isChecked = it.fullSequentialAfterStart
                     }
 
                     initViews()
@@ -343,6 +344,10 @@ class FuelInjectionFragment : BaseParamFragment() {
             }
             switchBetweenInjectorsRows.setOnCheckedChangeListener { _, isChecked ->
                 packet.switchSecondInjRow = isChecked
+                packet.let { it1 -> mViewModel.sendPacket(it1) }
+            }
+            fullSequentialAfterStart.setOnCheckedChangeListener { _, isChecked ->
+                packet.fullSequentialAfterStart = isChecked
                 packet.let { it1 -> mViewModel.sendPacket(it1) }
             }
 

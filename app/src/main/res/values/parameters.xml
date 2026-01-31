@@ -224,6 +224,7 @@
     <string name="injctr_par_use_air_density_correction_map_title">Use air density correction map</string>
     <string name="injctr_par_diff_press_for_pw_corr_from_gps_title">Diff.press.for PW corr.from GPS</string>
     <string name="injctr_par_switch_between_injectors_rows_title">Switch between injectors\' rows</string>
+    <string name="injctr_par_full_sequential_after_start_title">Full sequential after start</string>
     <string name="injctr_par_inj_timing_specifies">Inj. timing specifies</string>
     <string name="injctr_par_inj_config_throttlebody">Throttle-body</string>
     <string name="injctr_par_inj_config_simultaneous">Simultaneous</string>

@@ -215,6 +215,12 @@ data class InjctrParPacket(
             flags = flags.setBitValue(value, 5)
         }
 
+    var fullSequentialAfterStart: Boolean
+        get() = flags.getBitValue(6) > 0
+        set(value) {
+            flags = flags.setBitValue(value, 6)
+        }
+
 
     private fun configChanged(configNum: Int, pulses: Int) {
 

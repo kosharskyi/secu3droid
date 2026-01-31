@@ -533,6 +533,20 @@
                 android:drawableEnd="?android:attr/listChoiceIndicatorMultiple"
                 />
 
+            <!-- ************************************************************* -->
+
+            <CheckBox
+                android:id="@+id/full_sequential_after_start"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                app:layout_constraintTop_toBottomOf="@id/switch_between_injectors_rows"
+                app:layout_constraintStart_toStartOf="parent"
+                app:layout_constraintEnd_toEndOf="parent"
+                android:text="@string/injctr_par_full_sequential_after_start_title"
+                android:button="@null"
+                android:drawableEnd="?android:attr/listChoiceIndicatorMultiple"
+                />
+
 
 
 

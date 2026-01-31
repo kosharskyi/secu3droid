@@ -227,6 +227,7 @@
     <string name="injctr_par_use_air_density_correction_map_title">Использ.табл.корр.плотн.воздуха</string>
     <string name="injctr_par_diff_press_for_pw_corr_from_gps_title">Дифф.давление для корр.по ДДГ</string>
     <string name="injctr_par_switch_between_injectors_rows_title">Переключать ряды форсунок</string>
+    <string name="injctr_par_full_sequential_after_start_title">Распредел. впрыск после пуска</string>
     <string name="injctr_par_inj_timing_specifies">Фазу впрыска определяет</string>
     <string name="injctr_par_inj_config_throttlebody">Моновпрыск</string>
     <string name="injctr_par_inj_config_simultaneous">Одновременный</string>
