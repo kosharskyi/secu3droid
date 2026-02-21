@@ -42,7 +42,7 @@ android {
         release {
             debuggable false
             minifyEnabled true
-            proguardFiles getDefaultProguardFile('proguard-android-optimize.txt'), 'proguard-rules.pro', 'retorfit2.pro'
+            proguardFiles getDefaultProguardFile('proguard-android-optimize.txt'), 'proguard-rules.pro', 'retrofit2.pro'
             signingConfig signingConfigs.release
         }
 
