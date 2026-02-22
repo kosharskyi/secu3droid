@@ -63,6 +63,9 @@ data class InjctrParPacket(
 
     var injMaxPw: FloatArray = FloatArray(2),
 
+    var injPwDecSpeed: Float = 0f,
+    var injPwIncSpeed: Float = 0f,
+
 
     ) : Secu3Packet(), InputPacket, OutputPacket {
 
@@ -103,6 +106,9 @@ data class InjctrParPacket(
 
         data += injMaxPw[0].times(1000.0f / 3.2f).roundToInt().write2Bytes()
         data += injMaxPw[1].times(1000.0f / 3.2f).roundToInt().write2Bytes()
+
+        data += injPwDecSpeed.times(1000.0f / 3.2f).roundToInt().write2Bytes()
+        data += injPwIncSpeed.times(1000.0f / 3.2f).roundToInt().write2Bytes()
 
         data += unhandledParams
 
@@ -291,6 +297,9 @@ data class InjctrParPacket(
 
         injMaxPw[0] = data.get2Bytes().toFloat().times(3.2f / 1000.0f)
         injMaxPw[1] = data.get2Bytes().toFloat().times(3.2f / 1000.0f)
+
+        injPwDecSpeed = data.get2Bytes().toFloat().times(3.2f / 1000.0f)
+        injPwIncSpeed = data.get2Bytes().toFloat().times(3.2f / 1000.0f)
 
         data.setUnhandledParams()
 

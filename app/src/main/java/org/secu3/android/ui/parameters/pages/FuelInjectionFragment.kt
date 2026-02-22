@@ -155,6 +155,10 @@ class FuelInjectionFragment : BaseParamFragment() {
                         diffPressForPwCorrGps.isChecked = it.useDifferentialPressure
                         switchBetweenInjectorsRows.isChecked = it.switchSecondInjRow
                         fullSequentialAfterStart.isChecked = it.fullSequentialAfterStart
+
+                        injPwDecSpeed.value = it.injPwDecSpeed
+                        injPwIncSpeed.value = it.injPwIncSpeed
+
                     }
 
                     initViews()
@@ -321,6 +325,20 @@ class FuelInjectionFragment : BaseParamFragment() {
                 }
             }
 
+            injPwDecSpeed.addOnValueChangeListener {
+                packet.apply {
+                    injPwDecSpeed = it
+                    mViewModel.sendPacket(this)
+                }
+            }
+
+            injPwIncSpeed.addOnValueChangeListener {
+                packet.apply {
+                    injPwIncSpeed = it
+                    mViewModel.sendPacket(this)
+                }
+            }
+
 
 
 
@@ -365,6 +383,8 @@ class FuelInjectionFragment : BaseParamFragment() {
             minInjectionPwG.setOnClickListener { floatParamClick(it as FloatParamView) }
             maxInjectionPwG.setOnClickListener { floatParamClick(it as FloatParamView) }
             pulsesPerLitterOfFuel.setOnClickListener { intParamClick(it as IntParamView) }
+            injPwDecSpeed.setOnClickListener { floatParamClick(it as FloatParamView) }
+            injPwIncSpeed.setOnClickListener { floatParamClick(it as FloatParamView) }
         }
     }
 

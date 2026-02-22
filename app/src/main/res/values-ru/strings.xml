@@ -204,6 +204,7 @@
     <string name="units_kpa_per_sec">кПа/сек</string>
     <string name="units_volts">В</string>
     <string name="units_ms">мс</string>
+    <string name="units_ms_per_stroke">мс/т</string>
     <string name="units_percents">%</string>
     <string name="units_percent_per_volts">%/В</string>
     <string name="units_percent_per_second">%/сек</string>

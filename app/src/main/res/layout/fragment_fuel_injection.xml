@@ -547,6 +547,41 @@
                 android:drawableEnd="?android:attr/listChoiceIndicatorMultiple"
                 />
 
+            <!-- ************************************************************* -->
+
+            <org.secu3.android.ui.parameters.views.FloatParamView
+                android:id="@+id/inj_pw_dec_speed"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                app:layout_constraintTop_toBottomOf="@id/full_sequential_after_start"
+                app:layout_constraintStart_toStartOf="parent"
+                android:layout_marginTop="16dp"
+                app:title="@string/injctr_par_inj_pw_dec_speed_title"
+                app:units="@string/units_ms_per_stroke"
+                app:float_value="0.01"
+                app:value_precision="two"
+                app:float_min_value="0.01"
+                app:float_max_value="10.0"
+                app:float_step="0.01"
+                />
+
+            <org.secu3.android.ui.parameters.views.FloatParamView
+                android:id="@+id/inj_pw_inc_speed"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                app:layout_constraintTop_toBottomOf="@id/inj_pw_dec_speed"
+                app:layout_constraintStart_toStartOf="parent"
+                android:layout_marginTop="16dp"
+                app:title="@string/injctr_par_inj_pw_inc_speed_title"
+                app:units="@string/units_ms_per_stroke"
+                app:float_value="0.01"
+                app:value_precision="two"
+                app:float_min_value="0.01"
+                app:float_max_value="10.0"
+                app:float_step="0.01"
+                />
+
+
 
 
 
