@@ -528,6 +528,15 @@ data class UniOutParamPacket(
 
             CONDITION.TPSDOT.id -> value.toFloat()
 
+            CONDITION.GPS.id -> value.toFloat().div(MAP_MULTIPLIER)
+            CONDITION.FPS.id -> value.toFloat().div(MAP_MULTIPLIER)
+
+            CONDITION.OPS.id -> value.toFloat().div(OPS_MULT)
+            CONDITION.EGTS.id -> value.toFloat().div(EGTS_MULT)
+            CONDITION.FTS.id -> value.toFloat().div(FTS_MULT)
+            CONDITION.OTS.id -> value.toFloat().div(FTS_MULT)
+            CONDITION.LOAD.id -> value.toFloat().div(LOAD_PHYSICAL_MAGNITUDE_MULTIPLIER)
+            // Look for reference in ControlApp.cpp::5534
             else -> 0f
         }
     }
@@ -569,6 +578,14 @@ data class UniOutParamPacket(
 
             CONDITION.TPSDOT.id -> value.roundToInt() // %/s
 
+            CONDITION.GPS.id -> value.times(MAP_MULTIPLIER).roundToInt()
+            CONDITION.FPS.id -> value.times(MAP_MULTIPLIER).roundToInt()
+            CONDITION.OPS.id -> value.times(OPS_MULT).roundToInt()
+            CONDITION.EGTS.id -> value.times(EGTS_MULT).roundToInt()
+            CONDITION.FTS.id -> value.times(FTS_MULT).roundToInt()
+            CONDITION.OTS.id -> value.times(FTS_MULT).roundToInt()
+            CONDITION.LOAD.id -> value.times(LOAD_PHYSICAL_MAGNITUDE_MULTIPLIER).roundToInt()
+            // Look for reference in ControlApp.cpp::5534
             else -> 0
         }
     }
@@ -610,6 +627,13 @@ data class UniOutParamPacket(
         MAF(33, true, true, R.string.uniout_condition_maf),      //MAF
         TPSDOT(34, true, true, R.string.uniout_condition_tps_dot),   //TPS dot
         GPS(35, true, true, R.string.uniout_condition_gps),   //TPS dot
+        FPS(36, true, true, R.string.uniout_condition_fps),   //FPS
+        OPS(37, true, true, R.string.uniout_condition_ops),   //OPS
+        EGTS(38, true, true, R.string.uniout_condition_egts),  //EGTS
+        FTS(39, true, true, R.string.uniout_condition_fts),   //FTS
+        OTS(40, true, true, R.string.uniout_condition_ots),   //OTS
+        LOAD(41, true, true, R.string.uniout_condition_load),  //LOAD
+        // Look for reference in SECU3IO.h::606 and ParamDesk.rc for translations
     }
 
 

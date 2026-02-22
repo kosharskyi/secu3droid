@@ -171,6 +171,12 @@
     <string name="uniout_condition_maf">ДМВП (г/сек)</string>
     <string name="uniout_condition_tps_dot">Швидкість ДЗ (\%%/сек)</string>
     <string name="uniout_condition_gps">ДДГ (кПа)</string>
+    <string name="uniout_condition_fps">ДТП (кПа)</string>
+    <string name="uniout_condition_ops">ДТО (кг/см2)</string>
+    <string name="uniout_condition_egts">ДТВГ (°C)</string>
+    <string name="uniout_condition_fts">ДТП (°C)</string>
+    <string name="uniout_condition_ots">ДТО (°C)</string>
+    <string name="uniout_condition_load">Навантаження</string>
 
     <string name="title_activity_diagnostics">Діагностика</string>
     <string name="diagnostics_not_supported_title">Режим діагностики відключений в прошивці або не встановлено з\'єднання з Secu-3</string>

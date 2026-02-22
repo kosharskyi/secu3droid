@@ -224,6 +224,12 @@
     <string name="uniout_condition_maf">MAF (g/sec)</string>
     <string name="uniout_condition_tps_dot">TPS dot (\%%/sec)</string>
     <string name="uniout_condition_gps">GPS (kPa)</string>
+    <string name="uniout_condition_fps">FPS (kPa)</string>
+    <string name="uniout_condition_ops">OPS (kg/cm2)</string>
+    <string name="uniout_condition_egts">EGTS (C)</string>
+    <string name="uniout_condition_fts">FTS (C)</string>
+    <string name="uniout_condition_ots">OTS (C)</string>
+    <string name="uniout_condition_load">Load</string>
 
     <string name="title_activity_diagnostics">Diagnostics</string>
     <string name="diagnostics_not_supported_title">Diagnostics option disabled in your firmware or Secu-3 device not connected</string>

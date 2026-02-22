@@ -152,6 +152,31 @@ class UnioutTabConfigurator @Inject constructor() {
                 firstView.configure(0.25f, 500.0f,0.25f, 2, firstValue ?: 95.0f)
                 secondView.configure(0.25f, 500.0f,0.25f, 2, secondValue ?: 90.0f)
             }
+
+            CONDITION.FPS -> {
+                firstView.configure(0.0f, 700.0f,0.25f, 2, firstValue ?: 320.0f)
+                secondView.configure(0.0f, 700.0f,0.25f, 2, secondValue ?: 300.0f)
+            }
+            CONDITION.OPS -> {
+                firstView.configure(0.0f, 25.0f,0.05f, 3, firstValue ?: 4.1f)
+                secondView.configure(0.0f, 25.0f,0.05f, 3, secondValue ?: 4.0f)
+            }
+            CONDITION.EGTS -> {
+                firstView.configure(0.0f, 2000.0f,0.25f, 1, firstValue ?: 1000.0f)
+                secondView.configure(0.0f, 2000.0f,0.25f, 1, secondValue ?: 990.0f)
+            }
+            CONDITION.FTS -> {
+                firstView.configure(-40.0f, 250.0f,0.25f, 1, firstValue ?: 100.0f)
+                secondView.configure(-40.0f, 250.0f,0.25f, 1, secondValue ?: 98.0f)
+            }
+            CONDITION.OTS -> {
+                firstView.configure(-40.0f, 250.0f,0.25f, 1, firstValue ?: 100.0f)
+                secondView.configure(-40.0f, 250.0f,0.25f, 1, secondValue ?: 98.0f)
+            }
+            CONDITION.LOAD -> {
+                firstView.configure(0.25f, 500.0f,0.25f, 2, firstValue ?: 95.0f)
+                secondView.configure(0.25f, 500.0f,0.25f, 2, secondValue ?: 90.0f)
+            }
         }
     }
 
