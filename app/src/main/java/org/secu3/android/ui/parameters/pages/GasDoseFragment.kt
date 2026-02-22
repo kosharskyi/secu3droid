@@ -24,15 +24,17 @@
  */
 package org.secu3.android.ui.parameters.pages
 
+import android.graphics.Color
 import android.os.Bundle
 import android.text.InputType
 import android.view.LayoutInflater
+import android.view.MotionEvent
 import android.view.View
 import android.view.ViewGroup
 import android.widget.ArrayAdapter
+import androidx.core.content.ContextCompat
 import androidx.lifecycle.lifecycleScope
 import androidx.lifecycle.withResumed
-import androidx.lifecycle.withStarted
 import kotlinx.coroutines.launch
 import org.secu3.android.R
 import org.secu3.android.databinding.FragmentGasDoseBinding
@@ -41,6 +43,8 @@ import org.secu3.android.ui.parameters.views.FloatParamView
 import org.secu3.android.ui.parameters.views.IntParamView
 import org.secu3.android.utils.gone
 import org.secu3.android.utils.visible
+import androidx.core.graphics.toColorInt
+import com.google.android.material.button.MaterialButton
 
 
 class GasDoseFragment : BaseParamFragment() {
@@ -85,6 +89,9 @@ class GasDoseFragment : BaseParamFragment() {
                         gasDoseParamGroup.visible()
 
                         numOfSmSteps.value = it.steps
+
+                        updateTestBtnColor(it.testing)
+
                         stoichiometricRatio.value = it.lambdaStoichval
                         closingOnFuelCut.value = it.fcClosing
 
@@ -104,6 +111,16 @@ class GasDoseFragment : BaseParamFragment() {
         }
     }
 
+    private fun updateTestBtnColor(testing: Boolean) {
+        mBinding.apply {
+            if (testing) {
+                testBtn.setBackgroundColor(ContextCompat.getColor(requireContext(), android.R.color.holo_red_light))
+            } else {
+                testBtn.setBackgroundColor("#40b6fb".toColorInt())
+            }
+        }
+    }
+
     private fun initViews() {
 
         mBinding.apply {
@@ -111,6 +128,40 @@ class GasDoseFragment : BaseParamFragment() {
             numOfSmSteps.addOnValueChangeListener {
                 packet?.steps = it
                 packet?.let { it1 -> mViewModel.sendPacket(it1) }
+            }
+
+            testBtn.setOnClickListener {
+                packet?.let {
+                    it.testing = it.testing.not()
+                    updateTestBtnColor(it.testing)
+                    mViewModel.sendPacket(it)
+                }
+            }
+
+            testDecBtn.setPressAndHoldRepeater {
+                packet?.let {
+                    it.manualPositionD = it.manualPositionD.dec().coerceIn(-127..127)
+                }
+            }
+
+            testDecBtn.setOnClickListener {
+                packet?.let {
+                    mViewModel.sendPacket(it)
+                    it.manualPositionD = 0
+                }
+            }
+
+            testIncBtn.setPressAndHoldRepeater {
+                packet?.let {
+                    it.manualPositionD = it.manualPositionD.inc().coerceIn(-127..127)
+                }
+            }
+
+            testIncBtn.setOnClickListener {
+                packet?.let {
+                    mViewModel.sendPacket(it)
+                    it.manualPositionD = 0
+                }
             }
 
             stoichiometricRatio.addOnValueChangeListener {
@@ -149,6 +200,64 @@ class GasDoseFragment : BaseParamFragment() {
 
             correctionLimitPositive.setOnClickListener { floatParamClick(it as FloatParamView) }
             correctionLimitNegative.setOnClickListener { floatParamClick(it as FloatParamView) }
+        }
+    }
+
+    private fun MaterialButton.setPressAndHoldRepeater(
+        initialDelayMs: Long = 400L,
+        repeatDelayMs: Long = 80L,
+        fireImmediately: Boolean = true,
+        onTick: () -> Unit
+    ) {
+        var isDown = false
+        var didRepeat = false
+
+        val repeatRunnable = object : Runnable {
+            override fun run() {
+                if (!isDown) return
+                didRepeat = true
+                onTick()
+                postDelayed(this, repeatDelayMs)
+            }
+        }
+
+        setOnTouchListener { v, event ->
+            when (event.actionMasked) {
+                MotionEvent.ACTION_DOWN -> {
+                    isDown = true
+                    didRepeat = false
+                    v.isPressed = true
+
+                    if (fireImmediately) {
+                        onTick()
+                    }
+
+                    v.postDelayed(repeatRunnable, initialDelayMs)
+                    true
+                }
+
+                MotionEvent.ACTION_UP -> {
+                    isDown = false
+                    v.isPressed = false
+                    v.removeCallbacks(repeatRunnable)
+
+                    // Якщо не було повторів і ми не робили immediate tick — це звичайний tap
+                    if (!didRepeat && !fireImmediately) onTick()
+
+                    // І ОТУТ — єдиний тригер "відправити накопичене"
+                    v.performClick()
+                    true
+                }
+
+                MotionEvent.ACTION_CANCEL -> {
+                    isDown = false
+                    v.isPressed = false
+                    v.removeCallbacks(repeatRunnable)
+                    true
+                }
+
+                else -> false
+            }
         }
     }
 

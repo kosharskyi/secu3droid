@@ -380,5 +380,8 @@
     <string name="test_signal_frequency_hz">Частота тест. сигнала</string>
     <string name="test_signal_duty">Скважность тест. сигнала</string>
 
+    <string name="test">Тест</string>
+
+
 
 </resources>

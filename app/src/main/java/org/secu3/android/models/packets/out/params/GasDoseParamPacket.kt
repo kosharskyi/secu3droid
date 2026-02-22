@@ -32,8 +32,8 @@ import kotlin.math.roundToInt
 data class GasDoseParamPacket(
 
     var steps: Int = 0,
-    var testing: Int = 0,           //fake parameter (actually it is status)
-    var manualPositionD: Int = 0,   //fake parameter
+    var testing: Boolean = false,           // send 1 to start testing (it will open and close choke continuously) and 0 to stop testing
+    var manualPositionD: Int = 0,   // should be within -127..127 range
     var fcClosing: Float = 0f,
     var lambdaCorrLimitP: Float = 0f,
     var lambdaCorrLimitM: Float = 0f,
@@ -47,7 +47,7 @@ data class GasDoseParamPacket(
         var data = intArrayOf(DESCRIPTOR.code)
 
         data += steps.write2Bytes()
-        data += testing            //fake parameter (actually it is command)
+        data += if (testing) 1 else 0 //send 1 to start testing (it will open and close choke continuously) and 0 to stop testing
         data += manualPositionD    //fake parameter, not used in outgoing paket
         data += fcClosing.times(GAS_DOSE_MULTIPLIER).roundToInt()
         data += lambdaCorrLimitP.times(512.0f).div(100).roundToInt().write2Bytes()
@@ -64,7 +64,7 @@ data class GasDoseParamPacket(
     override fun parse(data: IntArray): InputPacket {
 
         steps = data.get2Bytes()
-        testing = data.get1Byte()       //fake parameter (actually it is command)
+        testing = data.get1Byte() > 0      //send 1 to start testing (it will open and close choke continuously) and 0 to stop testing
         manualPositionD = data.get1Byte()   //fake parameter, not used in outgoing paket
         fcClosing = data.get1Byte().toFloat() / GAS_DOSE_MULTIPLIER
         lambdaCorrLimitP = data.get2Bytes().toFloat().times(100.0f).div(512.0f)

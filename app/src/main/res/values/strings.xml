@@ -538,4 +538,6 @@
     <string name="test_signal_frequency_hz">Test signal frequency</string>
     <string name="test_signal_duty">Test signal duty</string>
 
+    <string name="test">Test</string>
+
 </resources>
