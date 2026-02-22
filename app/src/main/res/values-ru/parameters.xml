@@ -82,6 +82,7 @@
     <string name="idlreg_differential_title">Дифференциальный</string>
     <string name="idlreg_rigidity_load_coef_title">Коэффициент нагрузки в аргументе таблицы жесткости РХХ</string>
     <string name="idlreg_rigidity_rpm_coef_title">Коэффициент оборотов в аргументе таблицы жесткости РХХ</string>
+    <string name="idlreg_load_thrd_title">Порог нагрузки для входа в CL</string>
 
 
 

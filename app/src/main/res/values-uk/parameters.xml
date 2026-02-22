@@ -82,6 +82,7 @@
     <string name="idlreg_differential_title">Диференційний</string>
     <string name="idlreg_rigidity_load_coef_title">Коефіцієнт навантаження в аргументі таблиці жорсткості РХХ</string>
     <string name="idlreg_rigidity_rpm_coef_title">Коефіцієнт обертів в аргументі таблиці жорсткості РХХ</string>
+    <string name="idlreg_load_thrd_title">Поріг навантаження для входу в CL</string>
 
 
 

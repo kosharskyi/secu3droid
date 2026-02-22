@@ -59,6 +59,8 @@ data class IdlingParamPacket(
     var irrKLoad: Float = 0f,
     var irrKRpm: Float = 0f,
 
+    var loadIdlThrd: Float = 0f,
+
 
     ) : Secu3Packet(), InputPacket, OutputPacket {
 
@@ -131,6 +133,7 @@ data class IdlingParamPacket(
 
         irrKLoad = data.get2Bytes().toFloat() / 32.0f
         irrKRpm = data.get2Bytes().toFloat() / 32.0f
+        loadIdlThrd = data.get2Bytes().toFloat() / LOAD_PHYSICAL_MAGNITUDE_MULTIPLIER
 
         data.setUnhandledParams()
 
@@ -165,6 +168,8 @@ data class IdlingParamPacket(
 
         data += irrKLoad.times(32.0f).roundToInt().write2Bytes()
         data += irrKRpm.times(32.0f).roundToInt().write2Bytes()
+
+        data += loadIdlThrd.times(LOAD_PHYSICAL_MAGNITUDE_MULTIPLIER).roundToInt().write2Bytes()
 
         data += unhandledParams
 

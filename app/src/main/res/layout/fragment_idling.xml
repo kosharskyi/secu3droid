@@ -475,6 +475,22 @@
                 app:float_step="0.05"
                 />
 
+
+            <!-- ************************************************************* -->
+
+            <org.secu3.android.ui.parameters.views.FloatParamView
+                android:id="@+id/load_idl_thrd"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                app:title="@string/idlreg_load_thrd_title"
+                app:units="@string/units_percents"
+                app:float_value="0"
+                app:value_precision="one"
+                app:float_min_value="0.0"
+                app:float_max_value="500.0"
+                app:float_step="0.1"
+                />
+
         </LinearLayout>
 
     </ScrollView>

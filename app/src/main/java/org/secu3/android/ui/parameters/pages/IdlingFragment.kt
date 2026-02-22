@@ -110,6 +110,8 @@ class IdlingFragment : BaseParamFragment() {
 
                         idlRigidityLoadCoef.value = it.irrKLoad
                         idlRigidityRpmCoef.value = it.irrKRpm
+
+                        loadIdlThrd.value = it.loadIdlThrd
                     }
 
                     initViews()
@@ -266,6 +268,11 @@ class IdlingFragment : BaseParamFragment() {
                 packet?.let { it1 -> mViewModel.sendPacket(it1) }
             }
 
+            loadIdlThrd.addOnValueChangeListener {
+                packet?.loadIdlThrd = it
+                packet?.let { it1 -> mViewModel.sendPacket(it1) }
+            }
+
 
             positiveRegFactor.setOnClickListener { floatParamClick(it as FloatParamView) }
             negativeRegFactor.setOnClickListener { floatParamClick(it as FloatParamView) }
@@ -295,6 +302,8 @@ class IdlingFragment : BaseParamFragment() {
 
             idlRigidityLoadCoef.setOnClickListener { floatParamClick(it as FloatParamView) }
             idlRigidityRpmCoef.setOnClickListener { floatParamClick(it as FloatParamView) }
+
+            loadIdlThrd.setOnClickListener { floatParamClick(it as FloatParamView) }
         }
     }
 

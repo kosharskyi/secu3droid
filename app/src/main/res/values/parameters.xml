@@ -81,6 +81,7 @@
     <string name="idlreg_works_together_with_iac_reg_title">Ign.tim. idling regulator works together with IAC regulator</string>
     <string name="idlreg_rigidity_load_coef_title">Coeff. of load in the argument of idl. rigidity map</string>
     <string name="idlreg_rigidity_rpm_coef_title">Coeff. of rpm in the argument of idl. rigidity map</string>
+    <string name="idlreg_load_thrd_title">Load threshold for entering CL</string>
 
 
     <string name="funset_lower_pressure_title">Lower pressure value</string>
