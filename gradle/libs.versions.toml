@@ -1,12 +1,12 @@
 [versions]
-kotlin = "2.3.0" # NOTE: Do NOT forget to update KSP version as well
-kotlin-ksp = "2.3.4"
+kotlin = "2.3.10" # NOTE: Do NOT forget to update KSP version as well
+kotlin-ksp = "2.3.6"
 core-ktx = "1.17.0"
 appcompat = "1.7.1"
 
-dagger = "2.59"
+dagger = "2.59.2"
 
-firebase-bom = "34.8.0"
+firebase-bom = "34.9.0"
 
 annotation = "1.9.1"
 constraintlayout = "2.2.1"
@@ -20,8 +20,8 @@ viewpager2 = "1.1.0"
 material = "1.13.0"
 browser = "1.9.0"
 
-compose = "1.12.3"
-compose-bom = "2026.01.01"
+compose = "1.12.4"
+compose-bom = "2026.02.00"
 material3-android = "1.4.0"
 
 gson = "2.13.2"

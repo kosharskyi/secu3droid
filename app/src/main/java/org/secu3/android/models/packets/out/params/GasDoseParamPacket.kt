@@ -33,7 +33,7 @@ data class GasDoseParamPacket(
 
     var steps: Int = 0,
     var testing: Boolean = false,           // send 1 to start testing (it will open and close choke continuously) and 0 to stop testing
-    var manualPositionD: Int = 0,   // should be within -127..127 range
+    var manualPositionD: Int = 0,           // should be within -127..127 range
     var fcClosing: Float = 0f,
     var lambdaCorrLimitP: Float = 0f,
     var lambdaCorrLimitM: Float = 0f,

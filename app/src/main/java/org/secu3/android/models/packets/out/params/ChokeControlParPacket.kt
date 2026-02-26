@@ -34,8 +34,8 @@ import kotlin.math.roundToInt
 data class ChokeControlParPacket(
 
     var smSteps: Int = 0,
-    var testing: Int = 0,           //fake parameter (actually it is status)
-    var manualPositionD: Int = 0,   //fake parameter
+    var testing: Boolean = false,           // send 1 to start testing (it will open and close choke continuously) and 0 to stop testing
+    var manualPositionD: Int = 0,           // should be within -127..127 range
 
     var rpmIf: Float = 0f,
 
@@ -81,8 +81,8 @@ data class ChokeControlParPacket(
 
         data += smSteps.write2Bytes()
 
-        data += testing
-        data += manualPositionD
+        data += if (testing) 1 else 0 //send 1 to start testing (it will open and close choke continuously) and 0 to stop testing
+        data += manualPositionD    //fake parameter, not used in outgoing paket
 
         data += rpmIf.times(1024.0f).roundToInt().write2Bytes()
         data += corrTime0.times(100).roundToInt().write2Bytes()
@@ -98,8 +98,8 @@ data class ChokeControlParPacket(
 
     override fun parse(data: IntArray): InputPacket {
         smSteps = data.get2Bytes()
-        data.get1Byte()     // testing fake param
-        data.get1Byte()     // manual position fake param
+        testing = data.get1Byte() > 0      //send 1 to start testing (it will open and close choke continuously) and 0 to stop testing
+        manualPositionD = data.get1Byte()   //fake parameter, not used in outgoing paket
         rpmIf = data.get2Bytes().toFloat() / 1024.0f
         corrTime0 = data.get2Bytes().toFloat() / 100
         corrTime1 = data.get2Bytes().toFloat() / 100

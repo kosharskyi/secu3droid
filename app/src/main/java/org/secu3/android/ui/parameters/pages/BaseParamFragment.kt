@@ -25,8 +25,10 @@
 
 package org.secu3.android.ui.parameters.pages
 
+import android.view.MotionEvent
 import androidx.fragment.app.Fragment
 import androidx.fragment.app.viewModels
+import com.google.android.material.button.MaterialButton
 import org.secu3.android.ui.parameters.ParamsViewModel
 import org.secu3.android.ui.parameters.dialogs.ParamFloatEditDialogFragment
 import org.secu3.android.ui.parameters.dialogs.ParamIntEditDialogFragment
@@ -58,6 +60,64 @@ abstract class BaseParamFragment : Fragment() {
                 }
 
                 it.show(childFragmentManager, it::class.java.simpleName)
+            }
+        }
+    }
+
+    protected fun MaterialButton.setPressAndHoldRepeater(
+        initialDelayMs: Long = 400L,
+        repeatDelayMs: Long = 80L,
+        fireImmediately: Boolean = true,
+        onTick: () -> Unit
+    ) {
+        var isDown = false
+        var didRepeat = false
+
+        val repeatRunnable = object : Runnable {
+            override fun run() {
+                if (!isDown) return
+                didRepeat = true
+                onTick()
+                postDelayed(this, repeatDelayMs)
+            }
+        }
+
+        setOnTouchListener { v, event ->
+            when (event.actionMasked) {
+                MotionEvent.ACTION_DOWN -> {
+                    isDown = true
+                    didRepeat = false
+                    v.isPressed = true
+
+                    if (fireImmediately) {
+                        onTick()
+                    }
+
+                    v.postDelayed(repeatRunnable, initialDelayMs)
+                    true
+                }
+
+                MotionEvent.ACTION_UP -> {
+                    isDown = false
+                    v.isPressed = false
+                    v.removeCallbacks(repeatRunnable)
+
+                    // Якщо не було повторів і ми не робили immediate tick — це звичайний tap
+                    if (!didRepeat && !fireImmediately) onTick()
+
+                    // І ОТУТ — єдиний тригер "відправити накопичене"
+                    v.performClick()
+                    true
+                }
+
+                MotionEvent.ACTION_CANCEL -> {
+                    isDown = false
+                    v.isPressed = false
+                    v.removeCallbacks(repeatRunnable)
+                    true
+                }
+
+                else -> false
             }
         }
     }

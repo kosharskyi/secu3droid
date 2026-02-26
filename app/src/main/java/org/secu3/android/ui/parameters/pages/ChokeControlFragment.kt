@@ -30,6 +30,8 @@ import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import android.widget.ArrayAdapter
+import androidx.core.content.ContextCompat
+import androidx.core.graphics.toColorInt
 import androidx.lifecycle.lifecycleScope
 import androidx.lifecycle.withResumed
 import androidx.lifecycle.withStarted
@@ -80,6 +82,8 @@ class ChokeControlFragment : BaseParamFragment() {
                         params.visible()
 
                         numSmSteps.value = it.smSteps
+                        updateTestBtnColor(it.testing)
+
                         regulatorFactor.value = it.rpmIf
 
                         crankingMapLastingCold.value = it.corrTime0
@@ -102,6 +106,16 @@ class ChokeControlFragment : BaseParamFragment() {
         }
     }
 
+    private fun updateTestBtnColor(testing: Boolean) {
+        mBinding.apply {
+            if (testing) {
+                testBtn.setBackgroundColor(ContextCompat.getColor(requireContext(), android.R.color.holo_red_light))
+            } else {
+                testBtn.setBackgroundColor("#40b6fb".toColorInt())
+            }
+        }
+    }
+
     private fun initViews() {
 
         mBinding.apply {
@@ -109,6 +123,40 @@ class ChokeControlFragment : BaseParamFragment() {
             numSmSteps.addOnValueChangeListener {
                 packet?.smSteps = it
                 packet?.let { it1 -> mViewModel.sendPacket(it1) }
+            }
+
+            testBtn.setOnClickListener {
+                packet?.let {
+                    it.testing = it.testing.not()
+                    updateTestBtnColor(it.testing)
+                    mViewModel.sendPacket(it)
+                }
+            }
+
+            testDecBtn.setPressAndHoldRepeater {
+                packet?.let {
+                    it.manualPositionD = it.manualPositionD.dec().coerceIn(-127..127)
+                }
+            }
+
+            testDecBtn.setOnClickListener {
+                packet?.let {
+                    mViewModel.sendPacket(it)
+                    it.manualPositionD = 0
+                }
+            }
+
+            testIncBtn.setPressAndHoldRepeater {
+                packet?.let {
+                    it.manualPositionD = it.manualPositionD.inc().coerceIn(-127..127)
+                }
+            }
+
+            testIncBtn.setOnClickListener {
+                packet?.let {
+                    mViewModel.sendPacket(it)
+                    it.manualPositionD = 0
+                }
             }
 
             regulatorFactor.addOnValueChangeListener {
