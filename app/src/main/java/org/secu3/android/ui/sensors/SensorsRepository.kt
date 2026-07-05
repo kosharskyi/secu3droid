@@ -120,6 +120,8 @@ class SensorsRepository @Inject constructor(
             GaugeType.FUEL_PRESSURE_SENS -> String.format(Locale.US, "%.2f", it.fuelPressureSensor)
             GaugeType.APPS1 -> String.format(Locale.US, "%.1f", it.apps1)
             GaugeType.OTS -> String.format(Locale.US, "%.1f", it.ots)
+            GaugeType.EST_TORQUE -> String.format(Locale.US, "%.1f", it.estTorque)
+            GaugeType.REQ_TORQUE -> String.format(Locale.US, "%.1f", it.reqTorque)
         }
 
         return GaugeItem(state, value)

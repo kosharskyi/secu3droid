@@ -272,6 +272,7 @@
     <string name="units_l_per_100km">L/100km</string>
     <string name="units_gram_per_second">g/sec</string>
     <string name="units_kg_per_cm2">kg/cm2</string>
+    <string name="units_torque_nm">Nm</string>
 
 
     <string name="maximum_step_frequency_at_init">Maximum STEP frequency at init</string>
@@ -465,6 +466,8 @@
     <string name="sensors_frag_fuel_pressure_label">Fuel pressure</string>
     <string name="sensors_frag_acceleration_pedal_sensor_label">APPS</string>
     <string name="sensors_frag_oil_temperature_sensor_label">Oil Temp</string>
+    <string name="sensors_frag_estimated_torque_label">Estimated Torque</string>
+    <string name="sensors_frag_requested_torque_label">Requested Torque</string>
     <string name="sensors_frag_status_gas_valve_label">Gas valve</string>
     <string name="sensors_frag_status_throttle_label">Throttle</string>
     <string name="sensors_frag_status_fl_fuel_label">Fl fuel</string>

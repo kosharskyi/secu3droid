@@ -215,6 +215,7 @@
     <string name="units_curve_n">Крива N</string>
     <string name="units_l_per_100km">Л/100км</string>
     <string name="units_gram_per_second">г/сек</string>
+    <string name="units_torque_nm">Нм</string>
     <string name="units_kg_per_cm2">кг/см2</string>
 
     <string name="params_tab_start_title">Запуск</string>
@@ -303,6 +304,8 @@
     <string name="sensors_frag_fuel_pressure_label">Тиск палива</string>
     <string name="sensors_frag_acceleration_pedal_sensor_label">ДППА</string>
     <string name="sensors_frag_oil_temperature_sensor_label">Температура оливи</string>
+    <string name="sensors_frag_estimated_torque_label">Розрахунковий момент</string>
+    <string name="sensors_frag_requested_torque_label">Бажаний момент</string>
     <string name="sensors_frag_status_gas_valve_label">Газовий клапан</string>
     <string name="sensors_frag_status_throttle_label">Дросель</string>
     <string name="sensors_frag_status_fl_fuel_label">Паливо при ПХХ</string>

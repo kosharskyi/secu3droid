@@ -112,6 +112,8 @@ data class SensorsPacket(
 
     var apps1: Float = 0f,                     // Accelerator pedal position
     var ots: Float = 0f,                     // Oil temperature sensor
+    var estTorque: Float = 0f,               // Calculated torque
+    var reqTorque: Float = 0f,               // Requested torque
 
 ) : Secu3Packet(), InputPacket{
 
@@ -454,6 +456,9 @@ data class SensorsPacket(
         apps1 = data.get2Bytes().toFloat() / APPS_MULT
 
         ots = data.get2Bytes().toFloat() / FTS_MULT
+
+        estTorque = data.get2Bytes().toShort().toFloat() / 2.0f
+        reqTorque = data.get2Bytes().toShort().toFloat() / 2.0f
 
         return this
     }

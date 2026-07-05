@@ -303,6 +303,16 @@ enum class GaugeType (val title: Int, val minValue: Float, val maxValue: Float, 
         Section(0f, 0.5f, R.color.gauge_ots_0, -1f),
         Section(0.5f, 0.78f, R.color.gauge_ots_1, -1f),
         Section(0.78f, 1.0f, R.color.gauge_ots_2, -1f),
+    )),
+
+    EST_TORQUE(R.string.sensors_frag_estimated_torque_label, 0.0f, 400.0f, R.string.units_torque_nm, false, 9, listOf(
+        Section(0f, 0.25f, R.color.gauge_lt_red, -1f),
+        Section(0.25f, 1.0f, R.color.gauge_green, -1f),
+    )),
+
+    REQ_TORQUE(R.string.sensors_frag_requested_torque_label, 0.0f, 400.0f, R.string.units_torque_nm, false, 9, listOf(
+        Section(0f, 0.25f, R.color.gauge_lt_red, -1f),
+        Section(0.25f, 1.0f, R.color.gauge_green, -1f),
     ));
 
     fun getSections(context: Context, width: Float): List<Section> {
@@ -367,6 +377,8 @@ enum class GaugeType (val title: Int, val minValue: Float, val maxValue: Float, 
             FUEL_PRESSURE_SENS -> packet.fuelPressureSensor
             APPS1 -> packet.apps1
             OTS -> packet.ots
+            EST_TORQUE -> packet.estTorque
+            REQ_TORQUE -> packet.reqTorque
         }
     }
 }

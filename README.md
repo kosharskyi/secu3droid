@@ -34,7 +34,7 @@
 
 - Android Studio Koala or newer
 - JDK 17+
-- A Secu-3 unit with Bluetooth or USB-Serial adapter
+- A Secu-3 unit with Bluetooth or USB
 
 ### Installation
 
