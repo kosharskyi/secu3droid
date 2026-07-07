@@ -375,6 +375,7 @@
     <string name="unknown_device">Невідомий пристрій</string>
     <string name="select_a_device_from_the_list">Виберіть пристрій зі списку</string>
     <string name="clear_all_errors">Видалити всі помилки</string>
+    <string name="dialog_confirm_clear_errors_message">Ви впевнені, що хочете очистити всі помилки ECU?</string>
     <string name="name">Ім\'я</string>
     <string name="password">Пароль</string>
     <string name="test_signal_frequency_hz">Частота тест. сигналу</string>

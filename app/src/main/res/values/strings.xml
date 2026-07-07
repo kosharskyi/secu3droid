@@ -536,6 +536,7 @@
     <string name="unknown_device">Unknown Device</string>
     <string name="select_a_device_from_the_list">Select a device from the list</string>
     <string name="clear_all_errors">Clear all errors</string>
+    <string name="dialog_confirm_clear_errors_message">Are you sure you want to clear all ECU errors?</string>
     <string name="name">Name</string>
     <string name="password">Password</string>
     <string name="test_signal_frequency_hz">Test signal frequency</string>

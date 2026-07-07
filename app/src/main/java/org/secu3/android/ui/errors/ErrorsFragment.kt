@@ -35,6 +35,7 @@ import androidx.core.graphics.drawable.DrawableCompat
 import androidx.fragment.app.Fragment
 import androidx.fragment.app.viewModels
 import androidx.navigation.fragment.findNavController
+import com.google.android.material.dialog.MaterialAlertDialogBuilder
 import dagger.hilt.android.AndroidEntryPoint
 import org.secu3.android.R
 import org.secu3.android.connection.Connected
@@ -124,12 +125,23 @@ class ErrorsFragment : Fragment() {
             setOnMenuItemClickListener {
                 when (it.itemId) {
                     R.id.clear_errors -> {
-                        mViewModel.clearErrors()
+                        confirmClearErrors()
                         true
                     }
                     else -> false
                 }
             }
         }
+    }
+
+    private fun confirmClearErrors() {
+        MaterialAlertDialogBuilder(requireContext())
+            .setTitle(R.string.clear_all_errors)
+            .setMessage(R.string.dialog_confirm_clear_errors_message)
+            .setPositiveButton(android.R.string.ok) { _, _ ->
+                mViewModel.clearErrors()
+            }
+            .setNegativeButton(android.R.string.cancel, null)
+            .show()
     }
 }
