@@ -175,6 +175,7 @@ class HomeFragment : Fragment() {
 
             if (ContextCompat.checkSelfPermission(requireContext(), permission) == PackageManager.PERMISSION_GRANTED) {
                 mViewModel.downloadRelease(release)
+                return
             }
 
             if (shouldShowRequestPermissionRationale(android.Manifest.permission.WRITE_EXTERNAL_STORAGE)) {

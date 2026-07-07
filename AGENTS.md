@@ -95,7 +95,7 @@ Use the Gradle wrapper from the repository root.
 Notes:
 
 - `connectedDebugAndroidTest` requires a connected Android device or emulator.
-- TODO: Confirm the canonical CI command, if any. No workflow-specific command was verified here.
+- Current CI build command is `./gradlew app:assembleDebug`.
 - No project-specific ktlint, detekt, or format command is configured currently.
 
 ## Working Rules For Agents

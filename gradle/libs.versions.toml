@@ -79,6 +79,7 @@ compose-ui = { group = "androidx.compose.ui", name = "ui" }
 compose-material = { group = "androidx.compose.material", name = "material" }
 compose-material-icons = { group = "androidx.compose.material", name = "material-icons-extended" }
 compose-ui-tooling = { group = "androidx.compose.ui", name = "ui-tooling"}
+compose-ui-tooling-preview = { group = "androidx.compose.ui", name = "ui-tooling-preview" }
 compose-runtime = { group = "androidx.compose.runtime", name = "runtime" }
 compose-viewmodel = { group = "androidx.lifecycle", name = "lifecycle-viewmodel-compose" }
 compose-livedata = { group = "androidx.compose.runtime", name = "runtime-livedata"}
@@ -113,5 +114,4 @@ kotlin-compose = { id = "org.jetbrains.kotlin.plugin.compose", version.ref = "ko
 navigation-safeargs = { id = "androidx.navigation.safeargs.kotlin", version.ref = "navigation" }
 dagger-hilt-plugin = { id = "com.google.dagger.hilt.android", version.ref = "dagger" }
 room-plugin = { id = "androidx.room", version.ref = "room" }
-
 
