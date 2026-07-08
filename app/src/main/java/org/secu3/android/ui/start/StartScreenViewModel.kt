@@ -96,8 +96,7 @@ class StartScreenViewModel @Inject constructor(
     }
 
     fun isLocationEnabled(): Boolean {
-        val version = Build.VERSION.SDK_INT
-        if (version < Build.VERSION_CODES.P || version >= Build.VERSION_CODES.R) {
+        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.P || Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
             return true
         }
 

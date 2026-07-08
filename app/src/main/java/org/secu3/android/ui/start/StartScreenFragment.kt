@@ -61,7 +61,6 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.material.Icon
 import androidx.compose.material.MaterialTheme
 import androidx.compose.material.Surface
-import androidx.compose.material.Text
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Assessment
 import androidx.compose.material.icons.filled.Bluetooth
@@ -71,6 +70,7 @@ import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.ListItem
 import androidx.compose.material3.ModalBottomSheet
+import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.SideEffect
 import androidx.compose.runtime.getValue
@@ -163,7 +163,7 @@ class StartScreenFragment : Fragment() {
         }
     }
 
-    override fun onCreateView(inflater: LayoutInflater, container: ViewGroup?, savedInstanceState: Bundle?): View? {
+    override fun onCreateView(inflater: LayoutInflater, container: ViewGroup?, savedInstanceState: Bundle?): View {
 
         return ComposeView(requireContext()).apply {
             setContent {
@@ -287,7 +287,7 @@ class StartScreenFragment : Fragment() {
                                 viewModel.cancelBtDiscovery()
                             }
                         ) {
-                            androidx.compose.material3.Text(
+                            Text(
                                 text = stringResource(R.string.select_a_device_from_the_list),
                                 style = androidx.compose.material3.MaterialTheme.typography.titleLarge,
                                 modifier = Modifier
@@ -311,8 +311,8 @@ class StartScreenFragment : Fragment() {
                                                         .padding(end = 8.dp)
                                                         .align(Alignment.CenterVertically))
                                                 Column {
-                                                    androidx.compose.material3.Text(device.name ?: device.alias ?: stringResource(R.string.unknown_device))
-                                                    androidx.compose.material3.Text(device.address, fontSize = 12.sp, color = androidx.compose.material3.MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f)) // Відображення MAC-адреси()
+                                                    Text(device.name ?: stringResource(R.string.unknown_device))
+                                                    Text(device.address, fontSize = 12.sp, color = androidx.compose.material3.MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f)) // Відображення MAC-адреси()
                                                 }
                                             }
                                         },
