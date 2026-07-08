@@ -104,29 +104,41 @@ class StartScreenViewModel @Inject constructor(
     }
 
     fun startBtDiscovery() {
-        bluetoothAdapter.apply {
-            if (isEnabled.not()) return
+        try {
+            bluetoothAdapter.apply {
+                if (isEnabled.not()) return
 
-            if (isDiscovering) {
-                cancelDiscovery()
+                if (isDiscovering) {
+                    cancelDiscovery()
+                }
+
+                bondedDevices.forEach { device ->
+                    discoveredBtDevices.add(device)
+                }
+
+                startDiscovery()
             }
-
-            bondedDevices.forEach { device ->
-                discoveredBtDevices.add(device)
-            }
-
-            startDiscovery()
+        } catch (e: SecurityException) {
+            disableProgress()
         }
     }
 
     fun cancelBtDiscovery() {
-        bluetoothAdapter.cancelDiscovery()
+        try {
+            bluetoothAdapter.cancelDiscovery()
+        } catch (e: SecurityException) {
+            // Permission can be revoked while discovery UI is open.
+        }
     }
 
     fun isBtDeviceAddressNotSelected(): Boolean {
         val btName = mPrefs.bluetoothDeviceName.takeIf { it.isNullOrEmpty().not() } ?: return true
 
-        val bluetoothDevice: BluetoothDevice? = bluetoothAdapter.bondedDevices.firstOrNull { it.name == btName }
+        val bluetoothDevice: BluetoothDevice? = try {
+            bluetoothAdapter.bondedDevices.firstOrNull { it.name == btName }
+        } catch (e: SecurityException) {
+            null
+        }
 
         if (bluetoothDevice == null) {
             mPrefs.bluetoothDeviceName = null
@@ -136,7 +148,35 @@ class StartScreenViewModel @Inject constructor(
     }
 
     fun setBtDevice(device: BluetoothDevice) {
-        mPrefs.bluetoothDeviceName = device.name
+        mPrefs.bluetoothDeviceName = try {
+            device.name
+        } catch (e: SecurityException) {
+            null
+        }
+    }
+
+    fun getBluetoothDeviceName(device: BluetoothDevice): String? {
+        return try {
+            device.name
+        } catch (e: SecurityException) {
+            null
+        }
+    }
+
+    fun getBluetoothBondState(device: BluetoothDevice): Int? {
+        return try {
+            device.bondState
+        } catch (e: SecurityException) {
+            null
+        }
+    }
+
+    fun createBluetoothBond(device: BluetoothDevice) {
+        try {
+            device.createBond()
+        } catch (e: SecurityException) {
+            disableProgress()
+        }
     }
 
     fun enableProgress() {

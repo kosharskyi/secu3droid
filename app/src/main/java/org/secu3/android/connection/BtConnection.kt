@@ -108,12 +108,17 @@ class BtConnection @Inject constructor(
     }
 
     private fun connectToDevice() {
-        val device = bluetoothAdapter?.bondedDevices?.find { it.name == pairedDeviceName } ?: throw IOException("Device name is null")
-
-        bluetoothSocket = device.createRfcommSocketToServiceRecord(UUID.fromString("00001101-0000-1000-8000-00805F9B34FB"))
-        bluetoothAdapter?.cancelDiscovery()
         try {
+            val device = bluetoothAdapter?.bondedDevices?.find { it.name == pairedDeviceName }
+                ?: throw IOException("Device name is null")
+
+            bluetoothSocket = device.createRfcommSocketToServiceRecord(UUID.fromString("00001101-0000-1000-8000-00805F9B34FB"))
+            bluetoothAdapter?.cancelDiscovery()
             bluetoothSocket?.connect()
+        } catch (e: SecurityException) {
+            bluetoothSocket?.close()
+            bluetoothSocket = null
+            throw IOException("Missing Bluetooth permission", e)
         } catch (e: IOException) {
             bluetoothSocket?.close()
             bluetoothSocket = null

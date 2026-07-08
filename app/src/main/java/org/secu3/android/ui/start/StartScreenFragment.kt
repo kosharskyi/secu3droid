@@ -133,8 +133,8 @@ class StartScreenFragment : Fragment() {
                 Log.e(this.javaClass.simpleName, "ACTION_FOUND")
                 val device: BluetoothDevice? =
                     intent.getParcelableExtra(BluetoothDevice.EXTRA_DEVICE)
-                device?.takeIf { it.name.isNullOrEmpty().not() }?.let {
-                    Log.e(this.javaClass.simpleName, "Device found: ${it.name}")
+                device?.takeIf { viewModel.getBluetoothDeviceName(it).isNullOrEmpty().not() }?.let {
+                    Log.e(this.javaClass.simpleName, "Device found: ${viewModel.getBluetoothDeviceName(it)}")
                     viewModel.discoveredBtDevices.find { device -> device.address == it.address } ?: viewModel.discoveredBtDevices.add(it)
                 }
             }
@@ -145,7 +145,7 @@ class StartScreenFragment : Fragment() {
 
                 device?.let {
 
-                    when (it.bondState) {
+                    when (viewModel.getBluetoothBondState(it)) {
                         BluetoothDevice.BOND_BONDED -> {
                             viewModel.setBtDevice(it)
                             viewModel.startConnection(null)
@@ -311,18 +311,18 @@ class StartScreenFragment : Fragment() {
                                                         .padding(end = 8.dp)
                                                         .align(Alignment.CenterVertically))
                                                 Column {
-                                                    Text(device.name ?: stringResource(R.string.unknown_device))
+                                                    Text(viewModel.getBluetoothDeviceName(device) ?: stringResource(R.string.unknown_device))
                                                     Text(device.address, fontSize = 12.sp, color = androidx.compose.material3.MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f)) // Відображення MAC-адреси()
                                                 }
                                             }
                                         },
                                         modifier = Modifier.clickable {
-                                            if (device.bondState == BluetoothDevice.BOND_BONDED) {
+                                            if (viewModel.getBluetoothBondState(device) == BluetoothDevice.BOND_BONDED) {
                                                 viewModel.setBtDevice(device)
                                                 viewModel.startConnection(null)
                                             } else {
                                                 viewModel.enableProgress()
-                                                device.createBond()
+                                                viewModel.createBluetoothBond(device)
                                             }
                                             viewModel.showBottomSheet.value = false
                                         }
