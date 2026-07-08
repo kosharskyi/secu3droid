@@ -2,7 +2,6 @@
 
 plugins {
     id 'com.android.application' version '9.2.1' apply false
-    alias libs.plugins.kotlin.android apply false
     alias(libs.plugins.kotlin.compose) apply false
     alias libs.plugins.kotlin.parcelize apply false
     alias libs.plugins.navigation.safeargs apply false

@@ -1,6 +1,5 @@
 plugins {
     id 'com.android.application'
-    id 'org.jetbrains.kotlin.android'
     id 'org.jetbrains.kotlin.plugin.parcelize'
     id 'org.jetbrains.kotlin.plugin.compose'
     id 'com.google.devtools.ksp'
@@ -43,7 +42,7 @@ android {
             debuggable false
             minifyEnabled true
             proguardFiles getDefaultProguardFile('proguard-android-optimize.txt'), 'proguard-rules.pro', 'retrofit2.pro'
-            signingConfig signingConfigs.release
+            signingConfig = signingConfigs.release
         }
 
 
@@ -60,7 +59,7 @@ android {
     buildFeatures{
         viewBinding = true
         compose = true
-        buildConfig true
+        buildConfig = true
     }
 
     compileOptions {
@@ -68,15 +67,11 @@ android {
         sourceCompatibility JavaVersion.VERSION_17
     }
 
-    kotlinOptions {
-        jvmTarget = "17"
-    }
+    namespace = 'org.secu3.android'
+}
 
-    room {
-        schemaDirectory "$projectDir/schemas"
-    }
-
-    namespace 'org.secu3.android'
+room {
+    schemaDirectory "$projectDir/schemas"
 }
 
 
