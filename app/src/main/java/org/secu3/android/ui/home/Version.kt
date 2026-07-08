@@ -28,7 +28,14 @@ package org.secu3.android.ui.home
 data class Version(val major: Int, val minor: Int, val patch: Int = 0) : Comparable<Version> {
     companion object {
         fun parse(version: String): Version {
-            val parts = version.split(".")
+            val trimmedVersion = version.trim()
+            require(trimmedVersion.startsWith("v") || trimmedVersion.startsWith("V")) {
+                "Version must start with v or V"
+            }
+
+            val normalizedVersion = trimmedVersion.drop(1)
+
+            val parts = normalizedVersion.split(".")
             require(parts.size in 2..3) { "Version must have two or three parts: major.minor[.patch]" }
             val major = parts[0].toInt()
             val minor = parts[1].toInt()

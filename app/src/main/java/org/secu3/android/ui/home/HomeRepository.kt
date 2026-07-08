@@ -64,7 +64,7 @@ class HomeRepository @Inject constructor(
                     BuildConfig.VERSION_NAME
                 }
 
-                val localVersion = Version.parse(versionName)
+                val localVersion = Version.parse("v$versionName")
 
                 if (remoteVersion <= localVersion) {
                     return null
