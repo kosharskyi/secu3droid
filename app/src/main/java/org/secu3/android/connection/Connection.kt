@@ -1,6 +1,5 @@
 package org.secu3.android.connection
 
-import android.util.Log
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
@@ -132,8 +131,7 @@ abstract class Connection (
 
         val checksum = calculateChecksum(data.sliceArray(2 until data.size - 2))
 
-        if (packetCrc[0] != checksum[0] && packetCrc[1] != checksum[1]) {
-            Log.e("RawPacket", "checksum is not valid")
+        if (packetCrc[0] != checksum[0] || packetCrc[1] != checksum[1]) {
             return false
         }
 
