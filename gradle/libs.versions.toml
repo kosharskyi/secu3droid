@@ -46,7 +46,7 @@ annotation = { module = "androidx.annotation:annotation", version.ref = "annotat
 constraintlayout = { module = "androidx.constraintlayout:constraintlayout", version.ref = "constraintlayout" }
 fragment-ktx = { module = "androidx.fragment:fragment-ktx", version.ref = "fragment-ktx" }
 preference-ktx = { module = "androidx.preference:preference-ktx", version.ref = "preference-ktx" }
-usb-serial-for-android = { module = "com.github.mik3y:usb-serial-for-android", version.ref = "usb-serial-for-android" }
+usb-serial-android = { module = "com.github.mik3y:usb-serial-for-android", version.ref = "usb-serial-for-android" }
 viewpager2 = { module = "androidx.viewpager2:viewpager2", version.ref = "viewpager2" }
 
 
