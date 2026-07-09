@@ -26,16 +26,6 @@ jobs:
       - name: Set up Gradle
         uses: gradle/actions/setup-gradle@v4
 
-      - name: Restore signing config
-        run: |
-          echo "${{ secrets.RELEASE_KEYSTORE_BASE64 }}" | base64 --decode > "$GITHUB_WORKSPACE/ci-keystore.jks"
-          cat > keystore.properties <<EOF
-          KEY_ALIAS=${{ secrets.RELEASE_KEY_ALIAS }}
-          KEY_PASSWORD=${{ secrets.RELEASE_KEY_PASSWORD }}
-          KEYSTORE_PATH=$GITHUB_WORKSPACE/ci-keystore.jks
-          KEYSTORE_PASSWORD=${{ secrets.RELEASE_STORE_PASSWORD }}
-          EOF
-
       - name: Restore Google Services config
         run: |
           echo "${{ secrets.GOOGLE_SERVICES_JSON_BASE64 }}" | base64 --decode > app/google-services.json

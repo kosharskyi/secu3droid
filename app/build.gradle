@@ -12,7 +12,14 @@ plugins {
 
 def keystorePropertiesFile = rootProject.file("keystore.properties")
 def keystoreProperties = new Properties()
-keystoreProperties.load(new FileInputStream(keystorePropertiesFile))
+def hasReleaseKeystore = keystorePropertiesFile.exists()
+def isReleaseTask = gradle.startParameter.taskNames.any { it.toLowerCase().contains("release") }
+
+if (hasReleaseKeystore) {
+    keystoreProperties.load(new FileInputStream(keystorePropertiesFile))
+} else if (isReleaseTask) {
+    throw new GradleException("keystore.properties is required for release builds")
+}
 
 android {
     compileSdk = 37
@@ -30,10 +37,12 @@ android {
 
     signingConfigs {
         release {
-            keyAlias keystoreProperties['KEY_ALIAS']
-            keyPassword keystoreProperties['KEY_PASSWORD']
-            storeFile file(keystoreProperties['KEYSTORE_PATH'])
-            storePassword keystoreProperties['KEYSTORE_PASSWORD']
+            if (hasReleaseKeystore) {
+                keyAlias keystoreProperties['KEY_ALIAS']
+                keyPassword keystoreProperties['KEY_PASSWORD']
+                storeFile file(keystoreProperties['KEYSTORE_PATH'])
+                storePassword keystoreProperties['KEYSTORE_PASSWORD']
+            }
         }
     }
 
@@ -42,7 +51,9 @@ android {
             debuggable false
             minifyEnabled true
             proguardFiles getDefaultProguardFile('proguard-android-optimize.txt'), 'proguard-rules.pro', 'retrofit2.pro'
-            signingConfig = signingConfigs.release
+            if (hasReleaseKeystore) {
+                signingConfig = signingConfigs.release
+            }
         }
 
 
