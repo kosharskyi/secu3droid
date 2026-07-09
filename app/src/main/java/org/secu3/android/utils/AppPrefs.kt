@@ -28,6 +28,7 @@ package org.secu3.android.utils
 import android.content.Context
 import android.content.Context.MODE_PRIVATE
 import android.content.SharedPreferences
+import androidx.core.content.edit
 import dagger.hilt.android.qualifiers.ApplicationContext
 import org.threeten.bp.LocalDate
 import javax.inject.Inject
@@ -43,11 +44,11 @@ class AppPrefs @Inject constructor(@ApplicationContext private val ctx: Context)
         get() {
             return mPrefs.getString("last_app_version_check_stamp", null)?.let { LocalDate.parse(it) } ?: LocalDate.of(2000, 1, 1)
         }
-        set(value) = mPrefs.edit().putString("last_app_version_check_stamp", value.toString()).apply()
+        set(value) = mPrefs.edit { putString("last_app_version_check_stamp", value.toString()) }
 
     var isDbInitNeed: Boolean
         get() = mPrefs.getBoolean("need_db_init", true)
         set(value) {
-            mPrefs.edit().putBoolean("need_db_init", value).apply()
+            mPrefs.edit { putBoolean("need_db_init", value) }
         }
 }

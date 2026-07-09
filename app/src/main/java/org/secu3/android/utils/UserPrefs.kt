@@ -26,6 +26,7 @@ package org.secu3.android.utils
 
 import android.content.Context
 import android.content.SharedPreferences
+import androidx.core.content.edit
 import androidx.preference.PreferenceManager
 import com.google.gson.Gson
 import dagger.hilt.android.qualifiers.ApplicationContext
@@ -43,41 +44,41 @@ class UserPrefs @Inject constructor(@ApplicationContext private val ctx: Context
 
     var isSensorLoggerEnabled: Boolean
         get() = mPrefs.getBoolean(ctx.getString(R.string.pref_write_log_key), false)
-        set(value) = mPrefs.edit().putBoolean(ctx.getString(R.string.pref_write_log_key), value).apply()
+        set(value) = mPrefs.edit { putBoolean(ctx.getString(R.string.pref_write_log_key), value) }
 
     var isBinaryLogFormatEnabled: Boolean
         get() = mPrefs.getBoolean(ctx.getString(R.string.pref_write_binary_log_key), false)
-        set(value) = mPrefs.edit().putBoolean(ctx.getString(R.string.pref_write_binary_log_key), value).apply()
+        set(value) = mPrefs.edit { putBoolean(ctx.getString(R.string.pref_write_binary_log_key), value) }
 
     var isCsvTitleEnabled: Boolean
         get() = mPrefs.getBoolean(ctx.getString(R.string.pref_log_csv_write_title_key), false)
-        set(value) = mPrefs.edit().putBoolean(ctx.getString(R.string.pref_log_csv_write_title_key), value).apply()
+        set(value) = mPrefs.edit { putBoolean(ctx.getString(R.string.pref_log_csv_write_title_key), value) }
 
     var CSVDelimeter: String
         get() {
             return mPrefs.getString(ctx.getString(R.string.pref_log_csv_delimeter_key),";")!!
         }
-        set(value) = mPrefs.edit().putString(ctx.getString(R.string.pref_log_csv_delimeter_key), value).apply()
+        set(value) = mPrefs.edit { putString(ctx.getString(R.string.pref_log_csv_delimeter_key), value) }
 
     var isKeepScreenAliveActive: Boolean
         get() = mPrefs.getBoolean(ctx.getString(R.string.pref_keep_screen_key), false);
-        set(value) = mPrefs.edit().putBoolean(ctx.getString(R.string.pref_keep_screen_key), value).apply()
+        set(value) = mPrefs.edit { putBoolean(ctx.getString(R.string.pref_keep_screen_key), value) }
 
     var isWakeLockEnabled: Boolean
         get() = mPrefs.getBoolean(ctx.getString(R.string.pref_wakelock_key), false);
-        set(value) = mPrefs.edit().putBoolean(ctx.getString(R.string.pref_wakelock_key), value).apply()
+        set(value) = mPrefs.edit { putBoolean(ctx.getString(R.string.pref_wakelock_key), value) }
 
     var isDarkTheme: Boolean
         get() = mPrefs.getBoolean(ctx.getString(R.string.pref_night_mode_key), false);
-        set(value) = mPrefs.edit().putBoolean(ctx.getString(R.string.pref_night_mode_key), value).apply()
+        set(value) = mPrefs.edit { putBoolean(ctx.getString(R.string.pref_night_mode_key), value) }
 
     var bluetoothDeviceName: String?
         get() = mPrefs.getString(ctx.getString(R.string.pref_bluetooth_device_key), null);
-        set(value) = mPrefs.edit().putString(ctx.getString(R.string.pref_bluetooth_device_key), value).apply()
+        set(value) = mPrefs.edit { putString(ctx.getString(R.string.pref_bluetooth_device_key), value) }
 
     var connectionRetries: Int
         get() = mPrefs.getString(ctx.getString(R.string.pref_connection_retries_key), ctx.getString(R.string.defaultConnectionRetries))!!.toInt()
-        set(value) = mPrefs.edit().putString(ctx.getString(R.string.pref_connection_retries_key), value.toString()).apply()
+        set(value) = mPrefs.edit { putString(ctx.getString(R.string.pref_connection_retries_key), value.toString()) }
 
 
 
@@ -87,11 +88,11 @@ class UserPrefs @Inject constructor(@ApplicationContext private val ctx: Context
 
     var oldSensorViewEnabled: Boolean
         get() = mPrefs.getBoolean("old_sensors_view", false)
-        set(value) = mPrefs.edit().putBoolean("old_sensors_view", value).apply()
+        set(value) = mPrefs.edit { putBoolean("old_sensors_view", value) }
 
     var columnsCount: Int
         get() = mPrefs.getInt("columns_count", 2)
-        set(value) = mPrefs.edit().putInt("columns_count", value).apply()
+        set(value) = mPrefs.edit { putInt("columns_count", value) }
 
 
     var dashboardConfig: DashboardConfig?
@@ -103,7 +104,7 @@ class UserPrefs @Inject constructor(@ApplicationContext private val ctx: Context
         set(value) {
             value ?: return
             val json = gson.toJson(value)
-            mPrefs.edit().putString("dashboard_config", json).apply()
+            mPrefs.edit { putString("dashboard_config", json) }
         }
 
 }

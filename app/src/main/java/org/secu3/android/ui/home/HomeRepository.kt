@@ -26,8 +26,8 @@
 package org.secu3.android.ui.home
 
 import android.app.DownloadManager
-import android.net.Uri
 import android.os.Environment
+import androidx.core.net.toUri
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import org.secu3.android.BuildConfig
@@ -83,7 +83,7 @@ class HomeRepository @Inject constructor(
     fun downloadReleaseFile(release: GitHubRelease) {
         val asset = findReleaseApkAsset(release) ?: return
 
-        val uri = Uri.parse(asset.browserDownloadUrl)
+        val uri = asset.browserDownloadUrl.toUri()
 
         val request = DownloadManager.Request(uri).apply {
             setTitle(asset.name)

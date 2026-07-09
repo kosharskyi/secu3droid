@@ -47,11 +47,11 @@
 
     </com.google.android.material.appbar.AppBarLayout>
 
-    <fragment
+    <androidx.fragment.app.FragmentContainerView
         android:id="@+id/settings_fragment"
+        android:name="org.secu3.android.ui.settings.SettingsFragment"
         android:layout_width="match_parent"
         android:layout_height="match_parent"
-        android:name="org.secu3.android.ui.settings.SettingsFragment"
         />
 
 </LinearLayout>
