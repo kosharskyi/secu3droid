@@ -11,7 +11,6 @@ firebase-bom = "34.15.0"
 annotation = "1.10.0"
 constraintlayout = "2.2.1"
 fragment-ktx = "1.8.9"
-lifecycle-extensions = "2.2.0"
 lifecycle-viewmodel-ktx = "2.11.0"
 navigation = "2.9.8"
 preference-ktx = "1.2.1"
@@ -54,9 +53,9 @@ viewpager2 = { module = "androidx.viewpager2:viewpager2", version.ref = "viewpag
 navigation-fragment-ktx = { group = "androidx.navigation", name = "navigation-fragment-ktx", version.ref = "navigation" }
 navigation-ui-ktx = { group = "androidx.navigation", name = "navigation-ui-ktx", version.ref = "navigation" }
 
-lifecycle-extensions = { module = "androidx.lifecycle:lifecycle-extensions", version.ref = "lifecycle-extensions" }
 lifecycle-livedata-ktx = { module = "androidx.lifecycle:lifecycle-livedata-ktx", version.ref = "lifecycle-viewmodel-ktx" }
 lifecycle-runtime-ktx = { module = "androidx.lifecycle:lifecycle-runtime-ktx", version.ref = "lifecycle-viewmodel-ktx" }
+lifecycle-service = { module = "androidx.lifecycle:lifecycle-service", version.ref = "lifecycle-viewmodel-ktx" }
 lifecycle-viewmodel-ktx = { module = "androidx.lifecycle:lifecycle-viewmodel-ktx", version.ref = "lifecycle-viewmodel-ktx" }
 
 androidx-browser = { module = "androidx.browser:browser", version.ref = "browser" }
@@ -114,4 +113,3 @@ kotlin-compose = { id = "org.jetbrains.kotlin.plugin.compose", version.ref = "ko
 navigation-safeargs = { id = "androidx.navigation.safeargs.kotlin", version.ref = "navigation" }
 dagger-hilt-plugin = { id = "com.google.dagger.hilt.android", version.ref = "dagger" }
 room-plugin = { id = "androidx.room", version.ref = "room" }
-

@@ -88,6 +88,7 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.core.content.ContextCompat
+import androidx.core.content.IntentCompat
 import androidx.core.view.WindowInsetsControllerCompat
 import androidx.fragment.app.viewModels
 import androidx.lifecycle.viewmodel.compose.viewModel
@@ -106,17 +107,17 @@ class StartScreenFragment : Fragment() {
     private val usbDeviceActionReceiver = object : BroadcastReceiver() {
         override fun onReceive(context: Context, intent: Intent) {
             if (ACTION_USB_ATTACHED == intent.action) {
-                val usbDevice = intent.getParcelableExtra<UsbDevice>(UsbManager.EXTRA_DEVICE)
+                val usbDevice = IntentCompat.getParcelableExtra(intent, UsbManager.EXTRA_DEVICE, UsbDevice::class.java)
                 usbDevice?.let { viewModel.newUsbDeviceAttached(it) }
             }
             if (ACTION_USB_DETACHED == intent.action) {
-                val usbDevice = intent.getParcelableExtra<UsbDevice>(UsbManager.EXTRA_DEVICE)
+                val usbDevice = IntentCompat.getParcelableExtra(intent, UsbManager.EXTRA_DEVICE, UsbDevice::class.java)
                 usbDevice?.let { viewModel.newUsbDeviceDetached() }
             }
 
             if (ACTION_USB_PERMISSION == intent.action) {
                 Log.d(this.javaClass.simpleName, "ACTION_USB_PERMISSION RECEIVED")
-                val device = intent.getParcelableExtra<UsbDevice>(UsbManager.EXTRA_DEVICE)
+                val device = IntentCompat.getParcelableExtra(intent, UsbManager.EXTRA_DEVICE, UsbDevice::class.java)
                 if (intent.getBooleanExtra(UsbManager.EXTRA_PERMISSION_GRANTED, false)) {
                     device?.let { viewModel.startConnection(it) }
                 } else {
@@ -132,7 +133,7 @@ class StartScreenFragment : Fragment() {
             if (intent.action == BluetoothDevice.ACTION_FOUND) {
                 Log.e(this.javaClass.simpleName, "ACTION_FOUND")
                 val device: BluetoothDevice? =
-                    intent.getParcelableExtra(BluetoothDevice.EXTRA_DEVICE)
+                    IntentCompat.getParcelableExtra(intent, BluetoothDevice.EXTRA_DEVICE, BluetoothDevice::class.java)
                 device?.takeIf { viewModel.getBluetoothDeviceName(it).isNullOrEmpty().not() }?.let {
                     Log.e(this.javaClass.simpleName, "Device found: ${viewModel.getBluetoothDeviceName(it)}")
                     viewModel.discoveredBtDevices.find { device -> device.address == it.address } ?: viewModel.discoveredBtDevices.add(it)
@@ -141,7 +142,7 @@ class StartScreenFragment : Fragment() {
 
             if (intent.action == BluetoothDevice.ACTION_BOND_STATE_CHANGED) {
                 val device: BluetoothDevice? =
-                    intent.getParcelableExtra(BluetoothDevice.EXTRA_DEVICE)
+                    IntentCompat.getParcelableExtra(intent, BluetoothDevice.EXTRA_DEVICE, BluetoothDevice::class.java)
 
                 device?.let {
 
@@ -372,6 +373,12 @@ class StartScreenFragment : Fragment() {
         checkBtConfig()
     }
 
+    private val enableBtRequest = registerForActivityResult(ActivityResultContracts.StartActivityForResult()) {
+        if (it.resultCode == RESULT_OK) {
+            checkBluetoothPermissionsAndConnect()
+        }
+    }
+
     private fun checkBluetoothPermissionsAndConnect() {
         val permissions = mutableListOf<String>()
 
@@ -435,23 +442,10 @@ class StartScreenFragment : Fragment() {
 
     private fun enableBt() {
         val enableBtIntent = Intent(BluetoothAdapter.ACTION_REQUEST_ENABLE)
-        startActivityForResult(enableBtIntent, REQUEST_ENABLE_BT)
-    }
-
-    override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
-        super.onActivityResult(requestCode, resultCode, data)
-        if (requestCode == REQUEST_ENABLE_BT) {
-            if (resultCode == RESULT_OK) {
-                // Bluetooth enabled
-                checkBluetoothPermissionsAndConnect()
-            } else {
-                // User refused to enable Bluetooth
-            }
-        }
+        enableBtRequest.launch(enableBtIntent)
     }
 
     companion object {
-        private const val REQUEST_ENABLE_BT = 243135
         private const val ACTION_USB_ATTACHED = "android.hardware.usb.action.USB_DEVICE_ATTACHED"
         private const val ACTION_USB_DETACHED = "android.hardware.usb.action.USB_DEVICE_DETACHED"
         private const val ACTION_USB_PERMISSION = "org.secu3.android.USB_PERMISSION"
