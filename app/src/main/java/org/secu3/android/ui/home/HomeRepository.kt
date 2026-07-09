@@ -35,6 +35,7 @@ import org.secu3.android.db.AppDatabase
 import org.secu3.android.db.models.GaugeState
 import org.secu3.android.db.models.IndicatorState
 import org.secu3.android.network.ApiService
+import org.secu3.android.network.models.Asset
 import org.secu3.android.network.models.GitHubRelease
 import org.secu3.android.ui.sensors.models.GaugeType
 import org.secu3.android.ui.sensors.models.IndicatorType
@@ -80,7 +81,7 @@ class HomeRepository @Inject constructor(
     }
 
     fun downloadReleaseFile(release: GitHubRelease) {
-        val asset = release.assets.first { it.name.contains(".apk") }
+        val asset = findReleaseApkAsset(release) ?: return
 
         val uri = Uri.parse(asset.browserDownloadUrl)
 
@@ -119,6 +120,13 @@ class HomeRepository @Inject constructor(
             db.indicatorStateDao().insertAll(indicators)
 
             appPrefs.isDbInitNeed = false
+        }
+    }
+
+    companion object {
+        internal fun findReleaseApkAsset(release: GitHubRelease): Asset? {
+            val expectedAssetName = "Secu3Droid-${release.tagName}.apk"
+            return release.assets.firstOrNull { it.name == expectedAssetName }
         }
     }
 
