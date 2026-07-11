@@ -350,6 +350,35 @@
     <string name="raw_sensors_frag_add_io7_input_label">Вхід ADD_I7, В:</string>
     <string name="raw_sensors_frag_add_io8_input_label">Вхід ADD_I8, В:</string>
 
+    <string name="dashboard_status_online">На звʼязку</string>
+    <string name="dashboard_status_connecting">Підключення</string>
+    <string name="dashboard_status_offline">Немає звʼязку</string>
+    <string name="dashboard_status_no_data">Немає даних</string>
+    <string name="dashboard_warning_check_engine">Check Engine</string>
+    <string name="dashboard_warning_overheat">Перегрів</string>
+    <string name="dashboard_warning_hot">Гаряче</string>
+    <string name="dashboard_warning_low_voltage">Низька напруга</string>
+    <string name="dashboard_warning_voltage">Напруга</string>
+    <string name="dashboard_warning_oil_temp">Темп. оливи</string>
+    <string name="dashboard_warning_oil_hot">Олива гаряча</string>
+    <string name="dashboard_warning_rev_limit">Відсічка</string>
+    <string name="dashboard_warning_knock">Детонація</string>
+    <string name="dashboard_indicator_fan">Вентилятор</string>
+    <string name="dashboard_indicator_gas">Газ</string>
+    <string name="dashboard_indicator_eco">Еко</string>
+    <string name="dashboard_indicator_power">Потужність</string>
+    <string name="dashboard_indicator_choke">Підсмоктувач</string>
+    <string name="dashboard_readout_clt">Темп.Дв.</string>
+    <string name="dashboard_readout_voltage">Напр.</string>
+    <string name="dashboard_readout_load">Навант.</string>
+    <string name="dashboard_readout_tps">Дрос.</string>
+    <string name="dashboard_readout_oil">Олива</string>
+    <string name="dashboard_readout_afr">AFR</string>
+    <string name="dashboard_readout_fuel">Паливо</string>
+    <string name="dashboard_readout_map">MAP</string>
+    <string name="dashboard_readout_iat">Впуск</string>
+    <string name="dashboard_readout_aux">Дод.</string>
+
     <string name="service_working_in_background">Secu3Droid працює у фоні</string>
     <string name="exit">Вихід</string>
     <string name="select_gauge_to_add">Додати прилад</string>
@@ -384,4 +413,3 @@
     <string name="test">Тест</string>
 
 </resources>
-

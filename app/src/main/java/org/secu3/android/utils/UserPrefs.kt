@@ -28,10 +28,8 @@ import android.content.Context
 import android.content.SharedPreferences
 import androidx.core.content.edit
 import androidx.preference.PreferenceManager
-import com.google.gson.Gson
 import dagger.hilt.android.qualifiers.ApplicationContext
 import org.secu3.android.R
-import org.secu3.android.ui.dashboard.DashboardConfig
 import javax.inject.Inject
 import javax.inject.Singleton
 
@@ -39,8 +37,6 @@ import javax.inject.Singleton
 class UserPrefs @Inject constructor(@ApplicationContext private val ctx: Context) {
 
     private var mPrefs: SharedPreferences = PreferenceManager.getDefaultSharedPreferences(ctx)
-
-    private val gson = Gson()
 
     var isSensorLoggerEnabled: Boolean
         get() = mPrefs.getBoolean(ctx.getString(R.string.pref_write_log_key), false)
@@ -93,18 +89,4 @@ class UserPrefs @Inject constructor(@ApplicationContext private val ctx: Context
     var columnsCount: Int
         get() = mPrefs.getInt("columns_count", 2)
         set(value) = mPrefs.edit { putInt("columns_count", value) }
-
-
-    var dashboardConfig: DashboardConfig?
-        get() {
-            return mPrefs.getString("dashboard_config", null)?.let {
-                gson.fromJson(it, DashboardConfig::class.java)
-            }
-        }
-        set(value) {
-            value ?: return
-            val json = gson.toJson(value)
-            mPrefs.edit { putString("dashboard_config", json) }
-        }
-
 }

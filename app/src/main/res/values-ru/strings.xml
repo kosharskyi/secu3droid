@@ -353,6 +353,35 @@
     <string name="raw_sensors_frag_add_io7_input_label">Вход ADD_I7, В:</string>
     <string name="raw_sensors_frag_add_io8_input_label">Вход ADD_I8, В:</string>
 
+    <string name="dashboard_status_online">На связи</string>
+    <string name="dashboard_status_connecting">Подключение</string>
+    <string name="dashboard_status_offline">Нет связи</string>
+    <string name="dashboard_status_no_data">Нет данных</string>
+    <string name="dashboard_warning_check_engine">Check Engine</string>
+    <string name="dashboard_warning_overheat">Перегрев</string>
+    <string name="dashboard_warning_hot">Горячо</string>
+    <string name="dashboard_warning_low_voltage">Низкое напр.</string>
+    <string name="dashboard_warning_voltage">Напряжение</string>
+    <string name="dashboard_warning_oil_temp">Темп. масла</string>
+    <string name="dashboard_warning_oil_hot">Масло горячее</string>
+    <string name="dashboard_warning_rev_limit">Отсечка</string>
+    <string name="dashboard_warning_knock">Детонация</string>
+    <string name="dashboard_indicator_fan">Вентилятор</string>
+    <string name="dashboard_indicator_gas">Газ</string>
+    <string name="dashboard_indicator_eco">Эко</string>
+    <string name="dashboard_indicator_power">Мощность</string>
+    <string name="dashboard_indicator_choke">Подсос</string>
+    <string name="dashboard_readout_clt">ОЖ</string>
+    <string name="dashboard_readout_voltage">Напр.</string>
+    <string name="dashboard_readout_load">Нагр.</string>
+    <string name="dashboard_readout_tps">Дрос.</string>
+    <string name="dashboard_readout_oil">Масло</string>
+    <string name="dashboard_readout_afr">AFR</string>
+    <string name="dashboard_readout_fuel">Топливо</string>
+    <string name="dashboard_readout_map">MAP</string>
+    <string name="dashboard_readout_iat">Впуск</string>
+    <string name="dashboard_readout_aux">Доп.</string>
+
     <string name="service_working_in_background">Secu3Droid работает в фоне</string>
     <string name="exit">Выход</string>
     <string name="select_gauge_to_add">Добавить прибор</string>

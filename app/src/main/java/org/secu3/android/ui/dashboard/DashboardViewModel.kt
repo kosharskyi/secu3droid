@@ -35,7 +35,6 @@ import kotlinx.coroutines.flow.sample
 import org.secu3.android.connection.ConnectionState
 import org.secu3.android.connection.Secu3ConnectionManager
 import org.secu3.android.models.packets.input.SensorsPacket
-import org.secu3.android.ui.sensors.models.GaugeType
 import org.secu3.android.utils.UserPrefs
 import org.secu3.android.utils.Task
 import javax.inject.Inject
@@ -50,24 +49,15 @@ class DashboardViewModel @Inject constructor(private val secu3ConnectionManager:
             .sample(300)
             .map { (it as SensorsPacket) }
             .map {
-                DashboardViewData.inflate(dashboardConfig, it)
+                DashboardViewData.inflate(it)
             }
             .asLiveData()
 
     val statusLiveData: LiveData<ConnectionState>
         get() = secu3ConnectionManager.connectionStateFlow.asLiveData()
 
-    val dashboardConfig: DashboardConfig = mPrefs.dashboardConfig ?: DashboardConfig(
-        GaugeConfig(GaugeType.RPM, ),
-        GaugeConfig(GaugeType.TEMPERATURE),
-        GaugeConfig(GaugeType.VEHICLE_SPEED),
-        GaugeConfig(GaugeType.MAP),
-        GaugeConfig(GaugeType.VOLTAGE)
-    )
-
-    fun saveConfig() {
-        mPrefs.dashboardConfig = dashboardConfig
-    }
+    val isKeepScreenAliveActive: Boolean
+        get() = mPrefs.isKeepScreenAliveActive
 
     fun isBluetoothDeviceAddressNotSelected(): Boolean {
         return mPrefs.bluetoothDeviceName.isNullOrBlank()

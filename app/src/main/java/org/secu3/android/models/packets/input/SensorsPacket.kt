@@ -123,52 +123,52 @@ data class SensorsPacket(
     var inj_ffd: Float = 0f         // fuel flow in L/100km
     var inj_ffh: Float = 0f         // consumption in L/h
 
-    val ephhValveBit: Int //idle cutoff valve
+    val ephhValveBit: Int // idle cutoff valve
         get() = sensorsFlags.getBitValue(BITNUMBER_EPHH_VALVE)
 
     val carbBit: Int // throttle limit switch
         get() = sensorsFlags.getBitValue(BITNUMBER_CARB)
 
-    val gasBit: Int
+    val gasBit: Int // active gas fuel mode/gas valve
         get() = sensorsFlags.getBitValue(BITNUMBER_GAS)
 
-    val epmValveBit: Int
+    val epmValveBit: Int // power valve output
         get() = sensorsFlags.getBitValue(BITNUMBER_EPM_VALVE)
 
-    val checkEngineBit: Int
+    val checkEngineBit: Int // check engine state
         get() = sensorsFlags.getBitValue(BITNUMBER_CE_STATE)
 
-    val coolFanBit: Int
+    val coolFanBit: Int // cooling fan output
         get() = sensorsFlags.getBitValue(BITNUMBER_COOL_FAN)
 
-    val starterBlockBit: Int
+    val starterBlockBit: Int // starter blocking state
         get() = sensorsFlags.getBitValue(BITNUMBER_ST_BLOCK)
 
-    val accelerationEnrichment: Int
+    val accelerationEnrichment: Int // acceleration enrichment active
         get() = sensorsFlags.getBitValue(BITNUMBER_ACCELERATION)
 
-    val fc_revlim: Int // Rev. lim. fuel cut
+    val fc_revlim: Int // rev limiter active; ECU is limiting RPM, usually by fuel/ignition cut
         get() = sensorsFlags.getBitValue(BITNUMBER_FC_REVLIM)
 
-    val floodclear: Int
+    val floodclear: Int // flood clear mode active
         get() = sensorsFlags.getBitValue(BITNUMBER_FLOODCLEAR)
 
-    val sys_locked: Int
+    val sys_locked: Int // system locked by immobilizer
         get() = sensorsFlags.getBitValue(BITNUMBER_SYS_LOCKED)
 
-    val ign_i: Int
+    val ign_i: Int // IGN_I input state
         get() = sensorsFlags.getBitValue(BITNUMBER_IGN_I)
 
-    val cond_i: Int
+    val cond_i: Int // COND_I input state
         get() = sensorsFlags.getBitValue(BITNUMBER_COND_I)
 
-    val epas_i: Int
+    val epas_i: Int // EPAS_I input state
         get() = sensorsFlags.getBitValue(BITNUMBER_EPAS_I)
 
-    val aftstr_enr: Int // afterstart enrichment
+    val aftstr_enr: Int // afterstart enrichment active
         get() = sensorsFlags.getBitValue(BITNUMBER_AFTSTR_ENR)
 
-    val iac_closed_loop: Int
+    val iac_closed_loop: Int // idle air control closed loop active
         get() = sensorsFlags.getBitValue(BITNUMBER_IAC_CLOSED_LOOP)
 
 
@@ -478,7 +478,7 @@ data class SensorsPacket(
         private const val BITNUMBER_COOL_FAN = 5
         private const val BITNUMBER_ST_BLOCK = 6
         private const val BITNUMBER_ACCELERATION = 7  // acceleration enrichment flag
-        private const val BITNUMBER_FC_REVLIM = 8  // fuel cut rev.lim. flag
+        private const val BITNUMBER_FC_REVLIM = 8  // rev limiter/fuel cut flag
         private const val BITNUMBER_FLOODCLEAR = 9  // flood clear mode flag
         private const val BITNUMBER_SYS_LOCKED = 10  // system locked flag (immobilizer)
         private const val BITNUMBER_IGN_I = 11  // IGN_I flag

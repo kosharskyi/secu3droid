@@ -85,7 +85,6 @@
         android:id="@+id/dashboardFragment"
         android:name="org.secu3.android.ui.dashboard.DashBoardFragment"
         android:label="Dashboard Fragment"
-        tools:layout="@layout/fragment_dashboard"
         />
 
     <fragment

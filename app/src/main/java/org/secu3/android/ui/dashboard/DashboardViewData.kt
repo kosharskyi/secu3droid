@@ -28,11 +28,19 @@ package org.secu3.android.ui.dashboard
 import org.secu3.android.models.packets.input.SensorsPacket
 
 data class DashboardViewData(
-    var topLeft: Float,
-    var topRight: Float,
-    var center: Float,
-    var bottomLeft: Float,
-    var bottomRight: Float,
+    var rpm: Float,
+    var speed: Float,
+    var load: Float,
+    var map: Float,
+    var tps: Float,
+    var temperature: Float,
+    var voltage: Float,
+    var currentAngle: Float,
+    var afr: Float,
+    var oilTemperature: Float,
+    var fuelLevel: Float,
+    var intakeAirTemperature: Float,
+    var knockRetard: Float,
 
     var ledCheckEngine: Boolean,
     var ledGasoline: Boolean,
@@ -40,25 +48,33 @@ data class DashboardViewData(
     var ledPower: Boolean,
     var ledChoke: Boolean,
     var ledFan: Boolean,
+    var ledRevLimit: Boolean,
 ) {
 
     companion object {
 
-        fun inflate(dashboardConfig: DashboardConfig, packet: SensorsPacket): DashboardViewData {
-            val center = dashboardConfig.center.type.getGaugeItem(packet)
-            val topLeft = dashboardConfig.topLeft.type.getGaugeItem(packet)
-            val topRight = dashboardConfig.topRight.type.getGaugeItem(packet)
-            val bottomLeft = dashboardConfig.bottomLeft.type.getGaugeItem(packet)
-            val bottomRight = dashboardConfig.bottomRight.type.getGaugeItem(packet)
-
+        fun inflate(packet: SensorsPacket): DashboardViewData {
             return DashboardViewData(
-                topLeft, topRight, center, bottomLeft, bottomRight,
+                packet.rpm.toFloat(),
+                packet.speed,
+                packet.load,
+                packet.map,
+                packet.tps,
+                packet.temperature,
+                packet.voltage,
+                packet.currentAngle,
+                packet.afr,
+                packet.ots,
+                packet.ftls,
+                packet.airtempSensor,
+                packet.knockRetard,
                 packet.checkEngineBit > 0,
                 packet.gasBit > 0,
                 packet.ephhValveBit > 0,
                 packet.epmValveBit > 0,
                 packet.carbBit > 0,
                 packet.coolFanBit > 0,
+                packet.fc_revlim > 0,
 
                 )
         }

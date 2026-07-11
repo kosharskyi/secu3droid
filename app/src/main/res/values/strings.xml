@@ -511,6 +511,35 @@
     <string name="raw_sensors_frag_add_io7_input_label">Input ADD_I7, V:</string>
     <string name="raw_sensors_frag_add_io8_input_label">Input ADD_I8, V:</string>
 
+    <string name="dashboard_status_online">Online</string>
+    <string name="dashboard_status_connecting">Connecting</string>
+    <string name="dashboard_status_offline">Offline</string>
+    <string name="dashboard_status_no_data">No data</string>
+    <string name="dashboard_warning_check_engine">Check Engine</string>
+    <string name="dashboard_warning_overheat">Overheat</string>
+    <string name="dashboard_warning_hot">Hot</string>
+    <string name="dashboard_warning_low_voltage">Low voltage</string>
+    <string name="dashboard_warning_voltage">Voltage</string>
+    <string name="dashboard_warning_oil_temp">Oil temp</string>
+    <string name="dashboard_warning_oil_hot">Oil hot</string>
+    <string name="dashboard_warning_rev_limit">Rev limit</string>
+    <string name="dashboard_warning_knock">Knock</string>
+    <string name="dashboard_indicator_fan">Fan</string>
+    <string name="dashboard_indicator_gas">Gas</string>
+    <string name="dashboard_indicator_eco">Eco</string>
+    <string name="dashboard_indicator_power">Power</string>
+    <string name="dashboard_indicator_choke">Choke</string>
+    <string name="dashboard_readout_clt">CLT</string>
+    <string name="dashboard_readout_voltage">Volt</string>
+    <string name="dashboard_readout_load">Load</string>
+    <string name="dashboard_readout_tps">TPS</string>
+    <string name="dashboard_readout_oil">Oil</string>
+    <string name="dashboard_readout_afr">AFR</string>
+    <string name="dashboard_readout_fuel">Fuel</string>
+    <string name="dashboard_readout_map">MAP</string>
+    <string name="dashboard_readout_iat">IAT</string>
+    <string name="dashboard_readout_aux">Aux</string>
+
     <string name="service_working_in_background">Secu3Droid working in background</string>
     <string name="exit">Exit</string>
     <string name="select_gauge_to_add">Select gauge to add</string>
