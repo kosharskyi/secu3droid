@@ -28,7 +28,7 @@ package org.secu3.android.network
 import okhttp3.Interceptor
 import okhttp3.Protocol
 import okhttp3.Response
-import okhttp3.ResponseBody
+import okhttp3.ResponseBody.Companion.toResponseBody
 import org.secu3.android.utils.NetworkHelper
 
 class ConnectivityInterceptor (private val networkHelper: NetworkHelper) : Interceptor {
@@ -38,7 +38,7 @@ class ConnectivityInterceptor (private val networkHelper: NetworkHelper) : Inter
             return Response.Builder()
                 .code(600) // Internal server error
                 .message("No internet connection")
-                .body(ResponseBody.create(null, "Empty body from interceptor"))
+                .body("Empty body from interceptor".toResponseBody(null))
                 .protocol(Protocol.HTTP_1_1)
                 .request(chain.request())
                 .build()
