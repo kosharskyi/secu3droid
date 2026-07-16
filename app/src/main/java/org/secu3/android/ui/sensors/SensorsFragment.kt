@@ -193,8 +193,11 @@ class SensorsFragment : Fragment() {
             target: RecyclerView.ViewHolder
         ): Boolean {
 
-            val startIndex = viewHolder.adapterPosition
-            val targetIndex = target.adapterPosition
+            val startIndex = viewHolder.bindingAdapterPosition
+            val targetIndex = target.bindingAdapterPosition
+            if (startIndex == RecyclerView.NO_POSITION || targetIndex == RecyclerView.NO_POSITION) {
+                return false
+            }
 
             val adapter = mBinding?.gaugesList?.adapter as GaugeAdapter
             val listItems = adapter.currentList.toMutableList()
@@ -242,8 +245,11 @@ class SensorsFragment : Fragment() {
             viewHolder: RecyclerView.ViewHolder,
             target: RecyclerView.ViewHolder
         ): Boolean {
-            val startIndex = viewHolder.adapterPosition
-            val targetIndex = target.adapterPosition
+            val startIndex = viewHolder.bindingAdapterPosition
+            val targetIndex = target.bindingAdapterPosition
+            if (startIndex == RecyclerView.NO_POSITION || targetIndex == RecyclerView.NO_POSITION) {
+                return false
+            }
 
             val adapter = mBinding?.indicatorsList?.adapter as IndicatorAdapter
             val listItems = adapter.currentList.toMutableList()
