@@ -113,7 +113,7 @@ class BtConnection @Inject constructor(
                 ?: throw IOException("Device name is null")
 
             bluetoothSocket = device.createRfcommSocketToServiceRecord(UUID.fromString("00001101-0000-1000-8000-00805F9B34FB"))
-            bluetoothAdapter?.cancelDiscovery()
+            bluetoothAdapter.cancelDiscovery()
             bluetoothSocket?.connect()
         } catch (e: SecurityException) {
             bluetoothSocket?.close()

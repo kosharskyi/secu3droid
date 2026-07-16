@@ -75,7 +75,7 @@ class ParamsFragment : Fragment() {
                 }
             }
 
-            mBinding?.toolbar?.menu?.findItem(R.id.connection_status)?.apply {
+            mBinding.toolbar.menu.findItem(R.id.connection_status)?.apply {
                 val iconDrawable = icon ?: return@apply
 
                 // Tint the icon with the desired color
