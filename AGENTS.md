@@ -12,7 +12,7 @@ Secu3droid is an Android client for the Secu-3 engine control unit (ECU). The ap
 
 ## Modules
 
-- `:app` is the only Gradle module declared in `settings.gradle`.
+- `:app` is the only Gradle module declared in `settings.gradle.kts`.
 - Main package: `org.secu3.android`.
 - Main source set: `app/src/main/java`.
 - Test source sets visible in the project: `app/src/test` and `app/src/androidTest`.
@@ -20,20 +20,20 @@ Secu3droid is an Android client for the Secu-3 engine control unit (ECU). The ap
 ## Build System
 
 - Build tool: Gradle wrapper (`./gradlew`).
-- Gradle wrapper distribution: Gradle `9.4.1`.
+- Gradle wrapper distribution: Gradle `9.6.1`.
 - Android Gradle Plugin: `com.android.application` `9.2.1`.
 - Kotlin plugin version: `2.4.0`.
 - Dependency versions are managed in `gradle/libs.versions.toml`.
-- Repositories are declared in `settings.gradle`: Google, Maven Central, Gradle Plugin Portal, and JitPack.
+- Repositories are declared in `settings.gradle.kts`: Google, Maven Central, Gradle Plugin Portal, and JitPack.
 - Java/Kotlin target compatibility is `17`.
 
 ## Android Configuration
 
-From `app/build.gradle`:
+From `app/build.gradle.kts`:
 
 - `compileSdk = 37`.
-- `targetSdkVersion = 36`.
-- `minSdkVersion = 23`.
+- `targetSdk = 36`.
+- `minSdk = 23`.
 - `applicationId = "org.secu3.android"`.
 - `namespace = "org.secu3.android"`.
 - `versionCode = 55`.
