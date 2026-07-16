@@ -77,9 +77,9 @@ From `app/build.gradle`:
 
 ## Setup Notes
 
-- `app/build.gradle` loads `keystore.properties` at configuration time.
-- `setup.sh` and `setup.bat` can create a default `keystore.properties` with debug placeholder values.
-- The README notes that a `debug.jks` file is still required when using the default placeholder keystore settings.
+- `app/build.gradle.kts` loads `keystore.properties` only when it exists.
+- Debug builds use the default Android debug signing configuration and do not require `keystore.properties`.
+- Release builds require `keystore.properties`; keep release signing credentials out of source control.
 - `local.properties`, `keystore.properties`, and keystore files should be treated as local machine/configuration data.
 
 ## Common Commands

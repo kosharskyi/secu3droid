@@ -44,33 +44,23 @@
    ```
 2. Open the project in Android Studio.
 
-### Quick Setup
+### Build
 
-You can use the provided setup script to automatically create the `keystore.properties` file:
+Debug builds use the default Android debug signing configuration and do not require
+`keystore.properties`:
 
-- **Linux/macOS**:
-  ```bash
-  chmod +x setup.sh
-  ./setup.sh
-  ```
-- **Windows**:
-  ```batch
-  setup.bat
-  ```
-
-Alternatively, you can manually create the file:
-
-1. Create a file named `keystore.properties` in the project root.
-2. Add the following content:
-
-```properties
-KEY_ALIAS=debug
-KEY_PASSWORD=debug
-KEYSTORE_PASSWORD=debug
-KEYSTORE_PATH=debug.jks
+```bash
+./gradlew :app:assembleDebug
 ```
 
-*Note: Ensure you have a `debug.jks` file in the root if you are using these values (default for debug builds).*
+Release builds require a `keystore.properties` file in the project root:
+
+```properties
+KEY_ALIAS=your-key-alias
+KEY_PASSWORD=your-key-password
+KEYSTORE_PASSWORD=your-keystore-password
+KEYSTORE_PATH=/path/to/release-keystore.jks
+```
 
 ## 🤝 Contributing
 
