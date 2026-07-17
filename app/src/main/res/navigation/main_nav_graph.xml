@@ -112,7 +112,6 @@
         android:id="@+id/errorsFragment"
         android:name="org.secu3.android.ui.errors.ErrorsFragment"
         android:label="Errors Fragment"
-        tools:layout="@layout/fragment_errors"
         />
 
     <fragment

@@ -408,6 +408,13 @@
     <string name="select_a_device_from_the_list">Выберите устройство из списка</string>
     <string name="clear_all_errors">Удалить все ошибки</string>
     <string name="dialog_confirm_clear_errors_message">Вы уверены, что хотите очистить все ошибки ECU?</string>
+    <string name="errors_title_ecu">Ошибки ECU</string>
+    <string name="errors_clear_all_short">Очистить</string>
+    <string name="errors_summary">%1$d активных · %2$d сохранено в памяти ECU</string>
+    <string name="errors_loading_state">Чтение ошибок ECU…</string>
+    <string name="errors_empty_state">Сейчас ошибок ECU нет.</string>
+    <string name="error_state_active">• Активная</string>
+    <string name="error_state_saved">• Сохранена</string>
     <string name="name">Имя</string>
     <string name="password">Пароль</string>
     <string name="test_signal_frequency_hz">Частота тест. сигнала</string>
