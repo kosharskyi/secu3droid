@@ -78,6 +78,8 @@ compose-material = { group = "androidx.compose.material", name = "material" }
 compose-material-icons = { group = "androidx.compose.material", name = "material-icons-extended" }
 compose-ui-tooling = { group = "androidx.compose.ui", name = "ui-tooling"}
 compose-ui-tooling-preview = { group = "androidx.compose.ui", name = "ui-tooling-preview" }
+compose-ui-test-junit4 = { group = "androidx.compose.ui", name = "ui-test-junit4" }
+compose-ui-test-manifest = { group = "androidx.compose.ui", name = "ui-test-manifest" }
 compose-runtime = { group = "androidx.compose.runtime", name = "runtime" }
 compose-viewmodel = { group = "androidx.lifecycle", name = "lifecycle-viewmodel-compose" }
 compose-livedata = { group = "androidx.compose.runtime", name = "runtime-livedata"}
