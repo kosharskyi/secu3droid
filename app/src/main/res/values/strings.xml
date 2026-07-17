@@ -573,6 +573,11 @@
     <string name="errors_empty_state">No ECU errors right now.</string>
     <string name="error_state_active">• Active</string>
     <string name="error_state_saved">• Saved</string>
+    <string name="close">Close</string>
+    <string name="firmware_information_title">Firmware Information</string>
+    <string name="firmware_enabled_capabilities">ENABLED CAPABILITIES</string>
+    <string name="firmware_disabled_capabilities">DISABLED / NOT PRESENT</string>
+    <string name="firmware_unknown_value">Unknown</string>
     <string name="name">Name</string>
     <string name="password">Password</string>
     <string name="test_signal_frequency_hz">Test signal frequency</string>

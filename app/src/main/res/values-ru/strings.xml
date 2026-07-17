@@ -415,6 +415,11 @@
     <string name="errors_empty_state">Сейчас ошибок ECU нет.</string>
     <string name="error_state_active">• Активная</string>
     <string name="error_state_saved">• Сохранена</string>
+    <string name="close">Закрыть</string>
+    <string name="firmware_information_title">Информация о прошивке</string>
+    <string name="firmware_enabled_capabilities">ВКЛЮЧЕННЫЕ ВОЗМОЖНОСТИ</string>
+    <string name="firmware_disabled_capabilities">ОТКЛЮЧЕНО / ОТСУТСТВУЕТ</string>
+    <string name="firmware_unknown_value">Неизвестно</string>
     <string name="name">Имя</string>
     <string name="password">Пароль</string>
     <string name="test_signal_frequency_hz">Частота тест. сигнала</string>
