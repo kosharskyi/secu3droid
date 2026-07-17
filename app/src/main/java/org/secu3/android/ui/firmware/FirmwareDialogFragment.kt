@@ -70,9 +70,12 @@ import androidx.compose.ui.platform.ViewCompositionStrategy
 import androidx.compose.ui.platform.rememberNestedScrollInteropConnection
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.semantics.semantics
+import androidx.compose.ui.semantics.selected
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
+import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.core.graphics.drawable.toDrawable
@@ -260,6 +263,8 @@ private fun CapabilityChip(
         fontWeight = FontWeight.Bold,
         fontFamily = FontFamily.Monospace,
         modifier = Modifier
+            .testTag(firmwareCapabilityChipTag(label, enabled))
+            .semantics { selected = enabled }
             .clip(RoundedCornerShape(14.dp))
             .background(background)
             .border(1.dp, stroke, RoundedCornerShape(14.dp))
@@ -271,6 +276,7 @@ private fun CapabilityChip(
 private fun FirmwareLoadingState() {
     Box(
         modifier = Modifier
+            .testTag(FirmwareLoadingTag)
             .fillMaxWidth()
             .height(180.dp),
         contentAlignment = Alignment.Center,
@@ -283,6 +289,12 @@ private data class FirmwareCapability(
     val label: String,
     val enabled: Boolean,
 )
+
+internal fun firmwareCapabilityChipTag(label: String, enabled: Boolean): String {
+    return "firmware-capability-$label-${if (enabled) "enabled" else "disabled"}"
+}
+
+internal const val FirmwareLoadingTag = "firmware-loading"
 
 private fun FirmwareInfoPacket.capabilities(): List<FirmwareCapability> {
     return listOf(
