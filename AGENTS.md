@@ -103,6 +103,7 @@ Notes:
 - Do not change files outside the requested scope.
 - Preserve existing XML/Fragment/ViewBinding code where that is the local pattern.
 - Use Compose for all new UI. The project is being migrated to Compose gradually.
+- When changing a screen design or doing a full screen redesign, ask the user first whether the screen should be rewritten in Compose.
 - Keep generated files and local configuration files out of edits unless the task explicitly targets them.
 - When changing Room entities or DAOs, check whether schema files under `app/schemas` need to be regenerated.
 - Do not commit generated Safe Args or KSP outputs. Commit generated Room schemas only.
