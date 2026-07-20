@@ -112,8 +112,12 @@ class StartScreenViewModel @Inject constructor(
                     cancelDiscovery()
                 }
 
+                discoveredBtDevices.clear()
+
                 bondedDevices.forEach { device ->
-                    discoveredBtDevices.add(device)
+                    if (discoveredBtDevices.none { it.address == device.address }) {
+                        discoveredBtDevices.add(device)
+                    }
                 }
 
                 startDiscovery()
