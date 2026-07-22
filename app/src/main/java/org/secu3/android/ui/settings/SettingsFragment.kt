@@ -37,6 +37,7 @@ import androidx.preference.Preference
 import androidx.preference.PreferenceFragmentCompat
 import androidx.preference.PreferenceManager
 import org.secu3.android.R
+import org.secu3.android.utils.LogExportDestination
 
 class SettingsFragment : PreferenceFragmentCompat(), OnSharedPreferenceChangeListener {
 
@@ -66,8 +67,7 @@ class SettingsFragment : PreferenceFragmentCompat(), OnSharedPreferenceChangeLis
         }
 
         findPreference<Preference>(getString(R.string.pref_log_export_directory_key))?.let {
-            val directoryUri = sharedPref.getString(getString(R.string.pref_log_export_directory_key), null)
-            it.summary = directoryUri?.toFolderSummary() ?: getString(R.string.pref_log_export_directory_default)
+            it.summary = logExportDestination().toSummary()
         }
     }
 
@@ -130,5 +130,21 @@ class SettingsFragment : PreferenceFragmentCompat(), OnSharedPreferenceChangeLis
             val treeDocumentId = DocumentsContract.getTreeDocumentId(toUri())
             treeDocumentId.substringAfter(':').ifBlank { treeDocumentId }
         }.getOrDefault(getString(R.string.pref_log_export_directory_default))
+    }
+
+    private fun logExportDestination(): LogExportDestination {
+        val uri = sharedPref.getString(getString(R.string.pref_log_export_directory_key), null)
+        return if (uri == null) {
+            LogExportDestination.DefaultDownloads
+        } else {
+            LogExportDestination.CustomTree(uri)
+        }
+    }
+
+    private fun LogExportDestination.toSummary(): String {
+        return when (this) {
+            LogExportDestination.DefaultDownloads -> getString(R.string.pref_log_export_directory_default)
+            is LogExportDestination.CustomTree -> uri.toFolderSummary()
+        }
     }
 }

@@ -32,6 +32,7 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import dagger.hilt.android.lifecycle.HiltViewModel
 import org.secu3.android.utils.FileHelper
+import org.secu3.android.utils.LogExportDestination
 import org.secu3.android.utils.UserPrefs
 import java.io.File
 import javax.inject.Inject
@@ -46,17 +47,13 @@ class SecuLogsViewModel @Inject constructor(
         get() = fileHelper.listOfLogs
 
     fun requiresDefaultDownloadsPermission(): Boolean {
-        return userPrefs.logExportDirectoryUri == null && Build.VERSION.SDK_INT <= Build.VERSION_CODES.P
+        return userPrefs.logExportDestination is LogExportDestination.DefaultDownloads &&
+                Build.VERSION.SDK_INT <= Build.VERSION_CODES.P
     }
 
     suspend fun saveLogFile(file: File): SaveLogResult = withContext(Dispatchers.IO) {
         runCatching {
-            val customDirectoryUri = userPrefs.logExportDirectoryUri
-            val destination = if (customDirectoryUri == null) {
-                fileHelper.saveLogToDefaultDownloads(file)
-            } else {
-                fileHelper.saveLogToDirectoryUri(file, customDirectoryUri)
-            }
+            val destination = fileHelper.saveLog(file, userPrefs.logExportDestination)
             SaveLogResult(isSuccess = true, destination = destination)
         }.getOrElse {
             SaveLogResult(isSuccess = false, destination = "")

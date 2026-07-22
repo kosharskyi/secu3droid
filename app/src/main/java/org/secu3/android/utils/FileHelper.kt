@@ -86,7 +86,14 @@ class FileHelper @Inject constructor(@ApplicationContext private val context: Co
         }
     }
 
-    fun saveLogToDefaultDownloads(file: File): String {
+    fun saveLog(file: File, destination: LogExportDestination): String {
+        return when (destination) {
+            LogExportDestination.DefaultDownloads -> saveLogToDefaultDownloads(file)
+            is LogExportDestination.CustomTree -> saveLogToDirectoryUri(file, destination.uri)
+        }
+    }
+
+    private fun saveLogToDefaultDownloads(file: File): String {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
             return saveLogToMediaStoreDownloads(file)
         }
@@ -102,7 +109,7 @@ class FileHelper @Inject constructor(@ApplicationContext private val context: Co
         return defaultLogExportDirectoryLabel
     }
 
-    fun saveLogToDirectoryUri(file: File, directoryUri: String): String {
+    private fun saveLogToDirectoryUri(file: File, directoryUri: String): String {
         val treeUri = directoryUri.toUri()
         val directoryDocumentUri = DocumentsContract.buildDocumentUriUsingTree(
             treeUri,

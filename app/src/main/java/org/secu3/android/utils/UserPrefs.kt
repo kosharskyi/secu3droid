@@ -76,8 +76,18 @@ class UserPrefs @Inject constructor(@ApplicationContext private val ctx: Context
         get() = mPrefs.getString(ctx.getString(R.string.pref_connection_retries_key), ctx.getString(R.string.defaultConnectionRetries))!!.toInt()
         set(value) = mPrefs.edit { putString(ctx.getString(R.string.pref_connection_retries_key), value.toString()) }
 
+    val logExportDestination: LogExportDestination
+        get() {
+            val uri = mPrefs.getString(ctx.getString(R.string.pref_log_export_directory_key), null)
+            return if (uri == null) {
+                LogExportDestination.DefaultDownloads
+            } else {
+                LogExportDestination.CustomTree(uri)
+            }
+        }
+
     var logExportDirectoryUri: String?
-        get() = mPrefs.getString(ctx.getString(R.string.pref_log_export_directory_key), null)
+        get() = (logExportDestination as? LogExportDestination.CustomTree)?.uri
         set(value) = mPrefs.edit { putString(ctx.getString(R.string.pref_log_export_directory_key), value) }
 
 
@@ -91,4 +101,9 @@ class UserPrefs @Inject constructor(@ApplicationContext private val ctx: Context
     var columnsCount: Int
         get() = mPrefs.getInt("columns_count", 2)
         set(value) = mPrefs.edit { putInt("columns_count", value) }
+}
+
+sealed class LogExportDestination {
+    data object DefaultDownloads : LogExportDestination()
+    data class CustomTree(val uri: String) : LogExportDestination()
 }
