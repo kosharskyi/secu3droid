@@ -53,6 +53,12 @@
         android:defaultValue="false"
         />
 
+    <Preference
+        android:key="@string/pref_log_export_directory_key"
+        android:persistent="false"
+        android:title="@string/pref_log_export_directory_title"
+        android:summary="@string/pref_log_export_directory_default" />
+
     <EditTextPreference
         android:key="@string/pref_connection_retries_key"
         android:title="@string/pref_connection_retries_title"

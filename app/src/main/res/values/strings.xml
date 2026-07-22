@@ -51,6 +51,7 @@
     <string name="status_connecting">Connecting</string>
     <string name="title_activity_errors">Errors</string>
     <string name="title_activity_settings">Settings</string>
+    <string name="back">Back</string>
     <string name="menu_errors">Errors</string>
     <string name="menu_dashboard">Dashboard</string>
     <string name="menu_preferences">Preferences</string>
@@ -410,6 +411,14 @@
 
     <string name="idlreg_iac_dead_band_title">IAC dead band</string>
     <string name="empty_logs_list">You have no recorded logs yet</string>
+    <string name="logs_title">Logs</string>
+    <string name="share_log_file">Share log file</string>
+    <string name="delete_log_file">Delete log file</string>
+    <string name="log_export_success">Saved to %1$s</string>
+    <string name="log_export_failed">Could not save the log file</string>
+    <string name="log_export_permission_denied">Storage permission denied</string>
+    <string name="pref_log_export_directory_title">Log export folder</string>
+    <string name="pref_log_export_directory_default">Downloads/Secu3</string>
     <string name="log_start_writing">Start writing</string>
     <string name="stop">Stop</string>
     <string name="mark_1">Insert mark 1</string>

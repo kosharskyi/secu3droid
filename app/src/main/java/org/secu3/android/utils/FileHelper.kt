@@ -25,14 +25,22 @@
 
 package org.secu3.android.utils
 
+import android.content.ContentValues
 import android.content.Context
 import android.net.Uri
+import android.os.Build
+import android.os.Environment
+import android.provider.DocumentsContract
+import android.provider.MediaStore
 import android.util.Log
+import androidx.annotation.RequiresApi
 import androidx.core.content.FileProvider
+import androidx.core.net.toUri
 import dagger.hilt.android.qualifiers.ApplicationContext
 import org.threeten.bp.LocalDateTime
 import org.threeten.bp.format.DateTimeFormatter
 import java.io.File
+import java.io.FileInputStream
 import javax.inject.Inject
 import javax.inject.Singleton
 
@@ -76,6 +84,98 @@ class FileHelper @Inject constructor(@ApplicationContext private val context: Co
                 "The selected file can't be shared: $file")
             null
         }
+    }
+
+    fun saveLogToDefaultDownloads(file: File): String {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
+            return saveLogToMediaStoreDownloads(file)
+        }
+
+        val directory = File(
+            Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOWNLOADS),
+            DEFAULT_LOG_EXPORT_DIRECTORY_NAME,
+        ).also {
+            it.mkdirs()
+        }
+        val destination = File(directory, file.name)
+        file.copyTo(destination, overwrite = true)
+        return defaultLogExportDirectoryLabel
+    }
+
+    fun saveLogToDirectoryUri(file: File, directoryUri: String): String {
+        val treeUri = directoryUri.toUri()
+        val directoryDocumentUri = DocumentsContract.buildDocumentUriUsingTree(
+            treeUri,
+            DocumentsContract.getTreeDocumentId(treeUri),
+        )
+        val documentUri = DocumentsContract.createDocument(
+            context.contentResolver,
+            directoryDocumentUri,
+            file.mimeType(),
+            file.name,
+        ) ?: throw IllegalStateException("Unable to create ${file.name}")
+
+        context.contentResolver.openOutputStream(documentUri, "w")?.use { outputStream ->
+            FileInputStream(file).use { inputStream ->
+                inputStream.copyTo(outputStream)
+            }
+        } ?: throw IllegalStateException("Unable to write ${file.name}")
+
+        return directoryUri.toDirectoryLabel()
+    }
+
+    val defaultLogExportDirectoryLabel: String
+        get() = "${Environment.DIRECTORY_DOWNLOADS}/$DEFAULT_LOG_EXPORT_DIRECTORY_NAME"
+
+    @RequiresApi(Build.VERSION_CODES.Q)
+    private fun saveLogToMediaStoreDownloads(file: File): String {
+        val values = ContentValues().apply {
+            put(MediaStore.Downloads.DISPLAY_NAME, file.name)
+            put(MediaStore.Downloads.MIME_TYPE, file.mimeType())
+            put(MediaStore.Downloads.RELATIVE_PATH, "${Environment.DIRECTORY_DOWNLOADS}/$DEFAULT_LOG_EXPORT_DIRECTORY_NAME")
+            put(MediaStore.Downloads.IS_PENDING, 1)
+        }
+
+        val uri = context.contentResolver.insert(MediaStore.Downloads.EXTERNAL_CONTENT_URI, values)
+            ?: throw IllegalStateException("Unable to create ${file.name}")
+
+        try {
+            context.contentResolver.openOutputStream(uri, "w")?.use { outputStream ->
+                FileInputStream(file).use { inputStream ->
+                    inputStream.copyTo(outputStream)
+                }
+            } ?: throw IllegalStateException("Unable to write ${file.name}")
+
+            ContentValues().apply {
+                put(MediaStore.Downloads.IS_PENDING, 0)
+            }.also {
+                context.contentResolver.update(uri, it, null, null)
+            }
+        } catch (e: Exception) {
+            context.contentResolver.delete(uri, null, null)
+            throw e
+        }
+
+        return defaultLogExportDirectoryLabel
+    }
+
+    private fun File.mimeType(): String {
+        return when (extension.lowercase()) {
+            "csv" -> "text/csv"
+            "s3l" -> "application/octet-stream"
+            else -> "application/octet-stream"
+        }
+    }
+
+    private fun String.toDirectoryLabel(): String {
+        return runCatching {
+            val treeDocumentId = DocumentsContract.getTreeDocumentId(toUri())
+            treeDocumentId.substringAfter(':').ifBlank { treeDocumentId }
+        }.getOrDefault(this)
+    }
+
+    private companion object {
+        const val DEFAULT_LOG_EXPORT_DIRECTORY_NAME = "Secu3"
     }
 
 }

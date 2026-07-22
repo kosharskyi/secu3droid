@@ -24,9 +24,15 @@
  */
 package org.secu3.android.ui.settings
 
+import android.app.Activity
+import android.content.Intent
 import android.content.SharedPreferences
 import android.content.SharedPreferences.OnSharedPreferenceChangeListener
 import android.os.Bundle
+import android.provider.DocumentsContract
+import androidx.activity.result.contract.ActivityResultContracts
+import androidx.core.content.edit
+import androidx.core.net.toUri
 import androidx.preference.Preference
 import androidx.preference.PreferenceFragmentCompat
 import androidx.preference.PreferenceManager
@@ -34,8 +40,24 @@ import org.secu3.android.R
 
 class SettingsFragment : PreferenceFragmentCompat(), OnSharedPreferenceChangeListener {
 
-
     private lateinit var sharedPref: SharedPreferences
+
+    private val logExportDirectoryRequest = registerForActivityResult(ActivityResultContracts.StartActivityForResult()) { result ->
+        if (result.resultCode != Activity.RESULT_OK) {
+            return@registerForActivityResult
+        }
+
+        val uri = result.data?.data ?: return@registerForActivityResult
+        val flags = result.data?.flags ?: 0
+        val takeFlags = flags and (Intent.FLAG_GRANT_READ_URI_PERMISSION or Intent.FLAG_GRANT_WRITE_URI_PERMISSION)
+        if (takeFlags != 0) {
+            requireContext().contentResolver.takePersistableUriPermission(uri, takeFlags)
+        }
+        sharedPref.edit {
+            putString(getString(R.string.pref_log_export_directory_key), uri.toString())
+        }
+        updatePreferenceList()
+    }
 
     private fun updatePreferenceList() {
         findPreference<Preference>(getString(R.string.pref_connection_retries_key))?.let {
@@ -43,6 +65,10 @@ class SettingsFragment : PreferenceFragmentCompat(), OnSharedPreferenceChangeLis
             it.summary = getString(R.string.pref_connection_retries_summary, maxConnRetries)
         }
 
+        findPreference<Preference>(getString(R.string.pref_log_export_directory_key))?.let {
+            val directoryUri = sharedPref.getString(getString(R.string.pref_log_export_directory_key), null)
+            it.summary = directoryUri?.toFolderSummary() ?: getString(R.string.pref_log_export_directory_default)
+        }
     }
 
     override fun onCreatePreferences(savedInstanceState: Bundle?, rootKey: String?) {
@@ -53,6 +79,13 @@ class SettingsFragment : PreferenceFragmentCompat(), OnSharedPreferenceChangeLis
         findPreference<Preference>(getString(R.string.pref_about_key))?.let {
             it.onPreferenceClickListener = Preference.OnPreferenceClickListener {
                 AboutDialog().show(childFragmentManager, "About dialog")
+                true
+            }
+        }
+
+        findPreference<Preference>(getString(R.string.pref_log_export_directory_key))?.let {
+            it.onPreferenceClickListener = Preference.OnPreferenceClickListener {
+                openLogExportDirectoryPicker()
                 true
             }
         }
@@ -74,6 +107,28 @@ class SettingsFragment : PreferenceFragmentCompat(), OnSharedPreferenceChangeLis
             getString(R.string.pref_connection_retries_key) -> {
                 updatePreferenceList()
             }
+            getString(R.string.pref_log_export_directory_key) -> {
+                updatePreferenceList()
+            }
         }
+    }
+
+    private fun openLogExportDirectoryPicker() {
+        val intent = Intent(Intent.ACTION_OPEN_DOCUMENT_TREE).apply {
+            addFlags(
+                Intent.FLAG_GRANT_READ_URI_PERMISSION or
+                        Intent.FLAG_GRANT_WRITE_URI_PERMISSION or
+                        Intent.FLAG_GRANT_PERSISTABLE_URI_PERMISSION or
+                        Intent.FLAG_GRANT_PREFIX_URI_PERMISSION,
+            )
+        }
+        logExportDirectoryRequest.launch(intent)
+    }
+
+    private fun String.toFolderSummary(): String {
+        return runCatching {
+            val treeDocumentId = DocumentsContract.getTreeDocumentId(toUri())
+            treeDocumentId.substringAfter(':').ifBlank { treeDocumentId }
+        }.getOrDefault(getString(R.string.pref_log_export_directory_default))
     }
 }

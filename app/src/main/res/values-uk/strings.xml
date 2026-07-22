@@ -27,6 +27,7 @@
     <string name="title_activity_settings">Налаштування</string>
     <string name="menu_errors">Помилки</string>
     <string name="menu_dashboard">Приладова панель</string>
+    <string name="back">Назад</string>
     <string name="menu_preferences">Налаштування</string>
     <string name="menu_secu_logs">Логи Secu</string>
     <string name="menu_exit">Вихід</string>
@@ -248,6 +249,14 @@
     <string name="bluetooth_device_not_valid">Раніше налаштований пристрій Bluetooth недійсний</string>
     <string name="open_settings">Перейти в налаштування</string>
     <string name="empty_logs_list">У вас поки що немає записаних логів</string>
+    <string name="logs_title">Логи</string>
+    <string name="share_log_file">Поділитися файлом логу</string>
+    <string name="delete_log_file">Видалити файл логу</string>
+    <string name="log_export_success">Збережено в %1$s</string>
+    <string name="log_export_failed">Не вдалося зберегти файл логу</string>
+    <string name="log_export_permission_denied">Доступ до сховища не надано</string>
+    <string name="pref_log_export_directory_title">Папка експорту логів</string>
+    <string name="pref_log_export_directory_default">Downloads/Secu3</string>
     <string name="log_start_writing">Почати запис</string>
     <string name="stop">Стоп</string>
     <string name="mark_1">Вставити маркер 1</string>

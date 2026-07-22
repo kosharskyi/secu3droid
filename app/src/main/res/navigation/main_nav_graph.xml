@@ -125,7 +125,6 @@
         android:id="@+id/secuLogsFragment"
         android:name="org.secu3.android.ui.logger.SecuLogsFragment"
         android:label="Secu Logs Fragment"
-        tools:layout="@layout/fragment_secu_logs"
         />
 
     <dialog

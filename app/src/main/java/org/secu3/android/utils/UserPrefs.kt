@@ -76,7 +76,9 @@ class UserPrefs @Inject constructor(@ApplicationContext private val ctx: Context
         get() = mPrefs.getString(ctx.getString(R.string.pref_connection_retries_key), ctx.getString(R.string.defaultConnectionRetries))!!.toInt()
         set(value) = mPrefs.edit { putString(ctx.getString(R.string.pref_connection_retries_key), value.toString()) }
 
-
+    var logExportDirectoryUri: String?
+        get() = mPrefs.getString(ctx.getString(R.string.pref_log_export_directory_key), null)
+        set(value) = mPrefs.edit { putString(ctx.getString(R.string.pref_log_export_directory_key), value) }
 
 
 
