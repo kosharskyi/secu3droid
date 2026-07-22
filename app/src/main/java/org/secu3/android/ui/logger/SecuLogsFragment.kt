@@ -314,7 +314,7 @@ private fun LogFileCard(
                     onClick = onDownloadClick,
                     colors = ButtonDefaults.buttonColors(containerColor = LogsAccent),
                 ) {
-                    Text(text = stringResource(R.string.download))
+                    Text(text = stringResource(R.string.save))
                 }
             }
         }
