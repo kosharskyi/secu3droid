@@ -58,7 +58,7 @@ data class GitHubRelease(
     val targetCommitish: String,
 
     @SerializedName("name")
-    val name: String,
+    val name: String?,
 
     @SerializedName("body")
     val body: String,
@@ -80,4 +80,7 @@ data class GitHubRelease(
 
     @SerializedName("assets")
     val assets: List<Asset>
-)
+) {
+    val displayName: String
+        get() = name?.takeIf { it.isNotBlank() } ?: tagName
+}

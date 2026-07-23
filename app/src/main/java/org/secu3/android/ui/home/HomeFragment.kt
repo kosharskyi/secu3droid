@@ -150,7 +150,7 @@ class HomeFragment : Fragment() {
     private fun showNewVersionDialog(release: GitHubRelease) {
         MaterialAlertDialogBuilder(requireContext())
             .setTitle(getString(R.string.new_version_available))
-            .setMessage(getString(R.string.the_version_is_available_do_you_want_to_download, release.tagName))
+            .setMessage(getString(R.string.the_version_is_available_do_you_want_to_download, release.displayName))
             .setPositiveButton(getString(R.string.download)) { _, _ ->
                 checkPermissionsAndDownload(release)
             }
