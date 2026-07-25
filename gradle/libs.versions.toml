@@ -1,6 +1,6 @@
 [versions]
-kotlin = "2.4.0" # NOTE: Do NOT forget to update KSP version as well
-kotlin-ksp = "2.3.9"
+kotlin = "2.4.10" # NOTE: Do NOT forget to update KSP version as well
+kotlin-ksp = "2.3.10"
 core-ktx = "1.19.0"
 appcompat = "1.7.1"
 
