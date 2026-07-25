@@ -17,11 +17,33 @@ val keystorePropertiesFile = rootProject.file("keystore.properties")
 val keystoreProperties = Properties()
 val hasReleaseKeystore = keystorePropertiesFile.exists()
 val isReleaseTask = gradle.startParameter.taskNames.any { it.lowercase().contains("release") }
+val appVersionCode = 55
+val appVersionName = "0.18.0"
 
 if (hasReleaseKeystore) {
     keystoreProperties.load(FileInputStream(keystorePropertiesFile))
-} else if (isReleaseTask) {
-    throw GradleException("keystore.properties is required for release builds")
+}
+
+val releaseKeyAlias =
+    providers.environmentVariable("RELEASE_KEY_ALIAS").orNull ?: keystoreProperties.getProperty("KEY_ALIAS")
+val releaseKeyPassword =
+    providers.environmentVariable("RELEASE_KEY_PASSWORD").orNull ?: keystoreProperties.getProperty("KEY_PASSWORD")
+val releaseStorePassword =
+    providers.environmentVariable("RELEASE_STORE_PASSWORD").orNull ?: keystoreProperties.getProperty("KEYSTORE_PASSWORD")
+val releaseKeystorePath =
+    providers.environmentVariable("RELEASE_KEYSTORE_PATH").orNull ?: keystoreProperties.getProperty("KEYSTORE_PATH")
+val hasReleaseSigningConfig = listOf(
+    releaseKeyAlias,
+    releaseKeyPassword,
+    releaseStorePassword,
+    releaseKeystorePath,
+).none { it.isNullOrBlank() }
+
+if (isReleaseTask && !hasReleaseSigningConfig) {
+    throw GradleException(
+        "Release signing requires RELEASE_KEY_ALIAS, RELEASE_KEY_PASSWORD, RELEASE_STORE_PASSWORD, and " +
+            "RELEASE_KEYSTORE_PATH environment variables or equivalent values in keystore.properties",
+    )
 }
 
 android {
@@ -32,19 +54,19 @@ android {
         applicationId = "org.secu3.android"
         minSdk = 23
         targetSdk = 36
-        versionCode = 55
-        versionName = "0.18.0"
+        versionCode = appVersionCode
+        versionName = appVersionName
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
     }
 
     signingConfigs {
         create("release") {
-            if (hasReleaseKeystore) {
-                keyAlias = keystoreProperties["KEY_ALIAS"] as String?
-                keyPassword = keystoreProperties["KEY_PASSWORD"] as String?
-                storeFile = file(keystoreProperties["KEYSTORE_PATH"] as String)
-                storePassword = keystoreProperties["KEYSTORE_PASSWORD"] as String?
+            if (hasReleaseSigningConfig) {
+                keyAlias = requireNotNull(releaseKeyAlias)
+                keyPassword = requireNotNull(releaseKeyPassword)
+                storeFile = file(requireNotNull(releaseKeystorePath))
+                storePassword = requireNotNull(releaseStorePassword)
             }
         }
     }
@@ -59,7 +81,7 @@ android {
                 "proguard-rules.pro",
                 "retrofit2.pro",
             )
-            if (hasReleaseKeystore) {
+            if (hasReleaseSigningConfig) {
                 signingConfig = signingConfigs.getByName("release")
             }
         }
@@ -89,6 +111,27 @@ android {
 
 room {
     schemaDirectory("$projectDir/schemas")
+}
+
+tasks.register("validateVersionTag") {
+    group = "verification"
+    description = "Checks that the GitHub release tag matches the Android version name"
+
+    val releaseTag = providers.environmentVariable("GITHUB_REF_NAME")
+    inputs.property("releaseTag", releaseTag.orElse(""))
+    inputs.property("versionName", appVersionName)
+
+    doLast {
+        val actualTag = releaseTag.orNull
+            ?: throw GradleException("GITHUB_REF_NAME is required to validate a release tag")
+        val expectedTag = "v$appVersionName"
+
+        if (actualTag != expectedTag) {
+            throw GradleException(
+                "Release tag '$actualTag' does not match versionName '$appVersionName'. Expected tag: '$expectedTag'",
+            )
+        }
+    }
 }
 
 dependencies {
