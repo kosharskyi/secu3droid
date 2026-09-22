@@ -113,9 +113,9 @@ data class IdlingParamPacket(
         iFac2 = data.get2Bytes().toShort().toFloat() / 256
         minefr = data.get2Bytes()
         idlingRpm = data.get2Bytes()
-        idlregMinAngle = data.get2Bytes().toShort().toFloat() / ANGLE_DIVIDER
-        idlregMaxAngle = data.get2Bytes().toShort().toFloat() / ANGLE_DIVIDER
-        idlregTurnOnTemp = data.get2Bytes().toShort().toFloat() / TEMPERATURE_MULTIPLIER
+        idlregMinAngle = data.get2Bytes().toFloatSigned() / ANGLE_DIVIDER
+        idlregMaxAngle = data.get2Bytes().toFloatSigned() / ANGLE_DIVIDER
+        idlregTurnOnTemp = data.get2Bytes().toFloatSigned() / TEMPERATURE_MULTIPLIER
         idlToRunAdd = data.get1Byte().toFloat() / 2.0f
         rpmOnRunAdd = data.get1Byte() * 10
         idlRegP0 = data.get2Bytes().toFloat() / 256
