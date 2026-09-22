@@ -143,12 +143,12 @@ data class FunSetParamPacket(
         fnGas = data.get1Byte()
         loadLower = data.get2Bytes().toFloat() / MAP_MULTIPLIER
         loadUpper = data.get2Bytes().toFloat() / MAP_MULTIPLIER
-        mapCurveOffset = data.get2Bytes().toFloat() * ADC_DISCRETE
-        mapCurveGradient = data.get2Bytes().toFloat() / (MAP_MULTIPLIER * ADC_DISCRETE * 128.0f)
-        map2CurveOffset = data.get2Bytes().toFloat() * ADC_DISCRETE
-        map2CurveGradient = data.get2Bytes().toFloat() / (MAP_MULTIPLIER * ADC_DISCRETE * 128.0f)
-        tpsCurveOffset = data.get2Bytes().toFloat() * ADC_DISCRETE
-        tpsCurveGradient = data.get2Bytes().toFloat() / (TPS_MULTIPLIER.times(64) * ADC_DISCRETE * 128.0f)
+        mapCurveOffset = data.get2Bytes().toShort().toFloat() * ADC_DISCRETE
+        mapCurveGradient = data.get2Bytes().toShort().toFloat() / (MAP_MULTIPLIER * ADC_DISCRETE * 128.0f)
+        map2CurveOffset = data.get2Bytes().toShort().toFloat() * ADC_DISCRETE
+        map2CurveGradient = data.get2Bytes().toShort().toFloat() / (MAP_MULTIPLIER * ADC_DISCRETE * 128.0f)
+        tpsCurveOffset = data.get2Bytes().toShort().toFloat() * ADC_DISCRETE
+        tpsCurveGradient = data.get2Bytes().toShort().toFloat() / (TPS_MULTIPLIER.times(2) * ADC_DISCRETE * 128.0f)
         loadSrcCfg = data.get1Byte()
         mapselUni = data.get1Byte()
         barocorrType = data.get1Byte()
@@ -162,14 +162,14 @@ data class FunSetParamPacket(
         mafload_const = data.get4Bytes().toFloat()
         tps_raw = data.get2Bytes().times(ADC_DISCRETE)
 
-        gpsCurveOffset = data.get2Bytes().toFloat() * ADC_DISCRETE
-        gpsCurveGradient = data.get2Bytes().toFloat() / (MAP_MULTIPLIER * ADC_DISCRETE * 128.0f)
+        gpsCurveOffset = data.get2Bytes().toShort().toFloat() * ADC_DISCRETE
+        gpsCurveGradient = data.get2Bytes().toShort().toFloat() / (MAP_MULTIPLIER * ADC_DISCRETE * 128.0f)
 
-        fpsCurveOffset = data.get2Bytes().toFloat() * ADC_DISCRETE
-        fpsCurveGradient = data.get2Bytes().toFloat() / (MAP_MULTIPLIER * ADC_DISCRETE * 128.0f)
+        fpsCurveOffset = data.get2Bytes().toShort().toFloat() * ADC_DISCRETE
+        fpsCurveGradient = data.get2Bytes().toShort().toFloat() / (MAP_MULTIPLIER * ADC_DISCRETE * 128.0f)
 
-        apps1CurveOffset = data.get2Bytes().toFloat() * ADC_DISCRETE
-        apps1CurveGradient = data.get2Bytes().toFloat() / ((APPS_MULT * 2) * ADC_DISCRETE * 128.0f)
+        apps1CurveOffset = data.get2Bytes().toShort().toFloat() * ADC_DISCRETE
+        apps1CurveGradient = data.get2Bytes().toShort().toFloat() / ((APPS_MULT * 2) * ADC_DISCRETE * 128.0f)
 
         data.setUnhandledParams()
 
