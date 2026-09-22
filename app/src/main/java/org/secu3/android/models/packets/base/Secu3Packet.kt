@@ -49,6 +49,10 @@ abstract class Secu3Packet {
         return v
     }
 
+    protected fun IntArray.get2BytesSigned(): Int {
+        return this.get2Bytes().toShort().toInt()
+    }
+
     protected fun IntArray.get3Bytes(): Int {
         if (currentIndex + 2 >= size) {
             throw IllegalArgumentException("Packet too short; request ${currentIndex + 3} but length is $size")
