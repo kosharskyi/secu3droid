@@ -62,7 +62,7 @@ class HomeViewModel @Inject constructor(
     val firmware: FirmwareInfoPacket?
         get() = secu3ConnectionManager.fwInfo
 
-    val newReleaseAvailable: LiveData<GitHubRelease> = flow {
+    private val newReleaseAvailableFlow = flow {
         val now = LocalDate.now()
 
         if (BuildConfig.DEBUG || appPrefs.lastAppVersionCheck.isBefore(now)) {
@@ -70,7 +70,10 @@ class HomeViewModel @Inject constructor(
                 emit(it)
             }
         }
-    }.asLiveData()
+    }
+
+    val newReleaseAvailable: LiveData<GitHubRelease>
+        get() = newReleaseAvailableFlow.asLiveData()
 
     init {
         viewModelScope.launch {
