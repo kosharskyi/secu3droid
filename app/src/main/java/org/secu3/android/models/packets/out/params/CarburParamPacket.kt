@@ -82,7 +82,7 @@ data class CarburParamPacket(
         shutoffDelay = data.get1Byte().toFloat() / 100
         tpsThreshold = data.get2Bytes().toFloat() / TPS_MULTIPLIER
         fuelcutMapThrd = data.get2Bytes().toFloat() / MAP_MULTIPLIER
-        fuelcutCtsThrd = data.get2Bytes().toFloatSigned() / TEMPERATURE_MULTIPLIER
+        fuelcutCtsThrd = data.get2BytesSigned().toFloat() / TEMPERATURE_MULTIPLIER
         revlimLot = data.get2Bytes()
         revlimHit = data.get2Bytes()
 

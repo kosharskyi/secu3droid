@@ -195,7 +195,7 @@ data class LambdaParamPacket(
         corrLimitM = data.get2Bytes().toFloat() / 512 * 100
 
         swtPoint = data.get2Bytes().toFloat() * ADC_DISCRETE
-        tempThrd = data.get2Bytes().toFloatSigned() / TEMPERATURE_MULTIPLIER
+        tempThrd = data.get2BytesSigned().toFloat() / TEMPERATURE_MULTIPLIER
         rpmThrd = data.get2Bytes()
 
         activDelay = data.get1Byte()
