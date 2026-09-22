@@ -74,6 +74,8 @@ abstract class Secu3Packet {
         return v
     }
 
+    protected fun Int.toFloatSigned(): Float = toShort().toFloat()
+
     protected fun IntArray.getString(length: Int): String {
         if (currentIndex + length > size) {
             throw IllegalArgumentException("Packet too short; request ${currentIndex + length} but length is $size")

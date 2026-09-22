@@ -57,14 +57,14 @@ data class AnglesParamPacket(
 
 
     override fun parse(data: IntArray): InputPacket {
-        maxAngle = data.get2Bytes().toShort().toFloat() / ANGLE_DIVIDER
-        minAngle = data.get2Bytes().toShort().toFloat() / ANGLE_DIVIDER
-        angleCorrection = data.get2Bytes().toShort().toFloat() / ANGLE_DIVIDER
+        maxAngle = data.get2Bytes().toFloatSigned() / ANGLE_DIVIDER
+        minAngle = data.get2Bytes().toFloatSigned() / ANGLE_DIVIDER
+        angleCorrection = data.get2Bytes().toFloatSigned() / ANGLE_DIVIDER
         angleDecSpeed = data.get2Bytes().toShort().toFloat() / ANGLE_DIVIDER
         angleIncSpeed = data.get2Bytes().toShort().toFloat() / ANGLE_DIVIDER
         zeroAdvAngle = data.get1Byte()
         igntimFlags = data.get1Byte()
-        shift_ingtim = data.get2Bytes().toFloat() / ANGLE_DIVIDER
+        shift_ingtim = data.get2Bytes().toFloatSigned() / ANGLE_DIVIDER
 
         data.setUnhandledParams()
 
