@@ -22,81 +22,105 @@
  *                    http://secu-3.org
  *                    email: vetalkosharskiy@gmail.com
  */
-
 package org.secu3.android.ui.sensors.settings
 
 import android.os.Bundle
-import androidx.fragment.app.Fragment
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
-import android.widget.AdapterView
-import android.widget.AdapterView.OnItemSelectedListener
-import android.widget.ArrayAdapter
+import androidx.compose.foundation.clickable
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.padding
+import androidx.compose.material3.Checkbox
+import androidx.compose.material3.DropdownMenu
+import androidx.compose.material3.DropdownMenuItem
+import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.mutableIntStateOf
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
+import androidx.compose.ui.Alignment
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.ComposeView
+import androidx.compose.ui.platform.ViewCompositionStrategy
+import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.unit.dp
+import androidx.compose.ui.platform.testTag
+import androidx.fragment.app.Fragment
 import androidx.navigation.fragment.findNavController
 import dagger.hilt.android.AndroidEntryPoint
 import org.secu3.android.R
-import org.secu3.android.databinding.FragmentSensorsSetingsBinding
+import org.secu3.android.ui.compose.SecuComposeTheme
+import org.secu3.android.ui.compose.SecuTopAppBar
 import org.secu3.android.utils.UserPrefs
 import javax.inject.Inject
 
-
 @AndroidEntryPoint
 class SensorsSettingsFragment : Fragment() {
-
-    private var mBinding: FragmentSensorsSetingsBinding? = null
-
     @Inject
     internal lateinit var mPrefs: UserPrefs
 
-    override fun onCreateView(inflater: LayoutInflater, container: ViewGroup?, savedInstanceState: Bundle?): View? {
-        mBinding = FragmentSensorsSetingsBinding.inflate(inflater, container, false)
-        return mBinding?.root
-    }
-
-    override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
-        super.onViewCreated(view, savedInstanceState)
-
-        mBinding?.apply {
-
-            toolbar.setNavigationOnClickListener {
-                findNavController().navigateUp()
-            }
-
-            oldSensorsCheckbox.apply {
-                isChecked = mPrefs.oldSensorViewEnabled
-                setOnCheckedChangeListener { buttonView, isChecked ->
-                    mPrefs.oldSensorViewEnabled = isChecked
+    override fun onCreateView(inflater: LayoutInflater, container: ViewGroup?, savedInstanceState: Bundle?): View =
+        ComposeView(requireContext()).apply {
+            setViewCompositionStrategy(ViewCompositionStrategy.DisposeOnViewTreeLifecycleDestroyed)
+            setContent {
+                SecuComposeTheme {
+                    SensorsSettingsScreen(
+                        oldView = mPrefs.oldSensorViewEnabled,
+                        columns = mPrefs.columnsCount.coerceIn(2, 8),
+                        onOldViewChange = { mPrefs.oldSensorViewEnabled = it },
+                        onColumnsChange = { mPrefs.columnsCount = it },
+                        onNavigateUp = { findNavController().navigateUp() },
+                    )
                 }
             }
-
-            oldSensorsTitle.setOnClickListener {
-                oldSensorsCheckbox.performClick()
-            }
-
-            val items = IntRange(2, 8).toList()
-
-            columnsCountSpinner.apply {
-                adapter = ArrayAdapter(requireContext(), android.R.layout.simple_dropdown_item_1line, items.map { it.toString() })
-                setSelection(items.indexOf(mPrefs.columnsCount))
-                onItemSelectedListener = object : OnItemSelectedListener {
-                    override fun onItemSelected(parent: AdapterView<*>?, view: View?, position: Int, id: Long) {
-                        mPrefs.columnsCount = items[position]
-                    }
-
-                    override fun onNothingSelected(parent: AdapterView<*>?) {
-                        // Ignore
-                    }
-                }
-            }
-
-
         }
+}
 
-    }
-
-    override fun onDestroyView() {
-        super.onDestroyView()
-        mBinding = null
+@Composable
+internal fun SensorsSettingsScreen(
+    oldView: Boolean,
+    columns: Int,
+    onOldViewChange: (Boolean) -> Unit,
+    onColumnsChange: (Int) -> Unit,
+    onNavigateUp: () -> Unit,
+) {
+    var oldViewState by remember(oldView) { mutableStateOf(oldView) }
+    var columnsState by remember(columns) { mutableIntStateOf(columns) }
+    var columnsExpanded by remember { mutableStateOf(false) }
+    Column(Modifier.fillMaxSize()) {
+        SecuTopAppBar(title = stringResource(R.string.title_activity_settings), onNavigateUp = onNavigateUp, showStatus = false)
+        Row(Modifier.fillMaxWidth().clickable {
+            oldViewState = !oldViewState
+            onOldViewChange(oldViewState)
+        }.padding(start = 16.dp, end = 16.dp, top = 8.dp, bottom = 8.dp), verticalAlignment = Alignment.CenterVertically) {
+            Text(stringResource(R.string.enable_old_sensors_view), Modifier.weight(1f))
+            Checkbox(checked = oldViewState, modifier = Modifier.testTag("sensors-old-view-checkbox"), onCheckedChange = {
+                oldViewState = it
+                onOldViewChange(it)
+            })
+        }
+        Row(Modifier.fillMaxWidth().clickable { columnsExpanded = true }.padding(16.dp), verticalAlignment = Alignment.CenterVertically) {
+            Text(stringResource(R.string.columns_count), Modifier.weight(1f))
+            Box {
+                TextButton(onClick = { columnsExpanded = true }, modifier = Modifier.testTag("sensor-columns-value")) { Text(columnsState.toString()) }
+                DropdownMenu(expanded = columnsExpanded, onDismissRequest = { columnsExpanded = false }) {
+                    (2..8).forEach { count ->
+                        DropdownMenuItem(text = { Text(count.toString()) }, onClick = {
+                            columnsState = count
+                            onColumnsChange(count)
+                            columnsExpanded = false
+                        })
+                    }
+                }
+            }
+        }
     }
 }
