@@ -35,17 +35,21 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.safeDrawing
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.windowInsetsPadding
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.Icon
+import androidx.compose.foundation.Image
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
@@ -58,6 +62,8 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.ColorFilter
+import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
@@ -113,17 +119,26 @@ private val menuItems = listOf(
 )
 
 @Composable
-fun HomeScreen(state: HomeScreenState, actions: HomeScreenActions, modifier: Modifier = Modifier, layoutOverride: HomeLayout? = null) {
+fun HomeScreen(
+    state: HomeScreenState,
+    actions: HomeScreenActions,
+    modifier: Modifier = Modifier,
+    layoutOverride: HomeLayout? = null,
+    contentInsets: WindowInsets = WindowInsets.safeDrawing,
+) {
     var dialog by remember { mutableStateOf(if (state.releaseName != null) HomeDialog.RELEASE else null) }
     LaunchedEffect(state.releaseName) { dialog = if (state.releaseName != null) HomeDialog.RELEASE else null }
     LaunchedEffect(state.showExitConfirmation) { if (state.showExitConfirmation) dialog = HomeDialog.EXIT }
     val layout = layoutOverride ?: homeLayout(LocalConfiguration.current)
     SecuComposeTheme {
-        Box(modifier.fillMaxSize()) {
-          Column(Modifier.fillMaxSize()) {
+        Box(modifier.fillMaxSize().testTag("home-full-root")) {
+          Column(Modifier.fillMaxSize().windowInsetsPadding(contentInsets).testTag("home-safe-content")) {
             Row(Modifier.fillMaxWidth().height(64.dp).padding(horizontal = 16.dp), verticalAlignment = Alignment.CenterVertically,
                 horizontalArrangement = Arrangement.SpaceBetween) {
-                TextButton(onClick = { if (state.connectionRunning) dialog = HomeDialog.EXIT else actions.onExitImmediately() }) {
+                TextButton(
+                    modifier = Modifier.testTag("home-exit-button"),
+                    onClick = { if (state.connectionRunning) dialog = HomeDialog.EXIT else actions.onExitImmediately() },
+                ) {
                     Icon(painterResource(R.drawable.ic_logout_24), contentDescription = null, tint = Color.Black)
                     Text(stringResource(R.string.exit), color = Color.Black, modifier = Modifier.padding(start = 8.dp))
                 }
@@ -139,16 +154,16 @@ fun HomeScreen(state: HomeScreenState, actions: HomeScreenActions, modifier: Mod
                         HomeConnectionStatus.CONNECTED -> androidx.compose.ui.res.colorResource(R.color.gauge_dark_green)
                         HomeConnectionStatus.CONNECTING -> androidx.compose.ui.res.colorResource(R.color.gauge_dark_yellow)
                         HomeConnectionStatus.DISCONNECTED -> androidx.compose.ui.res.colorResource(R.color.gauge_red)
-                    }, modifier = Modifier.size(48.dp).semantics { contentDescription = statusDescription }
+                    }, modifier = Modifier.size(48.dp).testTag("home-ecu-status").semantics { contentDescription = statusDescription }
                         .then(if (state.firmwareAvailable) Modifier.clickableHome(actions.onFirmware) else Modifier))
             }
             if (layout == HomeLayout.LANDSCAPE_ROW) {
-                Row(Modifier.fillMaxSize().horizontalScroll(rememberScrollState()).padding(start = 32.dp, end = 24.dp, bottom = 8.dp),
+                Row(Modifier.fillMaxSize().testTag("home-menu-viewport").horizontalScroll(rememberScrollState()).padding(start = 32.dp, end = 24.dp, bottom = 8.dp),
                     horizontalArrangement = Arrangement.spacedBy(16.dp), verticalAlignment = Alignment.CenterVertically) {
                     menuItems.forEach { item -> MenuCard(item, Modifier.size(width = 180.dp, height = 150.dp)) { handleDestination(item.destination, actions) { dialog = HomeDialog.DIAGNOSTICS } } }
                 }
             } else {
-                Column(Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(horizontal = 32.dp, vertical = 16.dp),
+                Column(Modifier.fillMaxSize().testTag("home-menu-viewport").verticalScroll(rememberScrollState()).padding(horizontal = 32.dp, vertical = 16.dp),
                     verticalArrangement = Arrangement.spacedBy(16.dp)) {
                     MenuCard(menuItems.first(), Modifier.fillMaxWidth().height(150.dp)) { handleDestination(menuItems.first().destination, actions) { dialog = HomeDialog.DIAGNOSTICS } }
                     val rest = menuItems.drop(1)
@@ -190,7 +205,18 @@ private fun MenuCard(item: HomeMenuItem, modifier: Modifier, onClick: () -> Unit
         colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.background),
         border = BorderStroke(1.dp, Color(0xFFB2B2B2)), elevation = CardDefaults.cardElevation(defaultElevation = 4.dp)) {
         Column(Modifier.fillMaxSize().padding(8.dp), horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.SpaceBetween) {
-            Icon(painterResource(item.icon), contentDescription = null, modifier = Modifier.weight(1f).padding(12.dp))
+            Box(
+                Modifier.weight(1f).fillMaxWidth(),
+                contentAlignment = Alignment.Center,
+            ) {
+                Image(
+                    painter = painterResource(item.icon),
+                    contentDescription = null,
+                    contentScale = ContentScale.Fit,
+                    colorFilter = if (item.destination == HomeDestination.ERRORS) ColorFilter.tint(Color.Black) else null,
+                    modifier = Modifier.size(96.dp).testTag("home-icon-${item.destination.name.lowercase()}"),
+                )
+            }
             Text(stringResource(item.label), textAlign = TextAlign.Center, style = MaterialTheme.typography.titleMedium, modifier = Modifier.padding(bottom = 4.dp))
         }
     }

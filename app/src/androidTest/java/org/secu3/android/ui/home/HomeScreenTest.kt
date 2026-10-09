@@ -36,12 +36,15 @@ import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
+import androidx.compose.foundation.layout.WindowInsets
+import androidx.compose.ui.test.onRoot
 import androidx.test.platform.app.InstrumentationRegistry
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertTrue
 import org.junit.Rule
 import org.junit.Test
 import org.secu3.android.R
+import androidx.compose.ui.unit.dp
 
 class HomeScreenTest {
     @get:Rule val compose = createComposeRule()
@@ -142,5 +145,49 @@ class HomeScreenTest {
         val sensorsRow = compose.onNodeWithTag("home-card-sensors").fetchSemanticsNode().boundsInRoot
         assertTrue("Landscape cards share a row", kotlin.math.abs(sensorsRow.top - dashboardRow.top) < 1f)
         assertTrue("Landscape cards scroll from left to right", sensorsRow.left > dashboardRow.left)
+    }
+
+    @Test fun safeDrawingInsetsKeepControlsAndMenuViewportInsideTheUsableArea() {
+        var layout by mutableStateOf(HomeLayout.GRID)
+        val topInset = with(compose.density) { 28.dp.roundToPx() }
+        val bottomInset = with(compose.density) { 36.dp.roundToPx() }
+        val testInsets = WindowInsets(left = 0, top = topInset, right = 0, bottom = bottomInset)
+        compose.setContent {
+            HomeScreen(HomeScreenState(), HomeScreenActions(), layoutOverride = layout, contentInsets = testInsets)
+        }
+
+        fun assertContentWithinInsets() {
+            val rootHeight = compose.onRoot().fetchSemanticsNode().boundsInRoot.height
+            listOf("home-exit-button", "home-ecu-status", "home-menu-viewport").forEach { tag ->
+                val bounds = compose.onNodeWithTag(tag).fetchSemanticsNode().boundsInRoot
+                assertTrue("$tag starts below the status bar", bounds.top >= topInset - 1f)
+                assertTrue("$tag ends above the navigation bar", bounds.bottom <= rootHeight - bottomInset + 1f)
+            }
+        }
+
+        assertContentWithinInsets()
+        compose.runOnIdle { layout = HomeLayout.LANDSCAPE_ROW }
+        assertContentWithinInsets()
+    }
+
+    @Test fun everyMenuIconUsesTheSameProportionalFrameInGridAndLandscapeRow() {
+        var layout by mutableStateOf(HomeLayout.GRID)
+        val destinations = listOf("dashboard", "sensors", "parameters", "errors", "diagnostics", "logs", "settings")
+        val expectedIconSizePx = with(compose.density) { 96.dp.toPx() }
+        compose.setContent { HomeScreen(HomeScreenState(), HomeScreenActions(), layoutOverride = layout) }
+
+        fun assertAllIconFramesHaveConsistentReadableSize() {
+            destinations.forEach { destination ->
+                val icon = compose.onNodeWithTag("home-icon-$destination", useUnmergedTree = true)
+                icon.performScrollTo()
+                val bounds = icon.fetchSemanticsNode().boundsInRoot
+                assertTrue("$destination icon frame width stays 96dp", kotlin.math.abs(bounds.width - expectedIconSizePx) < 1f)
+                assertTrue("$destination icon frame height stays 96dp", kotlin.math.abs(bounds.height - expectedIconSizePx) < 1f)
+            }
+        }
+
+        assertAllIconFramesHaveConsistentReadableSize()
+        compose.runOnIdle { layout = HomeLayout.LANDSCAPE_ROW }
+        assertAllIconFramesHaveConsistentReadableSize()
     }
 }
