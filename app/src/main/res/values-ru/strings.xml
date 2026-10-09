@@ -322,6 +322,9 @@
     <string name="sensors_frag_oil_temperature_sensor_label">Температура масла</string>
     <string name="sensors_frag_estimated_torque_label">Расчетный момент</string>
     <string name="sensors_frag_requested_torque_label">Желаемый момент</string>
+    <string name="sensors_status_accessibility_on">Включено</string>
+    <string name="sensors_status_accessibility_off">Выключено</string>
+    <string name="sensors_status_accessibility_unavailable">Недоступно</string>
     <string name="sensors_frag_status_gas_valve_label">Газовый клапан</string>
     <string name="sensors_frag_status_throttle_label">Дроссель</string>
     <string name="sensors_frag_status_fl_fuel_label">Топл. при ПХХ</string>

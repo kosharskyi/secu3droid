@@ -481,6 +481,9 @@
     <string name="sensors_frag_oil_temperature_sensor_label">Oil Temp</string>
     <string name="sensors_frag_estimated_torque_label">Estimated Torque</string>
     <string name="sensors_frag_requested_torque_label">Requested Torque</string>
+    <string name="sensors_status_accessibility_on">On</string>
+    <string name="sensors_status_accessibility_off">Off</string>
+    <string name="sensors_status_accessibility_unavailable">Unavailable</string>
     <string name="sensors_frag_status_gas_valve_label">Gas valve</string>
     <string name="sensors_frag_status_throttle_label">Throttle</string>
     <string name="sensors_frag_status_fl_fuel_label">Fl fuel</string>
