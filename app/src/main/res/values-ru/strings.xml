@@ -26,6 +26,10 @@
     <string name="status_connecting">Подключение</string>
     <string name="title_activity_errors">Ошибки</string>
     <string name="menu_dashboard">Приборная панель</string>
+    <string name="home_connection_connected">ЭБУ подключен</string>
+    <string name="home_connection_connected_firmware">ЭБУ подключен. Открыть информацию о прошивке</string>
+    <string name="home_connection_connecting">Подключение к ЭБУ</string>
+    <string name="home_connection_disconnected">ЭБУ не подключен</string>
     <string name="title_activity_settings">Настройки</string>
     <string name="back">Назад</string>
     <string name="menu_errors">Ошибки</string>

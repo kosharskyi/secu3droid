@@ -27,6 +27,10 @@
     <string name="title_activity_settings">Налаштування</string>
     <string name="menu_errors">Помилки</string>
     <string name="menu_dashboard">Приладова панель</string>
+    <string name="home_connection_connected">ЕБУ підключено</string>
+    <string name="home_connection_connected_firmware">ЕБУ підключено. Відкрити інформацію про прошивку</string>
+    <string name="home_connection_connecting">Підключення до ЕБУ</string>
+    <string name="home_connection_disconnected">ЕБУ не підключено</string>
     <string name="back">Назад</string>
     <string name="menu_preferences">Налаштування</string>
     <string name="menu_secu_logs">Логи Secu</string>

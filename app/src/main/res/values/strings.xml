@@ -54,6 +54,10 @@
     <string name="back">Back</string>
     <string name="menu_errors">Errors</string>
     <string name="menu_dashboard">Dashboard</string>
+    <string name="home_connection_connected">Connected to ECU</string>
+    <string name="home_connection_connected_firmware">Connected to ECU. Open firmware information</string>
+    <string name="home_connection_connecting">Connecting to ECU</string>
+    <string name="home_connection_disconnected">Disconnected from ECU</string>
     <string name="menu_preferences">Preferences</string>
     <string name="menu_secu_logs">Secu logs</string>
     <string name="menu_raw_sensors">Raw values</string>

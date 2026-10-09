@@ -26,8 +26,7 @@
     <fragment
         android:id="@+id/homeFragment"
         android:name="org.secu3.android.ui.home.HomeFragment"
-        android:label="fragment_home_fragment"
-        tools:layout="@layout/fragment_home">
+        android:label="fragment_home_fragment">
 
         <action
             android:id="@+id/action_open_dashboard"

@@ -1,0 +1,146 @@
+/*
+ *    SecuDroid  - An open source, free manager for SECU-3 engine control unit
+ *    Copyright (C) 2026 Vitalii O. Kosharskyi. Ukraine, Kyiv
+ *
+ *    SECU-3  - An open source, free engine control unit
+ *    Copyright (C) 2007-2026 Alexey A. Shabelnikov. Ukraine, Kyiv
+ *
+ *    This program is free software: you can redistribute it and/or modify
+ *    it under the terms of the GNU General Public License as published by
+ *    the Free Software Foundation, either version 3 of the License, or
+ *    (at your option) any later version.
+ *
+ *    This program is distributed in the hope that it will be useful,
+ *    but WITHOUT ANY WARRANTY; without even the implied warranty of
+ *    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ *    GNU General Public License for more details.
+ *
+ *    You should have received a copy of the GNU General Public License
+ *    along with this program.  If not, see <http://www.gnu.org/licenses/>.
+ *
+ *    contacts:
+ *                    http://secu-3.org
+ *                    email: vetalkosharskiy@gmail.com
+ */
+
+package org.secu3.android.ui.home
+
+import android.content.res.Configuration
+import androidx.compose.ui.test.assertIsDisplayed
+import androidx.compose.ui.test.junit4.v2.createComposeRule
+import androidx.compose.ui.test.onNodeWithContentDescription
+import androidx.compose.ui.test.onNodeWithText
+import androidx.compose.ui.test.performClick
+import androidx.compose.ui.test.performScrollTo
+import androidx.compose.ui.test.onNodeWithTag
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.setValue
+import androidx.test.platform.app.InstrumentationRegistry
+import org.junit.Assert.assertEquals
+import org.junit.Assert.assertTrue
+import org.junit.Rule
+import org.junit.Test
+import org.secu3.android.R
+
+class HomeScreenTest {
+    @get:Rule val compose = createComposeRule()
+    private val context = InstrumentationRegistry.getInstrumentation().targetContext
+
+    @Test fun displaysAllMenuDestinationsAndInvokesTheirCallbacks() {
+        val called = mutableListOf<String>()
+        compose.setContent { HomeScreen(HomeScreenState(), HomeScreenActions(
+            onDashboard = { called += "dashboard" }, onSensors = { called += "sensors" },
+            onParameters = { called += "parameters" }, onErrors = { called += "errors" },
+            onLogs = { called += "logs" }, onSettings = { called += "settings" },
+        )) }
+        val destinations = listOf(
+            R.string.menu_dashboard to "dashboard", R.string.sensors to "sensors", R.string.menu_param to "parameters",
+            R.string.title_activity_errors to "errors", R.string.title_activity_diagnostics to "diagnostics",
+            R.string.menu_secu_logs to "logs", R.string.title_activity_settings to "settings",
+        )
+        destinations.forEach { (label, callback) ->
+            val text = context.getString(label)
+            compose.onNodeWithText(text).performScrollTo().assertIsDisplayed().performClick()
+            if (callback == "diagnostics") {
+                compose.onNodeWithText(context.getString(R.string.menu_diagnostics_warning_title)).assertIsDisplayed()
+                compose.onNodeWithText(context.getString(android.R.string.cancel)).performClick()
+            }
+        }
+        assertEquals(destinations.map { it.second }.filterNot { it == "diagnostics" }, called)
+    }
+
+    @Test fun firmwareIconIsAccessibleAndOnlyClickableWhenFirmwareExists() {
+        var opened = 0
+        var firmwareAvailable by mutableStateOf(false)
+        var status by mutableStateOf(HomeConnectionStatus.CONNECTED)
+        compose.setContent { HomeScreen(HomeScreenState(connectionStatus = status, firmwareAvailable = firmwareAvailable), HomeScreenActions(onFirmware = { opened++ })) }
+        compose.onNodeWithContentDescription(context.getString(R.string.home_connection_connected)).assertIsDisplayed().performClick()
+        assertEquals(0, opened)
+        compose.runOnIdle { firmwareAvailable = true }
+        compose.onNodeWithContentDescription(context.getString(R.string.home_connection_connected_firmware)).performClick()
+        assertEquals(1, opened)
+        compose.runOnIdle { status = HomeConnectionStatus.CONNECTING }
+        compose.onNodeWithContentDescription(context.getString(R.string.home_connection_connecting)).assertIsDisplayed()
+    }
+
+    @Test fun exitConfirmationSupportsCancelAndConfirm() {
+        var exits = 0
+        compose.setContent { HomeScreen(HomeScreenState(connectionRunning = true), HomeScreenActions(onExitConfirmed = { exits++ })) }
+        compose.onNodeWithText(context.getString(R.string.exit)).performClick()
+        compose.onNodeWithText(context.getString(R.string.disconnect_device_msg)).assertIsDisplayed()
+        compose.onNodeWithText(context.getString(android.R.string.cancel)).performClick()
+        assertEquals(0, exits)
+        compose.onNodeWithText(context.getString(R.string.exit)).performClick()
+        compose.onNodeWithText(context.getString(android.R.string.ok)).performClick()
+        assertEquals(1, exits)
+    }
+
+    @Test fun diagnosticsWarningConfirmationDelegatesCurrentFirmwareGateToFragment() {
+        var requested = 0
+        compose.setContent { HomeScreen(HomeScreenState(), HomeScreenActions(onDiagnosticsConfirmed = { requested++ })) }
+        compose.onNodeWithText(context.getString(R.string.title_activity_diagnostics)).performScrollTo().performClick()
+        compose.onNodeWithText(context.getString(android.R.string.ok)).performClick()
+        assertEquals(1, requested)
+        compose.onNodeWithText(context.getString(R.string.diagnostics_not_supported_title)).assertDoesNotExist()
+    }
+
+    @Test fun releaseDialogOffersDownloadNotesAndRemindChoices() {
+        val choices = mutableListOf<String>()
+        var releaseName by mutableStateOf<String?>("v1")
+        compose.setContent { HomeScreen(HomeScreenState(releaseName = releaseName, releaseMessage = "Release v1"), HomeScreenActions(onDownloadRelease = { choices += "download" }, onReleaseNotes = { choices += "notes" })) }
+        compose.onNodeWithText("Release v1").assertIsDisplayed()
+        compose.onNodeWithText(context.getString(R.string.download)).performClick()
+        compose.runOnIdle { releaseName = null }
+        compose.runOnIdle { releaseName = "v1" }
+        compose.onNodeWithText(context.getString(R.string.what_s_new)).performClick()
+        compose.runOnIdle { releaseName = null }
+        compose.runOnIdle { releaseName = "v1" }
+        compose.onNodeWithText(context.getString(R.string.remind_me_later)).performClick()
+        compose.onNodeWithText(context.getString(R.string.new_version_available)).assertDoesNotExist()
+        assertEquals(listOf("download", "notes"), choices)
+    }
+
+    @Test fun layoutUsesGridForPortraitAndTabletAndScrollingRowForLandscape() {
+        val config = Configuration()
+        config.orientation = Configuration.ORIENTATION_PORTRAIT
+        assertEquals(HomeLayout.GRID, homeLayout(config))
+        config.screenWidthDp = 720
+        assertEquals(HomeLayout.GRID, homeLayout(config))
+        config.orientation = Configuration.ORIENTATION_LANDSCAPE
+        assertEquals(HomeLayout.LANDSCAPE_ROW, homeLayout(config))
+
+        var layout by mutableStateOf(HomeLayout.GRID)
+        compose.setContent { HomeScreen(HomeScreenState(), HomeScreenActions(), layoutOverride = layout) }
+        val dashboardGrid = compose.onNodeWithTag("home-card-dashboard").fetchSemanticsNode().boundsInRoot
+        val sensorsGrid = compose.onNodeWithTag("home-card-sensors").fetchSemanticsNode().boundsInRoot
+        assertTrue("Dashboard is full width above the two-column grid", dashboardGrid.width > sensorsGrid.width)
+        assertTrue("Grid cards are below the dashboard", sensorsGrid.top > dashboardGrid.top)
+
+        compose.runOnIdle { layout = HomeLayout.LANDSCAPE_ROW }
+        val dashboardRow = compose.onNodeWithTag("home-card-dashboard").fetchSemanticsNode().boundsInRoot
+        val sensorsRow = compose.onNodeWithTag("home-card-sensors").fetchSemanticsNode().boundsInRoot
+        assertTrue("Landscape cards share a row", kotlin.math.abs(sensorsRow.top - dashboardRow.top) < 1f)
+        assertTrue("Landscape cards scroll from left to right", sensorsRow.left > dashboardRow.left)
+    }
+}

@@ -62,6 +62,9 @@ class HomeViewModel @Inject constructor(
     val firmware: FirmwareInfoPacket?
         get() = secu3ConnectionManager.fwInfo
 
+    val firmwareLiveData: LiveData<FirmwareInfoPacket>
+        get() = secu3ConnectionManager.firmwareLiveData
+
     private val newReleaseAvailableFlow = flow {
         val now = LocalDate.now()
 
