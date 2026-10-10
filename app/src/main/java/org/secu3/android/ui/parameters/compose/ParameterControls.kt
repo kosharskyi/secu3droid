@@ -56,7 +56,7 @@ fun ParameterValueRow(
         ) {
             Text(title, Modifier.weight(1f), style = MaterialTheme.typography.bodyLarge)
             Text(
-                String.format(java.util.Locale.getDefault(), "%.${precision}f", value) + " $units",
+                String.format(java.util.Locale.getDefault(), "%.${precision}f", value) + if (units.isEmpty()) "" else " $units",
                 Modifier.testTag("$testTag-value"),
                 textAlign = TextAlign.End,
             )
