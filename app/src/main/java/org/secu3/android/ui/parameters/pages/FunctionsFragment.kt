@@ -1,9 +1,9 @@
 /*
  *    SecuDroid  - An open source, free manager for SECU-3 engine control unit
- *    Copyright (C) 2024 Vitalii O. Kosharskyi. Ukraine, Kyiv
+ *    Copyright (C) 2026 Vitalii O. Kosharskyi. Ukraine, Kyiv
  *
  *    SECU-3  - An open source, free engine control unit
- *    Copyright (C) 2007-2024 Alexey A. Shabelnikov. Ukraine, Kyiv
+ *    Copyright (C) 2007-2026 Alexey A. Shabelnikov. Ukraine, Kyiv
  *
  *    This program is free software: you can redistribute it and/or modify
  *    it under the terms of the GNU General Public License as published by
@@ -25,325 +25,127 @@
 package org.secu3.android.ui.parameters.pages
 
 import android.os.Bundle
-import android.text.InputType
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
-import android.widget.AdapterView
-import android.widget.ArrayAdapter
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.setValue
+import androidx.compose.ui.platform.ComposeView
+import androidx.compose.ui.platform.ViewCompositionStrategy
 import androidx.lifecycle.lifecycleScope
+import androidx.lifecycle.Observer
 import androidx.lifecycle.withResumed
 import kotlinx.coroutines.launch
 import org.secu3.android.R
-import org.secu3.android.databinding.FragmentFunctionsBinding
 import org.secu3.android.models.packets.input.FnNameDatPacket
 import org.secu3.android.models.packets.out.params.FunSetParamPacket
-import org.secu3.android.ui.parameters.views.FloatParamView
-import org.secu3.android.utils.gone
-import org.secu3.android.utils.visible
-
+import org.secu3.android.ui.compose.SecuComposeTheme
+import org.secu3.android.ui.parameters.dialogs.ParamFloatEditDialogFragment
+import org.secu3.android.ui.parameters.pages.compose.FunctionsNumber
+import org.secu3.android.ui.parameters.pages.compose.FunctionsScreen
+import org.secu3.android.ui.parameters.pages.compose.FunctionsUiState
+import org.secu3.android.ui.parameters.pages.compose.FunctionsValues
+import org.secu3.android.ui.parameters.pages.compose.FunctionsChoices
+import org.secu3.android.ui.parameters.pages.compose.applyFunctionsChoice
+import org.secu3.android.ui.parameters.pages.compose.applyFunctionsFlag
+import org.secu3.android.ui.parameters.pages.compose.applyFunctionsValue
 
 class FunctionsFragment : BaseParamFragment() {
+    private var packet: FunSetParamPacket? = null
+    private var names: List<String>? = null
+    private var values by mutableStateOf<FunctionsValues?>(null)
+    private var choices by mutableStateOf<FunctionsChoices?>(null)
 
-    private lateinit var mBinding: FragmentFunctionsBinding
-
-    private var funSetPacket: FunSetParamPacket? = null
-    private var fnNamePacket: FnNameDatPacket? = null
-
-
-    private val loadMeasurementItems : List<String> by lazy {
-        resources.getStringArray(R.array.load_measurement_items).toList()
-    }
-    private val mapselItems = mapOf(1 to "1", 2 to "2", 3 to "3", 4 to "4", 5 to "5", 6 to "6", 15 to "no")
-    private val barocorrItems : List<String> by lazy {
-        resources.getStringArray(R.array.barocorr_items).toList()
-    }
-
-    private val ve2MapFuncItems : List<String> by lazy {
-        resources.getStringArray(R.array.ve2_map_func_items).toList()
-    }
-
-    override fun onCreateView(inflater: LayoutInflater, container: ViewGroup?, savedInstanceState: Bundle?): View? {
-        mBinding = FragmentFunctionsBinding.inflate(inflater, container, false)
-        return mBinding.root
+    override fun onCreateView(inflater: LayoutInflater, container: ViewGroup?, savedInstanceState: Bundle?): View {
+        packet = null
+        names = null
+        values = null
+        choices = null
+        return ComposeView(requireContext()).apply {
+            id = R.id.functions_compose_view
+            setViewCompositionStrategy(ViewCompositionStrategy.DisposeOnViewTreeLifecycleDestroyed)
+            setContent {
+                SecuComposeTheme {
+                    val screenState = values?.let { currentValues ->
+                        choices?.let { currentChoices -> FunctionsUiState.Data(currentValues, currentChoices) }
+                    } ?: FunctionsUiState.Loading
+                    FunctionsScreen(screenState, ::editParameter, ::updateFlag, ::updateChoice)
+                }
+            }
+        }
     }
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
+        val owner = viewLifecycleOwner
+        owner.lifecycleScope.launch {
+            owner.withResumed {
+                val fnNamesLiveData = mViewModel.fnNameLiveData
+                val fnNamesObserver = object : Observer<FnNameDatPacket> {
+                    override fun onChanged(value: FnNameDatPacket) {
+                        fnNamesLiveData.removeObserver(this)
+                        mViewModel.isSendAllowed = false
+                        val received = value
+                        names = received.fnNameList.map { it.name }
 
-        init()
-        lifecycleScope.launch {
-            withResumed {
-                mViewModel.fnNameLiveData.observe(viewLifecycleOwner) {
-
-                    mViewModel.isSendAllowed = false
-
-                    fnNamePacket = it
-
-                    mBinding.apply {
-
-                        val mapsSetList = it.fnNameList.map { it.name }
-
-                        mapsSet.inputType = InputType.TYPE_NULL
-                        val adapter = ArrayAdapter(requireContext(), R.layout.list_item, mapsSetList)
-                        mapsSet.setAdapter(adapter)
-
-                        mapsSetForGas.inputType = InputType.TYPE_NULL
-                        val adapterGas = ArrayAdapter(requireContext(), R.layout.list_item, mapsSetList)
-                        mapsSetForGas.setAdapter(adapterGas)
-
+                        // The LiveData getter starts the next protocol read. Evaluate it once,
+                        // only after all function table names have arrived.
+                        val funsetLiveData = mViewModel.funsetLiveData
+                        funsetLiveData.observe(owner) { receivedSet ->
+                            packet = receivedSet
+                            values = FunctionsValues.from(receivedSet)
+                            choices = FunctionsChoices.from(
+                                packet = receivedSet,
+                                names = names.orEmpty(),
+                                loads = resources.getStringArray(R.array.load_measurement_items).toList(),
+                                bars = resources.getStringArray(R.array.barocorr_items).toList(),
+                                ve2 = resources.getStringArray(R.array.ve2_map_func_items).toList(),
+                            )
+                            mViewModel.isSendAllowed = true
+                        }
                     }
-
-                    receiveFunset()
                 }
+                fnNamesLiveData.observe(owner, fnNamesObserver)
             }
         }
     }
 
-    private fun receiveFunset() {
-        mViewModel.funsetLiveData.observe(viewLifecycleOwner) {
+    private fun editParameter(number: FunctionsNumber) {
+        val current = values ?: return
+        val dialog = ParamFloatEditDialogFragment.newInstance(
+            current.value(number),
+            getString(number.titleRes),
+            number.step,
+            number.max,
+            number.min,
+            number.precision,
+        )
+        dialog.newValueLiveData.observe(viewLifecycleOwner) { updateValue(number, it) }
+        dialog.show(childFragmentManager, dialog::class.java.simpleName)
+    }
 
-            funSetPacket = it
+    private fun updateValue(number: FunctionsNumber, value: Float) {
+        val current = packet ?: return
+        applyFunctionsValue(current, number, value)
+        values = values?.withValue(number, value)
+        mViewModel.sendPacket(current)
+    }
 
-            mBinding.apply {
+    private fun updateFlag(checked: Boolean) {
+        val current = packet ?: return
+        applyFunctionsFlag(current, checked)
+        values = values?.copy(useLoadGrid = checked)
+        mViewModel.sendPacket(current)
+    }
 
-                progressBar.gone()
-                params.visible()
-
-                fnNamePacket?.fnNameList?.map { fn -> fn.name }?.let { fnNames ->
-                    mapsSet.setText(fnNames[it.fnGasoline], false)
-                    mapsSetForGas.setText(fnNames[it.fnGas], false)
-                }
-
-                lowerLoadValue.value = it.loadLower
-                upperLoadValue.value = it.loadUpper
-                useLoadGrid.isChecked = it.useLoadGrid
-
-                mapCurveOffset.value = it.mapCurveOffset
-                mapCurveGradient.value = it.mapCurveGradient
-
-                tpsCurveOffset.value = it.tpsCurveOffset
-                tpsCurveGradient.value = it.tpsCurveGradient
-
-
-                loadMeasurement.setText(loadMeasurementItems[it.loadSrcCfg], false)
-
-                mapselPetrol.setText(mapselItems[it.mapselUniPetrol], false)
-                mapselGas.setText(mapselItems[it.mapselUniGas], false)
-
-                barometricCorrection.setText(barocorrItems[it.barocorrType], false)
-
-                map2CurveOffset.value = it.map2CurveOffset
-                map2CurveGradient.value = it.map2CurveGradient
-
-                ve2MapFunc.setText(ve2MapFuncItems[it.ve2MapFunc], false)
-                gasVCondition.setText(mapselItems[it.gasVUni], false)
-
-                gasPressureCurveOffset.value = it.gpsCurveOffset
-                gasPressureCurveGradient.value = it.gpsCurveGradient
-
-                fuelPressureCurveOffset.value = it.fpsCurveOffset
-                fuelPressureCurveGradient.value = it.fpsCurveGradient
-
-                appsCurveOffset.value = it.apps1CurveOffset
-                appsCurveGradient.value = it.apps1CurveGradient
-            }
-
-            initViews()
-
-            mViewModel.isSendAllowed = true
+    private fun updateChoice(choice: FunctionsChoices.Selector, index: Int) {
+        val current = packet ?: return
+        if (applyFunctionsChoice(current, choice, index, names.orEmpty())) {
+            choices = choices?.withSelection(choice, index)
+            mViewModel.sendPacket(current)
         }
     }
 
-    private fun init() {
-        initLoadMeasurement()
-        initMapsel()
-        initBarometricCorrection()
-
-        mBinding.apply {
-            ve2MapFunc.inputType = InputType.TYPE_NULL
-            val adapter = ArrayAdapter(requireContext(), R.layout.list_item, ve2MapFuncItems)
-            ve2MapFunc.setAdapter(adapter)
-
-            gasVCondition.inputType = InputType.TYPE_NULL
-            val gasAdapter = ArrayAdapter(requireContext(), R.layout.list_item, mapselItems.values.toList())
-            gasVCondition.setAdapter(gasAdapter)
-        }
-    }
-
-    private fun initLoadMeasurement() {
-        mBinding.loadMeasurement.inputType = InputType.TYPE_NULL
-        val adapter = ArrayAdapter(requireContext(), R.layout.list_item, loadMeasurementItems)
-        mBinding.loadMeasurement.setAdapter(adapter)
-    }
-
-    private fun initMapsel() {
-        mBinding.apply {
-            mapselGas.inputType = InputType.TYPE_NULL
-            mapselPetrol.inputType = InputType.TYPE_NULL
-
-            val gasAdapter = ArrayAdapter(requireContext(), R.layout.list_item, mapselItems.values.toList())
-            mapselGas.setAdapter(gasAdapter)
-
-            val petrolAdapter = ArrayAdapter(requireContext(), R.layout.list_item, mapselItems.values.toList())
-            mapselPetrol.setAdapter(petrolAdapter)
-        }
-    }
-
-    private fun initBarometricCorrection() {
-        mBinding.barometricCorrection.inputType = InputType.TYPE_NULL
-        val adapter = ArrayAdapter(requireContext(), R.layout.list_item, barocorrItems)
-        mBinding.barometricCorrection.setAdapter(adapter)
-    }
-
-    private fun initViews() {
-
-        mBinding.apply {
-            lowerLoadValue.addOnValueChangeListener {
-                funSetPacket?.loadLower = it
-                funSetPacket?.let { it1 -> mViewModel.sendPacket(it1) }
-            }
-            upperLoadValue.addOnValueChangeListener {
-                funSetPacket?.loadUpper = it
-                funSetPacket?.let { it1 -> mViewModel.sendPacket(it1) }
-            }
-            useLoadGrid.setOnCheckedChangeListener { buttonView, isChecked ->
-                funSetPacket?.apply {
-                    useLoadGrid = isChecked
-                    mViewModel.sendPacket(this)
-                }
-            }
-
-            mapCurveOffset.addOnValueChangeListener {
-                funSetPacket?.mapCurveOffset = it
-                funSetPacket?.let { it1 -> mViewModel.sendPacket(it1) }
-            }
-            mapCurveGradient.addOnValueChangeListener {
-                funSetPacket?.mapCurveGradient = it
-                funSetPacket?.let { it1 -> mViewModel.sendPacket(it1) }
-            }
-            tpsCurveOffset.addOnValueChangeListener {
-                funSetPacket?.tpsCurveOffset = it
-                funSetPacket?.let { it1 -> mViewModel.sendPacket(it1) }
-            }
-            tpsCurveGradient.addOnValueChangeListener {
-                funSetPacket?.tpsCurveGradient = it
-                funSetPacket?.let { it1 -> mViewModel.sendPacket(it1) }
-            }
-            map2CurveOffset.addOnValueChangeListener {
-                funSetPacket?.map2CurveOffset = it
-                funSetPacket?.let { it1 -> mViewModel.sendPacket(it1) }
-            }
-            map2CurveGradient.addOnValueChangeListener {
-                funSetPacket?.map2CurveGradient = it
-                funSetPacket?.let { it1 -> mViewModel.sendPacket(it1) }
-            }
-
-            mapsSet.onItemClickListener = AdapterView.OnItemClickListener { _, _, position, _ ->
-                funSetPacket?.fnGasoline = position
-                funSetPacket?.let { it1 -> mViewModel.sendPacket(it1) }
-            }
-
-            mapsSetForGas.onItemClickListener = AdapterView.OnItemClickListener { _, _, position, _ ->
-                funSetPacket?.fnGas = position
-                funSetPacket?.let { it1 -> mViewModel.sendPacket(it1) }
-            }
-
-            loadMeasurement.onItemClickListener = AdapterView.OnItemClickListener { _, _, position, _ ->
-                funSetPacket?.loadSrcCfg = position
-                funSetPacket?.let { it1 -> mViewModel.sendPacket(it1) }
-            }
-
-            mapselPetrol.onItemClickListener = AdapterView.OnItemClickListener { _, _, position, _ ->
-                funSetPacket?.mapselUniPetrol = mapselItems.keys.elementAt(position)
-                funSetPacket?.let { it1 -> mViewModel.sendPacket(it1) }
-            }
-
-            mapselGas.onItemClickListener = AdapterView.OnItemClickListener { _, _, position, _ ->
-                funSetPacket?.mapselUniGas = mapselItems.keys.elementAt(position)
-                funSetPacket?.let { it1 -> mViewModel.sendPacket(it1) }
-            }
-
-            barometricCorrection.onItemClickListener = AdapterView.OnItemClickListener { _, _, position, _ ->
-                funSetPacket?.barocorrType = position
-                funSetPacket?.let { it1 -> mViewModel.sendPacket(it1) }
-            }
-
-            ve2MapFunc.onItemClickListener = AdapterView.OnItemClickListener { _, _, position, _ ->
-                funSetPacket?.apply {
-                    ve2MapFunc = position
-                    mViewModel.sendPacket(this)
-                }
-            }
-
-            gasVCondition.onItemClickListener = AdapterView.OnItemClickListener { _, _, position, _ ->
-                funSetPacket?.apply {
-                    gasVUni = mapselItems.keys.elementAt(position)
-                    mViewModel.sendPacket(this)
-                }
-            }
-
-            gasPressureCurveOffset.addOnValueChangeListener {
-                funSetPacket?.apply {
-                    gpsCurveOffset = it
-                    mViewModel.sendPacket(this)
-                }
-            }
-            gasPressureCurveGradient.addOnValueChangeListener {
-                funSetPacket?.apply {
-                    gpsCurveGradient = it
-                    mViewModel.sendPacket(this)
-                }
-            }
-
-            fuelPressureCurveOffset.addOnValueChangeListener {
-                funSetPacket?.apply {
-                    fpsCurveOffset = it
-                    mViewModel.sendPacket(this)
-                }
-            }
-            fuelPressureCurveGradient.addOnValueChangeListener {
-                funSetPacket?.apply {
-                    fpsCurveGradient = it
-                    mViewModel.sendPacket(this)
-                }
-            }
-
-            appsCurveOffset.addOnValueChangeListener {
-                funSetPacket?.apply {
-                    apps1CurveOffset = it
-                    mViewModel.sendPacket(this)
-                }
-            }
-            appsCurveGradient.addOnValueChangeListener {
-                funSetPacket?.apply {
-                    apps1CurveGradient = it
-                    mViewModel.sendPacket(this)
-                }
-            }
-
-
-            lowerLoadValue.setOnClickListener { floatParamClick(it as FloatParamView) }
-            upperLoadValue.setOnClickListener { floatParamClick(it as FloatParamView) }
-            mapCurveOffset.setOnClickListener { floatParamClick(it as FloatParamView) }
-            mapCurveGradient.setOnClickListener { floatParamClick(it as FloatParamView) }
-            tpsCurveOffset.setOnClickListener { floatParamClick(it as FloatParamView) }
-            tpsCurveGradient.setOnClickListener { floatParamClick(it as FloatParamView) }
-            map2CurveOffset.setOnClickListener { floatParamClick(it as FloatParamView) }
-            map2CurveGradient.setOnClickListener { floatParamClick(it as FloatParamView) }
-
-            gasPressureCurveOffset.setOnClickListener { floatParamClick(it as FloatParamView) }
-            gasPressureCurveGradient.setOnClickListener { floatParamClick(it as FloatParamView) }
-
-            fuelPressureCurveOffset.setOnClickListener { floatParamClick(it as FloatParamView) }
-            fuelPressureCurveGradient.setOnClickListener { floatParamClick(it as FloatParamView) }
-
-            appsCurveOffset.setOnClickListener { floatParamClick(it as FloatParamView) }
-            appsCurveGradient.setOnClickListener { floatParamClick(it as FloatParamView) }
-        }
-    }
-
-    override fun tabTitle(): Int {
-        return R.string.params_tab_functions_title
-    }
+    override fun tabTitle(): Int = R.string.params_tab_functions_title
 }

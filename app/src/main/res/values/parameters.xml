@@ -345,4 +345,10 @@
     <string name="raw_status_addi2_title">ADD_IO2: %.2f V\n</string>
 
     <string name="adc_cor_multiply_corr_and_koef_title">Multiply corr. by factor</string>
+    <string name="functions_section_general">General settings</string>
+    <string name="functions_section_map_tps">MAP and TPS sensors</string>
+    <string name="functions_section_tables">Maps and tables</string>
+    <string name="functions_section_sources">Load sources and conditions</string>
+    <string name="functions_section_map2">Second MAP sensor</string>
+    <string name="functions_section_pressures_apps">Gas, fuel pressure and accelerator sensors</string>
 </resources>
