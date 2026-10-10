@@ -28,13 +28,17 @@ import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.assertIsNotEnabled
 import androidx.compose.ui.test.junit4.v2.createComposeRule
 import androidx.compose.ui.test.junit4.StateRestorationTester
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.width
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.unit.dp
 import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.performScrollTo
 import androidx.compose.ui.test.onAllNodesWithTag
 import androidx.compose.ui.test.assertCountEquals
-import androidx.compose.ui.test.assertTextEquals
+import androidx.compose.ui.test.assertIsEnabled
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.setValue
@@ -55,8 +59,8 @@ class DiagnosticsInputsScreenTest {
         compose.onNodeWithTag("analog_ADD_IO8").assertIsDisplayed()
         compose.onNodeWithTag("status_GPA4_I").assertIsDisplayed()
         compose.onNodeWithTag("output_channel").assertIsDisplayed()
-        compose.onNodeWithTag("frequency_edit").assertIsDisplayed()
-        compose.onNodeWithTag("duty_edit").assertIsDisplayed()
+        compose.onNodeWithTag("frequency_edit").performScrollTo().assertIsDisplayed()
+        compose.onNodeWithTag("duty_edit").performScrollTo().assertIsDisplayed()
         compose.onNodeWithText("COND_I").assertIsDisplayed()
 
         compose.runOnIdle { firmware = true }
@@ -75,7 +79,7 @@ class DiagnosticsInputsScreenTest {
             DiagnosticsInputsScreen(null, true, current, 10f, 50f, { current = it; selectDiagnosticOutputChannel(packet, it) { sendCount++ } }, { sendCount++ }, { sendCount++ })
         }
         compose.runOnIdle { assertEquals(0, sendCount) }
-        compose.onNodeWithTag("output_channel").performClick()
+        compose.onNodeWithTag("output_channel").performScrollTo().performClick()
         compose.onNodeWithText("ST_BLOCK").performClick()
         compose.runOnIdle { assertEquals(9, packet.chan); assertEquals(1, sendCount) }
         compose.onNodeWithText("ST_BLOCK").assertIsDisplayed()
@@ -90,7 +94,7 @@ class DiagnosticsInputsScreenTest {
         compose.setContent {
             DiagnosticsInputsScreen(null, false, 0, 10f, 50f, { selectDiagnosticOutputChannel(packet, it) { sendCount++ } }, { sendCount++ }, { sendCount++ })
         }
-        compose.onNodeWithTag("output_channel").performClick()
+        compose.onNodeWithTag("output_channel").performScrollTo().performClick()
         compose.onNodeWithText("GPA6_O").performScrollTo().performClick()
         compose.runOnIdle { assertEquals(23, packet.chan); assertEquals(1, sendCount) }
     }
@@ -134,14 +138,38 @@ class DiagnosticsInputsScreenTest {
             assertEquals(11.2f, packet.frq)
             assertEquals(51.5f, packet.duty)
         }
-        compose.onNodeWithTag("frequency_edit").assertTextEquals("Test signal frequency: 11.2 Hz")
-        compose.onNodeWithTag("duty_edit").assertTextEquals("Test signal duty: 51.5 %")
+        compose.onNodeWithText("11.2 Hz").assertIsDisplayed()
+        compose.onNodeWithText("51.5 %").assertIsDisplayed()
         compose.runOnIdle {
             packet.chan = 1
             updateDiagnosticOutputFrequency(packet, 20f) { frequencyRequests++ }
             updateDiagnosticOutputDuty(packet, 60f) { dutyRequests++ }
             assertEquals(2, frequencyRequests)
             assertEquals(2, dutyRequests)
+        }
+    }
+
+    @Test fun outputFieldsRemainTappableAndReadableAtNarrowWidth() {
+        var channelChanges = 0
+        var frequencyEdits = 0
+        var dutyEdits = 0
+        compose.setContent {
+            Box(Modifier.width(280.dp)) {
+                DiagnosticsInputsScreen(null, true, 1, 123.4f, 42.5f,
+                    { channelChanges++ }, { frequencyEdits++ }, { dutyEdits++ })
+            }
+        }
+        compose.onNodeWithText("Test signal").assertIsDisplayed()
+        compose.onNodeWithText("Output channel").assertIsDisplayed()
+        compose.onNodeWithText("IGN_OUT1").assertIsDisplayed()
+        compose.onNodeWithText("123.4 Hz").assertIsDisplayed()
+        compose.onNodeWithText("42.5 %").assertIsDisplayed()
+        compose.onNodeWithTag("frequency_edit").performScrollTo().assertIsEnabled().performClick()
+        compose.onNodeWithTag("duty_edit").performScrollTo().assertIsEnabled().performClick()
+        compose.runOnIdle {
+            assertEquals(0, channelChanges)
+            assertEquals(1, frequencyEdits)
+            assertEquals(1, dutyEdits)
         }
     }
 

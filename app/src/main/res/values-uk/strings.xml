@@ -437,6 +437,10 @@
     <string name="password">Пароль</string>
     <string name="test_signal_frequency_hz">Частота тест. сигналу</string>
     <string name="test_signal_duty">Скважність тест. сигналу</string>
+    <string name="test_signal_title">Тестовий сигнал</string>
+    <string name="output_channel_title">Вихідний канал</string>
+    <string name="test_signal_frequency_label">Частота</string>
+    <string name="test_signal_duty_label">Заповнення</string>
 
     <string name="test">Тест</string>
     <string name="sensors_add">Додати датчик</string>

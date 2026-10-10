@@ -598,6 +598,10 @@
     <string name="password">Password</string>
     <string name="test_signal_frequency_hz">Test signal frequency</string>
     <string name="test_signal_duty">Test signal duty</string>
+    <string name="test_signal_title">Test signal</string>
+    <string name="output_channel_title">Output channel</string>
+    <string name="test_signal_frequency_label">Frequency</string>
+    <string name="test_signal_duty_label">Duty cycle</string>
 
     <string name="test">Test</string>
     <string name="sensors_add">Add sensor</string>

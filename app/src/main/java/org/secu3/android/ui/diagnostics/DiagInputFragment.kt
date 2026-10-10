@@ -68,8 +68,10 @@ class DiagInputFragment : Fragment() {
                     selectedChannel = selectedChannel,
                     frequency = frequency,
                     duty = duty,
-                    frequencyTitle = getString(R.string.test_signal_frequency_hz),
-                    dutyTitle = getString(R.string.test_signal_duty),
+                    testSignalTitle = getString(R.string.test_signal_title),
+                    outputChannelTitle = getString(R.string.output_channel_title),
+                    frequencyLabel = getString(R.string.test_signal_frequency_label),
+                    dutyLabel = getString(R.string.test_signal_duty_label),
                     onChannelSelected = { index ->
                         selectedChannel = index
                         selectDiagnosticOutputChannel(viewModel.outputPacket, index, viewModel::sendDiagOutPacket)
