@@ -103,7 +103,6 @@
         android:id="@+id/diagnosticsAdditionalDialog"
         android:name="org.secu3.android.ui.diagnostics.DiagnosticAdditionalDialogFragment"
         android:label="Diagnostics additional dialog"
-        tools:layout="@layout/fragment_diagnostic_additional_dialog"
         />
 
     <fragment
