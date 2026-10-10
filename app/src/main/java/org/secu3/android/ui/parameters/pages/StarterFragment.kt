@@ -28,137 +28,96 @@ import android.os.Bundle
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
+import androidx.compose.ui.platform.ComposeView
+import androidx.compose.ui.platform.ViewCompositionStrategy
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.setValue
 import org.secu3.android.R
-import org.secu3.android.databinding.FragmentStarterBinding
 import org.secu3.android.models.packets.out.params.StarterParamPacket
-import org.secu3.android.ui.parameters.views.FloatParamView
-import org.secu3.android.ui.parameters.views.IntParamView
-import org.secu3.android.utils.gone
-import org.secu3.android.utils.visible
+import org.secu3.android.ui.compose.SecuComposeTheme
+import org.secu3.android.ui.parameters.dialogs.ParamFloatEditDialogFragment
+import org.secu3.android.ui.parameters.dialogs.ParamIntEditDialogFragment
+import org.secu3.android.ui.parameters.pages.compose.StarterNumber
+import org.secu3.android.ui.parameters.pages.compose.StarterFlag
+import org.secu3.android.ui.parameters.pages.compose.StarterScreen
+import org.secu3.android.ui.parameters.pages.compose.StarterUiState
+import org.secu3.android.ui.parameters.pages.compose.StarterValues
+import org.secu3.android.ui.parameters.pages.compose.applyStarterValue
 
 class StarterFragment : BaseParamFragment() {
 
-    private lateinit var mBinding: FragmentStarterBinding
-
     private var packet: StarterParamPacket? = null
+    private var values by mutableStateOf<StarterValues?>(null)
 
-    override fun onCreateView(inflater: LayoutInflater, container: ViewGroup?, savedInstanceState: Bundle?): View? {
-        mBinding = FragmentStarterBinding.inflate(inflater, container, false)
-        return mBinding.root
+    override fun onCreateView(inflater: LayoutInflater, container: ViewGroup?, savedInstanceState: Bundle?): View {
+        packet = null
+        values = null
+        return ComposeView(requireContext()).apply {
+            id = R.id.starter_compose_view
+            setViewCompositionStrategy(ViewCompositionStrategy.DisposeOnViewTreeLifecycleDestroyed)
+            setContent {
+                SecuComposeTheme {
+                    StarterScreen(
+                        state = values?.let { StarterUiState.Data(it) } ?: StarterUiState.Loading,
+                        onEdit = ::editParameter,
+                        onFlagChanged = ::updateFlag,
+                    )
+                }
+            }
+        }
     }
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
-
-        mViewModel.starterLiveData.observe(viewLifecycleOwner) {
-            mViewModel.isSendAllowed = false
-
-            packet = it
-
-            mBinding.apply {
-
-                progressBar.gone()
-                params.visible()
-
-                starterBlockingRpm.value = it.starterOff
-                switchCrankMapRpm.value = it.smapAbandon
-                timeCrankToRunPositionCold.value = it.crankToRunTime
-                timeCrankToRunPositionHot.value = it.injCrankToRun_time1
-                afterstartEnrichmentTimePetrol.value = it.injAftstrStroke
-                afterstartEnrichmentTimeGas.value = it.injAftStrokes1
-                primePulseCold.value = it.injPrimeCold
-                primePulseHot.value = it.injPrimeHot
-                primePulseDelay.value = it.injPrimeDelay
-                floodClearModeThreshold.value = it.injFloodclearTps
-                stblStrCountdown.value = it.stblStrCnt
-                allowStartOnFloodClearMode.isChecked = it.allowStartOnClearFlood
-                limitMaxInjPwOnCranking.isChecked = it.limitMaxInjPwOnCranking
-            }
-
-            initViews()
-
+        // This getter creates a command-producing Flow. Read it once per view lifecycle.
+        val starterLiveData = mViewModel.starterLiveData
+        starterLiveData.observe(viewLifecycleOwner) { received ->
+            packet = received
+            values = StarterValues.from(received)
             mViewModel.isSendAllowed = true
         }
     }
 
-
-    private fun initViews() {
-
-        mBinding.apply {
-            starterBlockingRpm.addOnValueChangeListener {
-                packet?.starterOff = it
-                packet?.let { it1 -> mViewModel.sendPacket(it1) }
+    private fun editParameter(number: StarterNumber) {
+        val current = values ?: return
+        when (number) {
+            StarterNumber.STARTER_OFF, StarterNumber.SMAP_ABANDON, StarterNumber.AFTERSTART_PETROL,
+            StarterNumber.AFTERSTART_GAS, StarterNumber.STBL_COUNTDOWN -> {
+                val dialog = ParamIntEditDialogFragment.newInstance(
+                    current.value(number).toInt(), getString(number.titleRes), number.step.toInt(),
+                    number.max.toInt(), number.min.toInt(),
+                )
+                dialog.newValueLiveData.observe(viewLifecycleOwner) { updateValue(number, it.toFloat()) }
+                dialog.show(childFragmentManager, dialog::class.java.simpleName)
             }
-            switchCrankMapRpm.addOnValueChangeListener {
-                packet?.smapAbandon = it
-                packet?.let { it1 -> mViewModel.sendPacket(it1) }
+            else -> {
+                val dialog = ParamFloatEditDialogFragment.newInstance(
+                    current.value(number), getString(number.titleRes), number.step,
+                    number.max, number.min, number.precision,
+                )
+                dialog.newValueLiveData.observe(viewLifecycleOwner) { updateValue(number, it) }
+                dialog.show(childFragmentManager, dialog::class.java.simpleName)
             }
-            timeCrankToRunPositionCold.addOnValueChangeListener {
-                packet?.crankToRunTime = it
-                packet?.let { it1 -> mViewModel.sendPacket(it1) }
-            }
-            timeCrankToRunPositionHot.addOnValueChangeListener {
-                packet?.injCrankToRun_time1 = it
-                packet?.let { it1 -> mViewModel.sendPacket(it1) }
-            }
-            afterstartEnrichmentTimePetrol.addOnValueChangeListener {
-                packet?.injAftstrStroke = it
-                packet?.let { it1 -> mViewModel.sendPacket(it1) }
-            }
-            afterstartEnrichmentTimeGas.addOnValueChangeListener {
-                packet?.injAftStrokes1 = it
-                packet?.let { it1 -> mViewModel.sendPacket(it1) }
-            }
-            primePulseCold.addOnValueChangeListener {
-                packet?.injPrimeCold = it
-                packet?.let { it1 -> mViewModel.sendPacket(it1) }
-            }
-            primePulseHot.addOnValueChangeListener {
-                packet?.injPrimeHot = it
-                packet?.let { it1 -> mViewModel.sendPacket(it1) }
-            }
-            primePulseDelay.addOnValueChangeListener {
-                packet?.injPrimeDelay = it
-                packet?.let { it1 -> mViewModel.sendPacket(it1) }
-            }
-            floodClearModeThreshold.addOnValueChangeListener {
-                packet?.injFloodclearTps = it
-                packet?.let { it1 -> mViewModel.sendPacket(it1) }
-            }
-            stblStrCountdown.addOnValueChangeListener {
-                packet?.apply {
-                    stblStrCnt = it
-                    mViewModel.sendPacket(this)
-                }
-            }
-            allowStartOnFloodClearMode.setOnCheckedChangeListener { _, isChecked ->
-                packet?.apply {
-                    allowStartOnClearFlood = isChecked
-                    mViewModel.sendPacket(this)
-                }
-            }
-            limitMaxInjPwOnCranking.setOnCheckedChangeListener { _, isChecked ->
-                packet?.apply {
-                    limitMaxInjPwOnCranking = isChecked
-                    mViewModel.sendPacket(this)
-                }
-            }
-
-            starterBlockingRpm.setOnClickListener { intParamClick(it as IntParamView) }
-            switchCrankMapRpm.setOnClickListener { intParamClick(it as IntParamView) }
-            timeCrankToRunPositionCold.setOnClickListener { floatParamClick(it as FloatParamView) }
-            timeCrankToRunPositionHot.setOnClickListener { floatParamClick(it as FloatParamView) }
-            afterstartEnrichmentTimePetrol.setOnClickListener { intParamClick(it as IntParamView) }
-            afterstartEnrichmentTimeGas.setOnClickListener { intParamClick(it as IntParamView) }
-            primePulseCold.setOnClickListener { floatParamClick(it as FloatParamView) }
-            primePulseHot.setOnClickListener { floatParamClick(it as FloatParamView) }
-            primePulseDelay.setOnClickListener { floatParamClick(it as FloatParamView) }
-            floodClearModeThreshold.setOnClickListener { floatParamClick(it as FloatParamView) }
-            stblStrCountdown.setOnClickListener { intParamClick(it as IntParamView) }
         }
     }
 
-    override fun tabTitle(): Int {
-        return R.string.params_tab_start_title
+    private fun updateValue(number: StarterNumber, value: Float) {
+        val currentPacket = packet ?: return
+        applyStarterValue(currentPacket, number, value)
+        values = values?.withValue(number, value)
+        mViewModel.sendPacket(currentPacket)
     }
+
+    private fun updateFlag(flag: StarterFlag, checked: Boolean) {
+        val currentPacket = packet ?: return
+        when (flag) {
+            StarterFlag.ALLOW_FLOOD_CLEAR_START -> currentPacket.allowStartOnClearFlood = checked
+            StarterFlag.LIMIT_CRANKING_PW -> currentPacket.limitMaxInjPwOnCranking = checked
+        }
+        values = values?.withFlag(flag, checked)
+        mViewModel.sendPacket(currentPacket)
+    }
+
+    override fun tabTitle(): Int = R.string.params_tab_start_title
 }
