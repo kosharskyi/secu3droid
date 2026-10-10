@@ -28,6 +28,7 @@ import androidx.room.Room
 import androidx.compose.ui.test.assert
 import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.assertTextEquals
+import androidx.compose.ui.test.assertTextContains
 import androidx.compose.ui.test.hasTestTag
 import androidx.compose.ui.test.junit4.v2.createComposeRule
 import androidx.compose.runtime.mutableStateOf
@@ -204,6 +205,178 @@ class SensorsScreenTest {
         }
     }
 
+    @Test fun activeGaugeFollowsFingerUntilDrop() {
+        compose.setContent { SecuComposeTheme {
+            SensorsScreen(
+                listOf(
+                    GaugeItem(GaugeState(1, GaugeType.RPM, 0), "100"),
+                    GaugeItem(GaugeState(2, GaugeType.VOLTAGE, 1), "12"),
+                ), emptyList(),
+                1, null, null, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {},
+            )
+        } }
+        val initialBounds = compose.onNodeWithTag("gauge-RPM").fetchSemanticsNode().boundsInRoot
+        val neighborBounds = compose.onNodeWithTag("gauge-VOLTAGE").fetchSemanticsNode().boundsInRoot
+        compose.onNodeWithTag("gauge-RPM").performTouchInput {
+            down(center)
+            advanceEventTime(600)
+            moveBy(Offset(neighborBounds.center.x - initialBounds.center.x, neighborBounds.center.y - initialBounds.center.y))
+        }
+        compose.waitForIdle()
+        val draggedBounds = compose.onNodeWithTag("gauge-RPM").fetchSemanticsNode().boundsInRoot
+        val previewBounds = compose.onNodeWithTag("gauge-VOLTAGE").fetchSemanticsNode().boundsInRoot
+        org.junit.Assert.assertTrue("active card should follow the finger", draggedBounds.top > initialBounds.top + 50f)
+        org.junit.Assert.assertTrue("neighbor should preview into the vacated slot", previewBounds.top < neighborBounds.top - 50f)
+        compose.onNodeWithTag("gauge-RPM").performTouchInput { up() }
+        compose.waitForIdle()
+        val droppedRpm = compose.onNodeWithTag("gauge-RPM").fetchSemanticsNode().boundsInRoot
+        val droppedVoltage = compose.onNodeWithTag("gauge-VOLTAGE").fetchSemanticsNode().boundsInRoot
+        org.junit.Assert.assertTrue("drop should commit the previewed slot order", droppedVoltage.top < droppedRpm.top)
+    }
+
+    @Test fun activeIndicatorPreviewsNeighborMovingToVacatedSlot() {
+        compose.setContent { SecuComposeTheme {
+            SensorsScreen(
+                emptyList(), listOf(
+                    IndicatorItem(IndicatorState(1, IndicatorType.THROTTLE, 0), false),
+                    IndicatorItem(IndicatorState(2, IndicatorType.GAS_VALVE, 1), true),
+                ), 1, null, null, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {},
+            )
+        } }
+        val throttleStart = compose.onNodeWithTag("indicator-THROTTLE").fetchSemanticsNode().boundsInRoot
+        val gasStart = compose.onNodeWithTag("indicator-GAS_VALVE").fetchSemanticsNode().boundsInRoot
+        compose.onNodeWithTag("indicator-THROTTLE").performTouchInput {
+            down(center)
+            advanceEventTime(600)
+            moveBy(Offset(gasStart.center.x - throttleStart.center.x, gasStart.center.y - throttleStart.center.y))
+        }
+        compose.waitForIdle()
+        val throttleDragged = compose.onNodeWithTag("indicator-THROTTLE").fetchSemanticsNode().boundsInRoot
+        val gasPreview = compose.onNodeWithTag("indicator-GAS_VALVE").fetchSemanticsNode().boundsInRoot
+        org.junit.Assert.assertTrue(throttleDragged.top > throttleStart.top + 20f)
+        org.junit.Assert.assertTrue("indicator neighbor should move into the open slot", gasPreview.top < gasStart.top - 20f)
+        compose.onNodeWithTag("indicator-THROTTLE").performTouchInput { up() }
+        compose.waitForIdle()
+        org.junit.Assert.assertTrue(
+            compose.onNodeWithTag("indicator-GAS_VALVE").fetchSemanticsNode().boundsInRoot.top <
+                compose.onNodeWithTag("indicator-THROTTLE").fetchSemanticsNode().boundsInRoot.top,
+        )
+    }
+
+    @Test fun previewMovesNeighborSmoothlyUnderControlledClock() {
+        compose.mainClock.autoAdvance = false
+        var savedOrder: List<GaugeState>? = null
+        compose.setContent { SecuComposeTheme {
+            SensorsScreen(
+                listOf(
+                    GaugeItem(GaugeState(1, GaugeType.RPM, 0), "100"),
+                    GaugeItem(GaugeState(2, GaugeType.VOLTAGE, 1), "12"),
+                ), emptyList(), 1, null, null,
+                {}, {}, {}, {}, {}, {}, {}, {}, {}, { savedOrder = it }, {},
+            )
+        } }
+        compose.waitForIdle()
+        val sourceTop = compose.onNodeWithTag("gauge-RPM").fetchSemanticsNode().boundsInRoot.top
+        val neighborStart = compose.onNodeWithTag("gauge-VOLTAGE").fetchSemanticsNode().boundsInRoot
+        val delta = Offset(neighborStart.center.x - compose.onNodeWithTag("gauge-RPM").fetchSemanticsNode().boundsInRoot.center.x,
+            neighborStart.center.y - compose.onNodeWithTag("gauge-RPM").fetchSemanticsNode().boundsInRoot.center.y)
+        compose.onNodeWithTag("gauge-RPM").performTouchInput {
+            down(center)
+            advanceEventTime(600)
+            moveBy(delta)
+        }
+        compose.waitForIdle()
+        compose.mainClock.advanceTimeBy(100)
+        compose.waitForIdle()
+        val midpointTop = compose.onNodeWithTag("gauge-VOLTAGE").fetchSemanticsNode().boundsInRoot.top
+        org.junit.Assert.assertTrue("neighbor should be between its start and destination mid-animation", midpointTop < neighborStart.top && midpointTop > sourceTop)
+
+        compose.mainClock.advanceTimeBy(160)
+        compose.waitForIdle()
+        val destinationTop = compose.onNodeWithTag("gauge-VOLTAGE").fetchSemanticsNode().boundsInRoot.top
+        assertEquals(sourceTop, destinationTop, 1f)
+
+        compose.onNodeWithTag("gauge-RPM").performTouchInput { up() }
+        compose.mainClock.advanceTimeBy(48)
+        compose.waitForIdle()
+        assertEquals("committing after preview settles should not move the neighbor", destinationTop,
+            compose.onNodeWithTag("gauge-VOLTAGE").fetchSemanticsNode().boundsInRoot.top, 1f)
+        assertEquals(listOf(GaugeType.VOLTAGE, GaugeType.RPM), savedOrder?.map { it.gaugeType })
+        compose.mainClock.autoAdvance = true
+    }
+
+    @Test fun earlyDropWaitsOnlyForRemainingPreviewAnimation() {
+        compose.mainClock.autoAdvance = false
+        var savedOrder: List<GaugeState>? = null
+        compose.setContent { SecuComposeTheme {
+            SensorsScreen(
+                listOf(
+                    GaugeItem(GaugeState(1, GaugeType.RPM, 0), "100"),
+                    GaugeItem(GaugeState(2, GaugeType.VOLTAGE, 1), "12"),
+                ), emptyList(), 1, null, null,
+                {}, {}, {}, {}, {}, {}, {}, {}, {}, { savedOrder = it }, {},
+            )
+        } }
+        compose.waitForIdle()
+        val source = compose.onNodeWithTag("gauge-RPM").fetchSemanticsNode().boundsInRoot
+        val target = compose.onNodeWithTag("gauge-VOLTAGE").fetchSemanticsNode().boundsInRoot
+        compose.onNodeWithTag("gauge-RPM").performTouchInput {
+            down(center)
+            advanceEventTime(600)
+            moveBy(Offset(target.center.x - source.center.x, target.center.y - source.center.y))
+        }
+        compose.waitForIdle()
+        compose.mainClock.advanceTimeBy(100)
+        compose.waitForIdle()
+        compose.onNodeWithTag("gauge-RPM").performTouchInput { up() }
+        compose.mainClock.advanceTimeBy(100)
+        compose.waitForIdle()
+        assertEquals("drop must wait for the remaining preview animation", null, savedOrder)
+        compose.mainClock.advanceTimeBy(150)
+        compose.waitForIdle()
+        assertEquals(listOf(GaugeType.VOLTAGE, GaugeType.RPM), savedOrder?.map { it.gaugeType })
+        compose.mainClock.autoAdvance = true
+    }
+
+    @Test fun repeatedTargetEventsKeepPreviewStableAndReturningHomeCancelsReorder() {
+        var savedOrder: List<GaugeState>? = null
+        compose.setContent { SecuComposeTheme {
+            SensorsScreen(
+                listOf(
+                    GaugeItem(GaugeState(1, GaugeType.RPM, 0), "100"),
+                    GaugeItem(GaugeState(2, GaugeType.VOLTAGE, 1), "12"),
+                ), emptyList(), 1, null, null,
+                {}, {}, {}, {}, {}, {}, {}, {}, {}, { savedOrder = it }, {},
+            )
+        } }
+        val source = compose.onNodeWithTag("gauge-RPM").fetchSemanticsNode().boundsInRoot
+        val target = compose.onNodeWithTag("gauge-VOLTAGE").fetchSemanticsNode().boundsInRoot
+        val delta = Offset(target.center.x - source.center.x, target.center.y - source.center.y)
+        compose.onNodeWithTag("gauge-RPM").performTouchInput {
+            down(center)
+            advanceEventTime(600)
+            moveBy(delta)
+        }
+        compose.waitForIdle()
+        val firstPreview = compose.onNodeWithTag("gauge-VOLTAGE").fetchSemanticsNode().boundsInRoot.top
+
+        compose.onNodeWithTag("gauge-RPM").performTouchInput {
+            moveBy(Offset(1f, 0f))
+            moveBy(Offset(-1f, 0f))
+        }
+        compose.waitForIdle()
+        val repeatedPreview = compose.onNodeWithTag("gauge-VOLTAGE").fetchSemanticsNode().boundsInRoot.top
+        assertEquals("repeated events over the same target must not oscillate", firstPreview, repeatedPreview, 1f)
+
+        compose.onNodeWithTag("gauge-RPM").performTouchInput { moveBy(Offset(-delta.x, -delta.y)) }
+        compose.waitForIdle()
+        val homePreview = compose.onNodeWithTag("gauge-VOLTAGE").fetchSemanticsNode().boundsInRoot.top
+        assertEquals("returning the finger to the source restores the base preview", target.top, homePreview, 1f)
+        compose.onNodeWithTag("gauge-RPM").performTouchInput { up() }
+        compose.waitForIdle()
+        assertEquals(listOf(GaugeType.RPM, GaugeType.VOLTAGE), savedOrder?.map { it.gaugeType })
+    }
+
     @Test fun packetAndMembershipUpdatesDoNotUndoPendingDropOrder() {
         val packetItems = mutableStateOf(listOf(
             GaugeItem(GaugeState(1, GaugeType.RPM, 0, true), "100"),
@@ -250,6 +423,53 @@ class SensorsScreenTest {
         compose.onNodeWithTag("gauge-RPM").assertIsDisplayed()
         compose.onNodeWithTag("gauge-MAP").assertIsDisplayed()
         compose.onNodeWithTag("gauge-VOLTAGE").assertDoesNotExist()
+    }
+
+    @Test fun cancellingDragAfterPacketUpdateKeepsPendingOrderAndReconciles() {
+        val packetItems = mutableStateOf(listOf(
+            GaugeItem(GaugeState(1, GaugeType.RPM, 0, true), "100"),
+            GaugeItem(GaugeState(2, GaugeType.VOLTAGE, 1, true), "12"),
+        ))
+        compose.setContent { SecuComposeTheme {
+            SensorsScreen(
+                packetItems.value, emptyList(), 1, null, null,
+                {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {},
+                onReorderingChanged = { active ->
+                    if (active) packetItems.value = packetItems.value.map { it.copy(value = "updated during drag") }
+                },
+            )
+        } }
+        val source = compose.onNodeWithTag("gauge-RPM").fetchSemanticsNode().boundsInRoot
+        val target = compose.onNodeWithTag("gauge-VOLTAGE").fetchSemanticsNode().boundsInRoot
+        compose.onNodeWithTag("gauge-RPM").performTouchInput {
+            down(center)
+            advanceEventTime(600)
+            moveBy(Offset(target.center.x - source.center.x, target.center.y - source.center.y))
+            up()
+        }
+        val movedOrder = listOf(
+            compose.onNodeWithTag("gauge-VOLTAGE").fetchSemanticsNode().boundsInRoot.top,
+            compose.onNodeWithTag("gauge-RPM").fetchSemanticsNode().boundsInRoot.top,
+        )
+        org.junit.Assert.assertTrue(movedOrder[0] < movedOrder[1])
+
+        val voltage = compose.onNodeWithTag("gauge-VOLTAGE").fetchSemanticsNode().boundsInRoot
+        val rpm = compose.onNodeWithTag("gauge-RPM").fetchSemanticsNode().boundsInRoot
+        compose.onNodeWithTag("gauge-VOLTAGE").performTouchInput {
+            down(center)
+            advanceEventTime(600)
+            moveBy(Offset(rpm.center.x - voltage.center.x, rpm.center.y - voltage.center.y))
+            cancel()
+        }
+        compose.waitForIdle()
+        val orderAfterCancel = listOf(
+            compose.onNodeWithTag("gauge-VOLTAGE").fetchSemanticsNode().boundsInRoot.top,
+            compose.onNodeWithTag("gauge-RPM").fetchSemanticsNode().boundsInRoot.top,
+        )
+        org.junit.Assert.assertTrue("cancel must preserve the prior pending order", orderAfterCancel[0] < orderAfterCancel[1])
+        assertEquals(voltage.top, compose.onNodeWithTag("gauge-VOLTAGE").fetchSemanticsNode().boundsInRoot.top, 1f)
+        assertEquals(rpm.top, compose.onNodeWithTag("gauge-RPM").fetchSemanticsNode().boundsInRoot.top, 1f)
+        compose.onNodeWithTag("gauge-RPM").assertTextContains("updated during drag")
     }
 
     @Test fun reorderedGaugeAndIndicatorOrderSurvivesDatabaseReopen() = runBlocking {

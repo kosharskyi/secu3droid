@@ -82,8 +82,15 @@ internal fun SensorsTabsScreen(
     onUpdateGauge: (GaugeState) -> Unit,
     onReorderGauges: (List<GaugeState>) -> Unit, onReorderIndicators: (List<IndicatorState>) -> Unit,
     onStartLog: () -> Unit, onStopLog: () -> Unit, onMark: (Int) -> Unit,
+    onReorderingChanged: (Boolean) -> Unit = {},
 ) {
     val pagerState = rememberPagerState(initialPage = initialPage.coerceIn(0, 1), pageCount = { 2 })
+    var reordering by remember { mutableStateOf(false) }
+    val latestReordering by rememberUpdatedState(reordering)
+    val latestReorderingChanged by rememberUpdatedState(onReorderingChanged)
+    DisposableEffect(Unit) {
+        onDispose { if (latestReordering) latestReorderingChanged(false) }
+    }
     val scope = rememberCoroutineScope()
     val mark1Description = stringResource(R.string.mark_1)
     val mark2Description = stringResource(R.string.mark_2)
@@ -127,13 +134,14 @@ internal fun SensorsTabsScreen(
                     Tab(selected = pagerState.currentPage == index, onClick = { scope.launch { pagerState.animateScrollToPage(index) } }, text = { Text(stringResource(label)) })
                 }
             }
-            HorizontalPager(state = pagerState, modifier = Modifier.fillMaxSize().testTag("sensors-pager"), key = { it }) { page ->
+            HorizontalPager(state = pagerState, userScrollEnabled = !reordering, modifier = Modifier.fillMaxSize().testTag("sensors-pager"), key = { it }) { page ->
                 when (page) {
                     0 -> if (oldViewEnabled) OldSensorsScreen(sensors) else SensorsScreen(
                         gauges, indicators, columns, gaugeChoices, indicatorChoices,
                         onAddGaugeRequest, onAddIndicatorRequest, onAddGauge, onAddIndicator,
                         onGaugeChoicesConsumed, onIndicatorChoicesConsumed, onDeleteGauge, onDeleteIndicator,
                         onUpdateGauge, onReorderGauges, onReorderIndicators,
+                        onReorderingChanged = { active -> reordering = active; onReorderingChanged(active) },
                     )
                     else -> RawSensorsScreen(rawSensors)
                 }

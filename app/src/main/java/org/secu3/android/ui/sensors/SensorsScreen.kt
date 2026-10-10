@@ -26,6 +26,10 @@
 package org.secu3.android.ui.sensors
 
 import android.view.LayoutInflater
+import androidx.compose.animation.core.Animatable
+import androidx.compose.animation.core.AnimationVector2D
+import androidx.compose.animation.core.VectorConverter
+import androidx.compose.animation.core.tween
 import androidx.compose.foundation.gestures.detectDragGesturesAfterLongPress
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
@@ -78,11 +82,23 @@ internal fun SensorsScreen(
     onDeleteGauge: (GaugeType) -> Unit, onDeleteIndicator: (IndicatorType) -> Unit,
     onUpdateGauge: (GaugeState) -> Unit,
     onReorderGauges: (List<GaugeState>) -> Unit, onReorderIndicators: (List<IndicatorState>) -> Unit,
+    onReorderingChanged: (Boolean) -> Unit = {},
 ) {
     var localGauges by remember { mutableStateOf(gauges) }
     var localIndicators by remember { mutableStateOf(indicators) }
     var dragging by remember { mutableStateOf(false) }
     var activeDragKey by remember { mutableStateOf<String?>(null) }
+    var activeDragOffset by remember { mutableStateOf(Offset.Zero) }
+    var gaugeDragTarget by remember { mutableStateOf<GaugeType?>(null) }
+    var indicatorDragTarget by remember { mutableStateOf<IndicatorType?>(null) }
+    var gaugeDragBaseOrder by remember { mutableStateOf<List<GaugeType>>(emptyList()) }
+    var indicatorDragBaseOrder by remember { mutableStateOf<List<IndicatorType>>(emptyList()) }
+    var gaugePreviewOrder by remember { mutableStateOf<List<GaugeType>>(emptyList()) }
+    var indicatorPreviewOrder by remember { mutableStateOf<List<IndicatorType>>(emptyList()) }
+    var dragBasePositions by remember { mutableStateOf<Map<String, Rect>>(emptyMap()) }
+    val previewAnimations = remember { mutableMapOf<String, Animatable<Offset, AnimationVector2D>>() }
+    var pendingGaugeDrop by remember { mutableStateOf<Pair<GaugeType, GaugeType>?>(null) }
+    var pendingIndicatorDrop by remember { mutableStateOf<Pair<IndicatorType, IndicatorType>?>(null) }
     val gaugePositions = remember { mutableStateMapOf<String, Rect>() }
     val indicatorPositions = remember { mutableStateMapOf<String, Rect>() }
     var pendingGaugeOrder by remember { mutableStateOf<List<GaugeType>?>(null) }
@@ -93,7 +109,18 @@ internal fun SensorsScreen(
     var indicatorDialog by remember { mutableStateOf<List<IndicatorType>?>(null) }
     val latestGauges by rememberUpdatedState(gauges)
     val latestIndicators by rememberUpdatedState(indicators)
-    LaunchedEffect(gauges, pendingGaugeOrder) {
+    val latestDragging by rememberUpdatedState(dragging)
+    val latestReorderingChanged by rememberUpdatedState(onReorderingChanged)
+    fun setReordering(active: Boolean) {
+        if (dragging != active) {
+            dragging = active
+            onReorderingChanged(active)
+        }
+    }
+    DisposableEffect(Unit) {
+        onDispose { if (latestDragging) latestReorderingChanged(false) }
+    }
+    LaunchedEffect(gauges, pendingGaugeOrder, dragging) {
         if (!dragging) {
             val pending = pendingGaugeOrder
             if (pending == null) localGauges = gauges else if (gauges.map { it.state.gaugeType } == pending) {
@@ -108,7 +135,7 @@ internal fun SensorsScreen(
             }
         }
     }
-    LaunchedEffect(indicators, pendingIndicatorOrder) {
+    LaunchedEffect(indicators, pendingIndicatorOrder, dragging) {
         if (!dragging) {
             val pending = pendingIndicatorOrder
             if (pending == null) localIndicators = indicators else if (indicators.map { it.state.indicatorType } == pending) {
@@ -123,6 +150,46 @@ internal fun SensorsScreen(
             }
         }
     }
+    LaunchedEffect(pendingGaugeDrop) {
+        val drop = pendingGaugeDrop ?: return@LaunchedEffect
+        var elapsedNanos = 0L
+        var previousFrame = withFrameNanos { it }
+        while (elapsedNanos < PREVIEW_ANIMATION_NANOS && previewAnimations.values.any { it.isRunning }) {
+            val frame = withFrameNanos { it }
+            elapsedNanos += frame - previousFrame
+            previousFrame = frame
+        }
+        previewAnimations.values.forEach { it.snapTo(Offset.Zero) }
+        localGauges = localGauges.moveItem({ it.state.gaugeType == drop.first }, { it.state.gaugeType == drop.second })
+        val orderedTypes = localGauges.map { it.state.gaugeType }
+        localGauges = (orderedTypes + latestGauges.map { it.state.gaugeType }.filter { it !in orderedTypes })
+            .mapNotNull { type -> latestGauges.find { it.state.gaugeType == type } }
+        pendingGaugeOrder = localGauges.map { it.state.gaugeType }
+        onReorderGauges(localGauges.mapIndexed { index, value -> value.state.copy(idx = index) })
+        pendingGaugeDrop = null
+        setReordering(false); activeDragKey = null; activeDragOffset = Offset.Zero; gaugeDragTarget = null
+        gaugePreviewOrder = emptyList(); gaugeDragBaseOrder = emptyList(); dragBasePositions = emptyMap()
+    }
+    LaunchedEffect(pendingIndicatorDrop) {
+        val drop = pendingIndicatorDrop ?: return@LaunchedEffect
+        var elapsedNanos = 0L
+        var previousFrame = withFrameNanos { it }
+        while (elapsedNanos < PREVIEW_ANIMATION_NANOS && previewAnimations.values.any { it.isRunning }) {
+            val frame = withFrameNanos { it }
+            elapsedNanos += frame - previousFrame
+            previousFrame = frame
+        }
+        previewAnimations.values.forEach { it.snapTo(Offset.Zero) }
+        localIndicators = localIndicators.moveItem({ it.state.indicatorType == drop.first }, { it.state.indicatorType == drop.second })
+        val orderedTypes = localIndicators.map { it.state.indicatorType }
+        localIndicators = (orderedTypes + latestIndicators.map { it.state.indicatorType }.filter { it !in orderedTypes })
+            .mapNotNull { type -> latestIndicators.find { it.state.indicatorType == type } }
+        pendingIndicatorOrder = localIndicators.map { it.state.indicatorType }
+        onReorderIndicators(localIndicators.mapIndexed { index, value -> value.state.copy(idx = index) })
+        pendingIndicatorDrop = null
+        setReordering(false); activeDragKey = null; activeDragOffset = Offset.Zero; indicatorDragTarget = null
+        indicatorPreviewOrder = emptyList(); indicatorDragBaseOrder = emptyList(); dragBasePositions = emptyMap()
+    }
     LaunchedEffect(gaugeChoices?.requestId) {
         gaugeChoices?.let { request -> gaugeDialog = request.choices; onGaugeChoicesConsumed(request.requestId) }
     }
@@ -131,14 +198,24 @@ internal fun SensorsScreen(
     }
 
     Box(Modifier.fillMaxSize()) {
-        Column(Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(bottom = 88.dp)) {
-            Column(Modifier.fillMaxWidth().testTag("gauges-grid")) {
+        Column(Modifier.fillMaxSize().verticalScroll(rememberScrollState(), enabled = !dragging).padding(bottom = 88.dp)) {
+            Column(Modifier.fillMaxWidth().zIndex(if (activeDragKey?.startsWith("g:") == true) 2f else 0f).testTag("gauges-grid")) {
                 localGauges.chunked(columns.coerceAtLeast(1)).forEach { rowItems ->
-                    Row(Modifier.fillMaxWidth()) {
+                    Row(Modifier.fillMaxWidth().zIndex(if (rowItems.any { activeDragKey == "g:${it.state.gaugeType.name}" }) 1f else 0f)) {
                         rowItems.forEach { item ->
                             val dragKey = "g:${item.state.gaugeType.name}"
                             val isDragged = activeDragKey == dragKey
-                            Box(Modifier.weight(1f)) {
+                            val previewOffset = if (!isDragged && activeDragKey?.startsWith("g:") == true) {
+                                dragSlotOffset(dragKey, gaugeDragBaseOrder.map { "g:${it.name}" }, gaugePreviewOrder.map { "g:${it.name}" }, dragBasePositions)
+                            } else Offset.Zero
+                            val previewAnimation = previewAnimations.getOrPut(dragKey) {
+                                Animatable(Offset.Zero, Offset.VectorConverter)
+                            }
+                            val animatedPreviewOffset = previewAnimation.value
+                            LaunchedEffect(dragKey, previewOffset) {
+                                previewAnimation.animateTo(previewOffset, tween(PREVIEW_ANIMATION_MILLIS))
+                            }
+                            key(dragKey) { Box(Modifier.weight(1f).zIndex(if (isDragged) 2f else 0f)) {
                                 GaugeCard(
                                     item,
                                     Modifier.fillMaxWidth().padding(8.dp)
@@ -146,24 +223,42 @@ internal fun SensorsScreen(
                                             val bounds = coordinates.boundsInRoot()
                                             if (gaugePositions[dragKey] != bounds) gaugePositions[dragKey] = bounds
                                         }.graphicsLayer {
-                                            if (isDragged) { scaleX = 1.04f; scaleY = 1.04f; shadowElevation = 12.dp.toPx() }
+                                            if (isDragged) {
+                                                scaleX = 1.04f; scaleY = 1.04f; shadowElevation = 12.dp.toPx()
+                                                translationX = activeDragOffset.x; translationY = activeDragOffset.y
+                                            } else {
+                                                translationX = animatedPreviewOffset.x; translationY = animatedPreviewOffset.y
+                                            }
                                         }.zIndex(if (isDragged) 1f else 0f).reorderGridItem(
                                             gaugePositions, dragKey,
-                                            onStart = { dragging = true; activeDragKey = dragKey },
+                                            onStart = {
+                                                setReordering(true); activeDragKey = dragKey; activeDragOffset = Offset.Zero
+                                                gaugeDragTarget = item.state.gaugeType
+                                                gaugeDragBaseOrder = localGauges.map { it.state.gaugeType }
+                                                gaugePreviewOrder = gaugeDragBaseOrder
+                                                dragBasePositions = gaugePositions.toMap()
+                                            },
+                                            onDragDelta = { activeDragOffset += it },
                                             onTarget = { key ->
                                                 val target = GaugeType.entries.firstOrNull { it.name == key } ?: return@reorderGridItem
-                                                localGauges = localGauges.moveItem(
-                                                    source = { it.state.gaugeType == item.state.gaugeType },
-                                                    target = { it.state.gaugeType == target },
+                                                gaugeDragTarget = target
+                                                gaugePreviewOrder = gaugeDragBaseOrder.moveItem(
+                                                    source = { it == item.state.gaugeType }, target = { it == target },
                                                 )
                                             },
-                                            onFinish = {
-                                                val orderedTypes = localGauges.map { it.state.gaugeType }
-                                                localGauges = (orderedTypes + latestGauges.map { it.state.gaugeType }.filter { it !in orderedTypes })
-                                                    .mapNotNull { type -> latestGauges.find { it.state.gaugeType == type } }
-                                                pendingGaugeOrder = localGauges.map { it.state.gaugeType }
-                                                dragging = false; activeDragKey = null
-                                                onReorderGauges(localGauges.mapIndexed { index, value -> value.state.copy(idx = index) })
+                                            onFinish = { cancelled ->
+                                                if (cancelled) {
+                                                    if (pendingGaugeDrop != null) return@reorderGridItem
+                                                    setReordering(false); activeDragKey = null; activeDragOffset = Offset.Zero; gaugeDragTarget = null
+                                                    gaugePreviewOrder = emptyList(); gaugeDragBaseOrder = emptyList(); dragBasePositions = emptyMap()
+                                                    return@reorderGridItem
+                                                }
+                                                val targetType = gaugeDragTarget ?: item.state.gaugeType
+                                                activeDragOffset = dragSlotOffset(
+                                                    dragKey, gaugeDragBaseOrder.map { "g:${it.name}" },
+                                                    gaugePreviewOrder.map { "g:${it.name}" }, dragBasePositions,
+                                                )
+                                                pendingGaugeDrop = item.state.gaugeType to targetType
                                             },
                                         ),
                                     onMenu = { menuFor = dragKey },
@@ -185,19 +280,29 @@ internal fun SensorsScreen(
                                         onClick = { menuFor = null; onDeleteGauge(item.state.gaugeType) },
                                     )
                                 }
-                            }
+                            } }
                         }
                         repeat(columns.coerceAtLeast(1) - rowItems.size) { Spacer(Modifier.weight(1f)) }
                     }
                 }
             }
-            Column(Modifier.fillMaxWidth().testTag("indicators-grid")) {
+            Column(Modifier.fillMaxWidth().zIndex(if (activeDragKey?.startsWith("i:") == true) 2f else 0f).testTag("indicators-grid")) {
                 localIndicators.chunked(columns.coerceAtLeast(1)).forEach { rowItems ->
-                    Row(Modifier.fillMaxWidth()) {
+                    Row(Modifier.fillMaxWidth().zIndex(if (rowItems.any { activeDragKey == "i:${it.state.indicatorType.name}" }) 1f else 0f)) {
                         rowItems.forEach { item ->
                             val dragKey = "i:${item.state.indicatorType.name}"
                             val isDragged = activeDragKey == dragKey
-                            Box(Modifier.weight(1f)) {
+                            val previewOffset = if (!isDragged && activeDragKey?.startsWith("i:") == true) {
+                                dragSlotOffset(dragKey, indicatorDragBaseOrder.map { "i:${it.name}" }, indicatorPreviewOrder.map { "i:${it.name}" }, dragBasePositions)
+                            } else Offset.Zero
+                            val previewAnimation = previewAnimations.getOrPut(dragKey) {
+                                Animatable(Offset.Zero, Offset.VectorConverter)
+                            }
+                            val animatedPreviewOffset = previewAnimation.value
+                            LaunchedEffect(dragKey, previewOffset) {
+                                previewAnimation.animateTo(previewOffset, tween(PREVIEW_ANIMATION_MILLIS))
+                            }
+                            key(dragKey) { Box(Modifier.weight(1f).zIndex(if (isDragged) 2f else 0f)) {
                                 IndicatorCard(
                                     item,
                                     Modifier.fillMaxWidth().padding(8.dp)
@@ -205,24 +310,42 @@ internal fun SensorsScreen(
                                             val bounds = coordinates.boundsInRoot()
                                             if (indicatorPositions[dragKey] != bounds) indicatorPositions[dragKey] = bounds
                                         }.graphicsLayer {
-                                            if (isDragged) { scaleX = 1.04f; scaleY = 1.04f; shadowElevation = 12.dp.toPx() }
+                                            if (isDragged) {
+                                                scaleX = 1.04f; scaleY = 1.04f; shadowElevation = 12.dp.toPx()
+                                                translationX = activeDragOffset.x; translationY = activeDragOffset.y
+                                            } else {
+                                                translationX = animatedPreviewOffset.x; translationY = animatedPreviewOffset.y
+                                            }
                                         }.zIndex(if (isDragged) 1f else 0f).reorderGridItem(
                                             indicatorPositions, dragKey,
-                                            onStart = { dragging = true; activeDragKey = dragKey },
+                                            onStart = {
+                                                setReordering(true); activeDragKey = dragKey; activeDragOffset = Offset.Zero
+                                                indicatorDragTarget = item.state.indicatorType
+                                                indicatorDragBaseOrder = localIndicators.map { it.state.indicatorType }
+                                                indicatorPreviewOrder = indicatorDragBaseOrder
+                                                dragBasePositions = indicatorPositions.toMap()
+                                            },
+                                            onDragDelta = { activeDragOffset += it },
                                             onTarget = { key ->
                                                 val target = IndicatorType.entries.firstOrNull { it.name == key } ?: return@reorderGridItem
-                                                localIndicators = localIndicators.moveItem(
-                                                    source = { it.state.indicatorType == item.state.indicatorType },
-                                                    target = { it.state.indicatorType == target },
+                                                indicatorDragTarget = target
+                                                indicatorPreviewOrder = indicatorDragBaseOrder.moveItem(
+                                                    source = { it == item.state.indicatorType }, target = { it == target },
                                                 )
                                             },
-                                            onFinish = {
-                                                val orderedTypes = localIndicators.map { it.state.indicatorType }
-                                                localIndicators = (orderedTypes + latestIndicators.map { it.state.indicatorType }.filter { it !in orderedTypes })
-                                                    .mapNotNull { type -> latestIndicators.find { it.state.indicatorType == type } }
-                                                pendingIndicatorOrder = localIndicators.map { it.state.indicatorType }
-                                                dragging = false; activeDragKey = null
-                                                onReorderIndicators(localIndicators.mapIndexed { index, value -> value.state.copy(idx = index) })
+                                            onFinish = { cancelled ->
+                                                if (cancelled) {
+                                                    if (pendingIndicatorDrop != null) return@reorderGridItem
+                                                    setReordering(false); activeDragKey = null; activeDragOffset = Offset.Zero; indicatorDragTarget = null
+                                                    indicatorPreviewOrder = emptyList(); indicatorDragBaseOrder = emptyList(); dragBasePositions = emptyMap()
+                                                    return@reorderGridItem
+                                                }
+                                                val targetType = indicatorDragTarget ?: item.state.indicatorType
+                                                activeDragOffset = dragSlotOffset(
+                                                    dragKey, indicatorDragBaseOrder.map { "i:${it.name}" },
+                                                    indicatorPreviewOrder.map { "i:${it.name}" }, dragBasePositions,
+                                                )
+                                                pendingIndicatorDrop = item.state.indicatorType to targetType
                                             },
                                         ),
                                     onMenu = { menuFor = dragKey },
@@ -234,7 +357,7 @@ internal fun SensorsScreen(
                                         onClick = { menuFor = null; onDeleteIndicator(item.state.indicatorType) },
                                     )
                                 }
-                            }
+                            } }
                         }
                         repeat(columns.coerceAtLeast(1) - rowItems.size) { Spacer(Modifier.weight(1f)) }
                     }
@@ -320,33 +443,54 @@ private fun <T> List<T>.moveItem(source: (T) -> Boolean, target: (T) -> Boolean)
     return toMutableList().also { list -> list.add(to, list.removeAt(from)) }
 }
 
+private fun dragSlotOffset(
+    itemKey: String,
+    baseOrder: List<String>,
+    previewOrder: List<String>,
+    basePositions: Map<String, Rect>,
+): Offset {
+    val previewIndex = previewOrder.indexOf(itemKey)
+    if (previewIndex < 0) return Offset.Zero
+    val destinationKey = baseOrder.getOrNull(previewIndex) ?: return Offset.Zero
+    val current = basePositions[itemKey] ?: return Offset.Zero
+    val destination = basePositions[destinationKey] ?: return Offset.Zero
+    return destination.center - current.center
+}
+
 private fun Modifier.reorderGridItem(
     positions: Map<String, Rect>,
     itemKey: String,
     onStart: () -> Unit,
+    onDragDelta: (Offset) -> Unit,
     onTarget: (String) -> Unit,
-    onFinish: () -> Unit,
+    onFinish: (cancelled: Boolean) -> Unit,
 ): Modifier = pointerInput(positions, itemKey) {
     var dragPosition = Offset.Zero
+    var dragBounds: Map<String, Rect> = emptyMap()
     detectDragGesturesAfterLongPress(
         onDragStart = {
-            val bounds = positions[itemKey]
+            dragBounds = positions.toMap()
+            val bounds = dragBounds[itemKey]
             if (bounds != null) {
                 dragPosition = bounds.center
                 onStart()
             }
         },
-        onDragEnd = onFinish,
-        onDragCancel = onFinish,
+        onDragEnd = { onFinish(false) },
+        onDragCancel = { onFinish(true) },
         onDrag = { change, delta ->
             change.consume()
             dragPosition += delta
-            val target = positions.entries.minByOrNull { (_, bounds) ->
+            onDragDelta(delta)
+            val target = dragBounds.entries.minByOrNull { (_, bounds) ->
                 val dx = bounds.center.x - dragPosition.x
                 val dy = bounds.center.y - dragPosition.y
                 dx * dx + dy * dy
             }
-            if (target != null && target.key != itemKey) onTarget(target.key.removePrefix("g:").removePrefix("i:"))
+            if (target != null) onTarget(target.key.removePrefix("g:").removePrefix("i:"))
         },
     )
 }
+
+private const val PREVIEW_ANIMATION_MILLIS = 220
+private const val PREVIEW_ANIMATION_NANOS = PREVIEW_ANIMATION_MILLIS * 1_000_000L

@@ -34,15 +34,21 @@ import androidx.compose.ui.test.onNodeWithContentDescription
 import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.performTouchInput
 import androidx.compose.ui.test.swipeRight
+import androidx.compose.ui.test.swipeLeft
+import androidx.compose.ui.test.swipeUp
+import androidx.compose.ui.geometry.Offset
 import org.junit.Assert.assertEquals
 import org.junit.Rule
 import org.junit.Test
 import org.secu3.android.R
 import org.secu3.android.connection.Disconnected
 import org.secu3.android.db.models.GaugeState
+import org.secu3.android.db.models.IndicatorState
 import org.secu3.android.ui.compose.SecuComposeTheme
 import org.secu3.android.ui.sensors.models.GaugeItem
 import org.secu3.android.ui.sensors.models.GaugeType
+import org.secu3.android.ui.sensors.models.IndicatorItem
+import org.secu3.android.ui.sensors.models.IndicatorType
 import org.secu3.android.utils.Task
 import androidx.test.platform.app.InstrumentationRegistry
 
@@ -59,6 +65,77 @@ class SensorsTabsScreenTest {
         compose.onNodeWithTag("sensors-pager").performTouchInput { swipeRight() }
         compose.waitForIdle()
         assertEquals(listOf(1, 0), pages)
+    }
+
+    @Test fun horizontalCardSwipeChangesPage() {
+        val indicators = listOf(IndicatorItem(IndicatorState(20, IndicatorType.THROTTLE, 0), true))
+        val pages = mutableListOf<Int>()
+        compose.setContent { SecuComposeTheme { screen(indicators = indicators, pageChanged = pages::add) } }
+        compose.onNodeWithTag("indicator-THROTTLE").performTouchInput { swipeLeft() }
+        compose.waitForIdle()
+        assertEquals(listOf(1), pages)
+    }
+
+    @Test fun verticalCardSwipeScrollsList() {
+        val gauges = GaugeType.entries.take(10).mapIndexed { index, type ->
+            GaugeItem(GaugeState(index + 1, type, index, true), "${100 + index}")
+        }
+        val pages = mutableListOf<Int>()
+        val reorderStates = mutableListOf<Boolean>()
+        compose.setContent { SecuComposeTheme { screen(gauges = gauges, pageChanged = pages::add, reorderingChanged = reorderStates::add) } }
+        val rpmTop = compose.onNodeWithTag("gauge-RPM").fetchSemanticsNode().boundsInRoot.top
+        compose.onNodeWithTag("gauge-RPM").performTouchInput { swipeUp() }
+        compose.waitForIdle()
+        org.junit.Assert.assertTrue(compose.onNodeWithTag("gauge-RPM").fetchSemanticsNode().boundsInRoot.top < rpmTop)
+        assertEquals(emptyList<Int>(), pages)
+        assertEquals(emptyList<Boolean>(), reorderStates)
+    }
+
+    @Test fun longPressReordersGaugeAndIndicatorAndGesturesWorkAfterward() {
+        val gauges = listOf(
+            GaugeItem(GaugeState(1, GaugeType.RPM, 0, false), "100"),
+            GaugeItem(GaugeState(2, GaugeType.VOLTAGE, 1, true), "12"),
+            GaugeItem(GaugeState(5, GaugeType.MAP, 2, true), "90"),
+        )
+        val indicators = listOf(
+            IndicatorItem(IndicatorState(3, IndicatorType.THROTTLE, 0), true),
+            IndicatorItem(IndicatorState(4, IndicatorType.GAS_VALVE, 1), false),
+        )
+        var gaugeOrder: List<GaugeState>? = null
+        var indicatorOrder: List<IndicatorState>? = null
+        val pages = mutableListOf<Int>()
+        val reorderStates = mutableListOf<Boolean>()
+        compose.setContent {
+            SecuComposeTheme {
+                screen(gauges = gauges, indicators = indicators, pageChanged = pages::add,
+                    reorderGauges = { gaugeOrder = it }, reorderIndicators = { indicatorOrder = it },
+                    reorderingChanged = reorderStates::add)
+            }
+        }
+        compose.onNodeWithTag("dial-RPM").assertExists()
+        dragCard("gauge-RPM", "gauge-MAP")
+        assertEquals(listOf(GaugeType.VOLTAGE, GaugeType.MAP, GaugeType.RPM), gaugeOrder?.map { it.gaugeType })
+        assertEquals(listOf(true, false), reorderStates)
+        assertEquals(emptyList<Int>(), pages)
+        dragCard("indicator-THROTTLE", "indicator-GAS_VALVE")
+        assertEquals(listOf(IndicatorType.GAS_VALVE, IndicatorType.THROTTLE), indicatorOrder?.map { it.indicatorType })
+        assertEquals(listOf(true, false, true, false), reorderStates)
+        assertEquals(emptyList<Int>(), pages)
+        compose.onNodeWithTag("sensors-pager").performTouchInput { swipeLeft() }
+        compose.waitForIdle()
+        assertEquals(listOf(1), pages)
+    }
+
+    private fun dragCard(sourceTag: String, targetTag: String) {
+        val source = compose.onNodeWithTag(sourceTag).fetchSemanticsNode().boundsInRoot
+        val target = compose.onNodeWithTag(targetTag).fetchSemanticsNode().boundsInRoot
+        compose.onNodeWithTag(sourceTag).performTouchInput {
+            down(center)
+            advanceEventTime(600)
+            moveBy(Offset(target.center.x - source.center.x, target.center.y - source.center.y))
+            up()
+        }
+        compose.waitForIdle()
     }
 
     @Test fun loggerControlsExposeStartThenMarksAndStop() {
@@ -127,18 +204,23 @@ class SensorsTabsScreenTest {
         columns: Int = 2,
         oldView: Boolean = false,
         gauges: List<GaugeItem> = emptyList(),
+        indicators: List<IndicatorItem> = emptyList(),
         pageChanged: (Int) -> Unit = {},
+        reorderGauges: (List<GaugeState>) -> Unit = {},
+        reorderIndicators: (List<IndicatorState>) -> Unit = {},
+        reorderingChanged: (Boolean) -> Unit = {},
         loggerStarted: Boolean = false,
         start: () -> Unit = {}, stop: () -> Unit = {}, mark: (Int) -> Unit = {},
         settings: () -> Unit = {},
     ) = SensorsTabsScreen(
         initialPage = page, oldViewEnabled = oldView, loggerEnabled = true, loggerStarted = loggerStarted, columns = columns,
-        connectionState = Disconnected, gauges = gauges, indicators = emptyList(), gaugeChoices = null,
+        connectionState = Disconnected, gauges = gauges, indicators = indicators, gaugeChoices = null,
         indicatorChoices = null, sensors = null, rawSensors = null, onPageChanged = pageChanged,
         onNavigateUp = {}, onSettings = settings,
         onAddGaugeRequest = {}, onAddIndicatorRequest = {}, onAddGauge = {}, onAddIndicator = {},
         onGaugeChoicesConsumed = {}, onIndicatorChoicesConsumed = {}, onDeleteGauge = {}, onDeleteIndicator = {},
-        onUpdateGauge = {}, onReorderGauges = {}, onReorderIndicators = {}, onStartLog = start,
+        onUpdateGauge = {}, onReorderGauges = reorderGauges, onReorderIndicators = reorderIndicators, onStartLog = start,
+        onReorderingChanged = reorderingChanged,
         onStopLog = stop, onMark = mark,
     )
 }
