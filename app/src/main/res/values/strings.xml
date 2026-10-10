@@ -600,5 +600,8 @@
     <string name="test_signal_duty">Test signal duty</string>
 
     <string name="test">Test</string>
+    <string name="sensors_add">Add sensor</string>
+    <string name="sensors_add_gauge">Add gauge</string>
+    <string name="sensors_add_indicator">Add indicator</string>
 
 </resources>

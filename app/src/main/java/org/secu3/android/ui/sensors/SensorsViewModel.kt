@@ -1,6 +1,6 @@
 /*
  *    SecuDroid  - An open source, free manager for SECU-3 engine control unit
- *    Copyright (C) 2024 Vitaliy O. Kosharskyi. Ukraine, Kyiv
+ *    Copyright (C) 2024 Vitalii O. Kosharskyi. Ukraine, Kyiv
  *
  *    SECU-3  - An open source, free engine control unit
  *    Copyright (C) 2007-2024 Alexey A. Shabelnikov. Ukraine, Kyiv
@@ -29,7 +29,7 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.asLiveData
 import androidx.lifecycle.viewModelScope
 import dagger.hilt.android.lifecycle.HiltViewModel
-import kotlinx.coroutines.flow.MutableSharedFlow
+import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.filter
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.sample
@@ -55,6 +55,8 @@ class SensorsViewModel @Inject constructor(private val secu3ConnectionManager: S
                                            private val secuLogger: SecuLogger,
                                            private val repository: SensorsRepository
                                            ) : ViewModel() {
+
+    data class ChoiceRequest<T>(val requestId: Long, val choices: List<T>)
 
     val isLoggerEnabled: Boolean
         get() = mUserPrefs.isSensorLoggerEnabled
@@ -87,13 +89,20 @@ class SensorsViewModel @Inject constructor(private val secu3ConnectionManager: S
         get() = secu3ConnectionManager.receivedPacketFlow.sample(100).filter { it is AdcRawDatPacket }
             .map { it as AdcRawDatPacket }.asLiveData()
 
-    private val showAddGaugeFlow = MutableSharedFlow<List<GaugeType>>()
-    val showAddGaugeLiveData: LiveData<List<GaugeType>>
-        get() = showAddGaugeFlow.asLiveData()
+    private var nextChoiceRequestId = 0L
+    private val showAddGaugeFlow = MutableStateFlow<ChoiceRequest<GaugeType>?>(null)
+    val showAddGaugeLiveData: LiveData<ChoiceRequest<GaugeType>?> = showAddGaugeFlow.asLiveData()
 
-    private val showAddIndicatorFlow = MutableSharedFlow<List<IndicatorType>>()
-    val showAddIndicatorLiveData: LiveData<List<IndicatorType>>
-        get() = showAddIndicatorFlow.asLiveData()
+    private val showAddIndicatorFlow = MutableStateFlow<ChoiceRequest<IndicatorType>?>(null)
+    val showAddIndicatorLiveData: LiveData<ChoiceRequest<IndicatorType>?> = showAddIndicatorFlow.asLiveData()
+
+    fun consumeGaugeChoices(requestId: Long) {
+        if (showAddGaugeFlow.value?.requestId == requestId) showAddGaugeFlow.value = null
+    }
+
+    fun consumeIndicatorChoices(requestId: Long) {
+        if (showAddIndicatorFlow.value?.requestId == requestId) showAddIndicatorFlow.value = null
+    }
 
 
     fun sendNewTask(task: Task) {
@@ -130,7 +139,7 @@ class SensorsViewModel @Inject constructor(private val secu3ConnectionManager: S
         viewModelScope.launch {
             val storedGauges = repository.getStoredGaugeStates().map { it.gaugeType }
             val gauges = GaugeType.entries.filter { it !in storedGauges }
-            showAddGaugeFlow.emit(gauges)
+            showAddGaugeFlow.value = ChoiceRequest(++nextChoiceRequestId, gauges)
         }
     }
 
@@ -156,7 +165,7 @@ class SensorsViewModel @Inject constructor(private val secu3ConnectionManager: S
         viewModelScope.launch {
             val storedIndicators = repository.getStoredIndicatorStates().map { it.indicatorType }
             val indicators = IndicatorType.entries.filter { it !in storedIndicators }
-            showAddIndicatorFlow.emit(indicators)
+            showAddIndicatorFlow.value = ChoiceRequest(++nextChoiceRequestId, indicators)
         }
     }
 

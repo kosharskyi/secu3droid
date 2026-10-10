@@ -445,4 +445,7 @@
 
 
 
+    <string name="sensors_add">Добавить датчик</string>
+    <string name="sensors_add_gauge">Добавить измеритель</string>
+    <string name="sensors_add_indicator">Добавить индикатор</string>
 </resources>
