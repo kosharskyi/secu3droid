@@ -1,6 +1,6 @@
 /*
  *    SecuDroid  - An open source, free manager for SECU-3 engine control unit
- *    Copyright (C) 2024 Vitaliy O. Kosharskyi. Ukraine, Kyiv
+ *    Copyright (C) 2024 Vitalii O. Kosharskyi. Ukraine, Kyiv
  *
  *    SECU-3  - An open source, free engine control unit
  *    Copyright (C) 2007-2024 Alexey A. Shabelnikov. Ukraine, Kyiv
@@ -27,7 +27,6 @@ package org.secu3.android.ui.parameters.dialogs
 import android.os.Bundle
 import android.text.InputType
 import android.view.View
-import androidx.core.text.isDigitsOnly
 import androidx.core.widget.doAfterTextChanged
 import androidx.lifecycle.LiveData
 import androidx.lifecycle.MutableLiveData
@@ -69,23 +68,13 @@ class ParamFloatEditDialogFragment : ParamBaseEditDialogFragment() {
 
             value.editText?.apply {
                 setText(formatStr.format(Locale.US, currentValue))
-                inputType = InputType.TYPE_CLASS_NUMBER or InputType.TYPE_NUMBER_FLAG_DECIMAL
+                inputType = inputTypeFor(minValue)
 
                 doAfterTextChanged {
                     val valueStr = it.toString()
-                    if (valueStr.isEmpty()) {
-                        ok.isEnabled = false
-                        return@doAfterTextChanged
-                    }
-
-                    if (valueStr.length == 1 && valueStr.isDigitsOnly().not()) {
-                        ok.isEnabled = false
-                        return@doAfterTextChanged
-                    }
-
-                    currentValue = valueStr.toFloat()
-
-                    val isValueCorrect = currentValue in minValue..maxValue
+                    val parsedValue = valueStr.toFloatOrNull()
+                    val isValueCorrect = isValidInput(valueStr, minValue, maxValue)
+                    if (isValueCorrect) currentValue = parsedValue ?: currentValue
 
                     ok.isEnabled = isValueCorrect
 
@@ -130,6 +119,12 @@ class ParamFloatEditDialogFragment : ParamBaseEditDialogFragment() {
         }
 
     companion object {
+
+        internal fun isValidInput(value: String, min: Float, max: Float): Boolean =
+            value.toFloatOrNull()?.let { it in min..max } == true
+
+        internal fun inputTypeFor(min: Float): Int = InputType.TYPE_CLASS_NUMBER or InputType.TYPE_NUMBER_FLAG_DECIMAL or
+            if (min < 0f) InputType.TYPE_NUMBER_FLAG_SIGNED else 0
 
         private const val ARG_PRECISION = "precision"
 

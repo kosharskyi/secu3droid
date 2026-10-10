@@ -1,9 +1,9 @@
 /*
  *    SecuDroid  - An open source, free manager for SECU-3 engine control unit
- *    Copyright (C) 2024 Vitalii O. Kosharskyi. Ukraine, Kyiv
+ *    Copyright (C) 2026 Vitalii O. Kosharskyi. Ukraine, Kyiv
  *
  *    SECU-3  - An open source, free engine control unit
- *    Copyright (C) 2007-2024 Alexey A. Shabelnikov. Ukraine, Kyiv
+ *    Copyright (C) 2007-2026 Alexey A. Shabelnikov. Ukraine, Kyiv
  *
  *    This program is free software: you can redistribute it and/or modify
  *    it under the terms of the GNU General Public License as published by
@@ -28,135 +28,83 @@ import android.os.Bundle
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.setValue
+import androidx.compose.ui.platform.ComposeView
+import androidx.compose.ui.platform.ViewCompositionStrategy
 import androidx.lifecycle.lifecycleScope
 import androidx.lifecycle.withResumed
 import kotlinx.coroutines.launch
 import org.secu3.android.R
-import org.secu3.android.databinding.FragmentAnglesBinding
 import org.secu3.android.models.packets.out.params.AnglesParamPacket
-import org.secu3.android.ui.parameters.views.FloatParamView
-import org.secu3.android.utils.gone
-import org.secu3.android.utils.visible
-
+import org.secu3.android.ui.compose.SecuComposeTheme
+import org.secu3.android.ui.parameters.dialogs.ParamFloatEditDialogFragment
+import org.secu3.android.ui.parameters.pages.compose.AnglesFlag
+import org.secu3.android.ui.parameters.pages.compose.AnglesNumber
+import org.secu3.android.ui.parameters.pages.compose.AnglesScreen
+import org.secu3.android.ui.parameters.pages.compose.AnglesUiState
+import org.secu3.android.ui.parameters.pages.compose.AnglesValues
+import org.secu3.android.ui.parameters.pages.compose.applyAnglesFlag
+import org.secu3.android.ui.parameters.pages.compose.applyAnglesValue
 
 class AnglesFragment : BaseParamFragment() {
-
-    private lateinit var mBinding: FragmentAnglesBinding
-
     private var packet: AnglesParamPacket? = null
+    private var values by mutableStateOf<AnglesValues?>(null)
 
-
-    override fun onCreateView(inflater: LayoutInflater, container: ViewGroup?, savedInstanceState: Bundle?): View? {
-        mBinding = FragmentAnglesBinding.inflate(inflater, container, false)
-        return mBinding.root
+    override fun onCreateView(inflater: LayoutInflater, container: ViewGroup?, savedInstanceState: Bundle?): View {
+        packet = null
+        values = null
+        return ComposeView(requireContext()).apply {
+            id = R.id.angles_compose_view
+            setViewCompositionStrategy(ViewCompositionStrategy.DisposeOnViewTreeLifecycleDestroyed)
+            setContent {
+                SecuComposeTheme {
+                    AnglesScreen(values?.let(AnglesUiState::Data) ?: AnglesUiState.Loading, ::editParameter, ::updateFlag)
+                }
+            }
+        }
     }
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
-
-        lifecycleScope.launch {
-            withResumed {
-                mViewModel.anglesLiveData.observe(viewLifecycleOwner) {
+        val viewLifecycle = viewLifecycleOwner
+        viewLifecycle.lifecycleScope.launch {
+            viewLifecycle.withResumed {
+                // Accessing this getter schedules a protocol read; do it once after the page is resumed.
+                val anglesLiveData = mViewModel.anglesLiveData
+                anglesLiveData.observe(viewLifecycleOwner) { received ->
                     mViewModel.isSendAllowed = false
-
-                    packet = it
-
-                    mBinding.apply {
-
-                        progressBar.gone()
-                        params.visible()
-
-                        maxAdvanceAngle.value = it.maxAngle
-                        minAdvanceAngle.value = it.minAngle
-
-                        angleDecreaseSpeed.value = it.angleDecSpeed
-                        angleIncreaseSpeed.value = it.angleIncSpeed
-
-                        octaneCorrection.value = it.angleCorrection
-
-                        zeroAdvAngle.isChecked = it.zeroAdvAngle > 0
-
-                        ignTimingWhenShifting.value = it.shift_ingtim
-
-                        alwaysUseWorkingModeAngleMap.isChecked = it.alwaysUseIgnitionMap
-                        applyManualTimingCorr.isChecked = it.applyManualTimingCorrOnIdl
-                        zeroAdvOctaneCorr.isChecked = it.zeroAdvAngleWithCorr
-                    }
-
-                    initViews()
-
+                    packet = received
+                    values = AnglesValues.from(received)
                     mViewModel.isSendAllowed = true
                 }
             }
         }
     }
 
-    private fun initViews() {
-
-        mBinding.apply {
-            maxAdvanceAngle.addOnValueChangeListener {
-                packet?.maxAngle = it
-                packet?.let { it1 -> mViewModel.sendPacket(it1) }
-            }
-            minAdvanceAngle.addOnValueChangeListener {
-                packet?.minAngle = it
-                packet?.let { it1 -> mViewModel.sendPacket(it1) }
-            }
-            angleDecreaseSpeed.addOnValueChangeListener {
-                packet?.angleDecSpeed = it
-                packet?.let { it1 -> mViewModel.sendPacket(it1) }
-            }
-            angleIncreaseSpeed.addOnValueChangeListener {
-                packet?.angleIncSpeed = it
-                packet?.let { it1 -> mViewModel.sendPacket(it1) }
-            }
-            octaneCorrection.addOnValueChangeListener {
-                packet?.angleCorrection = it
-                packet?.let { it1 -> mViewModel.sendPacket(it1) }
-            }
-            zeroAdvAngle.setOnCheckedChangeListener { _, isChecked ->
-                packet?.zeroAdvAngle = if (isChecked) 1 else 0
-                packet?.let { it1 -> mViewModel.sendPacket(it1) }
-            }
-
-            ignTimingWhenShifting.addOnValueChangeListener {
-                packet?.apply {
-                    shift_ingtim = it
-                    mViewModel.sendPacket(this)
-                }
-            }
-
-            alwaysUseWorkingModeAngleMap.setOnCheckedChangeListener { _, isChecked ->
-                packet?.apply {
-                    alwaysUseIgnitionMap = isChecked
-                    mViewModel.sendPacket(this)
-                }
-            }
-
-            applyManualTimingCorr.setOnCheckedChangeListener { _, isChecked ->
-                packet?.apply {
-                    applyManualTimingCorrOnIdl = isChecked
-                    mViewModel.sendPacket(this)
-                }
-            }
-
-            zeroAdvOctaneCorr.setOnCheckedChangeListener { _, isChecked ->
-                packet?.apply {
-                    zeroAdvAngleWithCorr = isChecked
-                    mViewModel.sendPacket(this)
-                }
-            }
-
-            maxAdvanceAngle.setOnClickListener { floatParamClick(it as FloatParamView) }
-            minAdvanceAngle.setOnClickListener { floatParamClick(it as FloatParamView) }
-            angleDecreaseSpeed.setOnClickListener { floatParamClick(it as FloatParamView) }
-            angleIncreaseSpeed.setOnClickListener { floatParamClick(it as FloatParamView) }
-            octaneCorrection.setOnClickListener { floatParamClick(it as FloatParamView) }
-            ignTimingWhenShifting.setOnClickListener { floatParamClick(it as FloatParamView) }
-        }
+    private fun editParameter(number: AnglesNumber) {
+        val current = values ?: return
+        val dialog = ParamFloatEditDialogFragment.newInstance(
+            current.value(number), getString(number.titleRes), number.step, number.max, number.min, number.precision,
+        )
+        dialog.newValueLiveData.observe(viewLifecycleOwner) { updateValue(number, it) }
+        dialog.show(childFragmentManager, dialog::class.java.simpleName)
     }
 
-    override fun tabTitle(): Int {
-        return R.string.params_tab_angles_title
+    private fun updateValue(number: AnglesNumber, value: Float) {
+        val currentPacket = packet ?: return
+        applyAnglesValue(currentPacket, number, value)
+        values = values?.withValue(number, value)
+        mViewModel.sendPacket(currentPacket)
     }
+
+    private fun updateFlag(flag: AnglesFlag, checked: Boolean) {
+        val currentPacket = packet ?: return
+        applyAnglesFlag(currentPacket, flag, checked)
+        values = values?.withFlag(flag, checked)
+        mViewModel.sendPacket(currentPacket)
+    }
+
+    override fun tabTitle(): Int = R.string.params_tab_angles_title
 }

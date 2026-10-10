@@ -27,4 +27,5 @@
     <item name="diagnostics_compose_view" type="id" />
     <item name="diagnostic_additional_dialog_content" type="id" />
     <item name="starter_compose_view" type="id" />
+    <item name="angles_compose_view" type="id" />
 </resources>
