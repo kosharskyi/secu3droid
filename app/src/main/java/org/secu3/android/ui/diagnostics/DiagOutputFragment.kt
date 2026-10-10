@@ -1,6 +1,6 @@
 /*
  *    SecuDroid  - An open source, free manager for SECU-3 engine control unit
- *    Copyright (C) 2024 Vitaliy O. Kosharskyi. Ukraine, Kyiv
+ *    Copyright (C) 2024 Vitalii O. Kosharskyi. Ukraine, Kyiv
  *
  *    SECU-3  - An open source, free engine control unit
  *    Copyright (C) 2007-2024 Alexey A. Shabelnikov. Ukraine, Kyiv
@@ -29,220 +29,197 @@ import android.os.Bundle
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
-import androidx.core.view.isVisible
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.livedata.observeAsState
+import androidx.compose.runtime.mutableIntStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
+import androidx.compose.foundation.clickable
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.heightIn
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
+import androidx.compose.material3.Checkbox
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Text
+import androidx.compose.ui.Alignment
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.ComposeView
+import androidx.compose.ui.platform.ViewCompositionStrategy
+import androidx.compose.ui.platform.testTag
+import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.unit.dp
 import androidx.fragment.app.Fragment
 import androidx.navigation.navGraphViewModels
 import org.secu3.android.R
-import org.secu3.android.databinding.FragmentDiagOutputBinding
+import org.secu3.android.models.packets.out.DiagOutputPacket
+import org.secu3.android.ui.compose.SecuComposeTheme
 
 class DiagOutputFragment : Fragment() {
+    private val viewModel: DiagnosticsViewModel by navGraphViewModels(
+        R.id.diagnosticsFragment,
+        factoryProducer = { defaultViewModelProviderFactory },
+    )
 
-    private val mViewModel: DiagnosticsViewModel by navGraphViewModels(R.id.diagnosticsFragment, factoryProducer = { defaultViewModelProviderFactory })
+    override fun onCreateView(inflater: LayoutInflater, container: ViewGroup?, savedInstanceState: Bundle?): View =
+        (inflater.inflate(R.layout.fragment_diag_output, container, false) as ComposeView).apply {
+            setViewCompositionStrategy(ViewCompositionStrategy.DisposeOnViewTreeLifecycleDestroyed)
+            setContent {
+                val enableBlDe by viewModel.enableBlDe.observeAsState(false)
+                val enableTachO by viewModel.enableTachO.observeAsState(false)
+                SecuComposeTheme {
+                    DiagnosticsOutputsScreen(
+                        isSecu3T = viewModel.firmwareInfo?.isSecu3T,
+                        outputBits = viewModel.outputPacket.out,
+                        enableBlDe = enableBlDe,
+                        enableTachO = enableTachO,
+                        onOutputChanged = { output, enabled ->
+                            setDiagnosticOutput(viewModel.outputPacket, output, enabled)
+                            viewModel.sendDiagOutPacket()
+                        },
+                    )
+                }
+            }
+        }
+}
 
-    private lateinit var mBinding: FragmentDiagOutputBinding
+internal enum class DiagnosticOutput(val label: String, val bit: Int, val secondBit: Int? = null) {
+    IGN_OUT1("IGN_OUT1", 0), IGN_OUT2("IGN_OUT2", 1), IGN_OUT3("IGN_OUT3", 2), IGN_OUT4("IGN_OUT4", 3),
+    IE("IE", 4), FE("FE", 5), ECF("ECF", 6), CE("CE", 7), ST_BLOCK("ST_BLOCK", 8), ADD_IO1("ADD_IO1", 9), ADD_IO2("ADD_IO2", 10),
+    IGN_OUT5("IGN_OUT5", 4), ECF0("ECF0", 5), INJ_O1("INJ_O1", 6), INJ_O2("INJ_O2", 7), INJ_O3("INJ_O3", 8),
+    INJ_O4("INJ_O4", 9), INJ_O5("INJ_O5", 10), BL("BL", 11, 12), DE("DE", 13, 14), STBL_O("STBL_O", 15),
+    CEL_O("CEL_O", 16), FPMP_O("FPMP_O", 17), PWRR_O("PWRR_O", 18), EVAP_O("EVAP_O", 19), O2SH_O("O2SH_O", 20),
+    COND_O("COND_O", 21), ADD_O2("ADD_O2", 22), TACH_O("TACH_O", 23, 24), GPA6_O("GPA6_O", 25),
+}
 
-    override fun onCreateView(inflater: LayoutInflater, container: ViewGroup?, savedInstanceState: Bundle?): View? {
-        mBinding = FragmentDiagOutputBinding.inflate(inflater, container, false)
-        return mBinding.root
+internal fun setDiagnosticOutput(packet: DiagOutputPacket, output: DiagnosticOutput, enabled: Boolean) {
+    when (output) {
+        DiagnosticOutput.IGN_OUT1 -> packet.ignOut1 = enabled
+        DiagnosticOutput.IGN_OUT2 -> packet.ignOut2 = enabled
+        DiagnosticOutput.IGN_OUT3 -> packet.ignOut3 = enabled
+        DiagnosticOutput.IGN_OUT4 -> packet.ignOut4 = enabled
+        DiagnosticOutput.IE -> packet.ie = enabled
+        DiagnosticOutput.FE -> packet.fe = enabled
+        DiagnosticOutput.ECF -> packet.ecf = enabled
+        DiagnosticOutput.CE -> packet.ce = enabled
+        DiagnosticOutput.ST_BLOCK -> packet.stBlock = enabled
+        DiagnosticOutput.ADD_IO1 -> packet.addIo1 = enabled
+        DiagnosticOutput.ADD_IO2 -> packet.addIo2 = enabled
+        DiagnosticOutput.IGN_OUT5 -> packet.ignOut5 = enabled
+        DiagnosticOutput.ECF0 -> packet.ecf0 = enabled
+        DiagnosticOutput.INJ_O1 -> packet.injO1 = enabled
+        DiagnosticOutput.INJ_O2 -> packet.injO2 = enabled
+        DiagnosticOutput.INJ_O3 -> packet.injO3 = enabled
+        DiagnosticOutput.INJ_O4 -> packet.injO4 = enabled
+        DiagnosticOutput.INJ_O5 -> packet.injO5 = enabled
+        DiagnosticOutput.BL -> packet.bl = enabled
+        DiagnosticOutput.DE -> packet.de = enabled
+        DiagnosticOutput.STBL_O -> packet.stblO = enabled
+        DiagnosticOutput.CEL_O -> packet.celO = enabled
+        DiagnosticOutput.FPMP_O -> packet.fpmpO = enabled
+        DiagnosticOutput.PWRR_O -> packet.pwrrO = enabled
+        DiagnosticOutput.EVAP_O -> packet.evapO = enabled
+        DiagnosticOutput.O2SH_O -> packet.o2shO = enabled
+        DiagnosticOutput.COND_O -> packet.condO = enabled
+        DiagnosticOutput.ADD_O2 -> packet.addO2 = enabled
+        DiagnosticOutput.TACH_O -> packet.tachO = enabled
+        DiagnosticOutput.GPA6_O -> packet.gpa6_O = enabled
     }
+}
 
-    override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
-        super.onViewCreated(view, savedInstanceState)
+private val secu3TOutputs = listOf(
+    DiagnosticOutput.IGN_OUT1, DiagnosticOutput.IGN_OUT2, DiagnosticOutput.IGN_OUT3, DiagnosticOutput.IGN_OUT4,
+    DiagnosticOutput.IE, DiagnosticOutput.FE, DiagnosticOutput.ECF, DiagnosticOutput.CE, DiagnosticOutput.ST_BLOCK,
+    DiagnosticOutput.ADD_IO1, DiagnosticOutput.ADD_IO2, DiagnosticOutput.BL, DiagnosticOutput.DE,
+)
 
-        mViewModel.firmwareInfo?.let {
-            mBinding.apply {
-                secu3t.isVisible = it.isSecu3T
-                secu3i.isVisible = it.isSecu3T.not()
-            }
+private val secu3IOutputs = listOf(
+    DiagnosticOutput.IGN_OUT1, DiagnosticOutput.IGN_OUT2, DiagnosticOutput.IGN_OUT3, DiagnosticOutput.IGN_OUT4,
+    DiagnosticOutput.IGN_OUT5, DiagnosticOutput.ECF0, DiagnosticOutput.INJ_O1, DiagnosticOutput.INJ_O2,
+    DiagnosticOutput.INJ_O3, DiagnosticOutput.INJ_O4, DiagnosticOutput.INJ_O5, DiagnosticOutput.BL, DiagnosticOutput.DE,
+    DiagnosticOutput.STBL_O, DiagnosticOutput.CEL_O, DiagnosticOutput.FPMP_O, DiagnosticOutput.PWRR_O, DiagnosticOutput.EVAP_O,
+    DiagnosticOutput.O2SH_O, DiagnosticOutput.COND_O, DiagnosticOutput.ADD_O2, DiagnosticOutput.TACH_O, DiagnosticOutput.GPA6_O,
+)
+
+@Composable
+internal fun DiagnosticsOutputsScreen(
+    isSecu3T: Boolean?,
+    outputBits: Int,
+    enableBlDe: Boolean,
+    enableTachO: Boolean,
+    onOutputChanged: (DiagnosticOutput, Boolean) -> Unit,
+) {
+    var currentBits by remember(outputBits, enableBlDe, enableTachO) { mutableIntStateOf(outputBits) }
+    val outputs = when (isSecu3T) {
+        true -> secu3TOutputs
+        false -> secu3IOutputs
+        null -> emptyList()
+    }.filter { it != DiagnosticOutput.TACH_O || enableTachO }
+    Column(
+        modifier = Modifier.fillMaxWidth().verticalScroll(rememberScrollState()).padding(horizontal = 16.dp, vertical = 8.dp),
+        verticalArrangement = Arrangement.spacedBy(2.dp),
+    ) {
+        if (isSecu3T == null) return@Column
+        val ignitionCount = if (isSecu3T) 4 else 5
+        Text(stringResource(R.string.diag_outputs_ignition_group), style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.SemiBold, modifier = Modifier.padding(top = 8.dp, bottom = 4.dp))
+        outputs.take(ignitionCount).forEach { output ->
+            OutputToggle(output, currentBits, enabledFor(output, enableBlDe, enableTachO), onOutputChanged) { currentBits = it }
         }
-
-        mViewModel.enableBlDe.observe(viewLifecycleOwner) {
-            mBinding.apply {
-                bl.isEnabled = it
-                de.isEnabled = it
-            }
+        Text(
+            stringResource(if (isSecu3T) R.string.diag_outputs_other_group else R.string.diag_outputs_injection_group),
+            style = MaterialTheme.typography.titleMedium,
+            fontWeight = FontWeight.SemiBold,
+            modifier = Modifier.padding(top = 12.dp, bottom = 4.dp),
+        )
+        outputs.drop(ignitionCount).forEach { output ->
+            OutputToggle(output, currentBits, enabledFor(output, enableBlDe, enableTachO), onOutputChanged) { currentBits = it }
         }
+    }
+}
 
-        mViewModel.enableTachO.observe(viewLifecycleOwner) {
-            mBinding.tachO.isVisible = it
-        }
+private fun enabledFor(output: DiagnosticOutput, enableBlDe: Boolean, enableTachO: Boolean) = when (output) {
+    DiagnosticOutput.BL, DiagnosticOutput.DE -> enableBlDe
+    DiagnosticOutput.TACH_O -> enableTachO
+    else -> true
+}
 
-        mBinding.apply {
-            ignOut1.isChecked = mViewModel.outputPacket.ignOut1
-            ignOut1.setOnCheckedChangeListener { _, isChecked ->
-                mViewModel.outputPacket.ignOut1 = isChecked
-                mViewModel.sendDiagOutPacket()
-            }
-
-            ignOut2.isChecked = mViewModel.outputPacket.ignOut2
-            ignOut2.setOnCheckedChangeListener { _, isChecked ->
-                mViewModel.outputPacket.ignOut2 = isChecked
-                mViewModel.sendDiagOutPacket()
-            }
-
-            ignOut3.isChecked = mViewModel.outputPacket.ignOut3
-            ignOut3.setOnCheckedChangeListener { _, isChecked ->
-                mViewModel.outputPacket.ignOut3 = isChecked
-                mViewModel.sendDiagOutPacket()
-            }
-
-            ignOut4.isChecked = mViewModel.outputPacket.ignOut4
-            ignOut4.setOnCheckedChangeListener { _, isChecked ->
-                mViewModel.outputPacket.ignOut4 = isChecked
-                mViewModel.sendDiagOutPacket()
-            }
-
-            ignOut5.isChecked = mViewModel.outputPacket.ignOut5
-            ignOut5.setOnCheckedChangeListener { _, isChecked ->
-                mViewModel.outputPacket.ignOut5 = isChecked
-                mViewModel.sendDiagOutPacket()
-            }
-
-            addIo1.isChecked = mViewModel.outputPacket.addIo1
-            addIo1.setOnCheckedChangeListener { _, isChecked ->
-                mViewModel.outputPacket.addIo1 = isChecked
-                mViewModel.sendDiagOutPacket()
-            }
-
-            addIo2.isChecked = mViewModel.outputPacket.addIo2
-            addIo2.setOnCheckedChangeListener { _, isChecked ->
-                mViewModel.outputPacket.addIo2 = isChecked
-                mViewModel.sendDiagOutPacket()
-            }
-
-            ie.isChecked = mViewModel.outputPacket.ie
-            ie.setOnCheckedChangeListener { _, isChecked ->
-                mViewModel.outputPacket.ie = isChecked
-                mViewModel.sendDiagOutPacket()
-            }
-
-            fe.isChecked = mViewModel.outputPacket.fe
-            fe.setOnCheckedChangeListener { _, isChecked ->
-                mViewModel.outputPacket.fe = isChecked
-                mViewModel.sendDiagOutPacket()
-            }
-
-            ecf.isChecked = mViewModel.outputPacket.ecf
-            ecf.setOnCheckedChangeListener { _, isChecked ->
-                mViewModel.outputPacket.ecf = isChecked
-                mViewModel.sendDiagOutPacket()
-            }
-
-            ecf0.isChecked = mViewModel.outputPacket.ecf0
-            ecf0.setOnCheckedChangeListener { _, isChecked ->
-                mViewModel.outputPacket.ecf0 = isChecked
-                mViewModel.sendDiagOutPacket()
-            }
-
-            ce.isChecked = mViewModel.outputPacket.ce
-            ce.setOnCheckedChangeListener { _, isChecked ->
-                mViewModel.outputPacket.ce = isChecked
-                mViewModel.sendDiagOutPacket()
-            }
-
-            stBlock.isChecked = mViewModel.outputPacket.stBlock
-            stBlock.setOnCheckedChangeListener { _, isChecked ->
-                mViewModel.outputPacket.stBlock = isChecked
-                mViewModel.sendDiagOutPacket()
-            }
-
-            bl.setOnCheckedChangeListener { _, isChecked ->
-                mViewModel.outputPacket.bl = isChecked
-                mViewModel.sendDiagOutPacket()
-            }
-            de.setOnCheckedChangeListener { _, isChecked ->
-                mViewModel.outputPacket.de = isChecked
-                mViewModel.sendDiagOutPacket()
-            }
-
-            injO1.isChecked = mViewModel.outputPacket.injO1
-            injO1.setOnCheckedChangeListener { _, isChecked ->
-                mViewModel.outputPacket.injO1 = isChecked
-                mViewModel.sendDiagOutPacket()
-            }
-
-            injO2.isChecked = mViewModel.outputPacket.injO2
-            injO2.setOnCheckedChangeListener { _, isChecked ->
-                mViewModel.outputPacket.injO2 = isChecked
-                mViewModel.sendDiagOutPacket()
-            }
-
-            injO3.isChecked = mViewModel.outputPacket.injO3
-            injO3.setOnCheckedChangeListener { _, isChecked ->
-                mViewModel.outputPacket.injO3 = isChecked
-                mViewModel.sendDiagOutPacket()
-            }
-
-            injO4.isChecked = mViewModel.outputPacket.injO4
-            injO4.setOnCheckedChangeListener { _, isChecked ->
-                mViewModel.outputPacket.injO4 = isChecked
-                mViewModel.sendDiagOutPacket()
-            }
-
-            injO5.isChecked = mViewModel.outputPacket.injO5
-            injO5.setOnCheckedChangeListener { _, isChecked ->
-                mViewModel.outputPacket.injO5 = isChecked
-                mViewModel.sendDiagOutPacket()
-            }
-
-            stblO.isChecked = mViewModel.outputPacket.stblO
-            stblO.setOnCheckedChangeListener { _, isChecked ->
-                mViewModel.outputPacket.stblO = isChecked
-                mViewModel.sendDiagOutPacket()
-            }
-
-            celO.isChecked = mViewModel.outputPacket.celO
-            celO.setOnCheckedChangeListener { _, isChecked ->
-                mViewModel.outputPacket.celO = isChecked
-                mViewModel.sendDiagOutPacket()
-            }
-
-            fpmpO.isChecked = mViewModel.outputPacket.fpmpO
-            fpmpO.setOnCheckedChangeListener { _, isChecked ->
-                mViewModel.outputPacket.fpmpO = isChecked
-                mViewModel.sendDiagOutPacket()
-            }
-
-            pwrrO.isChecked = mViewModel.outputPacket.pwrrO
-            pwrrO.setOnCheckedChangeListener { _, isChecked ->
-                mViewModel.outputPacket.pwrrO = isChecked
-                mViewModel.sendDiagOutPacket()
-            }
-
-            evapO.isChecked = mViewModel.outputPacket.evapO
-            evapO.setOnCheckedChangeListener { _, isChecked ->
-                mViewModel.outputPacket.evapO = isChecked
-                mViewModel.sendDiagOutPacket()
-            }
-
-            o2shO.isChecked = mViewModel.outputPacket.o2shO
-            o2shO.setOnCheckedChangeListener { _, isChecked ->
-                mViewModel.outputPacket.o2shO = isChecked
-                mViewModel.sendDiagOutPacket()
-            }
-
-            condO.isChecked = mViewModel.outputPacket.condO
-            condO.setOnCheckedChangeListener { _, isChecked ->
-                mViewModel.outputPacket.condO = isChecked
-                mViewModel.sendDiagOutPacket()
-            }
-
-            addO2.isChecked = mViewModel.outputPacket.addO2
-            addO2.setOnCheckedChangeListener { _, isChecked ->
-                mViewModel.outputPacket.addO2 = isChecked
-                mViewModel.sendDiagOutPacket()
-            }
-
-            tachO.setOnCheckedChangeListener { _, isChecked ->
-                mViewModel.outputPacket.tachO = isChecked
-                mViewModel.sendDiagOutPacket()
-            }
-
-            gpa6O.isChecked = mViewModel.outputPacket.gpa6_O
-            gpa6O.setOnCheckedChangeListener { _, isChecked ->
-                mViewModel.outputPacket.gpa6_O = isChecked
-                mViewModel.sendDiagOutPacket()
-            }
-        }
+@Composable
+private fun OutputToggle(
+    output: DiagnosticOutput,
+    bits: Int,
+    enabled: Boolean,
+    onOutputChanged: (DiagnosticOutput, Boolean) -> Unit,
+    updateBits: (Int) -> Unit,
+) {
+    val checked = bits and (1 shl output.bit) != 0
+    Row(
+        modifier = Modifier.fillMaxWidth().heightIn(min = 48.dp).clickable(enabled = enabled) {
+            val newValue = !checked
+            onOutputChanged(output, newValue)
+            var updated = if (newValue) bits or (1 shl output.bit) else bits and (1 shl output.bit).inv()
+            output.secondBit?.let { bit -> updated = if (newValue) updated or (1 shl bit) else updated and (1 shl bit).inv() }
+            updateBits(updated)
+        }.padding(start = 8.dp, end = 4.dp),
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.SpaceBetween,
+    ) {
+        Text(output.label, modifier = Modifier.weight(1f), color = if (enabled) MaterialTheme.colorScheme.onSurface else MaterialTheme.colorScheme.onSurface.copy(alpha = 0.38f))
+        Checkbox(
+            modifier = Modifier.testTag("output_${output.name}"),
+            checked = checked,
+            enabled = enabled,
+            onCheckedChange = { newValue ->
+                onOutputChanged(output, newValue)
+                var updated = if (newValue) bits or (1 shl output.bit) else bits and (1 shl output.bit).inv()
+                output.secondBit?.let { bit -> updated = if (newValue) updated or (1 shl bit) else updated and (1 shl bit).inv() }
+                updateBits(updated)
+            },
+        )
     }
 }
