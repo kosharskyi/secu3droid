@@ -1,6 +1,6 @@
 /*
  *    SecuDroid  - An open source, free manager for SECU-3 engine control unit
- *    Copyright (C) 2024 Vitaliy O. Kosharskyi. Ukraine, Kyiv
+ *    Copyright (C) 2024 Vitalii O. Kosharskyi. Ukraine, Kyiv
  *
  *    SECU-3  - An open source, free engine control unit
  *    Copyright (C) 2007-2024 Alexey A. Shabelnikov. Ukraine, Kyiv
@@ -51,7 +51,7 @@ abstract class BaseParamFragment : Fragment() {
         }
     }
 
-    // NOTE: make sure you've changed this method in [DiagInputFragment.kt]
+    // Keep float edit dialog observation and child fragment lifecycle aligned with diagnostics.
     protected fun floatParamClick(view: FloatParamView) {
         view.apply {
             ParamFloatEditDialogFragment.newInstance(value, title, step, maxValue, minValue, precision).also {

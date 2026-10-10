@@ -1,9 +1,9 @@
 /*
  *    SecuDroid  - An open source, free manager for SECU-3 engine control unit
- *    Copyright (C) 2024 Vitalii O. Kosharskyi. Ukraine, Kyiv
+ *    Copyright (C) 2026 Vitalii O. Kosharskyi. Ukraine, Kyiv
  *
  *    SECU-3  - An open source, free engine control unit
- *    Copyright (C) 2007-2024 Alexey A. Shabelnikov. Ukraine, Kyiv
+ *    Copyright (C) 2007-2026 Alexey A. Shabelnikov. Ukraine, Kyiv
  *
  *    This program is free software: you can redistribute it and/or modify
  *    it under the terms of the GNU General Public License as published by
@@ -22,16 +22,10 @@
  *                    http://secu-3.org
  *                    email: vetalkosharskiy@gmail.com
  */
-
 package org.secu3.android.ui.diagnostics
 
-import android.os.Bundle
-import android.view.LayoutInflater
-import android.view.View
-import android.view.ViewGroup
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.livedata.observeAsState
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
@@ -49,45 +43,12 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.platform.ComposeView
-import androidx.compose.ui.platform.ViewCompositionStrategy
 import androidx.compose.ui.platform.testTag
-import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
-import androidx.fragment.app.Fragment
-import androidx.navigation.navGraphViewModels
+import androidx.compose.ui.res.stringResource
 import org.secu3.android.R
 import org.secu3.android.models.packets.out.DiagOutputPacket
-import org.secu3.android.ui.compose.SecuComposeTheme
-
-class DiagOutputFragment : Fragment() {
-    private val viewModel: DiagnosticsViewModel by navGraphViewModels(
-        R.id.diagnosticsFragment,
-        factoryProducer = { defaultViewModelProviderFactory },
-    )
-
-    override fun onCreateView(inflater: LayoutInflater, container: ViewGroup?, savedInstanceState: Bundle?): View =
-        (inflater.inflate(R.layout.fragment_diag_output, container, false) as ComposeView).apply {
-            setViewCompositionStrategy(ViewCompositionStrategy.DisposeOnViewTreeLifecycleDestroyed)
-            setContent {
-                val enableBlDe by viewModel.enableBlDe.observeAsState(false)
-                val enableTachO by viewModel.enableTachO.observeAsState(false)
-                SecuComposeTheme {
-                    DiagnosticsOutputsScreen(
-                        isSecu3T = viewModel.firmwareInfo?.isSecu3T,
-                        outputBits = viewModel.outputPacket.out,
-                        enableBlDe = enableBlDe,
-                        enableTachO = enableTachO,
-                        onOutputChanged = { output, enabled ->
-                            setDiagnosticOutput(viewModel.outputPacket, output, enabled)
-                            viewModel.sendDiagOutPacket()
-                        },
-                    )
-                }
-            }
-        }
-}
 
 internal enum class DiagnosticOutput(val label: String, val bit: Int, val secondBit: Int? = null) {
     IGN_OUT1("IGN_OUT1", 0), IGN_OUT2("IGN_OUT2", 1), IGN_OUT3("IGN_OUT3", 2), IGN_OUT4("IGN_OUT4", 3),

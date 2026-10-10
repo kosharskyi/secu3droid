@@ -63,6 +63,7 @@ import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.unit.dp
 import org.secu3.android.models.packets.input.DiagInputPacket
+import org.secu3.android.models.packets.out.DiagOutputPacket
 import java.util.Locale
 
 val secu3TOutputChannels = listOf("NONE", "IGN_OUT1", "IGN_OUT2", "IGN_OUT3", "IGN_OUT4", "IE", "FE", "ECF", "CE", "ST_BLOCK", "ADD_IO1", "ADD_IO2", "BL", "DE")
@@ -190,4 +191,19 @@ private fun StatusInput(label: String, checked: Boolean) {
         Text(label, Modifier.weight(1f))
         Checkbox(checked = checked, onCheckedChange = null)
     }
+}
+
+internal fun selectDiagnosticOutputChannel(packet: DiagOutputPacket, channelIndex: Int, send: () -> Unit) {
+    packet.chan = channelIndex
+    send()
+}
+
+internal fun updateDiagnosticOutputFrequency(packet: DiagOutputPacket, value: Float, send: () -> Unit) {
+    packet.frq = value
+    if (packet.chan > 0) send()
+}
+
+internal fun updateDiagnosticOutputDuty(packet: DiagOutputPacket, value: Float, send: () -> Unit) {
+    packet.duty = value
+    if (packet.chan > 0) send()
 }
