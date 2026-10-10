@@ -1,6 +1,6 @@
 /*
  *    SecuDroid  - An open source, free manager for SECU-3 engine control unit
- *    Copyright (C) 2024 Vitaliy O. Kosharskyi. Ukraine, Kyiv
+ *    Copyright (C) 2024 Vitalii O. Kosharskyi. Ukraine, Kyiv
  *
  *    SECU-3  - An open source, free engine control unit
  *    Copyright (C) 2007-2024 Alexey A. Shabelnikov. Ukraine, Kyiv
@@ -25,116 +25,87 @@
 package org.secu3.android.ui.diagnostics
 
 import android.os.Bundle
-import android.text.InputType
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
-import android.widget.AdapterView
-import android.widget.ArrayAdapter
-import androidx.core.view.isVisible
+import androidx.compose.ui.platform.ComposeView
+import androidx.compose.runtime.livedata.observeAsState
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableIntStateOf
+import androidx.compose.runtime.mutableFloatStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
+import androidx.compose.ui.platform.ViewCompositionStrategy
 import androidx.fragment.app.Fragment
 import androidx.navigation.navGraphViewModels
 import org.secu3.android.R
-import org.secu3.android.databinding.FragmentDiagInputBinding
 import org.secu3.android.ui.parameters.dialogs.ParamFloatEditDialogFragment
-import org.secu3.android.ui.parameters.views.FloatParamView
-
+import org.secu3.android.ui.compose.SecuComposeTheme
+import org.secu3.android.models.packets.out.DiagOutputPacket
 
 class DiagInputFragment : Fragment() {
+    private val viewModel: DiagnosticsViewModel by navGraphViewModels(
+        R.id.diagnosticsFragment,
+        factoryProducer = { defaultViewModelProviderFactory },
+    )
 
-    private lateinit var mBinding: FragmentDiagInputBinding
-
-    private val mViewModel: DiagnosticsViewModel by navGraphViewModels(R.id.diagnosticsFragment, factoryProducer = { defaultViewModelProviderFactory })
-
-    private val secu3TchannelValues = listOf("NONE", "IGN_OUT1", "IGN_OUT2", "IGN_OUT3", "IGN_OUT4", "IE", "FE", "ECF", "CE", "ST_BLOCK", "ADD_IO1", "ADD_IO2", "BL", "DE")
-    private val secu3IChannelValues = listOf("NONE", "IGN_OUT1", "IGN_OUT2", "IGN_OUT3", "IGN_OUT4", "IGN_OUT5", "ECF", "INJ_O1", "INJ_O2", "INJ_O3", "INJ_O4", "INJ_O5", "BL", "DE", "STBL_O", "CEL_O", "FPMP_O", "PWRR_O", "EVAP_O", "O2SH_0", "COND_O", "ADD_O2", "TACH_O", "GPA6_O")
-
-    override fun onCreateView(inflater: LayoutInflater, container: ViewGroup?, savedInstanceState: Bundle?): View? {
-        mBinding = FragmentDiagInputBinding.inflate(inflater, container, false)
-        return mBinding.root
-    }
-
-    override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
-        super.onViewCreated(view, savedInstanceState)
-
-        mViewModel.firmwareInfo?.let {
-            mBinding.apply {
-                secu3iGroup.isVisible = it.isSecu3T.not()
-
-                val chList = if (it.isSecu3T) secu3TchannelValues else secu3IChannelValues
-
-                selectOutput.inputType = InputType.TYPE_NULL
-                ArrayAdapter(requireContext(), R.layout.list_item, chList).also {
-                    selectOutput.setAdapter(it)
-                    selectOutput.setText(chList[0], false)
+    override fun onCreateView(inflater: LayoutInflater, container: ViewGroup?, savedInstanceState: Bundle?): View =
+        (inflater.inflate(R.layout.fragment_diag_input, container, false) as ComposeView).apply {
+            val diagInputLiveData = viewModel.diagInputLiveData
+            setViewCompositionStrategy(ViewCompositionStrategy.DisposeOnViewTreeLifecycleDestroyed)
+            setContent {
+                val firmware = viewModel.firmwareInfo
+                val input = diagInputLiveData.observeAsState().value
+                var selectedChannel by remember { mutableIntStateOf(viewModel.outputPacket.chan) }
+                var frequency by remember { mutableFloatStateOf(viewModel.outputPacket.frq) }
+                var duty by remember {
+                    mutableFloatStateOf(if (viewModel.outputPacket.chan == 0 && viewModel.outputPacket.duty == 0f) 50f else viewModel.outputPacket.duty)
                 }
-                selectOutput.onItemClickListener = AdapterView.OnItemClickListener { _, _, position, _ ->
-                    mViewModel.outputPacket.chan = position
-                    mViewModel.sendDiagOutPacket()
+                SecuComposeTheme {
+                DiagnosticsInputsScreen(
+                    input = input,
+                    isSecu3T = firmware?.isSecu3T,
+                    selectedChannel = selectedChannel,
+                    frequency = frequency,
+                    duty = duty,
+                    frequencyTitle = getString(R.string.test_signal_frequency_hz),
+                    dutyTitle = getString(R.string.test_signal_duty),
+                    onChannelSelected = { index ->
+                        selectedChannel = index
+                        selectDiagnosticOutputChannel(viewModel.outputPacket, index, viewModel::sendDiagOutPacket)
+                    },
+                    onFrequencyEdit = { showFloatEditor(getString(R.string.test_signal_frequency_hz), frequency, 0.1f, 5000f, 10f, 1) { value ->
+                        frequency = value
+                        updateDiagnosticOutputFrequency(viewModel.outputPacket, value, viewModel::sendDiagOutPacket)
+                    } },
+                    onDutyEdit = { showFloatEditor(getString(R.string.test_signal_duty), duty, 0.5f, 100f, 0f, 1) { value ->
+                        duty = value
+                        updateDiagnosticOutputDuty(viewModel.outputPacket, value, viewModel::sendDiagOutPacket)
+                    } },
+                )
                 }
-
-                freq.addOnValueChangeListener {
-                    mViewModel.outputPacket.frq = it
-                    if (mViewModel.outputPacket.chan > 0) {
-                        mViewModel.sendDiagOutPacket()
-                    }
-                }
-                freq.setOnClickListener { floatParamClick(it as FloatParamView) }
-
-
-                duty.addOnValueChangeListener {
-                    mViewModel.outputPacket.duty = it
-                    if (mViewModel.outputPacket.chan > 0) {
-                        mViewModel.sendDiagOutPacket()
-                    }
-                }
-                duty.setOnClickListener { floatParamClick(it as FloatParamView) }
-
             }
         }
 
-        mViewModel.diagInputLiveData.observe(viewLifecycleOwner) {
-            mBinding.apply {
-                voltage.value = it.voltage
-                map.value = it.map
-                temp.value = it.temperature
-                add1.value = it.addI1
-                add2.value = it.addI2
-                add3.value = it.addI3
-                add4.value = it.addI4
-                carb.value = it.carb
-                ks1.value = it.ks1
-                ks2.value = it.ks2
-
-                gasV.isChecked = it.gasV
-                ckps.isChecked = it.ckps
-                refS.isChecked = it.refS
-                ps.isChecked = it.ps
-                bl.isChecked = it.bl
-                de.isChecked = it.de
-                condI.isChecked = it.cond_i
-                epasI.isChecked = it.epas_i
-                ignI.isChecked = it.ign_i
-                gpa4I.isChecked = it.gpa4_i
-
-                add5.value = it.addI5
-                add6.value = it.addI6
-                add7.value = it.addI7
-                add8.value = it.addI8
-            }
+    private fun showFloatEditor(title: String, value: Float, step: Float, max: Float, min: Float, precision: Int, onConfirmed: (Float) -> Unit) {
+        ParamFloatEditDialogFragment.newInstance(value, title, step, max, min, precision).also { dialog ->
+            dialog.newValueLiveData.observe(viewLifecycleOwner) { result -> onConfirmed(result) }
+            dialog.show(childFragmentManager, dialog::class.java.simpleName)
         }
     }
+}
 
-    // NOTE: make sure you've changed this method in [BaseParamFragment.kt]
-    private fun floatParamClick(view: FloatParamView) {
-        view.apply {
-            ParamFloatEditDialogFragment.newInstance(value, title, step, maxValue, minValue, precision).also {
-                it.newValueLiveData.observe(viewLifecycleOwner) { result ->
-                    value = result
-                }
+internal fun selectDiagnosticOutputChannel(packet: DiagOutputPacket, channelIndex: Int, send: () -> Unit) {
+    packet.chan = channelIndex
+    send()
+}
 
-                it.show(childFragmentManager, it::class.java.simpleName)
-            }
-        }
-    }
+internal fun updateDiagnosticOutputFrequency(packet: DiagOutputPacket, value: Float, send: () -> Unit) {
+    packet.frq = value
+    if (packet.chan > 0) send()
+}
+
+internal fun updateDiagnosticOutputDuty(packet: DiagOutputPacket, value: Float, send: () -> Unit) {
+    packet.duty = value
+    if (packet.chan > 0) send()
 }
