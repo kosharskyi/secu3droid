@@ -454,5 +454,8 @@
     <string name="sensors_add">Додати датчик</string>
     <string name="sensors_add_gauge">Додати вимірювач</string>
     <string name="sensors_add_indicator">Додати індикатор</string>
+    <string name="gas_dose_unavailable">Ці параметри недоступні у вашій прошивці</string>
+    <string name="gas_dose_manual_decrease">Зменшити положення дозатора газу</string>
+    <string name="gas_dose_manual_increase">Збільшити положення дозатора газу</string>
 
 </resources>

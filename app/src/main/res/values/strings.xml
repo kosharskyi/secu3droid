@@ -612,6 +612,9 @@
     <string name="choke_test_active">Test · ON</string>
     <string name="choke_manual_decrease">Decrease choke position</string>
     <string name="choke_manual_increase">Increase choke position</string>
+    <string name="gas_dose_unavailable">These parameters are not available in your firmware</string>
+    <string name="gas_dose_manual_decrease">Decrease gas dose position</string>
+    <string name="gas_dose_manual_increase">Increase gas dose position</string>
     <string name="sensors_add">Add sensor</string>
     <string name="sensors_add_gauge">Add gauge</string>
     <string name="sensors_add_indicator">Add indicator</string>

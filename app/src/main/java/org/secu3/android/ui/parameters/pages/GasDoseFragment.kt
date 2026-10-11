@@ -25,182 +25,116 @@
 package org.secu3.android.ui.parameters.pages
 
 import android.os.Bundle
-import android.text.InputType
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
-import android.widget.ArrayAdapter
-import androidx.core.content.ContextCompat
-import androidx.core.graphics.toColorInt
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.setValue
+import androidx.compose.ui.platform.ComposeView
+import androidx.compose.ui.platform.ViewCompositionStrategy
 import androidx.lifecycle.lifecycleScope
 import androidx.lifecycle.withResumed
 import kotlinx.coroutines.launch
 import org.secu3.android.R
-import org.secu3.android.databinding.FragmentGasDoseBinding
 import org.secu3.android.models.packets.out.params.GasDoseParamPacket
-import org.secu3.android.ui.parameters.views.FloatParamView
-import org.secu3.android.ui.parameters.views.IntParamView
-import org.secu3.android.utils.gone
-import org.secu3.android.utils.visible
-
+import org.secu3.android.ui.compose.SecuComposeTheme
+import org.secu3.android.ui.parameters.dialogs.ParamFloatEditDialogFragment
+import org.secu3.android.ui.parameters.dialogs.ParamIntEditDialogFragment
+import org.secu3.android.ui.parameters.pages.compose.GasDoseManualDelta
+import org.secu3.android.ui.parameters.pages.compose.GasDoseNumber
+import org.secu3.android.ui.parameters.pages.compose.GasDoseScreen
+import org.secu3.android.ui.parameters.pages.compose.GasDoseValues
+import org.secu3.android.ui.parameters.pages.compose.applyGasDoseNumber
 
 class GasDoseFragment : BaseParamFragment() {
-
-    private lateinit var mBinding: FragmentGasDoseBinding
-
-    private val stepperPulses = listOf("300", "150", "100", "75")
-
     private var packet: GasDoseParamPacket? = null
+    private var values by mutableStateOf<GasDoseValues?>(null)
+    private var firmwareAvailable by mutableStateOf(true)
+    private val manualDelta = GasDoseManualDelta()
 
-    override fun onCreateView(inflater: LayoutInflater, container: ViewGroup?, savedInstanceState: Bundle?): View? {
-        mBinding = FragmentGasDoseBinding.inflate(inflater, container, false)
-        return mBinding.root
+    override fun onCreateView(inflater: LayoutInflater, container: ViewGroup?, savedInstanceState: Bundle?): View {
+        packet = null
+        values = null
+        manualDelta.clear()
+        firmwareAvailable = mViewModel.fwInfoPacket?.isGdControlEnabled ?: true
+        return ComposeView(requireContext()).apply {
+            setViewCompositionStrategy(ViewCompositionStrategy.DisposeOnViewTreeLifecycleDestroyed)
+            setContent {
+                SecuComposeTheme {
+                    GasDoseScreen(values, firmwareAvailable, ::edit, ::selectFrequency, ::setMaximumFrequency, ::manualStep, ::finishManual, ::cancelManual, ::toggleTest)
+                }
+            }
+        }
     }
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
-
-        mBinding.frequencyOfPulses.inputType = InputType.TYPE_NULL
-        ArrayAdapter(requireContext(), R.layout.list_item, stepperPulses).also {
-            mBinding.frequencyOfPulses.setAdapter(it)
-        }
-
-        mViewModel.fwInfoLiveData.observe(viewLifecycleOwner) {
-            if (it.isGdControlEnabled.not()) {
-                mBinding.gasDoseParamGroup.gone()
-                mBinding.gasDoseEmptyText.visible()
-            }
-        }
-
-        lifecycleScope.launch {
-            withResumed {
-                mViewModel.gasDoseLiveData.observe(viewLifecycleOwner) {
-
+        mViewModel.fwInfoLiveData.observe(viewLifecycleOwner) { firmwareAvailable = it.isGdControlEnabled }
+        val owner = viewLifecycleOwner
+        owner.lifecycleScope.launch {
+            owner.withResumed {
+                mViewModel.gasDoseLiveData.observe(owner) { received ->
                     mViewModel.isSendAllowed = false
-
-                    packet = it
-
-                    mBinding.apply {
-
-                        progressBar.gone()
-                        gasDoseParamGroup.visible()
-
-                        numOfSmSteps.value = it.steps
-
-                        updateTestBtnColor(it.testing)
-
-                        stoichiometricRatio.value = it.lambdaStoichval
-                        closingOnFuelCut.value = it.fcClosing
-
-                        correctionLimitPositive.value = it.lambdaCorrLimitP
-                        correctionLimitNegative.value = it.lambdaCorrLimitM
-
-                        frequencyOfPulses.setText(stepperPulses[it.freq], false)
-
-                        maximumSTEPFrequencyAtInit.isChecked = it.maxFreqInit > 0
-                    }
-
-                    initViews()
-
+                    manualDelta.clear()
+                    received.manualPositionD = 0
+                    packet = received
+                    values = GasDoseValues.from(received)
                     mViewModel.isSendAllowed = true
                 }
             }
         }
     }
 
-    private fun updateTestBtnColor(testing: Boolean) {
-        mBinding.apply {
-            if (testing) {
-                testBtn.setBackgroundColor(ContextCompat.getColor(requireContext(), android.R.color.holo_red_light))
-            } else {
-                testBtn.setBackgroundColor("#40b6fb".toColorInt())
-            }
+    private fun edit(number: GasDoseNumber) {
+        val current = values ?: return
+        if (number.integer) {
+            val dialog = ParamIntEditDialogFragment.newInstance(current.value(number).toInt(), getString(number.title), number.step.toInt(), number.max.toInt(), number.min.toInt())
+            dialog.newValueLiveData.observe(viewLifecycleOwner) { update(number, it.toFloat()) }
+            dialog.show(childFragmentManager, dialog::class.java.simpleName)
+        } else {
+            val dialog = ParamFloatEditDialogFragment.newInstance(current.value(number), getString(number.title), number.step, number.max, number.min, number.precision)
+            dialog.newValueLiveData.observe(viewLifecycleOwner) { update(number, it) }
+            dialog.show(childFragmentManager, dialog::class.java.simpleName)
         }
     }
 
-    private fun initViews() {
-
-        mBinding.apply {
-
-            numOfSmSteps.addOnValueChangeListener {
-                packet?.steps = it
-                packet?.let { it1 -> mViewModel.sendPacket(it1) }
-            }
-
-            testBtn.setOnClickListener {
-                packet?.let {
-                    it.testing = it.testing.not()
-                    updateTestBtnColor(it.testing)
-                    mViewModel.sendPacket(it)
-                }
-            }
-
-            testDecBtn.setPressAndHoldRepeater {
-                packet?.let {
-                    it.manualPositionD = it.manualPositionD.dec().coerceIn(-127..127)
-                }
-            }
-
-            testDecBtn.setOnClickListener {
-                packet?.let {
-                    mViewModel.sendPacket(it)
-                    it.manualPositionD = 0
-                }
-            }
-
-            testIncBtn.setPressAndHoldRepeater {
-                packet?.let {
-                    it.manualPositionD = it.manualPositionD.inc().coerceIn(-127..127)
-                }
-            }
-
-            testIncBtn.setOnClickListener {
-                packet?.let {
-                    mViewModel.sendPacket(it)
-                    it.manualPositionD = 0
-                }
-            }
-
-            stoichiometricRatio.addOnValueChangeListener {
-                packet?.lambdaStoichval = it
-                packet?.let { it1 -> mViewModel.sendPacket(it1) }
-            }
-
-            closingOnFuelCut.addOnValueChangeListener {
-                packet?.fcClosing = it
-                packet?.let { it1 -> mViewModel.sendPacket(it1) }
-            }
-
-            correctionLimitPositive.addOnValueChangeListener {
-                packet?.lambdaCorrLimitP = it
-                packet?.let { it1 -> mViewModel.sendPacket(it1) }
-            }
-            correctionLimitNegative.addOnValueChangeListener {
-                packet?.lambdaCorrLimitM = it
-                packet?.let { it1 -> mViewModel.sendPacket(it1) }
-            }
-
-            frequencyOfPulses.setOnItemClickListener { _, _, position, _ ->
-                packet?.freq = position
-                packet?.let { it1 -> mViewModel.sendPacket(it1) }
-            }
-
-            maximumSTEPFrequencyAtInit.setOnCheckedChangeListener { _, isChecked ->
-                packet?.maxFreqInit = if (isChecked) 1 else 0
-                packet?.let { it1 -> mViewModel.sendPacket(it1) }
-            }
-
-
-            numOfSmSteps.setOnClickListener { intParamClick(it as IntParamView) }
-            stoichiometricRatio.setOnClickListener { floatParamClick(it as FloatParamView) }
-            closingOnFuelCut.setOnClickListener { floatParamClick(it as FloatParamView) }
-
-            correctionLimitPositive.setOnClickListener { floatParamClick(it as FloatParamView) }
-            correctionLimitNegative.setOnClickListener { floatParamClick(it as FloatParamView) }
-        }
+    private fun update(number: GasDoseNumber, value: Float) {
+        val p = packet ?: return
+        applyGasDoseNumber(p, number, value)
+        values = GasDoseValues.from(p)
+        mViewModel.sendPacket(p.snapshotWithManualPosition(0))
     }
 
-    override fun tabTitle(): Int {
-        return R.string.params_tab_gas_dose_title
+    private fun selectFrequency(index: Int) {
+        if (index !in 0..3) return
+        val p = packet ?: return
+        p.freq = index
+        values = GasDoseValues.from(p)
+        mViewModel.sendPacket(p.snapshotWithManualPosition(0))
     }
+
+    private fun setMaximumFrequency(enabled: Boolean) {
+        val p = packet ?: return
+        p.maxFreqInit = if (enabled) 1 else 0
+        values = GasDoseValues.from(p)
+        mViewModel.sendPacket(p.snapshotWithManualPosition(0))
+    }
+
+    private fun manualStep(direction: Int) { if (packet != null) manualDelta.step(direction) }
+    private fun finishManual() {
+        val p = packet ?: return
+        if (manualDelta.value != 0) mViewModel.sendPacket(p.snapshotWithManualPosition(manualDelta.value))
+        p.manualPositionD = 0
+        manualDelta.clear()
+    }
+    private fun cancelManual() { packet?.manualPositionD = 0; manualDelta.clear() }
+    private fun toggleTest() {
+        val p = packet ?: return
+        p.testing = !p.testing
+        values = GasDoseValues.from(p)
+        mViewModel.sendPacket(p.snapshotWithManualPosition(0))
+    }
+
+    override fun tabTitle(): Int = R.string.params_tab_gas_dose_title
 }
