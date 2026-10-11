@@ -25,234 +25,125 @@
 package org.secu3.android.ui.parameters.pages
 
 import android.os.Bundle
-import android.text.InputType
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
-import android.widget.ArrayAdapter
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.setValue
+import androidx.compose.ui.platform.ComposeView
+import androidx.compose.ui.platform.ViewCompositionStrategy
 import androidx.lifecycle.lifecycleScope
 import androidx.lifecycle.withResumed
-import androidx.lifecycle.withStarted
 import kotlinx.coroutines.launch
 import org.secu3.android.R
-import org.secu3.android.databinding.FragmentKnockBinding
 import org.secu3.android.models.packets.out.params.KnockParamPacket
-import org.secu3.android.ui.parameters.views.FloatParamView
-import org.secu3.android.ui.parameters.views.IntParamView
-import org.secu3.android.utils.gone
-import org.secu3.android.utils.visible
-
+import org.secu3.android.ui.compose.SecuComposeTheme
+import org.secu3.android.ui.parameters.dialogs.ParamFloatEditDialogFragment
+import org.secu3.android.ui.parameters.dialogs.ParamIntEditDialogFragment
+import org.secu3.android.ui.parameters.pages.compose.KnockNumber
+import org.secu3.android.ui.parameters.pages.compose.KnockScreen
+import org.secu3.android.ui.parameters.pages.compose.KnockSelector
+import org.secu3.android.ui.parameters.pages.compose.KnockUiState
+import org.secu3.android.ui.parameters.pages.compose.KnockValues
+import org.secu3.android.ui.parameters.pages.compose.applyKnockNumber
 
 class KnockFragment : BaseParamFragment() {
-
-    private lateinit var mBinding: FragmentKnockBinding
-
     private var packet: KnockParamPacket? = null
+    private var values by mutableStateOf<KnockValues?>(null)
+    private var enabled by mutableStateOf(false)
+    private val bpf by lazy { resources.getStringArray(R.array.knock_filter_frequencies).toList() }
+    private val integration by lazy { resources.getStringArray(R.array.knock_integration_timeouts).toList() }
 
-    private val bpfList: List<String> by lazy {
-        resources.getStringArray(R.array.knock_filter_frequencies).toList()
+    override fun onCreateView(inflater: LayoutInflater, container: ViewGroup?, savedInstanceState: Bundle?): View {
+        packet = null
+        values = null
+        return ComposeView(requireContext()).apply {
+            id = R.id.knock_compose_view
+            setViewCompositionStrategy(ViewCompositionStrategy.DisposeOnViewTreeLifecycleDestroyed)
+            setContent {
+                SecuComposeTheme {
+                    KnockScreen(
+                        state = values?.let { KnockUiState.Data(it, enabled) } ?: KnockUiState.Loading,
+                        onEdit = ::edit,
+                        onEnable = ::updateEnabled,
+                        onChannel = ::setChannel,
+                        onSelector = ::setSelector,
+                    )
+                }
+            }
+        }
     }
-
-    private val integrationTimeConstatList: List<String> by lazy {
-        resources.getStringArray(R.array.knock_integration_timeouts).toList()
-    }
-
-    override fun onCreateView(inflater: LayoutInflater, container: ViewGroup?, savedInstanceState: Bundle?): View? {
-        mBinding = FragmentKnockBinding.inflate(inflater, container, false)
-        return mBinding.root
-    }
-
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
-
-        mBinding.bpfFrequency.apply {
-            inputType = InputType.TYPE_NULL
-            ArrayAdapter(requireContext(), R.layout.list_item, bpfList).also {
-                setAdapter(it)
-            }
-        }
-
-        mBinding.integrationTimeConstant.apply {
-            inputType = InputType.TYPE_NULL
-            ArrayAdapter(requireContext(), R.layout.list_item, integrationTimeConstatList).also {
-                setAdapter(it)
-            }
-        }
-
         lifecycleScope.launch {
             withResumed {
-                mViewModel.knockLiveData.observe(viewLifecycleOwner) {
-
-                    mViewModel.isSendAllowed = false
-
-                    packet = it
-
-                    mBinding.apply {
-                        progressBar.gone()
-                        params.visible()
-
-                        enableSensor.isChecked = it.useKnockChannel > 0
-                        phaseWindowBegin.value = it.kWndBeginAngle
-                        phaseWindowEnd.value = it.kWndEndAngle
-
-                        bpfFrequency.setText(bpfList[it.bpfFrequency], false)
-                        integrationTimeConstant.setText(integrationTimeConstatList[it.intTimeCost], false)
-
-                        angleDisplacementStep.value = it.retardStep
-                        angleRecoveryStep.value = it.advanceStep
-                        maxAngleDisplacement.value = it.maxRetard
-
-                        knockThreshold.value = it.threshold
-                        angleRecoveryDelay.value = it.recoveryDelay
-
-                        knockCh1.isChecked = it.isKnockChanelSelected(0)
-                        knockCh2.isChecked = it.isKnockChanelSelected(1)
-                        knockCh3.isChecked = it.isKnockChanelSelected(2)
-                        knockCh4.isChecked = it.isKnockChanelSelected(3)
-                        knockCh5.isChecked = it.isKnockChanelSelected(4)
-                        knockCh6.isChecked = it.isKnockChanelSelected(5)
-                        knockCh7.isChecked = it.isKnockChanelSelected(6)
-                        knockCh8.isChecked = it.isKnockChanelSelected(7)
-
-                        knockControlThreshold.value = it.knkctlThrd
-                    }
-
-                    initViews()
-
+                val liveData = mViewModel.knockLiveData
+                liveData.observe(viewLifecycleOwner) { received ->
+                    packet = received
+                    enabled = received.useKnockChannel > 0
+                    values = KnockValues.from(received, bpf, integration)
                     mViewModel.isSendAllowed = true
                 }
             }
         }
     }
 
-    private fun initViews() {
-
-        mBinding.apply {
-
-            enableSensor.setOnCheckedChangeListener { _, checkedId ->
-                packet?.useKnockChannel = if (checkedId) 1 else 0
-                packet?.let { it1 -> mViewModel.sendPacket(it1) }
-            }
-
-            phaseWindowBegin.addOnValueChangeListener {
-                packet?.kWndBeginAngle = it
-                packet?.let { it1 -> mViewModel.sendPacket(it1) }
-            }
-            phaseWindowEnd.addOnValueChangeListener {
-                packet?.kWndEndAngle = it
-                packet?.let { it1 -> mViewModel.sendPacket(it1) }
-            }
-
-            bpfFrequency.setOnItemClickListener { _, _, position, _ ->
-                packet?.bpfFrequency = position
-                packet?.let { it1 -> mViewModel.sendPacket(it1) }
-            }
-            integrationTimeConstant.setOnItemClickListener { _, _, position, _ ->
-                packet?.intTimeCost = position
-                packet?.let { it1 -> mViewModel.sendPacket(it1) }
-            }
-
-            angleDisplacementStep.addOnValueChangeListener {
-                packet?.retardStep = it
-                packet?.let { it1 -> mViewModel.sendPacket(it1) }
-            }
-            angleRecoveryStep.addOnValueChangeListener {
-                packet?.advanceStep = it
-                packet?.let { it1 -> mViewModel.sendPacket(it1) }
-            }
-            maxAngleDisplacement.addOnValueChangeListener {
-                packet?.maxRetard = it
-                packet?.let { it1 -> mViewModel.sendPacket(it1) }
-            }
-
-            knockThreshold.addOnValueChangeListener {
-                packet?.threshold = it
-                packet?.let { it1 -> mViewModel.sendPacket(it1) }
-            }
-
-            angleRecoveryDelay.addOnValueChangeListener {
-                packet?.recoveryDelay = it
-                packet?.let { it1 -> mViewModel.sendPacket(it1) }
-            }
-
-            knockCh1.setOnCheckedChangeListener { _, isChecked ->
-                packet?.apply {
-                    selectKnockChanel(0, isChecked)
-                    mViewModel.sendPacket(this)
-                }
-            }
-
-            knockCh2.setOnCheckedChangeListener { _, isChecked ->
-                packet?.apply {
-                    selectKnockChanel(1, isChecked)
-                    mViewModel.sendPacket(this)
-                }
-            }
-
-            knockCh3.setOnCheckedChangeListener { _, isChecked ->
-                packet?.apply {
-                    selectKnockChanel(2, isChecked)
-                    mViewModel.sendPacket(this)
-                }
-            }
-
-            knockCh4.setOnCheckedChangeListener { _, isChecked ->
-                packet?.apply {
-                    selectKnockChanel(3, isChecked)
-                    mViewModel.sendPacket(this)
-                }
-            }
-
-            knockCh5.setOnCheckedChangeListener { _, isChecked ->
-                packet?.apply {
-                    selectKnockChanel(4, isChecked)
-                    mViewModel.sendPacket(this)
-                }
-            }
-
-            knockCh6.setOnCheckedChangeListener { _, isChecked ->
-                packet?.apply {
-                    selectKnockChanel(5, isChecked)
-                    mViewModel.sendPacket(this)
-                }
-            }
-
-            knockCh7.setOnCheckedChangeListener { _, isChecked ->
-                packet?.apply {
-                    selectKnockChanel(6, isChecked)
-                    mViewModel.sendPacket(this)
-                }
-            }
-
-            knockCh8.setOnCheckedChangeListener { _, isChecked ->
-                packet?.apply {
-                    selectKnockChanel(7, isChecked)
-                    mViewModel.sendPacket(this)
-                }
-            }
-
-            knockControlThreshold.addOnValueChangeListener {
-                packet?.apply {
-                    knkctlThrd = it
-                    mViewModel.sendPacket(this)
-                }
-            }
-
-
-            phaseWindowBegin.setOnClickListener { floatParamClick(it as FloatParamView) }
-            phaseWindowEnd.setOnClickListener { floatParamClick(it as FloatParamView) }
-
-            angleDisplacementStep.setOnClickListener { floatParamClick(it as FloatParamView) }
-            angleRecoveryStep.setOnClickListener { floatParamClick(it as FloatParamView) }
-            maxAngleDisplacement.setOnClickListener { floatParamClick(it as FloatParamView) }
-
-            knockThreshold.setOnClickListener { floatParamClick(it as FloatParamView) }
-            angleRecoveryDelay.setOnClickListener { intParamClick(it as IntParamView) }
-            knockControlThreshold.setOnClickListener { floatParamClick(it as FloatParamView) }
+    private fun edit(number: KnockNumber) {
+        val currentValues = values ?: return
+        if (number == KnockNumber.DELAY) {
+            val dialog = ParamIntEditDialogFragment.newInstance(
+                currentValues.value(number).toInt(),
+                getString(number.title),
+                number.step.toInt(),
+                number.max.toInt(),
+                number.min.toInt(),
+            )
+            dialog.newValueLiveData.observe(viewLifecycleOwner) { update(number, it.toFloat()) }
+            dialog.show(childFragmentManager, dialog::class.java.simpleName)
+        } else {
+            val dialog = ParamFloatEditDialogFragment.newInstance(
+                currentValues.value(number),
+                getString(number.title),
+                number.step,
+                number.max,
+                number.min,
+                number.precision,
+            )
+            dialog.newValueLiveData.observe(viewLifecycleOwner) { update(number, it) }
+            dialog.show(childFragmentManager, dialog::class.java.simpleName)
         }
     }
-
-    override fun tabTitle(): Int {
-        return R.string.params_tab_knock_title
+    private fun update(number: KnockNumber, value: Float) {
+        val currentPacket = packet ?: return
+        applyKnockNumber(currentPacket, number, value)
+        values = KnockValues.from(currentPacket, bpf, integration)
+        mViewModel.sendPacket(currentPacket)
     }
+    private fun updateEnabled(checked: Boolean) {
+        val currentPacket = packet ?: return
+        currentPacket.useKnockChannel = if (checked) 1 else 0
+        enabled = checked
+        mViewModel.sendPacket(currentPacket)
+    }
+
+    private fun setChannel(channel: Int, checked: Boolean) {
+        val currentPacket = packet ?: return
+        currentPacket.selectKnockChanel(channel, checked)
+        values = KnockValues.from(currentPacket, bpf, integration)
+        mViewModel.sendPacket(currentPacket)
+    }
+
+    private fun setSelector(selector: KnockSelector, index: Int) {
+        val currentPacket = packet ?: return
+        if (selector == KnockSelector.BPF) {
+            currentPacket.bpfFrequency = index
+        } else {
+            currentPacket.intTimeCost = index
+        }
+        values = KnockValues.from(currentPacket, bpf, integration)
+        mViewModel.sendPacket(currentPacket)
+    }
+
+    override fun tabTitle() = R.string.params_tab_knock_title
 }
