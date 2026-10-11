@@ -1,9 +1,9 @@
 /*
  *    SecuDroid  - An open source, free manager for SECU-3 engine control unit
- *    Copyright (C) 2024 Vitalii O. Kosharskyi. Ukraine, Kyiv
+ *    Copyright (C) 2026 Vitalii O. Kosharskyi. Ukraine, Kyiv
  *
  *    SECU-3  - An open source, free engine control unit
- *    Copyright (C) 2007-2024 Alexey A. Shabelnikov. Ukraine, Kyiv
+ *    Copyright (C) 2007-2026 Alexey A. Shabelnikov. Ukraine, Kyiv
  *
  *    This program is free software: you can redistribute it and/or modify
  *    it under the terms of the GNU General Public License as published by
@@ -28,124 +28,98 @@ import android.os.Bundle
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.setValue
+import androidx.compose.ui.platform.ComposeView
+import androidx.compose.ui.platform.ViewCompositionStrategy
 import androidx.lifecycle.lifecycleScope
 import androidx.lifecycle.withResumed
-import androidx.lifecycle.withStarted
 import kotlinx.coroutines.launch
 import org.secu3.android.R
-import org.secu3.android.databinding.FragmentTemperatureBinding
 import org.secu3.android.models.packets.out.params.TemperatureParamPacket
-import org.secu3.android.ui.parameters.views.FloatParamView
-import org.secu3.android.ui.parameters.views.IntParamView
-import org.secu3.android.utils.gone
-import org.secu3.android.utils.visible
+import org.secu3.android.ui.compose.SecuComposeTheme
+import org.secu3.android.ui.parameters.dialogs.ParamFloatEditDialogFragment
+import org.secu3.android.ui.parameters.dialogs.ParamIntEditDialogFragment
+import org.secu3.android.ui.parameters.pages.compose.TemperatureFlag
+import org.secu3.android.ui.parameters.pages.compose.TemperatureNumber
+import org.secu3.android.ui.parameters.pages.compose.TemperatureScreen
+import org.secu3.android.ui.parameters.pages.compose.TemperatureUiState
+import org.secu3.android.ui.parameters.pages.compose.TemperatureValues
+import org.secu3.android.ui.parameters.pages.compose.applyTemperatureFlag
+import org.secu3.android.ui.parameters.pages.compose.applyTemperatureValue
 
 class TemperatureFragment : BaseParamFragment() {
-
-    private lateinit var mBinding: FragmentTemperatureBinding
-
     private var packet: TemperatureParamPacket? = null
+    private var values by mutableStateOf<TemperatureValues?>(null)
 
-    override fun onCreateView(inflater: LayoutInflater, container: ViewGroup?, savedInstanceState: Bundle?): View? {
-        mBinding = FragmentTemperatureBinding.inflate(inflater, container, false)
-        return mBinding.root
+    override fun onCreateView(inflater: LayoutInflater, container: ViewGroup?, savedInstanceState: Bundle?): View {
+        packet = null
+        values = null
+        return ComposeView(requireContext()).apply {
+            id = R.id.temperature_compose_view
+            setViewCompositionStrategy(ViewCompositionStrategy.DisposeOnViewTreeLifecycleDestroyed)
+            setContent {
+                SecuComposeTheme {
+                    TemperatureScreen(
+                        values?.let(TemperatureUiState::Data) ?: TemperatureUiState.Loading,
+                        ::editParameter,
+                        ::updateFlag,
+                    )
+                }
+            }
+        }
     }
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
-
-        lifecycleScope.launch {
-            withResumed {
-                mViewModel.temperatureLiveData.observe(viewLifecycleOwner) {
-
+        val owner = viewLifecycleOwner
+        owner.lifecycleScope.launch {
+            owner.withResumed {
+                // This getter issues a protocol read; evaluate it once for this view lifecycle.
+                val liveData = mViewModel.temperatureLiveData
+                liveData.observe(owner) { received ->
                     mViewModel.isSendAllowed = false
-
-                    packet = it
-
-                    mBinding.apply {
-
-                        progressBar.gone()
-                        params.visible()
-
-                        ventilatorTurnOn.value = it.ventOn
-                        ventilatorTurnOff.value = it.ventOff
-
-                        useSensor.isChecked = it.coolantUse
-                        controlCoolingPwm.isChecked = it.ventPwm
-                        useSensorsCurveTable.isChecked = it.coolantMap
-
-                        pwmFrequency.value = it.ventPwmFrq
-                        airCondOnThreshold.value = it.condPvtOn
-                        airCondOffThreshold.value = it.condPvtOff
-                        airCondOnMinRpmThreshold.value = it.condMinRpm
-                        coolingFansTimer.value = it.ventTmr
-                    }
-
-                    initViews()
-
+                    packet = received
+                    values = TemperatureValues.from(received)
                     mViewModel.isSendAllowed = true
                 }
             }
         }
     }
 
-    private fun initViews() {
-
-        mBinding.apply {
-            ventilatorTurnOn.addOnValueChangeListener {
-                packet?.ventOn = it
-                packet?.let { it1 -> mViewModel.sendPacket(it1) }
-            }
-            ventilatorTurnOff.addOnValueChangeListener {
-                packet?.ventOff = it
-                packet?.let { it1 -> mViewModel.sendPacket(it1) }
-            }
-
-            useSensor.setOnCheckedChangeListener { _, isChecked ->
-                packet?.coolantUse = isChecked
-                packet?.let { it1 -> mViewModel.sendPacket(it1) }
-            }
-            controlCoolingPwm.setOnCheckedChangeListener { _, isChecked ->
-                packet?.ventPwm = isChecked
-                packet?.let { it1 -> mViewModel.sendPacket(it1) }
-            }
-            useSensorsCurveTable.setOnCheckedChangeListener { _, isChecked ->
-                packet?.coolantMap = isChecked
-                packet?.let { it1 -> mViewModel.sendPacket(it1) }
-            }
-
-            pwmFrequency.addOnValueChangeListener {
-                packet?.ventPwmFrq = it
-                packet?.let { it1 -> mViewModel.sendPacket(it1) }
-            }
-            airCondOnThreshold.addOnValueChangeListener {
-                packet?.condPvtOn = it
-                packet?.let { it1 -> mViewModel.sendPacket(it1) }
-            }
-            airCondOffThreshold.addOnValueChangeListener {
-                packet?.condPvtOff = it
-                packet?.let { it1 -> mViewModel.sendPacket(it1) }
-            }
-            airCondOnMinRpmThreshold.addOnValueChangeListener {
-                packet?.condMinRpm = it
-                packet?.let { it1 -> mViewModel.sendPacket(it1) }
-            }
-            coolingFansTimer.addOnValueChangeListener {
-                packet?.ventTmr = it
-                packet?.let { it1 -> mViewModel.sendPacket(it1) }
-            }
-
-            ventilatorTurnOn.setOnClickListener { floatParamClick(it as FloatParamView) }
-            ventilatorTurnOff.setOnClickListener { floatParamClick(it as FloatParamView) }
-            pwmFrequency.setOnClickListener { intParamClick(it as IntParamView) }
-            airCondOnThreshold.setOnClickListener { floatParamClick(it as FloatParamView) }
-            airCondOffThreshold.setOnClickListener { floatParamClick(it as FloatParamView) }
-            airCondOnMinRpmThreshold.setOnClickListener { intParamClick(it as IntParamView) }
-            coolingFansTimer.setOnClickListener { intParamClick(it as IntParamView) }
+    private fun editParameter(number: TemperatureNumber) {
+        val current = values ?: return
+        if (number.integer) {
+            val dialog = ParamIntEditDialogFragment.newInstance(
+                current.value(number).toInt(), getString(number.titleRes), number.step.toInt(),
+                number.max.toInt(), number.min.toInt(),
+            )
+            dialog.newValueLiveData.observe(viewLifecycleOwner) { updateValue(number, it.toFloat()) }
+            dialog.show(childFragmentManager, dialog::class.java.simpleName)
+        } else {
+            val dialog = ParamFloatEditDialogFragment.newInstance(
+                current.value(number), getString(number.titleRes), number.step,
+                number.max, number.min, number.precision,
+            )
+            dialog.newValueLiveData.observe(viewLifecycleOwner) { updateValue(number, it) }
+            dialog.show(childFragmentManager, dialog::class.java.simpleName)
         }
     }
 
-    override fun tabTitle(): Int {
-        return R.string.params_tab_temperature_title
+    private fun updateValue(number: TemperatureNumber, value: Float) {
+        val currentPacket = packet ?: return
+        applyTemperatureValue(currentPacket, number, value)
+        values = values?.withValue(number, value)
+        mViewModel.sendPacket(currentPacket)
     }
+
+    private fun updateFlag(flag: TemperatureFlag, checked: Boolean) {
+        val currentPacket = packet ?: return
+        applyTemperatureFlag(currentPacket, flag, checked)
+        values = values?.withFlag(flag, checked)
+        mViewModel.sendPacket(currentPacket)
+    }
+
+    override fun tabTitle(): Int = R.string.params_tab_temperature_title
 }

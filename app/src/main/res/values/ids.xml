@@ -30,4 +30,5 @@
     <item name="starter_compose_view" type="id" />
     <item name="angles_compose_view" type="id" />
     <item name="idling_compose_view" type="id" />
+    <item name="temperature_compose_view" type="id" />
 </resources>
