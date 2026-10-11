@@ -1,9 +1,9 @@
 /*
  *    SecuDroid  - An open source, free manager for SECU-3 engine control unit
- *    Copyright (C) 2024 Vitalii O. Kosharskyi. Ukraine, Kyiv
+ *    Copyright (C) 2026 Vitalii O. Kosharskyi. Ukraine, Kyiv
  *
  *    SECU-3  - An open source, free engine control unit
- *    Copyright (C) 2007-2024 Alexey A. Shabelnikov. Ukraine, Kyiv
+ *    Copyright (C) 2007-2026 Alexey A. Shabelnikov. Ukraine, Kyiv
  *
  *    This program is free software: you can redistribute it and/or modify
  *    it under the terms of the GNU General Public License as published by
@@ -25,185 +25,117 @@
 package org.secu3.android.ui.parameters.pages
 
 import android.os.Bundle
-import android.text.InputType
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
-import android.widget.ArrayAdapter
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.setValue
+import androidx.compose.ui.platform.ComposeView
+import androidx.compose.ui.platform.ViewCompositionStrategy
+import androidx.lifecycle.Observer
 import androidx.lifecycle.lifecycleScope
 import androidx.lifecycle.withResumed
 import kotlinx.coroutines.launch
 import org.secu3.android.R
-import org.secu3.android.databinding.FragmentCkpsBinding
 import org.secu3.android.models.packets.out.params.CkpsParamPacket
-import org.secu3.android.ui.parameters.views.FloatParamView
-import org.secu3.android.ui.parameters.views.IntParamView
-import org.secu3.android.utils.gone
-import org.secu3.android.utils.visible
+import org.secu3.android.ui.compose.SecuComposeTheme
+import org.secu3.android.ui.parameters.dialogs.ParamFloatEditDialogFragment
+import org.secu3.android.ui.parameters.dialogs.ParamIntEditDialogFragment
+import org.secu3.android.ui.parameters.pages.compose.CkpsFlag
+import org.secu3.android.ui.parameters.pages.compose.CkpsNumber
+import org.secu3.android.ui.parameters.pages.compose.CkpsScreen
+import org.secu3.android.ui.parameters.pages.compose.CkpsUiState
+import org.secu3.android.ui.parameters.pages.compose.CkpsValues
+import org.secu3.android.ui.parameters.pages.compose.applyCkpsChoice
+import org.secu3.android.ui.parameters.pages.compose.applyCkpsFlag
+import org.secu3.android.ui.parameters.pages.compose.applyCkpsNumber
 
 class CkpsFragment : BaseParamFragment() {
-
-    private lateinit var mBinding: FragmentCkpsBinding
-
     private var packet: CkpsParamPacket? = null
+    private var values by mutableStateOf<CkpsValues?>(null)
 
-    private val teethBeforeTdcList = IntRange(12, 55).toList()
-    private val numberOfCylinderList = listOf(2,4,6,8)
-    private val defaultMttfValuesList = listOf(0.0f, 1.5f, 2.5f, 3.0f, 4.0f, 5.0f, 6.0f) // 0 - is stub
-
-    override fun onCreateView(inflater: LayoutInflater, container: ViewGroup?, savedInstanceState: Bundle?): View? {
-        mBinding = FragmentCkpsBinding.inflate(inflater, container, false)
-        return mBinding.root
+    override fun onCreateView(inflater: LayoutInflater, container: ViewGroup?, savedInstanceState: Bundle?): View {
+        packet = null
+        values = null
+        return ComposeView(requireContext()).apply {
+            id = R.id.ckps_compose_view
+            setViewCompositionStrategy(ViewCompositionStrategy.DisposeOnViewTreeLifecycleDestroyed)
+            setContent {
+                SecuComposeTheme {
+                    val screenState = values?.let(CkpsUiState::Data) ?: CkpsUiState.Loading
+                    CkpsScreen(screenState, ::edit, ::flag, ::choice)
+                }
+            }
+        }
     }
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
-
-        initTeethBeforeTdc()
-        initNumberOfCylinders()
-
-        lifecycleScope.launch {
-            withResumed {
-                mViewModel.ckpsLiveData.observe(viewLifecycleOwner) {
-
-                    mViewModel.isSendAllowed = false
-
-                    packet = it
-
-                    mBinding.apply {
-
-                        progressBar.gone()
-                        params.visible()
-
-                        if (it.ckpsEdge) {
-                            ckpsEdgeRising.isChecked = true
-                        } else {
-                            ckpsEdgeFalling.isChecked = true
-                        }
-
-                        if (it.refsEdge) {
-                            refSEdgeRising.isChecked = true
-                        } else {
-                            refSEdgeFalling.isChecked = true
-                        }
-
-                        sparkRisingEdgeForCdi.isChecked = it.risingSpark
-                        mergeSignalsToSingleOutput.isChecked = it.mergeOuts
-
-                        numberOfWheelsTeeth.value = it.ckpsCogsNum
-                        numberOfMissingTeeth.value = it.ckpsMissNum
-
-                        teethBeforeTdc.setText(it.ckpsCogsBtdc.toString(), false)
-                        numberOfCylinders.setText(it.ckpsEngineCyl.toString(), false)
-
-                        durationIngDriverPulseTeeth.value = it.ckpsIgnitCogs
-                        hallSensorInterrupterDegree.value = it.hallWndWidth
-                        degreesBeforeTDC.value = it.hallDegreesBtdc
-
-                        useCamSensorAsReference.isChecked = it.useCamRef
-
-                        missingTeethDetectionFactor.value = it.mttf
+        val owner = viewLifecycleOwner
+        owner.lifecycleScope.launch {
+            owner.withResumed {
+                val live = mViewModel.ckpsLiveData
+                live.observe(owner, object : Observer<CkpsParamPacket> {
+                    override fun onChanged(value: CkpsParamPacket) {
+                        live.removeObserver(this)
+                        mViewModel.isSendAllowed = false
+                        packet = value
+                        values = CkpsValues.from(value)
+                        mViewModel.isSendAllowed = true
                     }
-
-                    initViews()
-
-                    mViewModel.isSendAllowed = true
-                }
+                })
             }
         }
     }
 
-    private fun initTeethBeforeTdc() {
-        mBinding.teethBeforeTdc.inputType = InputType.TYPE_NULL
-        val adapter = ArrayAdapter(requireContext(), R.layout.list_item, teethBeforeTdcList.map { it.toString() })
-        mBinding.teethBeforeTdc.setAdapter(adapter)
-    }
-
-    private fun initNumberOfCylinders() {
-        mBinding.numberOfCylinders.inputType = InputType.TYPE_NULL
-        val adapter = ArrayAdapter(requireContext(), R.layout.list_item, numberOfCylinderList.map { it.toString() })
-        mBinding.numberOfCylinders.setAdapter(adapter)
-    }
-
-    private fun initViews() {
-
-        mBinding.apply {
-
-            ckpsEdgeGroup.setOnCheckedChangeListener { _, checkedId ->
-                packet?.ckpsEdge = checkedId == R.id.ckps_edge_rising
-                packet?.let { it1 -> mViewModel.sendPacket(it1) }
-            }
-
-            refSEdgeGroup.setOnCheckedChangeListener { _, checkedId ->
-                packet?.refsEdge = checkedId == R.id.ref_s_edge_rising
-                packet?.let { it1 -> mViewModel.sendPacket(it1) }
-            }
-
-            sparkRisingEdgeForCdi.setOnCheckedChangeListener { _, isChecked ->
-                packet?.risingSpark = isChecked
-                packet?.let { it1 -> mViewModel.sendPacket(it1) }
-            }
-            mergeSignalsToSingleOutput.setOnCheckedChangeListener { _, isChecked ->
-                packet?.mergeOuts = isChecked
-                packet?.let { it1 -> mViewModel.sendPacket(it1) }
-            }
-
-            numberOfWheelsTeeth.addOnValueChangeListener {
-                packet?.ckpsCogsNum = it
-                packet?.let { it1 -> mViewModel.sendPacket(it1) }
-            }
-            numberOfMissingTeeth.addOnValueChangeListener {
-                packet?.apply {
-                    ckpsMissNum = it
-                    if (it > 0) {
-                        mttf = defaultMttfValuesList[it]
-                        mBinding.missingTeethDetectionFactor.value = mttf
-                    }
-                    mViewModel.sendPacket(this)
-                }
-            }
-
-            teethBeforeTdc.setOnItemClickListener { _, _, position, _ ->
-                packet?.ckpsCogsBtdc = teethBeforeTdcList[position]
-                packet?.let { it1 -> mViewModel.sendPacket(it1) }
-            }
-            numberOfCylinders.setOnItemClickListener { _, _, position, _ ->
-                packet?.ckpsEngineCyl = numberOfCylinderList[position]
-                packet?.let { it1 -> mViewModel.sendPacket(it1) }
-            }
-            durationIngDriverPulseTeeth.addOnValueChangeListener {
-                packet?.ckpsIgnitCogs = it
-                packet?.let { it1 -> mViewModel.sendPacket(it1) }
-            }
-            hallSensorInterrupterDegree.addOnValueChangeListener {
-                packet?.hallWndWidth = it
-                packet?.let { it1 -> mViewModel.sendPacket(it1) }
-            }
-            degreesBeforeTDC.addOnValueChangeListener {
-                packet?.hallDegreesBtdc = it
-                packet?.let { it1 -> mViewModel.sendPacket(it1) }
-            }
-
-            useCamSensorAsReference.setOnCheckedChangeListener { _, isChecked ->
-                packet?.useCamRef = isChecked
-                packet?.let { it1 -> mViewModel.sendPacket(it1) }
-            }
-
-            missingTeethDetectionFactor.addOnValueChangeListener {
-                packet?.mttf = it
-                packet?.let { it1 -> mViewModel.sendPacket(it1) }
-            }
-
-            numberOfWheelsTeeth.setOnClickListener { intParamClick(it as IntParamView) }
-            numberOfMissingTeeth.setOnClickListener { intParamClick(it as IntParamView) }
-            durationIngDriverPulseTeeth.setOnClickListener { intParamClick(it as IntParamView) }
-            hallSensorInterrupterDegree.setOnClickListener { floatParamClick(it as FloatParamView) }
-            degreesBeforeTDC.setOnClickListener { floatParamClick(it as FloatParamView) }
-            missingTeethDetectionFactor.setOnClickListener { floatParamClick(it as FloatParamView) }
+    private fun edit(number: CkpsNumber) {
+        val current = values ?: return
+        if (number.integer) {
+            val dialog = ParamIntEditDialogFragment.newInstance(
+                current.numbers.getValue(number).toInt(),
+                getString(number.title),
+                number.step.toInt(),
+                number.max.toInt(),
+                number.min.toInt(),
+            )
+            dialog.newValueLiveData.observe(viewLifecycleOwner) { updateNumber(number, it.toFloat()) }
+            dialog.show(childFragmentManager, dialog::class.java.simpleName)
+        } else {
+            val dialog = ParamFloatEditDialogFragment.newInstance(
+                current.numbers.getValue(number),
+                getString(number.title),
+                number.step,
+                number.max,
+                number.min,
+                number.precision,
+            )
+            dialog.newValueLiveData.observe(viewLifecycleOwner) { updateNumber(number, it) }
+            dialog.show(childFragmentManager, dialog::class.java.simpleName)
         }
     }
 
-    override fun tabTitle(): Int {
-        return R.string.params_tab_ckps_title
+    private fun updateNumber(number: CkpsNumber, value: Float) {
+        val current = packet ?: return
+        applyCkpsNumber(current, number, value)
+        val updated = CkpsValues.from(current)
+        values = updated
+        mViewModel.sendPacket(current)
     }
+
+    private fun flag(flag: CkpsFlag, value: Boolean) {
+        val current = packet ?: return
+        applyCkpsFlag(current, flag, value)
+        values = CkpsValues.from(current)
+        mViewModel.sendPacket(current)
+    }
+
+    private fun choice(teeth: Boolean, value: Int) {
+        val current = packet ?: return
+        if (applyCkpsChoice(current, teeth, value)) {
+            values = CkpsValues.from(current)
+            mViewModel.sendPacket(current)
+        }
+    }
+    override fun tabTitle(): Int = R.string.params_tab_ckps_title
 }
