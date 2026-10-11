@@ -66,6 +66,30 @@ fun ParameterValueRow(
 }
 
 @Composable
+fun ParameterReadOnlyValueRow(
+    title: String,
+    units: String,
+    value: Float,
+    precision: Int,
+    testTag: String,
+    readOnlyLabel: String,
+) {
+    Column(Modifier.fillMaxWidth().testTag(testTag)) {
+        Row(Modifier.fillMaxWidth().padding(vertical = 8.dp), verticalAlignment = Alignment.CenterVertically) {
+            Column(Modifier.weight(1f)) {
+                Text(title, style = MaterialTheme.typography.bodyLarge)
+                Text(readOnlyLabel, style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+            }
+            Text(
+                String.format(java.util.Locale.getDefault(), "%.${precision}f", value) + if (units.isEmpty()) "" else " $units",
+                Modifier.testTag("$testTag-value"), textAlign = TextAlign.End,
+            )
+        }
+        HorizontalDivider()
+    }
+}
+
+@Composable
 fun ParameterSwitchRow(title: String, checked: Boolean, testTag: String, onCheckedChange: (Boolean) -> Unit) {
     Row(
         Modifier.fillMaxWidth().testTag(testTag).padding(vertical = 4.dp),
