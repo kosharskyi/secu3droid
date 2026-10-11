@@ -24,6 +24,8 @@
  */
 package org.secu3.android.ui.parameters.pages.compose
 
+import org.secu3.android.ui.compose.DropdownShape
+
 import androidx.annotation.StringRes
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.gestures.awaitEachGesture
@@ -118,14 +120,14 @@ fun GasDoseScreen(values: GasDoseValues?, firmwareAvailable: Boolean, onEdit: (G
         NumberRow(GasDoseNumber.CORRECTION_NEGATIVE, values, onEdit)
         Column {
             var expanded = androidx.compose.runtime.remember { androidx.compose.runtime.mutableStateOf(false) }
-            OutlinedButton(onClick = { expanded.value = true }, Modifier.fillMaxWidth().testTag("gas_dose_frequency")) {
+            OutlinedButton(onClick = { expanded.value = true }, Modifier.fillMaxWidth().testTag("gas_dose_frequency"), shape = DropdownShape) {
                 Column(Modifier.weight(1f)) {
                     Text(stringResource(R.string.choke_frequency_of_pulses), style = MaterialTheme.typography.labelMedium)
                     Text(gasDoseFrequencies.getOrNull(values.frequency) ?: "Code ${values.frequency}")
                 }
                 Text("⌄")
             }
-            DropdownMenu(expanded.value, { expanded.value = false }) {
+            DropdownMenu(expanded.value, { expanded.value = false }, shape = DropdownShape) {
                 gasDoseFrequencies.forEachIndexed { i, option -> DropdownMenuItem(text = { Text(option) }, onClick = { expanded.value = false; onFrequency(i) }, modifier = Modifier.testTag("gas_dose_frequency_option_$i")) }
             }
         }

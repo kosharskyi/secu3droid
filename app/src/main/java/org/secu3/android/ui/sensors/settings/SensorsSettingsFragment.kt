@@ -24,6 +24,8 @@
  */
 package org.secu3.android.ui.sensors.settings
 
+import org.secu3.android.ui.compose.DropdownShape
+
 import android.os.Bundle
 import android.view.LayoutInflater
 import android.view.View
@@ -110,8 +112,8 @@ internal fun SensorsSettingsScreen(
         Row(Modifier.fillMaxWidth().clickable { columnsExpanded = true }.padding(16.dp), verticalAlignment = Alignment.CenterVertically) {
             Text(stringResource(R.string.columns_count), Modifier.weight(1f))
             Box {
-                TextButton(onClick = { columnsExpanded = true }, modifier = Modifier.testTag("sensor-columns-value")) { Text(columnsState.toString()) }
-                DropdownMenu(expanded = columnsExpanded, onDismissRequest = { columnsExpanded = false }) {
+                TextButton(onClick = { columnsExpanded = true }, modifier = Modifier.testTag("sensor-columns-value"), shape = DropdownShape) { Text(columnsState.toString()) }
+                DropdownMenu(expanded = columnsExpanded, onDismissRequest = { columnsExpanded = false }, shape = DropdownShape) {
                     (2..8).forEach { count ->
                         DropdownMenuItem(text = { Text(count.toString()) }, onClick = {
                             columnsState = count

@@ -24,6 +24,8 @@
  */
 package org.secu3.android.ui.parameters.pages.compose
 
+import org.secu3.android.ui.compose.DropdownShape
+
 import androidx.annotation.StringRes
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
@@ -151,14 +153,14 @@ private fun NumberRow(values: AccelerationValues, number: AccelerationNumber, on
 private fun Selector(title: String, options: Array<String>, selected: Int, tag: String, onSelect: (Int) -> Unit) {
     val expanded = remember { mutableStateOf(false) }
     Column {
-        OutlinedButton(onClick = { expanded.value = true }, modifier = Modifier.fillMaxWidth().testTag(tag)) {
+        OutlinedButton(onClick = { expanded.value = true }, modifier = Modifier.fillMaxWidth().testTag(tag), shape = DropdownShape) {
             Column(Modifier.weight(1f), horizontalAlignment = androidx.compose.ui.Alignment.Start) {
                 Text(title, style = androidx.compose.material3.MaterialTheme.typography.labelMedium)
                 Text(options.getOrNull(selected) ?: "${stringResource(R.string.firmware_unknown_value)} ($selected)", Modifier.testTag("${tag}_value"))
             }
             Icon(Icons.Filled.ArrowDropDown, contentDescription = null)
         }
-        DropdownMenu(expanded.value, onDismissRequest = { expanded.value = false }) {
+        DropdownMenu(expanded.value, onDismissRequest = { expanded.value = false }, shape = DropdownShape) {
             options.forEachIndexed { index, label -> DropdownMenuItem(text = { Text(label) }, onClick = { expanded.value = false; onSelect(index) }, modifier = Modifier.testTag("${tag}_option_$index")) }
         }
     }

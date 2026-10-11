@@ -24,6 +24,8 @@
  */
 package org.secu3.android.ui.parameters.pages.compose
 
+import org.secu3.android.ui.compose.DropdownShape
+
 import androidx.annotation.StringRes
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.clickable
@@ -32,7 +34,6 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowDropDown
 import androidx.compose.foundation.rememberScrollState
@@ -167,7 +168,7 @@ private fun LtftModeSelector(modes: Array<String>, mode: Int, onMode: (Int) -> U
     Column {
         Surface(
             modifier = Modifier.fillMaxWidth().clickable { expanded = true }.testTag("ltft_mode"),
-            shape = RoundedCornerShape(4.dp),
+            shape = DropdownShape,
             color = MaterialTheme.colorScheme.surface,
             border = BorderStroke(1.dp, MaterialTheme.colorScheme.outline),
         ) {
@@ -179,7 +180,7 @@ private fun LtftModeSelector(modes: Array<String>, mode: Int, onMode: (Int) -> U
                 Icon(Icons.Filled.ArrowDropDown, contentDescription = null, tint = MaterialTheme.colorScheme.onSurfaceVariant)
             }
         }
-        DropdownMenu(expanded = expanded, onDismissRequest = { expanded = false }) {
+        DropdownMenu(expanded = expanded, onDismissRequest = { expanded = false }, shape = DropdownShape) {
             modes.forEachIndexed { index, item ->
                 DropdownMenuItem(
                     text = { Text(item) },

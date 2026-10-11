@@ -24,6 +24,8 @@
  */
 package org.secu3.android.ui.parameters.pages.compose
 
+import org.secu3.android.ui.compose.DropdownShape
+
 import androidx.annotation.StringRes
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
@@ -217,6 +219,7 @@ private fun KnockSelectorRow(
         OutlinedButton(
             onClick = { expanded = true },
             modifier = Modifier.fillMaxWidth().testTag("knock_selector_${selector.name.lowercase()}"),
+            shape = DropdownShape,
             contentPadding = PaddingValues(horizontal = 12.dp, vertical = 14.dp),
         ) {
             Column(Modifier.weight(1f), horizontalAlignment = Alignment.Start) {
@@ -225,7 +228,7 @@ private fun KnockSelectorRow(
             }
             Icon(Icons.Default.ArrowDropDown, contentDescription = null)
         }
-        DropdownMenu(expanded = expanded, onDismissRequest = { expanded = false }) {
+        DropdownMenu(expanded = expanded, onDismissRequest = { expanded = false }, shape = DropdownShape) {
             options.forEachIndexed { index, option ->
                 DropdownMenuItem(
                     text = { Text(option) },

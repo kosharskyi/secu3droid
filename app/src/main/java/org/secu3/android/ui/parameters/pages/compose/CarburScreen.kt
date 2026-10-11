@@ -24,6 +24,8 @@
  */
 package org.secu3.android.ui.parameters.pages.compose
 
+import org.secu3.android.ui.compose.DropdownShape
+
 import androidx.annotation.StringRes
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.clickable
@@ -33,7 +35,6 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.rememberScrollState
-import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowDropDown
@@ -164,7 +165,7 @@ private fun ParameterValueRow(title: String, units: String, value: Float, precis
 
 @Composable
 private fun CarburChoice(title: String, value: String, tag: String, onClick: () -> Unit) {
-    Surface(Modifier.fillMaxWidth().semantics(mergeDescendants = true) { role = Role.Button; contentDescription = "$title, $value"; stateDescription = value }.clickable(role = Role.Button, onClick = onClick).testTag(tag), shape = RoundedCornerShape(4.dp), color = MaterialTheme.colorScheme.surface, border = BorderStroke(1.dp, MaterialTheme.colorScheme.outline)) {
+    Surface(Modifier.fillMaxWidth().semantics(mergeDescendants = true) { role = Role.Button; contentDescription = "$title, $value"; stateDescription = value }.clickable(role = Role.Button, onClick = onClick).testTag(tag), shape = DropdownShape, color = MaterialTheme.colorScheme.surface, border = BorderStroke(1.dp, MaterialTheme.colorScheme.outline)) {
         Row(Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 12.dp), verticalAlignment = Alignment.CenterVertically) {
             Column(Modifier.weight(1f)) { Text(title, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant); Text(value, Modifier.padding(top = 4.dp), style = MaterialTheme.typography.bodyLarge) }
             Icon(Icons.Filled.ArrowDropDown, null, tint = MaterialTheme.colorScheme.onSurfaceVariant, modifier = Modifier.testTag("$tag-dropdown-indicator"))

@@ -24,6 +24,8 @@
  */
 package org.secu3.android.ui.diagnostics
 
+import org.secu3.android.ui.compose.DropdownShape
+
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -121,7 +123,7 @@ fun DiagnosticsInputsScreen(
                         onExpandedChange = { expanded = it },
                         selectedValue = channels[chosen],
                     )
-                    DropdownMenu(expanded = expanded, onDismissRequest = { expanded = false }) {
+                    DropdownMenu(expanded = expanded, onDismissRequest = { expanded = false }, shape = DropdownShape) {
                         channels.forEachIndexed { index, channel ->
                             DropdownMenuItem(text = { Text(channel) }, onClick = { expanded = false; onChannelSelected(index) })
                         }
@@ -145,7 +147,7 @@ private fun OutputChannelField(
     Row(
         Modifier.fillMaxWidth()
             .height(56.dp)
-            .border(1.dp, MaterialTheme.colorScheme.outline, RoundedCornerShape(10.dp))
+            .border(1.dp, MaterialTheme.colorScheme.outline, DropdownShape)
             .clickable(enabled = enabled, role = Role.Button, onClick = { onExpandedChange(true) })
             .testTag("output_channel")
             .padding(horizontal = 12.dp),

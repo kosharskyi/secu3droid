@@ -24,6 +24,8 @@
  */
 package org.secu3.android.ui.parameters.pages
 
+import org.secu3.android.ui.compose.DropdownShape
+
 import android.os.Bundle
 import android.view.View
 import android.view.ViewGroup
@@ -198,8 +200,8 @@ internal fun MiscellaneousScreen(
         Card { Column(Modifier.padding(16.dp), verticalArrangement=Arrangement.spacedBy(8.dp)) {
             Text(stringResource(R.string.miscel_baudrate_title),style=MaterialTheme.typography.titleMedium)
             var expanded by remember { mutableStateOf(false) }
-            OutlinedButton(onClick={expanded=true},modifier=Modifier.fillMaxWidth().testTag("misc-baud-selector")) { Text(rates[s.baudDivisor] ?: "Code ${s.baudDivisor}"); Spacer(Modifier.weight(1f)); Icon(Icons.Default.ArrowDropDown,contentDescription=stringResource(R.string.misc_choose_baud)) }
-            DropdownMenu(expanded=expanded,onDismissRequest={expanded=false}) { rates.forEach { (code,label) -> DropdownMenuItem(text={Text(label,Modifier.testTag("misc-baud-option-$code"))},onClick={expanded=false;baud(code)}) } }
+            OutlinedButton(onClick={expanded=true},modifier=Modifier.fillMaxWidth().testTag("misc-baud-selector"), shape = DropdownShape) { Text(rates[s.baudDivisor] ?: "Code ${s.baudDivisor}"); Spacer(Modifier.weight(1f)); Icon(Icons.Default.ArrowDropDown,contentDescription=stringResource(R.string.misc_choose_baud)) }
+            DropdownMenu(expanded=expanded,onDismissRequest={expanded=false}, shape = DropdownShape) { rates.forEach { (code,label) -> DropdownMenuItem(text={Text(label,Modifier.testTag("misc-baud-option-$code"))},onClick={expanded=false;baud(code)}) } }
             IntRow(stringResource(R.string.miscel_period_title),"${s.period} ${stringResource(R.string.units_ms)}",MiscField.PERIOD){intEdit(MiscField.PERIOD)}
         } }
         if (hasValidationError) Text(stringResource(R.string.misc_invalid_packet),color=MaterialTheme.colorScheme.error,modifier=Modifier.testTag("misc-validation-error"))

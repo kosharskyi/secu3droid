@@ -25,6 +25,8 @@
 
 package org.secu3.android.ui.sensors
 
+import org.secu3.android.ui.compose.DropdownShape
+
 import android.view.LayoutInflater
 import androidx.compose.animation.core.Animatable
 import androidx.compose.animation.core.AnimationVector2D
@@ -263,7 +265,7 @@ internal fun SensorsScreen(
                                         ),
                                     onMenu = { menuFor = dragKey },
                                 )
-                                DropdownMenu(expanded = menuFor == dragKey, onDismissRequest = { menuFor = null }) {
+                                DropdownMenu(expanded = menuFor == dragKey, onDismissRequest = { menuFor = null }, shape = DropdownShape) {
                                     DropdownMenuItem(
                                         text = { Text(stringResource(R.string.switch_view)) },
                                         leadingIcon = { Icon(Icons.Default.SwapHoriz, null) },
@@ -350,7 +352,7 @@ internal fun SensorsScreen(
                                         ),
                                     onMenu = { menuFor = dragKey },
                                 )
-                                DropdownMenu(expanded = menuFor == dragKey, onDismissRequest = { menuFor = null }) {
+                                DropdownMenu(expanded = menuFor == dragKey, onDismissRequest = { menuFor = null }, shape = DropdownShape) {
                                     DropdownMenuItem(
                                         text = { Text(stringResource(R.string.delete)) },
                                         leadingIcon = { Icon(Icons.Default.Delete, null) },

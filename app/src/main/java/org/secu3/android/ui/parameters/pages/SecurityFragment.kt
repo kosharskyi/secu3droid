@@ -24,6 +24,8 @@
  */
 package org.secu3.android.ui.parameters.pages
 
+import org.secu3.android.ui.compose.DropdownShape
+
 import android.os.Bundle
 import android.view.LayoutInflater
 import android.view.View
@@ -158,8 +160,8 @@ internal fun SecurityScreen(loaded: Boolean, useBt: Boolean, useImm: Boolean, na
             ExposedDropdownMenuBox(expanded = expanded, onExpandedChange = expand) {
                 OutlinedTextField(value = types.getOrNull(type) ?: stringResource(R.string.sec_unknown_type, type), onValueChange = {}, readOnly = true,
                     label = { Text(stringResource(R.string.sec_bt_type)) }, trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded) },
-                    modifier = Modifier.menuAnchor().fillMaxWidth().testTag("security-type"))
-                ExposedDropdownMenu(expanded = expanded, onDismissRequest = { expand(false) }) {
+                    modifier = Modifier.menuAnchor().fillMaxWidth().testTag("security-type"), shape = DropdownShape)
+                ExposedDropdownMenu(expanded = expanded, onDismissRequest = { expand(false) }, shape = DropdownShape) {
                     types.forEachIndexed { i, label -> DropdownMenuItem(text = { Text(label) }, onClick = { selectType(i); expand(false) }) }
                 }
             }

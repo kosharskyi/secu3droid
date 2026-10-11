@@ -24,6 +24,8 @@
  */
 package org.secu3.android.ui.parameters.pages.compose
 
+import org.secu3.android.ui.compose.DropdownShape
+
 import androidx.annotation.StringRes
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.gestures.awaitEachGesture
@@ -157,14 +159,14 @@ fun ChokeScreen(
     val options = listOf("300", "150", "100", "75")
     var expanded by remember { mutableStateOf(false) }
     Column {
-        OutlinedButton(onClick = { expanded = true }, Modifier.fillMaxWidth().testTag("choke_frequency")) {
+        OutlinedButton(onClick = { expanded = true }, Modifier.fillMaxWidth().testTag("choke_frequency"), shape = DropdownShape) {
             Column(Modifier.weight(1f), horizontalAlignment = Alignment.Start) {
                 Text(stringResource(R.string.choke_frequency_of_pulses), style = MaterialTheme.typography.labelMedium)
                 Text(options.getOrNull(index) ?: "Code $index")
             }
             Text("⌄", style = MaterialTheme.typography.titleLarge)
         }
-        DropdownMenu(expanded, { expanded = false }) {
+        DropdownMenu(expanded, { expanded = false }, shape = DropdownShape) {
             options.forEachIndexed { i, option -> DropdownMenuItem(text = { Text(option) }, onClick = { expanded = false; onSelect(i) }, modifier = Modifier.testTag("choke_frequency_option_$i")) }
         }
     }

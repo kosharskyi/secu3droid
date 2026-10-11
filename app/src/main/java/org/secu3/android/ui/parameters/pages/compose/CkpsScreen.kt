@@ -24,11 +24,12 @@
  */
 package org.secu3.android.ui.parameters.pages.compose
 
+import org.secu3.android.ui.compose.DropdownShape
+
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
-import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowDropDown
@@ -301,7 +302,7 @@ private fun Choice(title: String, value: String, tag: String, onClick: () -> Uni
             .semantics(mergeDescendants = true) { role = Role.Button }
             .clickable(role = Role.Button, onClick = onClick)
             .testTag(tag),
-        shape = RoundedCornerShape(4.dp),
+        shape = DropdownShape,
         border = BorderStroke(1.dp, MaterialTheme.colorScheme.outline),
     ) {
         Row(
