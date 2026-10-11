@@ -45,6 +45,7 @@ import androidx.compose.ui.unit.dp
 import androidx.lifecycle.lifecycleScope
 import androidx.lifecycle.withResumed
 import kotlinx.coroutines.launch
+import org.secu3.android.ui.parameters.compose.ParameterLoadingIndicator
 import org.secu3.android.R
 import org.secu3.android.models.packets.out.params.SecurityParamPacket
 import org.secu3.android.ui.compose.SecuComposeTheme
@@ -150,7 +151,7 @@ internal fun SecurityScreen(loaded: Boolean, useBt: Boolean, useImm: Boolean, na
     expand: (Boolean) -> Unit, selectType: (Int) -> Unit,
     toggleBt: (Boolean) -> Unit, toggleImm: (Boolean) -> Unit, changeName: (String) -> Unit, changePass: (String) -> Unit,
     changeKey0: (String) -> Unit, changeKey1: (String) -> Unit, apply: () -> Unit) {
-    if (!loaded) { CircularProgressIndicator(Modifier.testTag("security-loading")); return }
+    if (!loaded) { ParameterLoadingIndicator("security-loading"); return }
     Column(Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(16.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
         Card { Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
             Text(stringResource(R.string.sec_bluetooth), style = MaterialTheme.typography.titleMedium)

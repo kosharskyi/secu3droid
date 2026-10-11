@@ -37,7 +37,6 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.AlertDialog
-import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
@@ -57,6 +56,7 @@ import androidx.compose.ui.semantics.role
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.semantics.stateDescription
 import androidx.compose.ui.unit.dp
+import org.secu3.android.ui.parameters.compose.ParameterLoadingIndicator
 import org.secu3.android.R
 import org.secu3.android.models.packets.out.params.FunSetParamPacket
 import org.secu3.android.ui.parameters.compose.ParameterValueRow
@@ -226,12 +226,7 @@ fun FunctionsScreen(
     onChoice: (FunctionsChoices.Selector, Int) -> Unit,
 ) {
     when (state) {
-        FunctionsUiState.Loading -> Column(
-            Modifier.fillMaxWidth().padding(24.dp),
-            horizontalAlignment = Alignment.CenterHorizontally,
-        ) {
-            CircularProgressIndicator(Modifier.testTag("functions_loading"))
-        }
+        FunctionsUiState.Loading -> ParameterLoadingIndicator("functions_loading")
         is FunctionsUiState.Data -> {
             var open by remember { mutableStateOf<FunctionsChoices.Selector?>(null) }
             Column(

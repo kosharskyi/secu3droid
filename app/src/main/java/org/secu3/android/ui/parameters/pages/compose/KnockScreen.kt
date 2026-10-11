@@ -37,6 +37,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
+import org.secu3.android.ui.parameters.compose.ParameterLoadingIndicator
 import org.secu3.android.R
 import org.secu3.android.models.packets.out.params.KnockParamPacket
 import org.secu3.android.ui.parameters.compose.ParameterSwitchRow
@@ -127,9 +128,7 @@ fun KnockScreen(
     onSelector: (KnockSelector, Int) -> Unit,
 ) {
     when (state) {
-        KnockUiState.Loading -> Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-            CircularProgressIndicator(Modifier.testTag("knock_loading"))
-        }
+        KnockUiState.Loading -> ParameterLoadingIndicator("knock_loading")
 
         is KnockUiState.Data -> Column(
             Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(16.dp),

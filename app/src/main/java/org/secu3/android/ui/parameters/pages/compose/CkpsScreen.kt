@@ -42,6 +42,7 @@ import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.role
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.unit.dp
+import org.secu3.android.ui.parameters.compose.ParameterLoadingIndicator
 import org.secu3.android.R
 import org.secu3.android.models.packets.out.params.CkpsParamPacket
 import org.secu3.android.ui.parameters.compose.ParameterSwitchRow
@@ -160,12 +161,7 @@ fun CkpsScreen(
     onChoice: (Boolean, Int) -> Unit,
 ) {
     if (state is CkpsUiState.Loading) {
-        Box(
-            Modifier.fillMaxWidth().padding(24.dp),
-            contentAlignment = Alignment.Center,
-        ) {
-            CircularProgressIndicator(Modifier.testTag("ckps_loading"))
-        }
+        ParameterLoadingIndicator("ckps_loading")
         return
     }
 

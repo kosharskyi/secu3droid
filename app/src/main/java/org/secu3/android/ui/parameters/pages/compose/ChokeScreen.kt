@@ -47,6 +47,7 @@ import androidx.compose.ui.semantics.onClick
 import androidx.compose.ui.semantics.role
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.unit.dp
+import org.secu3.android.ui.parameters.compose.ParameterLoadingIndicator
 import org.secu3.android.R
 import org.secu3.android.models.packets.out.params.ChokeControlParPacket
 import org.secu3.android.ui.parameters.compose.ParameterSwitchRow
@@ -107,7 +108,7 @@ fun ChokeScreen(
     onTest: () -> Unit,
 ) {
     if (values == null) {
-        Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) { CircularProgressIndicator(Modifier.testTag("choke_loading")) }
+        ParameterLoadingIndicator("choke_loading")
         return
     }
     DisposableEffect(Unit) { onDispose(onManualCancel) }

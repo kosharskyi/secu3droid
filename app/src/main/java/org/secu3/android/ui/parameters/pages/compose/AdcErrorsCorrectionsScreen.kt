@@ -32,15 +32,14 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
-import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
-import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
+import org.secu3.android.ui.parameters.compose.ParameterLoadingIndicator
 import org.secu3.android.R
 import org.secu3.android.models.packets.out.params.AdcCorrectionsParamPacket
 import org.secu3.android.ui.parameters.compose.ParameterSwitchRow
@@ -121,9 +120,7 @@ fun AdcErrorsCorrectionsScreen(
     onCompModeChanged: (Boolean) -> Unit,
 ) {
     when (state) {
-        AdcCorrectionsUiState.Loading -> Column(Modifier.fillMaxWidth().padding(24.dp), horizontalAlignment = Alignment.CenterHorizontally) {
-            CircularProgressIndicator(Modifier.testTag("adc_loading"))
-        }
+        AdcCorrectionsUiState.Loading -> ParameterLoadingIndicator("adc_loading")
         is AdcCorrectionsUiState.Data -> Column(
             Modifier.fillMaxWidth().verticalScroll(rememberScrollState()).padding(16.dp),
             verticalArrangement = Arrangement.spacedBy(12.dp),

@@ -23,6 +23,7 @@
 package org.secu3.android.ui.parameters.pages.compose
 
 import androidx.compose.ui.test.*
+import androidx.compose.ui.unit.dp
 import androidx.compose.ui.test.junit4.v2.createComposeRule
 import androidx.compose.runtime.mutableStateOf
 import org.junit.Assert.assertEquals
@@ -38,7 +39,12 @@ class SecurityScreenTest {
     @Test fun loadingAndRenderingDoNotEmitChanges() {
         var calls = 0
         compose.setContent { SecuComposeTheme { SecurityScreen(false,false,false,"","","","",0,types,false,"",false,false,{calls++},{calls++},{calls++},{calls++},{calls++},{calls++},{calls++},{calls++},{calls++}) } }
-        compose.onNodeWithTag("security-loading").assertIsDisplayed()
+        val indicator = compose.onNodeWithTag("security-loading").assertIsDisplayed()
+        indicator.assertWidthIsEqualTo(40.dp).assertHeightIsEqualTo(40.dp)
+        val viewport = compose.onNodeWithTag("parameter-loading-container").fetchSemanticsNode().boundsInRoot
+        val indicatorBounds = indicator.fetchSemanticsNode().boundsInRoot
+        assertEquals(viewport.center.x, indicatorBounds.center.x, 0.5f)
+        assertEquals(viewport.center.y, indicatorBounds.center.y, 0.5f)
         compose.waitForIdle()
         assertEquals(0, calls)
     }

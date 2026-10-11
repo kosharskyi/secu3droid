@@ -25,6 +25,7 @@
 package org.secu3.android.ui.parameters.pages.compose
 
 import androidx.compose.runtime.mutableStateOf
+import androidx.compose.ui.unit.dp
 import androidx.compose.ui.test.*
 import androidx.compose.ui.test.junit4.v2.createComposeRule
 import org.junit.Assert.assertEquals
@@ -40,7 +41,12 @@ class KnockScreenTest {
         var calls = 0
         val state = mutableStateOf<KnockUiState>(KnockUiState.Loading)
         compose.setContent { SecuComposeTheme { KnockScreen(state.value, {calls++}, {calls++}, {_,_->calls++}, {_,_->calls++}) } }
-        compose.onNodeWithTag("knock_loading").assertIsDisplayed()
+        val indicator = compose.onNodeWithTag("knock_loading").assertIsDisplayed()
+        indicator.assertWidthIsEqualTo(40.dp).assertHeightIsEqualTo(40.dp)
+        val viewport = compose.onNodeWithTag("parameter-loading-container").fetchSemanticsNode().boundsInRoot
+        val indicatorBounds = indicator.fetchSemanticsNode().boundsInRoot
+        assertEquals(viewport.center.x, indicatorBounds.center.x, 0.5f)
+        assertEquals(viewport.center.y, indicatorBounds.center.y, 0.5f)
         val packet=KnockParamPacket(kWndBeginAngle=12.5f, selectedChanels=0xA5, useKnockChannel=5)
         val data=KnockValues.from(packet, listOf("1 kHz","2 kHz"), listOf("10 ms","20 ms"))
         compose.runOnIdle { state.value=KnockUiState.Data(data,true) }

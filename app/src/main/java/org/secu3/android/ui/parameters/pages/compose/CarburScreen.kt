@@ -38,7 +38,6 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowDropDown
 import androidx.compose.material3.AlertDialog
-import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
@@ -62,6 +61,7 @@ import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.semantics.stateDescription
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
+import org.secu3.android.ui.parameters.compose.ParameterLoadingIndicator
 import org.secu3.android.R
 import org.secu3.android.models.packets.out.params.CarburParamPacket
 
@@ -123,7 +123,7 @@ sealed interface CarburUiState {
 @Composable
 fun CarburScreen(state: CarburUiState, options: List<String>, onEdit: (CarburNumber) -> Unit, onInvers: (Boolean) -> Unit, onSelector: (Boolean, Int) -> Unit) {
     if (state is CarburUiState.Loading) {
-        Column(Modifier.fillMaxWidth().padding(24.dp), horizontalAlignment = Alignment.CenterHorizontally) { CircularProgressIndicator(Modifier.testTag("carbur_loading")) }
+        ParameterLoadingIndicator("carbur_loading")
         return
     }
     val data = (state as CarburUiState.Data).values

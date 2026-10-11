@@ -45,6 +45,7 @@ import androidx.compose.ui.unit.sp
 import androidx.lifecycle.withResumed
 import androidx.lifecycle.lifecycleScope
 import kotlinx.coroutines.launch
+import org.secu3.android.ui.parameters.compose.ParameterLoadingIndicator
 import org.secu3.android.R
 import org.secu3.android.models.packets.out.params.MiscellaneousParamPacket
 import org.secu3.android.ui.compose.SecuComposeTheme
@@ -192,7 +193,7 @@ internal fun MiscellaneousScreen(
     s: MiscState?, hasValidationError:Boolean, rates: Map<Int,String>, intEdit: (MiscField)->Unit, floatEdit: ()->Unit,
     baud: (Int)->Unit, toggleAction:(MiscToggle,Boolean)->Unit,
 ) {
-    if (s == null) { Box(Modifier.fillMaxSize(), contentAlignment=Alignment.Center) { CircularProgressIndicator(Modifier.testTag("misc-loading")) }; return }
+    if (s == null) { ParameterLoadingIndicator("misc-loading"); return }
     Column(Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(16.dp), verticalArrangement=Arrangement.spacedBy(12.dp)) {
         Card { Column(Modifier.padding(16.dp), verticalArrangement=Arrangement.spacedBy(8.dp)) {
             Text(stringResource(R.string.miscel_baudrate_title),style=MaterialTheme.typography.titleMedium)

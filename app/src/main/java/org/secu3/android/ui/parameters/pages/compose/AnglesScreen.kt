@@ -31,13 +31,12 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
-import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.runtime.Composable
-import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
+import org.secu3.android.ui.parameters.compose.ParameterLoadingIndicator
 import org.secu3.android.R
 import org.secu3.android.models.packets.out.params.AnglesParamPacket
 import org.secu3.android.ui.parameters.compose.ParameterSwitchRow
@@ -104,9 +103,7 @@ sealed interface AnglesUiState {
 @Composable
 fun AnglesScreen(state: AnglesUiState, onEdit: (AnglesNumber) -> Unit, onFlagChanged: (AnglesFlag, Boolean) -> Unit) {
     when (state) {
-        AnglesUiState.Loading -> Column(Modifier.fillMaxWidth().padding(24.dp), horizontalAlignment = Alignment.CenterHorizontally) {
-            CircularProgressIndicator(Modifier.testTag("angles_loading"))
-        }
+        AnglesUiState.Loading -> ParameterLoadingIndicator("angles_loading")
         is AnglesUiState.Data -> Column(Modifier.fillMaxWidth().verticalScroll(rememberScrollState()).padding(16.dp), verticalArrangement = Arrangement.spacedBy(16.dp)) {
             AnglesNumber.entries.filter { it != AnglesNumber.SHIFT }.forEach { number ->
                 ParameterValueRow(stringResource(number.titleRes), stringResource(number.unitRes), state.values.value(number), number.precision,
