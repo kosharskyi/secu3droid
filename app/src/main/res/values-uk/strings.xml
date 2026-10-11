@@ -248,6 +248,11 @@
 
 
     <string name="maximum_step_frequency_at_init">Максимальна частота при ініц.</string>
+    <string name="choke_manual_control">Ручне керування</string>
+    <string name="choke_settings">Налаштування</string>
+    <string name="choke_test_active">Тест · УВІМК.</string>
+    <string name="choke_manual_decrease">Зменшити положення заслінки</string>
+    <string name="choke_manual_increase">Збільшити положення заслінки</string>
     <string name="sensors_tab_title">Датчики</string>
     <string name="enable_bluetooth_to_start_work">Ввімкніть Bluetooth для початку роботи та натисніть \"Спробувати знову\"</string>
     <string name="try_again">Спробувати знову</string>
