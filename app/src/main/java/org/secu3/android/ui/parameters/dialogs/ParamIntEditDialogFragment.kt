@@ -65,17 +65,13 @@ class ParamIntEditDialogFragment : ParamBaseEditDialogFragment() {
 
             value.editText?.apply {
                 setText(currentValue.toString())
-                inputType = InputType.TYPE_CLASS_NUMBER
+                inputType = InputType.TYPE_CLASS_NUMBER or
+                    if (minValue < 0) InputType.TYPE_NUMBER_FLAG_SIGNED else 0
 
                 doAfterTextChanged {
-                    if (it.toString().isEmpty()) {
-                        ok.isEnabled = false
-                        return@doAfterTextChanged
-                    }
-
-                    currentValue = it.toString().toInt()
-
-                    val isValueCorrect = currentValue in minValue..maxValue
+                    val parsedValue = parseValidInput(it.toString(), minValue, maxValue)
+                    val isValueCorrect = parsedValue != null
+                    parsedValue?.let { currentValue = it }
 
                     ok.isEnabled = isValueCorrect
 
@@ -109,6 +105,9 @@ class ParamIntEditDialogFragment : ParamBaseEditDialogFragment() {
     }
 
     companion object {
+        internal fun parseValidInput(value: String, min: Int, max: Int): Int? =
+            value.toIntOrNull()?.takeIf { it in min..max }
+
         /**
          * Use this factory method to create a new instance of
          * this fragment using the provided parameters.
