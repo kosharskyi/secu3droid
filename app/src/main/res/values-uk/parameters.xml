@@ -356,4 +356,21 @@
     <string name="functions_section_sources">Джерела навантаження та умови</string>
     <string name="functions_section_map2">Другий датчик MAP</string>
     <string name="functions_section_pressures_apps">Тиск газу й палива та датчик акселератора</string>
+    <string name="sec_bluetooth">Bluetooth</string>
+    <string name="sec_immobilizer">Іммобілайзер</string>
+    <string name="sec_information">Інформація</string>
+    <string name="sec_bt_type">Тип Bluetooth</string>
+    <string name="sec_key1">Ключ 1</string>
+    <string name="sec_key2">Ключ 2</string>
+    <string name="sec_read_only">Лише для читання</string>
+    <string name="sec_unknown_type">Невідомий тип (%1$d)</string>
+    <string name="apply">Застосувати</string>
+    <string name="sec_enabled">Увімкнено</string>
+    <string name="sec_disabled">Вимкнено</string>
+    <string name="sec_reserve_params_description">Якщо увімкнено, завжди використовуються резервні параметри прошивки. Про пошкодження EEPROM не повідомляється.</string>
+    <string name="sec_firmware_integrity_description">Якщо увімкнено, під час запуску перевіряється контрольна сума прошивки; у разі помилки повідомляється про неї.</string>
+    <string name="sec_credentials_write_only">ЕБУ не може прочитати збережені ім’я та пароль. Введіть значення й натисніть «Застосувати», щоб надіслати їх.</string>
+    <string name="sec_ibutton_key_hint">Введіть рівно 12 шістнадцяткових символів.</string>
+    <string name="sec_ibutton_key_invalid">Некоректний ключ. Введіть рівно 12 шістнадцяткових символів.</string>
+    <string name="sec_invalid_credentials">Ім’я або пароль не відповідає формату ЕБУ.</string>
 </resources>

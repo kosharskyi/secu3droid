@@ -29,6 +29,9 @@ import org.secu3.android.models.packets.base.InputPacket
 import org.secu3.android.models.packets.base.OutputPacket
 import org.secu3.android.utils.getBitValue
 import org.secu3.android.utils.setBitValue
+import java.nio.charset.Charset
+import java.nio.charset.CodingErrorAction
+import java.nio.charset.StandardCharsets
 
 data class SecurityParamPacket(
 
@@ -65,17 +68,36 @@ data class SecurityParamPacket(
     val checkFwCrc: Boolean                             //Check firmware CRC (time consuming operation)
         get() = btFlags.getBitValue(4) > 0
 
+    fun packedSnapshot(): OutputPacket {
+        val bytes = pack().copyOf()
+        return object : OutputPacket { override fun pack(): IntArray = bytes.copyOf() }
+    }
+
+    fun credentialsSnapshot(name: String, password: String): OutputPacket {
+        btName = name
+        btPass = password
+        return try { packedSnapshot() } finally {
+            btName = ""
+            btPass = ""
+        }
+    }
+
     override fun pack(): IntArray {
         var data = intArrayOf(DESCRIPTOR.code)
 
-        val nameLength = btName.length.coerceIn(0, 8)
-        val passLength = btPass.length.coerceIn(0, 8)
+        val credentialsProvided = btName.isNotEmpty() || btPass.isNotEmpty()
+        val nameBytes = if (credentialsProvided) encodeManagerText(btName) else byteArrayOf()
+        val passBytes = if (credentialsProvided) btPass.toByteArray(StandardCharsets.US_ASCII) else byteArrayOf()
+        require(btName.length <= 16 && nameBytes.size <= 16) { "Bluetooth name must fit in 16 OEM bytes" }
+        if (credentialsProvided) require(btName.isNotEmpty() && passBytes.size in 4..8 && btPass.all { it in '0'..'9' }) { "Bluetooth credentials require a name and a 4–8 digit password" }
+        require(iButton0.size == IBTN_KEY_SIZE && iButton1.size == IBTN_KEY_SIZE) { "Each iButton key must contain 6 bytes" }
+        require((iButton0 + iButton1).all { it in 0..255 }) { "Invalid iButton key byte" }
 
-        if (nameLength > 0 && passLength >= 4) {
-            data += nameLength
-            data += passLength
-            data += btName.substring(0, nameLength).map { it.code }.toIntArray()
-            data += btPass.substring(0, passLength).map { it.code }.toIntArray()
+        if (credentialsProvided) {
+            data += nameBytes.size
+            data += passBytes.size
+            data += nameBytes.map { it.toInt() and 0xff }.toIntArray()
+            data += passBytes.map { it.toInt() and 0xff }.toIntArray()
         } else {
             data += 0
             data += 0
@@ -93,6 +115,17 @@ data class SecurityParamPacket(
         return data
     }
 
+    private fun encodeManagerText(value: String): ByteArray {
+        try {
+            val encoder = Charset.forName("IBM866").newEncoder()
+                .onMalformedInput(CodingErrorAction.REPORT).onUnmappableCharacter(CodingErrorAction.REPORT)
+            val buffer = encoder.encode(java.nio.CharBuffer.wrap(value))
+            return ByteArray(buffer.remaining()).also { buffer.get(it) }
+        } catch (error: java.nio.charset.CharacterCodingException) {
+            throw IllegalArgumentException("Bluetooth name contains characters unsupported by the ECU OEM encoding", error)
+        }
+    }
+
     override fun parse(data: IntArray): InputPacket {
         //Number of characters in name (must be zero)
         val numNam = data.get1Byte()
@@ -107,6 +140,9 @@ data class SecurityParamPacket(
         }
 
         btFlags = data.get1Byte()
+
+        iButton0 = emptyList()
+        iButton1 = emptyList()
 
         for (i in 0 until IBTN_KEY_SIZE) {
             iButton0 += data.get1Byte()

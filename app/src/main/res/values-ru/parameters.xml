@@ -363,4 +363,21 @@
     <string name="functions_section_sources">Источники нагрузки и условия</string>
     <string name="functions_section_map2">Второй датчик MAP</string>
     <string name="functions_section_pressures_apps">Давление газа и топлива, датчик акселератора</string>
+    <string name="sec_bluetooth">Bluetooth</string>
+    <string name="sec_immobilizer">Иммобилайзер</string>
+    <string name="sec_information">Информация</string>
+    <string name="sec_bt_type">Тип Bluetooth</string>
+    <string name="sec_key1">Ключ 1</string>
+    <string name="sec_key2">Ключ 2</string>
+    <string name="sec_read_only">Только чтение</string>
+    <string name="sec_unknown_type">Неизвестный тип (%1$d)</string>
+    <string name="apply">Применить</string>
+    <string name="sec_enabled">Включено</string>
+    <string name="sec_disabled">Отключено</string>
+    <string name="sec_reserve_params_description">Если включено, всегда используются резервные параметры прошивки. О повреждении EEPROM не сообщается.</string>
+    <string name="sec_firmware_integrity_description">Если включено, при запуске проверяется контрольная сумма прошивки; при ошибке сообщается о ней.</string>
+    <string name="sec_credentials_write_only">ЭБУ не может прочитать сохранённые имя и пароль. Введите значения и нажмите «Применить», чтобы отправить их.</string>
+    <string name="sec_ibutton_key_hint">Введите ровно 12 шестнадцатеричных символов.</string>
+    <string name="sec_ibutton_key_invalid">Неверный ключ. Введите ровно 12 шестнадцатеричных символов.</string>
+    <string name="sec_invalid_credentials">Имя или пароль не соответствуют формату ЭБУ.</string>
 </resources>

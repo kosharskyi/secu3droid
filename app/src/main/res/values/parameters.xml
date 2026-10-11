@@ -351,4 +351,21 @@
     <string name="functions_section_sources">Load sources and conditions</string>
     <string name="functions_section_map2">Second MAP sensor</string>
     <string name="functions_section_pressures_apps">Gas, fuel pressure and accelerator sensors</string>
+    <string name="sec_bluetooth">Bluetooth</string>
+    <string name="sec_immobilizer">Immobilizer</string>
+    <string name="sec_information">Information</string>
+    <string name="sec_bt_type">Bluetooth type</string>
+    <string name="sec_key1">Key 1</string>
+    <string name="sec_key2">Key 2</string>
+    <string name="sec_read_only">Read only</string>
+    <string name="sec_unknown_type">Unknown type (%1$d)</string>
+    <string name="apply">Apply</string>
+    <string name="sec_enabled">Enabled</string>
+    <string name="sec_disabled">Disabled</string>
+    <string name="sec_reserve_params_description">When enabled, always use the reserved firmware parameters. A damaged EEPROM is not reported.</string>
+    <string name="sec_firmware_integrity_description">When enabled, check the firmware checksum at startup and report an error if it is invalid.</string>
+    <string name="sec_credentials_write_only">The ECU cannot read back the existing name or password. Enter values here and tap Apply to send them.</string>
+    <string name="sec_ibutton_key_hint">Enter exactly 12 hexadecimal characters.</string>
+    <string name="sec_ibutton_key_invalid">Invalid key. Enter exactly 12 hexadecimal characters.</string>
+    <string name="sec_invalid_credentials">Name or password is invalid for this ECU.</string>
 </resources>
