@@ -51,16 +51,31 @@ class ChokePacketMappingTest {
         val delta = ChokeManualDelta()
         repeat(200) { delta.step(-1) }
         assertEquals(-127, delta.value)
-        val p = ChokeControlParPacket(flags = 0b10100000, manualPositionD = delta.value)
+        val p = ChokeControlParPacket(
+            flags = 0b10100000,
+            manualPositionD = delta.value,
+            rpmIf = 42.5f,
+            corrTime0 = 1.25f,
+            corrTime1 = 2.5f,
+            smFreq = 9,
+            injCrankToRunTime = 3.75f
+        )
         val packed = p.pack()
         assertEquals(129, packed[4])
         assertEquals(0b10100000, p.flags)
-        val incoming = intArrayOf(0x40, 0x25) + packed.drop(1).toIntArray() + intArrayOf(0xD1, 0xE2)
+        val incomingPayload = packed.drop(1).toIntArray()
+        incomingPayload[3] = 0 // Firmware reports zero for the outgoing-only manual command byte.
+        val incoming = intArrayOf(0x40, 0x25) + incomingPayload + intArrayOf(0xD1, 0xE2)
         val parsed = ChokeControlParPacket().parse(incoming) as ChokeControlParPacket
-        assertEquals(-127, parsed.manualPositionD)
+        assertEquals(0, parsed.manualPositionD)
+        assertEquals(42.5f, parsed.rpmIf)
+        assertEquals(1.25f, parsed.corrTime0)
+        assertEquals(2.5f, parsed.corrTime1)
+        assertEquals(9, parsed.smFreq)
+        assertEquals(3.75f, parsed.injCrankToRunTime)
+        assertEquals(0b10100000, parsed.flags)
         assertEquals(0xD1, parsed.pack()[packed.size])
         assertEquals(0xE2, parsed.pack()[packed.size + 1])
-        parsed.manualPositionD = 0
         val asyncSnapshot: OutputPacket = parsed.snapshotWithManualPosition(-127)
         assertEquals(0, parsed.manualPositionD)
         parsed.manualPositionD = 0

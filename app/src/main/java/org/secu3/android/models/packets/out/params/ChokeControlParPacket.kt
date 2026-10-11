@@ -111,8 +111,8 @@ data class ChokeControlParPacket(
     override fun parse(data: IntArray): InputPacket {
         smSteps = data.get2Bytes()
         testing = data.get1Byte() > 0      //send 1 to start testing (it will open and close choke continuously) and 0 to stop testing
-        val manualDelta = data.get1Byte()
-        manualPositionD = if (manualDelta >= 0x80) manualDelta - 0x100 else manualDelta
+        data.get1Byte() // outgoing-only command placeholder; incoming packets send zero here
+        manualPositionD = 0
         rpmIf = data.get2Bytes().toFloat() / 1024.0f
         corrTime0 = data.get2Bytes().toFloat() / 100
         corrTime1 = data.get2Bytes().toFloat() / 100
