@@ -148,8 +148,19 @@ data class InjctrParPacket(
     var engineDisp: Float
         get() = cylDisp * ckpsEngineCyl
         set(value) {
+            if (ckpsEngineCyl <= 0 || !value.isFinite() || value <= 0f) return
             cylDisp = value / ckpsEngineCyl
+            recalculateDerivedConstants()
         }
+
+    /** Recompute injector and synthetic-load constants when their inputs change. */
+    fun recalculateDerivedConstants() {
+        for (bank in 0..1) configChanged(bank, if (bank == 0) config0Pulses else config1Pulses)
+        if (ckpsEngineCyl > 0 && cylDisp.isFinite() && cylDisp > 0f) {
+            mafloadConst = (((101.35 * 64.0 * 128.0 * 120.0) / (64.0 * 0.0012041)) /
+                (cylDisp.toDouble() * 1000.0 * ckpsEngineCyl.toDouble())).toInt()
+        }
+    }
 
     var angleSpec0: Int
         get() = angleSpec.and(0xF)
@@ -230,13 +241,36 @@ data class InjctrParPacket(
 
     private fun configChanged(configNum: Int, pulses: Int) {
 
+        // A partially received or unsupported configuration must not corrupt the
+        // derived constant. In particular, never divide by zero while the UI is
+        // replacing a configuration and its dependent pulse count.
+        if (ckpsEngineCyl <= 0 || pulses <= 0 || flowRate[configNum] <= 0f ||
+            !flowRate[configNum].isFinite() || !cylDisp.isFinite() || cylDisp <= 0f) return
+
         val cfg = if (configNum == 0) config0 else config1
+        if (InjConfig.entries.none { it.id == cfg } || pulses !in validPulses(cfg, ckpsEngineCyl)) return
 
         val bnkNum = bnkNum(cfg).toFloat()
         val injNum = injNum(cfg).toFloat()
         val mifr = flowRate[configNum] * fuelDensity[configNum]
 
-        sdIglConst[configNum] = (((cylDisp * 3.482f * 18750000f) / mifr) * (bnkNum * ckpsEngineCyl.toFloat()) / (injNum * pulses.toFloat())).toInt()
+        if (mifr <= 0f || !mifr.isFinite() || injNum <= 0 || bnkNum <= 0) return
+        sdIglConst[configNum] = (((cylDisp * 3.482f * 18750000f) / mifr) * (bnkNum * ckpsEngineCyl.toFloat()) / (injNum * pulses.toFloat())).toInt().coerceAtMost(524288)
+        injMafConst[configNum] = (((120.0 * 18750000.0) / mifr.toDouble() *
+            (bnkNum.toDouble() / (injNum.toDouble() * pulses.toDouble())) / 64.0).toInt()).coerceAtMost(103200 * 4)
+    }
+
+    private fun validPulses(config: Int, cylinders: Int): List<Int> = when (config) {
+        InjConfig.THROTTLEBODY.id, InjConfig.SIMULTANEOUS.id -> when (cylinders) {
+            1 -> listOf(1); 2 -> listOf(1, 2); 3 -> listOf(1, 3); 4 -> listOf(1, 2, 4)
+            5 -> listOf(1, 5); 6 -> listOf(1, 2, 3, 6); 8 -> listOf(1, 2, 4, 8); else -> emptyList()
+        }
+        InjConfig.TWO_BANK_ALTERN.id -> when (cylinders) { 4 -> listOf(2, 4); 6 -> listOf(2, 6); 8 -> listOf(2, 4, 8); else -> emptyList() }
+        InjConfig.SEMISEQUENTIAL.id, InjConfig.SEMISEQSEPAR.id -> when (cylinders) {
+            2 -> listOf(1, 2); 4 -> listOf(2, 4); 6 -> listOf(3, 6); 8 -> listOf(4, 8); else -> emptyList()
+        }
+        InjConfig.FULLSEQUENTIAL.id -> listOf(cylinders).filter { it > 0 }
+        else -> emptyList()
     }
 
     private fun injNum(config: Int): Int {

@@ -238,6 +238,7 @@
     <string name="injctr_par_inj_config_ss_sep_channel">ПП окрем.кан.</string>
     <string name="injctr_par_inj_config_full_sequential">Розподілене</string>
     <string name="injctr_par_inj_timing_specifies">Фазу вприскування визначає</string>
+    <string name="injctr_par_primary_fuel_title">Основне паливо</string>
     <string name="injctr_par_max_inj_pw_title">Макс. тривалість вприскування</string>
 
     <string name="lambda_par_sensor_type_title">Тип сенсора</string>

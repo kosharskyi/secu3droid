@@ -452,6 +452,7 @@
     <string name="sensors_add_gauge">Добавить измеритель</string>
     <string name="sensors_add_indicator">Добавить индикатор</string>
     <string name="gas_dose_unavailable">Эти параметры недоступны в вашей прошивке</string>
+    <string name="fuel_injection_unavailable">Эти параметры недоступны в вашей прошивке</string>
     <string name="gas_dose_manual_decrease">Уменьшить положение дозатора газа</string>
     <string name="gas_dose_manual_increase">Увеличить положение дозатора газа</string>
 </resources>

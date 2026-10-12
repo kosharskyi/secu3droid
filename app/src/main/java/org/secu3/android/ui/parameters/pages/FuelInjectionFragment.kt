@@ -25,370 +25,152 @@
 package org.secu3.android.ui.parameters.pages
 
 import android.os.Bundle
-import android.text.InputType
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
-import android.widget.ArrayAdapter
-import androidx.fragment.app.viewModels
-import androidx.lifecycle.lifecycleScope
-import androidx.lifecycle.withResumed
-import androidx.lifecycle.withStarted
-import kotlinx.coroutines.launch
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.setValue
+import androidx.compose.ui.platform.ComposeView
+import androidx.compose.ui.platform.ViewCompositionStrategy
 import org.secu3.android.R
-import org.secu3.android.databinding.FragmentFuelInjectionBinding
 import org.secu3.android.models.packets.out.params.InjctrParPacket
-import org.secu3.android.ui.parameters.pages.injection.FuelInjectionViewModel
-import org.secu3.android.ui.parameters.views.FloatParamView
-import org.secu3.android.ui.parameters.views.IntParamView
-import org.secu3.android.utils.gone
-import org.secu3.android.utils.visible
+import org.secu3.android.ui.compose.SecuComposeTheme
+import org.secu3.android.ui.parameters.dialogs.ParamFloatEditDialogFragment
+import org.secu3.android.ui.parameters.dialogs.ParamIntEditDialogFragment
+import org.secu3.android.ui.parameters.pages.compose.*
+import org.secu3.android.ui.parameters.pages.injection.validInjectorPulses
 
 class FuelInjectionFragment : BaseParamFragment() {
+    private data class EditSpec(val title: Int, val value: Float, val step: Float, val min: Float, val max: Float, val precision: Int, val integer: Boolean)
+    private var packet: InjctrParPacket? = null
+    private var values by mutableStateOf<FuelInjectionValues?>(null)
+    private var injectorEnabled by mutableStateOf(true)
+    private var secu3t by mutableStateOf(false)
 
-    private val mInjViewModel: FuelInjectionViewModel by viewModels()
-    private lateinit var mBinding: FragmentFuelInjectionBinding
-
-    private val mInjTimingSpecifiesList: List<String> by lazy {
-        resources.getStringArray(R.array.inj_timing_specifies).toList()
-    }
-
-    private lateinit var packet: InjctrParPacket
-
-    override fun onCreateView(inflater: LayoutInflater, container: ViewGroup?, savedInstanceState: Bundle?): View? {
-        mBinding = FragmentFuelInjectionBinding.inflate(inflater, container, false)
-        return mBinding.root
-    }
+    override fun onCreateView(inflater: LayoutInflater, container: ViewGroup?, savedInstanceState: Bundle?): View =
+        ComposeView(requireContext()).apply {
+            packet = null
+            values = null
+            injectorEnabled = true
+            secu3t = false
+            id = R.id.fuel_injection_compose_view
+            setViewCompositionStrategy(ViewCompositionStrategy.DisposeOnViewTreeLifecycleDestroyed)
+            setContent {
+                SecuComposeTheme {
+                    val labels = InjctrParPacket.InjConfig.entries.associate { it.id to getString(it.strId) }
+                    FuelInjectionScreen(values?.let { FuelInjectionUiState.Data(it, injectorEnabled, secu3t) } ?: FuelInjectionUiState.Loading,
+                        labels, ::editParameter, ::changeConfig, ::changePulses, ::changeAngleSpec, ::changeFlag)
+                }
+            }
+        }
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
-
-        initDropdowns()
-
         mViewModel.fwInfoLiveData.observe(viewLifecycleOwner) {
-            if (it.isFuelInjectEnabled.not()) {
-                mBinding.fuelInjectParamGroup.gone()
-                mBinding.fuelInjectEmptyText.visible()
-            }
+            injectorEnabled = it.isFuelInjectEnabled
+            secu3t = it.isSecu3T
         }
-
-        mInjViewModel.sqrnum[0].observe(viewLifecycleOwner) {
-            mBinding.numOfSquirtsCycle.apply {
-                inputType = InputType.TYPE_NULL
-                ArrayAdapter(requireContext(), R.layout.list_item, it.map { it.second }).also {
-                    setAdapter(it)
-                }
-
-                setText(packet.config0Pulses.toString(), false)
-            }
+        val liveData = mViewModel.fuelInjectionLiveData
+        liveData.observe(viewLifecycleOwner) { received ->
+            packet = received
+            // The legacy generator held stale lists for unsupported cylinder counts. The
+            // pure mapping below handles each bank directly and leaves unknown config IDs intact.
+            values = fuelInjectionValues(received)
+            mViewModel.isSendAllowed = true
         }
+    }
 
-        mInjViewModel.sqrnum[1].observe(viewLifecycleOwner) {
-            mBinding.numOfSquirtsCycleG.apply {
-                inputType = InputType.TYPE_NULL
-                ArrayAdapter(requireContext(), R.layout.list_item, it.map { it.second }).also {
-                    setAdapter(it)
-                }
-                setText(packet.config1Pulses.toString(), false)
-            }
+    private fun editParameter(number: FuelInjectionNumber) {
+        val p = packet ?: return
+        val current = values ?: return
+        val spec = when (number) {
+            FuelInjectionNumber.ENGINE_DISPLACEMENT -> EditSpec(R.string.injctr_par_enjine_displacement_title, current.engineDisplacement, .0001f, .01f, 8f, 4, false)
+            FuelInjectionNumber.FLOW_0 -> EditSpec(R.string.injctr_par_injector_flow_rate_title, p.flowRate[0], .02f, 50f, 1023f, 2, false)
+            FuelInjectionNumber.FLOW_1 -> EditSpec(R.string.injctr_par_injector_flow_rate_title, p.flowRate[1], .02f, 50f, 1023f, 2, false)
+            FuelInjectionNumber.TIMING_0, FuelInjectionNumber.TIMING_1 -> EditSpec(R.string.injctr_par_injection_timing_title, p.timing[if (number == FuelInjectionNumber.TIMING_0) 0 else 1].toFloat(), 1f, 0f, 720f, 0, true)
+            FuelInjectionNumber.CRANKING_0, FuelInjectionNumber.CRANKING_1 -> EditSpec(R.string.injctr_par_cranking_injection_timing_title, p.timingCrk[if (number == FuelInjectionNumber.CRANKING_0) 0 else 1].toFloat(), 1f, 0f, 720f, 0, true)
+            FuelInjectionNumber.MIN_PW_0 -> EditSpec(R.string.injctr_par_min_inj_pw_title, p.minPw0, .025f, .1f, 6.5f, 2, false)
+            FuelInjectionNumber.MIN_PW_1 -> EditSpec(R.string.injctr_par_min_inj_pw_title, p.minPw1, .025f, .1f, 6.5f, 2, false)
+            FuelInjectionNumber.MAX_PW_0 -> EditSpec(R.string.injctr_par_max_inj_pw_title, p.injMaxPw[0], .1f, 0f, 100f, 2, false)
+            FuelInjectionNumber.MAX_PW_1 -> EditSpec(R.string.injctr_par_max_inj_pw_title, p.injMaxPw[1], .1f, 0f, 100f, 2, false)
+            FuelInjectionNumber.PULSES_PER_LITER -> EditSpec(R.string.injctr_par_pulses_per_litter_of_fuel, p.fffConst.toFloat(), 1f, 8000f, 32000f, 0, true)
+            FuelInjectionNumber.DECREASE_RATE -> EditSpec(R.string.injctr_par_inj_pw_dec_speed_title, p.injPwDecSpeed, .01f, .01f, 10f, 2, false)
+            FuelInjectionNumber.INCREASE_RATE -> EditSpec(R.string.injctr_par_inj_pw_inc_speed_title, p.injPwIncSpeed, .01f, .01f, 10f, 2, false)
         }
-
-        lifecycleScope.launch {
-            withResumed {
-                mViewModel.fuelInjectionLiveData.observe(viewLifecycleOwner) {
-
-                    mViewModel.isSendAllowed = false
-
-                    packet = it
-
-                    mInjViewModel.generateSquirtsDropDown(packet, 0)
-                    mInjViewModel.generateSquirtsDropDown(packet, 1)
-
-                    mBinding.apply {
-                        progressBar.gone()
-                        params.visible()
-
-                        engineDisplacement.value = it.engineDisp
-
-                        injectorFlowRate.value = it.flowRate[0]
-
-                        val configText = InjctrParPacket.InjConfig.entries.first { injConfig ->
-                            injConfig.id == it.config0
-                        }.let { injConfig ->
-                            getString(injConfig.strId)
-                        }
-                        injectionConfiguration.setText(configText, false)
-
-                        injectorTiming.value = it.timing[0]
-                        crankingInjectionTiming.value = it.timingCrk[0]
-
-                        useMapInjectionTiming.isChecked = it.useTimingMap
-                        injTimingSpecifies.setText(mInjTimingSpecifiesList[it.angleSpec0], false)
-
-                        minInjectionPw.value = it.minPw0
-                        maxInjectionPw.value = it.injMaxPw[0]
-
-
-
-                        injectorFlowRateG.value = it.flowRate[1]
-
-                        val configTextG = InjctrParPacket.InjConfig.entries.first { injConfig ->
-                            injConfig.id == it.config1
-                        }.let { injConfig ->
-                            getString(injConfig.strId)
-                        }
-                        injectionConfigurationG.setText(configTextG, false)
-
-                        injectorTimingG.value = it.timing[1]
-                        crankingInjectionTimingG.value = it.timingCrk[1]
-
-                        useMapInjectionTimingG.isChecked = it.useTimingMapG
-                        injTimingSpecifiesG.setText(mInjTimingSpecifiesList[it.angleSpec1], false)
-
-                        minInjectionPwG.value = it.minPw1
-                        maxInjectionPwG.value = it.injMaxPw[1]
-
-                        pulsesPerLitterOfFuel.value = it.fffConst
-
-                        additionalCorrectionsGasEq.isChecked = it.useAdditionalCorrections
-                        useAirDensityCorrectionMap.isChecked = it.useAirDensity
-                        diffPressForPwCorrGps.isChecked = it.useDifferentialPressure
-                        switchBetweenInjectorsRows.isChecked = it.switchSecondInjRow
-                        fullSequentialAfterStart.isChecked = it.fullSequentialAfterStart
-
-                        injPwDecSpeed.value = it.injPwDecSpeed
-                        injPwIncSpeed.value = it.injPwIncSpeed
-
-                    }
-
-                    initViews()
-
-                    mViewModel.isSendAllowed = true
-                }
+        val onValue: (Float) -> Unit = { updateValue(number, it) }
+        if (spec.integer) {
+            ParamIntEditDialogFragment.newInstance(spec.value.toInt(), getString(spec.title), spec.step.toInt(), spec.max.toInt(), spec.min.toInt()).also { dialog ->
+                dialog.newValueLiveData.observe(viewLifecycleOwner) { onValue(it.toFloat()) }; dialog.show(childFragmentManager, dialog::class.java.simpleName)
+            }
+        } else {
+            ParamFloatEditDialogFragment.newInstance(spec.value, getString(spec.title), spec.step, spec.max, spec.min, spec.precision).also { dialog ->
+                dialog.newValueLiveData.observe(viewLifecycleOwner) { onValue(it) }; dialog.show(childFragmentManager, dialog::class.java.simpleName)
             }
         }
     }
 
-    private fun initDropdowns() {
-        val injConfigList = InjctrParPacket.InjConfig.entries.map { getString(it.strId) }
-
-        mBinding.injectionConfiguration.apply {
-            ArrayAdapter(requireContext(), R.layout.list_item, injConfigList).also {
-                setAdapter(it)
-            }
-            inputType = InputType.TYPE_NULL
+    private fun updateValue(number: FuelInjectionNumber, value: Float) {
+        val p = packet ?: return
+        when (number) {
+            FuelInjectionNumber.ENGINE_DISPLACEMENT -> p.engineDisp = value
+            FuelInjectionNumber.FLOW_0 -> { p.flowRate[0] = value; p.recalculateDerivedConstants() }
+            FuelInjectionNumber.FLOW_1 -> { p.flowRate[1] = value; p.recalculateDerivedConstants() }
+            FuelInjectionNumber.TIMING_0 -> p.timing[0] = value.toInt()
+            FuelInjectionNumber.TIMING_1 -> p.timing[1] = value.toInt()
+            FuelInjectionNumber.CRANKING_0 -> p.timingCrk[0] = value.toInt()
+            FuelInjectionNumber.CRANKING_1 -> p.timingCrk[1] = value.toInt()
+            FuelInjectionNumber.MIN_PW_0 -> p.minPw0 = value
+            FuelInjectionNumber.MIN_PW_1 -> p.minPw1 = value
+            FuelInjectionNumber.MAX_PW_0 -> p.injMaxPw[0] = value
+            FuelInjectionNumber.MAX_PW_1 -> p.injMaxPw[1] = value
+            FuelInjectionNumber.PULSES_PER_LITER -> p.fffConst = value.toInt()
+            FuelInjectionNumber.DECREASE_RATE -> p.injPwDecSpeed = value
+            FuelInjectionNumber.INCREASE_RATE -> p.injPwIncSpeed = value
         }
-
-        mBinding.numOfSquirtsCycle.apply {
-            inputType = InputType.TYPE_NULL
-        }
-
-        mBinding.injTimingSpecifies.apply {
-            inputType = InputType.TYPE_NULL
-            ArrayAdapter(requireContext(), R.layout.list_item, mInjTimingSpecifiesList).also {
-                setAdapter(it)
-            }
-        }
-
-
-        mBinding.injectionConfigurationG.apply {
-            ArrayAdapter(requireContext(), R.layout.list_item, injConfigList).also {
-                setAdapter(it)
-            }
-            inputType = InputType.TYPE_NULL
-        }
-
-        mBinding.numOfSquirtsCycleG.apply {
-            inputType = InputType.TYPE_NULL
-        }
-
-        mBinding.injTimingSpecifiesG.apply {
-            inputType = InputType.TYPE_NULL
-            ArrayAdapter(requireContext(), R.layout.list_item, mInjTimingSpecifiesList).also {
-                setAdapter(it)
-            }
-        }
+        publishAndSend(p)
     }
 
-    private fun initViews() {
+    private fun changeConfig(bank: Int, config: Int) {
+        val p = packet ?: return
+        val choices = validInjectorPulses(config, p.ckpsEngineCyl)
+        if (choices.isEmpty()) return
+        val oldPulses = if (bank == 0) p.config0Pulses else p.config1Pulses
+        val nextPulses = oldPulses.takeIf(choices::contains) ?: choices.first()
+        // Set a valid pulse first: changing config recalculates the derived bank constants immediately.
+        if (bank == 0) { p.config0Pulses = nextPulses; p.config0 = config }
+        else { p.config1Pulses = nextPulses; p.config1 = config }
+        publishAndSend(p)
+    }
 
-        mBinding.apply {
+    private fun changePulses(bank: Int, pulses: Int) {
+        val p = packet ?: return
+        if (pulses !in validInjectorPulses(if (bank == 0) p.config0 else p.config1, p.ckpsEngineCyl)) return
+        if (bank == 0) p.config0Pulses = pulses else p.config1Pulses = pulses
+        publishAndSend(p)
+    }
 
-            engineDisplacement.addOnValueChangeListener {
-                packet.engineDisp = it
-                packet.let { it1 -> mViewModel.sendPacket(it1) }
-            }
+    private fun changeAngleSpec(bank: Int, value: Int) {
+        val p = packet ?: return
+        if (value !in 0..2) return
+        if (bank == 0) p.angleSpec0 = value else p.angleSpec1 = value
+        publishAndSend(p)
+    }
 
-            injectorFlowRate.addOnValueChangeListener {
-                packet.flowRate[0] = it
-                packet.let { it1 -> mViewModel.sendPacket(it1) }
-            }
-
-            injectionConfiguration.setOnItemClickListener { _, _, position, _ ->
-                packet.apply {
-                    config0 = InjctrParPacket.InjConfig.entries[position].id
-                    mViewModel.sendPacket(this)
-                }
-            }
-
-            numOfSquirtsCycle.setOnItemClickListener { _, _, position, _ ->
-                packet.config0Pulses = mInjViewModel.sqrnum[0].value?.get(position)?.first!!
-                packet.let { it1 -> mViewModel.sendPacket(it1) }
-            }
-
-            injectorTiming.addOnValueChangeListener {
-                packet.timing[0] = it
-                packet.let { it1 -> mViewModel.sendPacket(it1) }
-            }
-
-            crankingInjectionTiming.addOnValueChangeListener {
-                packet.timingCrk[0] = it
-                packet.let { it1 -> mViewModel.sendPacket(it1) }
-            }
-
-            useMapInjectionTiming.setOnCheckedChangeListener { _, isChecked ->
-                packet.useTimingMap = isChecked
-                packet.let { it1 -> mViewModel.sendPacket(it1) }
-            }
-
-            injTimingSpecifies.setOnItemClickListener { _, _, position, _ ->
-                packet.angleSpec0 = position
-                packet.let { it1 -> mViewModel.sendPacket(it1) }
-            }
-
-            minInjectionPw.addOnValueChangeListener {
-                packet.minPw0 = it
-                packet.let { it1 -> mViewModel.sendPacket(it1) }
-            }
-
-            maxInjectionPw.addOnValueChangeListener {
-                packet.apply {
-                    injMaxPw[0] = it
-                    mViewModel.sendPacket(this)
-                }
-            }
-
-
-
-
-
-
-
-
-
-            injectorFlowRateG.addOnValueChangeListener {
-                packet.flowRate[1] = it
-                packet.let { it1 -> mViewModel.sendPacket(it1) }
-            }
-
-            injectionConfigurationG.setOnItemClickListener { _, _, position, _ ->
-                packet.apply {
-                    config1 = InjctrParPacket.InjConfig.entries[position].id
-                    mViewModel.sendPacket(this)
-                }
-            }
-
-            numOfSquirtsCycleG.setOnItemClickListener { _, _, position, _ ->
-                packet.config1Pulses = mInjViewModel.sqrnum[1].value?.get(position)?.first!!
-                packet.let { it1 -> mViewModel.sendPacket(it1) }
-            }
-
-            injectorTimingG.addOnValueChangeListener {
-                packet.timing[1] = it
-                packet.let { it1 -> mViewModel.sendPacket(it1) }
-            }
-
-            crankingInjectionTimingG.addOnValueChangeListener {
-                packet.timingCrk[1] = it
-                packet.let { it1 -> mViewModel.sendPacket(it1) }
-            }
-
-            useMapInjectionTimingG.setOnCheckedChangeListener { _, isChecked ->
-                packet.useTimingMapG = isChecked
-                packet.let { it1 -> mViewModel.sendPacket(it1) }
-            }
-
-            injTimingSpecifiesG.setOnItemClickListener { _, _, position, _ ->
-                packet.angleSpec1 = position
-                packet.let { it1 -> mViewModel.sendPacket(it1) }
-            }
-
-            minInjectionPwG.addOnValueChangeListener {
-                packet.minPw1 = it
-                packet.let { it1 -> mViewModel.sendPacket(it1) }
-            }
-
-            maxInjectionPwG.addOnValueChangeListener {
-                packet.apply {
-                    injMaxPw[1] = it
-                    mViewModel.sendPacket(this)
-                }
-            }
-
-            injPwDecSpeed.addOnValueChangeListener {
-                packet.apply {
-                    injPwDecSpeed = it
-                    mViewModel.sendPacket(this)
-                }
-            }
-
-            injPwIncSpeed.addOnValueChangeListener {
-                packet.apply {
-                    injPwIncSpeed = it
-                    mViewModel.sendPacket(this)
-                }
-            }
-
-
-
-
-
-            pulsesPerLitterOfFuel.addOnValueChangeListener {
-                packet.fffConst = it
-                packet.let { it1 -> mViewModel.sendPacket(it1) }
-            }
-
-            additionalCorrectionsGasEq.setOnCheckedChangeListener { _, isChecked ->
-                packet.useAdditionalCorrections = isChecked
-                packet.let { it1 -> mViewModel.sendPacket(it1) }
-            }
-            useAirDensityCorrectionMap.setOnCheckedChangeListener { _, isChecked ->
-                packet.useAirDensity = isChecked
-                packet.let { it1 -> mViewModel.sendPacket(it1) }
-            }
-            diffPressForPwCorrGps.setOnCheckedChangeListener { _, isChecked ->
-                packet.useDifferentialPressure = isChecked
-                packet.let { it1 -> mViewModel.sendPacket(it1) }
-            }
-            switchBetweenInjectorsRows.setOnCheckedChangeListener { _, isChecked ->
-                packet.switchSecondInjRow = isChecked
-                packet.let { it1 -> mViewModel.sendPacket(it1) }
-            }
-            fullSequentialAfterStart.setOnCheckedChangeListener { _, isChecked ->
-                packet.fullSequentialAfterStart = isChecked
-                packet.let { it1 -> mViewModel.sendPacket(it1) }
-            }
-
-
-
-            engineDisplacement.setOnClickListener { floatParamClick(it as FloatParamView) }
-            injectorFlowRate.setOnClickListener { floatParamClick(it as FloatParamView) }
-            injectorTiming.setOnClickListener { intParamClick(it as IntParamView) }
-            crankingInjectionTiming.setOnClickListener { intParamClick(it as IntParamView) }
-            minInjectionPw.setOnClickListener { floatParamClick(it as FloatParamView) }
-            maxInjectionPw.setOnClickListener { floatParamClick(it as FloatParamView) }
-            injectorFlowRateG.setOnClickListener { floatParamClick(it as FloatParamView) }
-            injectorTimingG.setOnClickListener { intParamClick(it as IntParamView) }
-            crankingInjectionTimingG.setOnClickListener { intParamClick(it as IntParamView) }
-            minInjectionPwG.setOnClickListener { floatParamClick(it as FloatParamView) }
-            maxInjectionPwG.setOnClickListener { floatParamClick(it as FloatParamView) }
-            pulsesPerLitterOfFuel.setOnClickListener { intParamClick(it as IntParamView) }
-            injPwDecSpeed.setOnClickListener { floatParamClick(it as FloatParamView) }
-            injPwIncSpeed.setOnClickListener { floatParamClick(it as FloatParamView) }
+    private fun changeFlag(flag: FuelInjectionFlag, value: Boolean) {
+        val p = packet ?: return
+        when (flag) {
+            FuelInjectionFlag.USE_MAP_0 -> p.useTimingMap = value
+            FuelInjectionFlag.USE_MAP_1 -> p.useTimingMapG = value
+            FuelInjectionFlag.ADDITIONAL_CORRECTIONS -> p.useAdditionalCorrections = value
+            FuelInjectionFlag.AIR_DENSITY -> p.useAirDensity = value
+            FuelInjectionFlag.DIFFERENTIAL_PRESSURE -> p.useDifferentialPressure = value
+            FuelInjectionFlag.SWITCH_ROWS -> p.switchSecondInjRow = value
+            FuelInjectionFlag.FULL_SEQUENTIAL_AFTER_START -> p.fullSequentialAfterStart = value
         }
+        publishAndSend(p)
     }
 
-    override fun tabTitle(): Int {
-        return R.string.params_tab_fuel_injection_title
-    }
+    private fun publishAndSend(p: InjctrParPacket) { values = fuelInjectionValues(p); mViewModel.sendPacket(p) }
+    override fun tabTitle(): Int = R.string.params_tab_fuel_injection_title
 }

@@ -229,6 +229,7 @@
     <string name="injctr_par_inj_pw_dec_speed_title">Rate of change limit for decreasing inj.PW</string>
     <string name="injctr_par_inj_pw_inc_speed_title">Rate of change limit for increasing inj.PW</string>
     <string name="injctr_par_inj_timing_specifies">Inj. timing specifies</string>
+    <string name="injctr_par_primary_fuel_title">Primary fuel</string>
     <string name="injctr_par_inj_config_throttlebody">Throttle-body</string>
     <string name="injctr_par_inj_config_simultaneous">Simultaneous</string>
     <string name="injctr_par_inj_config_2banks_altern">2 banks altern</string>

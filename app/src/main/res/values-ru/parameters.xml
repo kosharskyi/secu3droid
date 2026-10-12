@@ -232,6 +232,7 @@
     <string name="injctr_par_inj_pw_dec_speed_title">Скорость уменьшения длительности впрыска</string>
     <string name="injctr_par_inj_pw_inc_speed_title">Скорость увеличения длительности впрыска</string>
     <string name="injctr_par_inj_timing_specifies">Фазу впрыска определяет</string>
+    <string name="injctr_par_primary_fuel_title">Основное топливо</string>
     <string name="injctr_par_inj_config_throttlebody">Моновпрыск</string>
     <string name="injctr_par_inj_config_simultaneous">Одновременный</string>
     <string name="injctr_par_inj_config_2banks_altern">2 банка попер.</string>

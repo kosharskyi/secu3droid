@@ -31,6 +31,27 @@ import androidx.lifecycle.ViewModel
 import org.secu3.android.models.packets.out.params.InjctrParPacket
 import org.secu3.android.models.packets.out.params.InjctrParPacket.InjConfig.*
 
+fun validInjectorConfigurations(cylinders: Int): List<Int> = buildList {
+    add(THROTTLEBODY.id)
+    add(SIMULTANEOUS.id)
+    if (cylinders !in listOf(1, 2, 3, 5)) add(TWO_BANK_ALTERN.id)
+    if (cylinders !in listOf(1, 3, 5)) { add(SEMISEQUENTIAL.id); add(SEMISEQSEPAR.id) }
+    add(FULLSEQUENTIAL.id)
+}
+
+fun validInjectorPulses(config: Int, cylinders: Int): List<Int> = when (config) {
+    THROTTLEBODY.id, SIMULTANEOUS.id -> when (cylinders) {
+        1 -> listOf(1); 2 -> listOf(1, 2); 3 -> listOf(1, 3); 4 -> listOf(1, 2, 4)
+        5 -> listOf(1, 5); 6 -> listOf(1, 2, 3, 6); 8 -> listOf(1, 2, 4, 8); else -> emptyList()
+    }
+    TWO_BANK_ALTERN.id -> when (cylinders) { 4 -> listOf(2, 4); 6 -> listOf(2, 6); 8 -> listOf(2, 4, 8); else -> emptyList() }
+    SEMISEQUENTIAL.id, SEMISEQSEPAR.id -> when (cylinders) {
+        2 -> listOf(1, 2); 4 -> listOf(2, 4); 6 -> listOf(3, 6); 8 -> listOf(4, 8); else -> emptyList()
+    }
+    FULLSEQUENTIAL.id -> listOf(cylinders).filter { it > 0 }
+    else -> emptyList()
+}
+
 class FuelInjectionViewModel: ViewModel() {
 
     private var mSqrnum = listOf(
@@ -41,6 +62,8 @@ class FuelInjectionViewModel: ViewModel() {
         get() = mSqrnum
 
     fun generateSquirtsDropDown(packet: InjctrParPacket, fi: Int) {
+        require(fi in 0..1)
+        mSqrnum[fi].value = emptyList()
 
         val config = if (fi == 0) packet.config0 else packet.config1
 
