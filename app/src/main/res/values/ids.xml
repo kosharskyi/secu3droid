@@ -38,4 +38,5 @@
     <item name="adc_errors_corrections_compose_view" type="id" />
     <item name="choke_control_compose_view" type="id" />
     <item name="acceleration_compose_view" type="id" />
+    <item name="lambda_control_compose_view" type="id" />
 </resources>
