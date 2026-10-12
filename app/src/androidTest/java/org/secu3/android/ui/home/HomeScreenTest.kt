@@ -124,14 +124,14 @@ class HomeScreenTest {
         assertEquals(listOf("download", "notes"), choices)
     }
 
-    @Test fun layoutUsesGridForPortraitAndTabletAndScrollingRowForLandscape() {
+    @Test fun layoutUsesGridForPortraitAndTabletAndScrollingColumnsForLandscape() {
         val config = Configuration()
         config.orientation = Configuration.ORIENTATION_PORTRAIT
         assertEquals(HomeLayout.GRID, homeLayout(config))
         config.screenWidthDp = 720
         assertEquals(HomeLayout.GRID, homeLayout(config))
         config.orientation = Configuration.ORIENTATION_LANDSCAPE
-        assertEquals(HomeLayout.LANDSCAPE_ROW, homeLayout(config))
+        assertEquals(HomeLayout.LANDSCAPE_COLUMNS, homeLayout(config))
 
         var layout by mutableStateOf(HomeLayout.GRID)
         compose.setContent { HomeScreen(HomeScreenState(), HomeScreenActions(), layoutOverride = layout) }
@@ -140,11 +140,23 @@ class HomeScreenTest {
         assertTrue("Dashboard is full width above the two-column grid", dashboardGrid.width > sensorsGrid.width)
         assertTrue("Grid cards are below the dashboard", sensorsGrid.top > dashboardGrid.top)
 
-        compose.runOnIdle { layout = HomeLayout.LANDSCAPE_ROW }
+        compose.runOnIdle { layout = HomeLayout.LANDSCAPE_COLUMNS }
         val dashboardRow = compose.onNodeWithTag("home-card-dashboard").fetchSemanticsNode().boundsInRoot
         val sensorsRow = compose.onNodeWithTag("home-card-sensors").fetchSemanticsNode().boundsInRoot
-        assertTrue("Landscape cards share a row", kotlin.math.abs(sensorsRow.top - dashboardRow.top) < 1f)
-        assertTrue("Landscape cards scroll from left to right", sensorsRow.left > dashboardRow.left)
+        assertTrue("Landscape dashboard is taller than a pair card", dashboardRow.height > sensorsRow.height)
+        assertTrue("Landscape dashboard precedes sensor column", sensorsRow.left > dashboardRow.left)
+        assertTrue("Sensor and parameter cards stack vertically", compose.onNodeWithTag("home-card-parameters").fetchSemanticsNode().boundsInRoot.top > sensorsRow.top)
+        assertTrue("Errors are in the second pair column", compose.onNodeWithTag("home-card-errors").fetchSemanticsNode().boundsInRoot.left > sensorsRow.left)
+        assertTrue("Logs are in the third pair column", compose.onNodeWithTag("home-card-logs").fetchSemanticsNode().boundsInRoot.left > compose.onNodeWithTag("home-card-errors").fetchSemanticsNode().boundsInRoot.left)
+    }
+
+    @Test fun landscapeScrollReachesSettingsAndCardsRemainClickable() {
+        val called = mutableListOf<String>()
+        compose.setContent {
+            HomeScreen(HomeScreenState(), HomeScreenActions(onSettings = { called += "settings" }), layoutOverride = HomeLayout.LANDSCAPE_COLUMNS)
+        }
+        compose.onNodeWithTag("home-card-settings").performScrollTo().assertIsDisplayed().performClick()
+        assertEquals(listOf("settings"), called)
     }
 
     @Test fun safeDrawingInsetsKeepControlsAndMenuViewportInsideTheUsableArea() {
@@ -166,11 +178,18 @@ class HomeScreenTest {
         }
 
         assertContentWithinInsets()
-        compose.runOnIdle { layout = HomeLayout.LANDSCAPE_ROW }
+        compose.runOnIdle { layout = HomeLayout.LANDSCAPE_COLUMNS }
         assertContentWithinInsets()
+        listOf("dashboard", "sensors", "parameters", "errors", "diagnostics", "logs", "settings").forEach { destination ->
+            val card = compose.onNodeWithTag("home-card-$destination").fetchSemanticsNode().boundsInRoot
+            val icon = compose.onNodeWithTag("home-icon-$destination", useUnmergedTree = true).fetchSemanticsNode().boundsInRoot
+            val label = compose.onNodeWithTag("home-label-$destination", useUnmergedTree = true).fetchSemanticsNode().boundsInRoot
+            assertTrue("$destination icon fits inside its landscape card", icon.top >= card.top && icon.bottom <= card.bottom)
+            assertTrue("$destination label fits inside its landscape card", label.top >= card.top && label.bottom <= card.bottom)
+        }
     }
 
-    @Test fun everyMenuIconUsesTheSameProportionalFrameInGridAndLandscapeRow() {
+    @Test fun menuIconsKeepPortraitSizeAndAdaptToLandscapeColumns() {
         var layout by mutableStateOf(HomeLayout.GRID)
         val destinations = listOf("dashboard", "sensors", "parameters", "errors", "diagnostics", "logs", "settings")
         val expectedIconSizePx = with(compose.density) { 96.dp.toPx() }
@@ -181,13 +200,16 @@ class HomeScreenTest {
                 val icon = compose.onNodeWithTag("home-icon-$destination", useUnmergedTree = true)
                 icon.performScrollTo()
                 val bounds = icon.fetchSemanticsNode().boundsInRoot
-                assertTrue("$destination icon frame width stays 96dp", kotlin.math.abs(bounds.width - expectedIconSizePx) < 1f)
-                assertTrue("$destination icon frame height stays 96dp", kotlin.math.abs(bounds.height - expectedIconSizePx) < 1f)
+                assertTrue("$destination icon frame remains visible", bounds.width > 0f && bounds.height > 0f)
+                if (layout == HomeLayout.GRID) {
+                    assertTrue("Portrait icon frame width stays 96dp", kotlin.math.abs(bounds.width - expectedIconSizePx) < 1f)
+                    assertTrue("Portrait icon frame height stays 96dp", kotlin.math.abs(bounds.height - expectedIconSizePx) < 1f)
+                }
             }
         }
 
         assertAllIconFramesHaveConsistentReadableSize()
-        compose.runOnIdle { layout = HomeLayout.LANDSCAPE_ROW }
+        compose.runOnIdle { layout = HomeLayout.LANDSCAPE_COLUMNS }
         assertAllIconFramesHaveConsistentReadableSize()
     }
 }

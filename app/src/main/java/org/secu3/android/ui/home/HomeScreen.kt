@@ -33,15 +33,18 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.safeDrawing
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.windowInsetsPadding
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
@@ -76,7 +79,7 @@ import org.secu3.android.R
 import org.secu3.android.ui.compose.SecuComposeTheme
 
 enum class HomeConnectionStatus { CONNECTED, CONNECTING, DISCONNECTED }
-enum class HomeLayout { GRID, LANDSCAPE_ROW }
+enum class HomeLayout { GRID, LANDSCAPE_COLUMNS }
 
 data class HomeScreenState(
     val connectionStatus: HomeConnectionStatus = HomeConnectionStatus.DISCONNECTED,
@@ -157,13 +160,20 @@ fun HomeScreen(
                     }, modifier = Modifier.size(48.dp).testTag("home-ecu-status").semantics { contentDescription = statusDescription }
                         .then(if (state.firmwareAvailable) Modifier.clickableHome(actions.onFirmware) else Modifier))
             }
-            if (layout == HomeLayout.LANDSCAPE_ROW) {
-                Row(Modifier.fillMaxSize().testTag("home-menu-viewport").horizontalScroll(rememberScrollState()).padding(start = 32.dp, end = 24.dp, bottom = 8.dp),
+            if (layout == HomeLayout.LANDSCAPE_COLUMNS) {
+                Row(Modifier.weight(1f).fillMaxWidth().testTag("home-menu-viewport").horizontalScroll(rememberScrollState()).padding(start = 32.dp, end = 24.dp, bottom = 8.dp),
                     horizontalArrangement = Arrangement.spacedBy(16.dp), verticalAlignment = Alignment.CenterVertically) {
-                    menuItems.forEach { item -> MenuCard(item, Modifier.size(width = 180.dp, height = 150.dp)) { handleDestination(item.destination, actions) { dialog = HomeDialog.DIAGNOSTICS } } }
+                    MenuCard(menuItems.first(), Modifier.fillMaxHeight().width(220.dp), adaptIconSize = true) { handleDestination(menuItems.first().destination, actions) { dialog = HomeDialog.DIAGNOSTICS } }
+                    menuItems.drop(1).chunked(2).forEachIndexed { columnIndex, pair ->
+                        Column(Modifier.fillMaxHeight().width(160.dp).testTag("home-landscape-pair-$columnIndex"), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                            pair.forEach { item ->
+                                MenuCard(item, Modifier.weight(1f).fillMaxWidth(), adaptIconSize = true) { handleDestination(item.destination, actions) { dialog = HomeDialog.DIAGNOSTICS } }
+                            }
+                        }
+                    }
                 }
             } else {
-                Column(Modifier.fillMaxSize().testTag("home-menu-viewport").verticalScroll(rememberScrollState()).padding(horizontal = 32.dp, vertical = 16.dp),
+                Column(Modifier.weight(1f).fillMaxWidth().testTag("home-menu-viewport").verticalScroll(rememberScrollState()).padding(horizontal = 32.dp, vertical = 16.dp),
                     verticalArrangement = Arrangement.spacedBy(16.dp)) {
                     MenuCard(menuItems.first(), Modifier.fillMaxWidth().height(150.dp)) { handleDestination(menuItems.first().destination, actions) { dialog = HomeDialog.DIAGNOSTICS } }
                     val rest = menuItems.drop(1)
@@ -200,11 +210,13 @@ fun HomeScreen(
 }
 
 @Composable
-private fun MenuCard(item: HomeMenuItem, modifier: Modifier, onClick: () -> Unit) {
+private fun MenuCard(item: HomeMenuItem, modifier: Modifier, adaptIconSize: Boolean = false, onClick: () -> Unit) {
     Card(onClick = onClick, modifier = modifier.testTag("home-card-${item.destination.name.lowercase()}"),
         colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.background),
         border = BorderStroke(1.dp, Color(0xFFB2B2B2)), elevation = CardDefaults.cardElevation(defaultElevation = 4.dp)) {
-        Column(Modifier.fillMaxSize().padding(8.dp), horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.SpaceBetween) {
+        BoxWithConstraints(Modifier.fillMaxSize().padding(8.dp)) {
+          val iconSize = if (!adaptIconSize || maxHeight >= 180.dp) 96.dp else if (maxHeight >= 130.dp) 72.dp else (maxHeight * 0.45f).coerceAtLeast(24.dp)
+          Column(Modifier.fillMaxSize(), horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.SpaceBetween) {
             Box(
                 Modifier.weight(1f).fillMaxWidth(),
                 contentAlignment = Alignment.Center,
@@ -214,10 +226,12 @@ private fun MenuCard(item: HomeMenuItem, modifier: Modifier, onClick: () -> Unit
                     contentDescription = null,
                     contentScale = ContentScale.Fit,
                     colorFilter = if (item.destination == HomeDestination.ERRORS) ColorFilter.tint(Color.Black) else null,
-                    modifier = Modifier.size(96.dp).testTag("home-icon-${item.destination.name.lowercase()}"),
+                    modifier = Modifier.size(iconSize).testTag("home-icon-${item.destination.name.lowercase()}"),
                 )
             }
-            Text(stringResource(item.label), textAlign = TextAlign.Center, style = MaterialTheme.typography.titleMedium, modifier = Modifier.padding(bottom = 4.dp))
+            Text(stringResource(item.label), textAlign = TextAlign.Center, style = MaterialTheme.typography.titleMedium,
+                modifier = Modifier.padding(bottom = 4.dp).testTag("home-label-${item.destination.name.lowercase()}"))
+          }
         }
     }
 }
@@ -226,7 +240,7 @@ private fun MenuCard(item: HomeMenuItem, modifier: Modifier, onClick: () -> Unit
 private fun Modifier.clickableHome(onClick: () -> Unit): Modifier = clickable(onClick = onClick)
 
 fun homeLayout(configuration: Configuration): HomeLayout =
-    if (configuration.orientation == Configuration.ORIENTATION_LANDSCAPE) HomeLayout.LANDSCAPE_ROW else HomeLayout.GRID
+    if (configuration.orientation == Configuration.ORIENTATION_LANDSCAPE) HomeLayout.LANDSCAPE_COLUMNS else HomeLayout.GRID
 
 private fun handleDestination(destination: HomeDestination, actions: HomeScreenActions, showDiagnostics: () -> Unit) {
     when (destination) {
