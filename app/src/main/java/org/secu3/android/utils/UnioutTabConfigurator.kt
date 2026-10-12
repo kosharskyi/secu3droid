@@ -24,10 +24,6 @@
  */
 package org.secu3.android.utils
 
-import org.secu3.android.models.packets.out.params.UniOutParamPacket.CONDITION
-import org.secu3.android.ui.parameters.views.FloatParamView
-import javax.inject.Inject
-
 internal data class UniOutConditionFormat(
     val min: Float, val max: Float, val step: Float, val precision: Int,
     val onDefault: Float, val offDefault: Float
@@ -57,20 +53,4 @@ internal fun uniOutConditionFormat(id: Int): UniOutConditionFormat = when (id) {
     38 -> UniOutConditionFormat(0f, 2000f, .25f, 1, 1000f, 990f)
     39, 40 -> UniOutConditionFormat(-40f, 250f, .25f, 1, 100f, 98f)
     else -> UniOutConditionFormat(0f, 1f, 1f, 0, 0f, 1f)
-}
-
-class UnioutTabConfigurator @Inject constructor() {
-    fun configureViews(condition: CONDITION, firstView: FloatParamView, secondView: FloatParamView, firstValue: Float? = null, secondValue: Float? = null) {
-        val format = uniOutConditionFormat(condition.id)
-        firstView.configure(format, firstValue ?: format.onDefault)
-        secondView.configure(format, secondValue ?: format.offDefault)
-    }
-
-    private fun FloatParamView.configure(format: UniOutConditionFormat, initial: Float) {
-        minValue = format.min
-        maxValue = format.max
-        step = format.step
-        precision = format.precision
-        value = initial
-    }
 }

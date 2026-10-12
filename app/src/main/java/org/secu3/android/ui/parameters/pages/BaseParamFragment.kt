@@ -25,102 +25,13 @@
 
 package org.secu3.android.ui.parameters.pages
 
-import android.view.MotionEvent
 import androidx.fragment.app.Fragment
 import androidx.fragment.app.viewModels
-import com.google.android.material.button.MaterialButton
 import org.secu3.android.ui.parameters.ParamsViewModel
-import org.secu3.android.ui.parameters.dialogs.ParamFloatEditDialogFragment
-import org.secu3.android.ui.parameters.dialogs.ParamIntEditDialogFragment
-import org.secu3.android.ui.parameters.views.FloatParamView
-import org.secu3.android.ui.parameters.views.IntParamView
 
 abstract class BaseParamFragment : Fragment() {
 
     protected val mViewModel: ParamsViewModel by viewModels( ownerProducer = { requireParentFragment() })
-
-    protected fun intParamClick(view: IntParamView) {
-        view.apply {
-            ParamIntEditDialogFragment.newInstance(value, title, step, maxValue, minValue).also {
-                it.newValueLiveData.observe(viewLifecycleOwner) { result ->
-                    value = result
-                }
-
-                it.show(childFragmentManager, it::class.java.simpleName)
-            }
-        }
-    }
-
-    // Keep float edit dialog observation and child fragment lifecycle aligned with diagnostics.
-    protected fun floatParamClick(view: FloatParamView) {
-        view.apply {
-            ParamFloatEditDialogFragment.newInstance(value, title, step, maxValue, minValue, precision).also {
-                it.newValueLiveData.observe(viewLifecycleOwner) { result ->
-                    value = result
-                }
-
-                it.show(childFragmentManager, it::class.java.simpleName)
-            }
-        }
-    }
-
-    protected fun MaterialButton.setPressAndHoldRepeater(
-        initialDelayMs: Long = 400L,
-        repeatDelayMs: Long = 80L,
-        fireImmediately: Boolean = true,
-        onTick: () -> Unit
-    ) {
-        var isDown = false
-        var didRepeat = false
-
-        val repeatRunnable = object : Runnable {
-            override fun run() {
-                if (!isDown) return
-                didRepeat = true
-                onTick()
-                postDelayed(this, repeatDelayMs)
-            }
-        }
-
-        setOnTouchListener { v, event ->
-            when (event.actionMasked) {
-                MotionEvent.ACTION_DOWN -> {
-                    isDown = true
-                    didRepeat = false
-                    v.isPressed = true
-
-                    if (fireImmediately) {
-                        onTick()
-                    }
-
-                    v.postDelayed(repeatRunnable, initialDelayMs)
-                    true
-                }
-
-                MotionEvent.ACTION_UP -> {
-                    isDown = false
-                    v.isPressed = false
-                    v.removeCallbacks(repeatRunnable)
-
-                    // Якщо не було повторів і ми не робили immediate tick — це звичайний tap
-                    if (!didRepeat && !fireImmediately) onTick()
-
-                    // І ОТУТ — єдиний тригер "відправити накопичене"
-                    v.performClick()
-                    true
-                }
-
-                MotionEvent.ACTION_CANCEL -> {
-                    isDown = false
-                    v.isPressed = false
-                    v.removeCallbacks(repeatRunnable)
-                    true
-                }
-
-                else -> false
-            }
-        }
-    }
 
     abstract fun tabTitle(): Int
 
