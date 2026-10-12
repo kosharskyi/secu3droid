@@ -36,4 +36,22 @@ class ParamIntInputValidationTest {
         assertEquals(-2, ParamIntEditDialogFragment.parseValidInput("-2", -6, 12))
         assertNull(ParamIntEditDialogFragment.parseValidInput("-7", -6, 12))
     }
+
+    @Test fun steppingUsesOutOfRangeIntegersBeforeClampingInEitherDirection() {
+        val step = ParamIntEditDialogFragment::stepValueFromInput
+        assertEquals(9, step("12", 4, 3, 0, 10, -1))
+        assertEquals(10, step("12", 4, 3, 0, 10, 1))
+        assertEquals(1, step("-2", 4, 3, 0, 10, 1))
+        assertEquals(0, step("-2", 4, 3, 0, 10, -1))
+    }
+
+    @Test fun steppingHandlesHugeIntegersAndFallsBackOnlyForUnparseableText() {
+        val step = ParamIntEditDialogFragment::stepValueFromInput
+        assertEquals(10, step("999999999999999999999999999", 4, 3, 0, 10, 1))
+        assertEquals(10, step("999999999999999999999999999", 4, 3, 0, 10, -1))
+        assertEquals(0, step("-999999999999999999999999999", 4, 3, 0, 10, 1))
+        assertEquals(0, step("-999999999999999999999999999", 4, 3, 0, 10, -1))
+        assertEquals(7, step("-", 4, 3, 0, 10, 1))
+        assertEquals(1, step("-", 4, 3, 0, 10, -1))
+    }
 }

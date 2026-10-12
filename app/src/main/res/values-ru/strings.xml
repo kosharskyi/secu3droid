@@ -1,6 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 
 <resources>
+    <string name="numeric_edit_invalid_value">Введите значение в допустимом диапазоне</string>
     <string name="miscel_evap_invalid_range">Текущую пару значений воздушного потока EVAP нельзя безопасно редактировать. Сначала исправьте другое значение воздушного потока.</string>
     <string name="misc_choose_baud">Выбрать скорость передачи</string>
     <string name="misc_invalid_packet">Этот набор параметров нельзя безопасно отправить. Сначала исправьте диапазон воздушного потока EVAP.</string>

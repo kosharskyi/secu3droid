@@ -27,6 +27,7 @@ package org.secu3.android.ui.parameters.dialogs
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue
 import android.text.InputType
+import org.junit.Assert.assertEquals
 import org.junit.Test
 
 class ParamFloatInputValidationTest {
@@ -43,5 +44,19 @@ class ParamFloatInputValidationTest {
     @Test fun signedKeyboardIsUsedOnlyWhenTheFieldAllowsNegativeValues() {
         assertTrue(ParamFloatEditDialogFragment.inputTypeFor(-15f) and InputType.TYPE_NUMBER_FLAG_SIGNED != 0)
         assertFalse(ParamFloatEditDialogFragment.inputTypeFor(0f) and InputType.TYPE_NUMBER_FLAG_SIGNED != 0)
+    }
+
+    @Test fun steppingUsesOutOfRangeFloatsBeforeClampingInEitherDirection() {
+        val step = ParamFloatEditDialogFragment::stepValueFromInput
+        assertEquals(2f, step("2.5", 1f, .5f, -2f, 2f, -1), 0f)
+        assertEquals(2f, step("2.5", 1f, .5f, -2f, 2f, 1), 0f)
+        assertEquals(-2f, step("-2.5", 1f, .5f, -2f, 2f, 1), 0f)
+        assertEquals(-2f, step("-2.5", 1f, .5f, -2f, 2f, -1), 0f)
+    }
+
+    @Test fun steppingIncompleteFloatSyntaxFallsBackToLastValidValue() {
+        val step = ParamFloatEditDialogFragment::stepValueFromInput
+        assertEquals(1.5f, step("-.", 1f, .5f, -2f, 2f, 1), 0f)
+        assertEquals(.5f, step(".", 1f, .5f, -2f, 2f, -1), 0f)
     }
 }
