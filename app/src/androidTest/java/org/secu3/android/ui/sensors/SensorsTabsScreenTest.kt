@@ -92,8 +92,9 @@ class SensorsTabsScreenTest {
     }
 
     @Test fun longPressReordersGaugeAndIndicatorAndGesturesWorkAfterward() {
+        // Compact numeric cards keep gauge and indicator targets in the tablet viewport; dial sizing has its own test.
         val gauges = listOf(
-            GaugeItem(GaugeState(1, GaugeType.RPM, 0, false), "100"),
+            GaugeItem(GaugeState(1, GaugeType.RPM, 0, true), "100"),
             GaugeItem(GaugeState(2, GaugeType.VOLTAGE, 1, true), "12"),
             GaugeItem(GaugeState(5, GaugeType.MAP, 2, true), "90"),
         )
@@ -112,7 +113,7 @@ class SensorsTabsScreenTest {
                     reorderingChanged = reorderStates::add)
             }
         }
-        compose.onNodeWithTag("dial-RPM").assertExists()
+        compose.onNodeWithTag("gauge-RPM").assertExists()
         dragCard("gauge-RPM", "gauge-MAP")
         assertEquals(listOf(GaugeType.VOLTAGE, GaugeType.MAP, GaugeType.RPM), gaugeOrder?.map { it.gaugeType })
         assertEquals(listOf(true, false), reorderStates)
@@ -129,6 +130,8 @@ class SensorsTabsScreenTest {
     private fun dragCard(sourceTag: String, targetTag: String) {
         val source = compose.onNodeWithTag(sourceTag).fetchSemanticsNode().boundsInRoot
         val target = compose.onNodeWithTag(targetTag).fetchSemanticsNode().boundsInRoot
+        assertPlaced(sourceTag, source)
+        assertPlaced(targetTag, target)
         compose.onNodeWithTag(sourceTag).performTouchInput {
             down(center)
             advanceEventTime(600)
@@ -136,6 +139,10 @@ class SensorsTabsScreenTest {
             up()
         }
         compose.waitForIdle()
+    }
+
+    private fun assertPlaced(tag: String, bounds: androidx.compose.ui.geometry.Rect) {
+        org.junit.Assert.assertTrue("$tag must be placed before the drag; got $bounds", bounds.width > 0f && bounds.height > 0f)
     }
 
     @Test fun loggerControlsExposeStartThenMarksAndStop() {

@@ -206,17 +206,20 @@ class SensorsScreenTest {
     }
 
     @Test fun activeGaugeFollowsFingerUntilDrop() {
+        // Compact numeric cards keep both drag targets in the tablet viewport; dial sizing is tested separately.
         compose.setContent { SecuComposeTheme {
             SensorsScreen(
                 listOf(
-                    GaugeItem(GaugeState(1, GaugeType.RPM, 0), "100"),
-                    GaugeItem(GaugeState(2, GaugeType.VOLTAGE, 1), "12"),
+                    GaugeItem(GaugeState(1, GaugeType.RPM, 0, isNumericView = true), "100"),
+                    GaugeItem(GaugeState(2, GaugeType.VOLTAGE, 1, isNumericView = true), "12"),
                 ), emptyList(),
                 1, null, null, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {},
             )
         } }
         val initialBounds = compose.onNodeWithTag("gauge-RPM").fetchSemanticsNode().boundsInRoot
         val neighborBounds = compose.onNodeWithTag("gauge-VOLTAGE").fetchSemanticsNode().boundsInRoot
+        assertPlaced("RPM gauge", initialBounds)
+        assertPlaced("Voltage gauge", neighborBounds)
         compose.onNodeWithTag("gauge-RPM").performTouchInput {
             down(center)
             advanceEventTime(600)
@@ -264,20 +267,24 @@ class SensorsScreenTest {
     }
 
     @Test fun previewMovesNeighborSmoothlyUnderControlledClock() {
+        // Keep both drag targets in the tablet viewport; SpeedView sizing is verified by its dedicated test.
         compose.mainClock.autoAdvance = false
         var savedOrder: List<GaugeState>? = null
         compose.setContent { SecuComposeTheme {
             SensorsScreen(
                 listOf(
-                    GaugeItem(GaugeState(1, GaugeType.RPM, 0), "100"),
-                    GaugeItem(GaugeState(2, GaugeType.VOLTAGE, 1), "12"),
+                    GaugeItem(GaugeState(1, GaugeType.RPM, 0, isNumericView = true), "100"),
+                    GaugeItem(GaugeState(2, GaugeType.VOLTAGE, 1, isNumericView = true), "12"),
                 ), emptyList(), 1, null, null,
                 {}, {}, {}, {}, {}, {}, {}, {}, {}, { savedOrder = it }, {},
             )
         } }
         compose.waitForIdle()
-        val sourceTop = compose.onNodeWithTag("gauge-RPM").fetchSemanticsNode().boundsInRoot.top
+        val sourceBounds = compose.onNodeWithTag("gauge-RPM").fetchSemanticsNode().boundsInRoot
+        val sourceTop = sourceBounds.top
         val neighborStart = compose.onNodeWithTag("gauge-VOLTAGE").fetchSemanticsNode().boundsInRoot
+        assertPlaced("RPM gauge", sourceBounds)
+        assertPlaced("Voltage gauge", neighborStart)
         val delta = Offset(neighborStart.center.x - compose.onNodeWithTag("gauge-RPM").fetchSemanticsNode().boundsInRoot.center.x,
             neighborStart.center.y - compose.onNodeWithTag("gauge-RPM").fetchSemanticsNode().boundsInRoot.center.y)
         compose.onNodeWithTag("gauge-RPM").performTouchInput {
@@ -306,13 +313,14 @@ class SensorsScreenTest {
     }
 
     @Test fun earlyDropWaitsOnlyForRemainingPreviewAnimation() {
+        // Keep both drag targets in the tablet viewport; SpeedView sizing is verified by its dedicated test.
         compose.mainClock.autoAdvance = false
         var savedOrder: List<GaugeState>? = null
         compose.setContent { SecuComposeTheme {
             SensorsScreen(
                 listOf(
-                    GaugeItem(GaugeState(1, GaugeType.RPM, 0), "100"),
-                    GaugeItem(GaugeState(2, GaugeType.VOLTAGE, 1), "12"),
+                    GaugeItem(GaugeState(1, GaugeType.RPM, 0, isNumericView = true), "100"),
+                    GaugeItem(GaugeState(2, GaugeType.VOLTAGE, 1, isNumericView = true), "12"),
                 ), emptyList(), 1, null, null,
                 {}, {}, {}, {}, {}, {}, {}, {}, {}, { savedOrder = it }, {},
             )
@@ -320,6 +328,8 @@ class SensorsScreenTest {
         compose.waitForIdle()
         val source = compose.onNodeWithTag("gauge-RPM").fetchSemanticsNode().boundsInRoot
         val target = compose.onNodeWithTag("gauge-VOLTAGE").fetchSemanticsNode().boundsInRoot
+        assertPlaced("RPM gauge", source)
+        assertPlaced("Voltage gauge", target)
         compose.onNodeWithTag("gauge-RPM").performTouchInput {
             down(center)
             advanceEventTime(600)
@@ -336,6 +346,10 @@ class SensorsScreenTest {
         compose.waitForIdle()
         assertEquals(listOf(GaugeType.VOLTAGE, GaugeType.RPM), savedOrder?.map { it.gaugeType })
         compose.mainClock.autoAdvance = true
+    }
+
+    private fun assertPlaced(label: String, bounds: androidx.compose.ui.geometry.Rect) {
+        org.junit.Assert.assertTrue("$label must be placed before the drag; got $bounds", bounds.width > 0f && bounds.height > 0f)
     }
 
     @Test fun repeatedTargetEventsKeepPreviewStableAndReturningHomeCancelsReorder() {
