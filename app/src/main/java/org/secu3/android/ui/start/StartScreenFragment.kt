@@ -46,59 +46,19 @@ import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import androidx.activity.result.contract.ActivityResultContracts
-import androidx.compose.foundation.Image
-import androidx.compose.foundation.clickable
-import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.layout.systemBarsPadding
-import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.items
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Assessment
-import androidx.compose.material.icons.filled.Bluetooth
-import androidx.compose.material.icons.filled.RequestQuote
-import androidx.compose.material.icons.filled.Settings
-import androidx.compose.material3.ExperimentalMaterial3Api
-import androidx.compose.material3.HorizontalDivider
-import androidx.compose.material3.Icon
-import androidx.compose.material3.ListItem
-import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.ModalBottomSheet
-import androidx.compose.material3.Surface
-import androidx.compose.material3.Text
-import androidx.compose.runtime.Composable
 import androidx.compose.runtime.SideEffect
-import androidx.compose.runtime.getValue
 import androidx.compose.runtime.livedata.observeAsState
-import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
-import androidx.compose.ui.Alignment
-import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.ComposeView
 import androidx.compose.ui.platform.ViewCompositionStrategy
-import androidx.compose.ui.res.painterResource
-import androidx.compose.ui.res.stringResource
-import androidx.compose.ui.tooling.preview.Preview
-import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
 import androidx.core.content.ContextCompat
 import androidx.core.content.IntentCompat
 import androidx.core.view.WindowInsetsControllerCompat
 import androidx.fragment.app.viewModels
-import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.fragment.findNavController
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.setValue
-import org.secu3.android.ui.compose.ConfirmationDialog
 import dagger.hilt.android.AndroidEntryPoint
-import org.secu3.android.R
 import org.secu3.android.connection.Connected
 import org.secu3.android.ui.settings.SettingsActivity
 
@@ -174,15 +134,42 @@ class StartScreenFragment : Fragment() {
         return ComposeView(requireContext()).apply {
             setViewCompositionStrategy(ViewCompositionStrategy.DisposeOnViewTreeLifecycleDestroyed)
             setContent {
-                StartScreen(viewModel)
-                if (showBluetoothRationale) {
-                    ConfirmationDialog(
-                        title = R.string.permission_rationale_title,
-                        message = R.string.permission_rationale_message,
-                        onConfirm = { showBluetoothRationale = false; permissionRequest.launch(pendingBluetoothPermissions) },
-                        onCancel = { showBluetoothRationale = false },
+                SideEffect {
+                    WindowInsetsControllerCompat(requireActivity().window, requireView()).isAppearanceLightStatusBars = true
+                }
+                val connecting by viewModel.isConnectionInProgressLiveData.observeAsState(false)
+                val usbDevice by viewModel.mUsbDeviceAttachedLiveData.observeAsState()
+                val devices = viewModel.discoveredBtDevices.map { device ->
+                    StartBluetoothDevice(
+                        id = device.address,
+                        name = viewModel.getBluetoothDeviceName(device).orEmpty(),
                     )
                 }
+                StartScreenContent(
+                    state = StartScreenState(
+                        connecting = connecting,
+                        usbDeviceDetected = usbDevice != null,
+                        showBluetoothDevices = viewModel.showBottomSheet.value,
+                        bluetoothDevices = devices,
+                        showBluetoothRationale = showBluetoothRationale,
+                    ),
+                    actions = StartScreenActions(
+                        onConnectOrCancel = { inProgress -> connectBtnClicked(inProgress) },
+                        onLogs = { findNavController().navigate(StartScreenFragmentDirections.openSecuLogsFragment()) },
+                        onSettings = { startActivity(Intent(requireContext(), SettingsActivity::class.java)) },
+                        onBluetoothDeviceSelected = ::onBluetoothDeviceSelected,
+                        onBluetoothSheetDismissed = {
+                            viewModel.showBottomSheet.value = false
+                            viewModel.discoveredBtDevices.clear()
+                            viewModel.cancelBtDiscovery()
+                        },
+                        onRationaleConfirmed = {
+                            showBluetoothRationale = false
+                            permissionRequest.launch(pendingBluetoothPermissions)
+                        },
+                        onRationaleCancelled = { showBluetoothRationale = false },
+                    ),
+                )
             }
         }
     }
@@ -224,131 +211,16 @@ class StartScreenFragment : Fragment() {
         requireContext().unregisterReceiver(btDeviceDiscoveryReceiver)
     }
 
-    @OptIn(ExperimentalMaterial3Api::class)
-    @Composable
-    fun StartScreen(viewModel: StartScreenViewModel = viewModel()) {
-
-        SideEffect {
-            WindowInsetsControllerCompat(requireActivity().window, requireView()).isAppearanceLightStatusBars = true
+    private fun onBluetoothDeviceSelected(address: String) {
+        val device = viewModel.discoveredBtDevices.firstOrNull { it.address == address } ?: return
+        if (viewModel.getBluetoothBondState(device) == BluetoothDevice.BOND_BONDED) {
+            viewModel.setBtDevice(device)
+            viewModel.startConnection(null)
+        } else {
+            viewModel.enableProgress()
+            viewModel.createBluetoothBond(device)
         }
-
-        var showBottomSheet by remember { viewModel.showBottomSheet }
-
-        MaterialTheme {
-            Surface {
-                Box(
-                    modifier = Modifier
-                        .fillMaxSize()
-                        .systemBarsPadding()) {
-
-                    Icon(
-                        painter = painterResource(R.drawable.ic_log_file),
-                        contentDescription = "Logs icon",
-                        modifier = Modifier
-                            .size(64.dp)
-                            .padding(16.dp)
-                            .align(Alignment.TopStart)
-                            .clickable {
-                                findNavController().navigate(StartScreenFragmentDirections.openSecuLogsFragment())
-                            },
-                        tint = Color.Black
-                    )
-
-                    Icon(
-                        imageVector = Icons.Default.Settings,
-                        contentDescription = "Settings icon",
-                        modifier = Modifier
-                            .size(64.dp)
-                            .padding(16.dp)
-                            .align(Alignment.TopEnd)
-                            .clickable {
-                                startActivity(Intent(requireContext(), SettingsActivity::class.java))
-                            },
-                        tint = Color.Black
-                    )
-
-                    val isInProgress = viewModel.isConnectionInProgressLiveData.observeAsState()
-                    isInProgress.value?.let {
-                        CircularButton(
-                            textNormal = stringResource(R.string.connect),
-                            textInProgress = stringResource(R.string.status_connecting),
-                            isInProgress = it,
-                            onClick = {
-                                connectBtnClicked(it)
-                            },
-                            size = 200.dp,
-                            borderColor = Color.Gray,
-                            progressSegmentColor = Color.Cyan,
-                            textColor = Color.Black,
-                            modifier = Modifier.align(Alignment.Center)
-                        )
-                    }
-
-                    val device = viewModel.mUsbDeviceAttachedLiveData.observeAsState()
-                    device.value?.let {
-                        Text(
-                            stringResource(R.string.usb_device_detected), modifier = Modifier
-                                .padding(16.dp)
-                                .align(Alignment.BottomCenter))
-                    }
-
-                    if (showBottomSheet) {
-
-                        ModalBottomSheet(
-                            onDismissRequest = {
-                                showBottomSheet = false
-                                viewModel.discoveredBtDevices.clear()
-                                viewModel.cancelBtDiscovery()
-                            }
-                        ) {
-                            Text(
-                                text = stringResource(R.string.select_a_device_from_the_list),
-                                style = androidx.compose.material3.MaterialTheme.typography.titleLarge,
-                                modifier = Modifier
-                                    .padding(horizontal = 16.dp)
-                                    .padding(bottom = 16.dp)
-                            )
-                            HorizontalDivider()
-
-                            val devices = remember { viewModel.discoveredBtDevices }
-
-                            LazyColumn(
-                                modifier = Modifier
-                                    .fillMaxWidth()
-                            ) {
-                                items(devices, key = { it.address }) { device ->
-                                    ListItem(
-                                        headlineContent = {
-                                            Row {
-                                                Image(Icons.Default.Bluetooth, contentDescription = "Bluetooth icon",
-                                                    modifier = Modifier
-                                                        .padding(end = 8.dp)
-                                                        .align(Alignment.CenterVertically))
-                                                Column {
-                                                    Text(viewModel.getBluetoothDeviceName(device) ?: stringResource(R.string.unknown_device))
-                                                    Text(device.address, fontSize = 12.sp, color = androidx.compose.material3.MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f)) // Відображення MAC-адреси()
-                                                }
-                                            }
-                                        },
-                                        modifier = Modifier.clickable {
-                                            if (viewModel.getBluetoothBondState(device) == BluetoothDevice.BOND_BONDED) {
-                                                viewModel.setBtDevice(device)
-                                                viewModel.startConnection(null)
-                                            } else {
-                                                viewModel.enableProgress()
-                                                viewModel.createBluetoothBond(device)
-                                            }
-                                            viewModel.showBottomSheet.value = false
-                                        }
-                                    )
-                                    HorizontalDivider(modifier = Modifier.padding(horizontal = 16.dp))
-                                }
-                            }
-                        }
-                    }
-                }
-            }
-        }
+        viewModel.showBottomSheet.value = false
     }
 
     private fun connectBtnClicked(isInProgress: Boolean) {
