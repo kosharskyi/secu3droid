@@ -1,6 +1,6 @@
 /*
  *    SecuDroid  - An open source, free manager for SECU-3 engine control unit
- *    Copyright (C) 2024 Vitaliy O. Kosharskyi. Ukraine, Kyiv
+ *    Copyright (C) 2024 Vitalii O. Kosharskyi. Ukraine, Kyiv
  *
  *    SECU-3  - An open source, free engine control unit
  *    Copyright (C) 2007-2024 Alexey A. Shabelnikov. Ukraine, Kyiv
@@ -22,169 +22,55 @@
  *                    http://secu-3.org
  *                    email: vetalkosharskiy@gmail.com
  */
-
 package org.secu3.android.utils
 
 import org.secu3.android.models.packets.out.params.UniOutParamPacket.CONDITION
 import org.secu3.android.ui.parameters.views.FloatParamView
 import javax.inject.Inject
 
+internal data class UniOutConditionFormat(
+    val min: Float, val max: Float, val step: Float, val precision: Int,
+    val onDefault: Float, val offDefault: Float
+)
+
+internal fun uniOutConditionFormat(id: Int): UniOutConditionFormat = when (id) {
+    0, 14, 28, 30 -> UniOutConditionFormat(-40f, 300f, .25f, 2, 55f, 50f)
+    1 -> UniOutConditionFormat(50f, 30000f, 10f, 0, 1500f, 1200f)
+    2, 29, 35, 41 -> UniOutConditionFormat(.25f, 500f, .25f, 2, 95f, 90f)
+    3 -> UniOutConditionFormat(5f, 16f, .1f, 1, 10f, 10.5f)
+    4, 17, 19, 31, 32 -> UniOutConditionFormat(0f, 1f, 1f, 0, 0f, 1f)
+    5 -> UniOutConditionFormat(5f, 250f, .1f, 1, 70f, 65f)
+    6 -> UniOutConditionFormat(0f, 16f, 1f, 0, 13f, 12f)
+    7, 8, 9, 20 -> UniOutConditionFormat(0f, 600f, .1f, 1, 0f, 5f)
+    10 -> UniOutConditionFormat(0f, 100f, .5f, 1, 60f, 55f)
+    11 -> UniOutConditionFormat(-15f, 65f, .1f, 1, 55f, 53f)
+    12 -> UniOutConditionFormat(0f, 5f, .01f, 2, 2.5f, 2.45f)
+    15, 21, 22, 24, 25, 26, 27 -> UniOutConditionFormat(0f, 5f, .01f, 2, 2.5f, 2.48f)
+    16 -> UniOutConditionFormat(0f, 600f, .1f, 2, 2.5f, 2.48f)
+    13 -> UniOutConditionFormat(0f, 100f, .5f, 1, 30f, 29f)
+    18 -> UniOutConditionFormat(.01f, 200f, .01f, 2, 20f, 19.9f)
+    23 -> UniOutConditionFormat(0f, 600f, .01f, 2, 1f, 5f)
+    33 -> UniOutConditionFormat(.02f, 650f, .1f, 2, 95f, 90f)
+    34 -> UniOutConditionFormat(-1000f, 1000f, 1f, 0, 55f, 50f)
+    36 -> UniOutConditionFormat(0f, 700f, .25f, 2, 320f, 300f)
+    37 -> UniOutConditionFormat(0f, 25f, .05f, 3, 4.1f, 4f)
+    38 -> UniOutConditionFormat(0f, 2000f, .25f, 1, 1000f, 990f)
+    39, 40 -> UniOutConditionFormat(-40f, 250f, .25f, 1, 100f, 98f)
+    else -> UniOutConditionFormat(0f, 1f, 1f, 0, 0f, 1f)
+}
+
 class UnioutTabConfigurator @Inject constructor() {
-
-
     fun configureViews(condition: CONDITION, firstView: FloatParamView, secondView: FloatParamView, firstValue: Float? = null, secondValue: Float? = null) {
-
-        when (condition) {
-            CONDITION.COOLANT_TEMPER -> {
-                firstView.configure(-40.0f, 180.0f,0.25f, 2, firstValue ?: 55.0f)
-                secondView.configure(-40.0f, 180.0f,0.25f, 2, secondValue ?: 50.0f)
-            }
-            CONDITION.RPM -> {
-                firstView.configure(50.0f, 2000.0f,10.0f, 0, firstValue ?: 1500.0f)
-                secondView.configure(50.0f, 2000.0f,10.0f, 0, secondValue ?: 1200.0f)
-            }
-            CONDITION.MAP -> {
-                firstView.configure(0.25f, 500.0f,0.25f, 2, firstValue ?: 95.0f)
-                secondView.configure(0.25f, 500.0f,0.25f, 2, secondValue ?: 90.0f)
-            }
-            CONDITION.UBAT -> {
-                firstView.configure(5.0f, 16.0f,0.1f, 1, firstValue ?: 10.0f)
-                secondView.configure(5.0f, 16.0f,0.1f, 1, secondValue ?: 10.5f)
-            }
-            CONDITION.CARB -> {
-                firstView.configure(0.0f, 1.0f,1.0f, 0, firstValue ?: 0.0f)
-                secondView.configure(0.0f, 1.0f,1.0f, 0, secondValue ?: 1.0f)
-            }
-            CONDITION.VSPD -> {
-                firstView.configure(5.0f, 250.0f,0.1f, 1, firstValue ?: 70.0f)
-                secondView.configure(5.0f, 250.0f,0.1f, 1, secondValue ?: 65.0f)
-            }
-            CONDITION.AIRFL -> {
-                firstView.configure(0.0f, 16.0f,1.0f, 0, firstValue ?: 13.0f)
-                secondView.configure(0.0f, 16.0f,1.0f, 0, secondValue ?: 12.0f)
-            }
-            CONDITION.TMR, CONDITION.ITTMR, CONDITION.ESTMR -> {
-                firstView.configure(0.0f, 600.0f,0.1f, 1, firstValue ?: 0.0f)
-                secondView.configure(0.0f, 600.0f,0.1f, 1, secondValue ?: 5.0f)
-            }
-            CONDITION.CPOS -> {
-                firstView.configure(0.0f, 100.0f,0.5f, 1, firstValue ?: 60.0f)
-                secondView.configure(0.0f, 100.0f,0.5f, 1, secondValue ?: 55.0f)
-            }
-            CONDITION.AANG -> {
-                firstView.configure(-15.0f, 65.0f,0.1f, 1, firstValue ?: 55.0f)
-                secondView.configure(-15.0f, 65.0f,0.1f, 1, secondValue ?: 53.0f)
-            }
-            CONDITION.KLEV -> {
-                firstView.configure(0.0f, 5.0f,0.01f, 2, firstValue ?: 2.5f)
-                secondView.configure(0.0f, 5.0f,0.01f, 2, secondValue ?: 2.45f)
-            }
-            CONDITION.TPS -> {
-                firstView.configure(0.0f, 100.0f,0.5f, 1, firstValue ?: 30.0f)
-                secondView.configure(0.0f, 100.0f,0.5f, 1, secondValue ?: 29.0f)
-            }
-            CONDITION.ATS -> {
-                firstView.configure(-40.0f, 180.0f,0.25f, 2, firstValue ?: 55.0f)
-                secondView.configure(-40.0f, 180.0f,0.25f, 2, secondValue ?: 50.0f)
-            }
-            CONDITION.AI1, CONDITION.AI2, CONDITION.AI3, CONDITION.AI4,
-            CONDITION.AI5, CONDITION.AI6, CONDITION.AI7, CONDITION.AI8 -> {
-                firstView.configure(0.0f, 5.0f,0.01f, 2, firstValue ?: 2.5f)
-                secondView.configure(0.0f, 5.0f,0.01f, 2, secondValue ?: 2.48f)
-            }
-            CONDITION.GASV -> {
-                firstView.configure(0.0f, 1.0f,1.0f, 0, firstValue ?: 0.0f)
-                secondView.configure(0.0f, 1.0f,1.0f, 0, secondValue ?: 1.0f)
-            }
-            CONDITION.IPW -> {
-                firstView.configure(0.01f, 200.0f,0.01f, 2, firstValue ?: 20.0f)
-                secondView.configure(0.01f, 200.0f,0.01f, 2, secondValue ?: 19.9f)
-            }
-            CONDITION.CE -> {
-                firstView.configure(0.0f, 1.0f,1.0f, 0, firstValue ?: 0.0f)
-                secondView.configure(0.0f, 1.0f,1.0f, 0, secondValue ?: 1.0f)
-            }
-            CONDITION.OFTMR -> {
-                firstView.configure(0.0f, 600.0f,0.1f, 1, firstValue ?: 0.0f)
-                secondView.configure(0.0f, 600.0f,0.1f, 1, secondValue ?: 5.0f)
-            }
-            CONDITION.LOOPTMR -> {
-                firstView.configure(0.0f, 600.0f,0.1f, 1, firstValue ?: 1.0f)
-                secondView.configure(0.0f, 600.0f,0.1f, 1, secondValue ?: 5.0f)
-            }
-
-            CONDITION.GRTS -> {
-                firstView.configure(-40.0f, 300.0f,0.25f, 2, firstValue ?: 55.0f)
-                secondView.configure(-40.0f, 300.0f,0.25f, 2, secondValue ?: 50.0f)
-            }
-
-            CONDITION.MAP2 -> {
-                firstView.configure(0.25f, 500.0f,0.25f, 2, firstValue ?: 95.0f)
-                secondView.configure(0.25f, 500.0f,0.25f, 2, secondValue ?: 90.0f)
-            }
-
-            CONDITION.TMP2 -> {
-                firstView.configure(-40.0f, 300.0f,0.25f, 2, firstValue ?: 55.0f)
-                firstView.configure(-40.0f, 300.0f,0.25f, 2, secondValue ?: 50.0f)
-            }
-
-            CONDITION.INPUT1 -> {
-                firstView.configure(0.0f, 1.0f,1.0f, 0, firstValue ?: 0.0f)
-                firstView.configure(0.0f, 1.0f,1.0f, 0, secondValue ?: 1.0f)
-            }
-
-            CONDITION.INPUT2 -> {
-                firstView.configure(0.0f, 1.0f,1.0f, 0, firstValue ?: 0.0f)
-                firstView.configure(0.0f, 1.0f,1.0f, 0, secondValue ?: 1.0f)
-            }
-
-            CONDITION.MAF -> {
-                firstView.configure(0.25f, 650.0f,0.10f, 2, firstValue ?: 95.0f)
-                secondView.configure(0.25f, 650.0f,0.10f, 2, secondValue ?: 90.0f)
-            }
-
-            CONDITION.TPSDOT -> {
-                firstView.configure(0.25f, 500.0f,0.25f, 2, firstValue ?: 95.0f)
-                secondView.configure(0.25f, 500.0f,0.25f, 2, secondValue ?: 90.0f)
-            }
-
-            CONDITION.GPS -> {
-                firstView.configure(0.25f, 500.0f,0.25f, 2, firstValue ?: 95.0f)
-                secondView.configure(0.25f, 500.0f,0.25f, 2, secondValue ?: 90.0f)
-            }
-
-            CONDITION.FPS -> {
-                firstView.configure(0.0f, 700.0f,0.25f, 2, firstValue ?: 320.0f)
-                secondView.configure(0.0f, 700.0f,0.25f, 2, secondValue ?: 300.0f)
-            }
-            CONDITION.OPS -> {
-                firstView.configure(0.0f, 25.0f,0.05f, 3, firstValue ?: 4.1f)
-                secondView.configure(0.0f, 25.0f,0.05f, 3, secondValue ?: 4.0f)
-            }
-            CONDITION.EGTS -> {
-                firstView.configure(0.0f, 2000.0f,0.25f, 1, firstValue ?: 1000.0f)
-                secondView.configure(0.0f, 2000.0f,0.25f, 1, secondValue ?: 990.0f)
-            }
-            CONDITION.FTS -> {
-                firstView.configure(-40.0f, 250.0f,0.25f, 1, firstValue ?: 100.0f)
-                secondView.configure(-40.0f, 250.0f,0.25f, 1, secondValue ?: 98.0f)
-            }
-            CONDITION.OTS -> {
-                firstView.configure(-40.0f, 250.0f,0.25f, 1, firstValue ?: 100.0f)
-                secondView.configure(-40.0f, 250.0f,0.25f, 1, secondValue ?: 98.0f)
-            }
-            CONDITION.LOAD -> {
-                firstView.configure(0.25f, 500.0f,0.25f, 2, firstValue ?: 95.0f)
-                secondView.configure(0.25f, 500.0f,0.25f, 2, secondValue ?: 90.0f)
-            }
-        }
+        val format = uniOutConditionFormat(condition.id)
+        firstView.configure(format, firstValue ?: format.onDefault)
+        secondView.configure(format, secondValue ?: format.offDefault)
     }
 
-    private fun FloatParamView.configure(min: Float, max: Float, stepValue: Float, precisionValue: Int, newValue: Float) {
-        minValue = min
-        maxValue = max
-        step = stepValue
-        precision = precisionValue
-        value = newValue
+    private fun FloatParamView.configure(format: UniOutConditionFormat, initial: Float) {
+        minValue = format.min
+        maxValue = format.max
+        step = format.step
+        precision = format.precision
+        value = initial
     }
 }

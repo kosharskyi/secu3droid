@@ -212,6 +212,13 @@
     <string name="unioutput5_condition_2_title">Условие 2 для выхода №5</string>
     <string name="unioutput6_condition_1_title">Условие 1 для выхода №6</string>
     <string name="unioutput6_condition_2_title">Условие 2 для выхода №6</string>
+    <string name="uniout_outputs_link_function">Функция связи выходов 1 + 2</string>
+    <string name="uniout_disabled">Отключено</string>
+    <string name="uniout_unknown_code">Код %1$d</string>
+    <string name="uniout_threshold_unavailable">Пороги недоступны для %1$s</string>
+    <string name="uniout_threshold_edit_title">Порог %1$s</string>
+    <string name="uniout_threshold_value_label">Значение</string>
+    <string name="uniout_label_value">%1$s: %2$s</string>
 
     <string name="injctr_par_injector_flow_rate_title">Производительность форсунки</string>
     <string name="injctr_par_enjine_displacement_title">Объем двигателя</string>

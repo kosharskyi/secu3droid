@@ -208,6 +208,13 @@
     <string name="unioutput5_condition_2_title">Condition 2 for output 5</string>
     <string name="unioutput6_condition_1_title">Condition 1 for output 6</string>
     <string name="unioutput6_condition_2_title">Condition 2 for output 6</string>
+    <string name="uniout_outputs_link_function">Function linking outputs 1 + 2</string>
+    <string name="uniout_disabled">Disabled</string>
+    <string name="uniout_unknown_code">Code %1$d</string>
+    <string name="uniout_threshold_unavailable">Thresholds unavailable for %1$s</string>
+    <string name="uniout_threshold_edit_title">%1$s threshold</string>
+    <string name="uniout_threshold_value_label">Value</string>
+    <string name="uniout_label_value">%1$s: %2$s</string>
 
     <string name="injctr_par_injector_flow_rate_title">Injector flow rate</string>
     <string name="injctr_par_enjine_displacement_title">Engine displacement</string>

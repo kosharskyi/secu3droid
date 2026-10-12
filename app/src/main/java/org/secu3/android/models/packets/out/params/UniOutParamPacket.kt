@@ -338,7 +338,7 @@ data class UniOutParamPacket(
     var output4Inversion: Boolean
         get() = rawOutput4Flags.getBitValue(3) > 0
         set(value) {
-            rawOutput4Flags = rawOutput3Flags.setBitValue(value, 3)
+            rawOutput4Flags = rawOutput4Flags.setBitValue(value, 3)
         }
 
     var output4LogicFunc: Int
@@ -459,7 +459,7 @@ data class UniOutParamPacket(
         }
 
     var output6LogicFunc: Int
-        get() = rawOutput5Flags shr 4
+        get() = rawOutput6Flags shr 4
         set(value) {
             rawOutput6Flags = rawOutput6Flags.and(0xF).or(value shl 4)
         }
@@ -613,7 +613,7 @@ data class UniOutParamPacket(
         CE(19, true, true, R.string.uniout_condition_ce), // CE state
         OFTMR(20, true, true, R.string.uniout_condition_oftmr), // On/Off delay timer
         AI3(21, true, true, R.string.uniout_condition_ai3), // Analog input 3
-        AI4(22, true, true, R.string.uniout_condition_ai3), // Analog input 4
+        AI4(22, true, true, R.string.uniout_condition_ai4), // Analog input 4
         LOOPTMR(23, false, true, R.string.uniout_condition_looptmr), // Looper timer 1 condition
         AI5(24, true, true, R.string.uniout_condition_ai5), // Analog input 5
         AI6(25, true, true, R.string.uniout_condition_ai6), // Analog input 6
@@ -637,54 +637,57 @@ data class UniOutParamPacket(
     }
 
 
+    private fun Int.signedIfNeeded(condition: Int): Int =
+        if (condition in SIGNED_CONDITIONS && (this and 0x8000) != 0) this - 0x10000 else this
+
     override fun parse(data: IntArray): InputPacket {
         rawOutput1Flags = data.get1Byte()
         output1Condition1 = data.get1Byte()
         output1Condition2 = data.get1Byte()
-        rawOutput1OnThrd1 = data.get2Bytes()
-        rawOutput1OffThrd1 = data.get2Bytes()
-        rawOutput1OnThrd2 = data.get2Bytes()
-        rawOutput1OffThrd2 = data.get2Bytes()
+        rawOutput1OnThrd1 = data.get2Bytes().signedIfNeeded(output1Condition1)
+        rawOutput1OffThrd1 = data.get2Bytes().signedIfNeeded(output1Condition1)
+        rawOutput1OnThrd2 = data.get2Bytes().signedIfNeeded(output1Condition2)
+        rawOutput1OffThrd2 = data.get2Bytes().signedIfNeeded(output1Condition2)
 
         rawOutput2Flags = data.get1Byte()
         output2Condition1 = data.get1Byte()
         output2Condition2 = data.get1Byte()
-        rawOutput2OnThrd1 = data.get2Bytes()
-        rawOutput2OffThrd1 = data.get2Bytes()
-        rawOutput2OnThrd2 = data.get2Bytes()
-        rawOutput2OffThrd2 = data.get2Bytes()
+        rawOutput2OnThrd1 = data.get2Bytes().signedIfNeeded(output2Condition1)
+        rawOutput2OffThrd1 = data.get2Bytes().signedIfNeeded(output2Condition1)
+        rawOutput2OnThrd2 = data.get2Bytes().signedIfNeeded(output2Condition2)
+        rawOutput2OffThrd2 = data.get2Bytes().signedIfNeeded(output2Condition2)
 
         rawOutput3Flags = data.get1Byte()
         output3Condition1 = data.get1Byte()
         output3Condition2 = data.get1Byte()
-        rawOutput3OnThrd1 = data.get2Bytes()
-        rawOutput3OffThrd1 = data.get2Bytes()
-        rawOutput3OnThrd2 = data.get2Bytes()
-        rawOutput3OffThrd2 = data.get2Bytes()
+        rawOutput3OnThrd1 = data.get2Bytes().signedIfNeeded(output3Condition1)
+        rawOutput3OffThrd1 = data.get2Bytes().signedIfNeeded(output3Condition1)
+        rawOutput3OnThrd2 = data.get2Bytes().signedIfNeeded(output3Condition2)
+        rawOutput3OffThrd2 = data.get2Bytes().signedIfNeeded(output3Condition2)
 
         rawOutput4Flags = data.get1Byte()
         output4Condition1 = data.get1Byte()
         output4Condition2 = data.get1Byte()
-        rawOutput4OnThrd1 = data.get2Bytes()
-        rawOutput4OffThrd1 = data.get2Bytes()
-        rawOutput4OnThrd2 = data.get2Bytes()
-        rawOutput4OffThrd2 = data.get2Bytes()
+        rawOutput4OnThrd1 = data.get2Bytes().signedIfNeeded(output4Condition1)
+        rawOutput4OffThrd1 = data.get2Bytes().signedIfNeeded(output4Condition1)
+        rawOutput4OnThrd2 = data.get2Bytes().signedIfNeeded(output4Condition2)
+        rawOutput4OffThrd2 = data.get2Bytes().signedIfNeeded(output4Condition2)
 
         rawOutput5Flags = data.get1Byte()
         output5Condition1 = data.get1Byte()
         output5Condition2 = data.get1Byte()
-        rawOutput5OnThrd1 = data.get2Bytes()
-        rawOutput5OffThrd1 = data.get2Bytes()
-        rawOutput5OnThrd2 = data.get2Bytes()
-        rawOutput5OffThrd2 = data.get2Bytes()
+        rawOutput5OnThrd1 = data.get2Bytes().signedIfNeeded(output5Condition1)
+        rawOutput5OffThrd1 = data.get2Bytes().signedIfNeeded(output5Condition1)
+        rawOutput5OnThrd2 = data.get2Bytes().signedIfNeeded(output5Condition2)
+        rawOutput5OffThrd2 = data.get2Bytes().signedIfNeeded(output5Condition2)
 
         rawOutput6Flags = data.get1Byte()
         output6Condition1 = data.get1Byte()
         output6Condition2 = data.get1Byte()
-        rawOutput6OnThrd1 = data.get2Bytes()
-        rawOutput6OffThrd1 = data.get2Bytes()
-        rawOutput6OnThrd2 = data.get2Bytes()
-        rawOutput6OffThrd2 = data.get2Bytes()
+        rawOutput6OnThrd1 = data.get2Bytes().signedIfNeeded(output6Condition1)
+        rawOutput6OffThrd1 = data.get2Bytes().signedIfNeeded(output6Condition1)
+        rawOutput6OnThrd2 = data.get2Bytes().signedIfNeeded(output6Condition2)
+        rawOutput6OffThrd2 = data.get2Bytes().signedIfNeeded(output6Condition2)
 
 
         logicFunction_1_2 = data.get1Byte()
@@ -695,6 +698,8 @@ data class UniOutParamPacket(
     }
 
     companion object {
+
+        private val SIGNED_CONDITIONS = setOf(0, 11, 14, 28, 30, 34, 39, 40)
 
         const val LF_OR = 0
         const val LF_AND = 1

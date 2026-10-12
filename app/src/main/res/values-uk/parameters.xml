@@ -212,6 +212,13 @@
     <string name="unioutput5_condition_2_title">Умова 2  для виходу №5</string>
     <string name="unioutput6_condition_1_title">Умова 1  для виходу №6</string>
     <string name="unioutput6_condition_2_title">Умова 2  для виходу №6</string>
+    <string name="uniout_outputs_link_function">Функція зв’язку виходів 1 + 2</string>
+    <string name="uniout_disabled">Вимкнено</string>
+    <string name="uniout_unknown_code">Код %1$d</string>
+    <string name="uniout_threshold_unavailable">Пороги недоступні для %1$s</string>
+    <string name="uniout_threshold_edit_title">Поріг %1$s</string>
+    <string name="uniout_threshold_value_label">Значення</string>
+    <string name="uniout_label_value">%1$s: %2$s</string>
 
     <string name="injctr_par_injector_flow_rate_title">Продуктивність форсунки</string>
     <string name="injctr_par_enjine_displacement_title">Об\'єм двигуна</string>
