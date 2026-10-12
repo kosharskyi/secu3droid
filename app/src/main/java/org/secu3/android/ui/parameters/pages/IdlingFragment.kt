@@ -28,286 +28,88 @@ import android.os.Bundle
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.setValue
+import androidx.compose.ui.platform.ComposeView
+import androidx.compose.ui.platform.ViewCompositionStrategy
 import androidx.lifecycle.lifecycleScope
 import androidx.lifecycle.withResumed
-import androidx.lifecycle.withStarted
 import kotlinx.coroutines.launch
 import org.secu3.android.R
-import org.secu3.android.databinding.FragmentIdlingBinding
 import org.secu3.android.models.packets.out.params.IdlingParamPacket
-import org.secu3.android.ui.parameters.views.FloatParamView
-import org.secu3.android.ui.parameters.views.IntParamView
-import org.secu3.android.utils.gone
-import org.secu3.android.utils.visible
+import org.secu3.android.ui.compose.SecuComposeTheme
+import org.secu3.android.ui.parameters.dialogs.ParamFloatEditDialogFragment
+import org.secu3.android.ui.parameters.dialogs.ParamIntEditDialogFragment
+import org.secu3.android.ui.parameters.pages.compose.IdlingFlag
+import org.secu3.android.ui.parameters.pages.compose.IdlingNumber
+import org.secu3.android.ui.parameters.pages.compose.IdlingScreen
+import org.secu3.android.ui.parameters.pages.compose.IdlingUiState
+import org.secu3.android.ui.parameters.pages.compose.IdlingValues
+import org.secu3.android.ui.parameters.pages.compose.applyIdlingFlag
+import org.secu3.android.ui.parameters.pages.compose.applyIdlingValue
 
 class IdlingFragment : BaseParamFragment() {
-
-    private lateinit var mBinding: FragmentIdlingBinding
-
     private var packet: IdlingParamPacket? = null
+    private var values by mutableStateOf<IdlingValues?>(null)
 
-    override fun onCreateView(inflater: LayoutInflater, container: ViewGroup?, savedInstanceState: Bundle?): View? {
-        mBinding = FragmentIdlingBinding.inflate(inflater, container, false)
-        return mBinding.root
+    override fun onCreateView(inflater: LayoutInflater, container: ViewGroup?, savedInstanceState: Bundle?): View {
+        packet = null
+        values = null
+        return ComposeView(requireContext()).apply {
+            id = R.id.idling_compose_view
+            setViewCompositionStrategy(ViewCompositionStrategy.DisposeOnViewTreeLifecycleDestroyed)
+            setContent { SecuComposeTheme { IdlingScreen(values?.let(IdlingUiState::Data) ?: IdlingUiState.Loading, ::editParameter, ::updateFlag) } }
+        }
     }
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
-
-        lifecycleScope.launch {
-            withResumed {
-                mViewModel.idlingLiveData.observe(viewLifecycleOwner) {
-
+        val owner = viewLifecycleOwner
+        owner.lifecycleScope.launch {
+            owner.withResumed {
+                // This getter starts a protocol read, so evaluate it once only after this page resumes.
+                val liveData = mViewModel.idlingLiveData
+                liveData.observe(owner) { received ->
                     mViewModel.isSendAllowed = false
-
-                    packet = it
-
-                    mBinding.apply {
-
-                        progressBar.gone()
-                        params.visible()
-
-                        positiveRegFactor.value = it.iFac1
-                        negativeRegFactor.value = it.iFac2
-
-                        maxRegLimit.value = it.idlregMaxAngle
-                        minRegLimit.value = it.idlregMinAngle
-
-                        goalRpm.value = it.idlingRpm
-                        rpmDeadBand.value = it.minefr
-
-                        regulatorOnTemp.value = it.idlregTurnOnTemp
-
-                        useRegulator.isChecked = it.useRegulator
-                        useRegulatorOnGas.isChecked = it.useRegulatorOnGas
-                        proportionalRegulator.isChecked = it.pRegMode
-                        useClosedLoop.isChecked = it.useClosedLoop
-
-                        iacAddAfterExit.value = it.idlToRunAdd
-                        useThrassmap.isChecked = it.useThrassmap
-                        rpmAddOnRun.value = it.rpmOnRunAdd
-
-                        proportionalPositive.value = it.idlRegP0
-                        integralPositive.value = it.idlRegI0
-                        proportionalNegative.value = it.idlRegP1
-                        integralNegative.value = it.idlRegI1
-
-                        transientThreshold1.value = it.coefThrd1
-                        transientThreshold2.value = it.coefThrd2
-
-                        integratorRpmLimit.value = it.integratorRpmLim
-                        pressureLoadOnIdling.value = it.mapValue
-
-                        minIacPosition.value = it.iacMinPos
-                        maxIacPosition.value = it.iacMaxPos
-
-                        iacDeadBand.value = it.iacRegDb
-
-                        useClosedLoopOnGas.isChecked = it.useClosedLoopOnGas
-                        idlRegWorksWithIAC.isChecked = it.idlRegWorksWithIAC
-
-                        differentialCoef.value = it.idlRegD
-
-                        idlRigidityLoadCoef.value = it.irrKLoad
-                        idlRigidityRpmCoef.value = it.irrKRpm
-
-                        loadIdlThrd.value = it.loadIdlThrd
-                    }
-
-                    initViews()
-
+                    packet = received
+                    values = IdlingValues.from(received)
                     mViewModel.isSendAllowed = true
                 }
             }
         }
     }
 
-
-    private fun initViews() {
-
-        mBinding.apply {
-            positiveRegFactor.addOnValueChangeListener {
-                packet?.iFac1 = it
-                packet?.let { it1 -> mViewModel.sendPacket(it1) }
-            }
-            negativeRegFactor.addOnValueChangeListener {
-                packet?.iFac2 = it
-                packet?.let { it1 -> mViewModel.sendPacket(it1) }
-            }
-            maxRegLimit.addOnValueChangeListener {
-                packet?.idlregMaxAngle = it
-                packet?.let { it1 -> mViewModel.sendPacket(it1) }
-            }
-            minRegLimit.addOnValueChangeListener {
-                packet?.idlregMinAngle = it
-                packet?.let { it1 -> mViewModel.sendPacket(it1) }
-            }
-            goalRpm.addOnValueChangeListener {
-                packet?.idlingRpm = it
-                packet?.let { it1 -> mViewModel.sendPacket(it1) }
-            }
-            rpmDeadBand.addOnValueChangeListener {
-                packet?.minefr = it
-                packet?.let { it1 -> mViewModel.sendPacket(it1) }
-            }
-            regulatorOnTemp.addOnValueChangeListener {
-                packet?.idlregTurnOnTemp = it
-                packet?.let { it1 -> mViewModel.sendPacket(it1) }
-            }
-
-            useRegulator.setOnCheckedChangeListener { _, isChecked ->
-                packet?.useRegulator = isChecked
-                packet?.let { it1 -> mViewModel.sendPacket(it1) }
-            }
-            useRegulatorOnGas.setOnCheckedChangeListener { _, isChecked ->
-                packet?.useRegulatorOnGas = isChecked
-                packet?.let { it1 -> mViewModel.sendPacket(it1) }
-            }
-            proportionalRegulator.setOnCheckedChangeListener { _, isChecked ->
-                packet?.pRegMode = isChecked
-                packet?.let { it1 -> mViewModel.sendPacket(it1) }
-            }
-            useClosedLoop.setOnCheckedChangeListener { _, isChecked ->
-                packet?.useClosedLoop = isChecked
-                packet?.let { it1 -> mViewModel.sendPacket(it1) }
-            }
-
-            iacAddAfterExit.addOnValueChangeListener {
-                packet?.idlToRunAdd = it
-                packet?.let { it1 -> mViewModel.sendPacket(it1) }
-            }
-
-            useThrassmap.setOnCheckedChangeListener { _, isChecked ->
-                packet?.apply {
-                    useThrassmap = isChecked
-                    mViewModel.sendPacket(this)
-                }
-            }
-
-            rpmAddOnRun.addOnValueChangeListener {
-                packet?.rpmOnRunAdd = it
-                packet?.let { it1 -> mViewModel.sendPacket(it1) }
-            }
-
-            proportionalPositive.addOnValueChangeListener {
-                packet?.idlRegP0 = it
-                packet?.let { it1 -> mViewModel.sendPacket(it1) }
-            }
-
-            integralPositive.addOnValueChangeListener {
-                packet?.idlRegI0 = it
-                packet?.let { it1 -> mViewModel.sendPacket(it1) }
-            }
-            proportionalNegative.addOnValueChangeListener {
-                packet?.idlRegP1 = it
-                packet?.let { it1 -> mViewModel.sendPacket(it1) }
-            }
-
-            integralNegative.addOnValueChangeListener {
-                packet?.idlRegI1 = it
-                packet?.let { it1 -> mViewModel.sendPacket(it1) }
-            }
-
-            transientThreshold1.addOnValueChangeListener {
-                packet?.coefThrd1 = it
-                packet?.let { it1 -> mViewModel.sendPacket(it1) }
-            }
-
-            transientThreshold2.addOnValueChangeListener {
-                packet?.coefThrd2 = it
-                packet?.let { it1 -> mViewModel.sendPacket(it1) }
-            }
-
-            integratorRpmLimit.addOnValueChangeListener {
-                packet?.integratorRpmLim = it
-                packet?.let { it1 -> mViewModel.sendPacket(it1) }
-            }
-
-            pressureLoadOnIdling.addOnValueChangeListener {
-                packet?.mapValue = it
-                packet?.let { it1 -> mViewModel.sendPacket(it1) }
-            }
-
-            minIacPosition.addOnValueChangeListener {
-                packet?.iacMinPos = it
-                packet?.let { it1 -> mViewModel.sendPacket(it1) }
-            }
-
-            maxIacPosition.addOnValueChangeListener {
-                packet?.iacMaxPos = it
-                packet?.let { it1 -> mViewModel.sendPacket(it1) }
-            }
-
-            iacDeadBand.addOnValueChangeListener {
-                packet?.apply {
-                    iacRegDb = it
-                    mViewModel.sendPacket(this)
-                }
-            }
-
-            useClosedLoopOnGas.setOnCheckedChangeListener { _, isChecked ->
-                packet?.useClosedLoopOnGas = isChecked
-            }
-
-            idlRegWorksWithIAC.setOnCheckedChangeListener { _, isChecked ->
-                packet?.idlRegWorksWithIAC = isChecked
-            }
-
-            differentialCoef.addOnValueChangeListener {
-                packet?.idlRegD = it
-                packet?.let { it1 -> mViewModel.sendPacket(it1) }
-            }
-
-            idlRigidityLoadCoef.addOnValueChangeListener {
-                packet?.irrKLoad = it
-                packet?.let { it1 -> mViewModel.sendPacket(it1) }
-            }
-
-            idlRigidityRpmCoef.addOnValueChangeListener {
-                packet?.irrKRpm = it
-                packet?.let { it1 -> mViewModel.sendPacket(it1) }
-            }
-
-            loadIdlThrd.addOnValueChangeListener {
-                packet?.loadIdlThrd = it
-                packet?.let { it1 -> mViewModel.sendPacket(it1) }
-            }
-
-
-            positiveRegFactor.setOnClickListener { floatParamClick(it as FloatParamView) }
-            negativeRegFactor.setOnClickListener { floatParamClick(it as FloatParamView) }
-            maxRegLimit.setOnClickListener { floatParamClick(it as FloatParamView) }
-            minRegLimit.setOnClickListener { floatParamClick(it as FloatParamView) }
-            goalRpm.setOnClickListener { intParamClick(it as IntParamView) }
-            rpmDeadBand.setOnClickListener { intParamClick(it as IntParamView) }
-            regulatorOnTemp.setOnClickListener { floatParamClick(it as FloatParamView) }
-
-            iacAddAfterExit.setOnClickListener { floatParamClick(it as FloatParamView) }
-            rpmAddOnRun.setOnClickListener { intParamClick(it as IntParamView) }
-            proportionalPositive.setOnClickListener { floatParamClick(it as FloatParamView) }
-            integralPositive.setOnClickListener { floatParamClick(it as FloatParamView) }
-            proportionalNegative.setOnClickListener { floatParamClick(it as FloatParamView) }
-            integralNegative.setOnClickListener { floatParamClick(it as FloatParamView) }
-            transientThreshold1.setOnClickListener { floatParamClick(it as FloatParamView) }
-            transientThreshold2.setOnClickListener { floatParamClick(it as FloatParamView) }
-            integratorRpmLimit.setOnClickListener { intParamClick(it as IntParamView) }
-            pressureLoadOnIdling.setOnClickListener { floatParamClick(it as FloatParamView) }
-
-            minIacPosition.setOnClickListener { floatParamClick(it as FloatParamView) }
-            maxIacPosition.setOnClickListener { floatParamClick(it as FloatParamView) }
-
-            iacDeadBand.setOnClickListener { intParamClick(it as IntParamView) }
-
-            differentialCoef.setOnClickListener { floatParamClick(it as FloatParamView) }
-
-            idlRigidityLoadCoef.setOnClickListener { floatParamClick(it as FloatParamView) }
-            idlRigidityRpmCoef.setOnClickListener { floatParamClick(it as FloatParamView) }
-
-            loadIdlThrd.setOnClickListener { floatParamClick(it as FloatParamView) }
+    private fun editParameter(number: IdlingNumber) {
+        val current = values ?: return
+        if (number.integer) {
+            val dialog = ParamIntEditDialogFragment.newInstance(
+                current.value(number).toInt(), getString(number.titleRes), number.step.toInt(), number.max.toInt(), number.min.toInt(),
+            )
+            dialog.newValueLiveData.observe(viewLifecycleOwner) { updateValue(number, it.toFloat()) }
+            dialog.show(childFragmentManager, dialog::class.java.simpleName)
+        } else {
+            val dialog = ParamFloatEditDialogFragment.newInstance(
+                current.value(number), getString(number.titleRes), number.step, number.max, number.min, number.precision,
+            )
+            dialog.newValueLiveData.observe(viewLifecycleOwner) { updateValue(number, it) }
+            dialog.show(childFragmentManager, dialog::class.java.simpleName)
         }
     }
 
-    override fun tabTitle(): Int {
-        return R.string.params_tab_idling_title
+    private fun updateValue(number: IdlingNumber, value: Float) {
+        val currentPacket = packet ?: return
+        applyIdlingValue(currentPacket, number, value)
+        values = values?.withValue(number, value)
+        mViewModel.sendPacket(currentPacket)
     }
+
+    private fun updateFlag(flag: IdlingFlag, checked: Boolean) {
+        val currentPacket = packet ?: return
+        applyIdlingFlag(currentPacket, flag, checked)
+        values = values?.withFlag(flag, checked)
+        mViewModel.sendPacket(currentPacket)
+    }
+
+    override fun tabTitle(): Int = R.string.params_tab_idling_title
 }

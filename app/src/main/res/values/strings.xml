@@ -26,6 +26,10 @@
   -->
 
 <resources>
+    <string name="numeric_edit_invalid_value">Enter a value within the allowed range</string>
+    <string name="miscel_evap_invalid_range">The current EVAP airflow pair cannot be edited safely. Correct the other airflow value first.</string>
+    <string name="misc_choose_baud">Choose baud rate</string>
+    <string name="misc_invalid_packet">This parameter set cannot be sent safely. Correct the EVAP airflow range first.</string>
     <string name="app_name">Secu3Droid</string>
     <string name="title_activity_param">Parameters</string>
     <string name="menu_param">Parameters</string>
@@ -54,6 +58,11 @@
     <string name="back">Back</string>
     <string name="menu_errors">Errors</string>
     <string name="menu_dashboard">Dashboard</string>
+    <string name="home_connection_connected">Connected to ECU</string>
+    <string name="home_connection_connected_firmware">Connected to ECU. Open firmware information</string>
+    <string name="home_connection_connecting">Connecting to ECU</string>
+    <string name="connection_status_unknown">Connection status unknown</string>
+    <string name="home_connection_disconnected">Disconnected from ECU</string>
     <string name="menu_preferences">Preferences</string>
     <string name="menu_secu_logs">Secu logs</string>
     <string name="menu_raw_sensors">Raw values</string>
@@ -477,6 +486,9 @@
     <string name="sensors_frag_oil_temperature_sensor_label">Oil Temp</string>
     <string name="sensors_frag_estimated_torque_label">Estimated Torque</string>
     <string name="sensors_frag_requested_torque_label">Requested Torque</string>
+    <string name="sensors_status_accessibility_on">On</string>
+    <string name="sensors_status_accessibility_off">Off</string>
+    <string name="sensors_status_accessibility_unavailable">Unavailable</string>
     <string name="sensors_frag_status_gas_valve_label">Gas valve</string>
     <string name="sensors_frag_status_throttle_label">Throttle</string>
     <string name="sensors_frag_status_fl_fuel_label">Fl fuel</string>
@@ -591,7 +603,23 @@
     <string name="password">Password</string>
     <string name="test_signal_frequency_hz">Test signal frequency</string>
     <string name="test_signal_duty">Test signal duty</string>
+    <string name="test_signal_title">Test signal</string>
+    <string name="output_channel_title">Output channel</string>
+    <string name="test_signal_frequency_label">Frequency</string>
+    <string name="test_signal_duty_label">Duty cycle</string>
 
     <string name="test">Test</string>
+    <string name="choke_manual_control">Manual control</string>
+    <string name="choke_settings">Settings</string>
+    <string name="choke_test_active">Test · ON</string>
+    <string name="choke_manual_decrease">Decrease choke position</string>
+    <string name="choke_manual_increase">Increase choke position</string>
+    <string name="gas_dose_unavailable">These parameters are not available in your firmware</string>
+    <string name="fuel_injection_unavailable">This parameters are not available in your firmware</string>
+    <string name="gas_dose_manual_decrease">Decrease gas dose position</string>
+    <string name="gas_dose_manual_increase">Increase gas dose position</string>
+    <string name="sensors_add">Add sensor</string>
+    <string name="sensors_add_gauge">Add gauge</string>
+    <string name="sensors_add_indicator">Add indicator</string>
 
 </resources>

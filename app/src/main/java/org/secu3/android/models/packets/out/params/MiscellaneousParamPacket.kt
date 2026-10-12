@@ -51,11 +51,12 @@ data class MiscellaneousParamPacket(
 
     var evapAfEnd: Int
         get() {
-            val slope = if (evapAfslope > .0f) evapAfslope else 0.000001f
-            return (32.0f / slope + evapAfbegin).toInt() //convert afslope to afend
+            if (!evapAfslope.isFinite() || evapAfslope <= 0f) return evapAfbegin
+            return (32.0f / evapAfslope + evapAfbegin).roundToInt()
         }
         set(value) {
-            evapAfslope = 32.0f / (value - evapAfbegin); //convert afend to afslope
+            require(value - evapAfbegin >= MIN_EVAP_AIRFLOW_DELTA) { "EVAP airflow end must exceed start by at least $MIN_EVAP_AIRFLOW_DELTA RxL" }
+            evapAfslope = 32.0f / (value - evapAfbegin)
         }
 
 
@@ -90,7 +91,10 @@ data class MiscellaneousParamPacket(
         data += flpmpFlags
 
         data += evapAfbegin.div(32).write2Bytes()
-        data += evapAfEnd.times(32).times(1048576.0f).roundToInt().write2Bytes()
+        require(evapAfEnd - evapAfbegin >= MIN_EVAP_AIRFLOW_DELTA) { "EVAP airflow pair is below the minimum safe range" }
+        val evapSlopeRaw = (evapAfslope * 32f * 1048576f).roundToInt()
+        require(evapAfslope.isFinite() && evapAfslope > 0f && evapSlopeRaw in 1..0xFFFF) { "EVAP slope cannot be encoded" }
+        data += evapSlopeRaw.write2Bytes()
 
         data += fpTimeoutStrt.times(10).roundToInt()
 
@@ -143,5 +147,6 @@ data class MiscellaneousParamPacket(
 
     companion object {
         internal const val DESCRIPTOR = 'z'
+        const val MIN_EVAP_AIRFLOW_DELTA = 16500
     }
 }

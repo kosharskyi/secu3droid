@@ -50,6 +50,18 @@ data class ChokeControlParPacket(
 
 ) : Secu3Packet(), InputPacket, OutputPacket {
 
+    /** Captures an immutable wire snapshot for the asynchronous connection send path. */
+    fun snapshotWithManualPosition(delta: Int): OutputPacket {
+        val previous = manualPositionD
+        val bytes = try {
+            manualPositionD = delta.coerceIn(-127, 127)
+            pack()
+        } finally {
+            manualPositionD = previous
+        }
+        return PackedChokeControlPacket(bytes)
+    }
+
     var useClosedLoopRmpRegulator: Boolean
         get() = flags.getBitValue(0) > 0
         set(value) {
@@ -82,7 +94,7 @@ data class ChokeControlParPacket(
         data += smSteps.write2Bytes()
 
         data += if (testing) 1 else 0 //send 1 to start testing (it will open and close choke continuously) and 0 to stop testing
-        data += manualPositionD    //fake parameter, not used in outgoing paket
+        data += manualPositionD.write1Byte() // signed control delta encoded as an unsigned wire byte
 
         data += rpmIf.times(1024.0f).roundToInt().write2Bytes()
         data += corrTime0.times(100).roundToInt().write2Bytes()
@@ -99,7 +111,8 @@ data class ChokeControlParPacket(
     override fun parse(data: IntArray): InputPacket {
         smSteps = data.get2Bytes()
         testing = data.get1Byte() > 0      //send 1 to start testing (it will open and close choke continuously) and 0 to stop testing
-        manualPositionD = data.get1Byte()   //fake parameter, not used in outgoing paket
+        data.get1Byte() // outgoing-only command placeholder; incoming packets send zero here
+        manualPositionD = 0
         rpmIf = data.get2Bytes().toFloat() / 1024.0f
         corrTime0 = data.get2Bytes().toFloat() / 100
         corrTime1 = data.get2Bytes().toFloat() / 100
@@ -115,4 +128,8 @@ data class ChokeControlParPacket(
     companion object {
         internal const val DESCRIPTOR = '%'
     }
+}
+
+private class PackedChokeControlPacket(private val bytes: IntArray) : OutputPacket {
+    override fun pack(): IntArray = bytes.copyOf()
 }

@@ -1,9 +1,9 @@
 /*
  *    SecuDroid  - An open source, free manager for SECU-3 engine control unit
- *    Copyright (C) 2024 Vitalii O. Kosharskyi. Ukraine, Kyiv
+ *    Copyright (C) 2026 Vitalii O. Kosharskyi. Ukraine, Kyiv
  *
  *    SECU-3  - An open source, free engine control unit
- *    Copyright (C) 2007-2024 Alexey A. Shabelnikov. Ukraine, Kyiv
+ *    Copyright (C) 2007-2026 Alexey A. Shabelnikov. Ukraine, Kyiv
  *
  *    This program is free software: you can redistribute it and/or modify
  *    it under the terms of the GNU General Public License as published by
@@ -25,192 +25,129 @@
 package org.secu3.android.ui.parameters.pages
 
 import android.os.Bundle
-import android.text.InputType
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
-import android.widget.ArrayAdapter
-import androidx.core.content.ContextCompat
-import androidx.core.graphics.toColorInt
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.setValue
+import androidx.compose.ui.platform.ComposeView
+import androidx.compose.ui.platform.ViewCompositionStrategy
 import androidx.lifecycle.lifecycleScope
 import androidx.lifecycle.withResumed
-import androidx.lifecycle.withStarted
 import kotlinx.coroutines.launch
 import org.secu3.android.R
-import org.secu3.android.databinding.FragmentChokeControlBinding
 import org.secu3.android.models.packets.out.params.ChokeControlParPacket
-import org.secu3.android.ui.parameters.views.FloatParamView
-import org.secu3.android.ui.parameters.views.IntParamView
-import org.secu3.android.utils.gone
-import org.secu3.android.utils.visible
-
+import org.secu3.android.ui.compose.SecuComposeTheme
+import org.secu3.android.ui.parameters.dialogs.ParamFloatEditDialogFragment
+import org.secu3.android.ui.parameters.dialogs.ParamIntEditDialogFragment
+import org.secu3.android.ui.parameters.pages.compose.ChokeNumber
+import org.secu3.android.ui.parameters.pages.compose.ChokeManualDelta
+import org.secu3.android.ui.parameters.pages.compose.ChokeScreen
+import org.secu3.android.ui.parameters.pages.compose.ChokeSelector
+import org.secu3.android.ui.parameters.pages.compose.ChokeValues
+import org.secu3.android.ui.parameters.pages.compose.applyChokeNumber
 
 class ChokeControlFragment : BaseParamFragment() {
-
-    private lateinit var mBinding: FragmentChokeControlBinding
-
-    private val stepperPulses = listOf("300", "150", "100", "75")
-
     private var packet: ChokeControlParPacket? = null
+    private var values by mutableStateOf<ChokeValues?>(null)
+    private val manualDelta = ChokeManualDelta()
 
-    override fun onCreateView(inflater: LayoutInflater, container: ViewGroup?, savedInstanceState: Bundle?): View? {
-        mBinding = FragmentChokeControlBinding.inflate(inflater, container, false)
-        return mBinding.root
+    override fun onCreateView(inflater: LayoutInflater, container: ViewGroup?, savedInstanceState: Bundle?): View {
+        packet = null
+        values = null
+        return ComposeView(requireContext()).apply {
+            id = R.id.choke_control_compose_view
+            setViewCompositionStrategy(ViewCompositionStrategy.DisposeOnViewTreeLifecycleDestroyed)
+            setContent {
+                SecuComposeTheme {
+                    ChokeScreen(values, ::edit, ::toggle, ::selectFrequency, ::manualStep, ::finishManual, ::cancelManual, ::toggleTest)
+                }
+            }
+        }
     }
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
-
-        mBinding.freqOfPulses.apply {
-            inputType = InputType.TYPE_NULL
-            ArrayAdapter(requireContext(), R.layout.list_item, stepperPulses).also {
-                setAdapter(it)
-            }
-        }
-
-        lifecycleScope.launch {
+        viewLifecycleOwner.lifecycleScope.launch {
             withResumed {
-                mViewModel.chokeLiveData.observe(viewLifecycleOwner) {
-
+                mViewModel.chokeLiveData.observe(viewLifecycleOwner) { received ->
                     mViewModel.isSendAllowed = false
-
-                    packet = it
-
-                    mBinding.apply {
-
-                        progressBar.gone()
-                        params.visible()
-
-                        numSmSteps.value = it.smSteps
-                        updateTestBtnColor(it.testing)
-
-                        regulatorFactor.value = it.rpmIf
-
-                        crankingMapLastingCold.value = it.corrTime0
-                        crankingMapLastingHot.value = it.corrTime1
-
-                        useClosedLoopRpmRegulator.isChecked = it.useClosedLoopRmpRegulator
-                        dontUseRpmRegulatorOnGas.isChecked = it.dontUseRpmRegOnGas
-                        useThrottlePosInChokeInit.isChecked = it.useThrottlePosInChokeInit
-                        maximumSTEPFrequencyAtInit.isChecked = it.maxSTEPfreqAtInit
-
-                        freqOfPulses.setText(stepperPulses[it.smFreq], false)
-                        timeFromCrankToRun.value = it.injCrankToRunTime
-                    }
-
-                    initViews()
-
+                    manualDelta.clear()
+                    received.manualPositionD = 0
+                    packet = received
+                    values = ChokeValues.from(received)
                     mViewModel.isSendAllowed = true
                 }
             }
         }
     }
 
-    private fun updateTestBtnColor(testing: Boolean) {
-        mBinding.apply {
-            if (testing) {
-                testBtn.setBackgroundColor(ContextCompat.getColor(requireContext(), android.R.color.holo_red_light))
-            } else {
-                testBtn.setBackgroundColor("#40b6fb".toColorInt())
-            }
+    private fun edit(number: ChokeNumber) {
+        val v = values ?: return
+        if (number == ChokeNumber.STEPS) {
+            val dialog = ParamIntEditDialogFragment.newInstance(v.value(number).toInt(), getString(number.title), 1, number.max.toInt(), number.min.toInt())
+            dialog.newValueLiveData.observe(viewLifecycleOwner) { update(number, it.toFloat()) }
+            dialog.show(childFragmentManager, dialog::class.java.simpleName)
+        } else {
+            val dialog = ParamFloatEditDialogFragment.newInstance(v.value(number), getString(number.title), number.step, number.max, number.min, number.precision)
+            dialog.newValueLiveData.observe(viewLifecycleOwner) { update(number, it) }
+            dialog.show(childFragmentManager, dialog::class.java.simpleName)
         }
     }
 
-    private fun initViews() {
+    private fun update(number: ChokeNumber, value: Float) {
+        val p = packet ?: return
+        applyChokeNumber(p, number, value)
+        values = ChokeValues.from(p)
+        mViewModel.sendPacket(p.snapshotWithManualPosition(0))
+    }
 
-        mBinding.apply {
-
-            numSmSteps.addOnValueChangeListener {
-                packet?.smSteps = it
-                packet?.let { it1 -> mViewModel.sendPacket(it1) }
-            }
-
-            testBtn.setOnClickListener {
-                packet?.let {
-                    it.testing = it.testing.not()
-                    updateTestBtnColor(it.testing)
-                    mViewModel.sendPacket(it)
-                }
-            }
-
-            testDecBtn.setPressAndHoldRepeater {
-                packet?.let {
-                    it.manualPositionD = it.manualPositionD.dec().coerceIn(-127..127)
-                }
-            }
-
-            testDecBtn.setOnClickListener {
-                packet?.let {
-                    mViewModel.sendPacket(it)
-                    it.manualPositionD = 0
-                }
-            }
-
-            testIncBtn.setPressAndHoldRepeater {
-                packet?.let {
-                    it.manualPositionD = it.manualPositionD.inc().coerceIn(-127..127)
-                }
-            }
-
-            testIncBtn.setOnClickListener {
-                packet?.let {
-                    mViewModel.sendPacket(it)
-                    it.manualPositionD = 0
-                }
-            }
-
-            regulatorFactor.addOnValueChangeListener {
-                packet?.rpmIf = it
-                packet?.let { it1 -> mViewModel.sendPacket(it1) }
-            }
-            crankingMapLastingCold.addOnValueChangeListener {
-                packet?.corrTime0 = it
-                packet?.let { it1 -> mViewModel.sendPacket(it1) }
-            }
-
-            crankingMapLastingHot.addOnValueChangeListener {
-                packet?.corrTime1 = it
-                packet?.let { it1 -> mViewModel.sendPacket(it1) }
-            }
-
-            useClosedLoopRpmRegulator.setOnCheckedChangeListener { _, isChecked ->
-                packet?.useClosedLoopRmpRegulator = isChecked
-                packet?.let { it1 -> mViewModel.sendPacket(it1) }
-            }
-            dontUseRpmRegulatorOnGas.setOnCheckedChangeListener { _, isChecked ->
-                packet?.dontUseRpmRegOnGas = isChecked
-                packet?.let { it1 -> mViewModel.sendPacket(it1) }
-            }
-            useThrottlePosInChokeInit.setOnCheckedChangeListener { _, isChecked ->
-                packet?.useThrottlePosInChokeInit = isChecked
-                packet?.let { it1 -> mViewModel.sendPacket(it1) }
-            }
-            maximumSTEPFrequencyAtInit.setOnCheckedChangeListener { _, isChecked ->
-                packet?.maxSTEPfreqAtInit = isChecked
-                packet?.let { it1 -> mViewModel.sendPacket(it1) }
-            }
-
-            freqOfPulses.setOnItemClickListener { _, _, position, _ ->
-                packet?.smFreq = position
-                packet?.let { it1 -> mViewModel.sendPacket(it1) }
-            }
-
-            timeFromCrankToRun.addOnValueChangeListener {
-                packet?.injCrankToRunTime = it
-                packet?.let { it1 -> mViewModel.sendPacket(it1) }
-            }
-
-
-            numSmSteps.setOnClickListener { intParamClick(it as IntParamView) }
-            regulatorFactor.setOnClickListener { floatParamClick(it as FloatParamView) }
-            crankingMapLastingCold.setOnClickListener { floatParamClick(it as FloatParamView) }
-
-            crankingMapLastingHot.setOnClickListener { floatParamClick(it as FloatParamView) }
-            timeFromCrankToRun.setOnClickListener { floatParamClick(it as FloatParamView) }
+    private fun toggle(number: ChokeNumber, checked: Boolean) {
+        val p = packet ?: return
+        when (number) {
+            ChokeNumber.CLOSED_LOOP -> p.useClosedLoopRmpRegulator = checked
+            ChokeNumber.DISABLE_ON_GAS -> p.dontUseRpmRegOnGas = checked
+            ChokeNumber.THROTTLE_INIT -> p.useThrottlePosInChokeInit = checked
+            ChokeNumber.MAX_FREQUENCY_INIT -> p.maxSTEPfreqAtInit = checked
+            else -> return
         }
+        values = ChokeValues.from(p)
+        mViewModel.sendPacket(p.snapshotWithManualPosition(0))
     }
 
-    override fun tabTitle(): Int {
-        return R.string.params_tab_choke_control_title
+    private fun selectFrequency(index: Int) {
+        if (index !in 0..3) return
+        val p = packet ?: return
+        p.smFreq = index
+        values = ChokeValues.from(p)
+        mViewModel.sendPacket(p.snapshotWithManualPosition(0))
     }
+
+    private fun manualStep(direction: Int) {
+        if (packet != null) manualDelta.step(direction)
+    }
+
+    private fun finishManual() {
+        val p = packet ?: return
+        if (manualDelta.value != 0) {
+            mViewModel.sendPacket(p.snapshotWithManualPosition(manualDelta.value))
+        }
+        p.manualPositionD = 0
+        manualDelta.clear()
+    }
+
+    private fun cancelManual() {
+        packet?.manualPositionD = 0
+        manualDelta.clear()
+    }
+
+    private fun toggleTest() {
+        val p = packet ?: return
+        p.testing = !p.testing
+        values = ChokeValues.from(p)
+        mViewModel.sendPacket(p.snapshotWithManualPosition(0))
+    }
+
+    override fun tabTitle(): Int = R.string.params_tab_choke_control_title
 }

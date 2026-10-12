@@ -54,9 +54,9 @@ data class KnockParamPacket(
 
     fun selectKnockChanel(knockChanel: Int, isSelected: Boolean) {
         if (isSelected) {
-            (1 shl knockChanel).or(selectedChanels)
+            selectedChanels = (1 shl knockChanel).or(selectedChanels)
         } else {
-            (1 shl knockChanel).inv().and(selectedChanels)
+            selectedChanels = (1 shl knockChanel).inv().and(selectedChanels)
         }
     }
 

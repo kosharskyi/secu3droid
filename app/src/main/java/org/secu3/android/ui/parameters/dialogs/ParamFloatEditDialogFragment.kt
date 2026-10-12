@@ -1,6 +1,6 @@
 /*
  *    SecuDroid  - An open source, free manager for SECU-3 engine control unit
- *    Copyright (C) 2024 Vitaliy O. Kosharskyi. Ukraine, Kyiv
+ *    Copyright (C) 2024 Vitalii O. Kosharskyi. Ukraine, Kyiv
  *
  *    SECU-3  - An open source, free engine control unit
  *    Copyright (C) 2007-2024 Alexey A. Shabelnikov. Ukraine, Kyiv
@@ -24,11 +24,9 @@
  */
 package org.secu3.android.ui.parameters.dialogs
 
-import android.os.Bundle
 import android.text.InputType
-import android.view.View
-import androidx.core.text.isDigitsOnly
-import androidx.core.widget.doAfterTextChanged
+import android.os.Bundle
+import androidx.compose.runtime.Composable
 import androidx.lifecycle.LiveData
 import androidx.lifecycle.MutableLiveData
 import java.util.Locale
@@ -61,60 +59,25 @@ class ParamFloatEditDialogFragment : ParamBaseEditDialogFragment() {
         get() = _newValueLiveData
 
 
-    override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
-        super.onViewCreated(view, savedInstanceState)
-
-        mBinding.apply {
-            parameterTitle.text = paramTitle
-
-            value.editText?.apply {
-                setText(formatStr.format(Locale.US, currentValue))
-                inputType = InputType.TYPE_CLASS_NUMBER or InputType.TYPE_NUMBER_FLAG_DECIMAL
-
-                doAfterTextChanged {
-                    val valueStr = it.toString()
-                    if (valueStr.isEmpty()) {
-                        ok.isEnabled = false
-                        return@doAfterTextChanged
-                    }
-
-                    if (valueStr.length == 1 && valueStr.isDigitsOnly().not()) {
-                        ok.isEnabled = false
-                        return@doAfterTextChanged
-                    }
-
-                    currentValue = valueStr.toFloat()
-
-                    val isValueCorrect = currentValue in minValue..maxValue
-
-                    ok.isEnabled = isValueCorrect
-
-                    if (isValueCorrect.not()) {
-                        value.isErrorEnabled = true
-                        value.error = " "
-                    } else {
-                        value.isErrorEnabled = false
-                        value.error = null
-                    }
-                }
-            }
-
-            increment.setOnClickListener {
-                currentValue = currentValue.plus(stepValue).coerceIn(minValue, maxValue)
-                value.editText?.setText(formatStr.format(Locale.US, currentValue))
-            }
-            decrement.setOnClickListener {
-                currentValue = currentValue.minus(stepValue).coerceIn(minValue, maxValue)
-                value.editText?.setText(formatStr.format(Locale.US,currentValue))
-            }
-
-            ok.setOnClickListener {
+    @Composable
+    override fun DialogContent() {
+        NumericEditDialogContent(
+            title = paramTitle,
+            initialText = formatStr.format(Locale.US, currentValue),
+            allowDecimal = true,
+            allowNegative = minValue < 0f,
+            validate = { isValidInput(it, minValue, maxValue) },
+            onStep = { text, direction ->
+                currentValue = stepValueFromInput(text, currentValue, stepValue, minValue, maxValue, direction)
+                formatStr.format(Locale.US, currentValue)
+            },
+            onConfirm = { text, changed ->
+                if (changed && isValidInput(text, minValue, maxValue)) currentValue = text.toFloat()
                 _newValueLiveData.value = currentValue
                 dismiss()
-            }
-            cancel.setOnClickListener { dismiss() }
-
-        }
+            },
+            onCancel = { dismiss() },
+        )
     }
 
     private val formatStr: String
@@ -130,6 +93,24 @@ class ParamFloatEditDialogFragment : ParamBaseEditDialogFragment() {
         }
 
     companion object {
+
+        internal fun isValidInput(value: String, min: Float, max: Float): Boolean =
+            value.toFloatOrNull()?.let { it in min..max } == true
+
+        internal fun stepValueFromInput(
+            value: String,
+            current: Float,
+            step: Float,
+            min: Float,
+            max: Float,
+            direction: Int,
+        ): Float {
+            val base = value.toFloatOrNull()?.takeUnless { it.isNaN() } ?: current
+            return (base + step * direction).coerceIn(min, max)
+        }
+
+        internal fun inputTypeFor(min: Float): Int = InputType.TYPE_CLASS_NUMBER or InputType.TYPE_NUMBER_FLAG_DECIMAL or
+            if (min < 0f) InputType.TYPE_NUMBER_FLAG_SIGNED else 0
 
         private const val ARG_PRECISION = "precision"
 

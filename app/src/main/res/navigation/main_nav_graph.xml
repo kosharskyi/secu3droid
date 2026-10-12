@@ -1,7 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <navigation xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
-    xmlns:tools="http://schemas.android.com/tools"
     android:id="@+id/main_nav_graph"
     app:startDestination="@id/startScreenFragment"
     >
@@ -26,8 +25,7 @@
     <fragment
         android:id="@+id/homeFragment"
         android:name="org.secu3.android.ui.home.HomeFragment"
-        android:label="fragment_home_fragment"
-        tools:layout="@layout/fragment_home">
+        android:label="fragment_home_fragment">
 
         <action
             android:id="@+id/action_open_dashboard"
@@ -65,7 +63,6 @@
         android:id="@+id/sensorsFragment"
         android:name="org.secu3.android.ui.sensors.SensorsTabsFragment"
         android:label="Sensors Fragment"
-        tools:layout="@layout/fragment_sensors_tabs"
         >
 
         <action
@@ -78,8 +75,7 @@
     <fragment
         android:id="@+id/sensors_settings"
         android:name="org.secu3.android.ui.sensors.settings.SensorsSettingsFragment"
-        android:label="Sensors Settings"
-        tools:layout="@layout/fragment_sensors_setings"/>
+        android:label="Sensors Settings" />
 
     <fragment
         android:id="@+id/dashboardFragment"
@@ -91,7 +87,6 @@
         android:id="@+id/diagnosticsFragment"
         android:name="org.secu3.android.ui.diagnostics.DiagnosticsFragment"
         android:label="Diagnostics Fragment"
-        tools:layout="@layout/fragment_diagnostics"
         >
 
         <action
@@ -105,7 +100,6 @@
         android:id="@+id/diagnosticsAdditionalDialog"
         android:name="org.secu3.android.ui.diagnostics.DiagnosticAdditionalDialogFragment"
         android:label="Diagnostics additional dialog"
-        tools:layout="@layout/fragment_diagnostic_additional_dialog"
         />
 
     <fragment
@@ -118,7 +112,6 @@
         android:id="@+id/parametersFragment"
         android:name="org.secu3.android.ui.parameters.ParamsFragment"
         android:label="Parameters Fragment"
-        tools:layout="@layout/fragment_params"
         />
 
     <fragment

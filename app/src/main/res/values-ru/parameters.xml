@@ -212,6 +212,13 @@
     <string name="unioutput5_condition_2_title">Условие 2 для выхода №5</string>
     <string name="unioutput6_condition_1_title">Условие 1 для выхода №6</string>
     <string name="unioutput6_condition_2_title">Условие 2 для выхода №6</string>
+    <string name="uniout_outputs_link_function">Функция связи выходов 1 + 2</string>
+    <string name="uniout_disabled">Отключено</string>
+    <string name="uniout_unknown_code">Код %1$d</string>
+    <string name="uniout_threshold_unavailable">Пороги недоступны для %1$s</string>
+    <string name="uniout_threshold_edit_title">Порог %1$s</string>
+    <string name="uniout_threshold_value_label">Значение</string>
+    <string name="uniout_label_value">%1$s: %2$s</string>
 
     <string name="injctr_par_injector_flow_rate_title">Производительность форсунки</string>
     <string name="injctr_par_enjine_displacement_title">Объем двигателя</string>
@@ -232,6 +239,7 @@
     <string name="injctr_par_inj_pw_dec_speed_title">Скорость уменьшения длительности впрыска</string>
     <string name="injctr_par_inj_pw_inc_speed_title">Скорость увеличения длительности впрыска</string>
     <string name="injctr_par_inj_timing_specifies">Фазу впрыска определяет</string>
+    <string name="injctr_par_primary_fuel_title">Основное топливо</string>
     <string name="injctr_par_inj_config_throttlebody">Моновпрыск</string>
     <string name="injctr_par_inj_config_simultaneous">Одновременный</string>
     <string name="injctr_par_inj_config_2banks_altern">2 банка попер.</string>
@@ -268,6 +276,7 @@
     <string name="lambda_par_air_flow_threshold_for_turning_heating_off_title">Порог выключения по расходу воздуха</string>
     <string name="lambda_par_heating_before_cranking_title">Подогрев перед пуском</string>
     <string name="lambda_par_select_an_oxygen_sensor">Выбор датчика кислорода</string>
+    <string name="lambda_par_mix_sensors_value_title">Усреднять сигналы двух датчиков на датчик 1</string>
 
 
     <string name="accel_par_tpsdot_threshold_title">Порог по ДПДЗ</string>
@@ -357,4 +366,27 @@
     <string name="raw_status_addi2_title">ADD_IO2: %.2f В</string>
 
     <string name="adc_cor_multiply_corr_and_koef_title">Умножать корр. на коэфф.</string>
+    <string name="functions_section_general">Общие настройки</string>
+    <string name="functions_section_map_tps">Датчики MAP и TPS</string>
+    <string name="functions_section_tables">Карты и таблицы</string>
+    <string name="functions_section_sources">Источники нагрузки и условия</string>
+    <string name="functions_section_map2">Второй датчик MAP</string>
+    <string name="functions_section_pressures_apps">Давление газа и топлива, датчик акселератора</string>
+    <string name="sec_bluetooth">Bluetooth</string>
+    <string name="sec_immobilizer">Иммобилайзер</string>
+    <string name="sec_information">Информация</string>
+    <string name="sec_bt_type">Тип Bluetooth</string>
+    <string name="sec_key1">Ключ 1</string>
+    <string name="sec_key2">Ключ 2</string>
+    <string name="sec_read_only">Только чтение</string>
+    <string name="sec_unknown_type">Неизвестный тип (%1$d)</string>
+    <string name="apply">Применить</string>
+    <string name="sec_enabled">Включено</string>
+    <string name="sec_disabled">Отключено</string>
+    <string name="sec_reserve_params_description">Если включено, всегда используются резервные параметры прошивки. О повреждении EEPROM не сообщается.</string>
+    <string name="sec_firmware_integrity_description">Если включено, при запуске проверяется контрольная сумма прошивки; при ошибке сообщается о ней.</string>
+    <string name="sec_credentials_write_only">ЭБУ не может прочитать сохранённые имя и пароль. Введите значения и нажмите «Применить», чтобы отправить их.</string>
+    <string name="sec_ibutton_key_hint">Введите ровно 12 шестнадцатеричных символов.</string>
+    <string name="sec_ibutton_key_invalid">Неверный ключ. Введите ровно 12 шестнадцатеричных символов.</string>
+    <string name="sec_invalid_credentials">Имя или пароль не соответствуют формату ЭБУ.</string>
 </resources>

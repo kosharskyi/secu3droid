@@ -1,6 +1,10 @@
 <?xml version="1.0" encoding="utf-8"?>
 
 <resources>
+    <string name="numeric_edit_invalid_value">Введите значение в допустимом диапазоне</string>
+    <string name="miscel_evap_invalid_range">Текущую пару значений воздушного потока EVAP нельзя безопасно редактировать. Сначала исправьте другое значение воздушного потока.</string>
+    <string name="misc_choose_baud">Выбрать скорость передачи</string>
+    <string name="misc_invalid_packet">Этот набор параметров нельзя безопасно отправить. Сначала исправьте диапазон воздушного потока EVAP.</string>
     <string name="app_name">Secu3Droid</string>
     <string name="title_activity_param">Параметры</string>
     <string name="menu_param">Параметры</string>
@@ -26,6 +30,11 @@
     <string name="status_connecting">Подключение</string>
     <string name="title_activity_errors">Ошибки</string>
     <string name="menu_dashboard">Приборная панель</string>
+    <string name="home_connection_connected">ЭБУ подключен</string>
+    <string name="home_connection_connected_firmware">ЭБУ подключен. Открыть информацию о прошивке</string>
+    <string name="home_connection_connecting">Подключение к ЭБУ</string>
+    <string name="connection_status_unknown">Состояние подключения неизвестно</string>
+    <string name="home_connection_disconnected">ЭБУ не подключен</string>
     <string name="title_activity_settings">Настройки</string>
     <string name="back">Назад</string>
     <string name="menu_errors">Ошибки</string>
@@ -318,6 +327,9 @@
     <string name="sensors_frag_oil_temperature_sensor_label">Температура масла</string>
     <string name="sensors_frag_estimated_torque_label">Расчетный момент</string>
     <string name="sensors_frag_requested_torque_label">Желаемый момент</string>
+    <string name="sensors_status_accessibility_on">Включено</string>
+    <string name="sensors_status_accessibility_off">Выключено</string>
+    <string name="sensors_status_accessibility_unavailable">Недоступно</string>
     <string name="sensors_frag_status_gas_valve_label">Газовый клапан</string>
     <string name="sensors_frag_status_throttle_label">Дроссель</string>
     <string name="sensors_frag_status_fl_fuel_label">Топл. при ПХХ</string>
@@ -438,4 +450,11 @@
 
 
 
+    <string name="sensors_add">Добавить датчик</string>
+    <string name="sensors_add_gauge">Добавить измеритель</string>
+    <string name="sensors_add_indicator">Добавить индикатор</string>
+    <string name="gas_dose_unavailable">Эти параметры недоступны в вашей прошивке</string>
+    <string name="fuel_injection_unavailable">Эти параметры недоступны в вашей прошивке</string>
+    <string name="gas_dose_manual_decrease">Уменьшить положение дозатора газа</string>
+    <string name="gas_dose_manual_increase">Увеличить положение дозатора газа</string>
 </resources>

@@ -208,6 +208,13 @@
     <string name="unioutput5_condition_2_title">Condition 2 for output 5</string>
     <string name="unioutput6_condition_1_title">Condition 1 for output 6</string>
     <string name="unioutput6_condition_2_title">Condition 2 for output 6</string>
+    <string name="uniout_outputs_link_function">Function linking outputs 1 + 2</string>
+    <string name="uniout_disabled">Disabled</string>
+    <string name="uniout_unknown_code">Code %1$d</string>
+    <string name="uniout_threshold_unavailable">Thresholds unavailable for %1$s</string>
+    <string name="uniout_threshold_edit_title">%1$s threshold</string>
+    <string name="uniout_threshold_value_label">Value</string>
+    <string name="uniout_label_value">%1$s: %2$s</string>
 
     <string name="injctr_par_injector_flow_rate_title">Injector flow rate</string>
     <string name="injctr_par_enjine_displacement_title">Engine displacement</string>
@@ -229,6 +236,7 @@
     <string name="injctr_par_inj_pw_dec_speed_title">Rate of change limit for decreasing inj.PW</string>
     <string name="injctr_par_inj_pw_inc_speed_title">Rate of change limit for increasing inj.PW</string>
     <string name="injctr_par_inj_timing_specifies">Inj. timing specifies</string>
+    <string name="injctr_par_primary_fuel_title">Primary fuel</string>
     <string name="injctr_par_inj_config_throttlebody">Throttle-body</string>
     <string name="injctr_par_inj_config_simultaneous">Simultaneous</string>
     <string name="injctr_par_inj_config_2banks_altern">2 banks altern</string>
@@ -260,6 +268,7 @@
     <string name="lambda_par_air_flow_threshold_for_turning_heating_off_title">Air flow threshold for turning heating off</string>
     <string name="lambda_par_heating_before_cranking_title">Heating before cranking</string>
     <string name="lambda_par_select_an_oxygen_sensor">Select an oxygen sensor</string>
+    <string name="lambda_par_mix_sensors_value_title">Average signals from two sensors to sensor 1</string>
 
 
     <string name="accel_par_tpsdot_threshold_title">Acceleration TPS dot threshold</string>
@@ -345,4 +354,27 @@
     <string name="raw_status_addi2_title">ADD_IO2: %.2f V\n</string>
 
     <string name="adc_cor_multiply_corr_and_koef_title">Multiply corr. by factor</string>
+    <string name="functions_section_general">General settings</string>
+    <string name="functions_section_map_tps">MAP and TPS sensors</string>
+    <string name="functions_section_tables">Maps and tables</string>
+    <string name="functions_section_sources">Load sources and conditions</string>
+    <string name="functions_section_map2">Second MAP sensor</string>
+    <string name="functions_section_pressures_apps">Gas, fuel pressure and accelerator sensors</string>
+    <string name="sec_bluetooth">Bluetooth</string>
+    <string name="sec_immobilizer">Immobilizer</string>
+    <string name="sec_information">Information</string>
+    <string name="sec_bt_type">Bluetooth type</string>
+    <string name="sec_key1">Key 1</string>
+    <string name="sec_key2">Key 2</string>
+    <string name="sec_read_only">Read only</string>
+    <string name="sec_unknown_type">Unknown type (%1$d)</string>
+    <string name="apply">Apply</string>
+    <string name="sec_enabled">Enabled</string>
+    <string name="sec_disabled">Disabled</string>
+    <string name="sec_reserve_params_description">When enabled, always use the reserved firmware parameters. A damaged EEPROM is not reported.</string>
+    <string name="sec_firmware_integrity_description">When enabled, check the firmware checksum at startup and report an error if it is invalid.</string>
+    <string name="sec_credentials_write_only">The ECU cannot read back the existing name or password. Enter values here and tap Apply to send them.</string>
+    <string name="sec_ibutton_key_hint">Enter exactly 12 hexadecimal characters.</string>
+    <string name="sec_ibutton_key_invalid">Invalid key. Enter exactly 12 hexadecimal characters.</string>
+    <string name="sec_invalid_credentials">Name or password is invalid for this ECU.</string>
 </resources>

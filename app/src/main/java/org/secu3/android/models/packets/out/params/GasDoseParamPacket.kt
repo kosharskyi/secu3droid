@@ -43,12 +43,24 @@ data class GasDoseParamPacket(
 
     ): Secu3Packet(), InputPacket, OutputPacket {
 
+    /** Captures an immutable wire snapshot for the asynchronous connection send path. */
+    fun snapshotWithManualPosition(delta: Int): OutputPacket {
+        val previous = manualPositionD
+        val bytes = try {
+            manualPositionD = delta.coerceIn(-127, 127)
+            pack()
+        } finally {
+            manualPositionD = previous
+        }
+        return PackedGasDoseParamPacket(bytes)
+    }
+
     override fun pack(): IntArray {
         var data = intArrayOf(DESCRIPTOR.code)
 
         data += steps.write2Bytes()
         data += if (testing) 1 else 0 //send 1 to start testing (it will open and close choke continuously) and 0 to stop testing
-        data += manualPositionD    //fake parameter, not used in outgoing paket
+        data += manualPositionD.write1Byte() //signed control delta encoded as an unsigned wire byte
         data += fcClosing.times(GAS_DOSE_MULTIPLIER).roundToInt()
         data += lambdaCorrLimitP.times(512.0f).div(100).roundToInt().write2Bytes()
         data += lambdaCorrLimitM.times(512.0f).div(100).roundToInt().write2Bytes()
@@ -65,7 +77,8 @@ data class GasDoseParamPacket(
 
         steps = data.get2Bytes()
         testing = data.get1Byte() > 0      //send 1 to start testing (it will open and close choke continuously) and 0 to stop testing
-        manualPositionD = data.get1Byte()   //fake parameter, not used in outgoing paket
+        data.get1Byte() //incoming placeholder; the controller expects this to be zero
+        manualPositionD = 0
         fcClosing = data.get1Byte().toFloat() / GAS_DOSE_MULTIPLIER
         lambdaCorrLimitP = data.get2Bytes().toFloat().times(100.0f).div(512.0f)
         lambdaCorrLimitM = data.get2Bytes().toFloat().times(100.0f).div(512.0f)
@@ -84,4 +97,8 @@ data class GasDoseParamPacket(
         internal const val DESCRIPTOR = '*'
 
     }
+}
+
+private class PackedGasDoseParamPacket(private val bytes: IntArray) : OutputPacket {
+    override fun pack(): IntArray = bytes.copyOf()
 }

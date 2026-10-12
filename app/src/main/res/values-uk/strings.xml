@@ -1,6 +1,10 @@
 <?xml version="1.0" encoding="utf-8"?>
 
 <resources>
+    <string name="numeric_edit_invalid_value">Введіть значення в допустимому діапазоні</string>
+    <string name="miscel_evap_invalid_range">Поточну пару повітряного потоку EVAP неможливо безпечно редагувати. Спочатку виправте інше значення повітряного потоку.</string>
+    <string name="misc_choose_baud">Вибрати швидкість передачі</string>
+    <string name="misc_invalid_packet">Цей набір параметрів не можна безпечно надіслати. Спочатку виправте діапазон повітряного потоку EVAP.</string>
     <string name="app_name">Secu3Droid</string>
     <string name="title_activity_param">Параметри</string>
     <string name="menu_param">Параметри</string>
@@ -27,6 +31,11 @@
     <string name="title_activity_settings">Налаштування</string>
     <string name="menu_errors">Помилки</string>
     <string name="menu_dashboard">Приладова панель</string>
+    <string name="home_connection_connected">ЕБУ підключено</string>
+    <string name="home_connection_connected_firmware">ЕБУ підключено. Відкрити інформацію про прошивку</string>
+    <string name="home_connection_connecting">Підключення до ЕБУ</string>
+    <string name="connection_status_unknown">Стан з’єднання невідомий</string>
+    <string name="home_connection_disconnected">ЕБУ не підключено</string>
     <string name="back">Назад</string>
     <string name="menu_preferences">Налаштування</string>
     <string name="menu_secu_logs">Логи Secu</string>
@@ -241,6 +250,11 @@
 
 
     <string name="maximum_step_frequency_at_init">Максимальна частота при ініц.</string>
+    <string name="choke_manual_control">Ручне керування</string>
+    <string name="choke_settings">Налаштування</string>
+    <string name="choke_test_active">Тест · УВІМК.</string>
+    <string name="choke_manual_decrease">Зменшити положення заслінки</string>
+    <string name="choke_manual_increase">Збільшити положення заслінки</string>
     <string name="sensors_tab_title">Датчики</string>
     <string name="enable_bluetooth_to_start_work">Ввімкніть Bluetooth для початку роботи та натисніть \"Спробувати знову\"</string>
     <string name="try_again">Спробувати знову</string>
@@ -315,6 +329,9 @@
     <string name="sensors_frag_oil_temperature_sensor_label">Температура оливи</string>
     <string name="sensors_frag_estimated_torque_label">Розрахунковий момент</string>
     <string name="sensors_frag_requested_torque_label">Бажаний момент</string>
+    <string name="sensors_status_accessibility_on">Увімкнено</string>
+    <string name="sensors_status_accessibility_off">Вимкнено</string>
+    <string name="sensors_status_accessibility_unavailable">Недоступно</string>
     <string name="sensors_frag_status_gas_valve_label">Газовий клапан</string>
     <string name="sensors_frag_status_throttle_label">Дросель</string>
     <string name="sensors_frag_status_fl_fuel_label">Паливо при ПХХ</string>
@@ -430,7 +447,18 @@
     <string name="password">Пароль</string>
     <string name="test_signal_frequency_hz">Частота тест. сигналу</string>
     <string name="test_signal_duty">Скважність тест. сигналу</string>
+    <string name="test_signal_title">Тестовий сигнал</string>
+    <string name="output_channel_title">Вихідний канал</string>
+    <string name="test_signal_frequency_label">Частота</string>
+    <string name="test_signal_duty_label">Заповнення</string>
 
     <string name="test">Тест</string>
+    <string name="sensors_add">Додати датчик</string>
+    <string name="sensors_add_gauge">Додати вимірювач</string>
+    <string name="sensors_add_indicator">Додати індикатор</string>
+    <string name="gas_dose_unavailable">Ці параметри недоступні у вашій прошивці</string>
+    <string name="fuel_injection_unavailable">Ці параметри недоступні у вашій прошивці</string>
+    <string name="gas_dose_manual_decrease">Зменшити положення дозатора газу</string>
+    <string name="gas_dose_manual_increase">Збільшити положення дозатора газу</string>
 
 </resources>

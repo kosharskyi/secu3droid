@@ -1,127 +1,102 @@
+/*
+ *    SecuDroid  - An open source, free manager for SECU-3 engine control unit
+ *    Copyright (C) 2026 Vitalii O. Kosharskyi. Ukraine, Kyiv
+ *
+ *    SECU-3  - An open source, free engine control unit
+ *    Copyright (C) 2007-2026 Alexey A. Shabelnikov. Ukraine, Kyiv
+ *
+ *    This program is free software: you can redistribute it and/or modify
+ *    it under the terms of the GNU General Public License as published by
+ *    the Free Software Foundation, either version 3 of the License, or
+ *    (at your option) any later version.
+ *
+ *    This program is distributed in the hope that it will be useful,
+ *    but WITHOUT ANY WARRANTY; without even the implied warranty of
+ *    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ *    GNU General Public License for more details.
+ *
+ *    You should have received a copy of the GNU General Public License
+ *    along with this program.  If not, see <http://www.gnu.org/licenses/>.
+ *
+ *    contacts:
+ *                    http://secu-3.org
+ *                    email: vetalkosharskiy@gmail.com
+ */
 package org.secu3.android.ui.parameters.pages
 
 import android.os.Bundle
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.setValue
+import androidx.compose.ui.platform.ComposeView
+import androidx.compose.ui.platform.ViewCompositionStrategy
 import androidx.lifecycle.lifecycleScope
 import androidx.lifecycle.withResumed
 import kotlinx.coroutines.launch
 import org.secu3.android.R
-import org.secu3.android.databinding.FragmentDbwBinding
 import org.secu3.android.models.packets.out.params.DbwParamPacket
-import org.secu3.android.ui.parameters.views.FloatParamView
-import org.secu3.android.utils.gone
-import org.secu3.android.utils.visible
+import org.secu3.android.ui.compose.SecuComposeTheme
+import org.secu3.android.ui.parameters.dialogs.ParamFloatEditDialogFragment
+import org.secu3.android.ui.parameters.pages.compose.DbwNumber
+import org.secu3.android.ui.parameters.pages.compose.DbwScreen
+import org.secu3.android.ui.parameters.pages.compose.DbwUiState
+import org.secu3.android.ui.parameters.pages.compose.DbwValues
+import org.secu3.android.ui.parameters.pages.compose.applyDbwValue
 
 class DbwFragment : BaseParamFragment() {
 
-    private var binding: FragmentDbwBinding? = null
-
     private var packet: DbwParamPacket? = null
+    private var values by mutableStateOf<DbwValues?>(null)
 
-
-    override fun onCreateView(inflater: LayoutInflater, container: ViewGroup?, savedInstanceState: Bundle?): View? {
-        binding = FragmentDbwBinding.inflate(inflater, container, false)
-        return binding?.root
+    override fun onCreateView(inflater: LayoutInflater, container: ViewGroup?, savedInstanceState: Bundle?): View {
+        packet = null
+        values = null
+        return ComposeView(requireContext()).apply {
+            id = R.id.dbw_compose_view
+            setViewCompositionStrategy(ViewCompositionStrategy.DisposeOnViewTreeLifecycleDestroyed)
+            setContent {
+                SecuComposeTheme {
+                    DbwScreen(values?.let(DbwUiState::Data) ?: DbwUiState.Loading, ::editParameter)
+                }
+            }
+        }
     }
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
-
-        lifecycleScope.launch {
-            withResumed {
-                mViewModel.dbwLiveData.observe(viewLifecycleOwner) {
-
+        val owner = viewLifecycleOwner
+        owner.lifecycleScope.launch {
+            owner.withResumed {
+                // Accessing this getter sends the DBW read request, so evaluate it only once here.
+                val dbwLiveData = mViewModel.dbwLiveData
+                dbwLiveData.observe(owner) { received ->
                     mViewModel.isSendAllowed = false
-
-                    packet = it
-
-                    binding?.apply {
-
-                        progressBar.gone()
-                        params.visible()
-
-                        etcP.value = it.etc_p
-                        etcI.value = it.etc_i
-                        etcD.value = it.etc_d
-                        nmaxDuty.value = it.etc_nmax_duty
-                        pmaxDuty.value = it.etc_pmax_duty
-                        pidPeriod.value = it.pid_period
-                        frictionTorqueOpen.value = it.frictorq_open
-                        frictionTorqueClose.value = it.frictorq_close
-                        frictionThrd.value = it.frictorq_thrd
-                        frictorqIddleAddMax.value = it.frictorq_idleadd_max
-                        homePosition.value = it.homePosition_edited
-                    }
-
-                    initViews()
-
+                    packet = received
+                    values = DbwValues.from(received)
                     mViewModel.isSendAllowed = true
                 }
             }
         }
     }
 
-    private fun initViews() {
-
-        binding?.apply {
-            etcP.addOnValueChangeListener {
-                packet?.etc_p = it
-                packet?.let { pckt -> mViewModel.sendPacket(pckt) }
-            }
-            etcI.addOnValueChangeListener {
-                packet?.etc_i = it
-                packet?.let { pckt -> mViewModel.sendPacket(pckt) }
-            }
-            etcD.addOnValueChangeListener {
-                packet?.etc_d = it
-                packet?.let { pckt -> mViewModel.sendPacket(pckt) }
-            }
-            nmaxDuty.addOnValueChangeListener {
-                packet?.etc_nmax_duty = it
-                packet?.let { pckt -> mViewModel.sendPacket(pckt) }
-            }
-            pmaxDuty.addOnValueChangeListener {
-                packet?.etc_pmax_duty = it
-                packet?.let { pckt -> mViewModel.sendPacket(pckt) }
-            }
-            pidPeriod.addOnValueChangeListener {
-                packet?.pid_period = it
-                packet?.let { pckt -> mViewModel.sendPacket(pckt) }
-            }
-            frictionTorqueOpen.addOnValueChangeListener {
-                packet?.frictorq_open = it
-                packet?.let { pckt -> mViewModel.sendPacket(pckt) }
-            }
-            frictionTorqueClose.addOnValueChangeListener {
-                packet?.frictorq_close = it
-                packet?.let { pckt -> mViewModel.sendPacket(pckt) }
-            }
-            frictionThrd.addOnValueChangeListener {
-                packet?.frictorq_thrd = it
-                packet?.let { pckt -> mViewModel.sendPacket(pckt) }
-            }
-            frictorqIddleAddMax.addOnValueChangeListener {
-                packet?.frictorq_idleadd_max = it
-                packet?.let { pckt -> mViewModel.sendPacket(pckt) }
-            }
-
-
-            etcP.setOnClickListener { floatParamClick(it as FloatParamView) }
-            etcI.setOnClickListener { floatParamClick(it as FloatParamView) }
-            etcD.setOnClickListener { floatParamClick(it as FloatParamView) }
-            nmaxDuty.setOnClickListener { floatParamClick(it as FloatParamView) }
-            pmaxDuty.setOnClickListener { floatParamClick(it as FloatParamView) }
-            pidPeriod.setOnClickListener { floatParamClick(it as FloatParamView) }
-            frictionTorqueOpen.setOnClickListener { floatParamClick(it as FloatParamView) }
-            frictionTorqueClose.setOnClickListener { floatParamClick(it as FloatParamView) }
-            frictionThrd.setOnClickListener { floatParamClick(it as FloatParamView) }
-            frictorqIddleAddMax.setOnClickListener { floatParamClick(it as FloatParamView) }
-        }
+    private fun editParameter(number: DbwNumber) {
+        val current = values ?: return
+        val dialog = ParamFloatEditDialogFragment.newInstance(
+            current.value(number), getString(number.titleRes), number.step, number.max, number.min, number.precision,
+        )
+        dialog.newValueLiveData.observe(viewLifecycleOwner) { updateValue(number, it) }
+        dialog.show(childFragmentManager, dialog::class.java.simpleName)
     }
 
-    override fun tabTitle(): Int {
-        return R.string.params_tab_el_throttle_title
+    private fun updateValue(number: DbwNumber, value: Float) {
+        val currentPacket = packet ?: return
+        applyDbwValue(currentPacket, number, value)
+        values = values?.withValue(number, value)
+        mViewModel.sendPacket(currentPacket)
     }
+
+    override fun tabTitle(): Int = R.string.params_tab_el_throttle_title
 }

@@ -56,7 +56,9 @@ import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.SideEffect
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.setValue
 import androidx.compose.runtime.livedata.observeAsState
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -80,7 +82,7 @@ import androidx.core.view.WindowInsetsControllerCompat
 import androidx.fragment.app.Fragment
 import androidx.fragment.app.viewModels
 import androidx.navigation.fragment.findNavController
-import com.google.android.material.dialog.MaterialAlertDialogBuilder
+import org.secu3.android.ui.compose.ConfirmationDialog
 import dagger.hilt.android.AndroidEntryPoint
 import org.secu3.android.R
 import org.secu3.android.connection.Connected
@@ -93,10 +95,11 @@ import org.secu3.android.models.CheckEngineError
 class ErrorsFragment : Fragment() {
 
     private val mViewModel: ErrorsViewModel by viewModels()
+    private var showClearConfirmation by mutableStateOf(false)
 
     override fun onCreateView(inflater: LayoutInflater, container: ViewGroup?, savedInstanceState: Bundle?): View {
         return ComposeView(requireContext()).apply {
-            setViewCompositionStrategy(ViewCompositionStrategy.DisposeOnDetachedFromWindow)
+            setViewCompositionStrategy(ViewCompositionStrategy.DisposeOnViewTreeLifecycleDestroyed)
             setContent {
                 ErrorsSystemBarsEffect()
 
@@ -117,8 +120,16 @@ class ErrorsFragment : Fragment() {
                     errors = errors,
                     isLoading = savedErrorsPacket == null && activeErrorsPacket == null,
                     onBackClick = { findNavController().navigateUp() },
-                    onClearClick = { confirmClearErrors() },
+                    onClearClick = { showClearConfirmation = true },
                 )
+                if (showClearConfirmation) {
+                    ConfirmationDialog(
+                        title = R.string.clear_all_errors,
+                        message = R.string.dialog_confirm_clear_errors_message,
+                        onConfirm = { showClearConfirmation = false; mViewModel.clearErrors() },
+                        onCancel = { showClearConfirmation = false },
+                    )
+                }
             }
         }
     }
@@ -132,17 +143,6 @@ class ErrorsFragment : Fragment() {
             requireActivity().window.navigationBarColor = ErrorsBackground.toArgb()
             WindowInsetsControllerCompat(requireActivity().window, view).isAppearanceLightStatusBars = false
         }
-    }
-
-    private fun confirmClearErrors() {
-        MaterialAlertDialogBuilder(requireContext())
-            .setTitle(R.string.clear_all_errors)
-            .setMessage(R.string.dialog_confirm_clear_errors_message)
-            .setPositiveButton(android.R.string.ok) { _, _ ->
-                mViewModel.clearErrors()
-            }
-            .setNegativeButton(android.R.string.cancel, null)
-            .show()
     }
 }
 

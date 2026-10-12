@@ -1,6 +1,6 @@
 /*
  *    SecuDroid  - An open source, free manager for SECU-3 engine control unit
- *    Copyright (C) 2024 Vitaliy O. Kosharskyi. Ukraine, Kyiv
+ *    Copyright (C) 2024 Vitalii O. Kosharskyi. Ukraine, Kyiv
  *
  *    SECU-3  - An open source, free engine control unit
  *    Copyright (C) 2007-2024 Alexey A. Shabelnikov. Ukraine, Kyiv
@@ -75,14 +75,18 @@ class DiagnosticsViewModel @Inject constructor(private val secu3ConnectionManage
     val enableBlDe: LiveData<Boolean>
         get() = mEnableBlDe
 
-    val connectionStatusLiveData: LiveData<ConnectionState>
-        get() = secu3ConnectionManager.connectionStateFlow.asLiveData()
+    // Each asLiveData() call creates a Flow collector; keep one instance for this
+    // view model so Compose recompositions and view recreation do not multiply them.
+    val connectionStatusLiveData: LiveData<ConnectionState> by lazy {
+        secu3ConnectionManager.connectionStateFlow.asLiveData()
+    }
 
-    val diagInputLiveData: LiveData<DiagInputPacket>
-        get() = secu3ConnectionManager.receivedPacketFlow.filter { it is DiagInputPacket }.map {
+    val diagInputLiveData: LiveData<DiagInputPacket> by lazy {
+        secu3ConnectionManager.receivedPacketFlow.filter { it is DiagInputPacket }.map {
             isDiagModeActive = true
             it as DiagInputPacket
         }.asLiveData()
+    }
 
 
     fun enableTachO(enable: Boolean) {

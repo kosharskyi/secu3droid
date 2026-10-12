@@ -62,7 +62,7 @@ data class CkpsParamPacket(
     var useCamRef: Boolean
         get() = hallFlags.getBitValue(1) > 0
         set(value) {
-            hallFlags.setBitValue(value, 1)
+            hallFlags = hallFlags.setBitValue(value, 1)
         }
 
     var ckpsEdge: Boolean

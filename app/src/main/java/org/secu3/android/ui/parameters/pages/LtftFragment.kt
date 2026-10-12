@@ -1,166 +1,120 @@
+/*
+ *    SecuDroid  - An open source, free manager for SECU-3 engine control unit
+ *    Copyright (C) 2026 Vitalii O. Kosharskyi. Ukraine, Kyiv
+ *
+ *    SECU-3  - An open source, free engine control unit
+ *    Copyright (C) 2007-2026 Alexey A. Shabelnikov. Ukraine, Kyiv
+ *
+ *    This program is free software: you can redistribute it and/or modify
+ *    it under the terms of the GNU General Public License as published by
+ *    the Free Software Foundation, either version 3 of the License, or
+ *    (at your option) any later version.
+ *
+ *    This program is distributed in the hope that it will be useful,
+ *    but WITHOUT ANY WARRANTY; without even the implied warranty of
+ *    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ *    GNU General Public License for more details.
+ *
+ *    You should have received a copy of the GNU General Public License
+ *    along with this program.  If not, see <http://www.gnu.org/licenses/>.
+ *
+ *    contacts:
+ *                    http://secu-3.org
+ *                    email: vetalkosharskiy@gmail.com
+ */
 package org.secu3.android.ui.parameters.pages
 
 import android.os.Bundle
-import android.text.InputType
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
-import android.widget.AdapterView
-import android.widget.ArrayAdapter
-import android.widget.Toast
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.setValue
+import androidx.compose.ui.platform.ComposeView
+import androidx.compose.ui.platform.ViewCompositionStrategy
+import androidx.lifecycle.lifecycleScope
+import androidx.lifecycle.withResumed
+import kotlinx.coroutines.launch
 import org.secu3.android.R
-import org.secu3.android.databinding.FragmentLtftBinding
 import org.secu3.android.models.packets.out.params.LtftParamPacket
-import org.secu3.android.ui.parameters.views.FloatParamView
-import org.secu3.android.ui.parameters.views.IntParamView
-import org.secu3.android.utils.gone
-import org.secu3.android.utils.visible
+import org.secu3.android.ui.compose.SecuComposeTheme
+import org.secu3.android.ui.parameters.dialogs.ParamFloatEditDialogFragment
+import org.secu3.android.ui.parameters.dialogs.ParamIntEditDialogFragment
+import org.secu3.android.ui.parameters.pages.compose.LtftNumber
+import org.secu3.android.ui.parameters.pages.compose.LtftScreen
+import org.secu3.android.ui.parameters.pages.compose.LtftUiState
+import org.secu3.android.ui.parameters.pages.compose.LtftValues
+import org.secu3.android.ui.parameters.pages.compose.applyLtftValue
 
 class LtftFragment : BaseParamFragment() {
-
-    private lateinit var mBinding: FragmentLtftBinding
-
     private var packet: LtftParamPacket? = null
+    private var values by mutableStateOf<LtftValues?>(null)
 
-    private val modeItems : List<String> by lazy {
-        resources.getStringArray(R.array.ltft_mode_items).toList()
-    }
-
-    override fun onCreateView(inflater: LayoutInflater, container: ViewGroup?, savedInstanceState: Bundle?): View? {
-        mBinding = FragmentLtftBinding.inflate(inflater, container, false)
-        return mBinding.root
+    override fun onCreateView(inflater: LayoutInflater, container: ViewGroup?, savedInstanceState: Bundle?): View {
+        packet = null
+        values = null
+        return ComposeView(requireContext()).apply {
+            id = R.id.ltft_compose_view
+            setViewCompositionStrategy(ViewCompositionStrategy.DisposeOnViewTreeLifecycleDestroyed)
+            setContent {
+                SecuComposeTheme {
+                    LtftScreen(values?.let(LtftUiState::Data) ?: LtftUiState.Loading, ::editParameter, ::selectMode)
+                }
+            }
+        }
     }
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
-
-        mBinding.apply {
-            ltftMode.inputType = InputType.TYPE_NULL
-            ArrayAdapter(requireContext(), R.layout.list_item, modeItems).also {
-                ltftMode.setAdapter(it)
+        val owner = viewLifecycleOwner
+        owner.lifecycleScope.launch {
+            owner.withResumed {
+                // This getter issues a protocol read; evaluate it once for this view lifecycle.
+                val ltftLiveData = mViewModel.ltftLiveData
+                ltftLiveData.observe(owner) { received ->
+                    mViewModel.isSendAllowed = false
+                    packet = received
+                    values = LtftValues.from(received)
+                    mViewModel.isSendAllowed = true
+                }
             }
-        }
-
-        mViewModel.ltftLiveData.observe(viewLifecycleOwner) {
-            mViewModel.isSendAllowed = false
-
-            packet = it
-
-            mBinding.apply {
-
-                progressBar.gone()
-                params.visible()
-
-                ltftMode.setText(modeItems[it.mode], false)
-
-                ltftLowerCltThreshold.value = it.learnClt
-                ltftUpperCltThreshold.value = it.learnCltUp
-                ltftUpperIatThreshold.value = it.learnIatUp
-                ltftLearningGradientFactor.value = it.learnGrad
-                ltftAbsGasPressureTreshold.value = it.learnGpa
-                ltftDiffGasPressureTreshold.value = it.learnGpd
-                ltftBottomLimitCorrection.value = it.min
-                ltftTopLimitCorrection.value = it.max
-                ltftLowerRpmThreshold.value = it.learnRpm0
-                ltftUpperRpmThreshold.value = it.learnRpm1
-                ltftLowerLoadThreshold.value = it.learnLoad0
-                ltftUpperLoadThreshold.value = it.learnLoad1
-                ltftNegativeInsensitivityThreshold.value = it.deadBand0
-                ltftPositiveInsensitivityThreshold.value = it.deadBand1
-                
-            }
-
-            initViews()
-
-            mViewModel.isSendAllowed = true
         }
     }
 
-    private fun initViews() {
-        mBinding.apply {
-
-            ltftMode.onItemClickListener = AdapterView.OnItemClickListener { _, _, position, _ ->
-                packet?.mode = position
-                packet?.let { pckt -> mViewModel.sendPacket(pckt) }
-            }
-
-
-            ltftLowerCltThreshold.addOnValueChangeListener {
-                packet?.learnClt = it
-                packet?.let { pckt -> mViewModel.sendPacket(pckt) }
-            }
-            ltftUpperCltThreshold.addOnValueChangeListener {
-                packet?.learnCltUp = it
-                packet?.let { pckt -> mViewModel.sendPacket(pckt) }
-            }
-            ltftUpperIatThreshold.addOnValueChangeListener {
-                packet?.learnIatUp = it
-                packet?.let { pckt -> mViewModel.sendPacket(pckt) }
-            }
-            ltftLearningGradientFactor.addOnValueChangeListener {
-                packet?.learnGrad = it
-                packet?.let { pckt -> mViewModel.sendPacket(pckt) }
-            }
-            ltftAbsGasPressureTreshold.addOnValueChangeListener {
-                packet?.learnGpa = it
-                packet?.let { pckt -> mViewModel.sendPacket(pckt) }
-            }
-            ltftDiffGasPressureTreshold.addOnValueChangeListener {
-                packet?.learnGpd = it
-                packet?.let { pckt -> mViewModel.sendPacket(pckt) }
-            }
-            ltftBottomLimitCorrection.addOnValueChangeListener {
-                packet?.min = it
-                packet?.let { pckt -> mViewModel.sendPacket(pckt) }
-            }
-            ltftTopLimitCorrection.addOnValueChangeListener {
-                packet?.max = it
-                packet?.let { pckt -> mViewModel.sendPacket(pckt) }
-            }
-            ltftLowerRpmThreshold.addOnValueChangeListener {
-                packet?.learnRpm0 = it
-                packet?.let { pckt -> mViewModel.sendPacket(pckt) }
-            }
-            ltftUpperRpmThreshold.addOnValueChangeListener {
-                packet?.learnRpm1 = it
-                packet?.let { pckt -> mViewModel.sendPacket(pckt) }
-            }
-            ltftLowerLoadThreshold.addOnValueChangeListener {
-                packet?.learnLoad0 = it
-                packet?.let { pckt -> mViewModel.sendPacket(pckt) }
-            }
-            ltftUpperLoadThreshold.addOnValueChangeListener {
-                packet?.learnLoad1 = it
-                packet?.let { pckt -> mViewModel.sendPacket(pckt) }
-            }
-            ltftNegativeInsensitivityThreshold.addOnValueChangeListener {
-                packet?.deadBand0 = it
-                packet?.let { pckt -> mViewModel.sendPacket(pckt) }
-            }
-            ltftPositiveInsensitivityThreshold.addOnValueChangeListener {
-                packet?.deadBand1 = it
-                packet?.let { pckt -> mViewModel.sendPacket(pckt) }
-            }
-
-            ltftLowerCltThreshold.setOnClickListener { floatParamClick(it as FloatParamView) }
-            ltftUpperCltThreshold.setOnClickListener { floatParamClick(it as FloatParamView) }
-            ltftUpperIatThreshold.setOnClickListener { floatParamClick(it as FloatParamView) }
-            ltftLearningGradientFactor.setOnClickListener { floatParamClick(it as FloatParamView) }
-            ltftAbsGasPressureTreshold.setOnClickListener { floatParamClick(it as FloatParamView) }
-            ltftDiffGasPressureTreshold.setOnClickListener { floatParamClick(it as FloatParamView) }
-            ltftBottomLimitCorrection.setOnClickListener { floatParamClick(it as FloatParamView) }
-            ltftTopLimitCorrection.setOnClickListener { floatParamClick(it as FloatParamView) }
-            ltftLowerRpmThreshold.setOnClickListener { intParamClick(it as IntParamView) }
-            ltftUpperRpmThreshold.setOnClickListener { intParamClick(it as IntParamView) }
-            ltftLowerLoadThreshold.setOnClickListener { floatParamClick(it as FloatParamView) }
-            ltftUpperLoadThreshold.setOnClickListener { floatParamClick(it as FloatParamView) }
-            ltftNegativeInsensitivityThreshold.setOnClickListener { floatParamClick(it as FloatParamView) }
-            ltftPositiveInsensitivityThreshold.setOnClickListener { floatParamClick(it as FloatParamView) }
-
+    private fun editParameter(number: LtftNumber) {
+        val current = values ?: return
+        if (number.integer) {
+            val dialog = ParamIntEditDialogFragment.newInstance(
+                current.value(number).toInt(), getString(number.titleRes), number.step.toInt(),
+                number.max.toInt(), number.min.toInt(),
+            )
+            dialog.newValueLiveData.observe(viewLifecycleOwner) { updateValue(number, it.toFloat()) }
+            dialog.show(childFragmentManager, dialog::class.java.simpleName)
+        } else {
+            val dialog = ParamFloatEditDialogFragment.newInstance(
+                current.value(number), getString(number.titleRes), number.step,
+                number.max, number.min, number.precision,
+            )
+            dialog.newValueLiveData.observe(viewLifecycleOwner) { updateValue(number, it) }
+            dialog.show(childFragmentManager, dialog::class.java.simpleName)
         }
     }
 
-    override fun tabTitle(): Int {
-        return R.string.params_tab_ltft_title
+    private fun updateValue(number: LtftNumber, value: Float) {
+        val currentPacket = packet ?: return
+        applyLtftValue(currentPacket, number, value)
+        values = values?.withValue(number, value)
+        mViewModel.sendPacket(currentPacket)
     }
+
+    private fun selectMode(index: Int) {
+        val currentPacket = packet ?: return
+        if (index !in 0..3) return
+        currentPacket.mode = index
+        values = values?.copy(mode = index)
+        mViewModel.sendPacket(currentPacket)
+    }
+
+    override fun tabTitle(): Int = R.string.params_tab_ltft_title
 }

@@ -25,11 +25,10 @@
 package org.secu3.android.ui.parameters.dialogs
 
 import android.os.Bundle
-import android.text.InputType
-import android.view.View
-import androidx.core.widget.doAfterTextChanged
+import androidx.compose.runtime.Composable
 import androidx.lifecycle.LiveData
 import androidx.lifecycle.MutableLiveData
+import java.math.BigInteger
 
 
 class ParamIntEditDialogFragment : ParamBaseEditDialogFragment() {
@@ -57,58 +56,46 @@ class ParamIntEditDialogFragment : ParamBaseEditDialogFragment() {
         get() = _newValueLiveData
 
 
-    override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
-        super.onViewCreated(view, savedInstanceState)
-
-        mBinding.apply {
-            parameterTitle.text = paramTitle
-
-            value.editText?.apply {
-                setText(currentValue.toString())
-                inputType = InputType.TYPE_CLASS_NUMBER
-
-                doAfterTextChanged {
-                    if (it.toString().isEmpty()) {
-                        ok.isEnabled = false
-                        return@doAfterTextChanged
-                    }
-
-                    currentValue = it.toString().toInt()
-
-                    val isValueCorrect = currentValue in minValue..maxValue
-
-                    ok.isEnabled = isValueCorrect
-
-                    if (isValueCorrect.not()) {
-                        value.isErrorEnabled = true
-                        value.error = " "
-                    } else {
-                        value.isErrorEnabled = false
-                        value.error = null
-                    }
-                }
-            }
-
-            increment.setOnClickListener {
-                currentValue = currentValue.plus(stepValue).coerceIn(minValue, maxValue)
-                value.editText?.setText(currentValue.toString())
-            }
-
-            decrement.setOnClickListener {
-                currentValue = currentValue.minus(stepValue).coerceIn(minValue, maxValue)
-                value.editText?.setText(currentValue.toString())
-            }
-
-            ok.setOnClickListener {
+    @Composable
+    override fun DialogContent() {
+        NumericEditDialogContent(
+            title = paramTitle,
+            initialText = currentValue.toString(),
+            allowDecimal = false,
+            allowNegative = minValue < 0,
+            validate = { parseValidInput(it, minValue, maxValue) != null },
+            onStep = { text, direction ->
+                currentValue = stepValueFromInput(text, currentValue, stepValue, minValue, maxValue, direction)
+                currentValue.toString()
+            },
+            onConfirm = { text, _ ->
+                parseValidInput(text, minValue, maxValue)?.let { currentValue = it }
                 _newValueLiveData.value = currentValue
                 dismiss()
-            }
-            cancel.setOnClickListener { dismiss() }
-
-        }
+            },
+            onCancel = { dismiss() },
+        )
     }
 
     companion object {
+        internal fun parseValidInput(value: String, min: Int, max: Int): Int? =
+            value.toIntOrNull()?.takeIf { it in min..max }
+
+        internal fun stepValueFromInput(
+            value: String,
+            current: Int,
+            step: Int,
+            min: Int,
+            max: Int,
+            direction: Int,
+        ): Int {
+            val base = value.toBigIntegerOrNull() ?: BigInteger.valueOf(current.toLong())
+            val delta = BigInteger.valueOf(step.toLong()).multiply(BigInteger.valueOf(direction.toLong()))
+            val stepped = base.add(delta)
+            val bounded = stepped.max(BigInteger.valueOf(min.toLong())).min(BigInteger.valueOf(max.toLong()))
+            return bounded.toInt()
+        }
+
         /**
          * Use this factory method to create a new instance of
          * this fragment using the provided parameters.

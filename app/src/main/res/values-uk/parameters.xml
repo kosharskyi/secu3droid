@@ -212,6 +212,13 @@
     <string name="unioutput5_condition_2_title">Умова 2  для виходу №5</string>
     <string name="unioutput6_condition_1_title">Умова 1  для виходу №6</string>
     <string name="unioutput6_condition_2_title">Умова 2  для виходу №6</string>
+    <string name="uniout_outputs_link_function">Функція зв’язку виходів 1 + 2</string>
+    <string name="uniout_disabled">Вимкнено</string>
+    <string name="uniout_unknown_code">Код %1$d</string>
+    <string name="uniout_threshold_unavailable">Пороги недоступні для %1$s</string>
+    <string name="uniout_threshold_edit_title">Поріг %1$s</string>
+    <string name="uniout_threshold_value_label">Значення</string>
+    <string name="uniout_label_value">%1$s: %2$s</string>
 
     <string name="injctr_par_injector_flow_rate_title">Продуктивність форсунки</string>
     <string name="injctr_par_enjine_displacement_title">Об\'єм двигуна</string>
@@ -238,6 +245,7 @@
     <string name="injctr_par_inj_config_ss_sep_channel">ПП окрем.кан.</string>
     <string name="injctr_par_inj_config_full_sequential">Розподілене</string>
     <string name="injctr_par_inj_timing_specifies">Фазу вприскування визначає</string>
+    <string name="injctr_par_primary_fuel_title">Основне паливо</string>
     <string name="injctr_par_max_inj_pw_title">Макс. тривалість вприскування</string>
 
     <string name="lambda_par_sensor_type_title">Тип сенсора</string>
@@ -263,6 +271,7 @@
     <string name="lambda_par_air_flow_threshold_for_turning_heating_off_title">Поріг вимкнення по споживанню повітря</string>
     <string name="lambda_par_heating_before_cranking_title">Підігрів перед запуском</string>
     <string name="lambda_par_select_an_oxygen_sensor">Вибір датчика кисню</string>
+    <string name="lambda_par_mix_sensors_value_title">Усереднювати сигнали двох датчиків на датчик 1</string>
 
 
     <string name="accel_par_tpsdot_threshold_title">Поріг по ДПДЗ</string>
@@ -350,4 +359,27 @@
     <string name="raw_status_addi2_title">ADD_IO2: %.2f В</string>
 
     <string name="adc_cor_multiply_corr_and_koef_title">Множити корр. на коеф.</string>
+    <string name="functions_section_general">Загальні налаштування</string>
+    <string name="functions_section_map_tps">Датчики MAP і TPS</string>
+    <string name="functions_section_tables">Карти й таблиці</string>
+    <string name="functions_section_sources">Джерела навантаження та умови</string>
+    <string name="functions_section_map2">Другий датчик MAP</string>
+    <string name="functions_section_pressures_apps">Тиск газу й палива та датчик акселератора</string>
+    <string name="sec_bluetooth">Bluetooth</string>
+    <string name="sec_immobilizer">Іммобілайзер</string>
+    <string name="sec_information">Інформація</string>
+    <string name="sec_bt_type">Тип Bluetooth</string>
+    <string name="sec_key1">Ключ 1</string>
+    <string name="sec_key2">Ключ 2</string>
+    <string name="sec_read_only">Лише для читання</string>
+    <string name="sec_unknown_type">Невідомий тип (%1$d)</string>
+    <string name="apply">Застосувати</string>
+    <string name="sec_enabled">Увімкнено</string>
+    <string name="sec_disabled">Вимкнено</string>
+    <string name="sec_reserve_params_description">Якщо увімкнено, завжди використовуються резервні параметри прошивки. Про пошкодження EEPROM не повідомляється.</string>
+    <string name="sec_firmware_integrity_description">Якщо увімкнено, під час запуску перевіряється контрольна сума прошивки; у разі помилки повідомляється про неї.</string>
+    <string name="sec_credentials_write_only">ЕБУ не може прочитати збережені ім’я та пароль. Введіть значення й натисніть «Застосувати», щоб надіслати їх.</string>
+    <string name="sec_ibutton_key_hint">Введіть рівно 12 шістнадцяткових символів.</string>
+    <string name="sec_ibutton_key_invalid">Некоректний ключ. Введіть рівно 12 шістнадцяткових символів.</string>
+    <string name="sec_invalid_credentials">Ім’я або пароль не відповідає формату ЕБУ.</string>
 </resources>

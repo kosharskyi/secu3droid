@@ -25,11 +25,12 @@
 package org.secu3.android.ui.parameters.dialogs
 
 import android.os.Bundle
-import android.view.LayoutInflater
 import android.view.View
-import android.view.ViewGroup
 import androidx.fragment.app.DialogFragment
-import org.secu3.android.databinding.FragmentParamsEditDialogBinding
+import androidx.compose.ui.platform.ComposeView
+import androidx.compose.ui.platform.ViewCompositionStrategy
+import androidx.compose.runtime.Composable
+import org.secu3.android.ui.compose.SecuComposeTheme
 
 
 const val ARG_CURRENT_VALUE = "current_value"
@@ -41,17 +42,19 @@ const val ARG_MAX_VALUE = "max_value"
 
 abstract class ParamBaseEditDialogFragment : DialogFragment() {
 
-    protected lateinit var mBinding: FragmentParamsEditDialogBinding
-
-
-    override fun onCreateView(inflater: LayoutInflater, container: ViewGroup?, savedInstanceState: Bundle?): View? {
-        mBinding = FragmentParamsEditDialogBinding.inflate(inflater, container, false)
-        return mBinding.root
+    override fun onCreateView(inflater: android.view.LayoutInflater, container: android.view.ViewGroup?, savedInstanceState: Bundle?): View {
+        return ComposeView(requireContext()).apply {
+            setViewCompositionStrategy(ViewCompositionStrategy.DisposeOnViewTreeLifecycleDestroyed)
+            setContent { SecuComposeTheme { DialogContent() } }
+        }
     }
+
+    @Composable
+    protected abstract fun DialogContent()
 
 
     override fun onStart() {
         super.onStart()
-        dialog?.window?.setLayout(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT)
+        dialog?.window?.setLayout(android.view.ViewGroup.LayoutParams.MATCH_PARENT, android.view.ViewGroup.LayoutParams.WRAP_CONTENT)
     }
 }
