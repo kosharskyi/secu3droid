@@ -46,7 +46,7 @@ import androidx.core.net.toUri
 import androidx.fragment.app.Fragment
 import androidx.fragment.app.viewModels
 import androidx.navigation.fragment.findNavController
-import com.google.android.material.dialog.MaterialAlertDialogBuilder
+import org.secu3.android.ui.compose.ConfirmationDialog
 import dagger.hilt.android.AndroidEntryPoint
 import org.secu3.android.R
 import org.secu3.android.connection.Connected
@@ -65,6 +65,8 @@ class HomeFragment : Fragment() {
     private var release by mutableStateOf<GitHubRelease?>(null)
     private var exitPending = false
     private var showExitConfirmation by mutableStateOf(false)
+    private var showDownloadPermissionRationale by mutableStateOf(false)
+    private val releasePermissionFlow = PendingReleasePermissionFlow()
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -106,6 +108,17 @@ class HomeFragment : Fragment() {
                             onReleaseNotes = { release?.let { CustomTabsIntent.Builder().build().launchUrl(requireContext(), it.htmlUrl.toUri()) } },
                         ),
                     )
+                    if (showDownloadPermissionRationale) {
+                        ConfirmationDialog(
+                            title = R.string.download_manager_permission_rationale_title,
+                            message = R.string.download_manager_permission_rationale_message,
+                            onConfirm = {
+                                showDownloadPermissionRationale = false
+                                permissionRequest.launch(android.Manifest.permission.WRITE_EXTERNAL_STORAGE)
+                            },
+                            onCancel = { showDownloadPermissionRationale = false; releasePermissionFlow.cancel() },
+                        )
+                    }
             }
         }
 
@@ -137,26 +150,27 @@ class HomeFragment : Fragment() {
     }
 
     private val permissionRequest = registerForActivityResult(ActivityResultContracts.RequestPermission()) { granted ->
-        if (granted) release?.let(mViewModel::downloadRelease)
+        releasePermissionFlow.complete(granted)?.let(mViewModel::downloadRelease)
     }
 
     private fun checkPermissionsAndDownload(item: GitHubRelease) {
+        releasePermissionFlow.begin(item)
         if (Build.VERSION.SDK_INT < Build.VERSION_CODES.Q) {
             val permission = android.Manifest.permission.WRITE_EXTERNAL_STORAGE
             if (ContextCompat.checkSelfPermission(requireContext(), permission) == PackageManager.PERMISSION_GRANTED) {
                 mViewModel.downloadRelease(item)
+                releasePermissionFlow.cancel()
                 return
             }
             if (shouldShowRequestPermissionRationale(permission)) {
-                MaterialAlertDialogBuilder(requireContext())
-                    .setTitle(R.string.download_manager_permission_rationale_title)
-                    .setMessage(R.string.download_manager_permission_rationale_message)
-                    .setPositiveButton(android.R.string.ok) { _, _ -> permissionRequest.launch(permission) }
-                    .setNegativeButton(android.R.string.cancel, null).show()
+                showDownloadPermissionRationale = true
                 return
             }
             permissionRequest.launch(permission)
-        } else mViewModel.downloadRelease(item)
+        } else {
+            releasePermissionFlow.cancel()
+            mViewModel.downloadRelease(item)
+        }
     }
 
     private fun serviceIntent() = Intent(requireContext(), SecuConnectionService::class.java)
@@ -180,5 +194,23 @@ class HomeFragment : Fragment() {
         }
         // The Compose exit dialog's confirmation requests shutdown and navigation occurs on Disconnected.
         showExitConfirmation = true
+    }
+}
+
+internal class PendingReleasePermissionFlow {
+    private var requestedRelease: GitHubRelease? = null
+
+    fun begin(release: GitHubRelease) {
+        requestedRelease = release
+    }
+
+    fun complete(granted: Boolean): GitHubRelease? {
+        val release = requestedRelease
+        requestedRelease = null
+        return release.takeIf { granted }
+    }
+
+    fun cancel() {
+        requestedRelease = null
     }
 }

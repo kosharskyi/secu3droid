@@ -93,7 +93,10 @@ import androidx.core.view.WindowInsetsControllerCompat
 import androidx.fragment.app.viewModels
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.fragment.findNavController
-import com.google.android.material.dialog.MaterialAlertDialogBuilder
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.setValue
+import org.secu3.android.ui.compose.ConfirmationDialog
 import dagger.hilt.android.AndroidEntryPoint
 import org.secu3.android.R
 import org.secu3.android.connection.Connected
@@ -101,6 +104,8 @@ import org.secu3.android.ui.settings.SettingsActivity
 
 @AndroidEntryPoint
 class StartScreenFragment : Fragment() {
+
+    private var showBluetoothRationale by mutableStateOf(false)
 
     private val viewModel: StartScreenViewModel by viewModels()
 
@@ -170,6 +175,14 @@ class StartScreenFragment : Fragment() {
             setViewCompositionStrategy(ViewCompositionStrategy.DisposeOnViewTreeLifecycleDestroyed)
             setContent {
                 StartScreen(viewModel)
+                if (showBluetoothRationale) {
+                    ConfirmationDialog(
+                        title = R.string.permission_rationale_title,
+                        message = R.string.permission_rationale_message,
+                        onConfirm = { showBluetoothRationale = false; permissionRequest.launch(pendingBluetoothPermissions) },
+                        onCancel = { showBluetoothRationale = false },
+                    )
+                }
             }
         }
     }
@@ -373,6 +386,8 @@ class StartScreenFragment : Fragment() {
         checkBtConfig()
     }
 
+    private var pendingBluetoothPermissions: Array<String> = emptyArray()
+
     private val enableBtRequest = registerForActivityResult(ActivityResultContracts.StartActivityForResult()) {
         if (it.resultCode == RESULT_OK) {
             checkBluetoothPermissionsAndConnect()
@@ -408,13 +423,10 @@ class StartScreenFragment : Fragment() {
             return
         }
 
+        pendingBluetoothPermissions = permissions.toTypedArray()
+
         if (permissions.any{ shouldShowRequestPermissionRationale(it) }) {
-            MaterialAlertDialogBuilder(requireContext())
-                .setTitle(R.string.permission_rationale_title)
-                .setMessage(R.string.permission_rationale_message)
-                .setPositiveButton(android.R.string.ok) { _, _ -> permissionRequest.launch(permissions.toTypedArray()) }
-                .setNegativeButton(android.R.string.cancel, null)
-                .show()
+            showBluetoothRationale = true
             return
         }
 
