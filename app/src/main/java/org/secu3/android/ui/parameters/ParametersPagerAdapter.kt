@@ -22,73 +22,68 @@
  *                    http://secu-3.org
  *                    email: vetalkosharskiy@gmail.com
  */
-
 package org.secu3.android.ui.parameters
 
 import androidx.fragment.app.Fragment
 import androidx.viewpager2.adapter.FragmentStateAdapter
+import org.secu3.android.R
 import org.secu3.android.models.packets.input.FirmwareInfoPacket
 import org.secu3.android.ui.parameters.pages.*
 
-class ParametersPagerAdapter(fragment: Fragment, fwInfoPacket: FirmwareInfoPacket?) : FragmentStateAdapter(fragment) {
+internal data class ParameterPageSpec(
+    val titleRes: Int,
+    val create: () -> BaseParamFragment,
+)
 
-    private val pages: List<BaseParamFragment>
+/** Single source of truth for pager pages, their order, and firmware gates. */
+internal fun parameterPageSpecs(fwInfoPacket: FirmwareInfoPacket?): List<ParameterPageSpec> {
+    val pages = mutableListOf(
+        ParameterPageSpec(R.string.params_tab_start_title, ::StarterFragment),
+        ParameterPageSpec(R.string.params_tab_angles_title, ::AnglesFragment),
+        ParameterPageSpec(R.string.params_tab_idling_title, ::IdlingFragment),
+        ParameterPageSpec(R.string.params_tab_functions_title, ::FunctionsFragment),
+        ParameterPageSpec(R.string.params_tab_temperature_title, ::TemperatureFragment),
+        ParameterPageSpec(R.string.params_tab_fuel_cutoff_title, ::FuelCutoffkFragment),
+        ParameterPageSpec(R.string.params_tab_adc_errors_corr_title, ::AdcErrorsCorrectionsFragment),
+        ParameterPageSpec(R.string.params_tab_ckps_title, ::CkpsFragment),
+        ParameterPageSpec(R.string.params_tab_knock_title, ::KnockFragment),
+        ParameterPageSpec(R.string.params_tab_miscellaneous_title, ::MiscellaneousFragment),
+        ParameterPageSpec(R.string.params_tab_choke_control_title, ::ChokeControlFragment),
+        ParameterPageSpec(R.string.params_tab_security_title, ::SecurityFragment),
+        ParameterPageSpec(R.string.params_tab_universal_outputs_title, ::UniversalOutputsFragment),
+    )
 
-    init {
-        val list =  mutableListOf(
-            StarterFragment(),
-            AnglesFragment(),
-            IdlingFragment(),
-            FunctionsFragment(),
-            TemperatureFragment(),
-            FuelCutoffkFragment(),
-            AdcErrorsCorrectionsFragment(),
-            CkpsFragment(),
-            KnockFragment(),
-            MiscellaneousFragment(),
-            ChokeControlFragment(),
-            SecurityFragment(),
-            UniversalOutputsFragment(),
-        )
-
-        fwInfoPacket?.let {
-            if (it.isFuelInjectEnabled) {
-                list.add(FuelInjectionFragment())
-            }
-
-            if (it.isFuelInjectEnabled || it.isCarbAfrEnabled || it.isGdControlEnabled) {
-                list.add(LambdaControlFragment())
-            }
-
-            if (it.isFuelInjectEnabled || it.isGdControlEnabled) {
-                list.add(AccelerationFragment())
-            }
-
-            if (it.isGdControlEnabled) {
-                list.add(GasDoseFragment())
-            }
-
-            if (it.isFuelInjectEnabled) {
-                list.add(LtftFragment())
-            }
-
-            if (it.isSecu3T.not()) {
-                list.add(DbwFragment())
-            }
+    fwInfoPacket?.let { firmware ->
+        if (firmware.isFuelInjectEnabled) {
+            pages += ParameterPageSpec(R.string.params_tab_fuel_injection_title, ::FuelInjectionFragment)
         }
-        pages = list
+        if (firmware.isFuelInjectEnabled || firmware.isCarbAfrEnabled || firmware.isGdControlEnabled) {
+            pages += ParameterPageSpec(R.string.params_tab_lambda_control_title, ::LambdaControlFragment)
+        }
+        if (firmware.isFuelInjectEnabled || firmware.isGdControlEnabled) {
+            pages += ParameterPageSpec(R.string.params_tab_acceleration_title, ::AccelerationFragment)
+        }
+        if (firmware.isGdControlEnabled) {
+            pages += ParameterPageSpec(R.string.params_tab_gas_dose_title, ::GasDoseFragment)
+        }
+        if (firmware.isFuelInjectEnabled) {
+            pages += ParameterPageSpec(R.string.params_tab_ltft_title, ::LtftFragment)
+        }
+        if (!firmware.isSecu3T) {
+            pages += ParameterPageSpec(R.string.params_tab_el_throttle_title, ::DbwFragment)
+        }
     }
+    return pages
+}
+
+class ParametersPagerAdapter(fragment: Fragment, fwInfoPacket: FirmwareInfoPacket?) : FragmentStateAdapter(fragment) {
+    private val pageSpecs = parameterPageSpecs(fwInfoPacket)
+    private val pages = pageSpecs.map { it.create() }
 
     val titles: List<Int>
-        get() = pages.map { it.tabTitle() }
+        get() = pageSpecs.map { it.titleRes }
 
-    override fun getItemCount(): Int {
-        return pages.size
-    }
+    override fun getItemCount(): Int = pages.size
 
-    override fun createFragment(position: Int): Fragment {
-        return pages[position]
-    }
-
-
+    override fun createFragment(position: Int): Fragment = pages[position]
 }

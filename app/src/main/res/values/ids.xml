@@ -39,4 +39,6 @@
     <item name="choke_control_compose_view" type="id" />
     <item name="acceleration_compose_view" type="id" />
     <item name="lambda_control_compose_view" type="id" />
+    <item name="paramsPager" type="id" />
+    <item name="params_view_container" type="id" />
 </resources>

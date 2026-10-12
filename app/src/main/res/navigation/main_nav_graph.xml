@@ -114,7 +114,6 @@
         android:id="@+id/parametersFragment"
         android:name="org.secu3.android.ui.parameters.ParamsFragment"
         android:label="Parameters Fragment"
-        tools:layout="@layout/fragment_params"
         />
 
     <fragment

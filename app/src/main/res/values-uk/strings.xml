@@ -34,6 +34,7 @@
     <string name="home_connection_connected">ЕБУ підключено</string>
     <string name="home_connection_connected_firmware">ЕБУ підключено. Відкрити інформацію про прошивку</string>
     <string name="home_connection_connecting">Підключення до ЕБУ</string>
+    <string name="connection_status_unknown">Стан з’єднання невідомий</string>
     <string name="home_connection_disconnected">ЕБУ не підключено</string>
     <string name="back">Назад</string>
     <string name="menu_preferences">Налаштування</string>
