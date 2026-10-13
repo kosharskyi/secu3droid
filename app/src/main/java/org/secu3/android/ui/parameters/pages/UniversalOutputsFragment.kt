@@ -30,21 +30,16 @@ import android.view.View
 import android.view.ViewGroup
 import androidx.compose.ui.platform.ComposeView
 import androidx.compose.ui.platform.ViewCompositionStrategy
-import androidx.lifecycle.lifecycleScope
-import androidx.lifecycle.withResumed
 import dagger.hilt.android.AndroidEntryPoint
-import kotlinx.coroutines.launch
 import org.secu3.android.R
 import org.secu3.android.models.packets.out.params.UniOutParamPacket
 import org.secu3.android.ui.compose.SecuComposeTheme
 
 @AndroidEntryPoint
 class UniversalOutputsFragment : BaseParamFragment() {
-    private lateinit var stateHolder: UniversalOutputsStateHolder
+    private val stateHolder get() = mViewModel.universalOutputsStateHolder
 
     override fun onCreateView(inflater: LayoutInflater, container: ViewGroup?, savedInstanceState: Bundle?): View {
-        stateHolder = UniversalOutputsStateHolder(mViewModel::sendPacket) { mViewModel.isSendAllowed = it }
-        stateHolder.reset()
         return ComposeView(requireContext()).apply {
             setViewCompositionStrategy(ViewCompositionStrategy.DisposeOnViewTreeLifecycleDestroyed)
             setContent {
@@ -57,17 +52,6 @@ class UniversalOutputsFragment : BaseParamFragment() {
                         onOutputChange = stateHolder::updateOutput,
                         onPairChange = stateHolder::updatePairFunction,
                     )
-                }
-            }
-        }
-    }
-
-    override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
-        super.onViewCreated(view, savedInstanceState)
-        viewLifecycleOwner.lifecycleScope.launch {
-            viewLifecycleOwner.lifecycle.withResumed {
-                mViewModel.uniOutLiveData.observe(viewLifecycleOwner) { received ->
-                    stateHolder.onPacketReceived(received)
                 }
             }
         }

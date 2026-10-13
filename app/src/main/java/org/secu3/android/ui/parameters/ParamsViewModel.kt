@@ -87,6 +87,8 @@ import org.secu3.android.ui.parameters.pages.compose.FunctionsStateHolder
 import org.secu3.android.ui.parameters.pages.compose.ChokeControlStateHolder
 import org.secu3.android.ui.parameters.pages.compose.GasDoseStateHolder
 import org.secu3.android.ui.parameters.pages.compose.DbwStateHolder
+import org.secu3.android.ui.parameters.pages.compose.FuelInjectionStateHolder
+import org.secu3.android.ui.parameters.pages.UniversalOutputsStateHolder
 import org.secu3.android.utils.Task
 import javax.inject.Inject
 
@@ -165,6 +167,14 @@ class ParamsViewModel @Inject constructor(
         DbwStateHolder(::sendPacket) { isSendAllowed = it }
     }
 
+    internal val fuelInjectionStateHolder by lazy {
+        FuelInjectionStateHolder(::sendPacket) { isSendAllowed = it }
+    }
+
+    internal val universalOutputsStateHolder by lazy {
+        UniversalOutputsStateHolder(::sendPacket) { isSendAllowed = it }
+    }
+
     internal val functionsStateHolder by lazy { FunctionsStateHolder(::sendPacket) }
 
     internal val miscellaneousStateHolder by lazy { MiscellaneousStateHolder(::sendPacket) }
@@ -177,6 +187,7 @@ class ParamsViewModel @Inject constructor(
         viewModelScope.launch {
             secu3ConnectionManager.firmwareLiveData.asFlow().collect { firmware ->
                 gasDoseStateHolder.setFirmwareAvailable(firmware.isGdControlEnabled)
+                fuelInjectionStateHolder.updateFirmware(firmware.isFuelInjectEnabled, firmware.isSecu3T)
             }
         }
     }
@@ -202,6 +213,8 @@ class ParamsViewModel @Inject constructor(
                 R.string.params_tab_choke_control_title,
                 R.string.params_tab_gas_dose_title,
                 R.string.params_tab_el_throttle_title,
+                R.string.params_tab_fuel_injection_title,
+                R.string.params_tab_universal_outputs_title,
             )) {
             loadViewModelPage(titleRes)
         }
@@ -235,6 +248,10 @@ class ParamsViewModel @Inject constructor(
         gasDoseStateHolder.reset()
         gasDoseStateHolder.setFirmwareAvailable(fwInfoPacket?.isGdControlEnabled ?: true)
         dbwStateHolder.reset()
+        fuelInjectionStateHolder.reset()
+        fwInfoPacket?.let { fuelInjectionStateHolder.updateFirmware(it.isFuelInjectEnabled, it.isSecu3T) }
+            ?: fuelInjectionStateHolder.updateFirmware(injectorEnabled = true, secu3t = false)
+        universalOutputsStateHolder.reset()
     }
 
     private suspend inline fun <reified T : InputPacket> readPacket(task: Task): T = readParameterPacket(
@@ -331,6 +348,29 @@ class ParamsViewModel @Inject constructor(
                             readPacket<LtftParamPacket>(Task.Secu3ReadLtftParam)
                         }.first()
                         ltftStateHolder.receive(packet)
+                    }
+                    R.string.params_tab_fuel_injection_title -> {
+                        fuelInjectionStateHolder.reset()
+                        fwInfoPacket?.let { fuelInjectionStateHolder.updateFirmware(it.isFuelInjectEnabled, it.isSecu3T) }
+                            ?: fuelInjectionStateHolder.updateFirmware(injectorEnabled = true, secu3t = false)
+                        val packet = pageReadGate.read(titleRes) {
+                            if (secu3ConnectionManager.fwInfo?.isFuelInjectEnabled != true) return@read null
+                            readPacket<InjctrParPacket>(Task.Secu3ReadFuelInjectionParam).also {
+                                it.isAtMega644 = secu3ConnectionManager.fwInfo?.isATMEGA644 ?: true
+                            }
+                        }.first()
+                        if (packet == null) {
+                            cacheLoaded = false
+                        } else {
+                            fuelInjectionStateHolder.receive(packet)
+                        }
+                    }
+                    R.string.params_tab_universal_outputs_title -> {
+                        universalOutputsStateHolder.reset()
+                        val packet = pageReadGate.read(titleRes) {
+                            readPacket<UniOutParamPacket>(Task.Secu3ReadUniversalOutputsParam)
+                        }.first()
+                        universalOutputsStateHolder.onPacketReceived(packet)
                     }
                     R.string.params_tab_choke_control_title -> {
                         chokeControlStateHolder.reset()
@@ -444,25 +484,6 @@ class ParamsViewModel @Inject constructor(
 
     val fwInfoPacket: FirmwareInfoPacket?
         get() = secu3ConnectionManager.fwInfo
-    val fwInfoLiveData: LiveData<FirmwareInfoPacket>
-        get() = secu3ConnectionManager.firmwareLiveData
-
-    val uniOutLiveData: LiveData<UniOutParamPacket>
-        get() = pageReadGate.read(R.string.params_tab_universal_outputs_title) {
-            readPacket<UniOutParamPacket>(Task.Secu3ReadUniversalOutputsParam)
-        }.filterNotNull().asLiveData(timeoutInMs = 0)
-
-    val fuelInjectionLiveData: LiveData<InjctrParPacket>
-        get() = pageReadGate.read(R.string.params_tab_fuel_injection_title) {
-            if (secu3ConnectionManager.fwInfo?.isFuelInjectEnabled != true) {
-                return@read null
-            }
-            val packet = readPacket<InjctrParPacket>(Task.Secu3ReadFuelInjectionParam)
-
-            packet.isAtMega644 = secu3ConnectionManager.fwInfo?.isATMEGA644 ?: true
-            packet
-        }.filterNotNull().asLiveData(timeoutInMs = 0)
-
 
 
 

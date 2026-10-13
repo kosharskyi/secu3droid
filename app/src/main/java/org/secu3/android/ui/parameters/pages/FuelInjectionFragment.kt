@@ -38,12 +38,10 @@ import org.secu3.android.ui.parameters.dialogs.ParamIntEditDialogFragment
 import org.secu3.android.ui.parameters.pages.compose.*
 
 class FuelInjectionFragment : BaseParamFragment() {
-    private lateinit var stateHolder: FuelInjectionStateHolder
+    private val stateHolder get() = mViewModel.fuelInjectionStateHolder
 
     override fun onCreateView(inflater: LayoutInflater, container: ViewGroup?, savedInstanceState: Bundle?): View =
         ComposeView(requireContext()).apply {
-            stateHolder = FuelInjectionStateHolder(mViewModel::sendPacket) { mViewModel.isSendAllowed = it }
-            stateHolder.reset()
             id = R.id.fuel_injection_compose_view
             setViewCompositionStrategy(ViewCompositionStrategy.DisposeOnViewTreeLifecycleDestroyed)
             setContent {
@@ -54,18 +52,6 @@ class FuelInjectionFragment : BaseParamFragment() {
                 }
             }
         }
-
-    override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
-        super.onViewCreated(view, savedInstanceState)
-        mViewModel.fwInfoLiveData.observe(viewLifecycleOwner) {
-            stateHolder.updateFirmware(it.isFuelInjectEnabled, it.isSecu3T)
-        }
-        val liveData = mViewModel.fuelInjectionLiveData
-        liveData.observe(viewLifecycleOwner) { received ->
-            // The pure mapping handles each bank directly and leaves unknown config IDs intact.
-            stateHolder.receive(received)
-        }
-    }
 
     private fun editParameter(number: FuelInjectionNumber) {
         val spec = stateHolder.editSpec(number) ?: return
