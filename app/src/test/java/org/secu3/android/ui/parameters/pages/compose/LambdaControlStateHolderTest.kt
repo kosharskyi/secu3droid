@@ -92,6 +92,22 @@ class LambdaControlStateHolderTest {
         assertEquals(7, holder.values!!.sensorType)
     }
 
+    @Test fun resetClearsPacketAndIgnoresEditsWithoutEchoingReceivedPacket() {
+        val sends = mutableListOf<LambdaParamPacket>()
+        val holder = LambdaControlStateHolder(sends::add)
+        holder.onPacketReceived(LambdaParamPacket())
+        assertTrue(sends.isEmpty())
+
+        holder.reset()
+        holder.updateFlag(LambdaFlag.BEFORE_CRANKING, true)
+        holder.updateChannel(0, true)
+        holder.updateSensorType(0, 2)
+        holder.updateValue(LambdaNumber.CTS, 1f)
+
+        assertEquals(null, holder.values)
+        assertTrue(sends.isEmpty())
+    }
+
     @Test fun flagsSensorsAndChannelsSendOnceAndInvalidIndicesAreIgnored() {
         val packet = LambdaParamPacket(flags = 0b1010, senstype = 0, lambdaSelectedChanel = 0b1010_0001)
         val sends = mutableListOf<LambdaParamPacket>()

@@ -39,6 +39,11 @@ class LambdaControlStateHolder(
     var values: LambdaValues? by mutableStateOf(null)
         private set
 
+    fun reset() {
+        packet = null
+        values = null
+    }
+
     fun onPacketReceived(received: LambdaParamPacket) {
         onPacketMapping()
         packet = received

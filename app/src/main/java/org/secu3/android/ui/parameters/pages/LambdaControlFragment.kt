@@ -30,28 +30,19 @@ import android.view.View
 import android.view.ViewGroup
 import androidx.compose.ui.platform.ComposeView
 import androidx.compose.ui.platform.ViewCompositionStrategy
-import androidx.lifecycle.lifecycleScope
-import androidx.lifecycle.withResumed
-import kotlinx.coroutines.launch
 import org.secu3.android.R
 import org.secu3.android.ui.compose.SecuComposeTheme
 import org.secu3.android.ui.parameters.dialogs.ParamFloatEditDialogFragment
 import org.secu3.android.ui.parameters.dialogs.ParamIntEditDialogFragment
 import org.secu3.android.ui.parameters.pages.compose.LambdaControlScreen
-import org.secu3.android.ui.parameters.pages.compose.LambdaControlStateHolder
 import org.secu3.android.ui.parameters.pages.compose.LambdaFlag
 import org.secu3.android.ui.parameters.pages.compose.LambdaNumber
 
 class LambdaControlFragment : BaseParamFragment() {
-    private lateinit var stateHolder: LambdaControlStateHolder
+    private val stateHolder get() = mViewModel.lambdaControlStateHolder
     private val sensorTypes by lazy { resources.getStringArray(R.array.lambda_sensors_types).toList() }
 
     override fun onCreateView(inflater: LayoutInflater, container: ViewGroup?, savedInstanceState: Bundle?): View {
-        stateHolder = LambdaControlStateHolder(
-            sendPacket = mViewModel::sendPacket,
-            onPacketMapping = { mViewModel.isSendAllowed = false },
-            onPacketMapped = { mViewModel.isSendAllowed = true },
-        )
         return ComposeView(requireContext()).apply {
             id = R.id.lambda_control_compose_view
             setViewCompositionStrategy(ViewCompositionStrategy.DisposeOnViewTreeLifecycleDestroyed)
@@ -60,17 +51,6 @@ class LambdaControlFragment : BaseParamFragment() {
                     LambdaControlScreen(stateHolder.values, sensorTypes, mViewModel.fwInfoPacket?.isFuelInjectEnabled == true,
                         ::editParameter, ::updateFlag, ::updateSensorType, ::updateChannel)
                 }
-            }
-        }
-    }
-
-    override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
-        super.onViewCreated(view, savedInstanceState)
-        val owner = viewLifecycleOwner
-        owner.lifecycleScope.launch {
-            owner.withResumed {
-                val liveData = mViewModel.lambdaLiveData
-                liveData.observe(owner, stateHolder::onPacketReceived)
             }
         }
     }

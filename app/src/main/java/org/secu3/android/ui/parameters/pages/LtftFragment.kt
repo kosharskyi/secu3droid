@@ -30,45 +30,24 @@ import android.view.View
 import android.view.ViewGroup
 import androidx.compose.ui.platform.ComposeView
 import androidx.compose.ui.platform.ViewCompositionStrategy
-import androidx.lifecycle.lifecycleScope
-import androidx.lifecycle.withResumed
-import kotlinx.coroutines.launch
 import org.secu3.android.R
 import org.secu3.android.ui.compose.SecuComposeTheme
 import org.secu3.android.ui.parameters.dialogs.ParamFloatEditDialogFragment
 import org.secu3.android.ui.parameters.dialogs.ParamIntEditDialogFragment
 import org.secu3.android.ui.parameters.pages.compose.LtftNumber
 import org.secu3.android.ui.parameters.pages.compose.LtftScreen
-import org.secu3.android.ui.parameters.pages.compose.LtftStateHolder
 import org.secu3.android.ui.parameters.pages.compose.LtftUiState
 
 class LtftFragment : BaseParamFragment() {
-    private val stateHolder by lazy { LtftStateHolder(mViewModel::sendPacket) }
+    private val stateHolder get() = mViewModel.ltftStateHolder
 
     override fun onCreateView(inflater: LayoutInflater, container: ViewGroup?, savedInstanceState: Bundle?): View {
-        stateHolder.reset()
         return ComposeView(requireContext()).apply {
             id = R.id.ltft_compose_view
             setViewCompositionStrategy(ViewCompositionStrategy.DisposeOnViewTreeLifecycleDestroyed)
             setContent {
                 SecuComposeTheme {
                     LtftScreen(stateHolder.uiState, ::editParameter, stateHolder::selectMode)
-                }
-            }
-        }
-    }
-
-    override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
-        super.onViewCreated(view, savedInstanceState)
-        val owner = viewLifecycleOwner
-        owner.lifecycleScope.launch {
-            owner.withResumed {
-                // This getter issues a protocol read; evaluate it once for this view lifecycle.
-                val ltftLiveData = mViewModel.ltftLiveData
-                ltftLiveData.observe(owner) { received ->
-                    mViewModel.isSendAllowed = false
-                    stateHolder.receive(received)
-                    mViewModel.isSendAllowed = stateHolder.isSendAllowed
                 }
             }
         }

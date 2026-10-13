@@ -49,6 +49,7 @@ class AccelerationStateHolderTest {
 
         holder.onPacketReceived(AccelerationParamPacket())
         assertEquals(listOf(false, true), allowed)
+        assertTrue("mapping a received packet must not echo it", sent.isEmpty())
         holder.reset()
         holder.updateNumber(AccelerationNumber.AE_TIME, 12f)
         assertNull(holder.values)

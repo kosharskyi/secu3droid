@@ -73,9 +73,12 @@ import org.secu3.android.ui.parameters.pages.compose.CarburStateHolder
 import org.secu3.android.ui.parameters.pages.compose.CkpsStateHolder
 import org.secu3.android.ui.parameters.pages.compose.AdcCorrectionsStateHolder
 import org.secu3.android.ui.parameters.pages.compose.KnockStateHolder
+import org.secu3.android.ui.parameters.pages.compose.LambdaControlStateHolder
+import org.secu3.android.ui.parameters.pages.compose.LtftStateHolder
 import org.secu3.android.ui.parameters.pages.compose.IdlingStateHolder
 import org.secu3.android.ui.parameters.pages.compose.TemperatureStateHolder
 import org.secu3.android.ui.parameters.pages.compose.StarterStateHolder
+import org.secu3.android.ui.parameters.pages.AccelerationStateHolder
 import org.secu3.android.utils.Task
 import javax.inject.Inject
 
@@ -128,6 +131,18 @@ class ParamsViewModel @Inject constructor(
         )
     }
 
+    internal val lambdaControlStateHolder by lazy {
+        LambdaControlStateHolder(::sendPacket, { isSendAllowed = false }, { isSendAllowed = true })
+    }
+
+    internal val accelerationStateHolder by lazy {
+        AccelerationStateHolder(::sendPacket) { isSendAllowed = it }
+    }
+
+    internal val ltftStateHolder by lazy {
+        LtftStateHolder(::sendPacket, { isSendAllowed = false }, { isSendAllowed = true })
+    }
+
     internal fun activatePage(titleRes: Int) {
         if (!isConnected) return
         pageReadGate.activate(titleRes)
@@ -140,6 +155,9 @@ class ParamsViewModel @Inject constructor(
                 R.string.params_tab_ckps_title,
                 R.string.params_tab_adc_errors_corr_title,
                 R.string.params_tab_knock_title,
+                R.string.params_tab_lambda_control_title,
+                R.string.params_tab_acceleration_title,
+                R.string.params_tab_ltft_title,
             )) {
             loadViewModelPage(titleRes)
         }
@@ -163,6 +181,9 @@ class ParamsViewModel @Inject constructor(
         ckpsStateHolder.reset()
         adcCorrectionsStateHolder.reset()
         knockStateHolder.reset()
+        lambdaControlStateHolder.reset()
+        accelerationStateHolder.reset()
+        ltftStateHolder.reset()
     }
 
     private suspend inline fun <reified T : InputPacket> readPacket(task: Task): T = readParameterPacket(
@@ -175,6 +196,7 @@ class ParamsViewModel @Inject constructor(
         if (titleRes in loadedPages || pageReadJobs[titleRes]?.isActive == true) return
         pageReadJobs[titleRes] = viewModelScope.launch {
             try {
+                var cacheLoaded = true
                 when (titleRes) {
                     R.string.params_tab_start_title -> {
                         starterStateHolder.reset()
@@ -232,8 +254,35 @@ class ParamsViewModel @Inject constructor(
                         }.first()
                         knockStateHolder.onPacketReceived(packet)
                     }
+                    R.string.params_tab_lambda_control_title -> {
+                        lambdaControlStateHolder.reset()
+                        val packet = pageReadGate.read(titleRes) {
+                            val fw = secu3ConnectionManager.fwInfo ?: return@read null
+                            if (!fw.isFuelInjectEnabled && !fw.isCarbAfrEnabled && !fw.isGdControlEnabled) {
+                                return@read null
+                            }
+                            readPacket<LambdaParamPacket>(Task.Secu3ReadLambdaParam)
+                        }.first()
+                        if (packet == null) cacheLoaded = false else lambdaControlStateHolder.onPacketReceived(packet)
+                    }
+                    R.string.params_tab_acceleration_title -> {
+                        accelerationStateHolder.reset()
+                        val packet = pageReadGate.read(titleRes) {
+                            val fw = secu3ConnectionManager.fwInfo ?: return@read null
+                            if (!fw.isFuelInjectEnabled && !fw.isGdControlEnabled) return@read null
+                            readPacket<AccelerationParamPacket>(Task.Secu3ReadAccelerationParam)
+                        }.first()
+                        if (packet == null) cacheLoaded = false else accelerationStateHolder.onPacketReceived(packet)
+                    }
+                    R.string.params_tab_ltft_title -> {
+                        ltftStateHolder.reset()
+                        val packet = pageReadGate.read(titleRes) {
+                            readPacket<LtftParamPacket>(Task.Secu3ReadLtftParam)
+                        }.first()
+                        ltftStateHolder.receive(packet)
+                    }
                 }
-                loadedPages += titleRes
+                if (cacheLoaded) loadedPages += titleRes
             } finally {
                 // A cancelled job may finish after a new view has started its replacement.
                 if (pageReadJobs[titleRes] == coroutineContext[Job]) pageReadJobs.remove(titleRes)
@@ -306,24 +355,6 @@ class ParamsViewModel @Inject constructor(
             packet
         }.filterNotNull().asLiveData(timeoutInMs = 0)
 
-    val lambdaLiveData: LiveData<LambdaParamPacket>
-        get() = pageReadGate.read(R.string.params_tab_lambda_control_title) {
-            val fw = secu3ConnectionManager.fwInfo ?: return@read null
-            if (fw.isFuelInjectEnabled.not() && fw.isCarbAfrEnabled.not() && fw.isGdControlEnabled.not()) {
-                return@read null
-            }
-            readPacket<LambdaParamPacket>(Task.Secu3ReadLambdaParam)
-        }.filterNotNull().asLiveData(timeoutInMs = 0)
-
-    val accelerationLiveData: LiveData<AccelerationParamPacket>
-        get() = pageReadGate.read(R.string.params_tab_acceleration_title) {
-            val fw = secu3ConnectionManager.fwInfo ?: return@read null
-            if (fw.isFuelInjectEnabled.not() && fw.isGdControlEnabled.not()) {
-                return@read null
-            }
-            readPacket<AccelerationParamPacket>(Task.Secu3ReadAccelerationParam)
-        }.filterNotNull().asLiveData(timeoutInMs = 0)
-
     val gasDoseLiveData: LiveData<GasDoseParamPacket>
         get() = pageReadGate.read(R.string.params_tab_gas_dose_title) {
             val fw = secu3ConnectionManager.fwInfo ?: return@read null
@@ -332,11 +363,6 @@ class ParamsViewModel @Inject constructor(
             }
 
             readPacket<GasDoseParamPacket>(Task.Secu3ReadGasDoseParam)
-        }.filterNotNull().asLiveData(timeoutInMs = 0)
-
-    val ltftLiveData: LiveData<LtftParamPacket>
-        get() = pageReadGate.read(R.string.params_tab_ltft_title) {
-            readPacket<LtftParamPacket>(Task.Secu3ReadLtftParam)
         }.filterNotNull().asLiveData(timeoutInMs = 0)
 
     val dbwLiveData: LiveData<DbwParamPacket>

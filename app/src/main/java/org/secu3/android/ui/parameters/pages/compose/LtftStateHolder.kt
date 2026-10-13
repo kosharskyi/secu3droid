@@ -30,7 +30,11 @@ import androidx.compose.runtime.setValue
 import org.secu3.android.models.packets.out.params.LtftParamPacket
 
 /** Owns the editable packet and presentation state for one LTFT view lifecycle. */
-class LtftStateHolder(private val sendPacket: (LtftParamPacket) -> Unit) {
+class LtftStateHolder(
+    private val sendPacket: (LtftParamPacket) -> Unit,
+    private val onPacketMapping: () -> Unit = {},
+    private val onPacketMapped: () -> Unit = {},
+) {
     private var packet: LtftParamPacket? = null
     var uiState: LtftUiState by mutableStateOf(LtftUiState.Loading)
         private set
@@ -44,8 +48,10 @@ class LtftStateHolder(private val sendPacket: (LtftParamPacket) -> Unit) {
 
     /** A received packet initializes state only; receiving it never sends it back. */
     fun receive(received: LtftParamPacket) {
+        onPacketMapping()
         packet = received
         uiState = LtftUiState.Data(LtftValues.from(received))
+        onPacketMapped()
     }
 
     fun edit(number: LtftNumber, value: Float) {

@@ -47,8 +47,11 @@ class LtftStateHolderTest {
         assertEquals(3, (holder.uiState as LtftUiState.Data).values.mode)
         assertTrue(sent.isEmpty())
         holder.reset()
+        holder.edit(LtftNumber.LOWER_CLT, 12f)
+        holder.selectMode(2)
         assertFalse(holder.isSendAllowed)
         assertEquals(LtftUiState.Loading, holder.uiState)
+        assertTrue(sent.isEmpty())
     }
 
     @Test fun eachNumericEditUpdatesExpectedPacketFieldAndSendsSamePacketOnce() {

@@ -30,9 +30,6 @@ import android.view.View
 import android.view.ViewGroup
 import androidx.compose.ui.platform.ComposeView
 import androidx.compose.ui.platform.ViewCompositionStrategy
-import androidx.lifecycle.lifecycleScope
-import androidx.lifecycle.withResumed
-import kotlinx.coroutines.launch
 import org.secu3.android.R
 import org.secu3.android.ui.compose.SecuComposeTheme
 import org.secu3.android.ui.parameters.dialogs.ParamIntEditDialogFragment
@@ -41,11 +38,9 @@ import org.secu3.android.ui.parameters.pages.compose.AccelerationScreen
 import org.secu3.android.ui.parameters.pages.compose.AccelerationUiState
 
 class AccelerationFragment : BaseParamFragment() {
-    private lateinit var stateHolder: AccelerationStateHolder
+    private val stateHolder get() = mViewModel.accelerationStateHolder
 
     override fun onCreateView(inflater: LayoutInflater, container: ViewGroup?, savedInstanceState: Bundle?): View {
-        stateHolder = AccelerationStateHolder(mViewModel::sendPacket) { mViewModel.isSendAllowed = it }
-        stateHolder.reset()
         return ComposeView(requireContext()).apply {
             id = R.id.acceleration_compose_view
             setViewCompositionStrategy(ViewCompositionStrategy.DisposeOnViewTreeLifecycleDestroyed)
@@ -53,19 +48,6 @@ class AccelerationFragment : BaseParamFragment() {
                 SecuComposeTheme {
                     AccelerationScreen(stateHolder.values?.let(AccelerationUiState::Data) ?: AccelerationUiState.Loading,
                         ::editParameter, stateHolder::selectAeType, stateHolder::selectWallwetModel, stateHolder::setBalance)
-                }
-            }
-        }
-    }
-
-    override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
-        super.onViewCreated(view, savedInstanceState)
-        val viewLifecycle = viewLifecycleOwner
-        viewLifecycle.lifecycleScope.launch {
-            viewLifecycle.withResumed {
-                val accelerationLiveData = mViewModel.accelerationLiveData
-                accelerationLiveData.observe(viewLifecycleOwner) { received ->
-                    stateHolder.onPacketReceived(received)
                 }
             }
         }
