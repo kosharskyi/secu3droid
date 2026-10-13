@@ -16,6 +16,7 @@ import kotlinx.coroutines.async
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.flow.onSubscription
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.withContext
@@ -25,7 +26,6 @@ import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue
 import org.junit.Test
-import org.secu3.android.connection.mergeSubscribedPacketFlows
 
 class ParameterPageReadGateTest {
     @Test
@@ -60,14 +60,13 @@ class ParameterPageReadGateTest {
             val gate = ParameterPageReadGate()
             val events = Channel<String>(Channel.UNLIMITED)
             val packets = MutableSharedFlow<Pair<Int, String>>()
-            val otherTransport = MutableSharedFlow<Pair<Int, String>>()
             val pages = (0..1).map { page ->
                 async(start = CoroutineStart.UNDISPATCHED) {
                     gate.read(page) {
                         readParameterPacket(
                             sendRequest = { events.trySend("read$page") },
                             restoreSensors = { events.trySend("sensors$page") },
-                        ) { ready -> mergeSubscribedPacketFlows(packets, otherTransport, ready).first { it.first == page }.second }
+                        ) { ready -> packets.onSubscription { ready() }.first { it.first == page }.second }
                     }.first()
                 }
             }
@@ -157,19 +156,17 @@ class ParameterPageReadGateTest {
     }
 
     @Test
-    fun collectorIsReadyBeforeRequestAndImmediateResponseIsReceived() {
+    fun activeCollectorIsReadyBeforeRequestAndImmediateResponseIsReceived() {
         runBlocking {
             val packets = MutableSharedFlow<String>()
-            val otherTransport = MutableSharedFlow<String>()
             var sensorRestores = 0
             val result = readParameterPacket(
                 sendRequest = {
                     assertEquals(1, packets.subscriptionCount.value)
-                    assertEquals(1, otherTransport.subscriptionCount.value)
                     launch(start = CoroutineStart.UNDISPATCHED) { packets.emit("immediate") }
                 },
                 restoreSensors = { sensorRestores++ },
-            ) { ready -> mergeSubscribedPacketFlows(packets, otherTransport, ready).first() }
+            ) { ready -> packets.onSubscription { ready() }.first() }
             assertEquals("immediate", result)
             assertEquals(1, sensorRestores)
         }
