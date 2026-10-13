@@ -222,6 +222,11 @@ class ParamsViewModel @Inject constructor(
 
     internal fun deactivatePage() = pageReadGate.deactivate()
 
+    internal fun cancelManualCommands() {
+        chokeControlStateHolder.cancelManual()
+        gasDoseStateHolder.cancelManual()
+    }
+
     internal val isConnected: Boolean
         get() = secu3ConnectionManager.isConnected
 

@@ -76,21 +76,21 @@ fun ChokeScreen(
     values: ChokeValues?, onEdit: (ChokeNumber) -> Unit,
     onToggle: (ChokeNumber, Boolean) -> Unit, onFrequency: (Int) -> Unit,
     onManualStep: (Int) -> Unit, onManualFlush: () -> Unit, onManualRelease: () -> Unit, onManualCancel: () -> Unit,
-    onTest: () -> Unit,
+    onTest: () -> Unit, isActive: Boolean = true,
 ) {
     if (values == null) {
         ParameterLoadingIndicator("choke_loading")
         return
     }
-    DisposableEffect(Unit) { onDispose(onManualCancel) }
+    DisposableEffect(isActive) { if (!isActive) onManualCancel(); onDispose(onManualCancel) }
     Column(Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(16.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
         Text(stringResource(R.string.choke_manual_control), style = MaterialTheme.typography.titleMedium)
         NumberRow(ChokeNumber.STEPS, values, onEdit)
         Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(12.dp)) {
             Row(horizontalArrangement = Arrangement.spacedBy(4.dp)) {
-                HoldButton("choke_manual_dec", -1, stringResource(R.string.choke_manual_decrease), onManualStep, onManualFlush, onManualRelease, onManualCancel, "‹",
+                HoldButton("choke_manual_dec", -1, stringResource(R.string.choke_manual_decrease), onManualStep, onManualFlush, onManualRelease, onManualCancel, "‹", isActive,
                     RoundedCornerShape(topStart = 24.dp, bottomStart = 24.dp))
-                HoldButton("choke_manual_inc", 1, stringResource(R.string.choke_manual_increase), onManualStep, onManualFlush, onManualRelease, onManualCancel, "›",
+                HoldButton("choke_manual_inc", 1, stringResource(R.string.choke_manual_increase), onManualStep, onManualFlush, onManualRelease, onManualCancel, "›", isActive,
                     RoundedCornerShape(topEnd = 24.dp, bottomEnd = 24.dp))
             }
             Spacer(Modifier.weight(1f))
@@ -142,7 +142,7 @@ fun ChokeScreen(
 }
 
 @OptIn(ExperimentalFoundationApi::class)
-@Composable private fun HoldButton(tag: String, direction: Int, label: String, onStep: (Int) -> Unit, onFlush: () -> Unit, onRelease: () -> Unit, onCancel: () -> Unit, icon: String, shape: RoundedCornerShape) {
+@Composable private fun HoldButton(tag: String, direction: Int, label: String, onStep: (Int) -> Unit, onFlush: () -> Unit, onRelease: () -> Unit, onCancel: () -> Unit, icon: String, isActive: Boolean, shape: RoundedCornerShape) {
     var pressed by remember(tag) { mutableStateOf(false) }
     val currentOnStep by rememberUpdatedState(onStep)
     val currentOnFlush by rememberUpdatedState(onFlush)
@@ -155,8 +155,9 @@ fun ChokeScreen(
         shape = shape, modifier = Modifier.testTag(tag).size(width = 64.dp, height = 48.dp)
             .semantics {
                 role = Role.Button
-                onClick(label) { currentOnStep(direction); currentOnRelease(); true }
-            }.pointerInput(direction) {
+                onClick(label) { if (isActive) { currentOnStep(direction); currentOnRelease() }; true }
+            }.pointerInput(direction, isActive) {
+                if (!isActive) return@pointerInput
         awaitEachGesture {
             awaitFirstDown(false)
             pressed = true

@@ -22,17 +22,27 @@
  *                    http://secu-3.org
  *                    email: vetalkosharskiy@gmail.com
  */
+package org.secu3.android.ui.parameters
 
-package org.secu3.android.ui.parameters.pages
+internal sealed interface ParameterEditRequest {
+    val title: String
 
-import androidx.fragment.app.Fragment
-import androidx.fragment.app.viewModels
-import org.secu3.android.ui.parameters.ParamsViewModel
+    data class IntValue(
+        override val title: String,
+        val value: Int,
+        val min: Int,
+        val max: Int,
+        val step: Int,
+        val onValue: (Int) -> Unit,
+    ) : ParameterEditRequest
 
-abstract class BaseParamFragment : Fragment() {
-
-    protected val mViewModel: ParamsViewModel by viewModels( ownerProducer = { requireParentFragment() })
-
-    abstract fun tabTitle(): Int
-
+    data class FloatValue(
+        override val title: String,
+        val value: Float,
+        val min: Float,
+        val max: Float,
+        val step: Float,
+        val precision: Int,
+        val onValue: (Float) -> Unit,
+    ) : ParameterEditRequest
 }

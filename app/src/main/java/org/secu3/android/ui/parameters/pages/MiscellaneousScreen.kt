@@ -24,11 +24,6 @@
  */
 package org.secu3.android.ui.parameters.pages
 
-import org.secu3.android.ui.compose.DropdownShape
-
-import android.os.Bundle
-import android.view.View
-import android.view.ViewGroup
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
@@ -39,82 +34,16 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.platform.ComposeView
-import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.platform.testTag
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import org.secu3.android.ui.parameters.compose.ParameterLoadingIndicator
 import org.secu3.android.R
 import org.secu3.android.models.packets.out.params.MiscellaneousParamPacket
-import org.secu3.android.ui.compose.SecuComposeTheme
-import org.secu3.android.ui.parameters.dialogs.ParamFloatEditDialogFragment
-import org.secu3.android.ui.parameters.dialogs.ParamIntEditDialogFragment
+import org.secu3.android.ui.compose.DropdownShape
+import org.secu3.android.ui.parameters.compose.ParameterLoadingIndicator
 
-class MiscellaneousFragment : BaseParamFragment() {
-    private val stateHolder get() = mViewModel.miscellaneousStateHolder
-
-    override fun onCreateView(inflater: android.view.LayoutInflater, container: ViewGroup?, savedInstanceState: Bundle?): View {
-        return ComposeView(requireContext()).apply {
-            setViewCompositionStrategy(androidx.compose.ui.platform.ViewCompositionStrategy.DisposeOnViewTreeLifecycleDestroyed)
-            setContent { SecuComposeTheme { MiscellaneousScreen(stateHolder.state, stateHolder.hasValidationError, BAUD_RATE_CODES, ::editInt, ::editFloat, ::selectBaud, ::toggle) } }
-        }
-    }
-
-    private fun selectBaud(code: Int) = stateHolder.selectBaud(code)
-    private fun editInt(key: MiscField, value: Int) = stateHolder.editInt(key, value)
-    private fun editFloat(value: Float) = stateHolder.editFloat(value)
-    private fun toggle(key: MiscToggle, value: Boolean) = stateHolder.toggle(key, value)
-
-    private fun openInt(key: MiscField, title: String, value: Int, min: Int, max: Int, step: Int) {
-        if (min > max) {
-            android.widget.Toast.makeText(requireContext(), R.string.miscel_evap_invalid_range, android.widget.Toast.LENGTH_LONG).show()
-            return
-        }
-        ParamIntEditDialogFragment.newInstance(value.coerceIn(min, max), title, step, max, min).also { dialog ->
-            dialog.newValueLiveData.observe(viewLifecycleOwner) { editInt(key,it) }
-            dialog.show(childFragmentManager, dialog::class.java.simpleName)
-        }
-    }
-    private fun editInt(key: MiscField) {
-        val p = stateHolder.currentPacket ?: return
-        val parameter = when (key) {
-            MiscField.PERIOD -> Triple(R.string.miscel_period_title, p.uartPeriodTms, 0 to 500)
-            MiscField.CUTOFF -> Triple(R.string.miscel_ignition_cutoff_rpm_title, p.ignCutoffThrd, 1000 to 30000)
-            MiscField.START -> Triple(R.string.miscel_start_rel_to_tdc_title, p.hopStartAng, -6 to 12)
-            MiscField.DURATION -> Triple(R.string.miscel_hall_output_delay_title, p.hopDuratAng, 1 to 30)
-            MiscField.BEGIN -> Triple(
-                R.string.miscel_evap_starting_air_flow_title,
-                p.evapAfbegin,
-                evapEditBounds(MiscField.BEGIN, p.evapAfbegin, p.evapAfEnd),
-            )
-            MiscField.END -> Triple(
-                R.string.miscel_evap_ending_air_flow_title,
-                p.evapAfEnd,
-                evapEditBounds(MiscField.END, p.evapAfbegin, p.evapAfEnd),
-            )
-            MiscField.PWM0 -> Triple(R.string.miscel_pwmfrq1_title, p.pwmFrq0, 10 to 5000)
-            MiscField.PWM1 -> Triple(R.string.miscel_pwmfrq2_title, p.pwmFrq1, 10 to 5000)
-            MiscField.VSS -> Triple(R.string.miscel_num_vss_pulsed_per_dist_title, p.vssPeriodDist, 100 to 60000)
-            MiscField.TIMEOUT -> error("Float parameter routed through integer editor")
-        }
-        val range = parameter.third ?: run {
-            android.widget.Toast.makeText(requireContext(), R.string.miscel_evap_invalid_range, android.widget.Toast.LENGTH_LONG).show()
-            return
-        }
-        val step = if (key == MiscField.PERIOD) 10 else 1
-        openInt(key, getString(parameter.first), parameter.second, range.first, range.second, step)
-    }
-    private fun editFloat() {
-        val p = stateHolder.currentPacket ?: return
-        ParamFloatEditDialogFragment.newInstance(p.fpTimeoutStrt,getString(R.string.miscel_fuel_pump_working_time_title),.1f,25.5f,.1f,1).also { d -> d.newValueLiveData.observe(viewLifecycleOwner) { editFloat(it) }; d.show(childFragmentManager,d::class.java.simpleName) }
-    }
-    override fun tabTitle() = R.string.params_tab_miscellaneous_title
-
-    companion object {
-        internal val BAUD_RATE_CODES = linkedMapOf(0x0411 to "2400", 0x0208 to "4800", 0x0103 to "9600", 0x00AD to "14400", 0x0081 to "19200", 0x0056 to "28800", 0x0040 to "38400", 0x002A to "57600", 0x0015 to "115200", 0x0009 to "250000")
-    }
-}
+internal val BAUD_RATE_CODES = linkedMapOf(0x0411 to "2400", 0x0208 to "4800", 0x0103 to "9600", 0x00AD to "14400", 0x0081 to "19200", 0x0056 to "28800", 0x0040 to "38400", 0x002A to "57600", 0x0015 to "115200", 0x0009 to "250000")
 
 internal data class MiscState(val baudDivisor:Int,val period:Int,val ign:Boolean,val cutoff:Int,val start:Int,val duration:Int,val pump:Boolean,val gas:Boolean,val petrol:Boolean,val begin:Int,val end:Int,val timeout:Float,val pwm0:Int,val pwm1:Int,val vss:Int)
 internal enum class MiscToggle { IGN, PUMP, GAS, PETROL }

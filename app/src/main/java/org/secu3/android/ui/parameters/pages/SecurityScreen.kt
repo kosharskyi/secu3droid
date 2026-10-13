@@ -24,46 +24,21 @@
  */
 package org.secu3.android.ui.parameters.pages
 
-import org.secu3.android.ui.compose.DropdownShape
-
-import android.os.Bundle
-import android.view.LayoutInflater
-import android.view.View
-import android.view.ViewGroup
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.*
-import androidx.compose.runtime.*
+import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.platform.ComposeView
-import androidx.compose.ui.platform.ViewCompositionStrategy
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.unit.dp
-import org.secu3.android.ui.parameters.compose.ParameterLoadingIndicator
 import org.secu3.android.R
-import org.secu3.android.ui.compose.SecuComposeTheme
-
-class SecurityFragment : BaseParamFragment() {
-    private val state get() = mViewModel.securityStateHolder
-    private var expanded by mutableStateOf(false)
-    private val types = listOf("BC417", "BK3231", "BK3231S (JDY-31)", "BC352 (HC-05)", "BK3432", "BK3431S")
-
-    override fun onCreateView(inflater: LayoutInflater, container: ViewGroup?, savedInstanceState: Bundle?): View {
-        expanded = false
-        return ComposeView(requireContext()).apply {
-            setViewCompositionStrategy(ViewCompositionStrategy.DisposeOnViewTreeLifecycleDestroyed)
-            setContent { SecuComposeTheme { SecurityScreen(state.loaded, state.useBt, state.useImm, state.name, state.password, state.key0, state.key1, state.type, types, expanded, state.error,
-                state.useReserveParams, state.checkFirmwareCrc, { expanded = it }, state::changeType, state::changeBt, state::changeImm, state::changeName, state::changePass, state::changeKey0, state::changeKey1, state::applyCredentials) } }
-        }
-    }
-
-    override fun tabTitle(): Int = R.string.params_tab_security_title
-}
+import org.secu3.android.ui.compose.DropdownShape
+import org.secu3.android.ui.parameters.compose.ParameterLoadingIndicator
 
 @Composable
 @OptIn(ExperimentalMaterial3Api::class)

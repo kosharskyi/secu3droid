@@ -88,7 +88,7 @@ fun applyGasDoseNumber(p: GasDoseParamPacket, n: GasDoseNumber, value: Float) {
 }
 
 @Composable
-fun GasDoseScreen(values: GasDoseValues?, firmwareAvailable: Boolean, onEdit: (GasDoseNumber) -> Unit, onFrequency: (Int) -> Unit, onMaximumFrequency: (Boolean) -> Unit, onManualStep: (Int) -> Unit, onManualRelease: () -> Unit, onManualCancel: () -> Unit, onTest: () -> Unit, onManualFlush: () -> Unit = {}) {
+fun GasDoseScreen(values: GasDoseValues?, firmwareAvailable: Boolean, onEdit: (GasDoseNumber) -> Unit, onFrequency: (Int) -> Unit, onMaximumFrequency: (Boolean) -> Unit, onManualStep: (Int) -> Unit, onManualRelease: () -> Unit, onManualCancel: () -> Unit, onTest: () -> Unit, onManualFlush: () -> Unit = {}, isActive: Boolean = true) {
     if (!firmwareAvailable) {
         Box(Modifier.fillMaxSize().testTag("gas_dose_unavailable"), contentAlignment = androidx.compose.ui.Alignment.Center) {
             Text(stringResource(R.string.gas_dose_unavailable), modifier = Modifier.padding(24.dp))
@@ -96,14 +96,14 @@ fun GasDoseScreen(values: GasDoseValues?, firmwareAvailable: Boolean, onEdit: (G
         return
     }
     if (values == null) { ParameterLoadingIndicator("gas_dose_loading"); return }
-    androidx.compose.runtime.DisposableEffect(Unit) { onDispose(onManualCancel) }
+    androidx.compose.runtime.DisposableEffect(isActive) { if (!isActive) onManualCancel(); onDispose(onManualCancel) }
     Column(Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(16.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
         Text(stringResource(R.string.params_tab_gas_dose_title), style = MaterialTheme.typography.titleMedium)
         NumberRow(GasDoseNumber.STEPS, values, onEdit)
         Row(Modifier.fillMaxWidth(), verticalAlignment = androidx.compose.ui.Alignment.CenterVertically) {
             Row(horizontalArrangement = Arrangement.spacedBy(4.dp)) {
-                ManualHoldButton("gas_dose_manual_dec", -1, stringResource(R.string.gas_dose_manual_decrease), "‹", onManualStep, onManualRelease, onManualCancel, onManualFlush, true)
-                ManualHoldButton("gas_dose_manual_inc", 1, stringResource(R.string.gas_dose_manual_increase), "›", onManualStep, onManualRelease, onManualCancel, onManualFlush, false)
+                ManualHoldButton("gas_dose_manual_dec", -1, stringResource(R.string.gas_dose_manual_decrease), "‹", onManualStep, onManualRelease, onManualCancel, onManualFlush, true, isActive)
+                ManualHoldButton("gas_dose_manual_inc", 1, stringResource(R.string.gas_dose_manual_increase), "›", onManualStep, onManualRelease, onManualCancel, onManualFlush, false, isActive)
             }
             Spacer(Modifier.weight(1f))
             Button(onClick = onTest, modifier = Modifier.testTag("gas_dose_test"), colors = ButtonDefaults.buttonColors(containerColor = if (values.testing) MaterialTheme.colorScheme.error else MaterialTheme.colorScheme.primary, contentColor = androidx.compose.ui.graphics.Color.White)) {
@@ -137,14 +137,15 @@ fun GasDoseScreen(values: GasDoseValues?, firmwareAvailable: Boolean, onEdit: (G
 }
 
 @OptIn(androidx.compose.foundation.ExperimentalFoundationApi::class)
-@Composable private fun ManualHoldButton(tag: String, direction: Int, label: String, icon: String, onStep: (Int) -> Unit, onRelease: () -> Unit, onCancel: () -> Unit, onFlush: () -> Unit, start: Boolean) {
+@Composable private fun ManualHoldButton(tag: String, direction: Int, label: String, icon: String, onStep: (Int) -> Unit, onRelease: () -> Unit, onCancel: () -> Unit, onFlush: () -> Unit, start: Boolean, isActive: Boolean) {
     val scope = rememberCoroutineScope()
     val pressed = androidx.compose.runtime.remember(tag) { androidx.compose.runtime.mutableStateOf(false) }
     val color = androidx.compose.ui.graphics.lerp(MaterialTheme.colorScheme.primary, androidx.compose.ui.graphics.Color.Black, if (pressed.value) .25f else 0f)
     Surface(color = color, contentColor = androidx.compose.ui.graphics.Color.White, shape = androidx.compose.foundation.shape.RoundedCornerShape(topStart = if (start) 24.dp else 0.dp, bottomStart = if (start) 24.dp else 0.dp, topEnd = if (start) 0.dp else 24.dp, bottomEnd = if (start) 0.dp else 24.dp), modifier = Modifier.testTag(tag).size(64.dp, 48.dp).semantics {
         role = Role.Button
-        onClick(label) { onStep(direction); onRelease(); true }
-    }.pointerInput(direction, onStep, onRelease, onCancel, onFlush) {
+        onClick(label) { if (isActive) { onStep(direction); onRelease() }; true }
+    }.pointerInput(direction, onStep, onRelease, onCancel, onFlush, isActive) {
+        if (!isActive) return@pointerInput
         awaitEachGesture {
             awaitFirstDown(false)
             pressed.value = true

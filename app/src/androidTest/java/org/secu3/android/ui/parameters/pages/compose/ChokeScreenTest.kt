@@ -124,4 +124,38 @@ class ChokeScreenTest {
         compose.onNodeWithTag("choke_test").assertExists()
         assertEquals(1, cancels)
     }
+
+    @Test fun inactivePageCancelsHeldManualCommandsAndDoesNotResumeThem() {
+        val active = mutableStateOf(true)
+        var steps = 0
+        var flushes = 0
+        var cancels = 0
+        compose.setContent {
+            SecuComposeTheme {
+                ChokeScreen(
+                    ChokeValues.from(ChokeControlParPacket()), {}, { _, _ -> }, {},
+                    { steps++ }, { flushes++ }, {}, { cancels++ }, {}, isActive = active.value,
+                )
+            }
+        }
+        val button = compose.onNodeWithTag("choke_manual_inc")
+        button.performTouchInput { down(center) }
+        compose.mainClock.advanceTimeBy(550)
+        compose.runOnIdle { assertTrue(steps > 1); active.value = false }
+        compose.waitForIdle()
+        assertTrue(cancels > 0)
+        val pausedSteps = steps
+        val pausedFlushes = flushes
+        compose.mainClock.advanceTimeBy(600)
+        compose.runOnIdle {
+            assertEquals(pausedSteps, steps)
+            assertEquals(pausedFlushes, flushes)
+            active.value = true
+        }
+        compose.mainClock.advanceTimeBy(600)
+        compose.runOnIdle {
+            assertEquals(pausedSteps, steps)
+            assertEquals(pausedFlushes, flushes)
+        }
+    }
 }

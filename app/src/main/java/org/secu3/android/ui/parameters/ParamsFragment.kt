@@ -27,21 +27,14 @@ package org.secu3.android.ui.parameters
 import android.os.Bundle
 import android.view.View
 import android.view.ViewGroup
-import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.horizontalScroll
+import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.relocation.BringIntoViewRequester
 import androidx.compose.foundation.relocation.bringIntoViewRequester
-import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.WindowInsets
-import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.safeDrawing
-import androidx.compose.foundation.layout.windowInsetsPadding
+import androidx.compose.foundation.pager.HorizontalPager
+import androidx.compose.foundation.pager.rememberPagerState
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.material.ContentAlpha
 import androidx.compose.material.Icon
@@ -49,116 +42,111 @@ import androidx.compose.material.IconButton
 import androidx.compose.material.MaterialTheme
 import androidx.compose.material.Surface
 import androidx.compose.material.Text
-import androidx.compose.runtime.Composable
-import androidx.compose.runtime.DisposableEffect
-import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableIntStateOf
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
-import androidx.compose.runtime.saveable.rememberSaveable
-import androidx.compose.runtime.rememberUpdatedState
-import androidx.compose.runtime.setValue
+import androidx.compose.runtime.*
 import androidx.compose.runtime.livedata.observeAsState
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.layout.onSizeChanged
+import androidx.compose.ui.platform.ComposeView
+import androidx.compose.ui.platform.LocalLifecycleOwner
+import androidx.compose.ui.platform.ViewCompositionStrategy
+import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.colorResource
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
-import androidx.compose.ui.semantics.Role
-import androidx.compose.ui.semantics.contentDescription
-import androidx.compose.ui.semantics.role
-import androidx.compose.ui.semantics.selected
-import androidx.compose.ui.semantics.semantics
-import androidx.compose.ui.platform.testTag
+import androidx.compose.ui.semantics.*
 import androidx.compose.ui.text.style.TextOverflow
+import androidx.compose.ui.unit.IntSize
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.viewinterop.AndroidView
-import androidx.compose.ui.platform.ComposeView
-import androidx.compose.ui.platform.ViewCompositionStrategy
 import androidx.fragment.app.Fragment
 import androidx.fragment.app.viewModels
-import androidx.core.view.doOnPreDraw
 import androidx.lifecycle.Lifecycle
+import androidx.lifecycle.LifecycleEventObserver
+import androidx.lifecycle.Observer
+import androidx.lifecycle.repeatOnLifecycle
 import androidx.navigation.fragment.findNavController
-import androidx.viewpager2.widget.ViewPager2
 import dagger.hilt.android.AndroidEntryPoint
+import kotlinx.coroutines.flow.distinctUntilChanged
+import kotlinx.coroutines.launch
 import org.secu3.android.R
 import org.secu3.android.connection.Connected
 import org.secu3.android.connection.Disconnected
 import org.secu3.android.connection.InProgress
+import org.secu3.android.ui.parameters.dialogs.ParamFloatEditDialogFragment
+import org.secu3.android.ui.parameters.dialogs.ParamIntEditDialogFragment
 
 @AndroidEntryPoint
 class ParamsFragment : Fragment() {
-
     private val mViewModel: ParamsViewModel by viewModels()
-    private var settledPageTitleRes: Int? = null
 
     override fun onCreateView(inflater: android.view.LayoutInflater, container: ViewGroup?, savedInstanceState: Bundle?): View {
-        val firmwareInfo = mViewModel.fwInfoPacket
-        val pageSpecs = parameterPageSpecs(firmwareInfo)
+        val pages = parameterPageSpecs(mViewModel.fwInfoPacket)
+        val pageTitles = pages.map { it.titleRes }
         return ComposeView(requireContext()).apply {
             id = R.id.params_view_container
             setViewCompositionStrategy(ViewCompositionStrategy.DisposeOnViewTreeLifecycleDestroyed)
             setContent {
                 val connectionState by mViewModel.connectionStatusLiveData.observeAsState()
-                val titles = remember(firmwareInfo) { pageSpecs.map { getString(it.titleRes) } }
                 ParamsScreen(
-                    titles = titles,
+                    titles = pageTitles.map { stringResource(it) },
+                    pageKeys = pageTitles,
                     connectionState = connectionState,
                     onBack = { findNavController().navigateUp() },
-                    onSave = { mViewModel.savePacket() },
-                    onPageSettled = { index ->
-                        settledPageTitleRes = pageSpecs.getOrNull(index)?.titleRes
-                        if (lifecycle.currentState.isAtLeast(Lifecycle.State.RESUMED)) {
-                            settledPageTitleRes?.let(mViewModel::activatePage)
-                        }
-                    },
-                    onPageUnsettled = {
-                        settledPageTitleRes = null
-                        mViewModel.deactivatePage()
-                    },
-                    createPager = { context ->
-                        ViewPager2(context).apply {
-                            id = R.id.paramsPager
-                            adapter = ParametersPagerAdapter(this@ParamsFragment, firmwareInfo)
-                            offscreenPageLimit = 2
-                            layoutParams = ViewGroup.LayoutParams(
-                                ViewGroup.LayoutParams.MATCH_PARENT,
-                                ViewGroup.LayoutParams.MATCH_PARENT,
-                            )
-                        }
-                    },
+                    onSave = mViewModel::savePacket,
+                    onPageSettled = { index -> pageTitles.getOrNull(index)?.let(mViewModel::activatePage) },
+                    onPageUnsettled = mViewModel::deactivatePage,
+                    pageContent = { index, active, isActiveNow -> pageTitles.getOrNull(index)?.let { title ->
+                        ParameterPageContent(title, mViewModel, active, isActiveNow) { showEditRequest(it) }
+                    } },
                 )
             }
         }
     }
 
-    override fun onResume() {
-        super.onResume()
-        settledPageTitleRes?.let(mViewModel::activatePage)
+    private fun showEditRequest(request: ParameterEditRequest) {
+        when (request) {
+            is ParameterEditRequest.IntValue -> ParamIntEditDialogFragment.newInstance(
+                request.value, request.title, request.step, request.max, request.min,
+            ).also { dialog ->
+                val observer = object : Observer<Int> {
+                    override fun onChanged(value: Int) {
+                        dialog.newValueLiveData.removeObserver(this)
+                        request.onValue(value)
+                    }
+                }
+                dialog.newValueLiveData.observe(viewLifecycleOwner, observer)
+                dialog.show(childFragmentManager, dialog::class.java.simpleName)
+            }
+            is ParameterEditRequest.FloatValue -> ParamFloatEditDialogFragment.newInstance(
+                request.value, request.title, request.step, request.max, request.min, request.precision,
+            ).also { dialog ->
+                val observer = object : Observer<Float> {
+                    override fun onChanged(value: Float) {
+                        dialog.newValueLiveData.removeObserver(this)
+                        request.onValue(value)
+                    }
+                }
+                dialog.newValueLiveData.observe(viewLifecycleOwner, observer)
+                dialog.show(childFragmentManager, dialog::class.java.simpleName)
+            }
+        }
     }
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
         mViewModel.connectionStatusLiveData.observe(viewLifecycleOwner) {
-            if (!mViewModel.isConnected) {
-                mViewModel.clearPageState()
-            } else if (lifecycle.currentState.isAtLeast(Lifecycle.State.RESUMED)) {
-                settledPageTitleRes?.let(mViewModel::activatePage)
-            }
+            if (!mViewModel.isConnected) mViewModel.clearPageState()
         }
     }
 
     override fun onPause() {
         mViewModel.deactivatePage()
+        mViewModel.cancelManualCommands()
         super.onPause()
     }
 
     override fun onDestroyView() {
         mViewModel.clearPageState()
-        settledPageTitleRes = null
         super.onDestroyView()
     }
 }
@@ -166,98 +154,90 @@ class ParamsFragment : Fragment() {
 @Composable
 internal fun ParamsScreen(
     titles: List<String>,
+    pageKeys: List<Int> = titles.indices.toList(),
     connectionState: org.secu3.android.connection.ConnectionState?,
     onBack: () -> Unit,
     onSave: () -> Unit,
     onPageSettled: (Int) -> Unit,
-    createPager: (android.content.Context) -> ViewPager2,
+    pageContent: @Composable (Int, Boolean, () -> Boolean) -> Unit,
     onPageUnsettled: () -> Unit = {},
 ) {
-    var selectedIndex by rememberSaveable { mutableIntStateOf(0) }
-    var pager by remember { mutableStateOf<ViewPager2?>(null) }
-    val safeIndex = clampPageIndex(selectedIndex, titles.size)
-    val latestSelection by rememberUpdatedState(safeIndex)
-    val latestOnPageSettled by rememberUpdatedState(onPageSettled)
-    val latestOnPageUnsettled by rememberUpdatedState(onPageUnsettled)
+    val pagerState = rememberPagerState(initialPage = 0, pageCount = { titles.size })
+    val scope = rememberCoroutineScope()
+    val lifecycle = LocalLifecycleOwner.current.lifecycle
+    var hostResumed by remember(lifecycle) { mutableStateOf(lifecycle.currentState.isAtLeast(Lifecycle.State.RESUMED)) }
+    DisposableEffect(lifecycle) {
+        val observer = LifecycleEventObserver { _, _ ->
+            hostResumed = lifecycle.currentState.isAtLeast(Lifecycle.State.RESUMED)
+        }
+        lifecycle.addObserver(observer)
+        onDispose { lifecycle.removeObserver(observer) }
+    }
+    var pagerSize by remember { mutableStateOf(IntSize.Zero) }
+    val selectedIndex = clampPageIndex(pagerState.settledPage, titles.size)
+    val updatedSettled by rememberUpdatedState(onPageSettled)
+    val updatedUnsettled by rememberUpdatedState(onPageUnsettled)
+    val updatedConnectionState by rememberUpdatedState(connectionState)
     val tabBringIntoView = remember(titles) { titles.map { BringIntoViewRequester() } }
 
-    LaunchedEffect(safeIndex, tabBringIntoView) {
-        tabBringIntoView.getOrNull(safeIndex)?.bringIntoView()
-    }
-
-    DisposableEffect(pager, titles.size) {
-        val viewPager = pager
-        if (viewPager == null) return@DisposableEffect onDispose { }
-        var disposed = false
-        val listener = object : ViewPager2.OnPageChangeCallback() {
-            override fun onPageSelected(position: Int) {
-                selectedIndex = clampPageIndex(position, titles.size)
-            }
-
-            override fun onPageScrollStateChanged(state: Int) {
-                if (state == ViewPager2.SCROLL_STATE_IDLE && viewPager.isLaidOut) {
-                    latestOnPageSettled(clampPageIndex(viewPager.currentItem, titles.size))
-                } else if (state != ViewPager2.SCROLL_STATE_IDLE) {
-                    latestOnPageUnsettled()
+    LaunchedEffect(selectedIndex, tabBringIntoView) { tabBringIntoView.getOrNull(selectedIndex)?.bringIntoView() }
+    LaunchedEffect(lifecycle, pagerState, titles.size) {
+        lifecycle.repeatOnLifecycle(Lifecycle.State.RESUMED) {
+            var activeIndex: Int? = null
+            try {
+                snapshotFlow {
+                    val index = pagerState.settledPage
+                    Triple(index, pagerState.isScrollInProgress,
+                        pagerSize.width > 0 && pagerSize.height > 0 && updatedConnectionState == Connected &&
+                            pagerState.layoutInfo.visiblePagesInfo.any { it.index == index })
+                }.distinctUntilChanged().collect { (index, scrolling, laidOutVisible) ->
+                    val next = index.takeIf { !scrolling && laidOutVisible && it in titles.indices }
+                    if (next != activeIndex) {
+                        if (activeIndex != null) updatedUnsettled()
+                        activeIndex = next
+                        if (next != null) updatedSettled(next)
+                    }
                 }
+            } finally {
+                if (activeIndex != null) updatedUnsettled()
             }
-        }
-        viewPager.registerOnPageChangeCallback(listener)
-        viewPager.setCurrentItem(latestSelection, false)
-        viewPager.doOnPreDraw {
-            if (!disposed && viewPager.scrollState == ViewPager2.SCROLL_STATE_IDLE) {
-                latestOnPageSettled(clampPageIndex(viewPager.currentItem, titles.size))
-            }
-        }
-        onDispose {
-            disposed = true
-            viewPager.unregisterOnPageChangeCallback(listener)
         }
     }
 
-    Column(
-        Modifier.fillMaxSize()
-            .windowInsetsPadding(WindowInsets.safeDrawing)
-            .background(colorResource(R.color.colorPrimary))
-    ) {
+    Column(Modifier.fillMaxSize().windowInsetsPadding(WindowInsets.safeDrawing).background(colorResource(R.color.colorPrimary))) {
         ParamsToolbar(connectionState, onBack, onSave)
-        Row(
-            modifier = Modifier.fillMaxWidth().height(48.dp)
-                .horizontalScroll(rememberScrollState()),
-            verticalAlignment = Alignment.CenterVertically,
-        ) {
+        Row(Modifier.fillMaxWidth().height(48.dp).horizontalScroll(rememberScrollState()), verticalAlignment = Alignment.CenterVertically) {
             titles.forEachIndexed { index, title ->
-                val selected = safeIndex == index
+                val selected = selectedIndex == index
                 Column(
-                    modifier = Modifier.height(48.dp)
-                        .bringIntoViewRequester(tabBringIntoView[index])
-                        .semantics {
-                            role = Role.Tab
-                            this.selected = selected
-                            contentDescription = title
-                        }
-                        .clickable(role = Role.Tab) { selectedIndex = index; pager?.setCurrentItem(index, true) }
+                    Modifier.height(48.dp).bringIntoViewRequester(tabBringIntoView[index])
+                        .semantics { role = Role.Tab; this.selected = selected; contentDescription = title }
+                        .clickable(role = Role.Tab) { scope.launch { pagerState.animateScrollToPage(index) } }
                         .padding(horizontal = 16.dp),
                     verticalArrangement = Arrangement.Center,
                     horizontalAlignment = Alignment.CenterHorizontally,
                 ) {
-                    Text(
-                        text = title,
-                        color = if (selected) MaterialTheme.colors.onSurface else MaterialTheme.colors.onSurface.copy(alpha = ContentAlpha.medium),
-                        maxLines = 1,
-                        overflow = TextOverflow.Ellipsis,
-                    )
-                    if (selected) Surface(
-                        modifier = Modifier.fillMaxWidth().padding(top = 5.dp).height(2.dp),
-                        color = MaterialTheme.colors.secondary,
-                    ) {}
+                    Text(title, color = if (selected) MaterialTheme.colors.onSurface else MaterialTheme.colors.onSurface.copy(alpha = ContentAlpha.medium), maxLines = 1, overflow = TextOverflow.Ellipsis)
+                    if (selected) Surface(Modifier.fillMaxWidth().padding(top = 5.dp).height(2.dp), color = MaterialTheme.colors.secondary) {}
                 }
             }
         }
-        AndroidView(
-            modifier = Modifier.weight(1f).fillMaxWidth().testTag("params-pager"),
-            factory = { context -> createPager(context).also { pager = it } },
-        )
+        HorizontalPager(
+            state = pagerState,
+            key = { index -> pageKeys.getOrElse(index) { index } },
+            beyondViewportPageCount = 1,
+            modifier = Modifier.weight(1f).fillMaxWidth().testTag("params-pager").onSizeChanged { pagerSize = it },
+        ) { index ->
+            val active = hostResumed && lifecycle.currentState.isAtLeast(Lifecycle.State.RESUMED) && index == selectedIndex &&
+                !pagerState.isScrollInProgress && pagerSize != IntSize.Zero && updatedConnectionState == Connected &&
+                pagerState.layoutInfo.visiblePagesInfo.any { it.index == index }
+            val isActiveNow = {
+                lifecycle.currentState.isAtLeast(Lifecycle.State.RESUMED) && pagerState.settledPage == index &&
+                    !pagerState.isScrollInProgress && pagerSize != IntSize.Zero && updatedConnectionState == Connected &&
+                    pagerState.layoutInfo.visiblePagesInfo.any { it.index == index }
+            }
+            pageContent(index, active, isActiveNow)
+        }
     }
 }
 

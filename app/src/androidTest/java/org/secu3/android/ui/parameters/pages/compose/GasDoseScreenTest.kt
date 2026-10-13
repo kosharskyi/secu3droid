@@ -130,4 +130,38 @@ class GasDoseScreenTest {
         assertEquals(completedSteps, steps.size)
         assertEquals(completedFlushes, flushes)
     }
+
+    @Test fun inactivePageCancelsHeldManualCommandsAndDoesNotResumeThem() {
+        val active = mutableStateOf(true)
+        val steps = mutableListOf<Int>()
+        var flushes = 0
+        var cancels = 0
+        compose.setContent {
+            SecuComposeTheme {
+                GasDoseScreen(
+                    GasDoseValues.from(GasDoseParamPacket()), true, {}, {}, {}, steps::add,
+                    {}, { cancels++ }, {}, { flushes++ }, isActive = active.value,
+                )
+            }
+        }
+        val button = compose.onNodeWithTag("gas_dose_manual_inc")
+        button.performTouchInput { down(center) }
+        compose.mainClock.advanceTimeBy(550)
+        compose.runOnIdle { assertTrue(steps.size > 1); active.value = false }
+        compose.waitForIdle()
+        assertTrue(cancels > 0)
+        val pausedSteps = steps.size
+        val pausedFlushes = flushes
+        compose.mainClock.advanceTimeBy(600)
+        compose.runOnIdle {
+            assertEquals(pausedSteps, steps.size)
+            assertEquals(pausedFlushes, flushes)
+            active.value = true
+        }
+        compose.mainClock.advanceTimeBy(600)
+        compose.runOnIdle {
+            assertEquals(pausedSteps, steps.size)
+            assertEquals(pausedFlushes, flushes)
+        }
+    }
 }

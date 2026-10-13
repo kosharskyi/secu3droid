@@ -33,8 +33,8 @@ import org.junit.Test
 import org.secu3.android.R
 import org.secu3.android.ui.compose.SecuComposeTheme
 import org.secu3.android.ui.parameters.pages.MiscState
+import org.secu3.android.ui.parameters.pages.BAUD_RATE_CODES
 import org.secu3.android.ui.parameters.pages.MiscToggle
-import org.secu3.android.ui.parameters.pages.MiscellaneousFragment
 import org.secu3.android.ui.parameters.pages.MiscellaneousScreen
 
 class MiscellaneousScreenTest {
@@ -46,7 +46,7 @@ class MiscellaneousScreenTest {
         var calls=0
         val state=mutableStateOf<MiscState?>(null)
         val error=mutableStateOf(false)
-        compose.setContent { SecuComposeTheme { MiscellaneousScreen(state.value,error.value,MiscellaneousFragment.BAUD_RATE_CODES,{calls++},{calls++},{calls++},{_,_->calls++}) } }
+        compose.setContent { SecuComposeTheme { MiscellaneousScreen(state.value,error.value,BAUD_RATE_CODES,{calls++},{calls++},{calls++},{_,_->calls++}) } }
         compose.onNodeWithTag("misc-loading").assertIsDisplayed()
         compose.runOnIdle { state.value=initial }
         compose.onNodeWithTag("misc-baud-selector").assertIsDisplayed()
@@ -61,7 +61,7 @@ class MiscellaneousScreenTest {
     @Test fun selectorAndEveryControlDispatchOnlyExplicitAction() {
         val actions=mutableListOf<String>()
         val state=mutableStateOf(initial.copy(baudDivisor=0x1234))
-        compose.setContent { SecuComposeTheme { MiscellaneousScreen(state.value,false,MiscellaneousFragment.BAUD_RATE_CODES,
+        compose.setContent { SecuComposeTheme { MiscellaneousScreen(state.value,false,BAUD_RATE_CODES,
             {key -> actions += "int:$key"; if(key.name=="PERIOD") state.value=state.value.copy(period=40)},
             {actions += "float"}, {code -> actions += "baud:$code"; state.value=state.value.copy(baudDivisor=code)},
             {toggle,value -> actions += "toggle:$toggle:$value"}) } }
