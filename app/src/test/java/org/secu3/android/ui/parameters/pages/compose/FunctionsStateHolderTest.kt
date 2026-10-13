@@ -44,6 +44,7 @@ class FunctionsStateHolderTest {
 
         holder.onNamesReceived(namesPacket("Alpha", "Beta"))
         holder.onPacketReceived(packet, loads, bars, ve2)
+        assertTrue("mapping received packets must not echo them", sent.isEmpty())
 
         val data = holder.state as FunctionsUiState.Data
         assertEquals("Beta", data.choices.selected[FunctionsChoices.Selector.GASOLINE_MAP])
@@ -97,6 +98,23 @@ class FunctionsStateHolderTest {
         holder.updateChoice(FunctionsChoices.Selector.GAS_MAP, 0)
 
         assertFalse((holder.state as? FunctionsUiState.Data) != null)
+        assertTrue(sent.isEmpty())
+    }
+
+    @Test
+    fun resetReturnsToLoadingAndIgnoresEdits() {
+        val sent = mutableListOf<FunSetParamPacket>()
+        val holder = loadedHolder(sent)
+        holder.onPacketReceived(FunSetParamPacket(), loads, bars, ve2)
+        assertTrue(sent.isEmpty())
+
+        holder.reset()
+        holder.onNamesReceived(namesPacket("Alpha", "Beta"))
+        holder.updateFlag(true)
+        holder.updateValue(FunctionsNumber.LOWER, 9f)
+        holder.updateChoice(FunctionsChoices.Selector.GAS_MAP, 0)
+
+        assertEquals(FunctionsUiState.Loading, holder.state)
         assertTrue(sent.isEmpty())
     }
 

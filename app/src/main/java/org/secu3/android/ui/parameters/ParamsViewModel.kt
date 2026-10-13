@@ -79,6 +79,9 @@ import org.secu3.android.ui.parameters.pages.compose.IdlingStateHolder
 import org.secu3.android.ui.parameters.pages.compose.TemperatureStateHolder
 import org.secu3.android.ui.parameters.pages.compose.StarterStateHolder
 import org.secu3.android.ui.parameters.pages.AccelerationStateHolder
+import org.secu3.android.ui.parameters.pages.MiscellaneousStateHolder
+import org.secu3.android.ui.parameters.pages.SecurityStateHolder
+import org.secu3.android.ui.parameters.pages.compose.FunctionsStateHolder
 import org.secu3.android.utils.Task
 import javax.inject.Inject
 
@@ -143,6 +146,14 @@ class ParamsViewModel @Inject constructor(
         LtftStateHolder(::sendPacket, { isSendAllowed = false }, { isSendAllowed = true })
     }
 
+    internal val functionsStateHolder by lazy { FunctionsStateHolder(::sendPacket) }
+
+    internal val miscellaneousStateHolder by lazy { MiscellaneousStateHolder(::sendPacket) }
+
+    internal val securityStateHolder by lazy {
+        SecurityStateHolder(::sendPacket, context.getString(R.string.sec_invalid_credentials))
+    }
+
     internal fun activatePage(titleRes: Int) {
         if (!isConnected) return
         pageReadGate.activate(titleRes)
@@ -158,6 +169,9 @@ class ParamsViewModel @Inject constructor(
                 R.string.params_tab_lambda_control_title,
                 R.string.params_tab_acceleration_title,
                 R.string.params_tab_ltft_title,
+                R.string.params_tab_functions_title,
+                R.string.params_tab_miscellaneous_title,
+                R.string.params_tab_security_title,
             )) {
             loadViewModelPage(titleRes)
         }
@@ -184,6 +198,9 @@ class ParamsViewModel @Inject constructor(
         lambdaControlStateHolder.reset()
         accelerationStateHolder.reset()
         ltftStateHolder.reset()
+        functionsStateHolder.reset()
+        miscellaneousStateHolder.reset()
+        securityStateHolder.reset()
     }
 
     private suspend inline fun <reified T : InputPacket> readPacket(task: Task): T = readParameterPacket(
@@ -281,6 +298,67 @@ class ParamsViewModel @Inject constructor(
                         }.first()
                         ltftStateHolder.receive(packet)
                     }
+                    R.string.params_tab_functions_title -> {
+                        functionsStateHolder.reset()
+                        val (namesPacket, funSetPacket) = pageReadGate.read(titleRes) {
+                            val namesPacket = readParameterPacket(
+                                sendRequest = { secu3ConnectionManager.sendNewTask(Task.Secu3ReadFnNameDat) },
+                                restoreSensors = { secu3ConnectionManager.sendNewTask(Task.Secu3ReadSensors) },
+                            ) { onSubscribed ->
+                                var names: FnNameDatPacket? = null
+                                secu3ConnectionManager.receivedPacketFlow(onSubscribed)
+                                    .filter { it is FnNameDatPacket }
+                                    .map { it as FnNameDatPacket }
+                                    .first { packet ->
+                                        val accumulated = names ?: packet.also {
+                                            it.fnNameList = MutableList(packet.tablesNumber) { FnName(-1, "placeholder name") }
+                                            names = it
+                                        }
+                                        accumulated.fnNameList[packet.fnName.index] = packet.fnName
+                                        accumulated.isAllFnNamesReceived
+                                    }
+                                checkNotNull(names)
+                            }
+                            val funSetPacket = readPacket<FunSetParamPacket>(Task.Secu3ReadFunsetParam)
+                            namesPacket to funSetPacket
+                        }.first()
+                        isSendAllowed = false
+                        try {
+                            functionsStateHolder.onNamesReceived(namesPacket)
+                            functionsStateHolder.onPacketReceived(
+                                received = funSetPacket,
+                                loads = context.resources.getStringArray(R.array.load_measurement_items).toList(),
+                                bars = context.resources.getStringArray(R.array.barocorr_items).toList(),
+                                ve2 = context.resources.getStringArray(R.array.ve2_map_func_items).toList(),
+                            )
+                        } finally {
+                            isSendAllowed = true
+                        }
+                    }
+                    R.string.params_tab_miscellaneous_title -> {
+                        miscellaneousStateHolder.reset()
+                        val packet = pageReadGate.read(titleRes) {
+                            readPacket<MiscellaneousParamPacket>(Task.Secu3ReadMiscellaneousParam)
+                        }.first()
+                        isSendAllowed = false
+                        try {
+                            miscellaneousStateHolder.onPacketReceived(packet)
+                        } finally {
+                            isSendAllowed = true
+                        }
+                    }
+                    R.string.params_tab_security_title -> {
+                        securityStateHolder.reset()
+                        val packet = pageReadGate.read(titleRes) {
+                            readPacket<SecurityParamPacket>(Task.Secu3ReadSecurityParam)
+                        }.first()
+                        isSendAllowed = false
+                        try {
+                            securityStateHolder.load(packet)
+                        } finally {
+                            isSendAllowed = true
+                        }
+                    }
                 }
                 if (cacheLoaded) loadedPages += titleRes
             } finally {
@@ -297,46 +375,9 @@ class ParamsViewModel @Inject constructor(
     val fwInfoLiveData: LiveData<FirmwareInfoPacket>
         get() = secu3ConnectionManager.firmwareLiveData
 
-    val fnNameLiveData: LiveData<FnNameDatPacket>
-        get() = pageReadGate.read(R.string.params_tab_functions_title) {
-            readParameterPacket(
-                sendRequest = { secu3ConnectionManager.sendNewTask(Task.Secu3ReadFnNameDat) },
-                restoreSensors = { secu3ConnectionManager.sendNewTask(Task.Secu3ReadSensors) },
-            ) { onSubscribed ->
-                var names: FnNameDatPacket? = null
-                secu3ConnectionManager.receivedPacketFlow(onSubscribed)
-                    .filter { it is FnNameDatPacket }
-                    .map { it as FnNameDatPacket }
-                    .first { packet ->
-                        val accumulated = names ?: packet.also {
-                            it.fnNameList = MutableList(packet.tablesNumber) { FnName(-1, "placeholder name") }
-                            names = it
-                        }
-                        accumulated.fnNameList[packet.fnName.index] = packet.fnName
-                        accumulated.isAllFnNamesReceived
-                    }
-                checkNotNull(names)
-            }
-        }.filterNotNull().asLiveData(timeoutInMs = 0)
-
-    val funsetLiveData: LiveData<FunSetParamPacket>
-        get() = pageReadGate.read(R.string.params_tab_functions_title) {
-            readPacket<FunSetParamPacket>(Task.Secu3ReadFunsetParam)
-        }.filterNotNull().asLiveData(timeoutInMs = 0)
-
-    val miscellaneousLiveData: LiveData<MiscellaneousParamPacket>
-        get() = pageReadGate.read(R.string.params_tab_miscellaneous_title) {
-            readPacket<MiscellaneousParamPacket>(Task.Secu3ReadMiscellaneousParam)
-        }.filterNotNull().asLiveData(timeoutInMs = 0)
-
     val chokeLiveData: LiveData<ChokeControlParPacket>
         get() = pageReadGate.read(R.string.params_tab_choke_control_title) {
             readPacket<ChokeControlParPacket>(Task.Secu3ReadChokeControlParam)
-        }.filterNotNull().asLiveData(timeoutInMs = 0)
-
-    val securityLiveData: LiveData<SecurityParamPacket>
-        get() = pageReadGate.read(R.string.params_tab_security_title) {
-            readPacket<SecurityParamPacket>(Task.Secu3ReadSecurityParam)
         }.filterNotNull().asLiveData(timeoutInMs = 0)
 
     val uniOutLiveData: LiveData<UniOutParamPacket>

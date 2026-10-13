@@ -103,29 +103,35 @@ internal class SecurityStateHolder(
     }
 
     fun changeType(index: Int) {
+        if (packet == null) return
         type = index
         commit { btType = index }
     }
 
     fun changeBt(value: Boolean) {
+        if (packet == null) return
         useBt = value
         commit { useBt = value; btFlags = btFlags or (1 shl 1) }
     }
 
     fun changeImm(value: Boolean) {
+        if (packet == null) return
         useImm = value
         commit { useImmobilizer = value }
     }
 
     fun changeName(value: String) {
+        if (packet == null) return
         if (value.length <= 16) name = value
     }
 
     fun changePass(value: String) {
+        if (packet == null) return
         if (value.length <= 8 && value.all { it in '0'..'9' }) password = value
     }
 
     fun changeKey0(value: String) {
+        if (packet == null) return
         if (value.length <= 12) {
             key0 = value.uppercase()
             updateKey(key0, first = true)
@@ -133,6 +139,7 @@ internal class SecurityStateHolder(
     }
 
     fun changeKey1(value: String) {
+        if (packet == null) return
         if (value.length <= 12) {
             key1 = value.uppercase()
             updateKey(key1, first = false)

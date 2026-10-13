@@ -49,6 +49,7 @@ class MiscellaneousStateHolderTest {
         val holder = MiscellaneousStateHolder(sent::add)
         val packet = validPacket()
         holder.onPacketReceived(packet)
+        assertTrue("mapping a received packet must not echo it", sent.isEmpty())
 
         holder.editInt(MiscField.PERIOD, 120)
         holder.toggle(MiscToggle.PUMP, true)
@@ -98,5 +99,22 @@ class MiscellaneousStateHolderTest {
         assertTrue(sent.isEmpty())
         assertEquals(originalBegin, packet.evapAfbegin)
         assertEquals(originalSlope, packet.evapAfslope)
+    }
+
+    @Test
+    fun resetClearsPacketStateAndValidationAndIgnoresEdits() {
+        val sent = mutableListOf<MiscellaneousParamPacket>()
+        val holder = MiscellaneousStateHolder(sent::add)
+        holder.onPacketReceived(validPacket())
+        holder.reset()
+
+        holder.selectBaud(0x0015)
+        holder.editInt(MiscField.PERIOD, 150)
+        holder.toggle(MiscToggle.PUMP, true)
+
+        assertEquals(null, holder.currentPacket)
+        assertEquals(null, holder.state)
+        assertFalse(holder.hasValidationError)
+        assertTrue(sent.isEmpty())
     }
 }

@@ -48,6 +48,7 @@ class SecurityStateHolderTest {
         assertTrue(sent.isEmpty())
 
         state.load(packet())
+        assertTrue("mapping a received packet must not echo it", sent.isEmpty())
         assertTrue(state.loaded)
         assertFalse(state.useBt)
         assertEquals(4, state.type)
@@ -57,6 +58,25 @@ class SecurityStateHolderTest {
         state.changeBt(true)
         val flags = sent.single().pack()[3]
         assertEquals(0xA3, flags) // preserves existing bits and enables BT and baud-rate bits
+    }
+
+    @Test fun resetClearsLoadedStateAndIgnoresEdits() {
+        val sent = mutableListOf<OutputPacket>()
+        val state = SecurityStateHolder(sent::add, "invalid")
+        state.load(packet())
+        assertTrue(sent.isEmpty())
+        state.reset()
+
+        state.changeBt(true)
+        state.changeImm(true)
+        state.changeName("name")
+        state.changePass("1234")
+        state.applyCredentials()
+
+        assertFalse(state.loaded)
+        assertEquals("", state.name)
+        assertEquals("", state.password)
+        assertTrue(sent.isEmpty())
     }
 
     @Test fun validKeySendsReversedBytesAndSnapshotsDoNotChange() {

@@ -44,9 +44,6 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import androidx.lifecycle.withResumed
-import androidx.lifecycle.lifecycleScope
-import kotlinx.coroutines.launch
 import org.secu3.android.ui.parameters.compose.ParameterLoadingIndicator
 import org.secu3.android.R
 import org.secu3.android.models.packets.out.params.MiscellaneousParamPacket
@@ -55,27 +52,12 @@ import org.secu3.android.ui.parameters.dialogs.ParamFloatEditDialogFragment
 import org.secu3.android.ui.parameters.dialogs.ParamIntEditDialogFragment
 
 class MiscellaneousFragment : BaseParamFragment() {
-    private lateinit var stateHolder: MiscellaneousStateHolder
+    private val stateHolder get() = mViewModel.miscellaneousStateHolder
 
     override fun onCreateView(inflater: android.view.LayoutInflater, container: ViewGroup?, savedInstanceState: Bundle?): View {
-        stateHolder = MiscellaneousStateHolder(mViewModel::sendPacket)
         return ComposeView(requireContext()).apply {
             setViewCompositionStrategy(androidx.compose.ui.platform.ViewCompositionStrategy.DisposeOnViewTreeLifecycleDestroyed)
             setContent { SecuComposeTheme { MiscellaneousScreen(stateHolder.state, stateHolder.hasValidationError, BAUD_RATE_CODES, ::editInt, ::editFloat, ::selectBaud, ::toggle) } }
-        }
-    }
-
-    override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
-        super.onViewCreated(view, savedInstanceState)
-        val viewOwner = viewLifecycleOwner
-        viewOwner.lifecycleScope.launch {
-            viewOwner.lifecycle.withResumed {
-                val liveData = mViewModel.miscellaneousLiveData
-                liveData.observe(viewOwner) { p ->
-                    stateHolder.onPacketReceived(p)
-                    mViewModel.isSendAllowed = true
-                }
-            }
         }
     }
 

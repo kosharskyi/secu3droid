@@ -40,6 +40,12 @@ internal class MiscellaneousStateHolder(
     var hasValidationError: Boolean by mutableStateOf(false)
         private set
 
+    fun reset() {
+        packet = null
+        state = null
+        hasValidationError = false
+    }
+
     fun onPacketReceived(received: MiscellaneousParamPacket) {
         packet = received
         state = received.toState()

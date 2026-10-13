@@ -44,39 +44,21 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.unit.dp
-import androidx.lifecycle.lifecycleScope
-import androidx.lifecycle.withResumed
-import kotlinx.coroutines.launch
 import org.secu3.android.ui.parameters.compose.ParameterLoadingIndicator
 import org.secu3.android.R
 import org.secu3.android.ui.compose.SecuComposeTheme
 
 class SecurityFragment : BaseParamFragment() {
-    private lateinit var state: SecurityStateHolder
+    private val state get() = mViewModel.securityStateHolder
     private var expanded by mutableStateOf(false)
     private val types = listOf("BC417", "BK3231", "BK3231S (JDY-31)", "BC352 (HC-05)", "BK3432", "BK3431S")
 
     override fun onCreateView(inflater: LayoutInflater, container: ViewGroup?, savedInstanceState: Bundle?): View {
-        state = SecurityStateHolder(mViewModel::sendPacket, getString(R.string.sec_invalid_credentials))
-        state.reset()
         expanded = false
         return ComposeView(requireContext()).apply {
             setViewCompositionStrategy(ViewCompositionStrategy.DisposeOnViewTreeLifecycleDestroyed)
             setContent { SecuComposeTheme { SecurityScreen(state.loaded, state.useBt, state.useImm, state.name, state.password, state.key0, state.key1, state.type, types, expanded, state.error,
                 state.useReserveParams, state.checkFirmwareCrc, { expanded = it }, state::changeType, state::changeBt, state::changeImm, state::changeName, state::changePass, state::changeKey0, state::changeKey1, state::applyCredentials) } }
-        }
-    }
-
-    override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
-        super.onViewCreated(view, savedInstanceState)
-        viewLifecycleOwner.lifecycleScope.launch {
-            viewLifecycleOwner.lifecycle.withResumed {
-                mViewModel.securityLiveData.observe(viewLifecycleOwner) { p ->
-                    mViewModel.isSendAllowed = false
-                    state.load(p)
-                    mViewModel.isSendAllowed = true
-                }
-            }
         }
     }
 

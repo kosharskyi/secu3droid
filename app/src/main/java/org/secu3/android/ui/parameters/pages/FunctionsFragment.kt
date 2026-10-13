@@ -30,24 +30,18 @@ import android.view.View
 import android.view.ViewGroup
 import androidx.compose.ui.platform.ComposeView
 import androidx.compose.ui.platform.ViewCompositionStrategy
-import androidx.lifecycle.lifecycleScope
 import androidx.lifecycle.Observer
-import androidx.lifecycle.withResumed
-import kotlinx.coroutines.launch
 import org.secu3.android.R
-import org.secu3.android.models.packets.input.FnNameDatPacket
 import org.secu3.android.ui.compose.SecuComposeTheme
 import org.secu3.android.ui.parameters.dialogs.ParamFloatEditDialogFragment
 import org.secu3.android.ui.parameters.pages.compose.FunctionsNumber
 import org.secu3.android.ui.parameters.pages.compose.FunctionsScreen
 import org.secu3.android.ui.parameters.pages.compose.FunctionsUiState
-import org.secu3.android.ui.parameters.pages.compose.FunctionsStateHolder
 
 class FunctionsFragment : BaseParamFragment() {
-    private val stateHolder by lazy { FunctionsStateHolder(mViewModel::sendPacket) }
+    private val stateHolder get() = mViewModel.functionsStateHolder
 
     override fun onCreateView(inflater: LayoutInflater, container: ViewGroup?, savedInstanceState: Bundle?): View {
-        stateHolder.reset()
         return ComposeView(requireContext()).apply {
             id = R.id.functions_compose_view
             setViewCompositionStrategy(ViewCompositionStrategy.DisposeOnViewTreeLifecycleDestroyed)
@@ -55,39 +49,6 @@ class FunctionsFragment : BaseParamFragment() {
                 SecuComposeTheme {
                     FunctionsScreen(stateHolder.state, ::editParameter, stateHolder::updateFlag, stateHolder::updateChoice)
                 }
-            }
-        }
-    }
-
-    override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
-        super.onViewCreated(view, savedInstanceState)
-        val owner = viewLifecycleOwner
-        owner.lifecycleScope.launch {
-            owner.withResumed {
-                val fnNamesLiveData = mViewModel.fnNameLiveData
-                val fnNamesObserver = object : Observer<FnNameDatPacket> {
-                    override fun onChanged(value: FnNameDatPacket) {
-                        fnNamesLiveData.removeObserver(this)
-                        mViewModel.isSendAllowed = false
-                        stateHolder.onNamesReceived(value)
-                        mViewModel.isSendAllowed = true
-
-                        // The LiveData getter starts the next protocol read. Evaluate it once,
-                        // only after all function table names have arrived.
-                        val funsetLiveData = mViewModel.funsetLiveData
-                        funsetLiveData.observe(owner) { receivedSet ->
-                            mViewModel.isSendAllowed = false
-                            stateHolder.onPacketReceived(
-                                received = receivedSet,
-                                loads = resources.getStringArray(R.array.load_measurement_items).toList(),
-                                bars = resources.getStringArray(R.array.barocorr_items).toList(),
-                                ve2 = resources.getStringArray(R.array.ve2_map_func_items).toList(),
-                            )
-                            mViewModel.isSendAllowed = true
-                        }
-                    }
-                }
-                fnNamesLiveData.observe(owner, fnNamesObserver)
             }
         }
     }

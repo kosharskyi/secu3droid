@@ -171,4 +171,50 @@ class ParameterPageReadGateTest {
             assertEquals(1, sensorRestores)
         }
     }
+
+    @Test
+    fun functionsReadCancelsBeforeSecondStageAndRetriesBothStagesOnReturn() {
+        runBlocking {
+            val gate = ParameterPageReadGate()
+            val events = Channel<String>(Channel.UNLIMITED)
+            val namesResponses = Channel<String>(Channel.UNLIMITED)
+            val funSetResponses = Channel<String>(Channel.UNLIMITED)
+            val functionsPage = 10
+            val read = async(start = CoroutineStart.UNDISPATCHED) {
+                gate.read(functionsPage) {
+                    val names = readParameterPacket(
+                        sendRequest = { events.trySend("names-request") },
+                        restoreSensors = { events.trySend("names-sensors") },
+                    ) { onSubscribed ->
+                        onSubscribed()
+                        namesResponses.receive()
+                    }
+                    val funSet = readParameterPacket(
+                        sendRequest = { events.trySend("funset-request") },
+                        restoreSensors = { events.trySend("funset-sensors") },
+                    ) { onSubscribed ->
+                        onSubscribed()
+                        funSetResponses.receive()
+                    }
+                    names to funSet
+                }.first()
+            }
+
+            gate.activate(functionsPage)
+            assertEquals("names-request", withTimeout(1_000) { events.receive() })
+            gate.activate(functionsPage + 1)
+            assertEquals("names-sensors", withTimeout(1_000) { events.receive() })
+            yield()
+            assertTrue("Cancelled names stage must not issue the funset request", events.tryReceive().isFailure)
+
+            gate.activate(functionsPage)
+            assertEquals("names-request", withTimeout(1_000) { events.receive() })
+            namesResponses.send("all names")
+            assertEquals("names-sensors", withTimeout(1_000) { events.receive() })
+            assertEquals("funset-request", withTimeout(1_000) { events.receive() })
+            funSetResponses.send("settings")
+            assertEquals("all names" to "settings", withTimeout(1_000) { read.await() })
+            assertEquals("funset-sensors", withTimeout(1_000) { events.receive() })
+        }
+    }
 }
