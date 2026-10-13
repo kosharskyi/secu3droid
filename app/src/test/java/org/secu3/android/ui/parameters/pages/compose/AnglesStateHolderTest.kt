@@ -57,6 +57,7 @@ class AnglesStateHolderTest {
         assertEquals(1, mapping)
         assertEquals(1, mapped)
         assertEquals(AnglesUiState.Data(AnglesValues.from(packet)), holder.state)
+        assertTrue("Receiving a packet must not echo it to the ECU", sent.isEmpty())
 
         holder.updateValue(AnglesNumber.OCTANE, 4.5f)
 
@@ -79,6 +80,19 @@ class AnglesStateHolderTest {
         assertTrue(sent.single() === packet)
         assertTrue(packet.alwaysUseIgnitionMap)
         assertTrue((holder.state as AnglesUiState.Data).values.flags.getValue(AnglesFlag.WORKING_MAP))
+    }
+
+    @Test
+    fun resetDiscardsOldPacketBeforeAnotherRead() {
+        val sent = mutableListOf<AnglesParamPacket>()
+        val holder = AnglesStateHolder(sent::add)
+        holder.onPacketReceived(AnglesParamPacket())
+
+        holder.reset()
+        holder.updateValue(AnglesNumber.OCTANE, 4.5f)
+
+        assertEquals(AnglesUiState.Loading, holder.state)
+        assertTrue(sent.isEmpty())
     }
 
 }

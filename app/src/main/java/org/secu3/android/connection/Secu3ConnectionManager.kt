@@ -39,6 +39,20 @@ import org.secu3.android.utils.SecuLogger
 import org.secu3.android.utils.Task
 import javax.inject.Inject
 import javax.inject.Singleton
+import java.util.concurrent.atomic.AtomicInteger
+
+/** The request may start only after both transport collectors are registered. */
+internal fun <T> mergeSubscribedPacketFlows(
+    first: SharedFlow<T>,
+    second: SharedFlow<T>,
+    onSubscribed: () -> Unit,
+): Flow<T> = flow {
+    val subscriptions = AtomicInteger()
+    val ready: suspend FlowCollector<T>.() -> Unit = {
+        if (subscriptions.incrementAndGet() == 2) onSubscribed()
+    }
+    emitAll(merge(first.onSubscription(ready), second.onSubscription(ready)))
+}
 
 @Singleton
 class Secu3ConnectionManager @Inject constructor(private val usbConnection: UsbConnection,
@@ -58,6 +72,11 @@ class Secu3ConnectionManager @Inject constructor(private val usbConnection: UsbC
             it.parse(fwInfo)
         }
     }.filterNotNull()
+
+    fun receivedPacketFlow(onSubscribed: () -> Unit): Flow<InputPacket> =
+        mergeSubscribedPacketFlows(usbConnection.receivedPacketFlow, btConnection.receivedPacketFlow, onSubscribed)
+            .map { raw -> withContext(Dispatchers.IO) { raw.parse(fwInfo) } }
+            .filterNotNull()
 
     val connectionStateFlow: Flow<ConnectionState>
         get() = flow {

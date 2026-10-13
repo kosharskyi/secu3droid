@@ -51,7 +51,7 @@ class FuelInjectionStateHolderTest {
         holder.reset()
         assertEquals(FuelInjectionUiState.Loading, holder.uiState)
         assertFalse(holder.isSendAllowed)
-        assertEquals(false, gates.last())
+        assertEquals("Resetting an unloaded neighbor must not block the active page", listOf(false, true), gates)
         holder.edit(FuelInjectionNumber.FLOW_0, 600f)
         assertTrue(sends.isEmpty())
     }

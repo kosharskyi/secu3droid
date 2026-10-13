@@ -79,6 +79,8 @@ import androidx.compose.ui.platform.ComposeView
 import androidx.compose.ui.platform.ViewCompositionStrategy
 import androidx.fragment.app.Fragment
 import androidx.fragment.app.viewModels
+import androidx.core.view.doOnPreDraw
+import androidx.lifecycle.Lifecycle
 import androidx.navigation.fragment.findNavController
 import androidx.viewpager2.widget.ViewPager2
 import dagger.hilt.android.AndroidEntryPoint
@@ -91,22 +93,32 @@ import org.secu3.android.connection.InProgress
 class ParamsFragment : Fragment() {
 
     private val mViewModel: ParamsViewModel by viewModels()
+    private var settledPageTitleRes: Int? = null
 
     override fun onCreateView(inflater: android.view.LayoutInflater, container: ViewGroup?, savedInstanceState: Bundle?): View {
         val firmwareInfo = mViewModel.fwInfoPacket
+        val pageSpecs = parameterPageSpecs(firmwareInfo)
         return ComposeView(requireContext()).apply {
             id = R.id.params_view_container
             setViewCompositionStrategy(ViewCompositionStrategy.DisposeOnViewTreeLifecycleDestroyed)
             setContent {
                 val connectionState by mViewModel.connectionStatusLiveData.observeAsState()
-                val titles = remember(firmwareInfo) {
-                    parameterPageSpecs(firmwareInfo).map { getString(it.titleRes) }
-                }
+                val titles = remember(firmwareInfo) { pageSpecs.map { getString(it.titleRes) } }
                 ParamsScreen(
                     titles = titles,
                     connectionState = connectionState,
                     onBack = { findNavController().navigateUp() },
                     onSave = { mViewModel.savePacket() },
+                    onPageSettled = { index ->
+                        settledPageTitleRes = pageSpecs.getOrNull(index)?.titleRes
+                        if (lifecycle.currentState.isAtLeast(Lifecycle.State.RESUMED)) {
+                            settledPageTitleRes?.let(mViewModel::activatePage)
+                        }
+                    },
+                    onPageUnsettled = {
+                        settledPageTitleRes = null
+                        mViewModel.deactivatePage()
+                    },
                     createPager = { context ->
                         ViewPager2(context).apply {
                             id = R.id.paramsPager
@@ -122,6 +134,33 @@ class ParamsFragment : Fragment() {
             }
         }
     }
+
+    override fun onResume() {
+        super.onResume()
+        settledPageTitleRes?.let(mViewModel::activatePage)
+    }
+
+    override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
+        super.onViewCreated(view, savedInstanceState)
+        mViewModel.connectionStatusLiveData.observe(viewLifecycleOwner) {
+            if (!mViewModel.isConnected) {
+                mViewModel.clearPageState()
+            } else if (lifecycle.currentState.isAtLeast(Lifecycle.State.RESUMED)) {
+                settledPageTitleRes?.let(mViewModel::activatePage)
+            }
+        }
+    }
+
+    override fun onPause() {
+        mViewModel.deactivatePage()
+        super.onPause()
+    }
+
+    override fun onDestroyView() {
+        mViewModel.clearPageState()
+        settledPageTitleRes = null
+        super.onDestroyView()
+    }
 }
 
 @Composable
@@ -130,12 +169,16 @@ internal fun ParamsScreen(
     connectionState: org.secu3.android.connection.ConnectionState?,
     onBack: () -> Unit,
     onSave: () -> Unit,
+    onPageSettled: (Int) -> Unit,
     createPager: (android.content.Context) -> ViewPager2,
+    onPageUnsettled: () -> Unit = {},
 ) {
     var selectedIndex by rememberSaveable { mutableIntStateOf(0) }
     var pager by remember { mutableStateOf<ViewPager2?>(null) }
     val safeIndex = clampPageIndex(selectedIndex, titles.size)
     val latestSelection by rememberUpdatedState(safeIndex)
+    val latestOnPageSettled by rememberUpdatedState(onPageSettled)
+    val latestOnPageUnsettled by rememberUpdatedState(onPageUnsettled)
     val tabBringIntoView = remember(titles) { titles.map { BringIntoViewRequester() } }
 
     LaunchedEffect(safeIndex, tabBringIntoView) {
@@ -145,14 +188,31 @@ internal fun ParamsScreen(
     DisposableEffect(pager, titles.size) {
         val viewPager = pager
         if (viewPager == null) return@DisposableEffect onDispose { }
+        var disposed = false
         val listener = object : ViewPager2.OnPageChangeCallback() {
             override fun onPageSelected(position: Int) {
                 selectedIndex = clampPageIndex(position, titles.size)
             }
+
+            override fun onPageScrollStateChanged(state: Int) {
+                if (state == ViewPager2.SCROLL_STATE_IDLE && viewPager.isLaidOut) {
+                    latestOnPageSettled(clampPageIndex(viewPager.currentItem, titles.size))
+                } else if (state != ViewPager2.SCROLL_STATE_IDLE) {
+                    latestOnPageUnsettled()
+                }
+            }
         }
         viewPager.registerOnPageChangeCallback(listener)
         viewPager.setCurrentItem(latestSelection, false)
-        onDispose { viewPager.unregisterOnPageChangeCallback(listener) }
+        viewPager.doOnPreDraw {
+            if (!disposed && viewPager.scrollState == ViewPager2.SCROLL_STATE_IDLE) {
+                latestOnPageSettled(clampPageIndex(viewPager.currentItem, titles.size))
+            }
+        }
+        onDispose {
+            disposed = true
+            viewPager.unregisterOnPageChangeCallback(listener)
+        }
     }
 
     Column(

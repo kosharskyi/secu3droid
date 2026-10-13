@@ -27,8 +27,6 @@ package org.secu3.android.ui.parameters.pages.compose
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
-import androidx.lifecycle.LifecycleOwner
-import androidx.lifecycle.LiveData
 import org.secu3.android.models.packets.out.params.StarterParamPacket
 
 /** Holds Starter page state and coordinates edits with packet sends. */
@@ -40,9 +38,9 @@ class StarterStateHolder(
     var state: StarterUiState by mutableStateOf(StarterUiState.Loading)
         private set
 
-    /** Observes packets only while the supplied page view lifecycle is active. */
-    fun observePackets(owner: LifecycleOwner, packets: LiveData<StarterParamPacket>) {
-        packets.observe(owner, ::onPacketReceived)
+    fun reset() {
+        packet = null
+        state = StarterUiState.Loading
     }
 
     fun onPacketReceived(received: StarterParamPacket) {

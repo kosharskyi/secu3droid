@@ -37,26 +37,20 @@ import org.secu3.android.ui.parameters.dialogs.ParamIntEditDialogFragment
 import org.secu3.android.ui.parameters.pages.compose.StarterNumber
 import org.secu3.android.ui.parameters.pages.compose.StarterFlag
 import org.secu3.android.ui.parameters.pages.compose.StarterScreen
-import org.secu3.android.ui.parameters.pages.compose.StarterStateHolder
 import org.secu3.android.ui.parameters.pages.compose.StarterUiState
 
 class StarterFragment : BaseParamFragment() {
 
-    private var starterState: StarterStateHolder? = null
+    private val starterState get() = mViewModel.starterStateHolder
 
     override fun onCreateView(inflater: LayoutInflater, container: ViewGroup?, savedInstanceState: Bundle?): View {
-        val stateHolder = StarterStateHolder(
-            sendPacket = mViewModel::sendPacket,
-            onPacketLoaded = { mViewModel.isSendAllowed = true },
-        )
-        starterState = stateHolder
         return ComposeView(requireContext()).apply {
             id = R.id.starter_compose_view
             setViewCompositionStrategy(ViewCompositionStrategy.DisposeOnViewTreeLifecycleDestroyed)
             setContent {
                 SecuComposeTheme {
                     StarterScreen(
-                        state = stateHolder.state,
+                        state = starterState.state,
                         onEdit = ::editParameter,
                         onFlagChanged = ::updateFlag,
                     )
@@ -65,15 +59,8 @@ class StarterFragment : BaseParamFragment() {
         }
     }
 
-    override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
-        super.onViewCreated(view, savedInstanceState)
-        // This getter creates a command-producing Flow. Read it once per view lifecycle.
-        val starterLiveData = mViewModel.starterLiveData
-        starterState?.observePackets(viewLifecycleOwner, starterLiveData)
-    }
-
     private fun editParameter(number: StarterNumber) {
-        val current = (starterState?.state as? StarterUiState.Data)?.values ?: return
+        val current = (starterState.state as? StarterUiState.Data)?.values ?: return
         when (number) {
             StarterNumber.STARTER_OFF, StarterNumber.SMAP_ABANDON, StarterNumber.AFTERSTART_PETROL,
             StarterNumber.AFTERSTART_GAS, StarterNumber.STBL_COUNTDOWN -> {
@@ -81,7 +68,7 @@ class StarterFragment : BaseParamFragment() {
                     current.value(number).toInt(), getString(number.titleRes), number.step.toInt(),
                     number.max.toInt(), number.min.toInt(),
                 )
-                dialog.newValueLiveData.observe(viewLifecycleOwner) { starterState?.updateValue(number, it.toFloat()) }
+                dialog.newValueLiveData.observe(viewLifecycleOwner) { starterState.updateValue(number, it.toFloat()) }
                 dialog.show(childFragmentManager, dialog::class.java.simpleName)
             }
             else -> {
@@ -89,19 +76,14 @@ class StarterFragment : BaseParamFragment() {
                     current.value(number), getString(number.titleRes), number.step,
                     number.max, number.min, number.precision,
                 )
-                dialog.newValueLiveData.observe(viewLifecycleOwner) { starterState?.updateValue(number, it) }
+                dialog.newValueLiveData.observe(viewLifecycleOwner) { starterState.updateValue(number, it) }
                 dialog.show(childFragmentManager, dialog::class.java.simpleName)
             }
         }
     }
 
     private fun updateFlag(flag: StarterFlag, checked: Boolean) {
-        starterState?.updateFlag(flag, checked)
-    }
-
-    override fun onDestroyView() {
-        starterState = null
-        super.onDestroyView()
+        starterState.updateFlag(flag, checked)
     }
 
     override fun tabTitle(): Int = R.string.params_tab_start_title

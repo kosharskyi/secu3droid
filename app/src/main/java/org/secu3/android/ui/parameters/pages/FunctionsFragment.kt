@@ -70,11 +70,13 @@ class FunctionsFragment : BaseParamFragment() {
                         fnNamesLiveData.removeObserver(this)
                         mViewModel.isSendAllowed = false
                         stateHolder.onNamesReceived(value)
+                        mViewModel.isSendAllowed = true
 
                         // The LiveData getter starts the next protocol read. Evaluate it once,
                         // only after all function table names have arrived.
                         val funsetLiveData = mViewModel.funsetLiveData
                         funsetLiveData.observe(owner) { receivedSet ->
+                            mViewModel.isSendAllowed = false
                             stateHolder.onPacketReceived(
                                 received = receivedSet,
                                 loads = resources.getStringArray(R.array.load_measurement_items).toList(),

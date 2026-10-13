@@ -44,7 +44,6 @@ internal class AccelerationStateHolder(
     fun reset() {
         packet = null
         values = null
-        setSendAllowed(false)
     }
 
     fun onPacketReceived(received: AccelerationParamPacket) {

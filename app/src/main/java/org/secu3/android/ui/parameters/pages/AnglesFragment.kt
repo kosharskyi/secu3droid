@@ -30,26 +30,17 @@ import android.view.View
 import android.view.ViewGroup
 import androidx.compose.ui.platform.ComposeView
 import androidx.compose.ui.platform.ViewCompositionStrategy
-import androidx.lifecycle.lifecycleScope
-import androidx.lifecycle.withResumed
-import kotlinx.coroutines.launch
 import org.secu3.android.R
 import org.secu3.android.ui.compose.SecuComposeTheme
 import org.secu3.android.ui.parameters.dialogs.ParamFloatEditDialogFragment
 import org.secu3.android.ui.parameters.pages.compose.AnglesNumber
 import org.secu3.android.ui.parameters.pages.compose.AnglesScreen
-import org.secu3.android.ui.parameters.pages.compose.AnglesStateHolder
 import org.secu3.android.ui.parameters.pages.compose.AnglesUiState
 
 class AnglesFragment : BaseParamFragment() {
-    private lateinit var stateHolder: AnglesStateHolder
+    private val stateHolder get() = mViewModel.anglesStateHolder
 
     override fun onCreateView(inflater: LayoutInflater, container: ViewGroup?, savedInstanceState: Bundle?): View {
-        stateHolder = AnglesStateHolder(
-            sendPacket = mViewModel::sendPacket,
-            onPacketMapping = { mViewModel.isSendAllowed = false },
-            onPacketMapped = { mViewModel.isSendAllowed = true },
-        )
         return ComposeView(requireContext()).apply {
             id = R.id.angles_compose_view
             setViewCompositionStrategy(ViewCompositionStrategy.DisposeOnViewTreeLifecycleDestroyed)
@@ -57,18 +48,6 @@ class AnglesFragment : BaseParamFragment() {
                 SecuComposeTheme {
                     AnglesScreen(stateHolder.state, ::editParameter, stateHolder::updateFlag)
                 }
-            }
-        }
-    }
-
-    override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
-        super.onViewCreated(view, savedInstanceState)
-        val viewLifecycle = viewLifecycleOwner
-        viewLifecycle.lifecycleScope.launch {
-            viewLifecycle.withResumed {
-                // Accessing this getter schedules a protocol read; do it once after the page is resumed.
-                val anglesLiveData = mViewModel.anglesLiveData
-                stateHolder.observePackets(viewLifecycleOwner, anglesLiveData)
             }
         }
     }

@@ -30,12 +30,13 @@ import androidx.lifecycle.LiveData
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.asLiveData
 import androidx.lifecycle.viewModelScope
+import kotlinx.coroutines.Job
 import dagger.hilt.android.lifecycle.HiltViewModel
 import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.filter
 import kotlinx.coroutines.flow.first
-import kotlinx.coroutines.flow.flow
+import kotlinx.coroutines.flow.filterNotNull
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
@@ -44,6 +45,7 @@ import org.secu3.android.connection.ConnectionState
 import org.secu3.android.connection.Secu3ConnectionManager
 import org.secu3.android.models.FnName
 import org.secu3.android.models.packets.base.OutputPacket
+import org.secu3.android.models.packets.base.InputPacket
 import org.secu3.android.models.packets.input.FirmwareInfoPacket
 import org.secu3.android.models.packets.input.FnNameDatPacket
 import org.secu3.android.models.packets.out.OpCompNc
@@ -66,6 +68,8 @@ import org.secu3.android.models.packets.out.params.SecurityParamPacket
 import org.secu3.android.models.packets.out.params.StarterParamPacket
 import org.secu3.android.models.packets.out.params.TemperatureParamPacket
 import org.secu3.android.models.packets.out.params.UniOutParamPacket
+import org.secu3.android.ui.parameters.pages.compose.AnglesStateHolder
+import org.secu3.android.ui.parameters.pages.compose.StarterStateHolder
 import org.secu3.android.utils.Task
 import javax.inject.Inject
 
@@ -76,228 +80,206 @@ class ParamsViewModel @Inject constructor(
 
     var isSendAllowed: Boolean = false
 
-    val connectionStatusLiveData: LiveData<ConnectionState>
-        get() = secu3ConnectionManager.connectionStateFlow.asLiveData()
+    private val pageReadGate = ParameterPageReadGate()
+    private val loadedPages = mutableSetOf<Int>()
+    private val pageReadJobs = mutableMapOf<Int, Job>()
+
+    internal val starterStateHolder by lazy {
+        StarterStateHolder(::sendPacket) { isSendAllowed = true }
+    }
+
+    internal val anglesStateHolder by lazy {
+        AnglesStateHolder(::sendPacket, { isSendAllowed = false }, { isSendAllowed = true })
+    }
+
+    internal fun activatePage(titleRes: Int) {
+        if (!isConnected) return
+        pageReadGate.activate(titleRes)
+        if (titleRes == R.string.params_tab_start_title || titleRes == R.string.params_tab_angles_title) {
+            loadViewModelPage(titleRes)
+        }
+    }
+
+    internal fun deactivatePage() = pageReadGate.deactivate()
+
+    internal val isConnected: Boolean
+        get() = secu3ConnectionManager.isConnected
+
+    internal fun clearPageState() {
+        deactivatePage()
+        pageReadJobs.values.forEach { it.cancel() }
+        pageReadJobs.clear()
+        loadedPages.clear()
+        starterStateHolder.reset()
+        anglesStateHolder.reset()
+    }
+
+    private suspend inline fun <reified T : InputPacket> readPacket(task: Task): T = readParameterPacket(
+        sendRequest = { secu3ConnectionManager.sendNewTask(task) },
+        restoreSensors = { secu3ConnectionManager.sendNewTask(Task.Secu3ReadSensors) },
+        receive = { onSubscribed -> secu3ConnectionManager.receivedPacketFlow(onSubscribed).first { it is T } as T },
+    )
+
+    private fun loadViewModelPage(titleRes: Int) {
+        if (titleRes in loadedPages || pageReadJobs[titleRes]?.isActive == true) return
+        pageReadJobs[titleRes] = viewModelScope.launch {
+            try {
+                when (titleRes) {
+                    R.string.params_tab_start_title -> {
+                        starterStateHolder.reset()
+                        val packet = pageReadGate.read(titleRes) {
+                            readPacket<StarterParamPacket>(Task.Secu3ReadStarterParam)
+                        }.first()
+                        starterStateHolder.onPacketReceived(packet)
+                    }
+                    R.string.params_tab_angles_title -> {
+                        anglesStateHolder.reset()
+                        val packet = pageReadGate.read(titleRes) {
+                            readPacket<AnglesParamPacket>(Task.Secu3ReadAnglesParam)
+                        }.first()
+                        anglesStateHolder.onPacketReceived(packet)
+                    }
+                }
+                loadedPages += titleRes
+            } finally {
+                // A cancelled job may finish after a new view has started its replacement.
+                if (pageReadJobs[titleRes] == coroutineContext[Job]) pageReadJobs.remove(titleRes)
+            }
+        }
+    }
+
+    val connectionStatusLiveData: LiveData<ConnectionState> = secu3ConnectionManager.connectionStateFlow.asLiveData()
 
     val fwInfoPacket: FirmwareInfoPacket?
         get() = secu3ConnectionManager.fwInfo
     val fwInfoLiveData: LiveData<FirmwareInfoPacket>
         get() = secu3ConnectionManager.firmwareLiveData
 
-    val starterLiveData: LiveData<StarterParamPacket>
-        get() = flow {
-            secu3ConnectionManager.sendNewTask(Task.Secu3ReadStarterParam)
-            val packet = secu3ConnectionManager.receivedPacketFlow.first { it is StarterParamPacket } as StarterParamPacket
-
-            emit(packet)
-            secu3ConnectionManager.sendNewTask(Task.Secu3ReadSensors)
-        }.asLiveData()
-
-    val anglesLiveData: LiveData<AnglesParamPacket>
-        get() = flow {
-            secu3ConnectionManager.sendNewTask(Task.Secu3ReadAnglesParam)
-            val packet = secu3ConnectionManager.receivedPacketFlow.first { it is AnglesParamPacket } as AnglesParamPacket
-
-            emit(packet)
-            secu3ConnectionManager.sendNewTask(Task.Secu3ReadSensors)
-        }.asLiveData()
-
     val idlingLiveData: LiveData<IdlingParamPacket>
-        get() = flow {
-            secu3ConnectionManager.sendNewTask(Task.Secu3ReadIdlingParam)
-            val packet = secu3ConnectionManager.receivedPacketFlow.first { it is IdlingParamPacket } as IdlingParamPacket
-
-            emit(packet)
-            secu3ConnectionManager.sendNewTask(Task.Secu3ReadSensors)
-        }.asLiveData()
+        get() = pageReadGate.read(R.string.params_tab_idling_title) {
+            readPacket<IdlingParamPacket>(Task.Secu3ReadIdlingParam)
+        }.filterNotNull().asLiveData(timeoutInMs = 0)
 
     val fnNameLiveData: LiveData<FnNameDatPacket>
-        get() = flow {
-            var fnNameDatPacket: FnNameDatPacket? = null
-
-            secu3ConnectionManager.sendNewTask(Task.Secu3ReadFnNameDat)
-            while (fnNameDatPacket?.isAllFnNamesReceived != true) {
-
-                val packet = secu3ConnectionManager.receivedPacketFlow.first { it is FnNameDatPacket } as FnNameDatPacket
-
-                fnNameDatPacket = fnNameDatPacket ?: packet.also {
-                    it.fnNameList = MutableList(packet.tablesNumber) { FnName(-1, "placeholder name") }
-                }
-
-                fnNameDatPacket.fnNameList[packet.fnName.index] = packet.fnName
+        get() = pageReadGate.read(R.string.params_tab_functions_title) {
+            readParameterPacket(
+                sendRequest = { secu3ConnectionManager.sendNewTask(Task.Secu3ReadFnNameDat) },
+                restoreSensors = { secu3ConnectionManager.sendNewTask(Task.Secu3ReadSensors) },
+            ) { onSubscribed ->
+                var names: FnNameDatPacket? = null
+                secu3ConnectionManager.receivedPacketFlow(onSubscribed)
+                    .filter { it is FnNameDatPacket }
+                    .map { it as FnNameDatPacket }
+                    .first { packet ->
+                        val accumulated = names ?: packet.also {
+                            it.fnNameList = MutableList(packet.tablesNumber) { FnName(-1, "placeholder name") }
+                            names = it
+                        }
+                        accumulated.fnNameList[packet.fnName.index] = packet.fnName
+                        accumulated.isAllFnNamesReceived
+                    }
+                checkNotNull(names)
             }
-            emit(fnNameDatPacket)
-        }.asLiveData()
+        }.filterNotNull().asLiveData(timeoutInMs = 0)
 
     val funsetLiveData: LiveData<FunSetParamPacket>
-        get() = flow {
-            secu3ConnectionManager.sendNewTask(Task.Secu3ReadFunsetParam)
-            val packet = secu3ConnectionManager.receivedPacketFlow.first { it is FunSetParamPacket } as FunSetParamPacket
-
-            emit(packet)
-            secu3ConnectionManager.sendNewTask(Task.Secu3ReadSensors)
-        }.asLiveData()
+        get() = pageReadGate.read(R.string.params_tab_functions_title) {
+            readPacket<FunSetParamPacket>(Task.Secu3ReadFunsetParam)
+        }.filterNotNull().asLiveData(timeoutInMs = 0)
 
     val temperatureLiveData: LiveData<TemperatureParamPacket>
-        get() = flow {
-            secu3ConnectionManager.sendNewTask(Task.Secu3ReadTemperatureParam)
-            val packet = secu3ConnectionManager.receivedPacketFlow.first { it is TemperatureParamPacket } as TemperatureParamPacket
-
-            emit(packet)
-            secu3ConnectionManager.sendNewTask(Task.Secu3ReadSensors)
-        }.asLiveData()
+        get() = pageReadGate.read(R.string.params_tab_temperature_title) {
+            readPacket<TemperatureParamPacket>(Task.Secu3ReadTemperatureParam)
+        }.filterNotNull().asLiveData(timeoutInMs = 0)
 
     val carburLiveData: LiveData<CarburParamPacket>
-        get() = flow {
-            secu3ConnectionManager.sendNewTask(Task.Secu3ReadCarburParam)
-            val packet = secu3ConnectionManager.receivedPacketFlow.first { it is CarburParamPacket } as CarburParamPacket
-
-            emit(packet)
-            secu3ConnectionManager.sendNewTask(Task.Secu3ReadSensors)
-        }.asLiveData()
+        get() = pageReadGate.read(R.string.params_tab_fuel_cutoff_title) {
+            readPacket<CarburParamPacket>(Task.Secu3ReadCarburParam)
+        }.filterNotNull().asLiveData(timeoutInMs = 0)
 
     val adcCorrectionsLiveData: LiveData<AdcCorrectionsParamPacket>
-        get() = flow {
-            secu3ConnectionManager.sendNewTask(Task.Secu3ReadAdcErrorsCorrectionsParam)
-            val packet = secu3ConnectionManager.receivedPacketFlow.first { it is AdcCorrectionsParamPacket } as AdcCorrectionsParamPacket
-
-            emit(packet)
-            secu3ConnectionManager.sendNewTask(Task.Secu3ReadSensors)
-        }.asLiveData()
+        get() = pageReadGate.read(R.string.params_tab_adc_errors_corr_title) {
+            readPacket<AdcCorrectionsParamPacket>(Task.Secu3ReadAdcErrorsCorrectionsParam)
+        }.filterNotNull().asLiveData(timeoutInMs = 0)
 
     val ckpsLiveData: LiveData<CkpsParamPacket>
-        get() = flow {
-            secu3ConnectionManager.sendNewTask(Task.Secu3ReadCkpsParam)
-            val packet = secu3ConnectionManager.receivedPacketFlow.first { it is CkpsParamPacket } as CkpsParamPacket
-
-            emit(packet)
-            secu3ConnectionManager.sendNewTask(Task.Secu3ReadSensors)
-        }.asLiveData()
+        get() = pageReadGate.read(R.string.params_tab_ckps_title) {
+            readPacket<CkpsParamPacket>(Task.Secu3ReadCkpsParam)
+        }.filterNotNull().asLiveData(timeoutInMs = 0)
 
     val knockLiveData: LiveData<KnockParamPacket>
-        get() = flow {
-            secu3ConnectionManager.sendNewTask(Task.Secu3ReadKnockParam)
-            val packet = secu3ConnectionManager.receivedPacketFlow.first { it is KnockParamPacket } as KnockParamPacket
-
-            emit(packet)
-            secu3ConnectionManager.sendNewTask(Task.Secu3ReadSensors)
-        }.asLiveData()
+        get() = pageReadGate.read(R.string.params_tab_knock_title) {
+            readPacket<KnockParamPacket>(Task.Secu3ReadKnockParam)
+        }.filterNotNull().asLiveData(timeoutInMs = 0)
 
     val miscellaneousLiveData: LiveData<MiscellaneousParamPacket>
-        get() = flow {
-            secu3ConnectionManager.sendNewTask(Task.Secu3ReadMiscellaneousParam)
-            val packet = secu3ConnectionManager.receivedPacketFlow.first { it is MiscellaneousParamPacket } as MiscellaneousParamPacket
-
-            emit(packet)
-            secu3ConnectionManager.sendNewTask(Task.Secu3ReadSensors)
-        }.asLiveData()
+        get() = pageReadGate.read(R.string.params_tab_miscellaneous_title) {
+            readPacket<MiscellaneousParamPacket>(Task.Secu3ReadMiscellaneousParam)
+        }.filterNotNull().asLiveData(timeoutInMs = 0)
 
     val chokeLiveData: LiveData<ChokeControlParPacket>
-        get() = flow {
-            secu3ConnectionManager.sendNewTask(Task.Secu3ReadChokeControlParam)
-            val packet = secu3ConnectionManager.receivedPacketFlow.first { it is ChokeControlParPacket } as ChokeControlParPacket
-
-            emit(packet)
-            secu3ConnectionManager.sendNewTask(Task.Secu3ReadSensors)
-        }.asLiveData()
+        get() = pageReadGate.read(R.string.params_tab_choke_control_title) {
+            readPacket<ChokeControlParPacket>(Task.Secu3ReadChokeControlParam)
+        }.filterNotNull().asLiveData(timeoutInMs = 0)
 
     val securityLiveData: LiveData<SecurityParamPacket>
-        get() = flow {
-            secu3ConnectionManager.sendNewTask(Task.Secu3ReadSecurityParam)
-            val packet = secu3ConnectionManager.receivedPacketFlow.first { it is SecurityParamPacket } as SecurityParamPacket
-
-            emit(packet)
-            secu3ConnectionManager.sendNewTask(Task.Secu3ReadSensors)
-        }.asLiveData()
+        get() = pageReadGate.read(R.string.params_tab_security_title) {
+            readPacket<SecurityParamPacket>(Task.Secu3ReadSecurityParam)
+        }.filterNotNull().asLiveData(timeoutInMs = 0)
 
     val uniOutLiveData: LiveData<UniOutParamPacket>
-        get() = flow {
-            secu3ConnectionManager.sendNewTask(Task.Secu3ReadUniversalOutputsParam)
-            val packet = secu3ConnectionManager.receivedPacketFlow.first { it is UniOutParamPacket } as UniOutParamPacket
-
-            emit(packet)
-            secu3ConnectionManager.sendNewTask(Task.Secu3ReadSensors)
-        }.asLiveData()
+        get() = pageReadGate.read(R.string.params_tab_universal_outputs_title) {
+            readPacket<UniOutParamPacket>(Task.Secu3ReadUniversalOutputsParam)
+        }.filterNotNull().asLiveData(timeoutInMs = 0)
 
     val fuelInjectionLiveData: LiveData<InjctrParPacket>
-        get() = flow {
+        get() = pageReadGate.read(R.string.params_tab_fuel_injection_title) {
             if (secu3ConnectionManager.fwInfo?.isFuelInjectEnabled != true) {
-                return@flow
+                return@read null
             }
-            secu3ConnectionManager.sendNewTask(Task.Secu3ReadFuelInjectionParam)
-            val packet = secu3ConnectionManager.receivedPacketFlow.first { it is InjctrParPacket } as InjctrParPacket
+            val packet = readPacket<InjctrParPacket>(Task.Secu3ReadFuelInjectionParam)
 
             packet.isAtMega644 = secu3ConnectionManager.fwInfo?.isATMEGA644 ?: true
-            emit(packet)
-            secu3ConnectionManager.sendNewTask(Task.Secu3ReadSensors)
-        }.asLiveData()
+            packet
+        }.filterNotNull().asLiveData(timeoutInMs = 0)
 
     val lambdaLiveData: LiveData<LambdaParamPacket>
-        get() = flow {
-            val fw = secu3ConnectionManager.fwInfo ?: return@flow
+        get() = pageReadGate.read(R.string.params_tab_lambda_control_title) {
+            val fw = secu3ConnectionManager.fwInfo ?: return@read null
             if (fw.isFuelInjectEnabled.not() && fw.isCarbAfrEnabled.not() && fw.isGdControlEnabled.not()) {
-                return@flow
+                return@read null
             }
-            secu3ConnectionManager.sendNewTask(Task.Secu3ReadLambdaParam)
-            val packet = secu3ConnectionManager.receivedPacketFlow
-                .filter { it is LambdaParamPacket }
-                .map { it as LambdaParamPacket }
-                .first()
-
-            emit(packet)
-            secu3ConnectionManager.sendNewTask(Task.Secu3ReadSensors)
-        }.asLiveData()
+            readPacket<LambdaParamPacket>(Task.Secu3ReadLambdaParam)
+        }.filterNotNull().asLiveData(timeoutInMs = 0)
 
     val accelerationLiveData: LiveData<AccelerationParamPacket>
-        get() = flow {
-            val fw = secu3ConnectionManager.fwInfo ?: return@flow
+        get() = pageReadGate.read(R.string.params_tab_acceleration_title) {
+            val fw = secu3ConnectionManager.fwInfo ?: return@read null
             if (fw.isFuelInjectEnabled.not() && fw.isGdControlEnabled.not()) {
-                return@flow
+                return@read null
             }
-            secu3ConnectionManager.sendNewTask(Task.Secu3ReadAccelerationParam)
-            val packet = secu3ConnectionManager.receivedPacketFlow
-                .filter { it is AccelerationParamPacket }
-                .map { it as AccelerationParamPacket }
-                .first()
-
-            emit(packet)
-            secu3ConnectionManager.sendNewTask(Task.Secu3ReadSensors)
-        }.asLiveData()
+            readPacket<AccelerationParamPacket>(Task.Secu3ReadAccelerationParam)
+        }.filterNotNull().asLiveData(timeoutInMs = 0)
 
     val gasDoseLiveData: LiveData<GasDoseParamPacket>
-        get() = flow {
-            val fw = secu3ConnectionManager.fwInfo ?: return@flow
+        get() = pageReadGate.read(R.string.params_tab_gas_dose_title) {
+            val fw = secu3ConnectionManager.fwInfo ?: return@read null
             if (fw.isGdControlEnabled.not()) {
-                return@flow
+                return@read null
             }
 
-            secu3ConnectionManager.sendNewTask(Task.Secu3ReadGasDoseParam)
-            val packet = secu3ConnectionManager.receivedPacketFlow
-                .filter { it is GasDoseParamPacket }
-                .map { it as GasDoseParamPacket }
-                .first()
-
-            emit(packet)
-            secu3ConnectionManager.sendNewTask(Task.Secu3ReadSensors)
-        }.asLiveData()
+            readPacket<GasDoseParamPacket>(Task.Secu3ReadGasDoseParam)
+        }.filterNotNull().asLiveData(timeoutInMs = 0)
 
     val ltftLiveData: LiveData<LtftParamPacket>
-        get() = flow {
-            secu3ConnectionManager.sendNewTask(Task.Secu3ReadLtftParam)
-            val packet = secu3ConnectionManager.receivedPacketFlow.first { it is LtftParamPacket } as LtftParamPacket
-
-            emit(packet)
-            secu3ConnectionManager.sendNewTask(Task.Secu3ReadSensors)
-        }.asLiveData()
+        get() = pageReadGate.read(R.string.params_tab_ltft_title) {
+            readPacket<LtftParamPacket>(Task.Secu3ReadLtftParam)
+        }.filterNotNull().asLiveData(timeoutInMs = 0)
 
     val dbwLiveData: LiveData<DbwParamPacket>
-        get() = flow {
-            secu3ConnectionManager.sendNewTask(Task.Secu3ReadDbwParam)
-            val packet = secu3ConnectionManager.receivedPacketFlow.first { it is DbwParamPacket } as DbwParamPacket
-
-            emit(packet)
-            secu3ConnectionManager.sendNewTask(Task.Secu3ReadSensors)
-        }.asLiveData()
+        get() = pageReadGate.read(R.string.params_tab_el_throttle_title) {
+            readPacket<DbwParamPacket>(Task.Secu3ReadDbwParam)
+        }.filterNotNull().asLiveData(timeoutInMs = 0)
 
 
 

@@ -50,7 +50,7 @@ class UniversalOutputsStateHolderTest {
         assertNull(holder.values)
         holder.updatePairFunction(4)
         assertTrue(sent.isEmpty())
-        assertEquals(listOf(false, true, false), allowed)
+        assertEquals("Resetting an unloaded neighbor must not block the active page", listOf(false, true), allowed)
     }
 
     @Test

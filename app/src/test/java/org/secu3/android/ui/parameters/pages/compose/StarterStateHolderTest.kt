@@ -44,6 +44,7 @@ class StarterStateHolderTest {
         holder.onPacketReceived(packet)
         assertEquals(1, loaded)
         assertEquals(StarterUiState.Data(StarterValues.from(packet)), holder.state)
+        assertTrue("Receiving a packet must not echo it to the ECU", sent.isEmpty())
 
         holder.updateValue(StarterNumber.STARTER_OFF, 750f)
 
@@ -71,5 +72,18 @@ class StarterStateHolderTest {
         val flags = (holder.state as StarterUiState.Data).values.flags
         assertTrue(flags.getValue(StarterFlag.ALLOW_FLOOD_CLEAR_START))
         assertTrue(flags.getValue(StarterFlag.LIMIT_CRANKING_PW))
+    }
+
+    @Test
+    fun resetDiscardsOldPacketBeforeAnotherRead() {
+        val sent = mutableListOf<StarterParamPacket>()
+        val holder = StarterStateHolder(sent::add)
+        holder.onPacketReceived(StarterParamPacket())
+
+        holder.reset()
+        holder.updateValue(StarterNumber.STARTER_OFF, 750f)
+
+        assertEquals(StarterUiState.Loading, holder.state)
+        assertTrue(sent.isEmpty())
     }
 }

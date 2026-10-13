@@ -33,6 +33,7 @@ import androidx.test.espresso.action.ViewActions.swipeLeft
 import androidx.test.espresso.matcher.ViewMatchers.withId
 import androidx.recyclerview.widget.RecyclerView
 import androidx.test.ext.junit.runners.AndroidJUnit4
+import androidx.test.platform.app.InstrumentationRegistry
 import androidx.viewpager2.widget.ViewPager2
 import org.junit.Assert.assertEquals
 import org.junit.Rule
@@ -45,10 +46,13 @@ import org.secu3.android.ui.compose.SecuComposeTheme
 @RunWith(AndroidJUnit4::class)
 class ParamsScreenTest {
     @get:Rule val compose = createComposeRule()
+    private val context get() = InstrumentationRegistry.getInstrumentation().targetContext
 
     @Test fun tabsToolbarActionsStatusAndPagerStaySynchronized() {
         var backCalls = 0
         var saveCalls = 0
+        val settledPages = mutableListOf<Int>()
+        var unsettledCalls = 0
         lateinit var pager: ViewPager2
         compose.setContent {
             SecuComposeTheme {
@@ -57,6 +61,8 @@ class ParamsScreenTest {
                     connectionState = Connected,
                     onBack = { backCalls++ },
                     onSave = { saveCalls++ },
+                    onPageSettled = settledPages::add,
+                    onPageUnsettled = { unsettledCalls++ },
                     createPager = { context ->
                         ViewPager2(context).apply {
                             adapter = object : RecyclerView.Adapter<RecyclerView.ViewHolder>() {
@@ -83,23 +89,34 @@ class ParamsScreenTest {
         compose.onNodeWithText("Idling").performClick()
         compose.onNodeWithText("Idling").assertIsSelected()
         compose.runOnIdle { assertEquals(2, pager.currentItem) }
-        compose.onNodeWithContentDescription("Back").performClick()
-        compose.onNodeWithContentDescription("Save").performClick()
-        compose.onNodeWithContentDescription("Connected to ECU").assertExists()
+        compose.waitUntil(timeoutMillis = 5_000) {
+            pager.scrollState == ViewPager2.SCROLL_STATE_IDLE && settledPages.lastOrNull() == 2
+        }
+        compose.runOnIdle {
+            assertEquals(false, 1 in settledPages)
+            assertEquals(true, unsettledCalls > 0)
+        }
+        compose.onNodeWithContentDescription(context.getString(R.string.back)).performClick()
+        compose.onNodeWithContentDescription(context.getString(R.string.save)).performClick()
+        compose.onNodeWithContentDescription(context.getString(R.string.home_connection_connected)).assertExists()
 
         compose.waitUntil(timeoutMillis = 5_000) { pager.scrollState == ViewPager2.SCROLL_STATE_IDLE }
         onView(withId(R.id.paramsPager)).perform(swipeLeft())
-        compose.waitForIdle()
+        compose.waitUntil(timeoutMillis = 5_000) {
+            pager.scrollState == ViewPager2.SCROLL_STATE_IDLE && settledPages.lastOrNull() == 3
+        }
         compose.onNodeWithText("Functions").assertIsSelected()
         compose.runOnIdle {
             assertEquals(3, pager.currentItem)
             assertEquals(1, backCalls)
             assertEquals(1, saveCalls)
+            assertEquals(3, settledPages.last())
         }
     }
 
     @Test fun selectedTabAndPagerIndexRestoreTogether() {
         var pager: ViewPager2? = null
+        val settledPages = mutableListOf<Int>()
         val restoration = StateRestorationTester(compose)
         restoration.setContent {
             SecuComposeTheme {
@@ -108,18 +125,23 @@ class ParamsScreenTest {
                     connectionState = Connected,
                     onBack = {},
                     onSave = {},
+                    onPageSettled = settledPages::add,
                     createPager = { context -> createTestPager(context).also { pager = it } },
                 )
             }
         }
         compose.onNodeWithText("Idling").performClick()
-        compose.waitForIdle()
+        compose.waitUntil(timeoutMillis = 5_000) { settledPages.lastOrNull() == 2 }
         compose.runOnIdle { assertEquals(2, pager?.currentItem) }
+        compose.runOnIdle { settledPages.clear() }
 
         restoration.emulateSavedInstanceStateRestore()
-        compose.waitForIdle()
+        compose.waitUntil(timeoutMillis = 5_000) { settledPages.lastOrNull() == 2 }
         compose.onNodeWithText("Idling").assertIsSelected()
-        compose.runOnIdle { assertEquals(2, pager?.currentItem) }
+        compose.runOnIdle {
+            assertEquals(2, pager?.currentItem)
+            assertEquals(true, settledPages.all { it == 2 })
+        }
     }
 
     private fun createTestPager(context: android.content.Context): ViewPager2 = ViewPager2(context).apply {

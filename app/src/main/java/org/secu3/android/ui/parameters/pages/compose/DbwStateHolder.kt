@@ -43,7 +43,6 @@ class DbwStateHolder(
     fun reset() {
         packet = null
         uiState = DbwUiState.Loading
-        setSendAllowed(false)
     }
 
     /** Receiving initializes the screen and send gate without echoing the packet. */

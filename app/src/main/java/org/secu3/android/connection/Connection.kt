@@ -5,6 +5,7 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableSharedFlow
+import kotlinx.coroutines.flow.SharedFlow
 import org.secu3.android.models.RawPacket
 import org.secu3.android.models.packets.base.OutputPacket
 import org.secu3.android.utils.UserPrefs
@@ -53,7 +54,7 @@ abstract class Connection (
     abstract val isConnected: Boolean
 
     protected val mReceivedPacketFlow = MutableSharedFlow<RawPacket>()
-    val receivedPacketFlow: Flow<RawPacket>
+    val receivedPacketFlow: SharedFlow<RawPacket>
         get() = mReceivedPacketFlow
 
     protected val mConnectionStateFlow = MutableSharedFlow<ConnectionState>()

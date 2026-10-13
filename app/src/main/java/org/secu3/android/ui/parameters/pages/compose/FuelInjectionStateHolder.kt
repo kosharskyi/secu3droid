@@ -55,7 +55,6 @@ class FuelInjectionStateHolder(
         injectorEnabled = true
         secu3t = false
         uiState = FuelInjectionUiState.Loading
-        setSendAllowed(false)
     }
 
     fun updateFirmware(injectorEnabled: Boolean, secu3t: Boolean) {

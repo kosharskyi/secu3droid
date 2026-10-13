@@ -96,9 +96,10 @@ class StarterScreenTest {
         compose.onNodeWithTag("starter_starter_off").performClick()
         assertEquals(StarterNumber.STARTER_OFF, edit)
         compose.onNodeWithTag("starter_starter_off-value", useUnmergedTree = true)
-            .assertTextEquals(String.format(java.util.Locale.getDefault(), "%.0f rpm", 42f))
-        compose.onNodeWithTag("starter_flag_row_allow_flood_clear_start-switch").performClick()
-        compose.onNodeWithTag("starter_flag_row_limit_cranking_pw-switch").performClick()
+            .assertTextEquals(String.format(java.util.Locale.getDefault(), "%.0f", 42f) + " " +
+                context.getString(StarterNumber.STARTER_OFF.unit.resourceId!!))
+        compose.onNodeWithTag("starter_flag_row_allow_flood_clear_start-switch").performScrollTo().performClick()
+        compose.onNodeWithTag("starter_flag_row_limit_cranking_pw-switch").performScrollTo().performClick()
         assertEquals(
             listOf(
                 StarterFlag.ALLOW_FLOOD_CLEAR_START to true,
