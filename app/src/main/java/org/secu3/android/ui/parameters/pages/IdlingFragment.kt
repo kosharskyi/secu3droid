@@ -30,43 +30,22 @@ import android.view.View
 import android.view.ViewGroup
 import androidx.compose.ui.platform.ComposeView
 import androidx.compose.ui.platform.ViewCompositionStrategy
-import androidx.lifecycle.lifecycleScope
-import androidx.lifecycle.withResumed
-import kotlinx.coroutines.launch
 import org.secu3.android.R
 import org.secu3.android.ui.compose.SecuComposeTheme
 import org.secu3.android.ui.parameters.dialogs.ParamFloatEditDialogFragment
 import org.secu3.android.ui.parameters.dialogs.ParamIntEditDialogFragment
 import org.secu3.android.ui.parameters.pages.compose.IdlingNumber
 import org.secu3.android.ui.parameters.pages.compose.IdlingScreen
-import org.secu3.android.ui.parameters.pages.compose.IdlingStateHolder
 import org.secu3.android.ui.parameters.pages.compose.IdlingUiState
 
 class IdlingFragment : BaseParamFragment() {
-    private lateinit var stateHolder: IdlingStateHolder
+    private val stateHolder get() = mViewModel.idlingStateHolder
 
     override fun onCreateView(inflater: LayoutInflater, container: ViewGroup?, savedInstanceState: Bundle?): View {
-        stateHolder = IdlingStateHolder(
-            sendPacket = mViewModel::sendPacket,
-            onPacketMapping = { mViewModel.isSendAllowed = false },
-            onPacketMapped = { mViewModel.isSendAllowed = true },
-        )
         return ComposeView(requireContext()).apply {
             id = R.id.idling_compose_view
             setViewCompositionStrategy(ViewCompositionStrategy.DisposeOnViewTreeLifecycleDestroyed)
             setContent { SecuComposeTheme { IdlingScreen(stateHolder.state, ::editParameter, stateHolder::updateFlag) } }
-        }
-    }
-
-    override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
-        super.onViewCreated(view, savedInstanceState)
-        val owner = viewLifecycleOwner
-        owner.lifecycleScope.launch {
-            owner.withResumed {
-                // This getter starts a protocol read, so evaluate it once only after this page resumes.
-                val liveData = mViewModel.idlingLiveData
-                stateHolder.observePackets(owner, liveData)
-            }
         }
     }
 

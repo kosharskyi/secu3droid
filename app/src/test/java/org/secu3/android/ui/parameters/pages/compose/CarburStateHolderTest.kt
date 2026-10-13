@@ -50,6 +50,7 @@ class CarburStateHolderTest {
         assertEquals(1, mapping)
         assertEquals(1, mapped)
         assertEquals(CarburUiState.Data(CarburValues.from(packet)), holder.state)
+        assertTrue("mapping a received packet must not echo it", sent.isEmpty())
 
         holder.updateValue(CarburNumber.TPS, 24f)
         holder.updateValue(CarburNumber.IDLE_LOW, 950f)
@@ -87,5 +88,20 @@ class CarburStateHolderTest {
         assertEquals(2, packet.fuelcut_uni)
         assertEquals(4, packet.igncut_uni)
         assertFalse(sent.isNotEmpty())
+    }
+
+    @Test
+    fun resetClearsPacketAndReturnsToLoadingWithoutSending() {
+        val sent = mutableListOf<CarburParamPacket>()
+        val holder = CarburStateHolder(sent::add)
+        holder.onPacketReceived(CarburParamPacket())
+
+        holder.reset()
+        holder.updateValue(CarburNumber.TPS, 24f)
+        holder.updateInvers(true)
+        holder.updateSelector(false, 6)
+
+        assertEquals(CarburUiState.Loading, holder.state)
+        assertTrue(sent.isEmpty())
     }
 }

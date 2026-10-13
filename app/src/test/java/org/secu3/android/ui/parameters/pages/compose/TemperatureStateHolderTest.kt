@@ -47,6 +47,7 @@ class TemperatureStateHolderTest {
         assertEquals(1, mapping)
         assertEquals(1, mapped)
         assertEquals(TemperatureUiState.Data(TemperatureValues.from(packet)), holder.state)
+        assertTrue("mapping a received packet must not echo it", sent.isEmpty())
 
         holder.updateValue(TemperatureNumber.FAN_ON, 88.5f)
         holder.updateValue(TemperatureNumber.PWM_FREQUENCY, 270f)
@@ -61,5 +62,19 @@ class TemperatureStateHolderTest {
         assertEquals(88.5f, state.value(TemperatureNumber.FAN_ON))
         assertEquals(270f, state.value(TemperatureNumber.PWM_FREQUENCY))
         assertTrue(state.flags.getValue(TemperatureFlag.COOLANT_SENSOR))
+    }
+
+    @Test
+    fun resetClearsPacketAndReturnsToLoadingWithoutSending() {
+        val sent = mutableListOf<TemperatureParamPacket>()
+        val holder = TemperatureStateHolder(sent::add)
+        holder.onPacketReceived(TemperatureParamPacket())
+
+        holder.reset()
+        holder.updateValue(TemperatureNumber.FAN_ON, 88f)
+        holder.updateFlag(TemperatureFlag.COOLANT_SENSOR, true)
+
+        assertEquals(TemperatureUiState.Loading, holder.state)
+        assertTrue(sent.isEmpty())
     }
 }

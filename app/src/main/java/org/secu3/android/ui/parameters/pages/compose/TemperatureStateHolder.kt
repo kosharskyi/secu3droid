@@ -27,8 +27,6 @@ package org.secu3.android.ui.parameters.pages.compose
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
-import androidx.lifecycle.LifecycleOwner
-import androidx.lifecycle.LiveData
 import org.secu3.android.models.packets.out.params.TemperatureParamPacket
 
 /** Owns Temperature page packet state and coordinates accepted edits with packet sends. */
@@ -41,8 +39,9 @@ class TemperatureStateHolder(
     var state: TemperatureUiState by mutableStateOf(TemperatureUiState.Loading)
         private set
 
-    fun observePackets(owner: LifecycleOwner, packets: LiveData<TemperatureParamPacket>) {
-        packets.observe(owner, ::onPacketReceived)
+    fun reset() {
+        packet = null
+        state = TemperatureUiState.Loading
     }
 
     fun onPacketReceived(received: TemperatureParamPacket) {

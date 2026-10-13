@@ -30,9 +30,6 @@ import android.view.View
 import android.view.ViewGroup
 import androidx.compose.ui.platform.ComposeView
 import androidx.compose.ui.platform.ViewCompositionStrategy
-import androidx.lifecycle.lifecycleScope
-import androidx.lifecycle.withResumed
-import kotlinx.coroutines.launch
 import org.secu3.android.R
 import org.secu3.android.ui.compose.SecuComposeTheme
 import org.secu3.android.ui.parameters.dialogs.ParamFloatEditDialogFragment
@@ -40,18 +37,12 @@ import org.secu3.android.ui.parameters.dialogs.ParamIntEditDialogFragment
 import org.secu3.android.ui.parameters.pages.compose.CarburNumber
 import org.secu3.android.ui.parameters.pages.compose.CarburScreen
 import org.secu3.android.ui.parameters.pages.compose.CarburUiState
-import org.secu3.android.ui.parameters.pages.compose.CarburStateHolder
 
 class FuelCutoffkFragment : BaseParamFragment() {
-    private lateinit var stateHolder: CarburStateHolder
+    private val stateHolder get() = mViewModel.carburStateHolder
     private var options: List<String> = emptyList()
 
     override fun onCreateView(inflater: LayoutInflater, container: ViewGroup?, savedInstanceState: Bundle?): View {
-        stateHolder = CarburStateHolder(
-            sendPacket = mViewModel::sendPacket,
-            onPacketMapping = { mViewModel.isSendAllowed = false },
-            onPacketMapped = { mViewModel.isSendAllowed = true },
-        )
         options = (1..6).map(Int::toString) + "no"
         return ComposeView(requireContext()).apply {
             setViewCompositionStrategy(ViewCompositionStrategy.DisposeOnViewTreeLifecycleDestroyed)
@@ -59,18 +50,6 @@ class FuelCutoffkFragment : BaseParamFragment() {
                 SecuComposeTheme {
                     CarburScreen(stateHolder.state, options, ::editParameter, ::updateInvers, ::updateSelector)
                 }
-            }
-        }
-    }
-
-    override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
-        super.onViewCreated(view, savedInstanceState)
-        val owner = viewLifecycleOwner
-        owner.lifecycleScope.launch {
-            owner.withResumed {
-                // This getter issues a protocol read; evaluate it once for this view lifecycle.
-                val liveData = mViewModel.carburLiveData
-                stateHolder.observePackets(owner, liveData)
             }
         }
     }

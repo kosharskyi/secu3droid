@@ -27,8 +27,6 @@ package org.secu3.android.ui.parameters.pages.compose
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
-import androidx.lifecycle.LifecycleOwner
-import androidx.lifecycle.LiveData
 import org.secu3.android.models.packets.out.params.IdlingParamPacket
 
 /** Owns Idling page packet state and coordinates accepted edits with packet sends. */
@@ -41,9 +39,9 @@ class IdlingStateHolder(
     var state: IdlingUiState by mutableStateOf(IdlingUiState.Loading)
         private set
 
-    /** Observes packets for this page view lifecycle. */
-    fun observePackets(owner: LifecycleOwner, packets: LiveData<IdlingParamPacket>) {
-        packets.observe(owner, ::onPacketReceived)
+    fun reset() {
+        packet = null
+        state = IdlingUiState.Loading
     }
 
     fun onPacketReceived(received: IdlingParamPacket) {

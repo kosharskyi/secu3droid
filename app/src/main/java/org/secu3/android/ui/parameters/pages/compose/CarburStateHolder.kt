@@ -27,8 +27,6 @@ package org.secu3.android.ui.parameters.pages.compose
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
-import androidx.lifecycle.LifecycleOwner
-import androidx.lifecycle.LiveData
 import org.secu3.android.models.packets.out.params.CarburParamPacket
 
 /** Owns Carbur page packet state and coordinates accepted edits with packet sends. */
@@ -41,8 +39,9 @@ class CarburStateHolder(
     var state: CarburUiState by mutableStateOf(CarburUiState.Loading)
         private set
 
-    fun observePackets(owner: LifecycleOwner, packets: LiveData<CarburParamPacket>) {
-        packets.observe(owner, ::onPacketReceived)
+    fun reset() {
+        packet = null
+        state = CarburUiState.Loading
     }
 
     fun onPacketReceived(received: CarburParamPacket) {

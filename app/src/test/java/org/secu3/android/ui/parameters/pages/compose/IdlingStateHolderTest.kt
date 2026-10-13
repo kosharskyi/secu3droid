@@ -57,6 +57,7 @@ class IdlingStateHolderTest {
         assertEquals(1, mapping)
         assertEquals(1, mapped)
         assertEquals(IdlingUiState.Data(IdlingValues.from(packet)), holder.state)
+        assertTrue("mapping a received packet must not echo it", sent.isEmpty())
 
         holder.updateValue(IdlingNumber.IFAC1, 2.5f)
 
@@ -79,6 +80,20 @@ class IdlingStateHolderTest {
         assertTrue(sent.single() === packet)
         assertTrue(packet.useRegulator)
         assertTrue((holder.state as IdlingUiState.Data).values.flags.getValue(IdlingFlag.REGULATOR))
+    }
+
+    @Test
+    fun resetClearsPacketAndReturnsToLoadingWithoutSending() {
+        val sent = mutableListOf<IdlingParamPacket>()
+        val holder = IdlingStateHolder(sent::add)
+        holder.onPacketReceived(IdlingParamPacket())
+
+        holder.reset()
+        holder.updateValue(IdlingNumber.IFAC1, 4f)
+        holder.updateFlag(IdlingFlag.REGULATOR, true)
+
+        assertEquals(IdlingUiState.Loading, holder.state)
+        assertTrue(sent.isEmpty())
     }
 
 }

@@ -30,9 +30,6 @@ import android.view.View
 import android.view.ViewGroup
 import androidx.compose.ui.platform.ComposeView
 import androidx.compose.ui.platform.ViewCompositionStrategy
-import androidx.lifecycle.lifecycleScope
-import androidx.lifecycle.withResumed
-import kotlinx.coroutines.launch
 import org.secu3.android.R
 import org.secu3.android.ui.compose.SecuComposeTheme
 import org.secu3.android.ui.parameters.dialogs.ParamFloatEditDialogFragment
@@ -41,17 +38,11 @@ import org.secu3.android.ui.parameters.pages.compose.TemperatureFlag
 import org.secu3.android.ui.parameters.pages.compose.TemperatureNumber
 import org.secu3.android.ui.parameters.pages.compose.TemperatureScreen
 import org.secu3.android.ui.parameters.pages.compose.TemperatureUiState
-import org.secu3.android.ui.parameters.pages.compose.TemperatureStateHolder
 
 class TemperatureFragment : BaseParamFragment() {
-    private lateinit var stateHolder: TemperatureStateHolder
+    private val stateHolder get() = mViewModel.temperatureStateHolder
 
     override fun onCreateView(inflater: LayoutInflater, container: ViewGroup?, savedInstanceState: Bundle?): View {
-        stateHolder = TemperatureStateHolder(
-            sendPacket = mViewModel::sendPacket,
-            onPacketMapping = { mViewModel.isSendAllowed = false },
-            onPacketMapped = { mViewModel.isSendAllowed = true },
-        )
         return ComposeView(requireContext()).apply {
             id = R.id.temperature_compose_view
             setViewCompositionStrategy(ViewCompositionStrategy.DisposeOnViewTreeLifecycleDestroyed)
@@ -63,18 +54,6 @@ class TemperatureFragment : BaseParamFragment() {
                         ::updateFlag,
                     )
                 }
-            }
-        }
-    }
-
-    override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
-        super.onViewCreated(view, savedInstanceState)
-        val owner = viewLifecycleOwner
-        owner.lifecycleScope.launch {
-            owner.withResumed {
-                // This getter issues a protocol read; evaluate it once for this view lifecycle.
-                val liveData = mViewModel.temperatureLiveData
-                stateHolder.observePackets(owner, liveData)
             }
         }
     }

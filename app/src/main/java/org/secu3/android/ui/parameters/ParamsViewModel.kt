@@ -69,6 +69,9 @@ import org.secu3.android.models.packets.out.params.StarterParamPacket
 import org.secu3.android.models.packets.out.params.TemperatureParamPacket
 import org.secu3.android.models.packets.out.params.UniOutParamPacket
 import org.secu3.android.ui.parameters.pages.compose.AnglesStateHolder
+import org.secu3.android.ui.parameters.pages.compose.CarburStateHolder
+import org.secu3.android.ui.parameters.pages.compose.IdlingStateHolder
+import org.secu3.android.ui.parameters.pages.compose.TemperatureStateHolder
 import org.secu3.android.ui.parameters.pages.compose.StarterStateHolder
 import org.secu3.android.utils.Task
 import javax.inject.Inject
@@ -92,10 +95,28 @@ class ParamsViewModel @Inject constructor(
         AnglesStateHolder(::sendPacket, { isSendAllowed = false }, { isSendAllowed = true })
     }
 
+    internal val idlingStateHolder by lazy {
+        IdlingStateHolder(::sendPacket, { isSendAllowed = false }, { isSendAllowed = true })
+    }
+
+    internal val temperatureStateHolder by lazy {
+        TemperatureStateHolder(::sendPacket, { isSendAllowed = false }, { isSendAllowed = true })
+    }
+
+    internal val carburStateHolder by lazy {
+        CarburStateHolder(::sendPacket, { isSendAllowed = false }, { isSendAllowed = true })
+    }
+
     internal fun activatePage(titleRes: Int) {
         if (!isConnected) return
         pageReadGate.activate(titleRes)
-        if (titleRes == R.string.params_tab_start_title || titleRes == R.string.params_tab_angles_title) {
+        if (titleRes in setOf(
+                R.string.params_tab_start_title,
+                R.string.params_tab_angles_title,
+                R.string.params_tab_idling_title,
+                R.string.params_tab_temperature_title,
+                R.string.params_tab_fuel_cutoff_title,
+            )) {
             loadViewModelPage(titleRes)
         }
     }
@@ -112,6 +133,9 @@ class ParamsViewModel @Inject constructor(
         loadedPages.clear()
         starterStateHolder.reset()
         anglesStateHolder.reset()
+        idlingStateHolder.reset()
+        temperatureStateHolder.reset()
+        carburStateHolder.reset()
     }
 
     private suspend inline fun <reified T : InputPacket> readPacket(task: Task): T = readParameterPacket(
@@ -139,6 +163,27 @@ class ParamsViewModel @Inject constructor(
                         }.first()
                         anglesStateHolder.onPacketReceived(packet)
                     }
+                    R.string.params_tab_idling_title -> {
+                        idlingStateHolder.reset()
+                        val packet = pageReadGate.read(titleRes) {
+                            readPacket<IdlingParamPacket>(Task.Secu3ReadIdlingParam)
+                        }.first()
+                        idlingStateHolder.onPacketReceived(packet)
+                    }
+                    R.string.params_tab_temperature_title -> {
+                        temperatureStateHolder.reset()
+                        val packet = pageReadGate.read(titleRes) {
+                            readPacket<TemperatureParamPacket>(Task.Secu3ReadTemperatureParam)
+                        }.first()
+                        temperatureStateHolder.onPacketReceived(packet)
+                    }
+                    R.string.params_tab_fuel_cutoff_title -> {
+                        carburStateHolder.reset()
+                        val packet = pageReadGate.read(titleRes) {
+                            readPacket<CarburParamPacket>(Task.Secu3ReadCarburParam)
+                        }.first()
+                        carburStateHolder.onPacketReceived(packet)
+                    }
                 }
                 loadedPages += titleRes
             } finally {
@@ -154,11 +199,6 @@ class ParamsViewModel @Inject constructor(
         get() = secu3ConnectionManager.fwInfo
     val fwInfoLiveData: LiveData<FirmwareInfoPacket>
         get() = secu3ConnectionManager.firmwareLiveData
-
-    val idlingLiveData: LiveData<IdlingParamPacket>
-        get() = pageReadGate.read(R.string.params_tab_idling_title) {
-            readPacket<IdlingParamPacket>(Task.Secu3ReadIdlingParam)
-        }.filterNotNull().asLiveData(timeoutInMs = 0)
 
     val fnNameLiveData: LiveData<FnNameDatPacket>
         get() = pageReadGate.read(R.string.params_tab_functions_title) {
@@ -185,16 +225,6 @@ class ParamsViewModel @Inject constructor(
     val funsetLiveData: LiveData<FunSetParamPacket>
         get() = pageReadGate.read(R.string.params_tab_functions_title) {
             readPacket<FunSetParamPacket>(Task.Secu3ReadFunsetParam)
-        }.filterNotNull().asLiveData(timeoutInMs = 0)
-
-    val temperatureLiveData: LiveData<TemperatureParamPacket>
-        get() = pageReadGate.read(R.string.params_tab_temperature_title) {
-            readPacket<TemperatureParamPacket>(Task.Secu3ReadTemperatureParam)
-        }.filterNotNull().asLiveData(timeoutInMs = 0)
-
-    val carburLiveData: LiveData<CarburParamPacket>
-        get() = pageReadGate.read(R.string.params_tab_fuel_cutoff_title) {
-            readPacket<CarburParamPacket>(Task.Secu3ReadCarburParam)
         }.filterNotNull().asLiveData(timeoutInMs = 0)
 
     val adcCorrectionsLiveData: LiveData<AdcCorrectionsParamPacket>
