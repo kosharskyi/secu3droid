@@ -45,6 +45,7 @@ class CkpsStateHolderTest {
         val packet = CkpsParamPacket()
         holder.onPacketReceived(packet)
         assertEquals(1, mapping); assertEquals(1, mapped)
+        assertTrue("mapping a received packet must not echo it", sent.isEmpty())
         holder.updateNumber(CkpsNumber.MISSING, 2f)
         assertEquals(1, sent.size)
         assertEquals(2, packet.ckpsMissNum)
@@ -61,6 +62,18 @@ class CkpsStateHolderTest {
         assertTrue(sent.all { it === packet })
         val values = (holder.state as CkpsUiState.Data).values
         assertEquals(CkpsValues.from(packet), values)
+    }
+
+    @Test fun resetClearsPacketAndIgnoresEdits() {
+        val sent = mutableListOf<CkpsParamPacket>()
+        val holder = CkpsStateHolder(sent::add)
+        holder.onPacketReceived(CkpsParamPacket())
+        holder.reset()
+        holder.updateNumber(CkpsNumber.WHEEL, 36f)
+        holder.updateFlag(CkpsFlag.CKPS_EDGE, true)
+        holder.updateChoice(true, 20)
+        assertEquals(CkpsUiState.Loading, holder.state)
+        assertTrue(sent.isEmpty())
     }
 
     @Test fun invalidChoicesLeavePacketAndStateUnchangedAndDoNotSend() {

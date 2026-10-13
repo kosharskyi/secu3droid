@@ -39,6 +39,11 @@ class CkpsStateHolder(
     var state: CkpsUiState by mutableStateOf(CkpsUiState.Loading)
         private set
 
+    fun reset() {
+        packet = null
+        state = CkpsUiState.Loading
+    }
+
     fun onPacketReceived(received: CkpsParamPacket) {
         onPacketMapping()
         packet = received

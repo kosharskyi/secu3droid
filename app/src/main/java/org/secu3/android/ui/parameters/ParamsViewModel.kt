@@ -70,6 +70,9 @@ import org.secu3.android.models.packets.out.params.TemperatureParamPacket
 import org.secu3.android.models.packets.out.params.UniOutParamPacket
 import org.secu3.android.ui.parameters.pages.compose.AnglesStateHolder
 import org.secu3.android.ui.parameters.pages.compose.CarburStateHolder
+import org.secu3.android.ui.parameters.pages.compose.CkpsStateHolder
+import org.secu3.android.ui.parameters.pages.compose.AdcCorrectionsStateHolder
+import org.secu3.android.ui.parameters.pages.compose.KnockStateHolder
 import org.secu3.android.ui.parameters.pages.compose.IdlingStateHolder
 import org.secu3.android.ui.parameters.pages.compose.TemperatureStateHolder
 import org.secu3.android.ui.parameters.pages.compose.StarterStateHolder
@@ -107,6 +110,24 @@ class ParamsViewModel @Inject constructor(
         CarburStateHolder(::sendPacket, { isSendAllowed = false }, { isSendAllowed = true })
     }
 
+    internal val ckpsStateHolder by lazy {
+        CkpsStateHolder(::sendPacket, { isSendAllowed = false }, { isSendAllowed = true })
+    }
+
+    internal val adcCorrectionsStateHolder by lazy {
+        AdcCorrectionsStateHolder(::sendPacket, { isSendAllowed = false }, { isSendAllowed = true })
+    }
+
+    internal val knockStateHolder by lazy {
+        KnockStateHolder(
+            bpfOptions = context.resources.getStringArray(R.array.knock_filter_frequencies).toList(),
+            integrationOptions = context.resources.getStringArray(R.array.knock_integration_timeouts).toList(),
+            sendPacket = ::sendPacket,
+            onPacketMapping = { isSendAllowed = false },
+            onPacketMapped = { isSendAllowed = true },
+        )
+    }
+
     internal fun activatePage(titleRes: Int) {
         if (!isConnected) return
         pageReadGate.activate(titleRes)
@@ -116,6 +137,9 @@ class ParamsViewModel @Inject constructor(
                 R.string.params_tab_idling_title,
                 R.string.params_tab_temperature_title,
                 R.string.params_tab_fuel_cutoff_title,
+                R.string.params_tab_ckps_title,
+                R.string.params_tab_adc_errors_corr_title,
+                R.string.params_tab_knock_title,
             )) {
             loadViewModelPage(titleRes)
         }
@@ -136,6 +160,9 @@ class ParamsViewModel @Inject constructor(
         idlingStateHolder.reset()
         temperatureStateHolder.reset()
         carburStateHolder.reset()
+        ckpsStateHolder.reset()
+        adcCorrectionsStateHolder.reset()
+        knockStateHolder.reset()
     }
 
     private suspend inline fun <reified T : InputPacket> readPacket(task: Task): T = readParameterPacket(
@@ -184,6 +211,27 @@ class ParamsViewModel @Inject constructor(
                         }.first()
                         carburStateHolder.onPacketReceived(packet)
                     }
+                    R.string.params_tab_ckps_title -> {
+                        ckpsStateHolder.reset()
+                        val packet = pageReadGate.read(titleRes) {
+                            readPacket<CkpsParamPacket>(Task.Secu3ReadCkpsParam)
+                        }.first()
+                        ckpsStateHolder.onPacketReceived(packet)
+                    }
+                    R.string.params_tab_adc_errors_corr_title -> {
+                        adcCorrectionsStateHolder.reset()
+                        val packet = pageReadGate.read(titleRes) {
+                            readPacket<AdcCorrectionsParamPacket>(Task.Secu3ReadAdcErrorsCorrectionsParam)
+                        }.first()
+                        adcCorrectionsStateHolder.onPacketReceived(packet)
+                    }
+                    R.string.params_tab_knock_title -> {
+                        knockStateHolder.reset()
+                        val packet = pageReadGate.read(titleRes) {
+                            readPacket<KnockParamPacket>(Task.Secu3ReadKnockParam)
+                        }.first()
+                        knockStateHolder.onPacketReceived(packet)
+                    }
                 }
                 loadedPages += titleRes
             } finally {
@@ -225,21 +273,6 @@ class ParamsViewModel @Inject constructor(
     val funsetLiveData: LiveData<FunSetParamPacket>
         get() = pageReadGate.read(R.string.params_tab_functions_title) {
             readPacket<FunSetParamPacket>(Task.Secu3ReadFunsetParam)
-        }.filterNotNull().asLiveData(timeoutInMs = 0)
-
-    val adcCorrectionsLiveData: LiveData<AdcCorrectionsParamPacket>
-        get() = pageReadGate.read(R.string.params_tab_adc_errors_corr_title) {
-            readPacket<AdcCorrectionsParamPacket>(Task.Secu3ReadAdcErrorsCorrectionsParam)
-        }.filterNotNull().asLiveData(timeoutInMs = 0)
-
-    val ckpsLiveData: LiveData<CkpsParamPacket>
-        get() = pageReadGate.read(R.string.params_tab_ckps_title) {
-            readPacket<CkpsParamPacket>(Task.Secu3ReadCkpsParam)
-        }.filterNotNull().asLiveData(timeoutInMs = 0)
-
-    val knockLiveData: LiveData<KnockParamPacket>
-        get() = pageReadGate.read(R.string.params_tab_knock_title) {
-            readPacket<KnockParamPacket>(Task.Secu3ReadKnockParam)
         }.filterNotNull().asLiveData(timeoutInMs = 0)
 
     val miscellaneousLiveData: LiveData<MiscellaneousParamPacket>

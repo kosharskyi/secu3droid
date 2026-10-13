@@ -39,6 +39,11 @@ class AdcCorrectionsStateHolder(
     var state: AdcCorrectionsUiState by mutableStateOf(AdcCorrectionsUiState.Loading)
         private set
 
+    fun reset() {
+        packet = null
+        state = AdcCorrectionsUiState.Loading
+    }
+
     fun onPacketReceived(received: AdcCorrectionsParamPacket) {
         onPacketMapping()
         packet = received

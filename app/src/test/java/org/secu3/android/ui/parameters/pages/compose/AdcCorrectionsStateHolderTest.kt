@@ -44,6 +44,7 @@ class AdcCorrectionsStateHolderTest {
         val packet = AdcCorrectionsParamPacket()
         holder.onPacketReceived(packet)
         assertEquals(1, mapping); assertEquals(1, mapped)
+        assertTrue("mapping a received packet must not echo it", sent.isEmpty())
         holder.updateValue(AdcNumber.MAP_CORRECTION, .125f)
         assertEquals(1, sent.size)
         assertTrue(sent.single() === packet)
@@ -54,6 +55,17 @@ class AdcCorrectionsStateHolderTest {
         val values = (holder.state as AdcCorrectionsUiState.Data).values
         assertEquals(.125f, values.value(AdcNumber.MAP_CORRECTION))
         assertTrue(values.adcCompMode)
+    }
+
+    @Test fun resetClearsPacketAndIgnoresEdits() {
+        val sent = mutableListOf<AdcCorrectionsParamPacket>()
+        val holder = AdcCorrectionsStateHolder(sent::add)
+        holder.onPacketReceived(AdcCorrectionsParamPacket())
+        holder.reset()
+        holder.updateValue(AdcNumber.MAP_FACTOR, 1.5f)
+        holder.updateCompMode(true)
+        assertEquals(AdcCorrectionsUiState.Loading, holder.state)
+        assertTrue(sent.isEmpty())
     }
 
     @Test fun mappingCallbacksSurroundPacketMapping() {

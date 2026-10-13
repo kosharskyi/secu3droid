@@ -30,28 +30,18 @@ import android.view.View
 import android.view.ViewGroup
 import androidx.compose.ui.platform.ComposeView
 import androidx.compose.ui.platform.ViewCompositionStrategy
-import androidx.lifecycle.lifecycleScope
-import androidx.lifecycle.withResumed
-import kotlinx.coroutines.launch
 import org.secu3.android.R
 import org.secu3.android.ui.compose.SecuComposeTheme
 import org.secu3.android.ui.parameters.dialogs.ParamFloatEditDialogFragment
 import org.secu3.android.ui.parameters.dialogs.ParamIntEditDialogFragment
 import org.secu3.android.ui.parameters.pages.compose.KnockScreen
 import org.secu3.android.ui.parameters.pages.compose.KnockNumber
-import org.secu3.android.ui.parameters.pages.compose.KnockStateHolder
 import org.secu3.android.ui.parameters.pages.compose.KnockUiState
 
 class KnockFragment : BaseParamFragment() {
-    private lateinit var stateHolder: KnockStateHolder
+    private val stateHolder get() = mViewModel.knockStateHolder
 
     override fun onCreateView(inflater: LayoutInflater, container: ViewGroup?, savedInstanceState: Bundle?): View {
-        stateHolder = KnockStateHolder(
-            bpfOptions = resources.getStringArray(R.array.knock_filter_frequencies).toList(),
-            integrationOptions = resources.getStringArray(R.array.knock_integration_timeouts).toList(),
-            sendPacket = mViewModel::sendPacket,
-            onPacketMapped = { mViewModel.isSendAllowed = true },
-        )
         return ComposeView(requireContext()).apply {
             id = R.id.knock_compose_view
             setViewCompositionStrategy(ViewCompositionStrategy.DisposeOnViewTreeLifecycleDestroyed)
@@ -68,17 +58,6 @@ class KnockFragment : BaseParamFragment() {
             }
         }
     }
-    override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
-        super.onViewCreated(view, savedInstanceState)
-        val owner = viewLifecycleOwner
-        owner.lifecycleScope.launch {
-            owner.withResumed {
-                val liveData = mViewModel.knockLiveData
-                stateHolder.observePackets(owner, liveData)
-            }
-        }
-    }
-
     private fun edit(number: KnockNumber) {
         val currentValues = (stateHolder.state as? KnockUiState.Data)?.values ?: return
         if (number == KnockNumber.DELAY) {

@@ -27,8 +27,6 @@ package org.secu3.android.ui.parameters.pages.compose
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
-import androidx.lifecycle.LifecycleOwner
-import androidx.lifecycle.LiveData
 import org.secu3.android.models.packets.out.params.KnockParamPacket
 
 /** Owns Knock page packet state and coordinates accepted edits with packet sends. */
@@ -43,9 +41,9 @@ class KnockStateHolder(
     var state: KnockUiState by mutableStateOf(KnockUiState.Loading)
         private set
 
-    /** Observes packets for this page view lifecycle. */
-    fun observePackets(owner: LifecycleOwner, packets: LiveData<KnockParamPacket>) {
-        packets.observe(owner, ::onPacketReceived)
+    fun reset() {
+        packet = null
+        state = KnockUiState.Loading
     }
 
     fun onPacketReceived(received: KnockParamPacket) {

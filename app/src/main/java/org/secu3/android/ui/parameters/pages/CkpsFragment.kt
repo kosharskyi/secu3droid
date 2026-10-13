@@ -30,12 +30,7 @@ import android.view.View
 import android.view.ViewGroup
 import androidx.compose.ui.platform.ComposeView
 import androidx.compose.ui.platform.ViewCompositionStrategy
-import androidx.lifecycle.Observer
-import androidx.lifecycle.lifecycleScope
-import androidx.lifecycle.withResumed
-import kotlinx.coroutines.launch
 import org.secu3.android.R
-import org.secu3.android.models.packets.out.params.CkpsParamPacket
 import org.secu3.android.ui.compose.SecuComposeTheme
 import org.secu3.android.ui.parameters.dialogs.ParamFloatEditDialogFragment
 import org.secu3.android.ui.parameters.dialogs.ParamIntEditDialogFragment
@@ -43,13 +38,11 @@ import org.secu3.android.ui.parameters.pages.compose.CkpsFlag
 import org.secu3.android.ui.parameters.pages.compose.CkpsNumber
 import org.secu3.android.ui.parameters.pages.compose.CkpsScreen
 import org.secu3.android.ui.parameters.pages.compose.CkpsUiState
-import org.secu3.android.ui.parameters.pages.compose.CkpsStateHolder
 
 class CkpsFragment : BaseParamFragment() {
-    private lateinit var stateHolder: CkpsStateHolder
+    private val stateHolder get() = mViewModel.ckpsStateHolder
 
     override fun onCreateView(inflater: LayoutInflater, container: ViewGroup?, savedInstanceState: Bundle?): View {
-        stateHolder = CkpsStateHolder(mViewModel::sendPacket, { mViewModel.isSendAllowed = false }, { mViewModel.isSendAllowed = true })
         return ComposeView(requireContext()).apply {
             id = R.id.ckps_compose_view
             setViewCompositionStrategy(ViewCompositionStrategy.DisposeOnViewTreeLifecycleDestroyed)
@@ -57,22 +50,6 @@ class CkpsFragment : BaseParamFragment() {
                 SecuComposeTheme {
                     CkpsScreen(stateHolder.state, ::edit, ::flag, ::choice)
                 }
-            }
-        }
-    }
-
-    override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
-        super.onViewCreated(view, savedInstanceState)
-        val owner = viewLifecycleOwner
-        owner.lifecycleScope.launch {
-            owner.withResumed {
-                val live = mViewModel.ckpsLiveData
-                live.observe(owner, object : Observer<CkpsParamPacket> {
-                    override fun onChanged(value: CkpsParamPacket) {
-                        live.removeObserver(this)
-                        stateHolder.onPacketReceived(value)
-                    }
-                })
             }
         }
     }

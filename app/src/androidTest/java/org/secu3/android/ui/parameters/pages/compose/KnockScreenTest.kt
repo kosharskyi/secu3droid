@@ -36,6 +36,10 @@ import org.secu3.android.ui.compose.SecuComposeTheme
 
 class KnockScreenTest {
     @get:Rule val compose = createComposeRule()
+    private val context get() = androidx.test.platform.app.InstrumentationRegistry.getInstrumentation().targetContext
+
+    private fun formattedDegrees(value: Float) = String.format(java.util.Locale.getDefault(), "%.2f", value) + " " +
+        context.getString(org.secu3.android.R.string.units_degrees_cs)
 
     @Test fun loadingAndDisplayDoesNotInvokeCallbacksOnCompositionOrRecomposition() {
         var calls = 0
@@ -50,7 +54,7 @@ class KnockScreenTest {
         val packet=KnockParamPacket(kWndBeginAngle=12.5f, selectedChanels=0xA5, useKnockChannel=5)
         val data=KnockValues.from(packet, listOf("1 kHz","2 kHz"), listOf("10 ms","20 ms"))
         compose.runOnIdle { state.value=KnockUiState.Data(data,true) }
-        compose.onNodeWithTag("knock_begin-value", useUnmergedTree=true).assertTextEquals("12.50 °CS")
+        compose.onNodeWithTag("knock_begin-value", useUnmergedTree=true).assertTextEquals(formattedDegrees(12.5f))
         compose.onNodeWithTag("knock_channel_1").assertIsDisplayed()
         compose.onNodeWithTag("knock_channel_8").performScrollTo().assertIsDisplayed()
         compose.onNodeWithTag("knock_selector_bpf").performScrollTo().assertIsDisplayed()
@@ -88,7 +92,7 @@ class KnockScreenTest {
         assertEquals(emptyList<String>(), actions)
 
         compose.onNodeWithTag("knock_begin").performClick()
-        compose.onNodeWithTag("knock_begin-value", useUnmergedTree = true).assertTextEquals("22.25 °CS")
+        compose.onNodeWithTag("knock_begin-value", useUnmergedTree = true).assertTextEquals(formattedDegrees(22.25f))
         assertEquals("edit:BEGIN", actions.last())
 
         compose.onNodeWithTag("knock_channel_1").performScrollTo()

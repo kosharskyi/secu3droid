@@ -30,22 +30,17 @@ import android.view.View
 import android.view.ViewGroup
 import androidx.compose.ui.platform.ComposeView
 import androidx.compose.ui.platform.ViewCompositionStrategy
-import androidx.lifecycle.lifecycleScope
-import androidx.lifecycle.withResumed
-import kotlinx.coroutines.launch
 import org.secu3.android.R
 import org.secu3.android.ui.compose.SecuComposeTheme
 import org.secu3.android.ui.parameters.dialogs.ParamFloatEditDialogFragment
-import org.secu3.android.ui.parameters.pages.compose.AdcCorrectionsStateHolder
 import org.secu3.android.ui.parameters.pages.compose.AdcCorrectionsUiState
 import org.secu3.android.ui.parameters.pages.compose.AdcErrorsCorrectionsScreen
 import org.secu3.android.ui.parameters.pages.compose.AdcNumber
 
 class AdcErrorsCorrectionsFragment : BaseParamFragment() {
-    private lateinit var stateHolder: AdcCorrectionsStateHolder
+    private val stateHolder get() = mViewModel.adcCorrectionsStateHolder
 
     override fun onCreateView(inflater: LayoutInflater, container: ViewGroup?, savedInstanceState: Bundle?): View {
-        stateHolder = AdcCorrectionsStateHolder(mViewModel::sendPacket, { mViewModel.isSendAllowed = false }, { mViewModel.isSendAllowed = true })
         return ComposeView(requireContext()).apply {
             id = R.id.adc_errors_corrections_compose_view
             setViewCompositionStrategy(ViewCompositionStrategy.DisposeOnViewTreeLifecycleDestroyed)
@@ -56,20 +51,6 @@ class AdcErrorsCorrectionsFragment : BaseParamFragment() {
                         ::editParameter,
                         ::updateCompMode,
                     )
-                }
-            }
-        }
-    }
-
-    override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
-        super.onViewCreated(view, savedInstanceState)
-        val owner = viewLifecycleOwner
-        owner.lifecycleScope.launch {
-            owner.withResumed {
-                // Accessing the getter sends a device read, so obtain this LiveData only once.
-                val liveData = mViewModel.adcCorrectionsLiveData
-                liveData.observe(owner) { received ->
-                    stateHolder.onPacketReceived(received)
                 }
             }
         }

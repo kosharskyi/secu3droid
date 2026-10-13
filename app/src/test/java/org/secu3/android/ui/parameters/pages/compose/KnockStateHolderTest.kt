@@ -55,6 +55,7 @@ class KnockStateHolderTest {
         val packet = KnockParamPacket(useKnockChannel = 2, bpfFrequency = 1, intTimeCost = 3)
         holder.onPacketReceived(packet)
         val state = holder.state as KnockUiState.Data
+        assertTrue("mapping a received packet must not echo it", sent.isEmpty())
         assertTrue(state.enabled)
         assertEquals("1.26", state.values.selector(KnockSelector.BPF))
         assertEquals("55", state.values.selector(KnockSelector.INTEGRATION))
@@ -63,6 +64,22 @@ class KnockStateHolderTest {
         packet.useKnockChannel = 0
         holder.onPacketReceived(packet)
         assertFalse((holder.state as KnockUiState.Data).enabled)
+        assertTrue(sent.isEmpty())
+    }
+
+    @Test
+    fun resetClearsPacketAndIgnoresEdits() {
+        val sent = mutableListOf<KnockParamPacket>()
+        val holder = holder(sent)
+        holder.onPacketReceived(KnockParamPacket())
+
+        holder.reset()
+        holder.updateValue(KnockNumber.BEGIN, 5f)
+        holder.updateEnabled(true)
+        holder.updateChannel(0, true)
+        holder.updateSelector(KnockSelector.BPF, 1)
+
+        assertEquals(KnockUiState.Loading, holder.state)
         assertTrue(sent.isEmpty())
     }
 
