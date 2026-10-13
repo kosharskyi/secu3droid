@@ -47,13 +47,10 @@ class ChokePacketMappingTest {
         assertEquals(2, mapped.frequency)
     }
 
-    @Test fun manualDeltaClampsAndNegativeDeltaPacksAsSignedByteWithoutTouchingFlags() {
-        val delta = ChokeManualDelta()
-        repeat(200) { delta.step(-1) }
-        assertEquals(-127, delta.value)
+    @Test fun negativeDeltaPacksAsSignedByteWithoutTouchingFlags() {
         val p = ChokeControlParPacket(
             flags = 0b10100000,
-            manualPositionD = delta.value,
+            manualPositionD = -127,
             rpmIf = 42.5f,
             corrTime0 = 1.25f,
             corrTime1 = 2.5f,
@@ -86,7 +83,5 @@ class ChokePacketMappingTest {
         assertEquals(0xE2, snapshotBytes[packed.size + 1])
         snapshotBytes[4] = 0
         assertEquals(129, asyncSnapshot.pack()[4])
-        delta.clear()
-        assertEquals(0, delta.value)
     }
 }

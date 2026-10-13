@@ -195,7 +195,6 @@ dependencies {
     implementation(libs.firebase.analytics)
     implementation(libs.firebase.crashlytics)
 
-    implementation(libs.speedviewlib)
 
     testImplementation(libs.junit)
     testImplementation(libs.room.testing)

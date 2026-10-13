@@ -24,7 +24,6 @@
  */
 package org.secu3.android.ui.parameters.dialogs
 
-import android.text.InputType
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.lightColorScheme
 import androidx.compose.ui.test.assertIsDisplayed
@@ -33,15 +32,14 @@ import androidx.compose.ui.test.assertIsEnabled
 import androidx.compose.ui.test.junit4.v2.createComposeRule
 import androidx.compose.ui.test.onNodeWithContentDescription
 import androidx.compose.ui.test.onNodeWithText
+import androidx.compose.ui.test.onNodeWithTag
+import androidx.compose.ui.test.performTextClearance
+import androidx.compose.ui.test.performTextInput
+import androidx.compose.ui.test.performTextInputSelection
+import androidx.compose.ui.test.performImeAction
+import androidx.compose.ui.test.assertTextEquals
+import androidx.compose.ui.text.TextRange
 import androidx.compose.ui.test.performClick
-import androidx.test.espresso.Espresso.onView
-import androidx.test.espresso.action.ViewActions.clearText
-import androidx.test.espresso.action.ViewActions.closeSoftKeyboard
-import androidx.test.espresso.action.ViewActions.replaceText
-import androidx.test.espresso.assertion.ViewAssertions.matches
-import androidx.test.espresso.matcher.ViewMatchers.withId
-import androidx.test.espresso.matcher.ViewMatchers.withInputType
-import androidx.test.espresso.matcher.ViewMatchers.withText
 import org.junit.Assert.assertEquals
 import org.junit.Rule
 import org.junit.Test
@@ -65,11 +63,9 @@ class NumericEditDialogContentTest {
             }
         }
 
-        onView(withId(android.R.id.edit)).check(matches(withInputType(
-            InputType.TYPE_CLASS_NUMBER or InputType.TYPE_NUMBER_FLAG_SIGNED,
-        )))
         composeTestRule.onNodeWithText("Integer parameter").assertIsDisplayed()
-        onView(withId(android.R.id.edit)).perform(clearText(), replaceText("4"), closeSoftKeyboard())
+        composeTestRule.onNodeWithTag("numeric_value").performTextClearance()
+        composeTestRule.onNodeWithTag("numeric_value").performTextInput("4")
         composeTestRule.onNodeWithContentDescription("Increase value").performClick()
         composeTestRule.onNodeWithText("OK").assertIsEnabled().performClick()
 
@@ -91,10 +87,8 @@ class NumericEditDialogContentTest {
             }
         }
 
-        onView(withId(android.R.id.edit)).check(matches(withInputType(
-            InputType.TYPE_CLASS_NUMBER or InputType.TYPE_NUMBER_FLAG_DECIMAL or InputType.TYPE_NUMBER_FLAG_SIGNED,
-        )))
-        onView(withId(android.R.id.edit)).perform(clearText(), replaceText("-1.0"), closeSoftKeyboard())
+        composeTestRule.onNodeWithTag("numeric_value").performTextClearance()
+        composeTestRule.onNodeWithTag("numeric_value").performTextInput("-1.0")
         composeTestRule.onNodeWithContentDescription("Increase value").performClick()
         composeTestRule.onNodeWithText("OK").performClick()
 
@@ -116,7 +110,8 @@ class NumericEditDialogContentTest {
             }
         }
 
-        onView(withId(android.R.id.edit)).perform(clearText(), replaceText("2.5"), closeSoftKeyboard())
+        composeTestRule.onNodeWithTag("numeric_value").performTextClearance()
+        composeTestRule.onNodeWithTag("numeric_value").performTextInput("2.5")
         composeTestRule.onNodeWithText("Enter a value within the allowed range").assertIsDisplayed()
         composeTestRule.onNodeWithText("OK").assertIsNotEnabled()
         composeTestRule.onNodeWithText("Cancel").performClick()
@@ -142,9 +137,10 @@ class NumericEditDialogContentTest {
         }
 
         fun step(input: String, increase: Boolean, expected: String) {
-            onView(withId(android.R.id.edit)).perform(clearText(), replaceText(input), closeSoftKeyboard())
+            composeTestRule.onNodeWithTag("numeric_value").performTextClearance()
+            composeTestRule.onNodeWithTag("numeric_value").performTextInput(input)
             composeTestRule.onNodeWithContentDescription(if (increase) "Increase value" else "Decrease value").performClick()
-            onView(withId(android.R.id.edit)).check(matches(withText(expected)))
+            composeTestRule.onNodeWithTag("numeric_value").assertTextEquals(expected)
         }
 
         step("12", increase = false, expected = "9")
@@ -174,9 +170,10 @@ class NumericEditDialogContentTest {
         }
 
         fun step(input: String, increase: Boolean, expected: String) {
-            onView(withId(android.R.id.edit)).perform(clearText(), replaceText(input), closeSoftKeyboard())
+            composeTestRule.onNodeWithTag("numeric_value").performTextClearance()
+            composeTestRule.onNodeWithTag("numeric_value").performTextInput(input)
             composeTestRule.onNodeWithContentDescription(if (increase) "Increase value" else "Decrease value").performClick()
-            onView(withId(android.R.id.edit)).check(matches(withText(expected)))
+            composeTestRule.onNodeWithTag("numeric_value").assertTextEquals(expected)
         }
 
         step("2.5", increase = false, expected = "2.00")
@@ -185,5 +182,65 @@ class NumericEditDialogContentTest {
         step("-2.5", increase = false, expected = "-2.00")
         step("-.", increase = true, expected = "-1.50")
         step(".", increase = false, expected = "-2.00")
+    }
+
+    @Test
+    fun insertingAtSelectionKeepsTextBeforeAndAfterCursor() {
+        var confirmed: String? = null
+        composeTestRule.setContent {
+            MaterialTheme(colorScheme = lightColorScheme()) {
+                NumericEditDialogContent(
+                    title = "Integer parameter", initialText = "123", allowDecimal = false, allowNegative = true,
+                    validate = { it.toIntOrNull() != null }, onStep = { value, _ -> value },
+                    onConfirm = { value, _ -> confirmed = value }, onCancel = {},
+                )
+            }
+        }
+
+        composeTestRule.onNodeWithTag("numeric_value").performTextInputSelection(TextRange(1))
+        composeTestRule.onNodeWithTag("numeric_value").performTextInput("9")
+        composeTestRule.onNodeWithTag("numeric_value").assertTextEquals("1923")
+        composeTestRule.onNodeWithText("OK").performClick()
+        assertEquals("1923", confirmed)
+    }
+
+    @Test
+    fun imeDoneDoesNotConfirmInvalidInput() {
+        var confirmed: String? = null
+        composeTestRule.setContent {
+            MaterialTheme(colorScheme = lightColorScheme()) {
+                NumericEditDialogContent(
+                    title = "Integer parameter", initialText = "12", allowDecimal = false, allowNegative = true,
+                    validate = { it.toIntOrNull()?.let { value -> value in 0..20 } == true },
+                    onStep = { value, _ -> value }, onConfirm = { value, _ -> confirmed = value }, onCancel = {},
+                )
+            }
+        }
+
+        composeTestRule.onNodeWithTag("numeric_value").performTextClearance()
+        composeTestRule.onNodeWithTag("numeric_value").performTextInput("-")
+        composeTestRule.onNodeWithTag("numeric_value").performImeAction()
+
+        assertEquals(null, confirmed)
+        composeTestRule.onNodeWithText("OK").assertIsNotEnabled()
+    }
+
+    @Test
+    fun movingCursorWithoutChangingTextDoesNotMarkValueChanged() {
+        var didChange: Boolean? = null
+        composeTestRule.setContent {
+            MaterialTheme(colorScheme = lightColorScheme()) {
+                NumericEditDialogContent(
+                    title = "Integer parameter", initialText = "123", allowDecimal = false, allowNegative = true,
+                    validate = { it.toIntOrNull() != null }, onStep = { value, _ -> value },
+                    onConfirm = { _, changed -> didChange = changed }, onCancel = {},
+                )
+            }
+        }
+
+        composeTestRule.onNodeWithTag("numeric_value").performTextInputSelection(TextRange(1))
+        composeTestRule.onNodeWithText("OK").performClick()
+
+        assertEquals(false, didChange)
     }
 }

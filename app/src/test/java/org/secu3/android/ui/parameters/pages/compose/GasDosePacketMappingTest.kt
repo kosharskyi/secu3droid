@@ -45,9 +45,6 @@ class GasDosePacketMappingTest {
         assertEquals(listOf(900f, 14.7f, 35.5f, 12.5f, 12.5f), GasDoseNumber.entries.map(mapped::value))
         assertEquals(2, mapped.frequency)
         assertTrue(mapped.maxFrequencyAtInit)
-        val delta = GasDoseManualDelta()
-        repeat(200) { delta.step(-1) }
-        assertEquals(-127, delta.value)
     }
 
     @Test fun scalesAndConsumesPlaceholderAndSnapshotsSignedDelta() {

@@ -28,16 +28,12 @@ import android.os.Bundle
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.setValue
 import androidx.compose.ui.platform.ComposeView
 import androidx.compose.ui.platform.ViewCompositionStrategy
 import androidx.lifecycle.lifecycleScope
 import androidx.lifecycle.withResumed
 import kotlinx.coroutines.launch
 import org.secu3.android.R
-import org.secu3.android.models.packets.out.params.TemperatureParamPacket
 import org.secu3.android.ui.compose.SecuComposeTheme
 import org.secu3.android.ui.parameters.dialogs.ParamFloatEditDialogFragment
 import org.secu3.android.ui.parameters.dialogs.ParamIntEditDialogFragment
@@ -45,24 +41,24 @@ import org.secu3.android.ui.parameters.pages.compose.TemperatureFlag
 import org.secu3.android.ui.parameters.pages.compose.TemperatureNumber
 import org.secu3.android.ui.parameters.pages.compose.TemperatureScreen
 import org.secu3.android.ui.parameters.pages.compose.TemperatureUiState
-import org.secu3.android.ui.parameters.pages.compose.TemperatureValues
-import org.secu3.android.ui.parameters.pages.compose.applyTemperatureFlag
-import org.secu3.android.ui.parameters.pages.compose.applyTemperatureValue
+import org.secu3.android.ui.parameters.pages.compose.TemperatureStateHolder
 
 class TemperatureFragment : BaseParamFragment() {
-    private var packet: TemperatureParamPacket? = null
-    private var values by mutableStateOf<TemperatureValues?>(null)
+    private lateinit var stateHolder: TemperatureStateHolder
 
     override fun onCreateView(inflater: LayoutInflater, container: ViewGroup?, savedInstanceState: Bundle?): View {
-        packet = null
-        values = null
+        stateHolder = TemperatureStateHolder(
+            sendPacket = mViewModel::sendPacket,
+            onPacketMapping = { mViewModel.isSendAllowed = false },
+            onPacketMapped = { mViewModel.isSendAllowed = true },
+        )
         return ComposeView(requireContext()).apply {
             id = R.id.temperature_compose_view
             setViewCompositionStrategy(ViewCompositionStrategy.DisposeOnViewTreeLifecycleDestroyed)
             setContent {
                 SecuComposeTheme {
                     TemperatureScreen(
-                        values?.let(TemperatureUiState::Data) ?: TemperatureUiState.Loading,
+                        stateHolder.state,
                         ::editParameter,
                         ::updateFlag,
                     )
@@ -78,47 +74,32 @@ class TemperatureFragment : BaseParamFragment() {
             owner.withResumed {
                 // This getter issues a protocol read; evaluate it once for this view lifecycle.
                 val liveData = mViewModel.temperatureLiveData
-                liveData.observe(owner) { received ->
-                    mViewModel.isSendAllowed = false
-                    packet = received
-                    values = TemperatureValues.from(received)
-                    mViewModel.isSendAllowed = true
-                }
+                stateHolder.observePackets(owner, liveData)
             }
         }
     }
 
     private fun editParameter(number: TemperatureNumber) {
-        val current = values ?: return
+        val current = (stateHolder.state as? TemperatureUiState.Data)?.values ?: return
         if (number.integer) {
             val dialog = ParamIntEditDialogFragment.newInstance(
                 current.value(number).toInt(), getString(number.titleRes), number.step.toInt(),
                 number.max.toInt(), number.min.toInt(),
             )
-            dialog.newValueLiveData.observe(viewLifecycleOwner) { updateValue(number, it.toFloat()) }
+            dialog.newValueLiveData.observe(viewLifecycleOwner) { stateHolder.updateValue(number, it.toFloat()) }
             dialog.show(childFragmentManager, dialog::class.java.simpleName)
         } else {
             val dialog = ParamFloatEditDialogFragment.newInstance(
                 current.value(number), getString(number.titleRes), number.step,
                 number.max, number.min, number.precision,
             )
-            dialog.newValueLiveData.observe(viewLifecycleOwner) { updateValue(number, it) }
+            dialog.newValueLiveData.observe(viewLifecycleOwner) { stateHolder.updateValue(number, it) }
             dialog.show(childFragmentManager, dialog::class.java.simpleName)
         }
     }
 
-    private fun updateValue(number: TemperatureNumber, value: Float) {
-        val currentPacket = packet ?: return
-        applyTemperatureValue(currentPacket, number, value)
-        values = values?.withValue(number, value)
-        mViewModel.sendPacket(currentPacket)
-    }
-
     private fun updateFlag(flag: TemperatureFlag, checked: Boolean) {
-        val currentPacket = packet ?: return
-        applyTemperatureFlag(currentPacket, flag, checked)
-        values = values?.withFlag(flag, checked)
-        mViewModel.sendPacket(currentPacket)
+        stateHolder.updateFlag(flag, checked)
     }
 
     override fun tabTitle(): Int = R.string.params_tab_temperature_title

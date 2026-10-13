@@ -30,36 +30,33 @@ import android.view.View
 import android.view.ViewGroup
 import androidx.compose.ui.platform.ComposeView
 import androidx.compose.ui.platform.ViewCompositionStrategy
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.setValue
 import org.secu3.android.R
-import org.secu3.android.models.packets.out.params.StarterParamPacket
 import org.secu3.android.ui.compose.SecuComposeTheme
 import org.secu3.android.ui.parameters.dialogs.ParamFloatEditDialogFragment
 import org.secu3.android.ui.parameters.dialogs.ParamIntEditDialogFragment
 import org.secu3.android.ui.parameters.pages.compose.StarterNumber
 import org.secu3.android.ui.parameters.pages.compose.StarterFlag
 import org.secu3.android.ui.parameters.pages.compose.StarterScreen
+import org.secu3.android.ui.parameters.pages.compose.StarterStateHolder
 import org.secu3.android.ui.parameters.pages.compose.StarterUiState
-import org.secu3.android.ui.parameters.pages.compose.StarterValues
-import org.secu3.android.ui.parameters.pages.compose.applyStarterValue
 
 class StarterFragment : BaseParamFragment() {
 
-    private var packet: StarterParamPacket? = null
-    private var values by mutableStateOf<StarterValues?>(null)
+    private var starterState: StarterStateHolder? = null
 
     override fun onCreateView(inflater: LayoutInflater, container: ViewGroup?, savedInstanceState: Bundle?): View {
-        packet = null
-        values = null
+        val stateHolder = StarterStateHolder(
+            sendPacket = mViewModel::sendPacket,
+            onPacketLoaded = { mViewModel.isSendAllowed = true },
+        )
+        starterState = stateHolder
         return ComposeView(requireContext()).apply {
             id = R.id.starter_compose_view
             setViewCompositionStrategy(ViewCompositionStrategy.DisposeOnViewTreeLifecycleDestroyed)
             setContent {
                 SecuComposeTheme {
                     StarterScreen(
-                        state = values?.let { StarterUiState.Data(it) } ?: StarterUiState.Loading,
+                        state = stateHolder.state,
                         onEdit = ::editParameter,
                         onFlagChanged = ::updateFlag,
                     )
@@ -72,15 +69,11 @@ class StarterFragment : BaseParamFragment() {
         super.onViewCreated(view, savedInstanceState)
         // This getter creates a command-producing Flow. Read it once per view lifecycle.
         val starterLiveData = mViewModel.starterLiveData
-        starterLiveData.observe(viewLifecycleOwner) { received ->
-            packet = received
-            values = StarterValues.from(received)
-            mViewModel.isSendAllowed = true
-        }
+        starterState?.observePackets(viewLifecycleOwner, starterLiveData)
     }
 
     private fun editParameter(number: StarterNumber) {
-        val current = values ?: return
+        val current = (starterState?.state as? StarterUiState.Data)?.values ?: return
         when (number) {
             StarterNumber.STARTER_OFF, StarterNumber.SMAP_ABANDON, StarterNumber.AFTERSTART_PETROL,
             StarterNumber.AFTERSTART_GAS, StarterNumber.STBL_COUNTDOWN -> {
@@ -88,7 +81,7 @@ class StarterFragment : BaseParamFragment() {
                     current.value(number).toInt(), getString(number.titleRes), number.step.toInt(),
                     number.max.toInt(), number.min.toInt(),
                 )
-                dialog.newValueLiveData.observe(viewLifecycleOwner) { updateValue(number, it.toFloat()) }
+                dialog.newValueLiveData.observe(viewLifecycleOwner) { starterState?.updateValue(number, it.toFloat()) }
                 dialog.show(childFragmentManager, dialog::class.java.simpleName)
             }
             else -> {
@@ -96,27 +89,19 @@ class StarterFragment : BaseParamFragment() {
                     current.value(number), getString(number.titleRes), number.step,
                     number.max, number.min, number.precision,
                 )
-                dialog.newValueLiveData.observe(viewLifecycleOwner) { updateValue(number, it) }
+                dialog.newValueLiveData.observe(viewLifecycleOwner) { starterState?.updateValue(number, it) }
                 dialog.show(childFragmentManager, dialog::class.java.simpleName)
             }
         }
     }
 
-    private fun updateValue(number: StarterNumber, value: Float) {
-        val currentPacket = packet ?: return
-        applyStarterValue(currentPacket, number, value)
-        values = values?.withValue(number, value)
-        mViewModel.sendPacket(currentPacket)
+    private fun updateFlag(flag: StarterFlag, checked: Boolean) {
+        starterState?.updateFlag(flag, checked)
     }
 
-    private fun updateFlag(flag: StarterFlag, checked: Boolean) {
-        val currentPacket = packet ?: return
-        when (flag) {
-            StarterFlag.ALLOW_FLOOD_CLEAR_START -> currentPacket.allowStartOnClearFlood = checked
-            StarterFlag.LIMIT_CRANKING_PW -> currentPacket.limitMaxInjPwOnCranking = checked
-        }
-        values = values?.withFlag(flag, checked)
-        mViewModel.sendPacket(currentPacket)
+    override fun onDestroyView() {
+        starterState = null
+        super.onDestroyView()
     }
 
     override fun tabTitle(): Int = R.string.params_tab_start_title

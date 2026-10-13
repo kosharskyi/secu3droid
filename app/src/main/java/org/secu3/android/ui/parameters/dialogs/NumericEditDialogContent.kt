@@ -24,11 +24,8 @@
  */
 package org.secu3.android.ui.parameters.dialogs
 
-import android.text.InputType
-import android.view.Gravity
-import android.view.inputmethod.EditorInfo
-import android.widget.EditText
-import androidx.core.widget.addTextChangedListener
+import androidx.compose.foundation.text.BasicTextField
+import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -49,12 +46,16 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.text.TextStyle
+import androidx.compose.ui.text.input.ImeAction
+import androidx.compose.ui.text.input.KeyboardType
+import androidx.compose.ui.text.input.TextFieldValue
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.platform.testTag
-import androidx.compose.ui.graphics.toArgb
-import androidx.compose.ui.viewinterop.AndroidView
+import androidx.compose.ui.graphics.SolidColor
 import androidx.compose.ui.unit.dp
 import androidx.compose.foundation.shape.RoundedCornerShape
 import org.secu3.android.R
@@ -70,7 +71,10 @@ internal fun NumericEditDialogContent(
     onConfirm: (String, Boolean) -> Unit,
     onCancel: () -> Unit,
 ) {
-    var inputText by remember(initialText) { mutableStateOf(initialText) }
+    var inputValue by remember(initialText) {
+        mutableStateOf(TextFieldValue(initialText, selection = androidx.compose.ui.text.TextRange(initialText.length)))
+    }
+    val inputText = inputValue.text
     var changed by remember(initialText) { mutableStateOf(false) }
     val valid = validate(inputText)
 
@@ -86,48 +90,55 @@ internal fun NumericEditDialogContent(
                 horizontalArrangement = Arrangement.spacedBy(12.dp),
             ) {
                 OutlinedButton(
-                    onClick = { changed = true; inputText = onStep(inputText, -1) },
+                    onClick = {
+                        changed = true
+                        val stepped = onStep(inputText, -1)
+                        inputValue = TextFieldValue(stepped, selection = androidx.compose.ui.text.TextRange(stepped.length))
+                    },
                     modifier = Modifier.sizeIn(minWidth = 48.dp, minHeight = 48.dp)
                         .semantics { contentDescription = "Decrease value" },
                 ) { Text("−", style = MaterialTheme.typography.titleLarge) }
                 Column(Modifier.weight(1f)) {
                     val inputShape = RoundedCornerShape(4.dp)
                     val borderColor = if (valid) MaterialTheme.colorScheme.outline else MaterialTheme.colorScheme.error
-                    val inputTextColor = MaterialTheme.colorScheme.onSurface.toArgb()
+                    val inputTextColor = MaterialTheme.colorScheme.onSurface
                     Box(
                         modifier = Modifier.fillMaxWidth().heightIn(min = 56.dp)
                             .border(1.dp, borderColor, inputShape)
                             .padding(horizontal = 8.dp),
                         contentAlignment = androidx.compose.ui.Alignment.Center,
                     ) {
-                        AndroidView(
+                        BasicTextField(
+                            value = inputValue,
+                            onValueChange = { value ->
+                                if (value.text != inputValue.text) changed = true
+                                inputValue = value
+                            },
                             modifier = Modifier.fillMaxWidth().heightIn(min = 48.dp).testTag("numeric_value"),
-                            factory = { context ->
-                                EditText(context).apply {
-                                    id = android.R.id.edit
-                                    background = null
-                                    gravity = Gravity.CENTER
-                                    textSize = 16f
-                                    setTextColor(inputTextColor)
-                                    inputType = InputType.TYPE_CLASS_NUMBER or
-                                        (if (allowDecimal) InputType.TYPE_NUMBER_FLAG_DECIMAL else 0) or
-                                        (if (allowNegative) InputType.TYPE_NUMBER_FLAG_SIGNED else 0)
-                                    imeOptions = EditorInfo.IME_ACTION_DONE
-                                    isSingleLine = true
-                                    setText(inputText)
-                                    addTextChangedListener { editable ->
-                                        inputText = editable?.toString().orEmpty()
-                                        changed = true
-                                    }
+                            singleLine = true,
+                            textStyle = TextStyle(
+                                color = inputTextColor,
+                                fontSize = MaterialTheme.typography.bodyLarge.fontSize,
+                                textAlign = TextAlign.Center,
+                            ),
+                            cursorBrush = SolidColor(MaterialTheme.colorScheme.primary),
+                            decorationBox = { innerTextField ->
+                                Box(
+                                    modifier = Modifier.fillMaxWidth().heightIn(min = 48.dp),
+                                    contentAlignment = androidx.compose.ui.Alignment.Center,
+                                ) {
+                                    innerTextField()
                                 }
                             },
-                            update = { editText ->
-                                editText.setTextColor(inputTextColor)
-                                if (editText.text.toString() != inputText) {
-                                    editText.setText(inputText)
-                                    editText.setSelection(editText.text.length)
-                                }
-                            },
+                            keyboardOptions = KeyboardOptions(
+                                keyboardType = when {
+                                    allowDecimal && allowNegative -> KeyboardType.DecimalSigned
+                                    allowDecimal -> KeyboardType.Decimal
+                                    allowNegative -> KeyboardType.NumberSigned
+                                    else -> KeyboardType.Number
+                                },
+                                imeAction = ImeAction.Done,
+                            ),
                         )
                     }
                     if (!valid) {
@@ -140,7 +151,11 @@ internal fun NumericEditDialogContent(
                     }
                 }
                 OutlinedButton(
-                    onClick = { changed = true; inputText = onStep(inputText, 1) },
+                    onClick = {
+                        changed = true
+                        val stepped = onStep(inputText, 1)
+                        inputValue = TextFieldValue(stepped, selection = androidx.compose.ui.text.TextRange(stepped.length))
+                    },
                     modifier = Modifier.sizeIn(minWidth = 48.dp, minHeight = 48.dp)
                         .semantics { contentDescription = "Increase value" },
                 ) { Text("+", style = MaterialTheme.typography.titleLarge) }

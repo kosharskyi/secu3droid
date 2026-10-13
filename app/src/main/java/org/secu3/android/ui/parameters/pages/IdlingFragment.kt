@@ -28,38 +28,33 @@ import android.os.Bundle
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.setValue
 import androidx.compose.ui.platform.ComposeView
 import androidx.compose.ui.platform.ViewCompositionStrategy
 import androidx.lifecycle.lifecycleScope
 import androidx.lifecycle.withResumed
 import kotlinx.coroutines.launch
 import org.secu3.android.R
-import org.secu3.android.models.packets.out.params.IdlingParamPacket
 import org.secu3.android.ui.compose.SecuComposeTheme
 import org.secu3.android.ui.parameters.dialogs.ParamFloatEditDialogFragment
 import org.secu3.android.ui.parameters.dialogs.ParamIntEditDialogFragment
-import org.secu3.android.ui.parameters.pages.compose.IdlingFlag
 import org.secu3.android.ui.parameters.pages.compose.IdlingNumber
 import org.secu3.android.ui.parameters.pages.compose.IdlingScreen
+import org.secu3.android.ui.parameters.pages.compose.IdlingStateHolder
 import org.secu3.android.ui.parameters.pages.compose.IdlingUiState
-import org.secu3.android.ui.parameters.pages.compose.IdlingValues
-import org.secu3.android.ui.parameters.pages.compose.applyIdlingFlag
-import org.secu3.android.ui.parameters.pages.compose.applyIdlingValue
 
 class IdlingFragment : BaseParamFragment() {
-    private var packet: IdlingParamPacket? = null
-    private var values by mutableStateOf<IdlingValues?>(null)
+    private lateinit var stateHolder: IdlingStateHolder
 
     override fun onCreateView(inflater: LayoutInflater, container: ViewGroup?, savedInstanceState: Bundle?): View {
-        packet = null
-        values = null
+        stateHolder = IdlingStateHolder(
+            sendPacket = mViewModel::sendPacket,
+            onPacketMapping = { mViewModel.isSendAllowed = false },
+            onPacketMapped = { mViewModel.isSendAllowed = true },
+        )
         return ComposeView(requireContext()).apply {
             id = R.id.idling_compose_view
             setViewCompositionStrategy(ViewCompositionStrategy.DisposeOnViewTreeLifecycleDestroyed)
-            setContent { SecuComposeTheme { IdlingScreen(values?.let(IdlingUiState::Data) ?: IdlingUiState.Loading, ::editParameter, ::updateFlag) } }
+            setContent { SecuComposeTheme { IdlingScreen(stateHolder.state, ::editParameter, stateHolder::updateFlag) } }
         }
     }
 
@@ -70,45 +65,26 @@ class IdlingFragment : BaseParamFragment() {
             owner.withResumed {
                 // This getter starts a protocol read, so evaluate it once only after this page resumes.
                 val liveData = mViewModel.idlingLiveData
-                liveData.observe(owner) { received ->
-                    mViewModel.isSendAllowed = false
-                    packet = received
-                    values = IdlingValues.from(received)
-                    mViewModel.isSendAllowed = true
-                }
+                stateHolder.observePackets(owner, liveData)
             }
         }
     }
 
     private fun editParameter(number: IdlingNumber) {
-        val current = values ?: return
+        val current = (stateHolder.state as? IdlingUiState.Data)?.values ?: return
         if (number.integer) {
             val dialog = ParamIntEditDialogFragment.newInstance(
                 current.value(number).toInt(), getString(number.titleRes), number.step.toInt(), number.max.toInt(), number.min.toInt(),
             )
-            dialog.newValueLiveData.observe(viewLifecycleOwner) { updateValue(number, it.toFloat()) }
+            dialog.newValueLiveData.observe(viewLifecycleOwner) { stateHolder.updateValue(number, it.toFloat()) }
             dialog.show(childFragmentManager, dialog::class.java.simpleName)
         } else {
             val dialog = ParamFloatEditDialogFragment.newInstance(
                 current.value(number), getString(number.titleRes), number.step, number.max, number.min, number.precision,
             )
-            dialog.newValueLiveData.observe(viewLifecycleOwner) { updateValue(number, it) }
+            dialog.newValueLiveData.observe(viewLifecycleOwner) { stateHolder.updateValue(number, it) }
             dialog.show(childFragmentManager, dialog::class.java.simpleName)
         }
-    }
-
-    private fun updateValue(number: IdlingNumber, value: Float) {
-        val currentPacket = packet ?: return
-        applyIdlingValue(currentPacket, number, value)
-        values = values?.withValue(number, value)
-        mViewModel.sendPacket(currentPacket)
-    }
-
-    private fun updateFlag(flag: IdlingFlag, checked: Boolean) {
-        val currentPacket = packet ?: return
-        applyIdlingFlag(currentPacket, flag, checked)
-        values = values?.withFlag(flag, checked)
-        mViewModel.sendPacket(currentPacket)
     }
 
     override fun tabTitle(): Int = R.string.params_tab_idling_title

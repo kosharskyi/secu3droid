@@ -28,9 +28,6 @@ import android.os.Bundle
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.setValue
 import androidx.compose.ui.platform.ComposeView
 import androidx.compose.ui.platform.ViewCompositionStrategy
 import androidx.lifecycle.Observer
@@ -46,25 +43,19 @@ import org.secu3.android.ui.parameters.pages.compose.CkpsFlag
 import org.secu3.android.ui.parameters.pages.compose.CkpsNumber
 import org.secu3.android.ui.parameters.pages.compose.CkpsScreen
 import org.secu3.android.ui.parameters.pages.compose.CkpsUiState
-import org.secu3.android.ui.parameters.pages.compose.CkpsValues
-import org.secu3.android.ui.parameters.pages.compose.applyCkpsChoice
-import org.secu3.android.ui.parameters.pages.compose.applyCkpsFlag
-import org.secu3.android.ui.parameters.pages.compose.applyCkpsNumber
+import org.secu3.android.ui.parameters.pages.compose.CkpsStateHolder
 
 class CkpsFragment : BaseParamFragment() {
-    private var packet: CkpsParamPacket? = null
-    private var values by mutableStateOf<CkpsValues?>(null)
+    private lateinit var stateHolder: CkpsStateHolder
 
     override fun onCreateView(inflater: LayoutInflater, container: ViewGroup?, savedInstanceState: Bundle?): View {
-        packet = null
-        values = null
+        stateHolder = CkpsStateHolder(mViewModel::sendPacket, { mViewModel.isSendAllowed = false }, { mViewModel.isSendAllowed = true })
         return ComposeView(requireContext()).apply {
             id = R.id.ckps_compose_view
             setViewCompositionStrategy(ViewCompositionStrategy.DisposeOnViewTreeLifecycleDestroyed)
             setContent {
                 SecuComposeTheme {
-                    val screenState = values?.let(CkpsUiState::Data) ?: CkpsUiState.Loading
-                    CkpsScreen(screenState, ::edit, ::flag, ::choice)
+                    CkpsScreen(stateHolder.state, ::edit, ::flag, ::choice)
                 }
             }
         }
@@ -79,10 +70,7 @@ class CkpsFragment : BaseParamFragment() {
                 live.observe(owner, object : Observer<CkpsParamPacket> {
                     override fun onChanged(value: CkpsParamPacket) {
                         live.removeObserver(this)
-                        mViewModel.isSendAllowed = false
-                        packet = value
-                        values = CkpsValues.from(value)
-                        mViewModel.isSendAllowed = true
+                        stateHolder.onPacketReceived(value)
                     }
                 })
             }
@@ -90,7 +78,7 @@ class CkpsFragment : BaseParamFragment() {
     }
 
     private fun edit(number: CkpsNumber) {
-        val current = values ?: return
+        val current = (stateHolder.state as? CkpsUiState.Data)?.values ?: return
         if (number.integer) {
             val dialog = ParamIntEditDialogFragment.newInstance(
                 current.numbers.getValue(number).toInt(),
@@ -99,7 +87,7 @@ class CkpsFragment : BaseParamFragment() {
                 number.max.toInt(),
                 number.min.toInt(),
             )
-            dialog.newValueLiveData.observe(viewLifecycleOwner) { updateNumber(number, it.toFloat()) }
+            dialog.newValueLiveData.observe(viewLifecycleOwner) { stateHolder.updateNumber(number, it.toFloat()) }
             dialog.show(childFragmentManager, dialog::class.java.simpleName)
         } else {
             val dialog = ParamFloatEditDialogFragment.newInstance(
@@ -110,32 +98,14 @@ class CkpsFragment : BaseParamFragment() {
                 number.min,
                 number.precision,
             )
-            dialog.newValueLiveData.observe(viewLifecycleOwner) { updateNumber(number, it) }
+            dialog.newValueLiveData.observe(viewLifecycleOwner) { stateHolder.updateNumber(number, it) }
             dialog.show(childFragmentManager, dialog::class.java.simpleName)
         }
     }
 
-    private fun updateNumber(number: CkpsNumber, value: Float) {
-        val current = packet ?: return
-        applyCkpsNumber(current, number, value)
-        val updated = CkpsValues.from(current)
-        values = updated
-        mViewModel.sendPacket(current)
-    }
+    private fun flag(flag: CkpsFlag, value: Boolean) = stateHolder.updateFlag(flag, value)
 
-    private fun flag(flag: CkpsFlag, value: Boolean) {
-        val current = packet ?: return
-        applyCkpsFlag(current, flag, value)
-        values = CkpsValues.from(current)
-        mViewModel.sendPacket(current)
-    }
+    private fun choice(teeth: Boolean, value: Int) = stateHolder.updateChoice(teeth, value)
 
-    private fun choice(teeth: Boolean, value: Int) {
-        val current = packet ?: return
-        if (applyCkpsChoice(current, teeth, value)) {
-            values = CkpsValues.from(current)
-            mViewModel.sendPacket(current)
-        }
-    }
     override fun tabTitle(): Int = R.string.params_tab_ckps_title
 }

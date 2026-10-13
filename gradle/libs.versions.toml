@@ -26,7 +26,6 @@ material3-android = "1.4.0"
 gson = "2.14.0"
 retrofit = "3.0.0"
 okhttp = "5.5.0"
-speedviewlib = "1.6.1"
 threetenabp = "1.4.9"
 
 usb-serial-for-android = "3.11.0"
@@ -96,7 +95,6 @@ okhttp = { module = "com.squareup.okhttp3:okhttp", version.ref = "okhttp"}
 logging-interceptor = { module = "com.squareup.okhttp3:logging-interceptor", version.ref = "okhttp" }
 converter-gson = { module = "com.squareup.retrofit2:converter-gson", version.ref = "retrofit" }
 
-speedviewlib = { module = "com.github.anastr:speedviewlib", version.ref = "speedviewlib" }
 
 threetenabp = { module = "com.jakewharton.threetenabp:threetenabp", version.ref = "threetenabp" }
 

@@ -28,47 +28,41 @@ import android.os.Bundle
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.setValue
 import androidx.compose.ui.platform.ComposeView
 import androidx.compose.ui.platform.ViewCompositionStrategy
 import androidx.lifecycle.lifecycleScope
 import androidx.lifecycle.withResumed
 import kotlinx.coroutines.launch
 import org.secu3.android.R
-import org.secu3.android.models.packets.out.params.KnockParamPacket
 import org.secu3.android.ui.compose.SecuComposeTheme
 import org.secu3.android.ui.parameters.dialogs.ParamFloatEditDialogFragment
 import org.secu3.android.ui.parameters.dialogs.ParamIntEditDialogFragment
-import org.secu3.android.ui.parameters.pages.compose.KnockNumber
 import org.secu3.android.ui.parameters.pages.compose.KnockScreen
-import org.secu3.android.ui.parameters.pages.compose.KnockSelector
+import org.secu3.android.ui.parameters.pages.compose.KnockNumber
+import org.secu3.android.ui.parameters.pages.compose.KnockStateHolder
 import org.secu3.android.ui.parameters.pages.compose.KnockUiState
-import org.secu3.android.ui.parameters.pages.compose.KnockValues
-import org.secu3.android.ui.parameters.pages.compose.applyKnockNumber
 
 class KnockFragment : BaseParamFragment() {
-    private var packet: KnockParamPacket? = null
-    private var values by mutableStateOf<KnockValues?>(null)
-    private var enabled by mutableStateOf(false)
-    private val bpf by lazy { resources.getStringArray(R.array.knock_filter_frequencies).toList() }
-    private val integration by lazy { resources.getStringArray(R.array.knock_integration_timeouts).toList() }
+    private lateinit var stateHolder: KnockStateHolder
 
     override fun onCreateView(inflater: LayoutInflater, container: ViewGroup?, savedInstanceState: Bundle?): View {
-        packet = null
-        values = null
+        stateHolder = KnockStateHolder(
+            bpfOptions = resources.getStringArray(R.array.knock_filter_frequencies).toList(),
+            integrationOptions = resources.getStringArray(R.array.knock_integration_timeouts).toList(),
+            sendPacket = mViewModel::sendPacket,
+            onPacketMapped = { mViewModel.isSendAllowed = true },
+        )
         return ComposeView(requireContext()).apply {
             id = R.id.knock_compose_view
             setViewCompositionStrategy(ViewCompositionStrategy.DisposeOnViewTreeLifecycleDestroyed)
             setContent {
                 SecuComposeTheme {
                     KnockScreen(
-                        state = values?.let { KnockUiState.Data(it, enabled) } ?: KnockUiState.Loading,
+                        state = stateHolder.state,
                         onEdit = ::edit,
-                        onEnable = ::updateEnabled,
-                        onChannel = ::setChannel,
-                        onSelector = ::setSelector,
+                        onEnable = stateHolder::updateEnabled,
+                        onChannel = stateHolder::updateChannel,
+                        onSelector = stateHolder::updateSelector,
                     )
                 }
             }
@@ -76,21 +70,17 @@ class KnockFragment : BaseParamFragment() {
     }
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
-        lifecycleScope.launch {
-            withResumed {
+        val owner = viewLifecycleOwner
+        owner.lifecycleScope.launch {
+            owner.withResumed {
                 val liveData = mViewModel.knockLiveData
-                liveData.observe(viewLifecycleOwner) { received ->
-                    packet = received
-                    enabled = received.useKnockChannel > 0
-                    values = KnockValues.from(received, bpf, integration)
-                    mViewModel.isSendAllowed = true
-                }
+                stateHolder.observePackets(owner, liveData)
             }
         }
     }
 
     private fun edit(number: KnockNumber) {
-        val currentValues = values ?: return
+        val currentValues = (stateHolder.state as? KnockUiState.Data)?.values ?: return
         if (number == KnockNumber.DELAY) {
             val dialog = ParamIntEditDialogFragment.newInstance(
                 currentValues.value(number).toInt(),
@@ -99,7 +89,7 @@ class KnockFragment : BaseParamFragment() {
                 number.max.toInt(),
                 number.min.toInt(),
             )
-            dialog.newValueLiveData.observe(viewLifecycleOwner) { update(number, it.toFloat()) }
+            dialog.newValueLiveData.observe(viewLifecycleOwner) { stateHolder.updateValue(number, it.toFloat()) }
             dialog.show(childFragmentManager, dialog::class.java.simpleName)
         } else {
             val dialog = ParamFloatEditDialogFragment.newInstance(
@@ -110,40 +100,9 @@ class KnockFragment : BaseParamFragment() {
                 number.min,
                 number.precision,
             )
-            dialog.newValueLiveData.observe(viewLifecycleOwner) { update(number, it) }
+            dialog.newValueLiveData.observe(viewLifecycleOwner) { stateHolder.updateValue(number, it) }
             dialog.show(childFragmentManager, dialog::class.java.simpleName)
         }
     }
-    private fun update(number: KnockNumber, value: Float) {
-        val currentPacket = packet ?: return
-        applyKnockNumber(currentPacket, number, value)
-        values = KnockValues.from(currentPacket, bpf, integration)
-        mViewModel.sendPacket(currentPacket)
-    }
-    private fun updateEnabled(checked: Boolean) {
-        val currentPacket = packet ?: return
-        currentPacket.useKnockChannel = if (checked) 1 else 0
-        enabled = checked
-        mViewModel.sendPacket(currentPacket)
-    }
-
-    private fun setChannel(channel: Int, checked: Boolean) {
-        val currentPacket = packet ?: return
-        currentPacket.selectKnockChanel(channel, checked)
-        values = KnockValues.from(currentPacket, bpf, integration)
-        mViewModel.sendPacket(currentPacket)
-    }
-
-    private fun setSelector(selector: KnockSelector, index: Int) {
-        val currentPacket = packet ?: return
-        if (selector == KnockSelector.BPF) {
-            currentPacket.bpfFrequency = index
-        } else {
-            currentPacket.intTimeCost = index
-        }
-        values = KnockValues.from(currentPacket, bpf, integration)
-        mViewModel.sendPacket(currentPacket)
-    }
-
     override fun tabTitle() = R.string.params_tab_knock_title
 }

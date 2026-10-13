@@ -49,35 +49,21 @@ import androidx.lifecycle.withResumed
 import kotlinx.coroutines.launch
 import org.secu3.android.ui.parameters.compose.ParameterLoadingIndicator
 import org.secu3.android.R
-import org.secu3.android.models.packets.out.params.SecurityParamPacket
 import org.secu3.android.ui.compose.SecuComposeTheme
 
 class SecurityFragment : BaseParamFragment() {
-    private var packet: SecurityParamPacket? = null
-    private var loaded by mutableStateOf(false)
-    private var name by mutableStateOf("")
-    private var password by mutableStateOf("")
-    private var key0 by mutableStateOf("")
-    private var key1 by mutableStateOf("")
-    private var error by mutableStateOf("")
-    private var useBt by mutableStateOf(false)
-    private var useImm by mutableStateOf(false)
-    private var type by mutableIntStateOf(0)
-    private var useReserveParams by mutableStateOf(false)
-    private var checkFirmwareCrc by mutableStateOf(false)
+    private lateinit var state: SecurityStateHolder
     private var expanded by mutableStateOf(false)
     private val types = listOf("BC417", "BK3231", "BK3231S (JDY-31)", "BC352 (HC-05)", "BK3432", "BK3431S")
 
     override fun onCreateView(inflater: LayoutInflater, container: ViewGroup?, savedInstanceState: Bundle?): View {
-        packet = null
-        loaded = false
-        name = ""; password = ""; key0 = ""; key1 = ""; error = ""
-        useBt = false; useImm = false; type = 0
-        useReserveParams = false; checkFirmwareCrc = false; expanded = false
+        state = SecurityStateHolder(mViewModel::sendPacket, getString(R.string.sec_invalid_credentials))
+        state.reset()
+        expanded = false
         return ComposeView(requireContext()).apply {
             setViewCompositionStrategy(ViewCompositionStrategy.DisposeOnViewTreeLifecycleDestroyed)
-            setContent { SecuComposeTheme { SecurityScreen(loaded, useBt, useImm, name, password, key0, key1, type, types, expanded, error,
-                useReserveParams, checkFirmwareCrc, { expanded = it }, ::changeType, ::changeBt, ::changeImm, ::changeName, ::changePass, ::changeKey0, ::changeKey1, ::applyCredentials) } }
+            setContent { SecuComposeTheme { SecurityScreen(state.loaded, state.useBt, state.useImm, state.name, state.password, state.key0, state.key1, state.type, types, expanded, state.error,
+                state.useReserveParams, state.checkFirmwareCrc, { expanded = it }, state::changeType, state::changeBt, state::changeImm, state::changeName, state::changePass, state::changeKey0, state::changeKey1, state::applyCredentials) } }
         }
     }
 
@@ -87,64 +73,15 @@ class SecurityFragment : BaseParamFragment() {
             viewLifecycleOwner.lifecycle.withResumed {
                 mViewModel.securityLiveData.observe(viewLifecycleOwner) { p ->
                     mViewModel.isSendAllowed = false
-                    packet = p
-                    useBt = p.useBt; useImm = p.useImmobilizer; type = p.btType
-                    useReserveParams = p.useReserveParams; checkFirmwareCrc = p.checkFwCrc
-                    key0 = formatKey(p.iButton0); key1 = formatKey(p.iButton1)
-                    // Credentials are intentionally write-only in the ECU protocol.
-                    name = ""; password = ""
-                    loaded = true
+                    state.load(p)
                     mViewModel.isSendAllowed = true
                 }
             }
         }
     }
 
-    private fun commit(change: SecurityParamPacket.() -> Unit) {
-        val p = packet ?: return
-        try {
-            change(p)
-            error = ""
-            mViewModel.sendPacket(p.packedSnapshot())
-        } catch (e: IllegalArgumentException) { error = e.message.orEmpty() }
-    }
-    private fun changeType(index: Int) { type = index; commit { btType = index } }
-    private fun changeBt(value: Boolean) { useBt = value; commit { useBt = value; btFlags = btFlags.setBit(1) } }
-    private fun changeImm(value: Boolean) { useImm = value; commit { useImmobilizer = value } }
-    private fun changeName(value: String) { if (value.length <= 16) name = value }
-    private fun changePass(value: String) { if (value.length <= 8 && value.all { it in '0'..'9' }) password = value }
-    private fun changeKey0(value: String) { if (value.length <= 12) { key0 = value.uppercase(); updateKey(key0, true) } }
-    private fun changeKey1(value: String) { if (value.length <= 12) { key1 = value.uppercase(); updateKey(key1, false) } }
-    private fun updateKey(value: String, first: Boolean) {
-        val bytes = parseIButtonKey(value) ?: return
-        commit { if (first) iButton0 = bytes else iButton1 = bytes }
-    }
-    private fun applyCredentials() {
-        val p = packet ?: return
-        try {
-            val snapshot = p.credentialsSnapshot(name, password)
-            error = ""
-            mViewModel.sendPacket(snapshot)
-            name = ""
-            password = ""
-        } catch (e: IllegalArgumentException) {
-            error = getString(R.string.sec_invalid_credentials)
-        }
-    }
-
     override fun tabTitle(): Int = R.string.params_tab_security_title
-
-    companion object {
-        private fun formatKey(bytes: List<Int>) = if (bytes.size == 6) bytes.asReversed().joinToString("") { "%02X".format(it) } else ""
-    }
 }
-
-internal fun parseIButtonKey(value: String): List<Int>? {
-    if (value.length != 12 || !value.all { it.digitToIntOrNull(16) != null }) return null
-    return value.chunked(2).reversed().map { it.toInt(16) }
-}
-
-private fun Int.setBit(bit: Int) = this or (1 shl bit)
 
 @Composable
 @OptIn(ExperimentalMaterial3Api::class)

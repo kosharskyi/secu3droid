@@ -24,6 +24,7 @@
  */
 package org.secu3.android.ui.parameters.pages
 
+import androidx.test.platform.app.InstrumentationRegistry
 import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.assertIsEnabled
 import androidx.compose.ui.test.assertCountEquals
@@ -39,10 +40,12 @@ import org.junit.Assert.assertEquals
 import org.junit.Assert.assertTrue
 import org.junit.Rule
 import org.junit.Test
+import org.secu3.android.R
 import org.secu3.android.models.packets.out.params.UniOutParamPacket
 
 class UniversalOutputsScreenTest {
     @get:Rule val compose = createComposeRule()
+    private val targetContext get() = InstrumentationRegistry.getInstrumentation().targetContext
     private val conditions = (0..41).associateWith { "Condition $it" }
     private val functions = listOf("OR", "AND", "XOR", "2nd", "None")
 
@@ -88,12 +91,13 @@ class UniversalOutputsScreenTest {
         }
         compose.onNodeWithTag("output-1-condition-1-picker").assertIsDisplayed()
             .assertHasClickAction()
-        compose.onNodeWithText("Condition 1 for output 1").assertIsDisplayed()
+        compose.onNodeWithText(targetContext.getString(R.string.unioutput1_condition_1_title)).assertIsDisplayed()
         compose.onNodeWithText("Condition 0").assertIsDisplayed()
         compose.onNodeWithTag("output-1-condition-1-group").assertIsDisplayed()
         compose.onNodeWithTag("output-1-threshold-on-1").assertIsDisplayed().assertHasClickAction().performClick()
-        compose.onNodeWithText("ON value threshold").assertIsDisplayed()
-        compose.onNodeWithText("Cancel").performClick()
+        val onValueLabel = targetContext.getString(R.string.unioutput1_condition1_on_value_title)
+        compose.onNodeWithText(targetContext.getString(R.string.uniout_threshold_edit_title, onValueLabel)).assertIsDisplayed()
+        compose.onNodeWithText(targetContext.getString(android.R.string.cancel)).performClick()
         compose.onAllNodesWithTag("output-1-condition-2-picker").assertCountEquals(0)
         val condition1Bounds = compose.onNodeWithTag("output-1-condition-1-group").fetchSemanticsNode().boundsInRoot
         val logicBounds = compose.onNodeWithTag("output-1-logical-function").fetchSemanticsNode().boundsInRoot
@@ -123,11 +127,11 @@ class UniversalOutputsScreenTest {
         })
         compose.setContent { UniversalOutputsScreen(values, conditions, functions, { _, _ -> }, {}) }
         compose.onNodeWithTag("output-1-condition-1-picker").assertIsDisplayed().assertHasClickAction()
-        compose.onNodeWithText("Code 99").assertIsDisplayed()
-        compose.onNodeWithText("Thresholds unavailable for ON value").assertIsDisplayed()
+        compose.onNodeWithText(targetContext.getString(R.string.uniout_unknown_code, 99)).assertIsDisplayed()
+        compose.onNodeWithText(targetContext.getString(R.string.uniout_threshold_unavailable, targetContext.getString(R.string.unioutput1_condition1_on_value_title))).assertIsDisplayed()
         compose.onAllNodesWithTag("output-1-threshold-on-1").assertCountEquals(0)
         compose.onNodeWithTag("output-1-logical-function").assertHasClickAction()
-        compose.onNodeWithText("Code 9").assertIsDisplayed()
+        compose.onNodeWithText(targetContext.getString(R.string.uniout_unknown_code, 9)).assertIsDisplayed()
         compose.onNodeWithTag("output-1-condition-1-picker").performClick()
         compose.onAllNodesWithText(conditions.getValue(7)).assertCountEquals(0)
         compose.onAllNodesWithText(conditions.getValue(23)).assertCountEquals(0)

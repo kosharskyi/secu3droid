@@ -28,38 +28,31 @@ import android.os.Bundle
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.setValue
 import androidx.compose.ui.platform.ComposeView
 import androidx.compose.ui.platform.ViewCompositionStrategy
 import androidx.lifecycle.lifecycleScope
 import androidx.lifecycle.withResumed
 import kotlinx.coroutines.launch
 import org.secu3.android.R
-import org.secu3.android.models.packets.out.params.AdcCorrectionsParamPacket
 import org.secu3.android.ui.compose.SecuComposeTheme
 import org.secu3.android.ui.parameters.dialogs.ParamFloatEditDialogFragment
+import org.secu3.android.ui.parameters.pages.compose.AdcCorrectionsStateHolder
 import org.secu3.android.ui.parameters.pages.compose.AdcCorrectionsUiState
-import org.secu3.android.ui.parameters.pages.compose.AdcCorrectionsValues
 import org.secu3.android.ui.parameters.pages.compose.AdcErrorsCorrectionsScreen
 import org.secu3.android.ui.parameters.pages.compose.AdcNumber
-import org.secu3.android.ui.parameters.pages.compose.setAdcValue
 
 class AdcErrorsCorrectionsFragment : BaseParamFragment() {
-    private var packet: AdcCorrectionsParamPacket? = null
-    private var values by mutableStateOf<AdcCorrectionsValues?>(null)
+    private lateinit var stateHolder: AdcCorrectionsStateHolder
 
     override fun onCreateView(inflater: LayoutInflater, container: ViewGroup?, savedInstanceState: Bundle?): View {
-        packet = null
-        values = null
+        stateHolder = AdcCorrectionsStateHolder(mViewModel::sendPacket, { mViewModel.isSendAllowed = false }, { mViewModel.isSendAllowed = true })
         return ComposeView(requireContext()).apply {
             id = R.id.adc_errors_corrections_compose_view
             setViewCompositionStrategy(ViewCompositionStrategy.DisposeOnViewTreeLifecycleDestroyed)
             setContent {
                 SecuComposeTheme {
                     AdcErrorsCorrectionsScreen(
-                        values?.let(AdcCorrectionsUiState::Data) ?: AdcCorrectionsUiState.Loading,
+                        stateHolder.state,
                         ::editParameter,
                         ::updateCompMode,
                     )
@@ -76,35 +69,22 @@ class AdcErrorsCorrectionsFragment : BaseParamFragment() {
                 // Accessing the getter sends a device read, so obtain this LiveData only once.
                 val liveData = mViewModel.adcCorrectionsLiveData
                 liveData.observe(owner) { received ->
-                    mViewModel.isSendAllowed = false
-                    packet = received
-                    values = AdcCorrectionsValues.from(received)
-                    mViewModel.isSendAllowed = true
+                    stateHolder.onPacketReceived(received)
                 }
             }
         }
     }
 
     private fun editParameter(number: AdcNumber) {
-        val current = values ?: return
+        val current = (stateHolder.state as? AdcCorrectionsUiState.Data)?.values ?: return
         val dialog = ParamFloatEditDialogFragment.newInstance(
             current.value(number), number.title, number.step, number.max, number.min, number.precision,
         )
-        dialog.newValueLiveData.observe(viewLifecycleOwner) { newValue ->
-            val currentPacket = packet ?: return@observe
-            currentPacket.setAdcValue(number, newValue)
-            values = values?.withValue(number, newValue)
-            mViewModel.sendPacket(currentPacket)
-        }
+        dialog.newValueLiveData.observe(viewLifecycleOwner) { stateHolder.updateValue(number, it) }
         dialog.show(childFragmentManager, dialog::class.java.simpleName)
     }
 
-    private fun updateCompMode(enabled: Boolean) {
-        val currentPacket = packet ?: return
-        currentPacket.adcCompMode = enabled
-        values = values?.withCompMode(enabled)
-        mViewModel.sendPacket(currentPacket)
-    }
+    private fun updateCompMode(enabled: Boolean) = stateHolder.updateCompMode(enabled)
 
     override fun tabTitle(): Int = R.string.params_tab_adc_errors_corr_title
 }

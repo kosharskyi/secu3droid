@@ -28,38 +28,31 @@ import android.os.Bundle
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.setValue
 import androidx.compose.ui.platform.ComposeView
 import androidx.compose.ui.platform.ViewCompositionStrategy
 import androidx.lifecycle.lifecycleScope
 import androidx.lifecycle.withResumed
 import kotlinx.coroutines.launch
 import org.secu3.android.R
-import org.secu3.android.models.packets.out.params.AccelerationParamPacket
 import org.secu3.android.ui.compose.SecuComposeTheme
 import org.secu3.android.ui.parameters.dialogs.ParamIntEditDialogFragment
 import org.secu3.android.ui.parameters.pages.compose.AccelerationNumber
 import org.secu3.android.ui.parameters.pages.compose.AccelerationScreen
 import org.secu3.android.ui.parameters.pages.compose.AccelerationUiState
-import org.secu3.android.ui.parameters.pages.compose.AccelerationValues
-import org.secu3.android.ui.parameters.pages.compose.applyAccelerationValue
 
 class AccelerationFragment : BaseParamFragment() {
-    private var packet: AccelerationParamPacket? = null
-    private var values by mutableStateOf<AccelerationValues?>(null)
+    private lateinit var stateHolder: AccelerationStateHolder
 
     override fun onCreateView(inflater: LayoutInflater, container: ViewGroup?, savedInstanceState: Bundle?): View {
-        packet = null
-        values = null
+        stateHolder = AccelerationStateHolder(mViewModel::sendPacket) { mViewModel.isSendAllowed = it }
+        stateHolder.reset()
         return ComposeView(requireContext()).apply {
             id = R.id.acceleration_compose_view
             setViewCompositionStrategy(ViewCompositionStrategy.DisposeOnViewTreeLifecycleDestroyed)
             setContent {
                 SecuComposeTheme {
-                    AccelerationScreen(values?.let(AccelerationUiState::Data) ?: AccelerationUiState.Loading,
-                        ::editParameter, ::selectAeType, ::selectWallwetModel, ::setBalance)
+                    AccelerationScreen(stateHolder.values?.let(AccelerationUiState::Data) ?: AccelerationUiState.Loading,
+                        ::editParameter, stateHolder::selectAeType, stateHolder::selectWallwetModel, stateHolder::setBalance)
                 }
             }
         }
@@ -72,50 +65,19 @@ class AccelerationFragment : BaseParamFragment() {
             viewLifecycle.withResumed {
                 val accelerationLiveData = mViewModel.accelerationLiveData
                 accelerationLiveData.observe(viewLifecycleOwner) { received ->
-                    mViewModel.isSendAllowed = false
-                    packet = received
-                    values = AccelerationValues.from(received)
-                    mViewModel.isSendAllowed = true
+                    stateHolder.onPacketReceived(received)
                 }
             }
         }
     }
 
     private fun editParameter(number: AccelerationNumber) {
-        val current = values ?: return
+        val current = stateHolder.values ?: return
         val dialog = ParamIntEditDialogFragment.newInstance(
             current.value(number).toInt(), getString(number.titleRes), number.step.toInt(), number.max.toInt(), number.min.toInt(),
         )
-        dialog.newValueLiveData.observe(viewLifecycleOwner) { updateNumber(number, it.toFloat()) }
+        dialog.newValueLiveData.observe(viewLifecycleOwner) { stateHolder.updateNumber(number, it.toFloat()) }
         dialog.show(childFragmentManager, dialog::class.java.simpleName)
-    }
-
-    private fun updateNumber(number: AccelerationNumber, value: Float) {
-        val currentPacket = packet ?: return
-        applyAccelerationValue(currentPacket, number, value)
-        values = values?.withValue(number, value)
-        mViewModel.sendPacket(currentPacket)
-    }
-
-    private fun selectAeType(index: Int) {
-        val currentPacket = packet ?: return
-        currentPacket.injAeType = index
-        values = values?.copy(aeType = index)
-        mViewModel.sendPacket(currentPacket)
-    }
-
-    private fun selectWallwetModel(index: Int) {
-        val currentPacket = packet ?: return
-        currentPacket.wallwetModel = index
-        values = values?.copy(wallwetModel = index)
-        mViewModel.sendPacket(currentPacket)
-    }
-
-    private fun setBalance(value: Float) {
-        val currentPacket = packet ?: return
-        currentPacket.injAeBallance = value
-        values = values?.copy(balance = value)
-        mViewModel.sendPacket(currentPacket)
     }
 
     override fun tabTitle(): Int = R.string.params_tab_acceleration_title

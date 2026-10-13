@@ -49,9 +49,10 @@ import androidx.compose.ui.semantics.onClick
 import androidx.compose.ui.semantics.role
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.unit.dp
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.launch
 import org.secu3.android.ui.parameters.compose.ParameterLoadingIndicator
 import org.secu3.android.R
-import org.secu3.android.models.packets.out.params.ChokeControlParPacket
 import org.secu3.android.ui.parameters.compose.ParameterSwitchRow
 import org.secu3.android.ui.parameters.compose.ParameterValueRow
 
@@ -69,44 +70,12 @@ enum class ChokeNumber(@StringRes val title: Int, val precision: Int, val min: F
 
 enum class ChokeSelector(@StringRes val title: Int) { FREQUENCY(R.string.choke_frequency_of_pulses) }
 
-data class ChokeValues(val numbers: Map<ChokeNumber, Float>, val flags: List<Boolean>, val testing: Boolean, val frequency: Int) {
-    fun value(number: ChokeNumber) = numbers.getValue(number)
-    companion object {
-        fun from(p: ChokeControlParPacket) = ChokeValues(
-            mapOf(ChokeNumber.STEPS to p.smSteps.toFloat(), ChokeNumber.REGULATOR_FACTOR to p.rpmIf,
-                ChokeNumber.COLD_DURATION to p.corrTime0, ChokeNumber.HOT_DURATION to p.corrTime1,
-                ChokeNumber.CRANK_TO_RUN to p.injCrankToRunTime),
-            listOf(p.useClosedLoopRmpRegulator, p.dontUseRpmRegOnGas, p.useThrottlePosInChokeInit, p.maxSTEPfreqAtInit),
-            p.testing, p.smFreq,
-        )
-    }
-}
-
-fun applyChokeNumber(p: ChokeControlParPacket, n: ChokeNumber, value: Float) {
-    when (n) {
-        ChokeNumber.STEPS -> p.smSteps = value.toInt().coerceIn(50, 2000)
-        ChokeNumber.REGULATOR_FACTOR -> p.rpmIf = value.coerceIn(.01f, 1f)
-        ChokeNumber.COLD_DURATION -> p.corrTime0 = value.coerceIn(.1f, 10f)
-        ChokeNumber.HOT_DURATION -> p.corrTime1 = value.coerceIn(.1f, 10f)
-        ChokeNumber.CRANK_TO_RUN -> p.injCrankToRunTime = value.coerceIn(.1f, 99f)
-        else -> Unit
-    }
-}
-
-/** A pending manual movement delta that is only copied into a packet on release. */
-class ChokeManualDelta {
-    var value: Int = 0
-        private set
-    fun step(direction: Int) { value = (value + direction.coerceIn(-1, 1)).coerceIn(-127, 127) }
-    fun clear() { value = 0 }
-}
-
 @OptIn(ExperimentalFoundationApi::class)
 @Composable
 fun ChokeScreen(
     values: ChokeValues?, onEdit: (ChokeNumber) -> Unit,
     onToggle: (ChokeNumber, Boolean) -> Unit, onFrequency: (Int) -> Unit,
-    onManualStep: (Int) -> Unit, onManualRelease: () -> Unit, onManualCancel: () -> Unit,
+    onManualStep: (Int) -> Unit, onManualFlush: () -> Unit, onManualRelease: () -> Unit, onManualCancel: () -> Unit,
     onTest: () -> Unit,
 ) {
     if (values == null) {
@@ -119,9 +88,9 @@ fun ChokeScreen(
         NumberRow(ChokeNumber.STEPS, values, onEdit)
         Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(12.dp)) {
             Row(horizontalArrangement = Arrangement.spacedBy(4.dp)) {
-                HoldButton("choke_manual_dec", -1, stringResource(R.string.choke_manual_decrease), onManualStep, onManualRelease, onManualCancel, "‹",
+                HoldButton("choke_manual_dec", -1, stringResource(R.string.choke_manual_decrease), onManualStep, onManualFlush, onManualRelease, onManualCancel, "‹",
                     RoundedCornerShape(topStart = 24.dp, bottomStart = 24.dp))
-                HoldButton("choke_manual_inc", 1, stringResource(R.string.choke_manual_increase), onManualStep, onManualRelease, onManualCancel, "›",
+                HoldButton("choke_manual_inc", 1, stringResource(R.string.choke_manual_increase), onManualStep, onManualFlush, onManualRelease, onManualCancel, "›",
                     RoundedCornerShape(topEnd = 24.dp, bottomEnd = 24.dp))
             }
             Spacer(Modifier.weight(1f))
@@ -173,32 +142,48 @@ fun ChokeScreen(
 }
 
 @OptIn(ExperimentalFoundationApi::class)
-@Composable private fun HoldButton(tag: String, direction: Int, label: String, onStep: (Int) -> Unit, onRelease: () -> Unit, onCancel: () -> Unit, icon: String, shape: RoundedCornerShape) {
+@Composable private fun HoldButton(tag: String, direction: Int, label: String, onStep: (Int) -> Unit, onFlush: () -> Unit, onRelease: () -> Unit, onCancel: () -> Unit, icon: String, shape: RoundedCornerShape) {
     var pressed by remember(tag) { mutableStateOf(false) }
+    val currentOnStep by rememberUpdatedState(onStep)
+    val currentOnFlush by rememberUpdatedState(onFlush)
+    val currentOnRelease by rememberUpdatedState(onRelease)
+    val currentOnCancel by rememberUpdatedState(onCancel)
+    val timerScope = rememberCoroutineScope()
     val baseColor = MaterialTheme.colorScheme.primary
     val pressedColor = lerp(baseColor, Color.Black, .25f)
     Surface(color = if (pressed) pressedColor else baseColor, contentColor = Color.White,
         shape = shape, modifier = Modifier.testTag(tag).size(width = 64.dp, height = 48.dp)
             .semantics {
                 role = Role.Button
-                onClick(label) { onStep(direction); onRelease(); true }
-            }.pointerInput(direction, onStep, onRelease, onCancel) {
+                onClick(label) { currentOnStep(direction); currentOnRelease(); true }
+            }.pointerInput(direction) {
         awaitEachGesture {
-            val down = awaitFirstDown(false)
+            awaitFirstDown(false)
             pressed = true
+            var repeatJob: kotlinx.coroutines.Job? = null
+            var flushJob: kotlinx.coroutines.Job? = null
             try {
-                onStep(direction)
-                val up = waitForUpOrCancellation()
-                if (up == null) {
-                    onCancel()
-                } else {
-                    val heldMillis = (up.uptimeMillis - down.uptimeMillis).coerceAtLeast(0L)
-                    if (heldMillis >= 400L) {
-                        repeat(1 + ((heldMillis - 400L) / 80L).toInt()) { onStep(direction) }
+                currentOnStep(direction)
+                repeatJob = timerScope.launch {
+                    delay(400L)
+                    while (true) {
+                        currentOnStep(direction)
+                        delay(80L)
                     }
-                    onRelease()
                 }
+                flushJob = timerScope.launch {
+                    while (true) {
+                        delay(250L)
+                        currentOnFlush()
+                    }
+                }
+                val up = waitForUpOrCancellation()
+                repeatJob.cancel()
+                flushJob.cancel()
+                if (up == null) currentOnCancel() else currentOnRelease()
             } finally {
+                repeatJob?.cancel()
+                flushJob?.cancel()
                 pressed = false
             }
         }

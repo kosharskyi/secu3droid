@@ -28,39 +28,34 @@ import android.os.Bundle
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.setValue
 import androidx.compose.ui.platform.ComposeView
 import androidx.compose.ui.platform.ViewCompositionStrategy
 import androidx.lifecycle.lifecycleScope
 import androidx.lifecycle.withResumed
 import kotlinx.coroutines.launch
 import org.secu3.android.R
-import org.secu3.android.models.packets.out.params.AnglesParamPacket
 import org.secu3.android.ui.compose.SecuComposeTheme
 import org.secu3.android.ui.parameters.dialogs.ParamFloatEditDialogFragment
-import org.secu3.android.ui.parameters.pages.compose.AnglesFlag
 import org.secu3.android.ui.parameters.pages.compose.AnglesNumber
 import org.secu3.android.ui.parameters.pages.compose.AnglesScreen
+import org.secu3.android.ui.parameters.pages.compose.AnglesStateHolder
 import org.secu3.android.ui.parameters.pages.compose.AnglesUiState
-import org.secu3.android.ui.parameters.pages.compose.AnglesValues
-import org.secu3.android.ui.parameters.pages.compose.applyAnglesFlag
-import org.secu3.android.ui.parameters.pages.compose.applyAnglesValue
 
 class AnglesFragment : BaseParamFragment() {
-    private var packet: AnglesParamPacket? = null
-    private var values by mutableStateOf<AnglesValues?>(null)
+    private lateinit var stateHolder: AnglesStateHolder
 
     override fun onCreateView(inflater: LayoutInflater, container: ViewGroup?, savedInstanceState: Bundle?): View {
-        packet = null
-        values = null
+        stateHolder = AnglesStateHolder(
+            sendPacket = mViewModel::sendPacket,
+            onPacketMapping = { mViewModel.isSendAllowed = false },
+            onPacketMapped = { mViewModel.isSendAllowed = true },
+        )
         return ComposeView(requireContext()).apply {
             id = R.id.angles_compose_view
             setViewCompositionStrategy(ViewCompositionStrategy.DisposeOnViewTreeLifecycleDestroyed)
             setContent {
                 SecuComposeTheme {
-                    AnglesScreen(values?.let(AnglesUiState::Data) ?: AnglesUiState.Loading, ::editParameter, ::updateFlag)
+                    AnglesScreen(stateHolder.state, ::editParameter, stateHolder::updateFlag)
                 }
             }
         }
@@ -73,37 +68,18 @@ class AnglesFragment : BaseParamFragment() {
             viewLifecycle.withResumed {
                 // Accessing this getter schedules a protocol read; do it once after the page is resumed.
                 val anglesLiveData = mViewModel.anglesLiveData
-                anglesLiveData.observe(viewLifecycleOwner) { received ->
-                    mViewModel.isSendAllowed = false
-                    packet = received
-                    values = AnglesValues.from(received)
-                    mViewModel.isSendAllowed = true
-                }
+                stateHolder.observePackets(viewLifecycleOwner, anglesLiveData)
             }
         }
     }
 
     private fun editParameter(number: AnglesNumber) {
-        val current = values ?: return
+        val current = (stateHolder.state as? AnglesUiState.Data)?.values ?: return
         val dialog = ParamFloatEditDialogFragment.newInstance(
             current.value(number), getString(number.titleRes), number.step, number.max, number.min, number.precision,
         )
-        dialog.newValueLiveData.observe(viewLifecycleOwner) { updateValue(number, it) }
+        dialog.newValueLiveData.observe(viewLifecycleOwner) { stateHolder.updateValue(number, it) }
         dialog.show(childFragmentManager, dialog::class.java.simpleName)
-    }
-
-    private fun updateValue(number: AnglesNumber, value: Float) {
-        val currentPacket = packet ?: return
-        applyAnglesValue(currentPacket, number, value)
-        values = values?.withValue(number, value)
-        mViewModel.sendPacket(currentPacket)
-    }
-
-    private fun updateFlag(flag: AnglesFlag, checked: Boolean) {
-        val currentPacket = packet ?: return
-        applyAnglesFlag(currentPacket, flag, checked)
-        values = values?.withFlag(flag, checked)
-        mViewModel.sendPacket(currentPacket)
     }
 
     override fun tabTitle(): Int = R.string.params_tab_angles_title

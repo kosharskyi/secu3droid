@@ -35,6 +35,7 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.input.pointer.pointerInput
@@ -44,6 +45,9 @@ import androidx.compose.ui.semantics.onClick
 import androidx.compose.ui.semantics.role
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.unit.dp
+import kotlinx.coroutines.Job
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.launch
 import org.secu3.android.R
 import org.secu3.android.models.packets.out.params.GasDoseParamPacket
 import org.secu3.android.ui.parameters.compose.ParameterLoadingIndicator
@@ -83,15 +87,8 @@ fun applyGasDoseNumber(p: GasDoseParamPacket, n: GasDoseNumber, value: Float) {
     }
 }
 
-class GasDoseManualDelta {
-    var value: Int = 0
-        private set
-    fun step(direction: Int) { value = (value + direction.coerceIn(-1, 1)).coerceIn(-127, 127) }
-    fun clear() { value = 0 }
-}
-
 @Composable
-fun GasDoseScreen(values: GasDoseValues?, firmwareAvailable: Boolean, onEdit: (GasDoseNumber) -> Unit, onFrequency: (Int) -> Unit, onMaximumFrequency: (Boolean) -> Unit, onManualStep: (Int) -> Unit, onManualRelease: () -> Unit, onManualCancel: () -> Unit, onTest: () -> Unit) {
+fun GasDoseScreen(values: GasDoseValues?, firmwareAvailable: Boolean, onEdit: (GasDoseNumber) -> Unit, onFrequency: (Int) -> Unit, onMaximumFrequency: (Boolean) -> Unit, onManualStep: (Int) -> Unit, onManualRelease: () -> Unit, onManualCancel: () -> Unit, onTest: () -> Unit, onManualFlush: () -> Unit = {}) {
     if (!firmwareAvailable) {
         Box(Modifier.fillMaxSize().testTag("gas_dose_unavailable"), contentAlignment = androidx.compose.ui.Alignment.Center) {
             Text(stringResource(R.string.gas_dose_unavailable), modifier = Modifier.padding(24.dp))
@@ -105,8 +102,8 @@ fun GasDoseScreen(values: GasDoseValues?, firmwareAvailable: Boolean, onEdit: (G
         NumberRow(GasDoseNumber.STEPS, values, onEdit)
         Row(Modifier.fillMaxWidth(), verticalAlignment = androidx.compose.ui.Alignment.CenterVertically) {
             Row(horizontalArrangement = Arrangement.spacedBy(4.dp)) {
-                ManualHoldButton("gas_dose_manual_dec", -1, stringResource(R.string.gas_dose_manual_decrease), "‹", onManualStep, onManualRelease, onManualCancel, true)
-                ManualHoldButton("gas_dose_manual_inc", 1, stringResource(R.string.gas_dose_manual_increase), "›", onManualStep, onManualRelease, onManualCancel, false)
+                ManualHoldButton("gas_dose_manual_dec", -1, stringResource(R.string.gas_dose_manual_decrease), "‹", onManualStep, onManualRelease, onManualCancel, onManualFlush, true)
+                ManualHoldButton("gas_dose_manual_inc", 1, stringResource(R.string.gas_dose_manual_increase), "›", onManualStep, onManualRelease, onManualCancel, onManualFlush, false)
             }
             Spacer(Modifier.weight(1f))
             Button(onClick = onTest, modifier = Modifier.testTag("gas_dose_test"), colors = ButtonDefaults.buttonColors(containerColor = if (values.testing) MaterialTheme.colorScheme.error else MaterialTheme.colorScheme.primary, contentColor = androidx.compose.ui.graphics.Color.White)) {
@@ -140,25 +137,39 @@ fun GasDoseScreen(values: GasDoseValues?, firmwareAvailable: Boolean, onEdit: (G
 }
 
 @OptIn(androidx.compose.foundation.ExperimentalFoundationApi::class)
-@Composable private fun ManualHoldButton(tag: String, direction: Int, label: String, icon: String, onStep: (Int) -> Unit, onRelease: () -> Unit, onCancel: () -> Unit, start: Boolean) {
+@Composable private fun ManualHoldButton(tag: String, direction: Int, label: String, icon: String, onStep: (Int) -> Unit, onRelease: () -> Unit, onCancel: () -> Unit, onFlush: () -> Unit, start: Boolean) {
+    val scope = rememberCoroutineScope()
     val pressed = androidx.compose.runtime.remember(tag) { androidx.compose.runtime.mutableStateOf(false) }
     val color = androidx.compose.ui.graphics.lerp(MaterialTheme.colorScheme.primary, androidx.compose.ui.graphics.Color.Black, if (pressed.value) .25f else 0f)
     Surface(color = color, contentColor = androidx.compose.ui.graphics.Color.White, shape = androidx.compose.foundation.shape.RoundedCornerShape(topStart = if (start) 24.dp else 0.dp, bottomStart = if (start) 24.dp else 0.dp, topEnd = if (start) 0.dp else 24.dp, bottomEnd = if (start) 0.dp else 24.dp), modifier = Modifier.testTag(tag).size(64.dp, 48.dp).semantics {
         role = Role.Button
         onClick(label) { onStep(direction); onRelease(); true }
-    }.pointerInput(direction, onStep, onRelease, onCancel) {
+    }.pointerInput(direction, onStep, onRelease, onCancel, onFlush) {
         awaitEachGesture {
-            val down = awaitFirstDown(false)
+            awaitFirstDown(false)
             pressed.value = true
+            var repeater: Job? = null
+            var flusher: Job? = null
             try {
                 onStep(direction)
-                val up = waitForUpOrCancellation()
-                if (up == null) onCancel() else {
-                    val held = (up.uptimeMillis - down.uptimeMillis).coerceAtLeast(0)
-                    if (held >= 400) repeat(1 + ((held - 400) / 80).toInt()) { onStep(direction) }
-                    onRelease()
+                repeater = scope.launch {
+                    delay(400)
+                    while (true) {
+                        onStep(direction)
+                        delay(80)
+                    }
                 }
-            } finally { pressed.value = false }
+                flusher = scope.launch {
+                    while (true) {
+                        delay(250)
+                        onFlush()
+                    }
+                }
+                val up = waitForUpOrCancellation()
+                repeater.cancel()
+                flusher.cancel()
+                if (up == null) onCancel() else onRelease()
+            } finally { repeater?.cancel(); flusher?.cancel(); pressed.value = false }
         }
     }) { Box(Modifier.fillMaxSize(), contentAlignment = androidx.compose.ui.Alignment.Center) { Text(icon, color = androidx.compose.ui.graphics.Color.White, style = MaterialTheme.typography.headlineSmall) } }
 }

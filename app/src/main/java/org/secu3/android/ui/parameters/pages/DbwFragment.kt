@@ -28,38 +28,32 @@ import android.os.Bundle
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.setValue
 import androidx.compose.ui.platform.ComposeView
 import androidx.compose.ui.platform.ViewCompositionStrategy
 import androidx.lifecycle.lifecycleScope
 import androidx.lifecycle.withResumed
 import kotlinx.coroutines.launch
 import org.secu3.android.R
-import org.secu3.android.models.packets.out.params.DbwParamPacket
 import org.secu3.android.ui.compose.SecuComposeTheme
 import org.secu3.android.ui.parameters.dialogs.ParamFloatEditDialogFragment
 import org.secu3.android.ui.parameters.pages.compose.DbwNumber
 import org.secu3.android.ui.parameters.pages.compose.DbwScreen
 import org.secu3.android.ui.parameters.pages.compose.DbwUiState
-import org.secu3.android.ui.parameters.pages.compose.DbwValues
-import org.secu3.android.ui.parameters.pages.compose.applyDbwValue
+import org.secu3.android.ui.parameters.pages.compose.DbwStateHolder
 
 class DbwFragment : BaseParamFragment() {
 
-    private var packet: DbwParamPacket? = null
-    private var values by mutableStateOf<DbwValues?>(null)
+    private lateinit var stateHolder: DbwStateHolder
 
     override fun onCreateView(inflater: LayoutInflater, container: ViewGroup?, savedInstanceState: Bundle?): View {
-        packet = null
-        values = null
+        stateHolder = DbwStateHolder(mViewModel::sendPacket) { mViewModel.isSendAllowed = it }
+        stateHolder.reset()
         return ComposeView(requireContext()).apply {
             id = R.id.dbw_compose_view
             setViewCompositionStrategy(ViewCompositionStrategy.DisposeOnViewTreeLifecycleDestroyed)
             setContent {
                 SecuComposeTheme {
-                    DbwScreen(values?.let(DbwUiState::Data) ?: DbwUiState.Loading, ::editParameter)
+                    DbwScreen(stateHolder.uiState, ::editParameter)
                 }
             }
         }
@@ -73,29 +67,19 @@ class DbwFragment : BaseParamFragment() {
                 // Accessing this getter sends the DBW read request, so evaluate it only once here.
                 val dbwLiveData = mViewModel.dbwLiveData
                 dbwLiveData.observe(owner) { received ->
-                    mViewModel.isSendAllowed = false
-                    packet = received
-                    values = DbwValues.from(received)
-                    mViewModel.isSendAllowed = true
+                    stateHolder.receive(received)
                 }
             }
         }
     }
 
     private fun editParameter(number: DbwNumber) {
-        val current = values ?: return
+        val current = (stateHolder.uiState as? DbwUiState.Data)?.values ?: return
         val dialog = ParamFloatEditDialogFragment.newInstance(
             current.value(number), getString(number.titleRes), number.step, number.max, number.min, number.precision,
         )
-        dialog.newValueLiveData.observe(viewLifecycleOwner) { updateValue(number, it) }
+        dialog.newValueLiveData.observe(viewLifecycleOwner) { stateHolder.edit(number, it) }
         dialog.show(childFragmentManager, dialog::class.java.simpleName)
-    }
-
-    private fun updateValue(number: DbwNumber, value: Float) {
-        val currentPacket = packet ?: return
-        applyDbwValue(currentPacket, number, value)
-        values = values?.withValue(number, value)
-        mViewModel.sendPacket(currentPacket)
     }
 
     override fun tabTitle(): Int = R.string.params_tab_el_throttle_title

@@ -49,6 +49,7 @@ import org.junit.Assert.assertEquals
 import org.junit.Rule
 import org.junit.Test
 import kotlinx.coroutines.runBlocking
+import java.util.Locale
 import org.secu3.android.R
 import org.secu3.android.db.AppDatabase
 import org.secu3.android.db.models.GaugeState
@@ -62,6 +63,8 @@ import org.secu3.android.ui.sensors.models.IndicatorType
 class SensorsScreenTest {
     @get:Rule val compose = createComposeRule()
     private val context = InstrumentationRegistry.getInstrumentation().targetContext
+
+
 
     @Test fun rendersPersistedGaugeAndIndicatorValuesAndActiveState() {
         compose.setContent { SecuComposeTheme {
@@ -137,11 +140,70 @@ class SensorsScreenTest {
         }
 
         val card = compose.onNodeWithTag("gauge-RPM").fetchSemanticsNode().boundsInRoot
-        val dial = compose.onNodeWithTag("dial-RPM").fetchSemanticsNode().boundsInRoot
+        val dial = compose.onNodeWithTag("dial-RPM", useUnmergedTree = true).fetchSemanticsNode().boundsInRoot
         org.junit.Assert.assertTrue("dial must be narrower than its card", dial.width < card.width)
-        org.junit.Assert.assertTrue("normal-mode dial should measure square", kotlin.math.abs(dial.width - dial.height) <= 2f)
+        val footerHeight = 24f * context.resources.displayMetrics.density
+        org.junit.Assert.assertTrue("dial should reserve a separate 24dp live-value footer: $dial", kotlin.math.abs((dial.height - dial.width) - footerHeight) <= 2f)
         org.junit.Assert.assertTrue("dial must fit horizontally in its card", dial.left >= card.left && dial.right <= card.right)
         org.junit.Assert.assertTrue("dial must fit vertically in its card", dial.top >= card.top && dial.bottom <= card.bottom)
+    }
+
+    @Test fun composeDialKeepsValueAndNegativeRangeWithinCardsAcrossColumnCounts() {
+        val columns = mutableStateOf(1)
+        val gauges = listOf(
+            GaugeItem(GaugeState(1, GaugeType.RPM, 0, false), "1234"),
+            GaugeItem(GaugeState(2, GaugeType.CURRENT_ANGLE, 1, false), "-7.5"),
+            GaugeItem(GaugeState(3, GaugeType.VOLTAGE, 2, false), "12.4"),
+        )
+        compose.setContent { SecuComposeTheme {
+            Box(Modifier.width(360.dp)) { SensorsScreen(gauges.take(columns.value), emptyList(), columns.value, null, null, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}) }
+        } }
+        for (columnCount in 1..3) {
+            compose.runOnIdle { columns.value = columnCount }
+            compose.waitForIdle()
+            for (name in listOf("RPM", "CURRENT_ANGLE", "VOLTAGE").take(columnCount)) {
+                val card = compose.onNodeWithTag("gauge-$name").fetchSemanticsNode().boundsInRoot
+                val dial = compose.onNodeWithTag("dial-$name", useUnmergedTree = true).fetchSemanticsNode().boundsInRoot
+                org.junit.Assert.assertTrue("$name dial is clipped at $columnCount columns: card=$card dial=$dial", dial.left >= card.left && dial.right <= card.right && dial.top >= card.top && dial.bottom <= card.bottom)
+            }
+        }
+        compose.onNodeWithTag("dial-CURRENT_ANGLE", useUnmergedTree = true).assert(SemanticsMatcher.expectValue(SemanticsProperties.ContentDescription, listOf("Advance angle: -7.5 °")))
+    }
+
+    @Test fun composeDialReportsLiveValueAndViewModeChanges() {
+        val value = mutableStateOf("100")
+        val numeric = mutableStateOf(false)
+        compose.setContent { SecuComposeTheme {
+            SensorsScreen(listOf(GaugeItem(GaugeState(1, GaugeType.RPM, 0, numeric.value), value.value)), emptyList(), 1, null, null,
+                {}, {}, {}, {}, {}, {}, {}, {}, { numeric.value = !numeric.value }, {}, {})
+        } }
+        compose.onNodeWithTag("dial-RPM", useUnmergedTree = true).assert(SemanticsMatcher.expectValue(SemanticsProperties.ContentDescription, listOf("RPM: 100 rpm")))
+        compose.runOnIdle { value.value = "2750" }
+        compose.onNodeWithTag("dial-RPM", useUnmergedTree = true).assert(SemanticsMatcher.expectValue(SemanticsProperties.ContentDescription, listOf("RPM: 2750 rpm")))
+        compose.onNodeWithTag("gauge-RPM").performClick()
+        compose.onNodeWithText(context.getString(R.string.switch_view)).performClick()
+        compose.onNodeWithText("2750").assertIsDisplayed()
+        compose.onNodeWithTag("gauge-RPM").performClick()
+        compose.onNodeWithText(context.getString(R.string.switch_view)).performClick()
+        compose.onNodeWithTag("dial-RPM", useUnmergedTree = true).assertIsDisplayed()
+    }
+
+    @Test fun tickLabelsRoundToWholeNumbersUsingDefaultLocale() {
+        val originalLocale = Locale.getDefault()
+        try {
+            Locale.setDefault(Locale.US)
+            assertEquals("148", formatGaugeTickLabel(147.6f))
+            assertEquals("-7", formatGaugeTickLabel(-7.4f))
+        } finally {
+            Locale.setDefault(originalLocale)
+        }
+    }
+
+    @Test fun narrowDialTickLabelsUseEvenSubsetIncludingEndpoints() {
+        assertEquals(listOf(0, 5, 10, 14, 19), selectGaugeTickLabelIndices(20, 5))
+        assertEquals((0 until 20).toList(), selectGaugeTickLabelIndices(20, 20))
+        assertEquals(listOf(0, 19), selectGaugeTickLabelIndices(20, 2))
+        assertEquals(emptyList<Int>(), selectGaugeTickLabelIndices(0, 5))
     }
 
     @Test fun addDialogsSelectGaugeAndIndicatorAndIndicatorDelete() {
@@ -267,7 +329,7 @@ class SensorsScreenTest {
     }
 
     @Test fun previewMovesNeighborSmoothlyUnderControlledClock() {
-        // Keep both drag targets in the tablet viewport; SpeedView sizing is verified by its dedicated test.
+        // Keep both drag targets in the tablet viewport for a reliable drag gesture.
         compose.mainClock.autoAdvance = false
         var savedOrder: List<GaugeState>? = null
         compose.setContent { SecuComposeTheme {
@@ -313,7 +375,7 @@ class SensorsScreenTest {
     }
 
     @Test fun earlyDropWaitsOnlyForRemainingPreviewAnimation() {
-        // Keep both drag targets in the tablet viewport; SpeedView sizing is verified by its dedicated test.
+        // Keep both drag targets in the tablet viewport for a reliable drag gesture.
         compose.mainClock.autoAdvance = false
         var savedOrder: List<GaugeState>? = null
         compose.setContent { SecuComposeTheme {

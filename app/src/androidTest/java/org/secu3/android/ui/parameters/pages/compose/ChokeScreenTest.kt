@@ -41,7 +41,8 @@ class ChokeScreenTest {
     @Test fun initialRenderAndRecompositionDoNotSendOrEditAnything() {
         var calls = 0
         val state = mutableStateOf(ChokeValues.from(ChokeControlParPacket(smFreq = 8)))
-        compose.setContent { SecuComposeTheme { ChokeScreen(state.value, {}, { _, _ -> calls++ }, { calls++ }, { calls++ }, { calls++ }, { calls++ }, { calls++ }) } }
+        compose.setContent { SecuComposeTheme { ChokeScreen(state.value, {}, { _, _ -> calls++ }, { calls++ }, { calls++ }, { calls++ }, { calls++ }, { calls++ }, { calls++ }) } }
+        compose.waitForIdle()
         compose.onNodeWithTag("choke_frequency").assertTextContains("Code 8")
         compose.onNodeWithTag("choke_test").assertExists()
         val decrease = compose.onNodeWithTag("choke_manual_dec").fetchSemanticsNode().boundsInRoot
@@ -62,6 +63,7 @@ class ChokeScreenTest {
     @Test fun tapHoldSelectorSwitchAndTestAreExplicitCallbacks() {
         var delta = 0
         var releases = 0
+        var flushes = 0
         var cancels = 0
         var tests = 0
         val edits = mutableListOf<ChokeNumber>()
@@ -70,9 +72,10 @@ class ChokeScreenTest {
         compose.setContent {
             SecuComposeTheme {
                 ChokeScreen(ChokeValues.from(ChokeControlParPacket()), { edits += it }, { number, checked -> toggles += number to checked },
-                    frequencies::add, { delta += it }, { releases++ }, { cancels++ }, { tests++ })
+                    frequencies::add, { delta += it }, { flushes++ }, { releases++ }, { cancels++ }, { tests++ })
             }
         }
+        compose.waitForIdle()
         compose.onNodeWithTag("choke_test").assertIsDisplayed().performClick()
         assertEquals(1, tests)
         ChokeNumber.entries.take(5).forEach { number ->
@@ -86,8 +89,16 @@ class ChokeScreenTest {
         assertEquals(0, cancels)
 
         delta = 0
-        compose.onNodeWithTag("choke_manual_inc").performTouchInput { down(center); advanceEventTime(550); up() }
-        assert(delta >= 2) { "Expected initial and held manual steps; got $delta" }
+        val increaseNode = compose.onNodeWithTag("choke_manual_inc")
+        increaseNode.performTouchInput { down(center) }
+        compose.mainClock.advanceTimeBy(550L)
+        compose.runOnIdle {
+            assert(delta >= 2) { "Expected repeat steps before release; got $delta" }
+            assert(flushes >= 1) { "Expected periodic flush before release; got $flushes" }
+        }
+        increaseNode.performTouchInput { up() }
+        assert(delta >= 2) { "Expected steps while still held; got $delta" }
+        assert(flushes >= 1) { "Expected periodic flush while still held; got $flushes" }
         assertEquals(2, releases)
 
         compose.onNodeWithTag("choke_manual_dec").performTouchInput { down(center); moveTo(Offset(-10f, -10f)); up() }

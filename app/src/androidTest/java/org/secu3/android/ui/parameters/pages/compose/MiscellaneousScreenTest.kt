@@ -30,6 +30,7 @@ import androidx.compose.ui.test.junit4.v2.createComposeRule
 import org.junit.Assert.assertEquals
 import org.junit.Rule
 import org.junit.Test
+import org.secu3.android.R
 import org.secu3.android.ui.compose.SecuComposeTheme
 import org.secu3.android.ui.parameters.pages.MiscState
 import org.secu3.android.ui.parameters.pages.MiscToggle
@@ -38,6 +39,7 @@ import org.secu3.android.ui.parameters.pages.MiscellaneousScreen
 
 class MiscellaneousScreenTest {
     @get:Rule val compose = createComposeRule()
+    private val context get() = androidx.test.platform.app.InstrumentationRegistry.getInstrumentation().targetContext
     private val initial = MiscState(0x0103,20,true,5000,-2,5,true,false,true,5000,175000,2.5f,100,200,400)
 
     @Test fun loadingScrollAndRecompositionHaveNoCallbacks() {
@@ -50,7 +52,7 @@ class MiscellaneousScreenTest {
         compose.onNodeWithTag("misc-baud-selector").assertIsDisplayed()
         compose.onNodeWithTag("misc-vss").performScrollTo().assertIsDisplayed()
         compose.runOnIdle { state.value=initial.copy(period=30) }
-        compose.onNodeWithTag("misc-period-value",useUnmergedTree=true).assertTextEquals("30 ms")
+        compose.onNodeWithTag("misc-period-value",useUnmergedTree=true).assertTextEquals("30 ${context.getString(R.string.units_ms)}")
         compose.runOnIdle { error.value=true }
         compose.onNodeWithTag("misc-validation-error").performScrollTo().assertIsDisplayed()
         assertEquals(0,calls)
@@ -70,7 +72,7 @@ class MiscellaneousScreenTest {
         assertEquals("baud:259",actions.last()) // 0x0103
         compose.onNodeWithText("9600").assertIsDisplayed()
         compose.onNodeWithTag("misc-period").performClick()
-        compose.onNodeWithTag("misc-period-value",useUnmergedTree=true).assertTextEquals("40 ms")
+        compose.onNodeWithTag("misc-period-value",useUnmergedTree=true).assertTextEquals("40 ${context.getString(R.string.units_ms)}")
         listOf("cutoff","start","duration","begin","end","timeout","pwm0","pwm1","vss").forEach { key ->
             compose.onNodeWithTag("misc-$key").performScrollTo().performClick()
             if(key=="timeout") assertEquals("float",actions.last()) else assertEquals("int:${key.uppercase()}",actions.last())

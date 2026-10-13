@@ -28,9 +28,6 @@ import android.os.Bundle
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.setValue
 import androidx.compose.ui.platform.ComposeView
 import androidx.compose.ui.platform.ViewCompositionStrategy
 import androidx.lifecycle.lifecycleScope
@@ -43,23 +40,22 @@ import org.secu3.android.ui.compose.SecuComposeTheme
 
 @AndroidEntryPoint
 class UniversalOutputsFragment : BaseParamFragment() {
-    private var packet: UniOutParamPacket? = null
-    private var values by mutableStateOf<UniversalOutputsValues?>(null)
+    private lateinit var stateHolder: UniversalOutputsStateHolder
 
     override fun onCreateView(inflater: LayoutInflater, container: ViewGroup?, savedInstanceState: Bundle?): View {
-        packet = null
-        values = null
+        stateHolder = UniversalOutputsStateHolder(mViewModel::sendPacket) { mViewModel.isSendAllowed = it }
+        stateHolder.reset()
         return ComposeView(requireContext()).apply {
             setViewCompositionStrategy(ViewCompositionStrategy.DisposeOnViewTreeLifecycleDestroyed)
             setContent {
                 SecuComposeTheme {
                     val conditionNames = UniOutParamPacket.CONDITION.entries.associate { it.id to getString(it.strId) }
                     UniversalOutputsScreen(
-                        values = values,
+                        values = stateHolder.values,
                         conditionNames = conditionNames,
                         logicalFunctions = resources.getStringArray(R.array.logical_functions).toList(),
-                        onOutputChange = ::updateOutput,
-                        onPairChange = ::updatePairFunction,
+                        onOutputChange = stateHolder::updateOutput,
+                        onPairChange = stateHolder::updatePairFunction,
                     )
                 }
             }
@@ -71,28 +67,10 @@ class UniversalOutputsFragment : BaseParamFragment() {
         viewLifecycleOwner.lifecycleScope.launch {
             viewLifecycleOwner.lifecycle.withResumed {
                 mViewModel.uniOutLiveData.observe(viewLifecycleOwner) { received ->
-                    mViewModel.isSendAllowed = false
-                    packet = received
-                    values = UniversalOutputsValues.from(received)
-                    mViewModel.isSendAllowed = true
+                    stateHolder.onPacketReceived(received)
                 }
             }
         }
-    }
-
-    private fun updateOutput(index: Int, updated: UniversalOutputValues) {
-        val source = packet ?: return
-        val before = values?.outputs?.getOrNull(index - 1) ?: return
-        applyUniversalOutput(source, index, before, updated)
-        values = UniversalOutputsValues.from(source)
-        mViewModel.sendPacket(source)
-    }
-
-    private fun updatePairFunction(value: Int) {
-        val source = packet ?: return
-        source.logicFunction_1_2 = value
-        values = UniversalOutputsValues.from(source)
-        mViewModel.sendPacket(source)
     }
 
     override fun tabTitle(): Int = R.string.params_tab_universal_outputs_title

@@ -36,15 +36,19 @@ import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.performScrollTo
 import androidx.compose.ui.test.performTouchInput
 import androidx.compose.ui.test.click
+import androidx.test.platform.app.InstrumentationRegistry
 import org.junit.Assert.assertEquals
 import org.junit.Rule
 import org.junit.Test
+import org.secu3.android.R
 import org.secu3.android.ui.compose.SecuComposeTheme
 
 class AccelerationScreenTest {
     @get:Rule val compose = createComposeRule()
 
     @Test fun loadingVisibilityUnknownSelectorsAndCallbacksAreUserDriven() {
+        val context = InstrumentationRegistry.getInstrumentation().targetContext
+        val unknown = context.getString(R.string.firmware_unknown_value)
         val state = mutableStateOf<AccelerationUiState>(AccelerationUiState.Loading)
         var edits = 0
         val selections = mutableListOf<Int>()
@@ -63,16 +67,16 @@ class AccelerationScreenTest {
         compose.runOnIdle { state.value = AccelerationUiState.Data(values) }
         compose.onNodeWithTag("acceleration_ae_time").performScrollTo().assertIsDisplayed()
         compose.onNodeWithTag("acceleration_xtau_start").performScrollTo().assertIsDisplayed()
-        compose.onNodeWithTag("acceleration_ae_type_value", useUnmergedTree = true).assertTextEquals("Unknown (7)")
-        compose.onNodeWithTag("acceleration_wallwet_model_value", useUnmergedTree = true).performScrollTo().assertTextEquals("Unknown (5)")
+        compose.onNodeWithTag("acceleration_ae_type_value", useUnmergedTree = true).assertTextEquals("$unknown (7)")
+        compose.onNodeWithTag("acceleration_wallwet_model_value", useUnmergedTree = true).performScrollTo().assertTextEquals("$unknown (5)")
         compose.onNodeWithTag("acceleration_ae_type_value", useUnmergedTree = true).assertIsDisplayed()
         compose.onNodeWithTag("acceleration_balance_value").assertTextEquals("40%")
         compose.onNodeWithTag("acceleration_balance").performScrollTo()
-        compose.onNodeWithText("AE type", useUnmergedTree = true).performScrollTo().assertIsDisplayed()
-        compose.onNodeWithTag("acceleration_ae_type_value", useUnmergedTree = true).assertTextEquals("Unknown (7)")
+        compose.onNodeWithText(context.getString(R.string.accel_par_ae_type_title), useUnmergedTree = true).performScrollTo().assertIsDisplayed()
+        compose.onNodeWithTag("acceleration_ae_type_value", useUnmergedTree = true).assertTextEquals("$unknown (7)")
         compose.onNodeWithTag("acceleration_wallwet_model").performScrollTo()
-        compose.onNodeWithText("Fuel film model", useUnmergedTree = true).performScrollTo().assertIsDisplayed()
-        compose.onNodeWithTag("acceleration_wallwet_model_value", useUnmergedTree = true).assertTextEquals("Unknown (5)")
+        compose.onNodeWithText(context.getString(R.string.accel_par_fuel_film_model_title), useUnmergedTree = true).performScrollTo().assertIsDisplayed()
+        compose.onNodeWithTag("acceleration_wallwet_model_value", useUnmergedTree = true).assertTextEquals("$unknown (5)")
         compose.runOnIdle { state.value = AccelerationUiState.Data(values.copy()) }
         assertEquals(0, edits)
         assertEquals(emptyList<Int>(), selections)

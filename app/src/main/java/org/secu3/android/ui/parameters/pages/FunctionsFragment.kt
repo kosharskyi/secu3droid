@@ -28,9 +28,6 @@ import android.os.Bundle
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.setValue
 import androidx.compose.ui.platform.ComposeView
 import androidx.compose.ui.platform.ViewCompositionStrategy
 import androidx.lifecycle.lifecycleScope
@@ -39,38 +36,24 @@ import androidx.lifecycle.withResumed
 import kotlinx.coroutines.launch
 import org.secu3.android.R
 import org.secu3.android.models.packets.input.FnNameDatPacket
-import org.secu3.android.models.packets.out.params.FunSetParamPacket
 import org.secu3.android.ui.compose.SecuComposeTheme
 import org.secu3.android.ui.parameters.dialogs.ParamFloatEditDialogFragment
 import org.secu3.android.ui.parameters.pages.compose.FunctionsNumber
 import org.secu3.android.ui.parameters.pages.compose.FunctionsScreen
 import org.secu3.android.ui.parameters.pages.compose.FunctionsUiState
-import org.secu3.android.ui.parameters.pages.compose.FunctionsValues
-import org.secu3.android.ui.parameters.pages.compose.FunctionsChoices
-import org.secu3.android.ui.parameters.pages.compose.applyFunctionsChoice
-import org.secu3.android.ui.parameters.pages.compose.applyFunctionsFlag
-import org.secu3.android.ui.parameters.pages.compose.applyFunctionsValue
+import org.secu3.android.ui.parameters.pages.compose.FunctionsStateHolder
 
 class FunctionsFragment : BaseParamFragment() {
-    private var packet: FunSetParamPacket? = null
-    private var names: List<String>? = null
-    private var values by mutableStateOf<FunctionsValues?>(null)
-    private var choices by mutableStateOf<FunctionsChoices?>(null)
+    private val stateHolder by lazy { FunctionsStateHolder(mViewModel::sendPacket) }
 
     override fun onCreateView(inflater: LayoutInflater, container: ViewGroup?, savedInstanceState: Bundle?): View {
-        packet = null
-        names = null
-        values = null
-        choices = null
+        stateHolder.reset()
         return ComposeView(requireContext()).apply {
             id = R.id.functions_compose_view
             setViewCompositionStrategy(ViewCompositionStrategy.DisposeOnViewTreeLifecycleDestroyed)
             setContent {
                 SecuComposeTheme {
-                    val screenState = values?.let { currentValues ->
-                        choices?.let { currentChoices -> FunctionsUiState.Data(currentValues, currentChoices) }
-                    } ?: FunctionsUiState.Loading
-                    FunctionsScreen(screenState, ::editParameter, ::updateFlag, ::updateChoice)
+                    FunctionsScreen(stateHolder.state, ::editParameter, stateHolder::updateFlag, stateHolder::updateChoice)
                 }
             }
         }
@@ -86,18 +69,14 @@ class FunctionsFragment : BaseParamFragment() {
                     override fun onChanged(value: FnNameDatPacket) {
                         fnNamesLiveData.removeObserver(this)
                         mViewModel.isSendAllowed = false
-                        val received = value
-                        names = received.fnNameList.map { it.name }
+                        stateHolder.onNamesReceived(value)
 
                         // The LiveData getter starts the next protocol read. Evaluate it once,
                         // only after all function table names have arrived.
                         val funsetLiveData = mViewModel.funsetLiveData
                         funsetLiveData.observe(owner) { receivedSet ->
-                            packet = receivedSet
-                            values = FunctionsValues.from(receivedSet)
-                            choices = FunctionsChoices.from(
-                                packet = receivedSet,
-                                names = names.orEmpty(),
+                            stateHolder.onPacketReceived(
+                                received = receivedSet,
                                 loads = resources.getStringArray(R.array.load_measurement_items).toList(),
                                 bars = resources.getStringArray(R.array.barocorr_items).toList(),
                                 ve2 = resources.getStringArray(R.array.ve2_map_func_items).toList(),
@@ -112,7 +91,7 @@ class FunctionsFragment : BaseParamFragment() {
     }
 
     private fun editParameter(number: FunctionsNumber) {
-        val current = values ?: return
+        val current = (stateHolder.state as? FunctionsUiState.Data)?.values ?: return
         val dialog = ParamFloatEditDialogFragment.newInstance(
             current.value(number),
             getString(number.titleRes),
@@ -121,30 +100,14 @@ class FunctionsFragment : BaseParamFragment() {
             number.min,
             number.precision,
         )
-        dialog.newValueLiveData.observe(viewLifecycleOwner) { updateValue(number, it) }
-        dialog.show(childFragmentManager, dialog::class.java.simpleName)
-    }
-
-    private fun updateValue(number: FunctionsNumber, value: Float) {
-        val current = packet ?: return
-        applyFunctionsValue(current, number, value)
-        values = values?.withValue(number, value)
-        mViewModel.sendPacket(current)
-    }
-
-    private fun updateFlag(checked: Boolean) {
-        val current = packet ?: return
-        applyFunctionsFlag(current, checked)
-        values = values?.copy(useLoadGrid = checked)
-        mViewModel.sendPacket(current)
-    }
-
-    private fun updateChoice(choice: FunctionsChoices.Selector, index: Int) {
-        val current = packet ?: return
-        if (applyFunctionsChoice(current, choice, index, names.orEmpty())) {
-            choices = choices?.withSelection(choice, index)
-            mViewModel.sendPacket(current)
+        val observer = object : Observer<Float> {
+            override fun onChanged(value: Float) {
+                dialog.newValueLiveData.removeObserver(this)
+                stateHolder.updateValue(number, value)
+            }
         }
+        dialog.newValueLiveData.observe(viewLifecycleOwner, observer)
+        dialog.show(childFragmentManager, dialog::class.java.simpleName)
     }
 
     override fun tabTitle(): Int = R.string.params_tab_functions_title

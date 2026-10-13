@@ -79,7 +79,7 @@ data class DbwParamPacket (
         frictorq_idleadd_max = data.get2Bytes().toFloat().div(TPS_MULTIPLIER)
         homePosition_edited = data.get2Bytes().toFloat().div(TPS_MULTIPLIER)
 
-//        data.setUnhandledParams()
+        data.setUnhandledParams()
 
         return this
     }

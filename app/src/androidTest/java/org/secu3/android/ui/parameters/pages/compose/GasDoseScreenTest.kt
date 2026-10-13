@@ -28,6 +28,7 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.ui.test.*
 import androidx.compose.ui.test.junit4.v2.createComposeRule
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertTrue
 import org.junit.Rule
 import org.junit.Test
 import org.secu3.android.models.packets.out.params.GasDoseParamPacket
@@ -97,5 +98,36 @@ class GasDoseScreenTest {
         assertEquals(1, tests)
         assertEquals(0, edits)
         assertEquals(0, maximumFrequencyChanges)
+    }
+
+    @Test fun manualHoldRepeatsAndFlushesBeforeRelease() {
+        val state = GasDoseValues.from(GasDoseParamPacket())
+        val steps = mutableListOf<Int>()
+        var flushes = 0
+        var releases = 0
+        compose.setContent {
+            SecuComposeTheme {
+                GasDoseScreen(state, true, {}, {}, {}, steps::add, { releases++ }, {}, {}, { flushes++ })
+            }
+        }
+        val button = compose.onNodeWithTag("gas_dose_manual_inc")
+        button.performTouchInput { down(center) }
+        assertEquals(listOf(1), steps)
+        compose.mainClock.advanceTimeBy(260)
+        compose.waitForIdle()
+        assertEquals(1, flushes)
+        compose.mainClock.advanceTimeBy(400)
+        compose.waitForIdle()
+        assertTrue(steps.size >= 2)
+        assertTrue(flushes >= 2)
+        button.performTouchInput { up() }
+        compose.waitForIdle()
+        assertEquals(1, releases)
+        val completedSteps = steps.size
+        val completedFlushes = flushes
+        compose.mainClock.advanceTimeBy(500)
+        compose.waitForIdle()
+        assertEquals(completedSteps, steps.size)
+        assertEquals(completedFlushes, flushes)
     }
 }

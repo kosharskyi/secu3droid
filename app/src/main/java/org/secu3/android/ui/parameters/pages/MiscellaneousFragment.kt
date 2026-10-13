@@ -55,18 +55,13 @@ import org.secu3.android.ui.parameters.dialogs.ParamFloatEditDialogFragment
 import org.secu3.android.ui.parameters.dialogs.ParamIntEditDialogFragment
 
 class MiscellaneousFragment : BaseParamFragment() {
-    private var packet: MiscellaneousParamPacket? = null
-    private var screenState by mutableStateOf<MiscState?>(null)
-    private var validationError by mutableStateOf(false)
-    private val baudRates = BAUD_RATE_CODES
+    private lateinit var stateHolder: MiscellaneousStateHolder
 
     override fun onCreateView(inflater: android.view.LayoutInflater, container: ViewGroup?, savedInstanceState: Bundle?): View {
-        packet = null
-        screenState = null
-        validationError = false
+        stateHolder = MiscellaneousStateHolder(mViewModel::sendPacket)
         return ComposeView(requireContext()).apply {
             setViewCompositionStrategy(androidx.compose.ui.platform.ViewCompositionStrategy.DisposeOnViewTreeLifecycleDestroyed)
-            setContent { SecuComposeTheme { MiscellaneousScreen(screenState, validationError, BAUD_RATE_CODES, ::editInt, ::editFloat, ::selectBaud, ::toggle) } }
+            setContent { SecuComposeTheme { MiscellaneousScreen(stateHolder.state, stateHolder.hasValidationError, BAUD_RATE_CODES, ::editInt, ::editFloat, ::selectBaud, ::toggle) } }
         }
     }
 
@@ -77,50 +72,17 @@ class MiscellaneousFragment : BaseParamFragment() {
             viewOwner.lifecycle.withResumed {
                 val liveData = mViewModel.miscellaneousLiveData
                 liveData.observe(viewOwner) { p ->
-                    packet = p
-                    screenState = p.toState()
+                    stateHolder.onPacketReceived(p)
                     mViewModel.isSendAllowed = true
                 }
             }
         }
     }
 
-    private fun update(skipExistingPacketValidation: Boolean = false, change: (MiscellaneousParamPacket) -> Unit) {
-        val p = packet ?: return
-        if (!skipExistingPacketValidation) {
-            try {
-                p.pack()
-            } catch (_: IllegalArgumentException) {
-                validationError = true
-                return
-            }
-        }
-        try {
-            change(p)
-            p.pack()
-            commitPacket(p)
-        } catch (_: IllegalArgumentException) {
-            validationError = true
-        }
-    }
-
-    private fun selectBaud(code: Int) = update { it.uartDivisor = code }
-
-    private fun commitPacket(p: MiscellaneousParamPacket) {
-        validationError = false
-        screenState = p.toState()
-        mViewModel.sendPacket(p)
-    }
-    private fun editInt(key: MiscField, value: Int) {
-        val isEvapEdit = key == MiscField.BEGIN || key == MiscField.END
-        update(skipExistingPacketValidation = isEvapEdit) { candidate ->
-            MiscellaneousNumericMapping.applyInt(candidate, key, value)
-        }
-    }
-    private fun editFloat(value: Float) = update {
-        MiscellaneousNumericMapping.applyFloat(it, MiscField.TIMEOUT, value)
-    }
-    private fun toggle(key: MiscToggle, value: Boolean) = update { p -> when(key) { MiscToggle.IGN -> p.ignCutoff=if(value) 1 else 0; MiscToggle.PUMP -> p.offPumpOnGas=value; MiscToggle.GAS -> p.offInjOnGas=value; MiscToggle.PETROL -> p.offInjOnPetrol=value } }
+    private fun selectBaud(code: Int) = stateHolder.selectBaud(code)
+    private fun editInt(key: MiscField, value: Int) = stateHolder.editInt(key, value)
+    private fun editFloat(value: Float) = stateHolder.editFloat(value)
+    private fun toggle(key: MiscToggle, value: Boolean) = stateHolder.toggle(key, value)
 
     private fun openInt(key: MiscField, title: String, value: Int, min: Int, max: Int, step: Int) {
         if (min > max) {
@@ -133,7 +95,7 @@ class MiscellaneousFragment : BaseParamFragment() {
         }
     }
     private fun editInt(key: MiscField) {
-        val p = packet ?: return
+        val p = stateHolder.currentPacket ?: return
         val parameter = when (key) {
             MiscField.PERIOD -> Triple(R.string.miscel_period_title, p.uartPeriodTms, 0 to 500)
             MiscField.CUTOFF -> Triple(R.string.miscel_ignition_cutoff_rpm_title, p.ignCutoffThrd, 1000 to 30000)
@@ -162,7 +124,7 @@ class MiscellaneousFragment : BaseParamFragment() {
         openInt(key, getString(parameter.first), parameter.second, range.first, range.second, step)
     }
     private fun editFloat() {
-        val p = packet ?: return
+        val p = stateHolder.currentPacket ?: return
         ParamFloatEditDialogFragment.newInstance(p.fpTimeoutStrt,getString(R.string.miscel_fuel_pump_working_time_title),.1f,25.5f,.1f,1).also { d -> d.newValueLiveData.observe(viewLifecycleOwner) { editFloat(it) }; d.show(childFragmentManager,d::class.java.simpleName) }
     }
     override fun tabTitle() = R.string.params_tab_miscellaneous_title
@@ -230,4 +192,3 @@ internal fun MiscellaneousScreen(
 }
 @Composable private fun IntRow(title:String,value:String,key:MiscField,onClick:()->Unit) { val tag=key.name.lowercase(); Row(Modifier.fillMaxWidth().testTag("misc-$tag").clickable(onClick=onClick).padding(vertical=10.dp),verticalAlignment=Alignment.CenterVertically) { Column(Modifier.weight(1f)) { Text(title); Text(value,Modifier.testTag("misc-$tag-value"),style=MaterialTheme.typography.bodySmall) }; Text("✎",fontSize=20.sp) } }
 @Composable private fun CheckRow(title:String,value:Boolean,key:String,onChange:(Boolean)->Unit) { Row(Modifier.fillMaxWidth().testTag("misc-$key"),verticalAlignment=Alignment.CenterVertically) { Text(title,Modifier.weight(1f)); Switch(checked=value,onCheckedChange=onChange,modifier=Modifier.testTag("misc-$key-switch")) } }
-private fun MiscellaneousParamPacket.toState()=MiscState(uartDivisor,uartPeriodTms,ignCutoff>0,ignCutoffThrd,hopStartAng,hopDuratAng,offPumpOnGas,offInjOnGas,offInjOnPetrol,evapAfbegin,evapAfEnd,fpTimeoutStrt,pwmFrq0,pwmFrq1,vssPeriodDist)

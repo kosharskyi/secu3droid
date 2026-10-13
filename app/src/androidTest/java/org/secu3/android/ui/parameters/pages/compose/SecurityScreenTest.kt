@@ -26,15 +26,18 @@ import androidx.compose.ui.test.*
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.test.junit4.v2.createComposeRule
 import androidx.compose.runtime.mutableStateOf
+import androidx.test.platform.app.InstrumentationRegistry
 import org.junit.Assert.assertEquals
 import org.junit.Rule
 import org.junit.Test
+import org.secu3.android.R
 import org.secu3.android.ui.compose.SecuComposeTheme
 import org.secu3.android.ui.parameters.pages.SecurityScreen
 
 class SecurityScreenTest {
     @get:Rule val compose = createComposeRule()
     private val types = listOf("BC417", "BK3231", "BK3231S", "BC352", "BK3432", "BK3431S")
+    private val targetContext get() = InstrumentationRegistry.getInstrumentation().targetContext
 
     @Test fun loadingAndRenderingDoNotEmitChanges() {
         var calls = 0
@@ -55,7 +58,7 @@ class SecurityScreenTest {
         compose.setContent { SecuComposeTheme { SecurityScreen(true,true,true,name.value,pass.value,"010203040506","AABBCCDDEEFF",0,types,expanded.value,"",true,false,
             {expanded.value = it},{actions += "type"},{actions += "bt"},{actions += "imm"},{name.value = it; actions += "name"},{pass.value = it; actions += "pass"},{actions += "key1"},{actions += "key2"},{actions += "apply"; name.value = ""; pass.value = ""}) } }
         assertEquals(emptyList<String>(), actions)
-        compose.onNodeWithTag("security-credentials-hint").assertTextEquals("The ECU cannot read back the existing name or password. Enter values here and tap Apply to send them.")
+        compose.onNodeWithTag("security-credentials-hint").assertTextEquals(targetContext.getString(R.string.sec_credentials_write_only))
         assertEquals(emptyList<String>(), actions)
         compose.onNodeWithTag("security-name").performTextInput("ecu")
         compose.onNodeWithTag("security-password").performTextInput("1234")
@@ -69,10 +72,10 @@ class SecurityScreenTest {
         compose.onNodeWithTag("security-key2").performTextInput("AABBCCDDEEFF")
         compose.onNodeWithTag("security-bt-switch").performClick()
         compose.onNodeWithTag("security-imm-switch").performClick()
-        compose.onNodeWithTag("security-reserve-readonly-value").performScrollTo().assertTextEquals("Enabled").assert(hasNoClickAction())
-        compose.onNodeWithTag("security-reserve-readonly-description").assertTextEquals("When enabled, always use the reserved firmware parameters. A damaged EEPROM is not reported.")
-        compose.onNodeWithTag("security-crc-readonly-value").performScrollTo().assertTextEquals("Disabled").assert(hasNoClickAction())
-        compose.onNodeWithTag("security-crc-readonly-description").assertTextEquals("When enabled, check the firmware checksum at startup and report an error if it is invalid.")
+        compose.onNodeWithTag("security-reserve-readonly-value").performScrollTo().assertTextEquals(targetContext.getString(R.string.sec_enabled)).assert(hasNoClickAction())
+        compose.onNodeWithTag("security-reserve-readonly-description").assertTextEquals(targetContext.getString(R.string.sec_reserve_params_description))
+        compose.onNodeWithTag("security-crc-readonly-value").performScrollTo().assertTextEquals(targetContext.getString(R.string.sec_disabled)).assert(hasNoClickAction())
+        compose.onNodeWithTag("security-crc-readonly-description").assertTextEquals(targetContext.getString(R.string.sec_firmware_integrity_description))
         assertEquals(listOf("name","pass","apply","type","key1","key2","bt","imm"), actions.distinct())
     }
 
@@ -81,6 +84,6 @@ class SecurityScreenTest {
         compose.setContent { SecuComposeTheme { SecurityScreen(true,false,true,"","",key.value,"",0,types,false,"",false,false,
             {},{},{},{},{},{},{ key.value = it },{},{}) } }
         compose.onNodeWithTag("security-key1").performTextInput("GGGGGGGGGGGG")
-        compose.onNodeWithTag("security-key1").assertTextContains("Invalid key. Enter exactly 12 hexadecimal characters.", substring = true)
+        compose.onNodeWithTag("security-key1").assertTextContains(targetContext.getString(R.string.sec_ibutton_key_invalid), substring = true)
     }
 }

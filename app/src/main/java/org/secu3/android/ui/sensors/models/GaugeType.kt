@@ -26,300 +26,293 @@
 package org.secu3.android.ui.sensors.models
 
 
-import android.content.Context
-import androidx.core.content.ContextCompat
-import com.github.anastr.speedviewlib.components.Section
 import org.secu3.android.R
 import org.secu3.android.models.packets.input.SensorsPacket
 
-enum class GaugeType (val title: Int, val minValue: Float, val maxValue: Float, val units: Int, val isInteger: Boolean, val tickCount: Int, private val sections: List<Section> = listOf()) {
+data class GaugeSection(val start: Float, val end: Float, val color: Int)
+
+enum class GaugeType (val title: Int, val minValue: Float, val maxValue: Float, val units: Int, val isInteger: Boolean, val tickCount: Int, val sections: List<GaugeSection> = listOf()) {
 
     RPM(R.string.sensors_frag_rpm_label, 0f, 8000f, R.string.units_rpm, true, 9, listOf(
-        Section(0f, .5f, R.color.gauge_green, -1f),
-        Section(.5f, .75f, R.color.gauge_yellow, -1f),
-        Section(.75f, 1f, R.color.gauge_red, -1f)
+        GaugeSection(0f, .5f, R.color.gauge_green),
+        GaugeSection(.5f, .75f, R.color.gauge_yellow),
+        GaugeSection(.75f, 1f, R.color.gauge_red)
     )),
 
     MAP(R.string.sensors_frag_absolute_pressure_label, 0f, 110f, R.string.units_pressure_kpa, false, 11, listOf(
-        Section(0f, .25f, R.color.gauge_gray, -1f),
-        Section(.25f, .75f, R.color.gauge_green, -1f),
-        Section(.75f, 1f, R.color.gauge_gray, -1f),
+        GaugeSection(0f, .25f, R.color.gauge_gray),
+        GaugeSection(.25f, .75f, R.color.gauge_green),
+        GaugeSection(.75f, 1f, R.color.gauge_gray),
     )),
 
     MAP_TURBO(R.string.sensors_frag_absolute_pressure_turbo_label, 0f, 250f, R.string.units_pressure_kpa, false, 11, listOf(
-        Section(0f, .25f, R.color.gauge_gray, -1f),
-        Section(.25f, .75f, R.color.gauge_green, -1f),
-        Section(.75f, 1f, R.color.gauge_gray, -1f),
+        GaugeSection(0f, .25f, R.color.gauge_gray),
+        GaugeSection(.25f, .75f, R.color.gauge_green),
+        GaugeSection(.75f, 1f, R.color.gauge_gray),
     )),
 
     VOLTAGE(R.string.sensors_frag_voltage_label, 2.0f, 18.0f, R.string.units_volts, false, 9, listOf(
-        Section(0f, 0.5f, R.color.gauge_red, -1f),
-        Section(0.5f, 0.81f, R.color.gauge_green, -1f),
-        Section(0.81f, 1f, R.color.gauge_red, -1f),
+        GaugeSection(0f, 0.5f, R.color.gauge_red),
+        GaugeSection(0.5f, 0.81f, R.color.gauge_green),
+        GaugeSection(0.81f, 1f, R.color.gauge_red),
     )),
 
     CURRENT_ANGLE(R.string.sensors_frag_advance_angle_label, -15.0f, 65.0f, R.string.units_degree, false, 9, listOf(
-        Section(0f, 0.1875f, R.color.gauge_lt_gray, -1f),
-        Section(0.1875f, 0.75f, R.color.gauge_yellow, -1f),
-        Section(0.75f, 1f, R.color.gauge_red, -1f),
+        GaugeSection(0f, 0.1875f, R.color.gauge_lt_gray),
+        GaugeSection(0.1875f, 0.75f, R.color.gauge_yellow),
+        GaugeSection(0.75f, 1f, R.color.gauge_red),
     )),
 
     TEMPERATURE(R.string.sensors_frag_coolant_temperature_label, -40.0f, 99.0f, R.string.units_degrees_celcius, false, 9, listOf(
-        Section(0f, 0.5625f, R.color.gauge_lt_purple, -1f),
-        Section(0.5625f, 0.875f, R.color.gauge_gray, -1f),
-        Section(0.875f, 1.0f, R.color.gauge_red, -1f),
+        GaugeSection(0f, 0.5625f, R.color.gauge_lt_purple),
+        GaugeSection(0.5625f, 0.875f, R.color.gauge_gray),
+        GaugeSection(0.875f, 1.0f, R.color.gauge_red),
     )),
 
     ADD1(R.string.sensors_frag_input_1_label, 0f, 5.0f, R.string.units_volts, false, 11, listOf(
-        Section(0f, 1f, R.color.gauge_lt_purple, -1f)
+        GaugeSection(0f, 1f, R.color.gauge_lt_purple)
     )),
 
     ADD2(R.string.sensors_frag_input_2_label, 0f, 5.0f, R.string.units_volts, false, 11, listOf(
-        Section(0f, 1f, R.color.gauge_lt_purple, -1f)
+        GaugeSection(0f, 1f, R.color.gauge_lt_purple)
     )),
 
     INJ_PW(R.string.sensors_frag_injection_pw_label, 0f, 24.0f, R.string.units_ms, false, 13, listOf(
-        Section(0f, 0.0416f, R.color.gauge_red, -1f),
-        Section(0.0416f, 0.4166f, R.color.gauge_green, -1f),
-        Section(0.4166f, 1.0f, R.color.gauge_lt_purple, -1f),
+        GaugeSection(0f, 0.0416f, R.color.gauge_red),
+        GaugeSection(0.0416f, 0.4166f, R.color.gauge_green),
+        GaugeSection(0.4166f, 1.0f, R.color.gauge_lt_purple),
         )),
 
     IAT(R.string.sensors_frag_intake_air_temp_label, -40f, 120.0f, R.string.units_degrees_celcius, false, 9, listOf(
-        Section(0f, 0.5625f, R.color.gauge_lt_purple, -1f),
-        Section(0.5625f, 0.875f, R.color.gauge_gray, -1f),
-        Section(0.875f, 1.0f, R.color.gauge_lt_red, -1f),
+        GaugeSection(0f, 0.5625f, R.color.gauge_lt_purple),
+        GaugeSection(0.5625f, 0.875f, R.color.gauge_gray),
+        GaugeSection(0.875f, 1.0f, R.color.gauge_lt_red),
     )),
 
     EGO_CORR(R.string.sensors_frag_ego_correction_label, -50f, 50.0f, R.string.units_percents, false, 9, listOf(
-        Section(0f, 0.3f, R.color.gauge_red, -1f),
-        Section(0.3f, 0.7f, R.color.gauge_green, -1f),
-        Section(0.7f, 1.0f, R.color.gauge_red, -1f),
+        GaugeSection(0f, 0.3f, R.color.gauge_red),
+        GaugeSection(0.3f, 0.7f, R.color.gauge_green),
+        GaugeSection(0.7f, 1.0f, R.color.gauge_red),
     )),
 
     CHOKE_POSITION(R.string.sensors_frag_iac_valve_label, 0f, 100.0f, R.string.units_percents, false, 9, listOf(
-        Section(0f, 0.05f, R.color.gauge_lt_purple, -1f),
-        Section(0.05f, 0.75f, R.color.gauge_dark_green, -1f),
-        Section(0.75f, 1.0f, R.color.gauge_lt_red, -1f),
+        GaugeSection(0f, 0.05f, R.color.gauge_lt_purple),
+        GaugeSection(0.05f, 0.75f, R.color.gauge_dark_green),
+        GaugeSection(0.75f, 1.0f, R.color.gauge_lt_red),
     )),
 
     AIR_FLOW(R.string.sensors_frag_air_flow_label, 0f, 16.0f, R.string.units_curve_n, true, 9, listOf(
-        Section(0f, 1f, R.color.gauge_green, -1f)
+        GaugeSection(0f, 1f, R.color.gauge_green)
     )),
 
     VEHICLE_SPEED(R.string.sensors_frag_vehicle_speed_label, 0f, 220f, R.string.units_km_h, true, 12, listOf(
-        Section(0f, 0.2857f, R.color.gauge_green, -1f),
-        Section(0.2857f, 0.5714f, R.color.gauge_green, -1f),
-        Section(0.5714f, 0.8571f, R.color.gauge_lt_red, -1f),
-        Section(0.8571f, 1.0f, R.color.gauge_red, -1f),
+        GaugeSection(0f, 0.2857f, R.color.gauge_green),
+        GaugeSection(0.2857f, 0.5714f, R.color.gauge_green),
+        GaugeSection(0.5714f, 0.8571f, R.color.gauge_lt_red),
+        GaugeSection(0.8571f, 1.0f, R.color.gauge_red),
     )),
 
     TPS_DOT(R.string.sensors_frag_tps_dot_label, -500.0f, 500f, R.string.units_percent_per_second, true, 6, listOf(
-        Section(0f, 0.3f, R.color.gauge_red, -1f),
-        Section(0.3f, 0.45f, R.color.gauge_green, -1f),
-        Section(0.45f, 0.55f, R.color.gauge_blue, -1f),
-        Section(0.55f, 0.7f, R.color.gauge_green, -1f),
-        Section(0.7f, 1.0f, R.color.gauge_red, -1f),
+        GaugeSection(0f, 0.3f, R.color.gauge_red),
+        GaugeSection(0.3f, 0.45f, R.color.gauge_green),
+        GaugeSection(0.45f, 0.55f, R.color.gauge_blue),
+        GaugeSection(0.55f, 0.7f, R.color.gauge_green),
+        GaugeSection(0.7f, 1.0f, R.color.gauge_red),
     )),
 
     MAP2(R.string.sensors_frag_map2_label, 0.0f, 400f, R.string.units_pressure_kpa, false, 11, listOf(
-        Section(0f, .25f, R.color.gauge_gray, -1f),
-        Section(.25f, .75f, R.color.gauge_green, -1f),
-        Section(.75f, 1f, R.color.gauge_gray, -1f),
+        GaugeSection(0f, .25f, R.color.gauge_gray),
+        GaugeSection(.25f, .75f, R.color.gauge_green),
+        GaugeSection(.75f, 1f, R.color.gauge_gray),
     )),
 
     DIFF_PRESSURE(R.string.sensors_frag_diff_pressure_label, 0.0f, 400f, R.string.units_pressure_kpa, false, 11, listOf(
-        Section(0f, .25f, R.color.gauge_gray, -1f),
-        Section(.25f, .75f, R.color.gauge_green, -1f),
-        Section(.75f, 1f, R.color.gauge_gray, -1f),
+        GaugeSection(0f, .25f, R.color.gauge_gray),
+        GaugeSection(.25f, .75f, R.color.gauge_green),
+        GaugeSection(.75f, 1f, R.color.gauge_gray),
     )),
 
     IAT2(R.string.sensors_frag_iat2_label, -40.0f, 120f, R.string.units_degrees_celcius, false, 9, listOf(
-        Section(0f, 0.5625f, R.color.gauge_lt_purple, -1f),
-        Section(0.5625f, 0.875f, R.color.gauge_gray, -1f),
-        Section(0.875f, 1.0f, R.color.gauge_lt_red, -1f),
+        GaugeSection(0f, 0.5625f, R.color.gauge_lt_purple),
+        GaugeSection(0.5625f, 0.875f, R.color.gauge_gray),
+        GaugeSection(0.875f, 1.0f, R.color.gauge_lt_red),
     )),
 
     FUEL_CONSUMPTION(R.string.sensors_frag_fuel_consumption_label, 0.0f, 50f, R.string.units_l_per_100km, false, 13, listOf(
-        Section(0f, 0.21f, R.color.gauge_green, -1f),
-        Section(0.21f, 0.4f, R.color.gauge_dark_yellow, -1f),
-        Section(0.4f, 1.0f, R.color.gauge_red, -1f),
+        GaugeSection(0f, 0.21f, R.color.gauge_green),
+        GaugeSection(0.21f, 0.4f, R.color.gauge_dark_yellow),
+        GaugeSection(0.4f, 1.0f, R.color.gauge_red),
     )),
 
     KNOCK_RETARD(R.string.sensors_frag_knock_retard_label, 0.0f, 30f, R.string.units_degree, false, 8, listOf(
-        Section(0f, 0.333f, R.color.gauge_dark_yellow, -1f),
-        Section(0.333f, 1.0f, R.color.gauge_lt_red, -1f),
+        GaugeSection(0f, 0.333f, R.color.gauge_dark_yellow),
+        GaugeSection(0.333f, 1.0f, R.color.gauge_lt_red),
     )),
 
     KNOCK_SIGNAL(R.string.sensors_frag_knock_signal_label, 0.0f, 5.0f, R.string.units_volts, false, 11, listOf(
-        Section(0f, 1f, R.color.gauge_green, -1f)
+        GaugeSection(0f, 1f, R.color.gauge_green)
     )),
 
     WBO_AFR(R.string.sensors_frag_wbo_afr_label, 6.0f, 24.0f, R.string.units_afr, false, 10, listOf(
-        Section(0f, 0.222f, R.color.gauge_lt_red, -1f),
-        Section(0.222f, 0.8f, R.color.gauge_lt_yellow, -1f),
-        Section(0.8f, 1.0f, R.color.gauge_lt_red, -1f),
+        GaugeSection(0f, 0.222f, R.color.gauge_lt_red),
+        GaugeSection(0.222f, 0.8f, R.color.gauge_lt_yellow),
+        GaugeSection(0.8f, 1.0f, R.color.gauge_lt_red),
     )),
 
     IAC_VALVE(R.string.sensors_frag_throttle_gate_label, 0.0f, 100.0f, R.string.units_percents, false, 11, listOf(
-        Section(0f, 1f, R.color.gauge_cyan, -1f)
+        GaugeSection(0f, 1f, R.color.gauge_cyan)
     )),
 
     GAS_DISPENSER(R.string.sensors_frag_gas_dispenser_label, 0.0f, 100.0f, R.string.units_percents, false, 11, listOf(
-        Section(0f, 1f, R.color.gauge_cyan, -1f)
+        GaugeSection(0f, 1f, R.color.gauge_cyan)
     )),
 
     SYNTHETIC_LOAD(R.string.sensors_frag_synthetic_load_label, 0.0f, 250.0f, R.string.units_empty, false, 11, listOf(
-        Section(0f, 0.4f, R.color.gauge_green, -1f),
-        Section(0.4f, 1.0f, R.color.gauge_lt_red, -1f)
+        GaugeSection(0f, 0.4f, R.color.gauge_green),
+        GaugeSection(0.4f, 1.0f, R.color.gauge_lt_red)
     )),
 
     BEGIN_INJ_PHASE(R.string.sensors_frag_begin_inj_phase_label, 0.0f, 720.0f, R.string.units_degree_word, false, 9, listOf(
-        Section(0f, 1f, R.color.gauge_lt_gray, -1f)
+        GaugeSection(0f, 1f, R.color.gauge_lt_gray)
     )),
 
     END_INJ_PHASE(R.string.sensors_frag_end_inj_phase_label, 0.0f, 720.0f, R.string.units_degree_word, false, 9, listOf(
-        Section(0f, 1f, R.color.gauge_lt_gray, -1f)
+        GaugeSection(0f, 1f, R.color.gauge_lt_gray)
     )),
 
     FUEL_CONSUMPTION_HZ(R.string.sensors_frag_fuel_consumption_hz_label, 0.0f, 250.0f, R.string.units_hertz, false, 11, listOf(
-        Section(0f, 0.04f, R.color.gauge_gray, -1f),
-        Section(0.04f, 0.3f, R.color.gauge_green, -1f),
-        Section(0.3f, 0.6f, R.color.gauge_lt_yellow, -1f),
-        Section(0.6f, 1.0f, R.color.gauge_lt_red, -1f),
+        GaugeSection(0f, 0.04f, R.color.gauge_gray),
+        GaugeSection(0.04f, 0.3f, R.color.gauge_green),
+        GaugeSection(0.3f, 0.6f, R.color.gauge_lt_yellow),
+        GaugeSection(0.6f, 1.0f, R.color.gauge_lt_red),
     )),
 
     GRTS(R.string.sensors_frag_grts_label, -40.0f, 120.0f, R.string.units_degrees_celcius, false, 9, listOf(
-        Section(0f, 0.55f, R.color.gauge_lt_purple, -1f),
-        Section(0.55f, 0.9f, R.color.gauge_lt_gray, -1f),
-        Section(0.9f, 1.0f, R.color.gauge_lt_red, -1f),
+        GaugeSection(0f, 0.55f, R.color.gauge_lt_purple),
+        GaugeSection(0.55f, 0.9f, R.color.gauge_lt_gray),
+        GaugeSection(0.9f, 1.0f, R.color.gauge_lt_red),
     )),
 
     FUEL_LEVEL(R.string.sensors_frag_fuel_level_label, 0.0f, 100.0f, R.string.units_liter, false, 11, listOf(
-        Section(0f, 0.1f, R.color.gauge_lt_red, -1f),
-        Section(0.1f, 0.5f, R.color.gauge_lt_yellow, -1f),
-        Section(0.5f, 1.0f, R.color.gauge_green, -1f),
+        GaugeSection(0f, 0.1f, R.color.gauge_lt_red),
+        GaugeSection(0.1f, 0.5f, R.color.gauge_lt_yellow),
+        GaugeSection(0.5f, 1.0f, R.color.gauge_green),
     )),
 
     EXHAUST_GAS_TEMP(R.string.sensors_frag_exhaust_gas_temp_label, 0.0f, 1100.0f, R.string.units_degrees_celcius, false, 9, listOf(
-        Section(0f, 0.37f, R.color.gauge_dark_blue, -1f),
-        Section(0.37f, 0.86f, R.color.gauge_dark_yellow, -1f),
-        Section(0.86f, 1.0f, R.color.gauge_lt_red, -1f),
+        GaugeSection(0f, 0.37f, R.color.gauge_dark_blue),
+        GaugeSection(0.37f, 0.86f, R.color.gauge_dark_yellow),
+        GaugeSection(0.86f, 1.0f, R.color.gauge_lt_red),
     )),
 
     OIL_PRESSURE(R.string.sensors_frag_oil_pressure_label, 0.0f, 6.0f, R.string.units_degrees_celcius, false, 7, listOf(
-        Section(0f, 0.16f, R.color.gauge_lt_purple, -1f),
-        Section(0.16f, 0.58f, R.color.gauge_green, -1f),
-        Section(0.58f, 0.83f, R.color.gauge_yellow, -1f),
-        Section(0.83f, 1.0f, R.color.gauge_lt_red, -1f),
+        GaugeSection(0f, 0.16f, R.color.gauge_lt_purple),
+        GaugeSection(0.16f, 0.58f, R.color.gauge_green),
+        GaugeSection(0.58f, 0.83f, R.color.gauge_yellow),
+        GaugeSection(0.83f, 1.0f, R.color.gauge_lt_red),
     )),
 
     INJ_DUTY(R.string.sensors_frag_injector_duty_label, 0.0f, 100.0f, R.string.units_percents, false, 11, listOf(
-        Section(0f, 0.1f, R.color.gauge_dark_blue, -1f),
-        Section(0.1f, 0.7f, R.color.gauge_green, -1f),
-        Section(0.7f, 0.9f, R.color.gauge_yellow, -1f),
-        Section(0.9f, 1.0f, R.color.gauge_lt_red, -1f),
+        GaugeSection(0f, 0.1f, R.color.gauge_dark_blue),
+        GaugeSection(0.1f, 0.7f, R.color.gauge_green),
+        GaugeSection(0.7f, 0.9f, R.color.gauge_yellow),
+        GaugeSection(0.9f, 1.0f, R.color.gauge_lt_red),
     )),
 
     MAF(R.string.sensors_frag_maf_label, 0.0f, 600.0f, R.string.units_gram_per_second, false, 11, listOf(
-        Section(0f, 0.16f, R.color.gauge_lt_purple, -1f),
-        Section(0.16f, 0.5f, R.color.gauge_lt_green, -1f),
-        Section(0.5f, 0.83f, R.color.gauge_lt_yellow, -1f),
-        Section(0.83f, 1.0f, R.color.gauge_lt_red, -1f),
+        GaugeSection(0f, 0.16f, R.color.gauge_lt_purple),
+        GaugeSection(0.16f, 0.5f, R.color.gauge_lt_green),
+        GaugeSection(0.5f, 0.83f, R.color.gauge_lt_yellow),
+        GaugeSection(0.83f, 1.0f, R.color.gauge_lt_red),
     )),
 
     FAN_DUTY(R.string.sensors_frag_fan_duty_label, 0.0f, 100.0f, R.string.units_percents, false, 11, listOf(
-        Section(0f, 0.1f, R.color.gauge_blue, -1f),
-        Section(0.1f, 0.7f, R.color.gauge_green, -1f),
-        Section(0.7f, 0.9f, R.color.gauge_lt_yellow, -1f),
-        Section(0.9f, 1.0f, R.color.gauge_lt_red, -1f),
+        GaugeSection(0f, 0.1f, R.color.gauge_blue),
+        GaugeSection(0.1f, 0.7f, R.color.gauge_green),
+        GaugeSection(0.7f, 0.9f, R.color.gauge_lt_yellow),
+        GaugeSection(0.9f, 1.0f, R.color.gauge_lt_red),
     )),
 
     MAP_DOT(R.string.sensors_frag_map_dot_label, -500.0f, 500.0f, R.string.units_kpa_per_sec, true, 6, listOf(
-        Section(0f, 0.3f, R.color.gauge_red, -1f),
-        Section(0.3f, 0.45f, R.color.gauge_green, -1f),
-        Section(0.45f, 0.55f, R.color.gauge_blue, -1f),
-        Section(0.55f, 0.7f, R.color.gauge_green, -1f),
-        Section(0.7f, 1.0f, R.color.gauge_red, -1f),
+        GaugeSection(0f, 0.3f, R.color.gauge_red),
+        GaugeSection(0.3f, 0.45f, R.color.gauge_green),
+        GaugeSection(0.45f, 0.55f, R.color.gauge_blue),
+        GaugeSection(0.55f, 0.7f, R.color.gauge_green),
+        GaugeSection(0.7f, 1.0f, R.color.gauge_red),
     )),
 
     FUEL_TEMP(R.string.sensors_frag_fuel_temp_label, -40.0f, 120.0f, R.string.units_degrees_celcius, false, 9, listOf(
-        Section(0f, 0.56f, R.color.gauge_dark_blue, -1f),
-        Section(0.56f, 0.87f, R.color.gauge_gray, -1f),
-        Section(0.87f, 1.0f, R.color.gauge_red, -1f),
+        GaugeSection(0f, 0.56f, R.color.gauge_dark_blue),
+        GaugeSection(0.56f, 0.87f, R.color.gauge_gray),
+        GaugeSection(0.87f, 1.0f, R.color.gauge_red),
     )),
 
     EGO_CORR2(R.string.sensors_frag_ego_correction2_label, -50.0f, 50.0f, R.string.units_percents, false, 9, listOf(
-        Section(0f, 0.3f, R.color.gauge_red, -1f),
-        Section(0.3f, 0.7f, R.color.gauge_green, -1f),
-        Section(0.7f, 1.0f, R.color.gauge_red, -1f),
+        GaugeSection(0f, 0.3f, R.color.gauge_red),
+        GaugeSection(0.3f, 0.7f, R.color.gauge_green),
+        GaugeSection(0.7f, 1.0f, R.color.gauge_red),
     )),
 
     WBO_AFR2(R.string.sensors_frag_wbo_afr_2_label, 6.0f, 24.0f, R.string.units_afr, false, 10, listOf(
-        Section(0f, 0.222f, R.color.gauge_lt_red, -1f),
-        Section(0.222f, 0.8f, R.color.gauge_lt_yellow, -1f),
-        Section(0.8f, 1.0f, R.color.gauge_lt_red, -1f),
+        GaugeSection(0f, 0.222f, R.color.gauge_lt_red),
+        GaugeSection(0.222f, 0.8f, R.color.gauge_lt_yellow),
+        GaugeSection(0.8f, 1.0f, R.color.gauge_lt_red),
     )),
 
     WBO_AFR_TABL(R.string.wbo_afr_tabl, 6.0f, 24.0f, R.string.units_afr, false, 10, listOf(
-        Section(0f, 0.222f, R.color.gauge_lt_red, -1f),
-        Section(0.222f, 0.8f, R.color.gauge_lt_yellow, -1f),
-        Section(0.8f, 1.0f, R.color.gauge_lt_red, -1f),
+        GaugeSection(0f, 0.222f, R.color.gauge_lt_red),
+        GaugeSection(0.222f, 0.8f, R.color.gauge_lt_yellow),
+        GaugeSection(0.8f, 1.0f, R.color.gauge_lt_red),
     )),
 
     AFR_DIFF(R.string.sensors_frag_afr_difference_label, -9.0f, 9.0f, R.string.units_afr, false, 10, listOf(
-        Section(0f, 0.361f, R.color.gauge_blue, -1f),
-        Section(0.361f, 0.45f, R.color.gauge_yellow, -1f),
-        Section(0.45f, 0.55f, R.color.gauge_green, -1f),
-        Section(0.55f, 0.639f, R.color.gauge_yellow, -1f),
-        Section(0.639f, 1.0f, R.color.gauge_red, -1f),
+        GaugeSection(0f, 0.361f, R.color.gauge_blue),
+        GaugeSection(0.361f, 0.45f, R.color.gauge_yellow),
+        GaugeSection(0.45f, 0.55f, R.color.gauge_green),
+        GaugeSection(0.55f, 0.639f, R.color.gauge_yellow),
+        GaugeSection(0.639f, 1.0f, R.color.gauge_red),
     )),
 
     AFR_DIFF2(R.string.sensors_frag_afr_difference2_label, -9.0f, 9.0f, R.string.units_afr, false, 10, listOf(
-        Section(0f, 0.361f, R.color.gauge_blue, -1f),
-        Section(0.361f, 0.45f, R.color.gauge_yellow, -1f),
-        Section(0.45f, 0.55f, R.color.gauge_green, -1f),
-        Section(0.55f, 0.639f, R.color.gauge_yellow, -1f),
-        Section(0.639f, 1.0f, R.color.gauge_red, -1f),
+        GaugeSection(0f, 0.361f, R.color.gauge_blue),
+        GaugeSection(0.361f, 0.45f, R.color.gauge_yellow),
+        GaugeSection(0.45f, 0.55f, R.color.gauge_green),
+        GaugeSection(0.55f, 0.639f, R.color.gauge_yellow),
+        GaugeSection(0.639f, 1.0f, R.color.gauge_red),
     )),
 
     GAS_PRESSURE_SENS(R.string.sensors_frag_gas_pressure_label,  0.0f, 400f, R.string.units_pressure_kpa, false, 11, listOf(
-        Section(0f, .25f, R.color.gauge_gray, -1f),
-        Section(.25f, .75f, R.color.gauge_green, -1f),
-        Section(.75f, 1f, R.color.gauge_gray, -1f),
+        GaugeSection(0f, .25f, R.color.gauge_gray),
+        GaugeSection(.25f, .75f, R.color.gauge_green),
+        GaugeSection(.75f, 1f, R.color.gauge_gray),
     )),
 
     FUEL_PRESSURE_SENS(R.string.sensors_frag_fuel_pressure_label,  0.0f, 700f, R.string.units_pressure_kpa, false, 20, listOf(
-        Section(0f, .4f, R.color.gauge_lt_red, -1f),
-        Section(.4f, 1f, R.color.gauge_green, -1f),
+        GaugeSection(0f, .4f, R.color.gauge_lt_red),
+        GaugeSection(.4f, 1f, R.color.gauge_green),
     )),
 
     APPS1(R.string.sensors_frag_acceleration_pedal_sensor_label, 0.0f, 100.0f, R.string.units_percents, false, 16, listOf(
-        Section(0f, 0.1f, R.color.gauge_purple, -1f),
-        Section(0.1f, 0.9f, R.color.gauge_green, -1f),
-        Section(0.9f, 1.0f, R.color.gauge_red, -1f),
+        GaugeSection(0f, 0.1f, R.color.gauge_purple),
+        GaugeSection(0.1f, 0.9f, R.color.gauge_green),
+        GaugeSection(0.9f, 1.0f, R.color.gauge_red),
     )),
 
     OTS(R.string.sensors_frag_oil_temperature_sensor_label, -40.0f, 180.0f, R.string.units_degrees_celcius, false, 16, listOf(
-        Section(0f, 0.5f, R.color.gauge_ots_0, -1f),
-        Section(0.5f, 0.78f, R.color.gauge_ots_1, -1f),
-        Section(0.78f, 1.0f, R.color.gauge_ots_2, -1f),
+        GaugeSection(0f, 0.5f, R.color.gauge_ots_0),
+        GaugeSection(0.5f, 0.78f, R.color.gauge_ots_1),
+        GaugeSection(0.78f, 1.0f, R.color.gauge_ots_2),
     )),
 
     EST_TORQUE(R.string.sensors_frag_estimated_torque_label, 0.0f, 400.0f, R.string.units_torque_nm, false, 9, listOf(
-        Section(0f, 0.25f, R.color.gauge_lt_red, -1f),
-        Section(0.25f, 1.0f, R.color.gauge_green, -1f),
+        GaugeSection(0f, 0.25f, R.color.gauge_lt_red),
+        GaugeSection(0.25f, 1.0f, R.color.gauge_green),
     )),
 
     REQ_TORQUE(R.string.sensors_frag_requested_torque_label, 0.0f, 400.0f, R.string.units_torque_nm, false, 9, listOf(
-        Section(0f, 0.25f, R.color.gauge_lt_red, -1f),
-        Section(0.25f, 1.0f, R.color.gauge_green, -1f),
+        GaugeSection(0f, 0.25f, R.color.gauge_lt_red),
+        GaugeSection(0.25f, 1.0f, R.color.gauge_green),
     ));
-
-    fun getSections(context: Context, width: Float): List<Section> {
-        return sections.map {
-            Section(it.startOffset, it.endOffset, ContextCompat.getColor(context, it.color), width)
-        }
-    }
 
     fun getGaugeItem(packet: SensorsPacket): Float {
         return when (this) {

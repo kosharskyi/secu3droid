@@ -55,7 +55,9 @@ class DbwScreenTest {
         }
         compose.onNodeWithTag("dbw_home_position").performScrollTo().assertIsDisplayed()
         compose.onNodeWithTag("dbw_home_position-value", useUnmergedTree = true)
-            .assertTextEquals("37.25 ${context.getString(R.string.units_percents)}")
+            .assertTextEquals(
+                "${String.format(java.util.Locale.getDefault(), "%.2f", values.homePosition)} ${context.getString(R.string.units_percents)}",
+            )
         compose.onNodeWithTag("dbw_home_position").assertHasNoClickAction()
         compose.runOnIdle { state.value = DbwUiState.Data(values.copy()) }
         assertEquals(0, callbacks)

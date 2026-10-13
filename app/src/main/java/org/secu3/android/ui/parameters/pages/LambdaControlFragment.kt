@@ -28,41 +28,36 @@ import android.os.Bundle
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.setValue
 import androidx.compose.ui.platform.ComposeView
 import androidx.compose.ui.platform.ViewCompositionStrategy
 import androidx.lifecycle.lifecycleScope
 import androidx.lifecycle.withResumed
 import kotlinx.coroutines.launch
 import org.secu3.android.R
-import org.secu3.android.models.packets.out.params.LambdaParamPacket
 import org.secu3.android.ui.compose.SecuComposeTheme
 import org.secu3.android.ui.parameters.dialogs.ParamFloatEditDialogFragment
 import org.secu3.android.ui.parameters.dialogs.ParamIntEditDialogFragment
 import org.secu3.android.ui.parameters.pages.compose.LambdaControlScreen
+import org.secu3.android.ui.parameters.pages.compose.LambdaControlStateHolder
 import org.secu3.android.ui.parameters.pages.compose.LambdaFlag
 import org.secu3.android.ui.parameters.pages.compose.LambdaNumber
-import org.secu3.android.ui.parameters.pages.compose.LambdaValues
-import org.secu3.android.ui.parameters.pages.compose.applyLambdaChannel
-import org.secu3.android.ui.parameters.pages.compose.applyLambdaFlag
-import org.secu3.android.ui.parameters.pages.compose.applyLambdaNumber
 
 class LambdaControlFragment : BaseParamFragment() {
-    private var packet: LambdaParamPacket? = null
-    private var values by mutableStateOf<LambdaValues?>(null)
+    private lateinit var stateHolder: LambdaControlStateHolder
     private val sensorTypes by lazy { resources.getStringArray(R.array.lambda_sensors_types).toList() }
 
     override fun onCreateView(inflater: LayoutInflater, container: ViewGroup?, savedInstanceState: Bundle?): View {
-        packet = null
-        values = null
+        stateHolder = LambdaControlStateHolder(
+            sendPacket = mViewModel::sendPacket,
+            onPacketMapping = { mViewModel.isSendAllowed = false },
+            onPacketMapped = { mViewModel.isSendAllowed = true },
+        )
         return ComposeView(requireContext()).apply {
             id = R.id.lambda_control_compose_view
             setViewCompositionStrategy(ViewCompositionStrategy.DisposeOnViewTreeLifecycleDestroyed)
             setContent {
                 SecuComposeTheme {
-                    LambdaControlScreen(values, sensorTypes, mViewModel.fwInfoPacket?.isFuelInjectEnabled == true,
+                    LambdaControlScreen(stateHolder.values, sensorTypes, mViewModel.fwInfoPacket?.isFuelInjectEnabled == true,
                         ::editParameter, ::updateFlag, ::updateSensorType, ::updateChannel)
                 }
             }
@@ -75,57 +70,34 @@ class LambdaControlFragment : BaseParamFragment() {
         owner.lifecycleScope.launch {
             owner.withResumed {
                 val liveData = mViewModel.lambdaLiveData
-                liveData.observe(owner) { received ->
-                    mViewModel.isSendAllowed = false
-                    packet = received
-                    values = LambdaValues.from(received)
-                    mViewModel.isSendAllowed = true
-                }
+                liveData.observe(owner, stateHolder::onPacketReceived)
             }
         }
     }
 
     private fun editParameter(number: LambdaNumber) {
-        val current = values ?: return
+        val current = stateHolder.values ?: return
         if (number.integer) {
             val dialog = ParamIntEditDialogFragment.newInstance(current.value(number).toInt(), getString(number.title), number.step.toInt(), number.max.toInt(), number.min.toInt())
-            dialog.newValueLiveData.observe(viewLifecycleOwner) { updateValue(number, it.toFloat()) }
+            dialog.newValueLiveData.observe(viewLifecycleOwner) { stateHolder.updateValue(number, it.toFloat()) }
             dialog.show(childFragmentManager, dialog::class.java.simpleName)
         } else {
             val dialog = ParamFloatEditDialogFragment.newInstance(current.value(number), getString(number.title), number.step, number.max, number.min, number.precision)
-            dialog.newValueLiveData.observe(viewLifecycleOwner) { updateValue(number, it) }
+            dialog.newValueLiveData.observe(viewLifecycleOwner) { stateHolder.updateValue(number, it) }
             dialog.show(childFragmentManager, dialog::class.java.simpleName)
         }
     }
 
-    private fun updateValue(number: LambdaNumber, value: Float) {
-        val current = packet ?: return
-        applyLambdaNumber(current, number, value)
-        val applied = if (number == LambdaNumber.MS) current.msPerStp.toFloat() else value.coerceIn(number.min, number.max)
-        values = values?.withValue(number, applied)
-        mViewModel.sendPacket(current)
-    }
-
     private fun updateFlag(flag: LambdaFlag, checked: Boolean) {
-        val current = packet ?: return
-        applyLambdaFlag(current, flag, checked)
-        values = values?.withFlag(flag, checked)
-        mViewModel.sendPacket(current)
+        stateHolder.updateFlag(flag, checked)
     }
 
     private fun updateChannel(index: Int, checked: Boolean) {
-        val current = packet ?: return
-        applyLambdaChannel(current, index, checked)
-        values = values?.copy(channels = values!!.channels.toMutableList().also { it[index] = checked })
-        mViewModel.sendPacket(current)
+        stateHolder.updateChannel(index, checked)
     }
 
     private fun updateSensorType(index: Int) {
-        if (index !in sensorTypes.indices) return
-        val current = packet ?: return
-        current.senstype = index
-        values = values?.copy(sensorType = index)
-        mViewModel.sendPacket(current)
+        stateHolder.updateSensorType(index, sensorTypes.size)
     }
 
     override fun tabTitle(): Int = R.string.params_tab_lambda_control_title

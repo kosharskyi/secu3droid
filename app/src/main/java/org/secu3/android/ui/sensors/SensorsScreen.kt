@@ -27,7 +27,7 @@ package org.secu3.android.ui.sensors
 
 import org.secu3.android.ui.compose.DropdownShape
 
-import android.view.LayoutInflater
+import android.graphics.Paint as NativePaint
 import androidx.compose.animation.core.Animatable
 import androidx.compose.animation.core.AnimationVector2D
 import androidx.compose.animation.core.VectorConverter
@@ -58,12 +58,17 @@ import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.layout.boundsInRoot
 import androidx.compose.ui.layout.onGloballyPositioned
 import androidx.compose.ui.semantics.semantics
+import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.stateDescription
 import androidx.compose.ui.zIndex
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import androidx.compose.ui.viewinterop.AndroidView
-import com.github.anastr.speedviewlib.SpeedView
+import androidx.compose.foundation.Canvas
+import androidx.compose.foundation.layout.BoxWithConstraints
+import androidx.compose.foundation.layout.height
+import androidx.compose.ui.graphics.drawscope.Stroke
+import androidx.compose.ui.graphics.drawscope.drawIntoCanvas
+import androidx.compose.ui.graphics.nativeCanvas
 import org.secu3.android.R
 import org.secu3.android.db.models.GaugeState
 import org.secu3.android.db.models.IndicatorState
@@ -73,6 +78,7 @@ import org.secu3.android.ui.sensors.models.IndicatorItem
 import org.secu3.android.ui.sensors.models.IndicatorType
 import org.secu3.android.ui.sensors.SensorsViewModel.ChoiceRequest
 import java.util.Locale
+import kotlin.math.roundToInt
 
 @Composable
 internal fun SensorsScreen(
@@ -390,7 +396,9 @@ internal fun SensorsScreen(
 @Composable
 private fun GaugeCard(item: GaugeItem, modifier: Modifier, onMenu: () -> Unit) {
     val type = item.state.gaugeType
-    val context = LocalContext.current
+    val value = item.value.toFloatOrNull() ?: 0f
+    val formattedValue = if (type.isInteger) value.toInt().toString() else String.format(Locale.US, "%.1f", value)
+    val dialDescription = "${stringResource(type.title)}: $formattedValue ${stringResource(type.units)}"
     Card(
         modifier = modifier.fillMaxWidth().testTag("gauge-${type.name}"),
         colors = CardDefaults.cardColors(containerColor = Color.White),
@@ -403,24 +411,116 @@ private fun GaugeCard(item: GaugeItem, modifier: Modifier, onMenu: () -> Unit) {
             if (item.state.isNumericView) {
                 Spacer(Modifier.height(32.dp)); Text(item.value, fontSize = 36.sp); Text(stringResource(type.units), fontSize = 18.sp); Spacer(Modifier.height(32.dp))
             } else {
-                    AndroidView(
-                        modifier = Modifier.fillMaxWidth().wrapContentHeight().testTag("dial-${type.name}"),
-                        factory = { ctx -> LayoutInflater.from(ctx).inflate(R.layout.view_gauge_compose_dial, null, false) as SpeedView },
-                        update = { gauge ->
-                            gauge.unit = context.getString(type.units)
-                            gauge.maxSpeed = 10_000f
-                            gauge.minSpeed = type.minValue
-                            gauge.maxSpeed = type.maxValue
-                            gauge.tickNumber = type.tickCount
-                            gauge.clearSections(); gauge.addSections(type.getSections(context, gauge.speedometerWidth))
-                            gauge.speedTextListener = if (type.isInteger) ({ speed -> speed.toInt().toString() }) else ({ speed -> "%.1f".format(Locale.US, speed) })
-                            gauge.setSpeedAt(item.value.toFloatOrNull() ?: 0f)
-                        },
-                        onRelease = { gauge -> gauge.speedTextListener = { speed -> speed.toString() } },
-                    )
+                    GaugeDial(type, item.value, stringResource(type.units), Modifier.fillMaxWidth().testTag("dial-${type.name}").semantics { contentDescription = dialDescription })
             }
         }
     }
+}
+
+@Composable
+private fun GaugeDial(type: GaugeType, valueText: String, unit: String, modifier: Modifier = Modifier) {
+    val context = LocalContext.current
+    val sections = remember(type, context) { type.sections.map { it.start to (it.end to Color(context.getColor(it.color))) } }
+    val value = valueText.toFloatOrNull() ?: 0f
+    val normalized = ((value - type.minValue) / (type.maxValue - type.minValue)).coerceIn(0f, 1f)
+    val label = if (type.isInteger) value.toInt().toString() else String.format(Locale.US, "%.1f", value)
+    BoxWithConstraints(modifier) {
+    Canvas(Modifier.fillMaxWidth().height(maxWidth + 24.dp)) {
+        val cx = size.width / 2f
+        val dialSize = size.width
+        val cy = dialSize / 2f
+        val radius = dialSize / 2f - 5.dp.toPx()
+        val stroke = 10.dp.toPx()
+        val rect = androidx.compose.ui.geometry.Rect(cx - radius, cy - radius, cx + radius, cy + radius)
+        drawArc(Color.LightGray.copy(alpha = .35f), 135f, 270f, false, rect.topLeft, rect.size, style = Stroke(stroke, cap = androidx.compose.ui.graphics.StrokeCap.Butt))
+        sections.forEach { (start, segment) ->
+            val (end, color) = segment
+            drawArc(color, 135f + 270f * start, 270f * (end - start), false, rect.topLeft, rect.size, style = Stroke(stroke, cap = androidx.compose.ui.graphics.StrokeCap.Butt))
+        }
+        for (index in 1..8) {
+            val markAngle = Math.toRadians((135f + 270f * index / 9f).toDouble())
+            val markOuter = radius + stroke / 2f
+            val markInner = markOuter - 9.dp.toPx()
+            drawLine(Color.White, Offset(cx + kotlin.math.cos(markAngle).toFloat() * markOuter, cy + kotlin.math.sin(markAngle).toFloat() * markOuter), Offset(cx + kotlin.math.cos(markAngle).toFloat() * markInner, cy + kotlin.math.sin(markAngle).toFloat() * markInner), 3.dp.toPx())
+        }
+        for (index in 0 until type.tickCount) {
+            val fraction = if (type.tickCount <= 1) 0f else index.toFloat() / (type.tickCount - 1)
+            val tickAngle = Math.toRadians((135f + 270f * fraction).toDouble())
+            val outer = radius - stroke * .05f
+            val inner = outer - 3.dp.toPx()
+            drawLine(Color.DarkGray, Offset(cx + kotlin.math.cos(tickAngle).toFloat() * inner, cy + kotlin.math.sin(tickAngle).toFloat() * inner), Offset(cx + kotlin.math.cos(tickAngle).toFloat() * outer, cy + kotlin.math.sin(tickAngle).toFloat() * outer), 1.dp.toPx())
+        }
+        val angle = Math.toRadians((135f + 270f * normalized).toDouble())
+        val direction = Offset(kotlin.math.cos(angle).toFloat(), kotlin.math.sin(angle).toFloat())
+        val perpendicular = Offset(-direction.y, direction.x)
+        val tip = Offset(cx, cy) + direction * (dialSize / 2f)
+        val base = Offset(cx, cy) - direction * (dialSize / 6f)
+        val halfBase = 5.dp.toPx()
+        val needlePath = androidx.compose.ui.graphics.Path().apply {
+            moveTo(tip.x, tip.y)
+            lineTo(base.x + perpendicular.x * halfBase, base.y + perpendicular.y * halfBase)
+            quadraticTo(base.x, base.y, base.x - perpendicular.x * halfBase, base.y - perpendicular.y * halfBase)
+            close()
+        }
+        drawPath(needlePath, Color(0xFF2196F3))
+        drawCircle(Color(0xFF444444), 10.dp.toPx(), Offset(cx, cy))
+        drawIntoCanvas { canvas ->
+            val tickCount = type.tickCount
+            val baseTickSize = 10.dp.toPx()
+            val readableTickSize = 8.dp.toPx()
+            val tickPaint = NativePaint(NativePaint.ANTI_ALIAS_FLAG).apply { color = android.graphics.Color.BLACK; textAlign = NativePaint.Align.CENTER; textSize = baseTickSize }
+            val tickLabels = (0 until tickCount).map { index ->
+                val fraction = if (tickCount <= 1) 0f else index.toFloat() / (tickCount - 1)
+                formatGaugeTickLabel(type.minValue + (type.maxValue - type.minValue) * fraction)
+            }
+            tickPaint.textSize = readableTickSize
+            val largestReadableTickWidth = tickLabels.maxOfOrNull { tickPaint.measureText(it) } ?: 0f
+            val tickLabelRadius = radius - stroke / 2f - 3.dp.toPx()
+            val labelCapacity = (2..tickCount).lastOrNull { count ->
+                val halfStepAngle = Math.toRadians((135f / (count - 1)).toDouble())
+                tickLabelRadius * 2f * kotlin.math.sin(halfStepAngle).toFloat() >= largestReadableTickWidth + 18.dp.toPx()
+            } ?: minOf(5, tickCount)
+            val selectedTickIndices = selectGaugeTickLabelIndices(tickCount, labelCapacity)
+            val largestSelectedTickWidth = selectedTickIndices.maxOfOrNull { tickPaint.measureText(tickLabels[it]) } ?: 0f
+            val selectedCount = selectedTickIndices.size
+            val selectedHalfStepAngle = Math.toRadians((135f / maxOf(1, selectedCount - 1)).toDouble())
+            val selectedLabelSpacing = if (selectedCount <= 1) size.width else tickLabelRadius * 2f * kotlin.math.sin(selectedHalfStepAngle).toFloat()
+            tickPaint.textSize = (baseTickSize * (selectedLabelSpacing / (largestSelectedTickWidth + 18.dp.toPx())).coerceAtMost(1f))
+                .coerceIn(readableTickSize, baseTickSize)
+            selectedTickIndices.forEach { index ->
+                val fraction = if (tickCount <= 1) 0f else index.toFloat() / (tickCount - 1)
+                val angle = Math.toRadians((135f + 270f * fraction).toDouble())
+                canvas.nativeCanvas.drawText(tickLabels[index], cx + kotlin.math.cos(angle).toFloat() * tickLabelRadius, cy + kotlin.math.sin(angle).toFloat() * tickLabelRadius + tickPaint.textSize * .35f, tickPaint)
+            }
+            val paint = NativePaint(NativePaint.ANTI_ALIAS_FLAG).apply { color = android.graphics.Color.BLACK; textAlign = NativePaint.Align.LEFT; textSize = 18.dp.toPx() }
+            val unitPaint = NativePaint(NativePaint.ANTI_ALIAS_FLAG).apply { color = android.graphics.Color.BLACK; textSize = 15.dp.toPx(); textAlign = NativePaint.Align.LEFT }
+            val gap = 5.dp.toPx()
+            val maxGroupWidth = size.width - 16.dp.toPx()
+            val scale = (maxGroupWidth / (paint.measureText(label) + gap + unitPaint.measureText(unit))).coerceAtMost(1f)
+            paint.textSize *= scale
+            unitPaint.textSize *= scale
+            val scaledGap = gap * scale
+            paint.typeface = android.graphics.Typeface.DEFAULT
+            val valueWidth = paint.measureText(label)
+            val unitWidth = unitPaint.measureText(unit)
+            val left = cx - (valueWidth + scaledGap + unitWidth) / 2f
+            val baseline = size.height - 1.dp.toPx() - maxOf(paint.fontMetrics.descent, unitPaint.fontMetrics.descent)
+            canvas.nativeCanvas.drawText(label, left, baseline, paint)
+            canvas.nativeCanvas.drawText(unit, left + valueWidth + scaledGap, baseline, unitPaint)
+        }
+    }
+    }
+}
+
+internal fun formatGaugeTickLabel(value: Float): String = String.format(Locale.getDefault(), "%.0f", value)
+
+internal fun selectGaugeTickLabelIndices(tickCount: Int, labelCount: Int): List<Int> {
+    if (tickCount <= 0 || labelCount <= 0) return emptyList()
+    if (tickCount <= labelCount) return (0 until tickCount).toList()
+    if (labelCount == 1) return listOf(0)
+    return (0 until labelCount).map { labelIndex ->
+        (labelIndex * (tickCount - 1).toFloat() / (labelCount - 1)).roundToInt()
+    }.distinct()
 }
 
 @Composable
