@@ -35,8 +35,11 @@ import androidx.compose.ui.test.onAllNodesWithText
 import androidx.compose.ui.test.onNodeWithContentDescription
 import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.onNodeWithText
+import androidx.compose.ui.test.performScrollTo
 import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.performTouchInput
+import androidx.compose.ui.test.performTextClearance
+import androidx.compose.ui.test.performTextInput
 import androidx.compose.ui.test.swipeLeft
 import androidx.compose.ui.test.swipeRight
 import androidx.lifecycle.MutableLiveData
@@ -112,6 +115,30 @@ class DiagnosticsScreenTest {
         assertEquals(0, outputCalls)
     }
 
+    @Test
+    fun frequencyAndDutyEditorsUseCurrentCompositionCallbacks() {
+        val packet = DiagOutputPacket().apply { frq = 123.456f; duty = 24.25f }
+        val data = fixture(packet = packet)
+        val frequencies = mutableListOf<Float>()
+        val duties = mutableListOf<Float>()
+        compose.setContent {
+            SecuComposeTheme {
+                Render(data, onFrequencyEdit = frequencies::add, onDutyEdit = duties::add)
+            }
+        }
+        compose.onNodeWithTag("frequency_edit").performScrollTo().performClick()
+        compose.waitForIdle()
+        compose.onNodeWithTag("numeric_confirm").performClick()
+        assertEquals(listOf(123.456f), frequencies)
+
+        compose.onNodeWithTag("duty_edit").performScrollTo().performClick()
+        compose.waitForIdle()
+        compose.onNodeWithTag("numeric_value").performTextClearance()
+        compose.onNodeWithTag("numeric_value").performTextInput("37.5")
+        compose.onNodeWithTag("numeric_confirm").performClick()
+        assertEquals(listOf(37.5f), duties)
+    }
+
     private data class Fixture(
         val connection: MutableLiveData<ConnectionState>,
         val input: MutableLiveData<DiagInputPacket>,
@@ -126,6 +153,8 @@ class DiagnosticsScreenTest {
         data: Fixture,
         onNavigateUp: () -> Unit = {},
         onAdditionalSettings: () -> Unit = {},
+        onFrequencyEdit: (Float) -> Unit = {},
+        onDutyEdit: (Float) -> Unit = {},
     ) = DiagnosticsScreen(
         isSecu3T = false,
         connectionStatus = data.connection,
@@ -137,17 +166,18 @@ class DiagnosticsScreenTest {
         onAdditionalSettings = onAdditionalSettings,
         onOutputChanged = data.onOutput,
         onChannelSelected = {},
-        onFrequencyEdit = { _, _ -> },
-        onDutyEdit = { _, _ -> },
+        onFrequencyEdit = onFrequencyEdit,
+        onDutyEdit = onDutyEdit,
     )
 
     private fun fixture(
         connection: MutableLiveData<ConnectionState> = MutableLiveData(Connected),
+        packet: DiagOutputPacket = DiagOutputPacket(),
         onOutput: (DiagnosticOutput, Boolean) -> Unit = { _, _ -> },
     ) = Fixture(
         connection = connection,
         input = MutableLiveData(),
-        packet = DiagOutputPacket(),
+        packet = packet,
         enableBlDe = MutableLiveData(false),
         enableTachO = MutableLiveData(false),
         onOutput = onOutput,

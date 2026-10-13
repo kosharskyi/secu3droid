@@ -26,28 +26,22 @@ package org.secu3.android.ui.parameters.dialogs
 
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue
-import android.text.InputType
 import org.junit.Assert.assertEquals
 import org.junit.Test
 
 class ParamFloatInputValidationTest {
     @Test fun acceptsNegativeValuesWithinBoundsAndRejectsPartialOrOutOfRangeInput() {
-        assertTrue(ParamFloatEditDialogFragment.isValidInput("-14.5", -15f, 60f))
-        assertTrue(ParamFloatEditDialogFragment.isValidInput("-15", -15f, 60f))
-        assertTrue(ParamFloatEditDialogFragment.isValidInput("60", -15f, 60f))
+        assertTrue(isValidFloatInput("-14.5", -15f, 60f))
+        assertTrue(isValidFloatInput("-15", -15f, 60f))
+        assertTrue(isValidFloatInput("60", -15f, 60f))
         listOf("", "-", "-.", ".", "-15.1", "60.1").forEach {
-            assertFalse("$it must be invalid", ParamFloatEditDialogFragment.isValidInput(it, -15f, 60f))
+            assertFalse("$it must be invalid", isValidFloatInput(it, -15f, 60f))
         }
-        assertFalse(ParamFloatEditDialogFragment.isValidInput("-1", 0f, 10f))
-    }
-
-    @Test fun signedKeyboardIsUsedOnlyWhenTheFieldAllowsNegativeValues() {
-        assertTrue(ParamFloatEditDialogFragment.inputTypeFor(-15f) and InputType.TYPE_NUMBER_FLAG_SIGNED != 0)
-        assertFalse(ParamFloatEditDialogFragment.inputTypeFor(0f) and InputType.TYPE_NUMBER_FLAG_SIGNED != 0)
+        assertFalse(isValidFloatInput("-1", 0f, 10f))
     }
 
     @Test fun steppingUsesOutOfRangeFloatsBeforeClampingInEitherDirection() {
-        val step = ParamFloatEditDialogFragment::stepValueFromInput
+        val step = ::stepFloatValue
         assertEquals(2f, step("2.5", 1f, .5f, -2f, 2f, -1), 0f)
         assertEquals(2f, step("2.5", 1f, .5f, -2f, 2f, 1), 0f)
         assertEquals(-2f, step("-2.5", 1f, .5f, -2f, 2f, 1), 0f)
@@ -55,7 +49,7 @@ class ParamFloatInputValidationTest {
     }
 
     @Test fun steppingIncompleteFloatSyntaxFallsBackToLastValidValue() {
-        val step = ParamFloatEditDialogFragment::stepValueFromInput
+        val step = ::stepFloatValue
         assertEquals(1.5f, step("-.", 1f, .5f, -2f, 2f, 1), 0f)
         assertEquals(.5f, step(".", 1f, .5f, -2f, 2f, -1), 0f)
     }

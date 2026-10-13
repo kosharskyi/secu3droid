@@ -43,8 +43,8 @@ import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.input.ImeAction
@@ -64,22 +64,24 @@ import org.secu3.android.R
 internal fun NumericEditDialogContent(
     title: String,
     initialText: String,
+    sessionKey: Long = 0L,
     allowDecimal: Boolean,
     allowNegative: Boolean,
     validate: (String) -> Boolean,
     onStep: (String, Int) -> String,
     onConfirm: (String, Boolean) -> Unit,
     onCancel: () -> Unit,
+    modifier: Modifier = Modifier,
 ) {
-    var inputValue by remember(initialText) {
+    var inputValue by rememberSaveable(sessionKey, stateSaver = TextFieldValue.Saver) {
         mutableStateOf(TextFieldValue(initialText, selection = androidx.compose.ui.text.TextRange(initialText.length)))
     }
     val inputText = inputValue.text
-    var changed by remember(initialText) { mutableStateOf(false) }
+    var changed by rememberSaveable(sessionKey) { mutableStateOf(false) }
     val valid = validate(inputText)
 
     Surface(
-        modifier = Modifier.fillMaxWidth(),
+        modifier = modifier.fillMaxWidth(),
         shape = RoundedCornerShape(12.dp),
         color = MaterialTheme.colorScheme.surface,
     ) {
@@ -164,13 +166,13 @@ internal fun NumericEditDialogContent(
                 modifier = Modifier.fillMaxWidth().padding(top = 20.dp),
                 horizontalArrangement = Arrangement.End,
             ) {
-                TextButton(onClick = onCancel, modifier = Modifier.sizeIn(minHeight = 48.dp)) {
+                TextButton(onClick = onCancel, modifier = Modifier.sizeIn(minHeight = 48.dp).testTag("numeric_cancel")) {
                     Text(stringResource(android.R.string.cancel))
                 }
                 TextButton(
                     onClick = { onConfirm(inputText, changed) },
                     enabled = valid,
-                    modifier = Modifier.sizeIn(minHeight = 48.dp),
+                    modifier = Modifier.sizeIn(minHeight = 48.dp).testTag("numeric_confirm"),
                 ) { Text(stringResource(android.R.string.ok)) }
             }
         }

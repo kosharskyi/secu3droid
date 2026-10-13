@@ -40,6 +40,7 @@ import androidx.compose.ui.test.performImeAction
 import androidx.compose.ui.test.assertTextEquals
 import androidx.compose.ui.text.TextRange
 import androidx.compose.ui.test.performClick
+import androidx.test.platform.app.InstrumentationRegistry
 import org.junit.Assert.assertEquals
 import org.junit.Rule
 import org.junit.Test
@@ -112,9 +113,11 @@ class NumericEditDialogContentTest {
 
         composeTestRule.onNodeWithTag("numeric_value").performTextClearance()
         composeTestRule.onNodeWithTag("numeric_value").performTextInput("2.5")
-        composeTestRule.onNodeWithText("Enter a value within the allowed range").assertIsDisplayed()
+        val invalidValueMessage = InstrumentationRegistry.getInstrumentation().targetContext
+            .getString(org.secu3.android.R.string.numeric_edit_invalid_value)
+        composeTestRule.onNodeWithText(invalidValueMessage).assertIsDisplayed()
         composeTestRule.onNodeWithText("OK").assertIsNotEnabled()
-        composeTestRule.onNodeWithText("Cancel").performClick()
+        composeTestRule.onNodeWithTag("numeric_cancel").performClick()
 
         assertEquals(null, confirmed)
         assertEquals(true, canceled)
@@ -127,9 +130,9 @@ class NumericEditDialogContentTest {
             MaterialTheme(colorScheme = lightColorScheme()) {
                 NumericEditDialogContent(
                     title = "Integer steps", initialText = "4", allowDecimal = false, allowNegative = true,
-                    validate = { ParamIntEditDialogFragment.parseValidInput(it, 0, 10) != null },
+                    validate = { parseIntegerInput(it, 0, 10) != null },
                     onStep = { value, direction ->
-                        current = ParamIntEditDialogFragment.stepValueFromInput(value, current, 3, 0, 10, direction)
+                        current = stepIntegerValue(value, current, 3, 0, 10, direction)
                         current.toString()
                     }, onConfirm = { _, _ -> }, onCancel = {},
                 )
@@ -160,9 +163,9 @@ class NumericEditDialogContentTest {
             MaterialTheme(colorScheme = lightColorScheme()) {
                 NumericEditDialogContent(
                     title = "Float steps", initialText = "1.00", allowDecimal = true, allowNegative = true,
-                    validate = { ParamFloatEditDialogFragment.isValidInput(it, -2f, 2f) },
+                    validate = { isValidFloatInput(it, -2f, 2f) },
                     onStep = { value, direction ->
-                        current = ParamFloatEditDialogFragment.stepValueFromInput(value, current, .5f, -2f, 2f, direction)
+                        current = stepFloatValue(value, current, .5f, -2f, 2f, direction)
                         "%.2f".format(java.util.Locale.US, current)
                     }, onConfirm = { _, _ -> }, onCancel = {},
                 )

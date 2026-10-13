@@ -30,15 +30,15 @@ import org.junit.Test
 
 class ParamIntInputValidationTest {
     @Test fun signedInputRejectsPartialAndOverflowButAcceptsNegativeValuesInRange() {
-        assertNull(ParamIntEditDialogFragment.parseValidInput("-", -6, 12))
-        assertNull(ParamIntEditDialogFragment.parseValidInput("2147483648", -6, 12))
-        assertEquals(-6, ParamIntEditDialogFragment.parseValidInput("-6", -6, 12))
-        assertEquals(-2, ParamIntEditDialogFragment.parseValidInput("-2", -6, 12))
-        assertNull(ParamIntEditDialogFragment.parseValidInput("-7", -6, 12))
+        assertNull(parseIntegerInput("-", -6, 12))
+        assertNull(parseIntegerInput("2147483648", -6, 12))
+        assertEquals(-6, parseIntegerInput("-6", -6, 12))
+        assertEquals(-2, parseIntegerInput("-2", -6, 12))
+        assertNull(parseIntegerInput("-7", -6, 12))
     }
 
     @Test fun steppingUsesOutOfRangeIntegersBeforeClampingInEitherDirection() {
-        val step = ParamIntEditDialogFragment::stepValueFromInput
+        val step = ::stepIntegerValue
         assertEquals(9, step("12", 4, 3, 0, 10, -1))
         assertEquals(10, step("12", 4, 3, 0, 10, 1))
         assertEquals(1, step("-2", 4, 3, 0, 10, 1))
@@ -46,7 +46,7 @@ class ParamIntInputValidationTest {
     }
 
     @Test fun steppingHandlesHugeIntegersAndFallsBackOnlyForUnparseableText() {
-        val step = ParamIntEditDialogFragment::stepValueFromInput
+        val step = ::stepIntegerValue
         assertEquals(10, step("999999999999999999999999999", 4, 3, 0, 10, 1))
         assertEquals(10, step("999999999999999999999999999", 4, 3, 0, 10, -1))
         assertEquals(0, step("-999999999999999999999999999", 4, 3, 0, 10, 1))

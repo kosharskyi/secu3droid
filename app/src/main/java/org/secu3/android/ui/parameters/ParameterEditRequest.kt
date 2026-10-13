@@ -46,3 +46,5 @@ internal sealed interface ParameterEditRequest {
         val onValue: (Float) -> Unit,
     ) : ParameterEditRequest
 }
+
+internal data class ParameterEditSession(val id: Long, val request: ParameterEditRequest)

@@ -46,7 +46,10 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableFloatStateOf
 import androidx.compose.runtime.mutableIntStateOf
+import androidx.compose.runtime.mutableLongStateOf
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Modifier
@@ -62,6 +65,8 @@ import org.secu3.android.connection.ConnectionState
 import org.secu3.android.models.packets.input.DiagInputPacket
 import org.secu3.android.models.packets.out.DiagOutputPacket
 import org.secu3.android.ui.compose.ConnectionStatusIndicator
+import org.secu3.android.ui.parameters.ParameterEditRequest
+import org.secu3.android.ui.parameters.dialogs.NumericEditDialog
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -76,8 +81,8 @@ internal fun DiagnosticsScreen(
     onAdditionalSettings: () -> Unit,
     onOutputChanged: (DiagnosticOutput, Boolean) -> Unit,
     onChannelSelected: (Int) -> Unit,
-    onFrequencyEdit: (Float, (Float) -> Unit) -> Unit,
-    onDutyEdit: (Float, (Float) -> Unit) -> Unit,
+    onFrequencyEdit: (Float) -> Unit,
+    onDutyEdit: (Float) -> Unit,
     initialPage: Int = 0,
 ) {
     val status by connectionStatus.observeAsState()
@@ -89,6 +94,9 @@ internal fun DiagnosticsScreen(
     var duty by remember(outputPacket) {
         mutableFloatStateOf(if (outputPacket.chan == 0 && outputPacket.duty == 0f) 50f else outputPacket.duty)
     }
+    var editorTarget by rememberSaveable { mutableStateOf<String?>(null) }
+    var editorInitialValue by rememberSaveable { mutableFloatStateOf(0f) }
+    var editorSessionId by rememberSaveable { mutableLongStateOf(0L) }
     val pagerState = rememberPagerState(initialPage = initialPage.coerceIn(0, 1), pageCount = { 2 })
     val scope = rememberCoroutineScope()
     val titles = stringArrayResource(R.array.diagnostics_fragments_title)
@@ -140,8 +148,16 @@ internal fun DiagnosticsScreen(
                         frequencyLabel = stringResource(R.string.test_signal_frequency_label),
                         dutyLabel = stringResource(R.string.test_signal_duty_label),
                         onChannelSelected = { selectedChannel = it; onChannelSelected(it) },
-                        onFrequencyEdit = { onFrequencyEdit(frequency) { frequency = it } },
-                        onDutyEdit = { onDutyEdit(duty) { duty = it } },
+                        onFrequencyEdit = {
+                            editorInitialValue = frequency
+                            editorTarget = "frequency"
+                            editorSessionId++
+                        },
+                        onDutyEdit = {
+                            editorInitialValue = duty
+                            editorTarget = "duty"
+                            editorSessionId++
+                        },
                     )
                     else -> DiagnosticsOutputsScreen(
                         isSecu3T = isSecu3T,
@@ -153,5 +169,46 @@ internal fun DiagnosticsScreen(
                 }
             }
         }
+    }
+    val editRequest = when (editorTarget) {
+        "frequency" -> ParameterEditRequest.FloatValue(
+            title = stringResource(R.string.test_signal_frequency_hz),
+            value = editorInitialValue,
+            min = 10f,
+            max = 5000f,
+            step = .1f,
+            precision = 1,
+            onValue = {},
+        )
+        "duty" -> ParameterEditRequest.FloatValue(
+            title = stringResource(R.string.test_signal_duty),
+            value = editorInitialValue,
+            min = 0f,
+            max = 100f,
+            step = .5f,
+            precision = 1,
+            onValue = {},
+        )
+        else -> null
+    }
+    editRequest?.let { request ->
+        val target = editorTarget
+        val currentSessionId = editorSessionId
+        NumericEditDialog(
+            request = request,
+            sessionId = currentSessionId,
+            onConfirm = { value ->
+                if (editorTarget == target && editorSessionId == currentSessionId) {
+                    editorTarget = null
+                    when (target) {
+                        "frequency" -> { frequency = value.toFloat(); onFrequencyEdit(value.toFloat()) }
+                        "duty" -> { duty = value.toFloat(); onDutyEdit(value.toFloat()) }
+                    }
+                }
+            },
+            onDismiss = {
+                if (editorTarget == target && editorSessionId == currentSessionId) editorTarget = null
+            },
+        )
     }
 }

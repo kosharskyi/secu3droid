@@ -62,7 +62,6 @@ import androidx.fragment.app.Fragment
 import androidx.fragment.app.viewModels
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.LifecycleEventObserver
-import androidx.lifecycle.Observer
 import androidx.lifecycle.repeatOnLifecycle
 import androidx.navigation.fragment.findNavController
 import dagger.hilt.android.AndroidEntryPoint
@@ -72,8 +71,8 @@ import org.secu3.android.R
 import org.secu3.android.connection.Connected
 import org.secu3.android.connection.Disconnected
 import org.secu3.android.connection.InProgress
-import org.secu3.android.ui.parameters.dialogs.ParamFloatEditDialogFragment
-import org.secu3.android.ui.parameters.dialogs.ParamIntEditDialogFragment
+import org.secu3.android.ui.compose.SecuComposeTheme
+import org.secu3.android.ui.parameters.dialogs.NumericEditDialog
 
 @AndroidEntryPoint
 class ParamsFragment : Fragment() {
@@ -86,48 +85,24 @@ class ParamsFragment : Fragment() {
             id = R.id.params_view_container
             setViewCompositionStrategy(ViewCompositionStrategy.DisposeOnViewTreeLifecycleDestroyed)
             setContent {
-                val connectionState by mViewModel.connectionStatusLiveData.observeAsState()
-                ParamsScreen(
-                    titles = pageTitles.map { stringResource(it) },
-                    pageKeys = pageTitles,
-                    connectionState = connectionState,
-                    onBack = { findNavController().navigateUp() },
-                    onSave = mViewModel::savePacket,
-                    onPageSettled = { index -> pageTitles.getOrNull(index)?.let(mViewModel::activatePage) },
-                    onPageUnsettled = mViewModel::deactivatePage,
-                    pageContent = { index, active, isActiveNow -> pageTitles.getOrNull(index)?.let { title ->
-                        ParameterPageContent(title, mViewModel, active, isActiveNow) { showEditRequest(it) }
-                    } },
-                )
-            }
-        }
-    }
-
-    private fun showEditRequest(request: ParameterEditRequest) {
-        when (request) {
-            is ParameterEditRequest.IntValue -> ParamIntEditDialogFragment.newInstance(
-                request.value, request.title, request.step, request.max, request.min,
-            ).also { dialog ->
-                val observer = object : Observer<Int> {
-                    override fun onChanged(value: Int) {
-                        dialog.newValueLiveData.removeObserver(this)
-                        request.onValue(value)
-                    }
+                SecuComposeTheme {
+                    val connectionState by mViewModel.connectionStatusLiveData.observeAsState()
+                    ParamsScreen(
+                        titles = pageTitles.map { stringResource(it) },
+                        pageKeys = pageTitles,
+                        connectionState = connectionState,
+                        editorSession = mViewModel.parameterEditSession,
+                        onEditConfirm = mViewModel::acceptParameterEditor,
+                        onEditDismiss = mViewModel::dismissParameterEditor,
+                        onBack = { findNavController().navigateUp() },
+                        onSave = mViewModel::savePacket,
+                        onPageSettled = { index -> pageTitles.getOrNull(index)?.let(mViewModel::activatePage) },
+                        onPageUnsettled = mViewModel::deactivatePage,
+                        pageContent = { index, active, isActiveNow -> pageTitles.getOrNull(index)?.let { title ->
+                            ParameterPageContent(title, mViewModel, active, isActiveNow, mViewModel::openParameterEditor)
+                        } },
+                    )
                 }
-                dialog.newValueLiveData.observe(viewLifecycleOwner, observer)
-                dialog.show(childFragmentManager, dialog::class.java.simpleName)
-            }
-            is ParameterEditRequest.FloatValue -> ParamFloatEditDialogFragment.newInstance(
-                request.value, request.title, request.step, request.max, request.min, request.precision,
-            ).also { dialog ->
-                val observer = object : Observer<Float> {
-                    override fun onChanged(value: Float) {
-                        dialog.newValueLiveData.removeObserver(this)
-                        request.onValue(value)
-                    }
-                }
-                dialog.newValueLiveData.observe(viewLifecycleOwner, observer)
-                dialog.show(childFragmentManager, dialog::class.java.simpleName)
             }
         }
     }
@@ -146,7 +121,12 @@ class ParamsFragment : Fragment() {
     }
 
     override fun onDestroyView() {
-        mViewModel.clearPageState()
+        if (requireActivity().isChangingConfigurations) {
+            mViewModel.deactivatePage()
+            mViewModel.cancelManualCommands()
+        } else {
+            mViewModel.clearPageState()
+        }
         super.onDestroyView()
     }
 }
@@ -160,6 +140,9 @@ internal fun ParamsScreen(
     onSave: () -> Unit,
     onPageSettled: (Int) -> Unit,
     pageContent: @Composable (Int, Boolean, () -> Boolean) -> Unit,
+    editorSession: ParameterEditSession? = null,
+    onEditConfirm: (Long, Number) -> Unit = { _, _ -> },
+    onEditDismiss: (Long) -> Unit = {},
     onPageUnsettled: () -> Unit = {},
 ) {
     val pagerState = rememberPagerState(initialPage = 0, pageCount = { titles.size })
@@ -238,6 +221,14 @@ internal fun ParamsScreen(
             }
             pageContent(index, active, isActiveNow)
         }
+    }
+    editorSession?.let { session ->
+        NumericEditDialog(
+            request = session.request,
+            sessionId = session.id,
+            onConfirm = { onEditConfirm(session.id, it) },
+            onDismiss = { onEditDismiss(session.id) },
+        )
     }
 }
 

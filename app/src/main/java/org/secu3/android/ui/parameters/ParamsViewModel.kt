@@ -31,6 +31,9 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.asLiveData
 import androidx.lifecycle.asFlow
 import androidx.lifecycle.viewModelScope
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.setValue
 import kotlinx.coroutines.Job
 import dagger.hilt.android.lifecycle.HiltViewModel
 import dagger.hilt.android.qualifiers.ApplicationContext
@@ -98,6 +101,10 @@ class ParamsViewModel @Inject constructor(
     private val secu3ConnectionManager: Secu3ConnectionManager) : ViewModel() {
 
     var isSendAllowed: Boolean = false
+
+    internal var parameterEditSession: ParameterEditSession? by mutableStateOf(null)
+        private set
+    private var nextParameterEditSessionId = 0L
 
     private val pageReadGate = ParameterPageReadGate()
     private val loadedPages = mutableSetOf<Int>()
@@ -227,11 +234,33 @@ class ParamsViewModel @Inject constructor(
         gasDoseStateHolder.cancelManual()
     }
 
+    internal fun openParameterEditor(request: ParameterEditRequest) {
+        parameterEditSession = ParameterEditSession(++nextParameterEditSessionId, request)
+    }
+
+    internal fun dismissParameterEditor(sessionId: Long) {
+        if (parameterEditSession?.id == sessionId) parameterEditSession = null
+    }
+
+    internal fun acceptParameterEditor(sessionId: Long, value: Number) {
+        val session = parameterEditSession?.takeIf { it.id == sessionId } ?: return
+        val accepted = when (val request = session.request) {
+            is ParameterEditRequest.IntValue -> (value as? Int)?.takeIf { it in request.min..request.max }
+            is ParameterEditRequest.FloatValue -> (value as? Float)?.takeIf { it.isFinite() && it in request.min..request.max }
+        } ?: return
+        parameterEditSession = null
+        when (val request = session.request) {
+            is ParameterEditRequest.IntValue -> request.onValue(accepted as Int)
+            is ParameterEditRequest.FloatValue -> request.onValue(accepted as Float)
+        }
+    }
+
     internal val isConnected: Boolean
         get() = secu3ConnectionManager.isConnected
 
     internal fun clearPageState() {
         deactivatePage()
+        parameterEditSession = null
         pageReadJobs.values.forEach { it.cancel() }
         pageReadJobs.clear()
         loadedPages.clear()

@@ -36,7 +36,6 @@ import androidx.navigation.navGraphViewModels
 import dagger.hilt.android.AndroidEntryPoint
 import org.secu3.android.R
 import org.secu3.android.ui.compose.SecuComposeTheme
-import org.secu3.android.ui.parameters.dialogs.ParamFloatEditDialogFragment
 
 @AndroidEntryPoint
 class DiagnosticsFragment : Fragment() {
@@ -72,35 +71,11 @@ class DiagnosticsFragment : Fragment() {
                         onChannelSelected = { index ->
                             selectDiagnosticOutputChannel(viewModel.outputPacket, index, viewModel::sendDiagOutPacket)
                         },
-                        onFrequencyEdit = { value, onConfirmed ->
-                            showFloatEditor(getString(R.string.test_signal_frequency_hz), value, 0.1f, 5000f, 10f, 1) {
-                                onConfirmed(it)
-                                updateDiagnosticOutputFrequency(viewModel.outputPacket, it, viewModel::sendDiagOutPacket)
-                            }
-                        },
-                        onDutyEdit = { value, onConfirmed ->
-                            showFloatEditor(getString(R.string.test_signal_duty), value, 0.5f, 100f, 0f, 1) {
-                                onConfirmed(it)
-                                updateDiagnosticOutputDuty(viewModel.outputPacket, it, viewModel::sendDiagOutPacket)
-                            }
-                        },
+                        onFrequencyEdit = { value -> updateDiagnosticOutputFrequency(viewModel.outputPacket, value, viewModel::sendDiagOutPacket) },
+                        onDutyEdit = { value -> updateDiagnosticOutputDuty(viewModel.outputPacket, value, viewModel::sendDiagOutPacket) },
                     )
                 }
             }
         }
 
-    private fun showFloatEditor(
-        title: String,
-        value: Float,
-        step: Float,
-        max: Float,
-        min: Float,
-        precision: Int,
-        onConfirmed: (Float) -> Unit,
-    ) {
-        ParamFloatEditDialogFragment.newInstance(value, title, step, max, min, precision).also { dialog ->
-            dialog.newValueLiveData.observe(viewLifecycleOwner) { result -> onConfirmed(result) }
-            dialog.show(childFragmentManager, dialog::class.java.simpleName)
-        }
-    }
 }
