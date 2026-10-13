@@ -28,62 +28,31 @@ import android.os.Bundle
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.setValue
 import androidx.compose.ui.platform.ComposeView
 import androidx.compose.ui.platform.ViewCompositionStrategy
-import androidx.lifecycle.lifecycleScope
-import androidx.lifecycle.withResumed
-import kotlinx.coroutines.launch
 import org.secu3.android.R
 import org.secu3.android.ui.compose.SecuComposeTheme
 import org.secu3.android.ui.parameters.dialogs.ParamFloatEditDialogFragment
 import org.secu3.android.ui.parameters.dialogs.ParamIntEditDialogFragment
 import org.secu3.android.ui.parameters.pages.compose.GasDoseNumber
 import org.secu3.android.ui.parameters.pages.compose.GasDoseScreen
-import org.secu3.android.ui.parameters.pages.compose.GasDoseStateHolder
-import org.secu3.android.ui.parameters.pages.compose.GasDoseValues
 
 class GasDoseFragment : BaseParamFragment() {
-    private var values by mutableStateOf<GasDoseValues?>(null)
-    private var firmwareAvailable by mutableStateOf(true)
-    private lateinit var stateHolder: GasDoseStateHolder
+    private val stateHolder get() = mViewModel.gasDoseStateHolder
 
     override fun onCreateView(inflater: LayoutInflater, container: ViewGroup?, savedInstanceState: Bundle?): View {
-        stateHolder = GasDoseStateHolder({ values = it }, mViewModel::sendPacket)
-        stateHolder.setFirmwareAvailable(mViewModel.fwInfoPacket?.isGdControlEnabled ?: true)
-        firmwareAvailable = stateHolder.isFirmwareAvailable
         return ComposeView(requireContext()).apply {
             setViewCompositionStrategy(ViewCompositionStrategy.DisposeOnViewTreeLifecycleDestroyed)
             setContent {
                 SecuComposeTheme {
-                    GasDoseScreen(values, firmwareAvailable, ::edit, ::selectFrequency, ::setMaximumFrequency, stateHolder::manualStep, stateHolder::finishManual, stateHolder::cancelManual, stateHolder::toggleTest, stateHolder::flushManual)
-                }
-            }
-        }
-    }
-
-    override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
-        super.onViewCreated(view, savedInstanceState)
-        mViewModel.fwInfoLiveData.observe(viewLifecycleOwner) {
-            stateHolder.setFirmwareAvailable(it.isGdControlEnabled)
-            firmwareAvailable = stateHolder.isFirmwareAvailable
-        }
-        val owner = viewLifecycleOwner
-        owner.lifecycleScope.launch {
-            owner.withResumed {
-                mViewModel.gasDoseLiveData.observe(owner) { received ->
-                    mViewModel.isSendAllowed = false
-                    stateHolder.receive(received)
-                    mViewModel.isSendAllowed = true
+                    GasDoseScreen(stateHolder.values, stateHolder.isFirmwareAvailable, ::edit, ::selectFrequency, ::setMaximumFrequency, stateHolder::manualStep, stateHolder::finishManual, stateHolder::cancelManual, stateHolder::toggleTest, stateHolder::flushManual)
                 }
             }
         }
     }
 
     private fun edit(number: GasDoseNumber) {
-        val current = values ?: return
+        val current = stateHolder.values ?: return
         if (number.integer) {
             val dialog = ParamIntEditDialogFragment.newInstance(current.value(number).toInt(), getString(number.title), number.step.toInt(), number.max.toInt(), number.min.toInt())
             dialog.newValueLiveData.observe(viewLifecycleOwner) { stateHolder.edit(number, it.toFloat()) }

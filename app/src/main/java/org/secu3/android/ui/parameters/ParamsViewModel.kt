@@ -29,11 +29,13 @@ import android.widget.Toast
 import androidx.lifecycle.LiveData
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.asLiveData
+import androidx.lifecycle.asFlow
 import androidx.lifecycle.viewModelScope
 import kotlinx.coroutines.Job
 import dagger.hilt.android.lifecycle.HiltViewModel
 import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.flow.collect
 import kotlinx.coroutines.flow.filter
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.filterNotNull
@@ -82,6 +84,9 @@ import org.secu3.android.ui.parameters.pages.AccelerationStateHolder
 import org.secu3.android.ui.parameters.pages.MiscellaneousStateHolder
 import org.secu3.android.ui.parameters.pages.SecurityStateHolder
 import org.secu3.android.ui.parameters.pages.compose.FunctionsStateHolder
+import org.secu3.android.ui.parameters.pages.compose.ChokeControlStateHolder
+import org.secu3.android.ui.parameters.pages.compose.GasDoseStateHolder
+import org.secu3.android.ui.parameters.pages.compose.DbwStateHolder
 import org.secu3.android.utils.Task
 import javax.inject.Inject
 
@@ -146,12 +151,34 @@ class ParamsViewModel @Inject constructor(
         LtftStateHolder(::sendPacket, { isSendAllowed = false }, { isSendAllowed = true })
     }
 
+    internal val chokeControlStateHolder by lazy {
+        ChokeControlStateHolder({}, ::sendPacket)
+    }
+
+    internal val gasDoseStateHolder by lazy {
+        GasDoseStateHolder({}, ::sendPacket).also {
+            it.setFirmwareAvailable(fwInfoPacket?.isGdControlEnabled ?: true)
+        }
+    }
+
+    internal val dbwStateHolder by lazy {
+        DbwStateHolder(::sendPacket) { isSendAllowed = it }
+    }
+
     internal val functionsStateHolder by lazy { FunctionsStateHolder(::sendPacket) }
 
     internal val miscellaneousStateHolder by lazy { MiscellaneousStateHolder(::sendPacket) }
 
     internal val securityStateHolder by lazy {
         SecurityStateHolder(::sendPacket, context.getString(R.string.sec_invalid_credentials))
+    }
+
+    init {
+        viewModelScope.launch {
+            secu3ConnectionManager.firmwareLiveData.asFlow().collect { firmware ->
+                gasDoseStateHolder.setFirmwareAvailable(firmware.isGdControlEnabled)
+            }
+        }
     }
 
     internal fun activatePage(titleRes: Int) {
@@ -172,6 +199,9 @@ class ParamsViewModel @Inject constructor(
                 R.string.params_tab_functions_title,
                 R.string.params_tab_miscellaneous_title,
                 R.string.params_tab_security_title,
+                R.string.params_tab_choke_control_title,
+                R.string.params_tab_gas_dose_title,
+                R.string.params_tab_el_throttle_title,
             )) {
             loadViewModelPage(titleRes)
         }
@@ -201,6 +231,10 @@ class ParamsViewModel @Inject constructor(
         functionsStateHolder.reset()
         miscellaneousStateHolder.reset()
         securityStateHolder.reset()
+        chokeControlStateHolder.reset()
+        gasDoseStateHolder.reset()
+        gasDoseStateHolder.setFirmwareAvailable(fwInfoPacket?.isGdControlEnabled ?: true)
+        dbwStateHolder.reset()
     }
 
     private suspend inline fun <reified T : InputPacket> readPacket(task: Task): T = readParameterPacket(
@@ -298,6 +332,44 @@ class ParamsViewModel @Inject constructor(
                         }.first()
                         ltftStateHolder.receive(packet)
                     }
+                    R.string.params_tab_choke_control_title -> {
+                        chokeControlStateHolder.reset()
+                        val packet = pageReadGate.read(titleRes) {
+                            readPacket<ChokeControlParPacket>(Task.Secu3ReadChokeControlParam)
+                        }.first()
+                        isSendAllowed = false
+                        try {
+                            chokeControlStateHolder.receive(packet)
+                        } finally {
+                            isSendAllowed = true
+                        }
+                    }
+                    R.string.params_tab_gas_dose_title -> {
+                        gasDoseStateHolder.reset()
+                        gasDoseStateHolder.setFirmwareAvailable(fwInfoPacket?.isGdControlEnabled ?: true)
+                        val packet = pageReadGate.read(titleRes) {
+                            val firmware = secu3ConnectionManager.fwInfo ?: return@read null
+                            if (!firmware.isGdControlEnabled) return@read null
+                            readPacket<GasDoseParamPacket>(Task.Secu3ReadGasDoseParam)
+                        }.first()
+                        if (packet == null) {
+                            cacheLoaded = false
+                        } else {
+                            isSendAllowed = false
+                            try {
+                                gasDoseStateHolder.receive(packet)
+                            } finally {
+                                isSendAllowed = true
+                            }
+                        }
+                    }
+                    R.string.params_tab_el_throttle_title -> {
+                        dbwStateHolder.reset()
+                        val packet = pageReadGate.read(titleRes) {
+                            readPacket<DbwParamPacket>(Task.Secu3ReadDbwParam)
+                        }.first()
+                        dbwStateHolder.receive(packet)
+                    }
                     R.string.params_tab_functions_title -> {
                         functionsStateHolder.reset()
                         val (namesPacket, funSetPacket) = pageReadGate.read(titleRes) {
@@ -375,11 +447,6 @@ class ParamsViewModel @Inject constructor(
     val fwInfoLiveData: LiveData<FirmwareInfoPacket>
         get() = secu3ConnectionManager.firmwareLiveData
 
-    val chokeLiveData: LiveData<ChokeControlParPacket>
-        get() = pageReadGate.read(R.string.params_tab_choke_control_title) {
-            readPacket<ChokeControlParPacket>(Task.Secu3ReadChokeControlParam)
-        }.filterNotNull().asLiveData(timeoutInMs = 0)
-
     val uniOutLiveData: LiveData<UniOutParamPacket>
         get() = pageReadGate.read(R.string.params_tab_universal_outputs_title) {
             readPacket<UniOutParamPacket>(Task.Secu3ReadUniversalOutputsParam)
@@ -396,20 +463,6 @@ class ParamsViewModel @Inject constructor(
             packet
         }.filterNotNull().asLiveData(timeoutInMs = 0)
 
-    val gasDoseLiveData: LiveData<GasDoseParamPacket>
-        get() = pageReadGate.read(R.string.params_tab_gas_dose_title) {
-            val fw = secu3ConnectionManager.fwInfo ?: return@read null
-            if (fw.isGdControlEnabled.not()) {
-                return@read null
-            }
-
-            readPacket<GasDoseParamPacket>(Task.Secu3ReadGasDoseParam)
-        }.filterNotNull().asLiveData(timeoutInMs = 0)
-
-    val dbwLiveData: LiveData<DbwParamPacket>
-        get() = pageReadGate.read(R.string.params_tab_el_throttle_title) {
-            readPacket<DbwParamPacket>(Task.Secu3ReadDbwParam)
-        }.filterNotNull().asLiveData(timeoutInMs = 0)
 
 
 

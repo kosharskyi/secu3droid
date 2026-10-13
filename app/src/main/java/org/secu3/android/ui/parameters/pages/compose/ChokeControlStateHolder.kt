@@ -24,6 +24,9 @@
  */
 package org.secu3.android.ui.parameters.pages.compose
 
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.setValue
 import org.secu3.android.models.packets.base.OutputPacket
 import org.secu3.android.models.packets.out.params.ChokeControlParPacket
 
@@ -75,7 +78,14 @@ class ChokeControlStateHolder(
     private var packet: ChokeControlParPacket? = null
     private var manualDelta = 0
 
-    val values: ChokeValues? get() = packet?.let(ChokeValues::from)
+    var values: ChokeValues? by mutableStateOf(null)
+        private set
+
+    fun reset() {
+        packet = null
+        manualDelta = 0
+        values = null
+    }
 
     /** Accepting a device packet resets the outgoing-only command and any unfinished movement. */
     fun receive(received: ChokeControlParPacket) {
@@ -144,7 +154,9 @@ class ChokeControlStateHolder(
     }
 
     private fun publishValues() {
-        packet?.let { onValuesChanged(ChokeValues.from(it)) }
+        val current = packet?.let(ChokeValues::from)
+        values = current
+        if (current != null) onValuesChanged(current)
     }
 
     private companion object {

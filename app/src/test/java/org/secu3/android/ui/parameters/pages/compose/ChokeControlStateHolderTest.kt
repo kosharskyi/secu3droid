@@ -38,6 +38,26 @@ class ChokeControlStateHolderTest {
         val holder = ChokeControlStateHolder(states::add, sends::add)
     }
 
+    @Test fun resetClearsPacketValuesAndPendingManualDeltaUntilFreshReceive() {
+        val fixture = Fixture()
+        val received = ChokeControlParPacket(smSteps = 777)
+        fixture.holder.receive(received)
+        assertTrue(fixture.sends.isEmpty())
+        fixture.holder.manualStep(1)
+        fixture.holder.reset()
+
+        assertEquals(null, fixture.holder.values)
+        fixture.holder.edit(ChokeNumber.STEPS, 900f)
+        fixture.holder.toggleTest()
+        fixture.holder.manualStep(1)
+        fixture.holder.finishManual()
+        assertTrue(fixture.sends.isEmpty())
+
+        fixture.holder.receive(ChokeControlParPacket(smSteps = 600))
+        fixture.holder.edit(ChokeNumber.STEPS, 900f)
+        assertEquals(1, fixture.sends.size)
+    }
+
     @Test fun manualDirectionsClampReleaseOnceAndZeroOrRepeatedReleaseDoesNotSend() {
         val positive = Fixture()
         positive.holder.receive(ChokeControlParPacket())

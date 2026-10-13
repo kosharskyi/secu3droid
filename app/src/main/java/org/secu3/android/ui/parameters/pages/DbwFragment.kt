@@ -30,44 +30,24 @@ import android.view.View
 import android.view.ViewGroup
 import androidx.compose.ui.platform.ComposeView
 import androidx.compose.ui.platform.ViewCompositionStrategy
-import androidx.lifecycle.lifecycleScope
-import androidx.lifecycle.withResumed
-import kotlinx.coroutines.launch
 import org.secu3.android.R
 import org.secu3.android.ui.compose.SecuComposeTheme
 import org.secu3.android.ui.parameters.dialogs.ParamFloatEditDialogFragment
 import org.secu3.android.ui.parameters.pages.compose.DbwNumber
 import org.secu3.android.ui.parameters.pages.compose.DbwScreen
 import org.secu3.android.ui.parameters.pages.compose.DbwUiState
-import org.secu3.android.ui.parameters.pages.compose.DbwStateHolder
 
 class DbwFragment : BaseParamFragment() {
 
-    private lateinit var stateHolder: DbwStateHolder
+    private val stateHolder get() = mViewModel.dbwStateHolder
 
     override fun onCreateView(inflater: LayoutInflater, container: ViewGroup?, savedInstanceState: Bundle?): View {
-        stateHolder = DbwStateHolder(mViewModel::sendPacket) { mViewModel.isSendAllowed = it }
-        stateHolder.reset()
         return ComposeView(requireContext()).apply {
             id = R.id.dbw_compose_view
             setViewCompositionStrategy(ViewCompositionStrategy.DisposeOnViewTreeLifecycleDestroyed)
             setContent {
                 SecuComposeTheme {
                     DbwScreen(stateHolder.uiState, ::editParameter)
-                }
-            }
-        }
-    }
-
-    override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
-        super.onViewCreated(view, savedInstanceState)
-        val owner = viewLifecycleOwner
-        owner.lifecycleScope.launch {
-            owner.withResumed {
-                // Accessing this getter sends the DBW read request, so evaluate it only once here.
-                val dbwLiveData = mViewModel.dbwLiveData
-                dbwLiveData.observe(owner) { received ->
-                    stateHolder.receive(received)
                 }
             }
         }

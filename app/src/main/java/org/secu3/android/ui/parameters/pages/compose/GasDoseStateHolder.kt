@@ -24,6 +24,9 @@
  */
 package org.secu3.android.ui.parameters.pages.compose
 
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.setValue
 import org.secu3.android.models.packets.base.OutputPacket
 import org.secu3.android.models.packets.out.params.GasDoseParamPacket
 
@@ -33,14 +36,16 @@ class GasDoseStateHolder(
     private val onSend: (OutputPacket) -> Unit,
 ) {
     private var packet: GasDoseParamPacket? = null
-    private var firmwareAvailable = true
     private var manualDelta = 0
 
-    val values: GasDoseValues? get() = packet?.let(GasDoseValues::from)
-    val isFirmwareAvailable: Boolean get() = firmwareAvailable
+    var values: GasDoseValues? by mutableStateOf(null)
+        private set
+    @set:JvmName("setFirmwareAvailableState")
+    var isFirmwareAvailable: Boolean by mutableStateOf(true)
+        private set
 
     fun setFirmwareAvailable(available: Boolean) {
-        firmwareAvailable = available
+        isFirmwareAvailable = available
         if (!available) manualDelta = 0
     }
 
@@ -48,6 +53,7 @@ class GasDoseStateHolder(
     fun reset() {
         packet = null
         manualDelta = 0
+        values = null
         onValuesChanged(null)
     }
 
@@ -55,44 +61,44 @@ class GasDoseStateHolder(
         manualDelta = 0
         received.manualPositionD = 0
         packet = received
-        onValuesChanged(GasDoseValues.from(received))
+        publishValues()
     }
 
     fun edit(number: GasDoseNumber, value: Float) {
-        if (!firmwareAvailable) return
+        if (!isFirmwareAvailable) return
         val current = packet ?: return
         applyGasDoseNumber(current, number, value)
         sendOrdinary(current)
     }
 
     fun selectFrequency(index: Int) {
-        if (!firmwareAvailable || index !in 0..3) return
+        if (!isFirmwareAvailable || index !in 0..3) return
         val current = packet ?: return
         current.freq = index
         sendOrdinary(current)
     }
 
     fun setMaximumFrequency(enabled: Boolean) {
-        if (!firmwareAvailable) return
+        if (!isFirmwareAvailable) return
         val current = packet ?: return
         current.maxFreqInit = if (enabled) 1 else 0
         sendOrdinary(current)
     }
 
     fun toggleTest() {
-        if (!firmwareAvailable) return
+        if (!isFirmwareAvailable) return
         val current = packet ?: return
         current.testing = !current.testing
         sendOrdinary(current)
     }
 
     fun manualStep(direction: Int) {
-        if (!firmwareAvailable || packet == null) return
+        if (!isFirmwareAvailable || packet == null) return
         manualDelta = (manualDelta + direction.coerceIn(-1, 1)).coerceIn(-127, 127)
     }
 
     fun flushManual() {
-        if (!firmwareAvailable) { manualDelta = 0; return }
+        if (!isFirmwareAvailable) { manualDelta = 0; return }
         val current = packet ?: return
         val delta = manualDelta
         manualDelta = 0
@@ -106,8 +112,14 @@ class GasDoseStateHolder(
         packet?.manualPositionD = 0
     }
 
+    private fun publishValues() {
+        val current = packet?.let(GasDoseValues::from)
+        values = current
+        onValuesChanged(current)
+    }
+
     private fun sendOrdinary(current: GasDoseParamPacket) {
-        onValuesChanged(GasDoseValues.from(current))
+        publishValues()
         onSend(current.snapshotWithManualPosition(0))
     }
 }

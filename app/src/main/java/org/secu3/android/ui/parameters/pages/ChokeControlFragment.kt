@@ -28,61 +28,35 @@ import android.os.Bundle
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.setValue
 import androidx.compose.ui.platform.ComposeView
 import androidx.compose.ui.platform.ViewCompositionStrategy
-import androidx.lifecycle.lifecycleScope
-import androidx.lifecycle.withResumed
-import kotlinx.coroutines.launch
 import org.secu3.android.R
 import org.secu3.android.ui.compose.SecuComposeTheme
 import org.secu3.android.ui.parameters.dialogs.ParamFloatEditDialogFragment
 import org.secu3.android.ui.parameters.dialogs.ParamIntEditDialogFragment
 import org.secu3.android.ui.parameters.pages.compose.ChokeNumber
 import org.secu3.android.ui.parameters.pages.compose.ChokeScreen
-import org.secu3.android.ui.parameters.pages.compose.ChokeControlStateHolder
 import org.secu3.android.ui.parameters.pages.compose.ChokeSelector
 import org.secu3.android.ui.parameters.pages.compose.ChokeValues
 
 class ChokeControlFragment : BaseParamFragment() {
-    private var values by mutableStateOf<ChokeValues?>(null)
-    private lateinit var stateHolder: ChokeControlStateHolder
+    private val stateHolder get() = mViewModel.chokeControlStateHolder
 
     override fun onCreateView(inflater: LayoutInflater, container: ViewGroup?, savedInstanceState: Bundle?): View {
-        values = null
-        stateHolder = ChokeControlStateHolder(
-            onValuesChanged = { values = it },
-            onSend = mViewModel::sendPacket,
-        )
         return ComposeView(requireContext()).apply {
             id = R.id.choke_control_compose_view
             setViewCompositionStrategy(ViewCompositionStrategy.DisposeOnViewTreeLifecycleDestroyed)
             setContent {
                 SecuComposeTheme {
-                    ChokeScreen(values, ::edit, stateHolder::toggle, stateHolder::selectFrequency,
+                    ChokeScreen(stateHolder.values, ::edit, stateHolder::toggle, stateHolder::selectFrequency,
                         stateHolder::manualStep, stateHolder::flushManual, stateHolder::finishManual, stateHolder::cancelManual, stateHolder::toggleTest)
                 }
             }
         }
     }
 
-    override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
-        super.onViewCreated(view, savedInstanceState)
-        viewLifecycleOwner.lifecycleScope.launch {
-            withResumed {
-                mViewModel.chokeLiveData.observe(viewLifecycleOwner) { received ->
-                    mViewModel.isSendAllowed = false
-                    stateHolder.receive(received)
-                    mViewModel.isSendAllowed = true
-                }
-            }
-        }
-    }
-
     private fun edit(number: ChokeNumber) {
-        val v = values ?: return
+        val v = stateHolder.values ?: return
         if (number == ChokeNumber.STEPS) {
             val dialog = ParamIntEditDialogFragment.newInstance(v.value(number).toInt(), getString(number.title), 1, number.max.toInt(), number.min.toInt())
             dialog.newValueLiveData.observe(viewLifecycleOwner) { stateHolder.edit(number, it.toFloat()) }
