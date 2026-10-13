@@ -46,3 +46,15 @@ The project should use Jetpack Compose for UI and Navigation Compose for navigat
 - When changing Bluetooth, USB, foreground-service, or notification behavior, check the relevant permissions in `app/src/main/AndroidManifest.xml`.
 - When changing release/download/network behavior, check ProGuard/R8 rules if Retrofit/Gson model reflection or Firebase behavior could be affected.
 - Do not add a formatter unless explicitly requested.
+
+## Agent Collaboration Workflow
+
+- The lead agent handles planning, complex architectural decisions, and code review when the change warrants it. Delegate implementation to Luna.
+- Luna implements the task, reviews her own diff, runs the relevant tests and build checks, and fixes issues discovered during those checks within the task's scope.
+- Do not automatically review all code after every Luna task. For simple changes whose relevant checks passed, use Luna's completion report to close the task.
+- The lead agent joins code review for complex, risky, or architecturally important changes, or when Luna reports uncertainty, failed tests or builds, or parts that could not be verified. Keep the review focused on the relevant changes and risks. Follow any explicit user request for review.
+- After completing a task, Luna provides a short report covering:
+  - What changed.
+  - Which tests and build checks passed.
+  - What could not be verified and why.
+  - Any remaining risks, doubts, or unresolved issues; explicitly state when there are none.
