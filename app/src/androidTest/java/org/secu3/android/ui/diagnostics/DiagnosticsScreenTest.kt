@@ -26,6 +26,7 @@ package org.secu3.android.ui.diagnostics
 
 import androidx.compose.ui.test.assertCountEquals
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.assertIsSelected
 import androidx.compose.ui.test.junit4.StateRestorationTester
@@ -116,6 +117,35 @@ class DiagnosticsScreenTest {
     }
 
     @Test
+    fun channelSelectionKeepsDefaultDutyDisplayWithoutChangingProtocolDuty() {
+        val packet = DiagOutputPacket()
+        val state = mutableStateOf(DiagnosticsViewModel.UiState())
+        compose.setContent {
+            SecuComposeTheme {
+                DiagnosticsScreen(
+                    isSecu3T = false,
+                    connectionStatus = MutableLiveData<ConnectionState>(Connected),
+                    inputLiveData = MutableLiveData<DiagInputPacket>(),
+                    state = state.value,
+                    onNavigateUp = {},
+                    onAdditionalSettings = {},
+                    onOutputChanged = { _, _ -> },
+                    onChannelSelected = { channel ->
+                        packet.chan = channel
+                        state.value = state.value.copy(channel = channel)
+                    },
+                    onFrequencyEdit = {},
+                    onDutyEdit = {},
+                )
+            }
+        }
+        compose.onNodeWithTag("output_channel").performClick()
+        compose.onNodeWithText("IGN_OUT1").performClick()
+        compose.onNodeWithText("50.0 %").assertIsDisplayed()
+        assertEquals(0f, packet.duty)
+    }
+
+    @Test
     fun frequencyAndDutyEditorsUseCurrentCompositionCallbacks() {
         val packet = DiagOutputPacket().apply { frq = 123.456f; duty = 24.25f }
         val data = fixture(packet = packet)
@@ -142,9 +172,7 @@ class DiagnosticsScreenTest {
     private data class Fixture(
         val connection: MutableLiveData<ConnectionState>,
         val input: MutableLiveData<DiagInputPacket>,
-        val packet: DiagOutputPacket,
-        val enableBlDe: MutableLiveData<Boolean>,
-        val enableTachO: MutableLiveData<Boolean>,
+        val state: DiagnosticsViewModel.UiState,
         val onOutput: (DiagnosticOutput, Boolean) -> Unit,
     )
 
@@ -159,9 +187,7 @@ class DiagnosticsScreenTest {
         isSecu3T = false,
         connectionStatus = data.connection,
         inputLiveData = data.input,
-        outputPacket = data.packet,
-        enableBlDeLiveData = data.enableBlDe,
-        enableTachOLiveData = data.enableTachO,
+        state = data.state,
         onNavigateUp = onNavigateUp,
         onAdditionalSettings = onAdditionalSettings,
         onOutputChanged = data.onOutput,
@@ -177,9 +203,12 @@ class DiagnosticsScreenTest {
     ) = Fixture(
         connection = connection,
         input = MutableLiveData(),
-        packet = packet,
-        enableBlDe = MutableLiveData(false),
-        enableTachO = MutableLiveData(false),
+        state = DiagnosticsViewModel.UiState(
+            outputBits = packet.out,
+            channel = packet.chan,
+            frequency = packet.frq,
+            duty = if (packet.chan == 0 && packet.duty == 0f) 50f else packet.duty,
+        ),
         onOutput = onOutput,
     )
 }

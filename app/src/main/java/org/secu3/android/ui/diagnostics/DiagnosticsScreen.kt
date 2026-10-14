@@ -63,7 +63,6 @@ import kotlinx.coroutines.launch
 import org.secu3.android.R
 import org.secu3.android.connection.ConnectionState
 import org.secu3.android.models.packets.input.DiagInputPacket
-import org.secu3.android.models.packets.out.DiagOutputPacket
 import org.secu3.android.ui.compose.ConnectionStatusIndicator
 import org.secu3.android.ui.parameters.ParameterEditRequest
 import org.secu3.android.ui.parameters.dialogs.NumericEditDialog
@@ -74,9 +73,7 @@ internal fun DiagnosticsScreen(
     isSecu3T: Boolean?,
     connectionStatus: LiveData<ConnectionState>,
     inputLiveData: LiveData<DiagInputPacket>,
-    outputPacket: DiagOutputPacket,
-    enableBlDeLiveData: LiveData<Boolean>,
-    enableTachOLiveData: LiveData<Boolean>,
+    state: DiagnosticsViewModel.UiState,
     onNavigateUp: () -> Unit,
     onAdditionalSettings: () -> Unit,
     onOutputChanged: (DiagnosticOutput, Boolean) -> Unit,
@@ -87,13 +84,8 @@ internal fun DiagnosticsScreen(
 ) {
     val status by connectionStatus.observeAsState()
     val input by inputLiveData.observeAsState()
-    val enableBlDe by enableBlDeLiveData.observeAsState(false)
-    val enableTachO by enableTachOLiveData.observeAsState(false)
-    var selectedChannel by remember(outputPacket) { mutableIntStateOf(outputPacket.chan) }
-    var frequency by remember(outputPacket) { mutableFloatStateOf(outputPacket.frq) }
-    var duty by remember(outputPacket) {
-        mutableFloatStateOf(if (outputPacket.chan == 0 && outputPacket.duty == 0f) 50f else outputPacket.duty)
-    }
+    val enableBlDe = state.enableBlDe
+    val enableTachO = state.enableTachO
     var editorTarget by rememberSaveable { mutableStateOf<String?>(null) }
     var editorInitialValue by rememberSaveable { mutableFloatStateOf(0f) }
     var editorSessionId by rememberSaveable { mutableLongStateOf(0L) }
@@ -140,28 +132,28 @@ internal fun DiagnosticsScreen(
                     0 -> DiagnosticsInputsScreen(
                         input = input,
                         isSecu3T = isSecu3T,
-                        selectedChannel = selectedChannel,
-                        frequency = frequency,
-                        duty = duty,
+                        selectedChannel = state.channel,
+                        frequency = state.frequency,
+                        duty = state.duty,
                         testSignalTitle = stringResource(R.string.test_signal_title),
                         outputChannelTitle = stringResource(R.string.output_channel_title),
                         frequencyLabel = stringResource(R.string.test_signal_frequency_label),
                         dutyLabel = stringResource(R.string.test_signal_duty_label),
-                        onChannelSelected = { selectedChannel = it; onChannelSelected(it) },
+                        onChannelSelected = onChannelSelected,
                         onFrequencyEdit = {
-                            editorInitialValue = frequency
+                            editorInitialValue = state.frequency
                             editorTarget = "frequency"
                             editorSessionId++
                         },
                         onDutyEdit = {
-                            editorInitialValue = duty
+                            editorInitialValue = state.duty
                             editorTarget = "duty"
                             editorSessionId++
                         },
                     )
                     else -> DiagnosticsOutputsScreen(
                         isSecu3T = isSecu3T,
-                        outputBits = outputPacket.out,
+                        outputBits = state.outputBits,
                         enableBlDe = enableBlDe,
                         enableTachO = enableTachO,
                         onOutputChanged = onOutputChanged,
@@ -201,8 +193,8 @@ internal fun DiagnosticsScreen(
                 if (editorTarget == target && editorSessionId == currentSessionId) {
                     editorTarget = null
                     when (target) {
-                        "frequency" -> { frequency = value.toFloat(); onFrequencyEdit(value.toFloat()) }
-                        "duty" -> { duty = value.toFloat(); onDutyEdit(value.toFloat()) }
+                        "frequency" -> onFrequencyEdit(value.toFloat())
+                        "duty" -> onDutyEdit(value.toFloat())
                     }
                 }
             },

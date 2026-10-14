@@ -102,12 +102,14 @@ class DiagnosticsOutputsScreenTest {
     fun enabledTachOAndBlDeCanBeChangedOnceAndUpdateTheirProtocolBits() {
         val packet = DiagOutputPacket()
         val sends = mutableListOf<Int>()
+        val bits = mutableIntStateOf(packet.out)
         val blDe = mutableStateOf(true)
         val tach = mutableStateOf(true)
         compose.setContent {
             SecuComposeTheme {
-                DiagnosticsOutputsScreen(false, packet.out, blDe.value, tach.value) { output, enabled ->
+                DiagnosticsOutputsScreen(false, bits.intValue, blDe.value, tach.value) { output, enabled ->
                     setDiagnosticOutput(packet, output, enabled)
+                    bits.intValue = packet.out
                     sends += packet.out
                 }
             }

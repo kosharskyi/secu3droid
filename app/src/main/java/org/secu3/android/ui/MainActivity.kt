@@ -36,6 +36,7 @@ import androidx.compose.ui.platform.ComposeView
 import androidx.fragment.app.Fragment
 import androidx.lifecycle.Lifecycle
 import androidx.navigation.NavHostController
+import androidx.navigation.NavDestination
 import dagger.hilt.android.AndroidEntryPoint
 import org.secu3.android.R
 
@@ -95,7 +96,8 @@ class MainActivity : AppCompatActivity() {
         super.onPostResume()
         when (rootNavController?.currentDestination?.route) {
             PARAMETERS_ROUTE, SETTINGS_ROUTE, ERRORS_ROUTE, LOGS_ROUTE, FIRMWARE_ROUTE,
-            DASHBOARD_ROUTE, SENSORS_ROUTE, SENSOR_SETTINGS_ROUTE ->
+            DASHBOARD_ROUTE, SENSORS_ROUTE, SENSOR_SETTINGS_ROUTE, DIAGNOSTICS_ROUTE,
+            DIAGNOSTICS_ADDITIONAL_ROUTE ->
                 showComposeOverlay(rootNavController?.currentDestination?.route)
             LEGACY_ROUTE -> showLegacyHost()
         }
@@ -127,6 +129,20 @@ class MainActivity : AppCompatActivity() {
         openComposeDestination(ERRORS_ROUTE)
     }
 
+    fun openDiagnostics() {
+        if (isInDiagnosticsGraph()) return
+        openComposeDestination(DIAGNOSTICS_GRAPH_ROUTE)
+    }
+
+    private fun isInDiagnosticsGraph(): Boolean {
+        var destination: NavDestination? = rootNavController?.currentDestination
+        while (destination != null) {
+            if (destination.route == DIAGNOSTICS_GRAPH_ROUTE) return true
+            destination = destination.parent
+        }
+        return false
+    }
+
     fun openLogs() {
         openComposeDestination(LOGS_ROUTE)
     }
@@ -149,7 +165,7 @@ class MainActivity : AppCompatActivity() {
             pendingComposeRoute = route
             return
         }
-        if (controller.currentDestination?.route == route) return
+        if (controller.currentDestination?.route == route || (route == DIAGNOSTICS_GRAPH_ROUTE && isInDiagnosticsGraph())) return
         if (!showComposeOverlay(route)) {
             pendingComposeRoute = route
             return
@@ -172,7 +188,8 @@ class MainActivity : AppCompatActivity() {
     internal fun onRootDestinationChanged(route: String?) {
         when (route) {
             PARAMETERS_ROUTE, SETTINGS_ROUTE, ERRORS_ROUTE, LOGS_ROUTE, FIRMWARE_ROUTE,
-            DASHBOARD_ROUTE, SENSORS_ROUTE, SENSOR_SETTINGS_ROUTE -> showComposeOverlay(route)
+            DASHBOARD_ROUTE, SENSORS_ROUTE, SENSOR_SETTINGS_ROUTE, DIAGNOSTICS_ROUTE,
+            DIAGNOSTICS_ADDITIONAL_ROUTE -> showComposeOverlay(route)
             LEGACY_ROUTE -> showLegacyHost()
         }
         if (pendingComposeRoute != null && lifecycle.currentState.isAtLeast(Lifecycle.State.RESUMED)) {

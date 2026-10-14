@@ -23,28 +23,6 @@
         android:name="org.secu3.android.ui.home.HomeFragment"
         android:label="fragment_home_fragment">
 
-        <action
-            android:id="@+id/action_open_secu_diagnostic"
-            app:destination="@id/diagnosticsFragment" />
     </fragment>
-
-    <fragment
-        android:id="@+id/diagnosticsFragment"
-        android:name="org.secu3.android.ui.diagnostics.DiagnosticsFragment"
-        android:label="Diagnostics Fragment"
-        >
-
-        <action
-            android:id="@+id/action_diagnostic_to_additional"
-            app:destination="@id/diagnosticsAdditionalDialog"
-            />
-
-    </fragment>
-
-    <dialog
-        android:id="@+id/diagnosticsAdditionalDialog"
-        android:name="org.secu3.android.ui.diagnostics.DiagnosticAdditionalDialogFragment"
-        android:label="Diagnostics additional dialog"
-        />
 
 </navigation>

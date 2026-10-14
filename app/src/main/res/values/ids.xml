@@ -27,8 +27,6 @@
     <item name="ltft_compose_view" type="id" />
     <item name="functions_compose_view" type="id" />
     <item name="ckps_compose_view" type="id" />
-    <item name="diagnostics_compose_view" type="id" />
-    <item name="diagnostic_additional_dialog_content" type="id" />
     <item name="starter_compose_view" type="id" />
     <item name="dbw_compose_view" type="id" />
     <item name="knock_compose_view" type="id" />

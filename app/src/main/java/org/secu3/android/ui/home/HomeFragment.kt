@@ -93,7 +93,7 @@ class HomeFragment : Fragment() {
                             onErrors = { (requireActivity() as MainActivity).openErrors() },
                             onDiagnosticsConfirmed = {
                                 if (mViewModel.firmware?.isDiagnosticsEnabled == true) {
-                                    findNavController().navigate(HomeFragmentDirections.actionOpenSecuDiagnostic())
+                                    (requireActivity() as org.secu3.android.ui.MainActivity).openDiagnostics()
                                 } else {
                                     Toast.makeText(requireContext(), R.string.diagnostics_not_supported_title, Toast.LENGTH_LONG).show()
                                 }

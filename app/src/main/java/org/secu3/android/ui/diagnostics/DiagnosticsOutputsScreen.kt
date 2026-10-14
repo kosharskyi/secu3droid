@@ -26,9 +26,6 @@ package org.secu3.android.ui.diagnostics
 
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableIntStateOf
-import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
@@ -116,7 +113,6 @@ internal fun DiagnosticsOutputsScreen(
     enableTachO: Boolean,
     onOutputChanged: (DiagnosticOutput, Boolean) -> Unit,
 ) {
-    var currentBits by remember(outputBits, enableBlDe, enableTachO) { mutableIntStateOf(outputBits) }
     val outputs = when (isSecu3T) {
         true -> secu3TOutputs
         false -> secu3IOutputs
@@ -130,7 +126,7 @@ internal fun DiagnosticsOutputsScreen(
         val ignitionCount = if (isSecu3T) 4 else 5
         Text(stringResource(R.string.diag_outputs_ignition_group), style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.SemiBold, modifier = Modifier.padding(top = 8.dp, bottom = 4.dp))
         outputs.take(ignitionCount).forEach { output ->
-            OutputToggle(output, currentBits, enabledFor(output, enableBlDe, enableTachO), onOutputChanged) { currentBits = it }
+            OutputToggle(output, outputBits, enabledFor(output, enableBlDe, enableTachO), onOutputChanged)
         }
         Text(
             stringResource(if (isSecu3T) R.string.diag_outputs_other_group else R.string.diag_outputs_injection_group),
@@ -139,7 +135,7 @@ internal fun DiagnosticsOutputsScreen(
             modifier = Modifier.padding(top = 12.dp, bottom = 4.dp),
         )
         outputs.drop(ignitionCount).forEach { output ->
-            OutputToggle(output, currentBits, enabledFor(output, enableBlDe, enableTachO), onOutputChanged) { currentBits = it }
+            OutputToggle(output, outputBits, enabledFor(output, enableBlDe, enableTachO), onOutputChanged)
         }
     }
 }
@@ -156,16 +152,12 @@ private fun OutputToggle(
     bits: Int,
     enabled: Boolean,
     onOutputChanged: (DiagnosticOutput, Boolean) -> Unit,
-    updateBits: (Int) -> Unit,
 ) {
     val checked = bits and (1 shl output.bit) != 0
     Row(
         modifier = Modifier.fillMaxWidth().heightIn(min = 48.dp).clickable(enabled = enabled) {
             val newValue = !checked
             onOutputChanged(output, newValue)
-            var updated = if (newValue) bits or (1 shl output.bit) else bits and (1 shl output.bit).inv()
-            output.secondBit?.let { bit -> updated = if (newValue) updated or (1 shl bit) else updated and (1 shl bit).inv() }
-            updateBits(updated)
         }.padding(start = 8.dp, end = 4.dp),
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.SpaceBetween,
@@ -177,9 +169,6 @@ private fun OutputToggle(
             enabled = enabled,
             onCheckedChange = { newValue ->
                 onOutputChanged(output, newValue)
-                var updated = if (newValue) bits or (1 shl output.bit) else bits and (1 shl output.bit).inv()
-                output.secondBit?.let { bit -> updated = if (newValue) updated or (1 shl bit) else updated and (1 shl bit).inv() }
-                updateBits(updated)
             },
         )
     }

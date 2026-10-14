@@ -24,11 +24,17 @@
  */
 package org.secu3.android.ui.diagnostics
 
-import androidx.lifecycle.*
+import androidx.lifecycle.LiveData
+import androidx.lifecycle.ViewModel
+import androidx.lifecycle.asLiveData
+import androidx.lifecycle.viewModelScope
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.filter
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.asStateFlow
 import org.secu3.android.connection.ConnectionState
 import org.secu3.android.connection.Secu3ConnectionManager
 import org.secu3.android.models.packets.input.DiagInputPacket
@@ -41,39 +47,37 @@ import javax.inject.Inject
 @HiltViewModel
 class DiagnosticsViewModel @Inject constructor(private val secu3ConnectionManager: Secu3ConnectionManager) : ViewModel() {
 
-    val outputPacket = DiagOutputPacket()
+    private val outputPacket = DiagOutputPacket()
+    private val outputController = DiagnosticOutputController(outputPacket, ::sendDiagOutPacket)
 
-    private var isDiagModeActive = false
+    private val session = DiagnosticsSessionController(secu3ConnectionManager::sendNewTask)
 
     init {
         viewModelScope.launch {
             secu3ConnectionManager.receivedPacketFlow.filter { it is OpCompNc }.map {
                 it as OpCompNc
             }.collect {
-                if (it.opCode == 7) {
-                    isDiagModeActive = false
-                }
-
-                if (it.opCode == 6) {
-                    isDiagModeActive = true
-                    secu3ConnectionManager.sendNewTask(Task.Secu3DiagInput)
-                }
+                session.onOpCode(it.opCode)
             }
         }
+        session.start()
 
-        secu3ConnectionManager.sendNewTask(Task.Secu3OpComEnterDiagnostics)
     }
 
     val firmwareInfo: FirmwareInfoPacket?
         get() = secu3ConnectionManager.fwInfo
 
-    private val mEnableTachO = MutableLiveData<Boolean>()
-    val enableTachO: LiveData<Boolean>
-        get() = mEnableTachO
+    data class UiState(
+        val outputBits: Int = 0,
+        val channel: Int = 0,
+        val frequency: Float = 10f,
+        val duty: Float = 50f,
+        val enableBlDe: Boolean = false,
+        val enableTachO: Boolean = false,
+    )
 
-    private val mEnableBlDe = MutableLiveData<Boolean>()
-    val enableBlDe: LiveData<Boolean>
-        get() = mEnableBlDe
+    private val _uiState = MutableStateFlow(UiState())
+    val uiState: StateFlow<UiState> = _uiState.asStateFlow()
 
     // Each asLiveData() call creates a Flow collector; keep one instance for this
     // view model so Compose recompositions and view recreation do not multiply them.
@@ -83,41 +87,98 @@ class DiagnosticsViewModel @Inject constructor(private val secu3ConnectionManage
 
     val diagInputLiveData: LiveData<DiagInputPacket> by lazy {
         secu3ConnectionManager.receivedPacketFlow.filter { it is DiagInputPacket }.map {
-            isDiagModeActive = true
+            session.onInputReceived()
             it as DiagInputPacket
         }.asLiveData()
     }
 
 
     fun enableTachO(enable: Boolean) {
-        if (enable.not()) {
-            outputPacket.tachO = false
-            sendDiagOutPacket()
-        }
+        outputController.enableTachO(enable)
 
-        mEnableTachO.value = enable
+        _uiState.value = _uiState.value.copy(enableTachO = enable, outputBits = outputPacket.out)
     }
 
     fun enableBlDe(enable: Boolean) {
-        if (enable.not()) {
-            outputPacket.bl = false
-            outputPacket.de = false
-            sendDiagOutPacket()
-        }
+        outputController.enableBlDe(enable)
 
-        mEnableBlDe.value = enable
+        _uiState.value = _uiState.value.copy(enableBlDe = enable, outputBits = outputPacket.out)
     }
 
     fun sendDiagOutPacket() {
         secu3ConnectionManager.sendOutPacket(outputPacket)
     }
 
-    private fun leaveDiagnostic() {
-        secu3ConnectionManager.sendNewTask(Task.Secu3OpComLeaveDiagnostics)
-        secu3ConnectionManager.sendNewTask(Task.Secu3ReadSensors)
+    internal fun setOutput(output: DiagnosticOutput, enabled: Boolean) {
+        outputController.setOutput(output, enabled)
+        publishOutputState()
+    }
+
+    fun selectChannel(index: Int) {
+        outputController.selectChannel(index)
+        publishOutputState()
+    }
+
+    fun editFrequency(value: Float) {
+        outputController.editFrequency(value)
+        publishOutputState()
+    }
+
+    fun editDuty(value: Float) {
+        outputController.editDuty(value)
+        publishOutputState(displayDuty = value)
+    }
+
+    fun applyAdditionalOptions(enableBlDe: Boolean, enableTachO: Boolean) {
+        outputController.applyAdditionalOptions(enableBlDe, enableTachO)
+        _uiState.value = _uiState.value.copy(enableBlDe = enableBlDe, enableTachO = enableTachO, outputBits = outputPacket.out)
+    }
+
+    private fun publishOutputState(displayDuty: Float = _uiState.value.duty) {
+        _uiState.value = _uiState.value.copy(
+            outputBits = outputPacket.out,
+            channel = outputPacket.chan,
+            frequency = outputPacket.frq,
+            duty = displayDuty,
+        )
     }
 
     override fun onCleared() {
-        leaveDiagnostic()
+        session.close()
+        super.onCleared()
+    }
+}
+
+internal class DiagnosticsSessionController(private val sendTask: (Task) -> Unit) {
+    var isActive: Boolean = false
+        private set
+    private var started = false
+    private var closed = false
+
+    fun start() {
+        if (started || closed) return
+        started = true
+        sendTask(Task.Secu3OpComEnterDiagnostics)
+    }
+
+    fun onOpCode(opCode: Int) {
+        if (!started || closed) return
+        when (opCode) {
+            6 -> { isActive = true; sendTask(Task.Secu3DiagInput) }
+            7 -> isActive = false
+        }
+    }
+
+    fun onInputReceived() {
+        if (started && !closed) isActive = true
+    }
+
+    fun close() {
+        if (closed) return
+        closed = true
+        isActive = false
+        if (!started) return
+        sendTask(Task.Secu3OpComLeaveDiagnostics)
+        sendTask(Task.Secu3ReadSensors)
     }
 }
