@@ -27,9 +27,9 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.Rect
-import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.platform.LocalResources
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.LinkAnnotation
 import androidx.compose.ui.text.SpanStyle
@@ -81,7 +81,7 @@ private fun LinkedText(
     open: (String) -> Unit,
     onLinkBounds: ((resourceId: Int, bounds: Rect) -> Unit)?,
 ) {
-    val resourceText = LocalContext.current.resources.getText(resourceId)
+    val resourceText = LocalResources.current.getText(resourceId)
     val styledText = if (resourceText is Spanned && resourceText.getSpans(0, resourceText.length, URLSpan::class.java).isNotEmpty()) {
         resourceText
     } else {

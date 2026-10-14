@@ -27,8 +27,6 @@
     xmlns:tools="http://schemas.android.com/tools">
 
     <application
-        android:dataExtractionRules="@xml/debug_backup_rules"
-        android:fullBackupContent="@xml/debug_backup_rules"
         android:allowBackup="false"
         tools:replace="android:allowBackup"
         >

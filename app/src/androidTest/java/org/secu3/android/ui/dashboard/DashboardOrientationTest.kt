@@ -12,7 +12,6 @@ import androidx.core.view.ViewCompat
 import androidx.core.view.WindowInsetsCompat
 import androidx.core.view.WindowInsetsControllerCompat
 import androidx.lifecycle.Lifecycle
-import androidx.preference.PreferenceManager
 import androidx.test.core.app.ActivityScenario
 import androidx.test.platform.app.InstrumentationRegistry
 import org.junit.Assert.assertEquals
@@ -21,12 +20,13 @@ import org.junit.Test
 import org.secu3.android.R
 import org.secu3.android.ui.DASHBOARD_ROUTE
 import org.secu3.android.ui.MainActivity
+import org.secu3.android.utils.getDefaultSharedPreferences
 
 class DashboardOrientationTest {
     @Test
     fun dashboardRestoresLandscapeLockImmersiveBarsAndKeepScreenPolicy() {
         val context = InstrumentationRegistry.getInstrumentation().targetContext
-        val preferences = PreferenceManager.getDefaultSharedPreferences(context)
+        val preferences = context.getDefaultSharedPreferences()
         val preferenceKey = context.getString(R.string.pref_keep_screen_key)
         val hadPreference = preferences.contains(preferenceKey)
         val originalPreference = preferences.getBoolean(preferenceKey, false)

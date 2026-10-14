@@ -64,7 +64,6 @@ import org.secu3.android.R
 internal fun NumericEditDialogContent(
     title: String,
     initialText: String,
-    sessionKey: Long = 0L,
     allowDecimal: Boolean,
     allowNegative: Boolean,
     validate: (String) -> Boolean,
@@ -72,6 +71,7 @@ internal fun NumericEditDialogContent(
     onConfirm: (String, Boolean) -> Unit,
     onCancel: () -> Unit,
     modifier: Modifier = Modifier,
+    sessionKey: Long = 0L,
 ) {
     var inputValue by rememberSaveable(sessionKey, stateSaver = TextFieldValue.Saver) {
         mutableStateOf(TextFieldValue(initialText, selection = androidx.compose.ui.text.TextRange(initialText.length)))

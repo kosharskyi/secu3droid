@@ -145,7 +145,6 @@ class DiagnosticsViewModel @Inject constructor(private val secu3ConnectionManage
 
     override fun onCleared() {
         session.close()
-        super.onCleared()
     }
 }
 

@@ -27,7 +27,6 @@ package org.secu3.android.utils
 import android.content.Context
 import android.content.SharedPreferences
 import androidx.core.content.edit
-import androidx.preference.PreferenceManager
 import dagger.hilt.android.qualifiers.ApplicationContext
 import org.secu3.android.R
 import javax.inject.Inject
@@ -36,7 +35,7 @@ import javax.inject.Singleton
 @Singleton
 class UserPrefs @Inject constructor(@ApplicationContext private val ctx: Context) {
 
-    private var mPrefs: SharedPreferences = PreferenceManager.getDefaultSharedPreferences(ctx)
+    private var mPrefs: SharedPreferences = ctx.getDefaultSharedPreferences()
 
     var isSensorLoggerEnabled: Boolean
         get() = mPrefs.getBoolean(ctx.getString(R.string.pref_write_log_key), false)

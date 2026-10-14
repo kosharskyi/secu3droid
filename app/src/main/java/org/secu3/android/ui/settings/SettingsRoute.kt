@@ -11,6 +11,7 @@ package org.secu3.android.ui.settings
 
 import android.app.Activity
 import android.content.Intent
+import androidx.core.net.toUri
 import android.net.Uri
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
@@ -85,7 +86,7 @@ internal fun SettingsRoute(
         if (dialog == SettingsDialog.About) {
             Dialog(onDismissRequest = viewModel::dismissDialog) {
                 Surface(Modifier.fillMaxWidth().widthIn(max = 560.dp).testTag("settings-about-dialog")) {
-                    AboutContent(open = { url -> activity.startActivity(Intent(Intent.ACTION_VIEW, android.net.Uri.parse(url))) })
+                    AboutContent(open = { url -> activity.startActivity(Intent(Intent.ACTION_VIEW, url.toUri())) })
                 }
             }
         }

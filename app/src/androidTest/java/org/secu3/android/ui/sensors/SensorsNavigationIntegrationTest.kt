@@ -14,7 +14,6 @@ import androidx.compose.ui.test.performScrollTo
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.ViewModelProvider
 import androidx.navigation.NavHostController
-import androidx.preference.PreferenceManager
 import androidx.test.platform.app.InstrumentationRegistry
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertSame
@@ -24,6 +23,7 @@ import org.secu3.android.R
 import org.secu3.android.ui.MainActivity
 import org.secu3.android.ui.SENSOR_SETTINGS_ROUTE
 import org.secu3.android.ui.SENSORS_ROUTE
+import org.secu3.android.utils.getDefaultSharedPreferences
 
 class SensorsNavigationIntegrationTest {
     @get:Rule val compose = createAndroidComposeRule<MainActivity>()
@@ -31,7 +31,7 @@ class SensorsNavigationIntegrationTest {
     private val context = InstrumentationRegistry.getInstrumentation().targetContext
 
     @Test fun rawPageAndSensorsViewModelSurviveSettingsNavigationAndRecreation() {
-        val preferences = PreferenceManager.getDefaultSharedPreferences(context)
+        val preferences = context.getDefaultSharedPreferences()
         val oldViewKey = "old_sensors_view"
         val columnsKey = "columns_count"
         val hadOldView = preferences.contains(oldViewKey)

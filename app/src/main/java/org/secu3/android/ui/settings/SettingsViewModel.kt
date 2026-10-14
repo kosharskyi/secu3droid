@@ -15,7 +15,6 @@ import android.provider.DocumentsContract
 import androidx.core.content.edit
 import androidx.core.net.toUri
 import androidx.lifecycle.ViewModel
-import androidx.preference.PreferenceManager
 import dagger.hilt.android.lifecycle.HiltViewModel
 import dagger.hilt.android.qualifiers.ApplicationContext
 import javax.inject.Inject
@@ -23,12 +22,13 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import org.secu3.android.R
+import org.secu3.android.utils.getDefaultSharedPreferences
 
 @HiltViewModel
 class SettingsViewModel @Inject constructor(
     @ApplicationContext private val context: Context,
 ) : ViewModel(), SharedPreferences.OnSharedPreferenceChangeListener {
-    private val preferences = PreferenceManager.getDefaultSharedPreferences(context)
+    private val preferences = context.getDefaultSharedPreferences()
     private val _state = MutableStateFlow(readSettings())
     val state: StateFlow<SettingsUiState> = _state.asStateFlow()
     private val _dialog = MutableStateFlow<SettingsDialog?>(null)

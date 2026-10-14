@@ -136,8 +136,6 @@ dependencies {
     implementation(libs.core.ktx)
     implementation(libs.annotation)
 
-    implementation(libs.preference)
-
     implementation(libs.lifecycle.viewmodel)
     implementation(libs.lifecycle.runtime)
     implementation(libs.lifecycle.livedata.ktx)

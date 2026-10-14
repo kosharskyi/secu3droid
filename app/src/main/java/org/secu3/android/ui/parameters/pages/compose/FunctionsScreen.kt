@@ -314,7 +314,7 @@ fun FunctionsScreen(
                 val options = state.choices.options[selector].orEmpty()
                 AlertDialog(
                     onDismissRequest = { open = null },
-                    title = { choiceTitle(selector) },
+                    title = { ChoiceTitle(selector) },
                     text = {
                         Column(Modifier.verticalScroll(rememberScrollState())) {
                             options.forEachIndexed { i, option ->
@@ -401,7 +401,7 @@ private fun ChoiceRow(title: String, value: String?, tag: String, onClick: () ->
 }
 
 @Composable
-private fun choiceTitle(selector: FunctionsChoices.Selector) {
+private fun ChoiceTitle(selector: FunctionsChoices.Selector) {
     val title = when (selector) {
         FunctionsChoices.Selector.GASOLINE_MAP -> stringResource(R.string.funset_maps_set_for_gasoline)
         FunctionsChoices.Selector.GAS_MAP -> stringResource(R.string.funset_maps_set_for_gas)

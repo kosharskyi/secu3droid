@@ -19,7 +19,6 @@ import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.asLiveData
 import androidx.lifecycle.viewModelScope
-import androidx.preference.PreferenceManager
 import dagger.hilt.android.lifecycle.HiltViewModel
 import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -44,6 +43,7 @@ import org.secu3.android.ui.sensors.models.IndicatorType
 import org.secu3.android.utils.SecuLogger
 import org.secu3.android.utils.Task
 import org.secu3.android.utils.UserPrefs
+import org.secu3.android.utils.getDefaultSharedPreferences
 import javax.inject.Inject
 
 @HiltViewModel
@@ -58,7 +58,7 @@ class SensorsViewModel @Inject constructor(
 
     data class ChoiceRequest<T>(val requestId: Long, val choices: List<T>)
 
-    private val preferences = PreferenceManager.getDefaultSharedPreferences(context)
+    private val preferences = context.getDefaultSharedPreferences()
     private val _state = MutableStateFlow(readUiState())
     val state: StateFlow<SensorsUiState> = _state.asStateFlow()
     private val taskGate = SensorTaskGate(_state.value.selectedPage, secu3ConnectionManager::sendNewTask)
@@ -137,7 +137,6 @@ class SensorsViewModel @Inject constructor(
 
     override fun onCleared() {
         preferences.unregisterOnSharedPreferenceChangeListener(preferenceListener)
-        super.onCleared()
     }
 
     fun consumeGaugeChoices(requestId: Long) {

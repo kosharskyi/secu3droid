@@ -147,7 +147,7 @@ private fun ErrorsTopBar(
         ) {
             Icon(
                 painter = painterResource(R.drawable.ic_arrow_back_24),
-                contentDescription = stringResource(R.string.abc_action_bar_up_description),
+                contentDescription = stringResource(R.string.back),
                 tint = ErrorsTextPrimary,
             )
         }

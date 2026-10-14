@@ -58,7 +58,7 @@ class SensorsTabsScreenTest {
 
     @Test fun tabClickAndSwipeNotifySettledPageOncePerSelection() {
         val pages = mutableListOf<Int>()
-        compose.setContent { SecuComposeTheme { screen(page = 0, pageChanged = pages::add) } }
+        compose.setContent { SecuComposeTheme { SensorsScreen(page = 0, pageChanged = pages::add) } }
         compose.onNodeWithText(context.getString(R.string.menu_raw_sensors)).performClick()
         compose.waitForIdle()
         assertEquals(listOf(1), pages)
@@ -70,7 +70,7 @@ class SensorsTabsScreenTest {
     @Test fun horizontalCardSwipeChangesPage() {
         val indicators = listOf(IndicatorItem(IndicatorState(20, IndicatorType.THROTTLE, 0), true))
         val pages = mutableListOf<Int>()
-        compose.setContent { SecuComposeTheme { screen(indicators = indicators, pageChanged = pages::add) } }
+        compose.setContent { SecuComposeTheme { SensorsScreen(indicators = indicators, pageChanged = pages::add) } }
         compose.onNodeWithTag("indicator-THROTTLE").performTouchInput { swipeLeft() }
         compose.waitForIdle()
         assertEquals(listOf(1), pages)
@@ -82,7 +82,7 @@ class SensorsTabsScreenTest {
         }
         val pages = mutableListOf<Int>()
         val reorderStates = mutableListOf<Boolean>()
-        compose.setContent { SecuComposeTheme { screen(gauges = gauges, pageChanged = pages::add, reorderingChanged = reorderStates::add) } }
+        compose.setContent { SecuComposeTheme { SensorsScreen(gauges = gauges, pageChanged = pages::add, reorderingChanged = reorderStates::add) } }
         val rpmTop = compose.onNodeWithTag("gauge-RPM").fetchSemanticsNode().boundsInRoot.top
         compose.onNodeWithTag("gauge-RPM").performTouchInput { swipeUp() }
         compose.waitForIdle()
@@ -108,7 +108,7 @@ class SensorsTabsScreenTest {
         val reorderStates = mutableListOf<Boolean>()
         compose.setContent {
             SecuComposeTheme {
-                screen(gauges = gauges, indicators = indicators, pageChanged = pages::add,
+                SensorsScreen(gauges = gauges, indicators = indicators, pageChanged = pages::add,
                     reorderGauges = { gaugeOrder = it }, reorderIndicators = { indicatorOrder = it },
                     reorderingChanged = reorderStates::add)
             }
@@ -152,7 +152,7 @@ class SensorsTabsScreenTest {
         val stops = mutableListOf<Int>()
         compose.setContent {
             SecuComposeTheme {
-                screen(loggerStarted = started.value, start = { starts += 1; started.value = true }, stop = { stops += 1; started.value = false }, mark = marks::add)
+                SensorsScreen(loggerStarted = started.value, start = { starts += 1; started.value = true }, stop = { stops += 1; started.value = false }, mark = marks::add)
             }
         }
         compose.onNodeWithTag("log-start").performClick()
@@ -169,7 +169,7 @@ class SensorsTabsScreenTest {
 
     @Test fun settingsAndConnectionStatusArePresent() {
         val settings = mutableListOf<Int>()
-        compose.setContent { SecuComposeTheme { screen(settings = { settings += 1 }) } }
+        compose.setContent { SecuComposeTheme { SensorsScreen(settings = { settings += 1 }) } }
         compose.onNodeWithContentDescription(context.getString(R.string.title_activity_settings)).performClick()
         compose.waitForIdle()
         assertEquals(listOf(1), settings)
@@ -183,7 +183,7 @@ class SensorsTabsScreenTest {
 
     @Test fun changingOldViewPreferenceReplacesGaugeScreenWithLegacyScreen() {
         val oldView = mutableStateOf(false)
-        compose.setContent { SecuComposeTheme { screen(oldView = oldView.value) } }
+        compose.setContent { SecuComposeTheme { SensorsScreen(oldView = oldView.value) } }
         compose.onNodeWithTag("gauges-grid").assertExists()
         compose.runOnIdle { oldView.value = true }
         compose.onNodeWithTag("old-sensors-list").assertExists()
@@ -196,7 +196,7 @@ class SensorsTabsScreenTest {
             GaugeItem(GaugeState(2, GaugeType.VOLTAGE, 1, true), "12.1"),
             GaugeItem(GaugeState(3, GaugeType.MAP, 2, true), "90"),
         )
-        compose.setContent { SecuComposeTheme { screen(columns = columns.value, oldView = false, gauges = gauges) } }
+        compose.setContent { SecuComposeTheme { SensorsScreen(columns = columns.value, oldView = false, gauges = gauges) } }
         val twoColumnTop = compose.onNodeWithTag("gauge-RPM").fetchSemanticsNode().boundsInRoot.top
         val thirdGaugeTop = compose.onNodeWithTag("gauge-MAP").fetchSemanticsNode().boundsInRoot.top
         org.junit.Assert.assertTrue(thirdGaugeTop > twoColumnTop)
@@ -206,7 +206,7 @@ class SensorsTabsScreenTest {
         compose.onNodeWithTag("gauges-grid").assertExists()
     }
 
-    @Composable private fun screen(
+    @Composable private fun SensorsScreen(
         page: Int = 0,
         columns: Int = 2,
         oldView: Boolean = false,

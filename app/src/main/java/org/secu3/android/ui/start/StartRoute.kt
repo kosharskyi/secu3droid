@@ -1,6 +1,7 @@
 package org.secu3.android.ui.start
 
 import android.Manifest
+import android.annotation.SuppressLint
 import android.bluetooth.BluetoothDevice
 import android.content.BroadcastReceiver
 import android.content.Context
@@ -36,6 +37,8 @@ import org.secu3.android.ui.compose.SecuComposeTheme
 
 internal const val USB_PERMISSION_ACTION = "org.secu3.android.USB_PERMISSION"
 
+// Permission constants are strings and this helper returns them only for matching API levels.
+@SuppressLint("InlinedApi")
 internal fun bluetoothPermissionsFor(apiLevel: Int, xiaomi: Boolean): Array<String> {
     val base = if (apiLevel >= 31) {
         arrayOf(Manifest.permission.BLUETOOTH_CONNECT, Manifest.permission.BLUETOOTH_SCAN).let {

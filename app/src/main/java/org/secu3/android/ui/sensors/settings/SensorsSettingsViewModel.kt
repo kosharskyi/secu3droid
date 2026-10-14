@@ -3,7 +3,6 @@ package org.secu3.android.ui.sensors.settings
 import android.content.Context
 import android.content.SharedPreferences
 import androidx.lifecycle.ViewModel
-import androidx.preference.PreferenceManager
 import dagger.hilt.android.lifecycle.HiltViewModel
 import dagger.hilt.android.qualifiers.ApplicationContext
 import javax.inject.Inject
@@ -12,6 +11,7 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
 import org.secu3.android.utils.UserPrefs
+import org.secu3.android.utils.getDefaultSharedPreferences
 
 data class SensorsSettingsUiState(
     val oldView: Boolean = false,
@@ -23,7 +23,7 @@ class SensorsSettingsViewModel @Inject constructor(
     private val userPrefs: UserPrefs,
     @ApplicationContext context: Context,
 ) : ViewModel() {
-    private val preferences = PreferenceManager.getDefaultSharedPreferences(context)
+    private val preferences = context.getDefaultSharedPreferences()
     private val _state = MutableStateFlow(readState())
     val state: StateFlow<SensorsSettingsUiState> = _state.asStateFlow()
     private val listener = SharedPreferences.OnSharedPreferenceChangeListener { _, key ->
@@ -56,7 +56,6 @@ class SensorsSettingsViewModel @Inject constructor(
 
     override fun onCleared() {
         preferences.unregisterOnSharedPreferenceChangeListener(listener)
-        super.onCleared()
     }
 
     private companion object {

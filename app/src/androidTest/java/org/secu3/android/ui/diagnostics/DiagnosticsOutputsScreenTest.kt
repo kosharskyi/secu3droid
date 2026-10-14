@@ -52,7 +52,7 @@ class DiagnosticsOutputsScreenTest {
     @Test
     fun displaysFirmwareSpecificControlsAndHidesUnknownFirmware() {
         val firmware = mutableStateOf<Boolean?>(true)
-        compose.setContent { SecuComposeTheme { screen(firmware = firmware.value) } }
+        compose.setContent { SecuComposeTheme { OutputsScreen(firmware = firmware.value) } }
         compose.onNodeWithText("IE").assertIsDisplayed()
         compose.onNodeWithText("FE").assertIsDisplayed()
         compose.onAllNodesWithText("IGN_OUT5").assertCountEquals(0)
@@ -66,7 +66,7 @@ class DiagnosticsOutputsScreenTest {
     @Test
     fun displaysEveryFirmwareControlIncludingAliases() {
         val firmware = mutableStateOf<Boolean?>(true)
-        compose.setContent { SecuComposeTheme { screen(firmware = firmware.value) } }
+        compose.setContent { SecuComposeTheme { OutputsScreen(firmware = firmware.value) } }
         val secu3TLabels = listOf("IGN_OUT1", "IGN_OUT2", "IGN_OUT3", "IGN_OUT4", "IE", "FE", "ECF", "CE", "ST_BLOCK", "ADD_IO1", "ADD_IO2", "BL", "DE")
         secu3TLabels.forEach { compose.onAllNodesWithText(it).assertCountEquals(1) }
         assertEquals(13, secu3TLabels.size)
@@ -180,7 +180,7 @@ class DiagnosticsOutputsScreenTest {
     }
 
     @androidx.compose.runtime.Composable
-    private fun screen(firmware: Boolean?, bits: Int = 0) = DiagnosticsOutputsScreen(
+    private fun OutputsScreen(firmware: Boolean?, bits: Int = 0) = DiagnosticsOutputsScreen(
         isSecu3T = firmware,
         outputBits = bits,
         enableBlDe = false,

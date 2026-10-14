@@ -14,26 +14,27 @@
 - **Real-time Dashboard**: Monitor engine parameters (RPM, MAP, Temperature, etc.) using interactive gauges and indicators.
 - **On-the-go Configuration**: Change Secu-3 unit settings and maps without needing a laptop.
 - **Data Logging**: Keep track of engine performance and diagnostic data.
-- **Modern UI**: Built with Jetpack Compose for a fluid and responsive experience.
+- **Modern UI**: Built with Jetpack Compose, Material 3, and Navigation Compose.
+- **Persistent settings**: Existing preferences remain in the Android default shared-preferences store, including settings created by older app versions.
 
 ## 🛠 Tech Stack
 
 - **Language**: [Kotlin](https://kotlinlang.org/)
-- **UI Framework**: [Jetpack Compose](https://developer.android.com/jetpack/compose) & Material 3
+- **UI Framework**: [Jetpack Compose](https://developer.android.com/jetpack/compose) with Material 3
 - **Dependency Injection**: [Hilt](https://dagger.dev/hilt/)
 - **Database**: [Room](https://developer.android.com/training/data-storage/room)
 - **Networking**: [Retrofit](https://square.github.io/retrofit/) & OkHttp
 - **Serialization**: Gson
-- **Navigation**: Jetpack Navigation Component
+- **Navigation**: [Navigation Compose](https://developer.android.com/develop/ui/compose/navigation)
 - **Hardware Interaction**: Bluetooth API & `usb-serial-for-android`
-- **Visualization**: [SpeedView](https://github.com/anastr/SpeedView) for dashboard gauges
+- **Dashboard**: Compose-based gauges and indicators backed by the Room database
 
 ## 📦 Getting Started
 
 ### Prerequisites
 
-- Android Studio Koala or newer
-- JDK 17+
+- Android Studio with Android SDK 37 and build tools 36.1.0 installed
+- JDK 21 for the Gradle 9.6.1 build; app bytecode targets Java 17
 - A Secu-3 unit with Bluetooth or USB
 
 ### Installation
@@ -53,13 +54,29 @@ Debug builds use the default Android debug signing configuration and do not requ
 ./gradlew :app:assembleDebug
 ```
 
-Release builds require a `keystore.properties` file in the project root:
+Release builds require signing values in `keystore.properties` or the corresponding `RELEASE_*` environment variables:
 
 ```properties
 KEY_ALIAS=your-key-alias
 KEY_PASSWORD=your-key-password
 KEYSTORE_PASSWORD=your-keystore-password
 KEYSTORE_PATH=/path/to/release-keystore.jks
+```
+
+### Checks
+
+Run unit tests, build both debug APKs, and run Android lint with:
+
+```bash
+./gradlew :app:testDebugUnitTest :app:assembleDebug :app:assembleDebugAndroidTest :app:lintDebug
+```
+
+See [Android lint triage](knowledge/lint-triage.md) for the remaining warning categories and why they were deferred.
+
+Instrumentation tests require a connected Android device or emulator:
+
+```bash
+./gradlew :app:connectedDebugAndroidTest
 ```
 
 ## 🤝 Contributing

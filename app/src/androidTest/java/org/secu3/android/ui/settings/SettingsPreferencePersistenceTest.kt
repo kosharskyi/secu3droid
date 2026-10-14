@@ -36,20 +36,20 @@ import androidx.compose.ui.test.onNodeWithContentDescription
 import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.junit4.v2.createAndroidComposeRule
 import androidx.test.platform.app.InstrumentationRegistry
-import androidx.preference.PreferenceManager
 import org.junit.Assert.assertEquals
 import org.junit.Rule
 import org.junit.Test
 import org.secu3.android.R
 import org.secu3.android.ui.MainActivity
 import org.secu3.android.ui.SETTINGS_ROUTE
+import org.secu3.android.utils.getDefaultSharedPreferences
 
 class SettingsPreferencePersistenceTest {
     @get:Rule val compose = createAndroidComposeRule<MainActivity>()
 
     @Test fun settingsPersistsAcrossRecreationAndReentryAndTracksExternalChanges() {
         val key = compose.activity.getString(R.string.pref_write_log_key)
-        val preference = PreferenceManager.getDefaultSharedPreferences(compose.activity)
+        val preference = compose.activity.getDefaultSharedPreferences()
         val originalValue = preference.getBoolean(key, false)
         try {
             compose.onNodeWithContentDescription("Settings icon").performClick()

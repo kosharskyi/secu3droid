@@ -177,7 +177,7 @@ class StartScreenViewModel @Inject constructor(
         if (!consumeLocationSettingsReturn()) return false
         return isLocationEnabled()
     }
-    override fun onCleared() { cancelBtDiscovery(); super.onCleared() }
+    override fun onCleared() { cancelBtDiscovery() }
 }
 
 data class StartUiState(
