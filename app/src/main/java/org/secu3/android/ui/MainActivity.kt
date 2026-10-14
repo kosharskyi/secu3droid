@@ -1,251 +1,176 @@
-/*
- *    SecuDroid  - An open source, free manager for SECU-3 engine control unit
- *    Copyright (C) 2024 Vitaliy O. Kosharskyi. Ukraine, Kyiv
- *
- *    SECU-3  - An open source, free engine control unit
- *    Copyright (C) 2007-2024 Alexey A. Shabelnikov. Ukraine, Kyiv
- *
- *    This program is free software: you can redistribute it and/or modify
- *    it under the terms of the GNU General Public License as published by
- *    the Free Software Foundation, either version 3 of the License, or
- *    (at your option) any later version.
- *
- *    This program is distributed in the hope that it will be useful,
- *    but WITHOUT ANY WARRANTY; without even the implied warranty of
- *    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- *    GNU General Public License for more details.
- *
- *    You should have received a copy of the GNU General Public License
- *    along with this program.  If not, see <http://www.gnu.org/licenses/>.
- *
- *    contacts:
- *                    http://secu-3.org
- *                    email: vetalkosharskiy@gmail.com
- */
 package org.secu3.android.ui
 
-import android.app.ComponentCaller
 import android.content.Intent
+import android.hardware.usb.UsbDevice
 import android.os.Bundle
-import android.view.View
 import android.view.WindowManager
-import androidx.constraintlayout.widget.ConstraintLayout
+import androidx.activity.ComponentActivity
+import androidx.activity.compose.setContent
 import androidx.activity.viewModels
-import androidx.appcompat.app.AppCompatActivity
-import androidx.compose.ui.platform.ComposeView
-import androidx.fragment.app.Fragment
+import androidx.core.content.IntentCompat
 import androidx.lifecycle.Lifecycle
-import androidx.navigation.NavHostController
 import androidx.navigation.NavDestination
+import androidx.navigation.NavHostController
 import dagger.hilt.android.AndroidEntryPoint
-import org.secu3.android.R
 
 @AndroidEntryPoint
-class MainActivity : AppCompatActivity() {
-
+class MainActivity : ComponentActivity() {
     private val viewModel: MainActivityViewModel by viewModels()
     private var rootNavController: NavHostController? = null
     internal val rootNavigationController: NavHostController? get() = rootNavController
-    private var pendingComposeRoute: String? = null
+    private var pendingNavigation: String? = null
+    private var pendingUsbIntentDevice: UsbDevice? = null
+    private var startUsbIntentHandler: ((UsbDevice?) -> Unit)? = null
     private var activeComposeRoute: String? = null
-    private lateinit var legacyContainer: View
-    private lateinit var composeNavigationView: ComposeView
-
-    companion object {
-        private const val STATE_ACTIVE_COMPOSE_ROUTE = "active_compose_route"
-        private const val STATE_PARAMETERS_ROUTE_ACTIVE = "parameters_route_active"
-    }
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        setContentView(R.layout.activity_main)
-        legacyContainer = findViewById(R.id.nav_host_fragment)
-        composeNavigationView = ComposeView(this).apply {
-            id = R.id.root_compose_nav_view
-            visibility = View.GONE
-            setContent { RootNavigation(this@MainActivity) }
-        }
-        findViewById<ConstraintLayout>(R.id.main_activity_root).addView(
-            composeNavigationView,
-            ConstraintLayout.LayoutParams(0, 0).apply {
-                startToStart = ConstraintLayout.LayoutParams.PARENT_ID
-                endToEnd = ConstraintLayout.LayoutParams.PARENT_ID
-                topToTop = ConstraintLayout.LayoutParams.PARENT_ID
-                bottomToBottom = ConstraintLayout.LayoutParams.PARENT_ID
-            },
-        )
-        activeComposeRoute = savedInstanceState?.getString(STATE_ACTIVE_COMPOSE_ROUTE)
-            ?: if (savedInstanceState?.getBoolean(STATE_PARAMETERS_ROUTE_ACTIVE) == true) PARAMETERS_ROUTE else null
-        if (activeComposeRoute != null) {
-            if (setComposeHostState(activeComposeRoute)) {
-                legacyContainer.visibility = if (activeComposeRoute == FIRMWARE_ROUTE) View.VISIBLE else View.GONE
-                composeNavigationView.visibility = View.VISIBLE
-            } else {
-                pendingComposeRoute = activeComposeRoute
-            }
-        }
-    }
-
-    override fun onSaveInstanceState(outState: Bundle) {
-        outState.putString(STATE_ACTIVE_COMPOSE_ROUTE, activeComposeRoute)
-        outState.putBoolean(STATE_PARAMETERS_ROUTE_ACTIVE, activeComposeRoute == PARAMETERS_ROUTE)
-        super.onSaveInstanceState(outState)
+        if (savedInstanceState == null) handleUsbIntent(intent)
+        setContent { RootNavigation(this) }
     }
 
     override fun onPostResume() {
         super.onPostResume()
-        when (rootNavController?.currentDestination?.route) {
-            PARAMETERS_ROUTE, SETTINGS_ROUTE, ERRORS_ROUTE, LOGS_ROUTE, FIRMWARE_ROUTE,
-            DASHBOARD_ROUTE, SENSORS_ROUTE, SENSOR_SETTINGS_ROUTE, DIAGNOSTICS_ROUTE,
-            DIAGNOSTICS_ADDITIONAL_ROUTE ->
-                showComposeOverlay(rootNavController?.currentDestination?.route)
-            LEGACY_ROUTE -> showLegacyHost()
-        }
-        processPendingComposeNavigation()
+        processPendingNavigation()
+        deliverPendingUsbIntent()
     }
 
-    private fun processPendingComposeNavigation() {
-        val route = rootNavController?.currentDestination?.route ?: return
-        val pendingRoute = pendingComposeRoute
-        if (pendingRoute != null) {
-            pendingComposeRoute = null
-            if (route != pendingRoute) {
-                openComposeDestination(pendingRoute)
-            } else {
-                showComposeOverlay(pendingRoute)
-            }
-        }
-    }
-
-    fun openParameters() {
-        openComposeDestination(PARAMETERS_ROUTE)
-    }
-
-    fun openSettings() {
-        openComposeDestination(SETTINGS_ROUTE)
-    }
-
-    fun openErrors() {
-        openComposeDestination(ERRORS_ROUTE)
-    }
-
+    fun openHome() = navigateTo(HOME_ROUTE)
+    fun openParameters() = navigateTo(PARAMETERS_ROUTE)
+    fun openSettings() = navigateTo(SETTINGS_ROUTE)
+    fun openErrors() = navigateTo(ERRORS_ROUTE)
     fun openDiagnostics() {
-        if (isInDiagnosticsGraph()) return
-        openComposeDestination(DIAGNOSTICS_GRAPH_ROUTE)
+        if (!isInsideDiagnosticsGraph(rootNavController?.currentDestination)) navigateTo(DIAGNOSTICS_GRAPH_ROUTE)
     }
-
-    private fun isInDiagnosticsGraph(): Boolean {
-        var destination: NavDestination? = rootNavController?.currentDestination
-        while (destination != null) {
-            if (destination.route == DIAGNOSTICS_GRAPH_ROUTE) return true
-            destination = destination.parent
+    fun openLogs() = navigateTo(LOGS_ROUTE)
+    fun openFirmware() = navigateTo(FIRMWARE_ROUTE)
+    fun openDashboard() = navigateTo(DASHBOARD_ROUTE)
+    fun openSensors() = navigateTo(SENSORS_ROUTE)
+    fun openStart(): Boolean {
+        val controller = rootNavController ?: run { pendingNavigation = START_ROUTE; return false }
+        if (controller.currentDestination == null || !lifecycle.currentState.isAtLeast(Lifecycle.State.RESUMED)) {
+            pendingNavigation = START_ROUTE
+            return false
         }
-        return false
+        if (controller.currentDestination?.route == START_ROUTE) return true
+        if (!controller.popBackStack(START_ROUTE, inclusive = false)) {
+            controller.navigate(START_ROUTE) { popUpTo(controller.graph.id) { inclusive = true }; launchSingleTop = true }
+        }
+        return true
     }
 
-    fun openLogs() {
-        openComposeDestination(LOGS_ROUTE)
-    }
-
-    fun openFirmware() {
-        openComposeDestination(FIRMWARE_ROUTE)
-    }
-
-    fun openDashboard() {
-        openComposeDestination(DASHBOARD_ROUTE)
-    }
-
-    fun openSensors() {
-        openComposeDestination(SENSORS_ROUTE)
-    }
-
-    private fun openComposeDestination(route: String) {
+    private fun navigateTo(route: String) {
         val controller = rootNavController
-        if (supportFragmentManager.isStateSaved || controller?.currentDestination == null) {
-            pendingComposeRoute = route
+        if (controller == null || controller.currentDestination == null || !lifecycle.currentState.isAtLeast(Lifecycle.State.RESUMED)) {
+            pendingNavigation = route
             return
         }
-        if (controller.currentDestination?.route == route || (route == DIAGNOSTICS_GRAPH_ROUTE && isInDiagnosticsGraph())) return
-        if (!showComposeOverlay(route)) {
-            pendingComposeRoute = route
-            return
-        }
+        if (controller.currentDestination?.route == route) return
+        if (route == DIAGNOSTICS_GRAPH_ROUTE && isInsideDiagnosticsGraph(controller.currentDestination)) return
         controller.navigate(route) { launchSingleTop = true }
     }
 
     internal fun attachRootNavController(controller: NavHostController) {
         rootNavController = controller
-        if (pendingComposeRoute != null && lifecycle.currentState.isAtLeast(Lifecycle.State.RESUMED)) {
-            onRootDestinationChanged(controller.currentDestination?.route)
-            processPendingComposeNavigation()
-        }
+        processPendingNavigation()
+        deliverPendingUsbIntent()
+    }
+
+    internal fun onRootDestinationChanged(destination: NavDestination?) {
+        updateActiveComposeRoute(destination?.route)
+        processPendingNavigation()
+        deliverPendingUsbIntent()
     }
 
     internal fun detachRootNavController(controller: NavHostController) {
         if (rootNavController === controller) rootNavController = null
     }
 
-    internal fun onRootDestinationChanged(route: String?) {
-        when (route) {
-            PARAMETERS_ROUTE, SETTINGS_ROUTE, ERRORS_ROUTE, LOGS_ROUTE, FIRMWARE_ROUTE,
-            DASHBOARD_ROUTE, SENSORS_ROUTE, SENSOR_SETTINGS_ROUTE, DIAGNOSTICS_ROUTE,
-            DIAGNOSTICS_ADDITIONAL_ROUTE -> showComposeOverlay(route)
-            LEGACY_ROUTE -> showLegacyHost()
-        }
-        if (pendingComposeRoute != null && lifecycle.currentState.isAtLeast(Lifecycle.State.RESUMED)) {
-            processPendingComposeNavigation()
+    private fun processPendingNavigation() {
+        if (!lifecycle.currentState.isAtLeast(Lifecycle.State.RESUMED)) return
+        val route = pendingNavigation ?: return
+        val controller = rootNavController ?: return
+        if (controller.currentDestination == null) return
+        pendingNavigation = null
+        if (route == START_ROUTE) {
+            openStart()
+        } else if (controller.currentDestination?.route != route &&
+            !(route == DIAGNOSTICS_GRAPH_ROUTE && isInsideDiagnosticsGraph(controller.currentDestination))
+        ) {
+            controller.navigate(route) { launchSingleTop = true }
         }
     }
 
-    private fun showComposeOverlay(route: String?): Boolean {
-        if (route == null) return false
-        if (supportFragmentManager.isStateSaved || !setComposeHostState(route)) return false
-        activeComposeRoute = route
-        legacyContainer.visibility = if (route == FIRMWARE_ROUTE) View.VISIBLE else View.GONE
-        composeNavigationView.visibility = View.VISIBLE
-        return true
+    internal fun setStartUsbIntentHandler(handler: ((UsbDevice?) -> Unit)?) {
+        startUsbIntentHandler = handler
+        deliverPendingUsbIntent()
     }
 
-    private fun setComposeHostState(route: String?): Boolean =
-        setNativeHostMaxLifecycle(if (route == FIRMWARE_ROUTE) Lifecycle.State.STARTED else Lifecycle.State.CREATED)
-
-    private fun showLegacyHost(): Boolean {
-        if (supportFragmentManager.isStateSaved || !setNativeHostMaxLifecycle(Lifecycle.State.RESUMED)) return false
-        activeComposeRoute = null
-        legacyContainer.visibility = View.VISIBLE
-        composeNavigationView.visibility = View.GONE
-        handleKeepScreenOn()
-        return true
+    private fun deliverPendingUsbIntent() {
+        if (rootNavController?.currentDestination?.route != START_ROUTE ||
+            !lifecycle.currentState.isAtLeast(Lifecycle.State.RESUMED)
+        ) return
+        val device = pendingUsbIntentDevice ?: return
+        val handler = startUsbIntentHandler ?: return
+        pendingUsbIntentDevice = null
+        handler(device)
     }
 
-    private fun setNativeHostMaxLifecycle(state: Lifecycle.State): Boolean {
-        if (supportFragmentManager.isStateSaved) return false
-        val host: Fragment = supportFragmentManager.findFragmentById(R.id.nav_host_fragment) ?: return false
-        if (host.lifecycle.currentState != state) {
-            supportFragmentManager.beginTransaction()
-                .setMaxLifecycle(host, state)
-                .commitNow()
+    @Suppress("OVERRIDE_DEPRECATION")
+    override fun onNewIntent(intent: Intent) {
+        super.onNewIntent(intent)
+        handleUsbIntent(intent)
+    }
+
+    private fun handleUsbIntent(intent: Intent) {
+        if (intent.action == ACTION_USB_DEVICE_ATTACHED) {
+            pendingUsbIntentDevice = IntentCompat.getParcelableExtra(intent, android.hardware.usb.UsbManager.EXTRA_DEVICE, UsbDevice::class.java)
+            deliverPendingUsbIntent()
         }
-        return true
     }
 
     override fun onResume() {
         super.onResume()
-
-        handleKeepScreenOn()
+        if (activeComposeRoute == DASHBOARD_ROUTE) window.addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON)
+        else applyKeepScreenOnPreference()
+        processPendingNavigation()
+        deliverPendingUsbIntent()
     }
 
-    private fun handleKeepScreenOn() {
-        if (activeComposeRoute == DASHBOARD_ROUTE || viewModel.prefs.isKeepScreenAliveActive) {
+    internal fun updateActiveComposeRoute(route: String?) { activeComposeRoute = route }
+
+    internal fun applyKeepScreenOnPreference() {
+        if (viewModel.prefs.isKeepScreenAliveActive) {
             window.addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON)
         } else {
             window.clearFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON)
         }
     }
 
-    override fun onNewIntent(intent: Intent, caller: ComponentCaller) {
-        super.onNewIntent(intent, caller)
+    internal fun applyConnectionServicePolicy() {
+        val intent = Intent(this, org.secu3.android.connection.SecuConnectionService::class.java)
+        if (viewModel.prefs.isWakeLockEnabled) {
+            if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.O) startForegroundService(intent)
+            else startService(intent)
+        } else {
+            stopConnectionService()
+        }
+    }
 
-        // do nothing
+    internal fun stopConnectionService() {
+        stopService(Intent(this, org.secu3.android.connection.SecuConnectionService::class.java))
+    }
+
+    private fun isInsideDiagnosticsGraph(destination: NavDestination?): Boolean {
+        var current = destination
+        while (current != null) {
+            if (current.route == DIAGNOSTICS_GRAPH_ROUTE) return true
+            current = current.parent
+        }
+        return false
+    }
+
+    private companion object {
+        const val ACTION_USB_DEVICE_ATTACHED = "android.hardware.usb.action.USB_DEVICE_ATTACHED"
     }
 }

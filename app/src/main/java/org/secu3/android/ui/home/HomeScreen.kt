@@ -77,6 +77,7 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import org.secu3.android.R
 import org.secu3.android.ui.compose.SecuComposeTheme
+import org.secu3.android.ui.compose.ConfirmationDialog
 
 enum class HomeConnectionStatus { CONNECTED, CONNECTING, DISCONNECTED }
 enum class HomeLayout { GRID, LANDSCAPE_COLUMNS }
@@ -85,7 +86,7 @@ data class HomeScreenState(
     val connectionStatus: HomeConnectionStatus = HomeConnectionStatus.DISCONNECTED,
     val firmwareAvailable: Boolean = false,
     val connectionRunning: Boolean = false,
-    val showExitConfirmation: Boolean = false,
+    val dialog: HomeDialog? = null,
     val releaseName: String? = null,
     val releaseMessage: String? = null,
 )
@@ -99,14 +100,19 @@ data class HomeScreenActions(
     val onSettings: () -> Unit = {},
     val onFirmware: () -> Unit = {},
     val onExitImmediately: () -> Unit = {},
+    val onExitRequested: () -> Unit = {},
     val onExitCancelled: () -> Unit = {},
     val onExitConfirmed: () -> Unit = {},
+    val onDiagnosticsRequested: () -> Unit = {},
+    val onDialogDismissed: () -> Unit = {},
+    val onPermissionRationaleConfirmed: () -> Unit = {},
+    val onPermissionRationaleCancelled: () -> Unit = {},
     val onDiagnosticsConfirmed: () -> Unit = {},
     val onDownloadRelease: () -> Unit = {},
     val onReleaseNotes: () -> Unit = {},
 )
 
-private enum class HomeDialog { EXIT, DIAGNOSTICS, RELEASE }
+enum class HomeDialog { EXIT, DIAGNOSTICS, RELEASE, RELEASE_PERMISSION_RATIONALE }
 
 private enum class HomeDestination { DASHBOARD, SENSORS, PARAMETERS, ERRORS, DIAGNOSTICS, LOGS, SETTINGS }
 private data class HomeMenuItem(@StringRes val label: Int, @DrawableRes val icon: Int, val destination: HomeDestination)
@@ -129,9 +135,7 @@ fun HomeScreen(
     layoutOverride: HomeLayout? = null,
     contentInsets: WindowInsets = WindowInsets.safeDrawing,
 ) {
-    var dialog by remember { mutableStateOf(if (state.releaseName != null) HomeDialog.RELEASE else null) }
-    LaunchedEffect(state.releaseName) { dialog = if (state.releaseName != null) HomeDialog.RELEASE else null }
-    LaunchedEffect(state.showExitConfirmation) { if (state.showExitConfirmation) dialog = HomeDialog.EXIT }
+    val dialog = state.dialog
     val layout = layoutOverride ?: homeLayout(LocalConfiguration.current)
     SecuComposeTheme {
         Box(modifier.fillMaxSize().testTag("home-full-root")) {
@@ -140,7 +144,7 @@ fun HomeScreen(
                 horizontalArrangement = Arrangement.SpaceBetween) {
                 TextButton(
                     modifier = Modifier.testTag("home-exit-button"),
-                    onClick = { if (state.connectionRunning) dialog = HomeDialog.EXIT else actions.onExitImmediately() },
+                    onClick = { if (state.connectionRunning) actions.onExitRequested() else actions.onExitImmediately() },
                 ) {
                     Icon(painterResource(R.drawable.ic_logout_24), contentDescription = null, tint = Color.Black)
                     Text(stringResource(R.string.exit), color = Color.Black, modifier = Modifier.padding(start = 8.dp))
@@ -163,11 +167,11 @@ fun HomeScreen(
             if (layout == HomeLayout.LANDSCAPE_COLUMNS) {
                 Row(Modifier.weight(1f).fillMaxWidth().testTag("home-menu-viewport").horizontalScroll(rememberScrollState()).padding(start = 32.dp, end = 24.dp, bottom = 8.dp),
                     horizontalArrangement = Arrangement.spacedBy(16.dp), verticalAlignment = Alignment.CenterVertically) {
-                    MenuCard(menuItems.first(), Modifier.fillMaxHeight().width(220.dp), adaptIconSize = true) { handleDestination(menuItems.first().destination, actions) { dialog = HomeDialog.DIAGNOSTICS } }
+                    MenuCard(menuItems.first(), Modifier.fillMaxHeight().width(220.dp), adaptIconSize = true) { handleDestination(menuItems.first().destination, actions) { actions.onDiagnosticsRequested() } }
                     menuItems.drop(1).chunked(2).forEachIndexed { columnIndex, pair ->
                         Column(Modifier.fillMaxHeight().width(160.dp).testTag("home-landscape-pair-$columnIndex"), verticalArrangement = Arrangement.spacedBy(8.dp)) {
                             pair.forEach { item ->
-                                MenuCard(item, Modifier.weight(1f).fillMaxWidth(), adaptIconSize = true) { handleDestination(item.destination, actions) { dialog = HomeDialog.DIAGNOSTICS } }
+                                MenuCard(item, Modifier.weight(1f).fillMaxWidth(), adaptIconSize = true) { handleDestination(item.destination, actions) { actions.onDiagnosticsRequested() } }
                             }
                         }
                     }
@@ -175,11 +179,11 @@ fun HomeScreen(
             } else {
                 Column(Modifier.weight(1f).fillMaxWidth().testTag("home-menu-viewport").verticalScroll(rememberScrollState()).padding(horizontal = 32.dp, vertical = 16.dp),
                     verticalArrangement = Arrangement.spacedBy(16.dp)) {
-                    MenuCard(menuItems.first(), Modifier.fillMaxWidth().height(150.dp)) { handleDestination(menuItems.first().destination, actions) { dialog = HomeDialog.DIAGNOSTICS } }
+                    MenuCard(menuItems.first(), Modifier.fillMaxWidth().height(150.dp)) { handleDestination(menuItems.first().destination, actions) { actions.onDiagnosticsRequested() } }
                     val rest = menuItems.drop(1)
                     rest.chunked(2).forEach { pair ->
                         Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(16.dp)) {
-                            pair.forEach { item -> MenuCard(item, Modifier.weight(1f).height(150.dp)) { handleDestination(item.destination, actions) { dialog = HomeDialog.DIAGNOSTICS } } }
+                            pair.forEach { item -> MenuCard(item, Modifier.weight(1f).height(150.dp)) { handleDestination(item.destination, actions) { actions.onDiagnosticsRequested() } } }
                             if (pair.size == 1) Box(Modifier.weight(1f))
                         }
                     }
@@ -187,22 +191,28 @@ fun HomeScreen(
             }
           }
           when (dialog) {
-        HomeDialog.EXIT -> AlertDialog(onDismissRequest = { dialog = null; actions.onExitCancelled() }, title = { Text(stringResource(R.string.disconnect_device)) },
+        HomeDialog.EXIT -> AlertDialog(onDismissRequest = actions.onExitCancelled, title = { Text(stringResource(R.string.disconnect_device)) },
             text = { Text(stringResource(R.string.disconnect_device_msg)) },
-            confirmButton = { TextButton(onClick = { dialog = null; actions.onExitConfirmed() }) { Text(stringResource(android.R.string.ok)) } },
-            dismissButton = { TextButton(onClick = { dialog = null; actions.onExitCancelled() }) { Text(stringResource(android.R.string.cancel)) } })
-        HomeDialog.DIAGNOSTICS -> AlertDialog(onDismissRequest = { dialog = null }, title = { Text(stringResource(android.R.string.dialog_alert_title)) },
+            confirmButton = { TextButton(onClick = actions.onExitConfirmed) { Text(stringResource(android.R.string.ok)) } },
+            dismissButton = { TextButton(onClick = actions.onExitCancelled) { Text(stringResource(android.R.string.cancel)) } })
+        HomeDialog.DIAGNOSTICS -> AlertDialog(onDismissRequest = actions.onDialogDismissed, title = { Text(stringResource(android.R.string.dialog_alert_title)) },
             text = { Text(stringResource(R.string.menu_diagnostics_warning_title)) },
-            confirmButton = { TextButton(onClick = { dialog = null; actions.onDiagnosticsConfirmed() }) { Text(stringResource(android.R.string.ok)) } },
-            dismissButton = { TextButton(onClick = { dialog = null }) { Text(stringResource(android.R.string.cancel)) } })
-        HomeDialog.RELEASE -> AlertDialog(onDismissRequest = { dialog = null }, title = { Text(stringResource(R.string.new_version_available)) },
+            confirmButton = { TextButton(onClick = { actions.onDialogDismissed(); actions.onDiagnosticsConfirmed() }) { Text(stringResource(android.R.string.ok)) } },
+            dismissButton = { TextButton(onClick = actions.onDialogDismissed) { Text(stringResource(android.R.string.cancel)) } })
+        HomeDialog.RELEASE -> AlertDialog(onDismissRequest = actions.onDialogDismissed, title = { Text(stringResource(R.string.new_version_available)) },
             text = { Column {
                 Text(state.releaseMessage.orEmpty())
-                TextButton(onClick = { dialog = null }) { Text(stringResource(R.string.remind_me_later)) }
+                TextButton(onClick = actions.onDialogDismissed) { Text(stringResource(R.string.remind_me_later)) }
             } },
-            confirmButton = { TextButton(onClick = { dialog = null; actions.onDownloadRelease() }) { Text(stringResource(R.string.download)) } },
-            dismissButton = { TextButton(onClick = { dialog = null; actions.onReleaseNotes() }) { Text(stringResource(R.string.what_s_new)) } },
+            confirmButton = { TextButton(onClick = { actions.onDialogDismissed(); actions.onDownloadRelease() }) { Text(stringResource(R.string.download)) } },
+            dismissButton = { TextButton(onClick = { actions.onDialogDismissed(); actions.onReleaseNotes() }) { Text(stringResource(R.string.what_s_new)) } },
             modifier = Modifier.semantics { contentDescription = "release_dialog" })
+        HomeDialog.RELEASE_PERMISSION_RATIONALE -> ConfirmationDialog(
+            title = R.string.download_manager_permission_rationale_title,
+            message = R.string.download_manager_permission_rationale_message,
+            onConfirm = actions.onPermissionRationaleConfirmed,
+            onCancel = actions.onPermissionRationaleCancelled,
+        )
         null -> Unit
           }
         }

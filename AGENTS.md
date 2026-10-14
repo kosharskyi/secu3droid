@@ -12,7 +12,7 @@ Secu3droid is an Android client for the Secu-3 engine control unit (ECU). The ap
 
 ## UI Architecture
 
-The project should use Jetpack Compose for UI and Navigation Compose for navigation. Existing Fragment/XML destinations are transitional. Follow `knowledge/compose-migration.md` for screen and navigation conventions.
+The project uses Jetpack Compose for UI and Navigation Compose for navigation. Follow `knowledge/compose-migration.md` for screen and navigation conventions.
 
 ## Important Directories
 
@@ -21,17 +21,15 @@ The project should use Jetpack Compose for UI and Navigation Compose for navigat
 - `app/src/main/java/org/secu3/android/di`: Hilt modules and entry points.
 - `app/src/main/java/org/secu3/android/models/packets`: protocol packet models.
 - `app/src/main/java/org/secu3/android/network`: API service/manager and network models.
-- `app/src/main/java/org/secu3/android/ui`: Activity, fragments, view models, adapters, and UI-specific models.
 - `app/src/main/java/org/secu3/android/utils`: preferences, logging, network, file, and utility helpers.
-- `app/src/main/res/navigation/main_nav_graph.xml`: legacy Fragment navigation graph.
-- `app/src/main/res/layout*`: remaining XML layouts.
+- `app/src/main/java/org/secu3/android/ui`: Activity, Compose routes/screens, view models, adapters, and UI-specific models.
 - `app/src/main/res/values*`: strings, themes, colors, protocol/constants/parameters resources and translations.
 
 ## Entry Points
 
 - Application class: `org.secu3.android.Secu3Application`.
 - Main activity: `org.secu3.android.ui.MainActivity`.
-- Current legacy navigation start destination: `StartScreenFragment`.
+- Navigation start destination: `START_ROUTE` in `RootNavigation`.
 - Foreground connection service: `org.secu3.android.connection.SecuConnectionService`.
 
 ## Working Rules For Agents

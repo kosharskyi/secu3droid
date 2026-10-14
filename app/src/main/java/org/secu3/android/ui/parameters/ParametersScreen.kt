@@ -45,7 +45,6 @@ import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.LifecycleEventObserver
 import androidx.lifecycle.repeatOnLifecycle
 import androidx.navigation.NavBackStackEntry
-import androidx.navigation.NavHostController
 import androidx.lifecycle.viewmodel.compose.viewModel
 import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.launch
@@ -61,7 +60,7 @@ import org.secu3.android.ui.parameters.dialogs.NumericEditDialog
 internal fun ParametersRoute(
     entry: NavBackStackEntry,
     activity: MainActivity,
-    navController: NavHostController,
+    onNavigateUp: () -> Unit,
 ) {
     val viewModel: ParamsViewModel = viewModel(
         viewModelStoreOwner = entry,
@@ -102,7 +101,7 @@ internal fun ParametersRoute(
             editorSession = viewModel.parameterEditSession,
             onEditConfirm = viewModel::acceptParameterEditor,
             onEditDismiss = viewModel::dismissParameterEditor,
-            onBack = { navController.popBackStack() },
+            onBack = onNavigateUp,
             onSave = viewModel::savePacket,
             onPageSettled = { index -> pages.getOrNull(index)?.let(viewModel::activatePage) },
             onPageUnsettled = viewModel::deactivatePage,

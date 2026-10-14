@@ -4,7 +4,6 @@ plugins {
     id("com.android.application") version "9.4.1" apply false
     alias(libs.plugins.kotlin.compose) apply false
     alias(libs.plugins.kotlin.parcelize) apply false
-    alias(libs.plugins.navigation.safeargs) apply false
     alias(libs.plugins.kotlin.ksp.plugin) apply false
     alias(libs.plugins.room.plugin) apply false
     alias(libs.plugins.dagger.hilt.plugin) apply false

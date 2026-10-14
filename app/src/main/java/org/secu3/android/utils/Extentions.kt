@@ -27,11 +27,10 @@ package org.secu3.android.utils
 import android.content.Context
 import android.view.View
 import android.view.animation.AccelerateDecelerateInterpolator
-import android.view.inputmethod.InputMethodManager
 import android.widget.ImageView
+import android.view.inputmethod.InputMethodManager
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.util.TypedValueCompat
-import androidx.fragment.app.Fragment
 import retrofit2.Response
 import java.io.File
 import java.text.DecimalFormat
@@ -55,15 +54,6 @@ fun ImageView.animateRotationByX(xDegrees: Float) {
             .rotationX(xDegrees)
             .setDuration(400)
             .interpolator = AccelerateDecelerateInterpolator()
-}
-
-fun Fragment.hideKeyboard(): Boolean {
-    activity?.currentFocus?.let {
-        val imm = context?.getSystemService(Context.INPUT_METHOD_SERVICE) as InputMethodManager
-        imm.hideSoftInputFromWindow(it.windowToken, 0)
-        return true
-    }
-    return false
 }
 
 fun AppCompatActivity.hideKeyboard(): Boolean {

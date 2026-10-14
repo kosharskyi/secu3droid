@@ -1,28 +1,3 @@
-/*
- *    SecuDroid  - An open source, free manager for SECU-3 engine control unit
- *    Copyright (C) 2025 Vitalii O. Kosharskyi. Ukraine, Kyiv
- *
- *    SECU-3  - An open source, free engine control unit
- *    Copyright (C) 2007-2025 Alexey A. Shabelnikov. Ukraine, Kyiv
- *
- *    This program is free software: you can redistribute it and/or modify
- *    it under the terms of the GNU General Public License as published by
- *    the Free Software Foundation, either version 3 of the License, or
- *    (at your option) any later version.
- *
- *    This program is distributed in the hope that it will be useful,
- *    but WITHOUT ANY WARRANTY; without even the implied warranty of
- *    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- *    GNU General Public License for more details.
- *
- *    You should have received a copy of the GNU General Public License
- *    along with this program.  If not, see <http://www.gnu.org/licenses/>.
- *
- *    contacts:
- *                    http://secu-3.org
- *                    email: vetalkosharskiy@gmail.com
- */
-
 package org.secu3.android.ui.start
 
 import android.bluetooth.BluetoothAdapter
@@ -33,15 +8,15 @@ import android.hardware.usb.UsbDevice
 import android.hardware.usb.UsbManager
 import android.location.LocationManager
 import android.os.Build
-import androidx.compose.runtime.mutableStateListOf
-import androidx.compose.runtime.mutableStateOf
 import androidx.lifecycle.LiveData
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.asLiveData
 import androidx.lifecycle.viewModelScope
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.delay
+import kotlinx.coroutines.Job
 import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
 import org.secu3.android.connection.ConnectionState
 import org.secu3.android.connection.Secu3ConnectionManager
@@ -50,185 +25,150 @@ import javax.inject.Inject
 
 @HiltViewModel
 class StartScreenViewModel @Inject constructor(
-    private val mPrefs: UserPrefs,
+    private val prefs: UserPrefs,
     private val bluetoothManager: BluetoothManager,
     private val locationManager: LocationManager,
-    private val secu3ConnectionManager: Secu3ConnectionManager,
+    private val connectionManager: Secu3ConnectionManager,
     private val packageManager: PackageManager,
     val usbManager: UsbManager,
-): ViewModel() {
+) : ViewModel() {
+    private val _uiState = MutableStateFlow(StartUiState())
+    val uiState = _uiState.asStateFlow()
+    val isConnectedLiveData: LiveData<ConnectionState> = connectionManager.connectionStateFlow.asLiveData()
+    private val bluetoothAdapter: BluetoothAdapter? get() = runCatching { bluetoothManager.adapter }.getOrNull()
+    private var usbDevice: UsbDevice? = null
+    private val devices = mutableListOf<BluetoothDevice>()
+    private var homeNavigationSent = false
+    var pendingBluetoothPermissions: Array<String> = emptyArray()
+    private val bluetoothBondGate = BluetoothBondRequestGate()
+    private val usbPermissionGate = UsbPermissionRequestGate()
+    private var pendingUsbPermissionDevice: UsbDevice? = null
+    private var connectionJob: Job? = null
+    private var returnFromLocationSettings = false
+    private var discoveryActive = false
+    val isUsbHostSupported get() = packageManager.hasSystemFeature(PackageManager.FEATURE_USB_HOST)
+    val isXiaomi = Build.MANUFACTURER.equals("Xiaomi", true) || Build.BRAND.equals("Xiaomi", true) || Build.BRAND.equals("POCO", true) || Build.MODEL.contains("POCO", true)
 
-    private val isConnectionInProgressFlow = MutableStateFlow(false)
-    val isConnectionInProgressLiveData: LiveData<Boolean>
-        get() = isConnectionInProgressFlow.asLiveData()
+    init { if (isUsbHostSupported) usbManager.deviceList.values.firstOrNull()?.let(::newUsbDeviceAttached) }
 
-    val isConnectedLiveData: LiveData<ConnectionState>
-        get() = secu3ConnectionManager.connectionStateFlow.asLiveData()
-
-    private val bluetoothAdapter: BluetoothAdapter by lazy { bluetoothManager.adapter }
-
-    var usbDevice: UsbDevice? = null
-    private val mUsbDeviceAttachedFlow = MutableStateFlow<UsbDevice?>(null)
-    val mUsbDeviceAttachedLiveData: LiveData<UsbDevice?>
-        get() = mUsbDeviceAttachedFlow.asLiveData()
-
-
-    val isUsbHostSupported: Boolean
-        get() = packageManager.hasSystemFeature(PackageManager.FEATURE_USB_HOST)
-
-    val showBottomSheet = mutableStateOf(false)
-
-    val discoveredBtDevices = mutableStateListOf<BluetoothDevice>()
-
-    val isXiaomi = Build.MANUFACTURER.equals("Xiaomi", ignoreCase = true) ||
-            Build.BRAND.equals("Xiaomi", ignoreCase = true) ||
-            Build.BRAND.equals("POCO", ignoreCase = true) ||
-            Build.MODEL.contains("POCO", ignoreCase = true)
-
-    init {
-        if (isUsbHostSupported) {
-            usbManager.deviceList.values.firstOrNull()?.let { newUsbDeviceAttached(it) }
-        }
+    fun isBtEnabled() = bluetoothAdapter?.let { runCatching { it.isEnabled }.getOrDefault(false) } ?: false
+    fun isLocationEnabled(): Boolean = Build.VERSION.SDK_INT < Build.VERSION_CODES.P || Build.VERSION.SDK_INT >= Build.VERSION_CODES.R || locationManager.isLocationEnabled
+    fun markLocationSettingsLaunched() { returnFromLocationSettings = true }
+    fun consumeLocationSettingsReturn(): Boolean = returnFromLocationSettings.also { returnFromLocationSettings = false }
+    fun selectedUsbDevice(): UsbDevice? = usbDevice
+    fun isBtDeviceAddressNotSelected(): Boolean {
+        val name = prefs.bluetoothDeviceName?.takeIf(String::isNotEmpty) ?: return true
+        val found = runCatching { bluetoothAdapter?.bondedDevices?.firstOrNull { it.name == name } }.getOrNull()
+        if (found == null) prefs.bluetoothDeviceName = null
+        return found == null
     }
-
-    fun isBtEnabled(): Boolean {
-        return bluetoothAdapter.isEnabled
-    }
-
-    fun isLocationEnabled(): Boolean {
-        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.P || Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
-            return true
-        }
-
-        return locationManager.isLocationEnabled
-    }
+    fun getBluetoothDeviceName(device: BluetoothDevice): String? = runCatching { device.name }.getOrNull()
+    private fun bondState(device: BluetoothDevice) = runCatching { device.bondState }.getOrNull()
+    private fun saveDevice(device: BluetoothDevice) { prefs.bluetoothDeviceName = getBluetoothDeviceName(device) }
 
     fun startBtDiscovery() {
         try {
-            bluetoothAdapter.apply {
-                if (isEnabled.not()) return
-
-                if (isDiscovering) {
-                    cancelDiscovery()
-                }
-
-                discoveredBtDevices.clear()
-
-                bondedDevices.forEach { device ->
-                    if (discoveredBtDevices.none { it.address == device.address }) {
-                        discoveredBtDevices.add(device)
-                    }
-                }
-
-                startDiscovery()
+            val adapter = bluetoothAdapter ?: return
+            if (!adapter.isEnabled) return
+            if (adapter.isDiscovering) adapter.cancelDiscovery()
+            devices.clear()
+            devices.addAll(adapter.bondedDevices)
+            discoveryActive = true
+            publishDevices(show = true)
+            adapter.startDiscovery()
+        } catch (_: SecurityException) { discoveryActive = false; setConnecting(false) }
+    }
+    fun cancelBtDiscovery() { discoveryActive = false; runCatching { bluetoothAdapter?.cancelDiscovery() } }
+    fun addDiscoveredDevice(device: BluetoothDevice) {
+        if (!discoveryActive) return
+        if (getBluetoothDeviceName(device).isNullOrEmpty()) return
+        if (devices.none { it.address == device.address }) devices += device
+        publishDevices(show = true)
+    }
+    fun selectBluetoothDevice(address: String) {
+        val device = devices.firstOrNull { it.address == address } ?: return
+        cancelBtDiscovery()
+        when (bondState(device)) {
+            BluetoothDevice.BOND_BONDED -> { saveDevice(device); startConnection(null) }
+            else -> {
+                bluetoothBondGate.begin(address)
+                setConnecting(true)
+                if (!runCatching { device.createBond() }.getOrDefault(false)) { bluetoothBondGate.cancel(); setConnecting(false) }
             }
-        } catch (e: SecurityException) {
-            disableProgress()
+        }
+        _uiState.value = _uiState.value.copy(showBluetoothDevices = false)
+    }
+    fun onBondStateChanged(device: BluetoothDevice) {
+        if (!bluetoothBondGate.matches(device.address)) return
+        when (bondState(device)) {
+            BluetoothDevice.BOND_BONDED -> { bluetoothBondGate.complete(device.address); saveDevice(device); startConnection(null) }
+            BluetoothDevice.BOND_BONDING -> setConnecting(true)
+            else -> { bluetoothBondGate.complete(device.address); setConnecting(false) }
         }
     }
-
-    fun cancelBtDiscovery() {
-        try {
-            bluetoothAdapter.cancelDiscovery()
-        } catch (e: SecurityException) {
-            // Permission can be revoked while discovery UI is open.
-        }
+    fun showBluetoothRationale() { _uiState.value = _uiState.value.copy(showBluetoothRationale = true) }
+    fun dismissBluetoothRationale() { _uiState.value = _uiState.value.copy(showBluetoothRationale = false) }
+    fun dismissBluetoothDevices() { _uiState.value = _uiState.value.copy(showBluetoothDevices = false) }
+    private fun publishDevices(show: Boolean) {
+        _uiState.value = _uiState.value.copy(showBluetoothDevices = show, bluetoothDevices = devices.mapNotNull { d -> getBluetoothDeviceName(d)?.takeIf(String::isNotEmpty)?.let { StartBluetoothDevice(d.address, it) } })
     }
-
-    fun isBtDeviceAddressNotSelected(): Boolean {
-        val btName = mPrefs.bluetoothDeviceName.takeIf { it.isNullOrEmpty().not() } ?: return true
-
-        val bluetoothDevice: BluetoothDevice? = try {
-            bluetoothAdapter.bondedDevices.firstOrNull { it.name == btName }
-        } catch (e: SecurityException) {
-            null
-        }
-
-        if (bluetoothDevice == null) {
-            mPrefs.bluetoothDeviceName = null
-        }
-
-        return bluetoothDevice == null
-    }
-
-    fun setBtDevice(device: BluetoothDevice) {
-        mPrefs.bluetoothDeviceName = try {
-            device.name
-        } catch (e: SecurityException) {
-            null
-        }
-    }
-
-    fun getBluetoothDeviceName(device: BluetoothDevice): String? {
-        return try {
-            device.name
-        } catch (e: SecurityException) {
-            null
-        }
-    }
-
-    fun getBluetoothBondState(device: BluetoothDevice): Int? {
-        return try {
-            device.bondState
-        } catch (e: SecurityException) {
-            null
-        }
-    }
-
-    fun createBluetoothBond(device: BluetoothDevice) {
-        try {
-            device.createBond()
-        } catch (e: SecurityException) {
-            disableProgress()
-        }
-    }
-
-    fun enableProgress() {
-        viewModelScope.launch {
-            isConnectionInProgressFlow.emit(true)
-        }
-    }
-
-    fun disableProgress() {
-        viewModelScope.launch {
-            isConnectionInProgressFlow.emit(false)
-        }
-    }
-
+    private fun setConnecting(value: Boolean) { _uiState.value = _uiState.value.copy(connecting = value) }
     fun startConnection(device: UsbDevice?) {
-        viewModelScope.launch {
-            isConnectionInProgressFlow.emit(true)
-
-            if (device != null) {
-                secu3ConnectionManager.startUsbConnection(device)
-            } else {
-                secu3ConnectionManager.startBtConnection()
-            }
-
-            while (secu3ConnectionManager.isConnectionRunning && secu3ConnectionManager.isConnected.not() && secu3ConnectionManager.fwInfo == null) {
-                delay(300)
-            }
-
-            isConnectionInProgressFlow.emit(false)
+        if (connectionJob?.isActive == true) return
+        if (!connectionManager.isConnected) homeNavigationSent = false
+        cancelBtDiscovery()
+        connectionJob = viewModelScope.launch {
+            setConnecting(true)
+            if (device != null) connectionManager.startUsbConnection(device) else connectionManager.startBtConnection()
+            while (connectionManager.isConnectionRunning && !connectionManager.isConnected && connectionManager.fwInfo == null) delay(300)
+            setConnecting(false)
         }
     }
-
     fun cancelConnection() {
-        secu3ConnectionManager.stopConnection()
+        connectionJob?.cancel()
+        connectionJob = null
+        bluetoothBondGate.cancel()
+        pendingUsbPermissionDevice = null
+        usbPermissionGate.cancel()
+        discoveryActive = false
+        setConnecting(false)
+        connectionManager.stopConnection()
     }
-
-    fun newUsbDeviceAttached(device: UsbDevice) {
-        viewModelScope.launch {
-            usbDevice = device
-            mUsbDeviceAttachedFlow.emit(usbDevice)
+    fun claimHomeNavigation(): Boolean {
+        if (homeNavigationSent || !connectionManager.isConnected) return false
+        homeNavigationSent = true
+        return true
+    }
+    fun resetHomeNavigation() { if (!connectionManager.isConnected) homeNavigationSent = false }
+    fun newUsbDeviceAttached(device: UsbDevice) { usbDevice = device; _uiState.value = _uiState.value.copy(usbDeviceDetected = true) }
+    fun newUsbDeviceDetached() { usbDevice = null; pendingUsbPermissionDevice = null; usbPermissionGate.cancel(); _uiState.value = _uiState.value.copy(usbDeviceDetected = false) }
+    fun beginUsbPermissionRequest(device: UsbDevice): Boolean {
+        if (!usbPermissionGate.begin(device.deviceId)) return false
+        pendingUsbPermissionDevice = device
+        return true
+    }
+    fun completeUsbPermissionRequest(device: UsbDevice?, granted: Boolean) {
+        val pending = pendingUsbPermissionDevice ?: return
+        val hasDevicePermission = device != null && device.deviceId == pending.deviceId && runCatching { usbManager.hasPermission(pending) }.getOrDefault(false)
+        if (!usbPermissionGate.complete(device?.deviceId, granted, hasDevicePermission)) {
+            if (device == null) pendingUsbPermissionDevice = null
+            else if (device.deviceId == pending.deviceId) pendingUsbPermissionDevice = null
+            return
         }
+        pendingUsbPermissionDevice = null
+        startConnection(pending)
     }
-
-    fun newUsbDeviceDetached() {
-        viewModelScope.launch {
-            usbDevice = null
-            mUsbDeviceAttachedFlow.emit(null)
-        }
+    fun locationSettingsReturned(): Boolean {
+        if (!consumeLocationSettingsReturn()) return false
+        return isLocationEnabled()
     }
-
+    override fun onCleared() { cancelBtDiscovery(); super.onCleared() }
 }
+
+data class StartUiState(
+    val connecting: Boolean = false,
+    val usbDeviceDetected: Boolean = false,
+    val showBluetoothDevices: Boolean = false,
+    val bluetoothDevices: List<StartBluetoothDevice> = emptyList(),
+    val showBluetoothRationale: Boolean = false,
+)

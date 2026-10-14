@@ -8,7 +8,6 @@ plugins {
     alias(libs.plugins.kotlin.ksp.plugin)
     id("com.google.gms.google-services")
     alias(libs.plugins.dagger.hilt.plugin)
-    alias(libs.plugins.navigation.safeargs)
     id("com.google.firebase.crashlytics")
     alias(libs.plugins.room.plugin)
 }
@@ -96,7 +95,6 @@ android {
     }
 
     buildFeatures {
-        viewBinding = false
         compose = true
         buildConfig = true
     }
@@ -140,20 +138,15 @@ dependencies {
     implementation(libs.kotlin.stdlib)
     implementation(libs.core.ktx)
     implementation(libs.appcompat)
-    implementation(libs.fragment.ktx)
     implementation(libs.annotation)
 
     implementation(libs.preference.ktx)
-    implementation(libs.constraintlayout)
-    implementation(libs.viewpager2)
 
     implementation(libs.lifecycle.viewmodel.ktx)
     implementation(libs.lifecycle.runtime.ktx)
     implementation(libs.lifecycle.livedata.ktx)
     implementation(libs.lifecycle.service)
 
-    implementation(libs.navigation.fragment.ktx)
-    implementation(libs.navigation.ui.ktx)
     implementation(libs.navigation.compose)
 
     implementation(libs.androidx.browser)

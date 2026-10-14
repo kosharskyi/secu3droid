@@ -52,10 +52,13 @@ class HomeScreenTest {
 
     @Test fun displaysAllMenuDestinationsAndInvokesTheirCallbacks() {
         val called = mutableListOf<String>()
-        compose.setContent { HomeScreen(HomeScreenState(), HomeScreenActions(
+        var screen by mutableStateOf(HomeScreenState())
+        compose.setContent { HomeScreen(screen, HomeScreenActions(
             onDashboard = { called += "dashboard" }, onSensors = { called += "sensors" },
             onParameters = { called += "parameters" }, onErrors = { called += "errors" },
             onLogs = { called += "logs" }, onSettings = { called += "settings" },
+            onDiagnosticsRequested = { screen = screen.copy(dialog = HomeDialog.DIAGNOSTICS) },
+            onDialogDismissed = { screen = screen.copy(dialog = null) },
         )) }
         val destinations = listOf(
             R.string.menu_dashboard to "dashboard", R.string.sensors to "sensors", R.string.menu_param to "parameters",
@@ -89,7 +92,8 @@ class HomeScreenTest {
 
     @Test fun exitConfirmationSupportsCancelAndConfirm() {
         var exits = 0
-        compose.setContent { HomeScreen(HomeScreenState(connectionRunning = true), HomeScreenActions(onExitConfirmed = { exits++ })) }
+        var screen by mutableStateOf(HomeScreenState(connectionRunning = true))
+        compose.setContent { HomeScreen(screen, HomeScreenActions(onExitRequested = { screen = screen.copy(dialog = HomeDialog.EXIT) }, onExitCancelled = { screen = screen.copy(dialog = null) }, onExitConfirmed = { exits++; screen = screen.copy(dialog = null) })) }
         compose.onNodeWithText(context.getString(R.string.exit)).performClick()
         compose.onNodeWithText(context.getString(R.string.disconnect_device_msg)).assertIsDisplayed()
         compose.onNodeWithText(context.getString(android.R.string.cancel)).performClick()
@@ -99,9 +103,10 @@ class HomeScreenTest {
         assertEquals(1, exits)
     }
 
-    @Test fun diagnosticsWarningConfirmationDelegatesCurrentFirmwareGateToFragment() {
+    @Test fun diagnosticsWarningConfirmationDelegatesThroughCallback() {
         var requested = 0
-        compose.setContent { HomeScreen(HomeScreenState(), HomeScreenActions(onDiagnosticsConfirmed = { requested++ })) }
+        var screen by mutableStateOf(HomeScreenState())
+        compose.setContent { HomeScreen(screen, HomeScreenActions(onDiagnosticsRequested = { screen = screen.copy(dialog = HomeDialog.DIAGNOSTICS) }, onDialogDismissed = { screen = screen.copy(dialog = null) }, onDiagnosticsConfirmed = { requested++ })) }
         compose.onNodeWithText(context.getString(R.string.title_activity_diagnostics)).performScrollTo().performClick()
         compose.onNodeWithText(context.getString(android.R.string.ok)).performClick()
         assertEquals(1, requested)
@@ -110,15 +115,13 @@ class HomeScreenTest {
 
     @Test fun releaseDialogOffersDownloadNotesAndRemindChoices() {
         val choices = mutableListOf<String>()
-        var releaseName by mutableStateOf<String?>("v1")
-        compose.setContent { HomeScreen(HomeScreenState(releaseName = releaseName, releaseMessage = "Release v1"), HomeScreenActions(onDownloadRelease = { choices += "download" }, onReleaseNotes = { choices += "notes" })) }
+        var screen by mutableStateOf(HomeScreenState(dialog = HomeDialog.RELEASE, releaseName = "v1", releaseMessage = "Release v1"))
+        compose.setContent { HomeScreen(screen, HomeScreenActions(onDialogDismissed = { screen = screen.copy(dialog = null) }, onDownloadRelease = { choices += "download" }, onReleaseNotes = { choices += "notes" })) }
         compose.onNodeWithText("Release v1").assertIsDisplayed()
         compose.onNodeWithText(context.getString(R.string.download)).performClick()
-        compose.runOnIdle { releaseName = null }
-        compose.runOnIdle { releaseName = "v1" }
+        compose.runOnIdle { screen = screen.copy(dialog = HomeDialog.RELEASE) }
         compose.onNodeWithText(context.getString(R.string.what_s_new)).performClick()
-        compose.runOnIdle { releaseName = null }
-        compose.runOnIdle { releaseName = "v1" }
+        compose.runOnIdle { screen = screen.copy(dialog = HomeDialog.RELEASE) }
         compose.onNodeWithText(context.getString(R.string.remind_me_later)).performClick()
         compose.onNodeWithText(context.getString(R.string.new_version_available)).assertDoesNotExist()
         assertEquals(listOf("download", "notes"), choices)

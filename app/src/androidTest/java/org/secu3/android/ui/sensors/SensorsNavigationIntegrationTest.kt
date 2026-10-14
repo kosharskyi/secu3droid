@@ -1,7 +1,6 @@
 package org.secu3.android.ui.sensors
 
 import android.view.KeyEvent
-import android.view.View
 import androidx.compose.ui.test.assertIsSelected
 import androidx.compose.ui.test.assertIsOn
 import androidx.compose.ui.test.assertIsOff
@@ -14,7 +13,7 @@ import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.performScrollTo
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.ViewModelProvider
-import androidx.navigation.fragment.NavHostFragment
+import androidx.navigation.NavHostController
 import androidx.preference.PreferenceManager
 import androidx.test.platform.app.InstrumentationRegistry
 import org.junit.Assert.assertEquals
@@ -107,11 +106,11 @@ class SensorsNavigationIntegrationTest {
         }
     }
 
-    private fun navigateToHomeAndSensors(): NavHostFragment {
-        lateinit var host: NavHostFragment
+    private fun navigateToHomeAndSensors(): NavHostController {
+        lateinit var host: NavHostController
         compose.activityRule.scenario.onActivity { activity ->
-            host = activity.supportFragmentManager.findFragmentById(R.id.nav_host_fragment) as NavHostFragment
-            host.navController.navigate(R.id.homeFragment)
+            host = requireNotNull(activity.rootNavigationController)
+            host.navigate(org.secu3.android.ui.HOME_ROUTE)
         }
         compose.waitForIdle()
         compose.onNodeWithTag("home-card-sensors").performScrollTo().performClick()
@@ -137,31 +136,27 @@ class SensorsNavigationIntegrationTest {
         return viewModel
     }
 
-    private fun nativeHost(): NavHostFragment {
-        lateinit var host: NavHostFragment
+    private fun nativeHost(): NavHostController {
+        lateinit var host: NavHostController
         compose.activityRule.scenario.onActivity { activity ->
-            host = activity.supportFragmentManager.findFragmentById(R.id.nav_host_fragment) as NavHostFragment
+            host = requireNotNull(activity.rootNavigationController)
         }
         return host
     }
 
-    private fun assertLegacyHome(host: NavHostFragment) {
+    private fun assertLegacyHome(host: NavHostController) {
         compose.activityRule.scenario.onActivity { activity ->
-            assertEquals(R.id.homeFragment, host.navController.currentDestination?.id)
-            assertEquals(Lifecycle.State.RESUMED, host.lifecycle.currentState)
-            assertEquals(View.VISIBLE, activity.findViewById<View>(R.id.nav_host_fragment).visibility)
-            assertEquals(View.GONE, activity.findViewById<View>(R.id.root_compose_nav_view).visibility)
-            assertEquals("legacy", activity.rootNavigationController?.currentDestination?.route)
+            assertEquals(org.secu3.android.ui.HOME_ROUTE, host.currentDestination?.route)
+            assertEquals(Lifecycle.State.RESUMED, host.getBackStackEntry(org.secu3.android.ui.HOME_ROUTE).lifecycle.currentState)
+            assertEquals(org.secu3.android.ui.HOME_ROUTE, activity.rootNavigationController?.currentDestination?.route)
         }
         compose.onNodeWithTag("home-card-sensors").assertExists()
     }
 
-    private fun assertOverlayRoute(host: NavHostFragment, route: String) {
+    private fun assertOverlayRoute(host: NavHostController, route: String) {
         compose.activityRule.scenario.onActivity { activity ->
-            assertEquals(Lifecycle.State.CREATED, host.lifecycle.currentState)
-            assertEquals(View.GONE, activity.findViewById<View>(R.id.nav_host_fragment).visibility)
-            assertEquals(View.VISIBLE, activity.findViewById<View>(R.id.root_compose_nav_view).visibility)
             assertEquals(route, activity.rootNavigationController?.currentDestination?.route)
+            host.getBackStackEntry(org.secu3.android.ui.HOME_ROUTE)
         }
     }
 }

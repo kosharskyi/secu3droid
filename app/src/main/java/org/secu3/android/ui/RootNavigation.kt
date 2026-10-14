@@ -9,24 +9,26 @@
  */
 package org.secu3.android.ui
 
-import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.animation.EnterTransition
 import androidx.compose.animation.ExitTransition
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.SideEffect
+import androidx.compose.runtime.LaunchedEffect
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.window.DialogProperties
-import androidx.navigation.NavController
-import androidx.navigation.NavHostController
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.dialog
+import org.secu3.android.ui.start.StartRoute
+import org.secu3.android.ui.home.HomeRoute
 import androidx.navigation.navigation
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.compose.rememberNavController
+import androidx.navigation.compose.currentBackStackEntryAsState
 import org.secu3.android.ui.compose.SecuComposeTheme
 import org.secu3.android.ui.errors.ErrorsRoute
 import org.secu3.android.ui.firmware.FirmwareRoute
@@ -40,7 +42,8 @@ import org.secu3.android.ui.diagnostics.DiagnosticsRoute
 import org.secu3.android.ui.diagnostics.DiagnosticsViewModel
 import org.secu3.android.ui.diagnostics.DiagnosticAdditionalDialogContent
 
-internal const val LEGACY_ROUTE = "legacy"
+internal const val START_ROUTE = "start"
+internal const val HOME_ROUTE = "home"
 internal const val PARAMETERS_ROUTE = "parameters"
 internal const val SETTINGS_ROUTE = "settings"
 internal const val ERRORS_ROUTE = "errors"
@@ -56,31 +59,44 @@ internal const val DIAGNOSTICS_ADDITIONAL_ROUTE = "diagnostics-additional"
 @Composable
 internal fun RootNavigation(activity: MainActivity) {
     val navController = rememberNavController()
+    val currentEntry by navController.currentBackStackEntryAsState()
+    SideEffect { activity.updateActiveComposeRoute(currentEntry?.destination?.route) }
+    LaunchedEffect(currentEntry) { activity.onRootDestinationChanged(currentEntry?.destination) }
     DisposableEffect(navController, activity) {
         activity.attachRootNavController(navController)
-        val listener = NavController.OnDestinationChangedListener { _, destination, _ ->
-            activity.onRootDestinationChanged(destination.route)
-        }
-        navController.addOnDestinationChangedListener(listener)
-        activity.onRootDestinationChanged(navController.currentDestination?.route)
         onDispose {
-            navController.removeOnDestinationChangedListener(listener)
             activity.detachRootNavController(navController)
         }
     }
     SecuComposeTheme {
         NavHost(
             navController = navController,
-            startDestination = LEGACY_ROUTE,
+            startDestination = START_ROUTE,
             modifier = Modifier.fillMaxSize(),
             enterTransition = { EnterTransition.None },
             exitTransition = { ExitTransition.None },
             popEnterTransition = { EnterTransition.None },
             popExitTransition = { ExitTransition.None },
         ) {
-            composable(LEGACY_ROUTE) { Box(Modifier.fillMaxSize()) }
+            composable(START_ROUTE) { entry ->
+                StartRoute(entry, activity, onConnected = { activity.openHome() })
+            }
+            composable(HOME_ROUTE) { entry ->
+                HomeRoute(
+                    entry, activity, activeRoute = currentEntry?.destination?.route,
+                    onStart = { activity.openStart() },
+                    onDashboard = { activity.openDashboard() },
+                    onSensors = { activity.openSensors() },
+                    onParameters = { activity.openParameters() },
+                    onErrors = { activity.openErrors() },
+                    onLogs = { activity.openLogs() },
+                    onSettings = { activity.openSettings() },
+                    onFirmware = { activity.openFirmware() },
+                    onDiagnostics = { activity.openDiagnostics() },
+                )
+            }
             composable(PARAMETERS_ROUTE) { entry ->
-                ParametersRoute(entry, activity, navController)
+                ParametersRoute(entry, activity, onNavigateUp = { navController.popBackStack() })
             }
             composable(SETTINGS_ROUTE) { entry ->
                 SettingsRoute(entry, activity, onNavigateUp = { navController.popBackStack() })
@@ -91,7 +107,7 @@ internal fun RootNavigation(activity: MainActivity) {
             composable(LOGS_ROUTE) { entry ->
                 SecuLogsRoute(entry, activity, onNavigateUp = { navController.popBackStack() })
             }
-            composable(FIRMWARE_ROUTE) { entry ->
+            dialog(FIRMWARE_ROUTE, dialogProperties = DialogProperties(usePlatformDefaultWidth = false)) { entry ->
                 FirmwareRoute(entry, activity, onDismiss = { navController.popBackStack() })
             }
             composable(DASHBOARD_ROUTE) { entry ->

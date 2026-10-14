@@ -8,12 +8,10 @@ import android.content.pm.ActivityInfo
 import android.content.res.Configuration
 import android.os.SystemClock
 import android.view.WindowManager
-import android.view.View
 import androidx.core.view.ViewCompat
 import androidx.core.view.WindowInsetsCompat
 import androidx.core.view.WindowInsetsControllerCompat
 import androidx.lifecycle.Lifecycle
-import androidx.navigation.fragment.NavHostFragment
 import androidx.preference.PreferenceManager
 import androidx.test.core.app.ActivityScenario
 import androidx.test.platform.app.InstrumentationRegistry
@@ -38,8 +36,8 @@ class DashboardOrientationTest {
                 preferences.edit().putBoolean(preferenceKey, keepScreenOn).commit()
                 ActivityScenario.launch(MainActivity::class.java).use { scenario ->
                     scenario.onActivity { activity ->
-                        val host = activity.supportFragmentManager.findFragmentById(R.id.nav_host_fragment) as NavHostFragment
-                        host.navController.navigate(R.id.homeFragment)
+                        val host = requireNotNull(activity.rootNavigationController)
+                        host.navigate(org.secu3.android.ui.HOME_ROUTE)
                     }
                     InstrumentationRegistry.getInstrumentation().waitForIdleSync()
                     scenario.onActivity { activity ->
@@ -74,11 +72,7 @@ class DashboardOrientationTest {
                     awaitLegacyUiState(scenario, keepScreenOn)
                     scenario.onActivity { activity ->
                         assertEquals(ActivityInfo.SCREEN_ORIENTATION_UNSPECIFIED, activity.requestedOrientation)
-                        assertEquals("legacy", activity.rootNavigationController?.currentDestination?.route)
-                        val nativeHost = activity.findViewById<View>(R.id.nav_host_fragment)
-                        assertEquals(View.VISIBLE, nativeHost.visibility)
-                        assertEquals(View.GONE, activity.findViewById<View>(R.id.root_compose_nav_view).visibility)
-                        assertEquals(Lifecycle.State.RESUMED, (activity.supportFragmentManager.findFragmentById(R.id.nav_host_fragment) as NavHostFragment).lifecycle.currentState)
+                        assertEquals(org.secu3.android.ui.HOME_ROUTE, activity.rootNavigationController?.currentDestination?.route)
                         val controller = WindowInsetsControllerCompat(activity.window, activity.window.decorView)
                         assertEquals(originalStatusColor, activity.window.statusBarColor)
                         assertEquals(originalNavigationColor, activity.window.navigationBarColor)
@@ -99,12 +93,8 @@ class DashboardOrientationTest {
 
     private fun assertDashboardActive(scenario: ActivityScenario<MainActivity>) {
         scenario.onActivity { activity ->
-            val nativeHost = activity.findViewById<View>(R.id.nav_host_fragment)
             assertEquals(ActivityInfo.SCREEN_ORIENTATION_SENSOR_LANDSCAPE, activity.requestedOrientation)
             assertEquals(DASHBOARD_ROUTE, activity.rootNavigationController?.currentDestination?.route)
-            assertEquals(Lifecycle.State.CREATED, (activity.supportFragmentManager.findFragmentById(R.id.nav_host_fragment) as NavHostFragment).lifecycle.currentState)
-            assertEquals(View.GONE, nativeHost.visibility)
-            assertEquals(View.VISIBLE, activity.findViewById<View>(R.id.root_compose_nav_view).visibility)
             assertFalse(systemBarsVisible(activity))
             assertEquals(
                 WindowInsetsControllerCompat.BEHAVIOR_SHOW_TRANSIENT_BARS_BY_SWIPE,
@@ -140,7 +130,7 @@ class DashboardOrientationTest {
             InstrumentationRegistry.getInstrumentation().waitForIdleSync()
             scenario.onActivity { activity ->
                 val keepFlag = activity.window.attributes.flags and WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON != 0
-                ready = activity.rootNavigationController?.currentDestination?.route == "legacy" &&
+                ready = activity.rootNavigationController?.currentDestination?.route == org.secu3.android.ui.HOME_ROUTE &&
                     systemBarsVisible(activity) && keepFlag == keepScreenOn
             }
             if (ready) return

@@ -1,7 +1,6 @@
 package org.secu3.android.ui
 
 import android.view.KeyEvent
-import android.view.View
 import androidx.compose.ui.test.assertCountEquals
 import androidx.compose.ui.test.assertIsOn
 import androidx.compose.ui.test.junit4.v2.createAndroidComposeRule
@@ -12,7 +11,7 @@ import androidx.compose.ui.test.onAllNodesWithText
 import androidx.compose.ui.test.performClick
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.ViewModelProvider
-import androidx.navigation.fragment.NavHostFragment
+import androidx.navigation.NavHostController
 import androidx.test.platform.app.InstrumentationRegistry
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNotSame
@@ -96,23 +95,23 @@ class DiagnosticsNavigationIntegrationTest {
         compose.activityRule.scenario.onActivity { it.openDiagnostics() }
         compose.waitForIdle()
         assertSame(vm, diagnosticsViewModel())
-        assertEquals(Lifecycle.State.CREATED, host.lifecycle.currentState)
+        assertEquals(DIAGNOSTICS_ROUTE, compose.activity.rootNavigationController?.currentDestination?.route)
     }
 
-    private fun navigateHome(): NavHostFragment {
-        lateinit var host: NavHostFragment
+    private fun navigateHome(): NavHostController {
+        lateinit var host: NavHostController
         compose.activityRule.scenario.onActivity { activity ->
-            host = activity.supportFragmentManager.findFragmentById(R.id.nav_host_fragment) as NavHostFragment
-            host.navController.navigate(R.id.homeFragment)
+            host = requireNotNull(activity.rootNavigationController)
+            host.navigate(HOME_ROUTE)
         }
         compose.waitForIdle()
         return host
     }
 
-    private fun nativeHost(): NavHostFragment {
-        lateinit var host: NavHostFragment
+    private fun nativeHost(): NavHostController {
+        lateinit var host: NavHostController
         compose.activityRule.scenario.onActivity { activity ->
-            host = activity.supportFragmentManager.findFragmentById(R.id.nav_host_fragment) as NavHostFragment
+            host = requireNotNull(activity.rootNavigationController)
         }
         return host
     }
@@ -127,23 +126,20 @@ class DiagnosticsNavigationIntegrationTest {
         return vm
     }
 
-    private fun assertDiagnosticsHost(host: NavHostFragment) {
+    private fun assertDiagnosticsHost(host: NavHostController) {
         compose.activityRule.scenario.onActivity { activity ->
             assertEquals(DIAGNOSTICS_ROUTE, activity.rootNavigationController?.currentDestination?.route)
-            assertEquals(Lifecycle.State.CREATED, host.lifecycle.currentState)
-            assertEquals(View.GONE, activity.findViewById<View>(R.id.nav_host_fragment).visibility)
-            assertEquals(View.VISIBLE, activity.findViewById<View>(R.id.root_compose_nav_view).visibility)
+            assertEquals(Lifecycle.State.CREATED, host.getBackStackEntry(HOME_ROUTE).lifecycle.currentState)
+            assertEquals(Lifecycle.State.RESUMED, host.getBackStackEntry(DIAGNOSTICS_ROUTE).lifecycle.currentState)
         }
         compose.onNodeWithText(compose.activity.getString(R.string.title_activity_diagnostics)).assertExists()
     }
 
-    private fun assertNativeHome(host: NavHostFragment) {
+    private fun assertNativeHome(host: NavHostController) {
         compose.activityRule.scenario.onActivity { activity ->
-            assertEquals(R.id.homeFragment, host.navController.currentDestination?.id)
-            assertEquals(Lifecycle.State.RESUMED, host.lifecycle.currentState)
-            assertEquals(View.VISIBLE, activity.findViewById<View>(R.id.nav_host_fragment).visibility)
-            assertEquals(View.GONE, activity.findViewById<View>(R.id.root_compose_nav_view).visibility)
-            assertEquals(LEGACY_ROUTE, activity.rootNavigationController?.currentDestination?.route)
+            assertEquals(HOME_ROUTE, host.currentDestination?.route)
+            assertEquals(Lifecycle.State.RESUMED, host.getBackStackEntry(HOME_ROUTE).lifecycle.currentState)
+            assertEquals(HOME_ROUTE, activity.rootNavigationController?.currentDestination?.route)
         }
         compose.onNodeWithTag("home-card-diagnostics").assertExists()
     }

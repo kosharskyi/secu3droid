@@ -70,7 +70,7 @@ fun ConnectionStatusIndicator(
     }
 }
 
-/** Shared toolbar for Compose destinations; Fragment navigation remains the caller's responsibility. */
+/** Shared toolbar for Compose destinations; navigation remains the caller's responsibility. */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun SecuTopAppBar(
