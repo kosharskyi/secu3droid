@@ -1,60 +1,152 @@
 /*
  *    SecuDroid  - An open source, free manager for SECU-3 engine control unit
  *    Copyright (C) 2026 Vitalii O. Kosharskyi. Ukraine, Kyiv
- *
- *    This program is free software: you can redistribute it and/or modify
- *    it under the terms of the GNU General Public License as published by
- *    the Free Software Foundation, either version 3 of the License, or
- *    (at your option) any later version.
- *
- *    This program is distributed in the hope that it will be useful,
- *    but WITHOUT ANY WARRANTY; without even the implied warranty of
- *    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- *    GNU General Public License for more details.
- *
- *    You should have received a copy of the GNU General Public License
- *    along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 package org.secu3.android.ui.dashboard
 
 import android.content.pm.ActivityInfo
 import android.content.res.Configuration
 import android.os.SystemClock
+import android.view.WindowManager
+import android.view.View
+import androidx.core.view.ViewCompat
+import androidx.core.view.WindowInsetsCompat
+import androidx.core.view.WindowInsetsControllerCompat
+import androidx.lifecycle.Lifecycle
 import androidx.navigation.fragment.NavHostFragment
+import androidx.preference.PreferenceManager
 import androidx.test.core.app.ActivityScenario
 import androidx.test.platform.app.InstrumentationRegistry
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertFalse
+import org.junit.Assert.assertTrue
 import org.junit.Test
 import org.secu3.android.R
+import org.secu3.android.ui.DASHBOARD_ROUTE
 import org.secu3.android.ui.MainActivity
 
 class DashboardOrientationTest {
     @Test
-    fun dashboardLocksLandscapeAndRestoresUnspecifiedWhenRemoved() {
-        ActivityScenario.launch(MainActivity::class.java).use { scenario ->
-            scenario.onActivity { activity ->
-                activity.requestedOrientation = ActivityInfo.SCREEN_ORIENTATION_PORTRAIT
-            }
-            awaitConfigurationOrientation(scenario, Configuration.ORIENTATION_PORTRAIT)
+    fun dashboardRestoresLandscapeLockImmersiveBarsAndKeepScreenPolicy() {
+        val context = InstrumentationRegistry.getInstrumentation().targetContext
+        val preferences = PreferenceManager.getDefaultSharedPreferences(context)
+        val preferenceKey = context.getString(R.string.pref_keep_screen_key)
+        val hadPreference = preferences.contains(preferenceKey)
+        val originalPreference = preferences.getBoolean(preferenceKey, false)
+        try {
+            listOf(false, true).forEach { keepScreenOn ->
+                preferences.edit().putBoolean(preferenceKey, keepScreenOn).commit()
+                ActivityScenario.launch(MainActivity::class.java).use { scenario ->
+                    scenario.onActivity { activity ->
+                        val host = activity.supportFragmentManager.findFragmentById(R.id.nav_host_fragment) as NavHostFragment
+                        host.navController.navigate(R.id.homeFragment)
+                    }
+                    InstrumentationRegistry.getInstrumentation().waitForIdleSync()
+                    scenario.onActivity { activity ->
+                        activity.requestedOrientation = ActivityInfo.SCREEN_ORIENTATION_PORTRAIT
+                    }
+                    awaitConfigurationOrientation(scenario, Configuration.ORIENTATION_PORTRAIT)
 
-            scenario.onActivity { activity ->
-                val navHost = activity.supportFragmentManager
-                    .findFragmentById(R.id.nav_host_fragment) as NavHostFragment
-                navHost.navController.navigate(R.id.dashboardFragment)
-            }
+                    var originalStatusColor = 0
+                    var originalNavigationColor = 0
+                    var originalLightStatus = false
+                    var originalLightNavigation = false
+                    var originalBarsBehavior = 0
+                    scenario.onActivity { activity ->
+                        val controller = WindowInsetsControllerCompat(activity.window, activity.window.decorView)
+                        originalStatusColor = activity.window.statusBarColor
+                        originalNavigationColor = activity.window.navigationBarColor
+                        originalLightStatus = controller.isAppearanceLightStatusBars
+                        originalLightNavigation = controller.isAppearanceLightNavigationBars
+                        originalBarsBehavior = controller.systemBarsBehavior
+                        activity.openDashboard()
+                    }
 
-            awaitConfigurationOrientation(scenario, Configuration.ORIENTATION_LANDSCAPE)
-            scenario.onActivity { activity ->
-                assertEquals(ActivityInfo.SCREEN_ORIENTATION_SENSOR_LANDSCAPE, activity.requestedOrientation)
-                val navHost = activity.supportFragmentManager
-                    .findFragmentById(R.id.nav_host_fragment) as NavHostFragment
-                navHost.navController.popBackStack()
-            }
+                    awaitConfigurationOrientation(scenario, Configuration.ORIENTATION_LANDSCAPE)
+                    awaitDashboardUiState(scenario)
+                    assertDashboardActive(scenario)
+                    scenario.recreate()
+                    awaitConfigurationOrientation(scenario, Configuration.ORIENTATION_LANDSCAPE)
+                    awaitDashboardUiState(scenario)
+                    assertDashboardActive(scenario)
 
-            scenario.onActivity { activity ->
-                assertEquals(ActivityInfo.SCREEN_ORIENTATION_UNSPECIFIED, activity.requestedOrientation)
+                    scenario.onActivity { activity -> requireNotNull(activity.rootNavigationController).popBackStack() }
+                    awaitLegacyUiState(scenario, keepScreenOn)
+                    scenario.onActivity { activity ->
+                        assertEquals(ActivityInfo.SCREEN_ORIENTATION_UNSPECIFIED, activity.requestedOrientation)
+                        assertEquals("legacy", activity.rootNavigationController?.currentDestination?.route)
+                        val nativeHost = activity.findViewById<View>(R.id.nav_host_fragment)
+                        assertEquals(View.VISIBLE, nativeHost.visibility)
+                        assertEquals(View.GONE, activity.findViewById<View>(R.id.root_compose_nav_view).visibility)
+                        assertEquals(Lifecycle.State.RESUMED, (activity.supportFragmentManager.findFragmentById(R.id.nav_host_fragment) as NavHostFragment).lifecycle.currentState)
+                        val controller = WindowInsetsControllerCompat(activity.window, activity.window.decorView)
+                        assertEquals(originalStatusColor, activity.window.statusBarColor)
+                        assertEquals(originalNavigationColor, activity.window.navigationBarColor)
+                        assertEquals(originalLightStatus, controller.isAppearanceLightStatusBars)
+                        assertEquals(originalLightNavigation, controller.isAppearanceLightNavigationBars)
+                        assertEquals(originalBarsBehavior, controller.systemBarsBehavior)
+                        assertTrue(systemBarsVisible(activity))
+                        val keepScreenOnFlag = activity.window.attributes.flags and WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON != 0
+                        assertEquals(keepScreenOn, keepScreenOnFlag)
+                    }
+                }
             }
+        } finally {
+            if (hadPreference) preferences.edit().putBoolean(preferenceKey, originalPreference).commit()
+            else preferences.edit().remove(preferenceKey).commit()
         }
+    }
+
+    private fun assertDashboardActive(scenario: ActivityScenario<MainActivity>) {
+        scenario.onActivity { activity ->
+            val nativeHost = activity.findViewById<View>(R.id.nav_host_fragment)
+            assertEquals(ActivityInfo.SCREEN_ORIENTATION_SENSOR_LANDSCAPE, activity.requestedOrientation)
+            assertEquals(DASHBOARD_ROUTE, activity.rootNavigationController?.currentDestination?.route)
+            assertEquals(Lifecycle.State.CREATED, (activity.supportFragmentManager.findFragmentById(R.id.nav_host_fragment) as NavHostFragment).lifecycle.currentState)
+            assertEquals(View.GONE, nativeHost.visibility)
+            assertEquals(View.VISIBLE, activity.findViewById<View>(R.id.root_compose_nav_view).visibility)
+            assertFalse(systemBarsVisible(activity))
+            assertEquals(
+                WindowInsetsControllerCompat.BEHAVIOR_SHOW_TRANSIENT_BARS_BY_SWIPE,
+                WindowInsetsControllerCompat(activity.window, activity.window.decorView).systemBarsBehavior,
+            )
+            assertTrue(activity.window.attributes.flags and WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON != 0)
+        }
+    }
+
+    private fun systemBarsVisible(activity: MainActivity): Boolean =
+        ViewCompat.getRootWindowInsets(activity.window.decorView)?.isVisible(WindowInsetsCompat.Type.systemBars()) ?: true
+
+    private fun awaitDashboardUiState(scenario: ActivityScenario<MainActivity>) {
+        val timeoutAt = SystemClock.elapsedRealtime() + 10_000L
+        var ready = false
+        do {
+            InstrumentationRegistry.getInstrumentation().waitForIdleSync()
+            scenario.onActivity { activity ->
+                ready = activity.rootNavigationController?.currentDestination?.route == DASHBOARD_ROUTE &&
+                    !systemBarsVisible(activity) &&
+                    activity.window.attributes.flags and WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON != 0
+            }
+            if (ready) return
+            SystemClock.sleep(50L)
+        } while (SystemClock.elapsedRealtime() < timeoutAt)
+        assertTrue("Dashboard window effects did not become active", ready)
+    }
+
+    private fun awaitLegacyUiState(scenario: ActivityScenario<MainActivity>, keepScreenOn: Boolean) {
+        val timeoutAt = SystemClock.elapsedRealtime() + 10_000L
+        var ready = false
+        do {
+            InstrumentationRegistry.getInstrumentation().waitForIdleSync()
+            scenario.onActivity { activity ->
+                val keepFlag = activity.window.attributes.flags and WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON != 0
+                ready = activity.rootNavigationController?.currentDestination?.route == "legacy" &&
+                    systemBarsVisible(activity) && keepFlag == keepScreenOn
+            }
+            if (ready) return
+            SystemClock.sleep(50L)
+        } while (SystemClock.elapsedRealtime() < timeoutAt)
+        assertTrue("Legacy window effects were not restored", ready)
     }
 
     private fun awaitConfigurationOrientation(
@@ -66,17 +158,10 @@ class DashboardOrientationTest {
         var actualOrientation = Configuration.ORIENTATION_UNDEFINED
         do {
             instrumentation.waitForIdleSync()
-            scenario.onActivity { activity ->
-                actualOrientation = activity.resources.configuration.orientation
-            }
+            scenario.onActivity { activity -> actualOrientation = activity.resources.configuration.orientation }
             if (actualOrientation == expectedOrientation) return
             SystemClock.sleep(50L)
         } while (SystemClock.elapsedRealtime() < timeoutAt)
-
-        assertEquals(
-            "Activity configuration did not reach requested orientation in time",
-            expectedOrientation,
-            actualOrientation,
-        )
+        assertEquals("Activity configuration did not reach requested orientation in time", expectedOrientation, actualOrientation)
     }
 }

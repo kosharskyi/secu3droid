@@ -24,43 +24,9 @@
         android:label="fragment_home_fragment">
 
         <action
-            android:id="@+id/action_open_dashboard"
-            app:destination="@id/dashboardFragment"
-            />
-
-        <action
-            android:id="@+id/action_open_sensors"
-            app:destination="@id/sensorsFragment"
-            />
-
-        <action
             android:id="@+id/action_open_secu_diagnostic"
             app:destination="@id/diagnosticsFragment" />
     </fragment>
-
-    <fragment
-        android:id="@+id/sensorsFragment"
-        android:name="org.secu3.android.ui.sensors.SensorsTabsFragment"
-        android:label="Sensors Fragment"
-        >
-
-        <action
-            android:id="@+id/action_open_settings"
-            app:destination="@id/sensors_settings"
-            />
-
-    </fragment>
-
-    <fragment
-        android:id="@+id/sensors_settings"
-        android:name="org.secu3.android.ui.sensors.settings.SensorsSettingsFragment"
-        android:label="Sensors Settings" />
-
-    <fragment
-        android:id="@+id/dashboardFragment"
-        android:name="org.secu3.android.ui.dashboard.DashBoardFragment"
-        android:label="Dashboard Fragment"
-        />
 
     <fragment
         android:id="@+id/diagnosticsFragment"

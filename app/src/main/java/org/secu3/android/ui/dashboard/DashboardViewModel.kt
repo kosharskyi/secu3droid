@@ -43,8 +43,7 @@ import javax.inject.Inject
 class DashboardViewModel @Inject constructor(private val secu3ConnectionManager: Secu3ConnectionManager,
                                              private val mPrefs: UserPrefs) : ViewModel() {
 
-    val packetLiveData: LiveData<DashboardViewData>
-        get() = secu3ConnectionManager.receivedPacketFlow
+    val packetLiveData: LiveData<DashboardViewData> = secu3ConnectionManager.receivedPacketFlow
             .filter { it is SensorsPacket }
             .sample(300)
             .map { (it as SensorsPacket) }
@@ -53,8 +52,7 @@ class DashboardViewModel @Inject constructor(private val secu3ConnectionManager:
             }
             .asLiveData()
 
-    val statusLiveData: LiveData<ConnectionState>
-        get() = secu3ConnectionManager.connectionStateFlow.asLiveData()
+    val statusLiveData: LiveData<ConnectionState> = secu3ConnectionManager.connectionStateFlow.asLiveData()
 
     val isKeepScreenAliveActive: Boolean
         get() = mPrefs.isKeepScreenAliveActive

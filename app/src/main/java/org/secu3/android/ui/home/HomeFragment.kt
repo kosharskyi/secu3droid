@@ -87,8 +87,8 @@ class HomeFragment : Fragment() {
                             releaseMessage = release?.let { getString(R.string.the_version_is_available_do_you_want_to_download, it.displayName) },
                         ),
                         actions = HomeScreenActions(
-                            onDashboard = { findNavController().navigate(HomeFragmentDirections.actionOpenDashboard()) },
-                            onSensors = { findNavController().navigate(HomeFragmentDirections.actionOpenSensors()) },
+                            onDashboard = { (requireActivity() as MainActivity).openDashboard() },
+                            onSensors = { (requireActivity() as MainActivity).openSensors() },
                             onParameters = { (requireActivity() as MainActivity).openParameters() },
                             onErrors = { (requireActivity() as MainActivity).openErrors() },
                             onDiagnosticsConfirmed = {

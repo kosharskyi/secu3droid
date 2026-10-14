@@ -94,7 +94,8 @@ class MainActivity : AppCompatActivity() {
     override fun onPostResume() {
         super.onPostResume()
         when (rootNavController?.currentDestination?.route) {
-            PARAMETERS_ROUTE, SETTINGS_ROUTE, ERRORS_ROUTE, LOGS_ROUTE, FIRMWARE_ROUTE ->
+            PARAMETERS_ROUTE, SETTINGS_ROUTE, ERRORS_ROUTE, LOGS_ROUTE, FIRMWARE_ROUTE,
+            DASHBOARD_ROUTE, SENSORS_ROUTE, SENSOR_SETTINGS_ROUTE ->
                 showComposeOverlay(rootNavController?.currentDestination?.route)
             LEGACY_ROUTE -> showLegacyHost()
         }
@@ -134,6 +135,14 @@ class MainActivity : AppCompatActivity() {
         openComposeDestination(FIRMWARE_ROUTE)
     }
 
+    fun openDashboard() {
+        openComposeDestination(DASHBOARD_ROUTE)
+    }
+
+    fun openSensors() {
+        openComposeDestination(SENSORS_ROUTE)
+    }
+
     private fun openComposeDestination(route: String) {
         val controller = rootNavController
         if (supportFragmentManager.isStateSaved || controller?.currentDestination == null) {
@@ -162,7 +171,8 @@ class MainActivity : AppCompatActivity() {
 
     internal fun onRootDestinationChanged(route: String?) {
         when (route) {
-            PARAMETERS_ROUTE, SETTINGS_ROUTE, ERRORS_ROUTE, LOGS_ROUTE, FIRMWARE_ROUTE -> showComposeOverlay(route)
+            PARAMETERS_ROUTE, SETTINGS_ROUTE, ERRORS_ROUTE, LOGS_ROUTE, FIRMWARE_ROUTE,
+            DASHBOARD_ROUTE, SENSORS_ROUTE, SENSOR_SETTINGS_ROUTE -> showComposeOverlay(route)
             LEGACY_ROUTE -> showLegacyHost()
         }
         if (pendingComposeRoute != null && lifecycle.currentState.isAtLeast(Lifecycle.State.RESUMED)) {
@@ -209,7 +219,7 @@ class MainActivity : AppCompatActivity() {
     }
 
     private fun handleKeepScreenOn() {
-        if (viewModel.prefs.isKeepScreenAliveActive) {
+        if (activeComposeRoute == DASHBOARD_ROUTE || viewModel.prefs.isKeepScreenAliveActive) {
             window.addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON)
         } else {
             window.clearFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON)

@@ -27,6 +27,9 @@ import org.secu3.android.ui.firmware.FirmwareRoute
 import org.secu3.android.ui.logger.SecuLogsRoute
 import org.secu3.android.ui.parameters.ParametersRoute
 import org.secu3.android.ui.settings.SettingsRoute
+import org.secu3.android.ui.dashboard.DashboardRoute
+import org.secu3.android.ui.sensors.SensorsRoute
+import org.secu3.android.ui.sensors.settings.SensorsSettingsRoute
 
 internal const val LEGACY_ROUTE = "legacy"
 internal const val PARAMETERS_ROUTE = "parameters"
@@ -34,6 +37,9 @@ internal const val SETTINGS_ROUTE = "settings"
 internal const val ERRORS_ROUTE = "errors"
 internal const val LOGS_ROUTE = "logs"
 internal const val FIRMWARE_ROUTE = "firmware"
+internal const val DASHBOARD_ROUTE = "dashboard"
+internal const val SENSORS_ROUTE = "sensors"
+internal const val SENSOR_SETTINGS_ROUTE = "sensor-settings"
 
 @Composable
 internal fun RootNavigation(activity: MainActivity) {
@@ -75,6 +81,20 @@ internal fun RootNavigation(activity: MainActivity) {
             }
             composable(FIRMWARE_ROUTE) { entry ->
                 FirmwareRoute(entry, activity, onDismiss = { navController.popBackStack() })
+            }
+            composable(DASHBOARD_ROUTE) { entry ->
+                DashboardRoute(entry, activity)
+            }
+            composable(SENSORS_ROUTE) { entry ->
+                SensorsRoute(
+                    entry = entry,
+                    activity = activity,
+                    onNavigateUp = { navController.popBackStack() },
+                    onOpenSettings = { navController.navigate(SENSOR_SETTINGS_ROUTE) },
+                )
+            }
+            composable(SENSOR_SETTINGS_ROUTE) { entry ->
+                SensorsSettingsRoute(entry, activity, onNavigateUp = { navController.popBackStack() })
             }
         }
     }
