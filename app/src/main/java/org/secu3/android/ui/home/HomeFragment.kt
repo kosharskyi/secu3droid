@@ -56,6 +56,7 @@ import org.secu3.android.connection.SecuConnectionService
 import org.secu3.android.models.packets.input.FirmwareInfoPacket
 import org.secu3.android.network.models.GitHubRelease
 import org.secu3.android.ui.settings.SettingsActivity
+import org.secu3.android.ui.MainActivity
 
 @AndroidEntryPoint
 class HomeFragment : Fragment() {
@@ -89,7 +90,7 @@ class HomeFragment : Fragment() {
                         actions = HomeScreenActions(
                             onDashboard = { findNavController().navigate(HomeFragmentDirections.actionOpenDashboard()) },
                             onSensors = { findNavController().navigate(HomeFragmentDirections.actionOpenSensors()) },
-                            onParameters = { findNavController().navigate(HomeFragmentDirections.actionOpenParameters()) },
+                            onParameters = { (requireActivity() as MainActivity).openParameters() },
                             onErrors = { findNavController().navigate(HomeFragmentDirections.actionOpenSecuErrors()) },
                             onDiagnosticsConfirmed = {
                                 if (mViewModel.firmware?.isDiagnosticsEnabled == true) {

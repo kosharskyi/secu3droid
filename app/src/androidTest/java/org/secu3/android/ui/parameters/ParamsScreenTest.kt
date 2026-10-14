@@ -64,7 +64,7 @@ class ParamsScreenTest {
         val composed = mutableSetOf<Int>()
         compose.setContent {
             SecuComposeTheme {
-                ParamsScreen(
+                ParametersScreen(
                     titles = listOf("Starter", "Angles", "Idling"),
                     pageKeys = listOf(101, 102, 103),
                     connectionState = Connected,
@@ -106,7 +106,7 @@ class ParamsScreenTest {
         compose.setContent {
             CompositionLocalProvider(LocalLifecycleOwner provides owner) {
                 SecuComposeTheme {
-                    ParamsScreen(
+                    ParametersScreen(
                         titles = listOf("Starter", "Angles"), connectionState = Connected,
                         onBack = {}, onSave = {}, onPageSettled = settled::add,
                         onPageUnsettled = { unsettled++ },
@@ -142,7 +142,7 @@ class ParamsScreenTest {
         val settled = mutableListOf<Int>()
         compose.setContent {
             SecuComposeTheme {
-                ParamsScreen(
+                ParametersScreen(
                     titles = listOf("Starter", "Angles", "Idling", "Functions"),
                     connectionState = Connected, onBack = {}, onSave = {}, onPageSettled = settled::add,
                     pageContent = { _, _, _ -> Box(Modifier.fillMaxSize()) },
@@ -161,7 +161,7 @@ class ParamsScreenTest {
         var unsettled = 0
         compose.setContent {
             SecuComposeTheme {
-                ParamsScreen(
+                ParametersScreen(
                     titles = listOf("Starter", "Angles", "Idling"), connectionState = connectionState.value,
                     onBack = {}, onSave = {}, onPageSettled = settled::add,
                     onPageUnsettled = { unsettled++ },
@@ -188,7 +188,7 @@ class ParamsScreenTest {
         val settled = mutableListOf<Int>()
         restoration.setContent {
             SecuComposeTheme {
-                ParamsScreen(
+                ParametersScreen(
                     titles = listOf("Starter", "Angles", "Idling"), connectionState = Connected,
                     onBack = {}, onSave = {}, onPageSettled = settled::add,
                     pageContent = { _, _, _ -> Box(Modifier.fillMaxSize()) },

@@ -38,11 +38,6 @@
             />
 
         <action
-            android:id="@+id/action_open_parameters"
-            app:destination="@id/parametersFragment"
-            />
-
-        <action
             android:id="@+id/action_open_secu_logs"
             app:destination="@id/secuLogsFragment" />
 
@@ -106,12 +101,6 @@
         android:id="@+id/errorsFragment"
         android:name="org.secu3.android.ui.errors.ErrorsFragment"
         android:label="Errors Fragment"
-        />
-
-    <fragment
-        android:id="@+id/parametersFragment"
-        android:name="org.secu3.android.ui.parameters.ParamsFragment"
-        android:label="Parameters Fragment"
         />
 
     <fragment

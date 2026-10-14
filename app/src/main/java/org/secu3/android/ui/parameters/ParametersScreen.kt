@@ -9,24 +9,9 @@
  *    it under the terms of the GNU General Public License as published by
  *    the Free Software Foundation, either version 3 of the License, or
  *    (at your option) any later version.
- *
- *    This program is distributed in the hope that it will be useful,
- *    but WITHOUT ANY WARRANTY; without even the implied warranty of
- *    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- *    GNU General Public License for more details.
- *
- *    You should have received a copy of the GNU General Public License
- *    along with this program.  If not, see <http://www.gnu.org/licenses/>.
- *
- *    contacts:
- *                    http://secu-3.org
- *                    email: vetalkosharskiy@gmail.com
  */
 package org.secu3.android.ui.parameters
 
-import android.os.Bundle
-import android.view.View
-import android.view.ViewGroup
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.horizontalScroll
@@ -47,9 +32,7 @@ import androidx.compose.runtime.livedata.observeAsState
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.layout.onSizeChanged
-import androidx.compose.ui.platform.ComposeView
 import androidx.compose.ui.platform.LocalLifecycleOwner
-import androidx.compose.ui.platform.ViewCompositionStrategy
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.colorResource
 import androidx.compose.ui.res.painterResource
@@ -58,81 +41,80 @@ import androidx.compose.ui.semantics.*
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.IntSize
 import androidx.compose.ui.unit.dp
-import androidx.fragment.app.Fragment
-import androidx.fragment.app.viewModels
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.LifecycleEventObserver
 import androidx.lifecycle.repeatOnLifecycle
-import androidx.navigation.fragment.findNavController
-import dagger.hilt.android.AndroidEntryPoint
+import androidx.navigation.NavBackStackEntry
+import androidx.navigation.NavHostController
+import androidx.lifecycle.viewmodel.compose.viewModel
 import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.launch
 import org.secu3.android.R
 import org.secu3.android.connection.Connected
 import org.secu3.android.connection.Disconnected
 import org.secu3.android.connection.InProgress
+import org.secu3.android.ui.MainActivity
 import org.secu3.android.ui.compose.SecuComposeTheme
 import org.secu3.android.ui.parameters.dialogs.NumericEditDialog
 
-@AndroidEntryPoint
-class ParamsFragment : Fragment() {
-    private val mViewModel: ParamsViewModel by viewModels()
+@Composable
+internal fun ParametersRoute(
+    entry: NavBackStackEntry,
+    activity: MainActivity,
+    navController: NavHostController,
+) {
+    val viewModel: ParamsViewModel = viewModel(
+        viewModelStoreOwner = entry,
+        factory = activity.defaultViewModelProviderFactory,
+        extras = entry.defaultViewModelCreationExtras,
+    )
+    val pages = remember(viewModel) { parameterPageSpecs(viewModel.fwInfoPacket).map { it.titleRes } }
+    val connectionState by viewModel.connectionStatusLiveData.observeAsState()
+    val lifecycle = LocalLifecycleOwner.current.lifecycle
 
-    override fun onCreateView(inflater: android.view.LayoutInflater, container: ViewGroup?, savedInstanceState: Bundle?): View {
-        val pages = parameterPageSpecs(mViewModel.fwInfoPacket)
-        val pageTitles = pages.map { it.titleRes }
-        return ComposeView(requireContext()).apply {
-            id = R.id.params_view_container
-            setViewCompositionStrategy(ViewCompositionStrategy.DisposeOnViewTreeLifecycleDestroyed)
-            setContent {
-                SecuComposeTheme {
-                    val connectionState by mViewModel.connectionStatusLiveData.observeAsState()
-                    ParamsScreen(
-                        titles = pageTitles.map { stringResource(it) },
-                        pageKeys = pageTitles,
-                        connectionState = connectionState,
-                        editorSession = mViewModel.parameterEditSession,
-                        onEditConfirm = mViewModel::acceptParameterEditor,
-                        onEditDismiss = mViewModel::dismissParameterEditor,
-                        onBack = { findNavController().navigateUp() },
-                        onSave = mViewModel::savePacket,
-                        onPageSettled = { index -> pageTitles.getOrNull(index)?.let(mViewModel::activatePage) },
-                        onPageUnsettled = mViewModel::deactivatePage,
-                        pageContent = { index, active, isActiveNow -> pageTitles.getOrNull(index)?.let { title ->
-                            ParameterPageContent(title, mViewModel, active, isActiveNow, mViewModel::openParameterEditor)
-                        } },
-                    )
-                }
+    DisposableEffect(lifecycle, viewModel) {
+        val observer = LifecycleEventObserver { _, event ->
+            if (event == Lifecycle.Event.ON_PAUSE) {
+                viewModel.deactivatePage()
+                viewModel.cancelManualCommands()
+            }
+        }
+        lifecycle.addObserver(observer)
+        onDispose {
+            lifecycle.removeObserver(observer)
+            if (activity.isChangingConfigurations) {
+                viewModel.deactivatePage()
+                viewModel.cancelManualCommands()
+            } else {
+                viewModel.clearPageState()
             }
         }
     }
-
-    override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
-        super.onViewCreated(view, savedInstanceState)
-        mViewModel.connectionStatusLiveData.observe(viewLifecycleOwner) {
-            if (!mViewModel.isConnected) mViewModel.clearPageState()
-        }
+    LaunchedEffect(connectionState) {
+        if (!viewModel.isConnected) viewModel.clearPageState()
     }
 
-    override fun onPause() {
-        mViewModel.deactivatePage()
-        mViewModel.cancelManualCommands()
-        super.onPause()
-    }
-
-    override fun onDestroyView() {
-        if (requireActivity().isChangingConfigurations) {
-            mViewModel.deactivatePage()
-            mViewModel.cancelManualCommands()
-        } else {
-            mViewModel.clearPageState()
-        }
-        super.onDestroyView()
+    SecuComposeTheme {
+        ParametersScreen(
+            titles = pages.map { stringResource(it) },
+            pageKeys = pages,
+            connectionState = connectionState,
+            editorSession = viewModel.parameterEditSession,
+            onEditConfirm = viewModel::acceptParameterEditor,
+            onEditDismiss = viewModel::dismissParameterEditor,
+            onBack = { navController.popBackStack() },
+            onSave = viewModel::savePacket,
+            onPageSettled = { index -> pages.getOrNull(index)?.let(viewModel::activatePage) },
+            onPageUnsettled = viewModel::deactivatePage,
+            pageContent = { index, active, isActiveNow -> pages.getOrNull(index)?.let { title ->
+                ParameterPageContent(title, viewModel, active, isActiveNow, viewModel::openParameterEditor)
+            } },
+        )
     }
 }
 
 @Composable
-internal fun ParamsScreen(
+internal fun ParametersScreen(
     titles: List<String>,
     pageKeys: List<Int> = titles.indices.toList(),
     connectionState: org.secu3.android.connection.ConnectionState?,
@@ -188,7 +170,7 @@ internal fun ParamsScreen(
     }
 
     Column(Modifier.fillMaxSize().windowInsetsPadding(WindowInsets.safeDrawing).background(colorResource(R.color.colorPrimary))) {
-        ParamsToolbar(connectionState, onBack, onSave)
+        ParametersToolbar(connectionState, onBack, onSave)
         Row(Modifier.fillMaxWidth().height(48.dp).horizontalScroll(rememberScrollState()), verticalAlignment = Alignment.CenterVertically) {
             titles.forEachIndexed { index, title ->
                 val selected = selectedIndex == index
@@ -233,8 +215,7 @@ internal fun ParamsScreen(
 }
 
 @Composable
-private fun ParamsToolbar(connectionState: org.secu3.android.connection.ConnectionState?, onBack: () -> Unit, onSave: () -> Unit) {
-    val barColor = colorResource(R.color.colorPrimary)
+private fun ParametersToolbar(connectionState: org.secu3.android.connection.ConnectionState?, onBack: () -> Unit, onSave: () -> Unit) {
     val statusLabel = when (connectionState) {
         Connected -> stringResource(R.string.home_connection_connected)
         InProgress -> stringResource(R.string.home_connection_connecting)
@@ -249,30 +230,17 @@ private fun ParamsToolbar(connectionState: org.secu3.android.connection.Connecti
     }
     val saveDescription = stringResource(R.string.save)
     val backDescription = stringResource(R.string.back)
-    Surface(color = barColor, elevation = 4.dp) {
-        Row(
-            modifier = Modifier.fillMaxWidth().height(56.dp),
-            verticalAlignment = Alignment.CenterVertically,
-        ) {
+    Surface(color = colorResource(R.color.colorPrimary), elevation = 4.dp) {
+        Row(Modifier.fillMaxWidth().height(56.dp), verticalAlignment = Alignment.CenterVertically) {
             IconButton(onClick = onBack, modifier = Modifier.semantics { contentDescription = backDescription }) {
                 Icon(painterResource(R.drawable.ic_arrow_back_24), contentDescription = null, tint = MaterialTheme.colors.onSurface)
             }
-            Text(
-                text = stringResource(R.string.title_activity_param),
-                modifier = Modifier.weight(1f),
-                style = MaterialTheme.typography.h6,
-                color = MaterialTheme.colors.onSurface,
-                maxLines = 1,
-            )
+            Text(stringResource(R.string.title_activity_param), Modifier.weight(1f), style = MaterialTheme.typography.h6, color = MaterialTheme.colors.onSurface, maxLines = 1)
             IconButton(onClick = onSave, modifier = Modifier.semantics { contentDescription = saveDescription }) {
                 Icon(painterResource(R.drawable.ic_save_24), contentDescription = null, tint = MaterialTheme.colors.onSurface)
             }
-            Row(modifier = Modifier.semantics { contentDescription = statusLabel }, verticalAlignment = Alignment.CenterVertically) {
-                Icon(
-                    painter = painterResource(R.drawable.ic_car),
-                    contentDescription = null,
-                    tint = statusColor ?: MaterialTheme.colors.onSurface.copy(alpha = ContentAlpha.disabled),
-                )
+            Row(Modifier.semantics { contentDescription = statusLabel }, verticalAlignment = Alignment.CenterVertically) {
+                Icon(painterResource(R.drawable.ic_car), contentDescription = null, tint = statusColor ?: MaterialTheme.colors.onSurface.copy(alpha = ContentAlpha.disabled))
             }
         }
     }

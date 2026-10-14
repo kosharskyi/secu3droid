@@ -27,9 +27,15 @@ package org.secu3.android.ui
 import android.app.ComponentCaller
 import android.content.Intent
 import android.os.Bundle
+import android.view.View
 import android.view.WindowManager
+import androidx.constraintlayout.widget.ConstraintLayout
 import androidx.activity.viewModels
 import androidx.appcompat.app.AppCompatActivity
+import androidx.compose.ui.platform.ComposeView
+import androidx.fragment.app.Fragment
+import androidx.lifecycle.Lifecycle
+import androidx.navigation.NavHostController
 import dagger.hilt.android.AndroidEntryPoint
 import org.secu3.android.R
 
@@ -37,11 +43,133 @@ import org.secu3.android.R
 class MainActivity : AppCompatActivity() {
 
     private val viewModel: MainActivityViewModel by viewModels()
+    private var rootNavController: NavHostController? = null
+    internal val rootNavigationController: NavHostController? get() = rootNavController
+    private var pendingParametersOpen = false
+    private var parametersRouteActive = false
+    private lateinit var legacyContainer: View
+    private lateinit var composeNavigationView: ComposeView
+
+    companion object {
+        private const val STATE_PARAMETERS_ROUTE_ACTIVE = "parameters_route_active"
+    }
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_main)
+        legacyContainer = findViewById(R.id.nav_host_fragment)
+        composeNavigationView = ComposeView(this).apply {
+            id = R.id.root_compose_nav_view
+            visibility = View.GONE
+            setContent { RootNavigation(this@MainActivity) }
+        }
+        findViewById<ConstraintLayout>(R.id.main_activity_root).addView(
+            composeNavigationView,
+            ConstraintLayout.LayoutParams(0, 0).apply {
+                startToStart = ConstraintLayout.LayoutParams.PARENT_ID
+                endToEnd = ConstraintLayout.LayoutParams.PARENT_ID
+                topToTop = ConstraintLayout.LayoutParams.PARENT_ID
+                bottomToBottom = ConstraintLayout.LayoutParams.PARENT_ID
+            },
+        )
+        parametersRouteActive = savedInstanceState?.getBoolean(STATE_PARAMETERS_ROUTE_ACTIVE) == true
+        if (parametersRouteActive) {
+            if (setNativeHostMaxLifecycle(Lifecycle.State.CREATED)) {
+                legacyContainer.visibility = View.GONE
+                composeNavigationView.visibility = View.VISIBLE
+            } else {
+                pendingParametersOpen = true
+            }
+        }
+    }
 
+    override fun onSaveInstanceState(outState: Bundle) {
+        outState.putBoolean(STATE_PARAMETERS_ROUTE_ACTIVE, parametersRouteActive)
+        super.onSaveInstanceState(outState)
+    }
+
+    override fun onPostResume() {
+        super.onPostResume()
+        when (rootNavController?.currentDestination?.route) {
+            PARAMETERS_ROUTE -> showParametersOverlay()
+            LEGACY_ROUTE -> showLegacyHost()
+        }
+        processPendingParametersNavigation()
+    }
+
+    private fun processPendingParametersNavigation() {
+        val route = rootNavController?.currentDestination?.route ?: return
+        if (pendingParametersOpen) {
+            pendingParametersOpen = false
+            if (route != PARAMETERS_ROUTE) {
+                openParameters()
+            } else {
+                showParametersOverlay()
+            }
+        }
+    }
+
+    fun openParameters() {
+        val controller = rootNavController
+        if (supportFragmentManager.isStateSaved || controller?.currentDestination == null) {
+            pendingParametersOpen = true
+            return
+        }
+        if (controller.currentDestination?.route == PARAMETERS_ROUTE) return
+        if (!showParametersOverlay()) {
+            pendingParametersOpen = true
+            return
+        }
+        controller.navigate(PARAMETERS_ROUTE) { launchSingleTop = true }
+    }
+
+    internal fun attachRootNavController(controller: NavHostController) {
+        rootNavController = controller
+        if (pendingParametersOpen && lifecycle.currentState.isAtLeast(Lifecycle.State.RESUMED)) {
+            onRootDestinationChanged(controller.currentDestination?.route)
+            processPendingParametersNavigation()
+        }
+    }
+
+    internal fun detachRootNavController(controller: NavHostController) {
+        if (rootNavController === controller) rootNavController = null
+    }
+
+    internal fun onRootDestinationChanged(route: String?) {
+        when (route) {
+            PARAMETERS_ROUTE -> showParametersOverlay()
+            LEGACY_ROUTE -> showLegacyHost()
+        }
+        if (pendingParametersOpen && lifecycle.currentState.isAtLeast(Lifecycle.State.RESUMED)) {
+            processPendingParametersNavigation()
+        }
+    }
+
+    private fun showParametersOverlay(): Boolean {
+        if (supportFragmentManager.isStateSaved || !setNativeHostMaxLifecycle(Lifecycle.State.CREATED)) return false
+        parametersRouteActive = true
+        legacyContainer.visibility = View.GONE
+        composeNavigationView.visibility = View.VISIBLE
+        return true
+    }
+
+    private fun showLegacyHost(): Boolean {
+        if (supportFragmentManager.isStateSaved || !setNativeHostMaxLifecycle(Lifecycle.State.RESUMED)) return false
+        parametersRouteActive = false
+        legacyContainer.visibility = View.VISIBLE
+        composeNavigationView.visibility = View.GONE
+        return true
+    }
+
+    private fun setNativeHostMaxLifecycle(state: Lifecycle.State): Boolean {
+        if (supportFragmentManager.isStateSaved) return false
+        val host: Fragment = supportFragmentManager.findFragmentById(R.id.nav_host_fragment) ?: return false
+        if (host.lifecycle.currentState != state) {
+            supportFragmentManager.beginTransaction()
+                .setMaxLifecycle(host, state)
+                .commitNow()
+        }
+        return true
     }
 
     override fun onResume() {
