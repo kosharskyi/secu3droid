@@ -133,17 +133,13 @@ tasks.register("validateVersionTag") {
 }
 
 dependencies {
-    implementation(fileTree(mapOf("dir" to "libs", "include" to listOf("*.jar"))))
-
-    implementation(libs.kotlin.stdlib)
     implementation(libs.core.ktx)
-    implementation(libs.appcompat)
     implementation(libs.annotation)
 
-    implementation(libs.preference.ktx)
+    implementation(libs.preference)
 
-    implementation(libs.lifecycle.viewmodel.ktx)
-    implementation(libs.lifecycle.runtime.ktx)
+    implementation(libs.lifecycle.viewmodel)
+    implementation(libs.lifecycle.runtime)
     implementation(libs.lifecycle.livedata.ktx)
     implementation(libs.lifecycle.service)
 
@@ -152,17 +148,14 @@ dependencies {
     implementation(libs.androidx.browser)
 
     implementation(libs.room.runtime)
-    implementation(libs.room.ktx)
     implementation(libs.androidx.material3.android)
     ksp(libs.room.compiler)
 
-    implementation(libs.material)
     implementation(libs.gson)
 
     implementation(platform(libs.compose.bom))
     androidTestImplementation(platform(libs.compose.bom))
     implementation(libs.compose.ui)
-    implementation(libs.compose.material)
     implementation(libs.compose.material.icons)
     implementation(libs.compose.ui.tooling.preview)
     debugImplementation(libs.compose.ui.tooling)
@@ -191,15 +184,11 @@ dependencies {
 
 
     testImplementation(libs.junit)
-    testImplementation(libs.room.testing)
-    testImplementation(libs.dagger.hilt.testing)
-    kspTest(libs.dagger.hilt.compiler)
 
     implementation(libs.usb.serial.android)
 
     androidTestImplementation(libs.ext.junit)
+    // Compose UI tests still resolve an older Espresso transitively; keep 3.7.0 explicit for API 37.
     androidTestImplementation(libs.espresso.core)
     androidTestImplementation(libs.compose.ui.test.junit4)
-    androidTestImplementation(libs.dagger.hilt.testing)
-    kspAndroidTest(libs.dagger.hilt.compiler)
 }

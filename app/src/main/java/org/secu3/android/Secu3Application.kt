@@ -26,7 +26,6 @@
 package org.secu3.android
 
 import android.app.Application
-import androidx.appcompat.app.AppCompatDelegate
 import com.jakewharton.threetenabp.AndroidThreeTen
 import dagger.hilt.EntryPoints
 import dagger.hilt.android.HiltAndroidApp
@@ -43,8 +42,5 @@ class Secu3Application : Application(){
         super.onCreate()
 
         AndroidThreeTen.init(this)
-
-
-        AppCompatDelegate.setDefaultNightMode(AppCompatDelegate.MODE_NIGHT_NO)
     }
 }

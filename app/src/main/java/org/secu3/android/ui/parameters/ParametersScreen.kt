@@ -21,12 +21,11 @@ import androidx.compose.foundation.relocation.bringIntoViewRequester
 import androidx.compose.foundation.pager.HorizontalPager
 import androidx.compose.foundation.pager.rememberPagerState
 import androidx.compose.foundation.rememberScrollState
-import androidx.compose.material.ContentAlpha
-import androidx.compose.material.Icon
-import androidx.compose.material.IconButton
-import androidx.compose.material.MaterialTheme
-import androidx.compose.material.Surface
-import androidx.compose.material.Text
+import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Surface
+import androidx.compose.material3.Text
 import androidx.compose.runtime.*
 import androidx.compose.runtime.livedata.observeAsState
 import androidx.compose.ui.Alignment
@@ -38,9 +37,11 @@ import androidx.compose.ui.res.colorResource
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.*
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.IntSize
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.LifecycleEventObserver
 import androidx.lifecycle.repeatOnLifecycle
@@ -181,8 +182,8 @@ internal fun ParametersScreen(
                     verticalArrangement = Arrangement.Center,
                     horizontalAlignment = Alignment.CenterHorizontally,
                 ) {
-                    Text(title, color = if (selected) MaterialTheme.colors.onSurface else MaterialTheme.colors.onSurface.copy(alpha = ContentAlpha.medium), maxLines = 1, overflow = TextOverflow.Ellipsis)
-                    if (selected) Surface(Modifier.fillMaxWidth().padding(top = 5.dp).height(2.dp), color = MaterialTheme.colors.secondary) {}
+                    Text(title, color = if (selected) MaterialTheme.colorScheme.onSurface else MaterialTheme.colorScheme.onSurface.copy(alpha = 0.74f), maxLines = 1, overflow = TextOverflow.Ellipsis)
+                    if (selected) Surface(Modifier.fillMaxWidth().padding(top = 5.dp).height(2.dp), color = MaterialTheme.colorScheme.secondary) {}
                 }
             }
         }
@@ -229,17 +230,17 @@ private fun ParametersToolbar(connectionState: org.secu3.android.connection.Conn
     }
     val saveDescription = stringResource(R.string.save)
     val backDescription = stringResource(R.string.back)
-    Surface(color = colorResource(R.color.colorPrimary), elevation = 4.dp) {
+    Surface(color = colorResource(R.color.colorPrimary), shadowElevation = 4.dp, tonalElevation = 0.dp) {
         Row(Modifier.fillMaxWidth().height(56.dp), verticalAlignment = Alignment.CenterVertically) {
             IconButton(onClick = onBack, modifier = Modifier.semantics { contentDescription = backDescription }) {
-                Icon(painterResource(R.drawable.ic_arrow_back_24), contentDescription = null, tint = MaterialTheme.colors.onSurface)
+                Icon(painterResource(R.drawable.ic_arrow_back_24), contentDescription = null, tint = MaterialTheme.colorScheme.onSurface)
             }
-            Text(stringResource(R.string.title_activity_param), Modifier.weight(1f), style = MaterialTheme.typography.h6, color = MaterialTheme.colors.onSurface, maxLines = 1)
+            Text(stringResource(R.string.title_activity_param), Modifier.weight(1f), style = MaterialTheme.typography.titleLarge.copy(fontSize = 20.sp, fontWeight = FontWeight.Medium, letterSpacing = 0.15.sp), color = MaterialTheme.colorScheme.onSurface, maxLines = 1)
             IconButton(onClick = onSave, modifier = Modifier.semantics { contentDescription = saveDescription }) {
-                Icon(painterResource(R.drawable.ic_save_24), contentDescription = null, tint = MaterialTheme.colors.onSurface)
+                Icon(painterResource(R.drawable.ic_save_24), contentDescription = null, tint = MaterialTheme.colorScheme.onSurface)
             }
             Row(Modifier.semantics { contentDescription = statusLabel }, verticalAlignment = Alignment.CenterVertically) {
-                Icon(painterResource(R.drawable.ic_car), contentDescription = null, tint = statusColor ?: MaterialTheme.colors.onSurface.copy(alpha = ContentAlpha.disabled))
+                Icon(painterResource(R.drawable.ic_car), contentDescription = null, tint = statusColor ?: MaterialTheme.colorScheme.onSurface.copy(alpha = 0.38f))
             }
         }
     }

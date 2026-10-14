@@ -12,7 +12,7 @@ Secu3droid is an Android client for the Secu-3 engine control unit (ECU). The ap
 
 ## UI Architecture
 
-The project uses Jetpack Compose for UI and Navigation Compose for navigation. Follow `knowledge/compose-migration.md` for screen and navigation conventions.
+The project uses Jetpack Compose for UI, Material3 for Compose components, and Navigation Compose for navigation. Do not add Compose Material2 widgets or Google Material view/XML libraries. Compose Material icon artifacts are allowed for the existing `androidx.compose.material.icons` namespace. XML resources may provide platform-only Activity/window themes. Follow `knowledge/compose-migration.md` for screen and navigation conventions.
 
 ## Important Directories
 
@@ -36,6 +36,7 @@ The project uses Jetpack Compose for UI and Navigation Compose for navigation. F
 
 - Do not change files outside the requested scope.
 - Use Compose for all new UI and Navigation Compose for new destinations and flows. Do not introduce new Fragment/XML destinations or Safe Args usage.
+- Use `androidx.compose.material3` for all Compose UI widgets and theming. Do not add `androidx.compose.material` widget artifacts or Google Material view/XML libraries; existing `androidx.compose.material.icons` artifacts are allowed for icon compatibility.
 - When rewriting an existing screen or flow, migrate its UI and navigation to Compose. Preserve behavior in legacy code during scoped fixes.
 - Keep generated files and local configuration files out of edits unless the task explicitly targets them. Never commit signing credentials or keystore files.
 - When changing Room entities or DAOs, check whether schema files under `app/schemas` need to be regenerated.

@@ -28,8 +28,6 @@ import android.content.Context
 import android.view.View
 import android.view.animation.AccelerateDecelerateInterpolator
 import android.widget.ImageView
-import android.view.inputmethod.InputMethodManager
-import androidx.appcompat.app.AppCompatActivity
 import androidx.core.util.TypedValueCompat
 import retrofit2.Response
 import java.io.File
@@ -54,15 +52,6 @@ fun ImageView.animateRotationByX(xDegrees: Float) {
             .rotationX(xDegrees)
             .setDuration(400)
             .interpolator = AccelerateDecelerateInterpolator()
-}
-
-fun AppCompatActivity.hideKeyboard(): Boolean {
-    currentFocus?.let {
-        val imm = getSystemService(Context.INPUT_METHOD_SERVICE) as InputMethodManager
-        imm.hideSoftInputFromWindow(it.windowToken, 0)
-        return true
-    }
-    return false
 }
 
 fun File.sizeStr(): String {
