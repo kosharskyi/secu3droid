@@ -16,10 +16,6 @@
             app:destination="@id/homeFragment"
             />
 
-        <action
-            android:id="@+id/open_secuLogsFragment"
-            app:destination="@id/secuLogsFragment" />
-
     </fragment>
 
     <fragment
@@ -36,18 +32,6 @@
             android:id="@+id/action_open_sensors"
             app:destination="@id/sensorsFragment"
             />
-
-        <action
-            android:id="@+id/action_open_secu_logs"
-            app:destination="@id/secuLogsFragment" />
-
-        <action
-            android:id="@+id/action_open_firmware_dialog"
-            app:destination="@id/firmwareDialogFragment" />
-
-        <action
-            android:id="@+id/action_open_secu_errors"
-            app:destination="@id/errorsFragment" />
 
         <action
             android:id="@+id/action_open_secu_diagnostic"
@@ -95,24 +79,6 @@
         android:id="@+id/diagnosticsAdditionalDialog"
         android:name="org.secu3.android.ui.diagnostics.DiagnosticAdditionalDialogFragment"
         android:label="Diagnostics additional dialog"
-        />
-
-    <fragment
-        android:id="@+id/errorsFragment"
-        android:name="org.secu3.android.ui.errors.ErrorsFragment"
-        android:label="Errors Fragment"
-        />
-
-    <fragment
-        android:id="@+id/secuLogsFragment"
-        android:name="org.secu3.android.ui.logger.SecuLogsFragment"
-        android:label="Secu Logs Fragment"
-        />
-
-    <dialog
-        android:id="@+id/firmwareDialogFragment"
-        android:name="org.secu3.android.ui.firmware.FirmwareDialogFragment"
-        android:label="Firmware info dialog"
         />
 
 </navigation>

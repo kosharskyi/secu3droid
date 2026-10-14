@@ -76,8 +76,8 @@ class MainActivity : AppCompatActivity() {
         activeComposeRoute = savedInstanceState?.getString(STATE_ACTIVE_COMPOSE_ROUTE)
             ?: if (savedInstanceState?.getBoolean(STATE_PARAMETERS_ROUTE_ACTIVE) == true) PARAMETERS_ROUTE else null
         if (activeComposeRoute != null) {
-            if (setNativeHostMaxLifecycle(Lifecycle.State.CREATED)) {
-                legacyContainer.visibility = View.GONE
+            if (setComposeHostState(activeComposeRoute)) {
+                legacyContainer.visibility = if (activeComposeRoute == FIRMWARE_ROUTE) View.VISIBLE else View.GONE
                 composeNavigationView.visibility = View.VISIBLE
             } else {
                 pendingComposeRoute = activeComposeRoute
@@ -94,7 +94,8 @@ class MainActivity : AppCompatActivity() {
     override fun onPostResume() {
         super.onPostResume()
         when (rootNavController?.currentDestination?.route) {
-            PARAMETERS_ROUTE, SETTINGS_ROUTE -> showComposeOverlay(rootNavController?.currentDestination?.route)
+            PARAMETERS_ROUTE, SETTINGS_ROUTE, ERRORS_ROUTE, LOGS_ROUTE, FIRMWARE_ROUTE ->
+                showComposeOverlay(rootNavController?.currentDestination?.route)
             LEGACY_ROUTE -> showLegacyHost()
         }
         processPendingComposeNavigation()
@@ -119,6 +120,18 @@ class MainActivity : AppCompatActivity() {
 
     fun openSettings() {
         openComposeDestination(SETTINGS_ROUTE)
+    }
+
+    fun openErrors() {
+        openComposeDestination(ERRORS_ROUTE)
+    }
+
+    fun openLogs() {
+        openComposeDestination(LOGS_ROUTE)
+    }
+
+    fun openFirmware() {
+        openComposeDestination(FIRMWARE_ROUTE)
     }
 
     private fun openComposeDestination(route: String) {
@@ -149,7 +162,7 @@ class MainActivity : AppCompatActivity() {
 
     internal fun onRootDestinationChanged(route: String?) {
         when (route) {
-            PARAMETERS_ROUTE, SETTINGS_ROUTE -> showComposeOverlay(route)
+            PARAMETERS_ROUTE, SETTINGS_ROUTE, ERRORS_ROUTE, LOGS_ROUTE, FIRMWARE_ROUTE -> showComposeOverlay(route)
             LEGACY_ROUTE -> showLegacyHost()
         }
         if (pendingComposeRoute != null && lifecycle.currentState.isAtLeast(Lifecycle.State.RESUMED)) {
@@ -159,12 +172,15 @@ class MainActivity : AppCompatActivity() {
 
     private fun showComposeOverlay(route: String?): Boolean {
         if (route == null) return false
-        if (supportFragmentManager.isStateSaved || !setNativeHostMaxLifecycle(Lifecycle.State.CREATED)) return false
+        if (supportFragmentManager.isStateSaved || !setComposeHostState(route)) return false
         activeComposeRoute = route
-        legacyContainer.visibility = View.GONE
+        legacyContainer.visibility = if (route == FIRMWARE_ROUTE) View.VISIBLE else View.GONE
         composeNavigationView.visibility = View.VISIBLE
         return true
     }
+
+    private fun setComposeHostState(route: String?): Boolean =
+        setNativeHostMaxLifecycle(if (route == FIRMWARE_ROUTE) Lifecycle.State.STARTED else Lifecycle.State.CREATED)
 
     private fun showLegacyHost(): Boolean {
         if (supportFragmentManager.isStateSaved || !setNativeHostMaxLifecycle(Lifecycle.State.RESUMED)) return false

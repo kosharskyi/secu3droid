@@ -1,38 +1,14 @@
 /*
  *    SecuDroid  - An open source, free manager for SECU-3 engine control unit
- *    Copyright (C) 2024 Vitaliy O. Kosharskyi. Ukraine, Kyiv
- *
- *    SECU-3  - An open source, free engine control unit
- *    Copyright (C) 2007-2024 Alexey A. Shabelnikov. Ukraine, Kyiv
+ *    Copyright (C) 2026 Vitalii O. Kosharskyi. Ukraine, Kyiv
  *
  *    This program is free software: you can redistribute it and/or modify
  *    it under the terms of the GNU General Public License as published by
  *    the Free Software Foundation, either version 3 of the License, or
  *    (at your option) any later version.
- *
- *    This program is distributed in the hope that it will be useful,
- *    but WITHOUT ANY WARRANTY; without even the implied warranty of
- *    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- *    GNU General Public License for more details.
- *
- *    You should have received a copy of the GNU General Public License
- *    along with this program.  If not, see <http://www.gnu.org/licenses/>.
- *
- *    contacts:
- *                    http://secu-3.org
- *                    email: vetalkosharskiy@gmail.com
  */
-
 package org.secu3.android.ui.logger
 
-import android.Manifest
-import android.content.Intent
-import android.content.pm.PackageManager
-import android.os.Bundle
-import android.view.LayoutInflater
-import android.view.View
-import android.view.ViewGroup
-import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -61,106 +37,18 @@ import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.platform.ComposeView
-import androidx.compose.ui.platform.ViewCompositionStrategy
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import androidx.core.content.ContextCompat
-import androidx.fragment.app.Fragment
-import androidx.fragment.app.viewModels
-import androidx.lifecycle.lifecycleScope
-import androidx.navigation.fragment.findNavController
-import dagger.hilt.android.AndroidEntryPoint
-import kotlinx.coroutines.launch
 import org.secu3.android.R
 import org.secu3.android.utils.sizeStr
 import java.io.File
-
-@AndroidEntryPoint
-class SecuLogsFragment : Fragment() {
-
-    private val mViewModel: SecuLogsViewModel by viewModels()
-    private var pendingDownloadFile: File? = null
-    private var snackbarHostState: SnackbarHostState? = null
-
-    private val storagePermissionRequest = registerForActivityResult(ActivityResultContracts.RequestPermission()) { isGranted ->
-        val file = pendingDownloadFile
-        pendingDownloadFile = null
-
-        if (isGranted && file != null) {
-            saveLog(file)
-        } else {
-            showSnackbar(getString(R.string.log_export_permission_denied))
-        }
-    }
-
-    override fun onCreateView(inflater: LayoutInflater, container: ViewGroup?, savedInstanceState: Bundle?): View {
-        return ComposeView(requireContext()).apply {
-            setViewCompositionStrategy(ViewCompositionStrategy.DisposeOnViewTreeLifecycleDestroyed)
-            setContent {
-                val snackbarHost = remember { SnackbarHostState() }
-                var files by remember { mutableStateOf(mViewModel.getListOfLogFiles) }
-                snackbarHostState = snackbarHost
-
-                SecuLogsScreen(
-                    files = files,
-                    snackbarHostState = snackbarHost,
-                    onBackClick = { findNavController().navigateUp() },
-                    onShareClick = { share(it) },
-                    onDownloadClick = { download(it) },
-                    onDeleteClick = {
-                        it.delete()
-                        files = mViewModel.getListOfLogFiles
-                    },
-                )
-            }
-        }
-    }
-
-    private fun download(file: File) {
-        if (mViewModel.requiresDefaultDownloadsPermission() && ContextCompat.checkSelfPermission(requireContext(), Manifest.permission.WRITE_EXTERNAL_STORAGE) != PackageManager.PERMISSION_GRANTED) {
-            pendingDownloadFile = file
-            storagePermissionRequest.launch(Manifest.permission.WRITE_EXTERNAL_STORAGE)
-            return
-        }
-
-        saveLog(file)
-    }
-
-    private fun saveLog(file: File) {
-        viewLifecycleOwner.lifecycleScope.launch {
-            val result = mViewModel.saveLogFile(file)
-            val message = if (result.isSuccess) {
-                getString(R.string.log_export_success, result.destination)
-            } else {
-                getString(R.string.log_export_failed)
-            }
-            showSnackbar(message)
-        }
-    }
-
-    private fun showSnackbar(message: String) {
-        viewLifecycleOwner.lifecycleScope.launch {
-            snackbarHostState?.showSnackbar(message)
-        }
-    }
-
-    private fun share(file: File) {
-        val shareIntent: Intent = mViewModel.getShareIntent(file)
-        startActivity(Intent.createChooser(shareIntent, null))
-    }
-}
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -170,10 +58,11 @@ internal fun SecuLogsScreen(
     onBackClick: () -> Unit,
     onShareClick: (File) -> Unit,
     onDownloadClick: (File) -> Unit,
-    onDeleteClick: (File) -> Unit,
+    pendingDeleteFile: File?,
+    onDeleteRequest: (File) -> Unit,
+    onDeleteCancel: () -> Unit,
+    onDeleteConfirm: () -> Unit,
 ) {
-    var filePendingDelete by remember { mutableStateOf<File?>(null) }
-
     Scaffold(
         snackbarHost = { SnackbarHost(hostState = snackbarHostState) },
         topBar = {
@@ -215,30 +104,29 @@ internal fun SecuLogsScreen(
                         file = file,
                         onShareClick = { onShareClick(file) },
                         onDownloadClick = { onDownloadClick(file) },
-                        onDeleteClick = { filePendingDelete = file },
+                        onDeleteClick = { onDeleteRequest(file) },
                     )
                 }
             }
         }
     }
 
-    filePendingDelete?.let { file ->
+    pendingDeleteFile?.let {
         AlertDialog(
-            onDismissRequest = { filePendingDelete = null },
+            onDismissRequest = onDeleteCancel,
             title = { Text(text = stringResource(R.string.dialog_confirm_delete_log_file_title)) },
             text = { Text(text = stringResource(R.string.dialog_confirm_delete_log_message)) },
             confirmButton = {
                 TextButton(
                     onClick = {
-                        filePendingDelete = null
-                        onDeleteClick(file)
+                        onDeleteConfirm()
                     },
                 ) {
                     Text(text = stringResource(android.R.string.ok))
                 }
             },
             dismissButton = {
-                TextButton(onClick = { filePendingDelete = null }) {
+                TextButton(onClick = onDeleteCancel) {
                     Text(text = stringResource(android.R.string.cancel))
                 }
             },

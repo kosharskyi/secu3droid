@@ -12,16 +12,20 @@ package org.secu3.android.ui
 import android.view.KeyEvent
 import android.view.View
 import androidx.compose.ui.test.assertIsSelected
+import androidx.compose.ui.test.assertCountEquals
+import androidx.compose.ui.test.onAllNodesWithText
 import androidx.compose.ui.test.assertTextEquals
 import androidx.compose.ui.test.junit4.v2.createAndroidComposeRule
 import androidx.compose.ui.test.onNodeWithContentDescription
 import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
+import androidx.compose.ui.test.performScrollTo
 import androidx.compose.ui.test.performTextClearance
 import androidx.compose.ui.test.performTextInput
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.ViewModelProvider
+import androidx.core.view.WindowInsetsControllerCompat
 import androidx.navigation.fragment.NavHostFragment
 import androidx.test.platform.app.InstrumentationRegistry
 import org.junit.Assert.assertEquals
@@ -113,14 +117,14 @@ class ParametersNavigationIntegrationTest {
 
         compose.activityRule.scenario.onActivity { nativeHost.navController.navigate(R.id.homeFragment) }
         compose.waitForIdle()
-        compose.onNodeWithTag("home-card-settings").performClick()
+        compose.onNodeWithTag("home-card-settings").performScrollTo().performClick()
         compose.waitForIdle()
         assertOnSettingsRoute(nativeHost)
         compose.onNodeWithContentDescription(compose.activity.getString(R.string.back)).performClick()
         compose.waitForIdle()
         assertNativeHostRestored(nativeHost, R.id.homeFragment)
 
-        compose.onNodeWithTag("home-card-settings").performClick()
+        compose.onNodeWithTag("home-card-settings").performScrollTo().performClick()
         compose.waitForIdle()
         assertOnSettingsRoute(nativeHost)
         InstrumentationRegistry.getInstrumentation().sendKeyDownUpSync(KeyEvent.KEYCODE_BACK)
@@ -138,6 +142,116 @@ class ParametersNavigationIntegrationTest {
         val restoredHost = compose.activity.supportFragmentManager.findFragmentById(R.id.nav_host_fragment) as NavHostFragment
         assertOnSettingsRoute(restoredHost)
         compose.onNodeWithText(compose.activity.getString(R.string.title_activity_settings)).assertExists()
+    }
+
+    @Test fun startAndHomeLogsRoutesRestoreTheirLegacyDestinations() {
+        val host = nativeHost()
+        compose.onNodeWithContentDescription("Logs icon").performClick()
+        compose.waitForIdle()
+        assertFullScreenComposeRoute(host, LOGS_ROUTE, R.id.startScreenFragment)
+        InstrumentationRegistry.getInstrumentation().sendKeyDownUpSync(KeyEvent.KEYCODE_BACK)
+        compose.waitForIdle()
+        assertNativeHostRestored(host, R.id.startScreenFragment)
+
+        compose.activityRule.scenario.onActivity { host.navController.navigate(R.id.homeFragment) }
+        compose.waitForIdle()
+        compose.onNodeWithTag("home-card-logs").performScrollTo().performClick()
+        compose.waitForIdle()
+        assertFullScreenComposeRoute(host, LOGS_ROUTE, R.id.homeFragment)
+        compose.onNodeWithContentDescription(compose.activity.getString(R.string.back)).performClick()
+        compose.waitForIdle()
+        assertNativeHostRestored(host, R.id.homeFragment)
+    }
+
+    @Test fun homeErrorsRouteRestoresSystemBarsAndNativeHost() {
+        val host = navigateNativeHostToHome()
+        var originalStatusBarColor = 0
+        var originalNavigationBarColor = 0
+        var originalLightStatusBars = false
+        var originalLightNavigationBars = false
+        compose.activityRule.scenario.onActivity { activity ->
+            originalStatusBarColor = activity.window.statusBarColor
+            originalNavigationBarColor = activity.window.navigationBarColor
+            val insets = WindowInsetsControllerCompat(activity.window, activity.window.decorView)
+            originalLightStatusBars = insets.isAppearanceLightStatusBars
+            originalLightNavigationBars = insets.isAppearanceLightNavigationBars
+        }
+
+        compose.onNodeWithTag("home-card-errors").performScrollTo().performClick()
+        compose.waitForIdle()
+        assertFullScreenComposeRoute(host, ERRORS_ROUTE, R.id.homeFragment)
+        compose.activityRule.scenario.onActivity { activity ->
+            val insets = WindowInsetsControllerCompat(activity.window, activity.window.decorView)
+            assertEquals(false, insets.isAppearanceLightStatusBars)
+            assertEquals(false, insets.isAppearanceLightNavigationBars)
+        }
+        InstrumentationRegistry.getInstrumentation().sendKeyDownUpSync(KeyEvent.KEYCODE_BACK)
+        compose.waitForIdle()
+        assertNativeHostRestored(host, R.id.homeFragment)
+        compose.activityRule.scenario.onActivity { activity ->
+            val insets = WindowInsetsControllerCompat(activity.window, activity.window.decorView)
+            assertEquals(originalStatusBarColor, activity.window.statusBarColor)
+            assertEquals(originalNavigationBarColor, activity.window.navigationBarColor)
+            assertEquals(originalLightStatusBars, insets.isAppearanceLightStatusBars)
+            assertEquals(originalLightNavigationBars, insets.isAppearanceLightNavigationBars)
+        }
+    }
+
+    @Test fun errorsClearConfirmationSurvivesRecreationAndCancelDoesNotClear() {
+        navigateNativeHostToHome()
+        compose.onNodeWithTag("home-card-errors").performScrollTo().performClick()
+        compose.waitForIdle()
+        compose.onNodeWithContentDescription(compose.activity.getString(R.string.errors_clear_all_short)).performClick()
+        compose.onNodeWithText(compose.activity.getString(R.string.dialog_confirm_clear_errors_message)).assertExists()
+
+        compose.activityRule.scenario.recreate()
+        compose.waitForIdle()
+        compose.onNodeWithText(compose.activity.getString(R.string.dialog_confirm_clear_errors_message)).assertExists()
+        compose.onNodeWithText(compose.activity.getString(android.R.string.cancel)).performClick()
+        compose.waitForIdle()
+        compose.onAllNodesWithText(compose.activity.getString(R.string.dialog_confirm_clear_errors_message)).assertCountEquals(0)
+    }
+
+    @Test fun firmwareModalKeepsHomeStartedBackClosesOnlySheetAndViewModelIsPerEntry() {
+        val host = navigateNativeHostToHome()
+        compose.activityRule.scenario.onActivity { it.openFirmware() }
+        compose.waitForIdle()
+        compose.onNodeWithText(compose.activity.getString(R.string.firmware_information_title)).assertExists()
+
+        var firstViewModel: org.secu3.android.ui.firmware.FirmwareViewModel? = null
+        compose.activityRule.scenario.onActivity { activity ->
+            assertEquals(Lifecycle.State.STARTED, host.lifecycle.currentState)
+            assertEquals(View.VISIBLE, activity.findViewById<View>(R.id.nav_host_fragment).visibility)
+            assertEquals(View.VISIBLE, activity.findViewById<View>(R.id.root_compose_nav_view).visibility)
+            assertEquals(FIRMWARE_ROUTE, activity.rootNavigationController?.currentDestination?.route)
+            val entry = requireNotNull(activity.rootNavigationController).getBackStackEntry(FIRMWARE_ROUTE)
+            firstViewModel = ViewModelProvider(entry.viewModelStore, activity.defaultViewModelProviderFactory, entry.defaultViewModelCreationExtras)[org.secu3.android.ui.firmware.FirmwareViewModel::class.java]
+        }
+
+        compose.activityRule.scenario.recreate()
+        compose.waitForIdle()
+        val restoredHost = nativeHost()
+        var restoredViewModel: org.secu3.android.ui.firmware.FirmwareViewModel? = null
+        compose.activityRule.scenario.onActivity { activity ->
+            val entry = requireNotNull(activity.rootNavigationController).getBackStackEntry(FIRMWARE_ROUTE)
+            restoredViewModel = ViewModelProvider(entry.viewModelStore, activity.defaultViewModelProviderFactory, entry.defaultViewModelCreationExtras)[org.secu3.android.ui.firmware.FirmwareViewModel::class.java]
+            assertEquals(Lifecycle.State.STARTED, restoredHost.lifecycle.currentState)
+        }
+        assertSame(firstViewModel, restoredViewModel)
+        InstrumentationRegistry.getInstrumentation().sendKeyDownUpSync(KeyEvent.KEYCODE_BACK)
+        compose.waitForIdle()
+        assertNativeHostRestored(restoredHost, R.id.homeFragment)
+        compose.onNodeWithTag("home-ecu-status").assertExists()
+        compose.onAllNodesWithText(compose.activity.getString(R.string.disconnect_device)).assertCountEquals(0)
+
+        compose.activityRule.scenario.onActivity { it.openFirmware() }
+        compose.waitForIdle()
+        var reopenedViewModel: org.secu3.android.ui.firmware.FirmwareViewModel? = null
+        compose.activityRule.scenario.onActivity { activity ->
+            val entry = requireNotNull(activity.rootNavigationController).getBackStackEntry(FIRMWARE_ROUTE)
+            reopenedViewModel = ViewModelProvider(entry.viewModelStore, activity.defaultViewModelProviderFactory, entry.defaultViewModelCreationExtras)[org.secu3.android.ui.firmware.FirmwareViewModel::class.java]
+        }
+        assertNotSame(restoredViewModel, reopenedViewModel)
     }
 
     private fun navigateNativeHostToHome(): NavHostFragment {
@@ -181,6 +295,16 @@ class ParametersNavigationIntegrationTest {
             assertEquals(SETTINGS_ROUTE, activity.rootNavigationController?.currentDestination?.route)
         }
         compose.onNodeWithText(compose.activity.getString(R.string.title_activity_settings)).assertExists()
+    }
+
+    private fun assertFullScreenComposeRoute(nativeHost: NavHostFragment, route: String, destination: Int) {
+        compose.activityRule.scenario.onActivity { activity ->
+            assertEquals(Lifecycle.State.CREATED, nativeHost.lifecycle.currentState)
+            assertEquals(destination, nativeHost.navController.currentDestination?.id)
+            assertEquals(View.GONE, activity.findViewById<View>(R.id.nav_host_fragment).visibility)
+            assertEquals(View.VISIBLE, activity.findViewById<View>(R.id.root_compose_nav_view).visibility)
+            assertEquals(route, activity.rootNavigationController?.currentDestination?.route)
+        }
     }
 
     private fun assertNativeHostRestored(nativeHost: NavHostFragment, destination: Int) {

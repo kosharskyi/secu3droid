@@ -1,34 +1,14 @@
 /*
  *    SecuDroid  - An open source, free manager for SECU-3 engine control unit
- *    Copyright (C) 2024 Vitaliy O. Kosharskyi. Ukraine, Kyiv
- *
- *    SECU-3  - An open source, free engine control unit
- *    Copyright (C) 2007-2024 Alexey A. Shabelnikov. Ukraine, Kyiv
+ *    Copyright (C) 2026 Vitalii O. Kosharskyi. Ukraine, Kyiv
  *
  *    This program is free software: you can redistribute it and/or modify
  *    it under the terms of the GNU General Public License as published by
  *    the Free Software Foundation, either version 3 of the License, or
  *    (at your option) any later version.
- *
- *    This program is distributed in the hope that it will be useful,
- *    but WITHOUT ANY WARRANTY; without even the implied warranty of
- *    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- *    GNU General Public License for more details.
- *
- *    You should have received a copy of the GNU General Public License
- *    along with this program.  If not, see <http://www.gnu.org/licenses/>.
- *
- *    contacts:
- *                    http://secu-3.org
- *                    email: vetalkosharskiy@gmail.com
  */
-
 package org.secu3.android.ui.errors
 
-import android.os.Bundle
-import android.view.LayoutInflater
-import android.view.View
-import android.view.ViewGroup
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
@@ -55,20 +35,11 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.SideEffect
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.setValue
-import androidx.compose.runtime.livedata.observeAsState
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.toArgb
-import androidx.compose.ui.platform.ComposeView
-import androidx.compose.ui.platform.LocalView
 import androidx.compose.ui.platform.testTag
-import androidx.compose.ui.platform.ViewCompositionStrategy
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringArrayResource
 import androidx.compose.ui.res.stringResource
@@ -78,73 +49,13 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import androidx.core.view.WindowInsetsControllerCompat
-import androidx.fragment.app.Fragment
-import androidx.fragment.app.viewModels
-import androidx.navigation.fragment.findNavController
 import org.secu3.android.ui.compose.ConfirmationDialog
-import dagger.hilt.android.AndroidEntryPoint
 import org.secu3.android.R
 import org.secu3.android.connection.Connected
 import org.secu3.android.connection.ConnectionState
 import org.secu3.android.connection.Disconnected
 import org.secu3.android.connection.InProgress
 import org.secu3.android.models.CheckEngineError
-
-@AndroidEntryPoint
-class ErrorsFragment : Fragment() {
-
-    private val mViewModel: ErrorsViewModel by viewModels()
-    private var showClearConfirmation by mutableStateOf(false)
-
-    override fun onCreateView(inflater: LayoutInflater, container: ViewGroup?, savedInstanceState: Bundle?): View {
-        return ComposeView(requireContext()).apply {
-            setViewCompositionStrategy(ViewCompositionStrategy.DisposeOnViewTreeLifecycleDestroyed)
-            setContent {
-                ErrorsSystemBarsEffect()
-
-                val connectionState by mViewModel.connectionStatusLiveData.observeAsState()
-                val savedErrorsPacket by mViewModel.checkEngineSavedLiveData.observeAsState()
-                val activeErrorsPacket by mViewModel.checkEngineLiveData.observeAsState()
-                val errorTitles = stringArrayResource(R.array.errors_ecu_errors_names)
-                val errors = errorTitles.mapIndexed { index, title ->
-                    CheckEngineError(
-                        title = title,
-                        isActive = activeErrorsPacket?.isError(index) ?: false,
-                        isSaved = savedErrorsPacket?.isError(index) ?: false,
-                    )
-                }
-
-                ErrorsScreen(
-                    connectionState = connectionState,
-                    errors = errors,
-                    isLoading = savedErrorsPacket == null && activeErrorsPacket == null,
-                    onBackClick = { findNavController().navigateUp() },
-                    onClearClick = { showClearConfirmation = true },
-                )
-                if (showClearConfirmation) {
-                    ConfirmationDialog(
-                        title = R.string.clear_all_errors,
-                        message = R.string.dialog_confirm_clear_errors_message,
-                        onConfirm = { showClearConfirmation = false; mViewModel.clearErrors() },
-                        onCancel = { showClearConfirmation = false },
-                    )
-                }
-            }
-        }
-    }
-
-    @Composable
-    private fun ErrorsSystemBarsEffect() {
-        val view = LocalView.current
-
-        SideEffect {
-            requireActivity().window.statusBarColor = ErrorsBackground.toArgb()
-            requireActivity().window.navigationBarColor = ErrorsBackground.toArgb()
-            WindowInsetsControllerCompat(requireActivity().window, view).isAppearanceLightStatusBars = false
-        }
-    }
-}
 
 @Composable
 internal fun ErrorsScreen(
@@ -433,7 +344,7 @@ private fun LoadingErrorsState(modifier: Modifier = Modifier) {
     }
 }
 
-private val ErrorsBackground = Color(0xFF0E1218)
+internal val ErrorsBackground = Color(0xFF0E1218)
 private val ErrorsCard = Color(0xFF171F27)
 private val ErrorsCardStroke = Color(0xFF4A371D)
 private val ErrorsDivider = Color(0xFF242B33)

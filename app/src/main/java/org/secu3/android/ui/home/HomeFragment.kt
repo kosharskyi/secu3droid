@@ -90,7 +90,7 @@ class HomeFragment : Fragment() {
                             onDashboard = { findNavController().navigate(HomeFragmentDirections.actionOpenDashboard()) },
                             onSensors = { findNavController().navigate(HomeFragmentDirections.actionOpenSensors()) },
                             onParameters = { (requireActivity() as MainActivity).openParameters() },
-                            onErrors = { findNavController().navigate(HomeFragmentDirections.actionOpenSecuErrors()) },
+                            onErrors = { (requireActivity() as MainActivity).openErrors() },
                             onDiagnosticsConfirmed = {
                                 if (mViewModel.firmware?.isDiagnosticsEnabled == true) {
                                     findNavController().navigate(HomeFragmentDirections.actionOpenSecuDiagnostic())
@@ -98,9 +98,9 @@ class HomeFragment : Fragment() {
                                     Toast.makeText(requireContext(), R.string.diagnostics_not_supported_title, Toast.LENGTH_LONG).show()
                                 }
                             },
-                            onLogs = { findNavController().navigate(HomeFragmentDirections.actionOpenSecuLogs()) },
+                            onLogs = { (requireActivity() as MainActivity).openLogs() },
                             onSettings = { (requireActivity() as MainActivity).openSettings() },
-                            onFirmware = { findNavController().navigate(HomeFragmentDirections.actionOpenFirmwareDialog()) },
+                            onFirmware = { (requireActivity() as MainActivity).openFirmware() },
                             onExitImmediately = { stopServiceAndNavigate() },
                             onExitCancelled = { showExitConfirmation = false },
                             onExitConfirmed = { showExitConfirmation = false; exitPending = true; requireActivity().stopService(serviceIntent()); mViewModel.closeConnection() },

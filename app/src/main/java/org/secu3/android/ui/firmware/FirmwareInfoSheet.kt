@@ -1,36 +1,14 @@
 /*
  *    SecuDroid  - An open source, free manager for SECU-3 engine control unit
- *    Copyright (C) 2024 Vitalii O. Kosharskyi. Ukraine, Kyiv
- *
- *    SECU-3  - An open source, free engine control unit
- *    Copyright (C) 2007-2024 Alexey A. Shabelnikov. Ukraine, Kyiv
+ *    Copyright (C) 2026 Vitalii O. Kosharskyi. Ukraine, Kyiv
  *
  *    This program is free software: you can redistribute it and/or modify
  *    it under the terms of the GNU General Public License as published by
  *    the Free Software Foundation, either version 3 of the License, or
  *    (at your option) any later version.
- *
- *    This program is distributed in the hope that it will be useful,
- *    but WITHOUT ANY WARRANTY; without even the implied warranty of
- *    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- *    GNU General Public License for more details.
- *
- *    You should have received a copy of the GNU General Public License
- *    along with this program.  If not, see <http://www.gnu.org/licenses/>.
- *
- *    contacts:
- *                    http://secu-3.org
- *                    email: vetalkosharskiy@gmail.com
  */
-
 package org.secu3.android.ui.firmware
 
-import android.app.Dialog
-import android.graphics.Color.TRANSPARENT
-import android.os.Bundle
-import android.view.LayoutInflater
-import android.view.View
-import android.view.ViewGroup
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Arrangement
@@ -62,12 +40,8 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.input.nestedscroll.nestedScroll
-import androidx.compose.ui.platform.ComposeView
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.LocalWindowInfo
-import androidx.compose.ui.platform.ViewCompositionStrategy
-import androidx.compose.ui.platform.rememberNestedScrollInteropConnection
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.semantics
@@ -79,52 +53,8 @@ import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.core.graphics.drawable.toDrawable
-import androidx.fragment.app.viewModels
-import com.google.android.material.bottomsheet.BottomSheetBehavior
-import com.google.android.material.bottomsheet.BottomSheetDialog
-import com.google.android.material.bottomsheet.BottomSheetDialogFragment
-import dagger.hilt.android.AndroidEntryPoint
 import org.secu3.android.R
 import org.secu3.android.models.packets.input.FirmwareInfoPacket
-
-@AndroidEntryPoint
-class FirmwareDialogFragment : BottomSheetDialogFragment() {
-
-    internal val mViewModel: FirmwareDialogViewModel by viewModels()
-
-    override fun onCreateDialog(savedInstanceState: Bundle?): Dialog {
-        return BottomSheetDialog(requireContext(), theme).apply {
-            window?.setBackgroundDrawable(TRANSPARENT.toDrawable())
-        }
-    }
-
-    override fun onStart() {
-        super.onStart()
-        (dialog as? BottomSheetDialog)?.let { bottomSheetDialog ->
-            bottomSheetDialog
-                .findViewById<View>(com.google.android.material.R.id.design_bottom_sheet)
-                ?.background = TRANSPARENT.toDrawable()
-
-            bottomSheetDialog.behavior.skipCollapsed = true
-            bottomSheetDialog.behavior.isDraggable = false
-            bottomSheetDialog.behavior.state = BottomSheetBehavior.STATE_EXPANDED
-        }
-    }
-
-    override fun onCreateView(inflater: LayoutInflater, container: ViewGroup?, savedInstanceState: Bundle?): View {
-        return ComposeView(requireContext()).apply {
-            setViewCompositionStrategy(ViewCompositionStrategy.DisposeOnViewTreeLifecycleDestroyed)
-            setContent {
-                val firmware by mViewModel.firmwareLiveData.observeAsState(mViewModel.initialFirmware)
-
-                FirmwareInfoSheet(
-                    firmware = firmware,
-                    onDismiss = { dismiss() },
-                )
-            }
-        }
-    }
-}
 
 @Composable
 internal fun FirmwareInfoSheet(
@@ -136,7 +66,6 @@ internal fun FirmwareInfoSheet(
             LocalWindowInfo.current.containerSize.height.toDp() * 0.9f
         }
         val scrollState = rememberScrollState()
-        val nestedScrollConnection = rememberNestedScrollInteropConnection()
 
         Surface(
             color = FirmwareSheetBackground,
@@ -148,7 +77,6 @@ internal fun FirmwareInfoSheet(
             Column(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .nestedScroll(nestedScrollConnection)
                     .navigationBarsPadding()
                     .padding(horizontal = 24.dp, vertical = 22.dp)
                     .verticalScroll(scrollState),

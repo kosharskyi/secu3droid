@@ -155,7 +155,7 @@ class StartScreenFragment : Fragment() {
                     ),
                     actions = StartScreenActions(
                         onConnectOrCancel = { inProgress -> connectBtnClicked(inProgress) },
-                        onLogs = { findNavController().navigate(StartScreenFragmentDirections.openSecuLogsFragment()) },
+                        onLogs = { (requireActivity() as MainActivity).openLogs() },
                         onSettings = { (requireActivity() as MainActivity).openSettings() },
                         onBluetoothDeviceSelected = ::onBluetoothDeviceSelected,
                         onBluetoothSheetDismissed = {

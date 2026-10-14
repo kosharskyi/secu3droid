@@ -1,6 +1,7 @@
 package org.secu3.android.ui.logger
 
 import androidx.compose.material3.SnackbarHostState
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.ui.test.assertCountEquals
 import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.junit4.v2.createComposeRule
@@ -39,7 +40,10 @@ class SecuLogsScreenTest {
                 onBackClick = {},
                 onShareClick = {},
                 onDownloadClick = {},
-                onDeleteClick = {},
+                pendingDeleteFile = null,
+                onDeleteRequest = {},
+                onDeleteCancel = {},
+                onDeleteConfirm = {},
             )
         }
 
@@ -58,7 +62,10 @@ class SecuLogsScreenTest {
                 onBackClick = {},
                 onShareClick = {},
                 onDownloadClick = {},
-                onDeleteClick = {},
+                pendingDeleteFile = null,
+                onDeleteRequest = {},
+                onDeleteCancel = {},
+                onDeleteConfirm = {},
             )
         }
 
@@ -80,7 +87,10 @@ class SecuLogsScreenTest {
                 onBackClick = {},
                 onShareClick = {},
                 onDownloadClick = { savedFile = it },
-                onDeleteClick = {},
+                pendingDeleteFile = null,
+                onDeleteRequest = {},
+                onDeleteCancel = {},
+                onDeleteConfirm = {},
             )
         }
 
@@ -101,7 +111,10 @@ class SecuLogsScreenTest {
                 onBackClick = {},
                 onShareClick = { sharedFile = it },
                 onDownloadClick = {},
-                onDeleteClick = {},
+                pendingDeleteFile = null,
+                onDeleteRequest = {},
+                onDeleteCancel = {},
+                onDeleteConfirm = {},
             )
         }
 
@@ -114,6 +127,7 @@ class SecuLogsScreenTest {
     fun deleteConfirmationInvokesDeleteCallback() {
         val file = createLogFile("secu-log-delete.csv")
         var deletedFile: File? = null
+        val pendingDelete = mutableStateOf<File?>(null)
 
         composeTestRule.setContent {
             SecuLogsScreen(
@@ -122,15 +136,22 @@ class SecuLogsScreenTest {
                 onBackClick = {},
                 onShareClick = {},
                 onDownloadClick = {},
-                onDeleteClick = { deletedFile = it },
+                pendingDeleteFile = pendingDelete.value,
+                onDeleteRequest = { pendingDelete.value = it },
+                onDeleteCancel = { pendingDelete.value = null },
+                onDeleteConfirm = { deletedFile = pendingDelete.value; pendingDelete.value = null },
             )
         }
 
         composeTestRule.onNodeWithContentDescription(context.getString(R.string.delete_log_file)).performClick()
         composeTestRule.onNodeWithText(context.getString(R.string.dialog_confirm_delete_log_file_title)).assertIsDisplayed()
         composeTestRule.onNodeWithText(context.getString(R.string.dialog_confirm_delete_log_message)).assertIsDisplayed()
-        composeTestRule.onNodeWithText(context.getString(android.R.string.ok)).performClick()
+        composeTestRule.onNodeWithText(context.getString(android.R.string.cancel)).performClick()
+        assertEquals(null, deletedFile)
+        composeTestRule.onNodeWithText(file.name).assertIsDisplayed()
 
+        composeTestRule.onNodeWithContentDescription(context.getString(R.string.delete_log_file)).performClick()
+        composeTestRule.onNodeWithText(context.getString(android.R.string.ok)).performClick()
         assertEquals(file, deletedFile)
     }
 
@@ -145,7 +166,10 @@ class SecuLogsScreenTest {
                 onBackClick = { clicked = true },
                 onShareClick = {},
                 onDownloadClick = {},
-                onDeleteClick = {},
+                pendingDeleteFile = null,
+                onDeleteRequest = {},
+                onDeleteCancel = {},
+                onDeleteConfirm = {},
             )
         }
 

@@ -33,7 +33,7 @@ import org.secu3.android.models.packets.input.FirmwareInfoPacket
 import javax.inject.Inject
 
 @HiltViewModel
-class FirmwareDialogViewModel @Inject constructor(private val secu3ConnectionManager: Secu3ConnectionManager) : ViewModel() {
+class FirmwareViewModel @Inject constructor(private val secu3ConnectionManager: Secu3ConnectionManager) : ViewModel() {
 
     val initialFirmware: FirmwareInfoPacket?
         get() = secu3ConnectionManager.fwInfo

@@ -30,10 +30,12 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.asLiveData
 import androidx.lifecycle.viewModelScope
 import dagger.hilt.android.lifecycle.HiltViewModel
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.distinctUntilChangedBy
-import kotlinx.coroutines.flow.filter
+import kotlinx.coroutines.flow.filterIsInstance
 import kotlinx.coroutines.flow.first
-import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.launch
 import org.secu3.android.connection.ConnectionState
 import org.secu3.android.connection.Secu3ConnectionManager
@@ -45,16 +47,16 @@ import javax.inject.Inject
 @HiltViewModel
 class ErrorsViewModel @Inject constructor(private val secu3ConnectionManager: Secu3ConnectionManager) : ViewModel() {
 
-    val connectionStatusLiveData: LiveData<ConnectionState>
-        get() = secu3ConnectionManager.connectionStateFlow.asLiveData()
+    val connectionStatusLiveData: LiveData<ConnectionState> = secu3ConnectionManager.connectionStateFlow.asLiveData()
 
-    val checkEngineSavedLiveData: LiveData<CheckEngineSavedErrorsPacket>
-        get() = secu3ConnectionManager.receivedPacketFlow.filter { it is CheckEngineSavedErrorsPacket }
-            .map { it as CheckEngineSavedErrorsPacket }.asLiveData()
+    val checkEngineSavedLiveData: LiveData<CheckEngineSavedErrorsPacket> =
+        secu3ConnectionManager.receivedPacketFlow.filterIsInstance<CheckEngineSavedErrorsPacket>().asLiveData()
 
-    val checkEngineLiveData: LiveData<CheckEngineErrorsPacket>
-        get() = secu3ConnectionManager.receivedPacketFlow.filter { it is CheckEngineErrorsPacket }
-            .map { it as CheckEngineErrorsPacket }.distinctUntilChangedBy { it.errors }.asLiveData()
+    val checkEngineLiveData: LiveData<CheckEngineErrorsPacket> = secu3ConnectionManager.receivedPacketFlow
+        .filterIsInstance<CheckEngineErrorsPacket>().distinctUntilChangedBy { it.errors }.asLiveData()
+
+    private val _showClearConfirmation = MutableStateFlow(false)
+    val showClearConfirmation: StateFlow<Boolean> = _showClearConfirmation.asStateFlow()
 
     init {
         waitSavedErrors()
@@ -73,6 +75,19 @@ class ErrorsViewModel @Inject constructor(private val secu3ConnectionManager: Se
     fun clearErrors() {
         waitSavedErrors()
         secu3ConnectionManager.sendOutPacket(CheckEngineSavedErrorsPacket())
+    }
+
+    fun requestClearConfirmation() {
+        _showClearConfirmation.value = true
+    }
+
+    fun dismissClearConfirmation() {
+        _showClearConfirmation.value = false
+    }
+
+    fun confirmClearErrors() {
+        _showClearConfirmation.value = false
+        clearErrors()
     }
 
 }

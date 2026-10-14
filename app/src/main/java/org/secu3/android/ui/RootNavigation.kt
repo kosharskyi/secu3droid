@@ -22,12 +22,18 @@ import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
 import org.secu3.android.ui.compose.SecuComposeTheme
+import org.secu3.android.ui.errors.ErrorsRoute
+import org.secu3.android.ui.firmware.FirmwareRoute
+import org.secu3.android.ui.logger.SecuLogsRoute
 import org.secu3.android.ui.parameters.ParametersRoute
 import org.secu3.android.ui.settings.SettingsRoute
 
 internal const val LEGACY_ROUTE = "legacy"
 internal const val PARAMETERS_ROUTE = "parameters"
 internal const val SETTINGS_ROUTE = "settings"
+internal const val ERRORS_ROUTE = "errors"
+internal const val LOGS_ROUTE = "logs"
+internal const val FIRMWARE_ROUTE = "firmware"
 
 @Composable
 internal fun RootNavigation(activity: MainActivity) {
@@ -60,6 +66,15 @@ internal fun RootNavigation(activity: MainActivity) {
             }
             composable(SETTINGS_ROUTE) { entry ->
                 SettingsRoute(entry, activity, onNavigateUp = { navController.popBackStack() })
+            }
+            composable(ERRORS_ROUTE) { entry ->
+                ErrorsRoute(entry, activity, onNavigateUp = { navController.popBackStack() })
+            }
+            composable(LOGS_ROUTE) { entry ->
+                SecuLogsRoute(entry, activity, onNavigateUp = { navController.popBackStack() })
+            }
+            composable(FIRMWARE_ROUTE) { entry ->
+                FirmwareRoute(entry, activity, onDismiss = { navController.popBackStack() })
             }
         }
     }
