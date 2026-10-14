@@ -60,7 +60,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.setValue
 import dagger.hilt.android.AndroidEntryPoint
 import org.secu3.android.connection.Connected
-import org.secu3.android.ui.settings.SettingsActivity
+import org.secu3.android.ui.MainActivity
 
 @AndroidEntryPoint
 class StartScreenFragment : Fragment() {
@@ -156,7 +156,7 @@ class StartScreenFragment : Fragment() {
                     actions = StartScreenActions(
                         onConnectOrCancel = { inProgress -> connectBtnClicked(inProgress) },
                         onLogs = { findNavController().navigate(StartScreenFragmentDirections.openSecuLogsFragment()) },
-                        onSettings = { startActivity(Intent(requireContext(), SettingsActivity::class.java)) },
+                        onSettings = { (requireActivity() as MainActivity).openSettings() },
                         onBluetoothDeviceSelected = ::onBluetoothDeviceSelected,
                         onBluetoothSheetDismissed = {
                             viewModel.showBottomSheet.value = false

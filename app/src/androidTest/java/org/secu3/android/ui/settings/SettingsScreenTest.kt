@@ -56,7 +56,7 @@ class SettingsScreenTest {
         var back = false
         compose.setContent {
             SecuComposeTheme {
-                SettingsFragment().SettingsContent(state.value, null, { back = true }, { key, value ->
+                SettingsContent(state.value, null, { back = true }, { key, value ->
                     toggled += key to value
                     state.value = when (key) {
                         R.string.pref_write_log_key -> state.value.copy(writeLog = value)
@@ -106,13 +106,13 @@ class SettingsScreenTest {
 
     @Test fun delimiterSelectionAndRetryValidationConfirmAndCancelWork() {
         val current = mutableStateOf(initial)
-        val dialog = mutableStateOf<SettingsFragment.SettingsDialog?>(null)
+        val dialog = mutableStateOf<SettingsDialog?>(null)
         var selected = ""
         var confirmed = ""
         compose.setContent {
             SecuComposeTheme {
-                SettingsFragment().SettingsContent(current.value, dialog.value, {}, { _, _ -> }, { selected = it; current.value = current.value.copy(csvDelimiter = it); dialog.value = null },
-                    {}, { dialog.value = SettingsFragment.SettingsDialog.Retries }, { confirmed = it; current.value = current.value.copy(connectionRetries = it); dialog.value = null },
+                SettingsContent(current.value, dialog.value, {}, { _, _ -> }, { selected = it; current.value = current.value.copy(csvDelimiter = it); dialog.value = null },
+                    {}, { dialog.value = SettingsDialog.Retries }, { confirmed = it; current.value = current.value.copy(connectionRetries = it); dialog.value = null },
                     { dialog.value = it }, { dialog.value = null }, {})
             }
         }

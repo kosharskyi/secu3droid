@@ -55,7 +55,6 @@ import org.secu3.android.connection.InProgress
 import org.secu3.android.connection.SecuConnectionService
 import org.secu3.android.models.packets.input.FirmwareInfoPacket
 import org.secu3.android.network.models.GitHubRelease
-import org.secu3.android.ui.settings.SettingsActivity
 import org.secu3.android.ui.MainActivity
 
 @AndroidEntryPoint
@@ -100,7 +99,7 @@ class HomeFragment : Fragment() {
                                 }
                             },
                             onLogs = { findNavController().navigate(HomeFragmentDirections.actionOpenSecuLogs()) },
-                            onSettings = { startActivity(Intent(requireContext(), SettingsActivity::class.java)) },
+                            onSettings = { (requireActivity() as MainActivity).openSettings() },
                             onFirmware = { findNavController().navigate(HomeFragmentDirections.actionOpenFirmwareDialog()) },
                             onExitImmediately = { stopServiceAndNavigate() },
                             onExitCancelled = { showExitConfirmation = false },

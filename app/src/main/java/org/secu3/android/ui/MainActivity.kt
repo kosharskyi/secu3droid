@@ -45,12 +45,13 @@ class MainActivity : AppCompatActivity() {
     private val viewModel: MainActivityViewModel by viewModels()
     private var rootNavController: NavHostController? = null
     internal val rootNavigationController: NavHostController? get() = rootNavController
-    private var pendingParametersOpen = false
-    private var parametersRouteActive = false
+    private var pendingComposeRoute: String? = null
+    private var activeComposeRoute: String? = null
     private lateinit var legacyContainer: View
     private lateinit var composeNavigationView: ComposeView
 
     companion object {
+        private const val STATE_ACTIVE_COMPOSE_ROUTE = "active_compose_route"
         private const val STATE_PARAMETERS_ROUTE_ACTIVE = "parameters_route_active"
     }
 
@@ -72,62 +73,73 @@ class MainActivity : AppCompatActivity() {
                 bottomToBottom = ConstraintLayout.LayoutParams.PARENT_ID
             },
         )
-        parametersRouteActive = savedInstanceState?.getBoolean(STATE_PARAMETERS_ROUTE_ACTIVE) == true
-        if (parametersRouteActive) {
+        activeComposeRoute = savedInstanceState?.getString(STATE_ACTIVE_COMPOSE_ROUTE)
+            ?: if (savedInstanceState?.getBoolean(STATE_PARAMETERS_ROUTE_ACTIVE) == true) PARAMETERS_ROUTE else null
+        if (activeComposeRoute != null) {
             if (setNativeHostMaxLifecycle(Lifecycle.State.CREATED)) {
                 legacyContainer.visibility = View.GONE
                 composeNavigationView.visibility = View.VISIBLE
             } else {
-                pendingParametersOpen = true
+                pendingComposeRoute = activeComposeRoute
             }
         }
     }
 
     override fun onSaveInstanceState(outState: Bundle) {
-        outState.putBoolean(STATE_PARAMETERS_ROUTE_ACTIVE, parametersRouteActive)
+        outState.putString(STATE_ACTIVE_COMPOSE_ROUTE, activeComposeRoute)
+        outState.putBoolean(STATE_PARAMETERS_ROUTE_ACTIVE, activeComposeRoute == PARAMETERS_ROUTE)
         super.onSaveInstanceState(outState)
     }
 
     override fun onPostResume() {
         super.onPostResume()
         when (rootNavController?.currentDestination?.route) {
-            PARAMETERS_ROUTE -> showParametersOverlay()
+            PARAMETERS_ROUTE, SETTINGS_ROUTE -> showComposeOverlay(rootNavController?.currentDestination?.route)
             LEGACY_ROUTE -> showLegacyHost()
         }
-        processPendingParametersNavigation()
+        processPendingComposeNavigation()
     }
 
-    private fun processPendingParametersNavigation() {
+    private fun processPendingComposeNavigation() {
         val route = rootNavController?.currentDestination?.route ?: return
-        if (pendingParametersOpen) {
-            pendingParametersOpen = false
-            if (route != PARAMETERS_ROUTE) {
-                openParameters()
+        val pendingRoute = pendingComposeRoute
+        if (pendingRoute != null) {
+            pendingComposeRoute = null
+            if (route != pendingRoute) {
+                openComposeDestination(pendingRoute)
             } else {
-                showParametersOverlay()
+                showComposeOverlay(pendingRoute)
             }
         }
     }
 
     fun openParameters() {
+        openComposeDestination(PARAMETERS_ROUTE)
+    }
+
+    fun openSettings() {
+        openComposeDestination(SETTINGS_ROUTE)
+    }
+
+    private fun openComposeDestination(route: String) {
         val controller = rootNavController
         if (supportFragmentManager.isStateSaved || controller?.currentDestination == null) {
-            pendingParametersOpen = true
+            pendingComposeRoute = route
             return
         }
-        if (controller.currentDestination?.route == PARAMETERS_ROUTE) return
-        if (!showParametersOverlay()) {
-            pendingParametersOpen = true
+        if (controller.currentDestination?.route == route) return
+        if (!showComposeOverlay(route)) {
+            pendingComposeRoute = route
             return
         }
-        controller.navigate(PARAMETERS_ROUTE) { launchSingleTop = true }
+        controller.navigate(route) { launchSingleTop = true }
     }
 
     internal fun attachRootNavController(controller: NavHostController) {
         rootNavController = controller
-        if (pendingParametersOpen && lifecycle.currentState.isAtLeast(Lifecycle.State.RESUMED)) {
+        if (pendingComposeRoute != null && lifecycle.currentState.isAtLeast(Lifecycle.State.RESUMED)) {
             onRootDestinationChanged(controller.currentDestination?.route)
-            processPendingParametersNavigation()
+            processPendingComposeNavigation()
         }
     }
 
@@ -137,17 +149,18 @@ class MainActivity : AppCompatActivity() {
 
     internal fun onRootDestinationChanged(route: String?) {
         when (route) {
-            PARAMETERS_ROUTE -> showParametersOverlay()
+            PARAMETERS_ROUTE, SETTINGS_ROUTE -> showComposeOverlay(route)
             LEGACY_ROUTE -> showLegacyHost()
         }
-        if (pendingParametersOpen && lifecycle.currentState.isAtLeast(Lifecycle.State.RESUMED)) {
-            processPendingParametersNavigation()
+        if (pendingComposeRoute != null && lifecycle.currentState.isAtLeast(Lifecycle.State.RESUMED)) {
+            processPendingComposeNavigation()
         }
     }
 
-    private fun showParametersOverlay(): Boolean {
+    private fun showComposeOverlay(route: String?): Boolean {
+        if (route == null) return false
         if (supportFragmentManager.isStateSaved || !setNativeHostMaxLifecycle(Lifecycle.State.CREATED)) return false
-        parametersRouteActive = true
+        activeComposeRoute = route
         legacyContainer.visibility = View.GONE
         composeNavigationView.visibility = View.VISIBLE
         return true
@@ -155,9 +168,10 @@ class MainActivity : AppCompatActivity() {
 
     private fun showLegacyHost(): Boolean {
         if (supportFragmentManager.isStateSaved || !setNativeHostMaxLifecycle(Lifecycle.State.RESUMED)) return false
-        parametersRouteActive = false
+        activeComposeRoute = null
         legacyContainer.visibility = View.VISIBLE
         composeNavigationView.visibility = View.GONE
+        handleKeepScreenOn()
         return true
     }
 

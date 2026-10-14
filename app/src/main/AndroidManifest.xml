@@ -95,9 +95,6 @@
                 android:resource="@xml/device_filter" />
         </activity>
 
-        <activity
-            android:name=".ui.settings.SettingsActivity"
-            android:label="@string/title_activity_settings" />
 
         <provider
             android:name="androidx.core.content.FileProvider"

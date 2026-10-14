@@ -47,7 +47,7 @@ class AboutContentTest {
 
     @Test fun localizedAboutContentShowsVersionLicenseAndSource() {
         compose.setContent {
-            SecuComposeTheme { AboutDialog().AboutContent(open = {}) }
+            SecuComposeTheme { AboutContent(open = {}) }
         }
         compose.onNodeWithText(context.getString(R.string.about_title)).assertIsDisplayed()
         compose.onNodeWithText("${context.getString(R.string.about_version)} ${BuildConfig.VERSION_NAME}").assertIsDisplayed()
@@ -60,7 +60,7 @@ class AboutContentTest {
         val linkCenter = androidx.compose.runtime.mutableStateOf(Offset.Zero)
         compose.setContent {
             SecuComposeTheme {
-                AboutDialog().AboutContent(
+                AboutContent(
                     open = { opened += it },
                     onLinkBounds = { resource, bounds ->
                         if (resource == R.string.about_sources) linkCenter.value = bounds.center

@@ -23,9 +23,11 @@ import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
 import org.secu3.android.ui.compose.SecuComposeTheme
 import org.secu3.android.ui.parameters.ParametersRoute
+import org.secu3.android.ui.settings.SettingsRoute
 
 internal const val LEGACY_ROUTE = "legacy"
 internal const val PARAMETERS_ROUTE = "parameters"
+internal const val SETTINGS_ROUTE = "settings"
 
 @Composable
 internal fun RootNavigation(activity: MainActivity) {
@@ -55,6 +57,9 @@ internal fun RootNavigation(activity: MainActivity) {
             composable(LEGACY_ROUTE) { Box(Modifier.fillMaxSize()) }
             composable(PARAMETERS_ROUTE) { entry ->
                 ParametersRoute(entry, activity, navController)
+            }
+            composable(SETTINGS_ROUTE) { entry ->
+                SettingsRoute(entry, activity, onNavigateUp = { navController.popBackStack() })
             }
         }
     }

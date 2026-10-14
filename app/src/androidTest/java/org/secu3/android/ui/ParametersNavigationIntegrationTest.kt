@@ -95,13 +95,63 @@ class ParametersNavigationIntegrationTest {
         assertNull(reopenedViewModel.parameterEditSession)
     }
 
+    @Test fun startAndHomeSettingsRoutesCapLegacyHostAndRestoreItOnBothBackPaths() {
+        val nativeHost = nativeHost()
+        compose.onNodeWithContentDescription("Settings icon").performClick()
+        compose.waitForIdle()
+        assertOnSettingsRoute(nativeHost)
+        compose.onNodeWithContentDescription(compose.activity.getString(R.string.back)).performClick()
+        compose.waitForIdle()
+        assertNativeHostRestored(nativeHost, R.id.startScreenFragment)
+
+        compose.onNodeWithContentDescription("Settings icon").performClick()
+        compose.waitForIdle()
+        assertOnSettingsRoute(nativeHost)
+        InstrumentationRegistry.getInstrumentation().sendKeyDownUpSync(KeyEvent.KEYCODE_BACK)
+        compose.waitForIdle()
+        assertNativeHostRestored(nativeHost, R.id.startScreenFragment)
+
+        compose.activityRule.scenario.onActivity { nativeHost.navController.navigate(R.id.homeFragment) }
+        compose.waitForIdle()
+        compose.onNodeWithTag("home-card-settings").performClick()
+        compose.waitForIdle()
+        assertOnSettingsRoute(nativeHost)
+        compose.onNodeWithContentDescription(compose.activity.getString(R.string.back)).performClick()
+        compose.waitForIdle()
+        assertNativeHostRestored(nativeHost, R.id.homeFragment)
+
+        compose.onNodeWithTag("home-card-settings").performClick()
+        compose.waitForIdle()
+        assertOnSettingsRoute(nativeHost)
+        InstrumentationRegistry.getInstrumentation().sendKeyDownUpSync(KeyEvent.KEYCODE_BACK)
+        compose.waitForIdle()
+        assertNativeHostRestored(nativeHost, R.id.homeFragment)
+    }
+
+    @Test fun settingsOverlayIsRestoredAcrossActivityRecreation() {
+        val nativeHost = nativeHost()
+        compose.onNodeWithContentDescription("Settings icon").performClick()
+        compose.waitForIdle()
+        assertOnSettingsRoute(nativeHost)
+        compose.activityRule.scenario.recreate()
+        compose.waitForIdle()
+        val restoredHost = compose.activity.supportFragmentManager.findFragmentById(R.id.nav_host_fragment) as NavHostFragment
+        assertOnSettingsRoute(restoredHost)
+        compose.onNodeWithText(compose.activity.getString(R.string.title_activity_settings)).assertExists()
+    }
+
     private fun navigateNativeHostToHome(): NavHostFragment {
+        val nativeHost = nativeHost()
+        compose.activityRule.scenario.onActivity { nativeHost.navController.navigate(R.id.homeFragment) }
+        compose.waitForIdle()
+        return nativeHost
+    }
+
+    private fun nativeHost(): NavHostFragment {
         lateinit var nativeHost: NavHostFragment
         compose.activityRule.scenario.onActivity { activity ->
             nativeHost = activity.supportFragmentManager.findFragmentById(R.id.nav_host_fragment) as NavHostFragment
-            nativeHost.navController.navigate(R.id.homeFragment)
         }
-        compose.waitForIdle()
         return nativeHost
     }
 
@@ -121,6 +171,26 @@ class ParametersNavigationIntegrationTest {
 
     private fun assertOnParametersRoute() {
         compose.onNodeWithText(compose.activity.getString(R.string.title_activity_param)).assertExists()
+    }
+
+    private fun assertOnSettingsRoute(nativeHost: NavHostFragment) {
+        compose.activityRule.scenario.onActivity { activity ->
+            assertEquals(Lifecycle.State.CREATED, nativeHost.lifecycle.currentState)
+            assertEquals(View.GONE, activity.findViewById<View>(R.id.nav_host_fragment).visibility)
+            assertEquals(View.VISIBLE, activity.findViewById<View>(R.id.root_compose_nav_view).visibility)
+            assertEquals(SETTINGS_ROUTE, activity.rootNavigationController?.currentDestination?.route)
+        }
+        compose.onNodeWithText(compose.activity.getString(R.string.title_activity_settings)).assertExists()
+    }
+
+    private fun assertNativeHostRestored(nativeHost: NavHostFragment, destination: Int) {
+        compose.activityRule.scenario.onActivity { activity ->
+            assertEquals(destination, nativeHost.navController.currentDestination?.id)
+            assertEquals(Lifecycle.State.RESUMED, nativeHost.lifecycle.currentState)
+            assertEquals(View.VISIBLE, activity.findViewById<View>(R.id.nav_host_fragment).visibility)
+            assertEquals(View.GONE, activity.findViewById<View>(R.id.root_compose_nav_view).visibility)
+            assertEquals(LEGACY_ROUTE, activity.rootNavigationController?.currentDestination?.route)
+        }
     }
 
     private fun clickParametersToolbarBack() {
