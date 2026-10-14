@@ -27,6 +27,7 @@ package org.secu3.android.ui.parameters
 import android.widget.Toast
 import androidx.compose.runtime.*
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalResources
 import androidx.compose.ui.res.stringArrayResource
 import androidx.compose.ui.res.stringResource
 import org.secu3.android.R
@@ -45,10 +46,11 @@ internal fun ParameterPageContent(
     onEdit: (ParameterEditRequest) -> Unit,
 ) {
     val context = LocalContext.current
+    val resources = LocalResources.current
     fun intEdit(title: Int, value: Int, step: Int, max: Int, min: Int, change: (Int) -> Unit) =
-        onEdit(ParameterEditRequest.IntValue(context.getString(title), value, min, max, step, change))
+        onEdit(ParameterEditRequest.IntValue(resources.getString(title), value, min, max, step, change))
     fun floatEdit(title: Int, value: Float, step: Float, max: Float, min: Float, precision: Int, change: (Float) -> Unit) =
-        onEdit(ParameterEditRequest.FloatValue(context.getString(title), value, min, max, step, precision, change))
+        onEdit(ParameterEditRequest.FloatValue(resources.getString(title), value, min, max, step, precision, change))
 
     when (titleRes) {
         R.string.params_tab_start_title -> {
@@ -130,12 +132,12 @@ internal fun ParameterPageContent(
         }
         R.string.params_tab_universal_outputs_title -> {
             val h = viewModel.universalOutputsStateHolder
-            UniversalOutputsScreen(h.values, UniOutParamPacket.CONDITION.entries.associate { it.id to context.getString(it.strId) },
-                context.resources.getStringArray(R.array.logical_functions).toList(), h::updateOutput, h::updatePairFunction)
+            UniversalOutputsScreen(h.values, UniOutParamPacket.CONDITION.entries.associate { it.id to resources.getString(it.strId) },
+                stringArrayResource(R.array.logical_functions).toList(), h::updateOutput, h::updatePairFunction)
         }
         R.string.params_tab_fuel_injection_title -> {
             val h = viewModel.fuelInjectionStateHolder
-            FuelInjectionScreen(h.uiState, InjctrParPacket.InjConfig.entries.associate { it.id to context.getString(it.strId) }, { n ->
+            FuelInjectionScreen(h.uiState, InjctrParPacket.InjConfig.entries.associate { it.id to resources.getString(it.strId) }, { n ->
                 h.editSpec(n)?.let { s -> if (s.integer) intEdit(s.title, s.value.toInt(), s.step.toInt(), s.max.toInt(), s.min.toInt()) { h.edit(n, it.toFloat()) } else floatEdit(s.title, s.value, s.step, s.max, s.min, s.precision) { h.edit(n, it.toFloat()) } }
             }, h::changeConfig, h::changePulses, h::changeAngleSpec, h::changeFlag)
         }

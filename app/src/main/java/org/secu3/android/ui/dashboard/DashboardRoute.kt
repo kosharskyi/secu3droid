@@ -18,7 +18,8 @@ import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.livedata.observeAsState
-import androidx.compose.runtime.remember
+import androidx.compose.runtime.saveable.mapSaver
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.platform.LocalLifecycleOwner
 import androidx.core.view.ViewCompat
 import androidx.core.view.WindowCompat
@@ -44,16 +45,18 @@ internal fun DashboardRoute(entry: NavBackStackEntry, activity: MainActivity) {
     val packet by viewModel.packetLiveData.observeAsState()
     val connection by viewModel.statusLiveData.observeAsState()
     val lifecycle = LocalLifecycleOwner.current.lifecycle
-    val previousWindowState = remember(activity) { DashboardWindowState.capture(activity.window) }
+    val previousWindowState = rememberSaveable(entry.id, saver = DashboardWindowState.Saver) {
+        DashboardWindowState.capture(activity.window)
+    }
 
     LaunchedEffect(lifecycle, viewModel, activity) {
         lifecycle.repeatOnLifecycle(Lifecycle.State.RESUMED) {
             viewModel.setTask(Task.Secu3ReadSensors)
-            previousWindowState.enterDashboard()
+            previousWindowState.enterDashboard(activity.window)
             try {
                 awaitCancellation()
             } finally {
-                previousWindowState.restore(viewModel.isKeepScreenAliveActive)
+                previousWindowState.restore(activity.window, viewModel.isKeepScreenAliveActive)
             }
         }
     }
@@ -77,16 +80,14 @@ internal fun DashboardRoute(entry: NavBackStackEntry, activity: MainActivity) {
 }
 
 private data class DashboardWindowState(
-    val window: Window,
     val statusBarColor: Int,
     val navigationBarColor: Int,
     val lightStatusBars: Boolean,
     val lightNavigationBars: Boolean,
     val systemBarsBehavior: Int,
-    val statusBarsVisible: Boolean,
-    val navigationBarsVisible: Boolean,
+    val visibleSystemBarsMask: Int,
 ) {
-    fun enterDashboard() {
+    fun enterDashboard(window: Window) {
         WindowCompat.setDecorFitsSystemWindows(window, false)
         WindowInsetsControllerCompat(window, window.decorView).apply {
             isAppearanceLightStatusBars = false
@@ -96,7 +97,7 @@ private data class DashboardWindowState(
         window.addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON)
     }
 
-    fun restore(keepScreenOnPreference: Boolean) {
+    fun restore(window: Window, keepScreenOnPreference: Boolean) {
         window.statusBarColor = statusBarColor
         window.navigationBarColor = navigationBarColor
         WindowCompat.setDecorFitsSystemWindows(window, true)
@@ -104,28 +105,55 @@ private data class DashboardWindowState(
             isAppearanceLightStatusBars = lightStatusBars
             isAppearanceLightNavigationBars = lightNavigationBars
             systemBarsBehavior = this@DashboardWindowState.systemBarsBehavior
-            if (statusBarsVisible) show(WindowInsetsCompat.Type.statusBars())
-            else hide(WindowInsetsCompat.Type.statusBars())
-            if (navigationBarsVisible) show(WindowInsetsCompat.Type.navigationBars())
-            else hide(WindowInsetsCompat.Type.navigationBars())
+            show(visibleSystemBarsMask)
+            hide(WindowInsetsCompat.Type.systemBars() and visibleSystemBarsMask.inv())
         }
         if (keepScreenOnPreference) window.addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON)
         else window.clearFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON)
     }
 
     companion object {
+        val Saver = mapSaver(
+            save = { state ->
+                mapOf(
+                    "statusBarColor" to state.statusBarColor,
+                    "navigationBarColor" to state.navigationBarColor,
+                    "lightStatusBars" to state.lightStatusBars,
+                    "lightNavigationBars" to state.lightNavigationBars,
+                    "systemBarsBehavior" to state.systemBarsBehavior,
+                    "visibleSystemBarsMask" to state.visibleSystemBarsMask,
+                )
+            },
+            restore = { saved ->
+                DashboardWindowState(
+                    statusBarColor = saved.getValue("statusBarColor") as Int,
+                    navigationBarColor = saved.getValue("navigationBarColor") as Int,
+                    lightStatusBars = saved.getValue("lightStatusBars") as Boolean,
+                    lightNavigationBars = saved.getValue("lightNavigationBars") as Boolean,
+                    systemBarsBehavior = saved.getValue("systemBarsBehavior") as Int,
+                    visibleSystemBarsMask = saved.getValue("visibleSystemBarsMask") as Int,
+                )
+            },
+        )
+
         fun capture(window: Window): DashboardWindowState {
             val insets = WindowInsetsControllerCompat(window, window.decorView)
             val rootInsets = ViewCompat.getRootWindowInsets(window.decorView)
+            val systemBarTypes = listOf(
+                WindowInsetsCompat.Type.statusBars(),
+                WindowInsetsCompat.Type.navigationBars(),
+                WindowInsetsCompat.Type.captionBar(),
+                WindowInsetsCompat.Type.systemOverlays(),
+            )
             return DashboardWindowState(
-                window = window,
                 statusBarColor = window.statusBarColor,
                 navigationBarColor = window.navigationBarColor,
                 lightStatusBars = insets.isAppearanceLightStatusBars,
                 lightNavigationBars = insets.isAppearanceLightNavigationBars,
                 systemBarsBehavior = insets.systemBarsBehavior,
-                statusBarsVisible = rootInsets?.isVisible(WindowInsetsCompat.Type.statusBars()) ?: true,
-                navigationBarsVisible = rootInsets?.isVisible(WindowInsetsCompat.Type.navigationBars()) ?: true,
+                visibleSystemBarsMask = systemBarTypes.fold(0) { mask, type ->
+                    if (rootInsets?.isVisible(type) != false) mask or type else mask
+                },
             )
         }
     }

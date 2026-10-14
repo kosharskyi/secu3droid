@@ -33,6 +33,7 @@ import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.performScrollTo
 import androidx.compose.ui.test.onNodeWithTag
+import androidx.compose.ui.test.getUnclippedBoundsInRoot
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
@@ -138,19 +139,19 @@ class HomeScreenTest {
 
         var layout by mutableStateOf(HomeLayout.GRID)
         compose.setContent { HomeScreen(HomeScreenState(), HomeScreenActions(), layoutOverride = layout) }
-        val dashboardGrid = compose.onNodeWithTag("home-card-dashboard").fetchSemanticsNode().boundsInRoot
-        val sensorsGrid = compose.onNodeWithTag("home-card-sensors").fetchSemanticsNode().boundsInRoot
-        assertTrue("Dashboard is full width above the two-column grid", dashboardGrid.width > sensorsGrid.width)
+        val dashboardGrid = compose.onNodeWithTag("home-card-dashboard").getUnclippedBoundsInRoot()
+        val sensorsGrid = compose.onNodeWithTag("home-card-sensors").getUnclippedBoundsInRoot()
+        assertTrue("Dashboard is full width above the two-column grid", (dashboardGrid.right - dashboardGrid.left) > (sensorsGrid.right - sensorsGrid.left))
         assertTrue("Grid cards are below the dashboard", sensorsGrid.top > dashboardGrid.top)
 
         compose.runOnIdle { layout = HomeLayout.LANDSCAPE_COLUMNS }
-        val dashboardRow = compose.onNodeWithTag("home-card-dashboard").fetchSemanticsNode().boundsInRoot
-        val sensorsRow = compose.onNodeWithTag("home-card-sensors").fetchSemanticsNode().boundsInRoot
-        assertTrue("Landscape dashboard is taller than a pair card", dashboardRow.height > sensorsRow.height)
+        val dashboardRow = compose.onNodeWithTag("home-card-dashboard").getUnclippedBoundsInRoot()
+        val sensorsRow = compose.onNodeWithTag("home-card-sensors").getUnclippedBoundsInRoot()
+        assertTrue("Landscape dashboard is taller than a pair card", (dashboardRow.bottom - dashboardRow.top) > (sensorsRow.bottom - sensorsRow.top))
         assertTrue("Landscape dashboard precedes sensor column", sensorsRow.left > dashboardRow.left)
-        assertTrue("Sensor and parameter cards stack vertically", compose.onNodeWithTag("home-card-parameters").fetchSemanticsNode().boundsInRoot.top > sensorsRow.top)
-        assertTrue("Errors are in the second pair column", compose.onNodeWithTag("home-card-errors").fetchSemanticsNode().boundsInRoot.left > sensorsRow.left)
-        assertTrue("Logs are in the third pair column", compose.onNodeWithTag("home-card-logs").fetchSemanticsNode().boundsInRoot.left > compose.onNodeWithTag("home-card-errors").fetchSemanticsNode().boundsInRoot.left)
+        assertTrue("Sensor and parameter cards stack vertically", compose.onNodeWithTag("home-card-parameters").getUnclippedBoundsInRoot().top > sensorsRow.top)
+        assertTrue("Errors are in the second pair column", compose.onNodeWithTag("home-card-errors").getUnclippedBoundsInRoot().left > sensorsRow.left)
+        assertTrue("Logs are in the third pair column", compose.onNodeWithTag("home-card-logs").getUnclippedBoundsInRoot().left > compose.onNodeWithTag("home-card-errors").getUnclippedBoundsInRoot().left)
     }
 
     @Test fun landscapeScrollReachesSettingsAndCardsRemainClickable() {

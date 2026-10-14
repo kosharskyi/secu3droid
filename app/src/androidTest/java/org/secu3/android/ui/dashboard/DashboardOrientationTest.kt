@@ -16,7 +16,6 @@ import androidx.preference.PreferenceManager
 import androidx.test.core.app.ActivityScenario
 import androidx.test.platform.app.InstrumentationRegistry
 import org.junit.Assert.assertEquals
-import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue
 import org.junit.Test
 import org.secu3.android.R
@@ -50,6 +49,7 @@ class DashboardOrientationTest {
                     var originalLightStatus = false
                     var originalLightNavigation = false
                     var originalBarsBehavior = 0
+                    var originalSystemBarsMask = 0
                     scenario.onActivity { activity ->
                         val controller = WindowInsetsControllerCompat(activity.window, activity.window.decorView)
                         originalStatusColor = activity.window.statusBarColor
@@ -57,6 +57,8 @@ class DashboardOrientationTest {
                         originalLightStatus = controller.isAppearanceLightStatusBars
                         originalLightNavigation = controller.isAppearanceLightNavigationBars
                         originalBarsBehavior = controller.systemBarsBehavior
+                        originalSystemBarsMask = systemBarsVisibilityMask(activity)
+                        assertEquals(primarySystemBarsMask, originalSystemBarsMask and primarySystemBarsMask)
                         activity.openDashboard()
                     }
 
@@ -69,7 +71,7 @@ class DashboardOrientationTest {
                     assertDashboardActive(scenario)
 
                     scenario.onActivity { activity -> requireNotNull(activity.rootNavigationController).popBackStack() }
-                    awaitLegacyUiState(scenario, keepScreenOn)
+                    awaitHomeWindowState(scenario, keepScreenOn, originalSystemBarsMask)
                     scenario.onActivity { activity ->
                         assertEquals(ActivityInfo.SCREEN_ORIENTATION_UNSPECIFIED, activity.requestedOrientation)
                         assertEquals(org.secu3.android.ui.HOME_ROUTE, activity.rootNavigationController?.currentDestination?.route)
@@ -79,7 +81,7 @@ class DashboardOrientationTest {
                         assertEquals(originalLightStatus, controller.isAppearanceLightStatusBars)
                         assertEquals(originalLightNavigation, controller.isAppearanceLightNavigationBars)
                         assertEquals(originalBarsBehavior, controller.systemBarsBehavior)
-                        assertTrue(systemBarsVisible(activity))
+                        assertEquals(originalSystemBarsMask, systemBarsVisibilityMask(activity))
                         val keepScreenOnFlag = activity.window.attributes.flags and WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON != 0
                         assertEquals(keepScreenOn, keepScreenOnFlag)
                     }
@@ -95,7 +97,7 @@ class DashboardOrientationTest {
         scenario.onActivity { activity ->
             assertEquals(ActivityInfo.SCREEN_ORIENTATION_SENSOR_LANDSCAPE, activity.requestedOrientation)
             assertEquals(DASHBOARD_ROUTE, activity.rootNavigationController?.currentDestination?.route)
-            assertFalse(systemBarsVisible(activity))
+            assertEquals(0, systemBarsVisibilityMask(activity) and primarySystemBarsMask)
             assertEquals(
                 WindowInsetsControllerCompat.BEHAVIOR_SHOW_TRANSIENT_BARS_BY_SWIPE,
                 WindowInsetsControllerCompat(activity.window, activity.window.decorView).systemBarsBehavior,
@@ -104,8 +106,21 @@ class DashboardOrientationTest {
         }
     }
 
-    private fun systemBarsVisible(activity: MainActivity): Boolean =
-        ViewCompat.getRootWindowInsets(activity.window.decorView)?.isVisible(WindowInsetsCompat.Type.systemBars()) ?: true
+    private fun systemBarsVisibilityMask(activity: MainActivity): Int {
+        val types = listOf(
+            WindowInsetsCompat.Type.statusBars(),
+            WindowInsetsCompat.Type.navigationBars(),
+            WindowInsetsCompat.Type.captionBar(),
+            WindowInsetsCompat.Type.systemOverlays(),
+        )
+        val insets = ViewCompat.getRootWindowInsets(activity.window.decorView)
+        return types.fold(0) { mask, type ->
+            if (insets?.isVisible(type) != false) mask or type else mask
+        }
+    }
+
+    private val primarySystemBarsMask: Int
+        get() = WindowInsetsCompat.Type.statusBars() or WindowInsetsCompat.Type.navigationBars()
 
     private fun awaitDashboardUiState(scenario: ActivityScenario<MainActivity>) {
         val timeoutAt = SystemClock.elapsedRealtime() + 10_000L
@@ -114,7 +129,7 @@ class DashboardOrientationTest {
             InstrumentationRegistry.getInstrumentation().waitForIdleSync()
             scenario.onActivity { activity ->
                 ready = activity.rootNavigationController?.currentDestination?.route == DASHBOARD_ROUTE &&
-                    !systemBarsVisible(activity) &&
+                    (systemBarsVisibilityMask(activity) and primarySystemBarsMask) == 0 &&
                     activity.window.attributes.flags and WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON != 0
             }
             if (ready) return
@@ -123,20 +138,32 @@ class DashboardOrientationTest {
         assertTrue("Dashboard window effects did not become active", ready)
     }
 
-    private fun awaitLegacyUiState(scenario: ActivityScenario<MainActivity>, keepScreenOn: Boolean) {
+    private fun awaitHomeWindowState(
+        scenario: ActivityScenario<MainActivity>,
+        keepScreenOn: Boolean,
+        expectedSystemBarsMask: Int,
+    ) {
         val timeoutAt = SystemClock.elapsedRealtime() + 10_000L
         var ready = false
+        var observedState = "not observed"
         do {
             InstrumentationRegistry.getInstrumentation().waitForIdleSync()
             scenario.onActivity { activity ->
                 val keepFlag = activity.window.attributes.flags and WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON != 0
-                ready = activity.rootNavigationController?.currentDestination?.route == org.secu3.android.ui.HOME_ROUTE &&
-                    systemBarsVisible(activity) && keepFlag == keepScreenOn
+                val route = activity.rootNavigationController?.currentDestination?.route
+                val requestedOrientation = activity.requestedOrientation
+                val visibleMask = systemBarsVisibilityMask(activity)
+                observedState = "route=$route, systemBarsMask=$visibleMask " +
+                    "(expected=$expectedSystemBarsMask), " +
+                    "keepScreenOn=$keepFlag, requestedOrientation=$requestedOrientation"
+                ready = route == org.secu3.android.ui.HOME_ROUTE &&
+                    visibleMask == expectedSystemBarsMask && keepFlag == keepScreenOn &&
+                    requestedOrientation == ActivityInfo.SCREEN_ORIENTATION_UNSPECIFIED
             }
             if (ready) return
             SystemClock.sleep(50L)
         } while (SystemClock.elapsedRealtime() < timeoutAt)
-        assertTrue("Legacy window effects were not restored", ready)
+        assertTrue("Home window effects were not restored ($observedState)", ready)
     }
 
     private fun awaitConfigurationOrientation(

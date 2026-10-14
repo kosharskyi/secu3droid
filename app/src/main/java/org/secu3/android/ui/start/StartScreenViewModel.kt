@@ -51,19 +51,25 @@ class StartScreenViewModel @Inject constructor(
 
     init { if (isUsbHostSupported) usbManager.deviceList.values.firstOrNull()?.let(::newUsbDeviceAttached) }
 
-    fun isBtEnabled() = bluetoothAdapter?.let { runCatching { it.isEnabled }.getOrDefault(false) } ?: false
+    fun isBtEnabled() = try { bluetoothAdapter?.isEnabled ?: false } catch (_: SecurityException) { false }
     fun isLocationEnabled(): Boolean = Build.VERSION.SDK_INT < Build.VERSION_CODES.P || Build.VERSION.SDK_INT >= Build.VERSION_CODES.R || locationManager.isLocationEnabled
     fun markLocationSettingsLaunched() { returnFromLocationSettings = true }
     fun consumeLocationSettingsReturn(): Boolean = returnFromLocationSettings.also { returnFromLocationSettings = false }
     fun selectedUsbDevice(): UsbDevice? = usbDevice
     fun isBtDeviceAddressNotSelected(): Boolean {
         val name = prefs.bluetoothDeviceName?.takeIf(String::isNotEmpty) ?: return true
-        val found = runCatching { bluetoothAdapter?.bondedDevices?.firstOrNull { it.name == name } }.getOrNull()
+        val adapter = bluetoothAdapter ?: return true
+        val found = try {
+            adapter.bondedDevices.firstOrNull { it.name == name }
+        } catch (_: SecurityException) {
+            return true
+        }
         if (found == null) prefs.bluetoothDeviceName = null
         return found == null
     }
-    fun getBluetoothDeviceName(device: BluetoothDevice): String? = runCatching { device.name }.getOrNull()
-    private fun bondState(device: BluetoothDevice) = runCatching { device.bondState }.getOrNull()
+    fun getBluetoothDeviceName(device: BluetoothDevice): String? = try { device.name } catch (_: SecurityException) { null }
+    private fun bluetoothAddress(device: BluetoothDevice): String? = try { device.address } catch (_: SecurityException) { null }
+    private fun bondState(device: BluetoothDevice) = try { device.bondState } catch (_: SecurityException) { null }
     private fun saveDevice(device: BluetoothDevice) { prefs.bluetoothDeviceName = getBluetoothDeviceName(device) }
 
     fun startBtDiscovery() {
@@ -78,39 +84,48 @@ class StartScreenViewModel @Inject constructor(
             adapter.startDiscovery()
         } catch (_: SecurityException) { discoveryActive = false; setConnecting(false) }
     }
-    fun cancelBtDiscovery() { discoveryActive = false; runCatching { bluetoothAdapter?.cancelDiscovery() } }
+    fun cancelBtDiscovery() {
+        discoveryActive = false
+        try { bluetoothAdapter?.cancelDiscovery() } catch (_: SecurityException) { }
+    }
     fun addDiscoveredDevice(device: BluetoothDevice) {
         if (!discoveryActive) return
         if (getBluetoothDeviceName(device).isNullOrEmpty()) return
-        if (devices.none { it.address == device.address }) devices += device
+        val address = bluetoothAddress(device) ?: return
+        if (devices.none { bluetoothAddress(it) == address }) devices += device
         publishDevices(show = true)
     }
     fun selectBluetoothDevice(address: String) {
-        val device = devices.firstOrNull { it.address == address } ?: return
+        val device = devices.firstOrNull { bluetoothAddress(it) == address } ?: return
         cancelBtDiscovery()
         when (bondState(device)) {
             BluetoothDevice.BOND_BONDED -> { saveDevice(device); startConnection(null) }
             else -> {
                 bluetoothBondGate.begin(address)
                 setConnecting(true)
-                if (!runCatching { device.createBond() }.getOrDefault(false)) { bluetoothBondGate.cancel(); setConnecting(false) }
+                val started = try { device.createBond() } catch (_: SecurityException) { false }
+                if (!started) { bluetoothBondGate.cancel(); setConnecting(false) }
             }
         }
         _uiState.value = _uiState.value.copy(showBluetoothDevices = false)
     }
     fun onBondStateChanged(device: BluetoothDevice) {
-        if (!bluetoothBondGate.matches(device.address)) return
+        val address = bluetoothAddress(device) ?: return
+        if (!bluetoothBondGate.matches(address)) return
         when (bondState(device)) {
-            BluetoothDevice.BOND_BONDED -> { bluetoothBondGate.complete(device.address); saveDevice(device); startConnection(null) }
+            BluetoothDevice.BOND_BONDED -> { bluetoothBondGate.complete(address); saveDevice(device); startConnection(null) }
             BluetoothDevice.BOND_BONDING -> setConnecting(true)
-            else -> { bluetoothBondGate.complete(device.address); setConnecting(false) }
+            else -> { bluetoothBondGate.complete(address); setConnecting(false) }
         }
     }
     fun showBluetoothRationale() { _uiState.value = _uiState.value.copy(showBluetoothRationale = true) }
     fun dismissBluetoothRationale() { _uiState.value = _uiState.value.copy(showBluetoothRationale = false) }
     fun dismissBluetoothDevices() { _uiState.value = _uiState.value.copy(showBluetoothDevices = false) }
     private fun publishDevices(show: Boolean) {
-        _uiState.value = _uiState.value.copy(showBluetoothDevices = show, bluetoothDevices = devices.mapNotNull { d -> getBluetoothDeviceName(d)?.takeIf(String::isNotEmpty)?.let { StartBluetoothDevice(d.address, it) } })
+        _uiState.value = _uiState.value.copy(showBluetoothDevices = show, bluetoothDevices = devices.mapNotNull { d ->
+            val address = bluetoothAddress(d) ?: return@mapNotNull null
+            getBluetoothDeviceName(d)?.takeIf(String::isNotEmpty)?.let { StartBluetoothDevice(address, it) }
+        })
     }
     private fun setConnecting(value: Boolean) { _uiState.value = _uiState.value.copy(connecting = value) }
     fun startConnection(device: UsbDevice?) {

@@ -106,8 +106,8 @@ internal fun DiagnosticsScreen(
                 },
                 actions = {
                     ConnectionStatusIndicator(status, Modifier.padding(end = 8.dp))
-                    IconButton(onClick = onAdditionalSettings) {
-                        Icon(Icons.Default.Settings, contentDescription = stringResource(R.string.title_activity_settings), modifier = Modifier.testTag("diagnostics-settings-icon"))
+                    IconButton(onClick = onAdditionalSettings, modifier = Modifier.testTag("diagnostics-settings-icon")) {
+                        Icon(Icons.Default.Settings, contentDescription = stringResource(R.string.title_activity_settings))
                     }
                 },
             )

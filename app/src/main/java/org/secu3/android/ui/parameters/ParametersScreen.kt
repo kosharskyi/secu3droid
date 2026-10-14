@@ -192,7 +192,7 @@ internal fun ParametersScreen(
             beyondViewportPageCount = 1,
             modifier = Modifier.weight(1f).fillMaxWidth().testTag("params-pager").onSizeChanged { pagerSize = it },
         ) { index ->
-            val active = hostResumed && lifecycle.currentState.isAtLeast(Lifecycle.State.RESUMED) && index == selectedIndex &&
+            val active = hostResumed && index == selectedIndex &&
                 !pagerState.isScrollInProgress && pagerSize != IntSize.Zero && updatedConnectionState == Connected &&
                 pagerState.layoutInfo.visiblePagesInfo.any { it.index == index }
             val isActiveNow = {

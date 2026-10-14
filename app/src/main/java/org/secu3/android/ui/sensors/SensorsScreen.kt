@@ -216,8 +216,8 @@ internal fun SensorsScreen(
                             val previewOffset = if (!isDragged && activeDragKey?.startsWith("g:") == true) {
                                 dragSlotOffset(dragKey, gaugeDragBaseOrder.map { "g:${it.name}" }, gaugePreviewOrder.map { "g:${it.name}" }, dragBasePositions)
                             } else Offset.Zero
-                            val previewAnimation = previewAnimations.getOrPut(dragKey) {
-                                Animatable(Offset.Zero, Offset.VectorConverter)
+                            val previewAnimation = remember(dragKey) {
+                                previewAnimations.getOrPut(dragKey) { Animatable(Offset.Zero, Offset.VectorConverter) }
                             }
                             val animatedPreviewOffset = previewAnimation.value
                             LaunchedEffect(dragKey, previewOffset) {
@@ -303,8 +303,8 @@ internal fun SensorsScreen(
                             val previewOffset = if (!isDragged && activeDragKey?.startsWith("i:") == true) {
                                 dragSlotOffset(dragKey, indicatorDragBaseOrder.map { "i:${it.name}" }, indicatorPreviewOrder.map { "i:${it.name}" }, dragBasePositions)
                             } else Offset.Zero
-                            val previewAnimation = previewAnimations.getOrPut(dragKey) {
-                                Animatable(Offset.Zero, Offset.VectorConverter)
+                            val previewAnimation = remember(dragKey) {
+                                previewAnimations.getOrPut(dragKey) { Animatable(Offset.Zero, Offset.VectorConverter) }
                             }
                             val animatedPreviewOffset = previewAnimation.value
                             LaunchedEffect(dragKey, previewOffset) {
@@ -420,7 +420,8 @@ private fun GaugeCard(item: GaugeItem, modifier: Modifier, onMenu: () -> Unit) {
 @Composable
 private fun GaugeDial(type: GaugeType, valueText: String, unit: String, modifier: Modifier = Modifier) {
     val context = LocalContext.current
-    val sections = remember(type, context) { type.sections.map { it.start to (it.end to Color(context.getColor(it.color))) } }
+    val resources = androidx.compose.ui.platform.LocalResources.current
+    val sections = remember(type, resources, context.theme) { type.sections.map { it.start to (it.end to Color(resources.getColor(it.color, context.theme))) } }
     val value = valueText.toFloatOrNull() ?: 0f
     val normalized = ((value - type.minValue) / (type.maxValue - type.minValue)).coerceIn(0f, 1f)
     val label = if (type.isInteger) value.toInt().toString() else String.format(Locale.US, "%.1f", value)

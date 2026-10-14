@@ -53,6 +53,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.Role
@@ -154,10 +155,11 @@ private fun selectorValue(code: Int, options: List<String>): String = CarburValu
 
 @Composable
 private fun ParameterValueRow(title: String, units: String, value: Float, precision: Int, tag: String, onClick: () -> Unit) {
+    val locale = LocalConfiguration.current.locales[0]
     Column {
         Row(Modifier.fillMaxWidth().clickable(onClick = onClick).testTag(tag).padding(vertical = 8.dp), verticalAlignment = Alignment.CenterVertically) {
             Text(title, Modifier.weight(1f), style = MaterialTheme.typography.bodyLarge)
-            Text(String.format(java.util.Locale.getDefault(), "%.${precision}f", value) + if (units.isEmpty()) "" else " $units", Modifier.testTag("$tag-value"), textAlign = TextAlign.End)
+            Text(String.format(locale, "%.${precision}f", value) + if (units.isEmpty()) "" else " $units", Modifier.testTag("$tag-value"), textAlign = TextAlign.End)
         }
         HorizontalDivider()
     }

@@ -36,6 +36,7 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
@@ -49,6 +50,7 @@ fun ParameterValueRow(
     testTag: String,
     onClick: () -> Unit,
 ) {
+    val locale = LocalConfiguration.current.locales[0]
     Column {
         Row(
             Modifier.fillMaxWidth().clickable(onClick = onClick).testTag(testTag).padding(vertical = 8.dp),
@@ -56,7 +58,7 @@ fun ParameterValueRow(
         ) {
             Text(title, Modifier.weight(1f), style = MaterialTheme.typography.bodyLarge)
             Text(
-                String.format(java.util.Locale.getDefault(), "%.${precision}f", value) + if (units.isEmpty()) "" else " $units",
+                String.format(locale, "%.${precision}f", value) + if (units.isEmpty()) "" else " $units",
                 Modifier.testTag("$testTag-value"),
                 textAlign = TextAlign.End,
             )
@@ -74,6 +76,7 @@ fun ParameterReadOnlyValueRow(
     testTag: String,
     readOnlyLabel: String,
 ) {
+    val locale = LocalConfiguration.current.locales[0]
     Column(Modifier.fillMaxWidth().testTag(testTag)) {
         Row(Modifier.fillMaxWidth().padding(vertical = 8.dp), verticalAlignment = Alignment.CenterVertically) {
             Column(Modifier.weight(1f)) {
@@ -81,7 +84,7 @@ fun ParameterReadOnlyValueRow(
                 Text(readOnlyLabel, style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
             }
             Text(
-                String.format(java.util.Locale.getDefault(), "%.${precision}f", value) + if (units.isEmpty()) "" else " $units",
+                String.format(locale, "%.${precision}f", value) + if (units.isEmpty()) "" else " $units",
                 Modifier.testTag("$testTag-value"), textAlign = TextAlign.End,
             )
         }

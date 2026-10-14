@@ -29,9 +29,9 @@ import android.content.Intent
 import android.net.Uri
 import androidx.compose.ui.test.assertIsOn
 import androidx.compose.ui.test.assertIsOff
+import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.onNodeWithText
-import androidx.compose.ui.test.assertIsNotDisplayed
 import androidx.compose.ui.test.onNodeWithContentDescription
 import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.junit4.v2.createAndroidComposeRule
@@ -91,10 +91,10 @@ class SettingsPreferencePersistenceTest {
         compose.onNodeWithContentDescription("Settings icon").performClick()
         compose.waitForIdle()
         compose.onNodeWithText(compose.activity.getString(R.string.pref_about_title)).performClick()
-        compose.onNodeWithText(compose.activity.getString(R.string.about_title)).assertExists()
+        compose.onNodeWithTag("settings-about-dialog").assertIsDisplayed()
         InstrumentationRegistry.getInstrumentation().sendKeyDownUpSync(android.view.KeyEvent.KEYCODE_BACK)
         compose.waitForIdle()
-        compose.onNodeWithText(compose.activity.getString(R.string.about_title)).assertIsNotDisplayed()
+        compose.onNodeWithTag("settings-about-dialog").assertDoesNotExist()
     }
 
     @Test fun folderPickerCancelAndGrantFailuresDoNotSaveAndSuccessPersistsOnlyGrantedFlags() {

@@ -17,18 +17,20 @@
  */
 package org.secu3.android.ui.dashboard
 
-import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.requiredSize
-import androidx.compose.ui.Modifier
+import android.content.pm.ActivityInfo
+import android.content.res.Configuration
+import android.os.SystemClock
+import androidx.activity.ComponentActivity
 import androidx.compose.runtime.MutableState
 import androidx.compose.runtime.mutableStateOf
-import androidx.compose.ui.unit.dp
 import androidx.compose.ui.test.assertCountEquals
 import androidx.compose.ui.test.assertIsDisplayed
-import androidx.compose.ui.test.junit4.v2.createComposeRule
+import androidx.compose.ui.test.junit4.v2.createAndroidComposeRule
 import androidx.compose.ui.test.onAllNodesWithText
 import androidx.compose.ui.test.onNodeWithText
 import androidx.test.platform.app.InstrumentationRegistry
+import org.junit.After
+import org.junit.Before
 import org.junit.Rule
 import org.junit.Test
 import org.secu3.android.R
@@ -39,12 +41,33 @@ import org.secu3.android.connection.InProgress
 
 class DashboardContentTest {
     @get:Rule
-    val composeRule = createComposeRule()
+    val composeRule = createAndroidComposeRule<ComponentActivity>()
 
     private val context = InstrumentationRegistry.getInstrumentation().targetContext
     private var contentInstalled = false
     private lateinit var dataState: MutableState<DashboardViewData?>
     private lateinit var connectionState: MutableState<ConnectionState?>
+
+    @Before
+    fun enterLandscapeHost() {
+        composeRule.activityRule.scenario.onActivity {
+            it.requestedOrientation = ActivityInfo.SCREEN_ORIENTATION_LANDSCAPE
+        }
+        val timeoutAt = SystemClock.elapsedRealtime() + 10_000L
+        while (SystemClock.elapsedRealtime() < timeoutAt) {
+            InstrumentationRegistry.getInstrumentation().waitForIdleSync()
+            if (composeRule.activity.resources.configuration.orientation == Configuration.ORIENTATION_LANDSCAPE) return
+            SystemClock.sleep(50L)
+        }
+        error("Compose test host did not reach landscape orientation")
+    }
+
+    @After
+    fun restoreHostOrientation() {
+        composeRule.activityRule.scenario.onActivity {
+            it.requestedOrientation = ActivityInfo.SCREEN_ORIENTATION_UNSPECIFIED
+        }
+    }
 
     @Test
     fun displaysPrimaryValuesUnitsAndSecondaryReadoutsInLandscape() {
@@ -105,11 +128,7 @@ class DashboardContentTest {
             dataState = mutableStateOf(data)
             connectionState = mutableStateOf(state)
             composeRule.setContent {
-                // Dashboard is a landscape-only screen; this fixed compact landscape viewport
-                // exercises its compact sizing without introducing portrait layout expectations.
-                Box(Modifier.requiredSize(width = 740.dp, height = 360.dp)) {
-                    DashboardContent(data = dataState.value, connectionState = connectionState.value)
-                }
+                DashboardContent(data = dataState.value, connectionState = connectionState.value)
             }
             contentInstalled = true
         }

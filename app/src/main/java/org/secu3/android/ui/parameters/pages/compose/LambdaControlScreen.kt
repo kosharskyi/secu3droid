@@ -45,6 +45,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
@@ -170,10 +171,11 @@ fun LambdaControlScreen(values: LambdaValues?, sensors: List<String>, fuelInject
 }
 
 @Composable private fun NumberRow(n: LambdaNumber, values: LambdaValues, onEdit: (LambdaNumber) -> Unit, enabled: Boolean = true) {
+    val locale = LocalConfiguration.current.locales[0]
     if (enabled) ParameterValueRow(stringResource(n.title), stringResource(n.units), values.value(n), n.precision, "lambda_${n.name.lowercase()}") { onEdit(n) }
     else androidx.compose.foundation.layout.Column(Modifier.fillMaxWidth().testTag("lambda_${n.name.lowercase()}_disabled")) {
         Text(stringResource(n.title), style = MaterialTheme.typography.bodyLarge, color = MaterialTheme.colorScheme.onSurfaceVariant)
-        Text(String.format(java.util.Locale.getDefault(), "%.${n.precision}f", values.value(n)) + " " + stringResource(n.units), color = MaterialTheme.colorScheme.onSurfaceVariant)
+        Text(String.format(locale, "%.${n.precision}f", values.value(n)) + " " + stringResource(n.units), color = MaterialTheme.colorScheme.onSurfaceVariant)
     }
 }
 

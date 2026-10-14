@@ -25,6 +25,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalLifecycleOwner
+import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Dialog
 import androidx.lifecycle.Lifecycle
@@ -83,7 +84,7 @@ internal fun SettingsRoute(
         )
         if (dialog == SettingsDialog.About) {
             Dialog(onDismissRequest = viewModel::dismissDialog) {
-                Surface(Modifier.fillMaxWidth().widthIn(max = 560.dp)) {
+                Surface(Modifier.fillMaxWidth().widthIn(max = 560.dp).testTag("settings-about-dialog")) {
                     AboutContent(open = { url -> activity.startActivity(Intent(Intent.ACTION_VIEW, android.net.Uri.parse(url))) })
                 }
             }

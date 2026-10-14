@@ -25,6 +25,7 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavBackStackEntry
 import org.secu3.android.R
+import androidx.compose.ui.res.stringResource
 import org.secu3.android.ui.MainActivity
 
 @Composable
@@ -70,7 +71,7 @@ internal fun HomeRoute(
             connectionRunning = vm.isConnectionRunning,
             dialog = ui.dialog,
             releaseName = ui.releaseName,
-            releaseMessage = ui.releaseName?.let { context.getString(R.string.the_version_is_available_do_you_want_to_download, it) },
+            releaseMessage = ui.releaseName?.let { stringResource(R.string.the_version_is_available_do_you_want_to_download, it) },
         ),
         actions = HomeScreenActions(
             onDashboard = onDashboard, onSensors = onSensors, onParameters = onParameters,

@@ -35,6 +35,7 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.stringArrayResource
 import androidx.compose.ui.res.stringResource
@@ -51,7 +52,6 @@ import org.secu3.android.ui.compose.DropdownShape
 import org.secu3.android.ui.parameters.compose.ParameterLoadingIndicator
 import org.secu3.android.ui.parameters.pages.injection.validInjectorConfigurations
 import org.secu3.android.ui.parameters.pages.injection.validInjectorPulses
-import java.util.Locale
 
 data class FuelBankValues(
     val flow: Float, val config: Int, val pulses: Int, val timing: Int, val cranking: Int,
@@ -147,10 +147,11 @@ fun FuelInjectionScreen(state: FuelInjectionUiState, configLabels: Map<Int, Stri
 }
 
 @Composable private fun NumberRow(title: String, units: String, value: Float, precision: Int, tag: String, enabled: Boolean = true, onClick: () -> Unit) {
+    val locale = LocalConfiguration.current.locales[0]
     Column {
         Row(Modifier.fillMaxWidth().clickable(enabled = enabled, onClick = onClick).testTag(tag).padding(vertical = 10.dp), verticalAlignment = Alignment.CenterVertically) {
             Text(title, Modifier.weight(1f), style = MaterialTheme.typography.bodyLarge, color = if (enabled) MaterialTheme.colorScheme.onSurface else MaterialTheme.colorScheme.onSurface.copy(alpha = .38f))
-            Text(String.format(Locale.getDefault(), "%.${precision}f", value) + if (units.isEmpty()) "" else " $units", Modifier.testTag("$tag-value"), textAlign = TextAlign.End)
+            Text(String.format(locale, "%.${precision}f", value) + if (units.isEmpty()) "" else " $units", Modifier.testTag("$tag-value"), textAlign = TextAlign.End)
         }; HorizontalDivider()
     }
 }
