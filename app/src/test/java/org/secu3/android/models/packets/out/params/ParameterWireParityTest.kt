@@ -63,7 +63,7 @@ class ParameterWireParityTest {
 
     @Test fun tpsGradientMatchesSignedManagerWordsEvenWhenEditingAnotherField() {
         for (word in listOf(41, 0xFFD7)) { // round(+/- 1 * 128 * 128 * .0025)
-            val frame = IntArray(47)
+            val frame = IntArray(49)
             frame[0] = 64; frame[1] = 'n'.code
             frame[18] = word ushr 8; frame[19] = word and 255
             val packet = FunSetParamPacket().parse(frame) as FunSetParamPacket
@@ -71,6 +71,32 @@ class ParameterWireParityTest {
             assertArrayEquals(bytes(word, 2), packet.pack().sliceArray(17..18))
         }
         assertArrayEquals(intArrayOf(0, 41), FunSetParamPacket(tpsCurveGradient = 1f).pack().sliceArray(17..18))
+    }
+
+    @Test fun apps1RawIsUnsignedReadOnlyAdcVoltageAndKnownWordIsNotSent() {
+        for ((raw, volts) in listOf(400 to 1f, 0x8000 to 81.92f)) {
+            val frame = IntArray(49)
+            frame[0] = 64; frame[1] = 'n'.code
+            frame[47] = raw ushr 8; frame[48] = raw and 255
+            val packet = FunSetParamPacket().parse(frame) as FunSetParamPacket
+            assertEquals(volts, packet.apps1Raw, .000001f)
+            assertEquals(44, packet.pack().size) // descriptor plus 43-byte FUNSET payload
+        }
+    }
+
+    @Test fun apps1RawRequiresFullKnownPayloadAndPreservesLaterExtension() {
+        val shortFrame = IntArray(48).also { it[0] = 64; it[1] = 'n'.code }
+        assertThrows(IllegalArgumentException::class.java) { FunSetParamPacket().parse(shortFrame) }
+
+        val frame = IntArray(51).also {
+            it[0] = 64; it[1] = 'n'.code
+            it[47] = 0x01; it[48] = 0x90 // 400 ADC counts = 1 V
+            it[49] = 0xCA; it[50] = 0xFE
+        }
+        val packet = FunSetParamPacket().parse(frame) as FunSetParamPacket
+        assertEquals(1f, packet.apps1Raw, .000001f)
+        assertArrayEquals(intArrayOf(0xCA, 0xFE), packet.pack().takeLast(2).toIntArray())
+        assertEquals(46, packet.pack().size) // descriptor plus the preserved two-byte extension
     }
 
     @Test fun minimumPulseUses1284DiscreteAndPreservesOtherBank() {

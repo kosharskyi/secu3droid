@@ -122,7 +122,7 @@ class PacketTest {
         // Payload sizes are the required field lengths from each packet's wire layout.
         val requiredPayloadBytes = linkedMapOf(
             'q' to 116, 'y' to 57, 's' to 26, 'v' to 4, 'x' to 4, '=' to 31,
-            'o' to 19, 'm' to 14, 'l' to 42, 'n' to 45, 'j' to 15, 'k' to 24,
+            'o' to 19, 'm' to 14, 'l' to 42, 'n' to 47, 'j' to 15, 'k' to 24,
             'r' to 73, 't' to 12, 'w' to 19, 'z' to 22, '%' to 14, '#' to 16,
             '&' to 67, ';' to 51, '-' to 28, '|' to 11, '*' to 13, 'O' to 24,
             'P' to 16, 'p' to 18, 'u' to 2

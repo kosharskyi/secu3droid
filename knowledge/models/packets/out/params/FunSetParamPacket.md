@@ -5,3 +5,7 @@ Both directions use `128 * (64 * 2) * 0.0025`; using `64 * 64` on write amplifie
 ## Signed half-counts follow the manager's rounding rule
 
 Manager MathHelpers::Round rounds a negative half-count away from zero; Kotlin roundToInt rounds it toward positive infinity. Use protocolRoundToInt for the corrected TPS, ADC and negative LTFT encoders so values on that boundary do not silently become zero.
+
+## APPS1 raw is the final known read-only word
+
+FUNSET includes an unsigned 16-bit APPS1 ADC voltage after the APPS1 gradient. It is read-only telemetry used for learning and must not be resent; only bytes after this word are unknown extensions to preserve.

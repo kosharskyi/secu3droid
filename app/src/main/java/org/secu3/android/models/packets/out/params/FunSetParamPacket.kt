@@ -70,7 +70,7 @@ data class FunSetParamPacket(
 
     var apps1CurveOffset: Float = 0f,     // Accelerator pedal position sensor
     var apps1CurveGradient: Float = 0f,   // APPS
-    var apps1Raw: Int = 0,              // Redundant: for APPS1 learning
+    var apps1Raw: Float = 0f,           // Read-only APPS1 ADC voltage; reported for learning, never sent
 
 
 ): Secu3Packet(), InputPacket, OutputPacket {
@@ -171,6 +171,7 @@ data class FunSetParamPacket(
 
         apps1CurveOffset = data.get2Bytes().toShort().toFloat() * ADC_DISCRETE
         apps1CurveGradient = data.get2Bytes().toShort().toFloat() / ((APPS_MULT * 2) * ADC_DISCRETE * 128.0f)
+        apps1Raw = data.get2Bytes() * ADC_DISCRETE
 
         data.setUnhandledParams()
 

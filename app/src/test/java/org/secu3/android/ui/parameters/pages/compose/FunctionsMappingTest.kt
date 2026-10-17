@@ -32,10 +32,11 @@ class FunctionsMappingTest {
     @Test
     fun tpsGradientUsesDesktopSignedScaleAndPreservesManagerTail() {
         // Manager payload from io-core: TPS slope -102/40.96 and unknown extension CA FE.
-        val managerPayload = IntArray(49).also {
+        val managerPayload = IntArray(51).also {
             it[0] = 64; it[1] = 'n'.code
             it[18] = 0xFF; it[19] = 0x9A
-            it[47] = 0xCA; it[48] = 0xFE
+            it[47] = 0x01; it[48] = 0x90 // APPS1 raw = 1 V
+            it[49] = 0xCA; it[50] = 0xFE
         }
         val packet = FunSetParamPacket().parse(managerPayload) as FunSetParamPacket
 
