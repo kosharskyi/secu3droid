@@ -39,6 +39,116 @@ import java.util.Locale
 import javax.inject.Inject
 import javax.inject.Singleton
 
+internal fun encodeBinaryLogRecord(packet: SensorsPacket, mark: Int, now: LocalTime): ByteArray {
+    // Float = 4 bytes; Int = 4 bytes; Byte = 1 byte; Short = 2 bytes
+    val buf = ByteBuffer.allocate(252).also {
+        it.order(ByteOrder.LITTLE_ENDIAN)
+    }
+
+    val alignByte = 0xCC.toByte()
+
+    var flags = 0
+    flags = flags.setBitValue(packet.carbBit > 0, 15)
+    flags = flags.setBitValue(packet.gasBit > 0, 14)
+    flags = flags.setBitValue(packet.ephhValveBit > 0, 13)
+    flags = flags.setBitValue(packet.epmValveBit > 0, 12)
+    flags = flags.setBitValue(packet.coolFanBit > 0, 11)
+    flags = flags.setBitValue(packet.starterBlockBit > 0, 10)
+    flags = flags.setBitValue(packet.accelerationEnrichment > 0, 9)
+    flags = flags.setBitValue(packet.fc_revlim > 0, 8)
+    flags = flags.setBitValue(packet.floodclear > 0, 7)
+    flags = flags.setBitValue(packet.sys_locked > 0, 6)
+    flags = flags.setBitValue(packet.checkEngineBit > 0, 5)
+    flags = flags.setBitValue(packet.ign_i > 0, 4)
+    flags = flags.setBitValue(packet.cond_i > 0, 3)
+    flags = flags.setBitValue(packet.epas_i > 0, 2)
+    flags = flags.setBitValue(packet.aftstr_enr > 0, 1)
+    flags = flags.setBitValue(packet.iac_closed_loop > 0, 0)
+
+    var flags1 = packet.additionalFlags shr 1
+
+    buf.apply {
+        put(now.hour.toByte())
+        put(now.minute.toByte())
+        put(now.second.toByte())
+        put(alignByte)           // align byte
+        putShort(now.nano.div(1000000).toShort()) // milliseconds
+        putShort(packet.rpm.toShort())
+        putFloat(packet.currentAngle)
+        putFloat(packet.map)
+        putFloat(packet.voltage)
+        putFloat(packet.temperature)
+        putFloat(packet.knockValue)
+        putFloat(packet.knockRetard)
+        put(packet.airflow.toByte())
+        put(alignByte)           // airflow-to-flags alignment
+        putShort(flags.toShort())
+        putShort(flags1.toShort())
+        put(alignByte)           // flags-to-TPS alignment
+        put(alignByte)
+        putFloat(packet.tps)
+        putFloat(packet.addI1)
+        putFloat(packet.addI2)
+        putFloat(packet.chokePosition)
+        putFloat(packet.gasDosePosition)
+        putFloat(packet.speed)
+        putFloat(packet.distance)
+        putFloat(packet.inj_ffd.coerceIn(.0f, 999.999f))
+        putFloat(packet.fuelFlowFrequency)
+        putFloat(if (packet.isAddI2Enabled) packet.airtempSensor else 999.99f)    //magic number indicates that IAT is not used
+        putFloat(packet.strtAalt)
+        putFloat(packet.idleAalt)
+        putFloat(packet.workAalt)
+        putFloat(packet.tempAalt)
+        putFloat(packet.airtAalt)
+        putFloat(packet.idlregAac)
+        putFloat(packet.octanAac)
+        putFloat(packet.lambdaCorr)
+        putFloat(packet.injPw)
+        putInt(packet.tpsdot.toInt())
+        putFloat(packet.map2)
+        putFloat(packet.tmp2)
+        putFloat(packet.mapd)
+        putFloat(packet.afr)
+        putFloat(packet.load)
+        putFloat(packet.baroPress)
+        putFloat(packet.injTimBegin)
+        putFloat(packet.injTimEnd)
+        putFloat(packet.grts)
+        putFloat(packet.ftls)
+        putFloat(packet.egts)
+        putFloat(packet.ops)
+        putFloat(packet.sens_injDuty)
+        putFloat(packet.rigidArg)
+        putInt(packet.rxlaf)
+        putFloat(packet.maf)
+        putFloat(packet.ventDuty)
+        put(packet.uniOutput.toByte())
+        put(alignByte)
+        put(alignByte)
+        put(alignByte)
+        putInt(packet.mapdot.toInt())
+        putFloat(packet.fts)
+        putFloat(packet.cons_fuel)
+        putFloat(packet.lambdaCorr2)
+        putFloat(packet.afr2)
+        putFloat(packet.afrMap)
+        putFloat(packet.tchrg)
+        putFloat(packet.gasPressureSensor)
+        putFloat(packet.fuelPressureSensor)
+        putFloat(packet.apps1)
+        putFloat(packet.ots)
+        putFloat(packet.estTorque)
+        putFloat(packet.reqTorque)
+        // TODO: update capacity if new field is added
+        put(mark.toByte())
+        put(alignByte)
+        putShort(packet.serviceFlags.toShort())
+        putInt(packet.ecuErrors)
+    }
+
+    return buf.array()
+}
 @Singleton
 class SecuLogger @Inject constructor(private val prefs: UserPrefs, private val fileHelper: FileHelper) {
 
@@ -153,117 +263,8 @@ class SecuLogger @Inject constructor(private val prefs: UserPrefs, private val f
     }
 
     private fun writeBinaryLog(packet: SensorsPacket) {
-        val now = LocalTime.now()
-
-        // Float = 4 bytes; Int = 4 bytes; Byte = 1 byte; Short = 2 bytes
-        val buf = ByteBuffer.allocate(252).also {
-            it.order(ByteOrder.LITTLE_ENDIAN)
-        }
-
-        val alignByte = 0xCC.toByte()
-
-        var flags = 0
-        flags = flags.setBitValue(packet.carbBit > 0, 15)
-        flags = flags.setBitValue(packet.gasBit > 0, 14)
-        flags = flags.setBitValue(packet.ephhValveBit > 0, 13)
-        flags = flags.setBitValue(packet.epmValveBit > 0, 12)
-        flags = flags.setBitValue(packet.coolFanBit > 0, 11)
-        flags = flags.setBitValue(packet.starterBlockBit > 0, 10)
-        flags = flags.setBitValue(packet.accelerationEnrichment > 0, 9)
-        flags = flags.setBitValue(packet.fc_revlim > 0, 8)
-        flags = flags.setBitValue(packet.floodclear > 0, 7)
-        flags = flags.setBitValue(packet.sys_locked > 0, 6)
-        flags = flags.setBitValue(packet.checkEngineBit > 0, 5)
-        flags = flags.setBitValue(packet.ign_i > 0, 4)
-        flags = flags.setBitValue(packet.cond_i > 0, 3)
-        flags = flags.setBitValue(packet.epas_i > 0, 2)
-        flags = flags.setBitValue(packet.aftstr_enr > 0, 1)
-        flags = flags.setBitValue(packet.iac_closed_loop > 0, 0)
-
-        var flags1 = packet.additionalFlags shr 1
-
-        buf.apply {
-            put(now.hour.toByte())
-            put(now.minute.toByte())
-            put(now.second.toByte())
-            put(alignByte)           // align byte
-            putShort(now.nano.div(1000000).toShort()) // milliseconds
-            putShort(packet.rpm.toShort())
-            putFloat(packet.currentAngle)
-            putFloat(packet.map)
-            putFloat(packet.voltage)
-            putFloat(packet.temperature)
-            putFloat(packet.knockValue)
-            putFloat(packet.knockRetard)
-            put(packet.airflow.toByte())
-            put(alignByte)           // align byte
-            put(alignByte)           // align byte
-            put(alignByte)           // align byte
-            putShort(flags.toShort())
-            putShort(flags1.toShort())
-            putFloat(packet.tps)
-            putFloat(packet.addI1)
-            putFloat(packet.addI2)
-            putFloat(packet.chokePosition)
-            putFloat(packet.gasDosePosition)
-            putFloat(packet.speed)
-            putFloat(packet.distance)
-            putFloat(packet.inj_ffd.coerceIn(.0f, 999.999f))
-            putFloat(packet.fuelFlowFrequency)
-            putFloat(if (packet.isAddI2Enabled) packet.airtempSensor else 999.99f)    //magic number indicates that IAT is not used
-            putFloat(packet.strtAalt)
-            putFloat(packet.idleAalt)
-            putFloat(packet.workAalt)
-            putFloat(packet.tempAalt)
-            putFloat(packet.airtAalt)
-            putFloat(packet.idlregAac)
-            putFloat(packet.octanAac)
-            putFloat(packet.lambdaCorr)
-            putFloat(packet.injPw)
-            putInt(packet.tpsdot.toInt())
-            putFloat(packet.map2)
-            putFloat(packet.tmp2)
-            putFloat(packet.mapd)
-            putFloat(packet.afr)
-            putFloat(packet.load)
-            putFloat(packet.baroPress)
-            putFloat(packet.injTimBegin)
-            putFloat(packet.injTimEnd)
-            putFloat(packet.grts)
-            putFloat(packet.ftls)
-            putFloat(packet.egts)
-            putFloat(packet.ops)
-            putFloat(packet.sens_injDuty)
-            putFloat(packet.rigidArg)
-            putInt(packet.rxlaf)
-            putFloat(packet.maf)
-            putFloat(packet.ventDuty)
-            put(packet.uniOutput.toByte())
-            put(alignByte)
-            put(alignByte)
-            put(alignByte)
-            putInt(packet.mapdot.toInt())
-            putFloat(packet.fts)
-            putFloat(packet.cons_fuel)
-            putFloat(packet.lambdaCorr2)
-            putFloat(packet.afr2)
-            putFloat(packet.afrMap)
-            putFloat(packet.tchrg)
-            putFloat(packet.gasPressureSensor)
-            putFloat(packet.fuelPressureSensor)
-            putFloat(packet.apps1)
-            putFloat(packet.ots)
-            putFloat(packet.estTorque)
-            putFloat(packet.reqTorque)
-            // TODO: update capacity if new field is added
-            put(mMark.toByte())
-            put(alignByte)
-            putShort(packet.serviceFlags.toShort())
-            putInt(packet.ecuErrors)
-        }
-
-        buf.flip()
-        byteChanel?.write(buf)
+        val buf = encodeBinaryLogRecord(packet, mMark, LocalTime.now())
+        byteChanel?.write(ByteBuffer.wrap(buf))
     }
 
     private fun writeInCsv(csvString: String) {
