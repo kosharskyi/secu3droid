@@ -69,9 +69,9 @@ data class LtftParamPacket(
         var data = intArrayOf(DESCRIPTOR.code)
 
         data += mode
-        data += learnClt.times(TEMPERATURE_MULTIPLIER).roundToInt().write2Bytes()
-        data += learnCltUp.times(TEMPERATURE_MULTIPLIER).roundToInt().write2Bytes()
-        data += learnIatUp.times(TEMPERATURE_MULTIPLIER).roundToInt().write2Bytes()
+        data += learnClt.times(TEMPERATURE_MULTIPLIER).protocolRoundToInt().write2Bytes()
+        data += learnCltUp.times(TEMPERATURE_MULTIPLIER).protocolRoundToInt().write2Bytes()
+        data += learnIatUp.times(TEMPERATURE_MULTIPLIER).protocolRoundToInt().write2Bytes()
         data += learnGrad.times(256).roundToInt()
         data += learnGpa.times(MAP_MULTIPLIER).roundToInt().write2Bytes()
         data += learnGpd.times(MAP_MULTIPLIER).roundToInt().write2Bytes()
@@ -93,9 +93,9 @@ data class LtftParamPacket(
 
         mode = data.get1Byte()
 
-        learnClt = data.get2Bytes().toFloat().div(TEMPERATURE_MULTIPLIER)
-        learnCltUp = data.get2Bytes().toFloat().div(TEMPERATURE_MULTIPLIER)
-        learnIatUp = data.get2Bytes().toFloat().div(TEMPERATURE_MULTIPLIER)
+        learnClt = data.get2BytesSigned().toFloat().div(TEMPERATURE_MULTIPLIER)
+        learnCltUp = data.get2BytesSigned().toFloat().div(TEMPERATURE_MULTIPLIER)
+        learnIatUp = data.get2BytesSigned().toFloat().div(TEMPERATURE_MULTIPLIER)
         learnGrad = data.get1Byte().toFloat().div(256.0f)
         learnGpa = data.get2Bytes().toFloat().div(MAP_MULTIPLIER)
         learnGpd = data.get2Bytes().toFloat().div(MAP_MULTIPLIER)
