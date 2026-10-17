@@ -418,7 +418,7 @@ data class SensorsPacket(
 
         rxlaf = data.get2Bytes().times(32)           // RxL air flow
         ftls = data.get2Bytes().toFloat().div(FTLS_MULT)  // fuel tank level
-        egts = data.get2Bytes().toFloat().div(EGTS_MULT)  // exhaust gas temperature
+        egts = data.get2BytesSigned().toFloat().div(EGTS_MULT)  // exhaust gas temperature
         ops = data.get2Bytes().toFloat().div(OPS_MULT)    // oil pressure
 
         sens_injDuty = data.get1Byte().toFloat() / 2.0f

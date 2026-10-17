@@ -30,4 +30,27 @@ class SensorsPacketTest {
             assertEquals(100f, packet.reqTorque, .0001f)
         }
     }
+
+    @Test fun exhaustTemperatureUsesSignedWordWithoutClampingAndKeepsNeighborChannelsAligned() {
+        val goldenTemperatures = listOf(
+            0xFFFC to -1f,
+            0xFFD8 to -10f,
+            0xFFFF to -.25f,
+            0x0000 to 0f,
+            0x0FA0 to 1000f,
+            0x8000 to -8192f,
+        )
+        goldenTemperatures.forEach { (raw, temperature) ->
+            val payload = IntArray(116)
+            payload[75] = 0x00; payload[76] = 0x40 // fuel tank level = 1
+            payload[77] = raw ushr 8; payload[78] = raw and 255
+            payload[79] = 0x01; payload[80] = 0x00 // oil pressure = 1
+            val packet = RawPacket(intArrayOf('@'.code, 'q'.code) + payload + intArrayOf(0, 0))
+                .parse(null) as SensorsPacket
+
+            assertEquals(temperature, packet.egts, .0001f)
+            assertEquals(1f, packet.ftls, .0001f)
+            assertEquals(1f, packet.ops, .0001f)
+        }
+    }
 }
