@@ -60,7 +60,7 @@ internal object MiscellaneousNumericMapping {
             }
             MiscField.VSS -> {
                 require(value in 100..60000)
-                packet.vssPeriodDist = value
+                packet.vssPeriodDist = value.toFloat()
             }
             MiscField.TIMEOUT -> error("Timeout is a float parameter")
         }

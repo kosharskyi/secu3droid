@@ -28,6 +28,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
 import org.secu3.android.models.packets.out.params.MiscellaneousParamPacket
+import kotlin.math.roundToInt
 
 /** Owns Miscellaneous packet state, validation, and accepted packet sends. */
 internal class MiscellaneousStateHolder(
@@ -123,5 +124,5 @@ internal class MiscellaneousStateHolder(
 private fun MiscellaneousParamPacket.toState() = MiscState(
     uartDivisor, uartPeriodTms, ignCutoff > 0, ignCutoffThrd, hopStartAng, hopDuratAng,
     offPumpOnGas, offInjOnGas, offInjOnPetrol, evapAfbegin, evapAfEnd, fpTimeoutStrt,
-    pwmFrq0, pwmFrq1, vssPeriodDist,
+    pwmFrq0, pwmFrq1, vssPeriodDist.roundToInt(),
 )

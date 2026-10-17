@@ -40,7 +40,7 @@ class MiscellaneousStateHolderTest {
         fpTimeoutStrt = 3f,
         pwmFrq0 = 100,
         pwmFrq1 = 200,
-        vssPeriodDist = 1000,
+        vssPeriodDist = 1000f,
     )
 
     @Test
@@ -66,7 +66,8 @@ class MiscellaneousStateHolderTest {
     fun invalidIncomingPacketBlocksUnrelatedEditsUntilEvapPairIsRepaired() {
         val sent = mutableListOf<MiscellaneousParamPacket>()
         val holder = MiscellaneousStateHolder(sent::add)
-        val invalid = validPacket().apply { evapAfslope = 0f }
+        val retainedVss = 32768000f / 65275f
+        val invalid = validPacket().apply { evapAfslope = 0f; vssPeriodDist = retainedVss }
         holder.onPacketReceived(invalid)
 
         holder.editInt(MiscField.PERIOD, 150)
@@ -75,13 +76,41 @@ class MiscellaneousStateHolderTest {
         assertTrue(sent.isEmpty())
         assertEquals(100, invalid.uartPeriodTms)
         assertEquals(0x0103, invalid.uartDivisor)
+        assertEquals(retainedVss, invalid.vssPeriodDist, 0f)
+        assertEquals(502, holder.state!!.vss)
 
         holder.editInt(MiscField.END, 100000)
         assertFalse(holder.hasValidationError)
         assertEquals(1, sent.size)
         assertSame(invalid, sent.single())
         assertTrue(invalid.pack().isNotEmpty())
+        assertEquals(retainedVss, invalid.vssPeriodDist, 0f)
         assertTrue(holder.state!!.end - holder.state!!.begin >= MiscellaneousParamPacket.MIN_EVAP_AIRFLOW_DELTA)
+    }
+
+    @Test
+    fun receivingAndUnrelatedEditKeepPreciseVssWhileUiStateRoundsForDisplay() {
+        val sent = mutableListOf<MiscellaneousParamPacket>()
+        val holder = MiscellaneousStateHolder(sent::add)
+        val packet = validPacket().apply { vssPeriodDist = 32768000f / 65275f }
+        holder.onPacketReceived(packet)
+
+        assertTrue(sent.isEmpty())
+        assertEquals(502, holder.state!!.vss)
+        holder.editInt(MiscField.PERIOD, 120)
+
+        assertEquals(1, sent.size)
+        assertEquals(32768000f / 65275f, packet.vssPeriodDist, 0f)
+        assertEquals(0xFE, packet.pack()[21])
+        assertEquals(0xFB, packet.pack()[22])
+        assertEquals(502, holder.state!!.vss)
+
+        holder.editInt(MiscField.VSS, 1200)
+        assertEquals(2, sent.size)
+        assertEquals(1200, holder.state!!.vss)
+        assertEquals(1200f, packet.vssPeriodDist, 0f)
+        assertEquals(0x6A, packet.pack()[21])
+        assertEquals(0xAB, packet.pack()[22])
     }
 
     @Test

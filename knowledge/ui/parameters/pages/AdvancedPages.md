@@ -25,3 +25,7 @@ The desktop PMParamsController disables both via EnableUseResParCheck(false). Ed
 ## Firmware options govern dependent parameter controls
 
 ParameterCapabilities maps ECU flags using the live desktop controller rules. Its permissive default supports loading and standalone previews; connected routes pass actual firmware options. Local predicates still apply (load-grid/source, missing teeth, injection table mode), and unsupported incoming values remain visible without selecting a replacement. Do not apply desktop-only user functionality preferences as ECU capabilities.
+
+## Miscellaneous VSS displays a rounded integer without quantizing the packet
+
+The packet retains the ECU's reciprocal VSS Float so unrelated edits preserve the incoming word. The state and integer editor display a rounded pulses-per-kilometer value, while an explicit editor commit stores the selected integer as a Float.

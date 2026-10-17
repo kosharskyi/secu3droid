@@ -34,6 +34,7 @@ import org.secu3.android.R
 import org.secu3.android.models.packets.out.params.InjctrParPacket
 import org.secu3.android.models.packets.out.params.UniOutParamPacket
 import org.secu3.android.ui.parameters.pages.*
+import kotlin.math.roundToInt
 import org.secu3.android.ui.parameters.pages.compose.*
 import org.secu3.android.ui.parameters.compose.ParameterReadError
 
@@ -122,7 +123,7 @@ internal fun ParameterPageContent(
                     MiscField.END -> Triple(R.string.miscel_evap_ending_air_flow_title, p.evapAfEnd, evapEditBounds(MiscField.END, p.evapAfbegin, p.evapAfEnd))
                     MiscField.PWM0 -> Triple(R.string.miscel_pwmfrq1_title, p.pwmFrq0, 10 to 5000)
                     MiscField.PWM1 -> Triple(R.string.miscel_pwmfrq2_title, p.pwmFrq1, 10 to 5000)
-                    MiscField.VSS -> Triple(R.string.miscel_num_vss_pulsed_per_dist_title, p.vssPeriodDist, 100 to 60000)
+                    MiscField.VSS -> Triple(R.string.miscel_num_vss_pulsed_per_dist_title, p.vssPeriodDist.roundToInt(), 100 to 60000)
                     MiscField.TIMEOUT -> error("Float parameter routed through integer editor")
                 }
                 val bounds = parameter.third

@@ -25,6 +25,7 @@
 package org.secu3.android.models.packets
 
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertArrayEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue
 import org.junit.Test
@@ -33,8 +34,53 @@ import org.secu3.android.ui.parameters.pages.evapEditBounds
 import org.secu3.android.ui.parameters.pages.MiscField
 import org.secu3.android.ui.parameters.pages.MiscellaneousNumericMapping
 import org.secu3.android.ui.parameters.pages.miscFieldEnabled
+import kotlin.math.roundToInt
 
 class MiscellaneousParamPacketTest {
+    private fun vssFrame(raw: Int): IntArray {
+        val valid = MiscellaneousParamPacket(
+            evapAfbegin = 5000,
+            evapAfslope = 32f / 170000f,
+            pwmFrq0 = 100,
+            pwmFrq1 = 200,
+            vssPeriodDist = 1000f,
+        ).pack()
+        return (intArrayOf(0x40, 'z'.code) + valid.drop(1).toIntArray() + intArrayOf(0xCA, 0xFE)).also {
+            it[22] = raw ushr 8
+            it[23] = raw and 255
+        }
+    }
+
+    @Test fun vssReciprocalRetainsIncomingWireWordAcrossUnrelatedEdits() {
+        val decoded = mutableListOf<Float>()
+        for (raw in listOf(65275, 65290, 1, 257, 32768, 65535)) {
+            val packet = MiscellaneousParamPacket().parse(vssFrame(raw)) as MiscellaneousParamPacket
+            assertEquals(32768000f / raw.toFloat(), packet.vssPeriodDist, 0f)
+            packet.uartPeriodTms = 30
+            packet.offPumpOnGas = true
+            val packed = packet.pack()
+            assertArrayEquals(intArrayOf(raw ushr 8, raw and 255), packed.sliceArray(21..22))
+            assertArrayEquals(intArrayOf(0xCA, 0xFE), packed.takeLast(2).toIntArray())
+            decoded += packet.vssPeriodDist
+        }
+        assertEquals(502, decoded[0].roundToInt())
+        assertEquals(502, decoded[1].roundToInt())
+        assertTrue(decoded[0] != decoded[1])
+    }
+
+    @Test fun explicitVssIntegerEditEncodesRequestedPhysicalValue() {
+        val packet = MiscellaneousParamPacket(
+            evapAfbegin = 5000,
+            evapAfslope = 32f / 170000f,
+            pwmFrq0 = 100,
+            pwmFrq1 = 200,
+            vssPeriodDist = 501.99924f,
+        )
+        MiscellaneousNumericMapping.applyInt(packet, MiscField.VSS, 1200)
+        assertEquals(1200f, packet.vssPeriodDist, 0f)
+        assertArrayEquals(intArrayOf(0x6A, 0xAB), packet.pack().sliceArray(21..22))
+    }
+
     @Test fun evapSlopeUsesExpectedRawWordAndRoundTrips() {
         val packet = MiscellaneousParamPacket(uartDivisor=0x0103, evapAfbegin=5000, evapAfslope=32f/170000f)
         val packed = packet.pack()
@@ -71,7 +117,7 @@ class MiscellaneousParamPacketTest {
     }
 
     @Test fun editingParsedPacketPreservesOtherParametersAndUnknownTail() {
-        val source=MiscellaneousParamPacket(uartDivisor=0x0103,uartPeriodTms=20,ignCutoff=1,ignCutoffThrd=4200,hopStartAng=-2,hopDuratAng=5,flpmpFlags=0xA9,evapAfbegin=5000,evapAfslope=32f/170000f,fpTimeoutStrt=2.5f,pwmFrq0=100,pwmFrq1=200,vssPeriodDist=1000)
+        val source=MiscellaneousParamPacket(uartDivisor=0x0103,uartPeriodTms=20,ignCutoff=1,ignCutoffThrd=4200,hopStartAng=-2,hopDuratAng=5,flpmpFlags=0xA9,evapAfbegin=5000,evapAfslope=32f/170000f,fpTimeoutStrt=2.5f,pwmFrq0=100,pwmFrq1=200,vssPeriodDist=1000f)
         val incoming=intArrayOf(0x40,0x21)+source.pack().drop(1).toIntArray()+intArrayOf(0xD1,0xE2)
         val parsed=MiscellaneousParamPacket().parse(incoming) as MiscellaneousParamPacket
         parsed.uartPeriodTms=30
@@ -85,7 +131,7 @@ class MiscellaneousParamPacketTest {
         assertEquals(25,repacked[16])
         assertEquals(100,parsed.pwmFrq0)
         assertEquals(200,parsed.pwmFrq1)
-        assertEquals(1000,parsed.vssPeriodDist)
+        assertEquals(1000f,parsed.vssPeriodDist, 0f)
         assertEquals(0xD1,repacked[23])
         assertEquals(0xE2,repacked[24])
     }
@@ -141,7 +187,7 @@ class MiscellaneousParamPacketTest {
                 fpTimeoutStrt = 2.5f,
                 pwmFrq0 = 100,
                 pwmFrq1 = 200,
-                vssPeriodDist = 1000,
+                vssPeriodDist = 1000f,
             )
             val input = intArrayOf(0x40, 0x21) + source.pack().drop(1).toIntArray() + intArrayOf(0xD1, 0xE2)
             val packet = MiscellaneousParamPacket().parse(input) as MiscellaneousParamPacket
@@ -185,7 +231,7 @@ class MiscellaneousParamPacketTest {
             assertEquals(if (field == MiscField.TIMEOUT) 3.4f else 2.5f, packet.fpTimeoutStrt, 0.0001f)
             assertEquals(if (field == MiscField.PWM0) 500 else 100, packet.pwmFrq0)
             assertEquals(if (field == MiscField.PWM1) 600 else 200, packet.pwmFrq1)
-            assertEquals(if (field == MiscField.VSS) 1200 else 1000, packet.vssPeriodDist)
+            assertEquals(if (field == MiscField.VSS) 1200f else 1000f, packet.vssPeriodDist, 0f)
             assertEquals(listOf(0xD1, 0xE2), packet.pack().takeLast(2))
         }
     }
@@ -204,7 +250,7 @@ class MiscellaneousParamPacketTest {
             fpTimeoutStrt = 2.5f,
             pwmFrq0 = 100,
             pwmFrq1 = 200,
-            vssPeriodDist = 1000,
+            vssPeriodDist = 1000f,
         )
         val incoming = intArrayOf(0x40, 0x21) + original.pack().drop(1).toIntArray() + intArrayOf(0xD1, 0xE2)
         incoming[15] = 0
@@ -224,7 +270,7 @@ class MiscellaneousParamPacketTest {
         assertEquals(2.5f, packet.fpTimeoutStrt, 0f)
         assertEquals(100, packet.pwmFrq0)
         assertEquals(200, packet.pwmFrq1)
-        assertEquals(1000, packet.vssPeriodDist)
+        assertEquals(1000f, packet.vssPeriodDist, 0f)
         assertEquals(listOf(0xD1, 0xE2), packet.pack().takeLast(2))
 
         MiscellaneousNumericMapping.applyInt(packet, MiscField.PERIOD, 30)

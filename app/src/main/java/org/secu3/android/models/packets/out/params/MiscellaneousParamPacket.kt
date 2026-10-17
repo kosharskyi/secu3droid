@@ -45,7 +45,7 @@ data class MiscellaneousParamPacket(
     var fpTimeoutStrt: Float = 0f,
     var pwmFrq0: Int = 0,
     var pwmFrq1: Int = 0,
-    var vssPeriodDist: Int = 0, //Number of VSS pulses per 1km
+    var vssPeriodDist: Float = 0f, //Number of VSS pulses per 1km
 
 ) : Secu3Packet(), InputPacket, OutputPacket {
 
@@ -137,7 +137,7 @@ data class MiscellaneousParamPacket(
 
         //Number of VSS pulses per 1km
         vssPeriodDist = data.get2Bytes().let {
-            ((1000.0f * 32768.0f) / it).toInt()
+            (1000.0f * 32768.0f) / it
         }
 
         data.setUnhandledParams()
