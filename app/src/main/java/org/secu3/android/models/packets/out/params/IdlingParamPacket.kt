@@ -27,6 +27,7 @@ package org.secu3.android.models.packets.out.params
 import org.secu3.android.models.packets.base.Secu3Packet
 import org.secu3.android.models.packets.base.InputPacket
 import org.secu3.android.models.packets.base.OutputPacket
+import org.secu3.android.models.packets.base.protocolRoundToInt
 import org.secu3.android.utils.getBitValue
 import org.secu3.android.utils.setBitValue
 import kotlin.math.roundToInt
@@ -144,13 +145,13 @@ data class IdlingParamPacket(
         var data = intArrayOf(DESCRIPTOR.code)
 
         data += idlFlags
-        data += iFac1.times(256).roundToInt().write2Bytes()
-        data += iFac2.times(256).roundToInt().write2Bytes()
+        data += iFac1.times(256).protocolRoundToInt().write2Bytes()
+        data += iFac2.times(256).protocolRoundToInt().write2Bytes()
         data += minefr.write2Bytes()
         data += idlingRpm.write2Bytes()
-        data += idlregMinAngle.times(ANGLE_DIVIDER).roundToInt().write2Bytes()
-        data += idlregMaxAngle.times(ANGLE_DIVIDER).roundToInt().write2Bytes()
-        data += idlregTurnOnTemp.times(TEMPERATURE_MULTIPLIER).roundToInt().write2Bytes()
+        data += idlregMinAngle.times(ANGLE_DIVIDER).protocolRoundToInt().write2Bytes()
+        data += idlregMaxAngle.times(ANGLE_DIVIDER).protocolRoundToInt().write2Bytes()
+        data += idlregTurnOnTemp.times(TEMPERATURE_MULTIPLIER).protocolRoundToInt().write2Bytes()
         data += idlToRunAdd.times(2.0f).roundToInt()
         data += rpmOnRunAdd.div(10)
         data += idlRegP0.times(256).roundToInt().write2Bytes()
