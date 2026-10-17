@@ -27,6 +27,7 @@ package org.secu3.android.models.packets.out.params
 import org.secu3.android.models.packets.base.Secu3Packet
 import org.secu3.android.models.packets.base.InputPacket
 import org.secu3.android.models.packets.base.OutputPacket
+import org.secu3.android.models.packets.base.protocolRoundToInt
 import org.secu3.android.utils.getBitValue
 import org.secu3.android.utils.setBitValue
 import kotlin.math.roundToInt
@@ -48,8 +49,8 @@ data class TemperatureParamPacket(
 
         data += tmpFlags
 
-        data += ventOn.times(TEMPERATURE_MULTIPLIER).roundToInt().write2Bytes()
-        data += ventOff.times(TEMPERATURE_MULTIPLIER).roundToInt().write2Bytes()
+        data += ventOn.times(TEMPERATURE_MULTIPLIER).protocolRoundToInt().write2Bytes()
+        data += ventOff.times(TEMPERATURE_MULTIPLIER).protocolRoundToInt().write2Bytes()
 
         data += 1f.div(ventPwmFrq.toFloat()).times(524288.0).roundToInt().write2Bytes()
 
