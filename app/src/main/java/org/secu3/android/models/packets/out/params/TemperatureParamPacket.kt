@@ -39,7 +39,7 @@ data class TemperatureParamPacket(
     var condPvtOn: Float = 0f,
     var condPvtOff: Float = 0f,
     var condMinRpm: Int = 0,
-    var ventTmr: Int = 0,
+    var ventTmr: Float = 0f,
 
     ) : Secu3Packet(), InputPacket, OutputPacket {
 
@@ -57,7 +57,7 @@ data class TemperatureParamPacket(
         data += condPvtOff.div(ADC_DISCRETE).roundToInt().write2Bytes()
 
         data += condMinRpm.write2Bytes()
-        data += ventTmr.times(100).write2Bytes()
+        data += ventTmr.times(100).roundToInt().write2Bytes()
 
         data += unhandledParams
 
@@ -93,7 +93,7 @@ data class TemperatureParamPacket(
         condPvtOn = data.get2Bytes().toFloat() * ADC_DISCRETE
         condPvtOff = data.get2Bytes().toFloat() * ADC_DISCRETE
         condMinRpm = data.get2Bytes()
-        ventTmr = data.get2Bytes() / 100
+        ventTmr = data.get2Bytes().toFloat() / 100f
 
         data.setUnhandledParams()
 

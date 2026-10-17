@@ -92,7 +92,7 @@ internal fun ParameterPageContent(
         }
         R.string.params_tab_temperature_title -> {
             val h = viewModel.temperatureStateHolder
-            TemperatureScreen(h.state, { n -> (h.state as? TemperatureUiState.Data)?.values?.let { v -> if (n.integer) intEdit(n.titleRes, v.value(n).toInt(), n.step.toInt(), n.max.toInt(), n.min.toInt()) { h.updateValue(n, it.toFloat()) } else floatEdit(n.titleRes, v.value(n), n.step, n.max, n.min, n.precision) { h.updateValue(n, it.toFloat()) } } }, h::updateFlag, capabilities = capabilities)
+            TemperatureScreen(h.state, { n -> (h.state as? TemperatureUiState.Data)?.values?.let { v -> if (n.integer) intEdit(n.titleRes, v.value(n).roundToInt(), n.step.toInt(), n.max.toInt(), n.min.toInt()) { h.updateValue(n, it.toFloat()) } else floatEdit(n.titleRes, v.value(n), n.step, n.max, n.min, n.precision) { h.updateValue(n, it.toFloat()) } } }, h::updateFlag, capabilities = capabilities)
         }
         R.string.params_tab_fuel_cutoff_title -> {
             val h = viewModel.carburStateHolder

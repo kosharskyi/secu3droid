@@ -40,7 +40,7 @@ class TemperaturePacketMappingTest {
             condPvtOn = 1.234f,
             condPvtOff = 2.345f,
             condMinRpm = 900,
-            ventTmr = 20,
+            ventTmr = 20f,
         )
         TemperatureFlag.entries.forEach { applyTemperatureFlag(packet, it, it.ordinal % 2 == 0) }
         val values = TemperatureValues.from(packet)
@@ -51,7 +51,7 @@ class TemperaturePacketMappingTest {
         val edits = listOf(99.2f, 90.6f, 250f, 3.21f, 4.32f, 1200f, 30f)
         TemperatureNumber.entries.forEachIndexed { index, number -> applyTemperatureValue(packet, number, edits[index]) }
         assertSame(original, packet)
-        assertEquals(edits, listOf(packet.ventOn, packet.ventOff, packet.ventPwmFrq.toFloat(), packet.condPvtOn, packet.condPvtOff, packet.condMinRpm.toFloat(), packet.ventTmr.toFloat()))
+        assertEquals(edits, listOf(packet.ventOn, packet.ventOff, packet.ventPwmFrq.toFloat(), packet.condPvtOn, packet.condPvtOff, packet.condMinRpm.toFloat(), packet.ventTmr))
         assertEquals(0b1000_0000, packet.tmpFlags and 0b1000_0000)
         TemperatureFlag.entries.forEach { applyTemperatureFlag(packet, it, true) }
         assertEquals(0b1000_0000, packet.tmpFlags and 0b1000_0000)
@@ -66,5 +66,16 @@ class TemperaturePacketMappingTest {
         assertEquals(listOf(125f, 125f, 5000f, 5f, 5f, 3000f, 600f), TemperatureNumber.entries.map { it.max })
         assertEquals(listOf(.2f, .2f, 1f, .01f, .01f, 10f, 1f), TemperatureNumber.entries.map { it.step })
         assertEquals(3, TemperatureFlag.entries.size)
+    }
+
+    @Test
+    fun fanTimerMappingRetainsCentisecondsAndEncodesRoundedWireValue() {
+        val packet = TemperatureParamPacket(ventTmr = 1.75f)
+        assertEquals(1.75f, TemperatureValues.from(packet).value(TemperatureNumber.FAN_TIMER), 0f)
+        applyTemperatureValue(packet, TemperatureNumber.FAN_TIMER, 30f)
+        assertEquals(30f, packet.ventTmr, 0f)
+        assertEquals(0x0B, packet.pack()[14])
+        assertEquals(0xB8, packet.pack()[15])
+        assertEquals(128, TemperatureParamPacket(ventTmr = 1.275f).pack()[15])
     }
 }

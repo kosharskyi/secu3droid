@@ -77,4 +77,34 @@ class TemperatureStateHolderTest {
         assertEquals(TemperatureUiState.Loading, holder.state)
         assertTrue(sent.isEmpty())
     }
+
+    @Test
+    fun fanTimerPrecisionSurvivesReceiveAndOtherEditsUntilIntegerCommit() {
+        for (timer in listOf(1.27f, 1.75f)) {
+            val sent = mutableListOf<TemperatureParamPacket>()
+            val holder = TemperatureStateHolder(sent::add)
+            val packet = TemperatureParamPacket(ventTmr = timer)
+            holder.onPacketReceived(packet)
+
+            assertTrue(sent.isEmpty())
+            var values = (holder.state as TemperatureUiState.Data).values
+            assertEquals(timer, values.value(TemperatureNumber.FAN_TIMER), 0f)
+            holder.updateFlag(TemperatureFlag.PWM_CONTROL, true)
+            holder.updateValue(TemperatureNumber.FAN_ON, 90f)
+            assertEquals(timer, packet.ventTmr, 0f)
+            assertEquals((timer * 100).toInt(), packet.pack()[15])
+
+            if (timer == 1.75f) {
+                holder.updateValue(TemperatureNumber.FAN_TIMER, 30f)
+                values = (holder.state as TemperatureUiState.Data).values
+                assertEquals(3, sent.size)
+                assertEquals(30f, packet.ventTmr, 0f)
+                assertEquals(30f, values.value(TemperatureNumber.FAN_TIMER), 0f)
+                assertEquals(0x0B, packet.pack()[14])
+                assertEquals(0xB8, packet.pack()[15])
+            } else {
+                assertEquals(2, sent.size)
+            }
+        }
+    }
 }

@@ -81,7 +81,7 @@ data class TemperatureValues(
                 TemperatureNumber.AC_ON to packet.condPvtOn,
                 TemperatureNumber.AC_OFF to packet.condPvtOff,
                 TemperatureNumber.AC_MIN_RPM to packet.condMinRpm.toFloat(),
-                TemperatureNumber.FAN_TIMER to packet.ventTmr.toFloat(),
+                TemperatureNumber.FAN_TIMER to packet.ventTmr,
             ),
             flags = mapOf(
                 TemperatureFlag.COOLANT_SENSOR to packet.coolantUse,
@@ -100,7 +100,7 @@ fun applyTemperatureValue(packet: TemperatureParamPacket, number: TemperatureNum
         TemperatureNumber.AC_ON -> packet.condPvtOn = value
         TemperatureNumber.AC_OFF -> packet.condPvtOff = value
         TemperatureNumber.AC_MIN_RPM -> packet.condMinRpm = value.toInt()
-        TemperatureNumber.FAN_TIMER -> packet.ventTmr = value.toInt()
+        TemperatureNumber.FAN_TIMER -> packet.ventTmr = value
     }
 }
 
