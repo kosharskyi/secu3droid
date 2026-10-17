@@ -120,4 +120,27 @@ class KnockParamPacketTest {
         assertEquals("Code 99", unknown.selector(org.secu3.android.ui.parameters.pages.compose.KnockSelector.BPF))
         assertEquals("Code -1", unknown.selector(org.secu3.android.ui.parameters.pages.compose.KnockSelector.INTEGRATION))
     }
+
+    @Test fun controlThresholdUsesSignedQuarterDegreeWordAndPreservesWireBytes() {
+        for ((word, degrees) in listOf(
+            0xFFD8 to -10f,
+            0xFF60 to -40f,
+            0xFFFF to -.25f,
+            0x0000 to 0f,
+            0x01E0 to 120f,
+        )) {
+            val frame = intArrayOf(
+                '@'.code, 'w'.code, 1, 3, 0, 0, 0, 0, 4,
+                0, 0, 0, 0, 0, 0, 0, 0,
+                7, 0xA5, word ushr 8, word and 255, 0xCA, 0xFE,
+            )
+            val packet = KnockParamPacket().parse(frame) as KnockParamPacket
+            assertEquals("control threshold word 0x${word.toString(16)}", degrees, packet.knkctlThrd, .0001f)
+
+            packet.bpfFrequency = 99
+            val outgoing = packet.pack()
+            assertArrayEquals(intArrayOf(word ushr 8, word and 255), outgoing.sliceArray(18..19))
+            assertArrayEquals(intArrayOf(0xCA, 0xFE), outgoing.takeLast(2).toIntArray())
+        }
+    }
 }

@@ -98,7 +98,7 @@ data class KnockParamPacket(
         threshold = data.get2Bytes().toFloat() / VOLTAGE_MULTIPLIER
         recoveryDelay = data.get1Byte()
         selectedChanels = data.get1Byte()
-        knkctlThrd = data.get2Bytes().toFloat() / TEMPERATURE_MULTIPLIER
+        knkctlThrd = data.get2BytesSigned().toFloat() / TEMPERATURE_MULTIPLIER
 
         data.setUnhandledParams()
 
