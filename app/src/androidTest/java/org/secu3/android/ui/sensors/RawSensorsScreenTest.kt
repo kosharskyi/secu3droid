@@ -26,6 +26,7 @@ package org.secu3.android.ui.sensors
 
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.ui.test.assertIsDisplayed
+import androidx.compose.ui.test.assertHasNoClickAction
 import androidx.compose.ui.test.assertTextEquals
 import androidx.compose.ui.test.junit4.v2.createComposeRule
 import androidx.compose.ui.test.hasText
@@ -71,9 +72,11 @@ class RawSensorsScreenTest {
         assertTrue("Rows should follow the legacy field order", tops.zipWithNext().all { (before, after) -> before < after })
         labelIds.indices.forEach { index ->
             val rowTag = "raw-sensor-row-${labelIds[index]}"
-            compose.onNodeWithTag("raw-sensors-list").performScrollToNode(hasText(context.getString(labelIds[index])))
+            compose.onNodeWithTag("parameter-page-root").performScrollToNode(hasText(context.getString(labelIds[index])))
             compose.onNodeWithTag("$rowTag-label").assertTextEquals(context.getString(labelIds[index]))
-            compose.onNodeWithTag("$rowTag-value").assertTextEquals(String.format(Locale.US, "%.3f", values[index]))
+            compose.onNodeWithTag("$rowTag-value")
+                .assertTextEquals(String.format(Locale.US, "%.3f", values[index]) + " " + context.getString(R.string.units_volts))
+                .assertHasNoClickAction()
         }
     }
 
@@ -90,18 +93,18 @@ class RawSensorsScreenTest {
         val current = mutableStateOf(packet((1..13).map { it.toFloat() }))
         compose.setContent { SecuComposeTheme { RawSensorsScreen(current.value) } }
 
-        compose.onNodeWithTag("raw-sensor-row-${labelIds.first()}-value").assertTextEquals("1.000")
+        compose.onNodeWithTag("raw-sensor-row-${labelIds.first()}-value").assertTextEquals("1.000 ${context.getString(R.string.units_volts)}")
         compose.runOnIdle { current.value = packet(listOf(2.3456f) + (2..13).map { it.toFloat() }) }
-        compose.onNodeWithTag("raw-sensor-row-${labelIds.first()}-value").assertTextEquals("2.346")
+        compose.onNodeWithTag("raw-sensor-row-${labelIds.first()}-value").assertTextEquals("2.346 ${context.getString(R.string.units_volts)}")
     }
 
     @Test fun scrollRevealsTheLastAdditionalInput() {
         compose.setContent { SecuComposeTheme { RawSensorsScreen(packet((1..13).map { it.toFloat() })) } }
 
-        compose.onNodeWithTag("raw-sensors-list")
+        compose.onNodeWithTag("parameter-page-root")
             .performScrollToNode(hasText(context.getString(labelIds.last())))
         compose.onNodeWithText(context.getString(labelIds.last())).assertIsDisplayed()
-        compose.onNodeWithText("13.000").assertIsDisplayed()
+        compose.onNodeWithText("13.000 ${context.getString(R.string.units_volts)}").assertIsDisplayed()
     }
 
     private fun packet(v: List<Float>) = AdcRawDatPacket(

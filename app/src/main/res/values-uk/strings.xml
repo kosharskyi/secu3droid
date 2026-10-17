@@ -363,19 +363,19 @@
     <string name="sensors_frag_status_refprs_i_label">Вхід REFPRS_I</string>
     <string name="sensors_frag_status_altrn_i_label">Вхід ALTRN_I</string>
     
-    <string name="raw_sensors_frag_map_sensor_label">Датчик абсолютного Тиску, В:</string>
-    <string name="raw_sensors_frag_voltage_label">Напруга бортовох мережі, В:</string>
-    <string name="raw_sensors_frag_coolant_sensor_label">Датчик температури ОР, В:</string>
-    <string name="raw_sensors_frag_knock_signal_lavel_label">Рівень сигналу детонації, В:</string>
-    <string name="raw_sensors_frag_throttle_position_sensor_label">Датчик полож. дрос. заслінки, В:</string>
-    <string name="raw_sensors_frag_add_io1_input_label">Вхід ADD_I1, В:</string>
-    <string name="raw_sensors_frag_add_io2_input_label">Вхід ADD_I2, В:</string>
-    <string name="raw_sensors_frag_add_io3_input_label">Вхід ADD_I3, В:</string>
-    <string name="raw_sensors_frag_add_io4_input_label">Вхід ADD_I4, В:</string>
-    <string name="raw_sensors_frag_add_io5_input_label">Вхід ADD_I5, В:</string>
-    <string name="raw_sensors_frag_add_io6_input_label">Вхід ADD_I6, В:</string>
-    <string name="raw_sensors_frag_add_io7_input_label">Вхід ADD_I7, В:</string>
-    <string name="raw_sensors_frag_add_io8_input_label">Вхід ADD_I8, В:</string>
+    <string name="raw_sensors_frag_map_sensor_label">Датчик абсолютного Тиску</string>
+    <string name="raw_sensors_frag_voltage_label">Напруга бортової мережі</string>
+    <string name="raw_sensors_frag_coolant_sensor_label">Датчик температури ОР</string>
+    <string name="raw_sensors_frag_knock_signal_lavel_label">Рівень сигналу детонації</string>
+    <string name="raw_sensors_frag_throttle_position_sensor_label">Датчик полож. дрос. заслінки</string>
+    <string name="raw_sensors_frag_add_io1_input_label">Вхід ADD_I1</string>
+    <string name="raw_sensors_frag_add_io2_input_label">Вхід ADD_I2</string>
+    <string name="raw_sensors_frag_add_io3_input_label">Вхід ADD_I3</string>
+    <string name="raw_sensors_frag_add_io4_input_label">Вхід ADD_I4</string>
+    <string name="raw_sensors_frag_add_io5_input_label">Вхід ADD_I5</string>
+    <string name="raw_sensors_frag_add_io6_input_label">Вхід ADD_I6</string>
+    <string name="raw_sensors_frag_add_io7_input_label">Вхід ADD_I7</string>
+    <string name="raw_sensors_frag_add_io8_input_label">Вхід ADD_I8</string>
 
     <string name="dashboard_status_online">На звʼязку</string>
     <string name="dashboard_status_connecting">Підключення</string>

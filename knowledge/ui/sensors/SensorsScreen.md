@@ -6,9 +6,9 @@ Room-configured cards and their order remain available while disconnected. The m
 
 Legacy gauge section colors encode ECU ranges. Theme the dial text, needle, and background while preserving those range colors.
 
-## Compact layouts keep configured gauges and legacy row semantics
+## Compact layouts keep configured gauges and raw voltage values
 
-Numeric gauge cards may change orientation to fit width and font scale, but the configured grid and per-gauge numeric/dial selection stay authoritative. Legacy/raw readouts preserve packet order and formatting inside one grouped surface; raw ADC values remain unitless, and unavailable packets must not invent zeros.
+Numeric gauge cards may change orientation to fit width and font scale, but the configured grid and per-gauge numeric/dial selection stay authoritative. Raw ADC readouts preserve packet order and three-decimal formatting inside the outlined parameter-style group. The packet fields are already voltage-scaled, so every raw field displays the localized volts unit beside its value, including fields such as TPS that are presented differently in derived sensor screens. Unavailable packets must not invent zeros.
 
 ## Indicator state is visual, with its status retained for accessibility
 

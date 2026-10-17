@@ -25,14 +25,10 @@
 
 package org.secu3.android.ui.sensors
 
-import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.rememberScrollState
-import androidx.compose.foundation.verticalScroll
-import androidx.compose.material3.Text
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.testTag
@@ -41,6 +37,9 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import org.secu3.android.R
 import org.secu3.android.models.packets.input.AdcRawDatPacket
+import org.secu3.android.ui.parameters.compose.ParameterPage
+import org.secu3.android.ui.parameters.compose.ParameterSection
+import org.secu3.android.ui.parameters.compose.ParameterTextValueRow
 import java.util.Locale
 
 @Composable
@@ -63,13 +62,7 @@ internal fun RawSensorsScreen(packet: AdcRawDatPacket?, modifier: Modifier = Mod
         )
     }
 
-    Column(
-        modifier = modifier
-            .fillMaxSize()
-            .verticalScroll(rememberScrollState())
-            .padding(horizontal = 16.dp, vertical = 8.dp)
-            .testTag("raw-sensors-list"),
-    ) {
+    ParameterPage(modifier = modifier.testTag("raw-sensors-list")) {
         if (rows == null) {
             Text(
                 text = stringResource(R.string.dashboard_status_no_data),
@@ -79,17 +72,18 @@ internal fun RawSensorsScreen(packet: AdcRawDatPacket?, modifier: Modifier = Mod
             )
         }
         rows?.let { sensorRows ->
-            SensorGroupSurface(Modifier.fillMaxWidth().testTag("raw-sensors-card")) {
-                sensorRows.forEachIndexed { index, (label, value) ->
+            ParameterSection(modifier = Modifier.fillMaxWidth().testTag("raw-sensors-card")) {
+                sensorRows.forEach { (label, value) ->
                     val rowTag = "raw-sensor-row-$label"
-                    SensorReadoutRow(
-                        label = stringResource(label),
-                        value = String.format(Locale.US, "%.3f", value),
-                        rowTag = rowTag,
-                        labelTag = "$rowTag-label",
-                        valueTag = "$rowTag-value",
+                    val numberText = String.format(Locale.US, "%.3f", value)
+                    val units = stringResource(R.string.units_volts)
+                    ParameterTextValueRow(
+                        title = stringResource(label),
+                        value = "$numberText $units",
+                        numberText = numberText,
+                        units = units,
+                        testTag = rowTag,
                     )
-                    if (index != sensorRows.lastIndex) SensorRowDivider()
                 }
             }
         }
