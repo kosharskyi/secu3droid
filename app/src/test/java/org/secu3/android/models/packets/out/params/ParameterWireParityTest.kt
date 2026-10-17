@@ -73,6 +73,22 @@ class ParameterWireParityTest {
         assertArrayEquals(intArrayOf(0, 41), FunSetParamPacket(tpsCurveGradient = 1f).pack().sliceArray(17..18))
     }
 
+    @Test fun tpsRawUsesSignedSixteenBitAdcVoltage() {
+        for ((word, volts) in listOf(
+            0xFFFF to -.0025f,
+            0xFE70 to -1f,
+            0x0000 to 0f,
+            0x0190 to 1f,
+            0x8000 to -81.92f,
+        )) {
+            val frame = IntArray(49)
+            frame[0] = 64; frame[1] = 'n'.code
+            frame[33] = word ushr 8; frame[34] = word and 255
+            val packet = FunSetParamPacket().parse(frame) as FunSetParamPacket
+            assertEquals("TPS raw word 0x${word.toString(16)}", volts, packet.tps_raw, .00001f)
+        }
+    }
+
     @Test fun apps1RawIsUnsignedReadOnlyAdcVoltageAndKnownWordIsNotSent() {
         for ((raw, volts) in listOf(400 to 1f, 0x8000 to 81.92f)) {
             val frame = IntArray(49)

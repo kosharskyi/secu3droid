@@ -161,7 +161,7 @@ data class FunSetParamPacket(
         ckpsEngineCyl = data.get1Byte()
         injCylDisp = data.get2Bytes().toFloat().div(16384.0f)
         mafload_const = data.get4Bytes().toFloat()
-        tps_raw = data.get2Bytes().times(ADC_DISCRETE)
+        tps_raw = data.get2BytesSigned().toFloat() * ADC_DISCRETE
 
         gpsCurveOffset = data.get2Bytes().toShort().toFloat() * ADC_DISCRETE
         gpsCurveGradient = data.get2Bytes().toShort().toFloat() / (MAP_MULTIPLIER * ADC_DISCRETE * 128.0f)

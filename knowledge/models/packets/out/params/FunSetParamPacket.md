@@ -9,3 +9,7 @@ Manager MathHelpers::Round rounds a negative half-count away from zero; Kotlin r
 ## APPS1 raw is the final known read-only word
 
 FUNSET includes an unsigned 16-bit APPS1 ADC voltage after the APPS1 gradient. It is read-only telemetry used for learning and must not be resent; only bytes after this word are unknown extensions to preserve.
+
+## TPS raw is signed while APPS1 raw is unsigned
+
+The TPS ADC learning word after the MAF constant is a signed 16-bit voltage count; APPS1 raw at the end is an unsigned 16-bit count. Preserve this difference when decoding high-bit samples.
