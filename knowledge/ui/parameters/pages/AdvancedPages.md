@@ -37,3 +37,7 @@ The packet keeps one-thirty-second degree Float values for start angle and durat
 ## Injection timing retains signed sixteenth-degree values while editors show whole degrees
 
 Both injection timing banks and both cranking timing banks are signed 16-bit values scaled by 1/16 degree. Keep their packet values as Floats through unrelated edits; the integer editor rounds only its initial display value, and an explicit edit stores the chosen whole degree.
+
+## Injector pulses-per-liter rounds for display without quantizing the packet
+
+The ECU's unsigned fixed-point physical value remains a Float so unrelated edits preserve its incoming word. The state and integer editor show a rounded value; an explicit whole-number edit stores that value as a Float.

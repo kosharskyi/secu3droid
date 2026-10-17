@@ -5,3 +5,7 @@ The supported ECU platform is ATmega1284. Its minimum-pulse discrete is fixed at
 ## All four injector timing words are signed sixteenths of a degree
 
 Main and cranking timing for both banks decode as signed 16-bit words divided by 16. Preserve these fractional values in the packet when another field changes; the UI rounds only for its whole-degree editor, and writes use the protocol's half-away-from-zero rounding rule.
+
+## Injector pulses-per-liter stays a physical Float
+
+`fffConst` is an unsigned 16-bit fixed-point physical value (`word * 60000 / 65536`). Keep the decoded Float so unrelated parameter writes can reproduce its original word. `SensorsPacket` has a separate fixed app-side conversion constant; it is not this ECU parameter.

@@ -85,7 +85,7 @@ class FuelInjectionStateHolder(
             FuelInjectionNumber.MIN_PW_1 -> FuelInjectionEditSpec(R.string.injctr_par_min_inj_pw_title, p.minPw1, .025f, .1f, 6.5f, 2, false)
             FuelInjectionNumber.MAX_PW_0 -> FuelInjectionEditSpec(R.string.injctr_par_max_inj_pw_title, p.injMaxPw[0], .1f, 0f, 100f, 2, false)
             FuelInjectionNumber.MAX_PW_1 -> FuelInjectionEditSpec(R.string.injctr_par_max_inj_pw_title, p.injMaxPw[1], .1f, 0f, 100f, 2, false)
-            FuelInjectionNumber.PULSES_PER_LITER -> FuelInjectionEditSpec(R.string.injctr_par_pulses_per_litter_of_fuel, p.fffConst.toFloat(), 1f, 8000f, 32000f, 0, true)
+            FuelInjectionNumber.PULSES_PER_LITER -> FuelInjectionEditSpec(R.string.injctr_par_pulses_per_litter_of_fuel, p.fffConst, 1f, 8000f, 32000f, 0, true)
             FuelInjectionNumber.DECREASE_RATE -> FuelInjectionEditSpec(R.string.injctr_par_inj_pw_dec_speed_title, p.injPwDecSpeed, .01f, .01f, 10f, 2, false)
             FuelInjectionNumber.INCREASE_RATE -> FuelInjectionEditSpec(R.string.injctr_par_inj_pw_inc_speed_title, p.injPwIncSpeed, .01f, .01f, 10f, 2, false)
         }
@@ -106,7 +106,7 @@ class FuelInjectionStateHolder(
             FuelInjectionNumber.MIN_PW_1 -> p.minPw1 = value
             FuelInjectionNumber.MAX_PW_0 -> p.injMaxPw[0] = value
             FuelInjectionNumber.MAX_PW_1 -> p.injMaxPw[1] = value
-            FuelInjectionNumber.PULSES_PER_LITER -> p.fffConst = value.toInt()
+            FuelInjectionNumber.PULSES_PER_LITER -> p.fffConst = value
             FuelInjectionNumber.DECREASE_RATE -> p.injPwDecSpeed = value
             FuelInjectionNumber.INCREASE_RATE -> p.injPwIncSpeed = value
         }

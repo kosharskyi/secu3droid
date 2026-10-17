@@ -74,7 +74,7 @@ class FuelInjectionStateHolderTest {
         assertArrayEquals(floatArrayOf(301f, 401f), p.flowRate, .001f)
         assertArrayEquals(floatArrayOf(11f, 21f), p.timing, 0f)
         assertArrayEquals(floatArrayOf(31f, 41f), p.timingCrk, 0f)
-        assertEquals(10000, p.fffConst)
+        assertEquals(10000f, p.fffConst, 0f)
         assertEquals(3f, p.injPwDecSpeed, .001f); assertEquals(4f, p.injPwIncSpeed, .001f)
         val values = (holder.uiState as FuelInjectionUiState.Data).values
         assertEquals(3f, values.engineDisplacement, .001f)
@@ -111,6 +111,34 @@ class FuelInjectionStateHolderTest {
         assertArrayEquals(floatArrayOf(2f, 3.25f), incoming.timing, 0f)
         assertArrayEquals(floatArrayOf(4.5f, -.03125f), incoming.timingCrk, 0f)
         assertArrayEquals(intArrayOf(0x00, 0x20, 0x00, 0x34, 0x00, 0x48, 0xFF, 0xFF), incoming.pack().sliceArray(19..26))
+    }
+
+    @Test fun pulsesPerLiterRetainsPhysicalPrecisionUntilExplicitIntegerEdit() {
+        val payload = IntArray(53).also {
+            it[27] = 0x22; it[28] = 0x26
+            it[51] = 0xCA; it[52] = 0xFE
+        }
+        val packet = InjctrParPacket().parse(intArrayOf('@'.code, ';'.code) + payload) as InjctrParPacket
+        holder.receive(packet)
+        assertTrue(sends.isEmpty())
+        assertEquals(8003.540039f, packet.fffConst, .0001f)
+        assertEquals(8004, (holder.uiState as FuelInjectionUiState.Data).values.pulsesPerLiter)
+        val spec = holder.editSpec(FuelInjectionNumber.PULSES_PER_LITER)!!
+        assertEquals(8003.540039f, spec.value, .0001f)
+        assertEquals(1f, spec.step, 0f); assertEquals(8000f, spec.min, 0f); assertEquals(32000f, spec.max, 0f)
+        assertEquals(0, spec.precision); assertTrue(spec.integer)
+
+        holder.changeFlag(FuelInjectionFlag.AIR_DENSITY, true)
+        assertEquals(0x2226, (packet.pack()[28] shl 8) or packet.pack()[29])
+        assertArrayEquals(intArrayOf(0xCA, 0xFE), packet.pack().takeLast(2).toIntArray())
+        assertEquals(1, sends.size)
+        sends.clear()
+
+        holder.edit(FuelInjectionNumber.PULSES_PER_LITER, 10000f)
+        assertEquals(1, sends.size)
+        assertEquals(10000f, packet.fffConst, 0f)
+        assertEquals(10000, (holder.uiState as FuelInjectionUiState.Data).values.pulsesPerLiter)
+        assertEquals(10923, (packet.pack()[28] shl 8) or packet.pack()[29])
     }
 
     @Test fun flowEditsRecalculateBothDerivedBankConstantsAndSyntheticLoad() {

@@ -88,7 +88,7 @@ fun fuelInjectionValues(packet: InjctrParPacket): FuelInjectionValues = FuelInje
             packet.timing[bank].roundToInt(), packet.timingCrk[bank].roundToInt(), if (bank == 0) packet.useTimingMap else packet.useTimingMapG,
             if (bank == 0) packet.angleSpec0 else packet.angleSpec1, if (bank == 0) packet.minPw0 else packet.minPw1,
             packet.injMaxPw[bank], validInjectorConfigurations(packet.ckpsEngineCyl), pulseList)
-    }, packet.fffConst, packet.useAdditionalCorrections, packet.useAirDensity, packet.useDifferentialPressure,
+    }, packet.fffConst.roundToInt(), packet.useAdditionalCorrections, packet.useAirDensity, packet.useDifferentialPressure,
     packet.switchSecondInjRow, packet.fullSequentialAfterStart, packet.injPwDecSpeed, packet.injPwIncSpeed,
 )
 

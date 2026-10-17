@@ -54,7 +54,7 @@ data class InjctrParPacket(
 
     var angleSpec: Int = 0,
 
-    var fffConst: Int = 0,
+    var fffConst: Float = 0f,
 
     var minPw: Int = 0,
 
@@ -96,7 +96,7 @@ data class InjctrParPacket(
 
         data += angleSpec
 
-        data += fffConst.toFloat().div(1000f*60f).times(65536f).roundToInt().write2Bytes()
+        data += fffConst.div(60000f).times(65536f).roundToInt().write2Bytes()
 
         data += minPw.write2Bytes()
 
@@ -314,7 +314,7 @@ data class InjctrParPacket(
 
         angleSpec = data.get1Byte()
 
-        fffConst = data.get2Bytes().toFloat().div(65536f).times(1000*60).roundToInt()
+        fffConst = data.get2Bytes().toFloat().div(65536f).times(60000f)
         minPw = data.get2Bytes()
 
         injMafConst[0] = data.get4Bytes()
@@ -348,7 +348,7 @@ data class InjctrParPacket(
         if (!timing.contentEquals(other.timing)) return false
         if (!timingCrk.contentEquals(other.timingCrk)) return false
         if (angleSpec != other.angleSpec) return false
-        if (fffConst != other.fffConst) return false
+        if (fffConst.compareTo(other.fffConst) != 0) return false
         if (minPw != other.minPw) return false
 
         return true
@@ -364,7 +364,7 @@ data class InjctrParPacket(
         result = 31 * result + timing.contentHashCode()
         result = 31 * result + timingCrk.contentHashCode()
         result = 31 * result + angleSpec
-        result = 31 * result + fffConst
+        result = 31 * result + fffConst.hashCode()
         result = 31 * result + minPw
         return result
     }
