@@ -27,6 +27,8 @@ package org.secu3.android.models.packets.input
 import org.secu3.android.models.FnName
 import org.secu3.android.models.packets.base.Secu3Packet
 import org.secu3.android.models.packets.base.InputPacket
+import java.nio.charset.Charset
+import java.nio.charset.StandardCharsets
 
 data class FnNameDatPacket(
 
@@ -59,7 +61,13 @@ data class FnNameDatPacket(
         require(parsedTablesNumber > 0) { "Function name table count must be positive" }
         require(index < parsedTablesNumber) { "Function name index must be less than table count" }
 
-        val name = data.getString(F_NAME_SIZE)
+        val nameBytes = data.getString(F_NAME_SIZE)
+            .toByteArray(StandardCharsets.ISO_8859_1)
+            .map { byte ->
+                if (byte.toInt() and 0xFF == 0xFF) ' '.code.toByte() else byte
+            }
+            .toByteArray()
+        val name = String(nameBytes, OEM_CHARSET).substringBefore('\u0000')
 
         tablesNumber = parsedTablesNumber
         fnName = FnName(index, name)
@@ -70,6 +78,7 @@ data class FnNameDatPacket(
     companion object {
 
         private const val F_NAME_SIZE = 16          //!< number of symbols in names of tables' sets
+        private val OEM_CHARSET = Charset.forName("IBM866")
         internal const val DESCRIPTOR = 'p'
 
     }
