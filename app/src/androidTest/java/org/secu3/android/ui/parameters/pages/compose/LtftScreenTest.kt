@@ -59,7 +59,7 @@ class LtftScreenTest {
             assertEquals(emptyList<Int>(), selections)
         }
         compose.onNodeWithTag("ltft_lower_clt").performScrollTo().performClick()
-        compose.onNodeWithTag("ltft_mode").performClick()
+        compose.onNodeWithTag("ltft_mode").performScrollTo().performClick()
         compose.onNodeWithTag("ltft_mode_option_3").performClick()
         compose.runOnIdle {
             assertEquals(1, edits)

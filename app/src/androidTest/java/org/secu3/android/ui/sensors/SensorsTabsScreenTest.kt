@@ -28,6 +28,7 @@ package org.secu3.android.ui.sensors
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.test.junit4.v2.createComposeRule
+import androidx.compose.ui.test.*
 import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.onNodeWithContentDescription
@@ -174,6 +175,18 @@ class SensorsTabsScreenTest {
         compose.waitForIdle()
         assertEquals(listOf(1), settings)
         compose.onNodeWithText(context.getString(R.string.dashboard_status_offline)).assertExists()
+    }
+
+    @Test fun disconnectedScreenKeepsConfigurationButMarksLiveReadingsUnavailable() {
+        val gauges = listOf(GaugeItem(GaugeState(1, GaugeType.RPM, 0, true), "2240"))
+        val indicators = listOf(IndicatorItem(IndicatorState(2, IndicatorType.THROTTLE, 0), false))
+        compose.setContent { SecuComposeTheme { SensorsScreen(gauges = gauges, indicators = indicators) } }
+
+        compose.onNodeWithTag("gauge-RPM").assertExists()
+        compose.onNodeWithText("—").assertExists()
+        compose.onNodeWithText("2240").assertDoesNotExist()
+        compose.onNodeWithText(context.getString(R.string.sensors_status_accessibility_unavailable)).assertExists()
+        compose.onNodeWithText(context.getString(R.string.sensors_status_accessibility_off)).assertDoesNotExist()
     }
 
     @Test fun pageTaskMappingSelectsSensorAndRawTasks() {

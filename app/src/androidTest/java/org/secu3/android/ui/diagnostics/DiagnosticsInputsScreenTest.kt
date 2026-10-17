@@ -26,12 +26,21 @@ package org.secu3.android.ui.diagnostics
 
 import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.assertIsNotEnabled
+import androidx.compose.ui.test.assert
+import androidx.compose.ui.test.assertTextEquals
 import androidx.compose.ui.test.junit4.v2.createComposeRule
 import androidx.compose.ui.test.junit4.StateRestorationTester
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.width
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.runtime.CompositionLocalProvider
+import androidx.compose.ui.unit.Density
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.test.SemanticsMatcher
+import androidx.compose.ui.semantics.SemanticsProperties
+import androidx.test.platform.app.InstrumentationRegistry
+import org.secu3.android.R
 import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
@@ -50,24 +59,49 @@ import org.secu3.android.models.packets.out.DiagOutputPacket
 
 class DiagnosticsInputsScreenTest {
     @get:Rule val compose = createComposeRule()
+    private val context = InstrumentationRegistry.getInstrumentation().targetContext
 
     @Test fun valuesAndReadOnlyStatusesAreShownAndSecu3iFieldsAreConditional() {
         val input = DiagInputPacket(voltage = 12.345f, map = 1.25f, addI8 = 8.5f, bits = 0b1010101010)
         var firmware by mutableStateOf<Boolean?>(false)
         compose.setContent { DiagnosticsInputsScreen(input, firmware, 0, 10f, 50f, {}, {}, {}) }
         compose.onNodeWithText("12.345 V").assertIsDisplayed()
-        compose.onNodeWithTag("analog_ADD_IO8").assertIsDisplayed()
-        compose.onNodeWithTag("status_GPA4_I").assertIsDisplayed()
-        compose.onNodeWithTag("output_channel").assertIsDisplayed()
+        compose.onNodeWithTag("analog_ADD_IO8").performScrollTo().assertIsDisplayed()
+        compose.onNodeWithTag("status_GPA4_I").performScrollTo().assertIsDisplayed()
+        compose.onNodeWithTag("output_channel").performScrollTo().assertIsDisplayed()
         compose.onNodeWithTag("frequency_edit").performScrollTo().assertIsDisplayed()
         compose.onNodeWithTag("duty_edit").performScrollTo().assertIsDisplayed()
-        compose.onNodeWithText("COND_I").assertIsDisplayed()
+        compose.onNodeWithText("COND_I").performScrollTo().assertIsDisplayed()
 
         compose.runOnIdle { firmware = true }
         compose.onAllNodesWithTag("analog_ADD_IO8").assertCountEquals(0)
         compose.onAllNodesWithTag("status_GPA4_I").assertCountEquals(0)
         compose.onAllNodesWithTag("status_COND_I").assertCountEquals(0)
-        compose.onNodeWithText("ADD_IO3").assertIsDisplayed()
+        compose.onNodeWithText("ADD_IO3").performScrollTo().assertIsDisplayed()
+    }
+
+    @Test fun absentPacketIsUnavailableButARealZeroAndFalseRemainValidReadouts() {
+        var packet by mutableStateOf<DiagInputPacket?>(null)
+        compose.setContent { DiagnosticsInputsScreen(packet, false, 0, 10f, 50f, {}, {}, {}) }
+
+        compose.onNodeWithTag("analog_Voltage-value").assertTextEquals("— V")
+        compose.onNodeWithTag("status_GAS_V").assert(
+            SemanticsMatcher.expectValue(
+                SemanticsProperties.StateDescription,
+                context.getString(R.string.sensors_status_accessibility_unavailable),
+            ),
+        )
+        compose.onNodeWithTag("status_GAS_V-value").assertTextEquals(context.getString(R.string.sensors_status_accessibility_unavailable))
+
+        packet = DiagInputPacket(voltage = 0f)
+        compose.onNodeWithTag("analog_Voltage-value").assertTextEquals("0.000 V")
+        compose.onNodeWithTag("status_GAS_V").assert(
+            SemanticsMatcher.expectValue(
+                SemanticsProperties.StateDescription,
+                context.getString(R.string.sensors_status_accessibility_off),
+            ),
+        )
+        compose.onNodeWithTag("status_GAS_V-value").assertTextEquals(context.getString(R.string.sensors_status_accessibility_off))
     }
 
     @Test fun secu3TChannelSelectionSendsSameIndexAsProtocolChannelAndRenderIsSilent() {
@@ -130,16 +164,16 @@ class DiagnosticsInputsScreenTest {
             })
         }
         compose.runOnIdle { assertEquals(0, frequencyRequests); assertEquals(0, dutyRequests) }
-        compose.onNodeWithTag("frequency_edit").performClick()
-        compose.onNodeWithTag("duty_edit").performClick()
+        compose.onNodeWithTag("frequency_edit").performScrollTo().performClick()
+        compose.onNodeWithTag("duty_edit").performScrollTo().performClick()
         compose.runOnIdle {
             assertEquals(1, frequencyRequests)
             assertEquals(1, dutyRequests)
             assertEquals(11.2f, packet.frq)
             assertEquals(51.5f, packet.duty)
         }
-        compose.onNodeWithText("11.2 Hz").assertIsDisplayed()
-        compose.onNodeWithText("51.5 %").assertIsDisplayed()
+        compose.onNodeWithText("11.2 Hz").performScrollTo().assertIsDisplayed()
+        compose.onNodeWithText("51.5 %").performScrollTo().assertIsDisplayed()
         compose.runOnIdle {
             packet.chan = 1
             updateDiagnosticOutputFrequency(packet, 20f) { frequencyRequests++ }
@@ -154,16 +188,19 @@ class DiagnosticsInputsScreenTest {
         var frequencyEdits = 0
         var dutyEdits = 0
         compose.setContent {
-            Box(Modifier.width(280.dp)) {
-                DiagnosticsInputsScreen(null, true, 1, 123.4f, 42.5f,
-                    { channelChanges++ }, { frequencyEdits++ }, { dutyEdits++ })
+            val density = LocalDensity.current
+                CompositionLocalProvider(LocalDensity provides Density(density.density, fontScale = 1.7f)) {
+                Box(Modifier.width(280.dp)) {
+                    DiagnosticsInputsScreen(null, true, 1, 123.4f, 42.5f,
+                        { channelChanges++ }, { frequencyEdits++ }, { dutyEdits++ })
+                }
             }
         }
-        compose.onNodeWithText("Test signal").assertIsDisplayed()
-        compose.onNodeWithText("Output channel").assertIsDisplayed()
-        compose.onNodeWithText("IGN_OUT1").assertIsDisplayed()
-        compose.onNodeWithText("123.4 Hz").assertIsDisplayed()
-        compose.onNodeWithText("42.5 %").assertIsDisplayed()
+        compose.onNodeWithText("Test signal").performScrollTo().assertIsDisplayed()
+        compose.onNodeWithText("Output channel").performScrollTo().assertIsDisplayed()
+        compose.onNodeWithText("IGN_OUT1").performScrollTo().assertIsDisplayed()
+        compose.onNodeWithText("123.4 Hz").performScrollTo().assertIsDisplayed()
+        compose.onNodeWithText("42.5 %").performScrollTo().assertIsDisplayed()
         compose.onNodeWithTag("frequency_edit").performScrollTo().assertIsEnabled().performClick()
         compose.onNodeWithTag("duty_edit").performScrollTo().assertIsEnabled().performClick()
         compose.runOnIdle {

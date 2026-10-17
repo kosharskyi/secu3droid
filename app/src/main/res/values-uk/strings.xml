@@ -233,7 +233,7 @@
     <string name="params_tab_idling_title">Регулятор ХХ</string>
     <string name="params_tab_functions_title">Функції</string>
     <string name="params_tab_temperature_title">Температура</string>
-    <string name="params_tab_fuel_cutoff_title">Карбюратор</string>
+    <string name="params_tab_fuel_cutoff_title">Відсічення палива</string>
     <string name="params_tab_adc_errors_corr_title">Корекція АЦП</string>
     <string name="params_tab_ckps_title">ДПКВ</string>
     <string name="params_tab_knock_title">Детонація</string>
@@ -461,4 +461,8 @@
     <string name="gas_dose_manual_decrease">Зменшити положення дозатора газу</string>
     <string name="gas_dose_manual_increase">Збільшити положення дозатора газу</string>
 
+    <string name="refresh">Оновити</string>
+    <string name="parameter_read_failed">Не вдалося прочитати параметри з ЕБУ.</string>
+    <string name="parameter_save_unconfirmed">ЕБУ не підтвердив збереження параметрів.</string>
+    <string name="retry">Повторити</string>
 </resources>

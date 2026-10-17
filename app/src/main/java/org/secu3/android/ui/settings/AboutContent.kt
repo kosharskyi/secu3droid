@@ -12,6 +12,7 @@ package org.secu3.android.ui.settings
 import android.text.Spanned
 import android.text.style.URLSpan
 import androidx.compose.foundation.Image
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -19,6 +20,7 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
@@ -35,6 +37,7 @@ import androidx.compose.ui.text.LinkAnnotation
 import androidx.compose.ui.text.SpanStyle
 import androidx.compose.ui.text.buildAnnotatedString
 import androidx.compose.ui.text.style.TextDecoration
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.withLink
 import androidx.compose.ui.unit.dp
 import androidx.core.text.HtmlCompat
@@ -48,12 +51,18 @@ internal fun AboutContent(
     onLinkBounds: ((resourceId: Int, bounds: Rect) -> Unit)? = null,
 ) {
     val year = LocalDateTime.now().year
-    Surface {
+    Surface(
+        modifier = Modifier.fillMaxWidth(),
+        shape = RoundedCornerShape(24.dp),
+        color = MaterialTheme.colorScheme.surface,
+        border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant),
+        shadowElevation = 0.dp,
+    ) {
         Column(
-            Modifier.fillMaxWidth().verticalScroll(rememberScrollState()).padding(24.dp),
+            Modifier.fillMaxWidth().verticalScroll(rememberScrollState()).padding(20.dp),
             verticalArrangement = Arrangement.spacedBy(12.dp),
         ) {
-            Row(verticalAlignment = Alignment.CenterVertically) {
+            Row(horizontalArrangement = Arrangement.spacedBy(12.dp), verticalAlignment = Alignment.CenterVertically) {
                 Image(
                     painter = painterResource(R.drawable.gplv3_icon),
                     contentDescription = null,
@@ -62,7 +71,8 @@ internal fun AboutContent(
                 Text(
                     text = stringResource(R.string.about_title),
                     style = MaterialTheme.typography.titleLarge,
-                    modifier = Modifier.padding(start = 16.dp),
+                    modifier = Modifier.weight(1f),
+                    textAlign = TextAlign.Center,
                 )
             }
             Text("${stringResource(R.string.about_version)} ${BuildConfig.VERSION_NAME}")

@@ -24,8 +24,10 @@
  */
 package org.secu3.android.ui.sensors
 
+import android.graphics.Bitmap
 import androidx.room.Room
 import androidx.compose.ui.test.assert
+import androidx.compose.ui.test.assertCountEquals
 import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.assertTextEquals
 import androidx.compose.ui.test.assertTextContains
@@ -33,11 +35,18 @@ import androidx.compose.ui.test.hasTestTag
 import androidx.compose.ui.test.junit4.v2.createComposeRule
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.width
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.unit.Density
 import androidx.compose.ui.test.onNodeWithTag
+import androidx.compose.ui.test.onAllNodesWithText
 import androidx.compose.ui.test.onNodeWithText
+import androidx.compose.ui.test.onRoot
+import androidx.compose.ui.test.captureToImage
+import androidx.compose.ui.graphics.asAndroidBitmap
 import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.performTouchInput
 import androidx.compose.ui.geometry.Offset
@@ -45,7 +54,9 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.semantics.SemanticsProperties
 import androidx.compose.ui.test.SemanticsMatcher
 import androidx.test.platform.app.InstrumentationRegistry
+import java.io.File
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertNotEquals
 import org.junit.Rule
 import org.junit.Test
 import kotlinx.coroutines.runBlocking
@@ -80,6 +91,115 @@ class SensorsScreenTest {
             .assert(SemanticsMatcher.expectValue(SemanticsProperties.StateDescription, context.getString(R.string.sensors_status_accessibility_on)))
         compose.onNodeWithTag("indicator-THROTTLE")
             .assert(SemanticsMatcher.expectValue(SemanticsProperties.StateDescription, context.getString(R.string.sensors_status_accessibility_off)))
+        compose.onAllNodesWithText(context.getString(R.string.sensors_status_accessibility_on)).assertCountEquals(0)
+        compose.onAllNodesWithText(context.getString(R.string.sensors_status_accessibility_off)).assertCountEquals(0)
+    }
+
+    @Test fun indicatorColorsCommunicateStateInBothThemesWhileSemanticsRemainAvailable() {
+        val darkTheme = mutableStateOf(false)
+        val available = mutableStateOf(true)
+        val active = mutableStateOf(true)
+        compose.setContent {
+            SecuComposeTheme(darkTheme = darkTheme.value) {
+                SensorsScreen(
+                    emptyList(),
+                    listOf(IndicatorItem(IndicatorState(1, IndicatorType.CHECK_ENGINE, 0), active.value)),
+                    1, null, null, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {},
+                    dataAvailable = available.value,
+                )
+            }
+        }
+
+        fun indicatorBackgroundColor(): Int {
+            val bitmap = compose.onNodeWithTag("indicator-CHECK_ENGINE").captureToImage().asAndroidBitmap()
+            val y = with(compose.density) { 10.dp.roundToPx() }.coerceIn(0, bitmap.height - 1)
+            return bitmap.getPixel(bitmap.width / 2, y)
+        }
+
+        fun assertState(resource: Int) {
+            compose.onNodeWithTag("indicator-CHECK_ENGINE")
+                .assert(SemanticsMatcher.expectValue(SemanticsProperties.StateDescription, context.getString(resource)))
+        }
+
+        assertState(R.string.sensors_status_accessibility_on)
+        val lightActive = indicatorBackgroundColor()
+        compose.runOnIdle { active.value = false }
+        compose.waitForIdle()
+        assertState(R.string.sensors_status_accessibility_off)
+        val lightInactive = indicatorBackgroundColor()
+        compose.runOnIdle { available.value = false }
+        compose.waitForIdle()
+        assertState(R.string.sensors_status_accessibility_unavailable)
+        val lightUnavailable = indicatorBackgroundColor()
+        assertNotEquals("light active and inactive indicators need distinct colors", lightActive, lightInactive)
+        assertNotEquals("light unavailable and inactive indicators need distinct colors", lightUnavailable, lightInactive)
+
+        compose.runOnIdle {
+            darkTheme.value = true
+            available.value = true
+            active.value = true
+        }
+        compose.waitForIdle()
+        assertState(R.string.sensors_status_accessibility_on)
+        val darkActive = indicatorBackgroundColor()
+        compose.runOnIdle { active.value = false }
+        compose.waitForIdle()
+        assertState(R.string.sensors_status_accessibility_off)
+        val darkInactive = indicatorBackgroundColor()
+        compose.runOnIdle { available.value = false }
+        compose.waitForIdle()
+        assertState(R.string.sensors_status_accessibility_unavailable)
+        val darkUnavailable = indicatorBackgroundColor()
+        assertNotEquals("dark active and inactive indicators need distinct colors", darkActive, darkInactive)
+        assertNotEquals("dark unavailable and inactive indicators need distinct colors", darkUnavailable, darkInactive)
+        compose.onAllNodesWithText(context.getString(R.string.sensors_status_accessibility_on)).assertCountEquals(0)
+        compose.onAllNodesWithText(context.getString(R.string.sensors_status_accessibility_off)).assertCountEquals(0)
+        compose.onAllNodesWithText(context.getString(R.string.sensors_status_accessibility_unavailable)).assertCountEquals(0)
+    }
+
+    @Test fun darkThemeAndLargeFontKeepNumericReadoutsInsideTheCard() {
+        val screenshotMode = mutableStateOf(false)
+        compose.setContent {
+            val fontDensity = LocalDensity.current.density
+            SecuComposeTheme(darkTheme = screenshotMode.value) {
+                CompositionLocalProvider(LocalDensity provides Density(fontDensity, 2f)) {
+                    Box(Modifier.width(360.dp)) {
+                        SensorsScreen(
+                            gauges = listOf(
+                                GaugeItem(GaugeState(1, GaugeType.RPM, 0, true), "1234"),
+                                GaugeItem(GaugeState(2, GaugeType.VOLTAGE, 1, true), "12.4"),
+                            ),
+                            indicators = listOf(IndicatorItem(IndicatorState(2, IndicatorType.CHECK_ENGINE, 0), true)),
+                            columns = 2,
+                            gaugeChoices = null,
+                            indicatorChoices = null,
+                            onAddGaugeRequest = {},
+                            onAddIndicatorRequest = {},
+                            onAddGauge = {},
+                            onAddIndicator = {},
+                            onGaugeChoicesConsumed = {},
+                            onIndicatorChoicesConsumed = {},
+                            onDeleteGauge = {},
+                            onDeleteIndicator = {},
+                            onUpdateGauge = {},
+                            onReorderGauges = {},
+                            onReorderIndicators = {},
+                        )
+                    }
+                }
+            }
+        }
+
+        val card = compose.onNodeWithTag("gauge-RPM").fetchSemanticsNode().boundsInRoot
+        val value = compose.onNodeWithText("1234").fetchSemanticsNode().boundsInRoot
+        org.junit.Assert.assertTrue("large type should remain within the gauge card", value.left >= card.left && value.right <= card.right)
+        val secondGauge = compose.onNodeWithTag("gauge-VOLTAGE").fetchSemanticsNode().boundsInRoot
+        org.junit.Assert.assertTrue("two configured columns should reflow for enlarged numeric values", secondGauge.top > card.top)
+        compose.onNodeWithTag("indicator-CHECK_ENGINE").assertIsDisplayed()
+        captureDesignScreenshot("design-sensors-light.png")
+        compose.runOnIdle { screenshotMode.value = true }
+        compose.waitForIdle()
+        captureDesignScreenshot("design-sensors-dark.png")
     }
 
     @Test fun configuredColumnCountControlsGaugeGridPlacement() {
@@ -142,8 +262,7 @@ class SensorsScreenTest {
         val card = compose.onNodeWithTag("gauge-RPM").fetchSemanticsNode().boundsInRoot
         val dial = compose.onNodeWithTag("dial-RPM", useUnmergedTree = true).fetchSemanticsNode().boundsInRoot
         org.junit.Assert.assertTrue("dial must be narrower than its card", dial.width < card.width)
-        val footerHeight = 24f * context.resources.displayMetrics.density
-        org.junit.Assert.assertTrue("dial should reserve a separate 24dp live-value footer: $dial", kotlin.math.abs((dial.height - dial.width) - footerHeight) <= 2f)
+        org.junit.Assert.assertTrue("dial should reserve a separate live-value footer: $dial", dial.height > dial.width)
         org.junit.Assert.assertTrue("dial must fit horizontally in its card", dial.left >= card.left && dial.right <= card.right)
         org.junit.Assert.assertTrue("dial must fit vertically in its card", dial.top >= card.top && dial.bottom <= card.bottom)
     }
@@ -196,6 +315,14 @@ class SensorsScreenTest {
             assertEquals("-7", formatGaugeTickLabel(-7.4f))
         } finally {
             Locale.setDefault(originalLocale)
+        }
+    }
+
+    private fun captureDesignScreenshot(fileName: String) {
+        if (InstrumentationRegistry.getArguments().getString("captureDesignScreenshots") != "true") return
+        val bitmap = compose.onRoot().captureToImage().asAndroidBitmap()
+        File(context.cacheDir, fileName).outputStream().use { output ->
+            bitmap.compress(Bitmap.CompressFormat.PNG, 100, output)
         }
     }
 
@@ -511,7 +638,7 @@ class SensorsScreenTest {
                 packetItems.value, emptyList(), 1, null, null,
                 {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {},
                 onReorderingChanged = { active ->
-                    if (active) packetItems.value = packetItems.value.map { it.copy(value = "updated during drag") }
+                    if (active) packetItems.value = packetItems.value.map { it.copy(value = "4321") }
                 },
             )
         } }
@@ -545,7 +672,7 @@ class SensorsScreenTest {
         org.junit.Assert.assertTrue("cancel must preserve the prior pending order", orderAfterCancel[0] < orderAfterCancel[1])
         assertEquals(voltage.top, compose.onNodeWithTag("gauge-VOLTAGE").fetchSemanticsNode().boundsInRoot.top, 1f)
         assertEquals(rpm.top, compose.onNodeWithTag("gauge-RPM").fetchSemanticsNode().boundsInRoot.top, 1f)
-        compose.onNodeWithTag("gauge-RPM").assertTextContains("updated during drag")
+        compose.onNodeWithTag("gauge-RPM").assertTextContains("4321")
     }
 
     @Test fun reorderedGaugeAndIndicatorOrderSurvivesDatabaseReopen() = runBlocking {

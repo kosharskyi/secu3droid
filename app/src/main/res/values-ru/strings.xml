@@ -457,4 +457,8 @@
     <string name="fuel_injection_unavailable">Эти параметры недоступны в вашей прошивке</string>
     <string name="gas_dose_manual_decrease">Уменьшить положение дозатора газа</string>
     <string name="gas_dose_manual_increase">Увеличить положение дозатора газа</string>
+    <string name="refresh">Обновить</string>
+    <string name="parameter_read_failed">Не удалось прочитать параметры из ЭБУ.</string>
+    <string name="parameter_save_unconfirmed">ЭБУ не подтвердил сохранение параметров.</string>
+    <string name="retry">Повторить</string>
 </resources>

@@ -29,6 +29,9 @@ import android.content.SharedPreferences
 import androidx.core.content.edit
 import dagger.hilt.android.qualifiers.ApplicationContext
 import org.secu3.android.R
+import kotlinx.coroutines.channels.awaitClose
+import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.callbackFlow
 import javax.inject.Inject
 import javax.inject.Singleton
 
@@ -66,6 +69,32 @@ class UserPrefs @Inject constructor(@ApplicationContext private val ctx: Context
     var isDarkTheme: Boolean
         get() = mPrefs.getBoolean(ctx.getString(R.string.pref_night_mode_key), false);
         set(value) = mPrefs.edit { putBoolean(ctx.getString(R.string.pref_night_mode_key), value) }
+
+    /** Appearance selection, with a one-way fallback for installations using the legacy boolean. */
+    var appearanceMode: AppearanceMode
+        get() {
+            val key = ctx.getString(R.string.pref_appearance_mode_key)
+            if (mPrefs.contains(key)) return AppearanceMode.fromPreference(mPrefs.getString(key, null))
+            val legacyKey = ctx.getString(R.string.pref_night_mode_key)
+            return if (mPrefs.contains(legacyKey)) {
+                if (mPrefs.getBoolean(legacyKey, false)) AppearanceMode.Dark else AppearanceMode.Light
+            } else AppearanceMode.System
+        }
+        set(value) = mPrefs.edit { putString(ctx.getString(R.string.pref_appearance_mode_key), value.preferenceValue) }
+
+    /** Emits current and externally edited appearance values while collected. */
+    val appearanceModeFlow: Flow<AppearanceMode>
+        get() = callbackFlow {
+            val key = ctx.getString(R.string.pref_appearance_mode_key)
+            val listener = SharedPreferences.OnSharedPreferenceChangeListener { _, changedKey ->
+                if (changedKey == null || changedKey == key || changedKey == ctx.getString(R.string.pref_night_mode_key)) {
+                    trySend(appearanceMode)
+                }
+            }
+            mPrefs.registerOnSharedPreferenceChangeListener(listener)
+            trySend(appearanceMode)
+            awaitClose { mPrefs.unregisterOnSharedPreferenceChangeListener(listener) }
+        }
 
     var bluetoothDeviceName: String?
         get() = mPrefs.getString(ctx.getString(R.string.pref_bluetooth_device_key), null);

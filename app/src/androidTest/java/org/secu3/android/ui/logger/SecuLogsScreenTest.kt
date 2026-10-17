@@ -1,7 +1,11 @@
 package org.secu3.android.ui.logger
 
 import androidx.compose.material3.SnackbarHostState
+import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.mutableStateOf
+import androidx.compose.ui.platform.LocalConfiguration
+import androidx.compose.foundation.layout.width
+import androidx.compose.ui.test.assertHeightIsAtLeast
 import androidx.compose.ui.test.assertCountEquals
 import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.junit4.v2.createComposeRule
@@ -9,6 +13,8 @@ import androidx.compose.ui.test.onAllNodesWithText
 import androidx.compose.ui.test.onNodeWithContentDescription
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
+import androidx.compose.ui.test.performScrollTo
+import androidx.compose.ui.unit.dp
 import androidx.test.platform.app.InstrumentationRegistry
 import org.junit.After
 import org.junit.Assert.assertEquals
@@ -16,6 +22,7 @@ import org.junit.Assert.assertTrue
 import org.junit.Rule
 import org.junit.Test
 import org.secu3.android.R
+import org.secu3.android.ui.compose.SecuComposeTheme
 import java.io.File
 
 class SecuLogsScreenTest {
@@ -176,6 +183,56 @@ class SecuLogsScreenTest {
         composeTestRule.onNodeWithContentDescription(context.getString(R.string.back)).performClick()
 
         assertTrue(clicked)
+    }
+
+    @Test
+    fun longFilenameAndActionsRemainUsableAtNarrowWidthAndLargeFontInBothThemes() {
+        val name = "secu-logger-session-with-a-deliberately-long-filename-for-wrapping.csv"
+        val file = createLogFile(name)
+        val darkTheme = mutableStateOf(false)
+        var shares = 0
+        var downloads = 0
+        var deleteRequests = 0
+        val largeFontConfiguration = context.resources.configuration.apply {
+            fontScale = 1.7f
+        }
+
+        composeTestRule.setContent {
+            CompositionLocalProvider(LocalConfiguration provides largeFontConfiguration) {
+                SecuComposeTheme(darkTheme = darkTheme.value) {
+                    androidx.compose.foundation.layout.Box(modifier = androidx.compose.ui.Modifier.width(280.dp)) {
+                        SecuLogsScreen(
+                            files = listOf(file),
+                            snackbarHostState = SnackbarHostState(),
+                            onBackClick = {},
+                            onShareClick = { shares++ },
+                            onDownloadClick = { downloads++ },
+                            pendingDeleteFile = null,
+                            onDeleteRequest = { deleteRequests++ },
+                            onDeleteCancel = {},
+                            onDeleteConfirm = {},
+                        )
+                    }
+                }
+            }
+        }
+
+        repeat(2) {
+            val filename = composeTestRule.onNodeWithText(name).performScrollTo().assertIsDisplayed()
+            filename.assertHeightIsAtLeast(60.dp)
+            composeTestRule.onNodeWithContentDescription(context.getString(R.string.share_log_file))
+                .performScrollTo().performClick()
+            composeTestRule.onNodeWithText(context.getString(R.string.save))
+                .performScrollTo().performClick()
+            composeTestRule.onNodeWithContentDescription(context.getString(R.string.delete_log_file))
+                .performScrollTo().performClick()
+            darkTheme.value = true
+            composeTestRule.waitForIdle()
+        }
+
+        assertEquals(2, shares)
+        assertEquals(2, downloads)
+        assertEquals(2, deleteRequests)
     }
 
     private fun createLogFile(name: String): File {

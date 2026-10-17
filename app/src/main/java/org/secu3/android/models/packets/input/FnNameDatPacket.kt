@@ -53,11 +53,15 @@ data class FnNameDatPacket(
         }
 
     override fun parse(data: IntArray): InputPacket {
-        tablesNumber = data.get1Byte()
+        val parsedTablesNumber = data.get1Byte()
         val index = data.get1Byte()
+
+        require(parsedTablesNumber > 0) { "Function name table count must be positive" }
+        require(index < parsedTablesNumber) { "Function name index must be less than table count" }
 
         val name = data.getString(F_NAME_SIZE)
 
+        tablesNumber = parsedTablesNumber
         fnName = FnName(index, name)
 
         return this

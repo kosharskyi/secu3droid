@@ -12,15 +12,10 @@
  */
 package org.secu3.android.ui.parameters
 
-import androidx.compose.foundation.background
-import androidx.compose.foundation.clickable
-import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.*
-import androidx.compose.foundation.relocation.BringIntoViewRequester
-import androidx.compose.foundation.relocation.bringIntoViewRequester
+import androidx.compose.foundation.background
 import androidx.compose.foundation.pager.HorizontalPager
 import androidx.compose.foundation.pager.rememberPagerState
-import androidx.compose.foundation.rememberScrollState
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
@@ -33,15 +28,13 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.layout.onSizeChanged
 import androidx.compose.ui.platform.LocalLifecycleOwner
 import androidx.compose.ui.platform.testTag
-import androidx.compose.ui.res.colorResource
+import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
-import androidx.compose.ui.semantics.*
 import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.IntSize
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.LifecycleEventObserver
 import androidx.lifecycle.repeatOnLifecycle
@@ -55,6 +48,8 @@ import org.secu3.android.connection.Disconnected
 import org.secu3.android.connection.InProgress
 import org.secu3.android.ui.MainActivity
 import org.secu3.android.ui.compose.SecuComposeTheme
+import org.secu3.android.ui.compose.LocalSecuPalette
+import org.secu3.android.ui.compose.SecuTabRow
 import org.secu3.android.ui.parameters.dialogs.NumericEditDialog
 
 @Composable
@@ -76,6 +71,7 @@ internal fun ParametersRoute(
         val observer = LifecycleEventObserver { _, event ->
             if (event == Lifecycle.Event.ON_PAUSE) {
                 viewModel.deactivatePage()
+                viewModel.invalidatePageCache()
                 viewModel.cancelManualCommands()
             }
         }
@@ -90,15 +86,12 @@ internal fun ParametersRoute(
             }
         }
     }
-    LaunchedEffect(connectionState) {
-        if (!viewModel.isConnected) viewModel.clearPageState()
-    }
-
     SecuComposeTheme {
         ParametersScreen(
             titles = pages.map { stringResource(it) },
             pageKeys = pages,
             connectionState = connectionState,
+            connectionSession = viewModel.connectionSession,
             editorSession = viewModel.parameterEditSession,
             onEditConfirm = viewModel::acceptParameterEditor,
             onEditDismiss = viewModel::dismissParameterEditor,
@@ -126,6 +119,7 @@ internal fun ParametersScreen(
     onEditConfirm: (Long, Number) -> Unit = { _, _ -> },
     onEditDismiss: (Long) -> Unit = {},
     onPageUnsettled: () -> Unit = {},
+    connectionSession: Int = 0,
 ) {
     val pagerState = rememberPagerState(initialPage = 0, pageCount = { titles.size })
     val scope = rememberCoroutineScope()
@@ -139,14 +133,11 @@ internal fun ParametersScreen(
         onDispose { lifecycle.removeObserver(observer) }
     }
     var pagerSize by remember { mutableStateOf(IntSize.Zero) }
-    val selectedIndex = clampPageIndex(pagerState.settledPage, titles.size)
+    val settledIndex = clampPageIndex(pagerState.settledPage, titles.size)
     val updatedSettled by rememberUpdatedState(onPageSettled)
     val updatedUnsettled by rememberUpdatedState(onPageUnsettled)
     val updatedConnectionState by rememberUpdatedState(connectionState)
-    val tabBringIntoView = remember(titles) { titles.map { BringIntoViewRequester() } }
-
-    LaunchedEffect(selectedIndex, tabBringIntoView) { tabBringIntoView.getOrNull(selectedIndex)?.bringIntoView() }
-    LaunchedEffect(lifecycle, pagerState, titles.size) {
+    LaunchedEffect(lifecycle, pagerState, titles.size, connectionSession) {
         lifecycle.repeatOnLifecycle(Lifecycle.State.RESUMED) {
             var activeIndex: Int? = null
             try {
@@ -156,7 +147,12 @@ internal fun ParametersScreen(
                         pagerSize.width > 0 && pagerSize.height > 0 && updatedConnectionState == Connected &&
                             pagerState.layoutInfo.visiblePagesInfo.any { it.index == index })
                 }.distinctUntilChanged().collect { (index, scrolling, laidOutVisible) ->
-                    val next = index.takeIf { !scrolling && laidOutVisible && it in titles.indices }
+                    val next = when {
+                        updatedConnectionState != Connected -> null
+                        scrolling -> activeIndex
+                        laidOutVisible -> index.takeIf { it in titles.indices }
+                        else -> null
+                    }
                     if (next != activeIndex) {
                         if (activeIndex != null) updatedUnsettled()
                         activeIndex = next
@@ -169,31 +165,34 @@ internal fun ParametersScreen(
         }
     }
 
-    Column(Modifier.fillMaxSize().windowInsetsPadding(WindowInsets.safeDrawing).background(colorResource(R.color.colorPrimary))) {
+    Column(Modifier.fillMaxSize().windowInsetsPadding(WindowInsets.safeDrawing).background(MaterialTheme.colorScheme.background)) {
         ParametersToolbar(connectionState, onBack, onSave)
-        Row(Modifier.fillMaxWidth().height(48.dp).horizontalScroll(rememberScrollState()), verticalAlignment = Alignment.CenterVertically) {
-            titles.forEachIndexed { index, title ->
-                val selected = selectedIndex == index
-                Column(
-                    Modifier.height(48.dp).bringIntoViewRequester(tabBringIntoView[index])
-                        .semantics { role = Role.Tab; this.selected = selected; contentDescription = title }
-                        .clickable(role = Role.Tab) { scope.launch { pagerState.animateScrollToPage(index) } }
-                        .padding(horizontal = 16.dp),
-                    verticalArrangement = Arrangement.Center,
-                    horizontalAlignment = Alignment.CenterHorizontally,
-                ) {
-                    Text(title, color = if (selected) MaterialTheme.colorScheme.onSurface else MaterialTheme.colorScheme.onSurface.copy(alpha = 0.74f), maxLines = 1, overflow = TextOverflow.Ellipsis)
-                    if (selected) Surface(Modifier.fillMaxWidth().padding(top = 5.dp).height(2.dp), color = MaterialTheme.colorScheme.secondary) {}
-                }
-            }
-        }
+        SecuTabRow(
+            titles = titles,
+            selectedIndex = clampPageIndex(pagerState.currentPage, titles.size),
+            selectionPosition = { pagerState.currentPage + pagerState.currentPageOffsetFraction },
+            onSelected = { index -> scope.launch { pagerState.animateScrollToPage(index) } },
+            scrollable = true,
+            testTag = "parameters-tabs",
+        )
         HorizontalPager(
             state = pagerState,
             key = { index -> pageKeys.getOrElse(index) { index } },
             beyondViewportPageCount = 1,
             modifier = Modifier.weight(1f).fillMaxWidth().testTag("params-pager").onSizeChanged { pagerSize = it },
         ) { index ->
-            val active = hostResumed && index == selectedIndex &&
+            val rendered = remember(index) { mutableStateOf(false) }
+            val readyToRender by remember(index, pagerState) {
+                derivedStateOf {
+                    rendered.value || !pagerState.isScrollInProgress ||
+                        index in minOf(pagerState.currentPage, pagerState.targetPage)..maxOf(pagerState.currentPage, pagerState.targetPage) ||
+                        pagerState.layoutInfo.visiblePagesInfo.any { it.index == index }
+                }
+            }
+            if (updatedConnectionState == Connected && readyToRender && !rendered.value) {
+                SideEffect { rendered.value = true }
+            }
+            val active = hostResumed && index == settledIndex &&
                 !pagerState.isScrollInProgress && pagerSize != IntSize.Zero && updatedConnectionState == Connected &&
                 pagerState.layoutInfo.visiblePagesInfo.any { it.index == index }
             val isActiveNow = {
@@ -201,10 +200,18 @@ internal fun ParametersScreen(
                     !pagerState.isScrollInProgress && pagerSize != IntSize.Zero && updatedConnectionState == Connected &&
                     pagerState.layoutInfo.visiblePagesInfo.any { it.index == index }
             }
-            pageContent(index, active, isActiveNow)
+            if (updatedConnectionState == Connected && readyToRender) {
+                pageContent(index, active, isActiveNow)
+            } else if (updatedConnectionState == Connected) {
+                Box(Modifier.fillMaxSize())
+            } else {
+                Box(Modifier.fillMaxSize().testTag("parameters-unavailable"), contentAlignment = Alignment.Center) {
+                    Text(stringResource(if (updatedConnectionState == InProgress) R.string.home_connection_connecting else R.string.home_connection_disconnected))
+                }
+            }
         }
     }
-    editorSession?.let { session ->
+    editorSession?.takeIf { connectionState == Connected }?.let { session ->
         NumericEditDialog(
             request = session.request,
             sessionId = session.id,
@@ -222,25 +229,33 @@ private fun ParametersToolbar(connectionState: org.secu3.android.connection.Conn
         Disconnected -> stringResource(R.string.home_connection_disconnected)
         else -> stringResource(R.string.connection_status_unknown)
     }
+    val palette = LocalSecuPalette.current
     val statusColor = when (connectionState) {
-        Connected -> colorResource(R.color.gauge_dark_green)
-        InProgress -> colorResource(R.color.gauge_dark_yellow)
-        Disconnected -> colorResource(R.color.gauge_red)
+        Connected -> palette.success
+        InProgress -> palette.warning
+        Disconnected -> MaterialTheme.colorScheme.error
         else -> null
     }
     val saveDescription = stringResource(R.string.save)
     val backDescription = stringResource(R.string.back)
-    Surface(color = colorResource(R.color.colorPrimary), shadowElevation = 4.dp, tonalElevation = 0.dp) {
-        Row(Modifier.fillMaxWidth().height(56.dp), verticalAlignment = Alignment.CenterVertically) {
+    Surface(color = MaterialTheme.colorScheme.surface, tonalElevation = 0.dp) {
+        Row(Modifier.fillMaxWidth().heightIn(min = 56.dp).padding(vertical = 4.dp), verticalAlignment = Alignment.CenterVertically) {
             IconButton(onClick = onBack, modifier = Modifier.semantics { contentDescription = backDescription }) {
                 Icon(painterResource(R.drawable.ic_arrow_back_24), contentDescription = null, tint = MaterialTheme.colorScheme.onSurface)
             }
-            Text(stringResource(R.string.title_activity_param), Modifier.weight(1f), style = MaterialTheme.typography.titleLarge.copy(fontSize = 20.sp, fontWeight = FontWeight.Medium, letterSpacing = 0.15.sp), color = MaterialTheme.colorScheme.onSurface, maxLines = 1)
-            IconButton(onClick = onSave, modifier = Modifier.semantics { contentDescription = saveDescription }) {
-                Icon(painterResource(R.drawable.ic_save_24), contentDescription = null, tint = MaterialTheme.colorScheme.onSurface)
+            Text(stringResource(R.string.title_activity_param), Modifier.weight(1f).padding(horizontal = 8.dp), style = MaterialTheme.typography.titleLarge.copy(fontWeight = FontWeight.Medium), color = MaterialTheme.colorScheme.onSurface)
+            IconButton(onClick = onSave, enabled = connectionState == Connected, modifier = Modifier.semantics { contentDescription = saveDescription }) {
+                Icon(painterResource(R.drawable.ic_save_24), contentDescription = null,
+                    tint = MaterialTheme.colorScheme.onSurface.copy(alpha = if (connectionState == Connected) 1f else .38f))
             }
-            Row(Modifier.semantics { contentDescription = statusLabel }, verticalAlignment = Alignment.CenterVertically) {
-                Icon(painterResource(R.drawable.ic_car), contentDescription = null, tint = statusColor ?: MaterialTheme.colorScheme.onSurface.copy(alpha = 0.38f))
+            Row(
+                Modifier.padding(end = 8.dp).widthIn(max = 136.dp).semantics(mergeDescendants = true) { contentDescription = statusLabel },
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(6.dp),
+            ) {
+                Icon(painterResource(R.drawable.ic_car), contentDescription = null,
+                    tint = statusColor ?: MaterialTheme.colorScheme.onSurfaceVariant, modifier = Modifier.size(20.dp))
+                Text(statusLabel, Modifier.weight(1f), style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant, maxLines = 1, overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis)
             }
         }
     }

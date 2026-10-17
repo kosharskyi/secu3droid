@@ -17,7 +17,7 @@ import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.SideEffect
 import androidx.compose.runtime.LaunchedEffect
-import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.window.DialogProperties
 import androidx.navigation.compose.NavHost
@@ -29,6 +29,9 @@ import androidx.navigation.navigation
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.compose.rememberNavController
 import androidx.navigation.compose.currentBackStackEntryAsState
+import androidx.compose.runtime.remember
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import org.secu3.android.utils.AppearanceMode
 import org.secu3.android.ui.compose.SecuComposeTheme
 import org.secu3.android.ui.errors.ErrorsRoute
 import org.secu3.android.ui.firmware.FirmwareRoute
@@ -58,6 +61,14 @@ internal const val DIAGNOSTICS_ADDITIONAL_ROUTE = "diagnostics-additional"
 
 @Composable
 internal fun RootNavigation(activity: MainActivity) {
+    val appearanceFlow = remember(activity.userPrefs) { activity.userPrefs.appearanceModeFlow }
+    val appearance by appearanceFlow.collectAsStateWithLifecycle(initialValue = activity.userPrefs.appearanceMode)
+    val systemDark = isSystemInDarkTheme()
+    val dark = when (appearance) {
+        AppearanceMode.System -> systemDark
+        AppearanceMode.Light -> false
+        AppearanceMode.Dark -> true
+    }
     val navController = rememberNavController()
     val currentEntry by navController.currentBackStackEntryAsState()
     SideEffect { activity.updateActiveComposeRoute(currentEntry?.destination?.route) }
@@ -68,7 +79,8 @@ internal fun RootNavigation(activity: MainActivity) {
             activity.detachRootNavController(navController)
         }
     }
-    SecuComposeTheme {
+    SideEffect { activity.applyAppearance(dark) }
+    SecuComposeTheme(darkTheme = dark) {
         NavHost(
             navController = navController,
             startDestination = START_ROUTE,

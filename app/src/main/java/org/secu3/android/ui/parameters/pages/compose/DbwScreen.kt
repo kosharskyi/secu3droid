@@ -24,22 +24,20 @@
  */
 package org.secu3.android.ui.parameters.pages.compose
 
-import androidx.annotation.StringRes
-import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.rememberScrollState
-import androidx.compose.foundation.verticalScroll
+import androidx.annotation.StringRes
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.stringResource
-import androidx.compose.ui.unit.dp
+import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import org.secu3.android.R
 import org.secu3.android.models.packets.out.params.DbwParamPacket
 import org.secu3.android.ui.parameters.compose.ParameterLoadingIndicator
 import org.secu3.android.ui.parameters.compose.ParameterReadOnlyValueRow
+import org.secu3.android.ui.parameters.compose.ParameterPage
+import org.secu3.android.ui.parameters.compose.ParameterSection
 import org.secu3.android.ui.parameters.compose.ParameterValueRow
 
 enum class DbwNumber(
@@ -105,23 +103,26 @@ sealed interface DbwUiState {
 }
 
 @Composable
-fun DbwScreen(state: DbwUiState, onEdit: (DbwNumber) -> Unit) {
+fun DbwScreen(state: DbwUiState, onEdit: (DbwNumber) -> Unit, onRefresh: (() -> Unit)? = null) {
+    val pageScrollState = rememberScrollState()
     when (state) {
         DbwUiState.Loading -> ParameterLoadingIndicator("dbw_loading")
-        is DbwUiState.Data -> Column(
-            Modifier.fillMaxWidth().verticalScroll(rememberScrollState()).padding(16.dp).testTag("dbw_content"),
-            verticalArrangement = Arrangement.spacedBy(16.dp),
-        ) {
-            DbwNumber.entries.forEach { number ->
-                ParameterValueRow(
-                    stringResource(number.titleRes), stringResource(number.unitsRes), state.values.value(number), number.precision,
-                    "dbw_${number.name.lowercase()}", { onEdit(number) },
+        is DbwUiState.Data -> ParameterPage(Modifier.testTag("dbw_content"), scrollState = pageScrollState) {
+            ParameterSection {
+                DbwNumber.entries.forEach { number ->
+                    ParameterValueRow(
+                        stringResource(number.titleRes), stringResource(number.unitsRes), state.values.value(number), number.precision,
+                        "dbw_${number.name.lowercase()}", { onEdit(number) },
+                    )
+                }
+                ParameterReadOnlyValueRow(
+                    stringResource(R.string.el_throttle_home_position_title), stringResource(R.string.units_percents),
+                    state.values.homePosition, 2, "dbw_home_position", stringResource(R.string.sec_read_only),
                 )
+                if (onRefresh != null) TextButton(onClick = onRefresh, modifier = Modifier.testTag("dbw_refresh")) {
+                    Text(stringResource(R.string.refresh))
+                }
             }
-            ParameterReadOnlyValueRow(
-                stringResource(R.string.el_throttle_home_position_title), stringResource(R.string.units_percents),
-                state.values.homePosition, 2, "dbw_home_position", stringResource(R.string.sec_read_only),
-            )
         }
     }
 }

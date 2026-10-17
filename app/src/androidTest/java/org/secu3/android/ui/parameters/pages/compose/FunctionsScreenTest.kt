@@ -25,14 +25,30 @@
 package org.secu3.android.ui.parameters.pages.compose
 
 import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.CompositionLocalProvider
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.width
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalConfiguration
+import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.platform.LocalResources
+import androidx.compose.ui.semantics.SemanticsActions
+import androidx.compose.ui.semantics.SemanticsProperties
+import androidx.compose.ui.text.TextLayoutResult
+import androidx.compose.ui.unit.Density
+import androidx.compose.ui.unit.dp
 import androidx.compose.ui.test.assertContentDescriptionEquals
 import androidx.compose.ui.test.assertHasClickAction
 import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.assertTextContains
+import androidx.compose.ui.test.assert
+import androidx.compose.ui.test.SemanticsMatcher
 import androidx.compose.ui.test.junit4.v2.createComposeRule
 import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.performScrollTo
+import androidx.compose.ui.test.performSemanticsAction
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertTrue
 import org.junit.Rule
@@ -157,6 +173,64 @@ class FunctionsScreenTest {
             "functions_gasoline-dropdown-indicator",
             useUnmergedTree = true,
         ).assertIsDisplayed()
+    }
+
+    @Test
+    fun longUkrainianSelectionWrapsAtNarrowWidthAndLargeFontInBothThemes() {
+        val context = androidx.test.platform.app.InstrumentationRegistry.getInstrumentation().targetContext
+        val configuration = android.content.res.Configuration(context.resources.configuration).apply {
+            setLocale(java.util.Locale.forLanguageTag("uk"))
+        }
+        val localizedContext = context.createConfigurationContext(configuration)
+        val longName = "Калібрування паливної системи для тривалого прогрівання двигуна"
+        val label = localizedContext.getString(org.secu3.android.R.string.funset_maps_set_for_gasoline)
+        val state = createDataState().let {
+            it.copy(choices = it.choices.copy(
+                selected = it.choices.selected + (FunctionsChoices.Selector.GASOLINE_MAP to longName),
+            ))
+        }
+        val dark = mutableStateOf(false)
+        var selected = 0
+        val baseDensity = compose.density.density
+        compose.setContent {
+            CompositionLocalProvider(
+                LocalContext provides localizedContext,
+                LocalConfiguration provides configuration,
+                LocalResources provides localizedContext.resources,
+                LocalDensity provides Density(baseDensity, fontScale = 1.7f),
+            ) {
+                SecuComposeTheme(darkTheme = dark.value) {
+                    Box(Modifier.width(320.dp)) {
+                        FunctionsScreen(state, onEdit = {}, onFlag = {}, onChoice = { _, _ -> selected++ })
+                    }
+                }
+            }
+        }
+
+        listOf(false, true).forEach { darkTheme ->
+            compose.runOnIdle { dark.value = darkTheme }
+            compose.onNodeWithTag("functions_gasoline").performScrollTo()
+                .assertHasClickAction()
+                .assertContentDescriptionEquals("$label, $longName")
+                .assert(SemanticsMatcher.expectValue(SemanticsProperties.StateDescription, longName))
+            assertTextDoesNotOverflow("functions_gasoline-label")
+            assertTextDoesNotOverflow("functions_gasoline-value")
+            compose.onNodeWithTag("functions_gasoline").performClick()
+            compose.onNodeWithTag("functions_option_1").performClick()
+        }
+        compose.runOnIdle { assertEquals(2, selected) }
+    }
+
+    private fun assertTextDoesNotOverflow(tag: String) {
+        var result: TextLayoutResult? = null
+        compose.onNodeWithTag(tag, useUnmergedTree = true)
+            .performSemanticsAction(SemanticsActions.GetTextLayoutResult) { action ->
+                val results = mutableListOf<TextLayoutResult>()
+                action(results)
+                result = results.firstOrNull()
+            }
+        assertTrue("$tag exposes its text layout", result != null)
+        assertTrue("$tag fits without clipping", !requireNotNull(result).hasVisualOverflow)
     }
 
     private fun createDataState() = FunctionsUiState.Data(

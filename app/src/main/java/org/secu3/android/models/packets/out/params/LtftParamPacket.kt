@@ -28,6 +28,7 @@ package org.secu3.android.models.packets.out.params
 import org.secu3.android.models.packets.base.Secu3Packet
 import org.secu3.android.models.packets.base.InputPacket
 import org.secu3.android.models.packets.base.OutputPacket
+import org.secu3.android.models.packets.base.protocolRoundToInt
 import kotlin.math.roundToInt
 
 data class LtftParamPacket(
@@ -74,7 +75,7 @@ data class LtftParamPacket(
         data += learnGrad.times(256).roundToInt()
         data += learnGpa.times(MAP_MULTIPLIER).roundToInt().write2Bytes()
         data += learnGpd.times(MAP_MULTIPLIER).roundToInt().write2Bytes()
-        data += min.div(100.0f / 512.0f).toInt().toUByte().toInt()
+        data += min.div(100.0f / 512.0f).protocolRoundToInt().toUByte().toInt()
         data += max.div(100.0f / 512.0f).roundToInt()
         data += learnRpm0.write2Bytes()
         data += learnRpm1.write2Bytes()

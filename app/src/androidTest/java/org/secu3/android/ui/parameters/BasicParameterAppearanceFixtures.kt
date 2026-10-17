@@ -1,0 +1,118 @@
+package org.secu3.android.ui.parameters
+
+import androidx.compose.runtime.Composable
+import org.secu3.android.ui.parameters.pages.compose.*
+
+/** Loaded UI samples for rendering every basic parameter page outside ECU navigation. */
+internal fun basicParameterAppearanceFixtures(): List<ParameterAppearanceFixture> = listOf(
+    ParameterAppearanceFixture("starter") {
+        StarterScreen(
+            StarterUiState.Data(
+                StarterValues(
+                    numbers = StarterNumber.entries.associateWith { it.ordinal + 1f },
+                    flags = StarterFlag.entries.associateWith { it == StarterFlag.LIMIT_CRANKING_PW },
+                ),
+            ),
+            onEdit = {},
+            onFlagChanged = { _, _ -> },
+        )
+    },
+    ParameterAppearanceFixture("angles") {
+        AnglesScreen(
+            AnglesUiState.Data(
+                AnglesValues(
+                    numbers = AnglesNumber.entries.associateWith { it.ordinal + 1.25f },
+                    flags = AnglesFlag.entries.associateWith { it.ordinal % 2 == 0 },
+                ),
+            ),
+            onEdit = {},
+            onFlagChanged = { _, _ -> },
+        )
+    },
+    ParameterAppearanceFixture("idling") {
+        IdlingScreen(
+            IdlingUiState.Data(
+                IdlingValues(
+                    numbers = IdlingNumber.entries.associateWith { it.ordinal + 1.5f },
+                    flags = IdlingFlag.entries.associateWith { it.ordinal % 2 == 0 },
+                ),
+            ),
+            onEdit = {},
+            onFlagChanged = { _, _ -> },
+        )
+    },
+    ParameterAppearanceFixture("temperature") {
+        TemperatureScreen(
+            TemperatureUiState.Data(
+                TemperatureValues(
+                    numbers = TemperatureNumber.entries.associateWith { it.ordinal * 10f + 20f },
+                    flags = TemperatureFlag.entries.associateWith { it.ordinal == 0 },
+                ),
+            ),
+            onEdit = {},
+            onFlagChanged = { _, _ -> },
+        )
+    },
+    ParameterAppearanceFixture("adc-errors-corrections") {
+        AdcErrorsCorrectionsScreen(
+            AdcCorrectionsUiState.Data(
+                AdcCorrectionsValues(
+                    numbers = AdcNumber.entries.associateWith { 1f + it.ordinal * 0.125f },
+                    adcCompMode = true,
+                ),
+            ),
+            onEdit = {},
+            onCompModeChanged = {},
+        )
+    },
+    ParameterAppearanceFixture("dbw") {
+        DbwScreen(
+            DbwUiState.Data(
+                DbwValues(DbwNumber.entries.associateWith { it.ordinal + 1f }, homePosition = 12.5f),
+            ),
+            onEdit = {},
+        )
+    },
+    ParameterAppearanceFixture("ltft") {
+        LtftScreen(
+            LtftUiState.Data(LtftValues(LtftNumber.entries.associateWith { it.ordinal + 1f }, mode = 0)),
+            onEdit = {},
+            onMode = {},
+        )
+    },
+    ParameterAppearanceFixture("knock") {
+        KnockScreen(
+            KnockUiState.Data(
+                KnockValues(
+                    numbers = KnockNumber.entries.associateWith { it.ordinal + 1.25f },
+                    selectedChannels = 0xA5,
+                    bpfIndex = 0,
+                    integrationIndex = 0,
+                    bpfOptions = listOf("1 kHz", "2 kHz"),
+                    integrationOptions = listOf("10 ms", "20 ms"),
+                ),
+                enabled = true,
+            ),
+            onEdit = {},
+            onEnable = {},
+            onChannel = { _, _ -> },
+            onSelector = { _, _ -> },
+        )
+    },
+    ParameterAppearanceFixture("carbur") {
+        CarburScreen(
+            CarburUiState.Data(
+                CarburValues(
+                    numbers = CarburNumber.entries.associateWith { it.ordinal + 1f },
+                    invers = false,
+                    fuelCutUni = 1,
+                    ignitionCutUni = 15,
+                ),
+            ),
+            options = listOf("1", "2", "3", "4", "5", "6", "no"),
+            onEdit = {},
+            onInvers = {},
+            onSelector = { _, _ -> },
+        )
+    },
+)

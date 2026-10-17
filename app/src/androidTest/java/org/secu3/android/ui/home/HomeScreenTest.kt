@@ -26,11 +26,21 @@
 package org.secu3.android.ui.home
 
 import android.content.res.Configuration
+import android.graphics.Bitmap
+import androidx.compose.runtime.CompositionLocalProvider
+import androidx.compose.ui.platform.LocalConfiguration
+import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.semantics.SemanticsActions
+import androidx.compose.ui.text.TextLayoutResult
+import androidx.compose.ui.test.captureToImage
+import androidx.compose.ui.graphics.asAndroidBitmap
 import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.junit4.v2.createComposeRule
 import androidx.compose.ui.test.onNodeWithContentDescription
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
+import androidx.compose.ui.test.performSemanticsAction
 import androidx.compose.ui.test.performScrollTo
 import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.getUnclippedBoundsInRoot
@@ -45,7 +55,11 @@ import org.junit.Assert.assertTrue
 import org.junit.Rule
 import org.junit.Test
 import org.secu3.android.R
+import org.secu3.android.ui.compose.SecuComposeTheme
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.Density
+import java.io.File
+import java.util.Locale
 
 class HomeScreenTest {
     @get:Rule val compose = createComposeRule()
@@ -128,6 +142,28 @@ class HomeScreenTest {
         assertEquals(listOf("download", "notes"), choices)
     }
 
+    @Test fun longReleaseMessageCanScrollToRemindAction() {
+        val configuration = Configuration(context.resources.configuration).apply { fontScale = 1.6f }
+        val largeFontDensity = Density(compose.density.density, fontScale = 1.6f)
+        val releaseMessage = ("Long release notes describe compatibility, fixes, and installation details.\n\n").repeat(40)
+        var dismissed = 0
+        val screen = HomeScreenState(dialog = HomeDialog.RELEASE, releaseName = "v2", releaseMessage = releaseMessage)
+        compose.setContent {
+            CompositionLocalProvider(
+                LocalConfiguration provides configuration,
+                LocalDensity provides largeFontDensity,
+            ) {
+                HomeScreen(screen, HomeScreenActions(onDialogDismissed = { dismissed++ }))
+            }
+        }
+
+        compose.onNodeWithText(context.getString(R.string.remind_me_later))
+            .performScrollTo()
+            .assertIsDisplayed()
+            .performClick()
+        assertEquals(1, dismissed)
+    }
+
     @Test fun layoutUsesGridForPortraitAndTabletAndScrollingColumnsForLandscape() {
         val config = Configuration()
         config.orientation = Configuration.ORIENTATION_PORTRAIT
@@ -193,7 +229,7 @@ class HomeScreenTest {
         }
     }
 
-    @Test fun menuIconsKeepPortraitSizeAndAdaptToLandscapeColumns() {
+    @Test fun menuIconsKeepOriginalPortraitSizeAndAdaptToLandscapeColumns() {
         var layout by mutableStateOf(HomeLayout.GRID)
         val destinations = listOf("dashboard", "sensors", "parameters", "errors", "diagnostics", "logs", "settings")
         val expectedIconSizePx = with(compose.density) { 96.dp.toPx() }
@@ -215,5 +251,87 @@ class HomeScreenTest {
         assertAllIconFramesHaveConsistentReadableSize()
         compose.runOnIdle { layout = HomeLayout.LANDSCAPE_COLUMNS }
         assertAllIconFramesHaveConsistentReadableSize()
+    }
+
+    @Test fun ukrainianMenuLabelsFitOriginalCardsAndCaptureThemeVariants() {
+        val ukrainianConfiguration = Configuration(context.resources.configuration).apply {
+            setLocale(Locale.forLanguageTag("uk"))
+        }
+        val ukrainianContext = context.createConfigurationContext(ukrainianConfiguration)
+        var darkTheme by mutableStateOf(false)
+        var layout by mutableStateOf(HomeLayout.GRID)
+        val destinations = listOf(
+            "dashboard" to R.string.menu_dashboard,
+            "sensors" to R.string.sensors,
+            "parameters" to R.string.menu_param,
+            "errors" to R.string.title_activity_errors,
+            "diagnostics" to R.string.title_activity_diagnostics,
+            "logs" to R.string.menu_secu_logs,
+            "settings" to R.string.title_activity_settings,
+        )
+        compose.setContent {
+            CompositionLocalProvider(
+                LocalConfiguration provides ukrainianConfiguration,
+                LocalContext provides ukrainianContext,
+            ) {
+                SecuComposeTheme(darkTheme = darkTheme) {
+                    HomeScreen(HomeScreenState(), HomeScreenActions(), layoutOverride = layout)
+                }
+            }
+        }
+
+        fun assertLabelsFitCards() {
+            destinations.forEach { (destination, labelResource) ->
+                val labelText = ukrainianContext.getString(labelResource)
+                val label = compose.onNodeWithTag("home-label-$destination", useUnmergedTree = true)
+                    .performScrollTo()
+                label.assertIsDisplayed()
+                val cardBounds = compose.onNodeWithTag("home-card-$destination").fetchSemanticsNode().boundsInRoot
+                val labelBounds = label.fetchSemanticsNode().boundsInRoot
+                val localizedText = compose.onNodeWithText(labelText, useUnmergedTree = true)
+                    .performScrollTo()
+                localizedText.assertIsDisplayed()
+                var textLayout: TextLayoutResult? = null
+                var hasTextLayout = false
+                var layoutCount = 0
+                label.performSemanticsAction(SemanticsActions.GetTextLayoutResult) { action ->
+                    val layoutResults = mutableListOf<TextLayoutResult>()
+                    hasTextLayout = action(layoutResults)
+                    layoutCount = layoutResults.size
+                    textLayout = layoutResults.firstOrNull()
+                }
+                assertTrue("$destination label has text layout", hasTextLayout)
+                assertEquals("$destination label has one text layout", 1, layoutCount)
+                val layout = requireNotNull(textLayout)
+                val diagnostic = "$destination label overflow=${layout.hasVisualOverflow} " +
+                    "width=${layout.didOverflowWidth} height=${layout.didOverflowHeight} " +
+                    "lines=${layout.lineCount} layoutSize=${layout.size} " +
+                    "fontSize=${layout.layoutInput.style.fontSize} fontScale=${ukrainianConfiguration.fontScale} " +
+                    "card=$cardBounds label=$labelBounds"
+                assertTrue(diagnostic, !layout.hasVisualOverflow)
+                assertTrue("$destination label fits within original card width", labelBounds.left >= cardBounds.left && labelBounds.right <= cardBounds.right)
+                assertTrue("$destination label fits within original card height", labelBounds.top >= cardBounds.top && labelBounds.bottom <= cardBounds.bottom)
+            }
+        }
+
+        captureDesignScreenshot("regression-home-light-portrait.png")
+        assertLabelsFitCards()
+        compose.runOnIdle { darkTheme = true }
+        compose.waitForIdle()
+        captureDesignScreenshot("regression-home-dark-portrait.png")
+        assertLabelsFitCards()
+        compose.runOnIdle { darkTheme = false; layout = HomeLayout.LANDSCAPE_COLUMNS }
+        compose.waitForIdle()
+        captureDesignScreenshot("regression-home-light-columns-preview.png")
+        assertLabelsFitCards()
+    }
+
+    private fun captureDesignScreenshot(fileName: String) {
+        if (InstrumentationRegistry.getArguments().getString("captureDesignScreenshots") != "true") return
+        val bitmap = compose.onRoot().captureToImage().asAndroidBitmap()
+        val outputDirectory = context.getExternalFilesDir(null) ?: context.cacheDir
+        File(outputDirectory, fileName).outputStream().use { output ->
+            bitmap.compress(Bitmap.CompressFormat.PNG, 100, output)
+        }
     }
 }

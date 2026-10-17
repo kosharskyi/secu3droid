@@ -28,13 +28,15 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
-import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Text
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
@@ -107,31 +109,49 @@ internal fun OldSensorsScreen(packet: SensorsPacket?, modifier: Modifier = Modif
         listOf(R.string.sensors_frag_status_univ_out_1_label to (p.uniOut0Bit > 0), R.string.sensors_frag_status_univ_out_2_label to (p.uniOut1Bit > 0), R.string.sensors_frag_status_univ_out_3_label to (p.uniOut2Bit > 0)),
         listOf(R.string.sensors_frag_status_univ_out_4_label to (p.uniOut3Bit > 0), R.string.sensors_frag_status_univ_out_5_label to (p.uniOut4Bit > 0), R.string.sensors_frag_status_univ_out_6_label to (p.uniOut5Bit > 0)),
     )
-    Column(modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(horizontal = 8.dp).testTag("old-sensors-list")) {
-        rows.forEachIndexed { index, item ->
-            val label = if (packet == null) "" else stringResource(item.label)
-            val text = if (packet == null || item.unit == null) label else "$label, ${stringResource(item.unit)}:"
-            Row(Modifier.fillMaxWidth().testTag("old-sensor-row-$index"), horizontalArrangement = Arrangement.SpaceBetween) {
-                Text(text, Modifier.weight(1f).padding(8.dp).testTag("old-sensor-label-$index"), color = Color.Black, fontSize = 16.sp)
-                Text(if (packet == null) "" else item.value, Modifier.padding(8.dp).testTag("old-sensor-value-$index"), color = Color.Black, fontSize = 16.sp)
+    Column(modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(horizontal = 16.dp, vertical = 8.dp).testTag("old-sensors-list")) {
+        SensorGroupSurface(Modifier.fillMaxWidth().testTag("old-sensors-measurements")) {
+            rows.forEachIndexed { index, item ->
+                SensorReadoutRow(
+                    label = stringResource(item.label),
+                    value = if (packet == null) "—" else item.value,
+                    unit = item.unit?.let { stringResource(it) }.orEmpty(),
+                    rowTag = "old-sensor-row-$index",
+                    labelTag = "old-sensor-label-$index",
+                    valueTag = "old-sensor-value-$index",
+                    unitTag = "old-sensor-unit-$index",
+                )
+                if (index != rows.lastIndex) SensorRowDivider()
             }
-            HorizontalDivider(color = Color(0xFFEDEDED), thickness = 1.dp)
         }
+        Spacer(Modifier.height(12.dp))
         statuses.forEachIndexed { group, entries ->
             Row(Modifier.fillMaxWidth().padding(top = 8.dp).testTag("old-status-group-$group")) {
                 entries.forEachIndexed { cell, entry ->
-                    val label = if (packet == null) "" else entry?.let { stringResource(it.first) }.orEmpty()
-                    val background = when { packet == null || entry == null -> Color.Transparent; entry.second -> Color(0xFF00FF00); else -> Color(0xFFCCCCCC) }
+                    val label = entry?.let { stringResource(it.first) }.orEmpty()
+                    val palette = org.secu3.android.ui.compose.LocalSecuPalette.current
+                    val activeState = entry?.second == true && packet != null
+                    val background = when {
+                        entry == null -> Color.Transparent
+                        packet == null -> MaterialTheme.colorScheme.background
+                        activeState -> palette.successContainer
+                        else -> MaterialTheme.colorScheme.surfaceVariant
+                    }
+                    val foreground = when {
+                        activeState -> palette.onSuccessContainer
+                        else -> MaterialTheme.colorScheme.onSurfaceVariant
+                    }
                     val state = when {
-                        packet == null || entry == null -> stringResource(R.string.sensors_status_accessibility_unavailable)
+                        entry == null -> ""
+                        packet == null -> stringResource(R.string.sensors_status_accessibility_unavailable)
                         entry.second -> stringResource(R.string.sensors_status_accessibility_on)
                         else -> stringResource(R.string.sensors_status_accessibility_off)
                     }
                     Text(
-                        label,
-                        Modifier.weight(1f).background(background).testTag("old-status-$group-$cell")
+                        if (entry == null) "" else label,
+                        Modifier.weight(1f).padding(horizontal = 2.dp).background(background).padding(4.dp).testTag("old-status-$group-$cell")
                             .semantics { stateDescription = state },
-                        color = Color.Black,
+                        color = foreground,
                         fontSize = 12.sp,
                         textAlign = TextAlign.Center,
                     )

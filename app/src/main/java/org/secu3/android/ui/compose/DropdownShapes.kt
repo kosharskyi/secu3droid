@@ -27,4 +27,4 @@ package org.secu3.android.ui.compose
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.ui.unit.dp
 
-internal val DropdownShape = RoundedCornerShape(4.dp)
+internal val DropdownShape = RoundedCornerShape(12.dp)

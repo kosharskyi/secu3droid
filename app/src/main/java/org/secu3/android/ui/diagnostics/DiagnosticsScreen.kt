@@ -37,9 +37,7 @@ import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
-import androidx.compose.material3.PrimaryTabRow
 import androidx.compose.material3.Scaffold
-import androidx.compose.material3.Tab
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
@@ -64,6 +62,7 @@ import org.secu3.android.R
 import org.secu3.android.connection.ConnectionState
 import org.secu3.android.models.packets.input.DiagInputPacket
 import org.secu3.android.ui.compose.ConnectionStatusIndicator
+import org.secu3.android.ui.compose.SecuTabRow
 import org.secu3.android.ui.parameters.ParameterEditRequest
 import org.secu3.android.ui.parameters.dialogs.NumericEditDialog
 
@@ -114,15 +113,14 @@ internal fun DiagnosticsScreen(
         },
     ) { padding ->
         Column(Modifier.fillMaxSize().padding(padding)) {
-            PrimaryTabRow(selectedTabIndex = pagerState.currentPage, modifier = Modifier.testTag("diagnostics-tabs")) {
-                titles.take(2).forEachIndexed { index, title ->
-                    Tab(
-                        selected = pagerState.currentPage == index,
-                        onClick = { scope.launch { pagerState.animateScrollToPage(index) } },
-                        text = { Text(title) },
-                    )
-                }
-            }
+            SecuTabRow(
+                titles = titles.take(2),
+                selectedIndex = pagerState.currentPage,
+                selectionPosition = { pagerState.currentPage + pagerState.currentPageOffsetFraction },
+                onSelected = { index -> scope.launch { pagerState.animateScrollToPage(index) } },
+                scrollable = false,
+                testTag = "diagnostics-tabs",
+            )
             HorizontalPager(
                 state = pagerState,
                 modifier = Modifier.fillMaxSize().testTag("diagnostics-pager"),

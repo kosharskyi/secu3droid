@@ -139,7 +139,7 @@ data class FirmwareInfoPacket(
 
         internal const val DESCRIPTOR = 'y'
 
-        private const val FIRMWARE_INFO_SIZE = 48
+        private const val FIRMWARE_INFO_SIZE = 52
 
 
         private const val COPT_OBD_SUPPORT = 0

@@ -29,6 +29,8 @@ import android.content.res.Configuration
 import androidx.annotation.DrawableRes
 import androidx.annotation.StringRes
 import androidx.compose.foundation.BorderStroke
+import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.Arrangement
@@ -41,6 +43,7 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.safeDrawing
 import androidx.compose.foundation.layout.size
@@ -48,6 +51,7 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.windowInsetsPadding
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
@@ -64,8 +68,8 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.ColorFilter
+import androidx.compose.ui.graphics.luminance
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.res.painterResource
@@ -78,6 +82,7 @@ import androidx.compose.ui.unit.dp
 import org.secu3.android.R
 import org.secu3.android.ui.compose.SecuComposeTheme
 import org.secu3.android.ui.compose.ConfirmationDialog
+import org.secu3.android.ui.compose.LocalSecuPalette
 
 enum class HomeConnectionStatus { CONNECTED, CONNECTING, DISCONNECTED }
 enum class HomeLayout { GRID, LANDSCAPE_COLUMNS }
@@ -138,7 +143,7 @@ fun HomeScreen(
     val dialog = state.dialog
     val layout = layoutOverride ?: homeLayout(LocalConfiguration.current)
     SecuComposeTheme {
-        Box(modifier.fillMaxSize().testTag("home-full-root")) {
+        Box(modifier.fillMaxSize().background(MaterialTheme.colorScheme.background).testTag("home-full-root")) {
           Column(Modifier.fillMaxSize().windowInsetsPadding(contentInsets).testTag("home-safe-content")) {
             Row(Modifier.fillMaxWidth().height(64.dp).padding(horizontal = 16.dp), verticalAlignment = Alignment.CenterVertically,
                 horizontalArrangement = Arrangement.SpaceBetween) {
@@ -146,8 +151,8 @@ fun HomeScreen(
                     modifier = Modifier.testTag("home-exit-button"),
                     onClick = { if (state.connectionRunning) actions.onExitRequested() else actions.onExitImmediately() },
                 ) {
-                    Icon(painterResource(R.drawable.ic_logout_24), contentDescription = null, tint = Color.Black)
-                    Text(stringResource(R.string.exit), color = Color.Black, modifier = Modifier.padding(start = 8.dp))
+                    Icon(painterResource(R.drawable.ic_logout_24), contentDescription = null, tint = MaterialTheme.colorScheme.onSurface)
+                    Text(stringResource(R.string.exit), color = MaterialTheme.colorScheme.onSurface, modifier = Modifier.padding(start = 8.dp))
                 }
                 val statusDescription = when (state.connectionStatus) {
                     HomeConnectionStatus.CONNECTED -> stringResource(
@@ -156,11 +161,12 @@ fun HomeScreen(
                     HomeConnectionStatus.CONNECTING -> stringResource(R.string.home_connection_connecting)
                     HomeConnectionStatus.DISCONNECTED -> stringResource(R.string.home_connection_disconnected)
                 }
+                val palette = LocalSecuPalette.current
                 Icon(painterResource(R.drawable.ic_car), contentDescription = statusDescription,
                     tint = when (state.connectionStatus) {
-                        HomeConnectionStatus.CONNECTED -> androidx.compose.ui.res.colorResource(R.color.gauge_dark_green)
-                        HomeConnectionStatus.CONNECTING -> androidx.compose.ui.res.colorResource(R.color.gauge_dark_yellow)
-                        HomeConnectionStatus.DISCONNECTED -> androidx.compose.ui.res.colorResource(R.color.gauge_red)
+                        HomeConnectionStatus.CONNECTED -> palette.success
+                        HomeConnectionStatus.CONNECTING -> palette.warning
+                        HomeConnectionStatus.DISCONNECTED -> MaterialTheme.colorScheme.error
                     }, modifier = Modifier.size(48.dp).testTag("home-ecu-status").semantics { contentDescription = statusDescription }
                         .then(if (state.firmwareAvailable) Modifier.clickableHome(actions.onFirmware) else Modifier))
             }
@@ -191,22 +197,33 @@ fun HomeScreen(
             }
           }
           when (dialog) {
-        HomeDialog.EXIT -> AlertDialog(onDismissRequest = actions.onExitCancelled, title = { Text(stringResource(R.string.disconnect_device)) },
-            text = { Text(stringResource(R.string.disconnect_device_msg)) },
-            confirmButton = { TextButton(onClick = actions.onExitConfirmed) { Text(stringResource(android.R.string.ok)) } },
-            dismissButton = { TextButton(onClick = actions.onExitCancelled) { Text(stringResource(android.R.string.cancel)) } })
-        HomeDialog.DIAGNOSTICS -> AlertDialog(onDismissRequest = actions.onDialogDismissed, title = { Text(stringResource(android.R.string.dialog_alert_title)) },
-            text = { Text(stringResource(R.string.menu_diagnostics_warning_title)) },
-            confirmButton = { TextButton(onClick = { actions.onDialogDismissed(); actions.onDiagnosticsConfirmed() }) { Text(stringResource(android.R.string.ok)) } },
-            dismissButton = { TextButton(onClick = actions.onDialogDismissed) { Text(stringResource(android.R.string.cancel)) } })
-        HomeDialog.RELEASE -> AlertDialog(onDismissRequest = actions.onDialogDismissed, title = { Text(stringResource(R.string.new_version_available)) },
-            text = { Column {
+        HomeDialog.EXIT -> ConfirmationDialog(
+            title = R.string.disconnect_device,
+            message = R.string.disconnect_device_msg,
+            onConfirm = actions.onExitConfirmed,
+            onCancel = actions.onExitCancelled,
+        )
+        HomeDialog.DIAGNOSTICS -> ConfirmationDialog(
+            title = android.R.string.dialog_alert_title,
+            message = R.string.menu_diagnostics_warning_title,
+            onConfirm = { actions.onDialogDismissed(); actions.onDiagnosticsConfirmed() },
+            onCancel = actions.onDialogDismissed,
+            onDismiss = actions.onDialogDismissed,
+        )
+        HomeDialog.RELEASE -> AlertDialog(onDismissRequest = actions.onDialogDismissed,
+            modifier = Modifier
+                .border(BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant), RoundedCornerShape(24.dp))
+                .semantics { contentDescription = "release_dialog" },
+            shape = RoundedCornerShape(24.dp),
+            containerColor = MaterialTheme.colorScheme.surface,
+            tonalElevation = 0.dp,
+            title = { Text(stringResource(R.string.new_version_available), modifier = Modifier.fillMaxWidth(), textAlign = TextAlign.Center) },
+            text = { Column(Modifier.heightIn(max = 300.dp).verticalScroll(rememberScrollState())) {
                 Text(state.releaseMessage.orEmpty())
                 TextButton(onClick = actions.onDialogDismissed) { Text(stringResource(R.string.remind_me_later)) }
             } },
             confirmButton = { TextButton(onClick = { actions.onDialogDismissed(); actions.onDownloadRelease() }) { Text(stringResource(R.string.download)) } },
-            dismissButton = { TextButton(onClick = { actions.onDialogDismissed(); actions.onReleaseNotes() }) { Text(stringResource(R.string.what_s_new)) } },
-            modifier = Modifier.semantics { contentDescription = "release_dialog" })
+            dismissButton = { TextButton(onClick = { actions.onDialogDismissed(); actions.onReleaseNotes() }) { Text(stringResource(R.string.what_s_new)) } })
         HomeDialog.RELEASE_PERMISSION_RATIONALE -> ConfirmationDialog(
             title = R.string.download_manager_permission_rationale_title,
             message = R.string.download_manager_permission_rationale_message,
@@ -221,9 +238,15 @@ fun HomeScreen(
 
 @Composable
 private fun MenuCard(item: HomeMenuItem, modifier: Modifier, adaptIconSize: Boolean = false, onClick: () -> Unit) {
+    val colors = MaterialTheme.colorScheme
+    val foregroundColor = if (colors.background.luminance() > 0.5f) {
+        colors.onSurface
+    } else {
+        colors.onSurfaceVariant
+    }
     Card(onClick = onClick, modifier = modifier.testTag("home-card-${item.destination.name.lowercase()}"),
-        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.background),
-        border = BorderStroke(1.dp, Color(0xFFB2B2B2)), elevation = CardDefaults.cardElevation(defaultElevation = 4.dp)) {
+        colors = CardDefaults.cardColors(containerColor = colors.surface, contentColor = foregroundColor),
+        border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant), elevation = CardDefaults.cardElevation(defaultElevation = 0.dp)) {
         BoxWithConstraints(Modifier.fillMaxSize().padding(8.dp)) {
           val iconSize = if (!adaptIconSize || maxHeight >= 180.dp) 96.dp else if (maxHeight >= 130.dp) 72.dp else (maxHeight * 0.45f).coerceAtLeast(24.dp)
           Column(Modifier.fillMaxSize(), horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.SpaceBetween) {
@@ -235,12 +258,12 @@ private fun MenuCard(item: HomeMenuItem, modifier: Modifier, adaptIconSize: Bool
                     painter = painterResource(item.icon),
                     contentDescription = null,
                     contentScale = ContentScale.Fit,
-                    colorFilter = if (item.destination == HomeDestination.ERRORS) ColorFilter.tint(Color.Black) else null,
+                    colorFilter = ColorFilter.tint(foregroundColor),
                     modifier = Modifier.size(iconSize).testTag("home-icon-${item.destination.name.lowercase()}"),
                 )
             }
             Text(stringResource(item.label), textAlign = TextAlign.Center, style = MaterialTheme.typography.titleMedium,
-                modifier = Modifier.padding(bottom = 4.dp).testTag("home-label-${item.destination.name.lowercase()}"))
+                modifier = Modifier.fillMaxWidth().padding(bottom = 4.dp).testTag("home-label-${item.destination.name.lowercase()}"))
           }
         }
     }

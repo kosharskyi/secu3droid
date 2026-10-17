@@ -24,23 +24,42 @@
  */
 package org.secu3.android.ui.parameters.pages.compose
 
+import androidx.compose.foundation.rememberScrollState
 import androidx.annotation.StringRes
+import androidx.compose.foundation.BorderStroke
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.rememberScrollState
-import androidx.compose.foundation.verticalScroll
+import androidx.compose.foundation.selection.toggleable
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material3.HorizontalDivider
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Surface
+import androidx.compose.material3.Switch
+import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.semantics.Role
+import androidx.compose.ui.text.SpanStyle
+import androidx.compose.ui.text.buildAnnotatedString
+import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.text.withStyle
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import org.secu3.android.ui.parameters.compose.ParameterLoadingIndicator
+import org.secu3.android.ui.parameters.*
 import org.secu3.android.R
 import org.secu3.android.models.packets.out.params.StarterParamPacket
-import org.secu3.android.ui.parameters.compose.ParameterSwitchRow
-import org.secu3.android.ui.parameters.compose.ParameterValueRow
+import org.secu3.android.ui.parameters.compose.ParameterPage
 
 enum class StarterUnit(@StringRes val resourceId: Int? = null, val text: String? = null) {
     RPM(R.string.units_rpm),
@@ -61,10 +80,10 @@ enum class StarterNumber(
 ) {
     STARTER_OFF(R.string.starter_off_title, StarterUnit.RPM, 0, 0f, 6000f, 10f),
     SMAP_ABANDON(R.string.starter_map_abandon_title, StarterUnit.RPM, 0, 0f, 6000f, 10f),
-    CRANK_TO_RUN_COLD(R.string.starter_dat_crank_to_run_time_cold_title, StarterUnit.SECONDS, 2, .1f, 99f, .1f),
-    CRANK_TO_RUN_HOT(R.string.starter_dat_crank_to_run_time_hot_title, StarterUnit.SECONDS, 2, .1f, 99f, .1f),
-    AFTERSTART_PETROL(R.string.starter_dat_afterstart_enrichment_strokes_petrol_title, StarterUnit.NUM_LITERAL, 0, 1f, 510f, 2f),
-    AFTERSTART_GAS(R.string.starter_dat_afterstart_enrichment_strokes_gas_title, StarterUnit.NUM_LITERAL, 0, 1f, 510f, 2f),
+    CRANK_TO_RUN_COLD(R.string.starter_dat_crank_to_run_time_cold_title, StarterUnit.SECONDS, 2, .1f, 99f, .01f),
+    CRANK_TO_RUN_HOT(R.string.starter_dat_crank_to_run_time_hot_title, StarterUnit.SECONDS, 2, .1f, 99f, .01f),
+    AFTERSTART_PETROL(R.string.starter_dat_afterstart_enrichment_strokes_petrol_title, StarterUnit.NUM_LITERAL, 0, 0f, 1020f, 4f),
+    AFTERSTART_GAS(R.string.starter_dat_afterstart_enrichment_strokes_gas_title, StarterUnit.NUM_LITERAL, 0, 0f, 1020f, 4f),
     PRIME_COLD(R.string.starter_dat_prime_pulse_cold_title, StarterUnit.MILLISECONDS, 1, 0f, 100f, .1f),
     PRIME_HOT(R.string.starter_dat_prime_pulse_hot_title, StarterUnit.MILLISECONDS, 1, 0f, 100f, .1f),
     PRIME_DELAY(R.string.starter_dat_prime_pulse_delay_title, StarterUnit.SECONDS, 1, 0f, 25f, .1f),
@@ -134,31 +153,91 @@ fun StarterScreen(
     state: StarterUiState,
     onEdit: (StarterNumber) -> Unit,
     onFlagChanged: (StarterFlag, Boolean) -> Unit,
+    capabilities: ParameterCapabilities = ParameterCapabilities.All,
 ) {
+    val pageScrollState = rememberScrollState()
     when (state) {
         StarterUiState.Loading -> ParameterLoadingIndicator("starter_loading")
-        is StarterUiState.Data -> Column(
-            Modifier.fillMaxWidth().verticalScroll(rememberScrollState()).padding(16.dp),
-            verticalArrangement = Arrangement.spacedBy(16.dp),
-        ) {
-            StarterNumber.entries.forEach { number ->
-                ParameterValueRow(
-                    title = stringResource(number.titleRes),
-                    units = number.unit.text ?: stringResource(number.unit.resourceId!!),
-                    value = state.values.value(number),
-                    precision = number.precision,
-                    testTag = "starter_${number.name.lowercase()}",
-                    onClick = { onEdit(number) },
-                )
-            }
-            StarterFlag.entries.forEach { flag ->
-                ParameterSwitchRow(
-                    title = stringResource(flag.titleRes),
-                    checked = state.values.flags.getValue(flag),
-                    testTag = "starter_flag_row_${flag.name.lowercase()}",
-                    onCheckedChange = { onFlagChanged(flag, it) },
-                )
+        is StarterUiState.Data -> ParameterPage(scrollState = pageScrollState) {
+            Surface(
+                modifier = Modifier.fillMaxWidth(),
+                shape = RoundedCornerShape(16.dp),
+                color = MaterialTheme.colorScheme.surface,
+                contentColor = MaterialTheme.colorScheme.onSurface,
+                border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant),
+            ) {
+                Column {
+                    StarterNumber.entries.forEach { number ->
+                        StarterNumberRow(number, state.values.value(number), starterNumberEnabled(number, capabilities)) { onEdit(number) }
+                        HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant)
+                    }
+                    StarterFlag.entries.forEachIndexed { index, flag ->
+                        StarterFlagRow(flag, state.values.flags.getValue(flag), if (flag == StarterFlag.LIMIT_CRANKING_PW) capabilities.fuelInjection else capabilities.fuelInjection || capabilities.gasDose || capabilities.choke) {
+                            onFlagChanged(flag, it)
+                        }
+                        if (index < StarterFlag.entries.lastIndex) {
+                            HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant)
+                        }
+                    }
+                }
             }
         }
+    }
+}
+
+@Composable
+private fun StarterNumberRow(number: StarterNumber, value: Float, enabled: Boolean, onClick: () -> Unit) {
+    val testTag = "starter_${number.name.lowercase()}"
+    val locale = LocalConfiguration.current.locales[0]
+    val units = number.unit.text ?: stringResource(number.unit.resourceId!!)
+    val formattedValue = buildAnnotatedString {
+        append(String.format(locale, "%.${number.precision}f", value))
+        withStyle(
+            SpanStyle(
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                fontSize = 12.sp,
+                fontWeight = FontWeight.Normal,
+            ),
+        ) {
+            append(" $units")
+        }
+    }
+    Row(
+        Modifier.fillMaxWidth().heightIn(min = 66.dp)
+            .clickable(enabled = enabled, role = Role.Button, onClick = onClick).testTag(testTag)
+            .padding(horizontal = 14.dp, vertical = 11.dp),
+        horizontalArrangement = Arrangement.spacedBy(12.dp),
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        Text(
+            stringResource(number.titleRes),
+            Modifier.weight(0.62f).testTag("$testTag-label"),
+            style = MaterialTheme.typography.bodyMedium,
+        )
+        Text(
+            formattedValue,
+            Modifier.weight(0.38f).testTag("$testTag-value"),
+            style = MaterialTheme.typography.titleLarge.copy(
+                fontSize = 22.sp,
+                fontWeight = FontWeight.SemiBold,
+                fontFeatureSettings = "tnum",
+            ),
+            textAlign = TextAlign.End,
+        )
+    }
+}
+
+@Composable
+private fun StarterFlagRow(flag: StarterFlag, checked: Boolean, enabled: Boolean, onCheckedChange: (Boolean) -> Unit) {
+    val testTag = "starter_flag_row_${flag.name.lowercase()}"
+    Row(
+        Modifier.fillMaxWidth().heightIn(min = 66.dp).testTag(testTag)
+            .toggleable(value = checked, enabled = enabled, role = Role.Switch, onValueChange = onCheckedChange)
+            .padding(horizontal = 14.dp, vertical = 11.dp),
+        horizontalArrangement = Arrangement.spacedBy(12.dp),
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        Text(stringResource(flag.titleRes), Modifier.weight(1f), style = MaterialTheme.typography.bodyMedium)
+        Switch(checked, onCheckedChange, enabled = enabled, modifier = Modifier.testTag("$testTag-switch"))
     }
 }

@@ -26,10 +26,12 @@ package org.secu3.android.ui.sensors
 
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.ui.test.assertIsDisplayed
+import androidx.compose.ui.test.assertCountEquals
 import androidx.compose.ui.test.assertTextEquals
 import androidx.compose.ui.test.hasTestTag
 import androidx.compose.ui.test.junit4.v2.createComposeRule
 import androidx.compose.ui.test.onNodeWithTag
+import androidx.compose.ui.test.onAllNodesWithTag
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performScrollToNode
 import androidx.compose.ui.test.assert
@@ -93,9 +95,11 @@ class OldSensorsScreenTest {
         assertEquals(labels.size, units.size)
         labels.indices.forEach { index ->
             compose.onNodeWithTag("old-sensors-list").performScrollToNode(hasTestTag("old-sensor-row-$index"))
-            val title = context.getString(labels[index]) + (units[index]?.let { ", ${context.getString(it)}:" } ?: "")
-            compose.onNodeWithTag("old-sensor-label-$index").assertTextEquals(title)
+            compose.onNodeWithTag("old-sensor-label-$index").assertTextEquals(context.getString(labels[index]))
             compose.onNodeWithTag("old-sensor-value-$index").assertExists()
+            units[index]?.let { unit ->
+                compose.onNodeWithTag("old-sensor-unit-$index").assertTextEquals(context.getString(unit))
+            } ?: compose.onAllNodesWithTag("old-sensor-unit-$index").assertCountEquals(0)
         }
         val expectedValues = listOf(
             "1234", "1.23", "2.3", "3.5", "4.6", "5.7", "6.8", "7", "8.125", "9.3", "10.1", "12",
@@ -120,12 +124,16 @@ class OldSensorsScreenTest {
         compose.setContent { SecuComposeTheme { OldSensorsScreen(packet.value) } }
         compose.onNodeWithTag("old-sensors-list").assertExists()
         for (index in labels.indices) {
-            compose.onNodeWithTag("old-sensor-label-$index").assertTextEquals("")
-            compose.onNodeWithTag("old-sensor-value-$index").assertTextEquals("")
+            compose.onNodeWithTag("old-sensor-label-$index").assertTextEquals(context.getString(labels[index]))
+            compose.onNodeWithTag("old-sensor-value-$index").assertTextEquals("—")
+            units[index]?.let { unit ->
+                compose.onNodeWithTag("old-sensor-unit-$index").assertTextEquals(context.getString(unit))
+            } ?: compose.onAllNodesWithTag("old-sensor-unit-$index").assertCountEquals(0)
         }
         for (group in 0..7) for (cell in 0..2) {
-            compose.onNodeWithTag("old-status-$group-$cell").assertTextEquals("")
-            assertStatusState(group, cell, context.getString(R.string.sensors_status_accessibility_unavailable))
+            val label = statusLabels[group][cell]?.let(context::getString).orEmpty()
+            compose.onNodeWithTag("old-status-$group-$cell").assertTextEquals(label)
+            if (label.isNotEmpty()) assertStatusState(group, cell, context.getString(R.string.sensors_status_accessibility_unavailable))
         }
         val mixedFlags = 0xA555
         val mixedOutputs = 0x15
@@ -135,7 +143,7 @@ class OldSensorsScreenTest {
         statusLabels.forEachIndexed { group, cells ->
             compose.onNodeWithTag("old-sensors-list").performScrollToNode(hasTestTag("old-status-group-$group"))
             cells.forEachIndexed { cell, label ->
-                compose.onNodeWithTag("old-status-$group-$cell").assertTextEquals(label?.let(context::getString) ?: "")
+                compose.onNodeWithTag("old-status-$group-$cell").assertTextEquals(label?.let(context::getString).orEmpty())
             }
         }
         assertStatusStates(statusEnabled)

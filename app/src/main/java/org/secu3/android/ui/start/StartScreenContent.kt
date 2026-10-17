@@ -23,11 +23,15 @@ package org.secu3.android.ui.start
 
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.systemBarsPadding
@@ -47,14 +51,15 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import org.secu3.android.R
 import org.secu3.android.ui.compose.ConfirmationDialog
+import org.secu3.android.ui.compose.SecuComposeTheme
 
 data class StartBluetoothDevice(val id: String, val name: String)
 
@@ -83,40 +88,60 @@ fun StartScreenContent(
     actions: StartScreenActions,
     modifier: Modifier = Modifier,
 ) {
-    MaterialTheme {
-        Surface(modifier = modifier.fillMaxSize()) {
+    SecuComposeTheme {
+        Surface(modifier = modifier.fillMaxSize(), color = MaterialTheme.colorScheme.background) {
             Box(Modifier.fillMaxSize().systemBarsPadding()) {
-                Icon(
-                    painter = painterResource(R.drawable.ic_log_file),
-                    contentDescription = "Logs icon",
-                    modifier = Modifier.size(64.dp).padding(16.dp).align(Alignment.TopStart)
-                        .clickable(onClick = actions.onLogs),
-                    tint = Color.Black,
-                )
-                Icon(
-                    imageVector = Icons.Default.Settings,
-                    contentDescription = "Settings icon",
-                    modifier = Modifier.size(64.dp).padding(16.dp).align(Alignment.TopEnd)
-                        .clickable(onClick = actions.onSettings),
-                    tint = Color.Black,
-                )
-                CircularButton(
-                    textNormal = stringResource(R.string.connect),
-                    textInProgress = stringResource(R.string.status_connecting),
-                    isInProgress = state.connecting,
-                    onClick = { actions.onConnectOrCancel(state.connecting) },
-                    size = 200.dp,
-                    borderColor = Color.Gray,
-                    progressSegmentColor = Color.Cyan,
-                    textColor = Color.Black,
-                    modifier = Modifier.align(Alignment.Center),
-                )
-                if (state.usbDeviceDetected) {
-                    Text(
-                        stringResource(R.string.usb_device_detected),
-                        modifier = Modifier.padding(16.dp).align(Alignment.BottomCenter),
-                        textAlign = TextAlign.Center,
-                    )
+                Column(Modifier.fillMaxSize()) {
+                    Row(
+                        Modifier.fillMaxWidth().height(64.dp),
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.SpaceBetween,
+                    ) {
+                        Icon(
+                            painter = painterResource(R.drawable.ic_log_file),
+                            contentDescription = "Logs icon",
+                            modifier = Modifier.size(64.dp).padding(16.dp).clickable(onClick = actions.onLogs),
+                            tint = MaterialTheme.colorScheme.onSurface,
+                        )
+                        Icon(
+                            imageVector = Icons.Default.Settings,
+                            contentDescription = "Settings icon",
+                            modifier = Modifier.size(64.dp).padding(16.dp).clickable(onClick = actions.onSettings),
+                            tint = MaterialTheme.colorScheme.onSurface,
+                        )
+                    }
+                    Box(
+                        modifier = Modifier.fillMaxWidth().weight(1f),
+                        contentAlignment = Alignment.Center,
+                    ) {
+                        CircularButton(
+                            textNormal = stringResource(R.string.connect),
+                            textInProgress = stringResource(R.string.status_connecting),
+                            isInProgress = state.connecting,
+                            onClick = { actions.onConnectOrCancel(state.connecting) },
+                            size = 200.dp,
+                            borderColor = MaterialTheme.colorScheme.outlineVariant,
+                            progressSegmentColor = MaterialTheme.colorScheme.primary,
+                            textColor = MaterialTheme.colorScheme.onSurface,
+                            borderWidth = 2.dp,
+                            progressSegmentWidth = 6.dp,
+                            modifier = Modifier.testTag("start-connect-button"),
+                        )
+                    }
+                    if (state.usbDeviceDetected) {
+                        Box(
+                            modifier = Modifier.fillMaxWidth().heightIn(min = 64.dp),
+                            contentAlignment = Alignment.Center,
+                        ) {
+                            Text(
+                                stringResource(R.string.usb_device_detected),
+                                modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 12.dp),
+                                textAlign = TextAlign.Center,
+                            )
+                        }
+                    } else {
+                        Spacer(Modifier.height(64.dp))
+                    }
                 }
                 if (state.showBluetoothDevices) {
                     ModalBottomSheet(onDismissRequest = actions.onBluetoothSheetDismissed) {

@@ -35,6 +35,7 @@ import androidx.compose.ui.test.onAllNodesWithText
 import androidx.compose.ui.test.onNodeWithContentDescription
 import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.performClick
+import androidx.compose.ui.test.performScrollTo
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.test.platform.app.InstrumentationRegistry
@@ -55,27 +56,27 @@ class SensorsSettingsScreenTest {
         compose.setContent {
             SensorsSettingsScreen(oldView.value, columns.intValue, { oldView.value = it }, { columns.intValue = it }, { back = true })
         }
-        compose.onNodeWithText(context.getString(R.string.enable_old_sensors_view)).assertIsDisplayed()
-        compose.onNodeWithText(context.getString(R.string.columns_count)).assertIsDisplayed()
-        compose.onNodeWithTag("sensor-columns-value").assertIsDisplayed()
-        compose.onNodeWithTag("sensor-columns-value").assertTextEquals("5")
+        compose.onNodeWithText(context.getString(R.string.enable_old_sensors_view)).performScrollTo().assertIsDisplayed()
+        compose.onNodeWithText(context.getString(R.string.columns_count)).performScrollTo().assertIsDisplayed()
+        compose.onNodeWithTag("sensor-columns-row").performScrollTo().assertIsDisplayed()
+        compose.onNodeWithTag("sensor-columns-value", useUnmergedTree = true).assertTextEquals("5")
         compose.onNodeWithTag("sensors-old-view-checkbox").assertIsOn()
-        compose.onNodeWithText(context.getString(R.string.enable_old_sensors_view)).performClick()
+        compose.onNodeWithText(context.getString(R.string.enable_old_sensors_view)).performScrollTo().performClick()
         compose.runOnIdle { assertEquals(false, oldView.value) }
         compose.onNodeWithTag("sensors-old-view-checkbox").assertIsOff()
         // Exercise both ends of the allowed range and check the selected value after each update.
-        compose.onNodeWithTag("sensor-columns-value").performClick()
+        compose.onNodeWithTag("sensor-columns-row").performScrollTo().performClick()
         (2..8).forEach { count ->
             compose.onAllNodesWithText(count.toString(), substring = false)
                 .assertCountEquals(if (count == 5) 2 else 1)
         }
         compose.onNodeWithText("2", substring = false).performClick()
         compose.runOnIdle { assertEquals(2, columns.intValue) }
-        compose.onNodeWithTag("sensor-columns-value").assertTextEquals("2")
-        compose.onNodeWithTag("sensor-columns-value").performClick()
+        compose.onNodeWithTag("sensor-columns-value", useUnmergedTree = true).assertTextEquals("2")
+        compose.onNodeWithTag("sensor-columns-row").performScrollTo().performClick()
         compose.onNodeWithText("8", substring = false).performClick()
         compose.runOnIdle { assertEquals(8, columns.intValue) }
-        compose.onNodeWithTag("sensor-columns-value").assertTextEquals("8")
+        compose.onNodeWithTag("sensor-columns-value", useUnmergedTree = true).assertTextEquals("8")
         compose.onNodeWithContentDescription(context.getString(R.string.back)).performClick()
         compose.runOnIdle { assertTrue(back) }
     }

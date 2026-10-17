@@ -25,6 +25,11 @@
 package org.secu3.android.ui.settings
 
 import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.CompositionLocalProvider
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.width
+import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.Modifier
 import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.assertIsOn
 import androidx.compose.ui.test.assertIsOff
@@ -35,6 +40,9 @@ import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.performTextReplacement
 import androidx.compose.ui.test.onNodeWithContentDescription
 import androidx.compose.ui.test.onNodeWithTag
+import androidx.compose.ui.test.performScrollTo
+import androidx.compose.ui.unit.Density
+import androidx.compose.ui.unit.dp
 import androidx.test.platform.app.InstrumentationRegistry
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertTrue
@@ -73,9 +81,9 @@ class SettingsScreenTest {
         listOf(R.string.pref_write_log_title, R.string.pref_log_csv_write_title, R.string.pref_log_csv_delimeter_title,
             R.string.pref_write_binary_log_title, R.string.pref_log_export_directory_title, R.string.pref_connection_retries_title,
             R.string.pref_keep_screen_title, R.string.pref_wakelock_title, R.string.pref_about_title)
-            .forEach { compose.onNodeWithText(context.getString(it)).assertIsDisplayed() }
-        compose.onNodeWithText("EngineLogs").assertIsDisplayed()
-        compose.onNodeWithText(context.getString(R.string.pref_connection_retries_summary, "3")).assertIsDisplayed()
+            .forEach { compose.onNodeWithText(context.getString(it)).performScrollTo().assertIsDisplayed() }
+        compose.onNodeWithText("EngineLogs").performScrollTo().assertIsDisplayed()
+        compose.onNodeWithText(context.getString(R.string.pref_connection_retries_summary, "3")).performScrollTo().assertIsDisplayed()
         val toggles = listOf(
             R.string.pref_write_log_key to initial.writeLog,
             R.string.pref_log_csv_write_title_key to initial.writeCsvHeader,
@@ -84,7 +92,7 @@ class SettingsScreenTest {
             R.string.pref_wakelock_key to initial.wakeLock,
         )
         toggles.forEach { (key, initiallyChecked) ->
-            val toggle = compose.onNodeWithTag("settings-toggle-$key")
+            val toggle = compose.onNodeWithTag("settings-toggle-$key").performScrollTo()
             if (initiallyChecked) toggle.assertIsOn() else toggle.assertIsOff()
             val titleResource = when (key) {
                 R.string.pref_write_log_key -> R.string.pref_write_log_title
@@ -94,12 +102,12 @@ class SettingsScreenTest {
                 else -> R.string.pref_wakelock_title
             }
             compose.onNodeWithText(context.getString(titleResource)).performClick()
-            val updated = compose.onNodeWithTag("settings-toggle-$key")
+            val updated = compose.onNodeWithTag("settings-toggle-$key").performScrollTo()
             if (initiallyChecked) updated.assertIsOff() else updated.assertIsOn()
         }
         compose.runOnIdle { assertEquals(5, toggled.size) }
-        compose.onNodeWithText(context.getString(R.string.pref_log_export_directory_title)).performClick()
-        compose.onNodeWithText(context.getString(R.string.pref_about_title)).performClick()
+        compose.onNodeWithText(context.getString(R.string.pref_log_export_directory_title)).performScrollTo().performClick()
+        compose.onNodeWithText(context.getString(R.string.pref_about_title)).performScrollTo().performClick()
         compose.onNodeWithContentDescription(context.getString(R.string.back)).performClick()
         compose.runOnIdle { assertTrue(folder && about && back) }
     }
@@ -116,7 +124,7 @@ class SettingsScreenTest {
                     { dialog.value = it }, { dialog.value = null }, {})
             }
         }
-        compose.onNodeWithText(context.getString(R.string.pref_log_csv_delimeter_title)).performClick()
+        compose.onNodeWithText(context.getString(R.string.pref_log_csv_delimeter_title)).performScrollTo().performClick()
         val colonLabel = context.resources.getStringArray(R.array.csv_delimeters)[2]
         compose.onNodeWithText(colonLabel).performClick()
         compose.runOnIdle {
@@ -124,16 +132,55 @@ class SettingsScreenTest {
             assertEquals(":", current.value.csvDelimiter)
         }
         compose.onNodeWithText(colonLabel, substring = false).assertIsDisplayed()
-        compose.onNodeWithText(context.getString(R.string.pref_connection_retries_title)).performClick()
+        compose.onNodeWithText(context.getString(R.string.pref_connection_retries_title)).performScrollTo().performClick()
         compose.onNodeWithText("3").performTextReplacement("0")
         compose.onNodeWithText(context.getString(android.R.string.ok)).assertIsNotEnabled()
         compose.onNodeWithText(context.getString(android.R.string.cancel)).performClick()
         compose.runOnIdle { assertEquals("3", current.value.connectionRetries) }
-        compose.onNodeWithText(context.getString(R.string.pref_connection_retries_summary, "3")).assertIsDisplayed()
-        compose.onNodeWithText(context.getString(R.string.pref_connection_retries_title)).performClick()
+        compose.onNodeWithText(context.getString(R.string.pref_connection_retries_summary, "3")).performScrollTo().assertIsDisplayed()
+        compose.onNodeWithText(context.getString(R.string.pref_connection_retries_title)).performScrollTo().performClick()
         compose.onNodeWithText("3").performTextReplacement("9")
         compose.onNodeWithText(context.getString(android.R.string.ok)).performClick()
         compose.runOnIdle { assertEquals("9", confirmed) }
-        compose.onNodeWithText(context.getString(R.string.pref_connection_retries_summary, "9")).assertIsDisplayed()
+        compose.onNodeWithText(context.getString(R.string.pref_connection_retries_summary, "9")).performScrollTo().assertIsDisplayed()
+    }
+
+    @Test fun longExportLocationWrapsAndRowActionWorksAtNarrowWidthAndLargeFontInBothThemes() {
+        val darkTheme = mutableStateOf(false)
+        val exportLocation = "content://com.example.documents/tree/" + "engine-log-folder/".repeat(5)
+        val state = initial.copy(exportFolder = exportLocation)
+        var folderSelections = 0
+        compose.setContent {
+            val density = LocalDensity.current
+            CompositionLocalProvider(LocalDensity provides Density(density.density, fontScale = 1.7f)) {
+                SecuComposeTheme(darkTheme = darkTheme.value) {
+                    Box(Modifier.width(280.dp)) {
+                        SettingsContent(
+                            state = state,
+                            dialog = null,
+                            onNavigateUp = {},
+                            onToggle = { _, _ -> },
+                            onSelectDelimiter = {},
+                            onChooseFolder = { folderSelections++ },
+                            onEditRetries = {},
+                            onSaveRetries = {},
+                            onSelectDialog = {},
+                            onDismissDialog = {},
+                            onShowAbout = {},
+                        )
+                    }
+                }
+            }
+        }
+
+        val folderSummary = compose.onNodeWithTag("settings-export-folder-summary", useUnmergedTree = true).performScrollTo().assertIsDisplayed()
+        assertTrue(folderSummary.fetchSemanticsNode().boundsInRoot.height > context.resources.displayMetrics.density * 60f)
+        compose.onNodeWithText(context.getString(R.string.pref_log_export_directory_title)).performScrollTo().performClick()
+        compose.runOnIdle { assertEquals(1, folderSelections) }
+
+        darkTheme.value = true
+        compose.onNodeWithTag("settings-export-folder-summary", useUnmergedTree = true).performScrollTo().assertIsDisplayed()
+        compose.onNodeWithText(context.getString(R.string.pref_log_export_directory_title)).performScrollTo().performClick()
+        compose.runOnIdle { assertEquals(2, folderSelections) }
     }
 }

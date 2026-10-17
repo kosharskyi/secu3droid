@@ -143,38 +143,12 @@ class BtConnection @Inject constructor(
         scope.launch {
             mConnectionStateFlow.emit(Connected)
             try {
-                val packetBuffer = IntArray(MAX_PACKET_SIZE)
-                val startMarker = INPUT_PACKET_SYMBOL
-                val endMarker = END_PACKET_SYMBOL
+                val receiver = PacketReceiver()
                 val inputStream = bluetoothSocket?.inputStream ?: throw IOException("Input stream is null")
                 val reader = BufferedReader(InputStreamReader(inputStream, StandardCharsets.ISO_8859_1))
 
-                var idx = 0
-
                 while (isRunning && bluetoothSocket?.isConnected == true) {
-                    if (idx >= packetBuffer.size) {
-                        Log.d(this.javaClass.simpleName, "Packet buffer overflow, resetting.")
-                        idx = 0
-                    }
-
-                    val char = reader.read().takeIf { it != -1 } ?: continue
-                    if (char == startMarker) {
-                        idx = 0
-                    }
-
-                    if (char != endMarker) {
-                        packetBuffer[idx++] = char
-                    }
-
-                    if (idx > 4 && char == endMarker) {
-                        val escaped = escRxPacket(packetBuffer.sliceArray(IntRange(0, idx - 1)))
-
-                        if (isChecksumValid(escaped)) {
-                            mReceivedPacketFlow.emit(RawPacket(escaped))
-                        }
-
-                        idx = 0
-                    }
+                    mReceivedPacketFlow.emit(RawPacket(receiver.readNext(reader)))
                 }
                 connectionAttempts = 0
             } catch (e: IOException) {

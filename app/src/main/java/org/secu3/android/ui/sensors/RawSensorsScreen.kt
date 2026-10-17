@@ -25,16 +25,14 @@
 
 package org.secu3.android.ui.sensors
 
-import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
-import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Text
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.testTag
@@ -69,32 +67,31 @@ internal fun RawSensorsScreen(packet: AdcRawDatPacket?, modifier: Modifier = Mod
         modifier = modifier
             .fillMaxSize()
             .verticalScroll(rememberScrollState())
-            .padding(horizontal = 8.dp)
+            .padding(horizontal = 16.dp, vertical = 8.dp)
             .testTag("raw-sensors-list"),
     ) {
-        rows?.forEach { (label, value) ->
-            val rowTag = "raw-sensor-row-$label"
-            RawSensorRow(
-                label = stringResource(label),
-                value = String.format(Locale.US, "%.3f", value),
-                rowTag = rowTag,
-                labelTag = "$rowTag-label",
-                valueTag = "$rowTag-value",
+        if (rows == null) {
+            Text(
+                text = stringResource(R.string.dashboard_status_no_data),
+                modifier = Modifier.padding(16.dp).testTag("raw-sensors-no-data"),
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                fontSize = 14.sp,
             )
         }
-    }
-}
-
-@Composable
-private fun RawSensorRow(label: String, value: String, rowTag: String, labelTag: String, valueTag: String) {
-    Column(modifier = Modifier.testTag(rowTag)) {
-        Row(
-            modifier = Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.SpaceBetween,
-        ) {
-            Text(label, modifier = Modifier.weight(1f).padding(8.dp).testTag(labelTag), color = androidx.compose.ui.graphics.Color.Black, fontSize = 16.sp)
-            Text(value, modifier = Modifier.padding(8.dp).testTag(valueTag), color = androidx.compose.ui.graphics.Color.Black, fontSize = 16.sp)
+        rows?.let { sensorRows ->
+            SensorGroupSurface(Modifier.fillMaxWidth().testTag("raw-sensors-card")) {
+                sensorRows.forEachIndexed { index, (label, value) ->
+                    val rowTag = "raw-sensor-row-$label"
+                    SensorReadoutRow(
+                        label = stringResource(label),
+                        value = String.format(Locale.US, "%.3f", value),
+                        rowTag = rowTag,
+                        labelTag = "$rowTag-label",
+                        valueTag = "$rowTag-value",
+                    )
+                    if (index != sensorRows.lastIndex) SensorRowDivider()
+                }
+            }
         }
-        HorizontalDivider(color = androidx.compose.ui.graphics.Color(0xFFEDEDED), thickness = 1.dp)
     }
 }

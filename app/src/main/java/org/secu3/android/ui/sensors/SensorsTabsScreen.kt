@@ -49,11 +49,13 @@ import kotlinx.coroutines.launch
 import kotlinx.coroutines.flow.drop
 import org.secu3.android.R
 import org.secu3.android.connection.ConnectionState
+import org.secu3.android.connection.Connected
 import org.secu3.android.db.models.GaugeState
 import org.secu3.android.db.models.IndicatorState
 import org.secu3.android.models.packets.input.AdcRawDatPacket
 import org.secu3.android.models.packets.input.SensorsPacket
 import org.secu3.android.ui.compose.ConnectionStatusIndicator
+import org.secu3.android.ui.compose.SecuTabRow
 import org.secu3.android.ui.sensors.SensorsViewModel.ChoiceRequest
 import org.secu3.android.ui.sensors.models.GaugeItem
 import org.secu3.android.ui.sensors.models.GaugeType
@@ -95,6 +97,7 @@ internal fun SensorsTabsScreen(
     val mark1Description = stringResource(R.string.mark_1)
     val mark2Description = stringResource(R.string.mark_2)
     val mark3Description = stringResource(R.string.mark_3)
+    val dataAvailable = connectionState == Connected
     LaunchedEffect(pagerState) { snapshotFlow { pagerState.settledPage }.drop(1).collect(onPageChanged) }
     Scaffold(
         contentWindowInsets = WindowInsets.safeDrawing,
@@ -116,7 +119,7 @@ internal fun SensorsTabsScreen(
                         FilledTonalIconButton(onClick = { onMark(1) }, modifier = Modifier.semantics { contentDescription = mark1Description }.testTag("log-mark-1")) { Icon(Icons.Default.LooksOne, null) }
                         FilledTonalIconButton(onClick = { onMark(2) }, modifier = Modifier.semantics { contentDescription = mark2Description }.testTag("log-mark-2")) { Icon(Icons.Default.LooksTwo, null) }
                         FilledTonalIconButton(onClick = { onMark(3) }, modifier = Modifier.semantics { contentDescription = mark3Description }.testTag("log-mark-3")) { Icon(Icons.Default.Looks3, null) }
-                        FloatingActionButton(onClick = onStopLog, modifier = Modifier.testTag("log-stop"), containerColor = MaterialTheme.colorScheme.error) { Icon(Icons.Default.Stop, stringResource(R.string.stop)) }
+                        FloatingActionButton(onClick = onStopLog, modifier = Modifier.testTag("log-stop"), containerColor = MaterialTheme.colorScheme.error, contentColor = MaterialTheme.colorScheme.onError) { Icon(Icons.Default.Stop, stringResource(R.string.stop)) }
                     }
                 } else {
                     ExtendedFloatingActionButton(onClick = onStartLog, modifier = Modifier.testTag("log-start")) {
@@ -129,21 +132,25 @@ internal fun SensorsTabsScreen(
         },
     ) { padding ->
         Column(Modifier.fillMaxSize().padding(padding)) {
-            PrimaryTabRow(selectedTabIndex = pagerState.currentPage, modifier = Modifier.testTag("sensors-tabs")) {
-                listOf(R.string.sensors_tab_title, R.string.menu_raw_sensors).forEachIndexed { index, label ->
-                    Tab(selected = pagerState.currentPage == index, onClick = { scope.launch { pagerState.animateScrollToPage(index) } }, text = { Text(stringResource(label)) })
-                }
-            }
+            SecuTabRow(
+                titles = listOf(R.string.sensors_tab_title, R.string.menu_raw_sensors).map { stringResource(it) },
+                selectedIndex = pagerState.currentPage,
+                selectionPosition = { pagerState.currentPage + pagerState.currentPageOffsetFraction },
+                onSelected = { index -> scope.launch { pagerState.animateScrollToPage(index) } },
+                scrollable = false,
+                testTag = "sensors-tabs",
+            )
             HorizontalPager(state = pagerState, userScrollEnabled = !reordering, modifier = Modifier.fillMaxSize().testTag("sensors-pager"), key = { it }) { page ->
                 when (page) {
-                    0 -> if (oldViewEnabled) OldSensorsScreen(sensors) else SensorsScreen(
+                    0 -> if (oldViewEnabled) OldSensorsScreen(sensors.takeIf { dataAvailable }) else SensorsScreen(
                         gauges, indicators, columns, gaugeChoices, indicatorChoices,
                         onAddGaugeRequest, onAddIndicatorRequest, onAddGauge, onAddIndicator,
                         onGaugeChoicesConsumed, onIndicatorChoicesConsumed, onDeleteGauge, onDeleteIndicator,
                         onUpdateGauge, onReorderGauges, onReorderIndicators,
                         onReorderingChanged = { active -> reordering = active; onReorderingChanged(active) },
+                        dataAvailable = dataAvailable,
                     )
-                    else -> RawSensorsScreen(rawSensors)
+                    else -> RawSensorsScreen(rawSensors.takeIf { dataAvailable })
                 }
             }
         }

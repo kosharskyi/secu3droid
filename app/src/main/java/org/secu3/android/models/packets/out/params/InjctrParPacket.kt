@@ -115,8 +115,6 @@ data class InjctrParPacket(
         return data
     }
 
-    var isAtMega644: Boolean = false
-
     var config0: Int
         get() = config[0].shr(4)
         set(value) {
@@ -175,13 +173,7 @@ data class InjctrParPacket(
         }
 
 
-    private val discrete: Float
-        get() {
-            if (isAtMega644) {
-                return 4.0f
-            }
-            return 3.2f
-        }
+    private val discrete: Float = 3.2f
 
     var minPw0: Float
         get() = minPw.and(0xFF).toFloat().times(8.0f).times(discrete).div(1000.0f)
@@ -357,7 +349,6 @@ data class InjctrParPacket(
         if (angleSpec != other.angleSpec) return false
         if (fffConst != other.fffConst) return false
         if (minPw != other.minPw) return false
-        if (isAtMega644 != other.isAtMega644) return false
 
         return true
     }
@@ -374,7 +365,6 @@ data class InjctrParPacket(
         result = 31 * result + angleSpec
         result = 31 * result + fffConst
         result = 31 * result + minPw
-        result = 31 * result + isAtMega644.hashCode()
         return result
     }
 

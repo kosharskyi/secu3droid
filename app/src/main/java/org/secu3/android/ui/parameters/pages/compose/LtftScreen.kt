@@ -24,26 +24,11 @@
  */
 package org.secu3.android.ui.parameters.pages.compose
 
-import org.secu3.android.ui.compose.DropdownShape
 
-import androidx.annotation.StringRes
-import androidx.compose.foundation.BorderStroke
-import androidx.compose.foundation.clickable
-import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.padding
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.ArrowDropDown
 import androidx.compose.foundation.rememberScrollState
-import androidx.compose.foundation.verticalScroll
-import androidx.compose.material3.DropdownMenu
-import androidx.compose.material3.DropdownMenuItem
-import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.Surface
+import androidx.annotation.StringRes
+import androidx.compose.foundation.layout.Column
 import androidx.compose.material3.Text
-import androidx.compose.material3.Icon
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -53,11 +38,15 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.stringArrayResource
 import androidx.compose.ui.res.stringResource
-import androidx.compose.ui.unit.dp
 import org.secu3.android.R
 import org.secu3.android.models.packets.out.params.LtftParamPacket
 import org.secu3.android.ui.parameters.compose.ParameterLoadingIndicator
 import org.secu3.android.ui.parameters.compose.ParameterValueRow
+import org.secu3.android.ui.parameters.compose.ParameterPage
+import org.secu3.android.ui.parameters.compose.ParameterSection
+import org.secu3.android.ui.parameters.compose.ParameterSelectionRow
+import org.secu3.android.ui.parameters.dialogs.ParameterChoice
+import org.secu3.android.ui.parameters.dialogs.ParameterChoiceDialog
 
 enum class LtftNumber(
     @StringRes val titleRes: Int,
@@ -137,24 +126,24 @@ sealed interface LtftUiState {
 
 @Composable
 fun LtftScreen(state: LtftUiState, onEdit: (LtftNumber) -> Unit, onMode: (Int) -> Unit) {
+    val pageScrollState = rememberScrollState()
     when (state) {
         LtftUiState.Loading -> ParameterLoadingIndicator("ltft_loading")
         is LtftUiState.Data -> {
             val modes = stringArrayResource(R.array.ltft_mode_items)
-            Column(
-                Modifier.fillMaxWidth().verticalScroll(rememberScrollState()).padding(16.dp),
-                verticalArrangement = Arrangement.spacedBy(16.dp),
-            ) {
-                LtftModeSelector(modes, state.values.mode, onMode)
-                LtftNumber.entries.forEach { number ->
-                    ParameterValueRow(
-                        title = stringResource(number.titleRes),
-                        units = stringResource(number.unitRes),
-                        value = state.values.value(number),
-                        precision = number.precision,
-                        testTag = "ltft_${number.name.lowercase()}",
-                        onClick = { onEdit(number) },
-                    )
+            ParameterPage(scrollState = pageScrollState) {
+                ParameterSection {
+                    LtftModeSelector(modes, state.values.mode, onMode)
+                    LtftNumber.entries.forEach { number ->
+                        ParameterValueRow(
+                            title = stringResource(number.titleRes),
+                            units = stringResource(number.unitRes),
+                            value = state.values.value(number),
+                            precision = number.precision,
+                            testTag = "ltft_${number.name.lowercase()}",
+                            onClick = { onEdit(number) },
+                        )
+                    }
                 }
             }
         }
@@ -166,28 +155,18 @@ private fun LtftModeSelector(modes: Array<String>, mode: Int, onMode: (Int) -> U
     var expanded by remember { mutableStateOf(false) }
     val selected = modes.getOrNull(mode) ?: "Unknown ($mode)"
     Column {
-        Surface(
-            modifier = Modifier.fillMaxWidth().clickable { expanded = true }.testTag("ltft_mode"),
-            shape = DropdownShape,
-            color = MaterialTheme.colorScheme.surface,
-            border = BorderStroke(1.dp, MaterialTheme.colorScheme.outline),
-        ) {
-            Row(Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 12.dp)) {
-                Column(Modifier.weight(1f)) {
-                    Text(stringResource(R.string.ltft_par_mode_title), style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
-                    Text(selected, Modifier.testTag("ltft_mode_value").padding(top = 4.dp), style = MaterialTheme.typography.bodyLarge)
-                }
-                Icon(Icons.Filled.ArrowDropDown, contentDescription = null, tint = MaterialTheme.colorScheme.onSurfaceVariant)
-            }
-        }
-        DropdownMenu(expanded = expanded, onDismissRequest = { expanded = false }, shape = DropdownShape) {
-            modes.forEachIndexed { index, item ->
-                DropdownMenuItem(
-                    text = { Text(item) },
-                    modifier = Modifier.testTag("ltft_mode_option_$index"),
-                    onClick = { expanded = false; onMode(index) },
-                )
-            }
-        }
+        ParameterSelectionRow(
+            title = stringResource(R.string.ltft_par_mode_title),
+            value = selected,
+            testTag = "ltft_mode",
+            valueTestTag = "ltft_mode_value",
+            onClick = { expanded = true },
+        )
+        if (expanded) ParameterChoiceDialog(
+            title = stringResource(R.string.ltft_par_mode_title),
+            choices = modes.mapIndexed { index, item -> ParameterChoice(index, item, "ltft_mode_option_$index") },
+            onDismiss = { expanded = false },
+            onSelect = onMode,
+        )
     }
 }

@@ -13,6 +13,18 @@ class ConnectionChecksumTest {
     private val connection = TestConnection()
 
     @Test
+    fun isChecksumValid_rejectsShortFramesAndMissingHeaderWithoutThrowing() {
+        for (length in 0..3) assertFalse(connection.isChecksumValidForTest(IntArray(length)))
+        assertFalse(connection.isChecksumValidForTest(intArrayOf(0, 'x'.code, 0, 0)))
+    }
+
+    @Test
+    fun checksumMatchesIndependentFirmwareGoldenBytes() {
+        assertTrue(connection.isChecksumValidForTest(intArrayOf(0x40, 'v'.code, 1, 2, 3, 4, 0x22, 0x0E)))
+        assertFalse(connection.isChecksumValidForTest(intArrayOf(0x40, 'v'.code, 1, 2, 3, 4, 0x0E, 0x22)))
+    }
+
+    @Test
     fun isChecksumValid_acceptsPacketWithMatchingChecksum() {
         val packet = packetWithChecksum(0x40, 'x'.code, 0x01, 0x02)
 

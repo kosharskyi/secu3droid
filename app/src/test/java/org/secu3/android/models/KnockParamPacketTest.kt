@@ -47,7 +47,7 @@ class KnockParamPacketTest {
         with(org.secu3.android.ui.parameters.pages.compose.KnockNumber.BEGIN) { assertEquals(-12f, min); assertEquals(54f, max); assertEquals(1f, step); assertEquals(2, precision) }
         with(org.secu3.android.ui.parameters.pages.compose.KnockNumber.END) { assertEquals(-12f, min); assertEquals(54f, max); assertEquals(1f, step); assertEquals(2, precision) }
         with(org.secu3.android.ui.parameters.pages.compose.KnockNumber.RETARD) { assertEquals(0f, min); assertEquals(20f, max); assertEquals(.25f, step); assertEquals(2, precision) }
-        with(org.secu3.android.ui.parameters.pages.compose.KnockNumber.ADVANCE) { assertEquals(0f, min); assertEquals(5f, max); assertEquals(.2f, step); assertEquals(2, precision) }
+        with(org.secu3.android.ui.parameters.pages.compose.KnockNumber.ADVANCE) { assertEquals(0f, min); assertEquals(5f, max); assertEquals(.02f, step); assertEquals(2, precision) }
         with(org.secu3.android.ui.parameters.pages.compose.KnockNumber.MAX_RETARD) { assertEquals(0f, min); assertEquals(25f, max); assertEquals(.25f, step); assertEquals(2, precision) }
         with(org.secu3.android.ui.parameters.pages.compose.KnockNumber.THRESHOLD) { assertEquals(.1f, min); assertEquals(5f, max); assertEquals(.01f, step); assertEquals(2, precision) }
         with(org.secu3.android.ui.parameters.pages.compose.KnockNumber.DELAY) { assertEquals(1f, min); assertEquals(99f, max); assertEquals(1f, step); assertEquals(0, precision) }

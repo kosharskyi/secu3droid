@@ -32,6 +32,7 @@ import org.secu3.android.models.packets.out.params.MiscellaneousParamPacket
 import org.secu3.android.ui.parameters.pages.evapEditBounds
 import org.secu3.android.ui.parameters.pages.MiscField
 import org.secu3.android.ui.parameters.pages.MiscellaneousNumericMapping
+import org.secu3.android.ui.parameters.pages.miscFieldEnabled
 
 class MiscellaneousParamPacketTest {
     @Test fun evapSlopeUsesExpectedRawWordAndRoundTrips() {
@@ -91,10 +92,38 @@ class MiscellaneousParamPacketTest {
 
     @Test fun evapBoundsStayInsideXmlRangeAndRejectImpossibleIncomingPair() {
         assertEquals(100 to 158500,evapEditBounds(MiscField.BEGIN,5000,175000))
-        assertEquals(21500 to 200000,evapEditBounds(MiscField.END,5000,175000))
+        assertEquals(21500 to 2_000_000,evapEditBounds(MiscField.END,5000,175000))
         assertEquals(100 to 100,evapEditBounds(MiscField.BEGIN,50,16600))
         assertEquals(null,evapEditBounds(MiscField.BEGIN,100,16599))
-        assertEquals(null,evapEditBounds(MiscField.END,199000,200000))
+        assertEquals(215500 to 2_000_000,evapEditBounds(MiscField.END,199000,200000))
+    }
+
+    @Test fun hallRangesAndExpandedEvapUpperBoundAcceptDesktopSupportedEdges() {
+        val packet = MiscellaneousParamPacket(evapAfbegin = 100, evapAfslope = 32f / 20000f)
+        MiscellaneousNumericMapping.applyInt(packet, MiscField.START, -36)
+        assertEquals(-36, packet.hopStartAng)
+        MiscellaneousNumericMapping.applyInt(packet, MiscField.START, 72)
+        assertEquals(72, packet.hopStartAng)
+        MiscellaneousNumericMapping.applyInt(packet, MiscField.DURATION, 6)
+        assertEquals(6, packet.hopDuratAng)
+        MiscellaneousNumericMapping.applyInt(packet, MiscField.DURATION, 180)
+        assertEquals(180, packet.hopDuratAng)
+        MiscellaneousNumericMapping.applyInt(packet, MiscField.END, 2_000_000)
+        assertTrue(packet.evapAfEnd in 1_995_000..2_000_000)
+        assertTrue(packet.evapAfEnd - packet.evapAfbegin >= MiscellaneousParamPacket.MIN_EVAP_AIRFLOW_DELTA)
+        packet.pack()
+
+        listOf(MiscField.START to -37, MiscField.START to 73, MiscField.DURATION to 5, MiscField.DURATION to 181).forEach { (field, value) ->
+            var rejected = false
+            try { MiscellaneousNumericMapping.applyInt(packet, field, value) } catch (_: IllegalArgumentException) { rejected = true }
+            assertTrue("$field should reject $value", rejected)
+        }
+    }
+
+    @Test fun cutoffThresholdIsDisabledUntilIgnitionCutoffIsEnabled() {
+        assertFalse(miscFieldEnabled(MiscField.CUTOFF, false))
+        assertTrue(miscFieldEnabled(MiscField.CUTOFF, true))
+        assertTrue(miscFieldEnabled(MiscField.START, false))
     }
 
     @Test fun numericMappingUpdatesEachFieldAndPreservesUnrelatedFieldsAndTail() {

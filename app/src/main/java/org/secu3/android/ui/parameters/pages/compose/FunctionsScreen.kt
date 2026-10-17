@@ -24,17 +24,18 @@
  */
 package org.secu3.android.ui.parameters.pages.compose
 
-import org.secu3.android.ui.compose.DropdownShape
-
 import androidx.annotation.StringRes
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.selection.toggleable
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.AlertDialog
@@ -44,24 +45,35 @@ import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.ArrowDropDown
+import androidx.compose.material.icons.filled.ExpandMore
+import androidx.compose.material3.Switch
 import androidx.compose.material3.Icon
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.contentDescription
-import androidx.compose.ui.semantics.role
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.semantics.stateDescription
+import androidx.compose.ui.text.SpanStyle
+import androidx.compose.ui.text.buildAnnotatedString
+import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.text.withStyle
+import androidx.compose.ui.unit.sp
 import androidx.compose.ui.unit.dp
 import org.secu3.android.ui.parameters.compose.ParameterLoadingIndicator
+import org.secu3.android.ui.parameters.compose.ParameterPage
+import org.secu3.android.ui.parameters.dialogs.ParameterAlertDialog
+import org.secu3.android.ui.parameters.dialogs.ParameterCancelButton
+import org.secu3.android.ui.parameters.dialogs.ParameterChoiceList
+import org.secu3.android.ui.parameters.dialogs.ParameterChoiceOption
+import org.secu3.android.ui.parameters.*
 import org.secu3.android.R
 import org.secu3.android.models.packets.out.params.FunSetParamPacket
-import org.secu3.android.ui.parameters.compose.ParameterValueRow
-import org.secu3.android.ui.parameters.compose.ParameterSwitchRow
 
 enum class FunctionsNumber(
     @StringRes val titleRes: Int,
@@ -73,21 +85,21 @@ enum class FunctionsNumber(
 ) {
     LOWER(R.string.funset_lower_pressure_title, R.string.units_pressure_kpa, 2, .25f, 105f, .25f),
     UPPER(R.string.funset_upper_pressure_title, R.string.units_pressure_kpa, 2, .25f, 500f, .25f),
-    MAP_OFFSET(R.string.funset_map_sensor_offset_title, R.string.units_volts, 3, -5f, 5f, .003f),
+    MAP_OFFSET(R.string.funset_map_sensor_offset_title, R.string.units_volts, 4, -5f, 5f, .0025f),
     MAP_GRADIENT(R.string.funset_map_sensor_gradient_title, R.string.units_kpa_per_volt, 3, -150f, 150f, .01f),
-    TPS_OFFSET(R.string.funset_tps_curve_offset_title, R.string.units_volts, 3, -5f, 5f, .003f),
-    TPS_GRADIENT(R.string.funset_tps_curve_gradient_title, R.string.units_percent_per_volts, 3, 0f, 100f, .01f),
-    MAP2_OFFSET(R.string.funset_map2_sensor_offset_title, R.string.units_volts, 3, -5f, 5f, .003f),
+    TPS_OFFSET(R.string.funset_tps_curve_offset_title, R.string.units_volts, 4, -5f, 5f, .0025f),
+    TPS_GRADIENT(R.string.funset_tps_curve_gradient_title, R.string.units_percent_per_volts, 3, -100f, 100f, .01f),
+    MAP2_OFFSET(R.string.funset_map2_sensor_offset_title, R.string.units_volts, 4, -5f, 5f, .0025f),
     MAP2_GRADIENT(R.string.funset_map2_sensor_gradient_title, R.string.units_kpa_per_volt, 3, -150f, 150f, .01f),
-    GPS_OFFSET(R.string.funset_gas_pressure_sensor_offset_title, R.string.units_volts, 3, -5f, 5f, .003f),
+    GPS_OFFSET(R.string.funset_gas_pressure_sensor_offset_title, R.string.units_volts, 4, -5f, 5f, .0025f),
     GPS_GRADIENT(R.string.funset_gas_pressure_sensor_gradient_title, R.string.units_kpa_per_volt, 3, -150f, 150f, .01f),
-    FPS_OFFSET(R.string.funset_fuel_pressure_sensor_offset_title, R.string.units_volts, 3, -5f, 5f, .0025f),
+    FPS_OFFSET(R.string.funset_fuel_pressure_sensor_offset_title, R.string.units_volts, 4, -5f, 5f, .0025f),
     FPS_GRADIENT(R.string.funset_fuel_pressure_sensor_gradient_title, R.string.units_kpa_per_volt, 3, -500f, 500f, .01f),
-    APPS_OFFSET(R.string.funset_apps_offset_title, R.string.units_volts, 3, -5f, 5f, .0025f),
+    APPS_OFFSET(R.string.funset_apps_offset_title, R.string.units_volts, 4, -5f, 5f, .0025f),
     APPS_GRADIENT(R.string.funset_apps_gradient_title, R.string.units_percent_per_volts, 3, -500f, 500f, .01f),
 }
 
-data class FunctionsValues(val numbers: Map<FunctionsNumber, Float>, val useLoadGrid: Boolean) {
+data class FunctionsValues(val numbers: Map<FunctionsNumber, Float>, val useLoadGrid: Boolean, val loadSource: Int = 0) {
     fun value(number: FunctionsNumber): Float = numbers.getValue(number)
 
     fun withValue(number: FunctionsNumber, value: Float): FunctionsValues =
@@ -112,8 +124,18 @@ data class FunctionsValues(val numbers: Map<FunctionsNumber, Float>, val useLoad
                 FunctionsNumber.APPS_GRADIENT to packet.apps1CurveGradient,
             ),
             useLoadGrid = packet.useLoadGrid,
+            loadSource = packet.loadSrcCfg,
         )
     }
+}
+
+internal fun functionsLoadAxisUnitRes(loadSource: Int): Int =
+    if (loadSource < 2) R.string.units_pressure_kpa else R.string.units_percents
+
+internal fun functionsNumberEnabled(number: FunctionsNumber, values: FunctionsValues): Boolean = when (number) {
+    FunctionsNumber.LOWER -> !values.useLoadGrid
+    FunctionsNumber.UPPER -> !values.useLoadGrid && values.loadSource != 1
+    else -> true
 }
 
 fun applyFunctionsValue(packet: FunSetParamPacket, number: FunctionsNumber, value: Float) {
@@ -225,116 +247,128 @@ fun FunctionsScreen(
     onEdit: (FunctionsNumber) -> Unit,
     onFlag: (Boolean) -> Unit,
     onChoice: (FunctionsChoices.Selector, Int) -> Unit,
+    capabilities: ParameterCapabilities = ParameterCapabilities.All,
 ) {
+    val pageScrollState = rememberScrollState()
     when (state) {
         FunctionsUiState.Loading -> ParameterLoadingIndicator("functions_loading")
         is FunctionsUiState.Data -> {
             var open by remember { mutableStateOf<FunctionsChoices.Selector?>(null) }
-            Column(
-                Modifier.fillMaxWidth().verticalScroll(rememberScrollState()).padding(16.dp),
-                verticalArrangement = Arrangement.spacedBy(8.dp),
-            ) {
-                FunctionsNumber.entries.forEach { n ->
-                    if (n == FunctionsNumber.LOWER) {
-                        SectionTitle(stringResource(R.string.functions_section_general))
-                    }
-                    if (n == FunctionsNumber.MAP_OFFSET) {
-                        ParameterSwitchRow(
-                            stringResource(R.string.idlreg_use_load_grid_title),
-                            state.values.useLoadGrid,
-                            "functions_load_grid",
-                            onFlag,
-                        )
-                        SectionTitle(stringResource(R.string.functions_section_map_tps))
-                    }
-                    if (n == FunctionsNumber.MAP2_OFFSET) {
-                        SectionTitle(stringResource(R.string.functions_section_map2))
-                    }
-                    if (n == FunctionsNumber.GPS_OFFSET) {
-                        SectionTitle(stringResource(R.string.functions_section_pressures_apps))
-                    }
-                    ParameterValueRow(
-                        title = stringResource(n.titleRes),
-                        units = stringResource(n.unitRes),
-                        value = state.values.value(n),
-                        precision = n.precision,
-                        testTag = "functions_${n.name.lowercase()}",
-                    ) { onEdit(n) }
-                    if (n == FunctionsNumber.MAP_GRADIENT) {
-                        SectionTitle(stringResource(R.string.functions_section_tables))
-                        ChoiceRow(
-                            stringResource(R.string.funset_maps_set_for_gasoline),
-                            state.choices.selected[FunctionsChoices.Selector.GASOLINE_MAP],
-                            "functions_gasoline",
-                        ) { open = FunctionsChoices.Selector.GASOLINE_MAP }
-                        ChoiceRow(
-                            stringResource(R.string.funset_maps_set_for_gas),
-                            state.choices.selected[FunctionsChoices.Selector.GAS_MAP],
-                            "functions_gas",
-                        ) { open = FunctionsChoices.Selector.GAS_MAP }
-                    }
-                    if (n == FunctionsNumber.TPS_GRADIENT) {
-                        SectionTitle(stringResource(R.string.functions_section_sources))
-                        ChoiceRow(
-                            stringResource(R.string.funset_load_measurement),
-                            state.choices.selected[FunctionsChoices.Selector.LOAD_SOURCE],
-                            "functions_load_source",
-                        ) { open = FunctionsChoices.Selector.LOAD_SOURCE }
-                        ChoiceRow(
-                            stringResource(R.string.funset_mapsel0_condition_for_petrol),
-                            state.choices.selected[FunctionsChoices.Selector.MAPSEL_PETROL],
-                            "functions_mapsel_petrol",
-                        ) { open = FunctionsChoices.Selector.MAPSEL_PETROL }
-                        ChoiceRow(
-                            stringResource(R.string.funset_mapsel0_condition_for_gas),
-                            state.choices.selected[FunctionsChoices.Selector.MAPSEL_GAS],
-                            "functions_mapsel_gas",
-                        ) { open = FunctionsChoices.Selector.MAPSEL_GAS }
-                        ChoiceRow(
-                            stringResource(R.string.funset_barometric_correction),
-                            state.choices.selected[FunctionsChoices.Selector.BAROCORR],
-                            "functions_barocorr",
-                        ) { open = FunctionsChoices.Selector.BAROCORR }
-                    }
-                    if (n == FunctionsNumber.MAP2_GRADIENT) {
-                        ChoiceRow(
-                            stringResource(R.string.funset_ve2_map_func_title),
-                            state.choices.selected[FunctionsChoices.Selector.VE2],
-                            "functions_ve2",
-                        ) { open = FunctionsChoices.Selector.VE2 }
-                        ChoiceRow(
-                            stringResource(R.string.funset_gas_v_uni_title),
-                            state.choices.selected[FunctionsChoices.Selector.GAS_V_UNI],
-                            "functions_gas_v_uni",
-                        ) { open = FunctionsChoices.Selector.GAS_V_UNI }
-                    }
-                }
-            }
-            open?.let { selector ->
-                val options = state.choices.options[selector].orEmpty()
-                AlertDialog(
-                    onDismissRequest = { open = null },
-                    title = { ChoiceTitle(selector) },
-                    text = {
-                        Column(Modifier.verticalScroll(rememberScrollState())) {
-                            options.forEachIndexed { i, option ->
-                                Text(option, Modifier
-                                    .fillMaxWidth()
-                                    .clickable {
-                                        onChoice(selector, i)
-                                        open = null
-                                    }
-                                    .padding(12.dp)
-                                    .testTag("functions_option_$i"))
+            ParameterPage(scrollState = pageScrollState) {
+                Surface(
+                    modifier = Modifier.fillMaxWidth(),
+                    shape = RoundedCornerShape(16.dp),
+                    color = MaterialTheme.colorScheme.surface,
+                    contentColor = MaterialTheme.colorScheme.onSurface,
+                    border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant),
+                ) {
+                    Column {
+                        FunctionsNumber.entries.forEach { n ->
+                            if (n == FunctionsNumber.LOWER) {
+                                SectionTitle(stringResource(R.string.functions_section_general))
+                            }
+                            if (n == FunctionsNumber.MAP_OFFSET) {
+                                FunctionsSwitchRow(
+                                    stringResource(R.string.idlreg_use_load_grid_title),
+                                    state.values.useLoadGrid,
+                                    "functions_load_grid",
+                                    onFlag,
+                                )
+                                SectionTitle(stringResource(R.string.functions_section_map_tps))
+                            }
+                            if (n == FunctionsNumber.MAP2_OFFSET) {
+                                SectionTitle(stringResource(R.string.functions_section_map2))
+                            }
+                            if (n == FunctionsNumber.GPS_OFFSET) {
+                                SectionTitle(stringResource(R.string.functions_section_pressures_apps))
+                            }
+                            FunctionsNumberRow(
+                                title = stringResource(n.titleRes),
+                                units = stringResource(if (n == FunctionsNumber.LOWER || n == FunctionsNumber.UPPER) functionsLoadAxisUnitRes(state.values.loadSource) else n.unitRes),
+                                value = state.values.value(n),
+                                precision = n.precision,
+                                testTag = "functions_${n.name.lowercase()}",
+                                enabled = functionsNumberEnabled(n, state.values) && when (n) {
+                                    FunctionsNumber.GPS_OFFSET, FunctionsNumber.GPS_GRADIENT,
+                                    FunctionsNumber.FPS_OFFSET, FunctionsNumber.FPS_GRADIENT -> !capabilities.secu3T
+                                    FunctionsNumber.APPS_OFFSET, FunctionsNumber.APPS_GRADIENT -> capabilities.dbw && !capabilities.secu3T
+                                    else -> true
+                                },
+                            ) { onEdit(n) }
+                            if (n != FunctionsNumber.entries.last()) {
+                                HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant)
+                            }
+                            if (n == FunctionsNumber.MAP_GRADIENT) {
+                                SectionTitle(stringResource(R.string.functions_section_tables))
+                                ChoiceRow(
+                                    stringResource(R.string.funset_maps_set_for_gasoline),
+                                    state.choices.selected[FunctionsChoices.Selector.GASOLINE_MAP],
+                                    "functions_gasoline",
+                                ) { open = FunctionsChoices.Selector.GASOLINE_MAP }
+                                ChoiceRow(
+                                    stringResource(R.string.funset_maps_set_for_gas),
+                                    state.choices.selected[FunctionsChoices.Selector.GAS_MAP],
+                                    "functions_gas",
+                                ) { open = FunctionsChoices.Selector.GAS_MAP }
+                            }
+                            if (n == FunctionsNumber.TPS_GRADIENT) {
+                                SectionTitle(stringResource(R.string.functions_section_sources))
+                                ChoiceRow(
+                                    stringResource(R.string.funset_load_measurement),
+                                    state.choices.selected[FunctionsChoices.Selector.LOAD_SOURCE],
+                                    "functions_load_source",
+                                ) { open = FunctionsChoices.Selector.LOAD_SOURCE }
+                                ChoiceRow(
+                                    stringResource(R.string.funset_mapsel0_condition_for_petrol),
+                                    state.choices.selected[FunctionsChoices.Selector.MAPSEL_PETROL],
+                                    "functions_mapsel_petrol",
+                                ) { open = FunctionsChoices.Selector.MAPSEL_PETROL }
+                                ChoiceRow(
+                                    stringResource(R.string.funset_mapsel0_condition_for_gas),
+                                    state.choices.selected[FunctionsChoices.Selector.MAPSEL_GAS],
+                                    "functions_mapsel_gas",
+                                ) { open = FunctionsChoices.Selector.MAPSEL_GAS }
+                                ChoiceRow(
+                                    stringResource(R.string.funset_barometric_correction),
+                                    state.choices.selected[FunctionsChoices.Selector.BAROCORR],
+                                    "functions_barocorr",
+                                ) { open = FunctionsChoices.Selector.BAROCORR }
+                            }
+                            if (n == FunctionsNumber.MAP2_GRADIENT) {
+                                ChoiceRow(
+                                    stringResource(R.string.funset_ve2_map_func_title),
+                                    state.choices.selected[FunctionsChoices.Selector.VE2],
+                                    "functions_ve2", enabled = capabilities.fuelInjection,
+                                ) { open = FunctionsChoices.Selector.VE2 }
+                                ChoiceRow(
+                                    stringResource(R.string.funset_gas_v_uni_title),
+                                    state.choices.selected[FunctionsChoices.Selector.GAS_V_UNI],
+                                    "functions_gas_v_uni",
+                                ) { open = FunctionsChoices.Selector.GAS_V_UNI }
                             }
                         }
-                    },
-                    confirmButton = {
-                        TextButton(onClick = { open = null }) {
-                            Text(stringResource(android.R.string.cancel))
-                        }
-                    },
-                )
+                    }
+                }
+                open?.let { selector ->
+                    val options = state.choices.options[selector].orEmpty()
+                    ParameterAlertDialog(
+                        onDismissRequest = { open = null },
+                        title = { ChoiceTitle(selector) },
+                        text = {
+                            ParameterChoiceList {
+                                options.forEachIndexed { i, option ->
+                                    ParameterChoiceOption(option, "functions_option_$i") {
+                                            onChoice(selector, i)
+                                            open = null
+                                    }
+                                }
+                            }
+                        },
+                        confirmButton = {
+                            ParameterCancelButton { open = null }
+                        },
+                    )
+                }
             }
         }
     }
@@ -344,60 +378,96 @@ fun FunctionsScreen(
 private fun SectionTitle(title: String) {
     Text(
         title,
-        Modifier.fillMaxWidth().padding(top = 12.dp, bottom = 4.dp),
-        style = androidx.compose.material3.MaterialTheme.typography.titleMedium,
+        Modifier.fillMaxWidth().padding(start = 14.dp, end = 14.dp, top = 16.dp, bottom = 8.dp),
+        style = MaterialTheme.typography.titleMedium,
     )
 }
 
 @Composable
-private fun ChoiceRow(title: String, value: String?, tag: String, onClick: () -> Unit) {
+private fun ChoiceRow(title: String, value: String?, tag: String, enabled: Boolean = true, onClick: () -> Unit) {
     val selectedValue = value.orEmpty()
-
-    Surface(
-        modifier = Modifier
-            .fillMaxWidth()
+    Row(
+        Modifier.fillMaxWidth().heightIn(min = 66.dp)
+            .clickable(enabled = enabled, role = Role.Button, onClick = onClick)
             .semantics(mergeDescendants = true) {
-                role = Role.Button
                 contentDescription = if (selectedValue.isEmpty()) title else "$title, $selectedValue"
                 if (selectedValue.isNotEmpty()) stateDescription = selectedValue
             }
-            .clickable(role = Role.Button, onClick = onClick)
-            .testTag(tag),
-        shape = DropdownShape,
-        color = MaterialTheme.colorScheme.surface,
-        border = BorderStroke(1.dp, MaterialTheme.colorScheme.outline),
+            .testTag(tag).padding(horizontal = 14.dp, vertical = 11.dp),
+        horizontalArrangement = Arrangement.spacedBy(12.dp),
+        verticalAlignment = Alignment.CenterVertically,
     ) {
-        Row(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(horizontal = 16.dp, vertical = 12.dp),
-            verticalAlignment = Alignment.CenterVertically,
-        ) {
-            Column(Modifier.weight(1f)) {
-                Text(
-                    text = title,
-                    style = MaterialTheme.typography.bodySmall,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                )
-                if (selectedValue.isNotEmpty()) {
-                    Text(
-                        text = selectedValue,
-                        modifier = Modifier.padding(top = 4.dp),
-                        style = MaterialTheme.typography.bodyLarge,
-                        softWrap = true,
-                    )
-                }
-            }
-            Icon(
-                imageVector = Icons.Filled.ArrowDropDown,
-                contentDescription = null,
-                modifier = Modifier
-                    .size(24.dp)
-                    .testTag("$tag-dropdown-indicator"),
-                tint = MaterialTheme.colorScheme.onSurfaceVariant,
-            )
-        }
+        Text(title, Modifier.weight(.5f).testTag("$tag-label"), style = MaterialTheme.typography.bodyMedium)
+        Text(
+            selectedValue,
+            Modifier.weight(.5f).testTag("$tag-value"),
+            style = MaterialTheme.typography.bodyLarge,
+            textAlign = TextAlign.End,
+        )
+        Icon(
+            Icons.Default.ExpandMore,
+            contentDescription = null,
+            modifier = Modifier.size(18.dp).testTag("$tag-dropdown-indicator"),
+            tint = MaterialTheme.colorScheme.onSurfaceVariant,
+        )
     }
+    HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant)
+}
+
+@Composable
+private fun FunctionsNumberRow(
+    title: String,
+    units: String,
+    value: Float,
+    precision: Int,
+    testTag: String,
+    enabled: Boolean = true,
+    onClick: () -> Unit,
+) {
+    val formattedValue = buildAnnotatedString {
+        append(String.format(LocalConfiguration.current.locales[0], "%.${precision}f", value))
+        withStyle(
+            SpanStyle(
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                fontSize = 12.sp,
+                fontWeight = FontWeight.Normal,
+            ),
+        ) { append(" $units") }
+    }
+    Row(
+        Modifier.fillMaxWidth().heightIn(min = 66.dp)
+            .clickable(enabled = enabled, role = Role.Button, onClick = onClick).testTag(testTag)
+            .padding(horizontal = 14.dp, vertical = 11.dp),
+        horizontalArrangement = Arrangement.spacedBy(12.dp),
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        Text(title, Modifier.weight(.62f).testTag("$testTag-label"), style = MaterialTheme.typography.bodyMedium)
+        Text(
+            formattedValue,
+            Modifier.weight(.38f).testTag("$testTag-value"),
+            style = MaterialTheme.typography.titleLarge.copy(
+                fontSize = 22.sp,
+                fontWeight = FontWeight.SemiBold,
+                fontFeatureSettings = "tnum",
+            ),
+            textAlign = TextAlign.End,
+        )
+    }
+}
+
+@Composable
+private fun FunctionsSwitchRow(title: String, checked: Boolean, tag: String, onCheckedChange: (Boolean) -> Unit) {
+    Row(
+        Modifier.fillMaxWidth().heightIn(min = 66.dp).testTag(tag)
+            .toggleable(value = checked, role = Role.Switch, onValueChange = onCheckedChange)
+            .padding(horizontal = 14.dp, vertical = 11.dp),
+        horizontalArrangement = Arrangement.spacedBy(12.dp),
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        Text(title, Modifier.weight(1f), style = MaterialTheme.typography.bodyMedium)
+        Switch(checked, onCheckedChange, modifier = Modifier.testTag("$tag-switch"))
+    }
+    HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant)
 }
 
 @Composable

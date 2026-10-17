@@ -1,5 +1,15 @@
 package org.secu3.android.ui.firmware
 
+import android.content.res.Configuration
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.width
+import androidx.compose.runtime.CompositionLocalProvider
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalConfiguration
+import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.semantics.SemanticsActions
+import androidx.compose.ui.text.TextLayoutResult
+import androidx.compose.ui.unit.Density
 import androidx.compose.ui.test.assertCountEquals
 import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.assertIsNotSelected
@@ -10,8 +20,11 @@ import androidx.compose.ui.test.onNodeWithContentDescription
 import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
+import androidx.compose.ui.test.performSemanticsAction
+import androidx.compose.ui.unit.dp
 import androidx.test.platform.app.InstrumentationRegistry
 import org.junit.Assert.assertTrue
+import org.junit.Assert.assertEquals
 import org.junit.Rule
 import org.junit.Test
 import org.secu3.android.R
@@ -58,6 +71,38 @@ class FirmwareInfoSheetTest {
         composeTestRule.onNodeWithTag(firmwareCapabilityChipTag("FUEL_INJECTION", enabled = true)).assertIsSelected()
         composeTestRule.onNodeWithTag(firmwareCapabilityChipTag("GAS_DOSE", enabled = false)).assertIsNotSelected()
         composeTestRule.onNodeWithTag(firmwareCapabilityChipTag("ATMEGA1284", enabled = false)).assertIsNotSelected()
+    }
+
+    @Test
+    fun fullFirmwareTagRemainsVisibleAtNarrowWidthAndLargeFont() {
+        val configuration = Configuration(context.resources.configuration).apply { fontScale = 1.7f }
+        val tag = "SECU3-" + "A".repeat(42)
+        val largeFontDensity = Density(composeTestRule.density.density, fontScale = 1.7f)
+        composeTestRule.setContent {
+            CompositionLocalProvider(
+                LocalConfiguration provides configuration,
+                LocalDensity provides largeFontDensity,
+            ) {
+                Box(Modifier.width(280.dp)) {
+                    FirmwareInfoSheet(firmware = FirmwareInfoPacket(tag = tag), onDismiss = {})
+                }
+            }
+        }
+
+        val tagNode = composeTestRule.onNodeWithText(tag).assertIsDisplayed()
+        var textLayout: TextLayoutResult? = null
+        tagNode.performSemanticsAction(SemanticsActions.GetTextLayoutResult) { action ->
+            val results = mutableListOf<TextLayoutResult>()
+            action(results)
+            textLayout = results.firstOrNull()
+        }
+        val layout = requireNotNull(textLayout)
+        assertTrue(
+            "At enlarged font in 280dp, tag wraps beyond two lines (lines=${layout.lineCount})",
+            layout.lineCount > 2,
+        )
+        assertTrue("Firmware tag has no clipped text", !layout.hasVisualOverflow)
+        assertEquals(48, tag.length)
     }
 
     @Test

@@ -9,18 +9,23 @@
  */
 package org.secu3.android.ui.sensors.settings
 
-import androidx.compose.foundation.clickable
+import androidx.compose.foundation.background
+import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
-import androidx.compose.material3.Checkbox
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
+import androidx.compose.material3.Icon
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
-import androidx.compose.material3.TextButton
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.ExpandMore
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -33,6 +38,9 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import org.secu3.android.R
 import org.secu3.android.ui.compose.DropdownShape
+import org.secu3.android.ui.compose.SettingsActionRow
+import org.secu3.android.ui.compose.SettingsSection
+import org.secu3.android.ui.compose.SettingsToggleRow
 import org.secu3.android.ui.compose.SecuTopAppBar
 
 @Composable
@@ -44,16 +52,33 @@ internal fun SensorsSettingsScreen(
     onNavigateUp: () -> Unit,
 ) {
     var columnsExpanded by remember { mutableStateOf(false) }
-    Column(Modifier.fillMaxSize()) {
+    Column(Modifier.fillMaxSize().background(MaterialTheme.colorScheme.background)) {
         SecuTopAppBar(title = stringResource(R.string.title_activity_settings), onNavigateUp = onNavigateUp, showStatus = false)
-        Row(Modifier.fillMaxWidth().clickable { onOldViewChange(!oldView) }.padding(start = 16.dp, end = 16.dp, top = 8.dp, bottom = 8.dp), verticalAlignment = Alignment.CenterVertically) {
-            Text(stringResource(R.string.enable_old_sensors_view), Modifier.weight(1f))
-            Checkbox(checked = oldView, modifier = Modifier.testTag("sensors-old-view-checkbox"), onCheckedChange = onOldViewChange)
-        }
-        Row(Modifier.fillMaxWidth().clickable { columnsExpanded = true }.padding(16.dp), verticalAlignment = Alignment.CenterVertically) {
-            Text(stringResource(R.string.columns_count), Modifier.weight(1f))
-            Box {
-                TextButton(onClick = { columnsExpanded = true }, modifier = Modifier.testTag("sensor-columns-value"), shape = DropdownShape) { Text(columns.toString()) }
+        Column(
+            Modifier.weight(1f).fillMaxWidth().verticalScroll(rememberScrollState()).padding(16.dp),
+            verticalArrangement = Arrangement.spacedBy(16.dp),
+        ) {
+            SettingsSection {
+                SettingsToggleRow(
+                    title = stringResource(R.string.enable_old_sensors_view),
+                    checked = oldView,
+                    testTag = "sensors-old-view-checkbox",
+                    onCheckedChange = onOldViewChange,
+                )
+            }
+            SettingsSection {
+                Box(Modifier.fillMaxWidth()) {
+                    SettingsActionRow(
+                        title = stringResource(R.string.columns_count),
+                        onClick = { columnsExpanded = true },
+                        testTag = "sensor-columns",
+                        value = {
+                            Row(verticalAlignment = Alignment.CenterVertically) {
+                                Text(columns.toString(), Modifier.testTag("sensor-columns-value"), style = MaterialTheme.typography.bodyLarge)
+                                Icon(Icons.Default.ExpandMore, contentDescription = null, tint = MaterialTheme.colorScheme.onSurfaceVariant)
+                            }
+                        },
+                    )
                 DropdownMenu(expanded = columnsExpanded, onDismissRequest = { columnsExpanded = false }, shape = DropdownShape) {
                     (2..8).forEach { count ->
                         DropdownMenuItem(text = { Text(count.toString()) }, onClick = {
@@ -61,6 +86,7 @@ internal fun SensorsSettingsScreen(
                             columnsExpanded = false
                         })
                     }
+                }
                 }
             }
         }

@@ -64,7 +64,10 @@ class CarburMappingTest {
     @Test fun rangesPrecisionAndTypesMatchLegacyLayout() {
         assertEquals(11, CarburNumber.entries.size)
         assertEquals(listOf(6, 5), listOf(CarburNumber.entries.count { it.integer }, CarburNumber.entries.count { !it.integer }))
-        assertEquals(-30f, CarburNumber.CTS.min); assertEquals(180f, CarburNumber.CTS.max); assertEquals(.25f, CarburNumber.CTS.step)
+        assertEquals(listOf(30000f, 30000f, 30000f, 30000f), listOf(CarburNumber.IDLE_LOW.max, CarburNumber.IDLE_HIGH.max, CarburNumber.IDLE_LOW_GAS.max, CarburNumber.IDLE_HIGH_GAS.max))
+        assertEquals(250f, CarburNumber.IDLE_LOW.min); assertEquals(10f, CarburNumber.IDLE_LOW.step)
+        assertEquals(500f, CarburNumber.VALVE_PRESSURE.max); assertEquals(.1f, CarburNumber.VALVE_PRESSURE.step)
+        assertEquals(-40f, CarburNumber.CTS.min); assertEquals(300f, CarburNumber.CTS.max); assertEquals(.25f, CarburNumber.CTS.step)
         assertEquals(2, CarburNumber.CUTOFF_DELAY.precision); assertEquals(1, CarburNumber.VALVE_PRESSURE.precision)
         assertEquals(.5f, CarburNumber.TPS.step); assertEquals(30000f, CarburNumber.REV_HIGH.max)
     }

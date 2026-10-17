@@ -27,6 +27,7 @@ package org.secu3.android.ui.diagnostics
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -36,6 +37,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.Checkbox
+import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.ui.Alignment
@@ -119,23 +121,53 @@ internal fun DiagnosticsOutputsScreen(
         null -> emptyList()
     }.filter { it != DiagnosticOutput.TACH_O || enableTachO }
     Column(
-        modifier = Modifier.fillMaxWidth().verticalScroll(rememberScrollState()).padding(horizontal = 16.dp, vertical = 8.dp),
-        verticalArrangement = Arrangement.spacedBy(2.dp),
+        modifier = Modifier.fillMaxWidth().verticalScroll(rememberScrollState()).padding(16.dp),
+        verticalArrangement = Arrangement.spacedBy(16.dp),
     ) {
         if (isSecu3T == null) return@Column
         val ignitionCount = if (isSecu3T) 4 else 5
-        Text(stringResource(R.string.diag_outputs_ignition_group), style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.SemiBold, modifier = Modifier.padding(top = 8.dp, bottom = 4.dp))
-        outputs.take(ignitionCount).forEach { output ->
-            OutputToggle(output, outputBits, enabledFor(output, enableBlDe, enableTachO), onOutputChanged)
-        }
-        Text(
-            stringResource(if (isSecu3T) R.string.diag_outputs_other_group else R.string.diag_outputs_injection_group),
-            style = MaterialTheme.typography.titleMedium,
-            fontWeight = FontWeight.SemiBold,
-            modifier = Modifier.padding(top = 12.dp, bottom = 4.dp),
+        OutputGroup(
+            title = stringResource(R.string.diag_outputs_ignition_group),
+            outputs = outputs.take(ignitionCount),
+            outputBits = outputBits,
+            enableBlDe = enableBlDe,
+            enableTachO = enableTachO,
+            onOutputChanged = onOutputChanged,
         )
-        outputs.drop(ignitionCount).forEach { output ->
-            OutputToggle(output, outputBits, enabledFor(output, enableBlDe, enableTachO), onOutputChanged)
+        OutputGroup(
+            title = stringResource(if (isSecu3T) R.string.diag_outputs_other_group else R.string.diag_outputs_injection_group),
+            outputs = outputs.drop(ignitionCount),
+            outputBits = outputBits,
+            enableBlDe = enableBlDe,
+            enableTachO = enableTachO,
+            onOutputChanged = onOutputChanged,
+        )
+    }
+}
+
+@Composable
+private fun OutputGroup(
+    title: String,
+    outputs: List<DiagnosticOutput>,
+    outputBits: Int,
+    enableBlDe: Boolean,
+    enableTachO: Boolean,
+    onOutputChanged: (DiagnosticOutput, Boolean) -> Unit,
+) {
+    DiagnosticGroupSurface(Modifier.fillMaxWidth()) {
+        Column {
+            Text(
+                title,
+                Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 14.dp),
+                style = MaterialTheme.typography.titleMedium,
+                fontWeight = FontWeight.SemiBold,
+                color = MaterialTheme.colorScheme.onSurface,
+            )
+            HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant)
+            outputs.forEachIndexed { index, output ->
+                OutputToggle(output, outputBits, enabledFor(output, enableBlDe, enableTachO), onOutputChanged)
+                if (index != outputs.lastIndex) HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant)
+            }
         }
     }
 }
@@ -155,10 +187,10 @@ private fun OutputToggle(
 ) {
     val checked = bits and (1 shl output.bit) != 0
     Row(
-        modifier = Modifier.fillMaxWidth().heightIn(min = 48.dp).clickable(enabled = enabled) {
+        modifier = Modifier.fillMaxWidth().heightIn(min = 64.dp).clickable(enabled = enabled) {
             val newValue = !checked
             onOutputChanged(output, newValue)
-        }.padding(start = 8.dp, end = 4.dp),
+        }.padding(horizontal = 14.dp, vertical = 8.dp),
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.SpaceBetween,
     ) {

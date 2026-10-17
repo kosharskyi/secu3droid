@@ -42,6 +42,12 @@ class KnockStateHolderTest {
     )
 
     @Test
+    fun advanceEditorStepMatchesManagerIncrement() {
+        assertEquals(.02f, KnockNumber.ADVANCE.step)
+        assertEquals(2, KnockNumber.ADVANCE.precision)
+    }
+
+    @Test
     fun loadingAndPacketMappingDoNotSendAndEnabledIsDerivedFromPacket() {
         val sent = mutableListOf<KnockParamPacket>()
         val holder = holder(sent)

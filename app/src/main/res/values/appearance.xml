@@ -1,0 +1,11 @@
+<resources>
+    <string name="pref_appearance_mode_key" translatable="false">appearanceMode</string>
+    <string name="appearance_title">Appearance</string>
+    <string name="appearance_system">System default</string>
+    <string name="appearance_light">Light</string>
+    <string name="appearance_dark">Dark</string>
+    <string name="appearance_system_summary">Follow the device appearance</string>
+    <string name="settings_group_logging">Logging</string>
+    <string name="settings_group_connection">Connection</string>
+    <string name="settings_group_display">Display and power</string>
+</resources>

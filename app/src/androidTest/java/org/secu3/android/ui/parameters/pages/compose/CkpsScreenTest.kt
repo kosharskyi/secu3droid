@@ -40,7 +40,7 @@ class CkpsScreenTest {
     @get:Rule val compose = createComposeRule()
     private fun state() = CkpsUiState.Data(
         CkpsValues(
-            CkpsNumber.entries.associateWith { it.ordinal.toFloat() },
+            CkpsNumber.entries.associateWith { if (it == CkpsNumber.WHEEL) 60f else it.ordinal.toFloat() },
             false,
             true,
             true,

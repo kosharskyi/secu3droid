@@ -24,19 +24,17 @@
  */
 package org.secu3.android.ui.parameters.pages.compose
 
-import org.secu3.android.ui.compose.DropdownShape
 
 import androidx.annotation.StringRes
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
-import androidx.compose.material3.DropdownMenu
-import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Slider
 import androidx.compose.material3.Text
@@ -53,16 +51,23 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.Alignment
 import kotlin.math.roundToInt
+import org.secu3.android.ui.parameters.*
 import org.secu3.android.R
 import org.secu3.android.models.packets.out.params.AccelerationParamPacket
 import org.secu3.android.ui.parameters.compose.ParameterLoadingIndicator
+import org.secu3.android.ui.parameters.compose.ParameterPage
+import org.secu3.android.ui.parameters.compose.ParameterSection
+import org.secu3.android.ui.parameters.compose.ParameterSelectionRow
+import org.secu3.android.ui.parameters.compose.ParameterTextValueRow
 import org.secu3.android.ui.parameters.compose.ParameterValueRow
+import org.secu3.android.ui.parameters.dialogs.ParameterChoice
+import org.secu3.android.ui.parameters.dialogs.ParameterChoiceDialog
 
 enum class AccelerationNumber(@StringRes val titleRes: Int, @StringRes val unitsRes: Int?, val min: Float, val max: Float, val step: Float) {
     TPS_THRESHOLD(R.string.accel_par_tpsdot_threshold_title, R.string.units_percent_per_second, 0f, 255f, 1f),
     COLD_MULTIPLIER(R.string.accel_par_coldacc_mult_title, R.string.units_percents, 100f, 600f, 1f),
-    DECAY_TIME(R.string.accel_par_ae_decay_time_title, null, 1f, 255f, 1f),
-    AE_TIME(R.string.accel_par_ae_time_title, null, 1f, 255f, 1f),
+    DECAY_TIME(R.string.accel_par_ae_decay_time_title, null, 0f, 255f, 1f),
+    AE_TIME(R.string.accel_par_ae_time_title, null, 0f, 255f, 1f),
     MAPDOT_THRESHOLD(R.string.accel_par_ae_mapdot_thrd_title, null, 0f, 255f, 1f),
     XTAU_START(R.string.accel_par_start_transition_title, R.string.units_pressure_kpa, -255f, 0f, 1f),
     XTAU_FINISH(R.string.accel_par_finish_transition_title, R.string.units_pressure_kpa, -255f, 0f, 1f),
@@ -112,16 +117,19 @@ fun AccelerationScreen(
     onAeType: (Int) -> Unit,
     onWallwetModel: (Int) -> Unit,
     onBalance: (Float) -> Unit,
+    capabilities: ParameterCapabilities = ParameterCapabilities.All,
 ) {
+    val pageScrollState = rememberScrollState()
     if (state is AccelerationUiState.Loading) { ParameterLoadingIndicator("acceleration_loading"); return }
     val values = (state as AccelerationUiState.Data).values
     val aeTypes = stringArrayResource(R.array.accel_enrichment_types)
     val wallwetTypes = stringArrayResource(R.array.accel_wallwet_types)
-    Column(Modifier.fillMaxWidth().verticalScroll(rememberScrollState()).padding(16.dp), verticalArrangement = Arrangement.spacedBy(16.dp)) {
+    ParameterPage(scrollState = pageScrollState) {
+            ParameterSection {
         AccelerationNumber.entries.take(3).forEach { number -> NumberRow(values, number, onEdit) }
         Selector(stringResource(R.string.accel_par_ae_type_title), aeTypes, values.aeType, "acceleration_ae_type", onAeType)
-        if (values.aeType != 0) NumberRow(values, AccelerationNumber.AE_TIME, onEdit)
-        Column {
+        if (values.aeType != 0) NumberRow(values, AccelerationNumber.AE_TIME, onEdit, capabilities.fuelInjection && values.aeType == 1)
+        Column(Modifier.fillMaxWidth().padding(horizontal = 14.dp, vertical = 11.dp)) {
             Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
                 Text(stringResource(R.string.accel_par_ae_ballance_title), Modifier.weight(1f))
                 Text("${values.balance.coerceIn(0f, 100f).roundToInt()}%", Modifier.testTag("acceleration_balance_value"))
@@ -133,35 +141,34 @@ fun AccelerationScreen(
             }
         }
         NumberRow(values, AccelerationNumber.MAPDOT_THRESHOLD, onEdit)
-        Selector(stringResource(R.string.accel_par_fuel_film_model_title), wallwetTypes, values.wallwetModel, "acceleration_wallwet_model", onWallwetModel)
+        Selector(stringResource(R.string.accel_par_fuel_film_model_title), wallwetTypes, values.wallwetModel, "acceleration_wallwet_model", onWallwetModel, capabilities.fuelInjection)
         if (values.wallwetModel > 0) {
-            NumberRow(values, AccelerationNumber.XTAU_START, onEdit)
-            NumberRow(values, AccelerationNumber.XTAU_FINISH, onEdit)
+            NumberRow(values, AccelerationNumber.XTAU_START, onEdit, capabilities.fuelInjection)
+            NumberRow(values, AccelerationNumber.XTAU_FINISH, onEdit, capabilities.fuelInjection)
         }
-    }
+                }
+        }
 }
 
 @Composable
-private fun NumberRow(values: AccelerationValues, number: AccelerationNumber, onEdit: (AccelerationNumber) -> Unit) {
+private fun NumberRow(values: AccelerationValues, number: AccelerationNumber, onEdit: (AccelerationNumber) -> Unit, enabled: Boolean = true) {
     ParameterValueRow(
         stringResource(number.titleRes), number.unitsRes?.let { stringResource(it) } ?: stringResource(R.string.units_str), values.value(number), 0,
-        "acceleration_${number.name.lowercase()}",
+        "acceleration_${number.name.lowercase()}", enabled = enabled,
     ) { onEdit(number) }
 }
 
 @Composable
-private fun Selector(title: String, options: Array<String>, selected: Int, tag: String, onSelect: (Int) -> Unit) {
+private fun Selector(title: String, options: Array<String>, selected: Int, tag: String, onSelect: (Int) -> Unit, enabled: Boolean = true) {
     val expanded = remember { mutableStateOf(false) }
-    Column {
-        OutlinedButton(onClick = { expanded.value = true }, modifier = Modifier.fillMaxWidth().testTag(tag), shape = DropdownShape) {
-            Column(Modifier.weight(1f), horizontalAlignment = androidx.compose.ui.Alignment.Start) {
-                Text(title, style = androidx.compose.material3.MaterialTheme.typography.labelMedium)
-                Text(options.getOrNull(selected) ?: "${stringResource(R.string.firmware_unknown_value)} ($selected)", Modifier.testTag("${tag}_value"))
-            }
-            Icon(Icons.Filled.ArrowDropDown, contentDescription = null)
-        }
-        DropdownMenu(expanded.value, onDismissRequest = { expanded.value = false }, shape = DropdownShape) {
-            options.forEachIndexed { index, label -> DropdownMenuItem(text = { Text(label) }, onClick = { expanded.value = false; onSelect(index) }, modifier = Modifier.testTag("${tag}_option_$index")) }
-        }
+    val value = options.getOrNull(selected) ?: "${stringResource(R.string.firmware_unknown_value)} ($selected)"
+    Box {
+        ParameterSelectionRow(title, value, tag, enabled = enabled, valueTestTag = "${tag}_value") { expanded.value = true }
+        if (expanded.value) ParameterChoiceDialog(
+            title = title,
+            choices = options.mapIndexed { index, label -> ParameterChoice(index, label, "${tag}_option_$index") },
+            onDismiss = { expanded.value = false },
+            onSelect = onSelect,
+        )
     }
 }

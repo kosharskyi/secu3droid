@@ -26,6 +26,7 @@ package org.secu3.android.ui.parameters.pages.compose
 
 import androidx.annotation.StringRes
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -33,8 +34,6 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
-import androidx.compose.material3.DropdownMenu
-import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Text
@@ -51,8 +50,13 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import org.secu3.android.R
 import org.secu3.android.models.packets.out.params.LambdaParamPacket
-import org.secu3.android.ui.compose.DropdownShape
 import org.secu3.android.ui.parameters.compose.ParameterLoadingIndicator
+import org.secu3.android.ui.parameters.compose.ParameterPage
+import org.secu3.android.ui.parameters.compose.ParameterSection
+import org.secu3.android.ui.parameters.compose.ParameterSelectionRow
+import org.secu3.android.ui.parameters.dialogs.ParameterChoice
+import org.secu3.android.ui.parameters.dialogs.ParameterChoiceDialog
+import org.secu3.android.ui.parameters.compose.ParameterTextValueRow
 import org.secu3.android.ui.parameters.compose.ParameterSwitchRow
 import org.secu3.android.ui.parameters.compose.ParameterValueRow
 
@@ -142,40 +146,51 @@ fun applyLambdaChannel(p: LambdaParamPacket, index: Int, checked: Boolean) {
 @Composable
 fun LambdaControlScreen(values: LambdaValues?, sensors: List<String>, fuelInjectionEnabled: Boolean, onEdit: (LambdaNumber) -> Unit,
     onFlag: (LambdaFlag, Boolean) -> Unit, onSensorType: (Int) -> Unit, onChannel: (Int, Boolean) -> Unit) {
+    val pageScrollState = rememberScrollState()
     if (values == null) { ParameterLoadingIndicator("lambda_loading"); return }
-    Column(Modifier.fillMaxWidth().verticalScroll(rememberScrollState()).padding(16.dp), verticalArrangement = Arrangement.spacedBy(4.dp)) {
-        SensorSelector(values.sensorType, sensors, onSensorType)
-        NumberRow(LambdaNumber.STROKES, values, onEdit)
-        NumberRow(LambdaNumber.MS, values, onEdit, enabled = values.value(LambdaNumber.STROKES) == 0f)
-        listOf(LambdaNumber.STEP_POS, LambdaNumber.STEP_NEG, LambdaNumber.LIMIT_POS, LambdaNumber.LIMIT_NEG,
-            LambdaNumber.SWITCH, LambdaNumber.CTS, LambdaNumber.RPM, LambdaNumber.DELAY, LambdaNumber.DEADBAND).forEach { NumberRow(it, values, onEdit) }
-        listOf(LambdaFlag.HEATING_VOLTAGE, LambdaFlag.IDLING_CORRECTION).forEach { FlagRow(it, values, onFlag) }
-        NumberRow(LambdaNumber.STOICH, values, onEdit, enabled = fuelInjectionEnabled)
-        Text(stringResource(R.string.lambda_control_sensors_heating_title), style = MaterialTheme.typography.titleMedium, modifier = Modifier.padding(top = 12.dp))
-        listOf(LambdaNumber.HEAT_COLD, LambdaNumber.HEAT_HOT, LambdaNumber.HEAT_TEMP, LambdaNumber.HEAT_PWM, LambdaNumber.AIR_FLOW).forEach { NumberRow(it, values, onEdit) }
-        FlagRow(LambdaFlag.BEFORE_CRANKING, values, onFlag)
-        Text(stringResource(R.string.lambda_par_select_an_oxygen_sensor), style = MaterialTheme.typography.titleMedium, modifier = Modifier.padding(top = 12.dp))
-        values.channels.chunked(4).forEachIndexed { rowIndex, rowChannels ->
-            Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
-                rowChannels.forEachIndexed { indexInRow, checked ->
-                    val i = rowIndex * 4 + indexInRow
-                    Row(verticalAlignment = Alignment.CenterVertically) {
-                        Text((i + 1).toString())
-                        androidx.compose.material3.Checkbox(checked, { onChannel(i, it) }, modifier = Modifier.testTag("lambda_channel_${i + 1}"))
+    ParameterPage(scrollState = pageScrollState) {
+        ParameterSection {
+            SensorSelector(values.sensorType, sensors, onSensorType)
+            NumberRow(LambdaNumber.STROKES, values, onEdit)
+            NumberRow(LambdaNumber.MS, values, onEdit, enabled = values.value(LambdaNumber.STROKES) == 0f)
+            listOf(LambdaNumber.STEP_POS, LambdaNumber.STEP_NEG, LambdaNumber.LIMIT_POS, LambdaNumber.LIMIT_NEG,
+                LambdaNumber.SWITCH, LambdaNumber.CTS, LambdaNumber.RPM, LambdaNumber.DELAY, LambdaNumber.DEADBAND).forEach { NumberRow(it, values, onEdit) }
+            listOf(LambdaFlag.HEATING_VOLTAGE, LambdaFlag.IDLING_CORRECTION).forEach { FlagRow(it, values, onFlag) }
+            NumberRow(LambdaNumber.STOICH, values, onEdit, enabled = fuelInjectionEnabled)
+        }
+        ParameterSection(stringResource(R.string.lambda_control_sensors_heating_title)) {
+            listOf(LambdaNumber.HEAT_COLD, LambdaNumber.HEAT_HOT, LambdaNumber.HEAT_TEMP, LambdaNumber.HEAT_PWM, LambdaNumber.AIR_FLOW).forEach { NumberRow(it, values, onEdit) }
+            FlagRow(LambdaFlag.BEFORE_CRANKING, values, onFlag)
+        }
+        ParameterSection(stringResource(R.string.lambda_par_select_an_oxygen_sensor)) {
+            values.channels.chunked(4).forEachIndexed { rowIndex, rowChannels ->
+                Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
+                    rowChannels.forEachIndexed { indexInRow, checked ->
+                        val i = rowIndex * 4 + indexInRow
+                        Row(verticalAlignment = Alignment.CenterVertically) {
+                            Text((i + 1).toString())
+                            androidx.compose.material3.Checkbox(checked, { onChannel(i, it) }, modifier = Modifier.testTag("lambda_channel_${i + 1}"))
+                        }
                     }
                 }
             }
+            FlagRow(LambdaFlag.MIX_SENSORS, values, onFlag)
         }
-        FlagRow(LambdaFlag.MIX_SENSORS, values, onFlag)
-    }
+}
 }
 
 @Composable private fun NumberRow(n: LambdaNumber, values: LambdaValues, onEdit: (LambdaNumber) -> Unit, enabled: Boolean = true) {
     val locale = LocalConfiguration.current.locales[0]
     if (enabled) ParameterValueRow(stringResource(n.title), stringResource(n.units), values.value(n), n.precision, "lambda_${n.name.lowercase()}") { onEdit(n) }
-    else androidx.compose.foundation.layout.Column(Modifier.fillMaxWidth().testTag("lambda_${n.name.lowercase()}_disabled")) {
-        Text(stringResource(n.title), style = MaterialTheme.typography.bodyLarge, color = MaterialTheme.colorScheme.onSurfaceVariant)
-        Text(String.format(locale, "%.${n.precision}f", values.value(n)) + " " + stringResource(n.units), color = MaterialTheme.colorScheme.onSurfaceVariant)
+    else Column(Modifier.fillMaxWidth().testTag("lambda_${n.name.lowercase()}_disabled")) {
+        ParameterTextValueRow(
+            title = stringResource(n.title),
+            value = String.format(locale, "%.${n.precision}f", values.value(n)) + " " + stringResource(n.units),
+            testTag = "lambda_${n.name.lowercase()}_disabled-field",
+            numberText = String.format(locale, "%.${n.precision}f", values.value(n)),
+            units = stringResource(n.units),
+            onClick = null,
+        )
     }
 }
 
@@ -185,13 +200,13 @@ fun LambdaControlScreen(values: LambdaValues?, sensors: List<String>, fuelInject
 @Composable private fun SensorSelector(index: Int, sensors: List<String>, onSelect: (Int) -> Unit) {
     var expanded by remember { mutableStateOf(false) }
     val display = sensors.getOrNull(index) ?: "Code $index"
-    Column {
-        OutlinedButton(onClick = { expanded = true }, modifier = Modifier.fillMaxWidth().testTag("lambda_sensor_type"), shape = RoundedCornerShape(4.dp)) {
-            Text(stringResource(R.string.lambda_par_sensor_type_title), Modifier.weight(1f), style = MaterialTheme.typography.labelMedium)
-            Text(display)
-        }
-        DropdownMenu(expanded, { expanded = false }, shape = DropdownShape) {
-            sensors.forEachIndexed { i, sensor -> DropdownMenuItem(text = { Text(sensor) }, onClick = { expanded = false; onSelect(i) }, modifier = Modifier.testTag("lambda_sensor_option_$i")) }
-        }
+    Box {
+        ParameterSelectionRow(stringResource(R.string.lambda_par_sensor_type_title), display, "lambda_sensor_type") { expanded = true }
+        if (expanded) ParameterChoiceDialog(
+            title = stringResource(R.string.lambda_par_sensor_type_title),
+            choices = sensors.mapIndexed { i, sensor -> ParameterChoice(i, sensor, "lambda_sensor_option_$i") },
+            onDismiss = { expanded = false },
+            onSelect = onSelect,
+        )
     }
 }

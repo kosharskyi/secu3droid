@@ -43,9 +43,11 @@ data class StarterParamPacket(
     var injAftStrokes1: Int = 0,
     var stblStrCnt: Int = 0,
     var strtFlags: Int = 0,
-    var injCrankToRun_time1: Float = 0f
+    var injCrankToRun_time1: Float = 0f,
 
 ) : Secu3Packet(), InputPacket, OutputPacket{
+
+    private val discrete: Float = 3.2f
 
     var allowStartOnClearFlood: Boolean
         get() = strtFlags.getBitValue(0) > 0
@@ -64,8 +66,8 @@ data class StarterParamPacket(
         smapAbandon = data.get2Bytes()
         crankToRunTime = data.get2Bytes().toFloat() / 100
         injAftstrStroke = data.get1Byte() * 4
-        injPrimeCold = data.get2Bytes().toFloat() * 32 / 10000
-        injPrimeHot = data.get2Bytes().toFloat() * 32 / 10000
+        injPrimeCold = data.get2Bytes().toFloat() * discrete / 1000f
+        injPrimeHot = data.get2Bytes().toFloat() * discrete / 1000f
         injPrimeDelay = data.get1Byte().toFloat() / 10
         injFloodclearTps = data.get2Bytes().toFloat() / TPS_MULTIPLIER
         injAftStrokes1 = data.get1Byte() * 4
@@ -85,8 +87,8 @@ data class StarterParamPacket(
         data += smapAbandon.write2Bytes()
         data += crankToRunTime.times(100).roundToInt().write2Bytes()
         data += injAftstrStroke.div(4)
-        data += injPrimeCold.times(10000).div(32).roundToInt().write2Bytes()
-        data += injPrimeHot.times(10000).div(32).roundToInt().write2Bytes()
+        data += injPrimeCold.times(1000).div(discrete).roundToInt().write2Bytes()
+        data += injPrimeHot.times(1000).div(discrete).roundToInt().write2Bytes()
         data += injPrimeDelay.times(10).roundToInt()
         data += injFloodclearTps.times(TPS_MULTIPLIER).roundToInt().write2Bytes()
         data += injAftStrokes1.div(4)

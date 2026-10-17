@@ -30,6 +30,16 @@ import org.junit.Test
 import org.secu3.android.models.packets.out.params.AnglesParamPacket
 
 class AnglesPacketMappingTest {
+    @Test fun editorMetadataMatchesLegacyLimitsStepsAndPrecision() {
+        assertEquals(-15f, AnglesNumber.SHIFT.min)
+        assertEquals(55f, AnglesNumber.SHIFT.max)
+        assertEquals(.1f, AnglesNumber.SHIFT.step)
+        assertEquals(.025f, AnglesNumber.DECREASE.step)
+        assertEquals(.025f, AnglesNumber.INCREASE.step)
+        assertEquals(3, AnglesNumber.DECREASE.precision)
+        assertEquals(3, AnglesNumber.INCREASE.precision)
+    }
+
     @Test fun packetMapsAllDisplayedValuesAndFlags() {
         val packet = AnglesParamPacket(45f, -12f, -5.5f, 1.2f, 2.3f, 2, 0b101, -3.4f)
         val values = AnglesValues.from(packet)

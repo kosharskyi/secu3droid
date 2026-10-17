@@ -19,9 +19,9 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.livedata.observeAsState
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.Alignment
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.testTag
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavBackStackEntry
@@ -41,7 +41,7 @@ internal fun FirmwareRoute(
     )
     val firmware by viewModel.firmwareLiveData.observeAsState(viewModel.initialFirmware)
     SecuComposeTheme {
-        Box(Modifier.fillMaxSize().background(Color.Black.copy(alpha = 0.32f)).clickable(onClick = onDismiss).testTag("firmware-overlay"), contentAlignment = Alignment.BottomCenter) {
+        Box(Modifier.fillMaxSize().background(MaterialTheme.colorScheme.scrim.copy(alpha = 0.32f)).clickable(onClick = onDismiss).testTag("firmware-overlay"), contentAlignment = Alignment.BottomCenter) {
             Column(Modifier.fillMaxWidth().clickable { }, verticalArrangement = Arrangement.Bottom) {
                 FirmwareInfoSheet(firmware = firmware, onDismiss = onDismiss)
             }

@@ -30,8 +30,9 @@ import org.junit.Test
 
 class MiscellaneousBaudMappingTest {
     @Test fun allBaudRatesUseProtocolDivisors() {
-        assertEquals(mapOf(0x0411 to "2400",0x0208 to "4800",0x0103 to "9600",0x00AD to "14400",0x0081 to "19200",0x0056 to "28800",0x0040 to "38400",0x002A to "57600",0x0015 to "115200",0x0009 to "250000"),BAUD_RATE_CODES)
+        assertEquals(mapOf(0x0411 to "2400",0x0208 to "4800",0x0103 to "9600",0x00AD to "14400",0x0081 to "19200",0x0056 to "28800",0x0040 to "38400",0x002A to "57600",0x0015 to "115200",0x0009 to "250000",0x0004 to "500000"),BAUD_RATE_CODES)
         assertEquals("9600",BAUD_RATE_CODES[0x0103])
+        assertEquals("500000", BAUD_RATE_CODES[0x0004])
         assertNull(BAUD_RATE_CODES[0x1234])
     }
 }

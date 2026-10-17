@@ -44,13 +44,32 @@ import androidx.compose.ui.semantics.role
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.unit.dp
 import org.secu3.android.ui.parameters.compose.ParameterLoadingIndicator
+import org.secu3.android.ui.parameters.compose.ParameterPage
+import org.secu3.android.ui.parameters.compose.ParameterSection
+import org.secu3.android.ui.parameters.compose.ParameterSelectionRow
+import org.secu3.android.ui.parameters.compose.ParameterTextValueRow
+import org.secu3.android.ui.parameters.*
 import org.secu3.android.R
 import org.secu3.android.models.packets.out.params.CkpsParamPacket
 import org.secu3.android.ui.parameters.compose.ParameterSwitchRow
 import org.secu3.android.ui.parameters.compose.ParameterValueRow
+import org.secu3.android.ui.parameters.dialogs.ParameterAlertDialog
+import org.secu3.android.ui.parameters.dialogs.ParameterCancelButton
+import org.secu3.android.ui.parameters.dialogs.ParameterChoiceList
+import org.secu3.android.ui.parameters.dialogs.ParameterChoiceOption
 
-private val tdcOptions = (12..55).toList()
-private val cylinderOptions = listOf(2, 4, 6, 8)
+internal fun ckpsTdcOptions(wheel: Int, cylinders: Int): List<Int> {
+    if (wheel <= 0 || cylinders !in 1..8) return emptyList()
+    val degrees = when (cylinders) { 1, 2 -> 540.0; 3, 4, 5 -> 330.0; else -> 270.0 }
+    val low = kotlin.math.ceil(66.0 * wheel / 360.0).toInt()
+    val high = kotlin.math.ceil(degrees * wheel / 360.0).toInt().coerceAtMost(255)
+    return (low..high).toList()
+}
+private val cylinderOptions = (1..8).toList()
+internal fun ckpsCylinderOptions(values: CkpsValues, capabilities: ParameterCapabilities): List<Int> {
+    val odd = capabilities.oddCylinders || values.mergeOuts
+    return cylinderOptions.filter { if (it == 7) odd && capabilities.sevenCylinders else it % 2 == 0 || odd }
+}
 private val mttfByMissingTeeth = listOf(0f, 1.5f, 2.5f, 3f, 4f, 5f, 6f)
 
 enum class CkpsFlag {
@@ -70,7 +89,7 @@ enum class CkpsNumber(
     val step: Float,
     val integer: Boolean = false,
 ) {
-    WHEEL(R.string.ckps_cogs_number_title, R.string.units_empty, 0, 16f, 200f, 1f, true),
+    WHEEL(R.string.ckps_cogs_number_title, R.string.units_empty, 0, 10f, 200f, 1f, true),
     MISSING(R.string.ckps_missing_cogs_number_title, R.string.units_empty, 0, 0f, 6f, 1f, true),
     PULSE(R.string.ckps_ignition_pulse_delay_title, R.string.units_empty, 0, 1f, 200f, 1f, true),
     HALL_WIDTH(R.string.ckps_hall_wnd_width_title, R.string.units_degrees_cs, 1, 0f, 120f, .1f),
@@ -140,7 +159,7 @@ fun applyCkpsFlag(packet: CkpsParamPacket, flag: CkpsFlag, value: Boolean) {
 
 fun applyCkpsChoice(packet: CkpsParamPacket, teeth: Boolean, value: Int): Boolean {
     if (teeth) {
-        if (value !in tdcOptions) return false
+        if (value !in ckpsTdcOptions(packet.ckpsCogsNum, packet.ckpsEngineCyl)) return false
         packet.ckpsCogsBtdc = value
     } else {
         if (value !in cylinderOptions) return false
@@ -160,19 +179,21 @@ fun CkpsScreen(
     onEdit: (CkpsNumber) -> Unit,
     onFlag: (CkpsFlag, Boolean) -> Unit,
     onChoice: (Boolean, Int) -> Unit,
+    capabilities: ParameterCapabilities = ParameterCapabilities.All,
 ) {
+    val pageScrollState = rememberScrollState()
     if (state is CkpsUiState.Loading) {
         ParameterLoadingIndicator("ckps_loading")
         return
     }
 
     val values = (state as CkpsUiState.Data).values
+    val tdcOptions = ckpsTdcOptions(values.numbers.getValue(CkpsNumber.WHEEL).toInt(), values.cylinders)
+    val availableCylinders = ckpsCylinderOptions(values, capabilities)
     var open by remember { mutableStateOf<Boolean?>(null) }
 
-    Column(
-        Modifier.fillMaxWidth().verticalScroll(rememberScrollState()).padding(16.dp),
-        verticalArrangement = Arrangement.spacedBy(8.dp),
-    ) {
+    ParameterPage(scrollState = pageScrollState) {
+            ParameterSection {
         EdgeGroup(stringResource(R.string.ckps_ckps_edge_title), values.ckpsEdge, "ckps_edge") {
             onFlag(CkpsFlag.CKPS_EDGE, it)
         }
@@ -182,12 +203,12 @@ fun CkpsScreen(
         ParameterSwitchRow(
             stringResource(R.string.ckps_spark_on_rising_edge_for_cdi_title),
             values.risingSpark,
-            "ckps_spark",
+            "ckps_spark", enabled = capabilities.risingSpark,
         ) { onFlag(CkpsFlag.SPARK_RISING, it) }
         ParameterSwitchRow(
             stringResource(R.string.ckps_merge_outputs_title),
             values.mergeOuts,
-            "ckps_merge",
+            "ckps_merge", enabled = capabilities.inputsMerging,
         ) { onFlag(CkpsFlag.MERGE_OUTPUTS, it) }
 
         CkpsNumber.entries.filter { it != CkpsNumber.MTTF }.forEach { n ->
@@ -195,7 +216,7 @@ fun CkpsScreen(
                 Choice(
                     title = stringResource(R.string.ckps_cogs_before_tdc_title),
                     value = selectorValue(values.teethBtdc, tdcOptions),
-                    tag = "ckps_teeth_btdc",
+                    tag = "ckps_teeth_btdc", enabled = capabilities.cogsBtdc,
                 ) { open = true }
                 Choice(
                     title = stringResource(R.string.ckps_engine_cylinders_title),
@@ -210,26 +231,27 @@ fun CkpsScreen(
                 value = values.numbers.getValue(n),
                 precision = n.precision,
                 testTag = "ckps_${n.name.lowercase()}",
+                enabled = ckpsNumberEnabled(n, values, capabilities),
             ) { onEdit(n) }
         }
 
         ParameterSwitchRow(
             stringResource(R.string.ckps_use_cam_sensor_title),
             values.useCamRef,
-            "ckps_cam",
+            "ckps_cam", enabled = !capabilities.known || (capabilities.camRef && values.numbers.getValue(CkpsNumber.MISSING) == 0f),
         ) { onFlag(CkpsFlag.USE_CAM_REFERENCE, it) }
         ParameterValueRow(
             title = stringResource(CkpsNumber.MTTF.title),
             units = stringResource(CkpsNumber.MTTF.units),
             value = values.numbers.getValue(CkpsNumber.MTTF),
             precision = CkpsNumber.MTTF.precision,
-            testTag = "ckps_mttf",
+            testTag = "ckps_mttf", enabled = ckpsNumberEnabled(CkpsNumber.MTTF, values, capabilities),
         ) { onEdit(CkpsNumber.MTTF) }
     }
 
     open?.let { teeth ->
-        val options = if (teeth) tdcOptions else cylinderOptions
-        AlertDialog(
+        val options = if (teeth) tdcOptions else availableCylinders
+        ParameterAlertDialog(
             onDismissRequest = { open = null },
             title = {
                 Text(
@@ -238,30 +260,22 @@ fun CkpsScreen(
                 )
             },
             text = {
-                Column(Modifier.verticalScroll(rememberScrollState())) {
+                ParameterChoiceList {
                     options.forEach { option ->
-                        Text(
-                            text = option.toString(),
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .clickable {
-                                    onChoice(teeth, option)
-                                    open = null
-                                }
-                                .padding(12.dp)
-                                .testTag("ckps_option_$option"),
-                        )
+                        ParameterChoiceOption(option.toString(), "ckps_option_$option") {
+                            onChoice(teeth, option)
+                            open = null
+                        }
                     }
                 }
             },
             confirmButton = {
-                TextButton(onClick = { open = null }) {
-                    Text(stringResource(android.R.string.cancel))
-                }
+                ParameterCancelButton { open = null }
             },
         )
     }
-}
+            }
+        }
 
 private fun selectorValue(value: Int, options: List<Int>): String =
     value.toString().takeIf { value in options } ?: "Code $value"
@@ -273,9 +287,10 @@ private fun EdgeGroup(
     tag: String,
     onSelect: (Boolean) -> Unit,
 ) {
-    Column {
-        Text(title, style = MaterialTheme.typography.titleSmall)
-        Row(verticalAlignment = Alignment.CenterVertically) {
+    Column(Modifier.fillMaxWidth()) {
+        Column(Modifier.fillMaxWidth().heightIn(min = 66.dp).padding(horizontal = 14.dp, vertical = 8.dp), verticalArrangement = Arrangement.spacedBy(4.dp)) {
+            Text(title, style = MaterialTheme.typography.bodyMedium)
+            Row(verticalAlignment = Alignment.CenterVertically) {
             listOf(
                 false to R.string.ckps_edge_negative,
                 true to R.string.ckps_edge_positive,
@@ -287,33 +302,16 @@ private fun EdgeGroup(
                     verticalAlignment = Alignment.CenterVertically,
                 ) {
                     RadioButton(selected = value == positive, onClick = { onSelect(value) })
-                    Text(stringResource(label))
+                    Text(stringResource(label), style = MaterialTheme.typography.bodyMedium)
                 }
             }
+            }
         }
+        HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant)
     }
 }
 
 @Composable
-private fun Choice(title: String, value: String, tag: String, onClick: () -> Unit) {
-    Surface(
-        modifier = Modifier
-            .fillMaxWidth()
-            .semantics(mergeDescendants = true) { role = Role.Button }
-            .clickable(role = Role.Button, onClick = onClick)
-            .testTag(tag),
-        shape = DropdownShape,
-        border = BorderStroke(1.dp, MaterialTheme.colorScheme.outline),
-    ) {
-        Row(
-            Modifier.padding(horizontal = 16.dp, vertical = 12.dp),
-            verticalAlignment = Alignment.CenterVertically,
-        ) {
-            Column(Modifier.weight(1f)) {
-                Text(title, style = MaterialTheme.typography.bodySmall)
-                Text(value, Modifier.testTag("$tag-value"), style = MaterialTheme.typography.bodyLarge)
-            }
-            Icon(Icons.Filled.ArrowDropDown, contentDescription = null)
-        }
-    }
+private fun Choice(title: String, value: String, tag: String, enabled: Boolean = true, onClick: () -> Unit) {
+    ParameterSelectionRow(title, value, tag, enabled = enabled, onClick = onClick)
 }

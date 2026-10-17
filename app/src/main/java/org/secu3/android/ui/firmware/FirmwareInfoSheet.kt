@@ -39,7 +39,6 @@ import androidx.compose.runtime.livedata.observeAsState
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.LocalWindowInfo
 import androidx.compose.ui.res.painterResource
@@ -47,29 +46,28 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.semantics.selected
 import androidx.compose.ui.text.font.FontFamily
-import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
 import androidx.core.graphics.drawable.toDrawable
 import org.secu3.android.R
 import org.secu3.android.models.packets.input.FirmwareInfoPacket
+import org.secu3.android.ui.compose.LocalSecuPalette
+import org.secu3.android.ui.compose.SecuComposeTheme
 
 @Composable
 internal fun FirmwareInfoSheet(
     firmware: FirmwareInfoPacket?,
     onDismiss: () -> Unit,
 ) {
-    MaterialTheme {
+    SecuComposeTheme {
         val maxSheetHeight = with(LocalDensity.current) {
             LocalWindowInfo.current.containerSize.height.toDp() * 0.9f
         }
         val scrollState = rememberScrollState()
 
         Surface(
-            color = FirmwareSheetBackground,
-            shape = RoundedCornerShape(topStart = 18.dp, topEnd = 18.dp),
+            color = MaterialTheme.colorScheme.surface,
+            shape = RoundedCornerShape(topStart = 16.dp, topEnd = 16.dp),
             modifier = Modifier
                 .fillMaxWidth()
                 .heightIn(max = maxSheetHeight),
@@ -78,7 +76,7 @@ internal fun FirmwareInfoSheet(
                 modifier = Modifier
                     .fillMaxWidth()
                     .navigationBarsPadding()
-                    .padding(horizontal = 24.dp, vertical = 22.dp)
+                    .padding(horizontal = 16.dp, vertical = 16.dp)
                     .verticalScroll(scrollState),
             ) {
                 FirmwareHeader(onDismiss = onDismiss)
@@ -91,11 +89,9 @@ internal fun FirmwareInfoSheet(
 
                 Text(
                     text = firmware.tag.ifBlank { stringResource(R.string.firmware_unknown_value) },
-                    color = FirmwareTextSecondary,
-                    fontSize = 14.sp,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    style = MaterialTheme.typography.bodyMedium,
                     fontFamily = FontFamily.Monospace,
-                    maxLines = 2,
-                    overflow = TextOverflow.Ellipsis,
                 )
 
                 Spacer(modifier = Modifier.height(22.dp))
@@ -128,9 +124,8 @@ private fun FirmwareHeader(onDismiss: () -> Unit) {
     ) {
         Text(
             text = stringResource(R.string.firmware_information_title),
-            color = FirmwareTextPrimary,
-            fontSize = 20.sp,
-            fontWeight = FontWeight.Bold,
+            color = MaterialTheme.colorScheme.onSurface,
+            style = MaterialTheme.typography.titleLarge,
             modifier = Modifier.weight(1f),
         )
         IconButton(
@@ -140,7 +135,7 @@ private fun FirmwareHeader(onDismiss: () -> Unit) {
             Icon(
                 painter = painterResource(R.drawable.ic_close_24),
                 contentDescription = stringResource(R.string.close),
-                tint = FirmwareTextMuted,
+                tint = MaterialTheme.colorScheme.onSurfaceVariant,
                 modifier = Modifier.size(20.dp),
             )
         }
@@ -156,10 +151,8 @@ private fun CapabilitySection(
 ) {
     Text(
         text = title,
-        color = if (enabled) FirmwareGreen else FirmwareTextDisabled,
-        fontSize = 12.sp,
-        fontWeight = FontWeight.Bold,
-        letterSpacing = 1.8.sp,
+        color = if (enabled) LocalSecuPalette.current.success else MaterialTheme.colorScheme.onSurfaceVariant,
+        style = MaterialTheme.typography.labelLarge,
     )
     Spacer(modifier = Modifier.height(10.dp))
     FlowRow(
@@ -180,15 +173,14 @@ private fun CapabilityChip(
     label: String,
     enabled: Boolean,
 ) {
-    val contentColor = if (enabled) FirmwareGreen else FirmwareTextDisabled
-    val background = if (enabled) FirmwareGreenContainer else FirmwareDisabledContainer
-    val stroke = if (enabled) FirmwareGreenStroke else FirmwareDisabledStroke
+    val contentColor = if (enabled) LocalSecuPalette.current.onSuccessContainer else MaterialTheme.colorScheme.onSurfaceVariant
+    val background = if (enabled) LocalSecuPalette.current.successContainer else MaterialTheme.colorScheme.surfaceVariant
+    val stroke = MaterialTheme.colorScheme.outlineVariant
 
     Text(
         text = label,
         color = contentColor,
-        fontSize = 12.sp,
-        fontWeight = FontWeight.Bold,
+        style = MaterialTheme.typography.labelMedium,
         fontFamily = FontFamily.Monospace,
         modifier = Modifier
             .testTag(firmwareCapabilityChipTag(label, enabled))
@@ -209,7 +201,7 @@ private fun FirmwareLoadingState() {
             .height(180.dp),
         contentAlignment = Alignment.Center,
     ) {
-        CircularProgressIndicator(color = FirmwareGreen)
+        CircularProgressIndicator(color = LocalSecuPalette.current.success)
     }
 }
 
@@ -255,14 +247,3 @@ private fun FirmwareInfoPacket.capabilities(): List<FirmwareCapability> {
         FirmwareCapability("CKPS_NPLUS1", isCkpsNplus1Enabled),
     )
 }
-
-private val FirmwareSheetBackground = Color(0xFF18212A)
-private val FirmwareTextPrimary = Color(0xFFE6EDF5)
-private val FirmwareTextSecondary = Color(0xFF8FA1B4)
-private val FirmwareTextMuted = Color(0xFF7F90A3)
-private val FirmwareTextDisabled = Color(0xFF6F7882)
-private val FirmwareGreen = Color(0xFF20D67A)
-private val FirmwareGreenContainer = Color(0xFF123529)
-private val FirmwareGreenStroke = Color(0xFF1B6A4D)
-private val FirmwareDisabledContainer = Color(0xFF26313B)
-private val FirmwareDisabledStroke = Color(0xFF3A4651)

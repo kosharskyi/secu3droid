@@ -30,6 +30,7 @@ import org.secu3.android.models.packets.base.OutputPacket
 import org.secu3.android.models.packets.out.params.UniOutParamPacket.Companion.UNI_OUTPUT_NUM
 import org.secu3.android.utils.getBitValue
 import org.secu3.android.utils.setBitValue
+import org.secu3.android.models.packets.base.protocolRoundToInt
 import kotlin.math.roundToInt
 
 data class FunSetParamPacket(
@@ -86,7 +87,7 @@ data class FunSetParamPacket(
         data += map2CurveOffset.div(ADC_DISCRETE).roundToInt().write2Bytes()
         data += map2CurveGradient.times(128.0f).times(MAP_MULTIPLIER).times(ADC_DISCRETE).roundToInt().write2Bytes()
         data += tpsCurveOffset.div(ADC_DISCRETE).roundToInt().write2Bytes()
-        data += tpsCurveGradient.times(128.0f).times(TPS_MULTIPLIER * 64f).times(ADC_DISCRETE).roundToInt().write2Bytes()
+        data += tpsCurveGradient.times(128.0f).times(TPS_MULTIPLIER * 2f).times(ADC_DISCRETE).protocolRoundToInt().write2Bytes()
 
         data += loadSrcCfg
         data += mapselUni

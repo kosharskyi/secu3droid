@@ -55,7 +55,7 @@ class KnockScreenTest {
         val data=KnockValues.from(packet, listOf("1 kHz","2 kHz"), listOf("10 ms","20 ms"))
         compose.runOnIdle { state.value=KnockUiState.Data(data,true) }
         compose.onNodeWithTag("knock_begin-value", useUnmergedTree=true).assertTextEquals(formattedDegrees(12.5f))
-        compose.onNodeWithTag("knock_channel_1").assertIsDisplayed()
+        compose.onNodeWithTag("knock_channel_1").performScrollTo().assertIsDisplayed()
         compose.onNodeWithTag("knock_channel_8").performScrollTo().assertIsDisplayed()
         compose.onNodeWithTag("knock_selector_bpf").performScrollTo().assertIsDisplayed()
         compose.runOnIdle { state.value=KnockUiState.Data(data,true) }

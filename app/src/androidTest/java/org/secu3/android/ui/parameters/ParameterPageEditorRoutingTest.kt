@@ -106,7 +106,7 @@ class ParameterPageEditorRoutingTest {
         val end = endSession.request as ParameterEditRequest.IntValue
         assertEquals(holder.currentPacket?.evapAfEnd, end.value)
         assertEquals(26_500, end.min)
-        assertEquals(200_000, end.max)
+        assertEquals(2_000_000, end.max)
         assertEquals(1, end.step)
         val previousSlope = holder.currentPacket?.evapAfslope
         compose.runOnIdle { vm.acceptParameterEditor(endSession.id, 180_000) }

@@ -30,6 +30,15 @@ import org.secu3.android.models.packets.out.params.StarterParamPacket
 
 class StarterPacketMappingTest {
     @Test
+    fun editorMetadataMatchesLegacyLimitsAndSpinSteps() {
+        assertEquals(.01f, StarterNumber.CRANK_TO_RUN_COLD.step)
+        assertEquals(.01f, StarterNumber.CRANK_TO_RUN_HOT.step)
+        assertEquals(listOf(0f, 0f), listOf(StarterNumber.AFTERSTART_PETROL.min, StarterNumber.AFTERSTART_GAS.min))
+        assertEquals(listOf(1020f, 1020f), listOf(StarterNumber.AFTERSTART_PETROL.max, StarterNumber.AFTERSTART_GAS.max))
+        assertEquals(listOf(4f, 4f), listOf(StarterNumber.AFTERSTART_PETROL.step, StarterNumber.AFTERSTART_GAS.step))
+    }
+
+    @Test
     fun packetReadValuesPopulateEveryVisibleValueAndFlag() {
         val packet = StarterParamPacket(
             starterOff = 100,

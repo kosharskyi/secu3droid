@@ -10,16 +10,20 @@
 package org.secu3.android.ui.errors
 
 import androidx.compose.foundation.background
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.FlowRow
+import androidx.compose.foundation.layout.ExperimentalLayoutApi
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.statusBarsPadding
@@ -38,7 +42,6 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringArrayResource
@@ -46,7 +49,6 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.selected
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import org.secu3.android.ui.compose.ConfirmationDialog
@@ -56,6 +58,8 @@ import org.secu3.android.connection.ConnectionState
 import org.secu3.android.connection.Disconnected
 import org.secu3.android.connection.InProgress
 import org.secu3.android.models.CheckEngineError
+import org.secu3.android.ui.compose.SecuComposeTheme
+import org.secu3.android.ui.compose.LocalSecuPalette
 
 @Composable
 internal fun ErrorsScreen(
@@ -67,10 +71,10 @@ internal fun ErrorsScreen(
 ) {
     val displayedErrors = errors.filter { it.isActive || it.isSaved }
 
-    MaterialTheme {
+    SecuComposeTheme {
         Surface(
             modifier = Modifier.fillMaxSize(),
-            color = ErrorsBackground,
+            color = MaterialTheme.colorScheme.background,
         ) {
             Column(
                 modifier = Modifier
@@ -85,8 +89,8 @@ internal fun ErrorsScreen(
                 Box(
                     modifier = Modifier
                         .fillMaxWidth()
-                        .height(1.dp)
-                        .background(ErrorsDivider),
+                        .heightIn(min = 1.dp)
+                        .background(MaterialTheme.colorScheme.outlineVariant),
                 )
                 if (isLoading) {
                     LoadingErrorsState(
@@ -98,12 +102,12 @@ internal fun ErrorsScreen(
                     LazyColumn(
                         modifier = Modifier.fillMaxSize(),
                         contentPadding = androidx.compose.foundation.layout.PaddingValues(
-                            start = 20.dp,
-                            top = 18.dp,
-                            end = 20.dp,
+                            start = 16.dp,
+                            top = 16.dp,
+                            end = 16.dp,
                             bottom = 24.dp,
                         ),
-                        verticalArrangement = Arrangement.spacedBy(10.dp),
+                        verticalArrangement = Arrangement.spacedBy(12.dp),
                     ) {
                         item(key = "summary") {
                             ErrorsSummary(errors = errors)
@@ -137,8 +141,8 @@ private fun ErrorsTopBar(
     Row(
         modifier = Modifier
             .fillMaxWidth()
-            .height(104.dp)
-            .padding(start = 20.dp, end = 18.dp),
+            .heightIn(min = 64.dp)
+            .padding(horizontal = 16.dp, vertical = 4.dp),
         verticalAlignment = Alignment.CenterVertically,
     ) {
         IconButton(
@@ -148,16 +152,13 @@ private fun ErrorsTopBar(
             Icon(
                 painter = painterResource(R.drawable.ic_arrow_back_24),
                 contentDescription = stringResource(R.string.back),
-                tint = ErrorsTextPrimary,
+                tint = MaterialTheme.colorScheme.onSurface,
             )
         }
         Text(
             text = stringResource(R.string.errors_title_ecu),
-            color = ErrorsTextPrimary,
-            fontSize = 18.sp,
-            fontWeight = FontWeight.Bold,
-            maxLines = 1,
-            overflow = TextOverflow.Ellipsis,
+            color = MaterialTheme.colorScheme.onSurface,
+            style = MaterialTheme.typography.titleLarge,
             modifier = Modifier
                 .padding(start = 8.dp)
                 .weight(1f),
@@ -168,15 +169,15 @@ private fun ErrorsTopBar(
             modifier = Modifier
                 .size(ToolbarIconButtonSize)
                 .clip(RoundedCornerShape(12.dp))
-                .background(ErrorsRedContainer)
-                .border(1.dp, ErrorsRedStroke, RoundedCornerShape(12.dp))
+                .background(MaterialTheme.colorScheme.errorContainer)
+                .border(1.dp, MaterialTheme.colorScheme.error, RoundedCornerShape(12.dp))
                 .clickable(onClick = onClearClick),
             contentAlignment = Alignment.Center,
         ) {
             Icon(
                 painter = painterResource(R.drawable.ic_delete_outline_24),
                 contentDescription = stringResource(R.string.errors_clear_all_short),
-                tint = ErrorsRed,
+                tint = MaterialTheme.colorScheme.error,
                 modifier = Modifier.size(18.dp),
             )
         }
@@ -186,10 +187,10 @@ private fun ErrorsTopBar(
 @Composable
 private fun ConnectionStatusIcon(connectionState: ConnectionState?) {
     val contentColor = when (connectionState) {
-        Connected -> ErrorsGreen
-        InProgress -> ErrorsAmber
-        Disconnected -> ErrorsRed
-        else -> ErrorsRed
+        Connected -> LocalSecuPalette.current.success
+        InProgress -> LocalSecuPalette.current.warning
+        Disconnected -> MaterialTheme.colorScheme.error
+        else -> MaterialTheme.colorScheme.onSurfaceVariant
     }
 
     Box(
@@ -210,71 +211,76 @@ private fun ErrorsSummary(errors: List<CheckEngineError>) {
     val activeCount = errors.count { it.isActive }
     val savedCount = errors.count { it.isSaved }
 
-    Row(
-        modifier = Modifier
-            .fillMaxWidth()
-            .padding(horizontal = 4.dp),
-        verticalAlignment = Alignment.CenterVertically,
+    Surface(
+        modifier = Modifier.fillMaxWidth(),
+        shape = RoundedCornerShape(20.dp),
+        color = MaterialTheme.colorScheme.surface,
+        border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant),
     ) {
+      Row(
+        modifier = Modifier.fillMaxWidth().heightIn(min = 60.dp).padding(horizontal = 16.dp, vertical = 12.dp),
+        verticalAlignment = Alignment.CenterVertically,
+      ) {
         Box(
             modifier = Modifier
                 .size(16.dp)
-                .border(1.5.dp, ErrorsAmber, CircleShape),
+                .border(1.5.dp, LocalSecuPalette.current.warning, CircleShape),
             contentAlignment = Alignment.Center,
         ) {
             Text(
                 text = "!",
-                color = ErrorsAmber,
-                fontSize = 11.sp,
+                color = LocalSecuPalette.current.warning,
+            fontSize = 12.sp,
                 fontWeight = FontWeight.Bold,
             )
         }
         Spacer(modifier = Modifier.width(10.dp))
         Text(
             text = stringResource(R.string.errors_summary, activeCount, savedCount),
-            color = ErrorsAmber,
-            fontSize = 14.sp,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+            style = MaterialTheme.typography.bodyMedium,
         )
+      }
     }
 }
 
 @Composable
+@OptIn(ExperimentalLayoutApi::class)
 private fun ErrorCard(error: CheckEngineError) {
     Column(
         modifier = Modifier
             .fillMaxWidth()
             .testTag(errorCardTag(error.title))
-            .clip(RoundedCornerShape(16.dp))
-            .background(ErrorsCard)
-            .border(1.dp, ErrorsCardStroke, RoundedCornerShape(16.dp))
-            .padding(horizontal = 18.dp, vertical = 18.dp),
+            .clip(RoundedCornerShape(20.dp))
+            .background(MaterialTheme.colorScheme.surface)
+            .border(1.dp, MaterialTheme.colorScheme.outlineVariant, RoundedCornerShape(20.dp))
+            .padding(horizontal = 16.dp, vertical = 16.dp),
     ) {
         Text(
             text = error.title,
-            color = ErrorsTextPrimary,
-            fontSize = 16.sp,
-            maxLines = 2,
-            overflow = TextOverflow.Ellipsis,
+            color = MaterialTheme.colorScheme.onSurface,
+            style = MaterialTheme.typography.titleMedium,
         )
-        Row(
+        FlowRow(
             modifier = Modifier.padding(top = 16.dp),
             horizontalArrangement = Arrangement.spacedBy(10.dp),
+            verticalArrangement = Arrangement.spacedBy(8.dp),
         ) {
             StateBadge(
                 text = stringResource(R.string.error_state_active),
                 selected = error.isActive,
                 testTag = errorStatusTag(error.title, ErrorStatus.Active),
-                selectedColor = ErrorsRed,
-                selectedContainer = ErrorsRedContainer,
-                selectedStroke = ErrorsRedStroke,
+                selectedColor = MaterialTheme.colorScheme.onErrorContainer,
+                selectedContainer = MaterialTheme.colorScheme.errorContainer,
+                selectedStroke = MaterialTheme.colorScheme.error,
             )
             StateBadge(
                 text = stringResource(R.string.error_state_saved),
                 selected = error.isSaved,
                 testTag = errorStatusTag(error.title, ErrorStatus.Saved),
-                selectedColor = ErrorsAmber,
-                selectedContainer = ErrorsAmberContainer,
-                selectedStroke = ErrorsAmberStroke,
+                selectedColor = LocalSecuPalette.current.onWarningContainer,
+                selectedContainer = LocalSecuPalette.current.warningContainer,
+                selectedStroke = LocalSecuPalette.current.warning,
             )
         }
     }
@@ -285,13 +291,13 @@ private fun StateBadge(
     text: String,
     selected: Boolean,
     testTag: String,
-    selectedColor: Color,
-    selectedContainer: Color,
-    selectedStroke: Color,
+    selectedColor: androidx.compose.ui.graphics.Color,
+    selectedContainer: androidx.compose.ui.graphics.Color,
+    selectedStroke: androidx.compose.ui.graphics.Color,
 ) {
     Text(
         text = text,
-        color = if (selected) selectedColor else ErrorsTextDisabled,
+        color = if (selected) selectedColor else MaterialTheme.colorScheme.onSurfaceVariant,
         fontSize = 12.sp,
         fontWeight = FontWeight.Bold,
         modifier = Modifier
@@ -300,10 +306,10 @@ private fun StateBadge(
                 this.selected = selected
             }
             .clip(RoundedCornerShape(12.dp))
-            .background(if (selected) selectedContainer else ErrorsBadgeInactive)
+            .background(if (selected) selectedContainer else MaterialTheme.colorScheme.surfaceVariant)
             .border(
                 width = 1.dp,
-                color = if (selected) selectedStroke else ErrorsBadgeInactiveStroke,
+                color = if (selected) selectedStroke else MaterialTheme.colorScheme.outlineVariant,
                 shape = RoundedCornerShape(12.dp),
             )
             .padding(horizontal = 12.dp, vertical = 7.dp),
@@ -318,8 +324,8 @@ private fun EmptyErrorsState(modifier: Modifier = Modifier) {
     ) {
         Text(
             text = stringResource(R.string.errors_empty_state),
-            color = ErrorsTextDisabled,
-            fontSize = 16.sp,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+            style = MaterialTheme.typography.bodyLarge,
         )
     }
 }
@@ -332,34 +338,19 @@ private fun LoadingErrorsState(modifier: Modifier = Modifier) {
         verticalArrangement = Arrangement.Center,
     ) {
         CircularProgressIndicator(
-            color = ErrorsAmber,
-            trackColor = ErrorsBadgeInactive,
+            color = LocalSecuPalette.current.warning,
+            trackColor = MaterialTheme.colorScheme.surfaceVariant,
         )
         Text(
             text = stringResource(R.string.errors_loading_state),
-            color = ErrorsTextDisabled,
-            fontSize = 16.sp,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+            style = MaterialTheme.typography.bodyLarge,
             modifier = Modifier.padding(top = 16.dp),
         )
     }
 }
 
-internal val ErrorsBackground = Color(0xFF0E1218)
-private val ErrorsCard = Color(0xFF171F27)
-private val ErrorsCardStroke = Color(0xFF4A371D)
-private val ErrorsDivider = Color(0xFF242B33)
-private val ErrorsTextPrimary = Color(0xFFE6EDF5)
-private val ErrorsTextDisabled = Color(0xFF737B85)
-private val ErrorsGreen = Color(0xFF20D67A)
-private val ErrorsAmber = Color(0xFFF5A61D)
-private val ErrorsAmberContainer = Color(0xFF2B2417)
-private val ErrorsAmberStroke = Color(0xFF765314)
-private val ErrorsRed = Color(0xFFFF5C5C)
-private val ErrorsRedContainer = Color(0xFF321A1F)
-private val ErrorsRedStroke = Color(0xFF823139)
-private val ErrorsBadgeInactive = Color(0xFF222A33)
-private val ErrorsBadgeInactiveStroke = Color(0xFF3A444F)
-private val ToolbarIconButtonSize = 40.dp
+private val ToolbarIconButtonSize = 48.dp
 
 internal enum class ErrorStatus {
     Active,

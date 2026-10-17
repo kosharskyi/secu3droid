@@ -58,6 +58,10 @@ data class RawPacket(val data: IntArray)  {
 
     fun parse(firmwarePacket: FirmwareInfoPacket?): InputPacket? {
         return try {
+            if (data.size < 4 || data.any { it !in 0..0xFF } || data[0] != '@'.code) {
+                return null
+            }
+
             val packetData = data.sliceArray(0 until data.size - 2)
 
             return when (packetData[1].toChar()) {
@@ -96,7 +100,7 @@ data class RawPacket(val data: IntArray)  {
         } catch (e: IllegalArgumentException) {
             e.printStackTrace()
             null
-        } catch (e: StringIndexOutOfBoundsException) {
+        } catch (e: IndexOutOfBoundsException) {
             e.printStackTrace()
             null
         }

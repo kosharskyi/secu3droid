@@ -24,31 +24,25 @@
  */
 package org.secu3.android.ui.parameters.pages.compose
 
-import androidx.annotation.StringRes
-import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.rememberScrollState
-import androidx.compose.foundation.verticalScroll
+import androidx.annotation.StringRes
 import androidx.compose.runtime.Composable
-import androidx.compose.ui.Modifier
-import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.stringResource
-import androidx.compose.ui.unit.dp
 import org.secu3.android.ui.parameters.compose.ParameterLoadingIndicator
 import org.secu3.android.R
 import org.secu3.android.models.packets.out.params.AnglesParamPacket
 import org.secu3.android.ui.parameters.compose.ParameterSwitchRow
 import org.secu3.android.ui.parameters.compose.ParameterValueRow
+import org.secu3.android.ui.parameters.compose.ParameterPage
+import org.secu3.android.ui.parameters.compose.ParameterSection
 
 enum class AnglesNumber(@StringRes val titleRes: Int, val unitRes: Int, val precision: Int, val min: Float, val max: Float, val step: Float) {
     MAX(R.string.angles_max_angle_title, R.string.units_degree, 2, -15f, 60f, .25f),
     MIN(R.string.angles_min_angle_title, R.string.units_degree, 2, -15f, 60f, .25f),
-    DECREASE(R.string.angles_angle_decrement_step_title, R.string.units_degree_per_stroke, 2, 0f, 10f, .02f),
-    INCREASE(R.string.angles_angle_increment_step_title, R.string.units_degree_per_stroke, 2, 0f, 10f, .02f),
+    DECREASE(R.string.angles_angle_decrement_step_title, R.string.units_degree_per_stroke, 3, 0f, 10f, .025f),
+    INCREASE(R.string.angles_angle_increment_step_title, R.string.units_degree_per_stroke, 3, 0f, 10f, .025f),
     OCTANE(R.string.angles_octane_correction_title, R.string.units_degree, 2, -30f, 30f, .25f),
-    SHIFT(R.string.angles_ign_timing_when_shifting_title, R.string.units_degree, 1, -16.9f, 55f, .1f),
+    SHIFT(R.string.angles_ign_timing_when_shifting_title, R.string.units_degree, 1, -15f, 55f, .1f),
 }
 
 enum class AnglesFlag(@StringRes val titleRes: Int) {
@@ -102,26 +96,29 @@ sealed interface AnglesUiState {
 
 @Composable
 fun AnglesScreen(state: AnglesUiState, onEdit: (AnglesNumber) -> Unit, onFlagChanged: (AnglesFlag, Boolean) -> Unit) {
+    val pageScrollState = rememberScrollState()
     when (state) {
         AnglesUiState.Loading -> ParameterLoadingIndicator("angles_loading")
-        is AnglesUiState.Data -> Column(Modifier.fillMaxWidth().verticalScroll(rememberScrollState()).padding(16.dp), verticalArrangement = Arrangement.spacedBy(16.dp)) {
-            AnglesNumber.entries.filter { it != AnglesNumber.SHIFT }.forEach { number ->
-                ParameterValueRow(stringResource(number.titleRes), stringResource(number.unitRes), state.values.value(number), number.precision,
-                    "angles_${number.name.lowercase()}", onClick = { onEdit(number) })
-                if (number == AnglesNumber.OCTANE) {
-                    val flag = AnglesFlag.ZERO
+        is AnglesUiState.Data -> ParameterPage(scrollState = pageScrollState) {
+            ParameterSection {
+                AnglesNumber.entries.filter { it != AnglesNumber.SHIFT }.forEach { number ->
+                    ParameterValueRow(stringResource(number.titleRes), stringResource(number.unitRes), state.values.value(number), number.precision,
+                        "angles_${number.name.lowercase()}", onClick = { onEdit(number) })
+                    if (number == AnglesNumber.OCTANE) {
+                        val flag = AnglesFlag.ZERO
+                        ParameterSwitchRow(stringResource(flag.titleRes), state.values.flags.getValue(flag), "angles_flag_${flag.name.lowercase()}") {
+                            onFlagChanged(flag, it)
+                        }
+                    }
+                }
+                AnglesNumber.SHIFT.let { number ->
+                    ParameterValueRow(stringResource(number.titleRes), stringResource(number.unitRes), state.values.value(number), number.precision,
+                        "angles_${number.name.lowercase()}", onClick = { onEdit(number) })
+                }
+                AnglesFlag.entries.filter { it != AnglesFlag.ZERO }.forEach { flag ->
                     ParameterSwitchRow(stringResource(flag.titleRes), state.values.flags.getValue(flag), "angles_flag_${flag.name.lowercase()}") {
                         onFlagChanged(flag, it)
                     }
-                }
-            }
-            AnglesNumber.SHIFT.let { number ->
-                ParameterValueRow(stringResource(number.titleRes), stringResource(number.unitRes), state.values.value(number), number.precision,
-                    "angles_${number.name.lowercase()}", onClick = { onEdit(number) })
-            }
-            AnglesFlag.entries.filter { it != AnglesFlag.ZERO }.forEach { flag ->
-                ParameterSwitchRow(stringResource(flag.titleRes), state.values.flags.getValue(flag), "angles_flag_${flag.name.lowercase()}") {
-                    onFlagChanged(flag, it)
                 }
             }
         }

@@ -57,3 +57,12 @@ The project uses Jetpack Compose for UI, Material3 for Compose components, and N
   - Which tests and build checks passed.
   - What could not be verified and why.
   - Any remaining risks, doubts, or unresolved issues; explicitly state when there are none.
+
+## Project knowledge
+
+Technical deep-dive notes go in `knowledge/`, organized to mirror the package structure (e.g. `knowledge/ui/<screen>/<component>.md`, `knowledge/domain/<area>/...`).
+
+- **Before** touching a component, check for a corresponding file in `knowledge/`. If one exists, read it in full — it captures constraints that are not visible from the code alone.
+- **After** changing a component, update (or create) its knowledge file to reflect any new invariants, gotchas, or cross-component contracts.
+- Only document what would **surprise** a competent reader of the code: hidden constraints and invariants, non-obvious cross-component contracts, workarounds for specific bugs or platform quirks (with the reason), and sentinel values or index conventions. Do not describe what the code does, repeat architecture covered here, or record anything derivable by reading the class in isolation.
+- Format: one `##` heading per insight, written as a short statement of the rule. Follow with a brief explanation, and a code snippet only if it aids understanding.

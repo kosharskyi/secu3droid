@@ -1,0 +1,10 @@
+<resources>
+    <string name="appearance_title">Оформление</string>
+    <string name="appearance_system">Системное</string>
+    <string name="appearance_light">Светлое</string>
+    <string name="appearance_dark">Тёмное</string>
+    <string name="appearance_system_summary">Использовать оформление устройства</string>
+    <string name="settings_group_logging">Журналирование</string>
+    <string name="settings_group_connection">Подключение</string>
+    <string name="settings_group_display">Экран и питание</string>
+</resources>

@@ -13,7 +13,6 @@
 package org.secu3.android.ui.parameters.dialogs
 
 import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.padding
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
@@ -21,7 +20,6 @@ import androidx.compose.runtime.mutableFloatStateOf
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.window.DialogProperties
 import org.secu3.android.ui.parameters.ParameterEditRequest
@@ -56,7 +54,7 @@ internal fun NumericEditDialog(
                         accepted?.let(onConfirm)
                     },
                     onCancel = onDismiss,
-                    modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp),
+                    modifier = Modifier.fillMaxWidth(),
                 )
             }
             is ParameterEditRequest.FloatValue -> {
@@ -77,7 +75,7 @@ internal fun NumericEditDialog(
                         accepted?.let(onConfirm)
                     },
                     onCancel = onDismiss,
-                    modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp),
+                    modifier = Modifier.fillMaxWidth(),
                 )
             }
         }

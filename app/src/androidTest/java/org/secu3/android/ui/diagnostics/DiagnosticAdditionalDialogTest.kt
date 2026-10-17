@@ -33,10 +33,14 @@ import androidx.compose.ui.test.junit4.StateRestorationTester
 import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
+import androidx.compose.ui.test.performScrollTo
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.width
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.runtime.CompositionLocalProvider
+import androidx.compose.ui.unit.Density
 import androidx.compose.ui.unit.dp
 import androidx.test.platform.app.InstrumentationRegistry
 import org.junit.Assert.assertEquals
@@ -111,22 +115,29 @@ class DiagnosticAdditionalDialogTest {
 
     @Test
     fun optionsAndActionsRemainAvailableAtNarrowWidth() {
+        val darkTheme = mutableStateOf(false)
         compose.setContent {
-            SecuComposeTheme {
-                Box(Modifier.width(280.dp)) {
-                    DiagnosticAdditionalDialogContent(
-                        initialEnableBlDe = false,
-                        initialEnableTachO = false,
-                        showTachO = true,
-                        onOk = { _, _ -> },
-                        onCancel = {},
-                    )
+            val density = LocalDensity.current
+            CompositionLocalProvider(LocalDensity provides Density(density.density, fontScale = 1.7f)) {
+                SecuComposeTheme(darkTheme = darkTheme.value) {
+                    Box(Modifier.width(280.dp)) {
+                        DiagnosticAdditionalDialogContent(
+                            initialEnableBlDe = false,
+                            initialEnableTachO = false,
+                            showTachO = true,
+                            onOk = { _, _ -> },
+                            onCancel = {},
+                        )
+                    }
                 }
             }
         }
-        compose.onNodeWithTag("enable_bl_de").assertIsDisplayed()
-        compose.onNodeWithTag("enable_tach_o").assertIsDisplayed()
-        compose.onNodeWithTag("diagnostic_ok").assertIsDisplayed()
+        compose.onNodeWithTag("enable_bl_de").performScrollTo().assertIsDisplayed()
+        compose.onNodeWithTag("enable_tach_o").performScrollTo().assertIsDisplayed()
+        compose.onNodeWithTag("diagnostic_ok").performScrollTo().assertIsDisplayed()
+        darkTheme.value = true
+        compose.onNodeWithTag("enable_bl_de").performScrollTo().assertIsDisplayed()
+        compose.onNodeWithTag("diagnostic_ok").performScrollTo().assertIsDisplayed()
     }
 
     @Test

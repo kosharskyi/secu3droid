@@ -11,10 +11,24 @@
 package org.secu3.android.ui.compose
 
 import androidx.annotation.StringRes
+import androidx.compose.foundation.BorderStroke
+import androidx.compose.foundation.border
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.AlertDialog
+import androidx.compose.material3.Button
+import androidx.compose.material3.ButtonDefaults
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
+import androidx.compose.ui.Modifier
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.heightIn
+import androidx.compose.foundation.layout.widthIn
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.unit.dp
 import androidx.compose.ui.res.stringResource
 import org.secu3.android.R
 
@@ -25,13 +39,43 @@ internal fun ConfirmationDialog(
     onConfirm: () -> Unit,
     onCancel: () -> Unit,
     onDismiss: () -> Unit = onCancel,
+    modifier: Modifier = Modifier,
 ) {
     AlertDialog(
         onDismissRequest = onDismiss,
-        title = { Text(stringResource(title)) },
-        text = { Text(stringResource(message)) },
+        modifier = modifier.widthIn(max = 420.dp).border(
+            BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant),
+            RoundedCornerShape(24.dp),
+        ),
+        shape = RoundedCornerShape(24.dp),
+        containerColor = MaterialTheme.colorScheme.surface,
+        tonalElevation = 0.dp,
+        title = {
+            Text(
+                text = stringResource(title),
+                modifier = Modifier.fillMaxWidth(),
+                textAlign = TextAlign.Center,
+            )
+        },
+        text = {
+            Text(
+                text = stringResource(message),
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .heightIn(max = 280.dp)
+                    .verticalScroll(rememberScrollState()),
+                textAlign = TextAlign.Center,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+            )
+        },
         confirmButton = {
-            TextButton(onClick = onConfirm) { Text(stringResource(android.R.string.ok)) }
+            Button(
+                onClick = onConfirm,
+                colors = ButtonDefaults.buttonColors(
+                    containerColor = MaterialTheme.colorScheme.primary,
+                    contentColor = MaterialTheme.colorScheme.onPrimary,
+                ),
+            ) { Text(stringResource(android.R.string.ok)) }
         },
         dismissButton = {
             TextButton(onClick = onCancel) { Text(stringResource(android.R.string.cancel)) }

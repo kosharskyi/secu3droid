@@ -42,10 +42,10 @@ internal fun parameterPageSpecs(fwInfoPacket: FirmwareInfoPacket?): List<Paramet
         R.string.params_tab_ckps_title,
         R.string.params_tab_knock_title,
         R.string.params_tab_miscellaneous_title,
-        R.string.params_tab_choke_control_title,
         R.string.params_tab_security_title,
         R.string.params_tab_universal_outputs_title,
     )
+    if (fwInfoPacket == null || fwInfoPacket.isSmControlEnabled) pages.add(10, R.string.params_tab_choke_control_title)
     fwInfoPacket?.let { firmware ->
         if (firmware.isFuelInjectEnabled) pages += R.string.params_tab_fuel_injection_title
         if (firmware.isFuelInjectEnabled || firmware.isCarbAfrEnabled || firmware.isGdControlEnabled) pages += R.string.params_tab_lambda_control_title

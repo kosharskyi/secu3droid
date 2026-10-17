@@ -4,10 +4,12 @@ import android.content.Intent
 import android.hardware.usb.UsbDevice
 import android.os.Bundle
 import android.view.WindowManager
+import android.graphics.drawable.ColorDrawable
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.viewModels
 import androidx.core.content.IntentCompat
+import androidx.core.view.WindowInsetsControllerCompat
 import androidx.lifecycle.Lifecycle
 import androidx.navigation.NavDestination
 import androidx.navigation.NavHostController
@@ -16,6 +18,7 @@ import dagger.hilt.android.AndroidEntryPoint
 @AndroidEntryPoint
 class MainActivity : ComponentActivity() {
     private val viewModel: MainActivityViewModel by viewModels()
+    internal val userPrefs get() = viewModel.prefs
     private var rootNavController: NavHostController? = null
     internal val rootNavigationController: NavHostController? get() = rootNavController
     private var pendingNavigation: String? = null
@@ -144,6 +147,19 @@ class MainActivity : ComponentActivity() {
             window.addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON)
         } else {
             window.clearFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON)
+        }
+    }
+
+    internal fun applyAppearance(dark: Boolean) {
+        val color = if (dark) android.graphics.Color.rgb(17, 24, 32) else android.graphics.Color.rgb(243, 246, 250)
+        val darkNavigationBar = android.graphics.Color.rgb(17, 24, 32)
+        val supportsLightNavigationIcons = android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.O
+        window.setBackgroundDrawable(ColorDrawable(color))
+        window.statusBarColor = color
+        window.navigationBarColor = if (dark || !supportsLightNavigationIcons) darkNavigationBar else color
+        WindowInsetsControllerCompat(window, window.decorView).apply {
+            isAppearanceLightStatusBars = !dark
+            isAppearanceLightNavigationBars = !dark && supportsLightNavigationIcons
         }
     }
 

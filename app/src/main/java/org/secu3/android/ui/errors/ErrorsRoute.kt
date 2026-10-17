@@ -10,7 +10,6 @@
 package org.secu3.android.ui.errors
 
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -18,9 +17,6 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.runtime.livedata.observeAsState
 import androidx.compose.ui.platform.LocalLifecycleOwner
-import androidx.compose.ui.platform.LocalView
-import androidx.compose.ui.graphics.toArgb
-import androidx.core.view.WindowInsetsControllerCompat
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.repeatOnLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
@@ -64,7 +60,6 @@ internal fun ErrorsRoute(
     }
 
     SecuComposeTheme {
-        ErrorsSystemBarsEffect(activity)
         ErrorsScreen(
             connectionState = connection,
             errors = errors,
@@ -79,29 +74,6 @@ internal fun ErrorsRoute(
                 onConfirm = viewModel::confirmClearErrors,
                 onCancel = viewModel::dismissClearConfirmation,
             )
-        }
-    }
-}
-
-@Composable
-private fun ErrorsSystemBarsEffect(activity: MainActivity) {
-    val view = LocalView.current
-    val window = activity.window
-    DisposableEffect(window, view) {
-        val insets = WindowInsetsControllerCompat(window, window.decorView)
-        val previousStatusBarColor = window.statusBarColor
-        val previousNavigationBarColor = window.navigationBarColor
-        val previousLightStatusBars = insets.isAppearanceLightStatusBars
-        val previousLightNavigationBars = insets.isAppearanceLightNavigationBars
-        window.statusBarColor = ErrorsBackground.toArgb()
-        window.navigationBarColor = ErrorsBackground.toArgb()
-        insets.isAppearanceLightStatusBars = false
-        insets.isAppearanceLightNavigationBars = false
-        onDispose {
-            window.statusBarColor = previousStatusBarColor
-            window.navigationBarColor = previousNavigationBarColor
-            insets.isAppearanceLightStatusBars = previousLightStatusBars
-            insets.isAppearanceLightNavigationBars = previousLightNavigationBars
         }
     }
 }

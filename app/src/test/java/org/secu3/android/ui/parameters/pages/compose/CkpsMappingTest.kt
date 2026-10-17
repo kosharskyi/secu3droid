@@ -104,11 +104,11 @@ class CkpsMappingTest {
 
     @Test
     fun choicesKeepUnknownValuesUntilValidExplicitSelection() {
-        val packet = CkpsParamPacket(ckpsCogsBtdc = 56, ckpsEngineCyl = 3)
+        val packet = CkpsParamPacket(ckpsCogsNum = 60, ckpsCogsBtdc = 56, ckpsEngineCyl = 3)
         assertEquals("Code 56", selectorValue(packet.ckpsCogsBtdc, (12..55).toList()))
 
-        assertFalse(applyCkpsChoice(packet, true, 11))
-        assertFalse(applyCkpsChoice(packet, false, 3))
+        assertFalse(applyCkpsChoice(packet, true, 10))
+        assertFalse(applyCkpsChoice(packet, false, 9))
         assertEquals(56, packet.ckpsCogsBtdc)
         assertEquals(3, packet.ckpsEngineCyl)
 
@@ -144,7 +144,7 @@ class CkpsMappingTest {
         )
 
         assertEquals(6, CkpsValues.from(packet).numbers.size)
-        assertEquals(16f, CkpsNumber.WHEEL.min)
+        assertEquals(10f, CkpsNumber.WHEEL.min)
         assertEquals(200f, CkpsNumber.WHEEL.max)
         assertEquals(0f, CkpsNumber.MISSING.min)
         assertEquals(6f, CkpsNumber.MISSING.max)

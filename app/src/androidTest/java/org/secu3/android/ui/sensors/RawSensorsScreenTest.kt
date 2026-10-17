@@ -81,6 +81,7 @@ class RawSensorsScreenTest {
         compose.setContent { SecuComposeTheme { RawSensorsScreen(null) } }
 
         compose.onNodeWithTag("raw-sensors-list").assertExists()
+        compose.onNodeWithText(context.getString(R.string.dashboard_status_no_data)).assertIsDisplayed()
         compose.onNodeWithText(context.getString(labelIds.first())).assertDoesNotExist()
         compose.onNodeWithText("0.000").assertDoesNotExist()
     }

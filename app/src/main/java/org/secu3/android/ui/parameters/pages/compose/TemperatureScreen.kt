@@ -24,23 +24,18 @@
  */
 package org.secu3.android.ui.parameters.pages.compose
 
-import androidx.annotation.StringRes
-import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.rememberScrollState
-import androidx.compose.foundation.verticalScroll
+import androidx.annotation.StringRes
 import androidx.compose.runtime.Composable
-import androidx.compose.ui.Modifier
-import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.stringResource
-import androidx.compose.ui.unit.dp
 import org.secu3.android.ui.parameters.compose.ParameterLoadingIndicator
+import org.secu3.android.ui.parameters.*
 import org.secu3.android.R
 import org.secu3.android.models.packets.out.params.TemperatureParamPacket
 import org.secu3.android.ui.parameters.compose.ParameterSwitchRow
 import org.secu3.android.ui.parameters.compose.ParameterValueRow
+import org.secu3.android.ui.parameters.compose.ParameterPage
+import org.secu3.android.ui.parameters.compose.ParameterSection
 
 enum class TemperatureNumber(
     @StringRes val titleRes: Int,
@@ -127,41 +122,53 @@ fun TemperatureScreen(
     state: TemperatureUiState,
     onEdit: (TemperatureNumber) -> Unit,
     onFlagChanged: (TemperatureFlag, Boolean) -> Unit,
+    capabilities: ParameterCapabilities = ParameterCapabilities.All,
 ) {
+    val pageScrollState = rememberScrollState()
     when (state) {
         TemperatureUiState.Loading -> ParameterLoadingIndicator("temperature_loading")
-        is TemperatureUiState.Data -> Column(
-            Modifier.fillMaxWidth().verticalScroll(rememberScrollState()).padding(16.dp),
-            verticalArrangement = Arrangement.spacedBy(16.dp),
-        ) {
-            @Composable
-            fun number(number: TemperatureNumber) = ParameterValueRow(
-                title = stringResource(number.titleRes),
-                units = stringResource(number.unitRes),
-                value = state.values.value(number),
-                precision = number.precision,
-                testTag = "temperature_${number.name.lowercase()}",
-                onClick = { onEdit(number) },
-            )
-            @Composable
-            fun flag(flag: TemperatureFlag) = ParameterSwitchRow(
-                title = stringResource(flag.titleRes),
-                checked = state.values.flags.getValue(flag),
-                testTag = "temperature_flag_${flag.name.lowercase()}",
-                onCheckedChange = { onFlagChanged(flag, it) },
-            )
+        is TemperatureUiState.Data -> ParameterPage(scrollState = pageScrollState) {
+            ParameterSection {
+                @Composable
+                fun number(number: TemperatureNumber) = ParameterValueRow(
+                    title = stringResource(number.titleRes),
+                    units = stringResource(number.unitRes),
+                    value = state.values.value(number),
+                    precision = number.precision,
+                    testTag = "temperature_${number.name.lowercase()}",
+                    enabled = when (number) {
+                        TemperatureNumber.PWM_FREQUENCY -> capabilities.fanPwm
+                        TemperatureNumber.AC_ON, TemperatureNumber.AC_OFF -> capabilities.fuelInjection && !capabilities.secu3T
+                        TemperatureNumber.AC_MIN_RPM -> capabilities.fuelInjection
+                        else -> true
+                    },
+                    onClick = { onEdit(number) },
+                )
+                @Composable
+                fun flag(flag: TemperatureFlag) = ParameterSwitchRow(
+                    title = stringResource(flag.titleRes),
+                    checked = state.values.flags.getValue(flag),
+                    testTag = "temperature_flag_${flag.name.lowercase()}",
+                    enabled = when (flag) {
+                        TemperatureFlag.PWM_CONTROL -> capabilities.fanPwm
+                        TemperatureFlag.SENSOR_CURVE_TABLE -> capabilities.tempCurve
+                        else -> true
+                    },
+                    onCheckedChange = { onFlagChanged(flag, it) },
+                )
 
-            // Preserve the XML order, including the switches between fan thresholds and PWM frequency.
-            number(TemperatureNumber.FAN_ON)
-            number(TemperatureNumber.FAN_OFF)
-            flag(TemperatureFlag.COOLANT_SENSOR)
-            flag(TemperatureFlag.PWM_CONTROL)
-            flag(TemperatureFlag.SENSOR_CURVE_TABLE)
-            number(TemperatureNumber.PWM_FREQUENCY)
-            number(TemperatureNumber.AC_ON)
-            number(TemperatureNumber.AC_OFF)
-            number(TemperatureNumber.AC_MIN_RPM)
-            number(TemperatureNumber.FAN_TIMER)
-        }
-    }
-}
+                // Preserve the XML order, including the switches between fan thresholds and PWM frequency.
+                number(TemperatureNumber.FAN_ON)
+                number(TemperatureNumber.FAN_OFF)
+                flag(TemperatureFlag.COOLANT_SENSOR)
+                flag(TemperatureFlag.PWM_CONTROL)
+                flag(TemperatureFlag.SENSOR_CURVE_TABLE)
+                number(TemperatureNumber.PWM_FREQUENCY)
+                number(TemperatureNumber.AC_ON)
+                number(TemperatureNumber.AC_OFF)
+                number(TemperatureNumber.AC_MIN_RPM)
+                number(TemperatureNumber.FAN_TIMER)
+            }
+            }
+            }
+            }

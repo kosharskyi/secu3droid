@@ -80,17 +80,12 @@ internal fun DashboardRoute(entry: NavBackStackEntry, activity: MainActivity) {
 }
 
 private data class DashboardWindowState(
-    val statusBarColor: Int,
-    val navigationBarColor: Int,
-    val lightStatusBars: Boolean,
-    val lightNavigationBars: Boolean,
     val systemBarsBehavior: Int,
     val visibleSystemBarsMask: Int,
 ) {
     fun enterDashboard(window: Window) {
         WindowCompat.setDecorFitsSystemWindows(window, false)
         WindowInsetsControllerCompat(window, window.decorView).apply {
-            isAppearanceLightStatusBars = false
             systemBarsBehavior = WindowInsetsControllerCompat.BEHAVIOR_SHOW_TRANSIENT_BARS_BY_SWIPE
             hide(WindowInsetsCompat.Type.systemBars())
         }
@@ -98,12 +93,8 @@ private data class DashboardWindowState(
     }
 
     fun restore(window: Window, keepScreenOnPreference: Boolean) {
-        window.statusBarColor = statusBarColor
-        window.navigationBarColor = navigationBarColor
         WindowCompat.setDecorFitsSystemWindows(window, true)
         WindowInsetsControllerCompat(window, window.decorView).apply {
-            isAppearanceLightStatusBars = lightStatusBars
-            isAppearanceLightNavigationBars = lightNavigationBars
             systemBarsBehavior = this@DashboardWindowState.systemBarsBehavior
             show(visibleSystemBarsMask)
             hide(WindowInsetsCompat.Type.systemBars() and visibleSystemBarsMask.inv())
@@ -116,20 +107,12 @@ private data class DashboardWindowState(
         val Saver = mapSaver(
             save = { state ->
                 mapOf(
-                    "statusBarColor" to state.statusBarColor,
-                    "navigationBarColor" to state.navigationBarColor,
-                    "lightStatusBars" to state.lightStatusBars,
-                    "lightNavigationBars" to state.lightNavigationBars,
                     "systemBarsBehavior" to state.systemBarsBehavior,
                     "visibleSystemBarsMask" to state.visibleSystemBarsMask,
                 )
             },
             restore = { saved ->
                 DashboardWindowState(
-                    statusBarColor = saved.getValue("statusBarColor") as Int,
-                    navigationBarColor = saved.getValue("navigationBarColor") as Int,
-                    lightStatusBars = saved.getValue("lightStatusBars") as Boolean,
-                    lightNavigationBars = saved.getValue("lightNavigationBars") as Boolean,
                     systemBarsBehavior = saved.getValue("systemBarsBehavior") as Int,
                     visibleSystemBarsMask = saved.getValue("visibleSystemBarsMask") as Int,
                 )
@@ -137,7 +120,6 @@ private data class DashboardWindowState(
         )
 
         fun capture(window: Window): DashboardWindowState {
-            val insets = WindowInsetsControllerCompat(window, window.decorView)
             val rootInsets = ViewCompat.getRootWindowInsets(window.decorView)
             val systemBarTypes = listOf(
                 WindowInsetsCompat.Type.statusBars(),
@@ -146,11 +128,7 @@ private data class DashboardWindowState(
                 WindowInsetsCompat.Type.systemOverlays(),
             )
             return DashboardWindowState(
-                statusBarColor = window.statusBarColor,
-                navigationBarColor = window.navigationBarColor,
-                lightStatusBars = insets.isAppearanceLightStatusBars,
-                lightNavigationBars = insets.isAppearanceLightNavigationBars,
-                systemBarsBehavior = insets.systemBarsBehavior,
+                systemBarsBehavior = WindowInsetsControllerCompat(window, window.decorView).systemBarsBehavior,
                 visibleSystemBarsMask = systemBarTypes.fold(0) { mask, type ->
                     if (rootInsets?.isVisible(type) != false) mask or type else mask
                 },

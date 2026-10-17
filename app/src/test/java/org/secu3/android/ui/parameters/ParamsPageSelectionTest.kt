@@ -51,9 +51,10 @@ class ParamsPageSelectionTest {
         )
         assertEquals(base, parameterPageSpecs(null).map { it.titleRes })
 
+        val supportedBase = base - R.string.params_tab_choke_control_title
         val allFeatures = FirmwareInfoPacket(options = (1 shl 28) or (1 shl 29) or (1 shl 30) or (1 shl 17))
         assertEquals(
-            base + listOf(
+            supportedBase + listOf(
                 R.string.params_tab_fuel_injection_title,
                 R.string.params_tab_lambda_control_title,
                 R.string.params_tab_acceleration_title,
@@ -65,13 +66,13 @@ class ParamsPageSelectionTest {
 
         val carbAfrOnly = FirmwareInfoPacket(options = 1 shl 30)
         assertEquals(
-            base + listOf(R.string.params_tab_lambda_control_title, R.string.params_tab_el_throttle_title),
+            supportedBase + listOf(R.string.params_tab_lambda_control_title, R.string.params_tab_el_throttle_title),
             parameterPageSpecs(carbAfrOnly).map { it.titleRes },
         )
 
         val gasDoseOnly = FirmwareInfoPacket(options = 1 shl 29)
         assertEquals(
-            base + listOf(
+            supportedBase + listOf(
                 R.string.params_tab_lambda_control_title,
                 R.string.params_tab_acceleration_title,
                 R.string.params_tab_gas_dose_title,

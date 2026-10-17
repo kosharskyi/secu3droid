@@ -24,7 +24,6 @@
  */
 package org.secu3.android.ui.parameters.pages.compose
 
-import org.secu3.android.ui.compose.DropdownShape
 
 import androidx.annotation.StringRes
 import androidx.compose.foundation.ExperimentalFoundationApi
@@ -39,8 +38,6 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.lerp
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.stringResource
@@ -52,6 +49,13 @@ import androidx.compose.ui.unit.dp
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import org.secu3.android.ui.parameters.compose.ParameterLoadingIndicator
+import org.secu3.android.ui.parameters.compose.ParameterPage
+import org.secu3.android.ui.parameters.compose.ParameterSection
+import org.secu3.android.ui.parameters.compose.ParameterSelectionRow
+import org.secu3.android.ui.parameters.dialogs.ParameterChoice
+import org.secu3.android.ui.parameters.dialogs.ParameterChoiceDialog
+import org.secu3.android.ui.parameters.compose.ParameterTextValueRow
+import org.secu3.android.ui.parameters.*
 import org.secu3.android.R
 import org.secu3.android.ui.parameters.compose.ParameterSwitchRow
 import org.secu3.android.ui.parameters.compose.ParameterValueRow
@@ -77,67 +81,67 @@ fun ChokeScreen(
     onToggle: (ChokeNumber, Boolean) -> Unit, onFrequency: (Int) -> Unit,
     onManualStep: (Int) -> Unit, onManualFlush: () -> Unit, onManualRelease: () -> Unit, onManualCancel: () -> Unit,
     onTest: () -> Unit, isActive: Boolean = true,
+    capabilities: ParameterCapabilities = ParameterCapabilities.All,
 ) {
+    val pageScrollState = rememberScrollState()
     if (values == null) {
         ParameterLoadingIndicator("choke_loading")
         return
     }
     DisposableEffect(isActive) { if (!isActive) onManualCancel(); onDispose(onManualCancel) }
-    Column(Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(16.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
-        Text(stringResource(R.string.choke_manual_control), style = MaterialTheme.typography.titleMedium)
+    ParameterPage(scrollState = pageScrollState) {
+        ParameterSection(stringResource(R.string.choke_manual_control)) {
         NumberRow(ChokeNumber.STEPS, values, onEdit)
-        Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+        Row(Modifier.fillMaxWidth().heightIn(min = 66.dp).padding(horizontal = 14.dp, vertical = 9.dp), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(12.dp)) {
             Row(horizontalArrangement = Arrangement.spacedBy(4.dp)) {
-                HoldButton("choke_manual_dec", -1, stringResource(R.string.choke_manual_decrease), onManualStep, onManualFlush, onManualRelease, onManualCancel, "‹", isActive,
+                HoldButton("choke_manual_dec", -1, stringResource(R.string.choke_manual_decrease), onManualStep, onManualFlush, onManualRelease, onManualCancel, "‹", isActive && capabilities.choke,
                     RoundedCornerShape(topStart = 24.dp, bottomStart = 24.dp))
-                HoldButton("choke_manual_inc", 1, stringResource(R.string.choke_manual_increase), onManualStep, onManualFlush, onManualRelease, onManualCancel, "›", isActive,
+                HoldButton("choke_manual_inc", 1, stringResource(R.string.choke_manual_increase), onManualStep, onManualFlush, onManualRelease, onManualCancel, "›", isActive && capabilities.choke,
                     RoundedCornerShape(topEnd = 24.dp, bottomEnd = 24.dp))
             }
             Spacer(Modifier.weight(1f))
-            Button(onClick = onTest, modifier = Modifier.testTag("choke_test"), colors = ButtonDefaults.buttonColors(
+            Button(onClick = onTest, enabled = capabilities.choke, modifier = Modifier.testTag("choke_test"), colors = ButtonDefaults.buttonColors(
                 containerColor = if (values.testing) MaterialTheme.colorScheme.error else MaterialTheme.colorScheme.primary,
-                contentColor = androidx.compose.ui.graphics.Color.White
             )) {
-                Text(if (values.testing) stringResource(R.string.choke_test_active) else stringResource(R.string.test), color = androidx.compose.ui.graphics.Color.White)
+                Text(if (values.testing) stringResource(R.string.choke_test_active) else stringResource(R.string.test))
             }
         }
-        HorizontalDivider()
-        Text(stringResource(R.string.choke_use_closed_loop_rpm_regulator_title), style = MaterialTheme.typography.titleMedium)
-        NumberRow(ChokeNumber.REGULATOR_FACTOR, values, onEdit)
-        listOf(ChokeNumber.CLOSED_LOOP, ChokeNumber.DISABLE_ON_GAS).forEachIndexed { i, n ->
-            ParameterSwitchRow(stringResource(n.title), values.flags[i], "choke_${n.name.lowercase()}") { onToggle(n, it) }
+        HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant)
         }
-        HorizontalDivider()
-        Text(stringResource(R.string.choke_settings), style = MaterialTheme.typography.titleMedium)
-        NumberRow(ChokeNumber.COLD_DURATION, values, onEdit)
-        NumberRow(ChokeNumber.HOT_DURATION, values, onEdit)
+        ParameterSection(stringResource(R.string.choke_use_closed_loop_rpm_regulator_title)) {
+        NumberRow(ChokeNumber.REGULATOR_FACTOR, values, onEdit, capabilities.carburetor)
+        listOf(ChokeNumber.CLOSED_LOOP, ChokeNumber.DISABLE_ON_GAS).forEachIndexed { i, n ->
+            ParameterSwitchRow(stringResource(n.title), values.flags[i], "choke_${n.name.lowercase()}", enabled = capabilities.carburetor) { onToggle(n, it) }
+        }
+        }
+        ParameterSection(stringResource(R.string.choke_settings)) {
+        NumberRow(ChokeNumber.COLD_DURATION, values, onEdit, capabilities.carburetor)
+        NumberRow(ChokeNumber.HOT_DURATION, values, onEdit, capabilities.carburetor)
         listOf(ChokeNumber.THROTTLE_INIT, ChokeNumber.MAX_FREQUENCY_INIT).forEachIndexed { i, n ->
             ParameterSwitchRow(stringResource(n.title), values.flags[i + 2], "choke_${n.name.lowercase()}") { onToggle(n, it) }
         }
         FrequencySelector(values.frequency, onFrequency)
-        NumberRow(ChokeNumber.CRANK_TO_RUN, values, onEdit)
-    }
+        NumberRow(ChokeNumber.CRANK_TO_RUN, values, onEdit, capabilities.carburetor)
+        }
+        }
 }
 
-@Composable private fun NumberRow(n: ChokeNumber, values: ChokeValues, onEdit: (ChokeNumber) -> Unit) {
+@Composable private fun NumberRow(n: ChokeNumber, values: ChokeValues, onEdit: (ChokeNumber) -> Unit, enabled: Boolean = true) {
     ParameterValueRow(stringResource(n.title), if (n.units == R.string.units_sec) stringResource(n.units) else "",
-        values.value(n), n.precision, "choke_${n.name.lowercase()}") { onEdit(n) }
+        values.value(n), n.precision, "choke_${n.name.lowercase()}", enabled = enabled) { onEdit(n) }
 }
 
 @Composable private fun FrequencySelector(index: Int, onSelect: (Int) -> Unit) {
     val options = listOf("300", "150", "100", "75")
     var expanded by remember { mutableStateOf(false) }
-    Column {
-        OutlinedButton(onClick = { expanded = true }, Modifier.fillMaxWidth().testTag("choke_frequency"), shape = DropdownShape) {
-            Column(Modifier.weight(1f), horizontalAlignment = Alignment.Start) {
-                Text(stringResource(R.string.choke_frequency_of_pulses), style = MaterialTheme.typography.labelMedium)
-                Text(options.getOrNull(index) ?: "Code $index")
-            }
-            Text("⌄", style = MaterialTheme.typography.titleLarge)
-        }
-        DropdownMenu(expanded, { expanded = false }, shape = DropdownShape) {
-            options.forEachIndexed { i, option -> DropdownMenuItem(text = { Text(option) }, onClick = { expanded = false; onSelect(i) }, modifier = Modifier.testTag("choke_frequency_option_$i")) }
-        }
+    Box {
+        ParameterSelectionRow(stringResource(R.string.choke_frequency_of_pulses), options.getOrNull(index) ?: "Code $index", "choke_frequency") { expanded = true }
+        if (expanded) ParameterChoiceDialog(
+            title = stringResource(R.string.choke_frequency_of_pulses),
+            choices = options.mapIndexed { i, option -> ParameterChoice(i, option, "choke_frequency_option_$i") },
+            onDismiss = { expanded = false },
+            onSelect = onSelect,
+        )
     }
 }
 
@@ -150,8 +154,9 @@ fun ChokeScreen(
     val currentOnCancel by rememberUpdatedState(onCancel)
     val timerScope = rememberCoroutineScope()
     val baseColor = MaterialTheme.colorScheme.primary
-    val pressedColor = lerp(baseColor, Color.Black, .25f)
-    Surface(color = if (pressed) pressedColor else baseColor, contentColor = Color.White,
+    val pressedColor = MaterialTheme.colorScheme.primaryContainer
+    val contentColor = if (pressed) MaterialTheme.colorScheme.onPrimaryContainer else MaterialTheme.colorScheme.onPrimary
+    Surface(color = if (pressed) pressedColor else baseColor, contentColor = contentColor,
         shape = shape, modifier = Modifier.testTag(tag).size(width = 64.dp, height = 48.dp)
             .semantics {
                 role = Role.Button
@@ -189,6 +194,6 @@ fun ChokeScreen(
             }
         }
     }) {
-        Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) { Text(icon, color = Color.White, style = MaterialTheme.typography.headlineSmall) }
+        Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) { Text(icon, style = MaterialTheme.typography.headlineSmall) }
     }
 }

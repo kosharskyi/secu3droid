@@ -25,6 +25,7 @@
 package org.secu3.android.ui.parameters
 
 import android.content.Context
+import android.util.Log
 import android.widget.Toast
 import androidx.lifecycle.LiveData
 import androidx.lifecycle.ViewModel
@@ -33,20 +34,20 @@ import androidx.lifecycle.asFlow
 import androidx.lifecycle.viewModelScope
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.setValue
 import kotlinx.coroutines.Job
+import kotlinx.coroutines.CancellationException
 import dagger.hilt.android.lifecycle.HiltViewModel
 import dagger.hilt.android.qualifiers.ApplicationContext
-import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.collect
 import kotlinx.coroutines.flow.filter
 import kotlinx.coroutines.flow.first
-import kotlinx.coroutines.flow.filterNotNull
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.launch
-import kotlinx.coroutines.withContext
 import org.secu3.android.R
 import org.secu3.android.connection.ConnectionState
+import org.secu3.android.connection.Connected
 import org.secu3.android.connection.Secu3ConnectionManager
 import org.secu3.android.models.FnName
 import org.secu3.android.models.packets.base.OutputPacket
@@ -94,6 +95,13 @@ import org.secu3.android.ui.parameters.pages.compose.FuelInjectionStateHolder
 import org.secu3.android.ui.parameters.pages.UniversalOutputsStateHolder
 import org.secu3.android.utils.Task
 import javax.inject.Inject
+import java.util.concurrent.TimeoutException
+
+internal fun cancelAndClearPageReadJobs(jobs: MutableMap<Int, Job>) {
+    val jobsToCancel = jobs.values.toList()
+    jobs.clear()
+    jobsToCancel.forEach { it.cancel() }
+}
 
 @HiltViewModel
 class ParamsViewModel @Inject constructor(
@@ -107,8 +115,15 @@ class ParamsViewModel @Inject constructor(
     private var nextParameterEditSessionId = 0L
 
     private val pageReadGate = ParameterPageReadGate()
-    private val loadedPages = mutableSetOf<Int>()
     private val pageReadJobs = mutableMapOf<Int, Job>()
+    private val loadedPages = mutableSetOf<Int>()
+    private var activePageTitle: Int? = null
+    private var parameterWriteRevision = 0L
+    private var saveJob: Job? = null
+    internal var connectionSession by mutableIntStateOf(0)
+        private set
+    internal var failedPage: Int? by mutableStateOf(null)
+        private set
 
     internal val starterStateHolder by lazy {
         StarterStateHolder(::sendPacket) { isSendAllowed = true }
@@ -192,6 +207,14 @@ class ParamsViewModel @Inject constructor(
 
     init {
         viewModelScope.launch {
+            secu3ConnectionManager.connectionStateFlow.collect { state ->
+                if (state != Connected) {
+                    connectionSession++
+                    clearPageState()
+                }
+            }
+        }
+        viewModelScope.launch {
             secu3ConnectionManager.firmwareLiveData.asFlow().collect { firmware ->
                 gasDoseStateHolder.setFirmwareAvailable(firmware.isGdControlEnabled)
                 fuelInjectionStateHolder.updateFirmware(firmware.isFuelInjectEnabled, firmware.isSecu3T)
@@ -201,6 +224,7 @@ class ParamsViewModel @Inject constructor(
 
     internal fun activatePage(titleRes: Int) {
         if (!isConnected) return
+        activePageTitle = titleRes
         pageReadGate.activate(titleRes)
         if (titleRes in setOf(
                 R.string.params_tab_start_title,
@@ -228,6 +252,18 @@ class ParamsViewModel @Inject constructor(
     }
 
     internal fun deactivatePage() = pageReadGate.deactivate()
+
+    internal fun invalidatePageCache() {
+        loadedPages.clear()
+        parameterWriteRevision++
+    }
+
+    internal fun refreshPage(titleRes: Int) {
+        if (isConnected) {
+            loadedPages.remove(titleRes)
+            loadViewModelPage(titleRes)
+        }
+    }
 
     internal fun cancelManualCommands() {
         chokeControlStateHolder.cancelManual()
@@ -259,11 +295,17 @@ class ParamsViewModel @Inject constructor(
         get() = secu3ConnectionManager.isConnected
 
     internal fun clearPageState() {
+        isSendAllowed = false
+        activePageTitle = null
+        loadedPages.clear()
+        parameterWriteRevision++
         deactivatePage()
         parameterEditSession = null
-        pageReadJobs.values.forEach { it.cancel() }
-        pageReadJobs.clear()
-        loadedPages.clear()
+        failedPage = null
+        val saving = saveJob
+        saveJob = null
+        saving?.cancel()
+        cancelAndClearPageReadJobs(pageReadJobs)
         starterStateHolder.reset()
         anglesStateHolder.reset()
         idlingStateHolder.reset()
@@ -295,90 +337,93 @@ class ParamsViewModel @Inject constructor(
     )
 
     private fun loadViewModelPage(titleRes: Int) {
-        if (titleRes in loadedPages || pageReadJobs[titleRes]?.isActive == true) return
+        if (titleRes in loadedPages) return
+        if (pageReadJobs[titleRes]?.isActive == true) return
+        if (failedPage == titleRes) failedPage = null
+        var readRevision = parameterWriteRevision
         pageReadJobs[titleRes] = viewModelScope.launch {
+            var readCompleted = true
             try {
-                var cacheLoaded = true
                 when (titleRes) {
                     R.string.params_tab_start_title -> {
                         starterStateHolder.reset()
-                        val packet = pageReadGate.read(titleRes) {
+                        val packet = pageReadGate.read(titleRes, onStarted = { readRevision = parameterWriteRevision }) {
                             readPacket<StarterParamPacket>(Task.Secu3ReadStarterParam)
                         }.first()
                         starterStateHolder.onPacketReceived(packet)
                     }
                     R.string.params_tab_angles_title -> {
                         anglesStateHolder.reset()
-                        val packet = pageReadGate.read(titleRes) {
+                        val packet = pageReadGate.read(titleRes, onStarted = { readRevision = parameterWriteRevision }) {
                             readPacket<AnglesParamPacket>(Task.Secu3ReadAnglesParam)
                         }.first()
                         anglesStateHolder.onPacketReceived(packet)
                     }
                     R.string.params_tab_idling_title -> {
                         idlingStateHolder.reset()
-                        val packet = pageReadGate.read(titleRes) {
+                        val packet = pageReadGate.read(titleRes, onStarted = { readRevision = parameterWriteRevision }) {
                             readPacket<IdlingParamPacket>(Task.Secu3ReadIdlingParam)
                         }.first()
                         idlingStateHolder.onPacketReceived(packet)
                     }
                     R.string.params_tab_temperature_title -> {
                         temperatureStateHolder.reset()
-                        val packet = pageReadGate.read(titleRes) {
+                        val packet = pageReadGate.read(titleRes, onStarted = { readRevision = parameterWriteRevision }) {
                             readPacket<TemperatureParamPacket>(Task.Secu3ReadTemperatureParam)
                         }.first()
                         temperatureStateHolder.onPacketReceived(packet)
                     }
                     R.string.params_tab_fuel_cutoff_title -> {
                         carburStateHolder.reset()
-                        val packet = pageReadGate.read(titleRes) {
+                        val packet = pageReadGate.read(titleRes, onStarted = { readRevision = parameterWriteRevision }) {
                             readPacket<CarburParamPacket>(Task.Secu3ReadCarburParam)
                         }.first()
                         carburStateHolder.onPacketReceived(packet)
                     }
                     R.string.params_tab_ckps_title -> {
                         ckpsStateHolder.reset()
-                        val packet = pageReadGate.read(titleRes) {
+                        val packet = pageReadGate.read(titleRes, onStarted = { readRevision = parameterWriteRevision }) {
                             readPacket<CkpsParamPacket>(Task.Secu3ReadCkpsParam)
                         }.first()
                         ckpsStateHolder.onPacketReceived(packet)
                     }
                     R.string.params_tab_adc_errors_corr_title -> {
                         adcCorrectionsStateHolder.reset()
-                        val packet = pageReadGate.read(titleRes) {
+                        val packet = pageReadGate.read(titleRes, onStarted = { readRevision = parameterWriteRevision }) {
                             readPacket<AdcCorrectionsParamPacket>(Task.Secu3ReadAdcErrorsCorrectionsParam)
                         }.first()
                         adcCorrectionsStateHolder.onPacketReceived(packet)
                     }
                     R.string.params_tab_knock_title -> {
                         knockStateHolder.reset()
-                        val packet = pageReadGate.read(titleRes) {
+                        val packet = pageReadGate.read(titleRes, onStarted = { readRevision = parameterWriteRevision }) {
                             readPacket<KnockParamPacket>(Task.Secu3ReadKnockParam)
                         }.first()
                         knockStateHolder.onPacketReceived(packet)
                     }
                     R.string.params_tab_lambda_control_title -> {
                         lambdaControlStateHolder.reset()
-                        val packet = pageReadGate.read(titleRes) {
+                        val packet = pageReadGate.read(titleRes, onStarted = { readRevision = parameterWriteRevision }) {
                             val fw = secu3ConnectionManager.fwInfo ?: return@read null
                             if (!fw.isFuelInjectEnabled && !fw.isCarbAfrEnabled && !fw.isGdControlEnabled) {
                                 return@read null
                             }
                             readPacket<LambdaParamPacket>(Task.Secu3ReadLambdaParam)
                         }.first()
-                        if (packet == null) cacheLoaded = false else lambdaControlStateHolder.onPacketReceived(packet)
+                        if (packet != null) lambdaControlStateHolder.onPacketReceived(packet) else readCompleted = false
                     }
                     R.string.params_tab_acceleration_title -> {
                         accelerationStateHolder.reset()
-                        val packet = pageReadGate.read(titleRes) {
+                        val packet = pageReadGate.read(titleRes, onStarted = { readRevision = parameterWriteRevision }) {
                             val fw = secu3ConnectionManager.fwInfo ?: return@read null
                             if (!fw.isFuelInjectEnabled && !fw.isGdControlEnabled) return@read null
                             readPacket<AccelerationParamPacket>(Task.Secu3ReadAccelerationParam)
                         }.first()
-                        if (packet == null) cacheLoaded = false else accelerationStateHolder.onPacketReceived(packet)
+                        if (packet != null) accelerationStateHolder.onPacketReceived(packet) else readCompleted = false
                     }
                     R.string.params_tab_ltft_title -> {
                         ltftStateHolder.reset()
-                        val packet = pageReadGate.read(titleRes) {
+                        val packet = pageReadGate.read(titleRes, onStarted = { readRevision = parameterWriteRevision }) {
                             readPacket<LtftParamPacket>(Task.Secu3ReadLtftParam)
                         }.first()
                         ltftStateHolder.receive(packet)
@@ -387,28 +432,24 @@ class ParamsViewModel @Inject constructor(
                         fuelInjectionStateHolder.reset()
                         fwInfoPacket?.let { fuelInjectionStateHolder.updateFirmware(it.isFuelInjectEnabled, it.isSecu3T) }
                             ?: fuelInjectionStateHolder.updateFirmware(injectorEnabled = true, secu3t = false)
-                        val packet = pageReadGate.read(titleRes) {
+                        val packet = pageReadGate.read(titleRes, onStarted = { readRevision = parameterWriteRevision }) {
                             if (secu3ConnectionManager.fwInfo?.isFuelInjectEnabled != true) return@read null
-                            readPacket<InjctrParPacket>(Task.Secu3ReadFuelInjectionParam).also {
-                                it.isAtMega644 = secu3ConnectionManager.fwInfo?.isATMEGA644 ?: true
-                            }
+                            readPacket<InjctrParPacket>(Task.Secu3ReadFuelInjectionParam)
                         }.first()
-                        if (packet == null) {
-                            cacheLoaded = false
-                        } else {
+                        if (packet != null) {
                             fuelInjectionStateHolder.receive(packet)
-                        }
+                        } else readCompleted = false
                     }
                     R.string.params_tab_universal_outputs_title -> {
                         universalOutputsStateHolder.reset()
-                        val packet = pageReadGate.read(titleRes) {
+                        val packet = pageReadGate.read(titleRes, onStarted = { readRevision = parameterWriteRevision }) {
                             readPacket<UniOutParamPacket>(Task.Secu3ReadUniversalOutputsParam)
                         }.first()
                         universalOutputsStateHolder.onPacketReceived(packet)
                     }
                     R.string.params_tab_choke_control_title -> {
                         chokeControlStateHolder.reset()
-                        val packet = pageReadGate.read(titleRes) {
+                        val packet = pageReadGate.read(titleRes, onStarted = { readRevision = parameterWriteRevision }) {
                             readPacket<ChokeControlParPacket>(Task.Secu3ReadChokeControlParam)
                         }.first()
                         isSendAllowed = false
@@ -421,32 +462,30 @@ class ParamsViewModel @Inject constructor(
                     R.string.params_tab_gas_dose_title -> {
                         gasDoseStateHolder.reset()
                         gasDoseStateHolder.setFirmwareAvailable(fwInfoPacket?.isGdControlEnabled ?: true)
-                        val packet = pageReadGate.read(titleRes) {
+                        val packet = pageReadGate.read(titleRes, onStarted = { readRevision = parameterWriteRevision }) {
                             val firmware = secu3ConnectionManager.fwInfo ?: return@read null
                             if (!firmware.isGdControlEnabled) return@read null
                             readPacket<GasDoseParamPacket>(Task.Secu3ReadGasDoseParam)
                         }.first()
-                        if (packet == null) {
-                            cacheLoaded = false
-                        } else {
+                        if (packet != null) {
                             isSendAllowed = false
                             try {
                                 gasDoseStateHolder.receive(packet)
                             } finally {
                                 isSendAllowed = true
                             }
-                        }
+                        } else readCompleted = false
                     }
                     R.string.params_tab_el_throttle_title -> {
                         dbwStateHolder.reset()
-                        val packet = pageReadGate.read(titleRes) {
+                        val packet = pageReadGate.read(titleRes, onStarted = { readRevision = parameterWriteRevision }) {
                             readPacket<DbwParamPacket>(Task.Secu3ReadDbwParam)
                         }.first()
                         dbwStateHolder.receive(packet)
                     }
                     R.string.params_tab_functions_title -> {
                         functionsStateHolder.reset()
-                        val (namesPacket, funSetPacket) = pageReadGate.read(titleRes) {
+                        val (namesPacket, funSetPacket) = pageReadGate.read(titleRes, onStarted = { readRevision = parameterWriteRevision }) {
                             val namesPacket = readParameterPacket(
                                 sendRequest = { secu3ConnectionManager.sendNewTask(Task.Secu3ReadFnNameDat) },
                                 restoreSensors = { secu3ConnectionManager.sendNewTask(Task.Secu3ReadSensors) },
@@ -483,7 +522,7 @@ class ParamsViewModel @Inject constructor(
                     }
                     R.string.params_tab_miscellaneous_title -> {
                         miscellaneousStateHolder.reset()
-                        val packet = pageReadGate.read(titleRes) {
+                        val packet = pageReadGate.read(titleRes, onStarted = { readRevision = parameterWriteRevision }) {
                             readPacket<MiscellaneousParamPacket>(Task.Secu3ReadMiscellaneousParam)
                         }.first()
                         isSendAllowed = false
@@ -495,7 +534,7 @@ class ParamsViewModel @Inject constructor(
                     }
                     R.string.params_tab_security_title -> {
                         securityStateHolder.reset()
-                        val packet = pageReadGate.read(titleRes) {
+                        val packet = pageReadGate.read(titleRes, onStarted = { readRevision = parameterWriteRevision }) {
                             readPacket<SecurityParamPacket>(Task.Secu3ReadSecurityParam)
                         }.first()
                         isSendAllowed = false
@@ -506,7 +545,16 @@ class ParamsViewModel @Inject constructor(
                         }
                     }
                 }
-                if (cacheLoaded) loadedPages += titleRes
+                if (readCompleted && parameterWriteRevision == readRevision) {
+                    loadedPages += titleRes
+                }
+            } catch (_: TimeoutException) {
+                failedPage = titleRes
+            } catch (cancelled: CancellationException) {
+                throw cancelled
+            } catch (error: Exception) {
+                Log.w("ParamsViewModel", "Could not read parameter page $titleRes", error)
+                failedPage = titleRes
             } finally {
                 // A cancelled job may finish after a new view has started its replacement.
                 if (pageReadJobs[titleRes] == coroutineContext[Job]) pageReadJobs.remove(titleRes)
@@ -522,30 +570,41 @@ class ParamsViewModel @Inject constructor(
 
 
     fun sendPacket(packet: OutputPacket) {
-        if (isSendAllowed.not()) {
+        if (!isSendAllowed || !isConnected) {
             return
         }
         secu3ConnectionManager.sendOutPacket(packet)
+        parameterWriteRevision++
+        loadedPages.removeAll { it != activePageTitle }
 
         Toast.makeText(context, context.getString(R.string.packet_sent), Toast.LENGTH_SHORT).show()  // TODO: move this out
     }
 
     fun savePacket() {
-        viewModelScope.launch(Dispatchers.IO) {
-            val opCompNc = secu3ConnectionManager.receivedPacketFlow.filter { it is OpCompNc }
-                .map { it as OpCompNc }
-                .filter { it.isEepromParamSave }
-                .first()
-
-            if (opCompNc.isEepromParamSave) {
-                withContext(Dispatchers.Main) {
-                    Toast.makeText(context, context.getString(R.string.packet_saved), Toast.LENGTH_SHORT).show()  // TODO: move this out
+        if (!isConnected || saveJob?.isActive == true) return
+        saveJob = viewModelScope.launch {
+            try {
+                readParameterPacket(
+                    sendRequest = {
+                        secu3ConnectionManager.sendNewTask(Task.Secu3OpComSaveEeprom)
+                        Toast.makeText(context, R.string.saving, Toast.LENGTH_SHORT).show()
+                    },
+                    restoreSensors = {},
+                ) { onSubscribed ->
+                    secu3ConnectionManager.receivedPacketFlow(onSubscribed)
+                        .first { it is OpCompNc && it.isEepromParamSave }
                 }
+                Toast.makeText(context, R.string.packet_saved, Toast.LENGTH_SHORT).show()
+            } catch (_: TimeoutException) {
+                Toast.makeText(context, R.string.parameter_save_unconfirmed, Toast.LENGTH_LONG).show()
+            } catch (cancelled: CancellationException) {
+                throw cancelled
+            } catch (error: Exception) {
+                Log.w("ParamsViewModel", "Could not confirm parameter save", error)
+                Toast.makeText(context, R.string.parameter_save_unconfirmed, Toast.LENGTH_LONG).show()
+            } finally {
+                if (saveJob == coroutineContext[Job]) saveJob = null
             }
         }
-
-        Toast.makeText(context, context.getString(R.string.saving), Toast.LENGTH_SHORT).show()  // TODO: move this out
-        
-        secu3ConnectionManager.sendNewTask(Task.Secu3OpComSaveEeprom)
     }
 }

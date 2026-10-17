@@ -41,11 +41,11 @@ internal object MiscellaneousNumericMapping {
                 packet.ignCutoffThrd = value
             }
             MiscField.START -> {
-                require(value in -6..12)
+                require(value in -36..72)
                 packet.hopStartAng = value
             }
             MiscField.DURATION -> {
-                require(value in 1..30)
+                require(value in 6..180)
                 packet.hopDuratAng = value
             }
             MiscField.BEGIN -> applyEvapPair(packet, value, packet.evapAfEnd)
@@ -73,7 +73,7 @@ internal object MiscellaneousNumericMapping {
     }
 
     private fun applyEvapPair(packet: MiscellaneousParamPacket, begin: Int, end: Int) {
-        require(begin in 100..200000 && end in 100..200000)
+        require(begin in EVAP_MIN..EVAP_MAX && end in EVAP_MIN..EVAP_MAX)
         val delta = end - begin
         require(delta >= MiscellaneousParamPacket.MIN_EVAP_AIRFLOW_DELTA)
         val targetSlope = 32f / delta
@@ -86,7 +86,7 @@ internal object MiscellaneousNumericMapping {
             val decodedSlope = raw.toFloat().div(1048576f).div(32f)
             val decodedEnd = (32f / decodedSlope + begin).roundToInt()
             val decodedDelta = decodedEnd - begin
-            if (decodedEnd in 100..200000 && decodedDelta >= MiscellaneousParamPacket.MIN_EVAP_AIRFLOW_DELTA) {
+            if (decodedEnd in EVAP_MIN..EVAP_MAX && decodedDelta >= MiscellaneousParamPacket.MIN_EVAP_AIRFLOW_DELTA) {
                 raw to decodedSlope
             } else {
                 null
@@ -98,4 +98,7 @@ internal object MiscellaneousNumericMapping {
         packet.evapAfbegin = begin
         packet.evapAfslope = decodedSlope
     }
+
+    private const val EVAP_MIN = 100
+    private const val EVAP_MAX = 2_000_000
 }

@@ -44,9 +44,11 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.foundation.BorderStroke
+import androidx.compose.foundation.background
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Rect
 import androidx.compose.ui.graphics.graphicsLayer
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.input.pointer.pointerInput
@@ -60,11 +62,12 @@ import androidx.compose.ui.layout.onGloballyPositioned
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.stateDescription
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.zIndex
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.compose.ui.graphics.toArgb
 import androidx.compose.foundation.Canvas
-import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.height
 import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.graphics.drawscope.drawIntoCanvas
@@ -77,6 +80,7 @@ import org.secu3.android.ui.sensors.models.GaugeType
 import org.secu3.android.ui.sensors.models.IndicatorItem
 import org.secu3.android.ui.sensors.models.IndicatorType
 import org.secu3.android.ui.sensors.SensorsViewModel.ChoiceRequest
+import org.secu3.android.ui.compose.LocalSecuPalette
 import java.util.Locale
 import kotlin.math.roundToInt
 
@@ -91,6 +95,7 @@ internal fun SensorsScreen(
     onUpdateGauge: (GaugeState) -> Unit,
     onReorderGauges: (List<GaugeState>) -> Unit, onReorderIndicators: (List<IndicatorState>) -> Unit,
     onReorderingChanged: (Boolean) -> Unit = {},
+    dataAvailable: Boolean = true,
 ) {
     var localGauges by remember { mutableStateOf(gauges) }
     var localIndicators by remember { mutableStateOf(indicators) }
@@ -205,10 +210,12 @@ internal fun SensorsScreen(
         indicatorChoices?.let { request -> indicatorDialog = request.choices; onIndicatorChoicesConsumed(request.requestId) }
     }
 
-    Box(Modifier.fillMaxSize()) {
+    BoxWithConstraints(Modifier.fillMaxSize().background(MaterialTheme.colorScheme.background)) {
+        val fontScale = androidx.compose.ui.platform.LocalDensity.current.fontScale
+        val renderColumns = minOf(columns.coerceAtLeast(1), (maxWidth / (110.dp * fontScale)).toInt().coerceAtLeast(1))
         Column(Modifier.fillMaxSize().verticalScroll(rememberScrollState(), enabled = !dragging).padding(bottom = 88.dp)) {
             Column(Modifier.fillMaxWidth().zIndex(if (activeDragKey?.startsWith("g:") == true) 2f else 0f).testTag("gauges-grid")) {
-                localGauges.chunked(columns.coerceAtLeast(1)).forEach { rowItems ->
+                localGauges.chunked(renderColumns).forEach { rowItems ->
                     Row(Modifier.fillMaxWidth().zIndex(if (rowItems.any { activeDragKey == "g:${it.state.gaugeType.name}" }) 1f else 0f)) {
                         rowItems.forEach { item ->
                             val dragKey = "g:${item.state.gaugeType.name}"
@@ -225,7 +232,7 @@ internal fun SensorsScreen(
                             }
                             key(dragKey) { Box(Modifier.weight(1f).zIndex(if (isDragged) 2f else 0f)) {
                                 GaugeCard(
-                                    item,
+                                    if (dataAvailable) item else item.copy(value = "—"),
                                     Modifier.fillMaxWidth().padding(8.dp)
                                         .onGloballyPositioned { coordinates ->
                                             val bounds = coordinates.boundsInRoot()
@@ -290,12 +297,12 @@ internal fun SensorsScreen(
                                 }
                             } }
                         }
-                        repeat(columns.coerceAtLeast(1) - rowItems.size) { Spacer(Modifier.weight(1f)) }
+                        repeat(renderColumns - rowItems.size) { Spacer(Modifier.weight(1f)) }
                     }
                 }
             }
             Column(Modifier.fillMaxWidth().zIndex(if (activeDragKey?.startsWith("i:") == true) 2f else 0f).testTag("indicators-grid")) {
-                localIndicators.chunked(columns.coerceAtLeast(1)).forEach { rowItems ->
+                localIndicators.chunked(renderColumns).forEach { rowItems ->
                     Row(Modifier.fillMaxWidth().zIndex(if (rowItems.any { activeDragKey == "i:${it.state.indicatorType.name}" }) 1f else 0f)) {
                         rowItems.forEach { item ->
                             val dragKey = "i:${item.state.indicatorType.name}"
@@ -357,6 +364,7 @@ internal fun SensorsScreen(
                                             },
                                         ),
                                     onMenu = { menuFor = dragKey },
+                                    dataAvailable = dataAvailable,
                                 )
                                 DropdownMenu(expanded = menuFor == dragKey, onDismissRequest = { menuFor = null }, shape = DropdownShape) {
                                     DropdownMenuItem(
@@ -367,17 +375,17 @@ internal fun SensorsScreen(
                                 }
                             } }
                         }
-                        repeat(columns.coerceAtLeast(1) - rowItems.size) { Spacer(Modifier.weight(1f)) }
+                        repeat(renderColumns - rowItems.size) { Spacer(Modifier.weight(1f)) }
                     }
                 }
             }
         }
         Column(Modifier.align(Alignment.BottomEnd).padding(16.dp), horizontalAlignment = Alignment.End) {
             if (fabExpanded) {
-                SmallFloatingActionButton(onClick = { fabExpanded = false; onAddIndicatorRequest() }, modifier = Modifier.padding(bottom = 8.dp).testTag("sensors-add-indicator"), containerColor = colorResource(R.color.gauge_blue), contentColor = Color.White) { Icon(painterResource(R.drawable.ic_indicator), stringResource(R.string.sensors_add_indicator)) }
-                SmallFloatingActionButton(onClick = { fabExpanded = false; onAddGaugeRequest() }, modifier = Modifier.padding(bottom = 8.dp).testTag("sensors-add-gauge"), containerColor = colorResource(R.color.gauge_blue), contentColor = Color.White) { Icon(painterResource(R.drawable.ic_gauge), stringResource(R.string.sensors_add_gauge)) }
+                SmallFloatingActionButton(onClick = { fabExpanded = false; onAddIndicatorRequest() }, modifier = Modifier.padding(bottom = 8.dp).testTag("sensors-add-indicator"), containerColor = MaterialTheme.colorScheme.primary, contentColor = MaterialTheme.colorScheme.onPrimary) { Icon(painterResource(R.drawable.ic_indicator), stringResource(R.string.sensors_add_indicator)) }
+                SmallFloatingActionButton(onClick = { fabExpanded = false; onAddGaugeRequest() }, modifier = Modifier.padding(bottom = 8.dp).testTag("sensors-add-gauge"), containerColor = MaterialTheme.colorScheme.primary, contentColor = MaterialTheme.colorScheme.onPrimary) { Icon(painterResource(R.drawable.ic_gauge), stringResource(R.string.sensors_add_gauge)) }
             }
-            FloatingActionButton(onClick = { fabExpanded = !fabExpanded }, modifier = Modifier.testTag("sensors-add"), containerColor = colorResource(R.color.colorPrimaryVariant), contentColor = Color.White) { Icon(Icons.Default.Add, stringResource(R.string.sensors_add)) }
+            FloatingActionButton(onClick = { fabExpanded = !fabExpanded }, modifier = Modifier.testTag("sensors-add"), containerColor = MaterialTheme.colorScheme.primary, contentColor = MaterialTheme.colorScheme.onPrimary) { Icon(Icons.Default.Add, stringResource(R.string.sensors_add)) }
         }
     }
 
@@ -396,44 +404,81 @@ internal fun SensorsScreen(
 @Composable
 private fun GaugeCard(item: GaugeItem, modifier: Modifier, onMenu: () -> Unit) {
     val type = item.state.gaugeType
-    val value = item.value.toFloatOrNull() ?: 0f
-    val formattedValue = if (type.isInteger) value.toInt().toString() else String.format(Locale.US, "%.1f", value)
+    val value = item.value.toFloatOrNull()
+    val formattedValue = value?.let { if (type.isInteger) it.toInt().toString() else String.format(Locale.US, "%.1f", it) } ?: "—"
     val dialDescription = "${stringResource(type.title)}: $formattedValue ${stringResource(type.units)}"
+    val colors = MaterialTheme.colorScheme
     Card(
         modifier = modifier.fillMaxWidth().testTag("gauge-${type.name}"),
-        colors = CardDefaults.cardColors(containerColor = Color.White),
-        border = BorderStroke(1.dp, colorResource(R.color.grey)),
-        elevation = CardDefaults.cardElevation(defaultElevation = 2.dp),
+        colors = CardDefaults.cardColors(containerColor = colors.surface),
+        shape = RoundedCornerShape(20.dp),
+        border = BorderStroke(1.dp, colors.outlineVariant),
+        elevation = CardDefaults.cardElevation(defaultElevation = 0.dp),
         onClick = onMenu,
     ) {
-        Column(Modifier.padding(8.dp), horizontalAlignment = Alignment.CenterHorizontally) {
-            Text(stringResource(type.title), fontSize = 18.sp)
+        Column(Modifier.fillMaxWidth().padding(16.dp), horizontalAlignment = Alignment.CenterHorizontally) {
             if (item.state.isNumericView) {
-                Spacer(Modifier.height(32.dp)); Text(item.value, fontSize = 36.sp); Text(stringResource(type.units), fontSize = 18.sp); Spacer(Modifier.height(32.dp))
+                val fontScale = androidx.compose.ui.platform.LocalDensity.current.fontScale
+                BoxWithConstraints(Modifier.fillMaxWidth()) {
+                    val title = stringResource(type.title)
+                    val unit = stringResource(type.units)
+                    if (maxWidth >= 180.dp * fontScale) {
+                        Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
+                            Text(
+                                title,
+                                modifier = Modifier.weight(1f).padding(end = 12.dp),
+                                color = colors.onSurfaceVariant,
+                                style = MaterialTheme.typography.bodyMedium,
+                            )
+                            Column(horizontalAlignment = Alignment.End) {
+                                Text(formattedValue, fontSize = 22.sp, color = colors.onSurface, fontWeight = androidx.compose.ui.text.font.FontWeight.SemiBold, style = MaterialTheme.typography.titleLarge.copy(fontFeatureSettings = "tnum"))
+                                Text(unit, fontSize = 12.sp, color = colors.onSurfaceVariant)
+                            }
+                        }
+                    } else {
+                        Column(Modifier.fillMaxWidth()) {
+                            Text(title, color = colors.onSurfaceVariant, style = MaterialTheme.typography.bodyMedium)
+                            Column(Modifier.fillMaxWidth(), horizontalAlignment = Alignment.End) {
+                                Text(formattedValue, fontSize = 22.sp, color = colors.onSurface, fontWeight = androidx.compose.ui.text.font.FontWeight.SemiBold, style = MaterialTheme.typography.titleLarge.copy(fontFeatureSettings = "tnum"))
+                                Text(unit, fontSize = 12.sp, color = colors.onSurfaceVariant)
+                            }
+                        }
+                    }
+                }
             } else {
-                    GaugeDial(type, item.value, stringResource(type.units), Modifier.fillMaxWidth().testTag("dial-${type.name}").semantics { contentDescription = dialDescription })
+                Text(
+                    stringResource(type.title),
+                    modifier = Modifier.fillMaxWidth(),
+                    fontSize = 18.sp,
+                    color = colors.onSurface,
+                    textAlign = TextAlign.Center,
+                    style = MaterialTheme.typography.titleMedium,
+                )
+                Spacer(Modifier.height(12.dp))
+                GaugeDial(type, value, stringResource(type.units), Modifier.fillMaxWidth().testTag("dial-${type.name}").semantics { contentDescription = dialDescription })
             }
         }
     }
 }
 
 @Composable
-private fun GaugeDial(type: GaugeType, valueText: String, unit: String, modifier: Modifier = Modifier) {
+private fun GaugeDial(type: GaugeType, value: Float?, unit: String, modifier: Modifier = Modifier) {
     val context = LocalContext.current
     val resources = androidx.compose.ui.platform.LocalResources.current
     val sections = remember(type, resources, context.theme) { type.sections.map { it.start to (it.end to Color(resources.getColor(it.color, context.theme))) } }
-    val value = valueText.toFloatOrNull() ?: 0f
-    val normalized = ((value - type.minValue) / (type.maxValue - type.minValue)).coerceIn(0f, 1f)
-    val label = if (type.isInteger) value.toInt().toString() else String.format(Locale.US, "%.1f", value)
-    BoxWithConstraints(modifier) {
-    Canvas(Modifier.fillMaxWidth().height(maxWidth + 24.dp)) {
+    val colors = MaterialTheme.colorScheme
+    val normalized = value?.let { ((it - type.minValue) / (type.maxValue - type.minValue)).coerceIn(0f, 1f) } ?: 0f
+    val label = value?.let { if (type.isInteger) it.toInt().toString() else String.format(Locale.US, "%.1f", it) } ?: "—"
+    Box(modifier) {
+    Column(horizontalAlignment = Alignment.CenterHorizontally) {
+    Canvas(Modifier.fillMaxWidth().aspectRatio(1f)) {
         val cx = size.width / 2f
         val dialSize = size.width
         val cy = dialSize / 2f
         val radius = dialSize / 2f - 5.dp.toPx()
         val stroke = 10.dp.toPx()
         val rect = androidx.compose.ui.geometry.Rect(cx - radius, cy - radius, cx + radius, cy + radius)
-        drawArc(Color.LightGray.copy(alpha = .35f), 135f, 270f, false, rect.topLeft, rect.size, style = Stroke(stroke, cap = androidx.compose.ui.graphics.StrokeCap.Butt))
+        drawArc(colors.surfaceVariant, 135f, 270f, false, rect.topLeft, rect.size, style = Stroke(stroke, cap = androidx.compose.ui.graphics.StrokeCap.Butt))
         sections.forEach { (start, segment) ->
             val (end, color) = segment
             drawArc(color, 135f + 270f * start, 270f * (end - start), false, rect.topLeft, rect.size, style = Stroke(stroke, cap = androidx.compose.ui.graphics.StrokeCap.Butt))
@@ -442,14 +487,14 @@ private fun GaugeDial(type: GaugeType, valueText: String, unit: String, modifier
             val markAngle = Math.toRadians((135f + 270f * index / 9f).toDouble())
             val markOuter = radius + stroke / 2f
             val markInner = markOuter - 9.dp.toPx()
-            drawLine(Color.White, Offset(cx + kotlin.math.cos(markAngle).toFloat() * markOuter, cy + kotlin.math.sin(markAngle).toFloat() * markOuter), Offset(cx + kotlin.math.cos(markAngle).toFloat() * markInner, cy + kotlin.math.sin(markAngle).toFloat() * markInner), 3.dp.toPx())
+            drawLine(colors.onSurfaceVariant, Offset(cx + kotlin.math.cos(markAngle).toFloat() * markOuter, cy + kotlin.math.sin(markAngle).toFloat() * markOuter), Offset(cx + kotlin.math.cos(markAngle).toFloat() * markInner, cy + kotlin.math.sin(markAngle).toFloat() * markInner), 3.dp.toPx())
         }
         for (index in 0 until type.tickCount) {
             val fraction = if (type.tickCount <= 1) 0f else index.toFloat() / (type.tickCount - 1)
             val tickAngle = Math.toRadians((135f + 270f * fraction).toDouble())
             val outer = radius - stroke * .05f
             val inner = outer - 3.dp.toPx()
-            drawLine(Color.DarkGray, Offset(cx + kotlin.math.cos(tickAngle).toFloat() * inner, cy + kotlin.math.sin(tickAngle).toFloat() * inner), Offset(cx + kotlin.math.cos(tickAngle).toFloat() * outer, cy + kotlin.math.sin(tickAngle).toFloat() * outer), 1.dp.toPx())
+            drawLine(colors.onSurfaceVariant.copy(alpha = .72f), Offset(cx + kotlin.math.cos(tickAngle).toFloat() * inner, cy + kotlin.math.sin(tickAngle).toFloat() * inner), Offset(cx + kotlin.math.cos(tickAngle).toFloat() * outer, cy + kotlin.math.sin(tickAngle).toFloat() * outer), 1.dp.toPx())
         }
         val angle = Math.toRadians((135f + 270f * normalized).toDouble())
         val direction = Offset(kotlin.math.cos(angle).toFloat(), kotlin.math.sin(angle).toFloat())
@@ -463,13 +508,14 @@ private fun GaugeDial(type: GaugeType, valueText: String, unit: String, modifier
             quadraticTo(base.x, base.y, base.x - perpendicular.x * halfBase, base.y - perpendicular.y * halfBase)
             close()
         }
-        drawPath(needlePath, Color(0xFF2196F3))
-        drawCircle(Color(0xFF444444), 10.dp.toPx(), Offset(cx, cy))
+        if (value != null) {
+            drawPath(needlePath, colors.primary)
+            drawCircle(colors.onSurfaceVariant, 10.dp.toPx(), Offset(cx, cy))
+        }
         drawIntoCanvas { canvas ->
             val tickCount = type.tickCount
-            val baseTickSize = 10.dp.toPx()
-            val readableTickSize = 8.dp.toPx()
-            val tickPaint = NativePaint(NativePaint.ANTI_ALIAS_FLAG).apply { color = android.graphics.Color.BLACK; textAlign = NativePaint.Align.CENTER; textSize = baseTickSize }
+            val readableTickSize = 12.sp.toPx()
+            val tickPaint = NativePaint(NativePaint.ANTI_ALIAS_FLAG).apply { color = colors.onSurfaceVariant.toArgb(); textAlign = NativePaint.Align.CENTER; textSize = readableTickSize }
             val tickLabels = (0 until tickCount).map { index ->
                 val fraction = if (tickCount <= 1) 0f else index.toFloat() / (tickCount - 1)
                 formatGaugeTickLabel(type.minValue + (type.maxValue - type.minValue) * fraction)
@@ -480,35 +526,19 @@ private fun GaugeDial(type: GaugeType, valueText: String, unit: String, modifier
             val labelCapacity = (2..tickCount).lastOrNull { count ->
                 val halfStepAngle = Math.toRadians((135f / (count - 1)).toDouble())
                 tickLabelRadius * 2f * kotlin.math.sin(halfStepAngle).toFloat() >= largestReadableTickWidth + 18.dp.toPx()
-            } ?: minOf(5, tickCount)
+            } ?: minOf(2, tickCount)
             val selectedTickIndices = selectGaugeTickLabelIndices(tickCount, labelCapacity)
-            val largestSelectedTickWidth = selectedTickIndices.maxOfOrNull { tickPaint.measureText(tickLabels[it]) } ?: 0f
-            val selectedCount = selectedTickIndices.size
-            val selectedHalfStepAngle = Math.toRadians((135f / maxOf(1, selectedCount - 1)).toDouble())
-            val selectedLabelSpacing = if (selectedCount <= 1) size.width else tickLabelRadius * 2f * kotlin.math.sin(selectedHalfStepAngle).toFloat()
-            tickPaint.textSize = (baseTickSize * (selectedLabelSpacing / (largestSelectedTickWidth + 18.dp.toPx())).coerceAtMost(1f))
-                .coerceIn(readableTickSize, baseTickSize)
+            tickPaint.textSize = readableTickSize
             selectedTickIndices.forEach { index ->
                 val fraction = if (tickCount <= 1) 0f else index.toFloat() / (tickCount - 1)
                 val angle = Math.toRadians((135f + 270f * fraction).toDouble())
                 canvas.nativeCanvas.drawText(tickLabels[index], cx + kotlin.math.cos(angle).toFloat() * tickLabelRadius, cy + kotlin.math.sin(angle).toFloat() * tickLabelRadius + tickPaint.textSize * .35f, tickPaint)
             }
-            val paint = NativePaint(NativePaint.ANTI_ALIAS_FLAG).apply { color = android.graphics.Color.BLACK; textAlign = NativePaint.Align.LEFT; textSize = 18.dp.toPx() }
-            val unitPaint = NativePaint(NativePaint.ANTI_ALIAS_FLAG).apply { color = android.graphics.Color.BLACK; textSize = 15.dp.toPx(); textAlign = NativePaint.Align.LEFT }
-            val gap = 5.dp.toPx()
-            val maxGroupWidth = size.width - 16.dp.toPx()
-            val scale = (maxGroupWidth / (paint.measureText(label) + gap + unitPaint.measureText(unit))).coerceAtMost(1f)
-            paint.textSize *= scale
-            unitPaint.textSize *= scale
-            val scaledGap = gap * scale
-            paint.typeface = android.graphics.Typeface.DEFAULT
-            val valueWidth = paint.measureText(label)
-            val unitWidth = unitPaint.measureText(unit)
-            val left = cx - (valueWidth + scaledGap + unitWidth) / 2f
-            val baseline = size.height - 1.dp.toPx() - maxOf(paint.fontMetrics.descent, unitPaint.fontMetrics.descent)
-            canvas.nativeCanvas.drawText(label, left, baseline, paint)
-            canvas.nativeCanvas.drawText(unit, left + valueWidth + scaledGap, baseline, unitPaint)
         }
+    }
+        Spacer(Modifier.height(4.dp))
+        Text(label, color = colors.onSurface, style = MaterialTheme.typography.titleLarge, fontSize = 24.sp, maxLines = 1)
+        Text(unit, color = colors.onSurfaceVariant, style = MaterialTheme.typography.bodyMedium, fontSize = 14.sp)
     }
     }
 }
@@ -525,16 +555,31 @@ internal fun selectGaugeTickLabelIndices(tickCount: Int, labelCount: Int): List<
 }
 
 @Composable
-private fun IndicatorCard(item: IndicatorItem, modifier: Modifier, onMenu: () -> Unit) {
-    val accessibilityState = stringResource(if (item.isActive) R.string.sensors_status_accessibility_on else R.string.sensors_status_accessibility_off)
+private fun IndicatorCard(item: IndicatorItem, modifier: Modifier, onMenu: () -> Unit, dataAvailable: Boolean) {
+    val accessibilityState = stringResource(when {
+        !dataAvailable -> R.string.sensors_status_accessibility_unavailable
+        item.isActive -> R.string.sensors_status_accessibility_on
+        else -> R.string.sensors_status_accessibility_off
+    })
+    val palette = LocalSecuPalette.current
+    val colors = MaterialTheme.colorScheme
+    val active = dataAvailable && item.isActive
+    val cardColor = when {
+        !dataAvailable -> colors.surfaceVariant
+        active -> palette.successContainer
+        else -> colors.surface
+    }
+    val labelColor = when {
+        !dataAvailable -> colors.onSurfaceVariant
+        active -> palette.onSuccessContainer
+        else -> colors.onSurface
+    }
     Card(modifier = modifier.fillMaxWidth().testTag("indicator-${item.state.indicatorType.name}").semantics {
         stateDescription = accessibilityState
-    }, colors = CardDefaults.cardColors(
-        containerColor = if (item.isActive) Color.Green else Color.White,
-    ), border = BorderStroke(1.dp, colorResource(R.color.grey)),
-        elevation = CardDefaults.cardElevation(defaultElevation = 2.dp), onClick = onMenu) {
-        Box(Modifier.fillMaxWidth().heightIn(min = 72.dp).padding(16.dp), contentAlignment = Alignment.Center) {
-            Text(stringResource(item.state.indicatorType.title), fontSize = 18.sp)
+    }, colors = CardDefaults.cardColors(containerColor = cardColor), shape = RoundedCornerShape(20.dp), border = BorderStroke(1.dp, colors.outlineVariant),
+        elevation = CardDefaults.cardElevation(defaultElevation = 0.dp), onClick = onMenu) {
+        Column(Modifier.fillMaxWidth().heightIn(min = 72.dp).padding(16.dp), horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.Center) {
+            Text(stringResource(item.state.indicatorType.title), fontSize = 16.sp, color = labelColor, style = MaterialTheme.typography.titleSmall)
         }
     }
 }

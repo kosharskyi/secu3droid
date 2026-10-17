@@ -17,7 +17,7 @@ import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.widthIn
-import androidx.compose.material3.Surface
+import androidx.compose.foundation.layout.Box
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -82,10 +82,11 @@ internal fun SettingsRoute(
             onSelectDialog = viewModel::showDialog,
             onDismissDialog = viewModel::dismissDialog,
             onShowAbout = { viewModel.showDialog(SettingsDialog.About) },
+            onSelectAppearance = viewModel::setAppearanceMode,
         )
         if (dialog == SettingsDialog.About) {
             Dialog(onDismissRequest = viewModel::dismissDialog) {
-                Surface(Modifier.fillMaxWidth().widthIn(max = 560.dp).testTag("settings-about-dialog")) {
+                Box(Modifier.fillMaxWidth().widthIn(max = 560.dp).testTag("settings-about-dialog")) {
                     AboutContent(open = { url -> activity.startActivity(Intent(Intent.ACTION_VIEW, url.toUri())) })
                 }
             }

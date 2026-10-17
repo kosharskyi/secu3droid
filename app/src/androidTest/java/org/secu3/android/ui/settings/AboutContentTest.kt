@@ -49,10 +49,10 @@ class AboutContentTest {
         compose.setContent {
             SecuComposeTheme { AboutContent(open = {}) }
         }
-        compose.onNodeWithText(context.getString(R.string.about_title)).assertIsDisplayed()
-        compose.onNodeWithText("${context.getString(R.string.about_version)} ${BuildConfig.VERSION_NAME}").assertIsDisplayed()
-        compose.onNodeWithText(context.getString(R.string.about_license), substring = true).assertIsDisplayed()
-        compose.onNodeWithText(context.getString(R.string.about_sources), substring = true).assertIsDisplayed()
+        compose.onNodeWithText(context.getString(R.string.about_title)).performScrollTo().assertIsDisplayed()
+        compose.onNodeWithText("${context.getString(R.string.about_version)} ${BuildConfig.VERSION_NAME}").performScrollTo().assertIsDisplayed()
+        compose.onNodeWithText(context.getString(R.string.about_license), substring = true).performScrollTo().assertIsDisplayed()
+        compose.onNodeWithText(context.getString(R.string.about_sources), substring = true).performScrollTo().assertIsDisplayed()
     }
 
     @Test fun sourceRepositoryLinkInvokesOpenCallback() {

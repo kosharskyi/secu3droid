@@ -24,26 +24,25 @@
  */
 package org.secu3.android.ui.parameters.pages.compose
 
-import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.rememberScrollState
-import androidx.compose.foundation.verticalScroll
-import androidx.compose.material3.Card
-import androidx.compose.material3.CardDefaults
+import androidx.compose.runtime.Composable
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
-import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import org.secu3.android.ui.parameters.compose.ParameterLoadingIndicator
+import org.secu3.android.ui.parameters.*
 import org.secu3.android.R
 import org.secu3.android.models.packets.out.params.AdcCorrectionsParamPacket
 import org.secu3.android.ui.parameters.compose.ParameterSwitchRow
 import org.secu3.android.ui.parameters.compose.ParameterValueRow
+import org.secu3.android.ui.parameters.compose.ParameterPage
+import org.secu3.android.ui.parameters.compose.ParameterSection
 
 enum class AdcNumber(val title: String, val precision: Int, val step: Float) {
     MAP_FACTOR("MAP factor", 3, .001f), MAP_CORRECTION("MAP correction", 3, .0025f),
@@ -59,8 +58,9 @@ enum class AdcNumber(val title: String, val precision: Int, val step: Float) {
     ADD_I7_FACTOR("ADD_I7 factor", 3, .001f), ADD_I7_CORRECTION("ADD_I7 correction", 4, .0025f),
     ADD_I8_FACTOR("ADD_I8 factor", 3, .001f), ADD_I8_CORRECTION("ADD_I8 correction", 4, .0025f);
 
-    val min = -2f
-    val max = 2f
+    val isFactor = name.endsWith("FACTOR")
+    val min = if (isFactor) 0f else -2f
+    val max = if (isFactor) 3.999f else 1.999f
     val units: String get() = if (name.endsWith("CORRECTION")) "V" else ""
 }
 
@@ -92,19 +92,32 @@ fun AdcCorrectionsParamPacket.adcValue(number: AdcNumber): Float = when (number)
 }
 
 fun AdcCorrectionsParamPacket.setAdcValue(number: AdcNumber, value: Float) {
+    markChannelEdited(number.ordinal / 2)
     when (number) {
-        AdcNumber.MAP_FACTOR -> mapAdcFactor = value; AdcNumber.MAP_CORRECTION -> mapAdcCorrection = value
-        AdcNumber.VOLTAGE_FACTOR -> ubatAdcFactor = value; AdcNumber.VOLTAGE_CORRECTION -> ubatAdcCorrection = value
-        AdcNumber.CTS_FACTOR -> tempAdcFactor = value; AdcNumber.CTS_CORRECTION -> tempAdcCorrection = value
-        AdcNumber.TPS_FACTOR -> tpsAdcFactor = value; AdcNumber.TPS_CORRECTION -> tpsAdcCorrection = value
-        AdcNumber.ADD_I1_FACTOR -> ai1AdcFactor = value; AdcNumber.ADD_I1_CORRECTION -> ai1AdcCorrection = value
-        AdcNumber.ADD_I2_FACTOR -> ai2AdcFactor = value; AdcNumber.ADD_I2_CORRECTION -> ai2AdcCorrection = value
-        AdcNumber.ADD_I3_FACTOR -> ai3AdcFactor = value; AdcNumber.ADD_I3_CORRECTION -> ai3AdcCorrection = value
-        AdcNumber.ADD_I4_FACTOR -> ai4AdcFactor = value; AdcNumber.ADD_I4_CORRECTION -> ai4AdcCorrection = value
-        AdcNumber.ADD_I5_FACTOR -> ai5AdcFactor = value; AdcNumber.ADD_I5_CORRECTION -> ai5AdcCorrection = value
-        AdcNumber.ADD_I6_FACTOR -> ai6AdcFactor = value; AdcNumber.ADD_I6_CORRECTION -> ai6AdcCorrection = value
-        AdcNumber.ADD_I7_FACTOR -> ai7AdcFactor = value; AdcNumber.ADD_I7_CORRECTION -> ai7AdcCorrection = value
-        AdcNumber.ADD_I8_FACTOR -> ai8AdcFactor = value; AdcNumber.ADD_I8_CORRECTION -> ai8AdcCorrection = value
+        AdcNumber.MAP_FACTOR -> mapAdcFactor = value
+        AdcNumber.MAP_CORRECTION -> { mapAdcCorrection = value }
+        AdcNumber.VOLTAGE_FACTOR -> ubatAdcFactor = value
+        AdcNumber.VOLTAGE_CORRECTION -> { ubatAdcCorrection = value }
+        AdcNumber.CTS_FACTOR -> tempAdcFactor = value
+        AdcNumber.CTS_CORRECTION -> { tempAdcCorrection = value }
+        AdcNumber.TPS_FACTOR -> tpsAdcFactor = value
+        AdcNumber.TPS_CORRECTION -> { tpsAdcCorrection = value }
+        AdcNumber.ADD_I1_FACTOR -> ai1AdcFactor = value
+        AdcNumber.ADD_I1_CORRECTION -> { ai1AdcCorrection = value }
+        AdcNumber.ADD_I2_FACTOR -> ai2AdcFactor = value
+        AdcNumber.ADD_I2_CORRECTION -> { ai2AdcCorrection = value }
+        AdcNumber.ADD_I3_FACTOR -> ai3AdcFactor = value
+        AdcNumber.ADD_I3_CORRECTION -> { ai3AdcCorrection = value }
+        AdcNumber.ADD_I4_FACTOR -> ai4AdcFactor = value
+        AdcNumber.ADD_I4_CORRECTION -> { ai4AdcCorrection = value }
+        AdcNumber.ADD_I5_FACTOR -> ai5AdcFactor = value
+        AdcNumber.ADD_I5_CORRECTION -> { ai5AdcCorrection = value }
+        AdcNumber.ADD_I6_FACTOR -> ai6AdcFactor = value
+        AdcNumber.ADD_I6_CORRECTION -> { ai6AdcCorrection = value }
+        AdcNumber.ADD_I7_FACTOR -> ai7AdcFactor = value
+        AdcNumber.ADD_I7_CORRECTION -> { ai7AdcCorrection = value }
+        AdcNumber.ADD_I8_FACTOR -> ai8AdcFactor = value
+        AdcNumber.ADD_I8_CORRECTION -> { ai8AdcCorrection = value }
     }
 }
 
@@ -118,21 +131,21 @@ fun AdcErrorsCorrectionsScreen(
     state: AdcCorrectionsUiState,
     onEdit: (AdcNumber) -> Unit,
     onCompModeChanged: (Boolean) -> Unit,
+    capabilities: ParameterCapabilities = ParameterCapabilities.All,
 ) {
+    val pageScrollState = rememberScrollState()
     when (state) {
         AdcCorrectionsUiState.Loading -> ParameterLoadingIndicator("adc_loading")
-        is AdcCorrectionsUiState.Data -> Column(
-            Modifier.fillMaxWidth().verticalScroll(rememberScrollState()).padding(16.dp),
-            verticalArrangement = Arrangement.spacedBy(12.dp),
-        ) {
+        is AdcCorrectionsUiState.Data -> ParameterPage(scrollState = pageScrollState) {
             val groups = listOf("MAP", "Voltage", "CTS", "TPS", "ADD_I1", "ADD_I2", "ADD_I3", "ADD_I4", "ADD_I5", "ADD_I6", "ADD_I7", "ADD_I8")
-            groups.forEachIndexed { index, group ->
-                Card(
-                    modifier = Modifier.fillMaxWidth().testTag("adc_group_$index"),
-                    colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant),
-                ) {
-                    Column(Modifier.padding(horizontal = 16.dp, vertical = 8.dp)) {
-                        Text(group, style = MaterialTheme.typography.titleMedium, modifier = Modifier.padding(bottom = 4.dp))
+            ParameterSection {
+                groups.forEachIndexed { index, group ->
+                    Column(Modifier.fillMaxWidth().testTag("adc_group_$index")) {
+                        Text(
+                            group,
+                            Modifier.fillMaxWidth().padding(horizontal = 14.dp, vertical = 11.dp),
+                            style = MaterialTheme.typography.titleSmall,
+                        )
                         val factor = AdcNumber.entries[index * 2]
                         val correction = AdcNumber.entries[index * 2 + 1]
                         listOf(factor, correction).forEach { number ->
@@ -140,19 +153,20 @@ fun AdcErrorsCorrectionsScreen(
                                 title = number.title,
                                 units = if (number.units.isEmpty()) "" else stringResource(R.string.units_volts),
                                 value = state.values.value(number), precision = number.precision,
-                                testTag = "adc_${number.name.lowercase()}", onClick = { onEdit(number) },
+                                testTag = "adc_${number.name.lowercase()}",
+                                enabled = when {
+                                    number.name.startsWith("ADD_I4") -> capabilities.extraAnalogInputs
+                                    number.ordinal >= AdcNumber.ADD_I3_FACTOR.ordinal -> !capabilities.secu3T
+                                    else -> true
+                                }, onClick = { onEdit(number) },
                             )
                         }
                     }
                 }
-            }
-            Card(modifier = Modifier.fillMaxWidth(), colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant)) {
-                Column(Modifier.padding(horizontal = 16.dp, vertical = 8.dp)) {
-                    ParameterSwitchRow(
-                        stringResource(R.string.adc_cor_multiply_corr_and_koef_title), state.values.adcCompMode,
-                        "adc_comp_mode", onCompModeChanged,
-                    )
-                }
+                ParameterSwitchRow(
+                    stringResource(R.string.adc_cor_multiply_corr_and_koef_title), state.values.adcCompMode,
+                    "adc_comp_mode", onCompModeChanged,
+                )
             }
         }
     }

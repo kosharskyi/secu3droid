@@ -622,4 +622,8 @@
     <string name="sensors_add_gauge">Add gauge</string>
     <string name="sensors_add_indicator">Add indicator</string>
 
+    <string name="refresh">Refresh</string>
+    <string name="parameter_read_failed">Could not read parameters from the ECU.</string>
+    <string name="parameter_save_unconfirmed">Saving parameters was not confirmed by the ECU.</string>
+    <string name="retry">Retry</string>
 </resources>

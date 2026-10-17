@@ -68,6 +68,18 @@ class FunctionsStateHolder(
         )
     }
 
+    val engineDisplacement: Float?
+        get() = packet?.takeIf { it.ckpsEngineCyl > 0 }?.let { it.injCylDisp * it.ckpsEngineCyl }
+
+    fun updateEngineDisplacement(value: Float) {
+        val current = packet ?: return
+        if (!value.isFinite() || value !in .01f..8f || current.ckpsEngineCyl <= 0) return
+        current.injCylDisp = value / current.ckpsEngineCyl
+        current.mafload_const = (((101.35 * 64 * 128 * 120) / (64 * .0012041)) /
+            (current.injCylDisp.toDouble() * 1000 * current.ckpsEngineCyl)).toFloat()
+        sendPacket(current)
+    }
+
     fun updateValue(number: FunctionsNumber, value: Float) {
         val currentPacket = packet ?: return
         val currentState = state as? FunctionsUiState.Data ?: return
@@ -88,7 +100,7 @@ class FunctionsStateHolder(
         val currentPacket = packet ?: return
         val currentState = state as? FunctionsUiState.Data ?: return
         if (applyFunctionsChoice(currentPacket, choice, index, names)) {
-            state = currentState.copy(choices = currentState.choices.withSelection(choice, index))
+            state = currentState.copy(values = FunctionsValues.from(currentPacket), choices = currentState.choices.withSelection(choice, index))
             sendPacket(currentPacket)
         }
     }

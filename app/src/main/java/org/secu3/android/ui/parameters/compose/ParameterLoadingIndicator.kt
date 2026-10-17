@@ -25,14 +25,22 @@
 package org.secu3.android.ui.parameters.compose
 
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.testTag
+import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
+import org.secu3.android.R
 
 /** A consistent loading state for parameter tabs, centered in the available tab viewport. */
 @Composable
@@ -42,5 +50,19 @@ fun ParameterLoadingIndicator(testTag: String) {
         contentAlignment = Alignment.Center,
     ) {
         CircularProgressIndicator(Modifier.size(40.dp).testTag(testTag))
+    }
+}
+
+@Composable
+internal fun ParameterReadError(onRetry: () -> Unit) {
+    Column(
+        Modifier.fillMaxSize().padding(24.dp).testTag("parameter-read-error"),
+        horizontalAlignment = Alignment.CenterHorizontally,
+        verticalArrangement = Arrangement.Center,
+    ) {
+        Text(stringResource(R.string.parameter_read_failed), textAlign = TextAlign.Center)
+        TextButton(onClick = onRetry, modifier = Modifier.testTag("parameter-read-retry")) {
+            Text(stringResource(R.string.retry))
+        }
     }
 }

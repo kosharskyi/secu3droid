@@ -23,6 +23,7 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import org.secu3.android.R
 import org.secu3.android.utils.getDefaultSharedPreferences
+import org.secu3.android.utils.AppearanceMode
 
 @HiltViewModel
 class SettingsViewModel @Inject constructor(
@@ -61,6 +62,11 @@ class SettingsViewModel @Inject constructor(
         preferences.edit { putString(context.getString(R.string.pref_log_export_directory_key), uri) }
     }
 
+    fun setAppearanceMode(mode: AppearanceMode) {
+        preferences.edit { putString(context.getString(R.string.pref_appearance_mode_key), mode.preferenceValue) }
+        dismissDialog()
+    }
+
     fun showDialog(dialog: SettingsDialog?) {
         _dialog.value = dialog
     }
@@ -87,6 +93,14 @@ class SettingsViewModel @Inject constructor(
                 ?: context.getString(R.string.defaultConnectionRetries),
             keepScreenOn = preferences.getBoolean(context.getString(R.string.pref_keep_screen_key), false),
             wakeLock = preferences.getBoolean(context.getString(R.string.pref_wakelock_key), false),
+            appearanceMode = AppearanceMode.fromPreference(
+                preferences.getString(context.getString(R.string.pref_appearance_mode_key), null)
+            ).let { mode ->
+                if (preferences.contains(context.getString(R.string.pref_appearance_mode_key))) mode
+                else if (preferences.contains(context.getString(R.string.pref_night_mode_key))) {
+                    if (preferences.getBoolean(context.getString(R.string.pref_night_mode_key), false)) AppearanceMode.Dark else AppearanceMode.Light
+                } else AppearanceMode.System
+            },
         )
     }
 

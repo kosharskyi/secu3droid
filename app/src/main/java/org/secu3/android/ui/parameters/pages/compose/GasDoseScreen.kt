@@ -24,7 +24,6 @@
  */
 package org.secu3.android.ui.parameters.pages.compose
 
-import org.secu3.android.ui.compose.DropdownShape
 
 import androidx.annotation.StringRes
 import androidx.compose.foundation.layout.*
@@ -51,8 +50,14 @@ import kotlinx.coroutines.launch
 import org.secu3.android.R
 import org.secu3.android.models.packets.out.params.GasDoseParamPacket
 import org.secu3.android.ui.parameters.compose.ParameterLoadingIndicator
+import org.secu3.android.ui.parameters.compose.ParameterPage
+import org.secu3.android.ui.parameters.compose.ParameterSection
+import org.secu3.android.ui.parameters.compose.ParameterSelectionRow
+import org.secu3.android.ui.parameters.compose.ParameterTextValueRow
 import org.secu3.android.ui.parameters.compose.ParameterSwitchRow
 import org.secu3.android.ui.parameters.compose.ParameterValueRow
+import org.secu3.android.ui.parameters.dialogs.ParameterChoice
+import org.secu3.android.ui.parameters.dialogs.ParameterChoiceDialog
 
 private val gasDoseFrequencies = listOf("300", "150", "100", "75")
 
@@ -89,6 +94,7 @@ fun applyGasDoseNumber(p: GasDoseParamPacket, n: GasDoseNumber, value: Float) {
 
 @Composable
 fun GasDoseScreen(values: GasDoseValues?, firmwareAvailable: Boolean, onEdit: (GasDoseNumber) -> Unit, onFrequency: (Int) -> Unit, onMaximumFrequency: (Boolean) -> Unit, onManualStep: (Int) -> Unit, onManualRelease: () -> Unit, onManualCancel: () -> Unit, onTest: () -> Unit, onManualFlush: () -> Unit = {}, isActive: Boolean = true) {
+    val pageScrollState = rememberScrollState()
     if (!firmwareAvailable) {
         Box(Modifier.fillMaxSize().testTag("gas_dose_unavailable"), contentAlignment = androidx.compose.ui.Alignment.Center) {
             Text(stringResource(R.string.gas_dose_unavailable), modifier = Modifier.padding(24.dp))
@@ -97,39 +103,39 @@ fun GasDoseScreen(values: GasDoseValues?, firmwareAvailable: Boolean, onEdit: (G
     }
     if (values == null) { ParameterLoadingIndicator("gas_dose_loading"); return }
     androidx.compose.runtime.DisposableEffect(isActive) { if (!isActive) onManualCancel(); onDispose(onManualCancel) }
-    Column(Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(16.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
-        Text(stringResource(R.string.params_tab_gas_dose_title), style = MaterialTheme.typography.titleMedium)
+    ParameterPage(scrollState = pageScrollState) {
+        ParameterSection {
         NumberRow(GasDoseNumber.STEPS, values, onEdit)
-        Row(Modifier.fillMaxWidth(), verticalAlignment = androidx.compose.ui.Alignment.CenterVertically) {
+        Row(Modifier.fillMaxWidth().heightIn(min = 66.dp).padding(horizontal = 14.dp, vertical = 9.dp), verticalAlignment = androidx.compose.ui.Alignment.CenterVertically) {
             Row(horizontalArrangement = Arrangement.spacedBy(4.dp)) {
                 ManualHoldButton("gas_dose_manual_dec", -1, stringResource(R.string.gas_dose_manual_decrease), "‹", onManualStep, onManualRelease, onManualCancel, onManualFlush, true, isActive)
                 ManualHoldButton("gas_dose_manual_inc", 1, stringResource(R.string.gas_dose_manual_increase), "›", onManualStep, onManualRelease, onManualCancel, onManualFlush, false, isActive)
             }
             Spacer(Modifier.weight(1f))
-            Button(onClick = onTest, modifier = Modifier.testTag("gas_dose_test"), colors = ButtonDefaults.buttonColors(containerColor = if (values.testing) MaterialTheme.colorScheme.error else MaterialTheme.colorScheme.primary, contentColor = androidx.compose.ui.graphics.Color.White)) {
-                Text(stringResource(if (values.testing) R.string.choke_test_active else R.string.test), color = androidx.compose.ui.graphics.Color.White)
+            Button(onClick = onTest, modifier = Modifier.testTag("gas_dose_test"), colors = ButtonDefaults.buttonColors(containerColor = if (values.testing) MaterialTheme.colorScheme.error else MaterialTheme.colorScheme.primary)) {
+                Text(stringResource(if (values.testing) R.string.choke_test_active else R.string.test))
             }
         }
-        HorizontalDivider()
+        HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant)
+        }
+        ParameterSection {
         NumberRow(GasDoseNumber.STOICHIOMETRIC_RATIO, values, onEdit)
         NumberRow(GasDoseNumber.FUEL_CUT_CLOSING, values, onEdit)
         NumberRow(GasDoseNumber.CORRECTION_POSITIVE, values, onEdit)
         NumberRow(GasDoseNumber.CORRECTION_NEGATIVE, values, onEdit)
-        Column {
-            var expanded = androidx.compose.runtime.remember { androidx.compose.runtime.mutableStateOf(false) }
-            OutlinedButton(onClick = { expanded.value = true }, Modifier.fillMaxWidth().testTag("gas_dose_frequency"), shape = DropdownShape) {
-                Column(Modifier.weight(1f)) {
-                    Text(stringResource(R.string.choke_frequency_of_pulses), style = MaterialTheme.typography.labelMedium)
-                    Text(gasDoseFrequencies.getOrNull(values.frequency) ?: "Code ${values.frequency}")
-                }
-                Text("⌄")
-            }
-            DropdownMenu(expanded.value, { expanded.value = false }, shape = DropdownShape) {
-                gasDoseFrequencies.forEachIndexed { i, option -> DropdownMenuItem(text = { Text(option) }, onClick = { expanded.value = false; onFrequency(i) }, modifier = Modifier.testTag("gas_dose_frequency_option_$i")) }
-            }
+        val frequencyDialogOpen = androidx.compose.runtime.remember { androidx.compose.runtime.mutableStateOf(false) }
+        Box {
+            ParameterSelectionRow(stringResource(R.string.choke_frequency_of_pulses), gasDoseFrequencies.getOrNull(values.frequency) ?: "Code ${values.frequency}", "gas_dose_frequency") { frequencyDialogOpen.value = true }
         }
+        if (frequencyDialogOpen.value) ParameterChoiceDialog(
+            title = stringResource(R.string.choke_frequency_of_pulses),
+            choices = gasDoseFrequencies.mapIndexed { i, option -> ParameterChoice(i, option, "gas_dose_frequency_option_$i") },
+            onDismiss = { frequencyDialogOpen.value = false },
+            onSelect = onFrequency,
+        )
         ParameterSwitchRow(stringResource(R.string.maximum_step_frequency_at_init), values.maxFrequencyAtInit, "gas_dose_max_frequency") { onMaximumFrequency(it) }
-    }
+        }
+        }
 }
 
 @Composable private fun NumberRow(n: GasDoseNumber, values: GasDoseValues, onEdit: (GasDoseNumber) -> Unit) {
@@ -140,8 +146,9 @@ fun GasDoseScreen(values: GasDoseValues?, firmwareAvailable: Boolean, onEdit: (G
 @Composable private fun ManualHoldButton(tag: String, direction: Int, label: String, icon: String, onStep: (Int) -> Unit, onRelease: () -> Unit, onCancel: () -> Unit, onFlush: () -> Unit, start: Boolean, isActive: Boolean) {
     val scope = rememberCoroutineScope()
     val pressed = androidx.compose.runtime.remember(tag) { androidx.compose.runtime.mutableStateOf(false) }
-    val color = androidx.compose.ui.graphics.lerp(MaterialTheme.colorScheme.primary, androidx.compose.ui.graphics.Color.Black, if (pressed.value) .25f else 0f)
-    Surface(color = color, contentColor = androidx.compose.ui.graphics.Color.White, shape = androidx.compose.foundation.shape.RoundedCornerShape(topStart = if (start) 24.dp else 0.dp, bottomStart = if (start) 24.dp else 0.dp, topEnd = if (start) 0.dp else 24.dp, bottomEnd = if (start) 0.dp else 24.dp), modifier = Modifier.testTag(tag).size(64.dp, 48.dp).semantics {
+    val color = if (pressed.value) MaterialTheme.colorScheme.primaryContainer else MaterialTheme.colorScheme.primary
+    val contentColor = if (pressed.value) MaterialTheme.colorScheme.onPrimaryContainer else MaterialTheme.colorScheme.onPrimary
+    Surface(color = color, contentColor = contentColor, shape = androidx.compose.foundation.shape.RoundedCornerShape(topStart = if (start) 24.dp else 0.dp, bottomStart = if (start) 24.dp else 0.dp, topEnd = if (start) 0.dp else 24.dp, bottomEnd = if (start) 0.dp else 24.dp), modifier = Modifier.testTag(tag).size(64.dp, 48.dp).semantics {
         role = Role.Button
         onClick(label) { if (isActive) { onStep(direction); onRelease() }; true }
     }.pointerInput(direction, onStep, onRelease, onCancel, onFlush, isActive) {
@@ -172,5 +179,5 @@ fun GasDoseScreen(values: GasDoseValues?, firmwareAvailable: Boolean, onEdit: (G
                 if (up == null) onCancel() else onRelease()
             } finally { repeater?.cancel(); flusher?.cancel(); pressed.value = false }
         }
-    }) { Box(Modifier.fillMaxSize(), contentAlignment = androidx.compose.ui.Alignment.Center) { Text(icon, color = androidx.compose.ui.graphics.Color.White, style = MaterialTheme.typography.headlineSmall) } }
+    }) { Box(Modifier.fillMaxSize(), contentAlignment = androidx.compose.ui.Alignment.Center) { Text(icon, style = MaterialTheme.typography.headlineSmall) } }
 }

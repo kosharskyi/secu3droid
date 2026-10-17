@@ -24,23 +24,18 @@
  */
 package org.secu3.android.ui.parameters.pages.compose
 
-import androidx.annotation.StringRes
-import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.rememberScrollState
-import androidx.compose.foundation.verticalScroll
+import androidx.annotation.StringRes
 import androidx.compose.runtime.Composable
-import androidx.compose.ui.Modifier
-import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.stringResource
-import androidx.compose.ui.unit.dp
 import org.secu3.android.ui.parameters.compose.ParameterLoadingIndicator
+import org.secu3.android.ui.parameters.*
 import org.secu3.android.R
 import org.secu3.android.models.packets.out.params.IdlingParamPacket
 import org.secu3.android.ui.parameters.compose.ParameterSwitchRow
 import org.secu3.android.ui.parameters.compose.ParameterValueRow
+import org.secu3.android.ui.parameters.compose.ParameterPage
+import org.secu3.android.ui.parameters.compose.ParameterSection
 
 // XML order and editing limits are retained for the migrated controls.
 enum class IdlingNumber(
@@ -54,11 +49,11 @@ enum class IdlingNumber(
 ) {
     IFAC1(R.string.idlreg_ifac1_title, 0, 2, 0f, 10f, .01f),
     IFAC2(R.string.idlreg_ifac2_title, 0, 2, 0f, 10f, .01f),
-    MAX_ANGLE(R.string.idlreg_maximal_angle_title, 0, 2, -15f, 30f, .02f),
-    MIN_ANGLE(R.string.idlreg_minimal_angle_title, 0, 2, -15f, 30f, .02f),
+    MAX_ANGLE(R.string.idlreg_maximal_angle_title, 0, 3, -15f, 30f, .025f),
+    MIN_ANGLE(R.string.idlreg_minimal_angle_title, 0, 3, -15f, 30f, .025f),
     RPM(R.string.idlreg_target_rpm_title, R.string.units_rpm, 0, 0f, 1800f, 5f, true),
     DEAD_BAND(R.string.idlreg_rpm_sensitivity_title, R.string.units_rpm, 0, 0f, 500f, 1f, true),
-    ON_TEMP(R.string.idlreg_turn_on_temp_title, R.string.units_degrees_celcius, 2, 0f, 100f, .2f),
+    ON_TEMP(R.string.idlreg_turn_on_temp_title, R.string.units_degrees_celcius, 2, -40f, 300f, .2f),
     IAC_ADD(R.string.idlreg_iac_add_after_exit_title, R.string.units_percents, 1, 0f, 100f, .5f),
     RPM_ADD(R.string.idlreg_rpm_add_on_run_title, R.string.units_rpm, 0, 0f, 2000f, 10f, true),
     P0(R.string.idlreg_proportional_positive_title, R.string.units_coef, 3, 0f, 5f, .005f),
@@ -67,7 +62,7 @@ enum class IdlingNumber(
     I1(R.string.idlreg_integral_negative_title, R.string.units_coef, 3, 0f, 5f, .005f),
     THRD1(R.string.idlreg_first_transient_threshold_title, R.string.units_coef, 2, 1f, 2.99f, .01f),
     THRD2(R.string.idlreg_second_transient_threshold_title, R.string.units_coef, 2, 1f, 2.99f, .01f),
-    INTEGRATOR_RPM(R.string.idlreg_integrator_rpm_limit_title, R.string.units_rpm, 0, 10f, 1200f, 10f, true),
+    INTEGRATOR_RPM(R.string.idlreg_integrator_rpm_limit_title, R.string.units_rpm, 0, 0f, 1200f, 10f, true),
     MAP(R.string.idlreg_pressure_load_on_idling_title, R.string.units_pressure_kpa, 1, 0f, 100f, .1f),
     IAC_MIN(R.string.idlreg_min_iac_position_title, R.string.units_percents, 1, 0f, 100f, .5f),
     IAC_MAX(R.string.idlreg_max_iac_position_title, R.string.units_percents, 1, 0f, 100f, .5f),
@@ -188,13 +183,12 @@ fun IdlingScreen(
     state: IdlingUiState,
     onEdit: (IdlingNumber) -> Unit,
     onFlagChanged: (IdlingFlag, Boolean) -> Unit,
+    capabilities: ParameterCapabilities = ParameterCapabilities.All,
 ) {
+    val pageScrollState = rememberScrollState()
     when (state) {
         IdlingUiState.Loading -> ParameterLoadingIndicator("idling_loading")
-        is IdlingUiState.Data -> Column(
-            Modifier.fillMaxWidth().verticalScroll(rememberScrollState()).padding(16.dp),
-            verticalArrangement = Arrangement.spacedBy(16.dp),
-        ) {
+        is IdlingUiState.Data -> ParameterPage(scrollState = pageScrollState) {
             @Composable
             fun number(number: IdlingNumber) {
                 ParameterValueRow(
@@ -203,6 +197,7 @@ fun IdlingScreen(
                     value = state.values.value(number),
                     precision = number.precision,
                     testTag = "idling_${number.name.lowercase()}",
+                    enabled = idlingNumberEnabled(number, state.values, capabilities),
                     onClick = { onEdit(number) },
                 )
             }
@@ -213,48 +208,44 @@ fun IdlingScreen(
                     title = stringResource(flag.titleRes),
                     checked = state.values.flags.getValue(flag),
                     testTag = "idling_flag_${flag.name.lowercase()}",
+                    enabled = flag in setOf(IdlingFlag.REGULATOR, IdlingFlag.ON_GAS, IdlingFlag.PROPORTIONAL) || capabilities.fuelInjection,
                     onCheckedChange = { onFlagChanged(flag, it) },
                 )
             }
 
-            // First regulator gain and angle groups.
-            number(IdlingNumber.IFAC1)
-            number(IdlingNumber.IFAC2)
-            number(IdlingNumber.MAX_ANGLE)
-            number(IdlingNumber.MIN_ANGLE)
-            number(IdlingNumber.RPM)
-            number(IdlingNumber.DEAD_BAND)
-            number(IdlingNumber.ON_TEMP)
-
-            flag(IdlingFlag.REGULATOR)
-            flag(IdlingFlag.ON_GAS)
-            flag(IdlingFlag.PROPORTIONAL)
-            flag(IdlingFlag.CLOSED_LOOP)
-
-            number(IdlingNumber.IAC_ADD)
-            flag(IdlingFlag.THRASSMAP)
-
-            // Regulator coefficients, transient thresholds, then IAC controls.
-            number(IdlingNumber.RPM_ADD)
-            number(IdlingNumber.P0)
-            number(IdlingNumber.I0)
-            number(IdlingNumber.P1)
-            number(IdlingNumber.I1)
-            number(IdlingNumber.THRD1)
-            number(IdlingNumber.THRD2)
-            number(IdlingNumber.INTEGRATOR_RPM)
-            number(IdlingNumber.MAP)
-            number(IdlingNumber.IAC_MIN)
-            number(IdlingNumber.IAC_MAX)
-            number(IdlingNumber.IAC_DB)
-
-            flag(IdlingFlag.CLOSED_LOOP_GAS)
-            flag(IdlingFlag.WORKS_IAC)
-
-            number(IdlingNumber.D)
-            number(IdlingNumber.IRR_LOAD)
-            number(IdlingNumber.IRR_RPM)
-            number(IdlingNumber.LOAD)
-        }
-    }
-}
+            ParameterSection {
+                number(IdlingNumber.IFAC1)
+                number(IdlingNumber.IFAC2)
+                number(IdlingNumber.MAX_ANGLE)
+                number(IdlingNumber.MIN_ANGLE)
+                number(IdlingNumber.RPM)
+                number(IdlingNumber.DEAD_BAND)
+                number(IdlingNumber.ON_TEMP)
+                flag(IdlingFlag.REGULATOR)
+                flag(IdlingFlag.ON_GAS)
+                flag(IdlingFlag.PROPORTIONAL)
+                flag(IdlingFlag.CLOSED_LOOP)
+                number(IdlingNumber.IAC_ADD)
+                flag(IdlingFlag.THRASSMAP)
+                number(IdlingNumber.RPM_ADD)
+                number(IdlingNumber.P0)
+                number(IdlingNumber.I0)
+                number(IdlingNumber.P1)
+                number(IdlingNumber.I1)
+                number(IdlingNumber.THRD1)
+                number(IdlingNumber.THRD2)
+                number(IdlingNumber.INTEGRATOR_RPM)
+                number(IdlingNumber.MAP)
+                number(IdlingNumber.IAC_MIN)
+                number(IdlingNumber.IAC_MAX)
+                number(IdlingNumber.IAC_DB)
+                flag(IdlingFlag.CLOSED_LOOP_GAS)
+                flag(IdlingFlag.WORKS_IAC)
+                number(IdlingNumber.D)
+                number(IdlingNumber.IRR_LOAD)
+                number(IdlingNumber.IRR_RPM)
+                number(IdlingNumber.LOAD)
+            }
+            }
+            }
+            }

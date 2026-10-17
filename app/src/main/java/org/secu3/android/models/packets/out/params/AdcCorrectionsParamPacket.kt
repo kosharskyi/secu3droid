@@ -29,6 +29,7 @@ import org.secu3.android.models.packets.base.InputPacket
 import org.secu3.android.models.packets.base.OutputPacket
 import org.secu3.android.utils.getBitValue
 import org.secu3.android.utils.setBitValue
+import org.secu3.android.models.packets.base.protocolRoundToInt
 import kotlin.math.roundToInt
 
 data class AdcCorrectionsParamPacket(
@@ -61,9 +62,20 @@ data class AdcCorrectionsParamPacket(
 
     ) : Secu3Packet(), InputPacket, OutputPacket {
 
+    private var parsedCompMode: Boolean? = null
+    private var parsedFactorWords: IntArray? = null
+    private var parsedCorrectionWords: IntArray? = null
+    private val editedChannels = BooleanArray(12)
+
+    /** The correction has no inverse when compensation is enabled and its factor is zero. */
+    fun markChannelEdited(channelIndex: Int) {
+        if (channelIndex in editedChannels.indices) editedChannels[channelIndex] = true
+    }
+
     var adcCompMode: Boolean
         get() = adcFlags.getBitValue(0) > 0
         set(value) {
+            if (value != adcCompMode) parsedCompMode = null
             adcFlags = adcFlags.setBitValue(value, 0)
         }
 
@@ -75,76 +87,20 @@ data class AdcCorrectionsParamPacket(
 
         data += adcFlags
 
-        data += mapAdcFactor.times(FACTOR_DIVIDER).roundToInt().write2Bytes()
-        mapAdcCorrection.unaryMinus().div(ADC_DISCRETE).roundToInt().let {
-            val factor = if (adcCompMode) mapAdcFactor else 1.0f
-            data += FACTOR_DIVIDER.times(0.5f - it.times(factor)).roundToInt().write4Bytes()
-        }
-
-        data += ubatAdcFactor.times(FACTOR_DIVIDER).roundToInt().write2Bytes()
-        ubatAdcCorrection.unaryMinus().div(ADC_DISCRETE).roundToInt().let {
-            val factor = if (adcCompMode) ubatAdcFactor else 1.0f
-            data += FACTOR_DIVIDER.times(0.5f - it.times(factor)).roundToInt().write4Bytes()
-        }
-
-        data += tempAdcFactor.times(FACTOR_DIVIDER).roundToInt().write2Bytes()
-        tempAdcCorrection.unaryMinus().div(ADC_DISCRETE).roundToInt().let {
-            val factor = if (adcCompMode) tempAdcFactor else 1.0f
-            data += FACTOR_DIVIDER.times(0.5f - it.times(factor)).roundToInt().write4Bytes()
-        }
-
-        data += tpsAdcFactor.times(FACTOR_DIVIDER).roundToInt().write2Bytes()
-        tpsAdcCorrection.unaryMinus().div(ADC_DISCRETE).roundToInt().let {
-            val factor = if (adcCompMode) tpsAdcFactor else 1.0f
-            data += FACTOR_DIVIDER.times(0.5f - it.times(factor)).roundToInt().write4Bytes()
-        }
-
-        data += ai1AdcFactor.times(FACTOR_DIVIDER).roundToInt().write2Bytes()
-        ai1AdcCorrection.unaryMinus().div(ADC_DISCRETE).roundToInt().let {
-            val factor = if (adcCompMode) ai1AdcFactor else 1.0f
-            data += FACTOR_DIVIDER.times(0.5f - it.times(factor)).roundToInt().write4Bytes()
-        }
-
-        data += ai2AdcFactor.times(FACTOR_DIVIDER).roundToInt().write2Bytes()
-        ai2AdcCorrection.unaryMinus().div(ADC_DISCRETE).roundToInt().let {
-            val factor = if (adcCompMode) ai2AdcFactor else 1.0f
-            data += FACTOR_DIVIDER.times(0.5f - it.times(factor)).roundToInt().write4Bytes()
-        }
-
-        data += ai3AdcFactor.times(FACTOR_DIVIDER).roundToInt().write2Bytes()
-        ai3AdcCorrection.unaryMinus().div(ADC_DISCRETE).roundToInt().let {
-            val factor = if (adcCompMode) ai3AdcFactor else 1.0f
-            data += FACTOR_DIVIDER.times(0.5f - it.times(factor)).roundToInt().write4Bytes()
-        }
-
-        data += ai4AdcFactor.times(FACTOR_DIVIDER).roundToInt().write2Bytes()
-        ai4AdcCorrection.unaryMinus().div(ADC_DISCRETE).roundToInt().let {
-            val factor = if (adcCompMode) ai4AdcFactor else 1.0f
-            data += FACTOR_DIVIDER.times(0.5f - it.times(factor)).roundToInt().write4Bytes()
-        }
-
-        data += ai5AdcFactor.times(FACTOR_DIVIDER).roundToInt().write2Bytes()
-        ai5AdcCorrection.unaryMinus().div(ADC_DISCRETE).roundToInt().let {
-            val factor = if (adcCompMode) ai5AdcFactor else 1.0f
-            data += FACTOR_DIVIDER.times(0.5f - it.times(factor)).roundToInt().write4Bytes()
-        }
-
-        data += ai6AdcFactor.times(FACTOR_DIVIDER).roundToInt().write2Bytes()
-        ai6AdcCorrection.unaryMinus().div(ADC_DISCRETE).roundToInt().let {
-            val factor = if (adcCompMode) ai6AdcFactor else 1.0f
-            data += FACTOR_DIVIDER.times(0.5f - it.times(factor)).roundToInt().write4Bytes()
-        }
-
-        data += ai7AdcFactor.times(FACTOR_DIVIDER).roundToInt().write2Bytes()
-        ai7AdcCorrection.unaryMinus().div(ADC_DISCRETE).roundToInt().let {
-            val factor = if (adcCompMode) ai7AdcFactor else 1.0f
-            data += FACTOR_DIVIDER.times(0.5f - it.times(factor)).roundToInt().write4Bytes()
-        }
-
-        data += ai8AdcFactor.times(FACTOR_DIVIDER).roundToInt().write2Bytes()
-        ai8AdcCorrection.unaryMinus().div(ADC_DISCRETE).roundToInt().let {
-            val factor = if (adcCompMode) ai8AdcFactor else 1.0f
-            data += FACTOR_DIVIDER.times(0.5f - it.times(factor)).roundToInt().write4Bytes()
+        adcChannels().forEachIndexed { index, (factor, correction) ->
+            val factorWord = factor.times(FACTOR_DIVIDER).roundToInt()
+            if (parsedFactorWords?.getOrNull(index)?.let { it != factorWord } == true) editedChannels[index] = true
+            data += factorWord.write2Bytes()
+            val rawFallback = parsedCorrectionWords?.getOrNull(index)
+            val factorWasZero = parsedFactorWords?.getOrNull(index) == 0
+            val canPreserveRaw = adcCompMode && parsedCompMode == true && factorWord == 0 &&
+                factorWasZero && !editedChannels[index] && rawFallback != null
+            val correctionWord = if (canPreserveRaw) {
+                rawFallback!!
+            } else {
+                encodeCorrection(correction, if (adcCompMode) factor else 1.0f)
+            }
+            data += correctionWord.write4Bytes()
         }
 
         data += unhandledParams
@@ -155,82 +111,66 @@ data class AdcCorrectionsParamPacket(
     override fun parse(data: IntArray): InputPacket {
         adcFlags = data.get1Byte()
 
-        mapAdcFactor = data.get2Bytes().toFloat() / FACTOR_DIVIDER
-        data.get4Bytes().toFloat().let {
-            mapAdcCorrection = ((it / FACTOR_DIVIDER) - 0.5f) / mapAdcFactor
-            mapAdcCorrection *= ADC_DISCRETE
+        val channels = List(12) {
+            val factorWord = data.get2Bytes()
+            val correctionWord = data.get4Bytes()
+            factorWord.toFloat() / FACTOR_DIVIDER to correctionWord
         }
-
-        ubatAdcFactor = data.get2Bytes().toFloat() / FACTOR_DIVIDER
-        data.get4Bytes().toFloat().let {
-            ubatAdcCorrection = ((it / FACTOR_DIVIDER) - 0.5f) / ubatAdcFactor
-            ubatAdcCorrection *= ADC_DISCRETE
-        }
-
-        tempAdcFactor = data.get2Bytes().toFloat() / FACTOR_DIVIDER
-        data.get4Bytes().toFloat().let {
-            tempAdcCorrection = ((it / FACTOR_DIVIDER) - 0.5f) / tempAdcFactor
-            tempAdcCorrection *= ADC_DISCRETE
-        }
-
-        tpsAdcFactor = data.get2Bytes().toFloat() / FACTOR_DIVIDER
-        data.get4Bytes().toFloat().let {
-            tpsAdcCorrection = ((it / FACTOR_DIVIDER) - 0.5f) / tpsAdcFactor
-            tpsAdcCorrection *= ADC_DISCRETE
-        }
-
-        ai1AdcFactor = data.get2Bytes().toFloat() / FACTOR_DIVIDER
-        data.get4Bytes().toFloat().let {
-            ai1AdcCorrection = ((it / FACTOR_DIVIDER) - 0.5f) / ai1AdcFactor
-            ai1AdcCorrection *= ADC_DISCRETE
-        }
-
-        ai2AdcFactor = data.get2Bytes().toFloat() / FACTOR_DIVIDER
-        data.get4Bytes().toFloat().let {
-            ai2AdcCorrection = ((it / FACTOR_DIVIDER) - 0.5f) / ai2AdcFactor
-            ai2AdcCorrection *= ADC_DISCRETE
-        }
-
-        ai3AdcFactor = data.get2Bytes().toFloat() / FACTOR_DIVIDER
-        data.get4Bytes().toFloat().let {
-            ai3AdcCorrection = ((it / FACTOR_DIVIDER) - 0.5f) /ai3AdcFactor
-            ai3AdcCorrection *= ADC_DISCRETE
-        }
-
-        ai4AdcFactor = data.get2Bytes().toFloat() / FACTOR_DIVIDER
-        data.get4Bytes().toFloat().let {
-            ai4AdcCorrection = ((it / FACTOR_DIVIDER) - 0.5f) / ai4AdcFactor
-            ai4AdcCorrection *= ADC_DISCRETE
-        }
-
-        ai5AdcFactor = data.get2Bytes().toFloat() / FACTOR_DIVIDER
-        data.get4Bytes().toFloat().let {
-            ai5AdcCorrection = ((it / FACTOR_DIVIDER) - 0.5f) / ai5AdcFactor
-            ai5AdcCorrection *= ADC_DISCRETE
-        }
-
-        ai6AdcFactor = data.get2Bytes().toFloat() / FACTOR_DIVIDER
-        data.get4Bytes().toFloat().let {
-            ai6AdcCorrection = ((it / FACTOR_DIVIDER) - 0.5f) / ai6AdcFactor
-            ai6AdcCorrection *= ADC_DISCRETE
-        }
-
-        ai7AdcFactor = data.get2Bytes().toFloat() / FACTOR_DIVIDER
-        data.get4Bytes().toFloat().let {
-            ai7AdcCorrection = ((it / FACTOR_DIVIDER) - 0.5f) / ai7AdcFactor
-            ai7AdcCorrection *= ADC_DISCRETE
-        }
-
-        ai8AdcFactor = data.get2Bytes().toFloat() / FACTOR_DIVIDER
-        data.get4Bytes().toFloat().let {
-            ai8AdcCorrection = ((it / FACTOR_DIVIDER) - 0.5f) / ai8AdcFactor
-            ai8AdcCorrection *= ADC_DISCRETE
+        parsedCompMode = adcCompMode
+        parsedFactorWords = channels.map { (factor, _) -> (factor * FACTOR_DIVIDER).roundToInt() }.toIntArray()
+        parsedCorrectionWords = channels.map { it.second }.toIntArray()
+        editedChannels.fill(false)
+        channels.forEachIndexed { index, (factor, correctionWord) ->
+            val divisor = if (adcCompMode) factor else 1.0f
+            val correction = if (divisor == 0f) 0f else decodeCorrection(correctionWord, divisor)
+            setChannel(index, factor, correction)
         }
 
         data.setUnhandledParams()
 
         return this
     }
+
+    private fun adcChannels(): List<Pair<Float, Float>> = listOf(
+        mapAdcFactor to mapAdcCorrection,
+        ubatAdcFactor to ubatAdcCorrection,
+        tempAdcFactor to tempAdcCorrection,
+        tpsAdcFactor to tpsAdcCorrection,
+        ai1AdcFactor to ai1AdcCorrection,
+        ai2AdcFactor to ai2AdcCorrection,
+        ai3AdcFactor to ai3AdcCorrection,
+        ai4AdcFactor to ai4AdcCorrection,
+        ai5AdcFactor to ai5AdcCorrection,
+        ai6AdcFactor to ai6AdcCorrection,
+        ai7AdcFactor to ai7AdcCorrection,
+        ai8AdcFactor to ai8AdcCorrection,
+    )
+
+    private fun setChannel(index: Int, factor: Float, correction: Float) {
+        when (index) {
+            0 -> { mapAdcFactor = factor; mapAdcCorrection = correction }
+            1 -> { ubatAdcFactor = factor; ubatAdcCorrection = correction }
+            2 -> { tempAdcFactor = factor; tempAdcCorrection = correction }
+            3 -> { tpsAdcFactor = factor; tpsAdcCorrection = correction }
+            4 -> { ai1AdcFactor = factor; ai1AdcCorrection = correction }
+            5 -> { ai2AdcFactor = factor; ai2AdcCorrection = correction }
+            6 -> { ai3AdcFactor = factor; ai3AdcCorrection = correction }
+            7 -> { ai4AdcFactor = factor; ai4AdcCorrection = correction }
+            8 -> { ai5AdcFactor = factor; ai5AdcCorrection = correction }
+            9 -> { ai6AdcFactor = factor; ai6AdcCorrection = correction }
+            10 -> { ai7AdcFactor = factor; ai7AdcCorrection = correction }
+            11 -> { ai8AdcFactor = factor; ai8AdcCorrection = correction }
+        }
+    }
+
+    private fun encodeCorrection(correction: Float, factor: Float): Int {
+        if (factor == 0f) return FACTOR_DIVIDER / 2
+        val correctionDiscrete = (-correction / ADC_DISCRETE).protocolRoundToInt()
+        return (FACTOR_DIVIDER * (0.5f - correctionDiscrete * factor)).protocolRoundToInt()
+    }
+
+    private fun decodeCorrection(rawCorrection: Int, factor: Float): Float =
+        ((rawCorrection.toFloat() / FACTOR_DIVIDER - 0.5f) / factor) * ADC_DISCRETE
 
     companion object {
 

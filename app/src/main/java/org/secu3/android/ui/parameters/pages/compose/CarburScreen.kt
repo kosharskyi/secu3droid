@@ -24,26 +24,15 @@
  */
 package org.secu3.android.ui.parameters.pages.compose
 
-import org.secu3.android.ui.compose.DropdownShape
-
 import androidx.annotation.StringRes
-import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.clickable
-import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.ArrowDropDown
 import androidx.compose.material3.AlertDialog
-import androidx.compose.material3.HorizontalDivider
-import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.Surface
-import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
@@ -51,32 +40,34 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
-import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.stringResource
-import androidx.compose.ui.semantics.Role
-import androidx.compose.ui.semantics.contentDescription
-import androidx.compose.ui.semantics.role
-import androidx.compose.ui.semantics.semantics
-import androidx.compose.ui.semantics.stateDescription
-import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import org.secu3.android.ui.parameters.compose.ParameterLoadingIndicator
+import org.secu3.android.ui.parameters.*
 import org.secu3.android.R
 import org.secu3.android.models.packets.out.params.CarburParamPacket
+import org.secu3.android.ui.parameters.compose.ParameterPage
+import org.secu3.android.ui.parameters.compose.ParameterSection
+import org.secu3.android.ui.parameters.compose.ParameterSelectionRow
+import org.secu3.android.ui.parameters.compose.ParameterSwitchRow
+import org.secu3.android.ui.parameters.compose.ParameterValueRow
+import org.secu3.android.ui.parameters.dialogs.ParameterAlertDialog
+import org.secu3.android.ui.parameters.dialogs.ParameterCancelButton
+import org.secu3.android.ui.parameters.dialogs.ParameterChoiceList
+import org.secu3.android.ui.parameters.dialogs.ParameterChoiceOption
 
 enum class CarburNumber(@StringRes val title: Int, @StringRes val units: Int, val precision: Int, val min: Float, val max: Float, val step: Float, val integer: Boolean = false) {
-    IDLE_LOW(R.string.carbur_overrun_lower_threshold_gasoline_title, R.string.units_rpm, 0, 250f, 7500f, 10f, true),
-    IDLE_HIGH(R.string.carbur_overrun_upper_threshold_gasoline_title, R.string.units_rpm, 0, 250f, 7500f, 10f, true),
-    IDLE_LOW_GAS(R.string.carbur_overrun_lower_threshold_gas_title, R.string.units_rpm, 0, 250f, 7500f, 10f, true),
-    IDLE_HIGH_GAS(R.string.carbur_overrun_upper_threshold_gas_title, R.string.units_rpm, 0, 250f, 7500f, 10f, true),
+    IDLE_LOW(R.string.carbur_overrun_lower_threshold_gasoline_title, R.string.units_rpm, 0, 250f, 30000f, 10f, true),
+    IDLE_HIGH(R.string.carbur_overrun_upper_threshold_gasoline_title, R.string.units_rpm, 0, 250f, 30000f, 10f, true),
+    IDLE_LOW_GAS(R.string.carbur_overrun_lower_threshold_gas_title, R.string.units_rpm, 0, 250f, 30000f, 10f, true),
+    IDLE_HIGH_GAS(R.string.carbur_overrun_upper_threshold_gas_title, R.string.units_rpm, 0, 250f, 30000f, 10f, true),
     CUTOFF_DELAY(R.string.carbur_overrun_valve_delay_title, R.string.units_sec, 2, 0f, 2.5f, .01f),
-    VALVE_PRESSURE(R.string.carbur_epm_valve_on_pressure_title, R.string.units_pressure_kpa, 1, 0f, 50f, .1f),
+    VALVE_PRESSURE(R.string.carbur_epm_valve_on_pressure_title, R.string.units_pressure_kpa, 1, 0f, 500f, .1f),
     TPS(R.string.carbur_tps_threshold_title, R.string.units_percents, 1, 0f, 100f, .5f),
     MAP(R.string.carbur_fuelcut_map_threshold_title, R.string.units_pressure_kpa, 1, 0f, 250f, .5f),
-    CTS(R.string.carbur_fuelcut_temp_threshold_title, R.string.units_degrees_celcius, 1, -30f, 180f, .25f),
+    CTS(R.string.carbur_fuelcut_temp_threshold_title, R.string.units_degrees_celcius, 1, -40f, 300f, .25f),
     REV_LOW(R.string.carbur_rev_limitting_lower_threshold_title, R.string.units_rpm, 0, 500f, 30000f, 50f, true),
     REV_HIGH(R.string.carbur_rev_limitting_upper_threshold_title, R.string.units_rpm, 0, 500f, 30000f, 50f, true),
 }
@@ -123,54 +114,65 @@ sealed interface CarburUiState {
 }
 
 @Composable
-fun CarburScreen(state: CarburUiState, options: List<String>, onEdit: (CarburNumber) -> Unit, onInvers: (Boolean) -> Unit, onSelector: (Boolean, Int) -> Unit) {
+fun CarburScreen(state: CarburUiState, options: List<String>, onEdit: (CarburNumber) -> Unit, onInvers: (Boolean) -> Unit, onSelector: (Boolean, Int) -> Unit, capabilities: ParameterCapabilities = ParameterCapabilities.All,
+) {
+    val pageScrollState = rememberScrollState()
     if (state is CarburUiState.Loading) {
         ParameterLoadingIndicator("carbur_loading")
         return
     }
     val data = (state as CarburUiState.Data).values
     var open by remember { mutableStateOf<Boolean?>(null) }
-    Column(Modifier.fillMaxWidth().verticalScroll(rememberScrollState()).padding(16.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
-        CarburNumber.entries.forEach { n ->
-            if (n == CarburNumber.REV_LOW) Text(stringResource(R.string.carbur_protection_of_engine_title), Modifier.fillMaxWidth().padding(top = 12.dp, bottom = 4.dp), style = MaterialTheme.typography.titleMedium)
-            ParameterValueRow(stringResource(n.title), if (n == CarburNumber.VALVE_PRESSURE) "dis.kPa" else stringResource(n.units), data.numbers.getValue(n), n.precision, "carbur_${n.name.lowercase()}") { onEdit(n) }
-            if (n == CarburNumber.TPS) {
-                Row(Modifier.fillMaxWidth().testTag("carbur_invers").padding(vertical = 4.dp), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically) {
-                    Text(stringResource(R.string.carbur_sensor_inverse_title), Modifier.weight(1f).clickable { onInvers(!data.invers) }.padding(end = 12.dp))
-                    Switch(checked = data.invers, onCheckedChange = onInvers, modifier = Modifier.testTag("carbur_invers-switch"))
+    ParameterPage(scrollState = pageScrollState) {
+        ParameterSection {
+            CarburNumber.entries.filter { it != CarburNumber.REV_LOW && it != CarburNumber.REV_HIGH }.forEach { n ->
+                ParameterValueRow(stringResource(n.title), if (n == CarburNumber.VALVE_PRESSURE) "dis.kPa" else stringResource(n.units), data.numbers.getValue(n), n.precision, "carbur_${n.name.lowercase()}", enabled = n !in setOf(CarburNumber.MAP, CarburNumber.CTS) || capabilities.fuelInjection) { onEdit(n) }
+                if (n == CarburNumber.TPS) {
+                    ParameterSwitchRow(stringResource(R.string.carbur_sensor_inverse_title), data.invers, "carbur_invers", onInvers)
                 }
             }
+            listOf(
+                stringResource(R.string.carbur_use_uniout_condition_title) to false,
+                stringResource(R.string.carbur_use_uniout_condition_for_ign_cutoff_title) to true,
+            ).forEach { (title, ignition) ->
+                val code = if (ignition) data.ignitionCutUni else data.fuelCutUni
+                val tag = if (ignition) "carbur_igncut_uni" else "carbur_fuelcut_uni"
+                val selected = selectorValue(code, options)
+                ParameterSelectionRow(
+                    title = title,
+                    value = selected,
+                    testTag = tag,
+                    enabled = ignition || capabilities.fuelInjection,
+                    contentDescription = "$title, $selected",
+                    stateDescription = selected,
+                    onClick = { open = ignition },
+                )
+            }
+            Text(
+                stringResource(R.string.carbur_protection_of_engine_title),
+                Modifier.fillMaxWidth().padding(horizontal = 14.dp, vertical = 11.dp),
+                style = MaterialTheme.typography.titleSmall,
+            )
+            listOf(CarburNumber.REV_LOW, CarburNumber.REV_HIGH).forEach { number ->
+                ParameterValueRow(
+                    title = stringResource(number.title),
+                    units = stringResource(number.units),
+                    value = data.numbers.getValue(number),
+                    precision = number.precision,
+                    testTag = "carbur_${number.name.lowercase()}",
+                    enabled = capabilities.fuelInjection || capabilities.gasDose,
+                    onClick = { onEdit(number) },
+                )
+            }
         }
-        CarburChoice(stringResource(R.string.carbur_use_uniout_condition_title), selectorValue(data.fuelCutUni, options), "carbur_fuelcut_uni") { open = false }
-        CarburChoice(stringResource(R.string.carbur_use_uniout_condition_for_ign_cutoff_title), selectorValue(data.ignitionCutUni, options), "carbur_igncut_uni") { open = true }
     }
     open?.let { ignition ->
-        AlertDialog(onDismissRequest = { open = null }, title = { Text(if (ignition) stringResource(R.string.carbur_use_uniout_condition_for_ign_cutoff_title) else stringResource(R.string.carbur_use_uniout_condition_title)) },
-            text = { Column(Modifier.verticalScroll(rememberScrollState())) { options.forEachIndexed { i, option -> Text(option, Modifier.fillMaxWidth().clickable { onSelector(ignition, i); open = null }.padding(12.dp).testTag("carbur_option_$i")) } } },
-            confirmButton = { TextButton(onClick = { open = null }) { Text(stringResource(android.R.string.cancel)) } })
+        ParameterAlertDialog(onDismissRequest = { open = null }, title = { Text(if (ignition) stringResource(R.string.carbur_use_uniout_condition_for_ign_cutoff_title) else stringResource(R.string.carbur_use_uniout_condition_title)) },
+            text = { ParameterChoiceList { options.forEachIndexed { i, option ->
+                ParameterChoiceOption(option, "carbur_option_$i") { onSelector(ignition, i); open = null }
+            } } },
+            confirmButton = { ParameterCancelButton { open = null } })
     }
 }
 
 private fun selectorValue(code: Int, options: List<String>): String = CarburValues.selectorCodes.indexOf(code).takeIf { it >= 0 }?.let(options::getOrNull) ?: "Code $code"
-
-@Composable
-private fun ParameterValueRow(title: String, units: String, value: Float, precision: Int, tag: String, onClick: () -> Unit) {
-    val locale = LocalConfiguration.current.locales[0]
-    Column {
-        Row(Modifier.fillMaxWidth().clickable(onClick = onClick).testTag(tag).padding(vertical = 8.dp), verticalAlignment = Alignment.CenterVertically) {
-            Text(title, Modifier.weight(1f), style = MaterialTheme.typography.bodyLarge)
-            Text(String.format(locale, "%.${precision}f", value) + if (units.isEmpty()) "" else " $units", Modifier.testTag("$tag-value"), textAlign = TextAlign.End)
-        }
-        HorizontalDivider()
-    }
-}
-
-@Composable
-private fun CarburChoice(title: String, value: String, tag: String, onClick: () -> Unit) {
-    Surface(Modifier.fillMaxWidth().semantics(mergeDescendants = true) { role = Role.Button; contentDescription = "$title, $value"; stateDescription = value }.clickable(role = Role.Button, onClick = onClick).testTag(tag), shape = DropdownShape, color = MaterialTheme.colorScheme.surface, border = BorderStroke(1.dp, MaterialTheme.colorScheme.outline)) {
-        Row(Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 12.dp), verticalAlignment = Alignment.CenterVertically) {
-            Column(Modifier.weight(1f)) { Text(title, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant); Text(value, Modifier.padding(top = 4.dp), style = MaterialTheme.typography.bodyLarge) }
-            Icon(Icons.Filled.ArrowDropDown, null, tint = MaterialTheme.colorScheme.onSurfaceVariant, modifier = Modifier.testTag("$tag-dropdown-indicator"))
-        }
-    }
-}

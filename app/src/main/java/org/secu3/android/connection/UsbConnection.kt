@@ -136,11 +136,7 @@ class UsbConnection @Inject constructor(
         scope.launch {
             mConnectionStateFlow.emit(Connected)
             try {
-                val packetBuffer = IntArray(MAX_PACKET_SIZE)
-                val startMarker = INPUT_PACKET_SYMBOL
-                val endMarker = END_PACKET_SYMBOL
-
-                var idx = 0
+                val receiver = PacketReceiver()
 
                 while (isRunning && usbSerialPort?.isOpen == true) {
                     val buffer = ByteArray(MAX_PACKET_SIZE)
@@ -149,31 +145,8 @@ class UsbConnection @Inject constructor(
                     if (bytesRead <= 0) continue
 
                     for (i in 0 until bytesRead) {
-                        val byte = buffer[i].toInt() and 0xFF
-
-
-                        if (byte == startMarker) {
-                            idx = 0
-                        }
-
-                        if (byte != endMarker) {
-                            if (idx < packetBuffer.size) {
-                                packetBuffer[idx++] = byte
-                            } else {
-                                Log.d(this.javaClass.simpleName, "Packet buffer overflow, resetting.")
-                                idx = 0
-                            }
-                        } else {
-                            if (idx > 2) {
-                                val escaped = escRxPacket(packetBuffer.sliceArray(0 until idx))
-
-                                if (isChecksumValid(escaped)) {
-                                    mReceivedPacketFlow.emit(RawPacket(escaped))
-                                }
-                            } else {
-                                Log.d(this.javaClass.simpleName, "Incomplete packet received, skipping.")
-                            }
-                            idx = 0
+                        receiver.receive(buffer[i].toInt() and 0xFF)?.let { packet ->
+                            mReceivedPacketFlow.emit(RawPacket(packet))
                         }
                     }
                 }

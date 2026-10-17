@@ -35,6 +35,7 @@ import org.secu3.android.models.packets.out.params.InjctrParPacket
 import org.secu3.android.models.packets.out.params.UniOutParamPacket
 import org.secu3.android.ui.parameters.pages.*
 import org.secu3.android.ui.parameters.pages.compose.*
+import org.secu3.android.ui.parameters.compose.ParameterReadError
 
 /** Direct Compose rendering for every ViewModel-owned parameter page. */
 @Composable
@@ -45,8 +46,13 @@ internal fun ParameterPageContent(
     isActiveNow: () -> Boolean,
     onEdit: (ParameterEditRequest) -> Unit,
 ) {
+    if (viewModel.failedPage == titleRes) {
+        ParameterReadError(onRetry = { viewModel.refreshPage(titleRes) })
+        return
+    }
     val context = LocalContext.current
     val resources = LocalResources.current
+    val capabilities = parameterCapabilities(viewModel.fwInfoPacket)
     fun intEdit(title: Int, value: Int, step: Int, max: Int, min: Int, change: (Int) -> Unit) =
         onEdit(ParameterEditRequest.IntValue(resources.getString(title), value, min, max, step, change))
     fun floatEdit(title: Int, value: Float, step: Float, max: Float, min: Float, precision: Int, change: (Float) -> Unit) =
@@ -62,7 +68,7 @@ internal fun ParameterPageContent(
                 } else {
                     floatEdit(n.titleRes, v.value(n), n.step, n.max, n.min, n.precision) { h.updateValue(n, it) }
                 }
-            }, h::updateFlag)
+            }, h::updateFlag, capabilities = capabilities)
         }
         R.string.params_tab_angles_title -> {
             val h = viewModel.anglesStateHolder
@@ -70,27 +76,34 @@ internal fun ParameterPageContent(
         }
         R.string.params_tab_idling_title -> {
             val h = viewModel.idlingStateHolder
-            IdlingScreen(h.state, { n -> (h.state as? IdlingUiState.Data)?.values?.let { values -> if (n.integer) intEdit(n.titleRes, values.value(n).toInt(), n.step.toInt(), n.max.toInt(), n.min.toInt()) { h.updateValue(n, it.toFloat()) } else floatEdit(n.titleRes, values.value(n), n.step, n.max, n.min, n.precision) { h.updateValue(n, it.toFloat()) } } }, h::updateFlag)
+            IdlingScreen(h.state, { n -> (h.state as? IdlingUiState.Data)?.values?.let { values -> if (n.integer) intEdit(n.titleRes, values.value(n).toInt(), n.step.toInt(), n.max.toInt(), n.min.toInt()) { h.updateValue(n, it.toFloat()) } else floatEdit(n.titleRes, values.value(n), n.step, n.max, n.min, n.precision) { h.updateValue(n, it.toFloat()) } } }, h::updateFlag, capabilities = capabilities)
         }
         R.string.params_tab_functions_title -> {
             val h = viewModel.functionsStateHolder
-            FunctionsScreen(h.state, { n -> (h.state as? FunctionsUiState.Data)?.values?.let { floatEdit(n.titleRes, it.value(n), n.step, n.max, n.min, n.precision) { h.updateValue(n, it.toFloat()) } } }, h::updateFlag, h::updateChoice)
+            FunctionsScreen(h.state, { n -> (h.state as? FunctionsUiState.Data)?.values?.let { floatEdit(n.titleRes, it.value(n), n.step, n.max, n.min, n.precision) { h.updateValue(n, it.toFloat()) } } }, h::updateFlag, { selector, index ->
+                h.updateChoice(selector, index)
+                if (selector == FunctionsChoices.Selector.LOAD_SOURCE && index == 4 && !capabilities.fuelInjection) {
+                    h.engineDisplacement?.let { value ->
+                        floatEdit(R.string.injctr_par_enjine_displacement_title, value, .0001f, 8f, .01f, 4, h::updateEngineDisplacement)
+                    }
+                }
+            }, capabilities = capabilities)
         }
         R.string.params_tab_temperature_title -> {
             val h = viewModel.temperatureStateHolder
-            TemperatureScreen(h.state, { n -> (h.state as? TemperatureUiState.Data)?.values?.let { v -> if (n.integer) intEdit(n.titleRes, v.value(n).toInt(), n.step.toInt(), n.max.toInt(), n.min.toInt()) { h.updateValue(n, it.toFloat()) } else floatEdit(n.titleRes, v.value(n), n.step, n.max, n.min, n.precision) { h.updateValue(n, it.toFloat()) } } }, h::updateFlag)
+            TemperatureScreen(h.state, { n -> (h.state as? TemperatureUiState.Data)?.values?.let { v -> if (n.integer) intEdit(n.titleRes, v.value(n).toInt(), n.step.toInt(), n.max.toInt(), n.min.toInt()) { h.updateValue(n, it.toFloat()) } else floatEdit(n.titleRes, v.value(n), n.step, n.max, n.min, n.precision) { h.updateValue(n, it.toFloat()) } } }, h::updateFlag, capabilities = capabilities)
         }
         R.string.params_tab_fuel_cutoff_title -> {
             val h = viewModel.carburStateHolder
-            CarburScreen(h.state, (1..6).map(Int::toString) + "no", { n -> (h.state as? CarburUiState.Data)?.values?.let { v -> if (n.integer) intEdit(n.title, v.numbers.getValue(n).toInt(), n.step.toInt(), n.max.toInt(), n.min.toInt()) { h.updateValue(n, it.toFloat()) } else floatEdit(n.title, v.numbers.getValue(n), n.step, n.max, n.min, n.precision) { h.updateValue(n, it.toFloat()) } } }, h::updateInvers, h::updateSelector)
+            CarburScreen(h.state, (1..6).map(Int::toString) + "no", { n -> (h.state as? CarburUiState.Data)?.values?.let { v -> if (n.integer) intEdit(n.title, v.numbers.getValue(n).toInt(), n.step.toInt(), n.max.toInt(), n.min.toInt()) { h.updateValue(n, it.toFloat()) } else floatEdit(n.title, v.numbers.getValue(n), n.step, n.max, n.min, n.precision) { h.updateValue(n, it.toFloat()) } } }, h::updateInvers, h::updateSelector, capabilities = capabilities)
         }
         R.string.params_tab_adc_errors_corr_title -> {
             val h = viewModel.adcCorrectionsStateHolder
-            AdcErrorsCorrectionsScreen(h.state, { n -> (h.state as? AdcCorrectionsUiState.Data)?.values?.let { onEdit(ParameterEditRequest.FloatValue(n.title, it.value(n), n.min, n.max, n.step, n.precision) { h.updateValue(n, it.toFloat()) }) } }, h::updateCompMode)
+            AdcErrorsCorrectionsScreen(h.state, { n -> (h.state as? AdcCorrectionsUiState.Data)?.values?.let { onEdit(ParameterEditRequest.FloatValue(n.title, it.value(n), n.min, n.max, n.step, n.precision) { h.updateValue(n, it.toFloat()) }) } }, h::updateCompMode, capabilities = capabilities)
         }
         R.string.params_tab_ckps_title -> {
             val h = viewModel.ckpsStateHolder
-            CkpsScreen(h.state, { n -> (h.state as? CkpsUiState.Data)?.values?.let { v -> if (n.integer) intEdit(n.title, v.numbers.getValue(n).toInt(), n.step.toInt(), n.max.toInt(), n.min.toInt()) { h.updateNumber(n, it.toFloat()) } else floatEdit(n.title, v.numbers.getValue(n), n.step, n.max, n.min, n.precision) { h.updateNumber(n, it.toFloat()) } } }, h::updateFlag, h::updateChoice)
+            CkpsScreen(h.state, { n -> (h.state as? CkpsUiState.Data)?.values?.let { v -> if (n.integer) intEdit(n.title, v.numbers.getValue(n).toInt(), n.step.toInt(), n.max.toInt(), n.min.toInt()) { h.updateNumber(n, it.toFloat()) } else floatEdit(n.title, v.numbers.getValue(n), n.step, n.max, n.min, n.precision) { h.updateNumber(n, it.toFloat()) } } }, h::updateFlag, h::updateChoice, capabilities = capabilities)
         }
         R.string.params_tab_knock_title -> {
             val h = viewModel.knockStateHolder
@@ -103,8 +116,8 @@ internal fun ParameterPageContent(
                 val parameter = when (key) {
                     MiscField.PERIOD -> Triple(R.string.miscel_period_title, p.uartPeriodTms, 0 to 500)
                     MiscField.CUTOFF -> Triple(R.string.miscel_ignition_cutoff_rpm_title, p.ignCutoffThrd, 1000 to 30000)
-                    MiscField.START -> Triple(R.string.miscel_start_rel_to_tdc_title, p.hopStartAng, -6 to 12)
-                    MiscField.DURATION -> Triple(R.string.miscel_hall_output_delay_title, p.hopDuratAng, 1 to 30)
+                    MiscField.START -> Triple(R.string.miscel_start_rel_to_tdc_title, p.hopStartAng, -36 to 72)
+                    MiscField.DURATION -> Triple(R.string.miscel_hall_output_delay_title, p.hopDuratAng, 6 to 180)
                     MiscField.BEGIN -> Triple(R.string.miscel_evap_starting_air_flow_title, p.evapAfbegin, evapEditBounds(MiscField.BEGIN, p.evapAfbegin, p.evapAfEnd))
                     MiscField.END -> Triple(R.string.miscel_evap_ending_air_flow_title, p.evapAfEnd, evapEditBounds(MiscField.END, p.evapAfbegin, p.evapAfEnd))
                     MiscField.PWM0 -> Triple(R.string.miscel_pwmfrq1_title, p.pwmFrq0, 10 to 5000)
@@ -115,12 +128,12 @@ internal fun ParameterPageContent(
                 val bounds = parameter.third
                 if (bounds == null || bounds.first > bounds.second) Toast.makeText(context, R.string.miscel_evap_invalid_range, Toast.LENGTH_LONG).show()
                 else intEdit(parameter.first, parameter.second.coerceIn(bounds.first, bounds.second), if (key == MiscField.PERIOD) 10 else 1, bounds.second, bounds.first) { h.editInt(key, it.toInt()) }
-            }, { h.currentPacket?.let { floatEdit(R.string.miscel_fuel_pump_working_time_title, it.fpTimeoutStrt, .1f, 25.5f, .1f, 1) { h.editFloat(it.toFloat()) } } }, h::selectBaud, h::toggle)
+            }, { h.currentPacket?.let { floatEdit(R.string.miscel_fuel_pump_working_time_title, it.fpTimeoutStrt, .1f, 25.5f, .1f, 1) { h.editFloat(it.toFloat()) } } }, h::selectBaud, h::toggle, capabilities = capabilities)
         }
         R.string.params_tab_choke_control_title -> {
             val h = viewModel.chokeControlStateHolder
             ChokeScreen(h.values, { n -> h.values?.let { v -> if (n == ChokeNumber.STEPS) intEdit(n.title, v.value(n).toInt(), 1, n.max.toInt(), n.min.toInt()) { h.edit(n, it.toFloat()) } else floatEdit(n.title, v.value(n), n.step, n.max, n.min, n.precision) { h.edit(n, it.toFloat()) } } }, h::toggle, h::selectFrequency,
-                { if (isActiveNow()) h.manualStep(it) }, { if (isActiveNow()) h.flushManual() }, { if (isActiveNow()) h.finishManual() }, h::cancelManual, h::toggleTest, isActive = isActive)
+                { if (isActiveNow()) h.manualStep(it) }, { if (isActiveNow()) h.flushManual() }, { if (isActiveNow()) h.finishManual() }, h::cancelManual, h::toggleTest, isActive = isActive, capabilities = capabilities)
         }
         R.string.params_tab_security_title -> {
             val h = viewModel.securityStateHolder
@@ -144,11 +157,11 @@ internal fun ParameterPageContent(
         R.string.params_tab_lambda_control_title -> {
             val h = viewModel.lambdaControlStateHolder
             val sensorTypes = stringArrayResource(R.array.lambda_sensors_types).toList()
-            LambdaControlScreen(h.values, sensorTypes, viewModel.fwInfoPacket?.isFuelInjectEnabled == true, { n -> h.values?.let { v -> if (n.integer) intEdit(n.title, v.value(n).toInt(), n.step.toInt(), n.max.toInt(), n.min.toInt()) { h.updateValue(n, it.toFloat()) } else floatEdit(n.title, v.value(n), n.step, n.max, n.min, n.precision) { h.updateValue(n, it.toFloat()) } } }, h::updateFlag, { h.updateSensorType(it, sensorTypes.size) }, { i, checked -> h.updateChannel(i, checked) })
+            LambdaControlScreen(h.values, sensorTypes, viewModel.fwInfoPacket?.let { it.isFuelInjectEnabled || it.isGdControlEnabled } == true, { n -> h.values?.let { v -> if (n.integer) intEdit(n.title, v.value(n).toInt(), n.step.toInt(), n.max.toInt(), n.min.toInt()) { h.updateValue(n, it.toFloat()) } else floatEdit(n.title, v.value(n), n.step, n.max, n.min, n.precision) { h.updateValue(n, it.toFloat()) } } }, h::updateFlag, { h.updateSensorType(it, sensorTypes.size) }, { i, checked -> h.updateChannel(i, checked) })
         }
         R.string.params_tab_acceleration_title -> {
             val h = viewModel.accelerationStateHolder
-            AccelerationScreen(h.values?.let(AccelerationUiState::Data) ?: AccelerationUiState.Loading, { n -> h.values?.let { v -> intEdit(n.titleRes, v.value(n).toInt(), n.step.toInt(), n.max.toInt(), n.min.toInt()) { h.updateNumber(n, it.toFloat()) } } }, h::selectAeType, h::selectWallwetModel, h::setBalance)
+            AccelerationScreen(h.values?.let(AccelerationUiState::Data) ?: AccelerationUiState.Loading, { n -> h.values?.let { v -> intEdit(n.titleRes, v.value(n).toInt(), n.step.toInt(), n.max.toInt(), n.min.toInt()) { h.updateNumber(n, it.toFloat()) } } }, h::selectAeType, h::selectWallwetModel, h::setBalance, capabilities = capabilities)
         }
         R.string.params_tab_gas_dose_title -> {
             val h = viewModel.gasDoseStateHolder
@@ -161,7 +174,7 @@ internal fun ParameterPageContent(
         }
         R.string.params_tab_el_throttle_title -> {
             val h = viewModel.dbwStateHolder
-            DbwScreen(h.uiState, { n -> (h.uiState as? DbwUiState.Data)?.values?.let { v -> floatEdit(n.titleRes, v.value(n), n.step, n.max, n.min, n.precision) { h.edit(n, it.toFloat()) } } })
+            DbwScreen(h.uiState, { n -> (h.uiState as? DbwUiState.Data)?.values?.let { v -> floatEdit(n.titleRes, v.value(n), n.step, n.max, n.min, n.precision) { h.edit(n, it.toFloat()) } } }, onRefresh = { viewModel.refreshPage(R.string.params_tab_el_throttle_title) })
         }
     }
 }

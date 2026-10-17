@@ -42,8 +42,8 @@ class AdcCorrectionsMappingTest {
         assertSame(originalPacket, packet)
         assertEquals(0b1010_1100, packet.adcFlags and 0b1111_1110)
         assertEquals(listOf(3, 3, 3, 4) + List(20) { if (it % 2 == 0) 3 else 4 }, AdcNumber.entries.map { it.precision })
-        assertEquals(List(24) { -2f }, AdcNumber.entries.map { it.min })
-        assertEquals(List(24) { 2f }, AdcNumber.entries.map { it.max })
+        assertEquals(AdcNumber.entries.map { if (it.name.endsWith("FACTOR")) 0f else -2f }, AdcNumber.entries.map { it.min })
+        assertEquals(AdcNumber.entries.map { if (it.name.endsWith("FACTOR")) 3.999f else 1.999f }, AdcNumber.entries.map { it.max })
         assertEquals(AdcNumber.entries.map { if (it.name.endsWith("CORRECTION")) .0025f else .001f }, AdcNumber.entries.map { it.step })
         assertEquals(AdcNumber.entries.map { if (it.name.endsWith("CORRECTION")) "V" else "" }, AdcNumber.entries.map { it.units })
     }

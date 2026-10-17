@@ -21,8 +21,8 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.res.colorResource
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import org.secu3.android.R
 import org.secu3.android.connection.Connected
@@ -42,16 +42,29 @@ fun ConnectionStatusIndicator(
         Disconnected -> R.string.dashboard_status_offline
         else -> R.string.dashboard_status_no_data
     }
-    val colorId = when (connectionState) {
-        Connected -> R.color.gauge_dark_green
-        InProgress -> R.color.gauge_dark_yellow
-        Disconnected -> R.color.gauge_dark_red
-        else -> R.color.gauge_gray
+    val palette = LocalSecuPalette.current
+    val indicatorColor = when (connectionState) {
+        Connected -> palette.success
+        InProgress -> palette.warning
+        Disconnected -> MaterialTheme.colorScheme.error
+        else -> MaterialTheme.colorScheme.secondary
+    }
+    val backgroundColor = when (connectionState) {
+        Connected -> palette.successContainer
+        InProgress -> palette.warningContainer
+        Disconnected -> MaterialTheme.colorScheme.errorContainer
+        else -> MaterialTheme.colorScheme.surfaceVariant
+    }
+    val textColor = when (connectionState) {
+        Connected -> palette.onSuccessContainer
+        InProgress -> palette.onWarningContainer
+        Disconnected -> MaterialTheme.colorScheme.onErrorContainer
+        else -> MaterialTheme.colorScheme.onSurfaceVariant
     }
     Row(
         modifier = modifier
             .clip(CircleShape)
-            .background(colorResource(colorId).copy(alpha = 0.12f))
+            .background(backgroundColor)
             .padding(horizontal = 10.dp, vertical = 6.dp),
         horizontalArrangement = Arrangement.spacedBy(6.dp),
         verticalAlignment = Alignment.CenterVertically,
@@ -60,11 +73,11 @@ fun ConnectionStatusIndicator(
             modifier = Modifier
                 .size(8.dp)
                 .clip(CircleShape)
-                .background(colorResource(colorId)),
+                .background(indicatorColor),
         )
         Text(
             text = stringResource(labelId),
-            color = MaterialTheme.colorScheme.onSurface,
+            color = textColor,
             style = MaterialTheme.typography.labelMedium,
         )
     }
@@ -80,7 +93,7 @@ fun SecuTopAppBar(
     showStatus: Boolean = connectionState != null,
 ) {
     TopAppBar(
-        title = { Text(title) },
+        title = { Text(title, maxLines = 1, overflow = TextOverflow.Ellipsis) },
         navigationIcon = {
             if (onNavigateUp != null) {
                 IconButton(onClick = onNavigateUp) {

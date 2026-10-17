@@ -29,14 +29,24 @@ import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.ExperimentalLayoutApi
+import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.sizeIn
 import androidx.compose.foundation.border
+import androidx.compose.foundation.background
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.verticalScroll
+import androidx.compose.material3.Button
+import androidx.compose.material3.FilledTonalButton
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
@@ -46,6 +56,7 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.KeyboardType
@@ -57,7 +68,6 @@ import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.graphics.SolidColor
 import androidx.compose.ui.unit.dp
-import androidx.compose.foundation.shape.RoundedCornerShape
 import org.secu3.android.R
 
 @Composable
@@ -80,18 +90,29 @@ internal fun NumericEditDialogContent(
     var changed by rememberSaveable(sessionKey) { mutableStateOf(false) }
     val valid = validate(inputText)
 
+    val dialogShape = RoundedCornerShape(24.dp)
     Surface(
-        modifier = modifier.fillMaxWidth(),
-        shape = RoundedCornerShape(12.dp),
+        modifier = modifier.fillMaxWidth().border(1.dp, MaterialTheme.colorScheme.outlineVariant, dialogShape)
+            .testTag("numeric_editor_surface"),
+        shape = dialogShape,
         color = MaterialTheme.colorScheme.surface,
     ) {
-        Column(Modifier.padding(horizontal = 16.dp, vertical = 20.dp)) {
-            Text(title, modifier = Modifier.fillMaxWidth(), style = MaterialTheme.typography.titleMedium)
+        Column(
+            Modifier.fillMaxWidth().heightIn(max = 560.dp).verticalScroll(rememberScrollState())
+                .padding(horizontal = 20.dp, vertical = 20.dp),
+        ) {
+            Text(
+                title,
+                modifier = Modifier.fillMaxWidth(),
+                style = MaterialTheme.typography.titleLarge,
+                color = MaterialTheme.colorScheme.onSurface,
+                textAlign = TextAlign.Center,
+            )
             Row(
                 modifier = Modifier.fillMaxWidth().padding(top = 20.dp),
-                horizontalArrangement = Arrangement.spacedBy(12.dp),
+                horizontalArrangement = Arrangement.spacedBy(8.dp),
             ) {
-                OutlinedButton(
+                FilledTonalButton(
                     onClick = {
                         changed = true
                         val stepped = onStep(inputText, -1)
@@ -99,15 +120,19 @@ internal fun NumericEditDialogContent(
                     },
                     modifier = Modifier.sizeIn(minWidth = 48.dp, minHeight = 48.dp)
                         .semantics { contentDescription = "Decrease value" },
+                    shape = RoundedCornerShape(12.dp),
+                    contentPadding = PaddingValues(horizontal = 8.dp, vertical = 8.dp),
                 ) { Text("−", style = MaterialTheme.typography.titleLarge) }
                 Column(Modifier.weight(1f)) {
-                    val inputShape = RoundedCornerShape(4.dp)
+                    val inputShape = RoundedCornerShape(12.dp)
                     val borderColor = if (valid) MaterialTheme.colorScheme.outline else MaterialTheme.colorScheme.error
                     val inputTextColor = MaterialTheme.colorScheme.onSurface
                     Box(
                         modifier = Modifier.fillMaxWidth().heightIn(min = 56.dp)
+                            .clip(inputShape)
+                            .background(MaterialTheme.colorScheme.surfaceContainerLow)
                             .border(1.dp, borderColor, inputShape)
-                            .padding(horizontal = 8.dp),
+                            .padding(horizontal = 12.dp),
                         contentAlignment = androidx.compose.ui.Alignment.Center,
                     ) {
                         BasicTextField(
@@ -120,7 +145,8 @@ internal fun NumericEditDialogContent(
                             singleLine = true,
                             textStyle = TextStyle(
                                 color = inputTextColor,
-                                fontSize = MaterialTheme.typography.bodyLarge.fontSize,
+                                fontSize = MaterialTheme.typography.titleLarge.fontSize,
+                                fontWeight = androidx.compose.ui.text.font.FontWeight.SemiBold,
                                 textAlign = TextAlign.Center,
                             ),
                             cursorBrush = SolidColor(MaterialTheme.colorScheme.primary),
@@ -152,7 +178,7 @@ internal fun NumericEditDialogContent(
                         )
                     }
                 }
-                OutlinedButton(
+                FilledTonalButton(
                     onClick = {
                         changed = true
                         val stepped = onStep(inputText, 1)
@@ -160,21 +186,36 @@ internal fun NumericEditDialogContent(
                     },
                     modifier = Modifier.sizeIn(minWidth = 48.dp, minHeight = 48.dp)
                         .semantics { contentDescription = "Increase value" },
+                    shape = RoundedCornerShape(12.dp),
+                    contentPadding = PaddingValues(horizontal = 8.dp, vertical = 8.dp),
                 ) { Text("+", style = MaterialTheme.typography.titleLarge) }
             }
-            Row(
-                modifier = Modifier.fillMaxWidth().padding(top = 20.dp),
-                horizontalArrangement = Arrangement.End,
-            ) {
+            Spacer(Modifier.height(16.dp))
+            NumericDialogActions(
+                onCancel = onCancel,
+                onConfirm = { onConfirm(inputText, changed) },
+                enabled = valid,
+            )
+        }
+    }
+}
+
+@OptIn(ExperimentalLayoutApi::class)
+@Composable
+private fun NumericDialogActions(onCancel: () -> Unit, onConfirm: () -> Unit, enabled: Boolean) {
+    FlowRow(
+        modifier = Modifier.fillMaxWidth(),
+        horizontalArrangement = Arrangement.spacedBy(8.dp, androidx.compose.ui.Alignment.End),
+        verticalArrangement = Arrangement.spacedBy(8.dp),
+    ) {
                 TextButton(onClick = onCancel, modifier = Modifier.sizeIn(minHeight = 48.dp).testTag("numeric_cancel")) {
                     Text(stringResource(android.R.string.cancel))
                 }
-                TextButton(
-                    onClick = { onConfirm(inputText, changed) },
-                    enabled = valid,
+                Button(
+                    onClick = onConfirm,
+                    enabled = enabled,
                     modifier = Modifier.sizeIn(minHeight = 48.dp).testTag("numeric_confirm"),
+                    shape = RoundedCornerShape(12.dp),
                 ) { Text(stringResource(android.R.string.ok)) }
-            }
-        }
     }
 }

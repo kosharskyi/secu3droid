@@ -59,7 +59,8 @@ class ParametersNavigationIntegrationTest {
 
         compose.onNodeWithTag("home-card-parameters").performClick()
         compose.waitForIdle()
-        InstrumentationRegistry.getInstrumentation().sendKeyDownUpSync(KeyEvent.KEYCODE_BACK)
+        assertOnParametersRoute()
+        compose.activityRule.scenario.onActivity { it.onBackPressedDispatcher.onBackPressed() }
         compose.waitForIdle()
         assertNativeHomeRestored(nativeHost)
     }
@@ -70,16 +71,16 @@ class ParametersNavigationIntegrationTest {
         compose.waitForIdle()
         val initialViewModel = currentParametersViewModel()
         val anglesTitle = compose.activity.getString(R.string.params_tab_angles_title)
-        compose.onNodeWithContentDescription(anglesTitle).performClick()
+        compose.onNodeWithText(anglesTitle).performClick()
         compose.waitForIdle()
-        compose.onNodeWithContentDescription(anglesTitle).assertIsSelected()
+        compose.onNodeWithText(anglesTitle).assertIsSelected()
         assertNull(initialViewModel.parameterEditSession)
 
         compose.activityRule.scenario.recreate()
         compose.waitForIdle()
         val retainedViewModel = currentParametersViewModel()
         assertSame(initialViewModel, retainedViewModel)
-        compose.onNodeWithContentDescription(anglesTitle).assertIsSelected()
+        compose.onNodeWithText(anglesTitle).assertIsSelected()
         assertNull(retainedViewModel.parameterEditSession)
 
         compose.runOnIdle {
@@ -215,7 +216,7 @@ class ParametersNavigationIntegrationTest {
         assertNativeHostRestored(host, HOME_ROUTE)
     }
 
-    @Test fun homeErrorsRouteRestoresSystemBarsAndNativeHost() {
+    @Test fun homeErrorsRoutePreservesSharedAppearanceAndNativeHost() {
         val host = navigateNativeHostToHome()
         var originalStatusBarColor = 0
         var originalNavigationBarColor = 0
@@ -234,8 +235,8 @@ class ParametersNavigationIntegrationTest {
         assertFullScreenComposeRoute(host, ERRORS_ROUTE, HOME_ROUTE)
         compose.activityRule.scenario.onActivity { activity ->
             val insets = WindowInsetsControllerCompat(activity.window, activity.window.decorView)
-            assertEquals(false, insets.isAppearanceLightStatusBars)
-            assertEquals(false, insets.isAppearanceLightNavigationBars)
+            assertEquals(originalLightStatusBars, insets.isAppearanceLightStatusBars)
+            assertEquals(originalLightNavigationBars, insets.isAppearanceLightNavigationBars)
         }
         InstrumentationRegistry.getInstrumentation().sendKeyDownUpSync(KeyEvent.KEYCODE_BACK)
         compose.waitForIdle()
@@ -344,6 +345,14 @@ class ParametersNavigationIntegrationTest {
 
     private fun assertOnParametersRoute() {
         compose.onNodeWithText(compose.activity.getString(R.string.title_activity_param)).assertExists()
+        compose.waitUntil(5_000) {
+            var resumed = false
+            compose.activityRule.scenario.onActivity { activity ->
+                val entry = activity.rootNavigationController?.currentBackStackEntry
+                resumed = entry?.destination?.route == PARAMETERS_ROUTE && entry.lifecycle.currentState == Lifecycle.State.RESUMED
+            }
+            resumed
+        }
     }
 
     private fun assertOnSettingsRoute(nativeHost: NavHostController) {
@@ -379,6 +388,14 @@ class ParametersNavigationIntegrationTest {
     }
 
     private fun assertNativeHomeRestored(nativeHost: NavHostController) {
+        compose.waitUntil(5_000) {
+            var restored = false
+            compose.activityRule.scenario.onActivity { activity ->
+                restored = nativeHost.currentDestination?.route == HOME_ROUTE &&
+                    activity.rootNavigationController?.currentDestination?.route == HOME_ROUTE
+            }
+            restored
+        }
         compose.activityRule.scenario.onActivity { activity ->
             assertEquals(HOME_ROUTE, nativeHost.currentDestination?.route)
             assertEquals(HOME_ROUTE, activity.rootNavigationController?.currentDestination?.route)

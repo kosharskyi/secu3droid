@@ -30,6 +30,26 @@ import org.secu3.android.models.packets.out.params.FunSetParamPacket
 
 class FunctionsMappingTest {
     @Test
+    fun tpsGradientUsesDesktopSignedScaleAndPreservesManagerTail() {
+        // Manager payload from io-core: TPS slope -102/40.96 and unknown extension CA FE.
+        val managerPayload = IntArray(49).also {
+            it[0] = 64; it[1] = 'n'.code
+            it[18] = 0xFF; it[19] = 0x9A
+            it[47] = 0xCA; it[48] = 0xFE
+        }
+        val packet = FunSetParamPacket().parse(managerPayload) as FunSetParamPacket
+
+        assertEquals(-102f / 40.96f, packet.tpsCurveGradient, 0.0001f)
+        packet.tpsCurveGradient = -2.5f
+        val outgoing = packet.pack()
+
+        assertEquals(0xFF, outgoing[17])
+        assertEquals(0x9A, outgoing[18])
+        assertEquals(0xCA, outgoing[outgoing.lastIndex - 1])
+        assertEquals(0xFE, outgoing.last())
+    }
+
+    @Test
     fun allFourteenFloatsAndLoadGridMapBothWays() {
         val packet = FunSetParamPacket(
             loadLower = 1f,
@@ -70,12 +90,12 @@ class FunctionsMappingTest {
         assertTrue(packet.useLoadGrid)
         val expectedMetadata = listOf(
             listOf(.25f, 105f, .25f, 2f), listOf(.25f, 500f, .25f, 2f),
-            listOf(-5f, 5f, .003f, 3f), listOf(-150f, 150f, .01f, 3f),
-            listOf(-5f, 5f, .003f, 3f), listOf(0f, 100f, .01f, 3f),
-            listOf(-5f, 5f, .003f, 3f), listOf(-150f, 150f, .01f, 3f),
-            listOf(-5f, 5f, .003f, 3f), listOf(-150f, 150f, .01f, 3f),
-            listOf(-5f, 5f, .0025f, 3f), listOf(-500f, 500f, .01f, 3f),
-            listOf(-5f, 5f, .0025f, 3f), listOf(-500f, 500f, .01f, 3f),
+            listOf(-5f, 5f, .0025f, 4f), listOf(-150f, 150f, .01f, 3f),
+            listOf(-5f, 5f, .0025f, 4f), listOf(-100f, 100f, .01f, 3f),
+            listOf(-5f, 5f, .0025f, 4f), listOf(-150f, 150f, .01f, 3f),
+            listOf(-5f, 5f, .0025f, 4f), listOf(-150f, 150f, .01f, 3f),
+            listOf(-5f, 5f, .0025f, 4f), listOf(-500f, 500f, .01f, 3f),
+            listOf(-5f, 5f, .0025f, 4f), listOf(-500f, 500f, .01f, 3f),
         )
         FunctionsNumber.entries.forEachIndexed { index, number ->
             val metadata = expectedMetadata[index]
@@ -86,6 +106,22 @@ class FunctionsMappingTest {
             assertTrue(number.titleRes != 0)
             assertTrue(number.unitRes != 0)
         }
+    }
+
+    @Test
+    fun loadAxisUnitsAndLowerUpperEnableRulesFollowSourceAndGridMode() {
+        assertEquals(org.secu3.android.R.string.units_pressure_kpa, functionsLoadAxisUnitRes(0))
+        assertEquals(org.secu3.android.R.string.units_pressure_kpa, functionsLoadAxisUnitRes(1))
+        assertEquals(org.secu3.android.R.string.units_percents, functionsLoadAxisUnitRes(2))
+        assertEquals(org.secu3.android.R.string.units_percents, functionsLoadAxisUnitRes(4))
+
+        val default = FunctionsValues(emptyMap(), useLoadGrid = false, loadSource = 0)
+        assertTrue(functionsNumberEnabled(FunctionsNumber.LOWER, default))
+        assertTrue(functionsNumberEnabled(FunctionsNumber.UPPER, default))
+        assertFalse(functionsNumberEnabled(FunctionsNumber.UPPER, default.copy(loadSource = 1)))
+        assertFalse(functionsNumberEnabled(FunctionsNumber.LOWER, default.copy(useLoadGrid = true)))
+        assertFalse(functionsNumberEnabled(FunctionsNumber.UPPER, default.copy(useLoadGrid = true)))
+        assertTrue(functionsNumberEnabled(FunctionsNumber.MAP_OFFSET, default.copy(useLoadGrid = true)))
     }
 
     @Test

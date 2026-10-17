@@ -24,7 +24,6 @@
  */
 package org.secu3.android.ui.parameters.pages.compose
 
-import org.secu3.android.ui.compose.DropdownShape
 
 import androidx.annotation.StringRes
 import androidx.compose.foundation.layout.*
@@ -44,12 +43,17 @@ import org.secu3.android.R
 import org.secu3.android.models.packets.out.params.KnockParamPacket
 import org.secu3.android.ui.parameters.compose.ParameterSwitchRow
 import org.secu3.android.ui.parameters.compose.ParameterValueRow
+import org.secu3.android.ui.parameters.compose.ParameterPage
+import org.secu3.android.ui.parameters.compose.ParameterSection
+import org.secu3.android.ui.parameters.compose.ParameterSelectionRow
+import org.secu3.android.ui.parameters.dialogs.ParameterChoice
+import org.secu3.android.ui.parameters.dialogs.ParameterChoiceDialog
 
 enum class KnockNumber(@StringRes val title: Int, val units: KnockUnits, val precision: Int, val min: Float, val max: Float, val step: Float) {
     BEGIN(R.string.knock_par_phase_window_begin_title, KnockUnits.DEGREES, 2, -12f, 54f, 1f),
     END(R.string.knock_par_phase_window_end_title, KnockUnits.DEGREES, 2, -12f, 54f, 1f),
     RETARD(R.string.knock_par_angle_displacement_step_title, KnockUnits.DEGREES, 2, 0f, 20f, .25f),
-    ADVANCE(R.string.knock_par_angle_retard_step_title, KnockUnits.DEGREES, 2, 0f, 5f, .2f),
+    ADVANCE(R.string.knock_par_angle_retard_step_title, KnockUnits.DEGREES, 2, 0f, 5f, .02f),
     MAX_RETARD(R.string.knock_par_maximal_angle_displacement_title, KnockUnits.DEGREES, 2, 0f, 25f, .25f),
     THRESHOLD(R.string.knock_par_knock_threshold_title, KnockUnits.VOLTS, 2, .1f, 5f, .01f),
     DELAY(R.string.knock_par_angle_recovery_delay_title, KnockUnits.STR, 0, 1f, 99f, 1f),
@@ -129,63 +133,69 @@ fun KnockScreen(
     onChannel: (Int, Boolean) -> Unit,
     onSelector: (KnockSelector, Int) -> Unit,
 ) {
+    val pageScrollState = rememberScrollState()
     when (state) {
         KnockUiState.Loading -> ParameterLoadingIndicator("knock_loading")
 
-        is KnockUiState.Data -> Column(
-            Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(16.dp),
-            verticalArrangement = Arrangement.spacedBy(16.dp),
-        ) {
-            ParameterSwitchRow(
-                title = stringResource(R.string.knock_par_use_knock_sensor_title),
-                checked = state.enabled,
-                testTag = "knock_enable",
-                onCheckedChange = onEnable,
-            )
-            listOf(KnockNumber.BEGIN, KnockNumber.END).forEach { number ->
-                NumberRow(number, state.values, onEdit)
-            }
-            KnockSelector.entries.forEach { selector ->
-                val options = if (selector == KnockSelector.BPF) {
-                    state.values.bpfOptions
-                } else {
-                    state.values.integrationOptions
+        is KnockUiState.Data -> ParameterPage(scrollState = pageScrollState) {
+            ParameterSection {
+                ParameterSwitchRow(
+                    title = stringResource(R.string.knock_par_use_knock_sensor_title),
+                    checked = state.enabled,
+                    testTag = "knock_enable",
+                    onCheckedChange = onEnable,
+                )
+                listOf(KnockNumber.BEGIN, KnockNumber.END).forEach { number ->
+                    NumberRow(number, state.values, onEdit)
                 }
-                KnockSelectorRow(selector, state.values.selector(selector), options) { index ->
-                    onSelector(selector, index)
-                }
-            }
-            listOf(
-                KnockNumber.RETARD,
-                KnockNumber.ADVANCE,
-                KnockNumber.MAX_RETARD,
-                KnockNumber.THRESHOLD,
-                KnockNumber.DELAY,
-            ).forEach { number ->
-                NumberRow(number, state.values, onEdit)
-            }
-            Text(
-                stringResource(R.string.knock_par_select_knock_sensor_title),
-                style = MaterialTheme.typography.titleMedium,
-            )
-            (0..7).chunked(4).forEach { channels ->
-                Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceEvenly) {
-                    channels.forEach { channel ->
-                        Row(
-                            Modifier.weight(1f).testTag("knock_channel_${channel + 1}"),
-                            verticalAlignment = Alignment.CenterVertically,
-                        ) {
-                            Checkbox(
-                                checked = state.values.channels()[channel],
-                                onCheckedChange = { onChannel(channel, it) },
-                                modifier = Modifier.testTag("knock_channel_checkbox_${channel + 1}"),
-                            )
-                            Text("${channel + 1}")
-                        }
+                KnockSelector.entries.forEach { selector ->
+                    val options = if (selector == KnockSelector.BPF) {
+                        state.values.bpfOptions
+                    } else {
+                        state.values.integrationOptions
+                    }
+                    KnockSelectorRow(selector, state.values.selector(selector), options) { index ->
+                        onSelector(selector, index)
                     }
                 }
+                listOf(
+                    KnockNumber.RETARD,
+                    KnockNumber.ADVANCE,
+                    KnockNumber.MAX_RETARD,
+                    KnockNumber.THRESHOLD,
+                    KnockNumber.DELAY,
+                ).forEach { number ->
+                    NumberRow(number, state.values, onEdit)
+                }
+                Text(
+                    stringResource(R.string.knock_par_select_knock_sensor_title),
+                    Modifier.fillMaxWidth().padding(horizontal = 14.dp, vertical = 11.dp),
+                    style = MaterialTheme.typography.titleMedium,
+                )
+                (0..7).chunked(4).forEachIndexed { rowIndex, channels ->
+                    Row(
+                        Modifier.fillMaxWidth().heightIn(min = 66.dp).padding(horizontal = 14.dp, vertical = 11.dp),
+                        horizontalArrangement = Arrangement.spacedBy(0.dp),
+                    ) {
+                        channels.forEach { channel ->
+                            Row(
+                                Modifier.weight(1f)
+                                    .testTag("knock_channel_${channel + 1}"),
+                                verticalAlignment = Alignment.CenterVertically,
+                            ) {
+                                Checkbox(
+                                    checked = state.values.channels()[channel],
+                                    onCheckedChange = { onChannel(channel, it) },
+                                    modifier = Modifier.testTag("knock_channel_checkbox_${channel + 1}"),
+                                )
+                                Text("${channel + 1}", style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurface)
+                            }
+                        }
+                    }
+                    if (rowIndex < 1) HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant)
+                }
+                NumberRow(KnockNumber.CONTROL, state.values, onEdit)
             }
-            NumberRow(KnockNumber.CONTROL, state.values, onEdit)
         }
     }
 }
@@ -216,29 +226,17 @@ private fun KnockSelectorRow(
     var expanded by remember { mutableStateOf(false) }
 
     Column {
-        OutlinedButton(
+        ParameterSelectionRow(
+            title = stringResource(selector.title),
+            value = value,
+            testTag = "knock_selector_${selector.name.lowercase()}",
             onClick = { expanded = true },
-            modifier = Modifier.fillMaxWidth().testTag("knock_selector_${selector.name.lowercase()}"),
-            shape = DropdownShape,
-            contentPadding = PaddingValues(horizontal = 12.dp, vertical = 14.dp),
-        ) {
-            Column(Modifier.weight(1f), horizontalAlignment = Alignment.Start) {
-                Text(stringResource(selector.title), style = MaterialTheme.typography.labelMedium)
-                Text(value)
-            }
-            Icon(Icons.Default.ArrowDropDown, contentDescription = null)
-        }
-        DropdownMenu(expanded = expanded, onDismissRequest = { expanded = false }, shape = DropdownShape) {
-            options.forEachIndexed { index, option ->
-                DropdownMenuItem(
-                    text = { Text(option) },
-                    onClick = {
-                        expanded = false
-                        onSelect(index)
-                    },
-                    modifier = Modifier.testTag("knock_selector_option_$index"),
-                )
-            }
-        }
+        )
+        if (expanded) ParameterChoiceDialog(
+            title = stringResource(selector.title),
+            choices = options.mapIndexed { index, option -> ParameterChoice(index, option, "knock_selector_option_$index") },
+            onDismiss = { expanded = false },
+            onSelect = onSelect,
+        )
     }
 }
