@@ -86,7 +86,7 @@ data class InjctrParPacket(
         data += sdIglConst[0].write4Bytes()
         data += sdIglConst[1].write4Bytes()
 
-        data += ckpsEngineCyl
+        data += 0 // RX-only cylinder metadata; desktop TX protocol uses a zero stub.
 
         data += timing[0].times(PARINJTIM_DIVIDER).protocolRoundToInt().write2Bytes()
         data += timing[1].times(PARINJTIM_DIVIDER).protocolRoundToInt().write2Bytes()

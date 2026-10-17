@@ -86,7 +86,9 @@ class FuelInjectionMappingTest {
     @Test fun packetMutationPreservesUnknownCodesAndUnhandledTail() {
         val packet = InjctrParPacket(flags = 0x80, config = intArrayOf(0xA2, 0xB4), ckpsEngineCyl = 4)
         val raw = packet.pack().drop(1).toIntArray() + intArrayOf(0xAA, 0x55)
-        val parsed = InjctrParPacket().parse(intArrayOf(0x40, 0x21) + raw) as InjctrParPacket
+        val incomingFrame = intArrayOf(0x40, 0x21) + raw
+        incomingFrame[19] = packet.ckpsEngineCyl
+        val parsed = InjctrParPacket().parse(incomingFrame) as InjctrParPacket
         parsed.useTimingMap = true
         assertEquals(10, parsed.config0)
         assertEquals(11, parsed.config1)

@@ -86,7 +86,9 @@ class FuelInjectionStateHolderTest {
             it.timing = floatArrayOf(1.5f, -1f)
             it.timingCrk = floatArrayOf(.0625f, 720f)
         }
-        val incoming = InjctrParPacket().parse(intArrayOf('@'.code) + source.pack() + intArrayOf(0xCA, 0xFE)) as InjctrParPacket
+        val incomingFrame = intArrayOf('@'.code) + source.pack() + intArrayOf(0xCA, 0xFE)
+        incomingFrame[19] = source.ckpsEngineCyl
+        val incoming = InjctrParPacket().parse(incomingFrame) as InjctrParPacket
         holder.receive(incoming)
         assertTrue(sends.isEmpty())
         val spec = holder.editSpec(FuelInjectionNumber.TIMING_0)!!
@@ -225,7 +227,9 @@ class FuelInjectionStateHolderTest {
         assertEquals(.02f, spec.step); assertEquals(50f, spec.min); assertEquals(1023f, spec.max)
         assertEquals(2, spec.precision); assertFalse(spec.integer)
         val raw = packet().also { it.config[0] = 0xA2; it.config[1] = 0xB4 }
-        val parsed = InjctrParPacket().parse(intArrayOf(0x40, 0x21) + raw.pack().drop(1).toIntArray() + intArrayOf(0xAA, 0x55)) as InjctrParPacket
+        val incomingFrame = intArrayOf(0x40, 0x21) + raw.pack().drop(1).toIntArray() + intArrayOf(0xAA, 0x55)
+        incomingFrame[19] = raw.ckpsEngineCyl
+        val parsed = InjctrParPacket().parse(incomingFrame) as InjctrParPacket
         holder.receive(parsed); holder.changeFlag(FuelInjectionFlag.USE_MAP_0, true)
         assertEquals(10, parsed.config0); assertEquals(11, parsed.config1)
         assertEquals(0x81, parsed.flags)

@@ -9,3 +9,7 @@ Main and cranking timing for both banks decode as signed 16-bit words divided by
 ## Injector pulses-per-liter stays a physical Float
 
 `fffConst` is an unsigned 16-bit fixed-point physical value (`word * 60000 / 65536`). Keep the decoded Float so unrelated parameter writes can reproduce its original word. `SensorsPacket` has a separate fixed app-side conversion constant; it is not this ECU parameter.
+
+## Cylinder count is RX metadata and a TX stub
+
+The received cylinder count remains available to derive injector-bank values, but desktop parameter writes always send zero in that byte. Keep the property for receive/UI calculations and emit the zero stub on TX.
