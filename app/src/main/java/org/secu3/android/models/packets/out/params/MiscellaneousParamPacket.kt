@@ -113,7 +113,7 @@ data class MiscellaneousParamPacket(
         uartDivisor = data.get2Bytes()
         uartPeriodTms = data.get1Byte() * 10
         ignCutoff = data.get1Byte()
-        ignCutoffThrd = data.get2Bytes()
+        ignCutoffThrd = data.get2BytesSigned()
         hopStartAng = data.get2BytesSigned().toFloat() / ANGLE_DIVIDER
         hopDuratAng = data.get2Bytes().toFloat() / ANGLE_DIVIDER
         flpmpFlags = data.get1Byte()

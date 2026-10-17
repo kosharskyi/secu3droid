@@ -51,6 +51,22 @@ class MiscellaneousParamPacketTest {
         }
     }
 
+    @Test fun ignitionCutoffThresholdDecodesSignedWordsAndSurvivesUnrelatedEdits() {
+        val expected = listOf(0 to 0, 0x7FFF to 32767, 0x8000 to -32768, 0xFFFF to -1)
+        for ((raw, value) in expected) {
+            val incoming = vssFrame(32768).also {
+                it[6] = raw ushr 8
+                it[7] = raw and 255
+            }.copyOfRange(0, 24) + intArrayOf(0xCA, 0xFE)
+
+            val packet = MiscellaneousParamPacket().parse(incoming) as MiscellaneousParamPacket
+            assertEquals(value, packet.ignCutoffThrd)
+            packet.uartPeriodTms = 30
+            assertArrayEquals(intArrayOf(raw ushr 8, raw and 255), packet.pack().sliceArray(5..6))
+            assertArrayEquals(intArrayOf(0xCA, 0xFE), packet.pack().takeLast(2).toIntArray())
+        }
+    }
+
     @Test fun vssReciprocalRetainsIncomingWireWordAcrossUnrelatedEdits() {
         val decoded = mutableListOf<Float>()
         for (raw in listOf(65275, 65290, 1, 257, 32768, 65535)) {

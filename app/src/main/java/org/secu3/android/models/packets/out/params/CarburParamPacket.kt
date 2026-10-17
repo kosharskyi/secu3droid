@@ -55,7 +55,7 @@ data class CarburParamPacket(
         data += ieLot.write2Bytes()
         data += ieHit.write2Bytes()
         data += carbInvers
-        data += feOnThresholds.times(MAP_MULTIPLIER).roundToInt().write2Bytes()
+        data += feOnThresholds.times(MAP_MULTIPLIER).protocolRoundToInt().write2Bytes()
         data += ieLotG.write2Bytes()
         data += ieHitG.write2Bytes()
         data += shutoffDelay.times(100).roundToInt()
@@ -77,7 +77,7 @@ data class CarburParamPacket(
         ieLot = data.get2Bytes()
         ieHit = data.get2Bytes()
         carbInvers = data.get1Byte()
-        feOnThresholds = data.get2Bytes().toFloat() / MAP_MULTIPLIER
+        feOnThresholds = data.get2BytesSigned().toFloat() / MAP_MULTIPLIER
         ieLotG = data.get2Bytes()
         ieHitG = data.get2Bytes()
         shutoffDelay = data.get1Byte().toFloat() / 100
