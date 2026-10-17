@@ -27,6 +27,7 @@ package org.secu3.android.models.packets.out.params
 import org.secu3.android.models.packets.base.Secu3Packet
 import org.secu3.android.models.packets.base.InputPacket
 import org.secu3.android.models.packets.base.OutputPacket
+import org.secu3.android.models.packets.base.protocolRoundToInt
 import org.secu3.android.utils.getBitValue
 import org.secu3.android.utils.setBitValue
 import kotlin.math.roundToInt
@@ -37,8 +38,8 @@ data class MiscellaneousParamPacket(
     var uartPeriodTms: Int = 0,
     var ignCutoff: Int = 0,
     var ignCutoffThrd: Int = 0,
-    var hopStartAng: Int = 0,
-    var hopDuratAng: Int = 0,
+    var hopStartAng: Float = 0f,
+    var hopDuratAng: Float = 0f,
     var flpmpFlags: Int = 0,
     var evapAfbegin: Int = 0,
     var evapAfslope: Float = 0f,
@@ -86,8 +87,8 @@ data class MiscellaneousParamPacket(
         data += ignCutoff
         data += ignCutoffThrd.write2Bytes()
 
-        data += hopStartAng.times(ANGLE_DIVIDER).write2Bytes()
-        data += hopDuratAng.times(ANGLE_DIVIDER).write2Bytes()
+        data += hopStartAng.times(ANGLE_DIVIDER).protocolRoundToInt().write2Bytes()
+        data += hopDuratAng.times(ANGLE_DIVIDER).roundToInt().write2Bytes()
         data += flpmpFlags
 
         data += evapAfbegin.div(32).write2Bytes()
@@ -113,8 +114,8 @@ data class MiscellaneousParamPacket(
         uartPeriodTms = data.get1Byte() * 10
         ignCutoff = data.get1Byte()
         ignCutoffThrd = data.get2Bytes()
-        hopStartAng = data.get2BytesSigned().div(ANGLE_DIVIDER)
-        hopDuratAng = data.get2Bytes().div(ANGLE_DIVIDER)
+        hopStartAng = data.get2BytesSigned().toFloat() / ANGLE_DIVIDER
+        hopDuratAng = data.get2Bytes().toFloat() / ANGLE_DIVIDER
         flpmpFlags = data.get1Byte()
         evapAfbegin = data.get2Bytes() * 32
         evapAfslope = data.get2Bytes().toFloat().div(1048576.0f).div(32)

@@ -29,3 +29,7 @@ ParameterCapabilities maps ECU flags using the live desktop controller rules. It
 ## Miscellaneous VSS displays a rounded integer without quantizing the packet
 
 The packet retains the ECU's reciprocal VSS Float so unrelated edits preserve the incoming word. The state and integer editor display a rounded pulses-per-kilometer value, while an explicit editor commit stores the selected integer as a Float.
+
+## Miscellaneous hop angles display rounded integers while retaining fractions
+
+The packet keeps one-thirty-second degree Float values for start angle and duration; state and integer editor initial values round only for presentation. An explicit editor commit stores the selected whole degree as a Float.

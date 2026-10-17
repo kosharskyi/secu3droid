@@ -117,8 +117,8 @@ internal fun ParameterPageContent(
                 val parameter = when (key) {
                     MiscField.PERIOD -> Triple(R.string.miscel_period_title, p.uartPeriodTms, 0 to 500)
                     MiscField.CUTOFF -> Triple(R.string.miscel_ignition_cutoff_rpm_title, p.ignCutoffThrd, 1000 to 30000)
-                    MiscField.START -> Triple(R.string.miscel_start_rel_to_tdc_title, p.hopStartAng, -36 to 72)
-                    MiscField.DURATION -> Triple(R.string.miscel_hall_output_delay_title, p.hopDuratAng, 6 to 180)
+                    MiscField.START -> Triple(R.string.miscel_start_rel_to_tdc_title, p.hopStartAng.roundToInt(), -36 to 72)
+                    MiscField.DURATION -> Triple(R.string.miscel_hall_output_delay_title, p.hopDuratAng.roundToInt(), 6 to 180)
                     MiscField.BEGIN -> Triple(R.string.miscel_evap_starting_air_flow_title, p.evapAfbegin, evapEditBounds(MiscField.BEGIN, p.evapAfbegin, p.evapAfEnd))
                     MiscField.END -> Triple(R.string.miscel_evap_ending_air_flow_title, p.evapAfEnd, evapEditBounds(MiscField.END, p.evapAfbegin, p.evapAfEnd))
                     MiscField.PWM0 -> Triple(R.string.miscel_pwmfrq1_title, p.pwmFrq0, 10 to 5000)

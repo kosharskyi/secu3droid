@@ -81,6 +81,38 @@ class MiscellaneousParamPacketTest {
         assertArrayEquals(intArrayOf(0x6A, 0xAB), packet.pack().sliceArray(21..22))
     }
 
+    @Test fun hopAnglesRetainSignedAndUnsignedWirePrecisionAcrossUnrelatedEdits() {
+        for ((raws, expected) in listOf(
+            intArrayOf(0x0021, 0x0041) to (33f / 32f to 65f / 32f),
+            intArrayOf(0xFFDF, 0xFFFF) to (-33f / 32f to 65535f / 32f),
+        )) {
+            val startRaw = raws[0]
+            val durationRaw = raws[1]
+            val incoming = vssFrame(32768).also {
+                it[8] = startRaw ushr 8; it[9] = startRaw and 255
+                it[10] = durationRaw ushr 8; it[11] = durationRaw and 255
+            }
+            val packet = MiscellaneousParamPacket().parse(incoming) as MiscellaneousParamPacket
+            assertEquals(expected.first, packet.hopStartAng, 0f)
+            assertEquals(expected.second, packet.hopDuratAng, 0f)
+
+            packet.uartPeriodTms = 30
+            val packed = packet.pack()
+            assertArrayEquals(intArrayOf(startRaw ushr 8, startRaw and 255, durationRaw ushr 8, durationRaw and 255), packed.sliceArray(7..10))
+            assertArrayEquals(intArrayOf(0xCA, 0xFE), packed.takeLast(2).toIntArray())
+        }
+
+        val negativeHalfTie = MiscellaneousParamPacket(
+            evapAfbegin = 5000,
+            evapAfslope = 32f / 170000f,
+            pwmFrq0 = 100,
+            pwmFrq1 = 200,
+            vssPeriodDist = 1000f,
+            hopStartAng = -.015625f,
+        )
+        assertArrayEquals(intArrayOf(0xFF, 0xFF), negativeHalfTie.pack().sliceArray(7..8))
+    }
+
     @Test fun evapSlopeUsesExpectedRawWordAndRoundTrips() {
         val packet = MiscellaneousParamPacket(uartDivisor=0x0103, evapAfbegin=5000, evapAfslope=32f/170000f)
         val packed = packet.pack()
@@ -117,7 +149,7 @@ class MiscellaneousParamPacketTest {
     }
 
     @Test fun editingParsedPacketPreservesOtherParametersAndUnknownTail() {
-        val source=MiscellaneousParamPacket(uartDivisor=0x0103,uartPeriodTms=20,ignCutoff=1,ignCutoffThrd=4200,hopStartAng=-2,hopDuratAng=5,flpmpFlags=0xA9,evapAfbegin=5000,evapAfslope=32f/170000f,fpTimeoutStrt=2.5f,pwmFrq0=100,pwmFrq1=200,vssPeriodDist=1000f)
+        val source=MiscellaneousParamPacket(uartDivisor=0x0103,uartPeriodTms=20,ignCutoff=1,ignCutoffThrd=4200,hopStartAng=-2f,hopDuratAng=5f,flpmpFlags=0xA9,evapAfbegin=5000,evapAfslope=32f/170000f,fpTimeoutStrt=2.5f,pwmFrq0=100,pwmFrq1=200,vssPeriodDist=1000f)
         val incoming=intArrayOf(0x40,0x21)+source.pack().drop(1).toIntArray()+intArrayOf(0xD1,0xE2)
         val parsed=MiscellaneousParamPacket().parse(incoming) as MiscellaneousParamPacket
         parsed.uartPeriodTms=30
@@ -126,7 +158,7 @@ class MiscellaneousParamPacketTest {
         assertEquals(3,repacked[3])
         assertEquals(1,repacked[4])
         assertEquals(4200,(repacked[5] shl 8) or repacked[6])
-        assertEquals(-2,parsed.hopStartAng)
+        assertEquals(-2f,parsed.hopStartAng, 0f)
         assertEquals(0xA9,parsed.flpmpFlags)
         assertEquals(25,repacked[16])
         assertEquals(100,parsed.pwmFrq0)
@@ -147,13 +179,13 @@ class MiscellaneousParamPacketTest {
     @Test fun hallRangesAndExpandedEvapUpperBoundAcceptDesktopSupportedEdges() {
         val packet = MiscellaneousParamPacket(evapAfbegin = 100, evapAfslope = 32f / 20000f)
         MiscellaneousNumericMapping.applyInt(packet, MiscField.START, -36)
-        assertEquals(-36, packet.hopStartAng)
+        assertEquals(-36f, packet.hopStartAng, 0f)
         MiscellaneousNumericMapping.applyInt(packet, MiscField.START, 72)
-        assertEquals(72, packet.hopStartAng)
+        assertEquals(72f, packet.hopStartAng, 0f)
         MiscellaneousNumericMapping.applyInt(packet, MiscField.DURATION, 6)
-        assertEquals(6, packet.hopDuratAng)
+        assertEquals(6f, packet.hopDuratAng, 0f)
         MiscellaneousNumericMapping.applyInt(packet, MiscField.DURATION, 180)
-        assertEquals(180, packet.hopDuratAng)
+        assertEquals(180f, packet.hopDuratAng, 0f)
         MiscellaneousNumericMapping.applyInt(packet, MiscField.END, 2_000_000)
         assertTrue(packet.evapAfEnd in 1_995_000..2_000_000)
         assertTrue(packet.evapAfEnd - packet.evapAfbegin >= MiscellaneousParamPacket.MIN_EVAP_AIRFLOW_DELTA)
@@ -179,8 +211,8 @@ class MiscellaneousParamPacketTest {
                 uartPeriodTms = 20,
                 ignCutoff = 1,
                 ignCutoffThrd = 4200,
-                hopStartAng = -2,
-                hopDuratAng = 5,
+                hopStartAng = -2f,
+                hopDuratAng = 5f,
                 flpmpFlags = 0xA9,
                 evapAfbegin = 5000,
                 evapAfslope = 32f / 170000f,
@@ -217,8 +249,8 @@ class MiscellaneousParamPacketTest {
             assertEquals(if (field == MiscField.PERIOD) 30 else 20, packet.uartPeriodTms)
             assertEquals(1, packet.ignCutoff)
             assertEquals(if (field == MiscField.CUTOFF) 4100 else 4200, packet.ignCutoffThrd)
-            assertEquals(if (field == MiscField.START) -4 else -2, packet.hopStartAng)
-            assertEquals(if (field == MiscField.DURATION) 10 else 5, packet.hopDuratAng)
+            assertEquals(if (field == MiscField.START) -4f else -2f, packet.hopStartAng, 0f)
+            assertEquals(if (field == MiscField.DURATION) 10f else 5f, packet.hopDuratAng, 0f)
             assertEquals(0xA9, packet.flpmpFlags)
             assertEquals(if (field == MiscField.BEGIN) 6000 else oldEvapBegin, packet.evapAfbegin)
             assertTrue(packet.evapAfslope > 0f)
@@ -242,8 +274,8 @@ class MiscellaneousParamPacketTest {
             uartPeriodTms = 20,
             ignCutoff = 1,
             ignCutoffThrd = 4200,
-            hopStartAng = -2,
-            hopDuratAng = 5,
+            hopStartAng = -2f,
+            hopDuratAng = 5f,
             flpmpFlags = 0xA9,
             evapAfbegin = 5000,
             evapAfslope = 32f / 170000f,
@@ -264,8 +296,8 @@ class MiscellaneousParamPacketTest {
         assertTrue(kotlin.math.abs(packet.evapAfEnd - 30000) < 20)
         assertEquals(20, packet.uartPeriodTms)
         assertEquals(4200, packet.ignCutoffThrd)
-        assertEquals(-2, packet.hopStartAng)
-        assertEquals(5, packet.hopDuratAng)
+        assertEquals(-2f, packet.hopStartAng, 0f)
+        assertEquals(5f, packet.hopDuratAng, 0f)
         assertEquals(0xA9, packet.flpmpFlags)
         assertEquals(2.5f, packet.fpTimeoutStrt, 0f)
         assertEquals(100, packet.pwmFrq0)

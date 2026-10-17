@@ -114,6 +114,36 @@ class MiscellaneousStateHolderTest {
     }
 
     @Test
+    fun fractionalAnglesSurviveReceiveAndUnrelatedEditThenExplicitIntegerEditsCommit() {
+        val sent = mutableListOf<MiscellaneousParamPacket>()
+        val holder = MiscellaneousStateHolder(sent::add)
+        val packet = validPacket().apply {
+            hopStartAng = 33f / 32f
+            hopDuratAng = 65f / 32f
+        }
+        holder.onPacketReceived(packet)
+        assertTrue(sent.isEmpty())
+        assertEquals(1, holder.state!!.start)
+        assertEquals(2, holder.state!!.duration)
+
+        holder.editInt(MiscField.PERIOD, 120)
+        assertEquals(33f / 32f, packet.hopStartAng, 0f)
+        assertEquals(65f / 32f, packet.hopDuratAng, 0f)
+        assertEquals(0x00, packet.pack()[7]); assertEquals(0x21, packet.pack()[8])
+        assertEquals(0x00, packet.pack()[9]); assertEquals(0x41, packet.pack()[10])
+
+        holder.editInt(MiscField.START, -4)
+        holder.editInt(MiscField.DURATION, 10)
+        assertEquals(3, sent.size)
+        assertEquals(-4f, packet.hopStartAng, 0f)
+        assertEquals(10f, packet.hopDuratAng, 0f)
+        assertEquals(-4, holder.state!!.start)
+        assertEquals(10, holder.state!!.duration)
+        assertEquals(0xFF, packet.pack()[7]); assertEquals(0x80, packet.pack()[8])
+        assertEquals(0x01, packet.pack()[9]); assertEquals(0x40, packet.pack()[10])
+    }
+
+    @Test
     fun invalidEvapCandidateDoesNotSendOrLeavePartialMutation() {
         val sent = mutableListOf<MiscellaneousParamPacket>()
         val holder = MiscellaneousStateHolder(sent::add)

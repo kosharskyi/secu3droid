@@ -122,7 +122,7 @@ internal class MiscellaneousStateHolder(
 }
 
 private fun MiscellaneousParamPacket.toState() = MiscState(
-    uartDivisor, uartPeriodTms, ignCutoff > 0, ignCutoffThrd, hopStartAng, hopDuratAng,
+    uartDivisor, uartPeriodTms, ignCutoff > 0, ignCutoffThrd, hopStartAng.roundToInt(), hopDuratAng.roundToInt(),
     offPumpOnGas, offInjOnGas, offInjOnPetrol, evapAfbegin, evapAfEnd, fpTimeoutStrt,
     pwmFrq0, pwmFrq1, vssPeriodDist.roundToInt(),
 )

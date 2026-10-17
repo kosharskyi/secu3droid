@@ -42,11 +42,11 @@ internal object MiscellaneousNumericMapping {
             }
             MiscField.START -> {
                 require(value in -36..72)
-                packet.hopStartAng = value
+                packet.hopStartAng = value.toFloat()
             }
             MiscField.DURATION -> {
                 require(value in 6..180)
-                packet.hopDuratAng = value
+                packet.hopDuratAng = value.toFloat()
             }
             MiscField.BEGIN -> applyEvapPair(packet, value, packet.evapAfEnd)
             MiscField.END -> applyEvapPair(packet, packet.evapAfbegin, value)
