@@ -5,3 +5,7 @@ The 252-byte little-endian S3L record stores airflow at byte 32, one padding byt
 ## Logger I/O failures stop the singleton session and remain pending until acknowledged
 
 Binary and CSV sinks are serialized with start and stop. An I/O failure clears the active session and publishes a monotonically increasing pending error ID; the Sensors route acknowledges only the ID it has displayed, so an error raised while that route is inactive can be shown when it resumes.
+
+## Idling VE is logged as service flag bit 9 from additional flag bit 0
+
+The ECU packet keeps Idling VE in `additionalFlags` bit 0, separate from `serviceFlags`. CSV `ServFlag` and the S3L service word use bit 9 for it, so the logger derives a copy of the service word with bit 9 set or cleared from `corrIdlve`; it must not modify the parsed packet.

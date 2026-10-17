@@ -1,6 +1,7 @@
 package org.secu3.android.utils
 
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertFalse
 import org.junit.Test
 import org.secu3.android.models.packets.input.SensorsPacket
 import org.threeten.bp.LocalTime
@@ -29,7 +30,31 @@ class SecuLoggerBinaryRecordTest {
         assertEquals(0xCCCC.toShort(), buffer.getShort(38))
         assertEquals(12.5f, buffer.getFloat(40), 0f)
         assertEquals(4.toByte(), bytes[244])
-        assertEquals(0x1357, buffer.getShort(246).toInt() and 0xFFFF)
+        assertEquals(0x1157, buffer.getShort(246).toInt() and 0xFFFF)
         assertEquals(0x12345678, buffer.getInt(248))
+    }
+
+    @Test
+    fun idlingVeMapsToServiceBitNineInBinaryAndCsvWithoutChangingOtherBits() {
+        val otherServiceBits = (1 shl 8) or (1 shl 4) or 1
+        val cases = listOf(
+            Triple(SensorsPacket(additionalFlags = 1, serviceFlags = otherServiceBits), otherServiceBits or (1 shl 9), "   785"),
+            Triple(SensorsPacket(additionalFlags = 0, serviceFlags = otherServiceBits or (1 shl 9)), otherServiceBits, "   273"),
+            Triple(SensorsPacket(additionalFlags = 0xFE, serviceFlags = 0), 0, "     0"),
+        )
+
+        cases.forEach { (packet, expectedServiceFlags, expectedCsvColumn) ->
+            val originalServiceFlags = packet.serviceFlags
+            val record = encodeBinaryLogRecord(packet, mark = 0, now = LocalTime.MIDNIGHT)
+            val encodedServiceFlags = ByteBuffer.wrap(record).order(ByteOrder.LITTLE_ENDIAN)
+                .getShort(246).toInt() and 0xFFFF
+
+            assertEquals(expectedServiceFlags, packet.serviceFlagsForLog())
+            assertEquals(expectedServiceFlags, encodedServiceFlags)
+            assertEquals(expectedCsvColumn, packet.csvServiceFlagsColumn())
+            assertEquals(originalServiceFlags, packet.serviceFlags)
+        }
+
+        assertFalse(cases.last().first.corrIdlve > 0)
     }
 }

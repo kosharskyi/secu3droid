@@ -39,6 +39,12 @@ import java.util.Locale
 import javax.inject.Inject
 import javax.inject.Singleton
 
+internal fun SensorsPacket.serviceFlagsForLog(): Int =
+    serviceFlags.setBitValue(corrIdlve > 0, 9)
+
+internal fun SensorsPacket.csvServiceFlagsColumn(): String =
+    " %5d".format(Locale.US, serviceFlagsForLog())
+
 private fun openBinaryOutput(file: File): LoggerOutput {
     val stream = FileOutputStream(file)
     return try {
@@ -194,7 +200,7 @@ internal fun encodeBinaryLogRecord(packet: SensorsPacket, mark: Int, now: LocalT
         // TODO: update capacity if new field is added
         put(mark.toByte())
         put(alignByte)
-        putShort(packet.serviceFlags.toShort())
+        putShort(packet.serviceFlagsForLog().toShort())
         putInt(packet.ecuErrors)
     }
 
@@ -382,7 +388,7 @@ class SecuLogger @Inject constructor(private val prefs: UserPrefs, private val f
             " %5.1f".format(Locale.US, reqTorque),
             // TODO: update titles if new field is added
             " %01d".format(Locale.US, mark),
-            " %5d".format(Locale.US, serviceFlags),
+            csvServiceFlagsColumn(),
             " $ceBits"
         )
 
