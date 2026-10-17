@@ -28,6 +28,7 @@ import org.junit.Assert.assertEquals
 import org.junit.Assert.assertTrue
 import org.junit.Test
 import org.secu3.android.models.packets.out.params.IdlingParamPacket
+import org.secu3.android.ui.parameters.dialogs.parseIntegerInput
 
 class IdlingStateHolderTest {
     @Test
@@ -80,6 +81,27 @@ class IdlingStateHolderTest {
         assertTrue(sent.single() === packet)
         assertTrue(packet.useRegulator)
         assertTrue((holder.state as IdlingUiState.Data).values.flags.getValue(IdlingFlag.REGULATOR))
+    }
+
+    @Test
+    fun acceptedNonStepIntegerEditsUseRoundedWireCounts() {
+        val sent = mutableListOf<IdlingParamPacket>()
+        val holder = IdlingStateHolder(sent::add)
+        val packet = IdlingParamPacket()
+        holder.onPacketReceived(packet)
+
+        val rpmAdd = parseIntegerInput("15", IdlingNumber.RPM_ADD.min.toInt(), IdlingNumber.RPM_ADD.max.toInt())!!
+        val integrator = parseIntegerInput("19", IdlingNumber.INTEGRATOR_RPM.min.toInt(), IdlingNumber.INTEGRATOR_RPM.max.toInt())!!
+        holder.updateValue(IdlingNumber.RPM_ADD, rpmAdd.toFloat())
+        holder.updateValue(IdlingNumber.INTEGRATOR_RPM, integrator.toFloat())
+
+        assertEquals(15, packet.rpmOnRunAdd)
+        assertEquals(19, packet.integratorRpmLim)
+        assertEquals(2, packet.pack()[17])
+        assertEquals(2, packet.pack()[28])
+        assertEquals(2, sent.size)
+        assertEquals(15f, (holder.state as IdlingUiState.Data).values.value(IdlingNumber.RPM_ADD))
+        assertEquals(19f, (holder.state as IdlingUiState.Data).values.value(IdlingNumber.INTEGRATOR_RPM))
     }
 
     @Test
