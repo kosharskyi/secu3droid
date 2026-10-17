@@ -58,6 +58,7 @@ import org.secu3.android.ui.parameters.dialogs.ParameterCancelButton
 import org.secu3.android.ui.parameters.dialogs.ParameterChoiceList
 import org.secu3.android.ui.parameters.dialogs.ParameterChoiceOption
 import org.secu3.android.ui.parameters.compose.ParameterTextValueRow
+import kotlin.math.roundToInt
 import org.secu3.android.ui.parameters.pages.injection.validInjectorConfigurations
 import org.secu3.android.ui.parameters.pages.injection.validInjectorPulses
 
@@ -84,7 +85,7 @@ fun fuelInjectionValues(packet: InjctrParPacket): FuelInjectionValues = FuelInje
         val cfg = if (bank == 0) packet.config0 else packet.config1
         val pulseList = validInjectorPulses(cfg, packet.ckpsEngineCyl)
         FuelBankValues(packet.flowRate[bank], cfg, if (bank == 0) packet.config0Pulses else packet.config1Pulses,
-            packet.timing[bank], packet.timingCrk[bank], if (bank == 0) packet.useTimingMap else packet.useTimingMapG,
+            packet.timing[bank].roundToInt(), packet.timingCrk[bank].roundToInt(), if (bank == 0) packet.useTimingMap else packet.useTimingMapG,
             if (bank == 0) packet.angleSpec0 else packet.angleSpec1, if (bank == 0) packet.minPw0 else packet.minPw1,
             packet.injMaxPw[bank], validInjectorConfigurations(packet.ckpsEngineCyl), pulseList)
     }, packet.fffConst, packet.useAdditionalCorrections, packet.useAirDensity, packet.useDifferentialPressure,

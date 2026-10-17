@@ -35,8 +35,8 @@ class FuelInjectionStateHolderTest {
 
     private fun packet() = InjctrParPacket(
         flags = 0x80, config = intArrayOf(0x11, 0x11), flowRate = floatArrayOf(300f, 400f),
-        sdIglConst = intArrayOf(123, 456), ckpsEngineCyl = 4, timing = intArrayOf(10, 20),
-        timingCrk = intArrayOf(30, 40), injMaxPw = floatArrayOf(10f, 11f),
+        sdIglConst = intArrayOf(123, 456), ckpsEngineCyl = 4, timing = floatArrayOf(10f, 20f),
+        timingCrk = floatArrayOf(30f, 40f), injMaxPw = floatArrayOf(10f, 11f),
         injPwDecSpeed = 1f, injPwIncSpeed = 2f,
     ).also { it.engineDisp = 2f }
 
@@ -72,13 +72,45 @@ class FuelInjectionStateHolderTest {
         assertEquals(edits.size, sends.size)
         assertEquals(3f, p.engineDisp, .0001f)
         assertArrayEquals(floatArrayOf(301f, 401f), p.flowRate, .001f)
-        assertArrayEquals(intArrayOf(11, 21), p.timing)
-        assertArrayEquals(intArrayOf(31, 41), p.timingCrk)
+        assertArrayEquals(floatArrayOf(11f, 21f), p.timing, 0f)
+        assertArrayEquals(floatArrayOf(31f, 41f), p.timingCrk, 0f)
         assertEquals(10000, p.fffConst)
         assertEquals(3f, p.injPwDecSpeed, .001f); assertEquals(4f, p.injPwIncSpeed, .001f)
         val values = (holder.uiState as FuelInjectionUiState.Data).values
         assertEquals(3f, values.engineDisplacement, .001f)
         assertEquals(401f, values.banks[1].flow, .001f)
+    }
+
+    @Test fun fractionalTimingSurvivesReceiveAndUnrelatedEditAndIntegerEditorRoundsOnlyForDisplay() {
+        val source = packet().also {
+            it.timing = floatArrayOf(1.5f, -1f)
+            it.timingCrk = floatArrayOf(.0625f, 720f)
+        }
+        val incoming = InjctrParPacket().parse(intArrayOf('@'.code) + source.pack() + intArrayOf(0xCA, 0xFE)) as InjctrParPacket
+        holder.receive(incoming)
+        assertTrue(sends.isEmpty())
+        val spec = holder.editSpec(FuelInjectionNumber.TIMING_0)!!
+        assertEquals(1.5f, spec.value, 0f)
+        assertTrue(spec.integer)
+        val displayed = (holder.uiState as FuelInjectionUiState.Data).values.banks[0].timing
+        assertEquals(2, displayed)
+
+        val timingWords = incoming.pack().sliceArray(19..26)
+        holder.changeFlag(FuelInjectionFlag.AIR_DENSITY, true)
+        assertArrayEquals(timingWords, incoming.pack().sliceArray(19..26))
+        assertArrayEquals(intArrayOf(0xCA, 0xFE), incoming.pack().takeLast(2).toIntArray())
+        assertArrayEquals(floatArrayOf(1.5f, -1f), incoming.timing, 0f)
+        assertArrayEquals(floatArrayOf(.0625f, 720f), incoming.timingCrk, 0f)
+        sends.clear()
+
+        holder.edit(FuelInjectionNumber.TIMING_0, 2f)
+        holder.edit(FuelInjectionNumber.TIMING_1, 3.25f)
+        holder.edit(FuelInjectionNumber.CRANKING_0, 4.5f)
+        holder.edit(FuelInjectionNumber.CRANKING_1, -.03125f)
+        assertEquals(4, sends.size)
+        assertArrayEquals(floatArrayOf(2f, 3.25f), incoming.timing, 0f)
+        assertArrayEquals(floatArrayOf(4.5f, -.03125f), incoming.timingCrk, 0f)
+        assertArrayEquals(intArrayOf(0x00, 0x20, 0x00, 0x34, 0x00, 0x48, 0xFF, 0xFF), incoming.pack().sliceArray(19..26))
     }
 
     @Test fun flowEditsRecalculateBothDerivedBankConstantsAndSyntheticLoad() {

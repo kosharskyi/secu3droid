@@ -79,8 +79,8 @@ class FuelInjectionStateHolder(
             FuelInjectionNumber.ENGINE_DISPLACEMENT -> FuelInjectionEditSpec(R.string.injctr_par_enjine_displacement_title, current.engineDisplacement, .0001f, .01f, 8f, 4, false)
             FuelInjectionNumber.FLOW_0 -> FuelInjectionEditSpec(R.string.injctr_par_injector_flow_rate_title, p.flowRate[0], .02f, 50f, 1023f, 2, false)
             FuelInjectionNumber.FLOW_1 -> FuelInjectionEditSpec(R.string.injctr_par_injector_flow_rate_title, p.flowRate[1], .02f, 50f, 1023f, 2, false)
-            FuelInjectionNumber.TIMING_0, FuelInjectionNumber.TIMING_1 -> FuelInjectionEditSpec(R.string.injctr_par_injection_timing_title, p.timing[if (number == FuelInjectionNumber.TIMING_0) 0 else 1].toFloat(), 1f, 0f, 720f, 0, true)
-            FuelInjectionNumber.CRANKING_0, FuelInjectionNumber.CRANKING_1 -> FuelInjectionEditSpec(R.string.injctr_par_cranking_injection_timing_title, p.timingCrk[if (number == FuelInjectionNumber.CRANKING_0) 0 else 1].toFloat(), 1f, 0f, 720f, 0, true)
+            FuelInjectionNumber.TIMING_0, FuelInjectionNumber.TIMING_1 -> FuelInjectionEditSpec(R.string.injctr_par_injection_timing_title, p.timing[if (number == FuelInjectionNumber.TIMING_0) 0 else 1], 1f, 0f, 720f, 0, true)
+            FuelInjectionNumber.CRANKING_0, FuelInjectionNumber.CRANKING_1 -> FuelInjectionEditSpec(R.string.injctr_par_cranking_injection_timing_title, p.timingCrk[if (number == FuelInjectionNumber.CRANKING_0) 0 else 1], 1f, 0f, 720f, 0, true)
             FuelInjectionNumber.MIN_PW_0 -> FuelInjectionEditSpec(R.string.injctr_par_min_inj_pw_title, p.minPw0, .025f, .1f, 6.5f, 2, false)
             FuelInjectionNumber.MIN_PW_1 -> FuelInjectionEditSpec(R.string.injctr_par_min_inj_pw_title, p.minPw1, .025f, .1f, 6.5f, 2, false)
             FuelInjectionNumber.MAX_PW_0 -> FuelInjectionEditSpec(R.string.injctr_par_max_inj_pw_title, p.injMaxPw[0], .1f, 0f, 100f, 2, false)
@@ -98,10 +98,10 @@ class FuelInjectionStateHolder(
             FuelInjectionNumber.ENGINE_DISPLACEMENT -> p.engineDisp = value
             FuelInjectionNumber.FLOW_0 -> { p.flowRate[0] = value; p.recalculateDerivedConstants() }
             FuelInjectionNumber.FLOW_1 -> { p.flowRate[1] = value; p.recalculateDerivedConstants() }
-            FuelInjectionNumber.TIMING_0 -> p.timing[0] = value.toInt()
-            FuelInjectionNumber.TIMING_1 -> p.timing[1] = value.toInt()
-            FuelInjectionNumber.CRANKING_0 -> p.timingCrk[0] = value.toInt()
-            FuelInjectionNumber.CRANKING_1 -> p.timingCrk[1] = value.toInt()
+            FuelInjectionNumber.TIMING_0 -> p.timing[0] = value
+            FuelInjectionNumber.TIMING_1 -> p.timing[1] = value
+            FuelInjectionNumber.CRANKING_0 -> p.timingCrk[0] = value
+            FuelInjectionNumber.CRANKING_1 -> p.timingCrk[1] = value
             FuelInjectionNumber.MIN_PW_0 -> p.minPw0 = value
             FuelInjectionNumber.MIN_PW_1 -> p.minPw1 = value
             FuelInjectionNumber.MAX_PW_0 -> p.injMaxPw[0] = value

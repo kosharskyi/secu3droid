@@ -152,7 +152,7 @@ internal fun ParameterPageContent(
         R.string.params_tab_fuel_injection_title -> {
             val h = viewModel.fuelInjectionStateHolder
             FuelInjectionScreen(h.uiState, InjctrParPacket.InjConfig.entries.associate { it.id to resources.getString(it.strId) }, { n ->
-                h.editSpec(n)?.let { s -> if (s.integer) intEdit(s.title, s.value.toInt(), s.step.toInt(), s.max.toInt(), s.min.toInt()) { h.edit(n, it.toFloat()) } else floatEdit(s.title, s.value, s.step, s.max, s.min, s.precision) { h.edit(n, it.toFloat()) } }
+                h.editSpec(n)?.let { s -> if (s.integer) intEdit(s.title, s.value.roundToInt(), s.step.toInt(), s.max.toInt(), s.min.toInt()) { h.edit(n, it.toFloat()) } else floatEdit(s.title, s.value, s.step, s.max, s.min, s.precision) { h.edit(n, it.toFloat()) } }
             }, h::changeConfig, h::changePulses, h::changeAngleSpec, h::changeFlag)
         }
         R.string.params_tab_lambda_control_title -> {

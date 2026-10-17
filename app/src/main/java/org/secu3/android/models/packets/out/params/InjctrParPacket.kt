@@ -29,6 +29,7 @@ import org.secu3.android.R
 import org.secu3.android.models.packets.base.Secu3Packet
 import org.secu3.android.models.packets.base.InputPacket
 import org.secu3.android.models.packets.base.OutputPacket
+import org.secu3.android.models.packets.base.protocolRoundToInt
 import org.secu3.android.utils.getBitValue
 import org.secu3.android.utils.setBitValue
 import kotlin.math.roundToInt
@@ -47,9 +48,9 @@ data class InjctrParPacket(
 
     var ckpsEngineCyl: Int = 0,
 
-    var timing: IntArray = IntArray(2),
+    var timing: FloatArray = FloatArray(2),
 
-    var timingCrk: IntArray = IntArray(2),
+    var timingCrk: FloatArray = FloatArray(2),
 
     var angleSpec: Int = 0,
 
@@ -87,11 +88,11 @@ data class InjctrParPacket(
 
         data += ckpsEngineCyl
 
-        data += timing[0].times(PARINJTIM_DIVIDER).write2Bytes()
-        data += timing[1].times(PARINJTIM_DIVIDER).write2Bytes()
+        data += timing[0].times(PARINJTIM_DIVIDER).protocolRoundToInt().write2Bytes()
+        data += timing[1].times(PARINJTIM_DIVIDER).protocolRoundToInt().write2Bytes()
 
-        data += timingCrk[0].times(PARINJTIM_DIVIDER).write2Bytes()
-        data += timingCrk[1].times(PARINJTIM_DIVIDER).write2Bytes()
+        data += timingCrk[0].times(PARINJTIM_DIVIDER).protocolRoundToInt().write2Bytes()
+        data += timingCrk[1].times(PARINJTIM_DIVIDER).protocolRoundToInt().write2Bytes()
 
         data += angleSpec
 
@@ -305,11 +306,11 @@ data class InjctrParPacket(
 
         ckpsEngineCyl = data.get1Byte()
 
-        timing[0] = data.get2Bytes() / PARINJTIM_DIVIDER
-        timing[1] = data.get2Bytes() / PARINJTIM_DIVIDER
+        timing[0] = data.get2BytesSigned().toFloat() / PARINJTIM_DIVIDER
+        timing[1] = data.get2BytesSigned().toFloat() / PARINJTIM_DIVIDER
 
-        timingCrk[0] = data.get2Bytes() / PARINJTIM_DIVIDER
-        timingCrk[1] = data.get2Bytes() / PARINJTIM_DIVIDER
+        timingCrk[0] = data.get2BytesSigned().toFloat() / PARINJTIM_DIVIDER
+        timingCrk[1] = data.get2BytesSigned().toFloat() / PARINJTIM_DIVIDER
 
         angleSpec = data.get1Byte()
 
