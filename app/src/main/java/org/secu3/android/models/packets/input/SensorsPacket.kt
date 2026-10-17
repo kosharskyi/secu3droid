@@ -465,7 +465,7 @@ data class SensorsPacket(
 
     companion object {
 
-        private const val fffConst = 1600
+        private const val fffConst = 16000
 
         internal const val DESCRIPTOR = 'q'
 

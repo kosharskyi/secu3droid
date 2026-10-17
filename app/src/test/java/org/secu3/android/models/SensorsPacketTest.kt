@@ -94,4 +94,32 @@ class SensorsPacketTest {
         assertEquals(0f, disabled.ops, .0001f)
         assertEquals(0f, disabled.maf, .0001f)
     }
+
+    @Test fun fuelConsumptionUses16000PulsesPerLiterAndKeepsStoppedAndZeroFlowBehavior() {
+        fun parseWithSpeedAndFlow(speedRaw: Int, flowRaw: Int): SensorsPacket {
+            val payload = IntArray(116)
+            payload[29] = speedRaw ushr 8; payload[30] = speedRaw and 255
+            payload[34] = flowRaw ushr 8; payload[35] = flowRaw and 255
+            return RawPacket(intArrayOf('@'.code, 'q'.code) + payload + intArrayOf(0, 0))
+                .parse(null) as SensorsPacket
+        }
+
+        val at100Kmh = parseWithSpeedAndFlow(speedRaw = 3200, flowRaw = 2560)
+        assertEquals(100f, at100Kmh.speed, .0001f)
+        assertEquals(10f, at100Kmh.fuelFlowFrequency, .0001f)
+        assertEquals(2.25f, at100Kmh.inj_ffh, .0001f)
+        assertEquals(2.25f, at100Kmh.inj_ffd, .0001f)
+
+        val at50Kmh = parseWithSpeedAndFlow(speedRaw = 1600, flowRaw = 2560)
+        assertEquals(4.5f, at50Kmh.inj_ffd, .0001f)
+        assertEquals(2.25f, at50Kmh.inj_ffh, .0001f)
+
+        val stopped = parseWithSpeedAndFlow(speedRaw = 0, flowRaw = 2560)
+        assertEquals(0f, stopped.inj_ffd, .0001f)
+        assertEquals(2.25f, stopped.inj_ffh, .0001f)
+
+        val noFlow = parseWithSpeedAndFlow(speedRaw = 3200, flowRaw = 0)
+        assertEquals(0f, noFlow.inj_ffd, .0001f)
+        assertEquals(0f, noFlow.inj_ffh, .0001f)
+    }
 }

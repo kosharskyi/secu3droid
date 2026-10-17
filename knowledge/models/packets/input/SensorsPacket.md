@@ -9,3 +9,7 @@ The exhaust gas temperature sample is also a signed 16-bit count scaled at 0.25 
 ## Signed sensor words must retain negative physical values
 
 Fuel tank level, oil pressure and MAF use signed 16-bit wire counts; negative raw values represent negative physical readings and must not be decoded as large positive values. Knock retard is signed too, except raw `0x7FFF`, which disables the reading and leaves it unused on a fresh packet.
+
+## App-side fuel consumption uses 16000 pulses per litre
+
+The instantaneous frequency conversion uses the manager's default 16000 pulses per litre for L/h and L/100 km. This app-side constant is separate from the ECU injector `fffConst` parameter and is not automatically linked to it.
