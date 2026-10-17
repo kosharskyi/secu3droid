@@ -238,6 +238,7 @@ class SecuLogger @Inject constructor(private val prefs: UserPrefs, private val f
         synchronized(loggerLock) {
             if (isLoggerStarted) return
             val logFile = mLogFile ?: return
+            mMark = 0
             val binary = logFile.extension == "s3l"
             val csvHeader = if (!binary) {
                 mCsvDelimeter = prefs.CSVDelimeter
@@ -255,6 +256,7 @@ class SecuLogger @Inject constructor(private val prefs: UserPrefs, private val f
 
     fun stopLogging() {
         synchronized(loggerLock) {
+            mMark = 0
             loggerSession.stop()
             mLogFile = null
         }

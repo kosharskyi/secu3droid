@@ -9,3 +9,7 @@ Binary and CSV sinks are serialized with start and stop. An I/O failure clears t
 ## Idling VE is logged as service flag bit 9 from additional flag bit 0
 
 The ECU packet keeps Idling VE in `additionalFlags` bit 0, separate from `serviceFlags`. CSV `ServFlag` and the S3L service word use bit 9 for it, so the logger derives a copy of the service word with bit 9 set or cleared from `corrIdlve`; it must not modify the parsed packet.
+
+## Log marks keep latest-click-wins replacement semantics
+
+By explicit agreement with the user, retain the Android app's latest-click-wins behavior instead of copying the desktop logger's OR accumulation. Each mark has its own bit, but only the last clicked mark is retained for the next sensor record. Explicit stop and each valid new start clear a pending mark so it cannot cross logger-session boundaries. Starting an already-running session remains a no-op and preserves its pending mark.
