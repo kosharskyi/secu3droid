@@ -29,6 +29,7 @@ import org.secu3.android.R
 import org.secu3.android.models.packets.base.Secu3Packet
 import org.secu3.android.models.packets.base.InputPacket
 import org.secu3.android.models.packets.base.OutputPacket
+import org.secu3.android.models.packets.base.protocolRoundToInt
 import org.secu3.android.utils.getBitValue
 import org.secu3.android.utils.setBitValue
 import kotlin.math.roundToInt
@@ -543,7 +544,7 @@ data class UniOutParamPacket(
 
     private fun encodeCondVal(value: Float, condition: Int): Int {
         return when (condition) {
-            CONDITION.COOLANT_TEMPER.id -> (value * TEMPERATURE_MULTIPLIER).roundToInt()
+            CONDITION.COOLANT_TEMPER.id -> (value * TEMPERATURE_MULTIPLIER).protocolRoundToInt()
             CONDITION.RPM.id -> value.roundToInt()
             CONDITION.MAP.id -> (value * MAP_MULTIPLIER).roundToInt()
             CONDITION.UBAT.id -> (value * VOLTAGE_MULTIPLIER).roundToInt()
@@ -552,10 +553,10 @@ data class UniOutParamPacket(
             CONDITION.AIRFL.id -> value.roundToInt()
             CONDITION.TMR.id, CONDITION.ITTMR.id, CONDITION.ESTMR.id -> (value * 100.0f).roundToInt()
             CONDITION.CPOS.id -> (value * CHOKE_MULTIPLIER).roundToInt()
-            CONDITION.AANG.id -> (value * ANGLE_DIVIDER).roundToInt()
+            CONDITION.AANG.id -> (value * ANGLE_DIVIDER).protocolRoundToInt()
             CONDITION.KLEV.id -> (value * 1.0f.div(ADC_DISCRETE)).roundToInt()
             CONDITION.TPS.id -> (value * TPS_MULTIPLIER).roundToInt()
-            CONDITION.ATS.id -> (value * TEMPERATURE_MULTIPLIER).roundToInt()
+            CONDITION.ATS.id -> (value * TEMPERATURE_MULTIPLIER).protocolRoundToInt()
 
             CONDITION.AI1.id, CONDITION.AI2.id, CONDITION.AI3.id, CONDITION.AI4.id, CONDITION.AI5.id, CONDITION.AI6.id, CONDITION.AI7.id, CONDITION.AI8.id -> (value * 1.0f.div(ADC_DISCRETE)).roundToInt()
 
@@ -564,11 +565,11 @@ data class UniOutParamPacket(
             CONDITION.CE.id -> value.roundToInt()
             CONDITION.OFTMR.id, CONDITION.LOOPTMR.id -> (value * 100.0f).roundToInt()
 
-            CONDITION.GRTS.id -> value.times(TEMPERATURE_MULTIPLIER).roundToInt()
+            CONDITION.GRTS.id -> value.times(TEMPERATURE_MULTIPLIER).protocolRoundToInt()
 
             CONDITION.MAP2.id -> value.times(MAP_MULTIPLIER).roundToInt()
 
-            CONDITION.TMP2.id -> value.times(TEMPERATURE_MULTIPLIER).roundToInt()
+            CONDITION.TMP2.id -> value.times(TEMPERATURE_MULTIPLIER).protocolRoundToInt()
 
             CONDITION.INPUT1.id -> value.roundToInt()
 
@@ -576,14 +577,14 @@ data class UniOutParamPacket(
 
             CONDITION.MAF.id -> value.times(MAFS_MULT).roundToInt()
 
-            CONDITION.TPSDOT.id -> value.roundToInt() // %/s
+            CONDITION.TPSDOT.id -> value.protocolRoundToInt() // %/s
 
             CONDITION.GPS.id -> value.times(MAP_MULTIPLIER).roundToInt()
             CONDITION.FPS.id -> value.times(MAP_MULTIPLIER).roundToInt()
             CONDITION.OPS.id -> value.times(OPS_MULT).roundToInt()
             CONDITION.EGTS.id -> value.times(EGTS_MULT).roundToInt()
-            CONDITION.FTS.id -> value.times(FTS_MULT).roundToInt()
-            CONDITION.OTS.id -> value.times(FTS_MULT).roundToInt()
+            CONDITION.FTS.id -> value.times(FTS_MULT).protocolRoundToInt()
+            CONDITION.OTS.id -> value.times(FTS_MULT).protocolRoundToInt()
             CONDITION.LOAD.id -> value.times(LOAD_PHYSICAL_MAGNITUDE_MULTIPLIER).roundToInt()
             // Look for reference in ControlApp.cpp::5534
             else -> 0

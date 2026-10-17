@@ -25,6 +25,7 @@
 package org.secu3.android.ui.parameters.pages
 
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertArrayEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue
 import org.junit.Test
@@ -71,6 +72,56 @@ class UniversalOutputsPacketTest {
             assertEquals(-2f, actual.offThreshold2, .02f)
         } }
     }
+
+    @Test
+    fun signedThresholdEncodersUseManagerRoundingForEveryOutputAndCondition() {
+        // Independent protocol scales: CTS/ATS/GRTS/TMP2/FTS/OTS ×4; AANG ×32; TPSDOT ×1.
+        val signedConditions = listOf(0 to 4f, 11 to 32f, 14 to 4f, 28 to 4f, 30 to 4f, 34 to 1f, 39 to 4f, 40 to 4f)
+        val cases = listOf(
+            ThresholdRoundingCase(.5f, -.5f, 1.5f, -1.5f, intArrayOf(0x0001, 0xFFFF, 0x0002, 0xFFFE)),
+            ThresholdRoundingCase(.4f, -.4f, 1.4f, -1.4f, intArrayOf(0x0000, 0x0000, 0x0001, 0xFFFF)),
+        )
+
+        for (output in 1..6) for ((condition, scale) in signedConditions) for (case in cases) {
+            val packet = UniOutParamPacket()
+            setOutputConditions(packet, output, condition)
+            setOutputThresholds(
+                packet,
+                output,
+                case.on1 / scale,
+                case.off1 / scale,
+                case.on2 / scale,
+                case.off2 / scale,
+            )
+            val thresholdStart = 4 + (output - 1) * 11
+            assertArrayEquals(
+                "output $output, signed condition $condition, counts ${case.words.contentToString()}",
+                case.words.flatMap { listOf(it ushr 8, it and 0xFF) }.toIntArray(),
+                packet.pack().sliceArray(thresholdStart..thresholdStart + 7),
+            )
+        }
+    }
+
+    @Test
+    fun unsignedRpmThresholdsKeepExistingPositiveTieRounding() {
+        val packet = UniOutParamPacket().apply {
+            output1Condition1 = 1
+            output1Condition2 = 1
+            output1OnThrd1 = .5f
+            output1OffThrd1 = -.5f
+            output1OnThrd2 = 1.5f
+            output1OffThrd2 = -1.5f
+        }
+        assertArrayEquals(intArrayOf(0, 1, 0, 0, 0, 2, 0xFF, 0xFF), packet.pack().sliceArray(4..11))
+    }
+
+    private data class ThresholdRoundingCase(
+        val on1: Float,
+        val off1: Float,
+        val on2: Float,
+        val off2: Float,
+        val words: IntArray,
+    )
 
     @Test
     fun outputChangesPreserveUnrelatedFlagsAndUnknownTail() {

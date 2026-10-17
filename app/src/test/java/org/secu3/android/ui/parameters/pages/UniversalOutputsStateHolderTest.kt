@@ -25,6 +25,7 @@
 package org.secu3.android.ui.parameters.pages
 
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertArrayEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertNull
 import org.junit.Assert.assertSame
@@ -122,5 +123,31 @@ class UniversalOutputsStateHolderTest {
         assertTrue(packet.output6Cond2Inversion)
         assertEquals(listOf(0xA5, 0x5A), packed.takeLast(2))
         assertTrue(sent.single() === packet)
+    }
+
+    @Test
+    fun signedHalfCountThresholdEditUsesManagerRoundingAndPreservesOtherRawWords() {
+        val sent = mutableListOf<UniOutParamPacket>()
+        val holder = UniversalOutputsStateHolder(sent::add)
+        val source = UniOutParamPacket().apply {
+            output1Condition1 = 0 // CTS: signed temperature word at four counts per degree.
+            output1Condition2 = 0
+            output1OnThrd1 = -.25f
+            output1OffThrd1 = -2f
+            output1OnThrd2 = .25f
+            output1OffThrd2 = -.5f
+        }
+        val incoming = UniOutParamPacket().parse(
+            intArrayOf(0x40, 0x21) + source.pack().drop(1).toIntArray() + intArrayOf(0xA5, 0x5A),
+        ) as UniOutParamPacket
+        holder.onPacketReceived(incoming)
+        assertTrue(sent.isEmpty())
+
+        holder.updateOutput(1, holder.values!!.outputs.first().copy(onThreshold1 = -.125f))
+
+        assertEquals(1, sent.size)
+        assertTrue(sent.single() === incoming)
+        assertArrayEquals(intArrayOf(0xFF, 0xFF, 0xFF, 0xF8, 0x00, 0x01, 0xFF, 0xFE), incoming.pack().sliceArray(4..11))
+        assertEquals(listOf(0xA5, 0x5A), incoming.pack().takeLast(2))
     }
 }
