@@ -28,6 +28,7 @@ import org.junit.Assert.assertEquals
 import org.junit.Assert.assertTrue
 import org.junit.Test
 import org.secu3.android.models.packets.out.params.StarterParamPacket
+import org.secu3.android.ui.parameters.dialogs.parseIntegerInput
 
 class StarterStateHolderTest {
     @Test
@@ -85,5 +86,28 @@ class StarterStateHolderTest {
 
         assertEquals(StarterUiState.Loading, holder.state)
         assertTrue(sent.isEmpty())
+    }
+
+    @Test
+    fun manualStrokeEditsBetweenSpinStepsAreAcceptedAndProtocolRounded() {
+        val sent = mutableListOf<StarterParamPacket>()
+        val holder = StarterStateHolder(sent::add)
+        val packet = StarterParamPacket()
+        holder.onPacketReceived(packet)
+
+        val petrolInput = parseIntegerInput("2", 0, 1020)!!
+        val gasInput = parseIntegerInput("3", 0, 1020)!!
+        holder.updateValue(StarterNumber.AFTERSTART_PETROL, petrolInput.toFloat())
+        holder.updateValue(StarterNumber.AFTERSTART_GAS, gasInput.toFloat())
+
+        assertEquals(2, packet.injAftstrStroke)
+        assertEquals(3, packet.injAftStrokes1)
+        assertEquals(1, packet.pack()[7])
+        assertEquals(1, packet.pack()[15])
+        assertEquals(listOf(2f, 3f), listOf(
+            (holder.state as StarterUiState.Data).values.value(StarterNumber.AFTERSTART_PETROL),
+            (holder.state as StarterUiState.Data).values.value(StarterNumber.AFTERSTART_GAS),
+        ))
+        assertEquals(2, sent.size)
     }
 }

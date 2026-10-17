@@ -27,6 +27,7 @@ package org.secu3.android.models.packets.out.params
 import org.secu3.android.models.packets.base.Secu3Packet
 import org.secu3.android.models.packets.base.InputPacket
 import org.secu3.android.models.packets.base.OutputPacket
+import org.secu3.android.models.packets.base.protocolRoundToInt
 import org.secu3.android.utils.getBitValue
 import org.secu3.android.utils.setBitValue
 import kotlin.math.roundToInt
@@ -86,12 +87,12 @@ data class StarterParamPacket(
         data += starterOff.write2Bytes()
         data += smapAbandon.write2Bytes()
         data += crankToRunTime.times(100).roundToInt().write2Bytes()
-        data += injAftstrStroke.div(4)
+        data += injAftstrStroke.div(4f).protocolRoundToInt()
         data += injPrimeCold.times(1000).div(discrete).roundToInt().write2Bytes()
         data += injPrimeHot.times(1000).div(discrete).roundToInt().write2Bytes()
         data += injPrimeDelay.times(10).roundToInt()
         data += injFloodclearTps.times(TPS_MULTIPLIER).roundToInt().write2Bytes()
-        data += injAftStrokes1.div(4)
+        data += injAftStrokes1.div(4f).protocolRoundToInt()
         data += stblStrCnt
         data += strtFlags
         data += injCrankToRun_time1.times(100).roundToInt().write2Bytes()
