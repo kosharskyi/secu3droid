@@ -114,7 +114,7 @@ class DiagnosticsInputsScreenTest {
         }
         compose.runOnIdle { assertEquals(0, sendCount) }
         compose.onNodeWithTag("output_channel").performScrollTo().performClick()
-        compose.onNodeWithText("ST_BLOCK").performClick()
+        compose.onNodeWithText("ST_BLOCK").performScrollTo().performClick()
         compose.runOnIdle { assertEquals(9, packet.chan); assertEquals(1, sendCount) }
         compose.onNodeWithText("ST_BLOCK").assertIsDisplayed()
 
@@ -144,6 +144,23 @@ class DiagnosticsInputsScreenTest {
         compose.onNodeWithTag("frequency_edit").assertIsNotEnabled()
         compose.onNodeWithTag("duty_edit").assertIsNotEnabled()
         compose.runOnIdle { refresh++; assertEquals(0, sends) }
+    }
+
+    @Test fun channelDialogCancelAndFirmwareChangeDoNotSendCommands() {
+        var firmware by mutableStateOf<Boolean?>(true)
+        var sends = 0
+        compose.setContent { DiagnosticsInputsScreen(null, firmware, 1, 10f, 50f, { sends++ }, {}, {}) }
+
+        compose.onNodeWithTag("output_channel").performScrollTo().performClick()
+        compose.onNodeWithTag("output_channel_option_1").assertIsDisplayed()
+        compose.onNodeWithText(context.getString(android.R.string.cancel)).performClick()
+        compose.onNodeWithTag("output_channel_option_1").assertDoesNotExist()
+
+        compose.onNodeWithTag("output_channel").performClick()
+        compose.runOnIdle { firmware = null }
+        compose.onNodeWithTag("output_channel_option_1").assertDoesNotExist()
+        compose.onNodeWithTag("output_channel").assertIsNotEnabled()
+        compose.runOnIdle { assertEquals(0, sends) }
     }
 
     @Test fun frequencyAndDutyEditRequestsOnlyComeFromUserConfirmationEntryPoints() {

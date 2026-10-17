@@ -31,10 +31,8 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
@@ -44,11 +42,6 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Edit
-import androidx.compose.material.icons.filled.ExpandLess
-import androidx.compose.material.icons.filled.ExpandMore
-import androidx.compose.material3.Checkbox
-import androidx.compose.material3.DropdownMenu
-import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
@@ -75,8 +68,10 @@ import androidx.compose.ui.unit.sp
 import org.secu3.android.R
 import org.secu3.android.models.packets.input.DiagInputPacket
 import org.secu3.android.models.packets.out.DiagOutputPacket
-import org.secu3.android.ui.compose.DropdownShape
 import org.secu3.android.ui.compose.LocalSecuPalette
+import org.secu3.android.ui.parameters.compose.ParameterSelectionRow
+import org.secu3.android.ui.parameters.dialogs.ParameterChoice
+import org.secu3.android.ui.parameters.dialogs.ParameterChoiceDialog
 import java.util.Locale
 
 val secu3TOutputChannels = listOf("NONE", "IGN_OUT1", "IGN_OUT2", "IGN_OUT3", "IGN_OUT4", "IE", "FE", "ECF", "CE", "ST_BLOCK", "ADD_IO1", "ADD_IO2", "BL", "DE")
@@ -138,49 +133,29 @@ fun DiagnosticsInputsScreen(
                 Text(testSignalTitle, style = MaterialTheme.typography.titleMedium, color = MaterialTheme.colorScheme.primary)
                 HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant)
                 var expanded by remember(isSecu3T) { mutableStateOf(false) }
-                Column {
-                    Text(outputChannelTitle, style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
-                    Spacer(Modifier.height(4.dp))
-                    OutputChannelField(
-                        enabled = enabled,
-                        expanded = expanded,
-                        onExpandedChange = { expanded = it },
-                        selectedValue = channels[chosen],
+                ParameterSelectionRow(
+                    title = outputChannelTitle,
+                    value = channels[chosen],
+                    testTag = "output_channel",
+                    enabled = enabled,
+                    contentDescription = "$outputChannelTitle, ${channels[chosen]}",
+                    stateDescription = channels[chosen],
+                    onClick = { expanded = true },
+                )
+                if (expanded && enabled) {
+                    ParameterChoiceDialog(
+                        title = outputChannelTitle,
+                        choices = channels.mapIndexed { index, channel ->
+                            ParameterChoice(index, channel, "output_channel_option_$index")
+                        },
+                        onDismiss = { expanded = false },
+                        onSelect = onChannelSelected,
                     )
-                    DropdownMenu(expanded = expanded, onDismissRequest = { expanded = false }, shape = DropdownShape) {
-                        channels.forEachIndexed { index, channel ->
-                            DropdownMenuItem(text = { Text(channel) }, onClick = { expanded = false; onChannelSelected(index) })
-                        }
-                    }
                 }
                 EditableValueRow(frequencyLabel, "${"%.1f".format(Locale.US, frequency)} Hz", enabled, "frequency_edit", onFrequencyEdit)
                 EditableValueRow(dutyLabel, "${"%.1f".format(Locale.US, duty)} %", enabled, "duty_edit", onDutyEdit)
             }
         }
-    }
-}
-
-@Composable
-private fun OutputChannelField(
-    enabled: Boolean,
-    expanded: Boolean,
-    onExpandedChange: (Boolean) -> Unit,
-    selectedValue: String,
-) {
-    Row(
-        Modifier.fillMaxWidth()
-            .heightIn(min = 56.dp)
-            .clip(DropdownShape)
-            .background(MaterialTheme.colorScheme.surfaceContainerLow)
-            .border(1.dp, MaterialTheme.colorScheme.outlineVariant, DropdownShape)
-            .clickable(enabled = enabled, role = Role.Button, onClick = { onExpandedChange(true) })
-            .testTag("output_channel")
-            .padding(horizontal = 12.dp),
-        verticalAlignment = Alignment.CenterVertically,
-        horizontalArrangement = Arrangement.SpaceBetween,
-    ) {
-        Text(selectedValue, Modifier.weight(1f), style = MaterialTheme.typography.bodyLarge, color = if (enabled) MaterialTheme.colorScheme.onSurface else MaterialTheme.colorScheme.onSurfaceVariant)
-        Icon(if (expanded) Icons.Default.ExpandLess else Icons.Default.ExpandMore, contentDescription = null, modifier = Modifier.size(24.dp), tint = MaterialTheme.colorScheme.onSurfaceVariant)
     }
 }
 
