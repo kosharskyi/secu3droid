@@ -166,14 +166,28 @@ class DiagOutputPacket : Secu3Packet(), OutputPacket {
         get() = out.getBitValue(11) > 0
         set(value) {
             out = out.setBitValue(value, 11)
+            out = out.setBitValue(true, 12)
+        }
+
+    var blOutputEnabled: Boolean
+        get() = out.getBitValue(12) > 0
+        set(value) {
             out = out.setBitValue(value, 12)
+            if (!value) out = out.setBitValue(false, 11)
         }
 
     var de: Boolean
         get() = out.getBitValue(13) > 0
         set(value) {
             out = out.setBitValue(value, 13)
+            out = out.setBitValue(true, 14)
+        }
+
+    var deOutputEnabled: Boolean
+        get() = out.getBitValue(14) > 0
+        set(value) {
             out = out.setBitValue(value, 14)
+            if (!value) out = out.setBitValue(false, 13)
         }
 
 
@@ -232,7 +246,14 @@ class DiagOutputPacket : Secu3Packet(), OutputPacket {
         get() = out.getBitValue(23) > 0
         set(value) {
             out = out.setBitValue(value, 23)
+            out = out.setBitValue(true, 24)
+        }
+
+    var tachOOutputEnabled: Boolean
+        get() = out.getBitValue(24) > 0
+        set(value) {
             out = out.setBitValue(value, 24)
+            if (!value) out = out.setBitValue(false, 23)
         }
 
     var gpa6_O: Boolean          // special

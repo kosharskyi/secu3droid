@@ -128,7 +128,7 @@ class DiagnosticsOutputsScreenTest {
         assertEquals((1 shl 11) or (1 shl 12) or (1 shl 13) or (1 shl 14) or (1 shl 23) or (1 shl 24) or (1 shl 25), packet.out)
         compose.onNodeWithTag("output_DE").performScrollTo().performClick()
         assertEquals(5, sends.size)
-        assertEquals((1 shl 11) or (1 shl 12) or (1 shl 23) or (1 shl 24) or (1 shl 25), packet.out)
+        assertEquals((1 shl 11) or (1 shl 12) or (1 shl 14) or (1 shl 23) or (1 shl 24) or (1 shl 25), packet.out)
     }
 
     @Test
@@ -175,7 +175,13 @@ class DiagnosticsOutputsScreenTest {
             val expected = expectedBits.getValue(output)
             assertEquals(output.name, expected, packet.out)
             setDiagnosticOutput(packet, output, false)
-            assertEquals(output.name, 0, packet.out)
+            val expectedOff = when (output) {
+                DiagnosticOutput.BL -> 1 shl 12
+                DiagnosticOutput.DE -> 1 shl 14
+                DiagnosticOutput.TACH_O -> 1 shl 24
+                else -> 0
+            }
+            assertEquals(output.name, expectedOff, packet.out)
         }
     }
 
