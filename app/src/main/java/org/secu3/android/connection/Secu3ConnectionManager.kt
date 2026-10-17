@@ -174,11 +174,7 @@ class Secu3ConnectionManager @Inject constructor(private val usbConnection: UsbC
         connectionScope.launch {
             receivedPacketFlow.filter { it is SensorsPacket }
                 .map { it as SensorsPacket }
-                .collect {
-                    if (mPrefs.isSensorLoggerEnabled) {
-                        secuLogger.logPacket(it)
-                    }
-                }
+                .collect { secuLogger.logPacket(it) }
         }
     }
 }

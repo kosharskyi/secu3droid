@@ -13,3 +13,7 @@ The ECU packet keeps Idling VE in `additionalFlags` bit 0, separate from `servic
 ## Log marks keep latest-click-wins replacement semantics
 
 By explicit agreement with the user, retain the Android app's latest-click-wins behavior instead of copying the desktop logger's OR accumulation. Each mark has its own bit, but only the last clicked mark is retained for the next sensor record. Explicit stop and each valid new start clear a pending mark so it cannot cross logger-session boundaries. Starting an already-running session remains a no-op and preserves its pending mark.
+
+## Sensor packets always reach the logger's preference gate
+
+The connection manager forwards each sensor packet even when logging is disabled. `SecuLogger.logPacket` owns the preference check so it can stop and close an active session when the setting is turned off; filtering packets in the manager would bypass that cleanup.
