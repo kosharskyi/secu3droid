@@ -27,6 +27,7 @@ package org.secu3.android.models.packets.out.params
 import org.secu3.android.models.packets.base.Secu3Packet
 import org.secu3.android.models.packets.base.InputPacket
 import org.secu3.android.models.packets.base.OutputPacket
+import org.secu3.android.models.packets.base.protocolRoundToInt
 import org.secu3.android.utils.getBitValue
 import org.secu3.android.utils.setBitValue
 import kotlin.math.roundToInt
@@ -93,8 +94,8 @@ data class CkpsParamPacket(
         data += ckpsMissNum
         data += hallFlags
 
-        data += hallWndWidth.times(ANGLE_DIVIDER).roundToInt().write2Bytes()
-        data += hallDegreesBtdc.times(ANGLE_DIVIDER).roundToInt().write2Bytes()
+        data += hallWndWidth.times(ANGLE_DIVIDER).protocolRoundToInt().write2Bytes()
+        data += hallDegreesBtdc.times(ANGLE_DIVIDER).protocolRoundToInt().write2Bytes()
         data += mttf.times(256.0f).roundToInt().write2Bytes()
 
         data += unhandledParams
@@ -109,8 +110,8 @@ data class CkpsParamPacket(
         ckpsCogsNum = data.get1Byte()
         ckpsMissNum = data.get1Byte()
         hallFlags = data.get1Byte()
-        hallWndWidth = data.get2Bytes().toFloat() / ANGLE_DIVIDER
-        hallDegreesBtdc = data.get2Bytes().toFloat() / ANGLE_DIVIDER
+        hallWndWidth = data.get2BytesSigned().toFloat() / ANGLE_DIVIDER
+        hallDegreesBtdc = data.get2BytesSigned().toFloat() / ANGLE_DIVIDER
         mttf = data.get2Bytes().toFloat() / 256.0f
 
         data.setUnhandledParams()
