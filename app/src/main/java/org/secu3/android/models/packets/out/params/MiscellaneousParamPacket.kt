@@ -91,7 +91,7 @@ data class MiscellaneousParamPacket(
         data += hopDuratAng.times(ANGLE_DIVIDER).roundToInt().write2Bytes()
         data += flpmpFlags
 
-        data += evapAfbegin.div(32).write2Bytes()
+        data += evapAfbegin.div(32f).protocolRoundToInt().write2Bytes()
         require(evapAfEnd - evapAfbegin >= MIN_EVAP_AIRFLOW_DELTA) { "EVAP airflow pair is below the minimum safe range" }
         val evapSlopeRaw = (evapAfslope * 32f * 1048576f).roundToInt()
         require(evapAfslope.isFinite() && evapAfslope > 0f && evapSlopeRaw in 1..0xFFFF) { "EVAP slope cannot be encoded" }

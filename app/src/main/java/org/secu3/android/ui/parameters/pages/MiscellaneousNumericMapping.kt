@@ -25,6 +25,7 @@
 package org.secu3.android.ui.parameters.pages
 
 import org.secu3.android.models.packets.out.params.MiscellaneousParamPacket
+import org.secu3.android.models.packets.base.protocolRoundToInt
 import kotlin.math.abs
 import kotlin.math.roundToInt
 
@@ -74,8 +75,11 @@ internal object MiscellaneousNumericMapping {
 
     private fun applyEvapPair(packet: MiscellaneousParamPacket, begin: Int, end: Int) {
         require(begin in EVAP_MIN..EVAP_MAX && end in EVAP_MIN..EVAP_MAX)
-        val delta = end - begin
-        require(delta >= MiscellaneousParamPacket.MIN_EVAP_AIRFLOW_DELTA)
+        require(end - begin >= MiscellaneousParamPacket.MIN_EVAP_AIRFLOW_DELTA)
+        val wireBegin = begin.div(32f).protocolRoundToInt() * 32
+        val maxDelta = EVAP_MAX - maxOf(begin, wireBegin)
+        require(maxDelta >= MiscellaneousParamPacket.MIN_EVAP_AIRFLOW_DELTA)
+        val delta = (end - maxOf(begin, wireBegin)).coerceIn(MiscellaneousParamPacket.MIN_EVAP_AIRFLOW_DELTA, maxDelta)
         val targetSlope = 32f / delta
         require(targetSlope.isFinite())
         val requestedRaw = (targetSlope * 32f * 1048576f).roundToInt()
@@ -84,9 +88,15 @@ internal object MiscellaneousNumericMapping {
             val raw = requestedRaw + offset
             if (raw !in 1..0xFFFF) return@mapNotNull null
             val decodedSlope = raw.toFloat().div(1048576f).div(32f)
-            val decodedEnd = (32f / decodedSlope + begin).roundToInt()
-            val decodedDelta = decodedEnd - begin
-            if (decodedEnd in EVAP_MIN..EVAP_MAX && decodedDelta >= MiscellaneousParamPacket.MIN_EVAP_AIRFLOW_DELTA) {
+            val decodedModelEnd = (32f / decodedSlope + begin).roundToInt()
+            val decodedWireEnd = (32f / decodedSlope + wireBegin).roundToInt()
+            val decodedModelDelta = decodedModelEnd - begin
+            val decodedWireDelta = decodedWireEnd - wireBegin
+            if (decodedModelEnd in EVAP_MIN..EVAP_MAX &&
+                decodedWireEnd in EVAP_MIN..EVAP_MAX &&
+                decodedModelDelta >= MiscellaneousParamPacket.MIN_EVAP_AIRFLOW_DELTA &&
+                decodedWireDelta >= MiscellaneousParamPacket.MIN_EVAP_AIRFLOW_DELTA
+            ) {
                 raw to decodedSlope
             } else {
                 null

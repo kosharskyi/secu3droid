@@ -161,6 +161,22 @@ class MiscellaneousStateHolderTest {
     }
 
     @Test
+    fun manualEvapBeginEditKeepsTypedValueAndEncodesRoundedWireStart() {
+        val sent = mutableListOf<MiscellaneousParamPacket>()
+        val holder = MiscellaneousStateHolder(sent::add)
+        val packet = validPacket()
+        holder.onPacketReceived(packet)
+
+        holder.editInt(MiscField.BEGIN, 1016)
+
+        assertEquals(1016, packet.evapAfbegin)
+        assertEquals(1016, holder.state!!.begin)
+        assertEquals(1, sent.size)
+        assertEquals(0, packet.pack()[12])
+        assertEquals(32, packet.pack()[13])
+    }
+
+    @Test
     fun resetClearsPacketStateAndValidationAndIgnoresEdits() {
         val sent = mutableListOf<MiscellaneousParamPacket>()
         val holder = MiscellaneousStateHolder(sent::add)

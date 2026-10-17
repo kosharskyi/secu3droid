@@ -9,3 +9,7 @@ The start angle is a signed 16-bit value and duration is unsigned; both decode a
 ## Ignition-cutoff threshold is signed on the wire
 
 The ignition cutoff threshold word is signed 16-bit, matching desktop parsing for negative and boundary wire values. It remains an integer field with its existing nonnegative UI range; signed parsing preserves the protocol value without changing editor bounds.
+
+## EVAP airflow start rounds to 32-RxL wire counts
+
+The outgoing start value is scaled by 1/32 and uses manager `MathHelpers::Round`. Preserve that rounding for manually entered values not divisible by 32; truncating integer division changes the encoded airflow start.

@@ -141,6 +141,45 @@ class MiscellaneousParamPacketTest {
         assertTrue(parsed.pack().takeLast(2) == listOf(0xA5,0x5A))
     }
 
+    @Test fun evapStartUsesManagerRoundingAtHalfCountsAndBoundaries() {
+        val expected = listOf(100 to 3, 1000 to 31, 1007 to 31, 1008 to 32, 1016 to 32, 1024 to 32, 2_000_000 to 62_500)
+        for ((begin, word) in expected) {
+            val packet = MiscellaneousParamPacket(evapAfbegin = begin, evapAfslope = 32f / 20_000f)
+            assertArrayEquals(intArrayOf(word ushr 8, word and 0xFF), packet.pack().sliceArray(12..13))
+        }
+    }
+
+    @Test fun incomingEvapStartWordAndUnknownTailSurviveUnrelatedEdit() {
+        val incoming = vssFrame(32768).also {
+            it[13] = 0x12
+            it[14] = 0x34
+        }
+        val packet = MiscellaneousParamPacket().parse(incoming) as MiscellaneousParamPacket
+        assertEquals(0x1234 * 32, packet.evapAfbegin)
+        packet.uartPeriodTms = 30
+        assertArrayEquals(intArrayOf(0x12, 0x34), packet.pack().sliceArray(12..13))
+        assertArrayEquals(intArrayOf(0xCA, 0xFE), packet.pack().takeLast(2).toIntArray())
+    }
+
+    @Test fun evapBeginAtUpperBoundRemainsInRangeAfterWireRoundTrip() {
+        for ((begin, end) in listOf(
+            1_983_472 to 2_000_000, // Rounds up to 1,983,488.
+            1_983_464 to 2_000_000, // Rounds down to 1,983,456.
+            1_008 to 17_508,        // Half-count start near the minimum delta.
+            1_016 to 17_516,
+        )) {
+            val packet = MiscellaneousParamPacket(evapAfbegin = begin, evapAfslope = 32f / (end - begin))
+            MiscellaneousNumericMapping.applyInt(packet, MiscField.BEGIN, begin)
+            assertTrue("model pair was $begin..${packet.evapAfEnd}", packet.evapAfEnd in 100..2_000_000)
+            assertTrue(packet.evapAfEnd - begin >= MiscellaneousParamPacket.MIN_EVAP_AIRFLOW_DELTA)
+
+            val packed = packet.pack()
+            val parsed = MiscellaneousParamPacket().parse(intArrayOf(0x40, 'z'.code) + packed.drop(1).toIntArray()) as MiscellaneousParamPacket
+            assertTrue("wire pair was ${parsed.evapAfbegin}..${parsed.evapAfEnd}", parsed.evapAfEnd in 100..2_000_000)
+            assertTrue(parsed.evapAfEnd - parsed.evapAfbegin >= MiscellaneousParamPacket.MIN_EVAP_AIRFLOW_DELTA)
+        }
+    }
+
     @Test fun invalidEvapSlopeCannotBePackedAndEndRequiresSafeDelta() {
         val packet = MiscellaneousParamPacket(evapAfbegin=5000, evapAfslope=0f)
         var failed=false
