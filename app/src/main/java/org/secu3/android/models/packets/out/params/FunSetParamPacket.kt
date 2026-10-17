@@ -82,11 +82,11 @@ data class FunSetParamPacket(
         data += fnGas
         data += loadLower.times(MAP_MULTIPLIER).roundToInt().write2Bytes()
         data += loadUpper.times(MAP_MULTIPLIER).roundToInt().write2Bytes()
-        data += mapCurveOffset.div(ADC_DISCRETE).roundToInt().write2Bytes()
-        data += mapCurveGradient.times(128.0f).times(MAP_MULTIPLIER).times(ADC_DISCRETE).roundToInt().write2Bytes()
-        data += map2CurveOffset.div(ADC_DISCRETE).roundToInt().write2Bytes()
-        data += map2CurveGradient.times(128.0f).times(MAP_MULTIPLIER).times(ADC_DISCRETE).roundToInt().write2Bytes()
-        data += tpsCurveOffset.div(ADC_DISCRETE).roundToInt().write2Bytes()
+        data += mapCurveOffset.div(ADC_DISCRETE).protocolRoundToInt().write2Bytes()
+        data += mapCurveGradient.times(128.0f).times(MAP_MULTIPLIER).times(ADC_DISCRETE).protocolRoundToInt().write2Bytes()
+        data += map2CurveOffset.div(ADC_DISCRETE).protocolRoundToInt().write2Bytes()
+        data += map2CurveGradient.times(128.0f).times(MAP_MULTIPLIER).times(ADC_DISCRETE).protocolRoundToInt().write2Bytes()
+        data += tpsCurveOffset.div(ADC_DISCRETE).protocolRoundToInt().write2Bytes()
         data += tpsCurveGradient.times(128.0f).times(TPS_MULTIPLIER * 2f).times(ADC_DISCRETE).protocolRoundToInt().write2Bytes()
 
         data += loadSrcCfg
@@ -107,14 +107,14 @@ data class FunSetParamPacket(
         data += injCylDisp.times(16384.0f).roundToInt().write2Bytes()
         data += mafload_const.toInt().write4Bytes()
 
-        data += gpsCurveOffset.div(ADC_DISCRETE).roundToInt().write2Bytes()
-        data += gpsCurveGradient.times(128.0f).times(MAP_MULTIPLIER).times(ADC_DISCRETE).roundToInt().write2Bytes()
+        data += gpsCurveOffset.div(ADC_DISCRETE).protocolRoundToInt().write2Bytes()
+        data += gpsCurveGradient.times(128.0f).times(MAP_MULTIPLIER).times(ADC_DISCRETE).protocolRoundToInt().write2Bytes()
 
-        data += fpsCurveOffset.div(ADC_DISCRETE).roundToInt().write2Bytes()
-        data += fpsCurveGradient.times(128.0f).times(MAP_MULTIPLIER).times(ADC_DISCRETE).roundToInt().write2Bytes()
+        data += fpsCurveOffset.div(ADC_DISCRETE).protocolRoundToInt().write2Bytes()
+        data += fpsCurveGradient.times(128.0f).times(MAP_MULTIPLIER).times(ADC_DISCRETE).protocolRoundToInt().write2Bytes()
 
-        data += apps1CurveOffset.div(ADC_DISCRETE).roundToInt().write2Bytes()
-        data += apps1CurveGradient.times(128.0f).times(APPS_MULT * 2).times(ADC_DISCRETE).roundToInt().write2Bytes()
+        data += apps1CurveOffset.div(ADC_DISCRETE).protocolRoundToInt().write2Bytes()
+        data += apps1CurveGradient.times(128.0f).times(APPS_MULT * 2).times(ADC_DISCRETE).protocolRoundToInt().write2Bytes()
 
         data += unhandledParams
 
