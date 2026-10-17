@@ -187,4 +187,30 @@ class KnockParamPacketTest {
         val positive = KnockParamPacket(retardStep = .015625f, advanceStep = .015625f, maxRetard = .015625f)
         assertArrayEquals(intArrayOf(0x00, 0x01, 0x00, 0x01, 0x00, 0x01), positive.pack().sliceArray(8..13))
     }
+
+    @Test fun windowAnglesAndCoolantThresholdUseProtocolHalfAwayRounding() {
+        val negativeHalf = KnockParamPacket(
+            kWndBeginAngle = -1.5f / 32f,
+            kWndEndAngle = -1.5f / 32f,
+            knkctlThrd = -1.5f / 4f,
+        ).pack()
+        assertArrayEquals(intArrayOf(0xFF, 0xFE, 0xFF, 0xFE), negativeHalf.sliceArray(3..6))
+        assertArrayEquals(intArrayOf(0xFF, 0xFE), negativeHalf.sliceArray(18..19))
+
+        val positiveHalf = KnockParamPacket(
+            kWndBeginAngle = 1.5f / 32f,
+            kWndEndAngle = 1.5f / 32f,
+            knkctlThrd = 1.5f / 4f,
+        ).pack()
+        assertArrayEquals(intArrayOf(0x00, 0x02, 0x00, 0x02), positiveHalf.sliceArray(3..6))
+        assertArrayEquals(intArrayOf(0x00, 0x02), positiveHalf.sliceArray(18..19))
+
+        val nearbyNonHalf = KnockParamPacket(
+            kWndBeginAngle = -1.49f / 32f,
+            kWndEndAngle = -1.49f / 32f,
+            knkctlThrd = -1.49f / 4f,
+        ).pack()
+        assertArrayEquals(intArrayOf(0xFF, 0xFF, 0xFF, 0xFF), nearbyNonHalf.sliceArray(3..6))
+        assertArrayEquals(intArrayOf(0xFF, 0xFF), nearbyNonHalf.sliceArray(18..19))
+    }
 }

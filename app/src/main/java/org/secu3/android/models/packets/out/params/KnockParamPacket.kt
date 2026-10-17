@@ -67,8 +67,8 @@ data class KnockParamPacket(
         data += useKnockChannel
         data += bpfFrequency
 
-        data += kWndBeginAngle.times(ANGLE_DIVIDER).roundToInt().write2Bytes()
-        data += kWndEndAngle.times(ANGLE_DIVIDER).roundToInt().write2Bytes()
+        data += kWndBeginAngle.times(ANGLE_DIVIDER).protocolRoundToInt().write2Bytes()
+        data += kWndEndAngle.times(ANGLE_DIVIDER).protocolRoundToInt().write2Bytes()
         data += intTimeCost
 
         data += retardStep.times(ANGLE_DIVIDER).protocolRoundToInt().write2Bytes()
@@ -79,7 +79,7 @@ data class KnockParamPacket(
         data += recoveryDelay
 
         data += selectedChanels
-        data += knkctlThrd.times(TEMPERATURE_MULTIPLIER).roundToInt().write2Bytes()
+        data += knkctlThrd.times(TEMPERATURE_MULTIPLIER).protocolRoundToInt().write2Bytes()
 
         data += unhandledParams
 
