@@ -28,6 +28,7 @@ import androidx.compose.ui.test.assertCountEquals
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.ui.test.assertIsDisplayed
+import androidx.compose.ui.test.*
 import androidx.compose.ui.test.assertIsSelected
 import androidx.compose.ui.test.junit4.StateRestorationTester
 import androidx.compose.ui.test.junit4.v2.createComposeRule
@@ -81,7 +82,7 @@ class DiagnosticsScreenTest {
     }
 
     @Test
-    fun toolbarCallbacksAndConnectionStatusAreVisibleAndReactive() {
+    fun toolbarCallbacksAndAccessibleConnectionStatusAreReactive() {
         var backCalls = 0
         var settingsCalls = 0
         val connection = MutableLiveData<ConnectionState>(Connected)
@@ -92,13 +93,15 @@ class DiagnosticsScreenTest {
             }
         }
         compose.waitForIdle()
-        compose.onNodeWithText(context.getString(R.string.dashboard_status_online)).assertIsDisplayed()
+        compose.onNodeWithContentDescription(context.getString(R.string.home_connection_connected)).assertIsDisplayed()
+        compose.onNodeWithText(context.getString(R.string.home_connection_connected)).assertDoesNotExist()
         compose.onNodeWithContentDescription(context.getString(R.string.back)).performClick()
         compose.onNodeWithContentDescription(context.getString(R.string.title_activity_settings)).performClick()
         assertEquals(1, backCalls)
         assertEquals(1, settingsCalls)
         compose.runOnIdle { connection.value = Disconnected }
-        compose.onNodeWithText(context.getString(R.string.dashboard_status_offline)).assertIsDisplayed()
+        compose.onNodeWithContentDescription(context.getString(R.string.home_connection_disconnected)).assertIsDisplayed()
+        compose.onNodeWithText(context.getString(R.string.home_connection_disconnected)).assertDoesNotExist()
     }
 
     @Test

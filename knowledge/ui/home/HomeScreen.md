@@ -9,3 +9,7 @@ The menu's monochrome XML and raster assets include both black and white source 
 ## Release reminders stay inside the scrollable release body
 
 The release dialog's server-provided message can be long. Keep “Remind me later” in the same bounded scroll region as that message so it remains reachable on short windows and at enlarged font scales; the download and release-notes actions remain in the dialog action area.
+
+## The ECU toolbar icon keeps its firmware action description
+
+Home shares the fixed toolbar status slot and state colors with feature screens, but its connected accessibility label must continue to announce that firmware information opens when an update is available. Only make the slot clickable when firmware information is available.

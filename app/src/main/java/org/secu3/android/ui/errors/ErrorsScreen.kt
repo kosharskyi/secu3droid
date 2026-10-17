@@ -34,7 +34,6 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Icon
-import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
@@ -53,13 +52,11 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import org.secu3.android.ui.compose.ConfirmationDialog
 import org.secu3.android.R
-import org.secu3.android.connection.Connected
 import org.secu3.android.connection.ConnectionState
-import org.secu3.android.connection.Disconnected
-import org.secu3.android.connection.InProgress
 import org.secu3.android.models.CheckEngineError
 import org.secu3.android.ui.compose.SecuComposeTheme
 import org.secu3.android.ui.compose.LocalSecuPalette
+import org.secu3.android.ui.compose.SecuTopAppBar
 
 @Composable
 internal fun ErrorsScreen(
@@ -81,10 +78,29 @@ internal fun ErrorsScreen(
                     .fillMaxSize()
                     .statusBarsPadding(),
             ) {
-                ErrorsTopBar(
+                SecuTopAppBar(
+                    title = stringResource(R.string.errors_title_ecu),
                     connectionState = connectionState,
-                    onBackClick = onBackClick,
-                    onClearClick = onClearClick,
+                    onNavigateUp = onBackClick,
+                    showStatus = true,
+                    actions = {
+                        Box(
+                            modifier = Modifier
+                                .size(ToolbarIconButtonSize)
+                                .clip(RoundedCornerShape(12.dp))
+                                .background(MaterialTheme.colorScheme.errorContainer)
+                                .border(1.dp, MaterialTheme.colorScheme.error, RoundedCornerShape(12.dp))
+                                .clickable(onClick = onClearClick),
+                            contentAlignment = Alignment.Center,
+                        ) {
+                            Icon(
+                                painter = painterResource(R.drawable.ic_delete_outline_24),
+                                contentDescription = stringResource(R.string.errors_clear_all_short),
+                                tint = MaterialTheme.colorScheme.error,
+                                modifier = Modifier.size(18.dp),
+                            )
+                        }
+                    },
                 )
                 Box(
                     modifier = Modifier
@@ -129,80 +145,6 @@ internal fun ErrorsScreen(
                 }
             }
         }
-    }
-}
-
-@Composable
-private fun ErrorsTopBar(
-    connectionState: ConnectionState?,
-    onBackClick: () -> Unit,
-    onClearClick: () -> Unit,
-) {
-    Row(
-        modifier = Modifier
-            .fillMaxWidth()
-            .heightIn(min = 64.dp)
-            .padding(horizontal = 16.dp, vertical = 4.dp),
-        verticalAlignment = Alignment.CenterVertically,
-    ) {
-        IconButton(
-            onClick = onBackClick,
-            modifier = Modifier.size(40.dp),
-        ) {
-            Icon(
-                painter = painterResource(R.drawable.ic_arrow_back_24),
-                contentDescription = stringResource(R.string.back),
-                tint = MaterialTheme.colorScheme.onSurface,
-            )
-        }
-        Text(
-            text = stringResource(R.string.errors_title_ecu),
-            color = MaterialTheme.colorScheme.onSurface,
-            style = MaterialTheme.typography.titleLarge,
-            modifier = Modifier
-                .padding(start = 8.dp)
-                .weight(1f),
-        )
-        ConnectionStatusIcon(connectionState = connectionState)
-        Spacer(modifier = Modifier.width(12.dp))
-        Box(
-            modifier = Modifier
-                .size(ToolbarIconButtonSize)
-                .clip(RoundedCornerShape(12.dp))
-                .background(MaterialTheme.colorScheme.errorContainer)
-                .border(1.dp, MaterialTheme.colorScheme.error, RoundedCornerShape(12.dp))
-                .clickable(onClick = onClearClick),
-            contentAlignment = Alignment.Center,
-        ) {
-            Icon(
-                painter = painterResource(R.drawable.ic_delete_outline_24),
-                contentDescription = stringResource(R.string.errors_clear_all_short),
-                tint = MaterialTheme.colorScheme.error,
-                modifier = Modifier.size(18.dp),
-            )
-        }
-    }
-}
-
-@Composable
-private fun ConnectionStatusIcon(connectionState: ConnectionState?) {
-    val contentColor = when (connectionState) {
-        Connected -> LocalSecuPalette.current.success
-        InProgress -> LocalSecuPalette.current.warning
-        Disconnected -> MaterialTheme.colorScheme.error
-        else -> MaterialTheme.colorScheme.onSurfaceVariant
-    }
-
-    Box(
-        modifier = Modifier.size(ToolbarIconButtonSize),
-        contentAlignment = Alignment.Center,
-    ) {
-        Icon(
-            painter = painterResource(R.drawable.ic_car),
-            contentDescription = null,
-            tint = contentColor,
-            modifier = Modifier.size(24.dp),
-        )
     }
 }
 

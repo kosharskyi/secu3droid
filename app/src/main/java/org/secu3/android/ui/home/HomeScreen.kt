@@ -74,15 +74,18 @@ import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
-import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import org.secu3.android.R
 import org.secu3.android.ui.compose.SecuComposeTheme
 import org.secu3.android.ui.compose.ConfirmationDialog
-import org.secu3.android.ui.compose.LocalSecuPalette
+import org.secu3.android.ui.compose.ConnectionStatusIndicator
+import org.secu3.android.connection.Connected
+import org.secu3.android.connection.Disconnected
+import org.secu3.android.connection.InProgress
 
 enum class HomeConnectionStatus { CONNECTED, CONNECTING, DISCONNECTED }
 enum class HomeLayout { GRID, LANDSCAPE_COLUMNS }
@@ -161,14 +164,17 @@ fun HomeScreen(
                     HomeConnectionStatus.CONNECTING -> stringResource(R.string.home_connection_connecting)
                     HomeConnectionStatus.DISCONNECTED -> stringResource(R.string.home_connection_disconnected)
                 }
-                val palette = LocalSecuPalette.current
-                Icon(painterResource(R.drawable.ic_car), contentDescription = statusDescription,
-                    tint = when (state.connectionStatus) {
-                        HomeConnectionStatus.CONNECTED -> palette.success
-                        HomeConnectionStatus.CONNECTING -> palette.warning
-                        HomeConnectionStatus.DISCONNECTED -> MaterialTheme.colorScheme.error
-                    }, modifier = Modifier.size(48.dp).testTag("home-ecu-status").semantics { contentDescription = statusDescription }
-                        .then(if (state.firmwareAvailable) Modifier.clickableHome(actions.onFirmware) else Modifier))
+                val connectionState = when (state.connectionStatus) {
+                    HomeConnectionStatus.CONNECTED -> Connected
+                    HomeConnectionStatus.CONNECTING -> InProgress
+                    HomeConnectionStatus.DISCONNECTED -> Disconnected
+                }
+                ConnectionStatusIndicator(
+                    connectionState = connectionState,
+                    contentDescriptionOverride = statusDescription,
+                    onClick = if (state.firmwareAvailable) actions.onFirmware else null,
+                    testTag = "home-ecu-status",
+                )
             }
             if (layout == HomeLayout.LANDSCAPE_COLUMNS) {
                 Row(Modifier.weight(1f).fillMaxWidth().testTag("home-menu-viewport").horizontalScroll(rememberScrollState()).padding(start = 32.dp, end = 24.dp, bottom = 8.dp),
@@ -268,9 +274,6 @@ private fun MenuCard(item: HomeMenuItem, modifier: Modifier, adaptIconSize: Bool
         }
     }
 }
-
-@Composable
-private fun Modifier.clickableHome(onClick: () -> Unit): Modifier = clickable(onClick = onClick)
 
 fun homeLayout(configuration: Configuration): HomeLayout =
     if (configuration.orientation == Configuration.ORIENTATION_LANDSCAPE) HomeLayout.LANDSCAPE_COLUMNS else HomeLayout.GRID

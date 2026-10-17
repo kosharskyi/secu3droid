@@ -19,7 +19,6 @@ import androidx.compose.foundation.pager.rememberPagerState
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.*
 import androidx.compose.runtime.livedata.observeAsState
@@ -28,11 +27,8 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.layout.onSizeChanged
 import androidx.compose.ui.platform.LocalLifecycleOwner
 import androidx.compose.ui.platform.testTag
-import androidx.compose.ui.semantics.contentDescription
-import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
-import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.IntSize
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.Lifecycle
@@ -48,7 +44,7 @@ import org.secu3.android.connection.Disconnected
 import org.secu3.android.connection.InProgress
 import org.secu3.android.ui.MainActivity
 import org.secu3.android.ui.compose.SecuComposeTheme
-import org.secu3.android.ui.compose.LocalSecuPalette
+import org.secu3.android.ui.compose.SecuTopAppBar
 import org.secu3.android.ui.compose.SecuTabRow
 import org.secu3.android.ui.parameters.dialogs.NumericEditDialog
 
@@ -223,42 +219,17 @@ internal fun ParametersScreen(
 
 @Composable
 private fun ParametersToolbar(connectionState: org.secu3.android.connection.ConnectionState?, onBack: () -> Unit, onSave: () -> Unit) {
-    val statusLabel = when (connectionState) {
-        Connected -> stringResource(R.string.home_connection_connected)
-        InProgress -> stringResource(R.string.home_connection_connecting)
-        Disconnected -> stringResource(R.string.home_connection_disconnected)
-        else -> stringResource(R.string.connection_status_unknown)
-    }
-    val palette = LocalSecuPalette.current
-    val statusColor = when (connectionState) {
-        Connected -> palette.success
-        InProgress -> palette.warning
-        Disconnected -> MaterialTheme.colorScheme.error
-        else -> null
-    }
-    val saveDescription = stringResource(R.string.save)
-    val backDescription = stringResource(R.string.back)
-    Surface(color = MaterialTheme.colorScheme.surface, tonalElevation = 0.dp) {
-        Row(Modifier.fillMaxWidth().heightIn(min = 56.dp).padding(vertical = 4.dp), verticalAlignment = Alignment.CenterVertically) {
-            IconButton(onClick = onBack, modifier = Modifier.semantics { contentDescription = backDescription }) {
-                Icon(painterResource(R.drawable.ic_arrow_back_24), contentDescription = null, tint = MaterialTheme.colorScheme.onSurface)
+    SecuTopAppBar(
+        title = stringResource(R.string.title_activity_param),
+        connectionState = connectionState,
+        onNavigateUp = onBack,
+        showStatus = true,
+        actions = {
+            IconButton(onClick = onSave, enabled = connectionState == Connected) {
+                Icon(painterResource(R.drawable.ic_save_24), contentDescription = stringResource(R.string.save))
             }
-            Text(stringResource(R.string.title_activity_param), Modifier.weight(1f).padding(horizontal = 8.dp), style = MaterialTheme.typography.titleLarge.copy(fontWeight = FontWeight.Medium), color = MaterialTheme.colorScheme.onSurface)
-            IconButton(onClick = onSave, enabled = connectionState == Connected, modifier = Modifier.semantics { contentDescription = saveDescription }) {
-                Icon(painterResource(R.drawable.ic_save_24), contentDescription = null,
-                    tint = MaterialTheme.colorScheme.onSurface.copy(alpha = if (connectionState == Connected) 1f else .38f))
-            }
-            Row(
-                Modifier.padding(end = 8.dp).widthIn(max = 136.dp).semantics(mergeDescendants = true) { contentDescription = statusLabel },
-                verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.spacedBy(6.dp),
-            ) {
-                Icon(painterResource(R.drawable.ic_car), contentDescription = null,
-                    tint = statusColor ?: MaterialTheme.colorScheme.onSurfaceVariant, modifier = Modifier.size(20.dp))
-                Text(statusLabel, Modifier.weight(1f), style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant, maxLines = 1, overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis)
-            }
-        }
-    }
+        },
+    )
 }
 
 internal fun clampPageIndex(index: Int, pageCount: Int): Int = if (pageCount <= 0) 0 else index.coerceIn(0, pageCount - 1)

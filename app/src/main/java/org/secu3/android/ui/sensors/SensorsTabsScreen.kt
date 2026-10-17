@@ -29,7 +29,6 @@ import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.pager.HorizontalPager
 import androidx.compose.foundation.pager.rememberPagerState
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material.icons.filled.Stop
 import androidx.compose.material.icons.filled.Add
@@ -54,7 +53,7 @@ import org.secu3.android.db.models.GaugeState
 import org.secu3.android.db.models.IndicatorState
 import org.secu3.android.models.packets.input.AdcRawDatPacket
 import org.secu3.android.models.packets.input.SensorsPacket
-import org.secu3.android.ui.compose.ConnectionStatusIndicator
+import org.secu3.android.ui.compose.SecuTopAppBar
 import org.secu3.android.ui.compose.SecuTabRow
 import org.secu3.android.ui.sensors.SensorsViewModel.ChoiceRequest
 import org.secu3.android.ui.sensors.models.GaugeItem
@@ -102,11 +101,12 @@ internal fun SensorsTabsScreen(
     Scaffold(
         contentWindowInsets = WindowInsets.safeDrawing,
         topBar = {
-            TopAppBar(
-                title = { Text(stringResource(R.string.app_name)) },
-                navigationIcon = { IconButton(onClick = onNavigateUp) { Icon(Icons.AutoMirrored.Filled.ArrowBack, stringResource(R.string.back)) } },
+            SecuTopAppBar(
+                title = stringResource(R.string.app_name),
+                connectionState = connectionState,
+                onNavigateUp = onNavigateUp,
+                showStatus = true,
                 actions = {
-                    ConnectionStatusIndicator(connectionState)
                     IconButton(onClick = onSettings) { Icon(Icons.Default.Settings, contentDescription = stringResource(R.string.title_activity_settings)) }
                 },
             )

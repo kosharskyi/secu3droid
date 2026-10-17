@@ -27,11 +27,17 @@ package org.secu3.android.ui.sensors
 
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.Composable
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.width
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.unit.dp
 import androidx.compose.ui.test.junit4.v2.createComposeRule
 import androidx.compose.ui.test.*
 import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.onNodeWithContentDescription
+import androidx.compose.ui.semantics.SemanticsProperties
 import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.performTouchInput
 import androidx.compose.ui.test.swipeRight
@@ -83,7 +89,13 @@ class SensorsTabsScreenTest {
         }
         val pages = mutableListOf<Int>()
         val reorderStates = mutableListOf<Boolean>()
-        compose.setContent { SecuComposeTheme { SensorsScreen(gauges = gauges, pageChanged = pages::add, reorderingChanged = reorderStates::add) } }
+        compose.setContent {
+            SecuComposeTheme {
+                Box(Modifier.width(320.dp).height(480.dp)) {
+                    SensorsScreen(gauges = gauges, pageChanged = pages::add, reorderingChanged = reorderStates::add)
+                }
+            }
+        }
         val rpmTop = compose.onNodeWithTag("gauge-RPM").fetchSemanticsNode().boundsInRoot.top
         compose.onNodeWithTag("gauge-RPM").performTouchInput { swipeUp() }
         compose.waitForIdle()
@@ -174,7 +186,7 @@ class SensorsTabsScreenTest {
         compose.onNodeWithContentDescription(context.getString(R.string.title_activity_settings)).performClick()
         compose.waitForIdle()
         assertEquals(listOf(1), settings)
-        compose.onNodeWithText(context.getString(R.string.dashboard_status_offline)).assertExists()
+        compose.onNodeWithContentDescription(context.getString(R.string.home_connection_disconnected)).assertExists()
     }
 
     @Test fun disconnectedScreenKeepsConfigurationButMarksLiveReadingsUnavailable() {
@@ -185,7 +197,9 @@ class SensorsTabsScreenTest {
         compose.onNodeWithTag("gauge-RPM").assertExists()
         compose.onNodeWithText("—").assertExists()
         compose.onNodeWithText("2240").assertDoesNotExist()
-        compose.onNodeWithText(context.getString(R.string.sensors_status_accessibility_unavailable)).assertExists()
+        compose.onNodeWithTag("indicator-THROTTLE")
+            .assert(SemanticsMatcher.expectValue(SemanticsProperties.StateDescription, context.getString(R.string.sensors_status_accessibility_unavailable)))
+        compose.onNodeWithText(context.getString(R.string.sensors_status_accessibility_unavailable)).assertDoesNotExist()
         compose.onNodeWithText(context.getString(R.string.sensors_status_accessibility_off)).assertDoesNotExist()
     }
 

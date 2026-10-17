@@ -211,7 +211,7 @@ class HomeScreenTest {
         fun assertContentWithinInsets() {
             val rootHeight = compose.onRoot().fetchSemanticsNode().boundsInRoot.height
             listOf("home-exit-button", "home-ecu-status", "home-menu-viewport").forEach { tag ->
-                val bounds = compose.onNodeWithTag(tag).fetchSemanticsNode().boundsInRoot
+                val bounds = compose.onNodeWithTag(tag, useUnmergedTree = tag == "home-ecu-status").fetchSemanticsNode().boundsInRoot
                 assertTrue("$tag starts below the status bar", bounds.top >= topInset - 1f)
                 assertTrue("$tag ends above the navigation bar", bounds.bottom <= rootHeight - bottomInset + 1f)
             }

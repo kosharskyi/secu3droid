@@ -292,7 +292,7 @@ class ParametersNavigationIntegrationTest {
         InstrumentationRegistry.getInstrumentation().sendKeyDownUpSync(KeyEvent.KEYCODE_BACK)
         compose.waitForIdle()
         assertNativeHostRestored(restoredHost, HOME_ROUTE)
-        compose.onNodeWithTag("home-ecu-status").assertExists()
+        compose.onNodeWithTag("home-ecu-status", useUnmergedTree = true).assertExists()
         compose.onAllNodesWithText(compose.activity.getString(R.string.disconnect_device)).assertCountEquals(0)
 
         compose.activityRule.scenario.onActivity { it.openFirmware() }

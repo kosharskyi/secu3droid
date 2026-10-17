@@ -32,14 +32,11 @@ import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.pager.HorizontalPager
 import androidx.compose.foundation.pager.rememberPagerState
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.Scaffold
-import androidx.compose.material3.Text
-import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableFloatStateOf
@@ -61,7 +58,7 @@ import kotlinx.coroutines.launch
 import org.secu3.android.R
 import org.secu3.android.connection.ConnectionState
 import org.secu3.android.models.packets.input.DiagInputPacket
-import org.secu3.android.ui.compose.ConnectionStatusIndicator
+import org.secu3.android.ui.compose.SecuTopAppBar
 import org.secu3.android.ui.compose.SecuTabRow
 import org.secu3.android.ui.parameters.ParameterEditRequest
 import org.secu3.android.ui.parameters.dialogs.NumericEditDialog
@@ -96,15 +93,13 @@ internal fun DiagnosticsScreen(
         modifier = Modifier.fillMaxSize(),
         contentWindowInsets = WindowInsets.safeDrawing,
         topBar = {
-            TopAppBar(
-                title = { Text(stringResource(R.string.title_activity_diagnostics)) },
-                navigationIcon = {
-                    IconButton(onClick = onNavigateUp) {
-                        Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = stringResource(R.string.back), modifier = Modifier.testTag("diagnostics-back-icon"))
-                    }
-                },
+            SecuTopAppBar(
+                title = stringResource(R.string.title_activity_diagnostics),
+                connectionState = status,
+                onNavigateUp = onNavigateUp,
+                showStatus = true,
+                navigationIconModifier = Modifier.testTag("diagnostics-back-icon"),
                 actions = {
-                    ConnectionStatusIndicator(status, Modifier.padding(end = 8.dp))
                     IconButton(onClick = onAdditionalSettings, modifier = Modifier.testTag("diagnostics-settings-icon")) {
                         Icon(Icons.Default.Settings, contentDescription = stringResource(R.string.title_activity_settings))
                     }
