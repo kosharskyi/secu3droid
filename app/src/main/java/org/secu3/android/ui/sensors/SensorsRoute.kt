@@ -7,6 +7,7 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.runtime.livedata.observeAsState
+import androidx.compose.material3.SnackbarHostState
 import androidx.compose.ui.platform.LocalLifecycleOwner
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.LifecycleEventObserver
@@ -40,6 +41,7 @@ internal fun SensorsRoute(
     val rawSensors by remember(viewModel) { viewModel.rawSensorsLiveData }.observeAsState<AdcRawDatPacket?, AdcRawDatPacket>(null)
     var state by remember(viewModel) { mutableStateOf(viewModel.state.value) }
     val lifecycle = LocalLifecycleOwner.current.lifecycle
+    val snackbarHostState = remember(viewModel) { SnackbarHostState() }
 
     androidx.compose.runtime.DisposableEffect(lifecycle, viewModel) {
         val observer = LifecycleEventObserver { _, event ->
@@ -67,6 +69,8 @@ internal fun SensorsRoute(
             oldViewEnabled = state.oldViewEnabled,
             loggerEnabled = state.loggerEnabled,
             loggerStarted = state.loggerStarted,
+            loggerErrorId = state.loggerErrorId,
+            snackbarHostState = snackbarHostState,
             columns = state.columns,
             connectionState = connection,
             gauges = gauges,
@@ -94,6 +98,7 @@ internal fun SensorsRoute(
             onReorderIndicators = viewModel::indicatorsSwiped,
             onStartLog = viewModel::startWriteLog,
             onStopLog = viewModel::stopWriteLog,
+            onLoggerErrorConsumed = viewModel::consumeLoggerError,
             onMark = { mark -> when (mark) { 1 -> viewModel.logMark1(); 2 -> viewModel.logMark2(); else -> viewModel.logMark3() } },
         )
     }

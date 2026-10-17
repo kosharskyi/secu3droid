@@ -13,3 +13,7 @@ Numeric gauge cards may change orientation to fit width and font scale, but the 
 ## Indicator state is visual, with its status retained for accessibility
 
 Modern and legacy status indicators communicate active, inactive, and unavailable states through theme-aware fills rather than visible On/Off words. Keep the matching `stateDescription` for assistive technology; disconnected indicators must use a distinct neutral appearance instead of looking inactive.
+
+## Logger state follows the singleton session, including background I/O failures
+
+The logger may stop while packet writes run outside the Sensors route. The ViewModel must observe the logger's state flow instead of relying only on start/stop button snapshots. A pending error ID remains until the resumed route displays and acknowledges that exact ID, so navigation away does not discard the error or replay an already acknowledged message.

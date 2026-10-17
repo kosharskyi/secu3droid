@@ -27,12 +27,14 @@ package org.secu3.android.ui.sensors
 
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.remember
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.width
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.test.junit4.v2.createComposeRule
+import androidx.compose.material3.SnackbarHostState
 import androidx.compose.ui.test.*
 import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.onNodeWithText
@@ -180,6 +182,36 @@ class SensorsTabsScreenTest {
         compose.onNodeWithTag("log-start").assertExists()
     }
 
+    @Test fun asynchronousLoggerFailureRestoresStartControlAndShowsOneSnackbar() {
+        val started = mutableStateOf(false)
+        val errorId = mutableStateOf(0L)
+        val consumedErrors = mutableListOf<Long>()
+        compose.setContent {
+            SecuComposeTheme {
+                SensorsScreen(
+                    loggerStarted = started.value,
+                    loggerErrorId = errorId.value,
+                    start = { started.value = true },
+                    onLoggerErrorConsumed = { consumedErrors += it; errorId.value = 0L },
+                )
+            }
+        }
+        compose.onNodeWithTag("log-start").performClick()
+        compose.onNodeWithTag("log-stop").assertExists()
+
+        compose.runOnIdle {
+            started.value = false
+            errorId.value = 1
+        }
+        compose.onNodeWithTag("log-start").assertExists()
+        compose.onNodeWithText(context.getString(R.string.sensor_logger_io_error)).assertExists()
+        compose.waitUntil(6_000) { consumedErrors == listOf(1L) }
+        compose.runOnIdle { started.value = false }
+        compose.waitForIdle()
+        compose.onNodeWithText(context.getString(R.string.sensor_logger_io_error)).assertDoesNotExist()
+        assertEquals(listOf(1L), consumedErrors)
+    }
+
     @Test fun settingsAndConnectionStatusArePresent() {
         val settings = mutableListOf<Int>()
         compose.setContent { SecuComposeTheme { SensorsScreen(settings = { settings += 1 }) } }
@@ -244,10 +276,13 @@ class SensorsTabsScreenTest {
         reorderIndicators: (List<IndicatorState>) -> Unit = {},
         reorderingChanged: (Boolean) -> Unit = {},
         loggerStarted: Boolean = false,
+        loggerErrorId: Long = 0,
+        onLoggerErrorConsumed: (Long) -> Unit = {},
         start: () -> Unit = {}, stop: () -> Unit = {}, mark: (Int) -> Unit = {},
         settings: () -> Unit = {},
     ) = SensorsTabsScreen(
-        initialPage = page, oldViewEnabled = oldView, loggerEnabled = true, loggerStarted = loggerStarted, columns = columns,
+        initialPage = page, oldViewEnabled = oldView, loggerEnabled = true, loggerStarted = loggerStarted,
+        loggerErrorId = loggerErrorId, snackbarHostState = remember { SnackbarHostState() }, columns = columns,
         connectionState = Disconnected, gauges = gauges, indicators = indicators, gaugeChoices = null,
         indicatorChoices = null, sensors = null, rawSensors = null, onPageChanged = pageChanged,
         onNavigateUp = {}, onSettings = settings,
@@ -256,5 +291,6 @@ class SensorsTabsScreenTest {
         onUpdateGauge = {}, onReorderGauges = reorderGauges, onReorderIndicators = reorderIndicators, onStartLog = start,
         onReorderingChanged = reorderingChanged,
         onStopLog = stop, onMark = mark,
+        onLoggerErrorConsumed = onLoggerErrorConsumed,
     )
 }

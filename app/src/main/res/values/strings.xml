@@ -429,6 +429,7 @@
     <string name="pref_log_export_directory_title">Log export folder</string>
     <string name="pref_log_export_directory_default">Downloads/Secu3</string>
     <string name="log_start_writing">Start writing</string>
+    <string name="sensor_logger_io_error">Could not write the sensor log. Check available storage and try again.</string>
     <string name="stop">Stop</string>
     <string name="mark_1">Insert mark 1</string>
     <string name="mark_2">Insert mark 2</string>

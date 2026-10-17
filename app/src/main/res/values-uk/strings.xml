@@ -272,6 +272,7 @@
     <string name="pref_log_export_directory_title">Папка експорту логів</string>
     <string name="pref_log_export_directory_default">Downloads/Secu3</string>
     <string name="log_start_writing">Почати запис</string>
+    <string name="sensor_logger_io_error">Не вдалося записати лог датчиків. Перевірте вільне місце та спробуйте ще раз.</string>
     <string name="stop">Стоп</string>
     <string name="mark_1">Вставити маркер 1</string>
     <string name="mark_2">Вставити маркер 2</string>

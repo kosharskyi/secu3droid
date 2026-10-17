@@ -39,6 +39,57 @@ import java.util.Locale
 import javax.inject.Inject
 import javax.inject.Singleton
 
+private fun openBinaryOutput(file: File): LoggerOutput {
+    val stream = FileOutputStream(file)
+    return try {
+        BinaryFileLoggerOutput(stream, stream.channel)
+    } catch (error: IOException) {
+        try {
+            stream.close()
+        } catch (closeError: IOException) {
+            error.addSuppressed(closeError)
+        }
+        throw error
+    }
+}
+
+private class BinaryFileLoggerOutput(
+    private val stream: FileOutputStream,
+    private val channel: FileChannel,
+) : LoggerOutput {
+    override fun writeBinary(bytes: ByteArray) {
+        val buffer = ByteBuffer.wrap(bytes)
+        while (buffer.hasRemaining()) channel.write(buffer)
+    }
+
+    override fun appendCsv(text: String) = Unit
+    override fun flushCsv() = Unit
+
+    override fun close() {
+        var closeFailure: IOException? = null
+        try {
+            channel.close()
+        } catch (error: IOException) {
+            closeFailure = error
+        }
+        try {
+            stream.close()
+        } catch (error: IOException) {
+            if (closeFailure == null) closeFailure = error else closeFailure.addSuppressed(error)
+        }
+        closeFailure?.let { throw it }
+    }
+}
+
+private class FileWriterOutput(private val writer: FileWriter) : LoggerOutput {
+    override fun writeBinary(bytes: ByteArray) = Unit
+    override fun appendCsv(text: String) {
+        writer.append(text)
+    }
+    override fun flushCsv() = writer.flush()
+    override fun close() = writer.close()
+}
+
 internal fun encodeBinaryLogRecord(packet: SensorsPacket, mark: Int, now: LocalTime): ByteArray {
     // Float = 4 bytes; Int = 4 bytes; Byte = 1 byte; Short = 2 bytes
     val buf = ByteBuffer.allocate(252).also {
@@ -152,128 +203,95 @@ internal fun encodeBinaryLogRecord(packet: SensorsPacket, mark: Int, now: LocalT
 @Singleton
 class SecuLogger @Inject constructor(private val prefs: UserPrefs, private val fileHelper: FileHelper) {
 
+    private val loggerSession = LoggerSession()
+    private val loggerLock = Any()
     private var mLogFile: File? = null
     private var mMark: Int = 0
 
-    private var mIsLoggingRunning = false
-
-    private var mCsvWriter: FileWriter? = null
     private var mCsvDelimeter: String = ";"
     private val mCsvFormatter = DateTimeFormatter.ofPattern("HH:mm:ss.SS")
 
-    private var fileOutputStream: FileOutputStream? = null
-    private var byteChanel: FileChannel? = null
-
     val isLoggerStarted: Boolean
-        get() = mIsLoggingRunning
+        get() = loggerSession.state.value.started
+    internal val state = loggerSession.state
+
+    internal fun acknowledgeLoggerError(errorId: Long) = loggerSession.acknowledgeError(errorId)
 
     fun prepareToLog() {
-        if (mIsLoggingRunning) {
-            return
-        }
-
-        mLogFile = if (prefs.isBinaryLogFormatEnabled) {
-            fileHelper.generateS3lFile
-        } else {
-            fileHelper.generateCsvFile
+        synchronized(loggerLock) {
+            if (isLoggerStarted) return
+            mLogFile = if (prefs.isBinaryLogFormatEnabled) {
+                fileHelper.generateS3lFile
+            } else {
+                fileHelper.generateCsvFile
+            }
         }
     }
 
     fun startLogging() {
-        if (mIsLoggingRunning) {
-            return
-        }
-
-        if (mLogFile == null) {
-            return
-        }
-
-        if (mLogFile?.extension == "s3l") {
-            fileOutputStream = FileOutputStream(mLogFile)
-            byteChanel = fileOutputStream?.channel
-
-            mIsLoggingRunning = true
-            return
-        }
-
-        try {
-            mCsvWriter = FileWriter(mLogFile, true)
-            mIsLoggingRunning = true
-            mCsvDelimeter = prefs.CSVDelimeter
-
-            if (prefs.isCsvTitleEnabled) {
-                writeInCsv(generateCsvTitle(delimeter = mCsvDelimeter))
+        synchronized(loggerLock) {
+            if (isLoggerStarted) return
+            val logFile = mLogFile ?: return
+            val binary = logFile.extension == "s3l"
+            val csvHeader = if (!binary) {
+                mCsvDelimeter = prefs.CSVDelimeter
+                if (prefs.isCsvTitleEnabled) generateCsvTitle(delimeter = mCsvDelimeter) else null
+            } else {
+                null
             }
-        } catch (e: IOException) {
-            e.printStackTrace()
+            loggerSession.start(
+                openOutput = { if (binary) openBinaryOutput(logFile) else FileWriterOutput(FileWriter(logFile, true)) },
+                binary = binary,
+                csvHeader = csvHeader,
+            )
         }
     }
 
     fun stopLogging() {
-        if (mIsLoggingRunning.not()) {
-            return
+        synchronized(loggerLock) {
+            loggerSession.stop()
+            mLogFile = null
         }
-
-        try {
-            mCsvWriter?.close()
-        } catch (e: IOException) {
-            e.printStackTrace()
-        }
-
-        byteChanel?.close()
-        fileOutputStream?.close()
-        fileOutputStream = null
-        byteChanel = null
-
-        mCsvWriter = null
-
-        mLogFile = null
-
-        mIsLoggingRunning = false
     }
 
     fun setMark1() {
-        mMark = 1
+        synchronized(loggerLock) { mMark = 1 }
     }
 
     fun setMark2() {
-        mMark = 2
+        synchronized(loggerLock) { mMark = 2 }
     }
 
     fun setMark3() {
-        mMark = 4
+        synchronized(loggerLock) { mMark = 4 }
     }
 
     fun logPacket(sensorsPacket: SensorsPacket) {
-        if (mIsLoggingRunning) {
+        synchronized(loggerLock) {
+            if (isLoggerStarted) {
+                if (prefs.isSensorLoggerEnabled.not()) {
+                    stopLogging()
+                    return
+                }
 
-            if (prefs.isSensorLoggerEnabled.not()) {
-                stopLogging()
-                return
+                if (mLogFile?.extension == "s3l") {
+                    writeBinaryLog(sensorsPacket)
+                } else {
+                    val csvString = sensorsPacket.scvString(mMark, mCsvDelimeter)
+                    writeInCsv(csvString)
+                }
+                mMark = 0
             }
-
-            if (mLogFile?.extension == "s3l") {  // check the extension to prevent disabling binary format in setting during log writing
-                writeBinaryLog(sensorsPacket)
-            } else {
-                val csvString = sensorsPacket.scvString(mMark, mCsvDelimeter)
-                writeInCsv(csvString)
-            }
-            mMark = 0
         }
     }
 
     private fun writeBinaryLog(packet: SensorsPacket) {
         val buf = encodeBinaryLogRecord(packet, mMark, LocalTime.now())
-        byteChanel?.write(ByteBuffer.wrap(buf))
+        loggerSession.writeBinary(buf)
     }
 
     private fun writeInCsv(csvString: String) {
-        try {
-            mCsvWriter?.append(csvString)
-            mCsvWriter?.flush()
-        } catch (e: IOException) {
-            e.printStackTrace()
-        }
+        loggerSession.writeCsv(csvString)
     }
 
     private fun SensorsPacket.scvString(mark: Int, delimeter: String): String {
