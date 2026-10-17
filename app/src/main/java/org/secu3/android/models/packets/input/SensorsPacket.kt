@@ -287,7 +287,7 @@ data class SensorsPacket(
         currentAngle = data.get2Bytes().toShort().toFloat() / ANGLE_DIVIDER
         knockValue = data.get2Bytes().toFloat() * ADC_DISCRETE
 
-        data.get2Bytes().takeIf { it != 32767 }?.toFloat()?.let {
+        data.get2BytesSigned().takeIf { it != 32767 }?.toFloat()?.let {
             knockRetard = it.div(ANGLE_DIVIDER)
             knkret_use = true
         }
@@ -417,14 +417,14 @@ data class SensorsPacket(
         grts = data.get2Bytes().toShort().toFloat().div(TEMPERATURE_MULTIPLIER).coerceIn(-99.9f, 999.0f)           // gas reducer's temperature
 
         rxlaf = data.get2Bytes().times(32)           // RxL air flow
-        ftls = data.get2Bytes().toFloat().div(FTLS_MULT)  // fuel tank level
+        ftls = data.get2BytesSigned().toFloat().div(FTLS_MULT)  // fuel tank level
         egts = data.get2BytesSigned().toFloat().div(EGTS_MULT)  // exhaust gas temperature
-        ops = data.get2Bytes().toFloat().div(OPS_MULT)    // oil pressure
+        ops = data.get2BytesSigned().toFloat().div(OPS_MULT)    // oil pressure
 
         sens_injDuty = data.get1Byte().toFloat() / 2.0f
 
         //mass air flow (g/sec)
-        maf = data.get2Bytes().toFloat() / MAFS_MULT
+        maf = data.get2BytesSigned().toFloat() / MAFS_MULT
         ventDuty = data.get1Byte().toFloat().div(2.0f)
 
         uniOutput = data.get1Byte()

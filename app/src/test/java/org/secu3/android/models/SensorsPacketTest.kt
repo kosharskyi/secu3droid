@@ -1,6 +1,8 @@
 package org.secu3.android.models
 
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertFalse
+import org.junit.Assert.assertTrue
 import org.junit.Test
 import org.secu3.android.models.packets.input.SensorsPacket
 
@@ -52,5 +54,44 @@ class SensorsPacketTest {
             assertEquals(1f, packet.ftls, .0001f)
             assertEquals(1f, packet.ops, .0001f)
         }
+    }
+
+    @Test fun signedFlowPressureAirflowAndKnockWordsPreservePhysicalValuesAndSentinel() {
+        fun parseWithWords(knock: Int, fuelLevel: Int, oilPressure: Int, maf: Int): SensorsPacket {
+            val payload = IntArray(116)
+            payload[12] = knock ushr 8; payload[13] = knock and 255
+            payload[75] = fuelLevel ushr 8; payload[76] = fuelLevel and 255
+            payload[79] = oilPressure ushr 8; payload[80] = oilPressure and 255
+            payload[82] = maf ushr 8; payload[83] = maf and 255
+            return RawPacket(intArrayOf('@'.code, 'q'.code) + payload + intArrayOf(0, 0))
+                .parse(null) as SensorsPacket
+        }
+
+        val negative = parseWithWords(knock = 0xFFE0, fuelLevel = 0xFFC0, oilPressure = 0xFF00, maf = 0xFFC0)
+        assertTrue(negative.knkret_use)
+        assertEquals(-1f, negative.knockRetard, .0001f)
+        assertEquals(-1f, negative.ftls, .0001f)
+        assertEquals(-1f, negative.ops, .0001f)
+        assertEquals(-1f, negative.maf, .0001f)
+
+        val negativeOne = parseWithWords(knock = 0xFFFF, fuelLevel = 0xFFFF, oilPressure = 0xFFFF, maf = 0xFFFF)
+        assertEquals(-1f / 32f, negativeOne.knockRetard, .0001f)
+        assertEquals(-1f / 64f, negativeOne.ftls, .0001f)
+        assertEquals(-1f / 256f, negativeOne.ops, .0001f)
+        assertEquals(-1f / 64f, negativeOne.maf, .0001f)
+
+        val positive = parseWithWords(knock = 0x0020, fuelLevel = 0x0040, oilPressure = 0x0100, maf = 0x0040)
+        assertTrue(positive.knkret_use)
+        assertEquals(1f, positive.knockRetard, .0001f)
+        assertEquals(1f, positive.ftls, .0001f)
+        assertEquals(1f, positive.ops, .0001f)
+        assertEquals(1f, positive.maf, .0001f)
+
+        val disabled = parseWithWords(knock = 0x7FFF, fuelLevel = 0, oilPressure = 0, maf = 0)
+        assertFalse(disabled.knkret_use)
+        assertEquals(0f, disabled.knockRetard, .0001f)
+        assertEquals(0f, disabled.ftls, .0001f)
+        assertEquals(0f, disabled.ops, .0001f)
+        assertEquals(0f, disabled.maf, .0001f)
     }
 }
