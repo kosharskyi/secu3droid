@@ -430,7 +430,7 @@ data class SensorsPacket(
         uniOutput = data.get1Byte()
 
         mapdot = data.get2Bytes().toShort()
-        fts = data.get2Bytes().toFloat()  / FTS_MULT
+        fts = data.get2BytesSigned().toFloat() / FTS_MULT
         cons_fuel = data.get3Bytes().toFloat() / 1024.0f //consumed fuel
 
         afr2 = data.get2Bytes().toFloat() / AFR_MULTIPLIER
@@ -455,7 +455,7 @@ data class SensorsPacket(
 
         apps1 = data.get2Bytes().toFloat() / APPS_MULT
 
-        ots = data.get2Bytes().toFloat() / FTS_MULT
+        ots = data.get2BytesSigned().toFloat() / FTS_MULT
 
         estTorque = data.get2Bytes().toShort().toFloat() / 2.0f
         reqTorque = data.get2Bytes().toShort().toFloat() / 2.0f
