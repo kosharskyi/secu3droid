@@ -27,6 +27,7 @@ package org.secu3.android.models.packets.out.params
 import org.secu3.android.models.packets.base.Secu3Packet
 import org.secu3.android.models.packets.base.InputPacket
 import org.secu3.android.models.packets.base.OutputPacket
+import org.secu3.android.models.packets.base.protocolRoundToInt
 import kotlin.math.roundToInt
 
 data class CarburParamPacket(
@@ -60,7 +61,7 @@ data class CarburParamPacket(
         data += shutoffDelay.times(100).roundToInt()
         data += tpsThreshold.times(TPS_MULTIPLIER).roundToInt().write2Bytes()
         data += fuelcutMapThrd.times(MAP_MULTIPLIER).roundToInt().write2Bytes()
-        data += fuelcutCtsThrd.times(TEMPERATURE_MULTIPLIER).roundToInt().write2Bytes()
+        data += fuelcutCtsThrd.times(TEMPERATURE_MULTIPLIER).protocolRoundToInt().write2Bytes()
         data += revlimLot.write2Bytes()
         data += revlimHit.write2Bytes()
 

@@ -27,6 +27,7 @@ package org.secu3.android.models.packets.out.params
 import org.secu3.android.models.packets.base.Secu3Packet
 import org.secu3.android.models.packets.base.InputPacket
 import org.secu3.android.models.packets.base.OutputPacket
+import org.secu3.android.models.packets.base.protocolRoundToInt
 import org.secu3.android.utils.getBitValue
 import org.secu3.android.utils.setBitValue
 import kotlin.math.roundToInt
@@ -159,7 +160,7 @@ data class LambdaParamPacket(
         data += corrLimitM.div(100).times(512).roundToInt().write2Bytes()
 
         data += swtPoint.div(ADC_DISCRETE).roundToInt().write2Bytes()
-        data += tempThrd.times(TEMPERATURE_MULTIPLIER).roundToInt().write2Bytes()
+        data += tempThrd.times(TEMPERATURE_MULTIPLIER).protocolRoundToInt().write2Bytes()
         data += rpmThrd.write2Bytes()
 
         data += activDelay
