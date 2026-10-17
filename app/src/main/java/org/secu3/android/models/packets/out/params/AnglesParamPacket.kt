@@ -27,9 +27,9 @@ package org.secu3.android.models.packets.out.params
 import org.secu3.android.models.packets.base.Secu3Packet
 import org.secu3.android.models.packets.base.InputPacket
 import org.secu3.android.models.packets.base.OutputPacket
+import org.secu3.android.models.packets.base.protocolRoundToInt
 import org.secu3.android.utils.getBitValue
 import org.secu3.android.utils.setBitValue
-import kotlin.math.roundToInt
 
 data class AnglesParamPacket(
     var maxAngle: Float = 0f,
@@ -76,14 +76,14 @@ data class AnglesParamPacket(
             DESCRIPTOR.code
         )
 
-        data += maxAngle.times(ANGLE_DIVIDER).roundToInt().write2Bytes()
-        data += minAngle.times(ANGLE_DIVIDER).roundToInt().write2Bytes()
-        data += angleCorrection.times(ANGLE_DIVIDER).roundToInt().write2Bytes()
-        data += angleDecSpeed.times(ANGLE_DIVIDER).roundToInt().write2Bytes()
-        data += angleIncSpeed.times(ANGLE_DIVIDER).roundToInt().write2Bytes()
+        data += maxAngle.times(ANGLE_DIVIDER).protocolRoundToInt().write2Bytes()
+        data += minAngle.times(ANGLE_DIVIDER).protocolRoundToInt().write2Bytes()
+        data += angleCorrection.times(ANGLE_DIVIDER).protocolRoundToInt().write2Bytes()
+        data += angleDecSpeed.times(ANGLE_DIVIDER).protocolRoundToInt().write2Bytes()
+        data += angleIncSpeed.times(ANGLE_DIVIDER).protocolRoundToInt().write2Bytes()
         data += zeroAdvAngle
         data += igntimFlags
-        data += shift_ingtim.times(ANGLE_DIVIDER).roundToInt().write2Bytes()
+        data += shift_ingtim.times(ANGLE_DIVIDER).protocolRoundToInt().write2Bytes()
 
         data += unhandledParams
 
