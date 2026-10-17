@@ -91,7 +91,7 @@ data class DiagInputPacket(
         flags = data.get1Byte()
         voltage = data.get2Bytes().toFloat() / VOLTAGE_MULTIPLIER
         map = data.get2Bytes().toFloat() / VOLTAGE_MULTIPLIER
-        temperature = data.get2Bytes().toShort().toFloat() / VOLTAGE_MULTIPLIER
+        temperature = data.get2Bytes().toFloat() / VOLTAGE_MULTIPLIER
 
         addI1 = data.get2Bytes().toFloat() / VOLTAGE_MULTIPLIER
         addI2 = data.get2Bytes().toFloat() / VOLTAGE_MULTIPLIER

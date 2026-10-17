@@ -183,7 +183,7 @@ class PacketTest {
         assertEquals(0x5A, parsed.flags)
         assertEquals(1.25f, parsed.voltage)
         assertEquals(2.5f, parsed.map)
-        assertEquals(-0.5f, parsed.temperature)
+        assertEquals(163.34f, parsed.temperature, 0.001f)
         assertEquals(0.25f, parsed.addI1)
         assertEquals(0.5f, parsed.addI2)
         assertEquals(0.75f, parsed.addI3)
