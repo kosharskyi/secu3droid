@@ -19,36 +19,36 @@ import org.secu3.android.models.packets.out.params.AccelerationParamPacket
 class AccelerationMappingTest {
     @Test fun packetFieldsMapAndEditsPreserveScalingSignsAndUnknownTail() {
         val packet = AccelerationParamPacket(
-            injAeTpsdotThrd = 42, injAeColdaccMult = 50, injAeDecayTime = 7,
+            injAeTpsdotThrd = 42, injAeColdaccMult = 150f, injAeDecayTime = 7,
             injAeType = 9, injAeTime = 12, injAeBallance = 99.609375f,
             injAeMapdotThrd = 13, injXtauSThrd = -25f, injXtauFThrd = -8f,
             wallwetModel = 6,
         )
         val values = AccelerationValues.from(packet)
         assertEquals(42f, values.value(AccelerationNumber.TPS_THRESHOLD))
-        assertEquals(50f, values.value(AccelerationNumber.COLD_MULTIPLIER))
+        assertEquals(150f, values.value(AccelerationNumber.COLD_MULTIPLIER))
         assertEquals(-25f, values.value(AccelerationNumber.XTAU_START))
         assertEquals(9, values.aeType)
         assertEquals(6, values.wallwetModel)
 
         applyAccelerationValue(packet, AccelerationNumber.XTAU_START, -31f)
-        applyAccelerationValue(packet, AccelerationNumber.COLD_MULTIPLIER, 50f)
+        applyAccelerationValue(packet, AccelerationNumber.COLD_MULTIPLIER, 150f)
         packet.injAeBallance = 50f
         packet.injAeType = 1
         val packed = packet.pack()
-        assertEquals(50f, AccelerationValues.from(packet).value(AccelerationNumber.COLD_MULTIPLIER))
+        assertEquals(150f, AccelerationValues.from(packet).value(AccelerationNumber.COLD_MULTIPLIER))
         assertEquals(-31f, packet.injXtauSThrd)
         assertEquals(1, packet.injAeType)
         assertEquals(50f, packet.injAeBallance)
-        assertEquals(0xFF, packed[2])
-        assertEquals(0xC0, packed[3])
+        assertEquals(0x00, packed[2])
+        assertEquals(0x40, packed[3])
         assertEquals(128, packed[7])
         assertEquals(31, packed[9])
         val withTail = intArrayOf(64, 33) + packed.drop(1) + intArrayOf(0xAB, 0xCD)
         val parsed = AccelerationParamPacket().parse(withTail) as AccelerationParamPacket
         assertEquals(0xAB, parsed.pack()[parsed.pack().size - 2])
         assertEquals(0xCD, parsed.pack().last())
-        assertEquals(50, parsed.injAeColdaccMult)
+        assertEquals(150f, parsed.injAeColdaccMult, 0f)
         assertEquals(-31f, parsed.injXtauSThrd)
         assertEquals(50f, parsed.injAeBallance, 0.1f)
     }

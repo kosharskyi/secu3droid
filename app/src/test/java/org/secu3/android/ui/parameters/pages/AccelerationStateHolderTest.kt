@@ -73,7 +73,7 @@ class AccelerationStateHolderTest {
 
         assertEquals(7, sent.size)
         assertEquals(41, packet.injAeTpsdotThrd)
-        assertEquals(250, packet.injAeColdaccMult)
+        assertEquals(250f, packet.injAeColdaccMult, 0f)
         assertEquals(21, packet.injAeDecayTime)
         assertEquals(17, packet.injAeTime)
         assertEquals(88, packet.injAeMapdotThrd)
@@ -117,5 +117,35 @@ class AccelerationStateHolderTest {
         assertEquals(9, received.injAeType)
         assertEquals(listOf(0xA5, 0x5A), received.pack().takeLast(2))
         assertFalse(sent.isEmpty())
+    }
+
+    @Test
+    fun coldMultiplierKeepsFractionalReceiveUntilExplicitWholePercentEdit() {
+        val sent = mutableListOf<AccelerationParamPacket>()
+        val holder = AccelerationStateHolder(sent::add)
+        val payload = IntArray(13).also {
+            it[1] = 0
+            it[2] = 1
+            it[11] = 0xCA
+            it[12] = 0xFE
+        }
+        val packet = AccelerationParamPacket().parse(intArrayOf('@'.code, '|'.code) + payload) as AccelerationParamPacket
+        holder.onPacketReceived(packet)
+
+        assertTrue(sent.isEmpty())
+        assertEquals(100.78125f, packet.injAeColdaccMult, 0f)
+        assertEquals(100.78125f, holder.values!!.value(AccelerationNumber.COLD_MULTIPLIER), 0f)
+        holder.updateNumber(AccelerationNumber.TPS_THRESHOLD, 75f)
+        assertEquals(100.78125f, packet.injAeColdaccMult, 0f)
+        assertEquals(1, (packet.pack()[2] shl 8) or packet.pack()[3])
+        assertEquals(listOf(0xCA, 0xFE), packet.pack().takeLast(2))
+        assertEquals(1, sent.size)
+
+        holder.updateNumber(AccelerationNumber.COLD_MULTIPLIER, 250f)
+        assertEquals(2, sent.size)
+        assertEquals(250f, packet.injAeColdaccMult, 0f)
+        assertEquals(250f, holder.values!!.value(AccelerationNumber.COLD_MULTIPLIER), 0f)
+        assertEquals(0x00, packet.pack()[2])
+        assertEquals(0xC0, packet.pack()[3])
     }
 }

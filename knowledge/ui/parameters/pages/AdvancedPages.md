@@ -41,3 +41,7 @@ Both injection timing banks and both cranking timing banks are signed 16-bit val
 ## Injector pulses-per-liter rounds for display without quantizing the packet
 
 The ECU's unsigned fixed-point physical value remains a Float so unrelated edits preserve its incoming word. The state and integer editor show a rounded value; an explicit whole-number edit stores that value as a Float.
+
+## Cold acceleration multiplier retains fractional percentage points
+
+Its integer editor rounds only for display. Preserve the decoded Float through unrelated edits, and store an explicit whole-percent selection as a Float so the packet can retain its fixed-point resolution.

@@ -162,7 +162,7 @@ internal fun ParameterPageContent(
         }
         R.string.params_tab_acceleration_title -> {
             val h = viewModel.accelerationStateHolder
-            AccelerationScreen(h.values?.let(AccelerationUiState::Data) ?: AccelerationUiState.Loading, { n -> h.values?.let { v -> intEdit(n.titleRes, v.value(n).toInt(), n.step.toInt(), n.max.toInt(), n.min.toInt()) { h.updateNumber(n, it.toFloat()) } } }, h::selectAeType, h::selectWallwetModel, h::setBalance, capabilities = capabilities)
+            AccelerationScreen(h.values?.let(AccelerationUiState::Data) ?: AccelerationUiState.Loading, { n -> h.values?.let { v -> intEdit(n.titleRes, if (n == AccelerationNumber.COLD_MULTIPLIER) v.value(n).roundToInt() else v.value(n).toInt(), n.step.toInt(), n.max.toInt(), n.min.toInt()) { h.updateNumber(n, it.toFloat()) } } }, h::selectAeType, h::selectWallwetModel, h::setBalance, capabilities = capabilities)
         }
         R.string.params_tab_gas_dose_title -> {
             val h = viewModel.gasDoseStateHolder

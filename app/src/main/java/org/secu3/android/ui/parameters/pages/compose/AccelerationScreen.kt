@@ -82,7 +82,7 @@ data class AccelerationValues(
         fun from(packet: AccelerationParamPacket) = AccelerationValues(
             mapOf(
                 AccelerationNumber.TPS_THRESHOLD to packet.injAeTpsdotThrd.toFloat(),
-                AccelerationNumber.COLD_MULTIPLIER to packet.injAeColdaccMult.toFloat(),
+                AccelerationNumber.COLD_MULTIPLIER to packet.injAeColdaccMult,
                 AccelerationNumber.DECAY_TIME to packet.injAeDecayTime.toFloat(),
                 AccelerationNumber.AE_TIME to packet.injAeTime.toFloat(),
                 AccelerationNumber.MAPDOT_THRESHOLD to packet.injAeMapdotThrd.toFloat(),
@@ -96,7 +96,7 @@ data class AccelerationValues(
 fun applyAccelerationValue(packet: AccelerationParamPacket, number: AccelerationNumber, value: Float) {
     when (number) {
         AccelerationNumber.TPS_THRESHOLD -> packet.injAeTpsdotThrd = value.toInt()
-        AccelerationNumber.COLD_MULTIPLIER -> packet.injAeColdaccMult = value.toInt()
+        AccelerationNumber.COLD_MULTIPLIER -> packet.injAeColdaccMult = value
         AccelerationNumber.DECAY_TIME -> packet.injAeDecayTime = value.toInt()
         AccelerationNumber.AE_TIME -> packet.injAeTime = value.toInt()
         AccelerationNumber.MAPDOT_THRESHOLD -> packet.injAeMapdotThrd = value.toInt()

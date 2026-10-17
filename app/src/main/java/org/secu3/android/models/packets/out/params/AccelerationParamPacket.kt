@@ -32,7 +32,7 @@ import kotlin.math.roundToInt
 data class AccelerationParamPacket(
 
     var injAeTpsdotThrd: Int = 0,
-    var injAeColdaccMult: Int = 0,
+    var injAeColdaccMult: Float = 0f,
     var injAeDecayTime: Int = 0,
     var injAeType: Int = 0,
     var injAeTime: Int = 0,
@@ -52,7 +52,7 @@ data class AccelerationParamPacket(
 
         data += injAeTpsdotThrd
 
-        data += injAeColdaccMult.toFloat().div(100).minus(1.0f).times(128f).roundToInt().write2Bytes()
+        data += injAeColdaccMult.div(100f).minus(1.0f).times(128f).roundToInt().write2Bytes()
 
         data += injAeDecayTime
 
@@ -73,9 +73,7 @@ data class AccelerationParamPacket(
     override fun parse(data: IntArray): InputPacket {
 
         injAeTpsdotThrd = data.get1Byte()
-        data.get2Bytes().let {
-            injAeColdaccMult = it.toShort().toFloat().plus(128.0f).div(128.0f).times(100.0f).toInt()
-        }
+        injAeColdaccMult = data.get2Bytes().toFloat().plus(128.0f).div(128.0f).times(100.0f)
         injAeDecayTime = data.get1Byte()
 
         injAeType = data.get1Byte()
