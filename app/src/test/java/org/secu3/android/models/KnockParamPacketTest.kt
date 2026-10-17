@@ -143,4 +143,48 @@ class KnockParamPacketTest {
             assertArrayEquals(intArrayOf(0xCA, 0xFE), outgoing.takeLast(2).toIntArray())
         }
     }
+
+    @Test fun correctionAnglesUseSignedThirtySecondDegreesAndPreserveWordsAndTail() {
+        val words = intArrayOf(0xFFFF, 0xFFE0, 0x0005)
+        val frame = intArrayOf(
+            '@'.code, 'w'.code, 1, 3, 0, 0, 0, 0, 4,
+            words[0] ushr 8, words[0] and 255,
+            words[1] ushr 8, words[1] and 255,
+            words[2] ushr 8, words[2] and 255,
+            0, 0, 7, 0xA5, 0x01, 0x90, 0xCA, 0xFE,
+        )
+        val packet = KnockParamPacket().parse(frame) as KnockParamPacket
+        assertEquals(-.03125f, packet.retardStep, 0f)
+        assertEquals(-1f, packet.advanceStep, 0f)
+        assertEquals(.15625f, packet.maxRetard, 0f)
+
+        packet.useKnockChannel = 2
+        val outgoing = packet.pack()
+        assertArrayEquals(intArrayOf(0xFF, 0xFF, 0xFF, 0xE0, 0x00, 0x05), outgoing.sliceArray(8..13))
+        assertArrayEquals(intArrayOf(0xCA, 0xFE), outgoing.takeLast(2).toIntArray())
+    }
+
+    @Test fun correctionAngleSignedBoundariesDecodeAndRepack() {
+        for ((word, expected) in listOf(0x8000 to -1024f, 0x7FFF to 1023.96875f)) {
+            val frame = intArrayOf(
+                '@'.code, 'w'.code, 1, 3, 0, 0, 0, 0, 4,
+                word ushr 8, word and 255,
+                word ushr 8, word and 255,
+                word ushr 8, word and 255,
+                0, 0, 7, 0xA5, 0x01, 0x90,
+            )
+            val packet = KnockParamPacket().parse(frame) as KnockParamPacket
+            assertEquals(expected, packet.retardStep, 0f)
+            assertEquals(expected, packet.advanceStep, 0f)
+            assertEquals(expected, packet.maxRetard, 0f)
+            assertArrayEquals(intArrayOf(word ushr 8, word and 255, word ushr 8, word and 255, word ushr 8, word and 255), packet.pack().sliceArray(8..13))
+        }
+    }
+
+    @Test fun allThreeCorrectionAnglesUseHalfAwayFromZeroRounding() {
+        val negative = KnockParamPacket(retardStep = -.015625f, advanceStep = -.015625f, maxRetard = -.015625f)
+        assertArrayEquals(intArrayOf(0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF), negative.pack().sliceArray(8..13))
+        val positive = KnockParamPacket(retardStep = .015625f, advanceStep = .015625f, maxRetard = .015625f)
+        assertArrayEquals(intArrayOf(0x00, 0x01, 0x00, 0x01, 0x00, 0x01), positive.pack().sliceArray(8..13))
+    }
 }

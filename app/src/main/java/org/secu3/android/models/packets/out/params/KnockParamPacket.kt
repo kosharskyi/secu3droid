@@ -27,6 +27,7 @@ package org.secu3.android.models.packets.out.params
 import org.secu3.android.models.packets.base.Secu3Packet
 import org.secu3.android.models.packets.base.InputPacket
 import org.secu3.android.models.packets.base.OutputPacket
+import org.secu3.android.models.packets.base.protocolRoundToInt
 import org.secu3.android.utils.getBitValue
 import kotlin.math.roundToInt
 
@@ -70,9 +71,9 @@ data class KnockParamPacket(
         data += kWndEndAngle.times(ANGLE_DIVIDER).roundToInt().write2Bytes()
         data += intTimeCost
 
-        data += retardStep.times(ANGLE_DIVIDER).roundToInt().write2Bytes()
-        data += advanceStep.times(ANGLE_DIVIDER).roundToInt().write2Bytes()
-        data += maxRetard.times(ANGLE_DIVIDER).roundToInt().write2Bytes()
+        data += retardStep.times(ANGLE_DIVIDER).protocolRoundToInt().write2Bytes()
+        data += advanceStep.times(ANGLE_DIVIDER).protocolRoundToInt().write2Bytes()
+        data += maxRetard.times(ANGLE_DIVIDER).protocolRoundToInt().write2Bytes()
         data += threshold.times(VOLTAGE_MULTIPLIER).roundToInt().write2Bytes()
 
         data += recoveryDelay
@@ -92,9 +93,9 @@ data class KnockParamPacket(
         kWndEndAngle = data.get2Bytes().toShort().toFloat() / ANGLE_DIVIDER
         intTimeCost = data.get1Byte()
 
-        retardStep = data.get2Bytes().toFloat() / ANGLE_DIVIDER
-        advanceStep = data.get2Bytes().toFloat() / ANGLE_DIVIDER
-        maxRetard = data.get2Bytes().toFloat() / ANGLE_DIVIDER
+        retardStep = data.get2BytesSigned().toFloat() / ANGLE_DIVIDER
+        advanceStep = data.get2BytesSigned().toFloat() / ANGLE_DIVIDER
+        maxRetard = data.get2BytesSigned().toFloat() / ANGLE_DIVIDER
         threshold = data.get2Bytes().toFloat() / VOLTAGE_MULTIPLIER
         recoveryDelay = data.get1Byte()
         selectedChanels = data.get1Byte()
