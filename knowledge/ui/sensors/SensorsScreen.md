@@ -8,7 +8,7 @@ Legacy gauge section colors encode ECU ranges. Theme the dial text, needle, and 
 
 ## Gauge cards resize to the active view's content
 
-Cards keep the same column width, but their heights follow the active content. Numeric gauges use a natural-height value and unit block; classic dials use a square face, while new dials allocate enough height for scale labels outside the same full-width circular face. Classic and thin-needle dials show a value/unit footer, while the precise-arc dial puts the readout inside its face. Rows align cards at the top without stretching shorter cards or reserving a transparent footer. Do not add spacer content to equalize heights when switching styles or numeric view.
+Cards keep the same column width, and each row uses the tallest card's natural outer height so wrapped titles do not leave staggered gaps between rows. Shorter cards fill that row height while their content keeps its natural dimensions; indicator content remains vertically centered. Numeric gauges use a natural-height value and unit block; classic dials use a square face, while new dials allocate enough height for scale labels outside the same full-width circular face. Classic and thin-needle dials show a value/unit footer, while the precise-arc dial puts the readout inside its face. Recompute row height from current title wrapping, gauge mode/style, font scale, and window width so a row shrinks when its content becomes shorter. Pass the measured inner card width into gauge layout rather than using `BoxWithConstraints` inside the card: rows use intrinsic height measurement, which cannot query intrinsic size through `SubcomposeLayout`.
 
 ## Gauge and indicator columns follow the available window width
 

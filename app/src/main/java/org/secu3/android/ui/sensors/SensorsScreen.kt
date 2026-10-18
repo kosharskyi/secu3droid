@@ -69,6 +69,7 @@ import androidx.compose.ui.semantics.clearAndSetSemantics
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.zIndex
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.graphics.toArgb
 import androidx.compose.foundation.Canvas
@@ -224,11 +225,14 @@ internal fun SensorsScreen(
         val minimumGaugeColumnWidth = 150.dp * fontScale.coerceAtLeast(1f)
         val renderColumns = (maxWidth / minimumGaugeColumnWidth).toInt().coerceAtLeast(1)
         val gridCellWidth = maxWidth / renderColumns
+        // Gauge cards need this width outside BoxWithConstraints so row intrinsic sizing can measure them.
+        val gaugeContentWidth = (gridCellWidth - CARD_CELL_GUTTER * 2f - CARD_CONTENT_INSET * 2f).coerceAtLeast(0.dp)
         Column(Modifier.fillMaxSize().verticalScroll(rememberScrollState(), enabled = !dragging).padding(bottom = 88.dp)) {
             Column(Modifier.fillMaxWidth().zIndex(if (activeDragKey?.startsWith("g:") == true) 2f else 0f).testTag("gauges-grid")) {
                 localGauges.chunked(renderColumns).forEach { rowItems ->
                     Row(
-                        Modifier.fillMaxWidth().zIndex(if (rowItems.any { activeDragKey == "g:${it.state.gaugeType.name}" }) 1f else 0f),
+                        Modifier.fillMaxWidth().height(IntrinsicSize.Max)
+                            .zIndex(if (rowItems.any { activeDragKey == "g:${it.state.gaugeType.name}" }) 1f else 0f),
                         horizontalArrangement = Arrangement.Start,
                     ) {
                         rowItems.forEach { item ->
@@ -244,12 +248,13 @@ internal fun SensorsScreen(
                             LaunchedEffect(dragKey, previewOffset) {
                                 previewAnimation.animateTo(previewOffset, tween(PREVIEW_ANIMATION_MILLIS))
                             }
-                            key(dragKey) { Box(Modifier.width(gridCellWidth).zIndex(if (isDragged) 2f else 0f), contentAlignment = Alignment.TopCenter) {
+                            key(dragKey) { Box(Modifier.width(gridCellWidth).fillMaxHeight().zIndex(if (isDragged) 2f else 0f), contentAlignment = Alignment.TopCenter) {
                                 GaugeCard(
                                     if (dataAvailable) item else item.copy(value = "—"),
                                     gaugeStyle,
                                     injectionTimingMode,
-                                    Modifier.fillMaxWidth().padding(8.dp)
+                                    gaugeContentWidth,
+                                    Modifier.fillMaxWidth().fillMaxHeight().padding(CARD_CELL_GUTTER)
                                         .onGloballyPositioned { coordinates ->
                                             val bounds = coordinates.boundsInRoot()
                                             if (gaugePositions[dragKey] != bounds) gaugePositions[dragKey] = bounds
@@ -325,7 +330,8 @@ internal fun SensorsScreen(
             Column(Modifier.fillMaxWidth().zIndex(if (activeDragKey?.startsWith("i:") == true) 2f else 0f).testTag("indicators-grid")) {
                 localIndicators.chunked(renderColumns).forEach { rowItems ->
                     Row(
-                        Modifier.fillMaxWidth().zIndex(if (rowItems.any { activeDragKey == "i:${it.state.indicatorType.name}" }) 1f else 0f),
+                        Modifier.fillMaxWidth().height(IntrinsicSize.Max)
+                            .zIndex(if (rowItems.any { activeDragKey == "i:${it.state.indicatorType.name}" }) 1f else 0f),
                         horizontalArrangement = Arrangement.Start,
                     ) {
                         rowItems.forEach { item ->
@@ -341,10 +347,10 @@ internal fun SensorsScreen(
                             LaunchedEffect(dragKey, previewOffset) {
                                 previewAnimation.animateTo(previewOffset, tween(PREVIEW_ANIMATION_MILLIS))
                             }
-                            key(dragKey) { Box(Modifier.width(gridCellWidth).zIndex(if (isDragged) 2f else 0f)) {
+                            key(dragKey) { Box(Modifier.width(gridCellWidth).fillMaxHeight().zIndex(if (isDragged) 2f else 0f)) {
                                 IndicatorCard(
                                     item,
-                                    Modifier.fillMaxWidth().padding(8.dp)
+                                    Modifier.fillMaxWidth().fillMaxHeight().padding(CARD_CELL_GUTTER)
                                         .onGloballyPositioned { coordinates ->
                                             val bounds = coordinates.boundsInRoot()
                                             if (indicatorPositions[dragKey] != bounds) indicatorPositions[dragKey] = bounds
@@ -431,7 +437,7 @@ internal fun SensorsScreen(
 }
 
 @Composable
-private fun GaugeCard(item: GaugeItem, gaugeStyle: SensorGaugeStyle, injectionTimingMode: InjectionTimingMode, modifier: Modifier, onMenu: () -> Unit) {
+private fun GaugeCard(item: GaugeItem, gaugeStyle: SensorGaugeStyle, injectionTimingMode: InjectionTimingMode, cardContentWidth: Dp, modifier: Modifier, onMenu: () -> Unit) {
     val type = item.state.gaugeType
     val value = item.value.toFloatOrNull()?.takeIf(Float::isFinite)
     val scale = remember(type, injectionTimingMode) { GaugeScale(type, injectionTimingMode) }
@@ -447,7 +453,7 @@ private fun GaugeCard(item: GaugeItem, gaugeStyle: SensorGaugeStyle, injectionTi
         elevation = CardDefaults.cardElevation(defaultElevation = 0.dp),
         onClick = onMenu,
     ) {
-        Column(Modifier.fillMaxWidth().padding(16.dp), horizontalAlignment = Alignment.CenterHorizontally) {
+        Column(Modifier.fillMaxWidth().padding(CARD_CONTENT_INSET), horizontalAlignment = Alignment.CenterHorizontally) {
             Text(
                 stringResource(type.title),
                 modifier = Modifier.fillMaxWidth(),
@@ -483,34 +489,31 @@ private fun GaugeCard(item: GaugeItem, gaugeStyle: SensorGaugeStyle, injectionTi
                         )
                 }
             } else {
-                BoxWithConstraints(Modifier.fillMaxWidth()) {
-                    val cardContentWidth = maxWidth
-                    val dialLabelOverflow = if (gaugeStyle == SensorGaugeStyle.Current) 0.dp else 14.dp
-                    val density = androidx.compose.ui.platform.LocalDensity.current
-                    val configuration = androidx.compose.ui.platform.LocalConfiguration.current
-                    val dialMeasure = if (gaugeStyle == SensorGaugeStyle.Current) null else remember(type, cardContentWidth, density, dialLabelOverflow, configuration) {
-                        measureNewGaugeDial(scale, cardContentWidth, density, dialLabelOverflow)
-                    }
-                    val bodyHeight = dialMeasure?.height ?: cardContentWidth
-                    Box(
-                        Modifier.fillMaxWidth().height(bodyHeight).testTag("gauge-body-${type.name}"),
-                        contentAlignment = Alignment.TopCenter,
-                    ) {
-                        if (gaugeStyle == SensorGaugeStyle.Current) {
-                            GaugeDial(scale, progress, Modifier.fillMaxSize().testTag("dial-${type.name}").semantics { contentDescription = dialDescription })
-                        } else {
-                            NewGaugeDial(
-                                scale = scale,
-                                progress = progress,
-                                formattedValue = formattedValue,
-                                unit = stringResource(type.units),
-                                style = gaugeStyle,
-                                dialMeasure = requireNotNull(dialMeasure),
-                                modifier = Modifier.requiredWidth(cardContentWidth + dialLabelOverflow * 2f).height(bodyHeight)
-                                    .testTag("dial-${type.name}").semantics { contentDescription = dialDescription },
-                                labelOverflow = dialLabelOverflow,
-                            )
-                        }
+                val dialLabelOverflow = if (gaugeStyle == SensorGaugeStyle.Current) 0.dp else 14.dp
+                val density = androidx.compose.ui.platform.LocalDensity.current
+                val configuration = androidx.compose.ui.platform.LocalConfiguration.current
+                val dialMeasure = if (gaugeStyle == SensorGaugeStyle.Current) null else remember(type, cardContentWidth, density, dialLabelOverflow, configuration, injectionTimingMode) {
+                    measureNewGaugeDial(scale, cardContentWidth, density, dialLabelOverflow)
+                }
+                val bodyHeight = dialMeasure?.height ?: cardContentWidth
+                Box(
+                    Modifier.fillMaxWidth().height(bodyHeight).testTag("gauge-body-${type.name}"),
+                    contentAlignment = Alignment.TopCenter,
+                ) {
+                    if (gaugeStyle == SensorGaugeStyle.Current) {
+                        GaugeDial(scale, progress, Modifier.fillMaxSize().testTag("dial-${type.name}").semantics { contentDescription = dialDescription })
+                    } else {
+                        NewGaugeDial(
+                            scale = scale,
+                            progress = progress,
+                            formattedValue = formattedValue,
+                            unit = stringResource(type.units),
+                            style = gaugeStyle,
+                            dialMeasure = requireNotNull(dialMeasure),
+                            modifier = Modifier.requiredWidth(cardContentWidth + dialLabelOverflow * 2f).height(bodyHeight)
+                                .testTag("dial-${type.name}").semantics { contentDescription = dialDescription },
+                            labelOverflow = dialLabelOverflow,
+                        )
                     }
                 }
             }
@@ -667,11 +670,14 @@ private fun IndicatorCard(item: IndicatorItem, modifier: Modifier, onMenu: () ->
         stateDescription = accessibilityState
     }, colors = CardDefaults.cardColors(containerColor = cardColor), shape = RoundedCornerShape(20.dp), border = BorderStroke(1.dp, colors.outlineVariant),
         elevation = CardDefaults.cardElevation(defaultElevation = 0.dp), onClick = onMenu) {
-        Column(Modifier.fillMaxWidth().heightIn(min = 72.dp).padding(16.dp), horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.Center) {
+        Column(Modifier.fillMaxWidth().fillMaxHeight().heightIn(min = 72.dp).padding(CARD_CONTENT_INSET), horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.Center) {
             Text(stringResource(item.state.indicatorType.title), fontSize = 16.sp, color = labelColor, style = MaterialTheme.typography.titleSmall)
         }
     }
 }
+
+private val CARD_CELL_GUTTER = 8.dp
+private val CARD_CONTENT_INSET = 16.dp
 
 private fun <T> List<T>.moveItem(source: (T) -> Boolean, target: (T) -> Boolean): List<T> {
     val from = indexOfFirst(source)

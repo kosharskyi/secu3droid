@@ -413,6 +413,108 @@ class SensorsScreenTest {
         assertEquals(listOf(IndicatorType.GAS_VALVE, IndicatorType.CHECK_ENGINE, IndicatorType.THROTTLE), savedIndicators?.map { it.indicatorType })
     }
 
+    @Test fun wrappedGaugeAndIndicatorRowsEqualizeNaturallyAndKeepRowGaps() {
+        val selectedStyle = mutableStateOf(SensorGaugeStyle.Current)
+        val width = mutableStateOf(400)
+        val fontScale = mutableStateOf(1.3f)
+        val gauges = mutableStateOf(listOf(
+            GaugeItem(GaugeState(1, GaugeType.RPM, 0, true), "1200"),
+            GaugeItem(GaugeState(2, GaugeType.EXHAUST_GAS_TEMP, 1, false), "640"),
+            GaugeItem(GaugeState(3, GaugeType.MAP, 2, true), "42"),
+        ))
+        val indicators = listOf(
+            IndicatorItem(IndicatorState(1, IndicatorType.THROTTLE, 0), false),
+            IndicatorItem(IndicatorState(2, IndicatorType.REV_LIM_FUEL_CUT, 1), true),
+            IndicatorItem(IndicatorState(3, IndicatorType.GAS_VALVE, 2), false),
+        )
+        compose.setContent {
+            val density = LocalDensity.current.density
+            CompositionLocalProvider(LocalDensity provides Density(density, fontScale.value)) {
+                SecuComposeTheme {
+                    Box(Modifier.requiredWidth(width.value.dp)) {
+                        SensorsScreen(
+                            gauges = gauges.value,
+                            indicators = indicators,
+                            gaugeChoices = null,
+                            indicatorChoices = null,
+                            onAddGaugeRequest = {},
+                            onAddIndicatorRequest = {},
+                            onAddGauge = {},
+                            onAddIndicator = {},
+                            onGaugeChoicesConsumed = {},
+                            onIndicatorChoicesConsumed = {},
+                            onDeleteGauge = {},
+                            onDeleteIndicator = {},
+                            onUpdateGauge = { updated -> gauges.value = gauges.value.map { if (it.state.gaugeType == updated.gaugeType) it.copy(state = updated) else it } },
+                            onReorderGauges = {},
+                            onReorderIndicators = {},
+                            gaugeStyle = selectedStyle.value,
+                        )
+                    }
+                }
+            }
+        }
+
+        fun textLineCount(text: String): Int {
+            var result: TextLayoutResult? = null
+            compose.onNodeWithText(text, useUnmergedTree = true)
+                .performSemanticsAction(SemanticsActions.GetTextLayoutResult) { action ->
+                    val layouts = mutableListOf<TextLayoutResult>()
+                    action(layouts)
+                    result = layouts.single()
+                }
+            return requireNotNull(result).lineCount
+        }
+
+        val longGaugeTitle = context.getString(GaugeType.EXHAUST_GAS_TEMP.title)
+        val longIndicatorTitle = context.getString(IndicatorType.REV_LIM_FUEL_CUT.title)
+        assertTrue("gauge title should wrap in a narrow cell", textLineCount(longGaugeTitle) > 1)
+        assertTrue("indicator title should wrap in a narrow cell", textLineCount(longIndicatorTitle) > 1)
+
+        var largestMixedRowHeight = 0f
+        for (style in SensorGaugeStyle.entries) {
+            compose.runOnIdle { selectedStyle.value = style }
+            compose.waitForIdle()
+            val firstGauge = compose.onNodeWithTag("gauge-RPM").getUnclippedBoundsInRoot()
+            val wrappedGauge = compose.onNodeWithTag("gauge-EXHAUST_GAS_TEMP").getUnclippedBoundsInRoot()
+            val nextGaugeRow = compose.onNodeWithTag("gauge-MAP").getUnclippedBoundsInRoot()
+            assertEquals("mixed $style gauge row equalizes its card heights", (firstGauge.bottom - firstGauge.top).value, (wrappedGauge.bottom - wrappedGauge.top).value, 1f)
+            val gaugeBody = compose.onNodeWithTag("gauge-body-EXHAUST_GAS_TEMP", useUnmergedTree = true).getUnclippedBoundsInRoot()
+            assertTrue("gauge dial body remains natural inside its taller card", gaugeBody.bottom - gaugeBody.top < wrappedGauge.bottom - wrappedGauge.top)
+            assertEquals("the gauge row gap stays tied to the outer gutters", 16f, nextGaugeRow.top.value - wrappedGauge.bottom.value, 1f)
+            largestMixedRowHeight = maxOf(largestMixedRowHeight, (firstGauge.bottom - firstGauge.top).value)
+
+            val firstIndicator = compose.onNodeWithTag("indicator-THROTTLE").getUnclippedBoundsInRoot()
+            val wrappedIndicator = compose.onNodeWithTag("indicator-REV_LIM_FUEL_CUT").getUnclippedBoundsInRoot()
+            val nextIndicatorRow = compose.onNodeWithTag("indicator-GAS_VALVE").getUnclippedBoundsInRoot()
+            assertEquals("wrapped indicator row equalizes its card heights", (firstIndicator.bottom - firstIndicator.top).value, (wrappedIndicator.bottom - wrappedIndicator.top).value, 1f)
+            val shortIndicatorTitle = compose.onNodeWithText(context.getString(IndicatorType.THROTTLE.title), useUnmergedTree = true).getUnclippedBoundsInRoot()
+            assertEquals("short indicator title stays vertically centered in its equalized card", (firstIndicator.top.value + firstIndicator.bottom.value) / 2f, (shortIndicatorTitle.top.value + shortIndicatorTitle.bottom.value) / 2f, 1f)
+            assertEquals("the indicator row gap stays tied to the outer gutters", 16f, nextIndicatorRow.top.value - wrappedIndicator.bottom.value, 1f)
+            assertEquals("partial indicator row remains in the first column", firstIndicator.left.value, nextIndicatorRow.left.value, 1f)
+        }
+
+        compose.runOnIdle { fontScale.value = 1f; width.value = 420 }
+        compose.waitForIdle()
+        val resizedGauge = compose.onNodeWithTag("gauge-RPM").getUnclippedBoundsInRoot()
+        val resizedWrappedGauge = compose.onNodeWithTag("gauge-EXHAUST_GAS_TEMP").getUnclippedBoundsInRoot()
+        val resizedIndicator = compose.onNodeWithTag("indicator-THROTTLE").getUnclippedBoundsInRoot()
+        val resizedWrappedIndicator = compose.onNodeWithTag("indicator-REV_LIM_FUEL_CUT").getUnclippedBoundsInRoot()
+        assertEquals("font-scale/window reflow keeps gauge rows equal", (resizedGauge.bottom - resizedGauge.top).value, (resizedWrappedGauge.bottom - resizedWrappedGauge.top).value, 1f)
+        assertEquals("font-scale/window reflow keeps indicator rows equal", (resizedIndicator.bottom - resizedIndicator.top).value, (resizedWrappedIndicator.bottom - resizedWrappedIndicator.top).value, 1f)
+
+        compose.runOnIdle {
+            fontScale.value = 1.3f
+            width.value = 400
+            gauges.value = gauges.value.map { item -> item.copy(state = item.state.copy(isNumericView = true)) }
+        }
+        compose.waitForIdle()
+        val numericFirst = compose.onNodeWithTag("gauge-RPM").getUnclippedBoundsInRoot()
+        val numericWrapped = compose.onNodeWithTag("gauge-EXHAUST_GAS_TEMP").getUnclippedBoundsInRoot()
+        assertEquals("all-numeric gauge cards remain equal", (numericFirst.bottom - numericFirst.top).value, (numericWrapped.bottom - numericWrapped.top).value, 1f)
+        assertTrue("row height shrinks when its dials are all switched to numeric", numericFirst.bottom - numericFirst.top < largestMixedRowHeight.dp)
+    }
+
     @Test fun singleGaugeAndIndicatorStayInFirstColumnAtNormalCellWidth() {
         compose.setContent {
             val density = LocalDensity.current.density
@@ -460,7 +562,7 @@ class SensorsScreenTest {
         compose.runOnIdle { assertEquals(GaugeType.RPM, deleted) }
     }
 
-    @Test fun switchingGaugeViewResizesOnlyTheChangedCardInMixedRow() {
+    @Test fun switchingGaugeViewEqualizesAndShrinksMixedRowCards() {
         val gauges = mutableStateOf(
             listOf(
                 GaugeItem(GaugeState(1, GaugeType.TPS_DOT, 0, true), "-500"),
@@ -488,7 +590,7 @@ class SensorsScreenTest {
         val names = listOf("TPS_DOT", "VOLTAGE", "MAP")
         val originalBounds = names.associateWith { compose.onNodeWithTag("gauge-$it").fetchSemanticsNode().boundsInRoot }
         assertEquals("configured cards should share the row", 1, originalBounds.values.map { it.top }.distinct().size)
-        org.junit.Assert.assertTrue("numeric content should use less height than the dial", originalBounds.getValue("TPS_DOT").height < originalBounds.getValue("VOLTAGE").height)
+        assertEquals("numeric content matches the tallest card in its row", originalBounds.getValue("VOLTAGE").height, originalBounds.getValue("TPS_DOT").height, 1f)
         compose.onNodeWithText("-500").assertIsDisplayed()
         compose.onNodeWithText(context.getString(GaugeType.TPS_DOT.units)).assertIsDisplayed()
         var numericValueLayout: TextLayoutResult? = null
@@ -509,7 +611,7 @@ class SensorsScreenTest {
             assertEquals("$name width changed when a neighbor switched", originalBounds.getValue(name).width, dialBounds.getValue(name).width, 1f)
         }
         assertEquals("mixed row cards should keep top alignment", 1, dialBounds.values.map { it.top }.distinct().size)
-        org.junit.Assert.assertTrue("switching numeric content to a classic dial should grow its card", dialBounds.getValue("TPS_DOT").height > originalBounds.getValue("TPS_DOT").height)
+        assertEquals("classic dial and numeric neighbor share their row height", dialBounds.getValue("TPS_DOT").height, dialBounds.getValue("VOLTAGE").height, 1f)
         compose.onNodeWithTag("gauge-body-TPS_DOT", useUnmergedTree = true).assertIsDisplayed()
         val dialDescription = "${context.getString(GaugeType.TPS_DOT.title)}: -500 ${context.getString(GaugeType.TPS_DOT.units)}"
         compose.onNodeWithTag("dial-TPS_DOT", useUnmergedTree = true)
@@ -526,6 +628,13 @@ class SensorsScreenTest {
             assertEquals("$name dimensions changed after switching back", originalBounds.getValue(name).width, restoredNamesBounds.getValue(name).width, 1f)
             assertEquals("$name height changed after switching back", originalBounds.getValue(name).height, restoredNamesBounds.getValue(name).height, 1f)
         }
+
+        compose.onNodeWithTag("gauge-VOLTAGE").performClick()
+        compose.onNodeWithText(context.getString(R.string.switch_view)).performClick()
+        compose.waitForIdle()
+        val allNumericBounds = listOf("TPS_DOT", "VOLTAGE").map { compose.onNodeWithTag("gauge-$it").fetchSemanticsNode().boundsInRoot }
+        assertEquals("all-numeric cards remain equal height", allNumericBounds[0].height, allNumericBounds[1].height, 1f)
+        org.junit.Assert.assertTrue("the row shrinks after its dial is switched to numeric", allNumericBounds[0].height < dialBounds.getValue("TPS_DOT").height)
         compose.onNodeWithText("-500").assertIsDisplayed()
     }
 
@@ -556,7 +665,8 @@ class SensorsScreenTest {
         val preciseDial = dialBounds()
         org.junit.Assert.assertTrue("precise arc should omit the classic footer", precise.height < classic.height)
         val labelOverflow = with(compose.density) { 28.dp.toPx() }
-        assertEquals("precise arc preserves the classic face width", classicDial.width, preciseDial.width - labelOverflow, 1f)
+        // Explicit cell and card insets round at separate density boundaries on the device.
+        assertEquals("precise arc preserves the classic face width", classicDial.width, preciseDial.width - labelOverflow, 1.5f)
         org.junit.Assert.assertTrue("precise arc label canvas stays inside the card", preciseDial.left >= precise.left && preciseDial.right <= precise.right)
         org.junit.Assert.assertTrue("precise arc allocates only the outside-label inset below the full-size circle", preciseDial.height > classicDial.height)
 
@@ -565,7 +675,7 @@ class SensorsScreenTest {
         val thin = cardBounds()
         val thinDial = dialBounds()
         org.junit.Assert.assertTrue("thin needle keeps the full-size circle and visible footer", thin.height > classic.height)
-        assertEquals("thin needle preserves the classic face width", classicDial.width, thinDial.width - labelOverflow, 1f)
+        assertEquals("thin needle preserves the classic face width", classicDial.width, thinDial.width - labelOverflow, 1.5f)
         org.junit.Assert.assertTrue("thin needle label canvas stays inside the card", thinDial.left >= thin.left && thinDial.right <= thin.right)
         assertEquals("thin needle allocates the same outside-label inset", preciseDial.height, thinDial.height, 1f)
 
