@@ -180,7 +180,7 @@ private fun placeNewGaugeDialLabels(
 @Composable
 internal fun NewGaugeDial(
     scale: GaugeScale,
-    value: Float?,
+    progress: () -> Float?,
     formattedValue: String,
     unit: String,
     style: SensorGaugeStyle,
@@ -197,7 +197,6 @@ internal fun NewGaugeDial(
     }
     val colors = MaterialTheme.colorScheme
     val density = LocalDensity.current
-    val normalized = scale.normalized(value)
     BoxWithConstraints(modifier) {
         val faceWidth = maxWidth - labelOverflow * 2f
         Canvas(Modifier.fillMaxSize()) {
@@ -205,7 +204,7 @@ internal fun NewGaugeDial(
                 scale = scale,
                 colors = colors,
                 sections = sections,
-                normalized = normalized,
+                normalized = progress(),
                 style = style,
                 faceWidth = size.width - labelOverflow.toPx() * 2f,
                 arcCenterY = with(density) { dialMeasure.centerY.toPx() },

@@ -630,6 +630,101 @@ class SensorsScreenTest {
         }
     }
 
+    @Test fun dialProgressAnimatesForEachRendererAndUnavailableReadingsResetIt() {
+        compose.mainClock.autoAdvance = false
+        try {
+            val style = mutableStateOf(SensorGaugeStyle.Current)
+            val reading = mutableStateOf("1000")
+            compose.setContent {
+                SecuComposeTheme(darkTheme = false) {
+                    Box(Modifier.width(360.dp)) {
+                        SensorsScreen(
+                            gauges = listOf(GaugeItem(GaugeState(1, GaugeType.RPM, 0, false), reading.value)),
+                            indicators = emptyList(), gaugeChoices = null, indicatorChoices = null,
+                            onAddGaugeRequest = {}, onAddIndicatorRequest = {}, onAddGauge = {}, onAddIndicator = {},
+                            onGaugeChoicesConsumed = {}, onIndicatorChoicesConsumed = {}, onDeleteGauge = {}, onDeleteIndicator = {},
+                            onUpdateGauge = {}, onReorderGauges = {}, onReorderIndicators = {}, gaugeStyle = style.value,
+                        )
+                    }
+                }
+            }
+            compose.waitForIdle()
+            fun primaryMask(): BooleanArray {
+                val bitmap = compose.onNodeWithTag("dial-RPM", useUnmergedTree = true).captureToImage().asAndroidBitmap()
+                val expected = 0xFF1769AA.toInt()
+                return BooleanArray(bitmap.width * bitmap.height) { index ->
+                    val pixel = bitmap.getPixel(index % bitmap.width, index / bitmap.width)
+                    kotlin.math.abs(android.graphics.Color.red(pixel) - android.graphics.Color.red(expected)) <= 24 &&
+                        kotlin.math.abs(android.graphics.Color.green(pixel) - android.graphics.Color.green(expected)) <= 24 &&
+                        kotlin.math.abs(android.graphics.Color.blue(pixel) - android.graphics.Color.blue(expected)) <= 24
+                }
+            }
+
+            listOf(SensorGaugeStyle.Current, SensorGaugeStyle.PreciseArc, SensorGaugeStyle.ThinNeedle).forEachIndexed { index, candidate ->
+                if (index > 0) {
+                    compose.runOnIdle { reading.value = "unavailable"; style.value = candidate }
+                    compose.mainClock.advanceTimeBy(48)
+                    compose.waitForIdle()
+                    val unavailableDescription = "${context.getString(GaugeType.RPM.title)}: — ${context.getString(GaugeType.RPM.units)}"
+                    compose.onNodeWithTag("dial-RPM", useUnmergedTree = true)
+                        .assert(SemanticsMatcher.expectValue(SemanticsProperties.ContentDescription, listOf(unavailableDescription)))
+                    assertEquals("$candidate hides progress while disconnected", 0, primaryMask().count { it })
+                    compose.runOnIdle { reading.value = "1000" }
+                    compose.mainClock.advanceTimeBy(48)
+                    compose.waitForIdle()
+                }
+                val initialDescription = "${context.getString(GaugeType.RPM.title)}: 1000 ${context.getString(GaugeType.RPM.units)}"
+                compose.onNodeWithTag("dial-RPM", useUnmergedTree = true)
+                    .assert(SemanticsMatcher.expectValue(SemanticsProperties.ContentDescription, listOf(initialDescription)))
+                val initial = primaryMask()
+                compose.mainClock.advanceTimeBy(60)
+                compose.waitForIdle()
+                assertTrue("$candidate first reading should snap directly instead of sweeping from zero", initial.contentEquals(primaryMask()))
+
+                compose.runOnIdle { reading.value = "8000" }
+                compose.mainClock.advanceTimeBy(60)
+                compose.waitForIdle()
+                val inFlight = primaryMask()
+                assertTrue("$candidate should move its colored indicator before settling", !initial.contentEquals(inFlight))
+
+                compose.runOnIdle { reading.value = "4000" }
+                compose.waitForIdle()
+                assertTrue("$candidate should retarget from its current position", inFlight.contentEquals(primaryMask()))
+                compose.mainClock.advanceTimeBy(60)
+                compose.waitForIdle()
+                val retargeted = primaryMask()
+                assertTrue("$candidate should continue moving after a retarget", !inFlight.contentEquals(retargeted))
+                compose.mainClock.advanceTimeBy(300)
+                compose.waitForIdle()
+                val settled = primaryMask()
+                assertTrue("$candidate should settle near its target within 300 ms", !retargeted.contentEquals(settled))
+
+                compose.runOnIdle { reading.value = "unavailable" }
+                compose.mainClock.advanceTimeBy(48)
+                compose.waitForIdle()
+                val unavailableDescription = "${context.getString(GaugeType.RPM.title)}: — ${context.getString(GaugeType.RPM.units)}"
+                compose.onNodeWithTag("dial-RPM", useUnmergedTree = true)
+                    .assert(SemanticsMatcher.expectValue(SemanticsProperties.ContentDescription, listOf(unavailableDescription)))
+                val unavailable = primaryMask()
+                assertEquals("$candidate leaves no primary-colored pointer/progress when unavailable", 0, unavailable.count { it })
+                assertTrue("$candidate removes its pointer/progress immediately", !settled.contentEquals(unavailable))
+                compose.runOnIdle { reading.value = "4000" }
+                compose.mainClock.advanceTimeBy(48)
+                compose.waitForIdle()
+                val reconnectedDescription = "${context.getString(GaugeType.RPM.title)}: 4000 ${context.getString(GaugeType.RPM.units)}"
+                compose.onNodeWithTag("dial-RPM", useUnmergedTree = true)
+                    .assert(SemanticsMatcher.expectValue(SemanticsProperties.ContentDescription, listOf(reconnectedDescription)))
+                val reconnected = primaryMask()
+                compose.mainClock.advanceTimeBy(60)
+                compose.waitForIdle()
+                assertTrue("$candidate reconnects directly at the current reading", reconnected.contentEquals(primaryMask()))
+                assertTrue("$candidate settled and reconnect positions agree", settled.contentEquals(reconnected))
+            }
+        } finally {
+            compose.mainClock.autoAdvance = true
+        }
+    }
+
     @Test fun tickLabelsUseSharedIntegerAndFractionalFormatting() {
         val originalLocale = Locale.getDefault()
         try {

@@ -34,6 +34,10 @@ The saved gauge style selects the dial renderer for modern configured gauges. It
 
 The rounded needle tip stops at least 2dp before major tick marks. Cap its length at `radius - 14dp` as well as 80% of the dial radius; the extra clearance accounts for the tick's inner edge and the needle's round cap.
 
+## Dial motion animates normalized progress while readings stay immediate
+
+Classic and both modern dial renderers share a spring-animated, clamped normalized progress; numeric readouts, units, and accessibility descriptions continue to use the latest raw reading immediately. The first valid reading after composition or reconnect appears at its target without sweeping from zero. Missing or non-finite data removes the pointer/progress immediately and disposes that animation state, so a later reading also snaps directly to its current target. Read animated state from the Canvas draw callback, not from card layout, to avoid recomposing and remeasuring the card at animation frame rate. Numeric-only cards do not animate dial progress.
+
 ## All dial styles share the configured gauge scale
 
 `GaugeScale` is derived from `GaugeType` and supplies inclusive configured ticks, range normalization, sections, angles, and shared tick-label text to all dial renderers. Renderer-specific label selection only controls which configured values fit; it must not invent scale positions. Keep PreciseArc ticks within the outer 5dp range band so they cannot close the 3dp gap to the blue inner arc; ThinNeedle marks keep their inner endpoint at `radius - 10dp` to preserve needle-tip clearance.

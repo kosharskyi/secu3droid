@@ -32,6 +32,9 @@ import androidx.compose.animation.core.Animatable
 import androidx.compose.animation.core.AnimationVector2D
 import androidx.compose.animation.core.VectorConverter
 import androidx.compose.animation.core.tween
+import androidx.compose.animation.core.Spring
+import androidx.compose.animation.core.animateFloatAsState
+import androidx.compose.animation.core.spring
 import androidx.compose.foundation.gestures.detectDragGesturesAfterLongPress
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
@@ -429,6 +432,8 @@ internal fun SensorsScreen(
 private fun GaugeCard(item: GaugeItem, gaugeStyle: SensorGaugeStyle, modifier: Modifier, onMenu: () -> Unit) {
     val type = item.state.gaugeType
     val value = item.value.toFloatOrNull()
+    val scale = remember(type) { GaugeScale(type) }
+    val progress = rememberGaugeProgress(scale, value, enabled = !item.state.isNumericView)
     val formattedValue = value?.let { if (type.isInteger) it.toInt().toString() else String.format(Locale.US, "%.1f", it) } ?: "—"
     val dialDescription = "${stringResource(type.title)}: $formattedValue ${stringResource(type.units)}"
     val colors = MaterialTheme.colorScheme
@@ -481,7 +486,6 @@ private fun GaugeCard(item: GaugeItem, gaugeStyle: SensorGaugeStyle, modifier: M
                     val dialLabelOverflow = if (gaugeStyle == SensorGaugeStyle.Current) 0.dp else 14.dp
                     val density = androidx.compose.ui.platform.LocalDensity.current
                     val configuration = androidx.compose.ui.platform.LocalConfiguration.current
-                    val scale = remember(type) { GaugeScale(type) }
                     val dialMeasure = if (gaugeStyle == SensorGaugeStyle.Current) null else remember(type, cardContentWidth, density, dialLabelOverflow, configuration) {
                         measureNewGaugeDial(scale, cardContentWidth, density, dialLabelOverflow)
                     }
@@ -491,11 +495,11 @@ private fun GaugeCard(item: GaugeItem, gaugeStyle: SensorGaugeStyle, modifier: M
                         contentAlignment = Alignment.TopCenter,
                     ) {
                         if (gaugeStyle == SensorGaugeStyle.Current) {
-                            GaugeDial(scale, value, Modifier.fillMaxSize().testTag("dial-${type.name}").semantics { contentDescription = dialDescription })
+                            GaugeDial(scale, progress, Modifier.fillMaxSize().testTag("dial-${type.name}").semantics { contentDescription = dialDescription })
                         } else {
                             NewGaugeDial(
                                 scale = scale,
-                                value = value,
+                                progress = progress,
                                 formattedValue = formattedValue,
                                 unit = stringResource(type.units),
                                 style = gaugeStyle,
@@ -540,13 +544,39 @@ private fun GaugeCard(item: GaugeItem, gaugeStyle: SensorGaugeStyle, modifier: M
 }
 
 @Composable
-private fun GaugeDial(scale: GaugeScale, value: Float?, modifier: Modifier = Modifier) {
+private fun rememberGaugeProgress(scale: GaugeScale, value: Float?, enabled: Boolean): () -> Float? {
+    val target = if (enabled) value?.takeIf(Float::isFinite)?.let(scale::normalized) else null
+    return key(scale.type, target != null) {
+        if (target == null) {
+            remember {
+                val progressReader: () -> Float? = { null }
+                progressReader
+            }
+        } else {
+            val animatedProgress = animateFloatAsState(
+                targetValue = target,
+                animationSpec = spring(
+                    dampingRatio = Spring.DampingRatioNoBouncy,
+                    stiffness = Spring.StiffnessMedium,
+                    visibilityThreshold = 0.001f,
+                ),
+                label = "sensorGaugeProgress",
+            )
+            val progressReader: () -> Float? = { animatedProgress.value.coerceIn(0f, 1f) }
+            progressReader
+        }
+    }
+}
+
+@Composable
+private fun GaugeDial(scale: GaugeScale, progress: () -> Float?, modifier: Modifier = Modifier) {
     val context = LocalContext.current
     val resources = androidx.compose.ui.platform.LocalResources.current
     val sections = remember(scale, resources, context.theme) { scale.sections.map { it.start to (it.end to Color(resources.getColor(it.color, context.theme))) } }
+    val tickLabels = remember(scale, androidx.compose.ui.platform.LocalConfiguration.current) { scale.ticks.map(scale::format) }
     val colors = MaterialTheme.colorScheme
-    val normalized = scale.normalized(value) ?: 0f
     Canvas(modifier.aspectRatio(1f)) {
+        val normalized = progress()
         val cx = size.width / 2f
         val dialSize = size.width
         val cy = dialSize / 2f
@@ -564,7 +594,7 @@ private fun GaugeDial(scale: GaugeScale, value: Float?, modifier: Modifier = Mod
             val inner = outer - 9.dp.toPx()
             drawLine(colors.onSurfaceVariant, Offset(cx + kotlin.math.cos(angle).toFloat() * outer, cy + kotlin.math.sin(angle).toFloat() * outer), Offset(cx + kotlin.math.cos(angle).toFloat() * inner, cy + kotlin.math.sin(angle).toFloat() * inner), 3.dp.toPx())
         }
-        val angle = Math.toRadians(scale.angleAt(normalized).toDouble())
+        val angle = Math.toRadians(scale.angleAt(normalized ?: 0f).toDouble())
         val direction = Offset(kotlin.math.cos(angle).toFloat(), kotlin.math.sin(angle).toFloat())
         val perpendicular = Offset(-direction.y, direction.x)
         val tip = Offset(cx, cy) + direction * (dialSize / 2f)
@@ -576,7 +606,7 @@ private fun GaugeDial(scale: GaugeScale, value: Float?, modifier: Modifier = Mod
             quadraticTo(base.x, base.y, base.x - perpendicular.x * halfBase, base.y - perpendicular.y * halfBase)
             close()
         }
-        if (value != null) {
+        if (normalized != null) {
             drawPath(needlePath, colors.primary)
             drawCircle(colors.onSurfaceVariant, 10.dp.toPx(), Offset(cx, cy))
         }
@@ -584,7 +614,6 @@ private fun GaugeDial(scale: GaugeScale, value: Float?, modifier: Modifier = Mod
             val ticks = scale.ticks
             val readableTickSize = 12.sp.toPx()
             val tickPaint = NativePaint(NativePaint.ANTI_ALIAS_FLAG).apply { color = colors.onSurfaceVariant.toArgb(); textAlign = NativePaint.Align.CENTER; textSize = readableTickSize }
-            val tickLabels = ticks.map(scale::format)
             tickPaint.textSize = readableTickSize
             val largestReadableTickWidth = tickLabels.maxOfOrNull { tickPaint.measureText(it) } ?: 0f
             val tickLabelRadius = radius - stroke / 2f - 11.dp.toPx()
