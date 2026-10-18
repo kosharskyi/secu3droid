@@ -62,12 +62,14 @@ import androidx.compose.ui.layout.onGloballyPositioned
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.stateDescription
+import androidx.compose.ui.semantics.clearAndSetSemantics
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.zIndex
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.graphics.toArgb
 import androidx.compose.foundation.Canvas
+import androidx.compose.foundation.text.TextAutoSize
 import androidx.compose.foundation.layout.height
 import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.graphics.drawscope.drawIntoCanvas
@@ -216,7 +218,7 @@ internal fun SensorsScreen(
         Column(Modifier.fillMaxSize().verticalScroll(rememberScrollState(), enabled = !dragging).padding(bottom = 88.dp)) {
             Column(Modifier.fillMaxWidth().zIndex(if (activeDragKey?.startsWith("g:") == true) 2f else 0f).testTag("gauges-grid")) {
                 localGauges.chunked(renderColumns).forEach { rowItems ->
-                    Row(Modifier.fillMaxWidth().zIndex(if (rowItems.any { activeDragKey == "g:${it.state.gaugeType.name}" }) 1f else 0f)) {
+                    Row(Modifier.fillMaxWidth().height(IntrinsicSize.Min).zIndex(if (rowItems.any { activeDragKey == "g:${it.state.gaugeType.name}" }) 1f else 0f)) {
                         rowItems.forEach { item ->
                             val dragKey = "g:${item.state.gaugeType.name}"
                             val isDragged = activeDragKey == dragKey
@@ -230,10 +232,10 @@ internal fun SensorsScreen(
                             LaunchedEffect(dragKey, previewOffset) {
                                 previewAnimation.animateTo(previewOffset, tween(PREVIEW_ANIMATION_MILLIS))
                             }
-                            key(dragKey) { Box(Modifier.weight(1f).zIndex(if (isDragged) 2f else 0f)) {
+                            key(dragKey) { Box(Modifier.weight(1f).fillMaxHeight().zIndex(if (isDragged) 2f else 0f)) {
                                 GaugeCard(
                                     if (dataAvailable) item else item.copy(value = "—"),
-                                    Modifier.fillMaxWidth().padding(8.dp)
+                                    Modifier.fillMaxWidth().padding(8.dp).fillMaxHeight()
                                         .onGloballyPositioned { coordinates ->
                                             val bounds = coordinates.boundsInRoot()
                                             if (gaugePositions[dragKey] != bounds) gaugePositions[dragKey] = bounds
@@ -409,43 +411,15 @@ private fun GaugeCard(item: GaugeItem, modifier: Modifier, onMenu: () -> Unit) {
     val dialDescription = "${stringResource(type.title)}: $formattedValue ${stringResource(type.units)}"
     val colors = MaterialTheme.colorScheme
     Card(
-        modifier = modifier.fillMaxWidth().testTag("gauge-${type.name}"),
+        modifier = modifier.fillMaxWidth().fillMaxHeight().testTag("gauge-${type.name}"),
         colors = CardDefaults.cardColors(containerColor = colors.surface),
         shape = RoundedCornerShape(20.dp),
         border = BorderStroke(1.dp, colors.outlineVariant),
         elevation = CardDefaults.cardElevation(defaultElevation = 0.dp),
         onClick = onMenu,
     ) {
-        Column(Modifier.fillMaxWidth().padding(16.dp), horizontalAlignment = Alignment.CenterHorizontally) {
-            if (item.state.isNumericView) {
-                val fontScale = androidx.compose.ui.platform.LocalDensity.current.fontScale
-                BoxWithConstraints(Modifier.fillMaxWidth()) {
-                    val title = stringResource(type.title)
-                    val unit = stringResource(type.units)
-                    if (maxWidth >= 180.dp * fontScale) {
-                        Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
-                            Text(
-                                title,
-                                modifier = Modifier.weight(1f).padding(end = 12.dp),
-                                color = colors.onSurfaceVariant,
-                                style = MaterialTheme.typography.bodyMedium,
-                            )
-                            Column(horizontalAlignment = Alignment.End) {
-                                Text(formattedValue, fontSize = 22.sp, color = colors.onSurface, fontWeight = androidx.compose.ui.text.font.FontWeight.SemiBold, style = MaterialTheme.typography.titleLarge.copy(fontFeatureSettings = "tnum"))
-                                Text(unit, fontSize = 12.sp, color = colors.onSurfaceVariant)
-                            }
-                        }
-                    } else {
-                        Column(Modifier.fillMaxWidth()) {
-                            Text(title, color = colors.onSurfaceVariant, style = MaterialTheme.typography.bodyMedium)
-                            Column(Modifier.fillMaxWidth(), horizontalAlignment = Alignment.End) {
-                                Text(formattedValue, fontSize = 22.sp, color = colors.onSurface, fontWeight = androidx.compose.ui.text.font.FontWeight.SemiBold, style = MaterialTheme.typography.titleLarge.copy(fontFeatureSettings = "tnum"))
-                                Text(unit, fontSize = 12.sp, color = colors.onSurfaceVariant)
-                            }
-                        }
-                    }
-                }
-            } else {
+        Column(Modifier.fillMaxSize().padding(16.dp), horizontalAlignment = Alignment.CenterHorizontally) {
+            Box(Modifier.fillMaxWidth().weight(1f), contentAlignment = Alignment.Center) {
                 Text(
                     stringResource(type.title),
                     modifier = Modifier.fillMaxWidth(),
@@ -454,24 +428,60 @@ private fun GaugeCard(item: GaugeItem, modifier: Modifier, onMenu: () -> Unit) {
                     textAlign = TextAlign.Center,
                     style = MaterialTheme.typography.titleMedium,
                 )
-                Spacer(Modifier.height(12.dp))
-                GaugeDial(type, value, stringResource(type.units), Modifier.fillMaxWidth().testTag("dial-${type.name}").semantics { contentDescription = dialDescription })
             }
+            Spacer(Modifier.height(12.dp))
+            Box(
+                Modifier.fillMaxWidth().aspectRatio(1f).testTag("gauge-body-${type.name}"),
+                contentAlignment = Alignment.Center,
+            ) {
+                if (item.state.isNumericView) {
+                    Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                        Text(
+                            formattedValue,
+                            modifier = Modifier.fillMaxWidth().padding(horizontal = 4.dp).testTag("gauge-value-${type.name}"),
+                            color = colors.onSurface,
+                            textAlign = TextAlign.Center,
+                            fontSize = 48.sp,
+                            fontWeight = androidx.compose.ui.text.font.FontWeight.SemiBold,
+                            maxLines = 1,
+                            autoSize = TextAutoSize.StepBased(minFontSize = 12.sp, maxFontSize = 48.sp, stepSize = 1.sp),
+                            style = MaterialTheme.typography.titleLarge.copy(fontFeatureSettings = "tnum"),
+                        )
+                        Text(stringResource(type.units), color = colors.onSurfaceVariant, fontSize = 14.sp, maxLines = 1)
+                    }
+                } else {
+                    GaugeDial(type, value, Modifier.fillMaxSize().testTag("dial-${type.name}").semantics { contentDescription = dialDescription })
+                }
+            }
+            Spacer(Modifier.height(4.dp))
+            // Reserve the same readout line in numeric mode so switching a card cannot resize its row.
+            Text(
+                if (item.state.isNumericView) " " else formattedValue,
+                modifier = if (item.state.isNumericView) Modifier.clearAndSetSemantics {} else Modifier,
+                color = if (item.state.isNumericView) Color.Transparent else colors.onSurface,
+                style = MaterialTheme.typography.titleLarge,
+                fontSize = 24.sp,
+                maxLines = 1,
+            )
+            Text(
+                stringResource(type.units),
+                modifier = if (item.state.isNumericView) Modifier.clearAndSetSemantics {} else Modifier,
+                color = if (item.state.isNumericView) Color.Transparent else colors.onSurfaceVariant,
+                style = MaterialTheme.typography.bodyMedium,
+                fontSize = 14.sp,
+            )
         }
     }
 }
 
 @Composable
-private fun GaugeDial(type: GaugeType, value: Float?, unit: String, modifier: Modifier = Modifier) {
+private fun GaugeDial(type: GaugeType, value: Float?, modifier: Modifier = Modifier) {
     val context = LocalContext.current
     val resources = androidx.compose.ui.platform.LocalResources.current
     val sections = remember(type, resources, context.theme) { type.sections.map { it.start to (it.end to Color(resources.getColor(it.color, context.theme))) } }
     val colors = MaterialTheme.colorScheme
     val normalized = value?.let { ((it - type.minValue) / (type.maxValue - type.minValue)).coerceIn(0f, 1f) } ?: 0f
-    val label = value?.let { if (type.isInteger) it.toInt().toString() else String.format(Locale.US, "%.1f", it) } ?: "—"
-    Box(modifier) {
-    Column(horizontalAlignment = Alignment.CenterHorizontally) {
-    Canvas(Modifier.fillMaxWidth().aspectRatio(1f)) {
+    Canvas(modifier.aspectRatio(1f)) {
         val cx = size.width / 2f
         val dialSize = size.width
         val cy = dialSize / 2f
@@ -535,11 +545,6 @@ private fun GaugeDial(type: GaugeType, value: Float?, unit: String, modifier: Mo
                 canvas.nativeCanvas.drawText(tickLabels[index], cx + kotlin.math.cos(angle).toFloat() * tickLabelRadius, cy + kotlin.math.sin(angle).toFloat() * tickLabelRadius + tickPaint.textSize * .35f, tickPaint)
             }
         }
-    }
-        Spacer(Modifier.height(4.dp))
-        Text(label, color = colors.onSurface, style = MaterialTheme.typography.titleLarge, fontSize = 24.sp, maxLines = 1)
-        Text(unit, color = colors.onSurfaceVariant, style = MaterialTheme.typography.bodyMedium, fontSize = 14.sp)
-    }
     }
 }
 

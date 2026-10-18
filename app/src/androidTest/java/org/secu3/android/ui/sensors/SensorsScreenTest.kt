@@ -49,10 +49,14 @@ import androidx.compose.ui.test.captureToImage
 import androidx.compose.ui.graphics.asAndroidBitmap
 import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.performTouchInput
+import androidx.compose.ui.test.performScrollTo
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.semantics.SemanticsProperties
+import androidx.compose.ui.semantics.SemanticsActions
+import androidx.compose.ui.text.TextLayoutResult
 import androidx.compose.ui.test.SemanticsMatcher
+import androidx.compose.ui.test.performSemanticsAction
 import androidx.test.platform.app.InstrumentationRegistry
 import java.io.File
 import org.junit.Assert.assertEquals
@@ -195,7 +199,7 @@ class SensorsScreenTest {
         org.junit.Assert.assertTrue("large type should remain within the gauge card", value.left >= card.left && value.right <= card.right)
         val secondGauge = compose.onNodeWithTag("gauge-VOLTAGE").fetchSemanticsNode().boundsInRoot
         org.junit.Assert.assertTrue("two configured columns should reflow for enlarged numeric values", secondGauge.top > card.top)
-        compose.onNodeWithTag("indicator-CHECK_ENGINE").assertIsDisplayed()
+        compose.onNodeWithTag("indicator-CHECK_ENGINE").performScrollTo().assertIsDisplayed()
         captureDesignScreenshot("design-sensors-light.png")
         compose.runOnIdle { screenshotMode.value = true }
         compose.waitForIdle()
@@ -247,6 +251,73 @@ class SensorsScreenTest {
         compose.runOnIdle { assertEquals(GaugeType.RPM, deleted) }
     }
 
+    @Test fun switchingGaugeViewKeepsCardDimensionsInMixedRow() {
+        val gauges = mutableStateOf(
+            listOf(
+                GaugeItem(GaugeState(1, GaugeType.TPS_DOT, 0, true), "-500"),
+                GaugeItem(GaugeState(2, GaugeType.VOLTAGE, 1, false), "12.4"),
+                GaugeItem(GaugeState(3, GaugeType.MAP, 2, true), "90"),
+            ),
+        )
+        compose.setContent {
+            val fontDensity = LocalDensity.current.density
+            SecuComposeTheme {
+                CompositionLocalProvider(LocalDensity provides Density(fontDensity, 1f)) {
+                    Box(Modifier.width(360.dp)) {
+                        SensorsScreen(
+                            gauges.value, emptyList(), 3, null, null,
+                            {}, {}, {}, {}, {}, {}, {}, {},
+                            { state -> gauges.value = gauges.value.map { if (it.state.gaugeType == state.gaugeType) it.copy(state = state) else it } },
+                            {}, {},
+                        )
+                    }
+                }
+            }
+        }
+
+        val names = listOf("TPS_DOT", "VOLTAGE", "MAP")
+        val originalBounds = names.associateWith { compose.onNodeWithTag("gauge-$it").fetchSemanticsNode().boundsInRoot }
+        assertEquals("configured cards should share the row", 1, originalBounds.values.map { it.top }.distinct().size)
+        assertEquals("cards should stretch to the tallest wrapped title", 1, originalBounds.values.map { it.height }.distinct().size)
+        compose.onNodeWithText("-500").assertIsDisplayed()
+        compose.onNodeWithText(context.getString(GaugeType.TPS_DOT.units)).assertIsDisplayed()
+        var numericValueLayout: TextLayoutResult? = null
+        compose.onNodeWithTag("gauge-value-TPS_DOT", useUnmergedTree = true)
+            .performSemanticsAction(SemanticsActions.GetTextLayoutResult) { action ->
+                val results = mutableListOf<TextLayoutResult>()
+                action(results)
+                numericValueLayout = results.single()
+            }
+        compose.runOnIdle { assertEquals("long numeric values must shrink to fit the card body", false, numericValueLayout?.hasVisualOverflow) }
+        captureDesignScreenshot("design-sensors-mixed-row.png")
+        compose.onNodeWithTag("gauge-TPS_DOT").performClick()
+        compose.onNodeWithText(context.getString(R.string.switch_view)).performClick()
+        compose.waitForIdle()
+
+        val dialBounds = names.associateWith { compose.onNodeWithTag("gauge-$it").fetchSemanticsNode().boundsInRoot }
+        names.forEach { name ->
+            assertEquals("$name width changed when a neighbor switched", originalBounds.getValue(name).width, dialBounds.getValue(name).width, 1f)
+            assertEquals("$name height changed when a neighbor switched", originalBounds.getValue(name).height, dialBounds.getValue(name).height, 1f)
+        }
+        assertEquals("mixed row should remain aligned in dial mode", 1, dialBounds.values.map { it.height }.distinct().size)
+        compose.onNodeWithTag("gauge-body-TPS_DOT", useUnmergedTree = true).assertIsDisplayed()
+        compose.onNodeWithText("-500").assertIsDisplayed()
+        compose.onNodeWithText(context.getString(GaugeType.TPS_DOT.units)).assertIsDisplayed()
+
+        compose.onNodeWithTag("gauge-TPS_DOT").performClick()
+        compose.onNodeWithText(context.getString(R.string.switch_view)).performClick()
+        compose.waitForIdle()
+        val restoredBounds = compose.onNodeWithTag("gauge-TPS_DOT").fetchSemanticsNode().boundsInRoot
+        assertEquals(originalBounds.getValue("TPS_DOT").width, restoredBounds.width, 1f)
+        assertEquals(originalBounds.getValue("TPS_DOT").height, restoredBounds.height, 1f)
+        val restoredNamesBounds = names.associateWith { compose.onNodeWithTag("gauge-$it").fetchSemanticsNode().boundsInRoot }
+        names.forEach { name ->
+            assertEquals("$name dimensions changed after switching back", originalBounds.getValue(name).width, restoredNamesBounds.getValue(name).width, 1f)
+            assertEquals("$name height changed after switching back", originalBounds.getValue(name).height, restoredNamesBounds.getValue(name).height, 1f)
+        }
+        compose.onNodeWithText("-500").assertIsDisplayed()
+    }
+
     @Test fun dialFitsInsideNarrowThreeColumnGaugeCard() {
         compose.setContent {
             SecuComposeTheme {
@@ -261,8 +332,10 @@ class SensorsScreenTest {
 
         val card = compose.onNodeWithTag("gauge-RPM").fetchSemanticsNode().boundsInRoot
         val dial = compose.onNodeWithTag("dial-RPM", useUnmergedTree = true).fetchSemanticsNode().boundsInRoot
+        val body = compose.onNodeWithTag("gauge-body-RPM", useUnmergedTree = true).fetchSemanticsNode().boundsInRoot
         org.junit.Assert.assertTrue("dial must be narrower than its card", dial.width < card.width)
-        org.junit.Assert.assertTrue("dial should reserve a separate live-value footer: $dial", dial.height > dial.width)
+        assertEquals("dial face should fill its shared square body", body.width, dial.width, 1f)
+        assertEquals("dial face should fill its shared square body", body.height, dial.height, 1f)
         org.junit.Assert.assertTrue("dial must fit horizontally in its card", dial.left >= card.left && dial.right <= card.right)
         org.junit.Assert.assertTrue("dial must fit vertically in its card", dial.top >= card.top && dial.bottom <= card.bottom)
     }
@@ -286,7 +359,8 @@ class SensorsScreenTest {
                 org.junit.Assert.assertTrue("$name dial is clipped at $columnCount columns: card=$card dial=$dial", dial.left >= card.left && dial.right <= card.right && dial.top >= card.top && dial.bottom <= card.bottom)
             }
         }
-        compose.onNodeWithTag("dial-CURRENT_ANGLE", useUnmergedTree = true).assert(SemanticsMatcher.expectValue(SemanticsProperties.ContentDescription, listOf("Advance angle: -7.5 °")))
+        val angleDescription = "${context.getString(GaugeType.CURRENT_ANGLE.title)}: -7.5 ${context.getString(GaugeType.CURRENT_ANGLE.units)}"
+        compose.onNodeWithTag("dial-CURRENT_ANGLE", useUnmergedTree = true).assert(SemanticsMatcher.expectValue(SemanticsProperties.ContentDescription, listOf(angleDescription)))
     }
 
     @Test fun composeDialReportsLiveValueAndViewModeChanges() {
@@ -296,9 +370,10 @@ class SensorsScreenTest {
             SensorsScreen(listOf(GaugeItem(GaugeState(1, GaugeType.RPM, 0, numeric.value), value.value)), emptyList(), 1, null, null,
                 {}, {}, {}, {}, {}, {}, {}, {}, { numeric.value = !numeric.value }, {}, {})
         } }
-        compose.onNodeWithTag("dial-RPM", useUnmergedTree = true).assert(SemanticsMatcher.expectValue(SemanticsProperties.ContentDescription, listOf("RPM: 100 rpm")))
+        fun rpmDescription(value: String) = "${context.getString(GaugeType.RPM.title)}: $value ${context.getString(GaugeType.RPM.units)}"
+        compose.onNodeWithTag("dial-RPM", useUnmergedTree = true).assert(SemanticsMatcher.expectValue(SemanticsProperties.ContentDescription, listOf(rpmDescription("100"))))
         compose.runOnIdle { value.value = "2750" }
-        compose.onNodeWithTag("dial-RPM", useUnmergedTree = true).assert(SemanticsMatcher.expectValue(SemanticsProperties.ContentDescription, listOf("RPM: 2750 rpm")))
+        compose.onNodeWithTag("dial-RPM", useUnmergedTree = true).assert(SemanticsMatcher.expectValue(SemanticsProperties.ContentDescription, listOf(rpmDescription("2750"))))
         compose.onNodeWithTag("gauge-RPM").performClick()
         compose.onNodeWithText(context.getString(R.string.switch_view)).performClick()
         compose.onNodeWithText("2750").assertIsDisplayed()
@@ -464,13 +539,13 @@ class SensorsScreenTest {
                 listOf(
                     GaugeItem(GaugeState(1, GaugeType.RPM, 0, isNumericView = true), "100"),
                     GaugeItem(GaugeState(2, GaugeType.VOLTAGE, 1, isNumericView = true), "12"),
-                ), emptyList(), 1, null, null,
+                ), emptyList(), 2, null, null,
                 {}, {}, {}, {}, {}, {}, {}, {}, {}, { savedOrder = it }, {},
             )
         } }
         compose.waitForIdle()
         val sourceBounds = compose.onNodeWithTag("gauge-RPM").fetchSemanticsNode().boundsInRoot
-        val sourceTop = sourceBounds.top
+        val sourceLeft = sourceBounds.left
         val neighborStart = compose.onNodeWithTag("gauge-VOLTAGE").fetchSemanticsNode().boundsInRoot
         assertPlaced("RPM gauge", sourceBounds)
         assertPlaced("Voltage gauge", neighborStart)
@@ -484,19 +559,19 @@ class SensorsScreenTest {
         compose.waitForIdle()
         compose.mainClock.advanceTimeBy(100)
         compose.waitForIdle()
-        val midpointTop = compose.onNodeWithTag("gauge-VOLTAGE").fetchSemanticsNode().boundsInRoot.top
-        org.junit.Assert.assertTrue("neighbor should be between its start and destination mid-animation", midpointTop < neighborStart.top && midpointTop > sourceTop)
+        val midpointLeft = compose.onNodeWithTag("gauge-VOLTAGE").fetchSemanticsNode().boundsInRoot.left
+        org.junit.Assert.assertTrue("neighbor should be between its start and destination mid-animation", midpointLeft < neighborStart.left && midpointLeft > sourceLeft)
 
         compose.mainClock.advanceTimeBy(160)
         compose.waitForIdle()
-        val destinationTop = compose.onNodeWithTag("gauge-VOLTAGE").fetchSemanticsNode().boundsInRoot.top
-        assertEquals(sourceTop, destinationTop, 1f)
+        val destinationLeft = compose.onNodeWithTag("gauge-VOLTAGE").fetchSemanticsNode().boundsInRoot.left
+        assertEquals(sourceLeft, destinationLeft, 1f)
 
         compose.onNodeWithTag("gauge-RPM").performTouchInput { up() }
         compose.mainClock.advanceTimeBy(48)
         compose.waitForIdle()
-        assertEquals("committing after preview settles should not move the neighbor", destinationTop,
-            compose.onNodeWithTag("gauge-VOLTAGE").fetchSemanticsNode().boundsInRoot.top, 1f)
+        assertEquals("committing after preview settles should not move the neighbor", destinationLeft,
+            compose.onNodeWithTag("gauge-VOLTAGE").fetchSemanticsNode().boundsInRoot.left, 1f)
         assertEquals(listOf(GaugeType.VOLTAGE, GaugeType.RPM), savedOrder?.map { it.gaugeType })
         compose.mainClock.autoAdvance = true
     }
@@ -587,7 +662,7 @@ class SensorsScreenTest {
         ))
         compose.setContent { SecuComposeTheme {
             SensorsScreen(
-                packetItems.value, emptyList(), 1, null, null,
+                packetItems.value, emptyList(), 2, null, null,
                 {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {},
             )
         } }
@@ -600,16 +675,16 @@ class SensorsScreenTest {
             up()
         }
         val savedOrder = listOf(
-            compose.onNodeWithTag("gauge-VOLTAGE").fetchSemanticsNode().boundsInRoot.top,
-            compose.onNodeWithTag("gauge-RPM").fetchSemanticsNode().boundsInRoot.top,
+            compose.onNodeWithTag("gauge-VOLTAGE").fetchSemanticsNode().boundsInRoot.left,
+            compose.onNodeWithTag("gauge-RPM").fetchSemanticsNode().boundsInRoot.left,
         )
         org.junit.Assert.assertTrue(savedOrder[0] < savedOrder[1])
 
         // A packet with stale persisted order arrives after drag completion.
         compose.runOnIdle { packetItems.value = packetItems.value.map { it.copy(value = "updated") } }
         val staleOrder = listOf(
-            compose.onNodeWithTag("gauge-VOLTAGE").fetchSemanticsNode().boundsInRoot.top,
-            compose.onNodeWithTag("gauge-RPM").fetchSemanticsNode().boundsInRoot.top,
+            compose.onNodeWithTag("gauge-VOLTAGE").fetchSemanticsNode().boundsInRoot.left,
+            compose.onNodeWithTag("gauge-RPM").fetchSemanticsNode().boundsInRoot.left,
         )
         org.junit.Assert.assertTrue(staleOrder[0] < staleOrder[1])
 
