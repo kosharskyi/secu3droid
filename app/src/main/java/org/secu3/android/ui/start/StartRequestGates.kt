@@ -33,4 +33,13 @@ internal class BluetoothBondRequestGate {
         return true
     }
     fun cancel() { pendingAddress = null }
+    fun isPending(): Boolean = pendingAddress != null
 }
+
+internal fun shouldResumeBluetoothDiscovery(
+    pickerVisible: Boolean,
+    connecting: Boolean,
+    connectionRunning: Boolean,
+    connected: Boolean,
+    pairing: Boolean,
+): Boolean = pickerVisible && !connecting && !connectionRunning && !connected && !pairing

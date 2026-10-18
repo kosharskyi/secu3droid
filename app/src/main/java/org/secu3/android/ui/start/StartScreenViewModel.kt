@@ -76,16 +76,34 @@ class StartScreenViewModel @Inject constructor(
         prefs.bluetoothDeviceName = getBluetoothDeviceName(device)
     }
 
-    fun startBtDiscovery() {
+    fun startBtDiscovery() = startBtDiscovery(resetDevices = true)
+
+    fun resumeBtDiscoveryIfPickerVisible(hasScanPermissions: Boolean) {
+        val state = _uiState.value
+        if (!shouldResumeBluetoothDiscovery(
+                pickerVisible = state.showBluetoothDevices,
+                connecting = state.connecting,
+                connectionRunning = connectionManager.isConnectionRunning,
+                connected = connectionManager.isConnected,
+                pairing = bluetoothBondGate.isPending(),
+            ) || discoveryActive || !hasScanPermissions
+        ) return
+        startBtDiscovery(resetDevices = false)
+    }
+
+    private fun startBtDiscovery(resetDevices: Boolean) {
         try {
             val adapter = bluetoothAdapter ?: return
             if (!adapter.isEnabled) return
+            if (discoveryActive && adapter.isDiscovering) return
             if (adapter.isDiscovering) adapter.cancelDiscovery()
-            devices.clear()
-            devices.addAll(adapter.bondedDevices)
+            if (resetDevices) {
+                devices.clear()
+                devices.addAll(adapter.bondedDevices)
+            }
             discoveryActive = true
-            publishDevices(show = true)
-            adapter.startDiscovery()
+            if (resetDevices) publishDevices(show = true)
+            if (!adapter.startDiscovery()) discoveryActive = false
         } catch (_: SecurityException) { discoveryActive = false; setConnecting(false) }
     }
     fun cancelBtDiscovery() {

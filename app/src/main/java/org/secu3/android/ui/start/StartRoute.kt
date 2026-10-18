@@ -123,6 +123,15 @@ internal fun StartRoute(entry: NavBackStackEntry, activity: MainActivity, onConn
                 val manager = context.getSystemService(Context.USB_SERVICE) as UsbManager
                 manager.deviceList.values.firstOrNull()?.let(vm::newUsbDeviceAttached) ?: vm.newUsbDeviceDetached()
                 if (vm.locationSettingsReturned()) continueBluetooth.value?.invoke()
+                val scanPermissions = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
+                    arrayOf(Manifest.permission.BLUETOOTH_SCAN, Manifest.permission.BLUETOOTH_CONNECT)
+                } else {
+                    arrayOf(Manifest.permission.BLUETOOTH, Manifest.permission.BLUETOOTH_ADMIN, Manifest.permission.ACCESS_FINE_LOCATION)
+                }
+                val hasScanPermissions = scanPermissions.all {
+                    ContextCompat.checkSelfPermission(context, it) == PackageManager.PERMISSION_GRANTED
+                }
+                vm.resumeBtDiscoveryIfPickerVisible(hasScanPermissions)
             }
             if (event == Lifecycle.Event.ON_PAUSE) vm.cancelBtDiscovery()
         }
