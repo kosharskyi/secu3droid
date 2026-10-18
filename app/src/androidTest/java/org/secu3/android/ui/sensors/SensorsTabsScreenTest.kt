@@ -292,5 +292,6 @@ class SensorsTabsScreenTest {
         onReorderingChanged = reorderingChanged,
         onStopLog = stop, onMark = mark,
         onLoggerErrorConsumed = onLoggerErrorConsumed,
+        gaugeStyle = org.secu3.android.models.SensorGaugeStyle.Current,
     )
 }

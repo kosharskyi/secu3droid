@@ -29,6 +29,7 @@ import android.content.SharedPreferences
 import androidx.core.content.edit
 import dagger.hilt.android.qualifiers.ApplicationContext
 import org.secu3.android.R
+import org.secu3.android.models.SensorGaugeStyle
 import kotlinx.coroutines.channels.awaitClose
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.callbackFlow
@@ -129,6 +130,14 @@ class UserPrefs @Inject constructor(@ApplicationContext private val ctx: Context
     var columnsCount: Int
         get() = mPrefs.getInt("columns_count", 2)
         set(value) = mPrefs.edit { putInt("columns_count", value) }
+
+    var sensorGaugeStyle: SensorGaugeStyle
+        get() = SensorGaugeStyle.fromPreference(mPrefs.getString(SENSOR_GAUGE_STYLE_KEY, null))
+        set(value) = mPrefs.edit { putString(SENSOR_GAUGE_STYLE_KEY, value.preferenceValue) }
+
+    companion object {
+        const val SENSOR_GAUGE_STYLE_KEY = "sensor_gauge_style"
+    }
 }
 
 sealed class LogExportDestination {

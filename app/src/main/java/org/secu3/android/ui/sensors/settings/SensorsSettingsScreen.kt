@@ -16,14 +16,20 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.selection.selectable
+import androidx.compose.foundation.selection.selectableGroup
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
+import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.RadioButton
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ExpandMore
 import androidx.compose.runtime.Composable
@@ -33,10 +39,12 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import org.secu3.android.R
+import org.secu3.android.models.SensorGaugeStyle
 import org.secu3.android.ui.compose.DropdownShape
 import org.secu3.android.ui.compose.SettingsActionRow
 import org.secu3.android.ui.compose.SettingsSection
@@ -50,8 +58,11 @@ internal fun SensorsSettingsScreen(
     onOldViewChange: (Boolean) -> Unit,
     onColumnsChange: (Int) -> Unit,
     onNavigateUp: () -> Unit,
+    gaugeStyle: SensorGaugeStyle = SensorGaugeStyle.Default,
+    onGaugeStyleChange: (SensorGaugeStyle) -> Unit = {},
 ) {
     var columnsExpanded by remember { mutableStateOf(false) }
+    var gaugeStyleDialog by remember { mutableStateOf(false) }
     Column(Modifier.fillMaxSize().background(MaterialTheme.colorScheme.background)) {
         SecuTopAppBar(title = stringResource(R.string.title_activity_settings), onNavigateUp = onNavigateUp, showStatus = false)
         Column(
@@ -64,6 +75,19 @@ internal fun SensorsSettingsScreen(
                     checked = oldView,
                     testTag = "sensors-old-view-checkbox",
                     onCheckedChange = onOldViewChange,
+                )
+            }
+            SettingsSection {
+                SettingsActionRow(
+                    title = stringResource(R.string.sensor_gauge_style),
+                    onClick = { gaugeStyleDialog = true },
+                    testTag = "sensor-gauge-style",
+                    value = {
+                        Row(verticalAlignment = Alignment.CenterVertically) {
+                            Text(stringResource(gaugeStyle.labelResource()), Modifier.testTag("sensor-gauge-style-value"), style = MaterialTheme.typography.bodyLarge)
+                            Icon(Icons.Default.ExpandMore, contentDescription = null, tint = MaterialTheme.colorScheme.onSurfaceVariant)
+                        }
+                    },
                 )
             }
             SettingsSection {
@@ -91,4 +115,36 @@ internal fun SensorsSettingsScreen(
             }
         }
     }
+    if (gaugeStyleDialog) {
+        AlertDialog(
+            onDismissRequest = { gaugeStyleDialog = false },
+            title = { Text(stringResource(R.string.sensor_gauge_style)) },
+            text = {
+                Column(Modifier.selectableGroup()) {
+                    SensorGaugeStyle.entries.forEach { style ->
+                        Row(
+                            Modifier.fillMaxWidth().heightIn(min = 48.dp).selectable(
+                                selected = gaugeStyle == style,
+                                role = Role.RadioButton,
+                            ) {
+                                onGaugeStyleChange(style)
+                                gaugeStyleDialog = false
+                            }.testTag("sensor-gauge-style-${style.preferenceValue}"),
+                            verticalAlignment = Alignment.CenterVertically,
+                        ) {
+                            RadioButton(selected = gaugeStyle == style, onClick = null)
+                            Text(stringResource(style.labelResource()), Modifier.padding(start = 8.dp))
+                        }
+                    }
+                }
+            },
+            confirmButton = { TextButton(onClick = { gaugeStyleDialog = false }) { Text(stringResource(R.string.close)) } },
+        )
+    }
+}
+
+private fun SensorGaugeStyle.labelResource(): Int = when (this) {
+    SensorGaugeStyle.Current -> R.string.sensor_gauge_style_current
+    SensorGaugeStyle.PreciseArc -> R.string.sensor_gauge_style_precise_arc
+    SensorGaugeStyle.ThinNeedle -> R.string.sensor_gauge_style_thin_needle
 }

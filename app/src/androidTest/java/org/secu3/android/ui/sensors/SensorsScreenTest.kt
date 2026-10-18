@@ -66,6 +66,7 @@ import org.junit.Test
 import kotlinx.coroutines.runBlocking
 import java.util.Locale
 import org.secu3.android.R
+import org.secu3.android.models.SensorGaugeStyle
 import org.secu3.android.db.AppDatabase
 import org.secu3.android.db.models.GaugeState
 import org.secu3.android.db.models.IndicatorState
@@ -212,6 +213,7 @@ class SensorsScreenTest {
             SensorsScreen(
                 listOf(GaugeItem(GaugeState(1, GaugeType.RPM, 0, true), "100"), GaugeItem(GaugeState(2, GaugeType.VOLTAGE, 1, true), "12.1"), GaugeItem(GaugeState(3, GaugeType.MAP, 2, true), "90")),
                 emptyList(), columns.value, null, null, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {},
+                gaugeStyle = SensorGaugeStyle.Current,
             )
         } }
         val firstTop = compose.onNodeWithTag("gauge-RPM").fetchSemanticsNode().boundsInRoot.top
@@ -241,6 +243,7 @@ class SensorsScreenTest {
             SensorsScreen(
                 listOf(GaugeItem(GaugeState(1, GaugeType.RPM, 0, true), "2400")), emptyList(),
                 2, null, null, {}, {}, {}, {}, {}, {}, { deleted = it }, {}, { switched = it }, {}, {},
+                gaugeStyle = SensorGaugeStyle.Current,
             )
         } }
         compose.onNodeWithTag("gauge-RPM").performClick()
@@ -251,7 +254,7 @@ class SensorsScreenTest {
         compose.runOnIdle { assertEquals(GaugeType.RPM, deleted) }
     }
 
-    @Test fun switchingGaugeViewKeepsCardDimensionsInMixedRow() {
+    @Test fun switchingGaugeViewResizesOnlyTheChangedCardInMixedRow() {
         val gauges = mutableStateOf(
             listOf(
                 GaugeItem(GaugeState(1, GaugeType.TPS_DOT, 0, true), "-500"),
@@ -263,12 +266,13 @@ class SensorsScreenTest {
             val fontDensity = LocalDensity.current.density
             SecuComposeTheme {
                 CompositionLocalProvider(LocalDensity provides Density(fontDensity, 1f)) {
-                    Box(Modifier.width(360.dp)) {
+                    Box(Modifier.width(520.dp)) {
                         SensorsScreen(
                             gauges.value, emptyList(), 3, null, null,
                             {}, {}, {}, {}, {}, {}, {}, {},
                             { state -> gauges.value = gauges.value.map { if (it.state.gaugeType == state.gaugeType) it.copy(state = state) else it } },
                             {}, {},
+                            gaugeStyle = SensorGaugeStyle.Current,
                         )
                     }
                 }
@@ -278,7 +282,7 @@ class SensorsScreenTest {
         val names = listOf("TPS_DOT", "VOLTAGE", "MAP")
         val originalBounds = names.associateWith { compose.onNodeWithTag("gauge-$it").fetchSemanticsNode().boundsInRoot }
         assertEquals("configured cards should share the row", 1, originalBounds.values.map { it.top }.distinct().size)
-        assertEquals("cards should stretch to the tallest wrapped title", 1, originalBounds.values.map { it.height }.distinct().size)
+        org.junit.Assert.assertTrue("numeric content should use less height than the dial", originalBounds.getValue("TPS_DOT").height < originalBounds.getValue("VOLTAGE").height)
         compose.onNodeWithText("-500").assertIsDisplayed()
         compose.onNodeWithText(context.getString(GaugeType.TPS_DOT.units)).assertIsDisplayed()
         var numericValueLayout: TextLayoutResult? = null
@@ -297,25 +301,73 @@ class SensorsScreenTest {
         val dialBounds = names.associateWith { compose.onNodeWithTag("gauge-$it").fetchSemanticsNode().boundsInRoot }
         names.forEach { name ->
             assertEquals("$name width changed when a neighbor switched", originalBounds.getValue(name).width, dialBounds.getValue(name).width, 1f)
-            assertEquals("$name height changed when a neighbor switched", originalBounds.getValue(name).height, dialBounds.getValue(name).height, 1f)
         }
-        assertEquals("mixed row should remain aligned in dial mode", 1, dialBounds.values.map { it.height }.distinct().size)
+        assertEquals("mixed row cards should keep top alignment", 1, dialBounds.values.map { it.top }.distinct().size)
+        org.junit.Assert.assertTrue("switching numeric content to a classic dial should grow its card", dialBounds.getValue("TPS_DOT").height > originalBounds.getValue("TPS_DOT").height)
         compose.onNodeWithTag("gauge-body-TPS_DOT", useUnmergedTree = true).assertIsDisplayed()
-        compose.onNodeWithText("-500").assertIsDisplayed()
-        compose.onNodeWithText(context.getString(GaugeType.TPS_DOT.units)).assertIsDisplayed()
+        val dialDescription = "${context.getString(GaugeType.TPS_DOT.title)}: -500 ${context.getString(GaugeType.TPS_DOT.units)}"
+        compose.onNodeWithTag("dial-TPS_DOT", useUnmergedTree = true)
+            .assert(SemanticsMatcher.expectValue(SemanticsProperties.ContentDescription, listOf(dialDescription)))
 
         compose.onNodeWithTag("gauge-TPS_DOT").performClick()
         compose.onNodeWithText(context.getString(R.string.switch_view)).performClick()
         compose.waitForIdle()
         val restoredBounds = compose.onNodeWithTag("gauge-TPS_DOT").fetchSemanticsNode().boundsInRoot
         assertEquals(originalBounds.getValue("TPS_DOT").width, restoredBounds.width, 1f)
-        assertEquals(originalBounds.getValue("TPS_DOT").height, restoredBounds.height, 1f)
+        assertEquals("switching back restores the original content height", originalBounds.getValue("TPS_DOT").height, restoredBounds.height, 1f)
         val restoredNamesBounds = names.associateWith { compose.onNodeWithTag("gauge-$it").fetchSemanticsNode().boundsInRoot }
         names.forEach { name ->
             assertEquals("$name dimensions changed after switching back", originalBounds.getValue(name).width, restoredNamesBounds.getValue(name).width, 1f)
             assertEquals("$name height changed after switching back", originalBounds.getValue(name).height, restoredNamesBounds.getValue(name).height, 1f)
         }
         compose.onNodeWithText("-500").assertIsDisplayed()
+    }
+
+    @Test fun gaugeCardResizesAcrossStylesAndKeepsTheDialFaceFullSize() {
+        val style = mutableStateOf(SensorGaugeStyle.Current)
+        val numeric = mutableStateOf(false)
+        compose.setContent {
+            SecuComposeTheme {
+                Box(Modifier.width(360.dp)) {
+                    SensorsScreen(
+                        gauges = listOf(GaugeItem(GaugeState(1, GaugeType.RPM, 0, numeric.value), "2840")),
+                        indicators = emptyList(), columns = 2, gaugeChoices = null, indicatorChoices = null,
+                        onAddGaugeRequest = {}, onAddIndicatorRequest = {}, onAddGauge = {}, onAddIndicator = {},
+                        onGaugeChoicesConsumed = {}, onIndicatorChoicesConsumed = {}, onDeleteGauge = {}, onDeleteIndicator = {},
+                        onUpdateGauge = {}, onReorderGauges = {}, onReorderIndicators = {}, gaugeStyle = style.value,
+                    )
+                }
+            }
+        }
+        fun cardBounds() = compose.onNodeWithTag("gauge-RPM").fetchSemanticsNode().boundsInRoot
+        fun dialBounds() = compose.onNodeWithTag("dial-RPM", useUnmergedTree = true).fetchSemanticsNode().boundsInRoot
+        val classic = cardBounds()
+        val classicDial = dialBounds()
+
+        compose.runOnIdle { style.value = SensorGaugeStyle.PreciseArc }
+        compose.waitForIdle()
+        val precise = cardBounds()
+        val preciseDial = dialBounds()
+        org.junit.Assert.assertTrue("precise arc should omit the classic footer", precise.height < classic.height)
+        assertEquals("precise arc keeps the classic dial width", classicDial.width, preciseDial.width, 1f)
+        org.junit.Assert.assertTrue("precise arc allocates only the outside-label inset below the full-size circle", preciseDial.height > classicDial.height)
+
+        compose.runOnIdle { style.value = SensorGaugeStyle.ThinNeedle }
+        compose.waitForIdle()
+        val thin = cardBounds()
+        val thinDial = dialBounds()
+        org.junit.Assert.assertTrue("thin needle keeps the full-size circle and visible footer", thin.height > classic.height)
+        assertEquals("thin needle keeps the classic dial width", classicDial.width, thinDial.width, 1f)
+        assertEquals("thin needle allocates the same outside-label inset", preciseDial.height, thinDial.height, 1f)
+
+        compose.runOnIdle { numeric.value = true }
+        compose.waitForIdle()
+        val numericCard = cardBounds()
+        org.junit.Assert.assertTrue("numeric content does not retain a blank dial footer", numericCard.height < precise.height)
+
+        compose.runOnIdle { numeric.value = false; style.value = SensorGaugeStyle.Current }
+        compose.waitForIdle()
+        assertEquals("returning to classic restores the original height", classic.height, cardBounds().height, 1f)
     }
 
     @Test fun dialFitsInsideNarrowThreeColumnGaugeCard() {
@@ -325,6 +377,7 @@ class SensorsScreenTest {
                     SensorsScreen(
                         listOf(GaugeItem(GaugeState(1, GaugeType.RPM, 0, false), "2400")),
                         emptyList(), 3, null, null, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {},
+                        gaugeStyle = SensorGaugeStyle.Current,
                     )
                 }
             }
@@ -348,7 +401,7 @@ class SensorsScreenTest {
             GaugeItem(GaugeState(3, GaugeType.VOLTAGE, 2, false), "12.4"),
         )
         compose.setContent { SecuComposeTheme {
-            Box(Modifier.width(360.dp)) { SensorsScreen(gauges.take(columns.value), emptyList(), columns.value, null, null, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}) }
+            Box(Modifier.width(360.dp)) { SensorsScreen(gauges.take(columns.value), emptyList(), columns.value, null, null, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, gaugeStyle = SensorGaugeStyle.Current) }
         } }
         for (columnCount in 1..3) {
             compose.runOnIdle { columns.value = columnCount }
@@ -363,12 +416,41 @@ class SensorsScreenTest {
         compose.onNodeWithTag("dial-CURRENT_ANGLE", useUnmergedTree = true).assert(SemanticsMatcher.expectValue(SemanticsProperties.ContentDescription, listOf(angleDescription)))
     }
 
+    @Test fun preciseArcUsesReadableSharedColumnWidthAtThreeColumnPreference() {
+        val style = mutableStateOf(SensorGaugeStyle.PreciseArc)
+        val gauges = listOf(
+            GaugeItem(GaugeState(1, GaugeType.RPM, 0, false), "2840"),
+            GaugeItem(GaugeState(2, GaugeType.TEMPERATURE, 1, false), "36.0"),
+            GaugeItem(GaugeState(3, GaugeType.VOLTAGE, 2, false), "13.8"),
+        )
+        compose.setContent { SecuComposeTheme {
+            Box(Modifier.width(360.dp)) {
+                SensorsScreen(gauges, emptyList(), 3, null, null, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, gaugeStyle = style.value)
+            }
+        } }
+
+        val firstCard = compose.onNodeWithTag("gauge-RPM").fetchSemanticsNode().boundsInRoot
+        val secondCard = compose.onNodeWithTag("gauge-TEMPERATURE").fetchSemanticsNode().boundsInRoot
+        val thirdCard = compose.onNodeWithTag("gauge-VOLTAGE").fetchSemanticsNode().boundsInRoot
+        val dialBody = compose.onNodeWithTag("gauge-body-RPM", useUnmergedTree = true).fetchSemanticsNode().boundsInRoot
+        org.junit.Assert.assertTrue("the 150dp readability guard should reflow the third card", thirdCard.top > firstCard.top)
+        val minimumWidthPx = 150.dp.value * context.resources.displayMetrics.density
+        org.junit.Assert.assertTrue("reflowed precise-arc card should retain a useful width", firstCard.width >= minimumWidthPx)
+        org.junit.Assert.assertTrue("precise-arc drawing bounds should remain non-empty", dialBody.width > 0f && dialBody.height > dialBody.width)
+        val description = "${context.getString(GaugeType.RPM.title)}: 2840 ${context.getString(GaugeType.RPM.units)}"
+        compose.onNodeWithTag("dial-RPM", useUnmergedTree = true)
+            .assert(SemanticsMatcher.expectValue(SemanticsProperties.ContentDescription, listOf(description)))
+        compose.runOnIdle { style.value = SensorGaugeStyle.Current }
+        compose.onNodeWithTag("gauge-RPM").assertIsDisplayed()
+        org.junit.Assert.assertEquals(firstCard.width, compose.onNodeWithTag("gauge-RPM").fetchSemanticsNode().boundsInRoot.width, 1f)
+    }
+
     @Test fun composeDialReportsLiveValueAndViewModeChanges() {
         val value = mutableStateOf("100")
         val numeric = mutableStateOf(false)
         compose.setContent { SecuComposeTheme {
             SensorsScreen(listOf(GaugeItem(GaugeState(1, GaugeType.RPM, 0, numeric.value), value.value)), emptyList(), 1, null, null,
-                {}, {}, {}, {}, {}, {}, {}, {}, { numeric.value = !numeric.value }, {}, {})
+                {}, {}, {}, {}, {}, {}, {}, {}, { numeric.value = !numeric.value }, {}, {}, gaugeStyle = SensorGaugeStyle.Current)
         } }
         fun rpmDescription(value: String) = "${context.getString(GaugeType.RPM.title)}: $value ${context.getString(GaugeType.RPM.units)}"
         compose.onNodeWithTag("dial-RPM", useUnmergedTree = true).assert(SemanticsMatcher.expectValue(SemanticsProperties.ContentDescription, listOf(rpmDescription("100"))))
@@ -380,6 +462,41 @@ class SensorsScreenTest {
         compose.onNodeWithTag("gauge-RPM").performClick()
         compose.onNodeWithText(context.getString(R.string.switch_view)).performClick()
         compose.onNodeWithTag("dial-RPM", useUnmergedTree = true).assertIsDisplayed()
+    }
+
+    @Test fun allGaugeDialStylesKeepTheLiveAccessibleValueAndShowUnavailableReadingsAsMissing() {
+        val style = mutableStateOf(SensorGaugeStyle.Current)
+        val reading = mutableStateOf("2840")
+        compose.setContent {
+            SecuComposeTheme {
+                SensorsScreen(
+                    gauges = listOf(GaugeItem(GaugeState(1, GaugeType.RPM, 0, false), reading.value)),
+                    indicators = emptyList(),
+                    columns = 1,
+                    gaugeChoices = null,
+                    indicatorChoices = null,
+                    onAddGaugeRequest = {}, onAddIndicatorRequest = {}, onAddGauge = {}, onAddIndicator = {},
+                    onGaugeChoicesConsumed = {}, onIndicatorChoicesConsumed = {}, onDeleteGauge = {}, onDeleteIndicator = {},
+                    onUpdateGauge = {}, onReorderGauges = {}, onReorderIndicators = {},
+                    gaugeStyle = style.value,
+                )
+            }
+        }
+        fun assertReadingDescription(value: String) {
+            val description = "${context.getString(GaugeType.RPM.title)}: $value ${context.getString(GaugeType.RPM.units)}"
+            compose.onNodeWithTag("dial-RPM", useUnmergedTree = true)
+                .assert(SemanticsMatcher.expectValue(SemanticsProperties.ContentDescription, listOf(description)))
+        }
+        listOf(SensorGaugeStyle.Current, SensorGaugeStyle.PreciseArc, SensorGaugeStyle.ThinNeedle).forEach { candidate ->
+            compose.runOnIdle { style.value = candidate }
+            compose.onNodeWithTag("dial-RPM", useUnmergedTree = true).assertIsDisplayed()
+            assertReadingDescription("2840")
+        }
+        compose.runOnIdle { reading.value = "not-a-number" }
+        listOf(SensorGaugeStyle.Current, SensorGaugeStyle.PreciseArc, SensorGaugeStyle.ThinNeedle).forEach { candidate ->
+            compose.runOnIdle { style.value = candidate }
+            assertReadingDescription("—")
+        }
     }
 
     @Test fun tickLabelsRoundToWholeNumbersUsingDefaultLocale() {

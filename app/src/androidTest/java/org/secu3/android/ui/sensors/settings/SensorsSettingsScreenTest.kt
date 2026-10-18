@@ -44,6 +44,7 @@ import org.junit.Assert.assertTrue
 import org.junit.Rule
 import org.junit.Test
 import org.secu3.android.R
+import org.secu3.android.models.SensorGaugeStyle
 
 class SensorsSettingsScreenTest {
     @get:Rule val compose = createComposeRule()
@@ -79,5 +80,27 @@ class SensorsSettingsScreenTest {
         compose.onNodeWithTag("sensor-columns-value", useUnmergedTree = true).assertTextEquals("8")
         compose.onNodeWithContentDescription(context.getString(R.string.back)).performClick()
         compose.runOnIdle { assertTrue(back) }
+    }
+
+    @Test fun gaugeStyleSelectionRendersCurrentChoiceAndReportsChanges() {
+        val selected = mutableStateOf(SensorGaugeStyle.Current)
+        compose.setContent {
+            SensorsSettingsScreen(
+                oldView = false,
+                columns = 2,
+                onOldViewChange = {},
+                onColumnsChange = {},
+                onNavigateUp = {},
+                gaugeStyle = selected.value,
+                onGaugeStyleChange = { selected.value = it },
+            )
+        }
+        compose.onNodeWithTag("sensor-gauge-style-value", useUnmergedTree = true)
+            .assertTextEquals(context.getString(R.string.sensor_gauge_style_current))
+        compose.onNodeWithTag("sensor-gauge-style-row").performScrollTo().performClick()
+        compose.onNodeWithTag("sensor-gauge-style-precise_arc").assertIsDisplayed().performClick()
+        compose.runOnIdle { assertEquals(SensorGaugeStyle.PreciseArc, selected.value) }
+        compose.onNodeWithTag("sensor-gauge-style-value", useUnmergedTree = true)
+            .assertTextEquals(context.getString(R.string.sensor_gauge_style_precise_arc))
     }
 }

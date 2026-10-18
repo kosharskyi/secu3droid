@@ -20,6 +20,7 @@ import org.junit.Assert.assertSame
 import org.junit.Rule
 import org.junit.Test
 import org.secu3.android.R
+import org.secu3.android.models.SensorGaugeStyle
 import org.secu3.android.ui.MainActivity
 import org.secu3.android.ui.SENSOR_SETTINGS_ROUTE
 import org.secu3.android.ui.SENSORS_ROUTE
@@ -51,11 +52,11 @@ class SensorsNavigationIntegrationTest {
             assertEquals(SENSOR_SETTINGS_ROUTE, compose.activity.rootNavigationController?.currentDestination?.route)
 
             compose.onNodeWithTag("sensors-old-view-checkbox").performClick()
-            compose.onNodeWithTag("sensor-columns-value").performClick()
+            compose.onNodeWithTag("sensor-columns-row").performClick()
             compose.onNodeWithText("7", substring = false).performClick()
             compose.waitForIdle()
             compose.onNodeWithTag("sensors-old-view-checkbox").assertIsOn()
-            compose.onNodeWithTag("sensor-columns-value").assertTextEquals("7")
+            compose.onNodeWithTag("sensor-columns-value", useUnmergedTree = true).assertTextEquals("7")
             assertEquals(true, preferences.getBoolean(oldViewKey, false))
             assertEquals(7, preferences.getInt(columnsKey, 2))
 
@@ -64,7 +65,7 @@ class SensorsNavigationIntegrationTest {
             val restoredHost = nativeHost()
             assertOverlayRoute(restoredHost, SENSOR_SETTINGS_ROUTE)
             compose.onNodeWithTag("sensors-old-view-checkbox").assertIsOn()
-            compose.onNodeWithTag("sensor-columns-value").assertTextEquals("7")
+            compose.onNodeWithTag("sensor-columns-value", useUnmergedTree = true).assertTextEquals("7")
             compose.onNodeWithContentDescription(context.getString(R.string.back)).performClick()
             compose.waitForIdle()
             assertEquals(SENSORS_ROUTE, compose.activity.rootNavigationController?.currentDestination?.route)
@@ -80,7 +81,7 @@ class SensorsNavigationIntegrationTest {
             }
             compose.waitForIdle()
             compose.onNodeWithTag("sensors-old-view-checkbox").assertIsOff()
-            compose.onNodeWithTag("sensor-columns-value").assertTextEquals("4")
+            compose.onNodeWithTag("sensor-columns-value", useUnmergedTree = true).assertTextEquals("4")
             InstrumentationRegistry.getInstrumentation().sendKeyDownUpSync(KeyEvent.KEYCODE_BACK)
             compose.waitForIdle()
             assertEquals(SENSORS_ROUTE, compose.activity.rootNavigationController?.currentDestination?.route)
@@ -102,6 +103,57 @@ class SensorsNavigationIntegrationTest {
             preferences.edit().apply {
                 if (hadOldView) putBoolean(oldViewKey, originalOldView) else remove(oldViewKey)
                 if (hadColumns) putInt(columnsKey, originalColumns) else remove(columnsKey)
+            }.commit()
+        }
+    }
+
+    @Test fun gaugeStylePersistsAndUpdatesAcrossSettingsAndSensorsRoutes() {
+        val preferences = context.getDefaultSharedPreferences()
+        val key = "sensor_gauge_style"
+        val hadStyle = preferences.contains(key)
+        val originalStyle = preferences.getString(key, null)
+        try {
+            preferences.edit().remove(key).commit()
+            navigateToHomeAndSensors()
+            val sensorsViewModel = currentSensorsViewModel()
+            assertEquals(SensorGaugeStyle.PreciseArc, sensorsViewModel.state.value.gaugeStyle)
+
+            openSensorsSettings()
+            compose.onNodeWithTag("sensor-gauge-style-row").performScrollTo().performClick()
+            compose.onNodeWithTag("sensor-gauge-style-current").performClick()
+            compose.waitForIdle()
+            assertEquals("current", preferences.getString(key, null))
+            assertEquals(SensorGaugeStyle.Current, sensorsViewModel.state.value.gaugeStyle)
+            compose.onNodeWithContentDescription(context.getString(R.string.back)).performClick()
+            compose.waitForIdle()
+
+            openSensorsSettings()
+            compose.onNodeWithTag("sensor-gauge-style-row").performScrollTo().performClick()
+            compose.onNodeWithTag("sensor-gauge-style-precise_arc").performClick()
+            compose.waitForIdle()
+            assertEquals("precise_arc", preferences.getString(key, null))
+            assertEquals(SensorGaugeStyle.PreciseArc, sensorsViewModel.state.value.gaugeStyle)
+
+            compose.activityRule.scenario.recreate()
+            compose.waitForIdle()
+            compose.onNodeWithTag("sensor-gauge-style-value", useUnmergedTree = true)
+                .assertTextEquals(context.getString(R.string.sensor_gauge_style_precise_arc))
+            compose.onNodeWithContentDescription(context.getString(R.string.back)).performClick()
+            compose.waitForIdle()
+            assertSame(sensorsViewModel, currentSensorsViewModel())
+            assertEquals(SensorGaugeStyle.PreciseArc, sensorsViewModel.state.value.gaugeStyle)
+
+            compose.activityRule.scenario.onActivity {
+                preferences.edit().putString(key, "thin_needle").commit()
+            }
+            compose.waitForIdle()
+            assertEquals(SensorGaugeStyle.ThinNeedle, sensorsViewModel.state.value.gaugeStyle)
+            openSensorsSettings()
+            compose.onNodeWithTag("sensor-gauge-style-value", useUnmergedTree = true)
+                .assertTextEquals(context.getString(R.string.sensor_gauge_style_thin_needle))
+        } finally {
+            preferences.edit().apply {
+                if (hadStyle) putString(key, originalStyle) else remove(key)
             }.commit()
         }
     }

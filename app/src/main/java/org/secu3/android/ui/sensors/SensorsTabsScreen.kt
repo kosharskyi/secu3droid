@@ -56,6 +56,7 @@ import org.secu3.android.db.models.GaugeState
 import org.secu3.android.db.models.IndicatorState
 import org.secu3.android.models.packets.input.AdcRawDatPacket
 import org.secu3.android.models.packets.input.SensorsPacket
+import org.secu3.android.models.SensorGaugeStyle
 import org.secu3.android.ui.compose.SecuTopAppBar
 import org.secu3.android.ui.compose.SecuTabRow
 import org.secu3.android.ui.sensors.SensorsViewModel.ChoiceRequest
@@ -90,6 +91,7 @@ internal fun SensorsTabsScreen(
     onStartLog: () -> Unit, onStopLog: () -> Unit, onMark: (Int) -> Unit,
     onLoggerErrorConsumed: (Long) -> Unit,
     onReorderingChanged: (Boolean) -> Unit = {},
+    gaugeStyle: SensorGaugeStyle = SensorGaugeStyle.Default,
 ) {
     val pagerState = rememberPagerState(initialPage = initialPage.coerceIn(0, 1), pageCount = { 2 })
     var reordering by remember { mutableStateOf(false) }
@@ -166,6 +168,7 @@ internal fun SensorsTabsScreen(
                         onUpdateGauge, onReorderGauges, onReorderIndicators,
                         onReorderingChanged = { active -> reordering = active; onReorderingChanged(active) },
                         dataAvailable = dataAvailable,
+                        gaugeStyle = gaugeStyle,
                     )
                     else -> RawSensorsScreen(rawSensors.takeIf { dataAvailable })
                 }

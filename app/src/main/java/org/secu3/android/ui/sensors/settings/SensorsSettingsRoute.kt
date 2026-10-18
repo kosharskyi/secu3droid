@@ -37,8 +37,10 @@ internal fun SensorsSettingsRoute(
         SensorsSettingsScreen(
             oldView = state.oldView,
             columns = state.columns,
+            gaugeStyle = state.gaugeStyle,
             onOldViewChange = viewModel::setOldView,
             onColumnsChange = viewModel::setColumns,
+            onGaugeStyleChange = viewModel::setGaugeStyle,
             onNavigateUp = onNavigateUp,
         )
     }

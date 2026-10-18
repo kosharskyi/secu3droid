@@ -11,6 +11,7 @@ import org.junit.Assert.assertTrue
 import org.junit.Before
 import org.junit.Test
 import org.secu3.android.R
+import org.secu3.android.models.SensorGaugeStyle
 import org.secu3.android.ui.sensors.settings.SensorsSettingsViewModel
 import org.secu3.android.ui.settings.SettingsViewModel
 
@@ -47,6 +48,34 @@ class UserPrefsTest {
 
         assertEquals(LogExportDestination.CustomTree(uri), userPrefs.logExportDestination)
         assertEquals(uri, userPrefs.logExportDirectoryUri)
+    }
+
+    @Test
+    fun sensorGaugeStyleDefaultsAndUnknownValuesReadAsPreciseArcWithoutRepairingStoredPreference() {
+        val key = UserPrefs.SENSOR_GAUGE_STYLE_KEY
+        val hadValue = sharedPreferences.contains(key)
+        val previous = sharedPreferences.getString(key, null)
+        try {
+            sharedPreferences.edit().remove(key).commit()
+            assertEquals(SensorGaugeStyle.PreciseArc, UserPrefs(context).sensorGaugeStyle)
+            assertFalse("reading the default must not create a stored preference", sharedPreferences.contains(key))
+
+            sharedPreferences.edit().putString(key, "unknown-style").commit()
+            assertEquals(SensorGaugeStyle.PreciseArc, UserPrefs(context).sensorGaugeStyle)
+            assertEquals("unknown-style", sharedPreferences.getString(key, null))
+
+            UserPrefs(context).sensorGaugeStyle = SensorGaugeStyle.Current
+            assertEquals(SensorGaugeStyle.Current, UserPrefs(context).sensorGaugeStyle)
+            assertEquals("current", sharedPreferences.getString(key, null))
+
+            UserPrefs(context).sensorGaugeStyle = SensorGaugeStyle.ThinNeedle
+            assertEquals(SensorGaugeStyle.ThinNeedle, UserPrefs(context).sensorGaugeStyle)
+            assertEquals("thin_needle", sharedPreferences.getString(key, null))
+        } finally {
+            sharedPreferences.edit().apply {
+                if (hadValue) putString(key, previous) else remove(key)
+            }.commit()
+        }
     }
 
     @Test

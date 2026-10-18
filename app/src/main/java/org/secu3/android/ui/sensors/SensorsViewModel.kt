@@ -36,6 +36,7 @@ import org.secu3.android.db.models.GaugeState
 import org.secu3.android.db.models.IndicatorState
 import org.secu3.android.models.packets.input.AdcRawDatPacket
 import org.secu3.android.models.packets.input.SensorsPacket
+import org.secu3.android.models.SensorGaugeStyle
 import org.secu3.android.ui.sensors.models.GaugeItem
 import org.secu3.android.ui.sensors.models.GaugeType
 import org.secu3.android.ui.sensors.models.IndicatorItem
@@ -63,7 +64,7 @@ class SensorsViewModel @Inject constructor(
     val state: StateFlow<SensorsUiState> = _state.asStateFlow()
     private val taskGate = SensorTaskGate(_state.value.selectedPage, secu3ConnectionManager::sendNewTask)
     private val preferenceListener = SharedPreferences.OnSharedPreferenceChangeListener { _, key ->
-        if (key == null || key == OLD_VIEW_KEY || key == COLUMNS_KEY || key == context.getString(R.string.pref_write_log_key)) {
+        if (key == null || key == OLD_VIEW_KEY || key == COLUMNS_KEY || key == UserPrefs.SENSOR_GAUGE_STYLE_KEY || key == context.getString(R.string.pref_write_log_key)) {
             refreshPreferences()
         }
     }
@@ -102,6 +103,7 @@ class SensorsViewModel @Inject constructor(
         selectedPage = (savedStateHandle.get<Int>(KEY_SELECTED_PAGE) ?: 0).coerceIn(0, 1),
         oldViewEnabled = userPrefs.oldSensorViewEnabled,
         columns = userPrefs.columnsCount.coerceIn(2, 8),
+        gaugeStyle = userPrefs.sensorGaugeStyle,
         loggerEnabled = userPrefs.isSensorLoggerEnabled,
         loggerStarted = secuLogger.isLoggerStarted,
         loggerErrorId = secuLogger.state.value.pendingErrorId ?: 0,
@@ -146,6 +148,7 @@ class SensorsViewModel @Inject constructor(
             it.copy(
                 oldViewEnabled = userPrefs.oldSensorViewEnabled,
                 columns = userPrefs.columnsCount.coerceIn(2, 8),
+                gaugeStyle = userPrefs.sensorGaugeStyle,
                 loggerEnabled = userPrefs.isSensorLoggerEnabled,
             )
         }
@@ -212,6 +215,7 @@ data class SensorsUiState(
     val selectedPage: Int = 0,
     val oldViewEnabled: Boolean = false,
     val columns: Int = 2,
+    val gaugeStyle: SensorGaugeStyle = SensorGaugeStyle.Default,
     val loggerEnabled: Boolean = false,
     val loggerStarted: Boolean = false,
     val loggerErrorId: Long = 0,

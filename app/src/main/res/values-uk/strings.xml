@@ -421,6 +421,10 @@
     <string name="switch_view">Перемкнути вигляд</string>
     <string name="enable_old_sensors_view">Ввімкнути старий вигляд екрану сенсорів</string>
     <string name="columns_count">Кількість колонок</string>
+    <string name="sensor_gauge_style">Стиль шкал</string>
+    <string name="sensor_gauge_style_current">Класичний</string>
+    <string name="sensor_gauge_style_precise_arc">Точна дуга</string>
+    <string name="sensor_gauge_style_thin_needle">Тонка стрілка</string>
     <string name="packet_saved">Пакет збережено</string>
     <string name="saving">Збереження</string>
     <string name="disconnect_device">Відключення пристрою</string>

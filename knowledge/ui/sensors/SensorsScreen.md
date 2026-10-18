@@ -6,9 +6,9 @@ Room-configured cards and their order remain available while disconnected. The m
 
 Legacy gauge section colors encode ECU ranges. Theme the dial text, needle, and background while preserving those range colors.
 
-## Gauge view modes keep one card footprint
+## Gauge cards resize to the active view's content
 
-Numeric and dial gauges share the same title area, square body, and reserved footer lines. Gauge rows size to their tallest wrapped title and stretch shorter cards to that height. The numeric value and unit sit together in the square body; transparent footer text keeps the card height equal to dial mode without adding blank accessibility text. Keep this shared footprint when changing either rendering so mixed rows do not leave gaps.
+Cards keep the same column width, but their heights follow the active content. Numeric gauges use a natural-height value and unit block; classic dials use a square face, while new dials allocate enough height for scale labels outside the same full-width circular face. Classic and thin-needle dials show a value/unit footer, while the precise-arc dial puts the readout inside its face. Rows align cards at the top without stretching shorter cards or reserving a transparent footer. Do not add spacer content to equalize heights when switching styles or numeric view.
 
 ## Raw ADC values retain their packet formatting and units
 
@@ -21,3 +21,7 @@ Modern and legacy status indicators communicate active, inactive, and unavailabl
 ## Logger state follows the singleton session, including background I/O failures
 
 The logger may stop while packet writes run outside the Sensors route. The ViewModel must observe the logger's state flow instead of relying only on start/stop button snapshots. A pending error ID remains until the resumed route displays and acknowledges that exact ID, so navigation away does not discard the error or replay an already acknowledged message.
+
+## Global dial style applies only to modern dial cards
+
+The saved gauge style selects the dial renderer for modern configured gauges. It must not override the old sensors view or a gauge's independent numeric-view setting. Both new dial circles use the classic dial's full-width radius; their content bounds add a font-metric-derived inset for 12sp scale labels outside the range band. Precise-arc readout bounds stay inside the blue arc with 8dp clearance, and the blue inner arc remains 3dp from the outer range band. Thin-needle readout lives in a natural footer below the face. All dial styles share a 150dp minimum column width (scaled up with accessibility font size), so the configured column count remains a ceiling; this keeps the centered precise-arc readout legible in the smallest supported grid cell.
