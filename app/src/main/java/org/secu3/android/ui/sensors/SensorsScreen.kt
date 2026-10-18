@@ -280,7 +280,13 @@ internal fun SensorsScreen(
                                         ),
                                     onMenu = { menuFor = dragKey },
                                 )
-                                DropdownMenu(expanded = menuFor == dragKey, onDismissRequest = { menuFor = null }, shape = DropdownShape) {
+                                DropdownMenu(
+                                    expanded = menuFor == dragKey,
+                                    onDismissRequest = { menuFor = null },
+                                    shape = DropdownShape,
+                                    containerColor = MaterialTheme.colorScheme.surfaceContainerHighest,
+                                    border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant),
+                                ) {
                                     DropdownMenuItem(
                                         text = { Text(stringResource(R.string.switch_view)) },
                                         leadingIcon = { Icon(Icons.Default.SwapHoriz, null) },
@@ -368,7 +374,13 @@ internal fun SensorsScreen(
                                     onMenu = { menuFor = dragKey },
                                     dataAvailable = dataAvailable,
                                 )
-                                DropdownMenu(expanded = menuFor == dragKey, onDismissRequest = { menuFor = null }, shape = DropdownShape) {
+                                DropdownMenu(
+                                    expanded = menuFor == dragKey,
+                                    onDismissRequest = { menuFor = null },
+                                    shape = DropdownShape,
+                                    containerColor = MaterialTheme.colorScheme.surfaceContainerHighest,
+                                    border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant),
+                                ) {
                                     DropdownMenuItem(
                                         text = { Text(stringResource(R.string.delete)) },
                                         leadingIcon = { Icon(Icons.Default.Delete, null) },
