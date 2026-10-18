@@ -201,15 +201,15 @@ private fun androidx.compose.ui.graphics.drawscope.DrawScope.drawGaugeCanvas(
         drawThinTicks(colors.onSurfaceVariant, centerX, arcCenterY, radius)
         normalized?.let { progress ->
             val angle = Math.toRadians(135.0 + 270.0 * progress)
-            val needleLength = radius * .56f
+            val needleLength = minOf(radius * .8f, radius - 14.dp.toPx()).coerceAtLeast(0f)
             drawLine(
                 color = colors.primary,
                 start = Offset(centerX, arcCenterY),
                 end = Offset(centerX + cos(angle).toFloat() * needleLength, arcCenterY + sin(angle).toFloat() * needleLength),
-                strokeWidth = 2.dp.toPx(),
+                strokeWidth = 3.dp.toPx(),
                 cap = androidx.compose.ui.graphics.StrokeCap.Round,
             )
-            drawCircle(colors.primary, radius = 4.dp.toPx(), center = Offset(centerX, arcCenterY))
+            drawCircle(colors.primary, radius = 5.dp.toPx(), center = Offset(centerX, arcCenterY))
         }
         drawDialLabels(type, colors.onSurfaceVariant, centerX, arcCenterY, radius)
     }

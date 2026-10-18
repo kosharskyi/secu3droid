@@ -29,3 +29,7 @@ The logger may stop while packet writes run outside the Sensors route. The ViewM
 ## Global dial style applies only to modern dial cards
 
 The saved gauge style selects the dial renderer for modern configured gauges. It must not override the old sensors view or a gauge's independent numeric-view setting. Both new dial circles use the classic dial's full-width radius; their content bounds add a font-metric-derived inset for 12sp scale labels outside the range band. Precise-arc readout bounds stay inside the blue arc with 8dp clearance, and the blue inner arc remains 3dp from the outer range band. Thin-needle readout lives in a natural footer below the face. The shared 150dp minimum grid cell (scaled up with accessibility font size) keeps the precise-arc readout legible; the measured window width alone determines the number of cells.
+
+## Thin-needle endpoints stay clear of major ticks
+
+The rounded needle tip stops at least 2dp before major tick marks. Cap its length at `radius - 14dp` as well as 80% of the dial radius; the extra clearance accounts for the tick's inner edge and the needle's round cap.
