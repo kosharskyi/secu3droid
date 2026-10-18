@@ -79,6 +79,7 @@ import org.secu3.android.models.SensorGaugeStyle
 import org.secu3.android.db.models.GaugeState
 import org.secu3.android.db.models.IndicatorState
 import org.secu3.android.ui.sensors.models.GaugeItem
+import org.secu3.android.ui.sensors.models.GaugeScale
 import org.secu3.android.ui.sensors.models.GaugeType
 import org.secu3.android.ui.sensors.models.IndicatorItem
 import org.secu3.android.ui.sensors.models.IndicatorType
@@ -476,25 +477,32 @@ private fun GaugeCard(item: GaugeItem, gaugeStyle: SensorGaugeStyle, modifier: M
                 }
             } else {
                 BoxWithConstraints(Modifier.fillMaxWidth()) {
-                    val bodyHeight = if (gaugeStyle == SensorGaugeStyle.Current) {
-                        maxWidth
-                    } else {
-                        measureNewGaugeDial(maxWidth, androidx.compose.ui.platform.LocalDensity.current).height
+                    val cardContentWidth = maxWidth
+                    val dialLabelOverflow = if (gaugeStyle == SensorGaugeStyle.Current) 0.dp else 14.dp
+                    val density = androidx.compose.ui.platform.LocalDensity.current
+                    val configuration = androidx.compose.ui.platform.LocalConfiguration.current
+                    val scale = remember(type) { GaugeScale(type) }
+                    val dialMeasure = if (gaugeStyle == SensorGaugeStyle.Current) null else remember(type, cardContentWidth, density, dialLabelOverflow, configuration) {
+                        measureNewGaugeDial(scale, cardContentWidth, density, dialLabelOverflow)
                     }
+                    val bodyHeight = dialMeasure?.height ?: cardContentWidth
                     Box(
                         Modifier.fillMaxWidth().height(bodyHeight).testTag("gauge-body-${type.name}"),
                         contentAlignment = Alignment.TopCenter,
                     ) {
                         if (gaugeStyle == SensorGaugeStyle.Current) {
-                            GaugeDial(type, value, Modifier.fillMaxSize().testTag("dial-${type.name}").semantics { contentDescription = dialDescription })
+                            GaugeDial(scale, value, Modifier.fillMaxSize().testTag("dial-${type.name}").semantics { contentDescription = dialDescription })
                         } else {
                             NewGaugeDial(
-                                type = type,
+                                scale = scale,
                                 value = value,
                                 formattedValue = formattedValue,
                                 unit = stringResource(type.units),
                                 style = gaugeStyle,
-                                modifier = Modifier.fillMaxSize().testTag("dial-${type.name}").semantics { contentDescription = dialDescription },
+                                dialMeasure = requireNotNull(dialMeasure),
+                                modifier = Modifier.requiredWidth(cardContentWidth + dialLabelOverflow * 2f).height(bodyHeight)
+                                    .testTag("dial-${type.name}").semantics { contentDescription = dialDescription },
+                                labelOverflow = dialLabelOverflow,
                             )
                         }
                     }
@@ -532,12 +540,12 @@ private fun GaugeCard(item: GaugeItem, gaugeStyle: SensorGaugeStyle, modifier: M
 }
 
 @Composable
-private fun GaugeDial(type: GaugeType, value: Float?, modifier: Modifier = Modifier) {
+private fun GaugeDial(scale: GaugeScale, value: Float?, modifier: Modifier = Modifier) {
     val context = LocalContext.current
     val resources = androidx.compose.ui.platform.LocalResources.current
-    val sections = remember(type, resources, context.theme) { type.sections.map { it.start to (it.end to Color(resources.getColor(it.color, context.theme))) } }
+    val sections = remember(scale, resources, context.theme) { scale.sections.map { it.start to (it.end to Color(resources.getColor(it.color, context.theme))) } }
     val colors = MaterialTheme.colorScheme
-    val normalized = value?.let { ((it - type.minValue) / (type.maxValue - type.minValue)).coerceIn(0f, 1f) } ?: 0f
+    val normalized = scale.normalized(value) ?: 0f
     Canvas(modifier.aspectRatio(1f)) {
         val cx = size.width / 2f
         val dialSize = size.width
@@ -545,25 +553,18 @@ private fun GaugeDial(type: GaugeType, value: Float?, modifier: Modifier = Modif
         val radius = dialSize / 2f - 5.dp.toPx()
         val stroke = 10.dp.toPx()
         val rect = androidx.compose.ui.geometry.Rect(cx - radius, cy - radius, cx + radius, cy + radius)
-        drawArc(colors.surfaceVariant, 135f, 270f, false, rect.topLeft, rect.size, style = Stroke(stroke, cap = androidx.compose.ui.graphics.StrokeCap.Butt))
+        drawArc(colors.surfaceVariant, GaugeScale.START_ANGLE_DEGREES, GaugeScale.SWEEP_ANGLE_DEGREES, false, rect.topLeft, rect.size, style = Stroke(stroke, cap = androidx.compose.ui.graphics.StrokeCap.Butt))
         sections.forEach { (start, segment) ->
             val (end, color) = segment
-            drawArc(color, 135f + 270f * start, 270f * (end - start), false, rect.topLeft, rect.size, style = Stroke(stroke, cap = androidx.compose.ui.graphics.StrokeCap.Butt))
+            drawArc(color, scale.angleAt(start), scale.sweepFor(end - start), false, rect.topLeft, rect.size, style = Stroke(stroke, cap = androidx.compose.ui.graphics.StrokeCap.Butt))
         }
-        for (index in 1..8) {
-            val markAngle = Math.toRadians((135f + 270f * index / 9f).toDouble())
-            val markOuter = radius + stroke / 2f
-            val markInner = markOuter - 9.dp.toPx()
-            drawLine(colors.onSurfaceVariant, Offset(cx + kotlin.math.cos(markAngle).toFloat() * markOuter, cy + kotlin.math.sin(markAngle).toFloat() * markOuter), Offset(cx + kotlin.math.cos(markAngle).toFloat() * markInner, cy + kotlin.math.sin(markAngle).toFloat() * markInner), 3.dp.toPx())
+        scale.ticks.forEach { tick ->
+            val angle = Math.toRadians(tick.angleDegrees.toDouble())
+            val outer = radius + stroke / 2f
+            val inner = outer - 9.dp.toPx()
+            drawLine(colors.onSurfaceVariant, Offset(cx + kotlin.math.cos(angle).toFloat() * outer, cy + kotlin.math.sin(angle).toFloat() * outer), Offset(cx + kotlin.math.cos(angle).toFloat() * inner, cy + kotlin.math.sin(angle).toFloat() * inner), 3.dp.toPx())
         }
-        for (index in 0 until type.tickCount) {
-            val fraction = if (type.tickCount <= 1) 0f else index.toFloat() / (type.tickCount - 1)
-            val tickAngle = Math.toRadians((135f + 270f * fraction).toDouble())
-            val outer = radius - stroke * .05f
-            val inner = outer - 3.dp.toPx()
-            drawLine(colors.onSurfaceVariant.copy(alpha = .72f), Offset(cx + kotlin.math.cos(tickAngle).toFloat() * inner, cy + kotlin.math.sin(tickAngle).toFloat() * inner), Offset(cx + kotlin.math.cos(tickAngle).toFloat() * outer, cy + kotlin.math.sin(tickAngle).toFloat() * outer), 1.dp.toPx())
-        }
-        val angle = Math.toRadians((135f + 270f * normalized).toDouble())
+        val angle = Math.toRadians(scale.angleAt(normalized).toDouble())
         val direction = Offset(kotlin.math.cos(angle).toFloat(), kotlin.math.sin(angle).toFloat())
         val perpendicular = Offset(-direction.y, direction.x)
         val tip = Offset(cx, cy) + direction * (dialSize / 2f)
@@ -580,32 +581,27 @@ private fun GaugeDial(type: GaugeType, value: Float?, modifier: Modifier = Modif
             drawCircle(colors.onSurfaceVariant, 10.dp.toPx(), Offset(cx, cy))
         }
         drawIntoCanvas { canvas ->
-            val tickCount = type.tickCount
+            val ticks = scale.ticks
             val readableTickSize = 12.sp.toPx()
             val tickPaint = NativePaint(NativePaint.ANTI_ALIAS_FLAG).apply { color = colors.onSurfaceVariant.toArgb(); textAlign = NativePaint.Align.CENTER; textSize = readableTickSize }
-            val tickLabels = (0 until tickCount).map { index ->
-                val fraction = if (tickCount <= 1) 0f else index.toFloat() / (tickCount - 1)
-                formatGaugeTickLabel(type.minValue + (type.maxValue - type.minValue) * fraction)
-            }
+            val tickLabels = ticks.map(scale::format)
             tickPaint.textSize = readableTickSize
             val largestReadableTickWidth = tickLabels.maxOfOrNull { tickPaint.measureText(it) } ?: 0f
             val tickLabelRadius = radius - stroke / 2f - 11.dp.toPx()
-            val labelCapacity = (2..tickCount).lastOrNull { count ->
-                val halfStepAngle = Math.toRadians((135f / (count - 1)).toDouble())
+            val labelCapacity = (2..ticks.size).lastOrNull { count ->
+                val halfStepAngle = Math.toRadians((scale.sweepFor(1f) / (2f * (count - 1))).toDouble())
                 tickLabelRadius * 2f * kotlin.math.sin(halfStepAngle).toFloat() >= largestReadableTickWidth + 18.dp.toPx()
-            } ?: minOf(2, tickCount)
-            val selectedTickIndices = selectGaugeTickLabelIndices(tickCount, labelCapacity)
+            } ?: minOf(2, ticks.size)
+            val selectedTickIndices = selectGaugeTickLabelIndices(ticks.size, labelCapacity)
             tickPaint.textSize = readableTickSize
             selectedTickIndices.forEach { index ->
-                val fraction = if (tickCount <= 1) 0f else index.toFloat() / (tickCount - 1)
-                val angle = Math.toRadians((135f + 270f * fraction).toDouble())
+                val tick = ticks[index]
+                val angle = Math.toRadians(tick.angleDegrees.toDouble())
                 canvas.nativeCanvas.drawText(tickLabels[index], cx + kotlin.math.cos(angle).toFloat() * tickLabelRadius, cy + kotlin.math.sin(angle).toFloat() * tickLabelRadius + tickPaint.textSize * .35f, tickPaint)
             }
         }
     }
 }
-
-internal fun formatGaugeTickLabel(value: Float): String = String.format(Locale.getDefault(), "%.0f", value)
 
 internal fun selectGaugeTickLabelIndices(tickCount: Int, labelCount: Int): List<Int> {
     if (tickCount <= 0 || labelCount <= 0) return emptyList()

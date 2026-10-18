@@ -63,6 +63,7 @@ import androidx.test.platform.app.InstrumentationRegistry
 import java.io.File
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNotEquals
+import org.junit.Assert.assertTrue
 import org.junit.Rule
 import org.junit.Test
 import kotlinx.coroutines.runBlocking
@@ -74,6 +75,7 @@ import org.secu3.android.db.models.GaugeState
 import org.secu3.android.db.models.IndicatorState
 import org.secu3.android.ui.compose.SecuComposeTheme
 import org.secu3.android.ui.sensors.models.GaugeItem
+import org.secu3.android.ui.sensors.models.GaugeScale
 import org.secu3.android.ui.sensors.models.GaugeType
 import org.secu3.android.ui.sensors.models.IndicatorItem
 import org.secu3.android.ui.sensors.models.IndicatorType
@@ -82,7 +84,55 @@ class SensorsScreenTest {
     @get:Rule val compose = createComposeRule()
     private val context = InstrumentationRegistry.getInstrumentation().targetContext
 
-
+    @Test fun modernDialLabelsUseReadableActualTickValuesWithoutClippingOrOverlap() {
+        val expectedCounts = mapOf(
+            GaugeType.RPM to 5,
+            GaugeType.MAP to 7,
+            GaugeType.TEMPERATURE to 5,
+            GaugeType.CURRENT_ANGLE to 8,
+        )
+        val types = expectedCounts.keys.toList()
+        val faceRadius = with(compose.density) { 112.dp.toPx() / 2f - 5.dp.toPx() }
+        val halfStroke = with(compose.density) { 2.5.dp.toPx() }
+        val bandGap = with(compose.density) { 3.dp.toPx() }
+        val maxLabelCenterX = with(compose.density) { 112.dp.toPx() / 2f + 14.dp.toPx() - 2.dp.toPx() }
+        val labelGap = with(compose.density) { 3.dp.toPx() }
+        for (type in types) {
+            val measured = measureNewGaugeDial(GaugeScale(type), 112.dp, compose.density, 14.dp)
+            val labels = measured.labels
+            val indices = labels.map { it.index }
+            assertEquals("${type.name} fitted tick labels", expectedCounts.getValue(type), labels.size)
+            assertEquals("${type.name} min endpoint", 0, indices.first())
+            assertEquals("${type.name} max endpoint", type.tickCount - 1, indices.last())
+            assertTrue("${type.name} should include intermediate values", labels.size >= 4)
+            assertTrue("${type.name} should retain its midpoint", indices.contains((type.tickCount - 1) / 2))
+            labels.forEach { label ->
+                val fraction = label.index.toFloat() / (type.tickCount - 1)
+                val expected = type.minValue + (type.maxValue - type.minValue) * fraction
+                assertEquals(expected, label.value, .001f)
+                assertEquals(GaugeScale.formatValue(expected), label.text)
+                assertTrue("${type.name} label ${label.text} should fit the card overflow", kotlin.math.abs(label.centerX) + label.width / 2f <= maxLabelCenterX)
+                if (label.index == 0 || label.index == type.tickCount - 1) {
+                    val endpointTop = label.centerY - label.height / 2f
+                    assertEquals("${type.name} endpoint label should clear the range band", faceRadius / kotlin.math.sqrt(2f) + halfStroke + bandGap, endpointTop, 1f)
+                } else {
+                    val fraction = label.index.toFloat() / (type.tickCount - 1)
+                    val angle = Math.toRadians(135.0 + 270.0 * fraction)
+                    val projectedHalfExtent = kotlin.math.abs(kotlin.math.cos(angle).toFloat()) * label.width / 2f +
+                        kotlin.math.abs(kotlin.math.sin(angle).toFloat()) * label.height / 2f
+                    val labelRadius = kotlin.math.hypot(label.centerX, label.centerY)
+                    assertTrue("${type.name} label ${label.text} should clear the range band", labelRadius - projectedHalfExtent >= faceRadius + halfStroke + bandGap - 1f)
+                }
+            }
+            for (first in labels.indices) for (second in first + 1 until labels.size) {
+                val one = labels[first]
+                val two = labels[second]
+                val clearX = kotlin.math.abs(one.centerX - two.centerX) >= (one.width + two.width) / 2f + labelGap
+                val clearY = kotlin.math.abs(one.centerY - two.centerY) >= (one.height + two.height) / 2f + labelGap
+                assertTrue("${type.name} labels ${one.text} and ${two.text} overlap", clearX || clearY)
+            }
+        }
+    }
 
     @Test fun rendersPersistedGaugeAndIndicatorValuesAndActiveState() {
         compose.setContent { SecuComposeTheme {
@@ -422,7 +472,9 @@ class SensorsScreenTest {
         val precise = cardBounds()
         val preciseDial = dialBounds()
         org.junit.Assert.assertTrue("precise arc should omit the classic footer", precise.height < classic.height)
-        assertEquals("precise arc keeps the classic dial width", classicDial.width, preciseDial.width, 1f)
+        val labelOverflow = with(compose.density) { 28.dp.toPx() }
+        assertEquals("precise arc preserves the classic face width", classicDial.width, preciseDial.width - labelOverflow, 1f)
+        org.junit.Assert.assertTrue("precise arc label canvas stays inside the card", preciseDial.left >= precise.left && preciseDial.right <= precise.right)
         org.junit.Assert.assertTrue("precise arc allocates only the outside-label inset below the full-size circle", preciseDial.height > classicDial.height)
 
         compose.runOnIdle { style.value = SensorGaugeStyle.ThinNeedle }
@@ -430,7 +482,8 @@ class SensorsScreenTest {
         val thin = cardBounds()
         val thinDial = dialBounds()
         org.junit.Assert.assertTrue("thin needle keeps the full-size circle and visible footer", thin.height > classic.height)
-        assertEquals("thin needle keeps the classic dial width", classicDial.width, thinDial.width, 1f)
+        assertEquals("thin needle preserves the classic face width", classicDial.width, thinDial.width - labelOverflow, 1f)
+        org.junit.Assert.assertTrue("thin needle label canvas stays inside the card", thinDial.left >= thin.left && thinDial.right <= thin.right)
         assertEquals("thin needle allocates the same outside-label inset", preciseDial.height, thinDial.height, 1f)
 
         compose.runOnIdle { numeric.value = true }
@@ -577,12 +630,17 @@ class SensorsScreenTest {
         }
     }
 
-    @Test fun tickLabelsRoundToWholeNumbersUsingDefaultLocale() {
+    @Test fun tickLabelsUseSharedIntegerAndFractionalFormatting() {
         val originalLocale = Locale.getDefault()
         try {
             Locale.setDefault(Locale.US)
-            assertEquals("148", formatGaugeTickLabel(147.6f))
-            assertEquals("-7", formatGaugeTickLabel(-7.4f))
+            assertEquals("147.6", GaugeScale.formatValue(147.6f))
+            assertEquals("-7.4", GaugeScale.formatValue(-7.4f))
+            assertEquals("147", GaugeScale.formatValue(147f))
+            assertEquals("0.5", GaugeScale.formatValue(GaugeScale(GaugeType.ADD1).ticks[1].value))
+            assertEquals("-7.5", GaugeScale.formatValue(-7.5f))
+            Locale.setDefault(Locale.GERMANY)
+            assertEquals("-7,5", GaugeScale.formatValue(-7.5f))
         } finally {
             Locale.setDefault(originalLocale)
         }

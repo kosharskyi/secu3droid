@@ -28,8 +28,12 @@ The logger may stop while packet writes run outside the Sensors route. The ViewM
 
 ## Global dial style applies only to modern dial cards
 
-The saved gauge style selects the dial renderer for modern configured gauges. It must not override the old sensors view or a gauge's independent numeric-view setting. Both new dial circles use the classic dial's full-width radius; their content bounds add a font-metric-derived inset for 12sp scale labels outside the range band. Precise-arc readout bounds stay inside the blue arc with 8dp clearance, and the blue inner arc remains 3dp from the outer range band. Thin-needle readout lives in a natural footer below the face. The shared 150dp minimum grid cell (scaled up with accessibility font size) keeps the precise-arc readout legible; the measured window width alone determines the number of cells.
+The saved gauge style selects the dial renderer for modern configured gauges. It must not override the old sensors view or a gauge's independent numeric-view setting. Both new dial circles use the classic dial's full-width radius. Their 12sp tick values are selected from actual `GaugeType.tickCount` positions with endpoints and a central configured tick retained; a readable non-overlapping subset is shown, and major marks stay on configured tick positions. The drawing canvas can use up to 14dp of the card's existing horizontal padding for endpoint labels without changing the face radius. Precise-arc readout bounds stay inside the blue arc with 8dp clearance, and the blue inner arc remains 3dp from the outer range band. Thin-needle readout lives in a natural footer below the face. The shared 150dp minimum grid cell (scaled up with accessibility font size) keeps the precise-arc readout legible; the measured window width alone determines the number of cells.
 
 ## Thin-needle endpoints stay clear of major ticks
 
 The rounded needle tip stops at least 2dp before major tick marks. Cap its length at `radius - 14dp` as well as 80% of the dial radius; the extra clearance accounts for the tick's inner edge and the needle's round cap.
+
+## All dial styles share the configured gauge scale
+
+`GaugeScale` is derived from `GaugeType` and supplies inclusive configured ticks, range normalization, sections, angles, and shared tick-label text to all dial renderers. Renderer-specific label selection only controls which configured values fit; it must not invent scale positions. Keep PreciseArc ticks within the outer 5dp range band so they cannot close the 3dp gap to the blue inner arc; ThinNeedle marks keep their inner endpoint at `radius - 10dp` to preserve needle-tip clearance.

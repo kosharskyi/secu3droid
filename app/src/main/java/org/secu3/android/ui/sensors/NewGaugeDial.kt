@@ -36,59 +36,192 @@ import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.Density
 import androidx.compose.ui.unit.sp
 import org.secu3.android.models.SensorGaugeStyle
-import org.secu3.android.ui.sensors.models.GaugeType
-import java.util.Locale
+import org.secu3.android.ui.sensors.models.GaugeScale
+import org.secu3.android.ui.sensors.models.GaugeTick
+import kotlin.math.abs
 import kotlin.math.cos
 import kotlin.math.sin
 import kotlin.math.sqrt
 
-internal data class NewGaugeDialMeasure(val height: Dp, val centerY: Dp)
+internal data class NewGaugeDialLabel(val tick: GaugeTick, val text: String, val centerX: Float, val centerY: Float, val width: Float, val height: Float) {
+    val index: Int get() = tick.index
+    val value: Float get() = tick.value
+}
+internal data class NewGaugeDialMeasure(val height: Dp, val centerY: Dp, val labels: List<NewGaugeDialLabel>)
 
-internal fun measureNewGaugeDial(width: Dp, density: Density): NewGaugeDialMeasure {
+internal fun measureNewGaugeDial(
+    scale: GaugeScale,
+    width: Dp,
+    density: Density,
+    labelOverflow: Dp = 14.dp,
+): NewGaugeDialMeasure {
     val labelPaint = NativePaint(NativePaint.ANTI_ALIAS_FLAG).apply {
         textSize = with(density) { 12.sp.toPx() }
     }
     val metrics = labelPaint.fontMetrics
-    val radius = with(density) { width.toPx() / 2f - 5.dp.toPx() }
+    val widthPx = with(density) { width.toPx() }
+    val overflowPx = with(density) { labelOverflow.toPx() }
+    val radius = widthPx / 2f - with(density) { 5.dp.toPx() }
     val halfStroke = with(density) { 2.5.dp.toPx() }
     val labelGap = with(density) { 3.dp.toPx() }
     val edgePadding = with(density) { 2.dp.toPx() }
-    val centerY = radius + halfStroke + labelGap + (metrics.descent - metrics.ascent) + edgePadding
-    val lastLabelBaseline = centerY + radius / sqrt(2f) + halfStroke + labelGap - metrics.ascent
-    val height = lastLabelBaseline + metrics.descent + edgePadding
-    return with(density) { NewGaugeDialMeasure(height.toDp(), centerY.toDp()) }
+    val textHeight = metrics.descent - metrics.ascent
+    val labels = placeNewGaugeDialLabels(
+        scale = scale,
+        labelPaint = labelPaint,
+        metrics = metrics,
+        radius = radius,
+        canvasWidth = widthPx + overflowPx * 2f,
+        halfStroke = halfStroke,
+        labelGap = labelGap,
+        edgePadding = edgePadding,
+        laneStep = with(density) { 4.dp.toPx() },
+    )
+    val top = labels.minOfOrNull { it.centerY - it.height / 2f } ?: -radius - halfStroke - labelGap - textHeight
+    val bottom = labels.maxOfOrNull { it.centerY + it.height / 2f } ?: radius / sqrt(2f) + halfStroke + labelGap + textHeight
+    val centerY = edgePadding - top
+    val height = centerY + bottom + edgePadding
+    return with(density) { NewGaugeDialMeasure(height.toDp(), centerY.toDp(), labels) }
+}
+private fun placeNewGaugeDialLabels(
+    scale: GaugeScale,
+    labelPaint: NativePaint,
+    metrics: NativePaint.FontMetrics,
+    radius: Float,
+    canvasWidth: Float,
+    halfStroke: Float,
+    labelGap: Float,
+    edgePadding: Float,
+    laneStep: Float,
+): List<NewGaugeDialLabel> {
+    val ticks = scale.ticks
+    if (ticks.isEmpty()) return emptyList()
+    val textHeight = metrics.descent - metrics.ascent
+    val endpointRadius = radius / sqrt(2f)
+    val middleIndex = (ticks.lastIndex / 2f).toInt()
+    val required = listOf(0, middleIndex, ticks.lastIndex).distinct()
+
+    fun place(indices: List<Int>): List<NewGaugeDialLabel>? {
+        val placed = mutableListOf<NewGaugeDialLabel>()
+        fun fits(label: NewGaugeDialLabel): Boolean {
+            val halfWidth = label.width / 2f
+            if (abs(label.centerX) + halfWidth > canvasWidth / 2f - edgePadding) return false
+            return placed.none { other ->
+                val separatedHorizontally = abs(label.centerX - other.centerX) >= (label.width + other.width) / 2f + labelGap
+                val separatedVertically = abs(label.centerY - other.centerY) >= (label.height + other.height) / 2f + labelGap
+                !separatedHorizontally && !separatedVertically
+            }
+        }
+
+        // Keep min/max labels in the existing lower endpoint positions, which fit the phone card width.
+        for (index in listOf(0, ticks.lastIndex).distinct().filter { it in indices }) {
+            val tick = ticks[index]
+            val angle = Math.toRadians(tick.angleDegrees.toDouble())
+            val text = scale.format(tick)
+            val label = NewGaugeDialLabel(
+                tick = tick,
+                text = text,
+                centerX = cos(angle).toFloat() * endpointRadius,
+                centerY = endpointRadius + halfStroke + labelGap + textHeight / 2f,
+                width = labelPaint.measureText(text),
+                height = textHeight,
+            )
+            if (!fits(label)) return null
+            placed += label
+        }
+
+        // Put the midpoint first, then fit other values in lanes outside the band as needed.
+        val interiorIndices = indices.filter { it !in listOf(0, ticks.lastIndex) }
+            .sortedWith(compareBy<Int> { abs(it - middleIndex) }.thenBy { it })
+        for (index in interiorIndices) {
+            val tick = ticks[index]
+            val angle = Math.toRadians(tick.angleDegrees.toDouble())
+            val text = scale.format(tick)
+            val textWidth = labelPaint.measureText(text)
+            val radialHalfExtent = abs(cos(angle).toFloat()) * textWidth / 2f + abs(sin(angle).toFloat()) * textHeight / 2f
+            val baseRadius = radius + halfStroke + labelGap + radialHalfExtent
+            var candidate: NewGaugeDialLabel? = null
+            for (lane in 0..2) {
+                val labelRadius = baseRadius + lane * laneStep
+                val label = NewGaugeDialLabel(
+                    tick = tick,
+                    text = text,
+                    centerX = cos(angle).toFloat() * labelRadius,
+                    centerY = sin(angle).toFloat() * labelRadius,
+                    width = textWidth,
+                    height = textHeight,
+                )
+                if (fits(label)) {
+                    candidate = label
+                    break
+                }
+            }
+            if (candidate == null) return null
+            placed += candidate
+        }
+        return placed
+    }
+
+    var selected = required
+    var placedLabels = place(selected) ?: return emptyList()
+    while (selected.size < ticks.size) {
+        val candidate = (ticks.indices - selected.toSet()).sortedWith(
+            compareByDescending<Int> { index -> selected.minOf { abs(index - it) } }.thenBy { it },
+        ).firstNotNullOfOrNull { index ->
+            val expanded = (selected + index).sorted()
+            place(expanded)?.let { expanded to it }
+        } ?: break
+        selected = candidate.first
+        placedLabels = candidate.second
+    }
+    return placedLabels.sortedBy { it.index }
 }
 
 @Composable
 internal fun NewGaugeDial(
-    type: GaugeType,
+    scale: GaugeScale,
     value: Float?,
     formattedValue: String,
     unit: String,
     style: SensorGaugeStyle,
+    dialMeasure: NewGaugeDialMeasure,
     modifier: Modifier = Modifier,
+    labelOverflow: Dp = 14.dp,
 ) {
     val context = LocalContext.current
     val resources = LocalResources.current
-    val sections = remember(type, resources, context.theme) {
-        type.sections.map { section ->
+    val sections = remember(scale, resources, context.theme) {
+        scale.sections.map { section ->
             GaugeRange(section.start, section.end, Color(resources.getColor(section.color, context.theme)))
         }
     }
     val colors = MaterialTheme.colorScheme
-    val normalized = value?.let { ((it - type.minValue) / (type.maxValue - type.minValue)).coerceIn(0f, 1f) }
+    val density = LocalDensity.current
+    val normalized = scale.normalized(value)
     BoxWithConstraints(modifier) {
-        Canvas(Modifier.fillMaxSize()) { drawGaugeCanvas(type, colors, sections, normalized, style) }
+        val faceWidth = maxWidth - labelOverflow * 2f
+        Canvas(Modifier.fillMaxSize()) {
+            drawGaugeCanvas(
+                scale = scale,
+                colors = colors,
+                sections = sections,
+                normalized = normalized,
+                style = style,
+                faceWidth = size.width - labelOverflow.toPx() * 2f,
+                arcCenterY = with(density) { dialMeasure.centerY.toPx() },
+                labels = dialMeasure.labels,
+            )
+        }
         if (style == SensorGaugeStyle.PreciseArc) {
             val outerStrokeWidth = 5.dp
             val blueStrokeWidth = 5.dp
             val interArcGap = 3.dp
             val textClearance = 8.dp
-            val outerRadius = maxWidth / 2f - 5.dp
+            val outerRadius = faceWidth / 2f - 5.dp
             val blueCenterRadius = outerRadius - outerStrokeWidth / 2f - interArcGap - blueStrokeWidth / 2f
             val blueInnerEdgeRadius = blueCenterRadius - blueStrokeWidth / 2f
             val readoutSize = (blueInnerEdgeRadius - textClearance) * sqrt(2f)
-            val dialCenterY = measureNewGaugeDial(maxWidth, LocalDensity.current).centerY
+            val dialCenterY = dialMeasure.centerY
             GaugeReadout(
                 formattedValue = formattedValue,
                 unit = unit,
@@ -141,29 +274,25 @@ private fun GaugeReadout(
 }
 
 private fun androidx.compose.ui.graphics.drawscope.DrawScope.drawGaugeCanvas(
-    type: GaugeType,
+    scale: GaugeScale,
     colors: androidx.compose.material3.ColorScheme,
     sections: List<GaugeRange>,
     normalized: Float?,
     style: SensorGaugeStyle,
+    faceWidth: Float,
+    arcCenterY: Float,
+    labels: List<NewGaugeDialLabel>,
 ) {
-    val width = size.width
     val outerStrokeWidth = 5.dp.toPx()
     val blueStrokeWidth = 5.dp.toPx()
-    val centerX = width / 2f
-    val radius = width / 2f - 5.dp.toPx()
-    val textPaint = NativePaint(NativePaint.ANTI_ALIAS_FLAG).apply { textSize = 12.sp.toPx() }
-    val metrics = textPaint.fontMetrics
-    val halfStroke = outerStrokeWidth / 2f
-    val labelGap = 3.dp.toPx()
-    val edgePadding = 2.dp.toPx()
-    val arcCenterY = radius + halfStroke + labelGap + (metrics.descent - metrics.ascent) + edgePadding
+    val centerX = size.width / 2f
+    val radius = faceWidth / 2f - 5.dp.toPx()
     val arcRect = Rect(centerX - radius, arcCenterY - radius, centerX + radius, arcCenterY + radius)
 
     drawArc(
         color = colors.surfaceVariant,
-        startAngle = 135f,
-        sweepAngle = 270f,
+        startAngle = GaugeScale.START_ANGLE_DEGREES,
+        sweepAngle = GaugeScale.SWEEP_ANGLE_DEGREES,
         useCenter = false,
         topLeft = arcRect.topLeft,
         size = arcRect.size,
@@ -172,8 +301,8 @@ private fun androidx.compose.ui.graphics.drawscope.DrawScope.drawGaugeCanvas(
     sections.forEach { section ->
         drawArc(
             color = section.color.copy(alpha = .78f),
-            startAngle = 135f + 270f * section.start,
-            sweepAngle = 270f * (section.end - section.start),
+            startAngle = scale.angleAt(section.start),
+            sweepAngle = scale.sweepFor(section.end - section.start),
             useCenter = false,
             topLeft = arcRect.topLeft,
             size = arcRect.size,
@@ -188,19 +317,20 @@ private fun androidx.compose.ui.graphics.drawscope.DrawScope.drawGaugeCanvas(
             val innerRect = Rect(centerX - innerRadius, arcCenterY - innerRadius, centerX + innerRadius, arcCenterY + innerRadius)
             if (progress > 0f) drawArc(
                 color = colors.primary,
-                startAngle = 135f,
-                sweepAngle = 270f * progress,
+                startAngle = GaugeScale.START_ANGLE_DEGREES,
+                sweepAngle = scale.sweepFor(progress),
                 useCenter = false,
                 topLeft = innerRect.topLeft,
                 size = innerRect.size,
                 style = Stroke(width = blueStrokeWidth, cap = androidx.compose.ui.graphics.StrokeCap.Round),
             )
         }
-        drawDialLabels(type, colors.onSurfaceVariant, centerX, arcCenterY, radius)
+        drawGaugeTicks(scale, colors.onSurfaceVariant, centerX, arcCenterY, radius, preciseArc = true)
+        drawDialLabels(labels, colors.onSurfaceVariant, centerX, arcCenterY)
     } else {
-        drawThinTicks(colors.onSurfaceVariant, centerX, arcCenterY, radius)
+        drawGaugeTicks(scale, colors.onSurfaceVariant, centerX, arcCenterY, radius, preciseArc = false)
         normalized?.let { progress ->
-            val angle = Math.toRadians(135.0 + 270.0 * progress)
+            val angle = Math.toRadians(scale.angleAt(progress).toDouble())
             val needleLength = minOf(radius * .8f, radius - 14.dp.toPx()).coerceAtLeast(0f)
             drawLine(
                 color = colors.primary,
@@ -211,65 +341,63 @@ private fun androidx.compose.ui.graphics.drawscope.DrawScope.drawGaugeCanvas(
             )
             drawCircle(colors.primary, radius = 5.dp.toPx(), center = Offset(centerX, arcCenterY))
         }
-        drawDialLabels(type, colors.onSurfaceVariant, centerX, arcCenterY, radius)
+        drawDialLabels(labels, colors.onSurfaceVariant, centerX, arcCenterY)
     }
 }
 
 private data class GaugeRange(val start: Float, val end: Float, val color: Color)
 
-private fun androidx.compose.ui.graphics.drawscope.DrawScope.drawThinTicks(
+private fun androidx.compose.ui.graphics.drawscope.DrawScope.drawGaugeTicks(
+    scale: GaugeScale,
     tickColor: Color,
     centerX: Float,
     centerY: Float,
     radius: Float,
+    preciseArc: Boolean,
 ) {
-    listOf(0f, .25f, .5f, .75f, 1f).forEach { fraction ->
-        val angle = Math.toRadians(135.0 + 270.0 * fraction)
-        val outer = radius - 4.dp.toPx()
-        val inner = outer - if (fraction == 0f || fraction == .5f || fraction == 1f) 6.dp.toPx() else 3.dp.toPx()
-        drawLine(
-            tickColor,
-            Offset(centerX + cos(angle).toFloat() * inner, centerY + sin(angle).toFloat() * inner),
-            Offset(centerX + cos(angle).toFloat() * outer, centerY + sin(angle).toFloat() * outer),
-            strokeWidth = 1.dp.toPx(),
-        )
-    }
-}
-
-private fun androidx.compose.ui.graphics.drawscope.DrawScope.drawDialLabels(
-    type: GaugeType,
-    textColor: Color,
-    centerX: Float,
-    centerY: Float,
-    radius: Float,
-) {
-    val values = listOf(type.minValue, (type.minValue + type.maxValue) / 2f, type.maxValue)
-    val labelPaint = NativePaint(NativePaint.ANTI_ALIAS_FLAG).apply { color = textColor.toArgb(); textSize = 12.sp.toPx() }
-    drawIntoCanvas { canvas ->
-        values.forEachIndexed { index, tickValue ->
-            val fraction = index / 2f
-            val angle = Math.toRadians(135.0 + 270.0 * fraction)
-            val label = formatNewGaugeTickLabel(tickValue)
-            labelPaint.textAlign = NativePaint.Align.CENTER
-            val labelWidth = labelPaint.measureText(label)
-            val endpointRadius = radius / kotlin.math.sqrt(2f)
-            val rawX = if (index == 1) centerX else centerX + cos(angle).toFloat() * endpointRadius
-            val x = rawX.coerceIn(labelWidth / 2f + 2.dp.toPx(), size.width - labelWidth / 2f - 2.dp.toPx())
-            val baseline = if (index == 1) {
-                centerY - radius - 2.5.dp.toPx() - 3.dp.toPx() - labelPaint.fontMetrics.descent
-            } else {
-                centerY + endpointRadius + 2.5.dp.toPx() + 3.dp.toPx() - labelPaint.fontMetrics.ascent
-            }
-            canvas.nativeCanvas.drawText(label, x, baseline, labelPaint)
+    if (preciseArc) {
+        // Configured ticks share their values and positions; this style keeps each mark inside the range band.
+        scale.ticks.forEach { tick ->
+            drawGaugeTick(tick.angleDegrees, tickColor, centerX, centerY, radius + 1.75.dp.toPx(), radius - 1.75.dp.toPx(), 1.5.dp.toPx())
+        }
+    } else {
+        // Keep the configured marks' inner edge at radius - 10dp for needle-tip clearance.
+        scale.ticks.forEach { tick ->
+            drawGaugeTick(tick.angleDegrees, tickColor, centerX, centerY, radius - 4.dp.toPx(), radius - 10.dp.toPx(), 1.5.dp.toPx())
         }
     }
 }
 
-internal fun formatNewGaugeTickLabel(value: Float): String {
-    val rounded = kotlin.math.round(value)
-    return if (kotlin.math.abs(value - rounded) < .001f) {
-        String.format(Locale.getDefault(), "%.0f", value)
-    } else {
-        String.format(Locale.getDefault(), "%.1f", value)
+private fun androidx.compose.ui.graphics.drawscope.DrawScope.drawGaugeTick(
+    angleDegrees: Float,
+    color: Color,
+    centerX: Float,
+    centerY: Float,
+    outerRadius: Float,
+    innerRadius: Float,
+    strokeWidth: Float,
+) {
+    val angle = Math.toRadians(angleDegrees.toDouble())
+    drawLine(
+        color,
+        Offset(centerX + cos(angle).toFloat() * innerRadius, centerY + sin(angle).toFloat() * innerRadius),
+        Offset(centerX + cos(angle).toFloat() * outerRadius, centerY + sin(angle).toFloat() * outerRadius),
+        strokeWidth = strokeWidth,
+    )
+}
+
+private fun androidx.compose.ui.graphics.drawscope.DrawScope.drawDialLabels(
+    labels: List<NewGaugeDialLabel>,
+    textColor: Color,
+    centerX: Float,
+    centerY: Float,
+) {
+    val labelPaint = NativePaint(NativePaint.ANTI_ALIAS_FLAG).apply { color = textColor.toArgb(); textSize = 12.sp.toPx() }
+    drawIntoCanvas { canvas ->
+        labelPaint.textAlign = NativePaint.Align.CENTER
+        val baselineOffset = (labelPaint.fontMetrics.ascent + labelPaint.fontMetrics.descent) / 2f
+        labels.forEach { label ->
+            canvas.nativeCanvas.drawText(label.text, centerX + label.centerX, centerY + label.centerY - baselineOffset, labelPaint)
+        }
     }
 }
