@@ -12,7 +12,7 @@ Cards keep the same column width, but their heights follow the active content. N
 
 ## Gauge and indicator columns follow the available window width
 
-`SensorsScreen` derives a shared column count from its measured content width, using a 150dp minimum cell width scaled up with accessibility font size. The configured preference no longer caps the count. Keep both grids in sync and give every cell a fixed `maxWidth / columnCount` width; `SpaceEvenly` centers incomplete last rows without shrinking their cards. Width changes from rotation, split-screen, or window resizing should reflow the existing item order without persisting a new layout preference. Drag target positions come from laid-out cards, so reorder previews must continue to use those measured bounds after partial rows are centered.
+`SensorsScreen` derives a shared column count from its measured content width, using a 150dp minimum cell width scaled up with accessibility font size. The configured preference no longer caps the count. Keep both grids in sync and give every cell a fixed `maxWidth / columnCount` width. Rows start at the first column even when the last row is incomplete or contains one card; full rows still fill the available width, and card contents remain centered within their cells. Width changes from rotation, split-screen, or window resizing should reflow the existing item order without persisting a new layout preference. Drag target positions come from laid-out cards, so reorder previews must continue to use those measured bounds after partial rows move to the first column.
 
 ## Raw ADC values retain their packet formatting and units
 

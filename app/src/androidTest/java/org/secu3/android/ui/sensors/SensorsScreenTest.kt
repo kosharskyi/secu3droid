@@ -329,28 +329,30 @@ class SensorsScreenTest {
             compose.waitForIdle()
             val gaugeBounds = gauges.map { compose.onNodeWithTag("gauge-${it.state.gaugeType.name}").getUnclippedBoundsInRoot() }
             val indicatorBounds = indicators.map { compose.onNodeWithTag("indicator-${it.state.indicatorType.name}").getUnclippedBoundsInRoot() }
-            val host = compose.onNodeWithTag("adaptive-host").getUnclippedBoundsInRoot()
             val grid = compose.onNodeWithTag("gauges-grid").getUnclippedBoundsInRoot()
             val minimumColumnWidth = 150f * fontScale.value.coerceAtLeast(1f)
             val expected = ((grid.right - grid.left).value / minimumColumnWidth).toInt().coerceAtLeast(1)
-            val hostCenter = (host.left + host.right).value / 2f
             val gaugeRows = gaugeBounds.take(expected).map { it.top }.distinct().size
             val indicatorRows = indicatorBounds.take(expected).map { it.top }.distinct().size
             assertEquals("gauges should honor 150dp × font-scale cells: requested=${width.value}dp grid=${(grid.right - grid.left).value}dp fontScale=${fontScale.value} expectedColumns=$expected cardTops=${gaugeBounds.map { it.top.value }}", 1, gaugeRows)
             assertEquals("indicators should honor 150dp × font-scale cells: requested=${width.value}dp grid=${(grid.right - grid.left).value}dp fontScale=${fontScale.value} expectedColumns=$expected cardTops=${indicatorBounds.map { it.top.value }}", 1, indicatorRows)
             assertEquals((gaugeBounds.first().right - gaugeBounds.first().left).value, (gaugeBounds[expected - 1].right - gaugeBounds[expected - 1].left).value, 1f)
             assertEquals((indicatorBounds.first().right - indicatorBounds.first().left).value, (indicatorBounds[expected - 1].right - indicatorBounds[expected - 1].left).value, 1f)
+            assertEquals("full gauge row begins in the first cell", grid.left.value + 8f, gaugeBounds.first().left.value, 1f)
+            assertEquals("full gauge row fills its last cell", grid.right.value - 8f, gaugeBounds[expected - 1].right.value, 1f)
+            assertEquals("full indicator row begins in the first cell", grid.left.value + 8f, indicatorBounds.first().left.value, 1f)
+            assertEquals("full indicator row fills its last cell", grid.right.value - 8f, indicatorBounds[expected - 1].right.value, 1f)
             if (gauges.size > expected) org.junit.Assert.assertTrue(gaugeBounds[expected].top > gaugeBounds.first().top)
             if (indicators.size > expected) org.junit.Assert.assertTrue(indicatorBounds[expected].top > indicatorBounds.first().top)
             // An incomplete last row keeps the same cell width as a full row.
             assertEquals((gaugeBounds.first().right - gaugeBounds.first().left).value, (gaugeBounds.last().right - gaugeBounds.last().left).value, 1f)
             assertEquals((indicatorBounds.first().right - indicatorBounds.first().left).value, (indicatorBounds.last().right - indicatorBounds.last().left).value, 1f)
-            val gaugesInLastRow = gaugeBounds.takeLast(gauges.size % expected).ifEmpty { gaugeBounds.takeLast(expected) }
-            val indicatorsInLastRow = indicatorBounds.takeLast(indicators.size % expected).ifEmpty { indicatorBounds.takeLast(expected) }
-            val gaugeRowCenter = gaugesInLastRow.map { (it.left + it.right).value / 2f }.average().toFloat()
-            val indicatorRowCenter = indicatorsInLastRow.map { (it.left + it.right).value / 2f }.average().toFloat()
-            assertEquals("partial gauge rows stay centered", hostCenter, gaugeRowCenter, 1f)
-            assertEquals("partial indicator rows stay centered", hostCenter, indicatorRowCenter, 1f)
+            val gaugesInLastRow = gauges.size % expected
+            val indicatorsInLastRow = indicators.size % expected
+            val gaugeLastRowStart = if (gaugesInLastRow == 0) gauges.size - expected else gauges.size - gaugesInLastRow
+            val indicatorLastRowStart = if (indicatorsInLastRow == 0) indicators.size - expected else indicators.size - indicatorsInLastRow
+            assertEquals("last gauge row starts below the first column", gaugeBounds.first().left.value, gaugeBounds[gaugeLastRowStart].left.value, 1f)
+            assertEquals("last indicator row starts below the first column", indicatorBounds.first().left.value, indicatorBounds[indicatorLastRowStart].left.value, 1f)
         }
 
         listOf(320, 360, 280, 600, 900).forEach { availableWidth ->
@@ -361,7 +363,7 @@ class SensorsScreenTest {
         assertColumnCount()
     }
 
-    @Test fun centeredPartialRowsRemainDragTargetsForBothGrids() {
+    @Test fun partialRowsStartInTheFirstColumnAndRemainDragTargetsForBothGrids() {
         val gauges = listOf(
             GaugeItem(GaugeState(1, GaugeType.RPM, 0, true), "1200"),
             GaugeItem(GaugeState(2, GaugeType.VOLTAGE, 1, true), "12.4"),
@@ -376,7 +378,7 @@ class SensorsScreenTest {
         var savedIndicators: List<IndicatorState>? = null
         compose.setContent {
             SecuComposeTheme {
-                Box(Modifier.width(360.dp).testTag("centered-grid-host")) {
+                Box(Modifier.requiredWidth(360.dp).testTag("partial-grid-host")) {
                     SensorsScreen(
                         gauges, indicators, null, null, {}, {}, {}, {}, {}, {}, {}, {}, {},
                         { savedGauges = it }, { savedIndicators = it },
@@ -385,15 +387,14 @@ class SensorsScreenTest {
             }
         }
 
-        fun assertCenteredLastRow(firstTag: String, lastTag: String) {
-            val host = compose.onNodeWithTag("centered-grid-host").getUnclippedBoundsInRoot()
+        fun assertLastRowStartsAtFirstColumn(firstTag: String, lastTag: String) {
             val first = compose.onNodeWithTag(firstTag).getUnclippedBoundsInRoot()
             val last = compose.onNodeWithTag(lastTag).getUnclippedBoundsInRoot()
             assertEquals((first.right - first.left).value, (last.right - last.left).value, 1f)
-            assertEquals((host.left + host.right).value / 2f, (last.left + last.right).value / 2f, 1f)
+            assertEquals(first.left.value, last.left.value, 1f)
         }
-        assertCenteredLastRow("gauge-RPM", "gauge-MAP")
-        assertCenteredLastRow("indicator-THROTTLE", "indicator-CHECK_ENGINE")
+        assertLastRowStartsAtFirstColumn("gauge-RPM", "gauge-MAP")
+        assertLastRowStartsAtFirstColumn("indicator-THROTTLE", "indicator-CHECK_ENGINE")
 
         fun dragTo(sourceTag: String, targetTag: String) {
             val source = compose.onNodeWithTag(sourceTag).fetchSemanticsNode().boundsInRoot
@@ -410,6 +411,35 @@ class SensorsScreenTest {
         assertEquals(listOf(GaugeType.VOLTAGE, GaugeType.MAP, GaugeType.RPM), savedGauges?.map { it.gaugeType })
         dragTo("indicator-THROTTLE", "indicator-CHECK_ENGINE")
         assertEquals(listOf(IndicatorType.GAS_VALVE, IndicatorType.CHECK_ENGINE, IndicatorType.THROTTLE), savedIndicators?.map { it.indicatorType })
+    }
+
+    @Test fun singleGaugeAndIndicatorStayInFirstColumnAtNormalCellWidth() {
+        compose.setContent {
+            val density = LocalDensity.current.density
+            CompositionLocalProvider(LocalDensity provides Density(density, 1f)) {
+                SecuComposeTheme {
+                    Box(Modifier.requiredWidth(360.dp).testTag("single-card-host")) {
+                        SensorsScreen(
+                            listOf(GaugeItem(GaugeState(1, GaugeType.RPM, 0, true), "1200")),
+                            listOf(IndicatorItem(IndicatorState(1, IndicatorType.THROTTLE, 0), true)),
+                            null, null, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {},
+                        )
+                    }
+                }
+            }
+        }
+
+        val gaugeGrid = compose.onNodeWithTag("gauges-grid").getUnclippedBoundsInRoot()
+        val indicatorGrid = compose.onNodeWithTag("indicators-grid").getUnclippedBoundsInRoot()
+        val gauge = compose.onNodeWithTag("gauge-RPM").getUnclippedBoundsInRoot()
+        val indicator = compose.onNodeWithTag("indicator-THROTTLE").getUnclippedBoundsInRoot()
+        val gaugeCellWidth = (gaugeGrid.right - gaugeGrid.left).value / 2f
+        val indicatorCellWidth = (indicatorGrid.right - indicatorGrid.left).value / 2f
+
+        assertEquals("single gauge occupies the first column", gaugeGrid.left.value + 8f, gauge.left.value, 1f)
+        assertEquals("single gauge keeps the normal padded cell width", gaugeCellWidth - 16f, (gauge.right - gauge.left).value, 1f)
+        assertEquals("single indicator occupies the first column", indicatorGrid.left.value + 8f, indicator.left.value, 1f)
+        assertEquals("single indicator keeps the normal padded cell width", indicatorCellWidth - 16f, (indicator.right - indicator.left).value, 1f)
     }
 
     @Test fun numericGaugeCanSwitchToDialAndDeleteFromCardMenu() {

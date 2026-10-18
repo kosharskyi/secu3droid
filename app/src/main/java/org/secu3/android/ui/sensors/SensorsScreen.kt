@@ -229,7 +229,7 @@ internal fun SensorsScreen(
                 localGauges.chunked(renderColumns).forEach { rowItems ->
                     Row(
                         Modifier.fillMaxWidth().zIndex(if (rowItems.any { activeDragKey == "g:${it.state.gaugeType.name}" }) 1f else 0f),
-                        horizontalArrangement = Arrangement.SpaceEvenly,
+                        horizontalArrangement = Arrangement.Start,
                     ) {
                         rowItems.forEach { item ->
                             val dragKey = "g:${item.state.gaugeType.name}"
@@ -326,7 +326,7 @@ internal fun SensorsScreen(
                 localIndicators.chunked(renderColumns).forEach { rowItems ->
                     Row(
                         Modifier.fillMaxWidth().zIndex(if (rowItems.any { activeDragKey == "i:${it.state.indicatorType.name}" }) 1f else 0f),
-                        horizontalArrangement = Arrangement.SpaceEvenly,
+                        horizontalArrangement = Arrangement.Start,
                     ) {
                         rowItems.forEach { item ->
                             val dragKey = "i:${item.state.indicatorType.name}"
