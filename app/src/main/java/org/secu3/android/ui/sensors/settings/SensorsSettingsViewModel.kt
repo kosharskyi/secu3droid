@@ -11,12 +11,14 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
 import org.secu3.android.models.SensorGaugeStyle
+import org.secu3.android.models.InjectionTimingMode
 import org.secu3.android.utils.UserPrefs
 import org.secu3.android.utils.getDefaultSharedPreferences
 
 data class SensorsSettingsUiState(
     val oldView: Boolean = false,
     val gaugeStyle: SensorGaugeStyle = SensorGaugeStyle.Default,
+    val injectionTimingMode: InjectionTimingMode = InjectionTimingMode.Default,
 )
 
 @HiltViewModel
@@ -28,7 +30,7 @@ class SensorsSettingsViewModel @Inject constructor(
     private val _state = MutableStateFlow(readState())
     val state: StateFlow<SensorsSettingsUiState> = _state.asStateFlow()
     private val listener = SharedPreferences.OnSharedPreferenceChangeListener { _, key ->
-        if (key == null || key == OLD_VIEW_KEY || key == UserPrefs.SENSOR_GAUGE_STYLE_KEY) refreshFromPreferences()
+        if (key == null || key == OLD_VIEW_KEY || key == UserPrefs.SENSOR_GAUGE_STYLE_KEY || key == UserPrefs.INJECTION_TIMING_MODE_KEY) refreshFromPreferences()
     }
 
     init {
@@ -45,6 +47,11 @@ class SensorsSettingsViewModel @Inject constructor(
         _state.update { it.copy(gaugeStyle = style) }
     }
 
+    fun setInjectionTimingMode(mode: InjectionTimingMode) {
+        userPrefs.injectionTimingMode = mode
+        _state.update { it.copy(injectionTimingMode = mode) }
+    }
+
     private fun refreshFromPreferences() {
         _state.value = readState()
     }
@@ -52,6 +59,7 @@ class SensorsSettingsViewModel @Inject constructor(
     private fun readState() = SensorsSettingsUiState(
         oldView = userPrefs.oldSensorViewEnabled,
         gaugeStyle = userPrefs.sensorGaugeStyle,
+        injectionTimingMode = userPrefs.injectionTimingMode,
     )
 
     override fun onCleared() {

@@ -56,7 +56,9 @@ import org.secu3.android.db.models.GaugeState
 import org.secu3.android.db.models.IndicatorState
 import org.secu3.android.models.packets.input.AdcRawDatPacket
 import org.secu3.android.models.packets.input.SensorsPacket
+import org.secu3.android.models.packets.input.FirmwareInfoPacket
 import org.secu3.android.models.SensorGaugeStyle
+import org.secu3.android.models.InjectionTimingMode
 import org.secu3.android.ui.compose.SecuTopAppBar
 import org.secu3.android.ui.compose.SecuTabRow
 import org.secu3.android.ui.sensors.SensorsViewModel.ChoiceRequest
@@ -78,6 +80,8 @@ internal fun SensorsTabsScreen(
     gauges: List<GaugeItem>, indicators: List<IndicatorItem>,
     gaugeChoices: ChoiceRequest<GaugeType>?, indicatorChoices: ChoiceRequest<IndicatorType>?,
     sensors: SensorsPacket?, rawSensors: AdcRawDatPacket?,
+    firmwareInfo: FirmwareInfoPacket?,
+    injectionTimingMode: InjectionTimingMode,
     onPageChanged: (Int) -> Unit,
     onNavigateUp: () -> Unit,
     onSettings: () -> Unit,
@@ -109,7 +113,7 @@ internal fun SensorsTabsScreen(
     val mark1Description = stringResource(R.string.mark_1)
     val mark2Description = stringResource(R.string.mark_2)
     val mark3Description = stringResource(R.string.mark_3)
-    val dataAvailable = connectionState == Connected
+    val dataAvailable = connectionState == Connected && sensors != null
     val lifecycle = LocalLifecycleOwner.current.lifecycle
     val loggerErrorMessage = stringResource(R.string.sensor_logger_io_error)
     LaunchedEffect(pagerState) { snapshotFlow { pagerState.settledPage }.drop(1).collect(onPageChanged) }
@@ -171,7 +175,7 @@ internal fun SensorsTabsScreen(
                 key = { it },
             ) { page ->
                 when (page) {
-                    0 -> if (oldViewEnabled) OldSensorsScreen(sensors.takeIf { dataAvailable }) else SensorsScreen(
+                    0 -> if (oldViewEnabled) OldSensorsScreen(sensors.takeIf { dataAvailable }, injectionTimingMode = injectionTimingMode) else SensorsScreen(
                         gauges, indicators, gaugeChoices, indicatorChoices,
                         onAddGaugeRequest, onAddIndicatorRequest, onAddGauge, onAddIndicator,
                         onGaugeChoicesConsumed, onIndicatorChoicesConsumed, onDeleteGauge, onDeleteIndicator,
@@ -179,8 +183,9 @@ internal fun SensorsTabsScreen(
                         onReorderingChanged = { active -> reordering = active; onReorderingChanged(active) },
                         dataAvailable = dataAvailable,
                         gaugeStyle = gaugeStyle,
+                        injectionTimingMode = injectionTimingMode,
                     )
-                    else -> RawSensorsScreen(rawSensors.takeIf { dataAvailable })
+                    else -> RawSensorsScreen(rawSensors.takeIf { connectionState == Connected }, capabilities = RawSensorCapabilities.from(firmwareInfo))
                 }
             }
         }

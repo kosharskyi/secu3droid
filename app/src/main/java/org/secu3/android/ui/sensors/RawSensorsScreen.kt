@@ -43,22 +43,26 @@ import org.secu3.android.ui.parameters.compose.ParameterTextValueRow
 import java.util.Locale
 
 @Composable
-internal fun RawSensorsScreen(packet: AdcRawDatPacket?, modifier: Modifier = Modifier) {
+internal fun RawSensorsScreen(
+    packet: AdcRawDatPacket?,
+    modifier: Modifier = Modifier,
+    capabilities: RawSensorCapabilities = RawSensorCapabilities.Unknown,
+) {
     val rows = packet?.let {
         listOf(
-            R.string.raw_sensors_frag_map_sensor_label to it.map,
-            R.string.raw_sensors_frag_voltage_label to it.voltage,
-            R.string.raw_sensors_frag_coolant_sensor_label to it.temperature,
-            R.string.raw_sensors_frag_knock_signal_lavel_label to it.knockValue,
-            R.string.raw_sensors_frag_throttle_position_sensor_label to it.tps,
-            R.string.raw_sensors_frag_add_io1_input_label to it.addI1,
-            R.string.raw_sensors_frag_add_io2_input_label to it.addI2,
-            R.string.raw_sensors_frag_add_io3_input_label to it.addI3,
-            R.string.raw_sensors_frag_add_io4_input_label to it.addI4,
-            R.string.raw_sensors_frag_add_io5_input_label to it.addI5,
-            R.string.raw_sensors_frag_add_io6_input_label to it.addI6,
-            R.string.raw_sensors_frag_add_io7_input_label to it.addI7,
-            R.string.raw_sensors_frag_add_io8_input_label to it.addI8,
+            RawSensorRow(R.string.raw_sensors_frag_map_sensor_label, it.map, 0),
+            RawSensorRow(R.string.raw_sensors_frag_voltage_label, it.voltage, 0),
+            RawSensorRow(R.string.raw_sensors_frag_coolant_sensor_label, it.temperature, 0),
+            RawSensorRow(R.string.raw_sensors_frag_knock_signal_lavel_label, it.knockValue, 0),
+            RawSensorRow(R.string.raw_sensors_frag_throttle_position_sensor_label, it.tps, 0),
+            RawSensorRow(R.string.raw_sensors_frag_add_io1_input_label, it.addI1, 1),
+            RawSensorRow(R.string.raw_sensors_frag_add_io2_input_label, it.addI2, 2),
+            RawSensorRow(R.string.raw_sensors_frag_add_io3_input_label, it.addI3, 3),
+            RawSensorRow(R.string.raw_sensors_frag_add_io4_input_label, it.addI4, 4),
+            RawSensorRow(R.string.raw_sensors_frag_add_io5_input_label, it.addI5, 5),
+            RawSensorRow(R.string.raw_sensors_frag_add_io6_input_label, it.addI6, 6),
+            RawSensorRow(R.string.raw_sensors_frag_add_io7_input_label, it.addI7, 7),
+            RawSensorRow(R.string.raw_sensors_frag_add_io8_input_label, it.addI8, 8),
         )
     }
 
@@ -73,12 +77,16 @@ internal fun RawSensorsScreen(packet: AdcRawDatPacket?, modifier: Modifier = Mod
         }
         rows?.let { sensorRows ->
             ParameterSection(modifier = Modifier.fillMaxWidth().testTag("raw-sensors-card")) {
-                sensorRows.forEach { (label, value) ->
-                    val rowTag = "raw-sensor-row-$label"
-                    val numberText = String.format(Locale.US, "%.3f", value)
+                sensorRows.filter { capabilities.isChannelVisible(it.channel) }.forEach { row ->
+                    val rowTag = "raw-sensor-row-${row.label}"
+                    val numberText = if (capabilities.isChannelSupported(row.channel)) {
+                        String.format(Locale.US, "%.3f", row.value)
+                    } else {
+                        "—"
+                    }
                     val units = stringResource(R.string.units_volts)
                     ParameterTextValueRow(
-                        title = stringResource(label),
+                        title = stringResource(row.label),
                         value = "$numberText $units",
                         numberText = numberText,
                         units = units,
@@ -89,3 +97,5 @@ internal fun RawSensorsScreen(packet: AdcRawDatPacket?, modifier: Modifier = Mod
         }
     }
 }
+
+private data class RawSensorRow(val label: Int, val value: Float, val channel: Int)

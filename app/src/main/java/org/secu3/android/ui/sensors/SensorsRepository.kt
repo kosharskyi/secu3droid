@@ -27,17 +27,19 @@ package org.secu3.android.ui.sensors
 
 import androidx.room.withTransaction
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.withContext
 import org.secu3.android.db.AppDatabase
 import org.secu3.android.db.models.GaugeState
 import org.secu3.android.db.models.IndicatorState
 import org.secu3.android.models.packets.input.SensorsPacket
+import org.secu3.android.models.InjectionTimingMode
 import org.secu3.android.ui.sensors.models.GaugeItem
 import org.secu3.android.ui.sensors.models.GaugeType
 import org.secu3.android.ui.sensors.models.IndicatorItem
 import org.secu3.android.ui.sensors.models.IndicatorType
 import org.secu3.android.utils.AppPrefs
-import java.util.Locale
 import javax.inject.Inject
 
 class SensorsRepository @Inject constructor(
@@ -52,7 +54,7 @@ class SensorsRepository @Inject constructor(
     suspend fun addGauge(gaugeType: GaugeType) = withContext(Dispatchers.IO)  {
         db.withTransaction {
             val maxIdx = db.gaugeStateDao().getMaxIdx()?.inc() ?: 0
-            val state = GaugeState(0, gaugeType, maxIdx, false)
+            val state = GaugeState(0, gaugeType, maxIdx, gaugeType.defaultNumericView)
             db.gaugeStateDao().insertOrIgnore(state)
         }
     }
@@ -61,70 +63,24 @@ class SensorsRepository @Inject constructor(
         db.gaugeStateDao().deleteGauge(gaugeType)
     }
 
-    suspend fun convertToGaugeItemList(packet: SensorsPacket) = withContext(Dispatchers.IO) {
-        db.gaugeStateDao().getAllOrderByIdx().map { getGaugeItem(it, packet) }
-    }
-
-    private fun getGaugeItem(state: GaugeState, it: SensorsPacket): GaugeItem {
-        val value = when (state.gaugeType) {
-            GaugeType.RPM -> it.rpm.toString()
-            GaugeType.MAP -> String.format(Locale.US, "%.1f", it.map)
-            GaugeType.MAP_TURBO -> String.format(Locale.US, "%.1f", it.map)
-            GaugeType.VOLTAGE -> String.format(Locale.US, "%.1f", it.voltage)
-            GaugeType.CURRENT_ANGLE -> String.format(Locale.US, "%.2f", it.currentAngle)
-            GaugeType.TEMPERATURE -> String.format(Locale.US, "%.1f", it.temperature)
-            GaugeType.ADD1 -> String.format(Locale.US, "%.3f", it.addI1)
-            GaugeType.ADD2 -> String.format(Locale.US, "%.3f", it.addI2)
-            GaugeType.INJ_PW -> String.format(Locale.US, "%.2f", it.injPw)
-            GaugeType.IAT -> String.format(Locale.US, "%.1f", it.airtempSensor)
-            GaugeType.EGO_CORR -> String.format(Locale.US, "%.2f", it.lambdaCorr)
-            GaugeType.CHOKE_POSITION -> String.format(Locale.US, "%.1f", it.chokePosition)
-            GaugeType.AIR_FLOW -> it.airflow.toString()
-            GaugeType.VEHICLE_SPEED -> String.format(Locale.US, "%.1f", it.speed)
-            GaugeType.TPS_DOT -> it.tpsdot.toString()
-            GaugeType.MAP2 -> String.format(Locale.US, "%.1f", it.map2)
-            GaugeType.DIFF_PRESSURE -> String.format(Locale.US, "%.1f", it.mapd)
-            GaugeType.IAT2 -> String.format(Locale.US, "%.1f", it.tmp2)
-            GaugeType.FUEL_CONSUMPTION -> String.format(Locale.US, "%.2f", it.cons_fuel)
-            GaugeType.KNOCK_RETARD -> String.format(Locale.US, "%.1f", it.knockRetard)
-            GaugeType.KNOCK_SIGNAL -> String.format(Locale.US, "%.3f", it.knockValue)
-            GaugeType.WBO_AFR -> String.format(Locale.US, "%.1f", it.afr)
-            GaugeType.IAC_VALVE -> String.format(Locale.US, "%.1f", it.tps)
-            GaugeType.GAS_DISPENSER -> it.gasDosePosition.toString()
-            GaugeType.SYNTHETIC_LOAD -> String.format(Locale.US, "%.1f", it.load)
-            GaugeType.BEGIN_INJ_PHASE -> String.format(Locale.US, "%.1f", it.injTimBegin)
-            GaugeType.END_INJ_PHASE -> String.format(Locale.US, "%.1f", it.injTimEnd)
-            GaugeType.FUEL_CONSUMPTION_HZ -> it.fuelFlowFrequency.toString()
-            GaugeType.GRTS -> String.format(Locale.US, "%.1f", it.grts)
-            GaugeType.FUEL_LEVEL -> String.format(Locale.US, "%.1f", it.ftls)
-            GaugeType.EXHAUST_GAS_TEMP -> String.format(Locale.US, "%.1f", it.egts)
-            GaugeType.OIL_PRESSURE -> String.format(Locale.US, "%.1f", it.ops)
-            GaugeType.INJ_DUTY -> String.format(Locale.US, "%.1f", it.sens_injDuty)
-            GaugeType.MAF -> String.format(Locale.US, "%.1f", it.maf)
-            GaugeType.FAN_DUTY -> it.ventDuty.toString()
-            GaugeType.MAP_DOT -> it.mapdot.toString()
-            GaugeType.FUEL_TEMP -> String.format(Locale.US, "%.1f", it.fts)
-            GaugeType.EGO_CORR2 -> String.format(Locale.US, "%.1f", it.lambdaCorr2)
-            GaugeType.WBO_AFR2 -> String.format(Locale.US, "%.1f", it.afr2)
-            GaugeType.WBO_AFR_TABL -> String.format(Locale.US, "%.2f", it.afrMap)
-            GaugeType.AFR_DIFF -> {
-                val difAfr = it.afr - it.afrMap
-                String.format(Locale.US, "%.2f", difAfr)
-            }
-            GaugeType.AFR_DIFF2 -> {
-                val difAfr = it.afr2 - it.afrMap
-                String.format(Locale.US, "%.2f", difAfr)
-            }
-
-            GaugeType.GAS_PRESSURE_SENS -> String.format(Locale.US, "%.2f", it.gasPressureSensor)
-            GaugeType.FUEL_PRESSURE_SENS -> String.format(Locale.US, "%.2f", it.fuelPressureSensor)
-            GaugeType.APPS1 -> String.format(Locale.US, "%.1f", it.apps1)
-            GaugeType.OTS -> String.format(Locale.US, "%.1f", it.ots)
-            GaugeType.EST_TORQUE -> String.format(Locale.US, "%.1f", it.estTorque)
-            GaugeType.REQ_TORQUE -> String.format(Locale.US, "%.1f", it.reqTorque)
+    fun observeGaugeItems(
+        packetFlow: Flow<SensorsPacket?>,
+        timingModeFlow: Flow<InjectionTimingMode>,
+    ): Flow<List<GaugeItem>> = combine(
+        db.gaugeStateDao().observeAllOrderByIdx(),
+        packetFlow,
+        timingModeFlow,
+    ) { states, packet, timingMode ->
+        states.map { state ->
+            val value = packet?.let { currentPacket ->
+                val raw = state.gaugeType.getGaugeItem(currentPacket)
+                val displayed = if (state.gaugeType == GaugeType.BEGIN_INJ_PHASE || state.gaugeType == GaugeType.END_INJ_PHASE) {
+                    timingMode.transform(raw)
+                } else raw
+                state.gaugeType.formatValue(displayed)
+            }.orEmpty()
+            GaugeItem(state, value)
         }
-
-        return GaugeItem(state, value)
     }
 
     suspend fun getStoredIndicatorStates(): List<IndicatorState> = withContext(Dispatchers.IO) {
@@ -143,44 +99,11 @@ class SensorsRepository @Inject constructor(
         db.indicatorStateDao().deleteIndicator(indicatorType)
     }
 
-    suspend fun convertToIndicatorItemList(packet: SensorsPacket) = withContext(Dispatchers.IO) {
-        db.indicatorStateDao().getAllOrderByIdx().map { getIndicatorItem(it, packet) }
-    }
-
-    private fun getIndicatorItem(state: IndicatorState, packet: SensorsPacket): IndicatorItem {
-        val value = when (state.indicatorType) {
-            IndicatorType.GAS_VALVE -> packet.gasBit > 0
-            IndicatorType.THROTTLE -> packet.carbBit > 0
-            IndicatorType.FI_FUEL -> packet.gasBit > 0
-            IndicatorType.POWER_VALVE -> packet.epmValveBit > 0
-            IndicatorType.STARTER_BLOCKING -> packet.starterBlockBit > 0
-            IndicatorType.AE -> packet.accelerationEnrichment > 0
-            IndicatorType.COOLING_FAN -> packet.coolFanBit > 0
-            IndicatorType.CHECK_ENGINE -> packet.checkEngineBit > 0
-            IndicatorType.REV_LIM_FUEL_CUT -> packet.fc_revlim > 0
-            IndicatorType.FLOOD_CLEAR_MODE -> packet.floodclear > 0
-            IndicatorType.SYSTEM_LOCKED -> packet.sys_locked > 0
-            IndicatorType.IGN_I_INPUT -> packet.ign_i > 0
-            IndicatorType.COND_I_INPUT -> packet.cond_i > 0
-            IndicatorType.EPAS_I_INPUT -> packet.epas_i > 0
-            IndicatorType.AFTERSTART_ENR -> packet.aftstr_enr > 0
-            IndicatorType.IAC_CLOSED_LOOP -> packet.iac_closed_loop > 0
-            IndicatorType.UNIV_OUT1 -> packet.uniOut0Bit > 0
-            IndicatorType.UNIV_OUT2 -> packet.uniOut1Bit > 0
-            IndicatorType.UNIV_OUT3 -> packet.uniOut2Bit > 0
-            IndicatorType.UNIV_OUT4 -> packet.uniOut3Bit > 0
-            IndicatorType.UNIV_OUT5 -> packet.uniOut4Bit > 0
-            IndicatorType.UNIV_OUT6 -> packet.uniOut5Bit > 0
-            IndicatorType.GPA4_I -> packet.sensGpa4i > 0
-            IndicatorType.INPUT1 -> packet.sensInput1 > 0
-            IndicatorType.INPUT2 -> packet.sensInput2 > 0
-            IndicatorType.AUTO_I -> packet.sensAutoI > 0
-            IndicatorType.MAPSEL0 -> packet.sensMapsel0 > 0
-            IndicatorType.REFPRS_I -> packet.sensRefprs_i > 0
-            IndicatorType.ALTRN_I -> packet.sensAltrn_i > 0
-        }
-
-        return IndicatorItem(state, value)
+    fun observeIndicatorItems(packetFlow: Flow<SensorsPacket?>): Flow<List<IndicatorItem>> = combine(
+        db.indicatorStateDao().observeAllOrderByIdx(),
+        packetFlow,
+    ) { states, packet ->
+        states.map { state -> IndicatorItem(state, packet?.let(state.indicatorType::isActive) ?: false) }
     }
 
     suspend fun updateGauges(swipedList: List<GaugeState>) = withContext(Dispatchers.IO) {

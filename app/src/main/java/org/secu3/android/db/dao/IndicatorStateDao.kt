@@ -28,6 +28,7 @@ package org.secu3.android.db.dao
 import androidx.room.Dao
 import androidx.room.Query
 import androidx.room.Transaction
+import kotlinx.coroutines.flow.Flow
 import org.secu3.android.db.models.IndicatorState
 import org.secu3.android.ui.sensors.models.IndicatorType
 
@@ -39,6 +40,9 @@ interface IndicatorStateDao : BaseDao<IndicatorState>{
 
     @Query("SELECT * FROM indicator_state ORDER BY idx")
     suspend fun getAllOrderByIdx(): List<IndicatorState>
+
+    @Query("SELECT * FROM indicator_state ORDER BY idx")
+    fun observeAllOrderByIdx(): Flow<List<IndicatorState>>
 
     @Query("SELECT * FROM indicator_state WHERE indicator_type = :indicatorType")
     suspend fun getByIndicatorType(indicatorType: IndicatorType): IndicatorState?

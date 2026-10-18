@@ -41,3 +41,7 @@ Classic and both modern dial renderers share a spring-animated, clamped normaliz
 ## All dial styles share the configured gauge scale
 
 `GaugeScale` is derived from `GaugeType` and supplies inclusive configured ticks, range normalization, sections, angles, and shared tick-label text to all dial renderers. Renderer-specific label selection only controls which configured values fit; it must not invent scale positions. Keep PreciseArc ticks within the outer 5dp range band so they cannot close the 3dp gap to the blue inner arc; ThinNeedle marks keep their inner endpoint at `radius - 10dp` to preserve needle-tip clearance.
+
+## Readout strings already carry the sensor's required precision
+
+`GaugeItem.value` is formatted by `GaugeType.formatValue`; parsing it in a card is only for finite-value validation and needle positioning. Display the original valid string instead of formatting it again, or small knock voltages, injector pulse widths, and other two- or three-decimal readings lose information. Tick-label formatting remains independent from readout precision.

@@ -16,6 +16,7 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavBackStackEntry
 import kotlinx.coroutines.flow.collect
 import org.secu3.android.models.packets.input.AdcRawDatPacket
+import org.secu3.android.models.packets.input.FirmwareInfoPacket
 import org.secu3.android.models.packets.input.SensorsPacket
 import org.secu3.android.ui.MainActivity
 import org.secu3.android.ui.compose.SecuComposeTheme
@@ -33,12 +34,13 @@ internal fun SensorsRoute(
         extras = entry.defaultViewModelCreationExtras,
     )
     val connection by remember(viewModel) { viewModel.connectionStatusLiveData }.observeAsState()
-    val gauges by remember(viewModel) { viewModel.gaugesLiveData }.observeAsState(emptyList())
-    val indicators by remember(viewModel) { viewModel.indicatorLiveData }.observeAsState(emptyList())
+    val gauges = remember(viewModel) { viewModel.gaugesLiveData }.observeAsState().value.orEmpty()
+    val indicators = remember(viewModel) { viewModel.indicatorLiveData }.observeAsState().value.orEmpty()
     val gaugeChoices by remember(viewModel) { viewModel.showAddGaugeLiveData }.observeAsState()
     val indicatorChoices by remember(viewModel) { viewModel.showAddIndicatorLiveData }.observeAsState()
-    val sensors by remember(viewModel) { viewModel.sensorsLiveData }.observeAsState<SensorsPacket?, SensorsPacket>(null)
-    val rawSensors by remember(viewModel) { viewModel.rawSensorsLiveData }.observeAsState<AdcRawDatPacket?, AdcRawDatPacket>(null)
+    val sensors: SensorsPacket? by remember(viewModel) { viewModel.sensorsLiveData }.observeAsState()
+    val rawSensors: AdcRawDatPacket? by remember(viewModel) { viewModel.rawSensorsLiveData }.observeAsState()
+    val firmware: FirmwareInfoPacket? by remember(viewModel) { viewModel.firmwareInfoLiveData }.observeAsState()
     var state by remember(viewModel) { mutableStateOf(viewModel.state.value) }
     val lifecycle = LocalLifecycleOwner.current.lifecycle
     val snackbarHostState = remember(viewModel) { SnackbarHostState() }
@@ -72,6 +74,8 @@ internal fun SensorsRoute(
             loggerErrorId = state.loggerErrorId,
             snackbarHostState = snackbarHostState,
             gaugeStyle = state.gaugeStyle,
+            injectionTimingMode = state.injectionTimingMode,
+            firmwareInfo = firmware,
             connectionState = connection,
             gauges = gauges,
             indicators = indicators,

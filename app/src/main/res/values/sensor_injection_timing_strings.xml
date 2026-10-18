@@ -1,0 +1,7 @@
+<resources>
+    <string name="injection_timing_mode">Injection timing display</string>
+    <string name="injection_timing_btdc_720">BTDC 0–720°</string>
+    <string name="injection_timing_atdc_720">ATDC 0–720°</string>
+    <string name="injection_timing_btdc_360">BTDC −360–360°</string>
+    <string name="injection_timing_atdc_360">ATDC −360–360°</string>
+</resources>

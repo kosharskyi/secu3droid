@@ -30,6 +30,7 @@ import androidx.core.content.edit
 import dagger.hilt.android.qualifiers.ApplicationContext
 import org.secu3.android.R
 import org.secu3.android.models.SensorGaugeStyle
+import org.secu3.android.models.InjectionTimingMode
 import kotlinx.coroutines.channels.awaitClose
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.callbackFlow
@@ -135,8 +136,13 @@ class UserPrefs @Inject constructor(@ApplicationContext private val ctx: Context
         get() = SensorGaugeStyle.fromPreference(mPrefs.getString(SENSOR_GAUGE_STYLE_KEY, null))
         set(value) = mPrefs.edit { putString(SENSOR_GAUGE_STYLE_KEY, value.preferenceValue) }
 
+    var injectionTimingMode: InjectionTimingMode
+        get() = InjectionTimingMode.fromPreference(mPrefs.getString(INJECTION_TIMING_MODE_KEY, null))
+        set(value) = mPrefs.edit { putString(INJECTION_TIMING_MODE_KEY, value.preferenceValue) }
+
     companion object {
         const val SENSOR_GAUGE_STYLE_KEY = "sensor_gauge_style"
+        const val INJECTION_TIMING_MODE_KEY = "injection_timing_mode"
     }
 }
 

@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="sensors_frag_fuel_consumption_hourly_label">Мгновенный расход топлива</string>
+    <string name="sensors_frag_consumed_fuel_label">Израсходовано топлива</string>
+    <string name="units_l_per_hour">л/ч</string>
+</resources>

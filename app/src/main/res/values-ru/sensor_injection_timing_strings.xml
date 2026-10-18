@@ -1,0 +1,7 @@
+<resources>
+    <string name="injection_timing_mode">Отображение фазы впрыска</string>
+    <string name="injection_timing_btdc_720">До ВМТ 0–720°</string>
+    <string name="injection_timing_atdc_720">После ВМТ 0–720°</string>
+    <string name="injection_timing_btdc_360">До ВМТ −360–360°</string>
+    <string name="injection_timing_atdc_360">После ВМТ −360–360°</string>
+</resources>

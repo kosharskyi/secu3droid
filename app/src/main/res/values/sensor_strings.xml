@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="sensors_frag_fuel_consumption_hourly_label">Hourly fuel consumption</string>
+    <string name="sensors_frag_consumed_fuel_label">Consumed fuel</string>
+    <string name="units_l_per_hour">L/h</string>
+</resources>

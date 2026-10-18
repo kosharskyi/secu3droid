@@ -49,65 +49,82 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import org.secu3.android.R
 import org.secu3.android.models.packets.input.SensorsPacket
-import java.util.Locale
+import org.secu3.android.models.InjectionTimingMode
+import org.secu3.android.ui.sensors.models.GaugeType
+import org.secu3.android.ui.sensors.models.IndicatorType
 
 @Composable
-internal fun OldSensorsScreen(packet: SensorsPacket?, modifier: Modifier = Modifier) {
+internal fun OldSensorsScreen(
+    packet: SensorsPacket?,
+    modifier: Modifier = Modifier,
+    injectionTimingMode: InjectionTimingMode = InjectionTimingMode.Default,
+) {
     val p = packet ?: SensorsPacket()
     val rows = listOf(
-        row(R.string.sensors_frag_rpm_label, p.rpm.toString()),
-        row(R.string.sensors_frag_absolute_pressure_label, fmt(p.map, "%.2f")),
-        row(R.string.sensors_frag_voltage_label, fmt(p.voltage, "%.1f")),
-        row(R.string.sensors_frag_coolant_temperature_label, fmt(p.temperature, "%.1f")),
-        row(R.string.sensors_frag_advance_angle_label, fmt(p.currentAngle, "%.1f")),
-        row(R.string.sensors_frag_map2_label, fmt(p.map2, "%.1f"), R.string.units_pressure_kpa),
-        row(R.string.sensors_frag_diff_pressure_label, fmt(p.mapd, "%.1f"), R.string.units_pressure_kpa),
-        row(R.string.sensors_frag_map_dot_label, p.mapdot.toString(), R.string.units_percent_per_second),
-        row(R.string.sensors_frag_knock_signal_label, fmt(p.knockValue, "%.3f"), R.string.units_curve_n),
-        row(R.string.sensors_frag_knock_retard_label, fmt(p.knockRetard, "%.1f"), R.string.units_degree_word),
-        row(R.string.sensors_frag_maf_label, fmt(p.maf, "%.1f"), R.string.units_gram_per_second),
-        row(R.string.sensors_frag_air_flow_label, p.airflow.toString(), R.string.units_curve_n),
-        row(R.string.sensors_frag_intake_air_temp_label, fmt(p.airtempSensor, "%.1f"), R.string.units_degrees_celcius),
-        row(R.string.sensors_frag_throttle_gate_label, fmt(p.tps, "%.1f"), R.string.units_percents),
-        row(R.string.sensors_frag_tps_dot_label, p.tpsdot.toString(), R.string.units_percent_per_second),
-        row(R.string.sensors_frag_input_1_label, fmt(p.addI1, "%.3f"), R.string.units_volts),
-        row(R.string.sensors_frag_input_2_label, fmt(p.addI2, "%.3f"), R.string.units_volts),
-        row(R.string.sensors_frag_iac_valve_label, fmt(p.chokePosition, "%.1f")),
-        row(R.string.sensors_frag_gas_dispenser_label, p.gasDosePosition.toString(), R.string.units_percents),
-        row(R.string.sensors_frag_grts_label, fmt(p.grts, "%.1f"), R.string.units_degrees_celcius),
-        row(R.string.sensors_frag_synthetic_load_label, fmt(p.load, "%.1f")),
-        row(R.string.sensors_frag_vehicle_speed_label, fmt(p.speed, "%.1f"), R.string.units_km_h),
-        row(R.string.sensors_frag_distance_label, fmt(p.distance, "%.1f"), R.string.units_km),
-        row(R.string.sensors_frag_fuel_consumption_hz_label, p.fuelFlowFrequency.toString(), R.string.units_hertz),
-        row(R.string.sensors_frag_fuel_consumption_label, fmt(p.cons_fuel, "%.2f"), R.string.units_l_per_100km),
-        row(R.string.sensors_frag_injection_pw_label, fmt(p.injPw, "%.2f"), R.string.units_ms),
-        row(R.string.sensors_frag_injector_duty_label, fmt(p.sens_injDuty, "%.1f"), R.string.units_percents),
-        row(R.string.sensors_frag_begin_inj_phase_label, fmt(p.injTimBegin, "%.1f")),
-        row(R.string.sensors_frag_end_inj_phase_label, fmt(p.injTimEnd, "%.1f")),
-        row(R.string.sensors_frag_ego_correction_label, fmt(p.lambdaCorr, "%.2f"), R.string.units_percents),
-        row(R.string.sensors_frag_ego_correction2_label, fmt(p.lambdaCorr2, "%.1f"), R.string.units_percents),
-        row(R.string.sensors_frag_wbo_afr_label, fmt(p.afr, "%.1f")),
-        row(R.string.sensors_frag_wbo_afr_2_label, fmt(p.afr2, "%.1f")),
-        row(R.string.wbo_afr_tabl, fmt(p.afrMap, "%.2f")),
-        row(R.string.sensors_frag_iat2_label, fmt(p.tmp2, "%.1f"), R.string.units_afr),
-        row(R.string.sensors_frag_fuel_level_label, fmt(p.ftls, "%.1f"), R.string.units_liter),
-        row(R.string.sensors_frag_exhaust_gas_temp_label, fmt(p.egts, "%.1f"), R.string.units_degrees_celcius),
-        row(R.string.sensors_frag_oil_pressure_label, fmt(p.ops, "%.1f"), R.string.units_kg_per_cm2),
-        row(R.string.sensors_frag_fan_duty_label, p.ventDuty.toString(), R.string.units_percents),
-        row(R.string.sensors_frag_fuel_temp_label, fmt(p.fts, "%.1f"), R.string.units_degrees_celcius),
-        row(R.string.sensors_frag_afr_difference_label, fmt(p.afr - p.afrMap, "%.2f")),
-        row(R.string.sensors_frag_afr_difference2_label, fmt(p.afr2 - p.afrMap, "%.2f")),
-        row(R.string.sensors_frag_gas_pressure_label, fmt(p.gasPressureSensor, "%.1f"), R.string.units_pressure_kpa),
+        typedRow(R.string.sensors_frag_rpm_label, GaugeType.RPM, p.rpm.toFloat()),
+        typedRow(R.string.sensors_frag_absolute_pressure_label, GaugeType.MAP, p.map),
+        typedRow(R.string.sensors_frag_voltage_label, GaugeType.VOLTAGE, p.voltage),
+        typedRow(R.string.sensors_frag_coolant_temperature_label, GaugeType.TEMPERATURE, p.temperature),
+        typedRow(R.string.sensors_frag_advance_angle_label, GaugeType.CURRENT_ANGLE, p.currentAngle),
+        typedRow(R.string.sensors_frag_map2_label, GaugeType.MAP2, p.map2),
+        typedRow(R.string.sensors_frag_diff_pressure_label, GaugeType.DIFF_PRESSURE, p.mapd),
+        typedRow(R.string.sensors_frag_map_dot_label, GaugeType.MAP_DOT, p.mapdot.toFloat()),
+        typedRow(R.string.sensors_frag_knock_signal_label, GaugeType.KNOCK_SIGNAL, p.knockValue),
+        typedRow(R.string.sensors_frag_knock_retard_label, GaugeType.KNOCK_RETARD, p.knockRetard),
+        typedRow(R.string.sensors_frag_maf_label, GaugeType.MAF, p.maf),
+        typedRow(R.string.sensors_frag_air_flow_label, GaugeType.AIR_FLOW, p.airflow.toFloat()),
+        typedRow(R.string.sensors_frag_intake_air_temp_label, GaugeType.IAT, p.airtempSensor),
+        typedRow(R.string.sensors_frag_throttle_gate_label, GaugeType.IAC_VALVE, p.tps),
+        typedRow(R.string.sensors_frag_tps_dot_label, GaugeType.TPS_DOT, p.tpsdot.toFloat()),
+        typedRow(R.string.sensors_frag_input_1_label, GaugeType.ADD1, p.addI1),
+        typedRow(R.string.sensors_frag_input_2_label, GaugeType.ADD2, p.addI2),
+        typedRow(R.string.sensors_frag_iac_valve_label, GaugeType.CHOKE_POSITION, p.chokePosition),
+        typedRow(R.string.sensors_frag_gas_dispenser_label, GaugeType.GAS_DISPENSER, p.gasDosePosition),
+        typedRow(R.string.sensors_frag_grts_label, GaugeType.GRTS, p.grts),
+        typedRow(R.string.sensors_frag_synthetic_load_label, GaugeType.SYNTHETIC_LOAD, p.load, includeUnit = false),
+        typedRow(R.string.sensors_frag_vehicle_speed_label, GaugeType.VEHICLE_SPEED, p.speed),
+        typedRow(R.string.sensors_frag_distance_label, GaugeType.DISTANCE, p.distance),
+        typedRow(R.string.sensors_frag_fuel_consumption_hz_label, GaugeType.FUEL_CONSUMPTION_HZ, p.fuelFlowFrequency),
+        typedRow(R.string.sensors_frag_fuel_consumption_label, GaugeType.FUEL_CONSUMPTION, p.inj_ffd),
+        typedRow(R.string.sensors_frag_injection_pw_label, GaugeType.INJ_PW, p.injPw),
+        typedRow(R.string.sensors_frag_injector_duty_label, GaugeType.INJ_DUTY, p.sens_injDuty),
+        typedRow(R.string.sensors_frag_begin_inj_phase_label, GaugeType.BEGIN_INJ_PHASE, injectionTimingMode.transform(p.injTimBegin)),
+        typedRow(R.string.sensors_frag_end_inj_phase_label, GaugeType.END_INJ_PHASE, injectionTimingMode.transform(p.injTimEnd)),
+        typedRow(R.string.sensors_frag_ego_correction_label, GaugeType.EGO_CORR, p.lambdaCorr),
+        typedRow(R.string.sensors_frag_ego_correction2_label, GaugeType.EGO_CORR2, p.lambdaCorr2),
+        typedRow(R.string.sensors_frag_wbo_afr_label, GaugeType.WBO_AFR, p.afr),
+        typedRow(R.string.sensors_frag_wbo_afr_2_label, GaugeType.WBO_AFR2, p.afr2),
+        typedRow(R.string.wbo_afr_tabl, GaugeType.WBO_AFR_TABL, p.afrMap),
+        typedRow(R.string.sensors_frag_iat2_label, GaugeType.IAT2, p.tmp2),
+        typedRow(R.string.sensors_frag_fuel_level_label, GaugeType.FUEL_LEVEL, p.ftls),
+        typedRow(R.string.sensors_frag_exhaust_gas_temp_label, GaugeType.EXHAUST_GAS_TEMP, p.egts),
+        typedRow(R.string.sensors_frag_oil_pressure_label, GaugeType.OIL_PRESSURE, p.ops),
+        typedRow(R.string.sensors_frag_fan_duty_label, GaugeType.FAN_DUTY, p.ventDuty),
+        typedRow(R.string.sensors_frag_fuel_temp_label, GaugeType.FUEL_TEMP, p.fts),
+        typedRow(R.string.sensors_frag_afr_difference_label, GaugeType.AFR_DIFF, p.afr - p.afrMap),
+        typedRow(R.string.sensors_frag_afr_difference2_label, GaugeType.AFR_DIFF2, p.afr2 - p.afrMap),
+        typedRow(R.string.sensors_frag_gas_pressure_label, GaugeType.GAS_PRESSURE_SENS, p.gasPressureSensor),
+        // Keep the original row indexes stable; newly covered values follow the original 43 rows.
+        typedRow(R.string.sensors_frag_fuel_pressure_label, GaugeType.FUEL_PRESSURE_SENS, p.fuelPressureSensor),
+        typedRow(R.string.sensors_frag_acceleration_pedal_sensor_label, GaugeType.APPS1, p.apps1),
+        typedRow(R.string.sensors_frag_oil_temperature_sensor_label, GaugeType.OTS, p.ots),
+        typedRow(R.string.sensors_frag_estimated_torque_label, GaugeType.EST_TORQUE, p.estTorque),
+        typedRow(R.string.sensors_frag_requested_torque_label, GaugeType.REQ_TORQUE, p.reqTorque),
+        typedRow(R.string.sensors_frag_fuel_consumption_hourly_label, GaugeType.FUEL_CONSUMPTION_HOURLY, p.inj_ffh),
+        typedRow(R.string.sensors_frag_consumed_fuel_label, GaugeType.CONSUMED_FUEL, p.cons_fuel),
     )
     val statuses = listOf(
-        listOf(R.string.sensors_frag_status_gas_valve_label to (p.gasBit > 0), R.string.sensors_frag_status_throttle_label to (p.carbBit > 0), R.string.sensors_frag_status_fl_fuel_label to (p.ephhValveBit > 0)),
-        listOf(R.string.sensors_frag_status_power_valve_label to (p.epmValveBit > 0), R.string.sensors_frag_status_starter_blocking_label to (p.starterBlockBit > 0), R.string.sensors_frag_status_ae_label to (p.accelerationEnrichment > 0)),
-        listOf(R.string.sensors_frag_status_cooling_fan_label to (p.coolFanBit > 0), R.string.sensors_frag_status_check_engine_label to (p.checkEngineBit > 0), R.string.sensors_frag_status_rev_lim_fuel_cut_label to (p.fc_revlim > 0)),
-        listOf(R.string.sensors_frag_status_flood_clear_mode_label to (p.floodclear > 0), R.string.sensors_frag_status_system_locked_label to (p.sys_locked > 0), R.string.sensors_frag_status_input_ign_label to (p.ign_i > 0)),
-        listOf(R.string.sensors_frag_status_input_cond_label to (p.cond_i > 0), R.string.sensors_frag_status_input_epas_label to (p.epas_i > 0), R.string.sensors_frag_status_afterstart_enr_label to (p.aftstr_enr > 0)),
-        listOf(R.string.sensors_frag_status_iac_closed_loop_label to (p.iac_closed_loop > 0), null, null),
-        listOf(R.string.sensors_frag_status_univ_out_1_label to (p.uniOut0Bit > 0), R.string.sensors_frag_status_univ_out_2_label to (p.uniOut1Bit > 0), R.string.sensors_frag_status_univ_out_3_label to (p.uniOut2Bit > 0)),
-        listOf(R.string.sensors_frag_status_univ_out_4_label to (p.uniOut3Bit > 0), R.string.sensors_frag_status_univ_out_5_label to (p.uniOut4Bit > 0), R.string.sensors_frag_status_univ_out_6_label to (p.uniOut5Bit > 0)),
+        listOf(IndicatorType.GAS_VALVE, IndicatorType.THROTTLE, IndicatorType.FI_FUEL),
+        listOf(IndicatorType.POWER_VALVE, IndicatorType.STARTER_BLOCKING, IndicatorType.AE),
+        listOf(IndicatorType.COOLING_FAN, IndicatorType.CHECK_ENGINE, IndicatorType.REV_LIM_FUEL_CUT),
+        listOf(IndicatorType.FLOOD_CLEAR_MODE, IndicatorType.SYSTEM_LOCKED, IndicatorType.IGN_I_INPUT),
+        listOf(IndicatorType.COND_I_INPUT, IndicatorType.EPAS_I_INPUT, IndicatorType.AFTERSTART_ENR),
+        listOf(IndicatorType.IAC_CLOSED_LOOP, null, null),
+        listOf(IndicatorType.UNIV_OUT1, IndicatorType.UNIV_OUT2, IndicatorType.UNIV_OUT3),
+        listOf(IndicatorType.UNIV_OUT4, IndicatorType.UNIV_OUT5, IndicatorType.UNIV_OUT6),
+        listOf(IndicatorType.GPA4_I, IndicatorType.INPUT1, IndicatorType.INPUT2),
+        listOf(IndicatorType.AUTO_I, IndicatorType.MAPSEL0, IndicatorType.REFPRS_I),
+        listOf(IndicatorType.ALTRN_I, null, null),
     )
     Column(modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(horizontal = 16.dp, vertical = 8.dp).testTag("old-sensors-list")) {
         SensorGroupSurface(Modifier.fillMaxWidth().testTag("old-sensors-measurements")) {
@@ -128,9 +145,9 @@ internal fun OldSensorsScreen(packet: SensorsPacket?, modifier: Modifier = Modif
         statuses.forEachIndexed { group, entries ->
             Row(Modifier.fillMaxWidth().padding(top = 8.dp).testTag("old-status-group-$group")) {
                 entries.forEachIndexed { cell, entry ->
-                    val label = entry?.let { stringResource(it.first) }.orEmpty()
+                    val label = entry?.let { stringResource(it.title) }.orEmpty()
                     val palette = org.secu3.android.ui.compose.LocalSecuPalette.current
-                    val activeState = entry?.second == true && packet != null
+                    val activeState = entry?.isActive(p) == true && packet != null
                     val background = when {
                         entry == null -> Color.Transparent
                         packet == null -> MaterialTheme.colorScheme.background
@@ -144,7 +161,7 @@ internal fun OldSensorsScreen(packet: SensorsPacket?, modifier: Modifier = Modif
                     val state = when {
                         entry == null -> ""
                         packet == null -> stringResource(R.string.sensors_status_accessibility_unavailable)
-                        entry.second -> stringResource(R.string.sensors_status_accessibility_on)
+                        activeState -> stringResource(R.string.sensors_status_accessibility_on)
                         else -> stringResource(R.string.sensors_status_accessibility_off)
                     }
                     Text(
@@ -162,5 +179,5 @@ internal fun OldSensorsScreen(packet: SensorsPacket?, modifier: Modifier = Modif
 }
 
 private data class OldSensorRow(val label: Int, val value: String, val unit: Int?)
-private fun row(label: Int, value: String, unit: Int? = null) = OldSensorRow(label, value, unit)
-private fun fmt(value: Number, pattern: String) = String.format(Locale.US, pattern, value)
+private fun typedRow(label: Int, type: GaugeType, value: Float, includeUnit: Boolean = true) =
+    OldSensorRow(label, type.formatValue(value), type.units.takeIf { includeUnit })

@@ -24,9 +24,21 @@ import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.emitAll
+import kotlinx.coroutines.flow.flatMapLatest
+import kotlinx.coroutines.flow.flow
+import kotlinx.coroutines.flow.flowOf
+import kotlinx.coroutines.flow.channelFlow
+import kotlinx.coroutines.flow.filter
 import kotlinx.coroutines.flow.filterIsInstance
-import kotlinx.coroutines.flow.map
+import kotlinx.coroutines.flow.merge
+import kotlinx.coroutines.flow.runningFold
 import kotlinx.coroutines.flow.sample
+import kotlinx.coroutines.flow.shareIn
+import kotlinx.coroutines.flow.stateIn
+import kotlinx.coroutines.flow.SharingStarted
+import kotlinx.coroutines.flow.map
+import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import org.secu3.android.R
@@ -36,7 +48,9 @@ import org.secu3.android.db.models.GaugeState
 import org.secu3.android.db.models.IndicatorState
 import org.secu3.android.models.packets.input.AdcRawDatPacket
 import org.secu3.android.models.packets.input.SensorsPacket
+import org.secu3.android.models.packets.input.FirmwareInfoPacket
 import org.secu3.android.models.SensorGaugeStyle
+import org.secu3.android.models.InjectionTimingMode
 import org.secu3.android.ui.sensors.models.GaugeItem
 import org.secu3.android.ui.sensors.models.GaugeType
 import org.secu3.android.ui.sensors.models.IndicatorItem
@@ -64,20 +78,29 @@ class SensorsViewModel @Inject constructor(
     val state: StateFlow<SensorsUiState> = _state.asStateFlow()
     private val taskGate = SensorTaskGate(_state.value.selectedPage, secu3ConnectionManager::sendNewTask)
     private val preferenceListener = SharedPreferences.OnSharedPreferenceChangeListener { _, key ->
-        if (key == null || key == OLD_VIEW_KEY || key == UserPrefs.SENSOR_GAUGE_STYLE_KEY || key == context.getString(R.string.pref_write_log_key)) {
+        if (key == null || key == OLD_VIEW_KEY || key == UserPrefs.SENSOR_GAUGE_STYLE_KEY || key == UserPrefs.INJECTION_TIMING_MODE_KEY || key == context.getString(R.string.pref_write_log_key)) {
             refreshPreferences()
         }
     }
 
     val connectionStatusLiveData: LiveData<ConnectionState> = secu3ConnectionManager.connectionStateFlow.asLiveData()
-    val sensorsLiveData: LiveData<SensorsPacket> = secu3ConnectionManager.receivedPacketFlow.sample(100)
-        .filterIsInstance<SensorsPacket>().asLiveData()
-    val gaugesLiveData: LiveData<List<GaugeItem>> = secu3ConnectionManager.receivedPacketFlow.sample(100)
-        .filterIsInstance<SensorsPacket>().map { repository.convertToGaugeItemList(it) }.asLiveData()
-    val indicatorLiveData: LiveData<List<IndicatorItem>> = secu3ConnectionManager.receivedPacketFlow.sample(100)
-        .filterIsInstance<SensorsPacket>().map { repository.convertToIndicatorItemList(it) }.asLiveData()
-    val rawSensorsLiveData: LiveData<AdcRawDatPacket> = secu3ConnectionManager.receivedPacketFlow.sample(100)
-        .filterIsInstance<AdcRawDatPacket>().asLiveData()
+    private val initialFirmwareInfo = secu3ConnectionManager.fwInfo.takeIf { secu3ConnectionManager.isConnected }
+    private val sensorSession = sensorSessionFlow(
+        secu3ConnectionManager.connectionStateFlow,
+        secu3ConnectionManager.receivedPacketFlow,
+        initialFirmware = initialFirmwareInfo,
+    )
+        .stateIn(viewModelScope, SharingStarted.Eagerly, SensorSessionSnapshot(firmware = initialFirmwareInfo))
+    val sensorsLiveData: LiveData<SensorsPacket?> = sensorSession.map { it.sensors }.distinctUntilChanged().asLiveData()
+    val rawSensorsLiveData: LiveData<AdcRawDatPacket?> = sensorSession.map { it.rawSensors }.distinctUntilChanged().asLiveData()
+    val firmwareInfoLiveData: LiveData<FirmwareInfoPacket?> = sensorSession.map { it.firmware }.distinctUntilChanged().asLiveData()
+    val gaugesLiveData: LiveData<List<GaugeItem>> = repository.observeGaugeItems(
+        sensorSession.map { it.sensors }.distinctUntilChanged(),
+        state.map { it.injectionTimingMode }.distinctUntilChanged(),
+    ).asLiveData()
+    val indicatorLiveData: LiveData<List<IndicatorItem>> = repository.observeIndicatorItems(
+        sensorSession.map { it.sensors }.distinctUntilChanged(),
+    ).asLiveData()
 
     private var nextChoiceRequestId = 0L
     private val showAddGaugeFlow = MutableStateFlow<ChoiceRequest<GaugeType>?>(null)
@@ -103,6 +126,7 @@ class SensorsViewModel @Inject constructor(
         selectedPage = (savedStateHandle.get<Int>(KEY_SELECTED_PAGE) ?: 0).coerceIn(0, 1),
         oldViewEnabled = userPrefs.oldSensorViewEnabled,
         gaugeStyle = userPrefs.sensorGaugeStyle,
+        injectionTimingMode = userPrefs.injectionTimingMode,
         loggerEnabled = userPrefs.isSensorLoggerEnabled,
         loggerStarted = secuLogger.isLoggerStarted,
         loggerErrorId = secuLogger.state.value.pendingErrorId ?: 0,
@@ -141,6 +165,7 @@ class SensorsViewModel @Inject constructor(
             it.copy(
                 oldViewEnabled = userPrefs.oldSensorViewEnabled,
                 gaugeStyle = userPrefs.sensorGaugeStyle,
+                injectionTimingMode = userPrefs.injectionTimingMode,
                 loggerEnabled = userPrefs.isSensorLoggerEnabled,
             )
         }
@@ -207,6 +232,7 @@ data class SensorsUiState(
     val selectedPage: Int = 0,
     val oldViewEnabled: Boolean = false,
     val gaugeStyle: SensorGaugeStyle = SensorGaugeStyle.Default,
+    val injectionTimingMode: InjectionTimingMode = InjectionTimingMode.Default,
     val loggerEnabled: Boolean = false,
     val loggerStarted: Boolean = false,
     val loggerErrorId: Long = 0,
@@ -236,3 +262,56 @@ internal class SensorTaskGate(
 internal fun taskForPage(page: Int): Task = if (page == 0) Task.Secu3ReadSensors else Task.Secu3ReadRawSensors
 
 private const val OLD_VIEW_KEY = "old_sensors_view"
+
+internal data class SensorSessionSnapshot(
+    val sensors: SensorsPacket? = null,
+    val rawSensors: AdcRawDatPacket? = null,
+    val firmware: FirmwareInfoPacket? = null,
+)
+
+/**
+ * Packet values belong to one connected transport session. A new connection starts empty, and
+ * disconnect cancels the transport collector and clears every packet before another session can
+ * publish values. This also avoids replaying SharedFlow packets when a route collector restarts.
+ */
+@OptIn(kotlinx.coroutines.ExperimentalCoroutinesApi::class, kotlinx.coroutines.FlowPreview::class)
+internal fun sensorSessionFlow(
+    connectionStates: kotlinx.coroutines.flow.Flow<ConnectionState>,
+    packets: kotlinx.coroutines.flow.Flow<org.secu3.android.models.packets.base.InputPacket>,
+    initialFirmware: FirmwareInfoPacket? = null,
+): kotlinx.coroutines.flow.Flow<SensorSessionSnapshot> {
+    return flow {
+        var isFirstConnectionState = true
+        emitAll(connectionStates.flatMapLatest { status ->
+            val firmwareSeed = if (isFirstConnectionState && status == org.secu3.android.connection.Connected) initialFirmware else null
+            isFirstConnectionState = false
+            if (status != org.secu3.android.connection.Connected) {
+                flowOf(SensorSessionSnapshot())
+            } else {
+                channelFlow {
+                    val packetFeed = packets.filter {
+                        it is SensorsPacket || it is AdcRawDatPacket || it is FirmwareInfoPacket
+                    }.shareIn(this, SharingStarted.WhileSubscribed(), replay = 0)
+                    val updates = merge(
+                        packetFeed.filterIsInstance<SensorsPacket>().sample(100).map(SensorPacketUpdate::Sensors),
+                        packetFeed.filterIsInstance<AdcRawDatPacket>().sample(100).map(SensorPacketUpdate::RawSensors),
+                        packetFeed.filterIsInstance<FirmwareInfoPacket>().map(SensorPacketUpdate::Firmware),
+                    )
+                    updates.runningFold(SensorSessionSnapshot(firmware = firmwareSeed)) { snapshot, update ->
+                        when (update) {
+                            is SensorPacketUpdate.Sensors -> snapshot.copy(sensors = update.packet)
+                            is SensorPacketUpdate.RawSensors -> snapshot.copy(rawSensors = update.packet)
+                            is SensorPacketUpdate.Firmware -> snapshot.copy(firmware = update.packet)
+                        }
+                    }.collect { send(it) }
+                }
+            }
+        })
+    }
+}
+
+private sealed interface SensorPacketUpdate {
+    data class Sensors(val packet: SensorsPacket) : SensorPacketUpdate
+    data class RawSensors(val packet: AdcRawDatPacket) : SensorPacketUpdate
+    data class Firmware(val packet: FirmwareInfoPacket) : SensorPacketUpdate
+}

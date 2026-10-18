@@ -44,6 +44,7 @@ import org.junit.Rule
 import org.junit.Test
 import org.secu3.android.R
 import org.secu3.android.models.SensorGaugeStyle
+import org.secu3.android.models.InjectionTimingMode
 
 class SensorsSettingsScreenTest {
     @get:Rule val compose = createComposeRule()
@@ -83,5 +84,25 @@ class SensorsSettingsScreenTest {
         compose.runOnIdle { assertEquals(SensorGaugeStyle.PreciseArc, selected.value) }
         compose.onNodeWithTag("sensor-gauge-style-value", useUnmergedTree = true)
             .assertTextEquals(context.getString(R.string.sensor_gauge_style_precise_arc))
+    }
+
+    @Test fun injectionTimingSelectionRendersAndReportsTheChosenConvention() {
+        val selected = mutableStateOf(InjectionTimingMode.Default)
+        compose.setContent {
+            SensorsSettingsScreen(
+                oldView = false,
+                onOldViewChange = {},
+                onNavigateUp = {},
+                injectionTimingMode = selected.value,
+                onInjectionTimingModeChange = { selected.value = it },
+            )
+        }
+        compose.onNodeWithTag("injection-timing-mode-value", useUnmergedTree = true)
+            .assertTextEquals(context.getString(R.string.injection_timing_btdc_720))
+        compose.onNodeWithTag("injection-timing-mode-row").performScrollTo().performClick()
+        compose.onNodeWithTag("injection-timing-mode-atdc_360").assertIsDisplayed().performClick()
+        compose.runOnIdle { assertEquals(InjectionTimingMode.Atdc360, selected.value) }
+        compose.onNodeWithTag("injection-timing-mode-value", useUnmergedTree = true)
+            .assertTextEquals(context.getString(R.string.injection_timing_atdc_360))
     }
 }

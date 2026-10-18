@@ -79,6 +79,7 @@ import androidx.compose.ui.graphics.drawscope.drawIntoCanvas
 import androidx.compose.ui.graphics.nativeCanvas
 import org.secu3.android.R
 import org.secu3.android.models.SensorGaugeStyle
+import org.secu3.android.models.InjectionTimingMode
 import org.secu3.android.db.models.GaugeState
 import org.secu3.android.db.models.IndicatorState
 import org.secu3.android.ui.sensors.models.GaugeItem
@@ -88,7 +89,6 @@ import org.secu3.android.ui.sensors.models.IndicatorItem
 import org.secu3.android.ui.sensors.models.IndicatorType
 import org.secu3.android.ui.sensors.SensorsViewModel.ChoiceRequest
 import org.secu3.android.ui.compose.LocalSecuPalette
-import java.util.Locale
 import kotlin.math.roundToInt
 
 @Composable
@@ -104,6 +104,7 @@ internal fun SensorsScreen(
     onReorderingChanged: (Boolean) -> Unit = {},
     dataAvailable: Boolean = true,
     gaugeStyle: SensorGaugeStyle = SensorGaugeStyle.Default,
+    injectionTimingMode: InjectionTimingMode = InjectionTimingMode.Default,
 ) {
     var localGauges by remember { mutableStateOf(gauges) }
     var localIndicators by remember { mutableStateOf(indicators) }
@@ -247,6 +248,7 @@ internal fun SensorsScreen(
                                 GaugeCard(
                                     if (dataAvailable) item else item.copy(value = "—"),
                                     gaugeStyle,
+                                    injectionTimingMode,
                                     Modifier.fillMaxWidth().padding(8.dp)
                                         .onGloballyPositioned { coordinates ->
                                             val bounds = coordinates.boundsInRoot()
@@ -429,12 +431,12 @@ internal fun SensorsScreen(
 }
 
 @Composable
-private fun GaugeCard(item: GaugeItem, gaugeStyle: SensorGaugeStyle, modifier: Modifier, onMenu: () -> Unit) {
+private fun GaugeCard(item: GaugeItem, gaugeStyle: SensorGaugeStyle, injectionTimingMode: InjectionTimingMode, modifier: Modifier, onMenu: () -> Unit) {
     val type = item.state.gaugeType
-    val value = item.value.toFloatOrNull()
-    val scale = remember(type) { GaugeScale(type) }
+    val value = item.value.toFloatOrNull()?.takeIf(Float::isFinite)
+    val scale = remember(type, injectionTimingMode) { GaugeScale(type, injectionTimingMode) }
     val progress = rememberGaugeProgress(scale, value, enabled = !item.state.isNumericView)
-    val formattedValue = value?.let { if (type.isInteger) it.toInt().toString() else String.format(Locale.US, "%.1f", it) } ?: "—"
+    val formattedValue = item.value.takeIf { value != null } ?: "—"
     val dialDescription = "${stringResource(type.title)}: $formattedValue ${stringResource(type.units)}"
     val colors = MaterialTheme.colorScheme
     Card(

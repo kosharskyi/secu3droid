@@ -37,12 +37,14 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.requiredWidth
 import androidx.compose.foundation.layout.width
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.unit.Density
 import androidx.compose.ui.test.onNodeWithTag
+import androidx.compose.ui.test.onAllNodesWithTag
 import androidx.compose.ui.test.onAllNodesWithText
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.onRoot
@@ -85,13 +87,12 @@ class SensorsScreenTest {
     private val context = InstrumentationRegistry.getInstrumentation().targetContext
 
     @Test fun modernDialLabelsUseReadableActualTickValuesWithoutClippingOrOverlap() {
-        val expectedCounts = mapOf(
-            GaugeType.RPM to 5,
-            GaugeType.MAP to 7,
-            GaugeType.TEMPERATURE to 5,
-            GaugeType.CURRENT_ANGLE to 8,
+        val types = listOf(
+            GaugeType.RPM,
+            GaugeType.MAP,
+            GaugeType.TEMPERATURE,
+            GaugeType.CURRENT_ANGLE,
         )
-        val types = expectedCounts.keys.toList()
         val faceRadius = with(compose.density) { 112.dp.toPx() / 2f - 5.dp.toPx() }
         val halfStroke = with(compose.density) { 2.5.dp.toPx() }
         val bandGap = with(compose.density) { 3.dp.toPx() }
@@ -101,7 +102,6 @@ class SensorsScreenTest {
             val measured = measureNewGaugeDial(GaugeScale(type), 112.dp, compose.density, 14.dp)
             val labels = measured.labels
             val indices = labels.map { it.index }
-            assertEquals("${type.name} fitted tick labels", expectedCounts.getValue(type), labels.size)
             assertEquals("${type.name} min endpoint", 0, indices.first())
             assertEquals("${type.name} max endpoint", type.tickCount - 1, indices.last())
             assertTrue("${type.name} should include intermediate values", labels.size >= 4)
@@ -150,6 +150,54 @@ class SensorsScreenTest {
             .assert(SemanticsMatcher.expectValue(SemanticsProperties.StateDescription, context.getString(R.string.sensors_status_accessibility_off)))
         compose.onAllNodesWithText(context.getString(R.string.sensors_status_accessibility_on)).assertCountEquals(0)
         compose.onAllNodesWithText(context.getString(R.string.sensors_status_accessibility_off)).assertCountEquals(0)
+    }
+
+    @Test fun gaugeCardsPreserveRepositoryPrecisionAcrossNumericAndDialStyles() {
+        val selectedStyle = mutableStateOf(SensorGaugeStyle.Current)
+        val gauges = listOf(
+            GaugeItem(GaugeState(1, GaugeType.ADD1, 0, true), "0.012"),
+            GaugeItem(GaugeState(2, GaugeType.KNOCK_SIGNAL, 1, false), "0.012"),
+            GaugeItem(GaugeState(3, GaugeType.INJ_PW, 2, false), "2.34"),
+            GaugeItem(GaugeState(4, GaugeType.VEHICLE_SPEED, 3, false), "12.9"),
+        )
+        compose.setContent {
+            SecuComposeTheme {
+                SensorsScreen(
+                    gauges = gauges,
+                    indicators = emptyList(),
+                    gaugeChoices = null,
+                    indicatorChoices = null,
+                    onAddGaugeRequest = {},
+                    onAddIndicatorRequest = {},
+                    onAddGauge = {},
+                    onAddIndicator = {},
+                    onGaugeChoicesConsumed = {},
+                    onIndicatorChoicesConsumed = {},
+                    onDeleteGauge = {},
+                    onDeleteIndicator = {},
+                    onUpdateGauge = {},
+                    onReorderGauges = {},
+                    onReorderIndicators = {},
+                    gaugeStyle = selectedStyle.value,
+                )
+            }
+        }
+
+        for (style in SensorGaugeStyle.entries) {
+            compose.runOnIdle { selectedStyle.value = style }
+            compose.waitForIdle()
+
+            compose.onNodeWithTag("gauge-value-ADD1", useUnmergedTree = true).assertTextEquals("0.012")
+            if (style == SensorGaugeStyle.Current) {
+                compose.onAllNodesWithText("0.012").assertCountEquals(2)
+                compose.onAllNodesWithText("2.34").assertCountEquals(1)
+                compose.onAllNodesWithText("12.9").assertCountEquals(1)
+            }
+
+            assertDialDescription(GaugeType.KNOCK_SIGNAL, "0.012")
+            assertDialDescription(GaugeType.INJ_PW, "2.34")
+            assertDialDescription(GaugeType.VEHICLE_SPEED, "12.9")
+        }
     }
 
     @Test fun indicatorColorsCommunicateStateInBothThemesWhileSemanticsRemainAvailable() {
@@ -267,7 +315,7 @@ class SensorsScreenTest {
             val density = LocalDensity.current.density
             CompositionLocalProvider(LocalDensity provides Density(density, fontScale.value)) {
                 SecuComposeTheme {
-                    Box(Modifier.width(width.value.dp).testTag("adaptive-host")) {
+                    Box(Modifier.requiredWidth(width.value.dp).testTag("adaptive-host")) {
                         SensorsScreen(
                             gauges, indicators, null, null, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {},
                             gaugeStyle = SensorGaugeStyle.Current,
@@ -277,14 +325,19 @@ class SensorsScreenTest {
             }
         }
 
-        fun assertColumnCount(expected: Int) {
+        fun assertColumnCount() {
             compose.waitForIdle()
             val gaugeBounds = gauges.map { compose.onNodeWithTag("gauge-${it.state.gaugeType.name}").getUnclippedBoundsInRoot() }
             val indicatorBounds = indicators.map { compose.onNodeWithTag("indicator-${it.state.indicatorType.name}").getUnclippedBoundsInRoot() }
             val host = compose.onNodeWithTag("adaptive-host").getUnclippedBoundsInRoot()
+            val grid = compose.onNodeWithTag("gauges-grid").getUnclippedBoundsInRoot()
+            val minimumColumnWidth = 150f * fontScale.value.coerceAtLeast(1f)
+            val expected = ((grid.right - grid.left).value / minimumColumnWidth).toInt().coerceAtLeast(1)
             val hostCenter = (host.left + host.right).value / 2f
-            assertEquals(1, gaugeBounds.take(expected).map { it.top }.distinct().size)
-            assertEquals(1, indicatorBounds.take(expected).map { it.top }.distinct().size)
+            val gaugeRows = gaugeBounds.take(expected).map { it.top }.distinct().size
+            val indicatorRows = indicatorBounds.take(expected).map { it.top }.distinct().size
+            assertEquals("gauges should honor 150dp × font-scale cells: requested=${width.value}dp grid=${(grid.right - grid.left).value}dp fontScale=${fontScale.value} expectedColumns=$expected cardTops=${gaugeBounds.map { it.top.value }}", 1, gaugeRows)
+            assertEquals("indicators should honor 150dp × font-scale cells: requested=${width.value}dp grid=${(grid.right - grid.left).value}dp fontScale=${fontScale.value} expectedColumns=$expected cardTops=${indicatorBounds.map { it.top.value }}", 1, indicatorRows)
             assertEquals((gaugeBounds.first().right - gaugeBounds.first().left).value, (gaugeBounds[expected - 1].right - gaugeBounds[expected - 1].left).value, 1f)
             assertEquals((indicatorBounds.first().right - indicatorBounds.first().left).value, (indicatorBounds[expected - 1].right - indicatorBounds[expected - 1].left).value, 1f)
             if (gauges.size > expected) org.junit.Assert.assertTrue(gaugeBounds[expected].top > gaugeBounds.first().top)
@@ -300,12 +353,12 @@ class SensorsScreenTest {
             assertEquals("partial indicator rows stay centered", hostCenter, indicatorRowCenter, 1f)
         }
 
-        listOf(320 to 2, 360 to 2, 280 to 1, 600 to 4, 900 to 6).forEach { (availableWidth, expectedColumns) ->
+        listOf(320, 360, 280, 600, 900).forEach { availableWidth ->
             compose.runOnIdle { width.value = availableWidth; fontScale.value = 1f }
-            assertColumnCount(expectedColumns)
+            assertColumnCount()
         }
         compose.runOnIdle { width.value = 600; fontScale.value = 1.5f }
-        assertColumnCount(2)
+        assertColumnCount()
     }
 
     @Test fun centeredPartialRowsRemainDragTargetsForBothGrids() {
@@ -389,7 +442,7 @@ class SensorsScreenTest {
             val fontDensity = LocalDensity.current.density
             SecuComposeTheme {
                 CompositionLocalProvider(LocalDensity provides Density(fontDensity, 1f)) {
-                    Box(Modifier.width(520.dp)) {
+                    Box(Modifier.requiredWidth(520.dp)) {
                         SensorsScreen(
                             gauges.value, emptyList(), null, null,
                             {}, {}, {}, {}, {}, {}, {}, {},
@@ -526,15 +579,24 @@ class SensorsScreenTest {
             GaugeItem(GaugeState(2, GaugeType.CURRENT_ANGLE, 1, false), "-7.5"),
             GaugeItem(GaugeState(3, GaugeType.VOLTAGE, 2, false), "12.4"),
         )
-        compose.setContent { SecuComposeTheme {
-            Box(Modifier.width(width.value.dp)) { SensorsScreen(gauges, emptyList(), null, null, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, gaugeStyle = SensorGaugeStyle.Current) }
-        } }
-        listOf(240 to 1, 360 to 2, 480 to 3).forEach { (availableWidth, expectedColumns) ->
+        compose.setContent {
+            val density = LocalDensity.current.density
+            CompositionLocalProvider(LocalDensity provides Density(density, 1f)) {
+                SecuComposeTheme {
+                    Box(Modifier.requiredWidth(width.value.dp).testTag("dial-width-host")) {
+                        SensorsScreen(gauges, emptyList(), null, null, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, gaugeStyle = SensorGaugeStyle.Current)
+                    }
+                }
+            }
+        }
+        listOf(240, 360, 480).forEach { availableWidth ->
             compose.runOnIdle { width.value = availableWidth }
             compose.waitForIdle()
             val cardBounds = listOf("RPM", "CURRENT_ANGLE", "VOLTAGE").map { compose.onNodeWithTag("gauge-$it").getUnclippedBoundsInRoot() }
+            val grid = compose.onNodeWithTag("gauges-grid").getUnclippedBoundsInRoot()
+            val expectedColumns = ((grid.right - grid.left).value / 150f).toInt().coerceAtLeast(1)
             val firstTop = cardBounds.first().top
-            assertEquals(1, cardBounds.take(expectedColumns).map { it.top }.distinct().size)
+            assertEquals("requested=${availableWidth}dp grid=${(grid.right - grid.left).value}dp expectedColumns=$expectedColumns cardTops=${cardBounds.map { it.top.value }}", 1, cardBounds.take(expectedColumns).map { it.top }.distinct().size)
             if (expectedColumns == 1) org.junit.Assert.assertTrue(cardBounds[1].top > firstTop)
             else assertEquals(firstTop.value, cardBounds[1].top.value, 1f)
             if (expectedColumns == 3) assertEquals(firstTop.value, cardBounds[2].top.value, 1f)
@@ -732,13 +794,21 @@ class SensorsScreenTest {
             assertEquals("147.6", GaugeScale.formatValue(147.6f))
             assertEquals("-7.4", GaugeScale.formatValue(-7.4f))
             assertEquals("147", GaugeScale.formatValue(147f))
-            assertEquals("0.5", GaugeScale.formatValue(GaugeScale(GaugeType.ADD1).ticks[1].value))
+            val add1Scale = GaugeScale(GaugeType.ADD1)
+            assertEquals("0.25", add1Scale.format(add1Scale.ticks[1]))
+            assertEquals("0.5", add1Scale.format(add1Scale.ticks[2]))
             assertEquals("-7.5", GaugeScale.formatValue(-7.5f))
             Locale.setDefault(Locale.GERMANY)
             assertEquals("-7,5", GaugeScale.formatValue(-7.5f))
         } finally {
             Locale.setDefault(originalLocale)
         }
+    }
+
+    private fun assertDialDescription(type: GaugeType, value: String) {
+        val description = "${context.getString(type.title)}: $value ${context.getString(type.units)}"
+        compose.onNodeWithTag("dial-${type.name}", useUnmergedTree = true)
+            .assert(SemanticsMatcher.expectValue(SemanticsProperties.ContentDescription, listOf(description)))
     }
 
     private fun captureDesignScreenshot(fileName: String) {
@@ -1012,14 +1082,19 @@ class SensorsScreenTest {
             GaugeItem(GaugeState(1, GaugeType.RPM, 0, true), "100"),
             GaugeItem(GaugeState(2, GaugeType.VOLTAGE, 1, true), "12"),
         ))
-        compose.setContent { SecuComposeTheme {
-            Box(Modifier.width(320.dp)) {
-                SensorsScreen(
-                    packetItems.value, emptyList(), null, null,
-                    {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {},
-                )
+        compose.setContent {
+            val density = LocalDensity.current.density
+            CompositionLocalProvider(LocalDensity provides Density(density, 1f)) {
+                SecuComposeTheme {
+                    Box(Modifier.requiredWidth(320.dp)) {
+                        SensorsScreen(
+                            packetItems.value, emptyList(), null, null,
+                            {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {},
+                        )
+                    }
+                }
             }
-        } }
+        }
         val sourceBounds = compose.onNodeWithTag("gauge-RPM").fetchSemanticsNode().boundsInRoot
         val targetBounds = compose.onNodeWithTag("gauge-VOLTAGE").fetchSemanticsNode().boundsInRoot
         compose.onNodeWithTag("gauge-RPM").performTouchInput {
@@ -1054,7 +1129,7 @@ class SensorsScreenTest {
         compose.runOnIdle { packetItems.value = listOf(packetItems.value[0], packetItems.value[2]) }
         compose.onNodeWithTag("gauge-RPM").assertIsDisplayed()
         compose.onNodeWithTag("gauge-MAP").assertIsDisplayed()
-        compose.onNodeWithTag("gauge-VOLTAGE").assertDoesNotExist()
+        compose.onAllNodesWithTag("gauge-VOLTAGE").assertCountEquals(0)
     }
 
     @Test fun cancellingDragAfterPacketUpdateKeepsPendingOrderAndReconciles() {

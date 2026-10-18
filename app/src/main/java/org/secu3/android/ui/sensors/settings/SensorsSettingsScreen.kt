@@ -42,6 +42,7 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import org.secu3.android.R
 import org.secu3.android.models.SensorGaugeStyle
+import org.secu3.android.models.InjectionTimingMode
 import org.secu3.android.ui.compose.SettingsActionRow
 import org.secu3.android.ui.compose.SettingsSection
 import org.secu3.android.ui.compose.SettingsToggleRow
@@ -54,8 +55,11 @@ internal fun SensorsSettingsScreen(
     onNavigateUp: () -> Unit,
     gaugeStyle: SensorGaugeStyle = SensorGaugeStyle.Default,
     onGaugeStyleChange: (SensorGaugeStyle) -> Unit = {},
+    injectionTimingMode: InjectionTimingMode = InjectionTimingMode.Default,
+    onInjectionTimingModeChange: (InjectionTimingMode) -> Unit = {},
 ) {
     var gaugeStyleDialog by remember { mutableStateOf(false) }
+    var injectionTimingDialog by remember { mutableStateOf(false) }
     Column(Modifier.fillMaxSize().background(MaterialTheme.colorScheme.background)) {
         SecuTopAppBar(title = stringResource(R.string.title_activity_settings), onNavigateUp = onNavigateUp, showStatus = false)
         Column(
@@ -78,6 +82,19 @@ internal fun SensorsSettingsScreen(
                     value = {
                         Row(verticalAlignment = Alignment.CenterVertically) {
                             Text(stringResource(gaugeStyle.labelResource()), Modifier.testTag("sensor-gauge-style-value"), style = MaterialTheme.typography.bodyLarge)
+                            Icon(Icons.Default.ExpandMore, contentDescription = null, tint = MaterialTheme.colorScheme.onSurfaceVariant)
+                        }
+                    },
+                )
+            }
+            SettingsSection {
+                SettingsActionRow(
+                    title = stringResource(R.string.injection_timing_mode),
+                    onClick = { injectionTimingDialog = true },
+                    testTag = "injection-timing-mode",
+                    value = {
+                        Row(verticalAlignment = Alignment.CenterVertically) {
+                            Text(stringResource(injectionTimingMode.labelResource()), Modifier.testTag("injection-timing-mode-value"), style = MaterialTheme.typography.bodyLarge)
                             Icon(Icons.Default.ExpandMore, contentDescription = null, tint = MaterialTheme.colorScheme.onSurfaceVariant)
                         }
                     },
@@ -111,10 +128,43 @@ internal fun SensorsSettingsScreen(
             confirmButton = { TextButton(onClick = { gaugeStyleDialog = false }) { Text(stringResource(R.string.close)) } },
         )
     }
+    if (injectionTimingDialog) {
+        AlertDialog(
+            onDismissRequest = { injectionTimingDialog = false },
+            title = { Text(stringResource(R.string.injection_timing_mode)) },
+            text = {
+                Column(Modifier.selectableGroup()) {
+                    InjectionTimingMode.entries.forEach { mode ->
+                        Row(
+                            Modifier.fillMaxWidth().heightIn(min = 48.dp).selectable(
+                                selected = injectionTimingMode == mode,
+                                role = Role.RadioButton,
+                            ) {
+                                onInjectionTimingModeChange(mode)
+                                injectionTimingDialog = false
+                            }.testTag("injection-timing-mode-${mode.preferenceValue}"),
+                            verticalAlignment = Alignment.CenterVertically,
+                        ) {
+                            RadioButton(selected = injectionTimingMode == mode, onClick = null)
+                            Text(stringResource(mode.labelResource()), Modifier.padding(start = 8.dp))
+                        }
+                    }
+                }
+            },
+            confirmButton = { TextButton(onClick = { injectionTimingDialog = false }) { Text(stringResource(R.string.close)) } },
+        )
+    }
 }
 
 private fun SensorGaugeStyle.labelResource(): Int = when (this) {
     SensorGaugeStyle.Current -> R.string.sensor_gauge_style_current
     SensorGaugeStyle.PreciseArc -> R.string.sensor_gauge_style_precise_arc
     SensorGaugeStyle.ThinNeedle -> R.string.sensor_gauge_style_thin_needle
+}
+
+private fun InjectionTimingMode.labelResource(): Int = when (this) {
+    InjectionTimingMode.Btdc720 -> R.string.injection_timing_btdc_720
+    InjectionTimingMode.Atdc720 -> R.string.injection_timing_atdc_720
+    InjectionTimingMode.Btdc360 -> R.string.injection_timing_btdc_360
+    InjectionTimingMode.Atdc360 -> R.string.injection_timing_atdc_360
 }

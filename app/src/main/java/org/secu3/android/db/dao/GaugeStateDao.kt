@@ -28,6 +28,7 @@ package org.secu3.android.db.dao
 import androidx.room.Dao
 import androidx.room.Query
 import androidx.room.Transaction
+import kotlinx.coroutines.flow.Flow
 import org.secu3.android.db.models.GaugeState
 import org.secu3.android.ui.sensors.models.GaugeType
 
@@ -39,6 +40,9 @@ interface GaugeStateDao : BaseDao<GaugeState> {
 
     @Query("SELECT * FROM gauge_state ORDER BY idx")
     suspend fun getAllOrderByIdx(): List<GaugeState>
+
+    @Query("SELECT * FROM gauge_state ORDER BY idx")
+    fun observeAllOrderByIdx(): Flow<List<GaugeState>>
 
     @Query("SELECT * FROM gauge_state WHERE gauge_type = :gaugeType")
     suspend fun getByGaugeType(gaugeType: GaugeType): GaugeState?

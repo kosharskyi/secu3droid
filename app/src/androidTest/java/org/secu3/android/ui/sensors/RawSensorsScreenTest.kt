@@ -39,6 +39,7 @@ import org.junit.Rule
 import org.junit.Test
 import org.secu3.android.R
 import org.secu3.android.models.packets.input.AdcRawDatPacket
+import org.secu3.android.ui.sensors.RawSensorCapabilities
 import org.secu3.android.ui.compose.SecuComposeTheme
 import java.util.Locale
 
@@ -105,6 +106,39 @@ class RawSensorsScreenTest {
             .performScrollToNode(hasText(context.getString(labelIds.last())))
         compose.onNodeWithText(context.getString(labelIds.last())).assertIsDisplayed()
         compose.onNodeWithText("13.000 ${context.getString(R.string.units_volts)}").assertIsDisplayed()
+    }
+
+    @Test fun secu3THidesUnsupportedPhysicalChannelsAndMarksI4Unavailable() {
+        compose.setContent {
+            SecuComposeTheme {
+                RawSensorsScreen(
+                    packet((1..13).map { it.toFloat() }),
+                    capabilities = RawSensorCapabilities(isSecu3T = true, isTpic8101Enabled = false, isAtmega1284 = true),
+                )
+            }
+        }
+
+        compose.onNodeWithText(context.getString(R.string.raw_sensors_frag_add_io3_input_label)).assertDoesNotExist()
+        (9..12).forEach { index -> compose.onNodeWithText(context.getString(labelIds[index])).assertDoesNotExist() }
+        compose.onNodeWithTag("raw-sensor-row-${labelIds[8]}-value")
+            .assertTextEquals("— ${context.getString(R.string.units_volts)}")
+    }
+
+    @Test fun unsupportedSpiAdcChannelsStayVisibleButDoNotShowPacketZeros() {
+        compose.setContent {
+            SecuComposeTheme {
+                RawSensorsScreen(
+                    packet((1..13).map { it.toFloat() }),
+                    capabilities = RawSensorCapabilities(isSecu3T = false, isTpic8101Enabled = false, isAtmega1284 = false),
+                )
+            }
+        }
+
+        (8..12).forEach { index ->
+            compose.onNodeWithTag("raw-sensor-row-${labelIds[index]}-value")
+                .assertTextEquals("— ${context.getString(R.string.units_volts)}")
+        }
+        compose.onNodeWithTag("raw-sensor-row-${labelIds[7]}-value").assertTextEquals("8.000 ${context.getString(R.string.units_volts)}")
     }
 
     private fun packet(v: List<Float>) = AdcRawDatPacket(
