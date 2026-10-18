@@ -144,7 +144,7 @@ class Secu3ConnectionManager @Inject constructor(private val usbConnection: UsbC
     }
 
     fun startBtConnection() {
-        mPrefs.bluetoothDeviceName?.takeIf {  it.isNotEmpty() }?.let {
+        BluetoothDeviceAddress.normalize(mPrefs.bluetoothDeviceAddress)?.let {
             if (bluetoothManager.adapter.isEnabled.not()) {
                 return
             }

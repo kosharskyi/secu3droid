@@ -11,3 +11,7 @@ The stable `sensor_gauge_style` values are `current`, `precise_arc`, and `thin_n
 ## Retired sensor column preference is intentionally ignored
 
 Older installs may still contain the `columns_count` SharedPreferences key. No code reads, rewrites, or removes it; the Sensors UI derives columns from its current content width, and leaving the stale key untouched avoids an unnecessary preference migration.
+
+## Bluetooth selection identity is the stored address
+
+`bluetoothDeviceAddress` is the only Bluetooth identity used to validate, start, or reconnect a connection. `bluetoothDeviceName` is retained as display metadata only; older installs that have only the name must select their device again instead of guessing among bonded devices with duplicate names.

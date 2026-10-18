@@ -101,6 +101,10 @@ class UserPrefs @Inject constructor(@ApplicationContext private val ctx: Context
         get() = mPrefs.getString(ctx.getString(R.string.pref_bluetooth_device_key), null);
         set(value) = mPrefs.edit { putString(ctx.getString(R.string.pref_bluetooth_device_key), value) }
 
+    var bluetoothDeviceAddress: String?
+        get() = mPrefs.getString(ctx.getString(R.string.pref_bluetooth_device_address_key), null)
+        set(value) = mPrefs.edit { putString(ctx.getString(R.string.pref_bluetooth_device_address_key), value) }
+
     var connectionRetries: Int
         get() = mPrefs.getString(ctx.getString(R.string.pref_connection_retries_key), ctx.getString(R.string.defaultConnectionRetries))!!.toInt()
         set(value) = mPrefs.edit { putString(ctx.getString(R.string.pref_connection_retries_key), value.toString()) }

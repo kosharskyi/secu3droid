@@ -51,6 +51,31 @@ class UserPrefsTest {
     }
 
     @Test
+    fun bluetoothAddressPersistsSeparatelyAndLegacyNameDoesNotBecomeAnAddress() {
+        val nameKey = context.getString(R.string.pref_bluetooth_device_key)
+        val addressKey = context.getString(R.string.pref_bluetooth_device_address_key)
+        val keys = listOf(nameKey, addressKey)
+        val previous = keys.associateWith { key -> if (sharedPreferences.contains(key)) sharedPreferences.all[key] else null }
+        try {
+            sharedPreferences.edit().remove(nameKey).remove(addressKey).commit()
+            val prefs = UserPrefs(context)
+
+            prefs.bluetoothDeviceName = "ECU"
+            assertNull("legacy name-only installs require reselection", prefs.bluetoothDeviceAddress)
+
+            prefs.bluetoothDeviceAddress = "00:11:22:33:44:55"
+            val recreatedPrefs = UserPrefs(context)
+            assertEquals("00:11:22:33:44:55", recreatedPrefs.bluetoothDeviceAddress)
+            assertEquals("ECU", recreatedPrefs.bluetoothDeviceName)
+        } finally {
+            sharedPreferences.edit().apply {
+                keys.forEach(::remove)
+                previous.forEach { (key, value) -> if (value is String) putString(key, value) }
+            }.commit()
+        }
+    }
+
+    @Test
     fun sensorGaugeStyleDefaultsAndUnknownValuesReadAsPreciseArcWithoutRepairingStoredPreference() {
         val key = UserPrefs.SENSOR_GAUGE_STYLE_KEY
         val hadValue = sharedPreferences.contains(key)

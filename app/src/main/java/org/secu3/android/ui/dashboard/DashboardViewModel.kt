@@ -32,6 +32,7 @@ import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.filter
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.sample
+import org.secu3.android.connection.BluetoothDeviceAddress
 import org.secu3.android.connection.ConnectionState
 import org.secu3.android.connection.Secu3ConnectionManager
 import org.secu3.android.models.packets.input.SensorsPacket
@@ -58,7 +59,7 @@ class DashboardViewModel @Inject constructor(private val secu3ConnectionManager:
         get() = mPrefs.isKeepScreenAliveActive
 
     fun isBluetoothDeviceAddressNotSelected(): Boolean {
-        return mPrefs.bluetoothDeviceName.isNullOrBlank()
+        return BluetoothDeviceAddress.normalize(mPrefs.bluetoothDeviceAddress) == null
     }
 
     fun setTask(task: Task) {

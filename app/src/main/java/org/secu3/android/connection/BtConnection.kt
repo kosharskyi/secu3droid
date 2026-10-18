@@ -53,19 +53,21 @@ class BtConnection @Inject constructor(
 
     private val bluetoothAdapter: BluetoothAdapter? = bluetoothManager.adapter
     private var bluetoothSocket: BluetoothSocket? = null
+    private var connectionAddress: String? = null
 
-    private val pairedDeviceName: String?
-        get() = prefs.bluetoothDeviceName
+    private val pairedDeviceAddress: String?
+        get() = BluetoothDeviceAddress.normalize(prefs.bluetoothDeviceAddress)
 
     override val isConnected: Boolean
         get() = bluetoothSocket?.isConnected == true
 
 
     fun startConnection() {
-        val deviceName = pairedDeviceName
-        if (deviceName == null || deviceName.isBlank()) {
-            throw IllegalStateException("Paired device name is not set in SharedPreferences")
+        val deviceAddress = pairedDeviceAddress
+        if (deviceAddress == null) {
+            throw IllegalStateException("Paired device address is not set in SharedPreferences")
         }
+        connectionAddress = deviceAddress
         isRunning = true
         connectionAttempts = 0
         reconnect()
@@ -109,8 +111,11 @@ class BtConnection @Inject constructor(
 
     private fun connectToDevice() {
         try {
-            val device = bluetoothAdapter?.bondedDevices?.find { it.name == pairedDeviceName }
-                ?: throw IOException("Device name is null")
+            val address = connectionAddress ?: throw IOException("Device address is invalid")
+            val device = bluetoothAdapter?.bondedDevices?.let {
+                BluetoothDeviceAddress.find(address, it) { device -> device.address }
+            }
+                ?: throw IOException("Paired device address is unavailable")
 
             bluetoothSocket = device.createRfcommSocketToServiceRecord(UUID.fromString("00001101-0000-1000-8000-00805F9B34FB"))
             bluetoothAdapter.cancelDiscovery()

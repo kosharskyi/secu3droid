@@ -19,6 +19,7 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
 import org.secu3.android.connection.ConnectionState
+import org.secu3.android.connection.BluetoothDeviceAddress
 import org.secu3.android.connection.Secu3ConnectionManager
 import org.secu3.android.utils.UserPrefs
 import javax.inject.Inject
@@ -57,20 +58,23 @@ class StartScreenViewModel @Inject constructor(
     fun consumeLocationSettingsReturn(): Boolean = returnFromLocationSettings.also { returnFromLocationSettings = false }
     fun selectedUsbDevice(): UsbDevice? = usbDevice
     fun isBtDeviceAddressNotSelected(): Boolean {
-        val name = prefs.bluetoothDeviceName?.takeIf(String::isNotEmpty) ?: return true
+        val address = BluetoothDeviceAddress.normalize(prefs.bluetoothDeviceAddress) ?: return true
         val adapter = bluetoothAdapter ?: return true
         val found = try {
-            adapter.bondedDevices.firstOrNull { it.name == name }
+            BluetoothDeviceAddress.find(address, adapter.bondedDevices, ::bluetoothAddress)
         } catch (_: SecurityException) {
             return true
         }
-        if (found == null) prefs.bluetoothDeviceName = null
+        if (found == null) prefs.bluetoothDeviceAddress = null
         return found == null
     }
     fun getBluetoothDeviceName(device: BluetoothDevice): String? = try { device.name } catch (_: SecurityException) { null }
     private fun bluetoothAddress(device: BluetoothDevice): String? = try { device.address } catch (_: SecurityException) { null }
     private fun bondState(device: BluetoothDevice) = try { device.bondState } catch (_: SecurityException) { null }
-    private fun saveDevice(device: BluetoothDevice) { prefs.bluetoothDeviceName = getBluetoothDeviceName(device) }
+    private fun saveDevice(device: BluetoothDevice) {
+        prefs.bluetoothDeviceAddress = BluetoothDeviceAddress.normalize(bluetoothAddress(device))
+        prefs.bluetoothDeviceName = getBluetoothDeviceName(device)
+    }
 
     fun startBtDiscovery() {
         try {
