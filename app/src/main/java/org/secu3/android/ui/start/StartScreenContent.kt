@@ -21,7 +21,6 @@
 
 package org.secu3.android.ui.start
 
-import androidx.compose.foundation.Image
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -165,8 +164,12 @@ fun StartScreenContent(
                                     ListItem(
                                         headlineContent = {
                                             Row {
-                                                Image(Icons.Default.Bluetooth, contentDescription = "Bluetooth icon",
-                                                    modifier = Modifier.padding(end = 8.dp).align(Alignment.CenterVertically))
+                                                Icon(
+                                                    imageVector = Icons.Default.Bluetooth,
+                                                    contentDescription = "Bluetooth icon",
+                                                    modifier = Modifier.padding(end = 8.dp).align(Alignment.CenterVertically),
+                                                    tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                                                )
                                                 Column {
                                                     Text(device.name.ifEmpty { stringResource(R.string.unknown_device) })
                                                     Text(device.id, fontSize = 12.sp,
