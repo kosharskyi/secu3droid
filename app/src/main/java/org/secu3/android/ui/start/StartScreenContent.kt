@@ -148,11 +148,11 @@ fun StartScreenContent(
                 if (state.showBluetoothDevices) {
                     ModalBottomSheet(
                         onDismissRequest = actions.onBluetoothSheetDismissed,
-                        sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true),
+                        sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = false),
                         modifier = Modifier.testTag("bluetooth-device-sheet"),
                     ) {
                         Column(
-                            Modifier.fillMaxWidth().fillMaxHeight(0.5f).testTag("bluetooth-device-sheet-content"),
+                            Modifier.fillMaxWidth().fillMaxHeight().testTag("bluetooth-device-sheet-content"),
                         ) {
                             Text(
                                 text = stringResource(R.string.select_a_device_from_the_list),

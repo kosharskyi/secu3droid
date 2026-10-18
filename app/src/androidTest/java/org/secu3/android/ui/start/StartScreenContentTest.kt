@@ -57,6 +57,7 @@ import org.secu3.android.ui.compose.SecuComposeTheme
 import java.io.File
 import java.util.Locale
 import kotlin.math.cos
+import kotlin.math.abs
 import kotlin.math.roundToInt
 import kotlin.math.sin
 import kotlin.math.PI
@@ -248,10 +249,10 @@ class StartScreenContentTest {
         }
     }
 
-    private fun captureBluetoothSheetScreenshotIfRequested() {
-        if (InstrumentationRegistry.getArguments().getString("captureBluetoothSheetScreenshot") != "true") return
+    private fun captureBluetoothSheetScreenshotIfRequested(fileName: String) {
+        if (InstrumentationRegistry.getArguments().getString("captureBluetoothSheetScreenshots") != "true") return
         val screenshotCommand = InstrumentationRegistry.getInstrumentation().uiAutomation
-            .executeShellCommand("screencap -p /sdcard/Pictures/bluetooth-sheet-half-window.png")
+            .executeShellCommand("screencap -p /sdcard/Pictures/$fileName")
         android.os.ParcelFileDescriptor.AutoCloseInputStream(screenshotCommand).use { output ->
             val buffer = ByteArray(1024)
             var bytesRead: Int
@@ -315,9 +316,9 @@ class StartScreenContentTest {
         assertEquals(0, dismissed)
     }
 
-    @Test fun bluetoothSheetKeepsExistingRowsFixedAsDiscoveryAppendsDevices() {
+    @Test fun bluetoothSheetExpandsBeforeListScrollsAndKeepsRowsStableDuringDiscovery() {
         val selected = mutableListOf<String>()
-        val devices = mutableStateOf(listOf(StartBluetoothDevice("AA:BB:CC:DD:EE:01", "ECU One")))
+        val devices = mutableStateOf(emptyList<StartBluetoothDevice>())
         compose.setContent {
             StartScreenContent(
                 StartScreenState(showBluetoothDevices = true, bluetoothDevices = devices.value),
@@ -326,24 +327,22 @@ class StartScreenContentTest {
         }
 
         val heading = compose.onNodeWithText(context.getString(R.string.select_a_device_from_the_list))
-        val firstRow = compose.onNodeWithText("AA:BB:CC:DD:EE:01")
         heading.assertIsDisplayed()
-        firstRow.assertIsDisplayed()
+        compose.onNodeWithText("AA:BB:CC:DD:EE:01").assertDoesNotExist()
         val sheet = compose.onNodeWithTag("bluetooth-device-sheet")
         val sheetBounds = sheet.getUnclippedBoundsInRoot()
         val viewportHeightDp = context.resources.displayMetrics.heightPixels / compose.density.density
         val sheetHeightRatio = (sheetBounds.bottom.value - sheetBounds.top.value) / viewportHeightDp
-        assertTrue("The modal occupies about half of the available window ($sheetHeightRatio)", sheetHeightRatio in 0.43f..0.57f)
         val headingBounds = heading.getUnclippedBoundsInRoot()
-        val firstRowBounds = firstRow.getUnclippedBoundsInRoot()
         val initialListBounds = compose.onNodeWithTag("bluetooth-device-list").getUnclippedBoundsInRoot()
         val contentTopRatio = headingBounds.top.value / viewportHeightDp
         val listBottomRatio = initialListBounds.bottom.value / viewportHeightDp
+        assertTrue("The empty modal occupies about half of the available window ($sheetHeightRatio)", sheetHeightRatio in 0.9f..1.05f)
         assertTrue("Sheet content begins around mid-window ($contentTopRatio)", contentTopRatio in 0.43f..0.62f)
         assertTrue("The list reaches the bottom safe-area edge ($listBottomRatio)", listBottomRatio >= 0.9f)
 
-        // Discovery adds a couple of devices before capturing the actual dialog window.
-        (2..3).forEach { index ->
+        // Add a few devices and confirm discovery doesn't move the partially expanded sheet.
+        (1..3).forEach { index ->
             compose.runOnIdle {
                 devices.value = devices.value + StartBluetoothDevice(
                     "AA:BB:CC:DD:EE:${index.toString().padStart(2, '0')}",
@@ -352,10 +351,14 @@ class StartScreenContentTest {
             }
         }
         compose.waitForIdle()
-        captureBluetoothSheetScreenshotIfRequested()
+        val firstRow = compose.onNodeWithText("AA:BB:CC:DD:EE:01")
+        firstRow.assertIsDisplayed()
+        val firstRowBounds = firstRow.getUnclippedBoundsInRoot()
+        assertEquals("Discovery keeps the initial sheet anchor fixed", headingBounds, heading.getUnclippedBoundsInRoot())
+        captureBluetoothSheetScreenshotIfRequested("bluetooth-sheet-half-window.png")
 
-        // Continue discovery until the fixed half-window list must scroll.
-        (4..14).forEach { index ->
+        // Continue discovery until the list overflows its fixed, full-height content viewport.
+        (4..20).forEach { index ->
             compose.runOnIdle {
                 devices.value = devices.value + StartBluetoothDevice(
                     "AA:BB:CC:DD:EE:${index.toString().padStart(2, '0')}",
@@ -365,9 +368,9 @@ class StartScreenContentTest {
         }
 
         compose.waitForIdle()
-        assertEquals("The sheet keeps its half-window height while discovery grows", sheetBounds, sheet.getUnclippedBoundsInRoot())
         assertEquals("The sheet heading stays in place while discovery grows", headingBounds, heading.getUnclippedBoundsInRoot())
         assertEquals("The first device stays in place while discovery grows", firstRowBounds, firstRow.getUnclippedBoundsInRoot())
+        assertEquals("The sheet measurement stays fixed while discovery grows", sheetBounds, sheet.getUnclippedBoundsInRoot())
 
         // Inject at the first row's original screen position, independent of its current semantics bounds.
         val rememberedCenter = Offset(
@@ -385,14 +388,37 @@ class StartScreenContentTest {
         }
         assertEquals("The remembered row position still selects the same address", listOf("AA:BB:CC:DD:EE:01"), selected)
 
-        // Verify rows beyond the fixed viewport can scroll into view and select.
         compose.runOnIdle { selected.clear() }
-        compose.runOnIdle {
-            devices.value = devices.value + StartBluetoothDevice("AA:BB:CC:DD:EE:20", "ECU 20")
+        val list = compose.onNodeWithTag("bluetooth-device-list")
+        val firstRowOffsetBeforeExpansion = firstRow.getUnclippedBoundsInRoot().top.value - list.getUnclippedBoundsInRoot().top.value
+
+        // A controlled, short upward swipe expands the partial sheet without leftover travel to scroll the list.
+        val listBounds = list.getUnclippedBoundsInRoot()
+        val visibleListHeightPx = (minOf(listBounds.bottom.value, viewportHeightDp) - maxOf(listBounds.top.value, 0f)) * compose.density.density
+        list.performTouchInput {
+            swipe(
+                start = Offset(width / 2f, visibleListHeightPx * 0.8f),
+                end = Offset(width / 2f, visibleListHeightPx * 0.3f),
+                durationMillis = 1800,
+            )
         }
-        compose.onNodeWithTag("bluetooth-device-list").performScrollToNode(hasText("AA:BB:CC:DD:EE:20"))
-        compose.onNodeWithText("AA:BB:CC:DD:EE:20").performClick()
-        assertEquals(listOf("AA:BB:CC:DD:EE:20"), selected)
+        compose.waitForIdle()
+        val expandedHeadingBounds = heading.getUnclippedBoundsInRoot()
+        val expandedHeadingTopRatio = expandedHeadingBounds.top.value / viewportHeightDp
+        captureBluetoothSheetScreenshotIfRequested("bluetooth-sheet-expanded.png")
+        val firstRowOffsetAfterExpansion = firstRow.getUnclippedBoundsInRoot().top.value - list.getUnclippedBoundsInRoot().top.value
+        assertTrue("The first swipe expands the sheet to the top ($expandedHeadingTopRatio)", expandedHeadingTopRatio < 0.15f)
+        assertTrue("The first device stays at the list start during expansion", abs(firstRowOffsetBeforeExpansion - firstRowOffsetAfterExpansion) < 4f)
+        firstRow.assertIsDisplayed()
+
+        // Further upward swipes now scroll inside the expanded sheet.
+        repeat(8) {
+            list.performTouchInput { swipeUp() }
+            compose.waitForIdle()
+        }
+        val lastAddress = "AA:BB:CC:DD:EE:20"
+        compose.onNodeWithText(lastAddress).assertIsDisplayed().performClick()
+        assertEquals(listOf(lastAddress), selected)
     }
 
     @Test fun bluetoothSheetDismissCallsCleanupCallback() {
