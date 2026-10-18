@@ -97,6 +97,7 @@ fun SecuTopAppBar(
     showStatus: Boolean = connectionState != null,
     actions: @Composable () -> Unit = {},
     navigationIconModifier: Modifier = Modifier,
+    statusBeforeActions: Boolean = true,
 ) {
     TopAppBar(
         title = { Text(title, maxLines = 1, overflow = TextOverflow.Ellipsis) },
@@ -111,8 +112,15 @@ fun SecuTopAppBar(
             }
         },
         actions = {
+            if (statusBeforeActions && showStatus) {
+                ConnectionStatusIndicator(
+                    connectionState,
+                    Modifier.padding(end = 12.dp),
+                    testTag = "connection-status-indicator",
+                )
+            }
             actions()
-            if (showStatus) {
+            if (!statusBeforeActions && showStatus) {
                 ConnectionStatusIndicator(
                     connectionState,
                     Modifier.padding(end = 4.dp),

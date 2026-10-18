@@ -86,6 +86,7 @@ internal fun ErrorsScreen(
                     actions = {
                         Box(
                             modifier = Modifier
+                                .padding(end = 12.dp)
                                 .size(ToolbarIconButtonSize)
                                 .clip(RoundedCornerShape(12.dp))
                                 .background(MaterialTheme.colorScheme.errorContainer)
