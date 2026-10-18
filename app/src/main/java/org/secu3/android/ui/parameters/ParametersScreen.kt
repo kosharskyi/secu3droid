@@ -161,7 +161,12 @@ internal fun ParametersScreen(
         }
     }
 
-    Column(Modifier.fillMaxSize().windowInsetsPadding(WindowInsets.safeDrawing).background(MaterialTheme.colorScheme.background)) {
+    Column(
+        Modifier
+            .fillMaxSize()
+            .windowInsetsPadding(WindowInsets.safeDrawing.only(WindowInsetsSides.Horizontal + WindowInsetsSides.Bottom))
+            .background(MaterialTheme.colorScheme.background),
+    ) {
         ParametersToolbar(connectionState, onBack, onSave)
         SecuTabRow(
             titles = titles,
