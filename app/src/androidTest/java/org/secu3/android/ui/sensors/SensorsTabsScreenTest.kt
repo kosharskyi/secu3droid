@@ -29,9 +29,12 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.remember
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.WindowInsets
+import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.width
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.test.junit4.v2.createComposeRule
 import androidx.compose.material3.SnackbarHostState
@@ -248,26 +251,43 @@ class SensorsTabsScreenTest {
         compose.onNodeWithTag("old-sensors-list").assertExists()
     }
 
-    @Test fun columnPreferenceUpdatesWithoutChangingOldViewSelection() {
-        val columns = mutableStateOf(2)
-        val gauges = listOf(
-            GaugeItem(GaugeState(1, GaugeType.RPM, 0, true), "100"),
-            GaugeItem(GaugeState(2, GaugeType.VOLTAGE, 1, true), "12.1"),
-            GaugeItem(GaugeState(3, GaugeType.MAP, 2, true), "90"),
-        )
-        compose.setContent { SecuComposeTheme { SensorsScreen(columns = columns.value, oldView = false, gauges = gauges) } }
-        val twoColumnTop = compose.onNodeWithTag("gauge-RPM").fetchSemanticsNode().boundsInRoot.top
-        val thirdGaugeTop = compose.onNodeWithTag("gauge-MAP").fetchSemanticsNode().boundsInRoot.top
-        org.junit.Assert.assertTrue(thirdGaugeTop > twoColumnTop)
-        compose.runOnIdle { columns.value = 3 }
-        val threeColumnTop = compose.onNodeWithTag("gauge-MAP").fetchSemanticsNode().boundsInRoot.top
-        assertEquals(twoColumnTop, threeColumnTop, 1f)
-        compose.onNodeWithTag("gauges-grid").assertExists()
+    @Test fun landscapeCutoutInsetsApplyToPagesButNotTabsWhileNavigationInsetsRemain() {
+        val density = compose.density
+        val navigationLeft = with(density) { 16.dp.roundToPx() }
+        val navigationRight = with(density) { 20.dp.roundToPx() }
+        val navigationTop = with(density) { 24.dp.roundToPx() }
+        val navigationBottom = with(density) { 28.dp.roundToPx() }
+        val cutoutLeft = with(density) { 80.dp.roundToPx() }
+        val cutoutRight = with(density) { 56.dp.roundToPx() }
+        val safeTop = with(density) { 36.dp.roundToPx() }
+        val safeBottom = with(density) { 44.dp.roundToPx() }
+        val safeDrawingInsets = WindowInsets(left = cutoutLeft, top = safeTop, right = cutoutRight, bottom = safeBottom)
+        val systemBarsInsets = WindowInsets(left = navigationLeft, top = navigationTop, right = navigationRight, bottom = navigationBottom)
+
+        compose.setContent {
+            SecuComposeTheme {
+                Box(Modifier.width(800.dp).height(700.dp).testTag("inset-host")) {
+                    SensorsScreen(safeDrawingInsets = safeDrawingInsets, systemBarsInsets = systemBarsInsets)
+                }
+            }
+        }
+
+        val host = compose.onNodeWithTag("inset-host").getUnclippedBoundsInRoot()
+        val tabs = compose.onNodeWithTag("sensors-tabs").getUnclippedBoundsInRoot()
+        val pager = compose.onNodeWithTag("sensors-pager").getUnclippedBoundsInRoot()
+        val loggerFab = compose.onNodeWithTag("log-start").getUnclippedBoundsInRoot()
+        assertEquals(host.left.value + navigationLeft / density.density, tabs.left.value, 1f)
+        assertEquals(host.right.value - navigationRight / density.density, tabs.right.value, 1f)
+        assertEquals(host.left.value + cutoutLeft / density.density, pager.left.value, 1f)
+        assertEquals(host.right.value - cutoutRight / density.density, pager.right.value, 1f)
+        org.junit.Assert.assertTrue("logger FAB stays clear of the cutout and navigation bar", loggerFab.left.value >= host.left.value + cutoutLeft / density.density)
+        org.junit.Assert.assertTrue("vertical safe inset remains above the tabs", tabs.top.value >= host.top.value + safeTop / density.density)
+        org.junit.Assert.assertTrue("page begins below, not beneath, the tabs", pager.top >= tabs.bottom)
+        org.junit.Assert.assertTrue("vertical safe inset remains below the page", pager.bottom.value <= host.bottom.value - safeBottom / density.density)
     }
 
     @Composable private fun SensorsScreen(
         page: Int = 0,
-        columns: Int = 2,
         oldView: Boolean = false,
         gauges: List<GaugeItem> = emptyList(),
         indicators: List<IndicatorItem> = emptyList(),
@@ -280,9 +300,11 @@ class SensorsTabsScreenTest {
         onLoggerErrorConsumed: (Long) -> Unit = {},
         start: () -> Unit = {}, stop: () -> Unit = {}, mark: (Int) -> Unit = {},
         settings: () -> Unit = {},
+        safeDrawingInsets: WindowInsets = WindowInsets.safeDrawing,
+        systemBarsInsets: WindowInsets = WindowInsets.systemBars,
     ) = SensorsTabsScreen(
         initialPage = page, oldViewEnabled = oldView, loggerEnabled = true, loggerStarted = loggerStarted,
-        loggerErrorId = loggerErrorId, snackbarHostState = remember { SnackbarHostState() }, columns = columns,
+        loggerErrorId = loggerErrorId, snackbarHostState = remember { SnackbarHostState() },
         connectionState = Disconnected, gauges = gauges, indicators = indicators, gaugeChoices = null,
         indicatorChoices = null, sensors = null, rawSensors = null, onPageChanged = pageChanged,
         onNavigateUp = {}, onSettings = settings,
@@ -293,5 +315,7 @@ class SensorsTabsScreenTest {
         onStopLog = stop, onMark = mark,
         onLoggerErrorConsumed = onLoggerErrorConsumed,
         gaugeStyle = org.secu3.android.models.SensorGaugeStyle.Current,
+        safeDrawingInsets = safeDrawingInsets,
+        systemBarsInsets = systemBarsInsets,
     )
 }

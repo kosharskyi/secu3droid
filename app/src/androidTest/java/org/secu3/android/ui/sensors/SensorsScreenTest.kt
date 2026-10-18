@@ -39,6 +39,7 @@ import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.width
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.unit.Density
 import androidx.compose.ui.test.onNodeWithTag
@@ -46,6 +47,7 @@ import androidx.compose.ui.test.onAllNodesWithText
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.onRoot
 import androidx.compose.ui.test.captureToImage
+import androidx.compose.ui.test.getUnclippedBoundsInRoot
 import androidx.compose.ui.graphics.asAndroidBitmap
 import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.performTouchInput
@@ -87,7 +89,7 @@ class SensorsScreenTest {
             SensorsScreen(
                 listOf(GaugeItem(GaugeState(4, GaugeType.RPM, 0, true), "1234")),
                 listOf(IndicatorItem(IndicatorState(2, IndicatorType.CHECK_ENGINE, 0), true), IndicatorItem(IndicatorState(3, IndicatorType.THROTTLE, 1), false)),
-                2, null, null, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {},
+                null, null, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {},
             )
         } }
         compose.onNodeWithTag("gauge-RPM").assertIsDisplayed()
@@ -109,7 +111,7 @@ class SensorsScreenTest {
                 SensorsScreen(
                     emptyList(),
                     listOf(IndicatorItem(IndicatorState(1, IndicatorType.CHECK_ENGINE, 0), active.value)),
-                    1, null, null, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {},
+                    null, null, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {},
                     dataAvailable = available.value,
                 )
             }
@@ -175,7 +177,6 @@ class SensorsScreenTest {
                                 GaugeItem(GaugeState(2, GaugeType.VOLTAGE, 1, true), "12.4"),
                             ),
                             indicators = listOf(IndicatorItem(IndicatorState(2, IndicatorType.CHECK_ENGINE, 0), true)),
-                            columns = 2,
                             gaugeChoices = null,
                             indicatorChoices = null,
                             onAddGaugeRequest = {},
@@ -199,7 +200,7 @@ class SensorsScreenTest {
         val value = compose.onNodeWithText("1234").fetchSemanticsNode().boundsInRoot
         org.junit.Assert.assertTrue("large type should remain within the gauge card", value.left >= card.left && value.right <= card.right)
         val secondGauge = compose.onNodeWithTag("gauge-VOLTAGE").fetchSemanticsNode().boundsInRoot
-        org.junit.Assert.assertTrue("two configured columns should reflow for enlarged numeric values", secondGauge.top > card.top)
+        org.junit.Assert.assertTrue("the width-derived two-column layout should reflow for enlarged numeric values", secondGauge.top > card.top)
         compose.onNodeWithTag("indicator-CHECK_ENGINE").performScrollTo().assertIsDisplayed()
         captureDesignScreenshot("design-sensors-light.png")
         compose.runOnIdle { screenshotMode.value = true }
@@ -207,33 +208,105 @@ class SensorsScreenTest {
         captureDesignScreenshot("design-sensors-dark.png")
     }
 
-    @Test fun configuredColumnCountControlsGaugeGridPlacement() {
-        val columns = mutableStateOf(2)
-        compose.setContent { SecuComposeTheme {
-            SensorsScreen(
-                listOf(GaugeItem(GaugeState(1, GaugeType.RPM, 0, true), "100"), GaugeItem(GaugeState(2, GaugeType.VOLTAGE, 1, true), "12.1"), GaugeItem(GaugeState(3, GaugeType.MAP, 2, true), "90")),
-                emptyList(), columns.value, null, null, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {},
-                gaugeStyle = SensorGaugeStyle.Current,
-            )
-        } }
-        val firstTop = compose.onNodeWithTag("gauge-RPM").fetchSemanticsNode().boundsInRoot.top
-        val secondTop = compose.onNodeWithTag("gauge-VOLTAGE").fetchSemanticsNode().boundsInRoot.top
-        assertEquals(firstTop, secondTop, 1f)
-        val firstBounds = compose.onNodeWithTag("gauge-RPM").fetchSemanticsNode().boundsInRoot
-        val secondBounds = compose.onNodeWithTag("gauge-VOLTAGE").fetchSemanticsNode().boundsInRoot
-        val twoColumnGrid = compose.onNodeWithTag("gauges-grid").fetchSemanticsNode().boundsInRoot
-        assertEquals(firstBounds.width, secondBounds.width, 1f)
-        org.junit.Assert.assertTrue(firstBounds.width + secondBounds.width > twoColumnGrid.width * .90f)
-        val thirdTopTwoColumns = compose.onNodeWithTag("gauge-MAP").fetchSemanticsNode().boundsInRoot.top
-        org.junit.Assert.assertTrue(thirdTopTwoColumns > firstTop)
-        compose.runOnIdle { columns.value = 3 }
-        val threeBounds = listOf("RPM", "VOLTAGE", "MAP").map { compose.onNodeWithTag("gauge-$it").fetchSemanticsNode().boundsInRoot }
-        assertEquals(threeBounds[0].width, threeBounds[1].width, 1f)
-        assertEquals(threeBounds[1].width, threeBounds[2].width, 1f)
-        assertEquals(threeBounds[0].top, threeBounds[2].top, 1f)
-        compose.runOnIdle { columns.value = 1 }
-        val singleColumnSecondTop = compose.onNodeWithTag("gauge-VOLTAGE").fetchSemanticsNode().boundsInRoot.top
-        org.junit.Assert.assertTrue(singleColumnSecondTop > firstTop)
+    @Test fun gaugeAndIndicatorColumnsAdaptToWindowWidthAndFontScale() {
+        val width = mutableStateOf(320)
+        val fontScale = mutableStateOf(1f)
+        val gauges = GaugeType.entries.take(7).mapIndexed { index, type -> GaugeItem(GaugeState(index + 1, type, index, true), "12") }
+        val indicators = IndicatorType.entries.take(7).mapIndexed { index, type -> IndicatorItem(IndicatorState(index + 1, type, index), false) }
+        compose.setContent {
+            val density = LocalDensity.current.density
+            CompositionLocalProvider(LocalDensity provides Density(density, fontScale.value)) {
+                SecuComposeTheme {
+                    Box(Modifier.width(width.value.dp).testTag("adaptive-host")) {
+                        SensorsScreen(
+                            gauges, indicators, null, null, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {},
+                            gaugeStyle = SensorGaugeStyle.Current,
+                        )
+                    }
+                }
+            }
+        }
+
+        fun assertColumnCount(expected: Int) {
+            compose.waitForIdle()
+            val gaugeBounds = gauges.map { compose.onNodeWithTag("gauge-${it.state.gaugeType.name}").getUnclippedBoundsInRoot() }
+            val indicatorBounds = indicators.map { compose.onNodeWithTag("indicator-${it.state.indicatorType.name}").getUnclippedBoundsInRoot() }
+            val host = compose.onNodeWithTag("adaptive-host").getUnclippedBoundsInRoot()
+            val hostCenter = (host.left + host.right).value / 2f
+            assertEquals(1, gaugeBounds.take(expected).map { it.top }.distinct().size)
+            assertEquals(1, indicatorBounds.take(expected).map { it.top }.distinct().size)
+            assertEquals((gaugeBounds.first().right - gaugeBounds.first().left).value, (gaugeBounds[expected - 1].right - gaugeBounds[expected - 1].left).value, 1f)
+            assertEquals((indicatorBounds.first().right - indicatorBounds.first().left).value, (indicatorBounds[expected - 1].right - indicatorBounds[expected - 1].left).value, 1f)
+            if (gauges.size > expected) org.junit.Assert.assertTrue(gaugeBounds[expected].top > gaugeBounds.first().top)
+            if (indicators.size > expected) org.junit.Assert.assertTrue(indicatorBounds[expected].top > indicatorBounds.first().top)
+            // An incomplete last row keeps the same cell width as a full row.
+            assertEquals((gaugeBounds.first().right - gaugeBounds.first().left).value, (gaugeBounds.last().right - gaugeBounds.last().left).value, 1f)
+            assertEquals((indicatorBounds.first().right - indicatorBounds.first().left).value, (indicatorBounds.last().right - indicatorBounds.last().left).value, 1f)
+            val gaugesInLastRow = gaugeBounds.takeLast(gauges.size % expected).ifEmpty { gaugeBounds.takeLast(expected) }
+            val indicatorsInLastRow = indicatorBounds.takeLast(indicators.size % expected).ifEmpty { indicatorBounds.takeLast(expected) }
+            val gaugeRowCenter = gaugesInLastRow.map { (it.left + it.right).value / 2f }.average().toFloat()
+            val indicatorRowCenter = indicatorsInLastRow.map { (it.left + it.right).value / 2f }.average().toFloat()
+            assertEquals("partial gauge rows stay centered", hostCenter, gaugeRowCenter, 1f)
+            assertEquals("partial indicator rows stay centered", hostCenter, indicatorRowCenter, 1f)
+        }
+
+        listOf(320 to 2, 360 to 2, 280 to 1, 600 to 4, 900 to 6).forEach { (availableWidth, expectedColumns) ->
+            compose.runOnIdle { width.value = availableWidth; fontScale.value = 1f }
+            assertColumnCount(expectedColumns)
+        }
+        compose.runOnIdle { width.value = 600; fontScale.value = 1.5f }
+        assertColumnCount(2)
+    }
+
+    @Test fun centeredPartialRowsRemainDragTargetsForBothGrids() {
+        val gauges = listOf(
+            GaugeItem(GaugeState(1, GaugeType.RPM, 0, true), "1200"),
+            GaugeItem(GaugeState(2, GaugeType.VOLTAGE, 1, true), "12.4"),
+            GaugeItem(GaugeState(3, GaugeType.MAP, 2, true), "42.0"),
+        )
+        val indicators = listOf(
+            IndicatorItem(IndicatorState(1, IndicatorType.THROTTLE, 0), false),
+            IndicatorItem(IndicatorState(2, IndicatorType.GAS_VALVE, 1), true),
+            IndicatorItem(IndicatorState(3, IndicatorType.CHECK_ENGINE, 2), false),
+        )
+        var savedGauges: List<GaugeState>? = null
+        var savedIndicators: List<IndicatorState>? = null
+        compose.setContent {
+            SecuComposeTheme {
+                Box(Modifier.width(360.dp).testTag("centered-grid-host")) {
+                    SensorsScreen(
+                        gauges, indicators, null, null, {}, {}, {}, {}, {}, {}, {}, {}, {},
+                        { savedGauges = it }, { savedIndicators = it },
+                    )
+                }
+            }
+        }
+
+        fun assertCenteredLastRow(firstTag: String, lastTag: String) {
+            val host = compose.onNodeWithTag("centered-grid-host").getUnclippedBoundsInRoot()
+            val first = compose.onNodeWithTag(firstTag).getUnclippedBoundsInRoot()
+            val last = compose.onNodeWithTag(lastTag).getUnclippedBoundsInRoot()
+            assertEquals((first.right - first.left).value, (last.right - last.left).value, 1f)
+            assertEquals((host.left + host.right).value / 2f, (last.left + last.right).value / 2f, 1f)
+        }
+        assertCenteredLastRow("gauge-RPM", "gauge-MAP")
+        assertCenteredLastRow("indicator-THROTTLE", "indicator-CHECK_ENGINE")
+
+        fun dragTo(sourceTag: String, targetTag: String) {
+            val source = compose.onNodeWithTag(sourceTag).fetchSemanticsNode().boundsInRoot
+            val target = compose.onNodeWithTag(targetTag).fetchSemanticsNode().boundsInRoot
+            compose.onNodeWithTag(sourceTag).performTouchInput {
+                down(center)
+                advanceEventTime(600)
+                moveBy(Offset(target.center.x - source.center.x, target.center.y - source.center.y))
+                up()
+            }
+            compose.waitForIdle()
+        }
+        dragTo("gauge-RPM", "gauge-MAP")
+        assertEquals(listOf(GaugeType.VOLTAGE, GaugeType.MAP, GaugeType.RPM), savedGauges?.map { it.gaugeType })
+        dragTo("indicator-THROTTLE", "indicator-CHECK_ENGINE")
+        assertEquals(listOf(IndicatorType.GAS_VALVE, IndicatorType.CHECK_ENGINE, IndicatorType.THROTTLE), savedIndicators?.map { it.indicatorType })
     }
 
     @Test fun numericGaugeCanSwitchToDialAndDeleteFromCardMenu() {
@@ -242,7 +315,7 @@ class SensorsScreenTest {
         compose.setContent { SecuComposeTheme {
             SensorsScreen(
                 listOf(GaugeItem(GaugeState(1, GaugeType.RPM, 0, true), "2400")), emptyList(),
-                2, null, null, {}, {}, {}, {}, {}, {}, { deleted = it }, {}, { switched = it }, {}, {},
+                null, null, {}, {}, {}, {}, {}, {}, { deleted = it }, {}, { switched = it }, {}, {},
                 gaugeStyle = SensorGaugeStyle.Current,
             )
         } }
@@ -268,7 +341,7 @@ class SensorsScreenTest {
                 CompositionLocalProvider(LocalDensity provides Density(fontDensity, 1f)) {
                     Box(Modifier.width(520.dp)) {
                         SensorsScreen(
-                            gauges.value, emptyList(), 3, null, null,
+                            gauges.value, emptyList(), null, null,
                             {}, {}, {}, {}, {}, {}, {}, {},
                             { state -> gauges.value = gauges.value.map { if (it.state.gaugeType == state.gaugeType) it.copy(state = state) else it } },
                             {}, {},
@@ -331,7 +404,7 @@ class SensorsScreenTest {
                 Box(Modifier.width(360.dp)) {
                     SensorsScreen(
                         gauges = listOf(GaugeItem(GaugeState(1, GaugeType.RPM, 0, numeric.value), "2840")),
-                        indicators = emptyList(), columns = 2, gaugeChoices = null, indicatorChoices = null,
+                        indicators = emptyList(), gaugeChoices = null, indicatorChoices = null,
                         onAddGaugeRequest = {}, onAddIndicatorRequest = {}, onAddGauge = {}, onAddIndicator = {},
                         onGaugeChoicesConsumed = {}, onIndicatorChoicesConsumed = {}, onDeleteGauge = {}, onDeleteIndicator = {},
                         onUpdateGauge = {}, onReorderGauges = {}, onReorderIndicators = {}, gaugeStyle = style.value,
@@ -370,13 +443,13 @@ class SensorsScreenTest {
         assertEquals("returning to classic restores the original height", classic.height, cardBounds().height, 1f)
     }
 
-    @Test fun dialFitsInsideNarrowThreeColumnGaugeCard() {
+    @Test fun dialFitsInsideAutomaticGridCell() {
         compose.setContent {
             SecuComposeTheme {
-                Box(Modifier.width(360.dp)) {
+                Box(Modifier.width(480.dp)) {
                     SensorsScreen(
                         listOf(GaugeItem(GaugeState(1, GaugeType.RPM, 0, false), "2400")),
-                        emptyList(), 3, null, null, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {},
+                        emptyList(), null, null, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {},
                         gaugeStyle = SensorGaugeStyle.Current,
                     )
                 }
@@ -393,30 +466,36 @@ class SensorsScreenTest {
         org.junit.Assert.assertTrue("dial must fit vertically in its card", dial.top >= card.top && dial.bottom <= card.bottom)
     }
 
-    @Test fun composeDialKeepsValueAndNegativeRangeWithinCardsAcrossColumnCounts() {
-        val columns = mutableStateOf(1)
+    @Test fun composeDialKeepsValueAndNegativeRangeWithinCardsAcrossWindowWidths() {
+        val width = mutableStateOf(240)
         val gauges = listOf(
             GaugeItem(GaugeState(1, GaugeType.RPM, 0, false), "1234"),
             GaugeItem(GaugeState(2, GaugeType.CURRENT_ANGLE, 1, false), "-7.5"),
             GaugeItem(GaugeState(3, GaugeType.VOLTAGE, 2, false), "12.4"),
         )
         compose.setContent { SecuComposeTheme {
-            Box(Modifier.width(360.dp)) { SensorsScreen(gauges.take(columns.value), emptyList(), columns.value, null, null, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, gaugeStyle = SensorGaugeStyle.Current) }
+            Box(Modifier.width(width.value.dp)) { SensorsScreen(gauges, emptyList(), null, null, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, gaugeStyle = SensorGaugeStyle.Current) }
         } }
-        for (columnCount in 1..3) {
-            compose.runOnIdle { columns.value = columnCount }
+        listOf(240 to 1, 360 to 2, 480 to 3).forEach { (availableWidth, expectedColumns) ->
+            compose.runOnIdle { width.value = availableWidth }
             compose.waitForIdle()
-            for (name in listOf("RPM", "CURRENT_ANGLE", "VOLTAGE").take(columnCount)) {
-                val card = compose.onNodeWithTag("gauge-$name").fetchSemanticsNode().boundsInRoot
-                val dial = compose.onNodeWithTag("dial-$name", useUnmergedTree = true).fetchSemanticsNode().boundsInRoot
-                org.junit.Assert.assertTrue("$name dial is clipped at $columnCount columns: card=$card dial=$dial", dial.left >= card.left && dial.right <= card.right && dial.top >= card.top && dial.bottom <= card.bottom)
+            val cardBounds = listOf("RPM", "CURRENT_ANGLE", "VOLTAGE").map { compose.onNodeWithTag("gauge-$it").getUnclippedBoundsInRoot() }
+            val firstTop = cardBounds.first().top
+            assertEquals(1, cardBounds.take(expectedColumns).map { it.top }.distinct().size)
+            if (expectedColumns == 1) org.junit.Assert.assertTrue(cardBounds[1].top > firstTop)
+            else assertEquals(firstTop.value, cardBounds[1].top.value, 1f)
+            if (expectedColumns == 3) assertEquals(firstTop.value, cardBounds[2].top.value, 1f)
+            for ((index, name) in listOf("RPM", "CURRENT_ANGLE", "VOLTAGE").withIndex()) {
+                val card = cardBounds[index]
+                val dial = compose.onNodeWithTag("dial-$name", useUnmergedTree = true).getUnclippedBoundsInRoot()
+                org.junit.Assert.assertTrue("$name dial is clipped at $expectedColumns columns: card=$card dial=$dial", dial.left >= card.left && dial.right <= card.right && dial.top >= card.top && dial.bottom <= card.bottom)
             }
         }
         val angleDescription = "${context.getString(GaugeType.CURRENT_ANGLE.title)}: -7.5 ${context.getString(GaugeType.CURRENT_ANGLE.units)}"
         compose.onNodeWithTag("dial-CURRENT_ANGLE", useUnmergedTree = true).assert(SemanticsMatcher.expectValue(SemanticsProperties.ContentDescription, listOf(angleDescription)))
     }
 
-    @Test fun preciseArcUsesReadableSharedColumnWidthAtThreeColumnPreference() {
+    @Test fun preciseArcUsesReadableMinimumCellWidth() {
         val style = mutableStateOf(SensorGaugeStyle.PreciseArc)
         val gauges = listOf(
             GaugeItem(GaugeState(1, GaugeType.RPM, 0, false), "2840"),
@@ -424,8 +503,8 @@ class SensorsScreenTest {
             GaugeItem(GaugeState(3, GaugeType.VOLTAGE, 2, false), "13.8"),
         )
         compose.setContent { SecuComposeTheme {
-            Box(Modifier.width(360.dp)) {
-                SensorsScreen(gauges, emptyList(), 3, null, null, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, gaugeStyle = style.value)
+            Box(Modifier.width(320.dp)) {
+                SensorsScreen(gauges, emptyList(), null, null, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, gaugeStyle = style.value)
             }
         } }
 
@@ -433,8 +512,8 @@ class SensorsScreenTest {
         val secondCard = compose.onNodeWithTag("gauge-TEMPERATURE").fetchSemanticsNode().boundsInRoot
         val thirdCard = compose.onNodeWithTag("gauge-VOLTAGE").fetchSemanticsNode().boundsInRoot
         val dialBody = compose.onNodeWithTag("gauge-body-RPM", useUnmergedTree = true).fetchSemanticsNode().boundsInRoot
-        org.junit.Assert.assertTrue("the 150dp readability guard should reflow the third card", thirdCard.top > firstCard.top)
-        val minimumWidthPx = 150.dp.value * context.resources.displayMetrics.density
+        org.junit.Assert.assertTrue("the available width should reflow the third card", thirdCard.top > firstCard.top)
+        val minimumWidthPx = (150f - 16f) * context.resources.displayMetrics.density
         org.junit.Assert.assertTrue("reflowed precise-arc card should retain a useful width", firstCard.width >= minimumWidthPx)
         org.junit.Assert.assertTrue("precise-arc drawing bounds should remain non-empty", dialBody.width > 0f && dialBody.height > dialBody.width)
         val description = "${context.getString(GaugeType.RPM.title)}: 2840 ${context.getString(GaugeType.RPM.units)}"
@@ -449,7 +528,7 @@ class SensorsScreenTest {
         val value = mutableStateOf("100")
         val numeric = mutableStateOf(false)
         compose.setContent { SecuComposeTheme {
-            SensorsScreen(listOf(GaugeItem(GaugeState(1, GaugeType.RPM, 0, numeric.value), value.value)), emptyList(), 1, null, null,
+            SensorsScreen(listOf(GaugeItem(GaugeState(1, GaugeType.RPM, 0, numeric.value), value.value)), emptyList(), null, null,
                 {}, {}, {}, {}, {}, {}, {}, {}, { numeric.value = !numeric.value }, {}, {}, gaugeStyle = SensorGaugeStyle.Current)
         } }
         fun rpmDescription(value: String) = "${context.getString(GaugeType.RPM.title)}: $value ${context.getString(GaugeType.RPM.units)}"
@@ -472,7 +551,6 @@ class SensorsScreenTest {
                 SensorsScreen(
                     gauges = listOf(GaugeItem(GaugeState(1, GaugeType.RPM, 0, false), reading.value)),
                     indicators = emptyList(),
-                    columns = 1,
                     gaugeChoices = null,
                     indicatorChoices = null,
                     onAddGaugeRequest = {}, onAddIndicatorRequest = {}, onAddGauge = {}, onAddIndicator = {},
@@ -535,7 +613,7 @@ class SensorsScreenTest {
             indicatorChoices = remember { mutableStateOf<SensorsViewModel.ChoiceRequest<IndicatorType>?>(null) }
             SensorsScreen(
                 emptyList(), listOf(IndicatorItem(IndicatorState(0, IndicatorType.THROTTLE, 0), false)),
-                1, gaugeChoices.value, indicatorChoices.value,
+                gaugeChoices.value, indicatorChoices.value,
                 {}, {}, { addedGauge = it }, { addedIndicator = it }, { gaugeChoices.value = null }, { indicatorChoices.value = null }, {}, { deletedIndicator = it }, {}, {}, {},
             )
         } }
@@ -556,7 +634,7 @@ class SensorsScreenTest {
             SensorsScreen(
                 listOf(GaugeItem(GaugeState(1, GaugeType.RPM, 0), "100"), GaugeItem(GaugeState(2, GaugeType.VOLTAGE, 1), "12.1")),
                 listOf(IndicatorItem(IndicatorState(3, IndicatorType.THROTTLE, 0), false), IndicatorItem(IndicatorState(4, IndicatorType.GAS_VALVE, 1), true)),
-                2, null, null, {}, {}, {}, {}, {}, {}, {}, {}, {}, { savedGauges = it }, { savedIndicators = it },
+                null, null, {}, {}, {}, {}, {}, {}, {}, {}, {}, { savedGauges = it }, { savedIndicators = it },
             )
         } }
         val gaugeSource = compose.onNodeWithTag("gauge-RPM").fetchSemanticsNode().boundsInRoot
@@ -589,13 +667,15 @@ class SensorsScreenTest {
     @Test fun activeGaugeFollowsFingerUntilDrop() {
         // Compact numeric cards keep both drag targets in the tablet viewport; dial sizing is tested separately.
         compose.setContent { SecuComposeTheme {
-            SensorsScreen(
-                listOf(
-                    GaugeItem(GaugeState(1, GaugeType.RPM, 0, isNumericView = true), "100"),
-                    GaugeItem(GaugeState(2, GaugeType.VOLTAGE, 1, isNumericView = true), "12"),
-                ), emptyList(),
-                1, null, null, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {},
-            )
+            Box(Modifier.width(280.dp)) {
+                SensorsScreen(
+                    listOf(
+                        GaugeItem(GaugeState(1, GaugeType.RPM, 0, isNumericView = true), "100"),
+                        GaugeItem(GaugeState(2, GaugeType.VOLTAGE, 1, isNumericView = true), "12"),
+                    ), emptyList(),
+                    null, null, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {},
+                )
+            }
         } }
         val initialBounds = compose.onNodeWithTag("gauge-RPM").fetchSemanticsNode().boundsInRoot
         val neighborBounds = compose.onNodeWithTag("gauge-VOLTAGE").fetchSemanticsNode().boundsInRoot
@@ -620,12 +700,14 @@ class SensorsScreenTest {
 
     @Test fun activeIndicatorPreviewsNeighborMovingToVacatedSlot() {
         compose.setContent { SecuComposeTheme {
-            SensorsScreen(
-                emptyList(), listOf(
-                    IndicatorItem(IndicatorState(1, IndicatorType.THROTTLE, 0), false),
-                    IndicatorItem(IndicatorState(2, IndicatorType.GAS_VALVE, 1), true),
-                ), 1, null, null, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {},
-            )
+            Box(Modifier.width(280.dp)) {
+                SensorsScreen(
+                    emptyList(), listOf(
+                        IndicatorItem(IndicatorState(1, IndicatorType.THROTTLE, 0), false),
+                        IndicatorItem(IndicatorState(2, IndicatorType.GAS_VALVE, 1), true),
+                    ), null, null, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {},
+                )
+            }
         } }
         val throttleStart = compose.onNodeWithTag("indicator-THROTTLE").fetchSemanticsNode().boundsInRoot
         val gasStart = compose.onNodeWithTag("indicator-GAS_VALVE").fetchSemanticsNode().boundsInRoot
@@ -656,7 +738,7 @@ class SensorsScreenTest {
                 listOf(
                     GaugeItem(GaugeState(1, GaugeType.RPM, 0, isNumericView = true), "100"),
                     GaugeItem(GaugeState(2, GaugeType.VOLTAGE, 1, isNumericView = true), "12"),
-                ), emptyList(), 2, null, null,
+                ), emptyList(), null, null,
                 {}, {}, {}, {}, {}, {}, {}, {}, {}, { savedOrder = it }, {},
             )
         } }
@@ -702,7 +784,7 @@ class SensorsScreenTest {
                 listOf(
                     GaugeItem(GaugeState(1, GaugeType.RPM, 0, isNumericView = true), "100"),
                     GaugeItem(GaugeState(2, GaugeType.VOLTAGE, 1, isNumericView = true), "12"),
-                ), emptyList(), 1, null, null,
+                ), emptyList(), null, null,
                 {}, {}, {}, {}, {}, {}, {}, {}, {}, { savedOrder = it }, {},
             )
         } }
@@ -740,7 +822,7 @@ class SensorsScreenTest {
                 listOf(
                     GaugeItem(GaugeState(1, GaugeType.RPM, 0), "100"),
                     GaugeItem(GaugeState(2, GaugeType.VOLTAGE, 1), "12"),
-                ), emptyList(), 1, null, null,
+                ), emptyList(), null, null,
                 {}, {}, {}, {}, {}, {}, {}, {}, {}, { savedOrder = it }, {},
             )
         } }
@@ -778,10 +860,12 @@ class SensorsScreenTest {
             GaugeItem(GaugeState(2, GaugeType.VOLTAGE, 1, true), "12"),
         ))
         compose.setContent { SecuComposeTheme {
-            SensorsScreen(
-                packetItems.value, emptyList(), 2, null, null,
-                {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {},
-            )
+            Box(Modifier.width(320.dp)) {
+                SensorsScreen(
+                    packetItems.value, emptyList(), null, null,
+                    {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {},
+                )
+            }
         } }
         val sourceBounds = compose.onNodeWithTag("gauge-RPM").fetchSemanticsNode().boundsInRoot
         val targetBounds = compose.onNodeWithTag("gauge-VOLTAGE").fetchSemanticsNode().boundsInRoot
@@ -826,13 +910,15 @@ class SensorsScreenTest {
             GaugeItem(GaugeState(2, GaugeType.VOLTAGE, 1, true), "12"),
         ))
         compose.setContent { SecuComposeTheme {
-            SensorsScreen(
-                packetItems.value, emptyList(), 1, null, null,
-                {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {},
-                onReorderingChanged = { active ->
-                    if (active) packetItems.value = packetItems.value.map { it.copy(value = "4321") }
-                },
-            )
+            Box(Modifier.width(280.dp)) {
+                SensorsScreen(
+                    packetItems.value, emptyList(), null, null,
+                    {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {},
+                    onReorderingChanged = { active ->
+                        if (active) packetItems.value = packetItems.value.map { it.copy(value = "4321") }
+                    },
+                )
+            }
         } }
         val source = compose.onNodeWithTag("gauge-RPM").fetchSemanticsNode().boundsInRoot
         val target = compose.onNodeWithTag("gauge-VOLTAGE").fetchSemanticsNode().boundsInRoot

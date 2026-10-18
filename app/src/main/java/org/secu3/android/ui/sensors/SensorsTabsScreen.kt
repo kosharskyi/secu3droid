@@ -74,7 +74,6 @@ internal fun SensorsTabsScreen(
     loggerStarted: Boolean,
     loggerErrorId: Long,
     snackbarHostState: SnackbarHostState,
-    columns: Int,
     connectionState: ConnectionState?,
     gauges: List<GaugeItem>, indicators: List<IndicatorItem>,
     gaugeChoices: ChoiceRequest<GaugeType>?, indicatorChoices: ChoiceRequest<IndicatorType>?,
@@ -92,7 +91,13 @@ internal fun SensorsTabsScreen(
     onLoggerErrorConsumed: (Long) -> Unit,
     onReorderingChanged: (Boolean) -> Unit = {},
     gaugeStyle: SensorGaugeStyle = SensorGaugeStyle.Default,
+    safeDrawingInsets: WindowInsets = WindowInsets.safeDrawing,
+    systemBarsInsets: WindowInsets = WindowInsets.systemBars,
 ) {
+    val scaffoldWindowInsets = safeDrawingInsets.only(WindowInsetsSides.Vertical)
+        .union(systemBarsInsets.only(WindowInsetsSides.Horizontal))
+    val pagerHorizontalInsets = safeDrawingInsets.only(WindowInsetsSides.Horizontal)
+    val additionalFabInsets = safeDrawingInsets.exclude(systemBarsInsets).only(WindowInsetsSides.Horizontal)
     val pagerState = rememberPagerState(initialPage = initialPage.coerceIn(0, 1), pageCount = { 2 })
     var reordering by remember { mutableStateOf(false) }
     val latestReordering by rememberUpdatedState(reordering)
@@ -118,7 +123,7 @@ internal fun SensorsTabsScreen(
     }
     Scaffold(
         snackbarHost = { SnackbarHost(snackbarHostState) },
-        contentWindowInsets = WindowInsets.safeDrawing,
+        contentWindowInsets = scaffoldWindowInsets,
         topBar = {
             SecuTopAppBar(
                 title = stringResource(R.string.app_name),
@@ -132,7 +137,7 @@ internal fun SensorsTabsScreen(
         },
         floatingActionButtonPosition = FabPosition.Start,
         floatingActionButton = {
-            if (loggerEnabled) {
+            if (loggerEnabled) Box(Modifier.windowInsetsPadding(additionalFabInsets)) {
                 if (loggerStarted) {
                     Row(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalAlignment = Alignment.CenterVertically) {
                         FilledTonalIconButton(onClick = { onMark(1) }, modifier = Modifier.semantics { contentDescription = mark1Description }.testTag("log-mark-1")) { Icon(Icons.Default.LooksOne, null) }
@@ -150,7 +155,7 @@ internal fun SensorsTabsScreen(
             }
         },
     ) { padding ->
-        Column(Modifier.fillMaxSize().padding(padding)) {
+        Column(Modifier.fillMaxSize().padding(padding).consumeWindowInsets(padding)) {
             SecuTabRow(
                 titles = listOf(R.string.sensors_tab_title, R.string.menu_raw_sensors).map { stringResource(it) },
                 selectedIndex = pagerState.currentPage,
@@ -159,10 +164,15 @@ internal fun SensorsTabsScreen(
                 scrollable = false,
                 testTag = "sensors-tabs",
             )
-            HorizontalPager(state = pagerState, userScrollEnabled = !reordering, modifier = Modifier.fillMaxSize().testTag("sensors-pager"), key = { it }) { page ->
+            HorizontalPager(
+                state = pagerState,
+                userScrollEnabled = !reordering,
+                modifier = Modifier.fillMaxSize().windowInsetsPadding(pagerHorizontalInsets).testTag("sensors-pager"),
+                key = { it },
+            ) { page ->
                 when (page) {
                     0 -> if (oldViewEnabled) OldSensorsScreen(sensors.takeIf { dataAvailable }) else SensorsScreen(
-                        gauges, indicators, columns, gaugeChoices, indicatorChoices,
+                        gauges, indicators, gaugeChoices, indicatorChoices,
                         onAddGaugeRequest, onAddIndicatorRequest, onAddGauge, onAddIndicator,
                         onGaugeChoicesConsumed, onIndicatorChoicesConsumed, onDeleteGauge, onDeleteIndicator,
                         onUpdateGauge, onReorderGauges, onReorderIndicators,

@@ -102,7 +102,7 @@ class UserPrefsTest {
             assertTrue(userPrefs.isSensorLoggerEnabled)
             assertEquals("|", userPrefs.CSVDelimeter)
             assertEquals(7, userPrefs.connectionRetries)
-            assertEquals(5, userPrefs.columnsCount)
+            assertEquals(5, legacyStore.getInt(columnsKey, -1))
 
             userPrefs.isSensorLoggerEnabled = false
             assertFalse(legacyStore.getBoolean(logKey, true))
@@ -114,14 +114,14 @@ class UserPrefsTest {
             assertTrue(settings.state.value.writeLog.not())
             assertEquals("|", settings.state.value.csvDelimiter)
             assertEquals("7", settings.state.value.connectionRetries)
-            assertEquals(5, sensors.state.value.columns)
+            assertFalse(sensors.state.value.oldView)
 
             InstrumentationRegistry.getInstrumentation().runOnMainSync {
                 legacyStore.edit().putBoolean(logKey, true).putBoolean(oldViewKey, true).putInt(columnsKey, 6).commit()
             }
             assertTrue(settings.state.value.writeLog)
             assertTrue(sensors.state.value.oldView)
-            assertEquals(6, sensors.state.value.columns)
+            assertEquals(6, legacyStore.getInt(columnsKey, -1))
         } finally {
             legacyStore.edit().apply {
                 keys.forEach(::remove)

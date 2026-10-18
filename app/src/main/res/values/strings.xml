@@ -576,7 +576,6 @@
     <string name="remind_me_later">Remind me later</string>
     <string name="switch_view">Switch view</string>
     <string name="enable_old_sensors_view">Enable old sensors view</string>
-    <string name="columns_count">Columns count</string>
     <string name="sensor_gauge_style">Gauge style</string>
     <string name="sensor_gauge_style_current">Classic</string>
     <string name="sensor_gauge_style_precise_arc">Precise arc</string>

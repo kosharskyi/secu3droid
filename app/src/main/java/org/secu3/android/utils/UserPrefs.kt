@@ -127,10 +127,6 @@ class UserPrefs @Inject constructor(@ApplicationContext private val ctx: Context
         get() = mPrefs.getBoolean("old_sensors_view", false)
         set(value) = mPrefs.edit { putBoolean("old_sensors_view", value) }
 
-    var columnsCount: Int
-        get() = mPrefs.getInt("columns_count", 2)
-        set(value) = mPrefs.edit { putInt("columns_count", value) }
-
     var sensorGaugeStyle: SensorGaugeStyle
         get() = SensorGaugeStyle.fromPreference(mPrefs.getString(SENSOR_GAUGE_STYLE_KEY, null))
         set(value) = mPrefs.edit { putString(SENSOR_GAUGE_STYLE_KEY, value.preferenceValue) }

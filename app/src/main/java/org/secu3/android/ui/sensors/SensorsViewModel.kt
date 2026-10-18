@@ -64,7 +64,7 @@ class SensorsViewModel @Inject constructor(
     val state: StateFlow<SensorsUiState> = _state.asStateFlow()
     private val taskGate = SensorTaskGate(_state.value.selectedPage, secu3ConnectionManager::sendNewTask)
     private val preferenceListener = SharedPreferences.OnSharedPreferenceChangeListener { _, key ->
-        if (key == null || key == OLD_VIEW_KEY || key == COLUMNS_KEY || key == UserPrefs.SENSOR_GAUGE_STYLE_KEY || key == context.getString(R.string.pref_write_log_key)) {
+        if (key == null || key == OLD_VIEW_KEY || key == UserPrefs.SENSOR_GAUGE_STYLE_KEY || key == context.getString(R.string.pref_write_log_key)) {
             refreshPreferences()
         }
     }
@@ -102,7 +102,6 @@ class SensorsViewModel @Inject constructor(
     private fun readUiState() = SensorsUiState(
         selectedPage = (savedStateHandle.get<Int>(KEY_SELECTED_PAGE) ?: 0).coerceIn(0, 1),
         oldViewEnabled = userPrefs.oldSensorViewEnabled,
-        columns = userPrefs.columnsCount.coerceIn(2, 8),
         gaugeStyle = userPrefs.sensorGaugeStyle,
         loggerEnabled = userPrefs.isSensorLoggerEnabled,
         loggerStarted = secuLogger.isLoggerStarted,
@@ -137,17 +136,10 @@ class SensorsViewModel @Inject constructor(
         _state.update { it.copy(oldViewEnabled = enabled) }
     }
 
-    fun setColumnsCount(columns: Int) {
-        val normalized = columns.coerceIn(2, 8)
-        userPrefs.columnsCount = normalized
-        _state.update { it.copy(columns = normalized) }
-    }
-
     private fun refreshPreferences() {
         _state.update {
             it.copy(
                 oldViewEnabled = userPrefs.oldSensorViewEnabled,
-                columns = userPrefs.columnsCount.coerceIn(2, 8),
                 gaugeStyle = userPrefs.sensorGaugeStyle,
                 loggerEnabled = userPrefs.isSensorLoggerEnabled,
             )
@@ -214,7 +206,6 @@ class SensorsViewModel @Inject constructor(
 data class SensorsUiState(
     val selectedPage: Int = 0,
     val oldViewEnabled: Boolean = false,
-    val columns: Int = 2,
     val gaugeStyle: SensorGaugeStyle = SensorGaugeStyle.Default,
     val loggerEnabled: Boolean = false,
     val loggerStarted: Boolean = false,
@@ -245,4 +236,3 @@ internal class SensorTaskGate(
 internal fun taskForPage(page: Int): Task = if (page == 0) Task.Secu3ReadSensors else Task.Secu3ReadRawSensors
 
 private const val OLD_VIEW_KEY = "old_sensors_view"
-private const val COLUMNS_KEY = "columns_count"

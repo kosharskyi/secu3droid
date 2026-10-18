@@ -89,7 +89,7 @@ import kotlin.math.roundToInt
 
 @Composable
 internal fun SensorsScreen(
-    gauges: List<GaugeItem>, indicators: List<IndicatorItem>, columns: Int,
+    gauges: List<GaugeItem>, indicators: List<IndicatorItem>,
     gaugeChoices: ChoiceRequest<GaugeType>?, indicatorChoices: ChoiceRequest<IndicatorType>?,
     onAddGaugeRequest: () -> Unit, onAddIndicatorRequest: () -> Unit,
     onAddGauge: (GaugeType) -> Unit, onAddIndicator: (IndicatorType) -> Unit,
@@ -217,11 +217,15 @@ internal fun SensorsScreen(
     BoxWithConstraints(Modifier.fillMaxSize().background(MaterialTheme.colorScheme.background)) {
         val fontScale = androidx.compose.ui.platform.LocalDensity.current.fontScale
         val minimumGaugeColumnWidth = 150.dp * fontScale.coerceAtLeast(1f)
-        val renderColumns = minOf(columns.coerceAtLeast(1), (maxWidth / minimumGaugeColumnWidth).toInt().coerceAtLeast(1))
+        val renderColumns = (maxWidth / minimumGaugeColumnWidth).toInt().coerceAtLeast(1)
+        val gridCellWidth = maxWidth / renderColumns
         Column(Modifier.fillMaxSize().verticalScroll(rememberScrollState(), enabled = !dragging).padding(bottom = 88.dp)) {
             Column(Modifier.fillMaxWidth().zIndex(if (activeDragKey?.startsWith("g:") == true) 2f else 0f).testTag("gauges-grid")) {
                 localGauges.chunked(renderColumns).forEach { rowItems ->
-                    Row(Modifier.fillMaxWidth().zIndex(if (rowItems.any { activeDragKey == "g:${it.state.gaugeType.name}" }) 1f else 0f)) {
+                    Row(
+                        Modifier.fillMaxWidth().zIndex(if (rowItems.any { activeDragKey == "g:${it.state.gaugeType.name}" }) 1f else 0f),
+                        horizontalArrangement = Arrangement.SpaceEvenly,
+                    ) {
                         rowItems.forEach { item ->
                             val dragKey = "g:${item.state.gaugeType.name}"
                             val isDragged = activeDragKey == dragKey
@@ -235,7 +239,7 @@ internal fun SensorsScreen(
                             LaunchedEffect(dragKey, previewOffset) {
                                 previewAnimation.animateTo(previewOffset, tween(PREVIEW_ANIMATION_MILLIS))
                             }
-                            key(dragKey) { Box(Modifier.weight(1f).zIndex(if (isDragged) 2f else 0f), contentAlignment = Alignment.TopCenter) {
+                            key(dragKey) { Box(Modifier.width(gridCellWidth).zIndex(if (isDragged) 2f else 0f), contentAlignment = Alignment.TopCenter) {
                                 GaugeCard(
                                     if (dataAvailable) item else item.copy(value = "—"),
                                     gaugeStyle,
@@ -309,13 +313,15 @@ internal fun SensorsScreen(
                                 }
                             } }
                         }
-                        repeat(renderColumns - rowItems.size) { Spacer(Modifier.weight(1f)) }
                     }
                 }
             }
             Column(Modifier.fillMaxWidth().zIndex(if (activeDragKey?.startsWith("i:") == true) 2f else 0f).testTag("indicators-grid")) {
                 localIndicators.chunked(renderColumns).forEach { rowItems ->
-                    Row(Modifier.fillMaxWidth().zIndex(if (rowItems.any { activeDragKey == "i:${it.state.indicatorType.name}" }) 1f else 0f)) {
+                    Row(
+                        Modifier.fillMaxWidth().zIndex(if (rowItems.any { activeDragKey == "i:${it.state.indicatorType.name}" }) 1f else 0f),
+                        horizontalArrangement = Arrangement.SpaceEvenly,
+                    ) {
                         rowItems.forEach { item ->
                             val dragKey = "i:${item.state.indicatorType.name}"
                             val isDragged = activeDragKey == dragKey
@@ -329,7 +335,7 @@ internal fun SensorsScreen(
                             LaunchedEffect(dragKey, previewOffset) {
                                 previewAnimation.animateTo(previewOffset, tween(PREVIEW_ANIMATION_MILLIS))
                             }
-                            key(dragKey) { Box(Modifier.weight(1f).zIndex(if (isDragged) 2f else 0f)) {
+                            key(dragKey) { Box(Modifier.width(gridCellWidth).zIndex(if (isDragged) 2f else 0f)) {
                                 IndicatorCard(
                                     item,
                                     Modifier.fillMaxWidth().padding(8.dp)
@@ -393,7 +399,6 @@ internal fun SensorsScreen(
                                 }
                             } }
                         }
-                        repeat(renderColumns - rowItems.size) { Spacer(Modifier.weight(1f)) }
                     }
                 }
             }

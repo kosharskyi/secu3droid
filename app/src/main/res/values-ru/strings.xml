@@ -418,7 +418,6 @@
     <string name="remind_me_later">Напомнить позже</string>
     <string name="switch_view">Переключить вид</string>
     <string name="enable_old_sensors_view">Включить старый вид экрана сенсоров</string>
-    <string name="columns_count">Количество колонок</string>
     <string name="sensor_gauge_style">Стиль шкал</string>
     <string name="sensor_gauge_style_current">Классический</string>
     <string name="sensor_gauge_style_precise_arc">Точная дуга</string>

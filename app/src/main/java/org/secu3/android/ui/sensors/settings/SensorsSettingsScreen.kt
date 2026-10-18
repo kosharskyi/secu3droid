@@ -11,7 +11,6 @@ package org.secu3.android.ui.sensors.settings
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
@@ -22,8 +21,6 @@ import androidx.compose.foundation.selection.selectable
 import androidx.compose.foundation.selection.selectableGroup
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
-import androidx.compose.material3.DropdownMenu
-import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
@@ -45,7 +42,6 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import org.secu3.android.R
 import org.secu3.android.models.SensorGaugeStyle
-import org.secu3.android.ui.compose.DropdownShape
 import org.secu3.android.ui.compose.SettingsActionRow
 import org.secu3.android.ui.compose.SettingsSection
 import org.secu3.android.ui.compose.SettingsToggleRow
@@ -54,14 +50,11 @@ import org.secu3.android.ui.compose.SecuTopAppBar
 @Composable
 internal fun SensorsSettingsScreen(
     oldView: Boolean,
-    columns: Int,
     onOldViewChange: (Boolean) -> Unit,
-    onColumnsChange: (Int) -> Unit,
     onNavigateUp: () -> Unit,
     gaugeStyle: SensorGaugeStyle = SensorGaugeStyle.Default,
     onGaugeStyleChange: (SensorGaugeStyle) -> Unit = {},
 ) {
-    var columnsExpanded by remember { mutableStateOf(false) }
     var gaugeStyleDialog by remember { mutableStateOf(false) }
     Column(Modifier.fillMaxSize().background(MaterialTheme.colorScheme.background)) {
         SecuTopAppBar(title = stringResource(R.string.title_activity_settings), onNavigateUp = onNavigateUp, showStatus = false)
@@ -89,29 +82,6 @@ internal fun SensorsSettingsScreen(
                         }
                     },
                 )
-            }
-            SettingsSection {
-                Box(Modifier.fillMaxWidth()) {
-                    SettingsActionRow(
-                        title = stringResource(R.string.columns_count),
-                        onClick = { columnsExpanded = true },
-                        testTag = "sensor-columns",
-                        value = {
-                            Row(verticalAlignment = Alignment.CenterVertically) {
-                                Text(columns.toString(), Modifier.testTag("sensor-columns-value"), style = MaterialTheme.typography.bodyLarge)
-                                Icon(Icons.Default.ExpandMore, contentDescription = null, tint = MaterialTheme.colorScheme.onSurfaceVariant)
-                            }
-                        },
-                    )
-                DropdownMenu(expanded = columnsExpanded, onDismissRequest = { columnsExpanded = false }, shape = DropdownShape) {
-                    (2..8).forEach { count ->
-                        DropdownMenuItem(text = { Text(count.toString()) }, onClick = {
-                            onColumnsChange(count)
-                            columnsExpanded = false
-                        })
-                    }
-                }
-                }
             }
         }
     }

@@ -34,13 +34,10 @@ class SensorsNavigationIntegrationTest {
     @Test fun rawPageAndSensorsViewModelSurviveSettingsNavigationAndRecreation() {
         val preferences = context.getDefaultSharedPreferences()
         val oldViewKey = "old_sensors_view"
-        val columnsKey = "columns_count"
         val hadOldView = preferences.contains(oldViewKey)
-        val hadColumns = preferences.contains(columnsKey)
         val originalOldView = preferences.getBoolean(oldViewKey, false)
-        val originalColumns = preferences.getInt(columnsKey, 2)
         try {
-            preferences.edit().putBoolean(oldViewKey, false).putInt(columnsKey, 2).commit()
+            preferences.edit().putBoolean(oldViewKey, false).commit()
             val host = navigateToHomeAndSensors()
             val sensorsViewModel = currentSensorsViewModel()
             assertOverlayRoute(host, SENSORS_ROUTE)
@@ -52,20 +49,15 @@ class SensorsNavigationIntegrationTest {
             assertEquals(SENSOR_SETTINGS_ROUTE, compose.activity.rootNavigationController?.currentDestination?.route)
 
             compose.onNodeWithTag("sensors-old-view-checkbox").performClick()
-            compose.onNodeWithTag("sensor-columns-row").performClick()
-            compose.onNodeWithText("7", substring = false).performClick()
             compose.waitForIdle()
             compose.onNodeWithTag("sensors-old-view-checkbox").assertIsOn()
-            compose.onNodeWithTag("sensor-columns-value", useUnmergedTree = true).assertTextEquals("7")
             assertEquals(true, preferences.getBoolean(oldViewKey, false))
-            assertEquals(7, preferences.getInt(columnsKey, 2))
 
             compose.activityRule.scenario.recreate()
             compose.waitForIdle()
             val restoredHost = nativeHost()
             assertOverlayRoute(restoredHost, SENSOR_SETTINGS_ROUTE)
             compose.onNodeWithTag("sensors-old-view-checkbox").assertIsOn()
-            compose.onNodeWithTag("sensor-columns-value", useUnmergedTree = true).assertTextEquals("7")
             compose.onNodeWithContentDescription(context.getString(R.string.back)).performClick()
             compose.waitForIdle()
             assertEquals(SENSORS_ROUTE, compose.activity.rootNavigationController?.currentDestination?.route)
@@ -77,11 +69,10 @@ class SensorsNavigationIntegrationTest {
 
             openSensorsSettings()
             compose.activityRule.scenario.onActivity {
-                preferences.edit().putBoolean(oldViewKey, false).putInt(columnsKey, 4).commit()
+                preferences.edit().putBoolean(oldViewKey, false).commit()
             }
             compose.waitForIdle()
             compose.onNodeWithTag("sensors-old-view-checkbox").assertIsOff()
-            compose.onNodeWithTag("sensor-columns-value", useUnmergedTree = true).assertTextEquals("4")
             InstrumentationRegistry.getInstrumentation().sendKeyDownUpSync(KeyEvent.KEYCODE_BACK)
             compose.waitForIdle()
             assertEquals(SENSORS_ROUTE, compose.activity.rootNavigationController?.currentDestination?.route)
@@ -102,7 +93,6 @@ class SensorsNavigationIntegrationTest {
         } finally {
             preferences.edit().apply {
                 if (hadOldView) putBoolean(oldViewKey, originalOldView) else remove(oldViewKey)
-                if (hadColumns) putInt(columnsKey, originalColumns) else remove(columnsKey)
             }.commit()
         }
     }

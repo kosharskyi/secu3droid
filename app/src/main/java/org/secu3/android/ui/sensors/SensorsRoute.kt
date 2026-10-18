@@ -71,7 +71,6 @@ internal fun SensorsRoute(
             loggerStarted = state.loggerStarted,
             loggerErrorId = state.loggerErrorId,
             snackbarHostState = snackbarHostState,
-            columns = state.columns,
             gaugeStyle = state.gaugeStyle,
             connectionState = connection,
             gauges = gauges,

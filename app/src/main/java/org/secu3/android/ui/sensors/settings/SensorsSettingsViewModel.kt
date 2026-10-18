@@ -16,7 +16,6 @@ import org.secu3.android.utils.getDefaultSharedPreferences
 
 data class SensorsSettingsUiState(
     val oldView: Boolean = false,
-    val columns: Int = 2,
     val gaugeStyle: SensorGaugeStyle = SensorGaugeStyle.Default,
 )
 
@@ -29,7 +28,7 @@ class SensorsSettingsViewModel @Inject constructor(
     private val _state = MutableStateFlow(readState())
     val state: StateFlow<SensorsSettingsUiState> = _state.asStateFlow()
     private val listener = SharedPreferences.OnSharedPreferenceChangeListener { _, key ->
-        if (key == null || key == OLD_VIEW_KEY || key == COLUMNS_KEY || key == UserPrefs.SENSOR_GAUGE_STYLE_KEY) refreshFromPreferences()
+        if (key == null || key == OLD_VIEW_KEY || key == UserPrefs.SENSOR_GAUGE_STYLE_KEY) refreshFromPreferences()
     }
 
     init {
@@ -39,12 +38,6 @@ class SensorsSettingsViewModel @Inject constructor(
     fun setOldView(enabled: Boolean) {
         userPrefs.oldSensorViewEnabled = enabled
         _state.update { it.copy(oldView = enabled) }
-    }
-
-    fun setColumns(columns: Int) {
-        val normalized = columns.coerceIn(2, 8)
-        userPrefs.columnsCount = normalized
-        _state.update { it.copy(columns = normalized) }
     }
 
     fun setGaugeStyle(style: SensorGaugeStyle) {
@@ -58,7 +51,6 @@ class SensorsSettingsViewModel @Inject constructor(
 
     private fun readState() = SensorsSettingsUiState(
         oldView = userPrefs.oldSensorViewEnabled,
-        columns = userPrefs.columnsCount.coerceIn(2, 8),
         gaugeStyle = userPrefs.sensorGaugeStyle,
     )
 
@@ -68,6 +60,5 @@ class SensorsSettingsViewModel @Inject constructor(
 
     private companion object {
         const val OLD_VIEW_KEY = "old_sensors_view"
-        const val COLUMNS_KEY = "columns_count"
     }
 }
