@@ -29,6 +29,7 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.heightIn
@@ -46,6 +47,7 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.ListItem
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.ModalBottomSheet
+import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -144,30 +146,38 @@ fun StartScreenContent(
                     }
                 }
                 if (state.showBluetoothDevices) {
-                    ModalBottomSheet(onDismissRequest = actions.onBluetoothSheetDismissed) {
-                        Text(
-                            text = stringResource(R.string.select_a_device_from_the_list),
-                            style = MaterialTheme.typography.titleLarge,
-                            modifier = Modifier.padding(horizontal = 16.dp).padding(bottom = 16.dp),
-                        )
-                        HorizontalDivider()
-                        LazyColumn(Modifier.fillMaxWidth()) {
-                            items(state.bluetoothDevices, key = { it.id }) { device ->
-                                ListItem(
-                                    headlineContent = {
-                                        Row {
-                                            Image(Icons.Default.Bluetooth, contentDescription = "Bluetooth icon",
-                                                modifier = Modifier.padding(end = 8.dp).align(Alignment.CenterVertically))
-                                            Column {
-                                                Text(device.name.ifEmpty { stringResource(R.string.unknown_device) })
-                                                Text(device.id, fontSize = 12.sp,
-                                                    color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f))
+                    ModalBottomSheet(
+                        onDismissRequest = actions.onBluetoothSheetDismissed,
+                        sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true),
+                        modifier = Modifier.testTag("bluetooth-device-sheet"),
+                    ) {
+                        Column(
+                            Modifier.fillMaxWidth().fillMaxHeight(0.5f).testTag("bluetooth-device-sheet-content"),
+                        ) {
+                            Text(
+                                text = stringResource(R.string.select_a_device_from_the_list),
+                                style = MaterialTheme.typography.titleLarge,
+                                modifier = Modifier.padding(horizontal = 16.dp).padding(bottom = 16.dp),
+                            )
+                            HorizontalDivider()
+                            LazyColumn(Modifier.fillMaxWidth().weight(1f).testTag("bluetooth-device-list")) {
+                                items(state.bluetoothDevices, key = { it.id }) { device ->
+                                    ListItem(
+                                        headlineContent = {
+                                            Row {
+                                                Image(Icons.Default.Bluetooth, contentDescription = "Bluetooth icon",
+                                                    modifier = Modifier.padding(end = 8.dp).align(Alignment.CenterVertically))
+                                                Column {
+                                                    Text(device.name.ifEmpty { stringResource(R.string.unknown_device) })
+                                                    Text(device.id, fontSize = 12.sp,
+                                                        color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f))
+                                                }
                                             }
-                                        }
-                                    },
-                                    modifier = Modifier.clickable { actions.onBluetoothDeviceSelected(device.id) },
-                                )
-                                HorizontalDivider(Modifier.padding(horizontal = 16.dp))
+                                        },
+                                        modifier = Modifier.clickable { actions.onBluetoothDeviceSelected(device.id) },
+                                    )
+                                    HorizontalDivider(Modifier.padding(horizontal = 16.dp))
+                                }
                             }
                         }
                     }
