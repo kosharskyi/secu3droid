@@ -26,18 +26,16 @@
 package org.secu3.android.ui.errors
 
 import androidx.lifecycle.LiveData
-import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.asLiveData
 import androidx.lifecycle.viewModelScope
 import dagger.hilt.android.lifecycle.HiltViewModel
-import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
-import kotlinx.coroutines.flow.distinctUntilChangedBy
-import kotlinx.coroutines.flow.filterIsInstance
-import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.flow.collect
+import kotlinx.coroutines.flow.distinctUntilChanged
+import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.launch
 import org.secu3.android.connection.ConnectionState
 import org.secu3.android.connection.Secu3ConnectionManager
@@ -46,54 +44,44 @@ import org.secu3.android.models.packets.out.CheckEngineSavedErrorsPacket
 import org.secu3.android.utils.Task
 import javax.inject.Inject
 
-internal suspend fun readSavedErrors(
-    packets: (onSubscribed: () -> Unit) -> Flow<org.secu3.android.models.packets.base.InputPacket>,
-    sendRequest: () -> Unit,
-    onReceived: (CheckEngineSavedErrorsPacket) -> Unit,
-): CheckEngineSavedErrorsPacket {
-    val savedErrors = packets { sendRequest() }
-        .filterIsInstance<CheckEngineSavedErrorsPacket>()
-        .first()
-    onReceived(savedErrors)
-    return savedErrors
-}
-
 @HiltViewModel
 class ErrorsViewModel @Inject constructor(private val secu3ConnectionManager: Secu3ConnectionManager) : ViewModel() {
 
     val connectionStatusLiveData: LiveData<ConnectionState> = secu3ConnectionManager.connectionStateFlow.asLiveData()
 
-    private val _checkEngineSavedLiveData = MutableLiveData<CheckEngineSavedErrorsPacket>()
-    val checkEngineSavedLiveData: LiveData<CheckEngineSavedErrorsPacket> = _checkEngineSavedLiveData
+    private val session = ErrorsSessionController(
+        scope = viewModelScope,
+        packets = { onSubscribed -> secu3ConnectionManager.receivedPacketFlow(onSubscribed) },
+        sendSavedRead = { secu3ConnectionManager.sendNewTask(Task.Secu3ReadEcuSavedErrors) },
+        sendActiveRead = { secu3ConnectionManager.sendNewTask(Task.Secu3ReadEcuErrors) },
+        clearSavedErrors = { secu3ConnectionManager.sendOutPacket(CheckEngineSavedErrorsPacket()) },
+        onSessionInvalidated = { _showClearConfirmation.value = false },
+    )
 
-    val checkEngineLiveData: LiveData<CheckEngineErrorsPacket> = secu3ConnectionManager.receivedPacketFlow
-        .filterIsInstance<CheckEngineErrorsPacket>().distinctUntilChangedBy { it.errors }.asLiveData()
+    val checkEngineSavedLiveData: LiveData<CheckEngineSavedErrorsPacket?> =
+        session.snapshot.map { it.saved }.distinctUntilChanged().asLiveData()
+    val checkEngineLiveData: LiveData<CheckEngineErrorsPacket?> =
+        session.snapshot.map { it.active }.distinctUntilChanged().asLiveData()
 
     private val _showClearConfirmation = MutableStateFlow(false)
     val showClearConfirmation: StateFlow<Boolean> = _showClearConfirmation.asStateFlow()
 
     init {
-        waitSavedErrors()
-    }
-
-    private fun waitSavedErrors() {
         viewModelScope.launch {
-            readSavedErrors(
-                packets = { onSubscribed -> secu3ConnectionManager.receivedPacketFlow(onSubscribed) },
-                sendRequest = { secu3ConnectionManager.sendNewTask(Task.Secu3ReadEcuSavedErrors) },
-                onReceived = { _checkEngineSavedLiveData.value = it },
-            )
-            secu3ConnectionManager.sendNewTask(Task.Secu3ReadEcuErrors)
+            secu3ConnectionManager.connectionStateFlow.collect(session::onConnectionState)
         }
     }
 
+    fun onRouteResumed() = session.onRouteResumed()
+
+    fun onRoutePaused() = session.onRoutePaused()
+
     fun clearErrors() {
-        waitSavedErrors()
-        secu3ConnectionManager.sendOutPacket(CheckEngineSavedErrorsPacket())
+        session.clearErrors()
     }
 
     fun requestClearConfirmation() {
-        _showClearConfirmation.value = true
+        _showClearConfirmation.value = session.canClearErrors
     }
 
     fun dismissClearConfirmation() {
@@ -103,6 +91,10 @@ class ErrorsViewModel @Inject constructor(private val secu3ConnectionManager: Se
     fun confirmClearErrors() {
         _showClearConfirmation.value = false
         clearErrors()
+    }
+
+    override fun onCleared() {
+        session.close()
     }
 
 }
