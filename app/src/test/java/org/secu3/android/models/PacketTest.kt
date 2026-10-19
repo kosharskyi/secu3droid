@@ -39,6 +39,14 @@ class PacketTest {
     }
 
     @Test
+    fun savedErrorsTask_packsEepromReadOperation() {
+        assertArrayEquals(
+            intArrayOf('u'.code, 0, 2),
+            Task.Secu3ReadEcuSavedErrors.getPacket().pack(),
+        )
+    }
+
+    @Test
     fun rawPacket_parsesCheckEngineErrorsPacket() {
         val parsed = RawPacket(
             intArrayOf('@'.code, 'v'.code, 0x01, 0x02, 0x03, 0x04, 0, 0)

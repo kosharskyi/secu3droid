@@ -92,7 +92,7 @@ sealed class Task {
 
     fun getPacket(): OutputPacket {
         return when (this) {
-            Secu3ReadFirmwareInfo, Secu3ReadSensors, Secu3ReadRawSensors, Secu3ReadEcuErrors, Secu3ReadEcuSavedErrors,
+            Secu3ReadFirmwareInfo, Secu3ReadSensors, Secu3ReadRawSensors, Secu3ReadEcuErrors,
             Secu3DiagInput, Secu3ReadStarterParam, Secu3ReadAnglesParam, Secu3ReadIdlingParam, Secu3ReadFunsetParam,
             Secu3ReadFnNameDat, Secu3ReadTemperatureParam, Secu3ReadCarburParam, Secu3ReadAdcErrorsCorrectionsParam,
             Secu3ReadCkpsParam, Secu3ReadKnockParam, Secu3ReadMiscellaneousParam, Secu3ReadChokeControlParam,
@@ -103,6 +103,7 @@ sealed class Task {
             Secu3OpComEnterDiagnostics -> OpCompNc.getEnterDiagCommand()
             Secu3OpComLeaveDiagnostics -> OpCompNc.getLeaveDiagCommand()
             Secu3OpComSaveEeprom -> OpCompNc.getSaveEepromCommand()
+            Secu3ReadEcuSavedErrors -> OpCompNc.getReadSavedErrorsCommand()
         }
     }
 

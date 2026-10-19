@@ -26,10 +26,12 @@
 package org.secu3.android.ui.errors
 
 import androidx.lifecycle.LiveData
+import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.asLiveData
 import androidx.lifecycle.viewModelScope
 import dagger.hilt.android.lifecycle.HiltViewModel
+import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -44,13 +46,25 @@ import org.secu3.android.models.packets.out.CheckEngineSavedErrorsPacket
 import org.secu3.android.utils.Task
 import javax.inject.Inject
 
+internal suspend fun readSavedErrors(
+    packets: (onSubscribed: () -> Unit) -> Flow<org.secu3.android.models.packets.base.InputPacket>,
+    sendRequest: () -> Unit,
+    onReceived: (CheckEngineSavedErrorsPacket) -> Unit,
+): CheckEngineSavedErrorsPacket {
+    val savedErrors = packets { sendRequest() }
+        .filterIsInstance<CheckEngineSavedErrorsPacket>()
+        .first()
+    onReceived(savedErrors)
+    return savedErrors
+}
+
 @HiltViewModel
 class ErrorsViewModel @Inject constructor(private val secu3ConnectionManager: Secu3ConnectionManager) : ViewModel() {
 
     val connectionStatusLiveData: LiveData<ConnectionState> = secu3ConnectionManager.connectionStateFlow.asLiveData()
 
-    val checkEngineSavedLiveData: LiveData<CheckEngineSavedErrorsPacket> =
-        secu3ConnectionManager.receivedPacketFlow.filterIsInstance<CheckEngineSavedErrorsPacket>().asLiveData()
+    private val _checkEngineSavedLiveData = MutableLiveData<CheckEngineSavedErrorsPacket>()
+    val checkEngineSavedLiveData: LiveData<CheckEngineSavedErrorsPacket> = _checkEngineSavedLiveData
 
     val checkEngineLiveData: LiveData<CheckEngineErrorsPacket> = secu3ConnectionManager.receivedPacketFlow
         .filterIsInstance<CheckEngineErrorsPacket>().distinctUntilChangedBy { it.errors }.asLiveData()
@@ -64,11 +78,12 @@ class ErrorsViewModel @Inject constructor(private val secu3ConnectionManager: Se
 
     private fun waitSavedErrors() {
         viewModelScope.launch {
-            secu3ConnectionManager.sendNewTask(Task.Secu3ReadEcuSavedErrors)
-
-            secu3ConnectionManager.receivedPacketFlow.first { it is CheckEngineSavedErrorsPacket }.let {
-                secu3ConnectionManager.sendNewTask(Task.Secu3ReadEcuErrors)
-            }
+            readSavedErrors(
+                packets = { onSubscribed -> secu3ConnectionManager.receivedPacketFlow(onSubscribed) },
+                sendRequest = { secu3ConnectionManager.sendNewTask(Task.Secu3ReadEcuSavedErrors) },
+                onReceived = { _checkEngineSavedLiveData.value = it },
+            )
+            secu3ConnectionManager.sendNewTask(Task.Secu3ReadEcuErrors)
         }
     }
 

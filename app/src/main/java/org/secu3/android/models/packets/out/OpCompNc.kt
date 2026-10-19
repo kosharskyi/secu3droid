@@ -78,6 +78,7 @@ data class OpCompNc(
         fun getLeaveDiagCommand() = OpCompNc(0, DIAGNOST_LEAVE)
 
         fun getSaveEepromCommand() = OpCompNc(0, EEPROM_PARAM_SAVE)
+        fun getReadSavedErrorsCommand() = OpCompNc(0, CE_SAVE_ERRORS)
 
     }
     

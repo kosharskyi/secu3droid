@@ -80,7 +80,6 @@ data class ChangeModePacket(
                 Task.Secu3ReadSensors -> ChangeModePacket(SensorsPacket.DESCRIPTOR)
                 Task.Secu3ReadRawSensors -> ChangeModePacket(AdcRawDatPacket.DESCRIPTOR)
                 Task.Secu3ReadEcuErrors -> ChangeModePacket(CheckEngineErrorsPacket.DESCRIPTOR)
-                Task.Secu3ReadEcuSavedErrors -> ChangeModePacket(CheckEngineSavedErrorsPacket.DESCRIPTOR)
                 Task.Secu3DiagInput -> ChangeModePacket(DiagInputPacket.DESCRIPTOR)
 
                 Task.Secu3ReadStarterParam -> ChangeModePacket(StarterParamPacket.DESCRIPTOR)
