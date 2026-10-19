@@ -22,6 +22,8 @@ import org.junit.Test
 import org.secu3.android.R
 import org.secu3.android.connection.Connected
 import org.secu3.android.models.CheckEngineError
+import org.secu3.android.models.packets.input.CheckEngineErrorsPacket
+import org.secu3.android.models.packets.out.CheckEngineSavedErrorsPacket
 
 class ErrorsScreenTest {
 
@@ -29,6 +31,53 @@ class ErrorsScreenTest {
     val composeTestRule = createComposeRule()
 
     private val context = InstrumentationRegistry.getInstrumentation().targetContext
+
+    @Test
+    fun savedOnlyZeroMaskStaysLoadingUntilActiveZeroArrives() {
+        var snapshot by mutableStateOf(ErrorsSnapshot())
+        composeTestRule.setContent {
+            ErrorsContent(Connected, snapshot, listOf("Test fault"), true, {}, {})
+        }
+
+        composeTestRule.onNodeWithText(context.getString(R.string.errors_loading_state)).assertIsDisplayed()
+        composeTestRule.onAllNodesWithText(context.getString(R.string.errors_summary, 0, 0)).assertCountEquals(0)
+        composeTestRule.onAllNodesWithText(context.getString(R.string.errors_empty_state)).assertCountEquals(0)
+
+        composeTestRule.runOnIdle { snapshot = snapshot.copy(saved = CheckEngineSavedErrorsPacket(errors = 0)) }
+        composeTestRule.onNodeWithText(context.getString(R.string.errors_loading_state)).assertIsDisplayed()
+        composeTestRule.onAllNodesWithText(context.getString(R.string.errors_summary, 0, 0)).assertCountEquals(0)
+        composeTestRule.onAllNodesWithText(context.getString(R.string.errors_empty_state)).assertCountEquals(0)
+
+        composeTestRule.runOnIdle { snapshot = snapshot.copy(active = CheckEngineErrorsPacket(errors = 0)) }
+        composeTestRule.onNodeWithText(context.getString(R.string.errors_summary, 0, 0)).assertIsDisplayed()
+        composeTestRule.onNodeWithText(context.getString(R.string.errors_empty_state)).assertIsDisplayed()
+    }
+
+    @Test
+    fun activeOnlyAndNewSessionResetRemainLoadingUntilBothMasksArrive() {
+        var snapshot by mutableStateOf(ErrorsSnapshot())
+        composeTestRule.setContent {
+            ErrorsContent(Connected, snapshot, listOf("Test fault"), true, {}, {})
+        }
+
+        composeTestRule.runOnIdle { snapshot = snapshot.copy(active = CheckEngineErrorsPacket(errors = 0)) }
+        composeTestRule.onNodeWithText(context.getString(R.string.errors_loading_state)).assertIsDisplayed()
+        composeTestRule.onAllNodesWithText(context.getString(R.string.errors_summary, 0, 0)).assertCountEquals(0)
+
+        composeTestRule.runOnIdle { snapshot = snapshot.copy(saved = CheckEngineSavedErrorsPacket(errors = 0)) }
+        composeTestRule.onNodeWithText(context.getString(R.string.errors_empty_state)).assertIsDisplayed()
+
+        composeTestRule.runOnIdle { snapshot = ErrorsSnapshot() }
+        composeTestRule.onNodeWithText(context.getString(R.string.errors_loading_state)).assertIsDisplayed()
+        composeTestRule.onAllNodesWithText(context.getString(R.string.errors_empty_state)).assertCountEquals(0)
+
+        composeTestRule.runOnIdle {
+            snapshot = ErrorsSnapshot(saved = CheckEngineSavedErrorsPacket(errors = 1))
+        }
+        composeTestRule.onNodeWithText(context.getString(R.string.errors_loading_state)).assertIsDisplayed()
+        composeTestRule.onAllNodesWithText(context.getString(R.string.errors_summary, 0, 0)).assertCountEquals(0)
+        composeTestRule.onAllNodesWithText("Test fault").assertCountEquals(0)
+    }
 
     @Test
     fun loadingStateShowsProgressTextAndHidesErrors() {

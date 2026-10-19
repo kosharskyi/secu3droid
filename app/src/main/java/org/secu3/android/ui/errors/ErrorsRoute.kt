@@ -17,6 +17,7 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.runtime.livedata.observeAsState
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.LifecycleEventObserver
 import androidx.lifecycle.repeatOnLifecycle
@@ -27,7 +28,6 @@ import org.secu3.android.R
 import org.secu3.android.ui.MainActivity
 import org.secu3.android.ui.compose.ConfirmationDialog
 import org.secu3.android.ui.compose.SecuComposeTheme
-import org.secu3.android.models.CheckEngineError
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.flow.collect
 
@@ -43,11 +43,7 @@ internal fun ErrorsRoute(
         extras = entry.defaultViewModelCreationExtras,
     )
     val connection by remember(viewModel) { viewModel.connectionStatusLiveData }.observeAsState()
-    val savedPacket by remember(viewModel) { viewModel.checkEngineSavedLiveData }.observeAsState()
-    val activePacket by remember(viewModel) { viewModel.checkEngineLiveData }.observeAsState()
-    val clearStatus by remember(viewModel) { viewModel.clearStatusLiveData }
-        .observeAsState(ErrorsClearStatus.Idle)
-    val canClearErrors by remember(viewModel) { viewModel.canClearErrorsLiveData }.observeAsState(false)
+    val snapshot by viewModel.errorsSnapshot.collectAsStateWithLifecycle()
     val lifecycle = LocalLifecycleOwner.current.lifecycle
     var confirmClear by remember(viewModel) { mutableStateOf(viewModel.showClearConfirmation.value) }
     LaunchedEffect(lifecycle, viewModel) {
@@ -71,21 +67,15 @@ internal fun ErrorsRoute(
         }
     }
     val titles = androidx.compose.ui.res.stringArrayResource(R.array.errors_ecu_errors_names)
-    val errors = titles.mapIndexed { index, title ->
-        CheckEngineError(
-            title = title,
-            isActive = activePacket?.isError(index) ?: false,
-            isSaved = savedPacket?.isError(index) ?: false,
-        )
-    }
 
     SecuComposeTheme {
-        ErrorsScreen(
+        ErrorsContent(
             connectionState = connection,
-            errors = errors,
-            isLoading = savedPacket == null && activePacket == null,
-            clearStatus = clearStatus,
-            canClearErrors = canClearErrors && connection == org.secu3.android.connection.Connected,
+            snapshot = snapshot,
+            errorTitles = titles.toList(),
+            canClearErrors = snapshot.saved != null &&
+                snapshot.clearStatus != ErrorsClearStatus.Clearing &&
+                connection == org.secu3.android.connection.Connected,
             onBackClick = onNavigateUp,
             onClearClick = viewModel::requestClearConfirmation,
         )

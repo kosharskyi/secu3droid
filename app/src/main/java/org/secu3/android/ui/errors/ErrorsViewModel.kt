@@ -34,12 +34,9 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.collect
-import kotlinx.coroutines.flow.distinctUntilChanged
-import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.launch
 import org.secu3.android.connection.ConnectionState
 import org.secu3.android.connection.Secu3ConnectionManager
-import org.secu3.android.models.packets.input.CheckEngineErrorsPacket
 import org.secu3.android.models.packets.out.CheckEngineSavedErrorsPacket
 import org.secu3.android.utils.Task
 import javax.inject.Inject
@@ -58,16 +55,7 @@ class ErrorsViewModel @Inject constructor(private val secu3ConnectionManager: Se
         onSessionInvalidated = { _showClearConfirmation.value = false },
     )
 
-    val checkEngineSavedLiveData: LiveData<CheckEngineSavedErrorsPacket?> =
-        session.snapshot.map { it.saved }.distinctUntilChanged().asLiveData()
-    val checkEngineLiveData: LiveData<CheckEngineErrorsPacket?> =
-        session.snapshot.map { it.active }.distinctUntilChanged().asLiveData()
-    internal val clearStatusLiveData: LiveData<ErrorsClearStatus> =
-        session.snapshot.map { it.clearStatus }.distinctUntilChanged().asLiveData()
-    val canClearErrorsLiveData: LiveData<Boolean> = session.snapshot
-        .map { it.saved != null && it.clearStatus != ErrorsClearStatus.Clearing }
-        .distinctUntilChanged()
-        .asLiveData()
+    internal val errorsSnapshot: StateFlow<ErrorsSnapshot> = session.snapshot
 
     private val _showClearConfirmation = MutableStateFlow(false)
     val showClearConfirmation: StateFlow<Boolean> = _showClearConfirmation.asStateFlow()

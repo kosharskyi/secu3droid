@@ -4,7 +4,11 @@ An ECU error can be active and saved at the same time. Keep the two badges indep
 
 ## Saved errors use the EEPROM operation and a cached response
 
-Request saved ECU errors with the `u,0,2` operation packet. The `h,x` change-mode packet only selects the ECU's existing RAM transfer buffer; it does not read saved errors from EEPROM. The one-shot response can arrive immediately, so start collecting the transport flow before sending the request, then retain the received packet in LiveData for UI observers.
+Request saved ECU errors with the `u,0,2` operation packet. The `h,x` change-mode packet only selects the ECU's existing RAM transfer buffer; it does not read saved errors from EEPROM. The one-shot response can arrive immediately, so start collecting the transport flow before sending the request, then retain both saved and active packets in one immutable `ErrorsSnapshot` observed as a `StateFlow`.
+
+## Show an empty result only after both error masks arrive
+
+The saved `x` packet and active `v` packet arrive independently. Keep the screen loading until both are present, including when either received mask is zero; otherwise a partial response can briefly report that the ECU has no errors. Clearing remains enabled only with a saved packet, outside the clearing transaction, while connected.
 
 ## Error packets belong to a resumed, connected route session
 

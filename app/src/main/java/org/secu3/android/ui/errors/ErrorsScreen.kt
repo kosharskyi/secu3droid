@@ -58,6 +58,33 @@ import org.secu3.android.ui.compose.LocalSecuPalette
 import org.secu3.android.ui.compose.SecuTopAppBar
 
 @Composable
+internal fun ErrorsContent(
+    connectionState: ConnectionState?,
+    snapshot: ErrorsSnapshot,
+    errorTitles: List<String>,
+    canClearErrors: Boolean,
+    onBackClick: () -> Unit,
+    onClearClick: () -> Unit,
+) {
+    val errors = if (snapshot.saved != null && snapshot.active != null) errorTitles.mapIndexed { index, title ->
+        CheckEngineError(
+            title = title,
+            isActive = snapshot.active.isError(index),
+            isSaved = snapshot.saved.isError(index),
+        )
+    } else emptyList()
+    ErrorsScreen(
+        connectionState = connectionState,
+        errors = errors,
+        isLoading = snapshot.saved == null || snapshot.active == null,
+        clearStatus = snapshot.clearStatus,
+        canClearErrors = canClearErrors,
+        onBackClick = onBackClick,
+        onClearClick = onClearClick,
+    )
+}
+
+@Composable
 internal fun ErrorsScreen(
     connectionState: ConnectionState?,
     errors: List<CheckEngineError>,
