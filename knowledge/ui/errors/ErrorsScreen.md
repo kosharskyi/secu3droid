@@ -21,3 +21,7 @@ Connection setup sends the firmware-info mode request concurrently with `Connect
 ## Clearing saved errors is a single-flight ACK/readback transaction
 
 The clear write is an `x` packet with a zero saved mask; it does not clear active faults. Wait for a `u` acknowledgement with opcode 2 and opData 0 before requesting another saved list. Only an ACK followed by an `x` readback is a successful transaction; a nonzero readback is still valid because active faults can be logged again. Keep one clear in flight because the protocol has no request IDs, and show timeout results as uncertain without retrying the write automatically. A delayed ACK that crosses a user-initiated retry cannot be perfectly correlated.
+
+## Read timeouts report missing packets without fabricating masks
+
+The initial saved and first active packet waits have independent timeout status. An active timeout keeps the active collector alive so a late `v` packet or firmware-info recovery can still complete the screen; only the first active packet is timed. Explicit retry clears packet masks and starts the full saved-to-active read sequence, while preserving clear outcome status and never repeating a clear write.

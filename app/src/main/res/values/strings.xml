@@ -599,6 +599,8 @@
     <string name="errors_clear_readback_timeout">ECU acknowledged the clear, but a fresh saved-error list did not arrive. The displayed list may be outdated.</string>
     <string name="errors_summary">%1$d active · %2$d saved in ECU memory</string>
     <string name="errors_loading_state">Reading ECU errors…</string>
+    <string name="errors_saved_read_timeout">Saved ECU errors did not arrive.</string>
+    <string name="errors_active_read_timeout">Active ECU errors did not arrive.</string>
     <string name="errors_empty_state">No ECU errors right now.</string>
     <string name="error_state_active">• Active</string>
     <string name="error_state_saved">• Saved</string>

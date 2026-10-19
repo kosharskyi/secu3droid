@@ -74,6 +74,11 @@ class ErrorsViewModel @Inject constructor(private val secu3ConnectionManager: Se
         session.clearErrors()
     }
 
+    fun retryRead() {
+        _showClearConfirmation.value = false
+        session.retryRead()
+    }
+
     fun requestClearConfirmation() {
         _showClearConfirmation.value = session.canClearErrors
     }

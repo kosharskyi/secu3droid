@@ -97,6 +97,45 @@ class ErrorsScreenTest {
     }
 
     @Test
+    fun readTimeoutShowsRetryAndRetryReturnsToLoading() {
+        var snapshot by mutableStateOf(ErrorsSnapshot(readStatus = ErrorsReadStatus.ActiveTimeout))
+        var clicked = false
+        composeTestRule.setContent {
+            ErrorsContent(Connected, snapshot, listOf("Test fault"), true, {}, {}, {
+                clicked = true
+                snapshot = ErrorsSnapshot()
+            })
+        }
+        composeTestRule.onNodeWithText(context.getString(R.string.errors_active_read_timeout)).assertIsDisplayed()
+        composeTestRule.onAllNodesWithText(context.getString(R.string.errors_loading_state)).assertCountEquals(0)
+        composeTestRule.onNodeWithText(context.getString(R.string.retry)).assertIsEnabled().performClick()
+        assertTrue(clicked)
+        composeTestRule.onNodeWithText(context.getString(R.string.errors_loading_state)).assertIsDisplayed()
+        composeTestRule.runOnIdle {
+            snapshot = ErrorsSnapshot(
+                saved = CheckEngineSavedErrorsPacket(errors = 0),
+                active = CheckEngineErrorsPacket(errors = 0),
+            )
+        }
+        composeTestRule.onNodeWithText(context.getString(R.string.errors_empty_state)).assertIsDisplayed()
+    }
+
+    @Test
+    fun readRetryIsDisabledOfflineAndWhileClearIsInFlight() {
+        var snapshot by mutableStateOf(ErrorsSnapshot(readStatus = ErrorsReadStatus.SavedTimeout))
+        var connected by mutableStateOf(false)
+        composeTestRule.setContent {
+            ErrorsContent(if (connected) Connected else null, snapshot, listOf("Test fault"), false, {}, {}, {})
+        }
+        composeTestRule.onNodeWithText(context.getString(R.string.retry)).assertIsNotEnabled()
+        composeTestRule.runOnIdle {
+            connected = true
+            snapshot = snapshot.copy(clearStatus = ErrorsClearStatus.Clearing)
+        }
+        composeTestRule.onNodeWithText(context.getString(R.string.retry)).assertIsNotEnabled()
+    }
+
+    @Test
     fun emptyStateShowsWhenThereAreNoActiveOrSavedErrors() {
         composeTestRule.setContent {
             ErrorsScreen(

@@ -443,6 +443,8 @@
     <string name="errors_clear_readback_timeout">ECU підтвердив очищення, але новий список збережених помилок не надійшов. Показані дані можуть бути застарілими.</string>
     <string name="errors_summary">%1$d активних · %2$d збережено в памʼяті ECU</string>
     <string name="errors_loading_state">Зчитування помилок ECU…</string>
+    <string name="errors_saved_read_timeout">Збережені помилки ECU не отримано.</string>
+    <string name="errors_active_read_timeout">Активні помилки ECU не отримано.</string>
     <string name="errors_empty_state">Зараз помилок ECU немає.</string>
     <string name="error_state_active">• Активна</string>
     <string name="error_state_saved">• Збережена</string>

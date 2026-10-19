@@ -38,6 +38,113 @@ class ErrorsSessionControllerTest {
     }
 
     @Test
+    fun savedReadTimeoutCanRetryFullSequenceAndRetryNeverWrites() = runBlocking {
+        val fixture = Fixture(this, initialReadTimeoutMillis = 100)
+        fixture.resumeConnected()
+        fixture.awaitSnapshot { it.readStatus == ErrorsReadStatus.SavedTimeout }
+        fixture.controller.retryRead()
+        fixture.awaitCommands(listOf("saved", "saved"))
+        fixture.packets.emit(CheckEngineSavedErrorsPacket(errors = 1))
+        fixture.awaitCommands(listOf("saved", "saved", "active"))
+        fixture.packets.emit(CheckEngineErrorsPacket(errors = 2))
+        fixture.awaitSnapshot { it.saved?.errors == 1 && it.active?.errors == 2 }
+        assertEquals(0, fixture.commands.count { it == "clear" })
+        fixture.close()
+    }
+
+    @Test
+    fun activeFirstResponseTimeoutKeepsCollectorForLateRecoveryAndNoRepeatTimeout() = runBlocking {
+        val fixture = Fixture(this, initialReadTimeoutMillis = 100)
+        fixture.resumeConnected()
+        fixture.awaitSubscriptions(1)
+        fixture.packets.emit(CheckEngineSavedErrorsPacket(errors = 1))
+        fixture.awaitSnapshot { it.readStatus == ErrorsReadStatus.ActiveTimeout }
+        fixture.packets.emit(CheckEngineErrorsPacket(errors = 2))
+        fixture.awaitSnapshot { it.active?.errors == 2 && it.readStatus == ErrorsReadStatus.Idle }
+        kotlinx.coroutines.delay(150)
+        assertEquals(ErrorsReadStatus.Idle, fixture.controller.snapshot.value.readStatus)
+        fixture.close()
+    }
+
+    @Test
+    fun timedOutReadCancellationHasNoStaleTimeoutAndRetryIsSingleFlight() = runBlocking {
+        val fixture = Fixture(this, initialReadTimeoutMillis = 100)
+        fixture.resumeConnected()
+        fixture.awaitSubscriptions(1)
+        fixture.controller.onRoutePaused()
+        fixture.awaitSubscriptions(0)
+        kotlinx.coroutines.delay(150)
+        assertEquals(ErrorsSnapshot(), fixture.controller.snapshot.value)
+
+        fixture.controller.onRouteResumed()
+        fixture.awaitCommands(listOf("saved", "saved"))
+        fixture.awaitSnapshot { it.readStatus == ErrorsReadStatus.SavedTimeout }
+        fixture.controller.retryRead()
+        fixture.awaitCommands(listOf("saved", "saved", "saved"))
+        fixture.controller.retryRead()
+        assertEquals(3, fixture.commands.count { it == "saved" })
+        fixture.close()
+    }
+
+    @Test
+    fun activeReadTimerCanceledByPauseCannotAffectFreshSession() = runBlocking {
+        val fixture = Fixture(this, initialReadTimeoutMillis = 100)
+        fixture.resumeConnected()
+        fixture.awaitSubscriptions(1)
+        fixture.packets.emit(CheckEngineSavedErrorsPacket(errors = 1))
+        fixture.awaitCommands(listOf("saved", "active"))
+        fixture.controller.onRoutePaused()
+        fixture.awaitSubscriptions(0)
+        kotlinx.coroutines.delay(150)
+        assertEquals(ErrorsSnapshot(), fixture.controller.snapshot.value)
+
+        fixture.controller.onRouteResumed()
+        fixture.awaitCommands(listOf("saved", "active", "saved"))
+        fixture.packets.emit(CheckEngineSavedErrorsPacket(errors = 2))
+        fixture.awaitCommands(listOf("saved", "active", "saved", "active"))
+        fixture.packets.emit(CheckEngineErrorsPacket(errors = 4))
+        fixture.awaitSnapshot { it.saved?.errors == 2 && it.active?.errors == 4 }
+        assertEquals(ErrorsReadStatus.Idle, fixture.controller.snapshot.value.readStatus)
+        fixture.close()
+    }
+
+    @Test
+    fun retryCannotInterruptClearOrRepeatItsWrite() = runBlocking {
+        val fixture = Fixture(this)
+        fixture.startWithSavedErrors()
+        fixture.controller.clearErrors()
+        fixture.awaitCommands(listOf("saved", "active", "clear"))
+        fixture.controller.retryRead()
+        assertEquals(ErrorsClearStatus.Clearing, fixture.controller.snapshot.value.clearStatus)
+        assertEquals(listOf("saved", "active", "clear"), fixture.commands)
+        fixture.packets.emit(OpCompNc(opData = 0, opCode = 2))
+        fixture.awaitCommands(listOf("saved", "active", "clear", "saved"))
+        fixture.packets.emit(CheckEngineSavedErrorsPacket(errors = 0))
+        fixture.awaitSnapshot { it.clearStatus == ErrorsClearStatus.Succeeded }
+        assertEquals(1, fixture.commands.count { it == "clear" })
+        fixture.close()
+    }
+
+    @Test
+    fun retryAfterUncertainClearPreservesOutcomeAndDoesNotRepeatWrite() = runBlocking {
+        val fixture = Fixture(this, ackTimeoutMillis = 20, initialReadTimeoutMillis = 100)
+        fixture.resumeConnected()
+        fixture.awaitSubscriptions(1)
+        fixture.packets.emit(CheckEngineSavedErrorsPacket(errors = 3))
+        fixture.awaitSnapshot { it.readStatus == ErrorsReadStatus.ActiveTimeout }
+        fixture.controller.clearErrors()
+        fixture.awaitSnapshot {
+            it.clearStatus == ErrorsClearStatus.AckTimeout && it.readStatus == ErrorsReadStatus.ActiveTimeout
+        }
+        fixture.awaitCommands(listOf("saved", "active", "clear", "active"))
+        fixture.controller.retryRead()
+        assertEquals(ErrorsClearStatus.AckTimeout, fixture.controller.snapshot.value.clearStatus)
+        fixture.awaitCommands(listOf("saved", "active", "clear", "active", "saved"))
+        assertEquals(1, fixture.commands.count { it == "clear" })
+        fixture.close()
+    }
+
+    @Test
     fun disconnectClearsBothPacketsAndReconnectReadsSavedBeforeActiveAgain() = runBlocking {
         val fixture = Fixture(this)
         fixture.resumeConnected()
@@ -324,6 +431,7 @@ class ErrorsSessionControllerTest {
         private val scope: kotlinx.coroutines.CoroutineScope,
         ackTimeoutMillis: Long = 1_000,
         readbackTimeoutMillis: Long = 1_000,
+        initialReadTimeoutMillis: Long = 10_000,
     ) {
         val packets = MutableSharedFlow<InputPacket>()
         val commands = mutableListOf<String>()
@@ -337,6 +445,7 @@ class ErrorsSessionControllerTest {
             clearSavedErrors = { commands += "clear"; onClearWrite?.invoke() },
             ackTimeoutMillis = ackTimeoutMillis,
             readbackTimeoutMillis = readbackTimeoutMillis,
+            initialReadTimeoutMillis = initialReadTimeoutMillis,
         )
 
         fun resumeConnected() {

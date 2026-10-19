@@ -78,6 +78,7 @@ internal fun ErrorsRoute(
                 connection == org.secu3.android.connection.Connected,
             onBackClick = onNavigateUp,
             onClearClick = viewModel::requestClearConfirmation,
+            onRetryClick = viewModel::retryRead,
         )
         if (confirmClear) {
             ConfirmationDialog(

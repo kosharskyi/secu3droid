@@ -65,6 +65,7 @@ internal fun ErrorsContent(
     canClearErrors: Boolean,
     onBackClick: () -> Unit,
     onClearClick: () -> Unit,
+    onRetryClick: () -> Unit = {},
 ) {
     val errors = if (snapshot.saved != null && snapshot.active != null) errorTitles.mapIndexed { index, title ->
         CheckEngineError(
@@ -78,9 +79,11 @@ internal fun ErrorsContent(
         errors = errors,
         isLoading = snapshot.saved == null || snapshot.active == null,
         clearStatus = snapshot.clearStatus,
+        readStatus = snapshot.readStatus,
         canClearErrors = canClearErrors,
         onBackClick = onBackClick,
         onClearClick = onClearClick,
+        onRetryClick = onRetryClick,
     )
 }
 
@@ -93,6 +96,8 @@ internal fun ErrorsScreen(
     canClearErrors: Boolean = true,
     onBackClick: () -> Unit,
     onClearClick: () -> Unit,
+    readStatus: ErrorsReadStatus = ErrorsReadStatus.Idle,
+    onRetryClick: () -> Unit = {},
 ) {
     val displayedErrors = errors.filter { it.isActive || it.isSaved }
     val isClearing = clearStatus == ErrorsClearStatus.Clearing
@@ -140,7 +145,13 @@ internal fun ErrorsScreen(
                 if (clearStatus != ErrorsClearStatus.Idle) {
                     ClearStatusMessage(clearStatus)
                 }
-                if (isLoading) {
+                if (readStatus != ErrorsReadStatus.Idle) {
+                    ReadFailureState(
+                        status = readStatus,
+                        retryEnabled = connectionState == org.secu3.android.connection.Connected && !isClearing,
+                        onRetryClick = onRetryClick,
+                    )
+                } else if (isLoading) {
                     LoadingErrorsState(
                         modifier = Modifier
                             .fillMaxSize()
@@ -176,6 +187,24 @@ internal fun ErrorsScreen(
                     }
                 }
             }
+        }
+    }
+}
+
+@Composable
+private fun ReadFailureState(status: ErrorsReadStatus, retryEnabled: Boolean, onRetryClick: () -> Unit) {
+    Column(
+        modifier = Modifier.fillMaxSize().padding(24.dp),
+        horizontalAlignment = Alignment.CenterHorizontally,
+        verticalArrangement = Arrangement.Center,
+    ) {
+        Text(
+            text = stringResource(if (status == ErrorsReadStatus.SavedTimeout) R.string.errors_saved_read_timeout else R.string.errors_active_read_timeout),
+            color = MaterialTheme.colorScheme.error,
+            style = MaterialTheme.typography.bodyLarge,
+        )
+        androidx.compose.material3.TextButton(onClick = onRetryClick, enabled = retryEnabled, modifier = Modifier.padding(top = 12.dp)) {
+            Text(stringResource(R.string.retry))
         }
     }
 }
