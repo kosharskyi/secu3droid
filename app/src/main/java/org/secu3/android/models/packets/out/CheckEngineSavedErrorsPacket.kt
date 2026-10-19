@@ -44,6 +44,7 @@ data class CheckEngineSavedErrorsPacket(
     }
 
     override fun parse(data: IntArray): InputPacket {
+        require(data.size == 6) { "Saved check-engine errors packet must contain exactly 4 payload bytes" }
         errors = data.get4Bytes()
 
         return this

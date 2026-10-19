@@ -74,6 +74,53 @@ class PacketTest {
     }
 
     @Test
+    fun rawPacket_rejectsOverlongErrorMasksAndAcceptsFollowingValidFrames() {
+        for (descriptor in listOf('v', 'x')) {
+            val overlongFrame = intArrayOf('@'.code, descriptor.code, 0x12, 0x34, 0x56, 0x78, 0x9A, 0, 0)
+            assertNull("descriptor=$descriptor", RawPacket(overlongFrame).parse(null))
+
+            val validFrame = intArrayOf('@'.code, descriptor.code, 0x80, 0, 0, 1, 0, 0)
+            assertTrue("valid descriptor=$descriptor", RawPacket(validFrame).parse(null) != null)
+        }
+    }
+
+    @Test
+    fun errorMaskParsersRejectInvalidLengthsWithoutChangingExistingMask() {
+        fun assertInvalidLengthsPreserveMask(model: org.secu3.android.models.packets.base.InputPacket, descriptor: Char, getErrors: () -> Int) {
+            for (payloadSize in listOf(3, 5)) {
+                val invalidInput = intArrayOf('@'.code, descriptor.code) + IntArray(payloadSize)
+                org.junit.Assert.assertThrows(IllegalArgumentException::class.java) {
+                    model.parse(invalidInput)
+                }
+                assertEquals(0x12345678, getErrors())
+            }
+        }
+
+        val active = CheckEngineErrorsPacket(errors = 0x12345678)
+        val saved = CheckEngineSavedErrorsPacket(errors = 0x12345678)
+        assertInvalidLengthsPreserveMask(active, 'v') { active.errors }
+        assertInvalidLengthsPreserveMask(saved, 'x') { saved.errors }
+    }
+
+    @Test
+    fun errorMaskPacketsParseBigEndianMasksAndSavedPacketPackingIsUnchanged() {
+        val active = CheckEngineErrorsPacket().parse(
+            intArrayOf('@'.code, 'v'.code, 0x80, 0, 0, 1)
+        ) as CheckEngineErrorsPacket
+        val saved = CheckEngineSavedErrorsPacket().parse(
+            intArrayOf('@'.code, 'x'.code, 0xFF, 0xFF, 0xFF, 0xFF)
+        ) as CheckEngineSavedErrorsPacket
+
+        assertEquals(0x80000001.toInt(), active.errors)
+        assertTrue(active.isError(31))
+        assertTrue(active.isError(0))
+        assertEquals(-1, saved.errors)
+        assertTrue(saved.isError(31))
+        assertTrue(saved.isError(0))
+        assertArrayEquals(intArrayOf('x'.code, 0x80, 0, 0, 1), CheckEngineSavedErrorsPacket(0x80000001.toInt()).pack())
+    }
+
+    @Test
     fun rawPacket_parsesFirmwareSignatureOptionsAndVersionAtProtocolOffsets() {
         val signature = "SECU-3 firmware v5.0. Build [Aug 17 2026 19:55:3".padEnd(52, 'Q').take(52)
         val signatureBytes = signature.map { it.code }.toIntArray()
