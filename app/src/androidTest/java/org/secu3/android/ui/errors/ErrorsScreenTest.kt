@@ -1,6 +1,11 @@
 package org.secu3.android.ui.errors
 
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.setValue
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.ui.test.assertIsDisplayed
+import androidx.compose.ui.test.assertIsEnabled
+import androidx.compose.ui.test.assertIsNotEnabled
 import androidx.compose.ui.test.assertCountEquals
 import androidx.compose.ui.test.junit4.v2.createComposeRule
 import androidx.compose.ui.test.assertIsNotSelected
@@ -107,5 +112,49 @@ class ErrorsScreenTest {
         composeTestRule.onNodeWithContentDescription(context.getString(R.string.errors_clear_all_short)).performClick()
 
         assertTrue(clicked)
+    }
+
+    @Test
+    fun clearingDisablesClearControlAndShowsBusyFeedback() {
+        composeTestRule.setContent {
+            ErrorsScreen(
+                connectionState = Connected,
+                errors = emptyList(),
+                isLoading = false,
+                clearStatus = ErrorsClearStatus.Clearing,
+                canClearErrors = false,
+                onBackClick = {},
+                onClearClick = {},
+            )
+        }
+
+        composeTestRule.onNodeWithTag("errors-clear-button").assertIsNotEnabled()
+        composeTestRule.onNodeWithText(context.getString(R.string.errors_clear_busy)).assertIsDisplayed()
+    }
+
+    @Test
+    fun clearFailureAndSuccessStatusesAreVisibleAndAllowControlledRetry() {
+        var status by androidx.compose.runtime.mutableStateOf(ErrorsClearStatus.AckTimeout)
+        composeTestRule.setContent {
+            ErrorsScreen(
+                connectionState = Connected,
+                errors = emptyList(),
+                isLoading = false,
+                clearStatus = status,
+                canClearErrors = true,
+                onBackClick = {},
+                onClearClick = {},
+            )
+        }
+
+        composeTestRule.onNodeWithTag("errors-clear-button").assertIsEnabled()
+        composeTestRule.onNodeWithText(context.getString(R.string.errors_clear_ack_timeout)).assertIsDisplayed()
+
+        composeTestRule.runOnIdle { status = ErrorsClearStatus.ReadbackTimeout }
+        composeTestRule.onNodeWithTag("errors-clear-button").assertIsEnabled()
+        composeTestRule.onNodeWithText(context.getString(R.string.errors_clear_readback_timeout)).assertIsDisplayed()
+
+        composeTestRule.runOnIdle { status = ErrorsClearStatus.Succeeded }
+        composeTestRule.onNodeWithText(context.getString(R.string.errors_clear_success)).assertIsDisplayed()
     }
 }

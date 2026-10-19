@@ -47,6 +47,9 @@ data class OpCompNc(
     val isEepromParamSave: Boolean
         get() = opCode == EEPROM_PARAM_SAVE
 
+    val isSavedErrorsWriteAcknowledgement: Boolean
+        get() = opCode == CE_SAVE_ERRORS && opData == 0
+
     override fun parse(data: IntArray): InputPacket {
         opData = data[2]
         opCode = data[3]

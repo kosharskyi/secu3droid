@@ -18,6 +18,7 @@ import org.secu3.android.models.packets.base.InputPacket
 import org.secu3.android.models.packets.input.CheckEngineErrorsPacket
 import org.secu3.android.models.packets.input.FirmwareInfoPacket
 import org.secu3.android.models.packets.out.CheckEngineSavedErrorsPacket
+import org.secu3.android.models.packets.out.OpCompNc
 
 class ErrorsSessionControllerTest {
     @Test
@@ -166,32 +167,189 @@ class ErrorsSessionControllerTest {
         fixture.resumeConnected()
         fixture.awaitSubscriptions(1)
         fixture.awaitCommands(listOf("saved"))
+        fixture.packets.emit(CheckEngineSavedErrorsPacket(errors = 3))
+        fixture.awaitCommands(listOf("saved", "active"))
         fixture.controller.clearErrors()
-        fixture.awaitCommands(listOf("saved", "saved", "clear"))
-        assertEquals(listOf("saved", "saved", "clear"), fixture.commands)
+        fixture.awaitCommands(listOf("saved", "active", "clear"))
+        fixture.controller.clearErrors()
+        assertEquals(listOf("saved", "active", "clear"), fixture.commands)
+        fixture.packets.emit(OpCompNc(opData = 0, opCode = 2))
+        fixture.awaitCommands(listOf("saved", "active", "clear", "saved"))
+        fixture.packets.emit(CheckEngineSavedErrorsPacket(errors = 1))
+        fixture.awaitCommands(listOf("saved", "active", "clear", "saved", "active"))
+        assertEquals(ErrorsClearStatus.Succeeded, fixture.controller.snapshot.value.clearStatus)
 
         fixture.controller.onConnectionState(Disconnected)
         fixture.awaitSubscriptions(0)
         fixture.controller.clearErrors()
-        assertFalse(fixture.commands.drop(3).contains("clear"))
+        assertFalse(fixture.commands.drop(5).contains("clear"))
         fixture.close()
     }
 
-    private class Fixture(private val scope: kotlinx.coroutines.CoroutineScope) {
+    @Test
+    fun clearWaitsForMatchingAcknowledgementThenFreshSavedReadBeforeActiveMode() = runBlocking {
+        val fixture = Fixture(this)
+        fixture.resumeConnected()
+        fixture.awaitSubscriptions(1)
+        fixture.awaitCommands(listOf("saved"))
+        fixture.packets.emit(CheckEngineSavedErrorsPacket(errors = 3))
+        fixture.awaitCommands(listOf("saved", "active"))
+        fixture.packets.emit(CheckEngineErrorsPacket(errors = 0x80))
+        fixture.awaitSnapshot { it.active?.errors == 0x80 }
+        fixture.controller.clearErrors()
+        fixture.awaitCommands(listOf("saved", "active", "clear"))
+        assertEquals(ErrorsClearStatus.Clearing, fixture.controller.snapshot.value.clearStatus)
+        assertEquals(3, fixture.controller.snapshot.value.saved?.errors)
+        assertEquals(0x80, fixture.controller.snapshot.value.active?.errors)
+
+        fixture.packets.emit(CheckEngineSavedErrorsPacket(errors = 0)) // x is not the write ACK
+        fixture.packets.emit(OpCompNc(opData = 1, opCode = 2))
+        fixture.packets.emit(OpCompNc(opData = 0, opCode = 1))
+        assertEquals(listOf("saved", "active", "clear"), fixture.commands)
+        assertEquals(3, fixture.controller.snapshot.value.saved?.errors)
+        assertEquals(0x80, fixture.controller.snapshot.value.active?.errors)
+
+        fixture.packets.emit(OpCompNc(opData = 0, opCode = 2))
+        fixture.awaitCommands(listOf("saved", "active", "clear", "saved"))
+        val refreshed = CheckEngineSavedErrorsPacket(errors = 0x40)
+        fixture.packets.emit(refreshed)
+        fixture.awaitCommands(listOf("saved", "active", "clear", "saved", "active"))
+        assertEquals(refreshed, fixture.controller.snapshot.value.saved)
+        assertEquals(ErrorsClearStatus.Succeeded, fixture.controller.snapshot.value.clearStatus)
+        fixture.close()
+    }
+
+    @Test
+    fun clearBeforeInitialSavedReadCompletesSendsNoWrite() = runBlocking {
+        val fixture = Fixture(this)
+        fixture.resumeConnected()
+        fixture.awaitSubscriptions(1)
+        fixture.awaitCommands(listOf("saved"))
+        fixture.controller.clearErrors()
+        assertEquals(listOf("saved"), fixture.commands)
+        assertEquals(ErrorsClearStatus.Idle, fixture.controller.snapshot.value.clearStatus)
+        fixture.close()
+    }
+
+    @Test
+    fun immediateAcknowledgementAndReadbackAreAcceptedWithoutTreatingNonzeroMaskAsFailure() = runBlocking {
+        val fixture = Fixture(this)
+        fixture.onClearWrite = {
+            launch(start = CoroutineStart.UNDISPATCHED) {
+                fixture.packets.emit(OpCompNc(opData = 0, opCode = 2))
+            }
+        }
+        fixture.onSavedRead = {
+            if (fixture.commands.count { it == "saved" } > 1) {
+                launch(start = CoroutineStart.UNDISPATCHED) {
+                    fixture.packets.emit(CheckEngineSavedErrorsPacket(errors = 0x20))
+                }
+            }
+        }
+        fixture.resumeConnected()
+        fixture.awaitSubscriptions(1)
+        fixture.packets.emit(CheckEngineSavedErrorsPacket(errors = 2))
+        fixture.awaitCommands(listOf("saved", "active"))
+        fixture.controller.clearErrors()
+        fixture.awaitSnapshot { it.clearStatus == ErrorsClearStatus.Succeeded }
+        fixture.awaitCommands(listOf("saved", "active", "clear", "saved", "active"))
+        assertEquals(0x20, fixture.controller.snapshot.value.saved?.errors)
+        fixture.close()
+    }
+
+    @Test
+    fun acknowledgementTimeoutReportsUncertaintyDoesNotRetryWriteAndRestoresActiveRead() = runBlocking {
+        val fixture = Fixture(this, ackTimeoutMillis = 20)
+        fixture.startWithSavedErrors()
+        fixture.controller.clearErrors()
+        fixture.awaitSnapshot { it.clearStatus == ErrorsClearStatus.AckTimeout }
+        fixture.awaitCommands(listOf("saved", "active", "clear", "active"))
+        assertEquals(1, fixture.commands.count { it == "clear" })
+        assertEquals(3, fixture.controller.snapshot.value.saved?.errors)
+        fixture.close()
+    }
+
+    @Test
+    fun readbackTimeoutReportsUncertaintyDoesNotRetryWriteAndRestoresActiveRead() = runBlocking {
+        val fixture = Fixture(this, readbackTimeoutMillis = 20)
+        fixture.startWithSavedErrors()
+        fixture.controller.clearErrors()
+        fixture.awaitCommands(listOf("saved", "active", "clear"))
+        fixture.packets.emit(OpCompNc(opData = 0, opCode = 2))
+        fixture.awaitSnapshot { it.clearStatus == ErrorsClearStatus.ReadbackTimeout }
+        fixture.awaitCommands(listOf("saved", "active", "clear", "saved", "active"))
+        assertEquals(1, fixture.commands.count { it == "clear" })
+        assertEquals(3, fixture.controller.snapshot.value.saved?.errors)
+        fixture.close()
+    }
+
+    @Test
+    fun disconnectDuringClearAckWaitCancelsWorkerAndFreshSessionIsUnaffected() = runBlocking {
+        val fixture = Fixture(this)
+        fixture.startWithSavedErrors()
+        fixture.controller.clearErrors()
+        fixture.awaitCommands(listOf("saved", "active", "clear"))
+        fixture.controller.onConnectionState(Disconnected)
+        fixture.awaitSubscriptions(0)
+        fixture.packets.emit(OpCompNc(opData = 0, opCode = 2))
+        fixture.controller.onConnectionState(Connected)
+        fixture.awaitCommands(listOf("saved", "active", "clear", "saved"))
+        assertEquals(ErrorsSnapshot(), fixture.controller.snapshot.value)
+        fixture.close()
+    }
+
+    @Test
+    fun routePauseDuringReadbackWaitCancelsWorkerAndFreshResumeReadsNormally() = runBlocking {
+        val fixture = Fixture(this)
+        fixture.startWithSavedErrors()
+        fixture.controller.clearErrors()
+        fixture.awaitCommands(listOf("saved", "active", "clear"))
+        fixture.packets.emit(OpCompNc(opData = 0, opCode = 2))
+        fixture.awaitCommands(listOf("saved", "active", "clear", "saved"))
+        fixture.controller.onRoutePaused()
+        fixture.awaitSubscriptions(0)
+        fixture.packets.emit(CheckEngineSavedErrorsPacket(errors = 0))
+        assertEquals(ErrorsSnapshot(), fixture.controller.snapshot.value)
+
+        fixture.controller.onRouteResumed()
+        fixture.awaitCommands(listOf("saved", "active", "clear", "saved", "saved"))
+        fixture.packets.emit(CheckEngineSavedErrorsPacket(errors = 8))
+        fixture.awaitSnapshot { it.saved?.errors == 8 }
+        fixture.awaitCommands(listOf("saved", "active", "clear", "saved", "saved", "active"))
+        assertEquals(ErrorsClearStatus.Idle, fixture.controller.snapshot.value.clearStatus)
+        fixture.close()
+    }
+
+    private class Fixture(
+        private val scope: kotlinx.coroutines.CoroutineScope,
+        ackTimeoutMillis: Long = 1_000,
+        readbackTimeoutMillis: Long = 1_000,
+    ) {
         val packets = MutableSharedFlow<InputPacket>()
         val commands = mutableListOf<String>()
         var onSavedRead: (() -> Unit)? = null
+        var onClearWrite: (() -> Unit)? = null
         val controller = ErrorsSessionController(
             scope = scope,
             packets = { onSubscribed -> packets.onSubscription { onSubscribed() } },
             sendSavedRead = { commands += "saved"; onSavedRead?.invoke() },
             sendActiveRead = { commands += "active" },
-            clearSavedErrors = { commands += "clear" },
+            clearSavedErrors = { commands += "clear"; onClearWrite?.invoke() },
+            ackTimeoutMillis = ackTimeoutMillis,
+            readbackTimeoutMillis = readbackTimeoutMillis,
         )
 
         fun resumeConnected() {
             controller.onRouteResumed()
             controller.onConnectionState(Connected)
+        }
+
+        suspend fun startWithSavedErrors() {
+            resumeConnected()
+            awaitSubscriptions(1)
+            awaitCommands(listOf("saved"))
+            packets.emit(CheckEngineSavedErrorsPacket(errors = 3))
+            awaitCommands(listOf("saved", "active"))
         }
 
         suspend fun awaitSubscriptions(expected: Int) {

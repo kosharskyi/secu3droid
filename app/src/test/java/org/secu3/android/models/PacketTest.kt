@@ -12,6 +12,7 @@ import org.secu3.android.models.packets.input.CheckEngineErrorsPacket
 import org.secu3.android.models.packets.input.DiagInputPacket
 import org.secu3.android.models.packets.input.FnNameDatPacket
 import org.secu3.android.models.packets.out.ChangeModePacket
+import org.secu3.android.models.packets.out.CheckEngineSavedErrorsPacket
 import org.secu3.android.models.packets.out.OpCompNc
 import org.secu3.android.models.packets.out.params.StarterParamPacket
 import org.secu3.android.ui.parameters.parameterCapabilities
@@ -36,6 +37,21 @@ class PacketTest {
         val parsed = OpCompNc().parse(intArrayOf('@'.code, 'u'.code, 0, 1)) as OpCompNc
 
         assertTrue(parsed.isEepromParamSave)
+    }
+
+    @Test
+    fun opCompNc_identifiesOnlySavedErrorsWriteAcknowledgement() {
+        assertTrue(OpCompNc(opData = 0, opCode = 2).isSavedErrorsWriteAcknowledgement)
+        assertFalse(OpCompNc(opData = 1, opCode = 2).isSavedErrorsWriteAcknowledgement)
+        assertFalse(OpCompNc(opData = 0, opCode = 1).isSavedErrorsWriteAcknowledgement)
+    }
+
+    @Test
+    fun savedErrorsClearPacketWritesOnlyAnEmptySavedMask() {
+        assertArrayEquals(
+            intArrayOf('x'.code, 0, 0, 0, 0),
+            CheckEngineSavedErrorsPacket(errors = 0).pack(),
+        )
     }
 
     @Test

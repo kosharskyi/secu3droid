@@ -431,10 +431,14 @@
     <string name="usb_device_detected">Обнаружено USB устройство</string>
     <string name="unknown_device">Неизвестное устройство</string>
     <string name="select_a_device_from_the_list">Выберите устройство из списка</string>
-    <string name="clear_all_errors">Удалить все ошибки</string>
-    <string name="dialog_confirm_clear_errors_message">Вы уверены, что хотите очистить все ошибки ECU?</string>
+    <string name="clear_all_errors">Очистить сохраненные ошибки</string>
+    <string name="dialog_confirm_clear_errors_message">Очистить сохраненную историю ошибок ECU? Активные неисправности могут записаться снова.</string>
     <string name="errors_title_ecu">Ошибки ECU</string>
     <string name="errors_clear_all_short">Очистить</string>
+    <string name="errors_clear_busy">Очистка сохраненных ошибок ECU…</string>
+    <string name="errors_clear_success">Очистка подтверждена; список сохраненных ошибок обновлен.</string>
+    <string name="errors_clear_ack_timeout">ECU не подтвердил очистку сохраненных ошибок. Показанный список может быть устаревшим.</string>
+    <string name="errors_clear_readback_timeout">ECU подтвердил очистку, но новый список сохраненных ошибок не поступил. Показанные данные могут быть устаревшими.</string>
     <string name="errors_summary">%1$d активных · %2$d сохранено в памяти ECU</string>
     <string name="errors_loading_state">Чтение ошибок ECU…</string>
     <string name="errors_empty_state">Сейчас ошибок ECU нет.</string>

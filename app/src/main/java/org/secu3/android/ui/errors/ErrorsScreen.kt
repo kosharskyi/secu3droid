@@ -62,10 +62,13 @@ internal fun ErrorsScreen(
     connectionState: ConnectionState?,
     errors: List<CheckEngineError>,
     isLoading: Boolean,
+    clearStatus: ErrorsClearStatus = ErrorsClearStatus.Idle,
+    canClearErrors: Boolean = true,
     onBackClick: () -> Unit,
     onClearClick: () -> Unit,
 ) {
     val displayedErrors = errors.filter { it.isActive || it.isSaved }
+    val isClearing = clearStatus == ErrorsClearStatus.Clearing
 
     SecuComposeTheme {
         Surface(
@@ -88,7 +91,8 @@ internal fun ErrorsScreen(
                                 .clip(RoundedCornerShape(12.dp))
                                 .background(MaterialTheme.colorScheme.errorContainer)
                                 .border(1.dp, MaterialTheme.colorScheme.error, RoundedCornerShape(12.dp))
-                                .clickable(onClick = onClearClick),
+                                .testTag("errors-clear-button")
+                                .clickable(enabled = canClearErrors && !isClearing, onClick = onClearClick),
                             contentAlignment = Alignment.Center,
                         ) {
                             Icon(
@@ -106,6 +110,9 @@ internal fun ErrorsScreen(
                         .heightIn(min = 1.dp)
                         .background(MaterialTheme.colorScheme.outlineVariant),
                 )
+                if (clearStatus != ErrorsClearStatus.Idle) {
+                    ClearStatusMessage(clearStatus)
+                }
                 if (isLoading) {
                     LoadingErrorsState(
                         modifier = Modifier
@@ -143,6 +150,31 @@ internal fun ErrorsScreen(
                 }
             }
         }
+    }
+}
+
+@Composable
+private fun ClearStatusMessage(status: ErrorsClearStatus) {
+    val (message, color) = when (status) {
+        ErrorsClearStatus.Idle -> return
+        ErrorsClearStatus.Clearing -> R.string.errors_clear_busy to MaterialTheme.colorScheme.primary
+        ErrorsClearStatus.Succeeded -> R.string.errors_clear_success to MaterialTheme.colorScheme.primary
+        ErrorsClearStatus.AckTimeout -> R.string.errors_clear_ack_timeout to MaterialTheme.colorScheme.error
+        ErrorsClearStatus.ReadbackTimeout -> R.string.errors_clear_readback_timeout to MaterialTheme.colorScheme.error
+    }
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .testTag("errors-clear-status")
+            .background(MaterialTheme.colorScheme.surfaceVariant)
+            .padding(horizontal = 16.dp, vertical = 12.dp),
+        horizontalArrangement = Arrangement.spacedBy(10.dp),
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        if (status == ErrorsClearStatus.Clearing) {
+            CircularProgressIndicator(modifier = Modifier.size(18.dp), strokeWidth = 2.dp)
+        }
+        Text(text = stringResource(message), color = color, style = MaterialTheme.typography.bodyMedium)
     }
 }
 

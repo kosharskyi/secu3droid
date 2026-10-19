@@ -11,22 +11,36 @@ package org.secu3.android.ui.errors
 
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Job
+import kotlinx.coroutines.TimeoutCancellationException
+import kotlinx.coroutines.currentCoroutineContext
+import kotlinx.coroutines.ensureActive
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.filterIsInstance
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withTimeout
 import org.secu3.android.connection.Connected
 import org.secu3.android.connection.ConnectionState
 import org.secu3.android.models.packets.base.InputPacket
 import org.secu3.android.models.packets.input.CheckEngineErrorsPacket
 import org.secu3.android.models.packets.input.FirmwareInfoPacket
 import org.secu3.android.models.packets.out.CheckEngineSavedErrorsPacket
+import org.secu3.android.models.packets.out.OpCompNc
+
+internal enum class ErrorsClearStatus {
+    Idle,
+    Clearing,
+    Succeeded,
+    AckTimeout,
+    ReadbackTimeout,
+}
 
 internal data class ErrorsSnapshot(
     val saved: CheckEngineSavedErrorsPacket? = null,
     val active: CheckEngineErrorsPacket? = null,
+    val clearStatus: ErrorsClearStatus = ErrorsClearStatus.Idle,
 )
 
 /** Owns error packets and reads only while the route is resumed and its transport is connected. */
@@ -37,6 +51,8 @@ internal class ErrorsSessionController(
     private val sendActiveRead: () -> Unit,
     private val clearSavedErrors: () -> Unit,
     private val onSessionInvalidated: () -> Unit = {},
+    private val ackTimeoutMillis: Long = 10_000,
+    private val readbackTimeoutMillis: Long = 10_000,
 ) {
     private val _snapshot = MutableStateFlow(ErrorsSnapshot())
     val snapshot = _snapshot.asStateFlow()
@@ -46,7 +62,9 @@ internal class ErrorsSessionController(
     private var generation = 0L
     private var sessionJob: Job? = null
 
-    val canClearErrors: Boolean get() = connected && resumed
+    val canClearErrors: Boolean
+        get() = connected && resumed && _snapshot.value.saved != null &&
+            _snapshot.value.clearStatus != ErrorsClearStatus.Clearing
 
     fun onConnectionState(state: ConnectionState) {
         if (state != Connected) {
@@ -73,8 +91,16 @@ internal class ErrorsSessionController(
 
     fun clearErrors() {
         if (!canClearErrors) return
-        stopSession()
-        startSessionIfEligible(afterSavedRequest = clearSavedErrors)
+        cancelWorkerPreservingSnapshot()
+        _snapshot.value = _snapshot.value.copy(clearStatus = ErrorsClearStatus.Clearing)
+        val session = generation
+        sessionJob = scope.launch {
+            try {
+                performClear(session)
+            } finally {
+                if (generation == session) sessionJob = null
+            }
+        }
     }
 
     fun close() {
@@ -83,35 +109,78 @@ internal class ErrorsSessionController(
         stopSession()
     }
 
-    private fun startSessionIfEligible(afterSavedRequest: () -> Unit = {}) {
+    private fun startSessionIfEligible() {
         if (!connected || !resumed || sessionJob != null) return
         val session = ++generation
         sessionJob = scope.launch {
             try {
-                val saved = packets {
-                    if (isCurrent(session)) {
-                        sendSavedRead()
-                        afterSavedRequest()
-                    }
-                }.filterIsInstance<CheckEngineSavedErrorsPacket>().first()
+                val saved = packets { if (isCurrent(session)) sendSavedRead() }
+                    .filterIsInstance<CheckEngineSavedErrorsPacket>().first()
                 if (!isCurrent(session)) return@launch
                 _snapshot.value = _snapshot.value.copy(saved = saved)
-
-                packets {
-                    if (isCurrent(session)) sendActiveRead()
-                }.collect { packet ->
-                    if (!isCurrent(session)) return@collect
-                    when (packet) {
-                        is CheckEngineErrorsPacket -> _snapshot.value = _snapshot.value.copy(active = packet)
-                        // Connection setup can send h/y concurrently with this read. Reassert v
-                        // after its firmware packet so the ECU returns to the active-error mode.
-                        is FirmwareInfoPacket -> sendActiveRead()
-                    }
-                }
+                collectActiveErrors(session)
             } finally {
                 if (generation == session) sessionJob = null
             }
         }
+    }
+
+    private suspend fun performClear(session: Long) {
+        try {
+            withTimeout(ackTimeoutMillis) {
+                packets { if (isCurrent(session)) clearSavedErrors() }
+                    .filterIsInstance<OpCompNc>()
+                    .first { it.isSavedErrorsWriteAcknowledgement }
+            }
+        } catch (_: TimeoutCancellationException) {
+            currentCoroutineContext().ensureActive()
+            updateClearStatus(session, ErrorsClearStatus.AckTimeout)
+            collectActiveErrors(session)
+            return
+        }
+        if (!isCurrent(session)) return
+
+        val refreshedSavedErrors = try {
+            withTimeout(readbackTimeoutMillis) {
+                packets { if (isCurrent(session)) sendSavedRead() }
+                    .filterIsInstance<CheckEngineSavedErrorsPacket>()
+                    .first()
+            }
+        } catch (_: TimeoutCancellationException) {
+            currentCoroutineContext().ensureActive()
+            updateClearStatus(session, ErrorsClearStatus.ReadbackTimeout)
+            collectActiveErrors(session)
+            return
+        }
+        if (!isCurrent(session)) return
+
+        _snapshot.value = _snapshot.value.copy(
+            saved = refreshedSavedErrors,
+            clearStatus = ErrorsClearStatus.Succeeded,
+        )
+        collectActiveErrors(session)
+    }
+
+    private suspend fun collectActiveErrors(session: Long) {
+        packets { if (isCurrent(session)) sendActiveRead() }.collect { packet ->
+            if (!isCurrent(session)) return@collect
+            when (packet) {
+                is CheckEngineErrorsPacket -> _snapshot.value = _snapshot.value.copy(active = packet)
+                // Connection setup can send h/y concurrently with this read. Reassert v
+                // after its firmware packet so the ECU returns to the active-error mode.
+                is FirmwareInfoPacket -> sendActiveRead()
+            }
+        }
+    }
+
+    private fun updateClearStatus(session: Long, status: ErrorsClearStatus) {
+        if (isCurrent(session)) _snapshot.value = _snapshot.value.copy(clearStatus = status)
+    }
+
+    private fun cancelWorkerPreservingSnapshot() {
+        generation++
+        sessionJob?.cancel()
+        sessionJob = null
     }
 
     private fun stopSession() {

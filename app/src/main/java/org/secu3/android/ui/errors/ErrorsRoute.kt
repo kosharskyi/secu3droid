@@ -45,6 +45,9 @@ internal fun ErrorsRoute(
     val connection by remember(viewModel) { viewModel.connectionStatusLiveData }.observeAsState()
     val savedPacket by remember(viewModel) { viewModel.checkEngineSavedLiveData }.observeAsState()
     val activePacket by remember(viewModel) { viewModel.checkEngineLiveData }.observeAsState()
+    val clearStatus by remember(viewModel) { viewModel.clearStatusLiveData }
+        .observeAsState(ErrorsClearStatus.Idle)
+    val canClearErrors by remember(viewModel) { viewModel.canClearErrorsLiveData }.observeAsState(false)
     val lifecycle = LocalLifecycleOwner.current.lifecycle
     var confirmClear by remember(viewModel) { mutableStateOf(viewModel.showClearConfirmation.value) }
     LaunchedEffect(lifecycle, viewModel) {
@@ -81,6 +84,8 @@ internal fun ErrorsRoute(
             connectionState = connection,
             errors = errors,
             isLoading = savedPacket == null && activePacket == null,
+            clearStatus = clearStatus,
+            canClearErrors = canClearErrors && connection == org.secu3.android.connection.Connected,
             onBackClick = onNavigateUp,
             onClearClick = viewModel::requestClearConfirmation,
         )

@@ -11,6 +11,7 @@ package org.secu3.android.ui
 
 import android.view.KeyEvent
 import androidx.compose.ui.test.assertIsSelected
+import androidx.compose.ui.test.assertIsNotEnabled
 import androidx.compose.ui.test.assertCountEquals
 import androidx.compose.ui.test.onAllNodesWithText
 import androidx.compose.ui.test.assertTextEquals
@@ -250,18 +251,18 @@ class ParametersNavigationIntegrationTest {
         }
     }
 
-    @Test fun errorsClearConfirmationSurvivesRecreationAndCancelDoesNotClear() {
+    @Test fun errorsClearIsDisabledOfflineAndShowsNoConfirmationAcrossRecreation() {
         navigateNativeHostToHome()
         compose.onNodeWithTag("home-card-errors").performScrollTo().performClick()
         compose.waitForIdle()
-        compose.onNodeWithContentDescription(compose.activity.getString(R.string.errors_clear_all_short)).performClick()
-        compose.onNodeWithText(compose.activity.getString(R.string.dialog_confirm_clear_errors_message)).assertExists()
+        val clearButton = compose.onNodeWithContentDescription(compose.activity.getString(R.string.errors_clear_all_short))
+        clearButton.assertIsNotEnabled()
+        clearButton.performClick()
+        compose.onAllNodesWithText(compose.activity.getString(R.string.dialog_confirm_clear_errors_message)).assertCountEquals(0)
 
         compose.activityRule.scenario.recreate()
         compose.waitForIdle()
-        compose.onNodeWithText(compose.activity.getString(R.string.dialog_confirm_clear_errors_message)).assertExists()
-        compose.onNodeWithText(compose.activity.getString(android.R.string.cancel)).performClick()
-        compose.waitForIdle()
+        compose.onNodeWithContentDescription(compose.activity.getString(R.string.errors_clear_all_short)).assertIsNotEnabled()
         compose.onAllNodesWithText(compose.activity.getString(R.string.dialog_confirm_clear_errors_message)).assertCountEquals(0)
     }
 

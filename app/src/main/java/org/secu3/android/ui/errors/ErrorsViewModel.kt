@@ -62,6 +62,12 @@ class ErrorsViewModel @Inject constructor(private val secu3ConnectionManager: Se
         session.snapshot.map { it.saved }.distinctUntilChanged().asLiveData()
     val checkEngineLiveData: LiveData<CheckEngineErrorsPacket?> =
         session.snapshot.map { it.active }.distinctUntilChanged().asLiveData()
+    internal val clearStatusLiveData: LiveData<ErrorsClearStatus> =
+        session.snapshot.map { it.clearStatus }.distinctUntilChanged().asLiveData()
+    val canClearErrorsLiveData: LiveData<Boolean> = session.snapshot
+        .map { it.saved != null && it.clearStatus != ErrorsClearStatus.Clearing }
+        .distinctUntilChanged()
+        .asLiveData()
 
     private val _showClearConfirmation = MutableStateFlow(false)
     val showClearConfirmation: StateFlow<Boolean> = _showClearConfirmation.asStateFlow()

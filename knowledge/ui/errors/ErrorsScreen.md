@@ -13,3 +13,7 @@ The Errors route owns packet reads only while it is resumed and the transport is
 ## Reassert active error mode after a late firmware response
 
 Connection setup sends the firmware-info mode request concurrently with `Connected`. If its `y` packet arrives after the saved-error response, send the active-error read again so the ECU returns to the `v` transfer mode. Keep this recovery inside the active Errors session; do not add a transport delay.
+
+## Clearing saved errors is a single-flight ACK/readback transaction
+
+The clear write is an `x` packet with a zero saved mask; it does not clear active faults. Wait for a `u` acknowledgement with opcode 2 and opData 0 before requesting another saved list. Only an ACK followed by an `x` readback is a successful transaction; a nonzero readback is still valid because active faults can be logged again. Keep one clear in flight because the protocol has no request IDs, and show timeout results as uncertain without retrying the write automatically. A delayed ACK that crosses a user-initiated retry cannot be perfectly correlated.
