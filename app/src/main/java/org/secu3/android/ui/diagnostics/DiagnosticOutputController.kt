@@ -6,28 +6,44 @@ internal class DiagnosticOutputController(
     val packet: DiagOutputPacket,
     private val send: () -> Unit,
 ) {
-    fun setOutput(output: DiagnosticOutput, enabled: Boolean) {
-        if (isDisabledSpecialOutput(output)) return
-        setDiagnosticOutput(packet, output, enabled)
+    private var initialized = false
+    private var initialStateSent = false
+
+    fun initializeIgnitionOutputs(isSecu3T: Boolean) {
+        if (initialized) return
+        packet.out = (packet.out and IGNITION_OUTPUT_MASK.inv()) or if (isSecu3T) IGNITION_OUTPUT_MASK else 0
+        initialized = true
+    }
+
+    fun onDiagnosticInput(isSecu3T: Boolean) {
+        initializeIgnitionOutputs(isSecu3T)
+        if (initialStateSent) return
+        initialStateSent = true
         send()
     }
 
-    fun selectChannel(index: Int) = selectDiagnosticOutputChannel(packet, index, send)
-    fun editFrequency(value: Float) = updateDiagnosticOutputFrequency(packet, value, send)
-    fun editDuty(value: Float) = updateDiagnosticOutputDuty(packet, value, send)
+    fun setOutput(output: DiagnosticOutput, enabled: Boolean) {
+        if (isDisabledSpecialOutput(output)) return
+        setDiagnosticOutput(packet, output, enabled)
+        sendIfInitialized()
+    }
+
+    fun selectChannel(index: Int) = selectDiagnosticOutputChannel(packet, index, ::sendIfInitialized)
+    fun editFrequency(value: Float) = updateDiagnosticOutputFrequency(packet, value, ::sendIfInitialized)
+    fun editDuty(value: Float) = updateDiagnosticOutputDuty(packet, value, ::sendIfInitialized)
 
     fun enableBlDe(enabled: Boolean) {
         packet.bl = false
         packet.de = false
         packet.blOutputEnabled = enabled
         packet.deOutputEnabled = enabled
-        send()
+        sendIfInitialized()
     }
 
     fun enableTachO(enabled: Boolean) {
         packet.tachO = false
         packet.tachOOutputEnabled = enabled
-        send()
+        sendIfInitialized()
     }
 
     fun applyAdditionalOptions(enableBlDe: Boolean, enableTachO: Boolean) {
@@ -41,5 +57,13 @@ internal class DiagnosticOutputController(
         DiagnosticOutput.DE -> !packet.deOutputEnabled
         DiagnosticOutput.TACH_O -> !packet.tachOOutputEnabled
         else -> false
+    }
+
+    private fun sendIfInitialized() {
+        if (initialized) send()
+    }
+
+    private companion object {
+        const val IGNITION_OUTPUT_MASK = 0b11
     }
 }

@@ -12,6 +12,7 @@ class DiagnosticOutputControllerTest {
         val packet = DiagOutputPacket()
         val sends = mutableListOf<Snapshot>()
         val controller = DiagnosticOutputController(packet) { sends += packet.snapshot() }
+        controller.initializeIgnitionOutputs(isSecu3T = false)
 
         controller.editFrequency(123f)
         controller.editDuty(37.5f)
@@ -35,10 +36,73 @@ class DiagnosticOutputControllerTest {
     }
 
     @Test
+    fun firstDiagnosticInputInitializesAndSendsSafeSecu3TIgnitionMaskOnce() {
+        val packet = DiagOutputPacket().apply { out = (1 shl 5) or (1 shl 1) }
+        val sends = mutableListOf<Int>()
+        val controller = DiagnosticOutputController(packet) { sends += packet.out }
+
+        controller.onDiagnosticInput(isSecu3T = true)
+        assertEquals((1 shl 5) or 0b11, packet.out)
+        assertEquals(listOf((1 shl 5) or 0b11), sends)
+
+        controller.setOutput(DiagnosticOutput.IGN_OUT3, true)
+        val userState = packet.out
+        controller.onDiagnosticInput(isSecu3T = false)
+        controller.onDiagnosticInput(isSecu3T = false)
+        assertEquals(userState, packet.out)
+        assertEquals(2, sends.size)
+    }
+
+    @Test
+    fun firstDiagnosticInputInitializesSecu3iIgnitionMaskToLowAndSendsOnce() {
+        val packet = DiagOutputPacket().apply { out = (1 shl 5) or 0b11 }
+        val sends = mutableListOf<Int>()
+        val controller = DiagnosticOutputController(packet) { sends += packet.out }
+
+        controller.onDiagnosticInput(isSecu3T = false)
+        assertEquals(1 shl 5, packet.out)
+        assertEquals(listOf(1 shl 5), sends)
+        controller.onDiagnosticInput(isSecu3T = true)
+        assertEquals(1 shl 5, packet.out)
+        assertEquals(1, sends.size)
+    }
+
+    @Test
+    fun unknownFamilySuppressesUserSendsUntilFirstDiagnosticInputInitializesPacket() {
+        val packet = DiagOutputPacket()
+        val sends = mutableListOf<Int>()
+        val controller = DiagnosticOutputController(packet) { sends += packet.out }
+
+        controller.enableBlDe(true)
+        assertEquals(emptyList<Int>(), sends)
+        controller.onDiagnosticInput(isSecu3T = true)
+        assertEquals(listOf((1 shl 12) or (1 shl 14) or 0b11), sends)
+    }
+
+    @Test
+    fun knownSecu3TFirmwarePreparesBeforeCommandsAndFirstInputPreservesUserState() {
+        val packet = DiagOutputPacket()
+        val sends = mutableListOf<Int>()
+        val controller = DiagnosticOutputController(packet) { sends += packet.out }
+
+        controller.initializeIgnitionOutputs(isSecu3T = true)
+        assertEquals(0b11, packet.out)
+        assertEquals(emptyList<Int>(), sends)
+
+        controller.setOutput(DiagnosticOutput.IGN_OUT1, false)
+        assertEquals(listOf(0b10), sends)
+        controller.onDiagnosticInput(isSecu3T = true)
+        controller.onDiagnosticInput(isSecu3T = true)
+        assertEquals(0b10, packet.out)
+        assertEquals(listOf(0b10, 0b10), sends)
+    }
+
+    @Test
     fun additionalOptionsDisableBlDeThenTachoWithSeparatePacketSnapshots() {
         val packet = DiagOutputPacket().apply { bl = true; de = true; tachO = true }
         val sends = mutableListOf<Int>()
         val controller = DiagnosticOutputController(packet) { sends += packet.out }
+        controller.initializeIgnitionOutputs(isSecu3T = false)
 
         controller.applyAdditionalOptions(enableBlDe = false, enableTachO = false)
 
@@ -51,6 +115,7 @@ class DiagnosticOutputControllerTest {
         val packet = DiagOutputPacket()
         val sends = mutableListOf<Snapshot>()
         val controller = DiagnosticOutputController(packet) { sends += packet.snapshot() }
+        controller.initializeIgnitionOutputs(isSecu3T = false)
 
         controller.selectChannel(2)
         assertEquals(0f, packet.duty)
@@ -72,6 +137,7 @@ class DiagnosticOutputControllerTest {
         val packet = DiagOutputPacket()
         val sends = mutableListOf<Int>()
         val controller = DiagnosticOutputController(packet) { sends += packet.out }
+        controller.initializeIgnitionOutputs(isSecu3T = false)
         controller.applyAdditionalOptions(enableBlDe = true, enableTachO = true)
         assertEquals(listOf((1 shl 12) or (1 shl 14), (1 shl 12) or (1 shl 14) or (1 shl 24)), sends)
     }
@@ -81,6 +147,7 @@ class DiagnosticOutputControllerTest {
         val packet = DiagOutputPacket().apply { out = 1 shl 2 }
         val sends = mutableListOf<Int>()
         val controller = DiagnosticOutputController(packet) { sends += packet.out }
+        controller.initializeIgnitionOutputs(isSecu3T = false)
 
         controller.setOutput(DiagnosticOutput.BL, true)
         controller.setOutput(DiagnosticOutput.DE, true)

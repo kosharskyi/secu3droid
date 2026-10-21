@@ -52,18 +52,6 @@ class DiagnosticsViewModel @Inject constructor(private val secu3ConnectionManage
 
     private val session = DiagnosticsSessionController(secu3ConnectionManager::sendNewTask)
 
-    init {
-        viewModelScope.launch {
-            secu3ConnectionManager.receivedPacketFlow.filter { it is OpCompNc }.map {
-                it as OpCompNc
-            }.collect {
-                session.onOpCode(it.opCode)
-            }
-        }
-        session.start()
-
-    }
-
     val firmwareInfo: FirmwareInfoPacket?
         get() = secu3ConnectionManager.fwInfo
 
@@ -79,6 +67,21 @@ class DiagnosticsViewModel @Inject constructor(private val secu3ConnectionManage
     private val _uiState = MutableStateFlow(UiState())
     val uiState: StateFlow<UiState> = _uiState.asStateFlow()
 
+    init {
+        secu3ConnectionManager.fwInfo?.let { firmware ->
+            outputController.initializeIgnitionOutputs(firmware.isSecu3T)
+            publishOutputState()
+        }
+        viewModelScope.launch {
+            secu3ConnectionManager.receivedPacketFlow.filter { it is OpCompNc }.map {
+                it as OpCompNc
+            }.collect {
+                session.onOpCode(it.opCode)
+            }
+        }
+        session.start()
+    }
+
     // Each asLiveData() call creates a Flow collector; keep one instance for this
     // view model so Compose recompositions and view recreation do not multiply them.
     val connectionStatusLiveData: LiveData<ConnectionState> by lazy {
@@ -87,8 +90,11 @@ class DiagnosticsViewModel @Inject constructor(private val secu3ConnectionManage
 
     val diagInputLiveData: LiveData<DiagInputPacket> by lazy {
         secu3ConnectionManager.receivedPacketFlow.filter { it is DiagInputPacket }.map {
+            val input = it as DiagInputPacket
+            outputController.onDiagnosticInput(isSecu3T = input.flags != 0)
+            publishOutputState()
             session.onInputReceived()
-            it as DiagInputPacket
+            input
         }.asLiveData()
     }
 
