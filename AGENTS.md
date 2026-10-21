@@ -34,6 +34,9 @@ The project uses Jetpack Compose for UI, Material3 for Compose components, and N
 
 ## Working Rules For Agents
 
+- Before implementation, present a detailed work plan and wait for the user's explicit approval. Include the problem, proposed approach, affected files and components, behavior changes, shared contracts and consumers, risks, and validation steps. Read-only investigation to prepare the plan is allowed; do not edit project files or delegate implementation before approval.
+- Work only within the approved plan. If the solution requires expanding scope or introducing architectural/core changes not covered by that plan, stop and submit a revised plan for approval before proceeding.
+- Treat changes to core modules (including connection handling, packet/protocol infrastructure, persistence, and shared utilities) as project-wide changes. Inspect all consumers and call sites, prefer a common solution that accounts for them, and update affected consumers and tests together. Screen-specific methods or infrastructure are allowed only when the functionality is unnecessary for other consumers or a shared solution would overcomplicate them. Explain that tradeoff in the work plan and obtain approval before implementation.
 - Do not change files outside the requested scope.
 - Use Compose for all new UI and Navigation Compose for new destinations and flows. Do not introduce new Fragment/XML destinations or Safe Args usage.
 - Use `androidx.compose.material3` for all Compose UI widgets and theming. Do not add `androidx.compose.material` widget artifacts or Google Material view/XML libraries; existing `androidx.compose.material.icons` artifacts are allowed for icon compatibility.
