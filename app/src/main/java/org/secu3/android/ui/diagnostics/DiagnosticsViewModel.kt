@@ -132,7 +132,7 @@ class DiagnosticsViewModel @Inject constructor(private val secu3ConnectionManage
 
     fun editDuty(value: Float) {
         outputController.editDuty(value)
-        publishOutputState(displayDuty = value)
+        publishOutputState()
     }
 
     fun applyAdditionalOptions(enableBlDe: Boolean, enableTachO: Boolean) {
@@ -140,12 +140,12 @@ class DiagnosticsViewModel @Inject constructor(private val secu3ConnectionManage
         _uiState.value = _uiState.value.copy(enableBlDe = enableBlDe, enableTachO = enableTachO, outputBits = outputPacket.out)
     }
 
-    private fun publishOutputState(displayDuty: Float = _uiState.value.duty) {
+    private fun publishOutputState() {
         _uiState.value = _uiState.value.copy(
             outputBits = outputPacket.out,
             channel = outputPacket.chan,
             frequency = outputPacket.frq,
-            duty = displayDuty,
+            duty = outputPacket.duty,
         )
     }
 

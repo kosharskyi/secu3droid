@@ -20,6 +20,12 @@ class DiagOutputPacketTest {
         SpecialOutput(24, 23, { it.tachO }, { packet, value -> packet.tachO = value }, { it.tachOOutputEnabled }, { packet, value -> packet.tachOOutputEnabled = value }),
     )
 
+    @Test fun newDiagnosticOutputPacketUsesFiftyPercentDutyOnWire() {
+        val packet = DiagOutputPacket()
+        assertEquals(50f, packet.duty)
+        assertEquals(128, packet.pack()[7])
+    }
+
     @Test fun blDeAndTachDistinguishHighLowAndHighImpedanceWithoutChangingOtherBits() {
         for (output in outputs) {
             val unrelated = 1 shl 5

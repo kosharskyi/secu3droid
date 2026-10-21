@@ -34,7 +34,7 @@ class DiagOutputPacket : Secu3Packet(), OutputPacket {
 
     var out: Int = 0
     var frq: Float = 10.0f
-    var duty: Float = 0.0f
+    var duty: Float = 50.0f
     var chan: Int = 0
 
     //SECU-3T (13 values):

@@ -111,22 +111,28 @@ class DiagnosticOutputControllerTest {
     }
 
     @Test
-    fun freshChannelKeepsProtocolDutyZeroAndSpecialOutputRequiresDirectionEnable() {
+    fun freshChannelStartsAtFiftyPercentAndSpecialOutputRequiresDirectionEnable() {
         val packet = DiagOutputPacket()
         val sends = mutableListOf<Snapshot>()
         val controller = DiagnosticOutputController(packet) { sends += packet.snapshot() }
         controller.initializeIgnitionOutputs(isSecu3T = false)
 
+        controller.selectChannel(0)
+        assertEquals(50f, packet.duty)
+        assertEquals(128, packet.pack()[7])
+        controller.editDuty(25f)
         controller.selectChannel(2)
-        assertEquals(0f, packet.duty)
+        assertEquals(25f, packet.duty)
+        assertEquals(64, packet.pack()[7])
         controller.enableBlDe(true)
         controller.setOutput(DiagnosticOutput.BL, true)
 
         assertEquals(
             listOf(
-                Snapshot(0, 2, 10f, 0f),
-                Snapshot((1 shl 12) or (1 shl 14), 2, 10f, 0f),
-                Snapshot((1 shl 11) or (1 shl 12) or (1 shl 14), 2, 10f, 0f),
+                Snapshot(0, 0, 10f, 50f),
+                Snapshot(0, 2, 10f, 25f),
+                Snapshot((1 shl 12) or (1 shl 14), 2, 10f, 25f),
+                Snapshot((1 shl 11) or (1 shl 12) or (1 shl 14), 2, 10f, 25f),
             ),
             sends,
         )
