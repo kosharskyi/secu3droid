@@ -41,6 +41,8 @@ import org.threeten.bp.LocalDateTime
 import org.threeten.bp.format.DateTimeFormatter
 import java.io.File
 import java.io.FileInputStream
+import java.io.IOException
+import java.util.Locale
 import javax.inject.Inject
 import javax.inject.Singleton
 
@@ -59,7 +61,7 @@ class FileHelper @Inject constructor(@ApplicationContext private val context: Co
         }
 
     val listOfLogs: List<File>
-        get() = logsDir.listFiles()?.toList()?.sortedByDescending { LocalDateTime.parse(it.nameWithoutExtension, dateTimeFormatter) } ?: emptyList()
+        get() = logsDir.listFiles()?.let { orderLogFiles(it.toList(), dateTimeFormatter) } ?: emptyList()
 
     val generateCsvFile: File
         get() {
@@ -118,15 +120,26 @@ class FileHelper @Inject constructor(@ApplicationContext private val context: Co
         val documentUri = DocumentsContract.createDocument(
             context.contentResolver,
             directoryDocumentUri,
-            file.mimeType(),
+            logFileMimeType(file),
             file.name,
         ) ?: throw IllegalStateException("Unable to create ${file.name}")
 
-        context.contentResolver.openOutputStream(documentUri, "w")?.use { outputStream ->
-            FileInputStream(file).use { inputStream ->
-                inputStream.copyTo(outputStream)
+        try {
+            context.contentResolver.openOutputStream(documentUri, "w")?.use { outputStream ->
+                FileInputStream(file).use { inputStream ->
+                    inputStream.copyTo(outputStream)
+                }
+            } ?: throw IOException("Unable to write ${file.name}")
+        } catch (error: Exception) {
+            try {
+                if (!DocumentsContract.deleteDocument(context.contentResolver, documentUri)) {
+                    error.addSuppressed(IOException("Unable to remove failed export ${file.name}"))
+                }
+            } catch (cleanupError: Exception) {
+                if (cleanupError !== error) error.addSuppressed(cleanupError)
             }
-        } ?: throw IllegalStateException("Unable to write ${file.name}")
+            throw error
+        }
 
         return directoryUri.toDirectoryLabel()
     }
@@ -138,7 +151,7 @@ class FileHelper @Inject constructor(@ApplicationContext private val context: Co
     private fun saveLogToMediaStoreDownloads(file: File): String {
         val values = ContentValues().apply {
             put(MediaStore.Downloads.DISPLAY_NAME, file.name)
-            put(MediaStore.Downloads.MIME_TYPE, file.mimeType())
+            put(MediaStore.Downloads.MIME_TYPE, logFileMimeType(file))
             put(MediaStore.Downloads.RELATIVE_PATH, "${Environment.DIRECTORY_DOWNLOADS}/$DEFAULT_LOG_EXPORT_DIRECTORY_NAME")
             put(MediaStore.Downloads.IS_PENDING, 1)
         }
@@ -166,14 +179,6 @@ class FileHelper @Inject constructor(@ApplicationContext private val context: Co
         return defaultLogExportDirectoryLabel
     }
 
-    private fun File.mimeType(): String {
-        return when (extension.lowercase()) {
-            "csv" -> "text/csv"
-            "s3l" -> "application/octet-stream"
-            else -> "application/octet-stream"
-        }
-    }
-
     private fun String.toDirectoryLabel(): String {
         return runCatching {
             val treeDocumentId = DocumentsContract.getTreeDocumentId(toUri())
@@ -186,3 +191,39 @@ class FileHelper @Inject constructor(@ApplicationContext private val context: Co
     }
 
 }
+
+internal fun logFileMimeType(file: File): String = when (file.extension.lowercase(Locale.ROOT)) {
+    "csv" -> "text/csv"
+    else -> "application/octet-stream"
+}
+
+private data class LogFileOrder(
+    val file: File,
+    val timestamp: LocalDateTime?,
+    val lastModified: Long,
+)
+
+internal fun orderLogFiles(files: List<File>, dateTimeFormatter: DateTimeFormatter): List<File> =
+    files.asSequence()
+        .filter(File::isFile)
+        .map { file ->
+            LogFileOrder(
+                file = file,
+                timestamp = runCatching { LocalDateTime.parse(file.nameWithoutExtension, dateTimeFormatter) }.getOrNull(),
+                lastModified = file.lastModified(),
+            )
+        }
+        .sortedWith { first, second ->
+            when {
+                first.timestamp != null && second.timestamp == null -> -1
+                first.timestamp == null && second.timestamp != null -> 1
+                first.timestamp != null && second.timestamp != null -> {
+                    second.timestamp.compareTo(first.timestamp).takeIf { it != 0 }
+                        ?: first.file.name.compareTo(second.file.name)
+                }
+                else -> second.lastModified.compareTo(first.lastModified).takeIf { it != 0 }
+                    ?: first.file.name.compareTo(second.file.name)
+            }
+        }
+        .map(LogFileOrder::file)
+        .toList()

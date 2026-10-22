@@ -5,3 +5,7 @@ Log rows are keyed by `absolutePath`, while share, save, and delete callbacks re
 ## Deletion results come from the logger session owner
 
 Delete confirmation remains pending-state-backed, but the ViewModel must pass the selected path to `SecuLogger` for the active-file check and deletion. The logger serializes that operation with writes, so the screen should report active-file rejection and filesystem failure separately and refresh the list after either result.
+
+## Share MIME type follows the selected file's export mapping
+
+The share intent uses the same extension-based MIME helper as all export destinations. Keep passing the original selected `File` through the callback so the MIME type and content URI both refer to that row's file.

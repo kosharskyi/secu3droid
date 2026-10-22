@@ -29,6 +29,7 @@ import org.secu3.android.utils.LogExportDestination
 import org.secu3.android.utils.LogDeletionResult
 import org.secu3.android.utils.SecuLogger
 import org.secu3.android.utils.UserPrefs
+import org.secu3.android.utils.logFileMimeType
 import java.io.File
 
 @HiltViewModel
@@ -115,7 +116,7 @@ class SecuLogsViewModel @Inject constructor(
         return Intent().apply {
             action = Intent.ACTION_SEND
             putExtra(Intent.EXTRA_STREAM, fileUri)
-            type = "text/*"
+            type = logFileMimeType(file)
             flags = Intent.FLAG_GRANT_READ_URI_PERMISSION
         }
     }
