@@ -60,6 +60,7 @@ class DiagnosticsNavigationIntegrationTest {
         val firstVm = diagnosticsViewModel()
         val transport = connectFakeUsb(firstVm)
         await { firstVm.connectionStatusLiveData.value == Connected }
+        await { transport.enterCount == 1 }
         assertFalse(firstVm.uiState.value.controlsEnabled)
         transport.emitDiagnosticInput(flags = 0)
         await { firstVm.uiState.value.controlsEnabled }
@@ -116,6 +117,7 @@ class DiagnosticsNavigationIntegrationTest {
         val vm = diagnosticsViewModel()
         val transport = connectFakeUsb(vm)
         await { vm.connectionStatusLiveData.value == Connected }
+        await { transport.enterCount == 1 }
         assertFalse(vm.uiState.value.controlsEnabled)
         transport.emitDiagnosticInput(flags = 0)
         await { vm.uiState.value.controlsEnabled }
@@ -158,6 +160,7 @@ class DiagnosticsNavigationIntegrationTest {
         assertFalse(vm.uiState.value.controlsEnabled)
         val transport = connectFakeUsb(vm)
         await { vm.connectionStatusLiveData.value == Connected }
+        await { transport.enterCount == 1 }
         assertFalse(vm.uiState.value.controlsEnabled)
         transport.emitDiagnosticInput(flags = 1, voltageRaw = 500)
         await { vm.uiState.value.controlsEnabled }
@@ -210,6 +213,7 @@ class DiagnosticsNavigationIntegrationTest {
 
         val reconnected = connectFakeUsb(vm)
         await { vm.connectionStatusLiveData.value == Connected }
+        await { reconnected.enterCount == 1 }
         assertFalse(vm.uiState.value.controlsEnabled)
         val writesBeforeFreshInput = reconnected.writes.size
         compose.activityRule.scenario.onActivity {
@@ -230,6 +234,30 @@ class DiagnosticsNavigationIntegrationTest {
         assertEquals(0, vm.uiState.value.channel)
         assertEquals(activeFrequency, vm.uiState.value.frequency)
         assertEquals(activeDuty, vm.uiState.value.duty)
+    }
+
+    @Test
+    fun enterSubscriptionIsReadyForImmediateAckAndInitialInputIsSentOnce() = runBlocking {
+        navigateHome()
+        compose.activityRule.scenario.onActivity { it.openDiagnostics() }
+        compose.waitForIdle()
+        val vm = diagnosticsViewModel()
+        val transport = connectFakeUsb(vm, acknowledgeEnterImmediately = true)
+
+        await { vm.connectionStatusLiveData.value == Connected }
+        await { transport.enterCount == 1 && transport.diagInputRequestCount == 1 }
+        assertFalse(vm.uiState.value.controlsEnabled)
+        transport.emitDiagnosticInput(flags = 1)
+        await { vm.uiState.value.controlsEnabled && transport.outputCount == 1 }
+        assertEquals(0b11, vm.uiState.value.outputBits)
+
+        transport.emitOpcode(6)
+        transport.emitDiagnosticInput(flags = 1, voltageRaw = 600)
+        await { vm.diagInputLiveData.value?.voltage == 1.5f }
+        compose.activityRule.scenario.onActivity { vm.selectChannel(1) }
+        await { transport.outputCount == 2 }
+        assertEquals(1, transport.diagInputRequestCount)
+        assertEquals(2, transport.outputCount)
     }
 
     private fun navigateHome(): NavHostController {
@@ -278,7 +306,10 @@ class DiagnosticsNavigationIntegrationTest {
         compose.onNodeWithTag("home-card-diagnostics").assertExists()
     }
 
-    private fun connectFakeUsb(viewModel: DiagnosticsViewModel): FakeUsbTransport = runBlocking {
+    private fun connectFakeUsb(
+        viewModel: DiagnosticsViewModel,
+        acknowledgeEnterImmediately: Boolean = false,
+    ): FakeUsbTransport = runBlocking {
         val managerField = DiagnosticsViewModel::class.java.getDeclaredField("secu3ConnectionManager").apply { isAccessible = true }
         val manager = managerField.get(viewModel) as Secu3ConnectionManager
         val usbField = Secu3ConnectionManager::class.java.declaredFields.first { UsbConnection::class.java.isAssignableFrom(it.type) }
@@ -286,10 +317,25 @@ class DiagnosticsNavigationIntegrationTest {
         val connection = usbField.get(manager) as UsbConnection
         val endpointField = Connection::class.java.getDeclaredField("endpoint").apply { isAccessible = true }
         val writes = CopyOnWriteArrayList<ByteArray>()
+        val rawFlowField = Connection::class.java.getDeclaredField("mReceivedPacketFlow").apply { isAccessible = true }
+        @Suppress("UNCHECKED_CAST")
+        val rawFlow = rawFlowField.get(connection) as MutableSharedFlow<RawPacket>
         val port = Proxy.newProxyInstance(UsbSerialPort::class.java.classLoader, arrayOf(UsbSerialPort::class.java)) { _, method, args ->
             when (method.name) {
                 "isOpen" -> true
-                "write" -> { (args?.firstOrNull() as? ByteArray)?.let { writes += it.copyOf() }; null }
+                "write" -> {
+                    (args?.firstOrNull() as? ByteArray)?.let { bytes ->
+                        writes += bytes.copyOf()
+                        if (acknowledgeEnterImmediately && bytes.size > 3 && bytes[1] == 'u'.code.toByte() && bytes[3] == 6.toByte()) {
+                            runBlocking {
+                                withTimeout(3_000) {
+                                    rawFlow.emit(RawPacket(intArrayOf('@'.code, 'u'.code, 0, 6, 0, 0)))
+                                }
+                            }
+                        }
+                    }
+                    null
+                }
                 "read" -> 0
                 "toString" -> "diagnostics-test-usb"
                 "hashCode" -> System.identityHashCode(this)
@@ -304,7 +350,7 @@ class DiagnosticsNavigationIntegrationTest {
         val stateFlow = stateFlowField.get(connection) as MutableSharedFlow<ConnectionState>
         delay(100)
         stateFlow.emit(Connected)
-        FakeUsbTransport(connection, endpointField, port, stateFlow, writes).also(fakeTransports::add)
+        FakeUsbTransport(connection, endpointField, port, stateFlow, rawFlow, writes).also(fakeTransports::add)
     }
 
     private suspend fun await(predicate: () -> Boolean) {
@@ -316,18 +362,24 @@ class DiagnosticsNavigationIntegrationTest {
         private val endpointField: java.lang.reflect.Field,
         private val port: UsbSerialPort,
         private val stateFlow: MutableSharedFlow<ConnectionState>,
+        private val rawFlow: MutableSharedFlow<RawPacket>,
         val writes: CopyOnWriteArrayList<ByteArray>,
     ) {
+        val enterCount: Int get() = writes.count { it.size > 3 && it[1] == 'u'.code.toByte() && it[3] == 6.toByte() }
+        val diagInputRequestCount: Int get() = writes.count { it.size > 2 && it[1] == 'h'.code.toByte() && it[2] == '='.code.toByte() }
+        val outputCount: Int get() = writes.count { it.size > 1 && it[1] == '^'.code.toByte() }
+
         suspend fun emitDiagnosticInput(flags: Int, voltageRaw: Int = 0) {
-            val rawFlowField = Connection::class.java.getDeclaredField("mReceivedPacketFlow").apply { isAccessible = true }
-            @Suppress("UNCHECKED_CAST")
-            val rawFlow = rawFlowField.get(connection) as MutableSharedFlow<RawPacket>
             rawFlow.emit(
                 RawPacket(
                     intArrayOf('@'.code, '='.code, flags, voltageRaw shr 8, voltageRaw and 0xFF) +
                         IntArray(28) + intArrayOf(0, 0),
                 ),
             )
+        }
+
+        suspend fun emitOpcode(opCode: Int) {
+            rawFlow.emit(RawPacket(intArrayOf('@'.code, 'u'.code, 0, opCode, 0, 0)))
         }
 
         fun disconnect() = runBlocking {

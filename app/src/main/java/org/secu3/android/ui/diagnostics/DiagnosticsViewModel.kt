@@ -29,6 +29,7 @@ import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import dagger.hilt.android.lifecycle.HiltViewModel
+import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -39,6 +40,7 @@ import org.secu3.android.connection.Secu3ConnectionManager
 import org.secu3.android.models.packets.input.DiagInputPacket
 import org.secu3.android.models.packets.out.DiagOutputPacket
 import org.secu3.android.models.packets.input.FirmwareInfoPacket
+import org.secu3.android.models.packets.base.InputPacket
 import org.secu3.android.models.packets.out.OpCompNc
 import org.secu3.android.utils.Task
 import javax.inject.Inject
@@ -50,7 +52,7 @@ class DiagnosticsViewModel @Inject constructor(private val secu3ConnectionManage
     private val outputController = DiagnosticOutputController(outputPacket, ::sendDiagOutPacket)
 
     private val session = DiagnosticsSessionController(secu3ConnectionManager::sendNewTask)
-    private var connectionAvailable = secu3ConnectionManager.isConnected
+    private var connectionAvailable = false
     private var hasFreshInput = false
     private val _diagInput = MutableLiveData<DiagInputPacket?>(null)
     private val _connectionStatus = MutableLiveData<ConnectionState>()
@@ -75,39 +77,29 @@ class DiagnosticsViewModel @Inject constructor(private val secu3ConnectionManage
     val uiState: StateFlow<UiState> = _uiState.asStateFlow()
 
     init {
-        session.onConnectionChanged(connectionAvailable)
         secu3ConnectionManager.fwInfo?.let { firmware ->
             outputController.initializeIgnitionOutputs(firmware.isSecu3T)
             publishOutputState()
         }
+        session.start()
         viewModelScope.launch {
-            secu3ConnectionManager.connectionStateFlow.collect { state ->
+            secu3ConnectionManager.connectionStateFlow.collectLatest { state ->
                 _connectionStatus.value = state
                 if (state == Connected && secu3ConnectionManager.isConnected) {
-                    connectionAvailable = true
-                    session.onConnectionChanged(true)
-                    publishControlAvailability()
+                    secu3ConnectionManager.receivedPacketFlow(onSubscribed = {
+                        if (secu3ConnectionManager.isConnected) {
+                            connectionAvailable = true
+                            session.onConnectionChanged(true)
+                            publishControlAvailability()
+                        } else {
+                            handleConnectionLoss()
+                        }
+                    }).collect(::onReceivedPacket)
                 } else {
                     handleConnectionLoss()
                 }
             }
         }
-        viewModelScope.launch {
-            secu3ConnectionManager.receivedPacketFlow.collect { packet ->
-                when (packet) {
-                    is OpCompNc -> {
-                        if (!connectionAvailable || !secu3ConnectionManager.isConnected) {
-                            handleConnectionLoss()
-                        } else {
-                            session.onOpCode(packet.opCode)
-                            publishControlAvailability()
-                        }
-                    }
-                    is DiagInputPacket -> onDiagnosticInput(packet)
-                }
-            }
-        }
-        session.start()
     }
 
     val connectionStatusLiveData: LiveData<ConnectionState>
@@ -115,6 +107,20 @@ class DiagnosticsViewModel @Inject constructor(private val secu3ConnectionManage
 
     val diagInputLiveData: LiveData<DiagInputPacket?>
         get() = _diagInput
+
+    private fun onReceivedPacket(packet: InputPacket) {
+        if (!connectionAvailable || !secu3ConnectionManager.isConnected) {
+            handleConnectionLoss()
+            return
+        }
+        when (packet) {
+            is OpCompNc -> {
+                session.onOpCode(packet.opCode)
+                publishControlAvailability()
+            }
+            is DiagInputPacket -> onDiagnosticInput(packet)
+        }
+    }
 
     private fun onDiagnosticInput(input: DiagInputPacket) {
         if (!connectionAvailable || !secu3ConnectionManager.isConnected) {
@@ -216,39 +222,61 @@ internal class DiagnosticsSessionController(private val sendTask: (Task) -> Unit
         private set
     private var started = false
     private var closed = false
-    private var connectionAvailable = true
+    private var connectionAvailable = false
+    private var enterRequested = false
+    private var inputRequested = false
 
     fun onConnectionChanged(available: Boolean) {
         if (closed) return
         connectionAvailable = available
-        if (!available) isActive = false
+        if (available) {
+            requestEnterIfNeeded()
+        } else {
+            isActive = false
+            enterRequested = false
+            inputRequested = false
+        }
     }
 
     fun start() {
         if (started || closed) return
         started = true
+        requestEnterIfNeeded()
+    }
+
+    private fun requestEnterIfNeeded() {
+        if (!started || closed || !connectionAvailable || enterRequested) return
+        enterRequested = true
+        inputRequested = false
         sendTask(Task.Secu3OpComEnterDiagnostics)
     }
 
     fun onOpCode(opCode: Int) {
-        if (!started || closed || !connectionAvailable) return
+        if (!started || closed || !connectionAvailable || !enterRequested) return
         when (opCode) {
-            6 -> { isActive = true; sendTask(Task.Secu3DiagInput) }
+            6 -> {
+                if (!inputRequested) {
+                    inputRequested = true
+                    sendTask(Task.Secu3DiagInput)
+                }
+            }
             7 -> isActive = false
         }
     }
 
     fun onInputReceived() {
-        if (started && !closed && connectionAvailable) isActive = true
+        if (started && !closed && connectionAvailable && enterRequested) isActive = true
     }
 
     fun close() {
         if (closed) return
+        val shouldLeave = started && connectionAvailable && enterRequested
         closed = true
         connectionAvailable = false
         isActive = false
-        if (!started) return
-        sendTask(Task.Secu3OpComLeaveDiagnostics)
-        sendTask(Task.Secu3ReadSensors)
+        if (shouldLeave) {
+            sendTask(Task.Secu3OpComLeaveDiagnostics)
+            sendTask(Task.Secu3ReadSensors)
+        }
     }
 }
