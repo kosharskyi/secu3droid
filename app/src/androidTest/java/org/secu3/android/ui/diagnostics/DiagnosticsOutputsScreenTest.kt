@@ -85,7 +85,7 @@ class DiagnosticsOutputsScreenTest {
         val tach = mutableStateOf(false)
         compose.setContent {
             SecuComposeTheme {
-                DiagnosticsOutputsScreen(false, 0, blDe.value, tach.value) { _, _ -> }
+                DiagnosticsOutputsScreen(false, 0, blDe.value, tach.value, controlsEnabled = true) { _, _ -> }
             }
         }
         compose.onNodeWithTag("output_BL").assertIsNotEnabled()
@@ -112,6 +112,7 @@ class DiagnosticsOutputsScreenTest {
                     enableTachO = true,
                     selectedChannel = selectedChannel.intValue,
                     onOutputChanged = { _, _ -> outputCalls++ },
+                    controlsEnabled = true,
                 )
             }
         }
@@ -150,6 +151,7 @@ class DiagnosticsOutputsScreenTest {
                     enableTachO = true,
                     selectedChannel = selectedChannel.intValue,
                     onOutputChanged = { _, _ -> },
+                    controlsEnabled = true,
                 )
             }
         }
@@ -175,7 +177,7 @@ class DiagnosticsOutputsScreenTest {
         val tach = mutableStateOf(true)
         compose.setContent {
             SecuComposeTheme {
-                DiagnosticsOutputsScreen(false, bits.intValue, blDe.value, tach.value) { output, enabled ->
+                DiagnosticsOutputsScreen(false, bits.intValue, blDe.value, tach.value, controlsEnabled = true) { output, enabled ->
                     setDiagnosticOutput(packet, output, enabled)
                     bits.intValue = packet.out
                     sends += packet.out
@@ -208,7 +210,7 @@ class DiagnosticsOutputsScreenTest {
         val restorationTester = StateRestorationTester(compose)
         restorationTester.setContent {
             SecuComposeTheme {
-                DiagnosticsOutputsScreen(false, bits.intValue, permission.value, false) { output, enabled ->
+                DiagnosticsOutputsScreen(false, bits.intValue, permission.value, false, controlsEnabled = true) { output, enabled ->
                     setDiagnosticOutput(packet, output, enabled)
                     bits.intValue = packet.out
                     sends += packet.out
@@ -261,5 +263,6 @@ class DiagnosticsOutputsScreenTest {
         enableTachO = false,
         selectedChannel = selectedChannel,
         onOutputChanged = { _, _ -> },
+        controlsEnabled = true,
     )
 }

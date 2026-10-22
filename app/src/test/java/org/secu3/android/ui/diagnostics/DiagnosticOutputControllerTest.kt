@@ -69,6 +69,44 @@ class DiagnosticOutputControllerTest {
     }
 
     @Test
+    fun connectionLossResetsLocalOutputsAndChannelWithoutSendingAndPreservesGeneratorValues() {
+        val packet = DiagOutputPacket().apply { frq = 432f; duty = 37.5f }
+        val sends = mutableListOf<Snapshot>()
+        val controller = DiagnosticOutputController(packet) { sends += packet.snapshot() }
+        controller.initializeIgnitionOutputs(isSecu3T = true)
+        controller.onDiagnosticInput(isSecu3T = true)
+        controller.selectChannel(3)
+        controller.editFrequency(123f)
+        controller.editDuty(25f)
+        controller.setOutput(DiagnosticOutput.IGN_OUT4, true)
+        controller.applyAdditionalOptions(enableBlDe = true, enableTachO = true)
+        controller.setOutput(DiagnosticOutput.BL, true)
+        controller.setOutput(DiagnosticOutput.DE, true)
+        controller.setOutput(DiagnosticOutput.TACH_O, true)
+        sends.clear()
+
+        controller.resetForConnectionLoss(firmwareFamilyIsSecu3T = true)
+
+        assertEquals(0b11, packet.out)
+        assertEquals(0, packet.chan)
+        assertEquals(123f, packet.frq)
+        assertEquals(25f, packet.duty)
+        assertEquals(false, packet.blOutputEnabled)
+        assertEquals(false, packet.deOutputEnabled)
+        assertEquals(false, packet.tachOOutputEnabled)
+        assertEquals(emptyList<Snapshot>(), sends)
+
+        controller.resetForConnectionLoss(firmwareFamilyIsSecu3T = null)
+        assertEquals(0b11, packet.out)
+        controller.onDiagnosticInput(isSecu3T = false)
+        assertEquals(0, packet.out)
+        assertEquals(1, sends.size)
+        assertEquals(0, sends.single().channel)
+        assertEquals(123f, sends.single().frequency)
+        assertEquals(25f, sends.single().duty)
+    }
+
+    @Test
     fun unknownFamilySuppressesUserSendsUntilFirstDiagnosticInputInitializesPacket() {
         val packet = DiagOutputPacket()
         val sends = mutableListOf<Int>()

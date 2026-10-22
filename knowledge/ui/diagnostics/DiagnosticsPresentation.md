@@ -33,3 +33,7 @@ Channel zero is NONE; each nonzero channel index maps through its firmware famil
 ## Firmware family and TPIC capability must stay reactive on diagnostics
 
 The route observes firmware packets and seeds from the manager's cached packet so a reply arriving while diagnostics is open updates family-specific input labels and availability. Preserve the common labels while the family is unknown, show ADD_IO3 only outside SECU-3T, and treat ADD_IO4 as unavailable unless both family and TPIC8101 capability are known and enabled; a supported packet value of 0.000 V is still a real reading.
+
+## A connection loss clears diagnostics readiness and local actuator state
+
+On any observed non-connected state, clear the last DIAGINP from presentation and disable every diagnostic command until the connection is available and a fresh DIAGINP arrives. Reset the output word and selected channel locally without sending during loss; retain frequency and duty. Preserve the last known family only to keep IGN_OUT1/2 at their safe display defaults through repeated loss states. The next fresh input may replace that family and is the only event that sends the new initial output state; connection recovery alone does not re-enter diagnostics. UI editors and the additional-options dialog are invalid once readiness is lost, and the ViewModel must reject their stale callbacks.

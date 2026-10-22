@@ -155,7 +155,7 @@ class DiagnosticsInputsScreenTest {
         var sendCount = 0
         var current by mutableStateOf(0)
         compose.setContent {
-            DiagnosticsInputsScreen(null, true, current, 10f, 50f, { current = it; selectDiagnosticOutputChannel(packet, it) { sendCount++ } }, { sendCount++ }, { sendCount++ })
+            DiagnosticsInputsScreen(null, true, current, 10f, 50f, { current = it; selectDiagnosticOutputChannel(packet, it) { sendCount++ } }, { sendCount++ }, { sendCount++ }, controlsEnabled = true)
         }
         compose.runOnIdle { assertEquals(0, sendCount) }
         compose.onNodeWithTag("output_channel").performScrollTo().performClick()
@@ -171,7 +171,7 @@ class DiagnosticsInputsScreenTest {
         val packet = DiagOutputPacket()
         var sendCount = 0
         compose.setContent {
-            DiagnosticsInputsScreen(null, false, 0, 10f, 50f, { selectDiagnosticOutputChannel(packet, it) { sendCount++ } }, { sendCount++ }, { sendCount++ })
+            DiagnosticsInputsScreen(null, false, 0, 10f, 50f, { selectDiagnosticOutputChannel(packet, it) { sendCount++ } }, { sendCount++ }, { sendCount++ }, controlsEnabled = true)
         }
         compose.onNodeWithTag("output_channel").performScrollTo().performClick()
         compose.onNodeWithText("GPA6_O").performScrollTo().performClick()
@@ -194,7 +194,7 @@ class DiagnosticsInputsScreenTest {
     @Test fun channelDialogCancelAndFirmwareChangeDoNotSendCommands() {
         var firmware by mutableStateOf<Boolean?>(true)
         var sends = 0
-        compose.setContent { DiagnosticsInputsScreen(null, firmware, 1, 10f, 50f, { sends++ }, {}, {}) }
+        compose.setContent { DiagnosticsInputsScreen(null, firmware, 1, 10f, 50f, { sends++ }, {}, {}, controlsEnabled = true) }
 
         compose.onNodeWithTag("output_channel").performScrollTo().performClick()
         compose.onNodeWithTag("output_channel_option_1").assertIsDisplayed()
@@ -223,7 +223,7 @@ class DiagnosticsInputsScreenTest {
                 dutyRequests++
                 duty = 51.5f
                 updateDiagnosticOutputDuty(packet, duty) { dutyRequests += 100 }
-            })
+            }, controlsEnabled = true)
         }
         compose.runOnIdle { assertEquals(0, frequencyRequests); assertEquals(0, dutyRequests) }
         compose.onNodeWithTag("frequency_edit").performScrollTo().performClick()
@@ -254,7 +254,7 @@ class DiagnosticsInputsScreenTest {
                 CompositionLocalProvider(LocalDensity provides Density(density.density, fontScale = 1.7f)) {
                 Box(Modifier.width(280.dp)) {
                     DiagnosticsInputsScreen(null, true, 1, 123.4f, 42.5f,
-                        { channelChanges++ }, { frequencyEdits++ }, { dutyEdits++ })
+                        { channelChanges++ }, { frequencyEdits++ }, { dutyEdits++ }, controlsEnabled = true)
                 }
             }
         }

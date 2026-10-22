@@ -25,17 +25,16 @@
 package org.secu3.android.ui.diagnostics
 
 import androidx.lifecycle.LiveData
+import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.ViewModel
-import androidx.lifecycle.asLiveData
 import androidx.lifecycle.viewModelScope
 import dagger.hilt.android.lifecycle.HiltViewModel
-import kotlinx.coroutines.flow.filter
-import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import org.secu3.android.connection.ConnectionState
+import org.secu3.android.connection.Connected
 import org.secu3.android.connection.Secu3ConnectionManager
 import org.secu3.android.models.packets.input.DiagInputPacket
 import org.secu3.android.models.packets.out.DiagOutputPacket
@@ -51,6 +50,10 @@ class DiagnosticsViewModel @Inject constructor(private val secu3ConnectionManage
     private val outputController = DiagnosticOutputController(outputPacket, ::sendDiagOutPacket)
 
     private val session = DiagnosticsSessionController(secu3ConnectionManager::sendNewTask)
+    private var connectionAvailable = secu3ConnectionManager.isConnected
+    private var hasFreshInput = false
+    private val _diagInput = MutableLiveData<DiagInputPacket?>(null)
+    private val _connectionStatus = MutableLiveData<ConnectionState>()
 
     val firmwareInfo: FirmwareInfoPacket?
         get() = secu3ConnectionManager.fwInfo
@@ -65,80 +68,112 @@ class DiagnosticsViewModel @Inject constructor(private val secu3ConnectionManage
         val duty: Float = 50f,
         val enableBlDe: Boolean = false,
         val enableTachO: Boolean = false,
+        val controlsEnabled: Boolean = false,
     )
 
     private val _uiState = MutableStateFlow(UiState())
     val uiState: StateFlow<UiState> = _uiState.asStateFlow()
 
     init {
+        session.onConnectionChanged(connectionAvailable)
         secu3ConnectionManager.fwInfo?.let { firmware ->
             outputController.initializeIgnitionOutputs(firmware.isSecu3T)
             publishOutputState()
         }
         viewModelScope.launch {
-            secu3ConnectionManager.receivedPacketFlow.filter { it is OpCompNc }.map {
-                it as OpCompNc
-            }.collect {
-                session.onOpCode(it.opCode)
+            secu3ConnectionManager.connectionStateFlow.collect { state ->
+                _connectionStatus.value = state
+                if (state == Connected && secu3ConnectionManager.isConnected) {
+                    connectionAvailable = true
+                    session.onConnectionChanged(true)
+                    publishControlAvailability()
+                } else {
+                    handleConnectionLoss()
+                }
+            }
+        }
+        viewModelScope.launch {
+            secu3ConnectionManager.receivedPacketFlow.collect { packet ->
+                when (packet) {
+                    is OpCompNc -> {
+                        if (!connectionAvailable || !secu3ConnectionManager.isConnected) {
+                            handleConnectionLoss()
+                        } else {
+                            session.onOpCode(packet.opCode)
+                            publishControlAvailability()
+                        }
+                    }
+                    is DiagInputPacket -> onDiagnosticInput(packet)
+                }
             }
         }
         session.start()
     }
 
-    // Each asLiveData() call creates a Flow collector; keep one instance for this
-    // view model so Compose recompositions and view recreation do not multiply them.
-    val connectionStatusLiveData: LiveData<ConnectionState> by lazy {
-        secu3ConnectionManager.connectionStateFlow.asLiveData()
-    }
+    val connectionStatusLiveData: LiveData<ConnectionState>
+        get() = _connectionStatus
 
-    val diagInputLiveData: LiveData<DiagInputPacket> by lazy {
-        secu3ConnectionManager.receivedPacketFlow.filter { it is DiagInputPacket }.map {
-            val input = it as DiagInputPacket
-            outputController.onDiagnosticInput(isSecu3T = input.flags != 0)
-            publishOutputState()
-            session.onInputReceived()
-            input
-        }.asLiveData()
+    val diagInputLiveData: LiveData<DiagInputPacket?>
+        get() = _diagInput
+
+    private fun onDiagnosticInput(input: DiagInputPacket) {
+        if (!connectionAvailable || !secu3ConnectionManager.isConnected) {
+            handleConnectionLoss()
+            return
+        }
+        hasFreshInput = true
+        session.onInputReceived()
+        _diagInput.value = input
+        outputController.onDiagnosticInput(isSecu3T = input.flags != 0)
+        publishOutputState()
     }
 
 
     fun enableTachO(enable: Boolean) {
+        if (!canControl()) return
         outputController.enableTachO(enable)
 
         _uiState.value = _uiState.value.copy(enableTachO = enable, outputBits = outputPacket.out)
     }
 
     fun enableBlDe(enable: Boolean) {
+        if (!canControl()) return
         outputController.enableBlDe(enable)
 
         _uiState.value = _uiState.value.copy(enableBlDe = enable, outputBits = outputPacket.out)
     }
 
     fun sendDiagOutPacket() {
+        if (!canControl()) return
         secu3ConnectionManager.sendOutPacket(outputPacket)
     }
 
     internal fun setOutput(output: DiagnosticOutput, enabled: Boolean) {
+        if (!canControl()) return
         outputController.setOutput(output, enabled)
         publishOutputState()
     }
 
     fun selectChannel(index: Int) {
+        if (!canControl()) return
         outputController.selectChannel(index)
         publishOutputState()
     }
 
     fun editFrequency(value: Float) {
+        if (!canControl()) return
         outputController.editFrequency(value)
         publishOutputState()
     }
 
     fun editDuty(value: Float) {
+        if (!canControl()) return
         outputController.editDuty(value)
         publishOutputState()
     }
 
     fun applyAdditionalOptions(enableBlDe: Boolean, enableTachO: Boolean) {
+        if (!canControl()) return
         outputController.applyAdditionalOptions(enableBlDe, enableTachO)
         _uiState.value = _uiState.value.copy(enableBlDe = enableBlDe, enableTachO = enableTachO, outputBits = outputPacket.out)
     }
@@ -149,7 +184,26 @@ class DiagnosticsViewModel @Inject constructor(private val secu3ConnectionManage
             channel = outputPacket.chan,
             frequency = outputPacket.frq,
             duty = outputPacket.duty,
+            enableBlDe = outputPacket.blOutputEnabled && outputPacket.deOutputEnabled,
+            enableTachO = outputPacket.tachOOutputEnabled,
+            controlsEnabled = canControl(),
         )
+    }
+
+    private fun publishControlAvailability() {
+        _uiState.value = _uiState.value.copy(controlsEnabled = canControl())
+    }
+
+    private fun canControl(): Boolean =
+        connectionAvailable && secu3ConnectionManager.isConnected && hasFreshInput && session.isActive
+
+    private fun handleConnectionLoss() {
+        connectionAvailable = false
+        hasFreshInput = false
+        session.onConnectionChanged(false)
+        _diagInput.value = null
+        outputController.resetForConnectionLoss(secu3ConnectionManager.fwInfo?.isSecu3T)
+        publishOutputState()
     }
 
     override fun onCleared() {
@@ -162,6 +216,13 @@ internal class DiagnosticsSessionController(private val sendTask: (Task) -> Unit
         private set
     private var started = false
     private var closed = false
+    private var connectionAvailable = true
+
+    fun onConnectionChanged(available: Boolean) {
+        if (closed) return
+        connectionAvailable = available
+        if (!available) isActive = false
+    }
 
     fun start() {
         if (started || closed) return
@@ -170,7 +231,7 @@ internal class DiagnosticsSessionController(private val sendTask: (Task) -> Unit
     }
 
     fun onOpCode(opCode: Int) {
-        if (!started || closed) return
+        if (!started || closed || !connectionAvailable) return
         when (opCode) {
             6 -> { isActive = true; sendTask(Task.Secu3DiagInput) }
             7 -> isActive = false
@@ -178,12 +239,13 @@ internal class DiagnosticsSessionController(private val sendTask: (Task) -> Unit
     }
 
     fun onInputReceived() {
-        if (started && !closed) isActive = true
+        if (started && !closed && connectionAvailable) isActive = true
     }
 
     fun close() {
         if (closed) return
         closed = true
+        connectionAvailable = false
         isActive = false
         if (!started) return
         sendTask(Task.Secu3OpComLeaveDiagnostics)

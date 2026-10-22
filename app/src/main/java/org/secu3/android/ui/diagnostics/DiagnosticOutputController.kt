@@ -24,6 +24,15 @@ internal class DiagnosticOutputController(
         send()
     }
 
+    fun resetForConnectionLoss(firmwareFamilyIsSecu3T: Boolean?) {
+        val knownFamily = this.firmwareFamilyIsSecu3T ?: firmwareFamilyIsSecu3T
+        packet.out = if (knownFamily == true) IGNITION_OUTPUT_MASK else 0
+        packet.chan = 0
+        initialized = false
+        initialStateSent = false
+        this.firmwareFamilyIsSecu3T = knownFamily
+    }
+
     fun setOutput(output: DiagnosticOutput, enabled: Boolean) {
         if (diagnosticOutputForChannel(firmwareFamilyIsSecu3T, packet.chan) == output) return
         if (isDisabledSpecialOutput(output)) return

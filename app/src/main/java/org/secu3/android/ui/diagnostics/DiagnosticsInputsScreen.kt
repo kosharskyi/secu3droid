@@ -47,6 +47,7 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -92,8 +93,9 @@ fun DiagnosticsInputsScreen(
     frequencyLabel: String = "Frequency",
     dutyLabel: String = "Duty cycle",
     hasTpic8101: Boolean? = null,
+    controlsEnabled: Boolean = false,
 ) {
-    val enabled = isSecu3T != null
+    val enabled = controlsEnabled && isSecu3T != null
     val channels = if (isSecu3T == true) secu3TOutputChannels else secu3IOutputChannels
     val chosen = selectedChannel.takeIf { it in channels.indices } ?: 0
     Column(Modifier.fillMaxSize().background(MaterialTheme.colorScheme.background).verticalScroll(rememberScrollState()).padding(16.dp), verticalArrangement = Arrangement.spacedBy(16.dp)) {
@@ -142,6 +144,9 @@ fun DiagnosticsInputsScreen(
                 Text(testSignalTitle, style = MaterialTheme.typography.titleMedium, color = MaterialTheme.colorScheme.primary)
                 HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant)
                 var expanded by remember(isSecu3T) { mutableStateOf(false) }
+                LaunchedEffect(enabled) {
+                    if (!enabled) expanded = false
+                }
                 ParameterSelectionRow(
                     title = outputChannelTitle,
                     value = channels[chosen],

@@ -114,6 +114,7 @@ internal fun DiagnosticsOutputsScreen(
     enableBlDe: Boolean,
     enableTachO: Boolean,
     selectedChannel: Int = 0,
+    controlsEnabled: Boolean = false,
     onOutputChanged: (DiagnosticOutput, Boolean) -> Unit,
 ) {
     val familyOutputs = when (isSecu3T) {
@@ -136,6 +137,7 @@ internal fun DiagnosticsOutputsScreen(
             generatorOutput = generatorOutput,
             enableBlDe = enableBlDe,
             enableTachO = enableTachO,
+            controlsEnabled = controlsEnabled,
             onOutputChanged = onOutputChanged,
         )
         OutputGroup(
@@ -145,6 +147,7 @@ internal fun DiagnosticsOutputsScreen(
             generatorOutput = generatorOutput,
             enableBlDe = enableBlDe,
             enableTachO = enableTachO,
+            controlsEnabled = controlsEnabled,
             onOutputChanged = onOutputChanged,
         )
     }
@@ -169,6 +172,7 @@ private fun OutputGroup(
     generatorOutput: DiagnosticOutput?,
     enableBlDe: Boolean,
     enableTachO: Boolean,
+    controlsEnabled: Boolean,
     onOutputChanged: (DiagnosticOutput, Boolean) -> Unit,
 ) {
     DiagnosticGroupSurface(Modifier.fillMaxWidth()) {
@@ -185,7 +189,7 @@ private fun OutputGroup(
                 OutputToggle(
                     output,
                     outputBits,
-                    enabledFor(output, enableBlDe, enableTachO) && output != generatorOutput,
+                    controlsEnabled && enabledFor(output, enableBlDe, enableTachO) && output != generatorOutput,
                     isGeneratorOutput = output == generatorOutput,
                     onOutputChanged = onOutputChanged,
                 )

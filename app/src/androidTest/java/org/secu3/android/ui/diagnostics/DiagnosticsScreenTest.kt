@@ -122,13 +122,13 @@ class DiagnosticsScreenTest {
     @Test
     fun channelSelectionPreservesDefaultDutyInDisplayAndPacket() {
         val packet = DiagOutputPacket()
-        val state = mutableStateOf(DiagnosticsViewModel.UiState())
+        val state = mutableStateOf(DiagnosticsViewModel.UiState(controlsEnabled = true))
         compose.setContent {
             SecuComposeTheme {
                 DiagnosticsScreen(
                     isSecu3T = false,
                     connectionStatus = MutableLiveData<ConnectionState>(Connected),
-                    inputLiveData = MutableLiveData<DiagInputPacket>(),
+                    inputLiveData = MutableLiveData<DiagInputPacket?>(DiagInputPacket()),
                     state = state.value,
                     onNavigateUp = {},
                     onAdditionalSettings = {},
@@ -152,14 +152,14 @@ class DiagnosticsScreenTest {
 
     @Test
     fun selectedGeneratorChannelLocksCorrespondingOutputOnTheOutputsTab() {
-        val state = mutableStateOf(DiagnosticsViewModel.UiState(channel = 1))
+        val state = mutableStateOf(DiagnosticsViewModel.UiState(channel = 1, controlsEnabled = true))
         val tabTitles = context.resources.getStringArray(R.array.diagnostics_fragments_title)
         compose.setContent {
             SecuComposeTheme {
                 DiagnosticsScreen(
                     isSecu3T = false,
                     connectionStatus = MutableLiveData<ConnectionState>(Connected),
-                    inputLiveData = MutableLiveData<DiagInputPacket>(),
+                    inputLiveData = MutableLiveData<DiagInputPacket?>(DiagInputPacket()),
                     state = state.value,
                     onNavigateUp = {},
                     onAdditionalSettings = {},
@@ -192,7 +192,7 @@ class DiagnosticsScreenTest {
                     hasTpic8101 = hasTpic8101.value,
                     connectionStatus = MutableLiveData<ConnectionState>(Connected),
                     inputLiveData = MutableLiveData(packet),
-                    state = DiagnosticsViewModel.UiState(),
+                    state = DiagnosticsViewModel.UiState(controlsEnabled = true),
                     onNavigateUp = {},
                     onAdditionalSettings = {},
                     onOutputChanged = { _, _ -> },
@@ -249,6 +249,74 @@ class DiagnosticsScreenTest {
         assertEquals(listOf(37.5f), duties)
     }
 
+    @Test
+    fun losingReadinessClosesNumericEditorAndDisablesControls() {
+        val connection = MutableLiveData<ConnectionState>(Connected)
+        val input = MutableLiveData<DiagInputPacket?>(DiagInputPacket(voltage = 12.5f))
+        val state = mutableStateOf(DiagnosticsViewModel.UiState(controlsEnabled = true))
+        var edits = 0
+        compose.setContent {
+            SecuComposeTheme {
+                DiagnosticsScreen(
+                    isSecu3T = false,
+                    connectionStatus = connection,
+                    inputLiveData = input,
+                    state = state.value,
+                    onNavigateUp = {},
+                    onAdditionalSettings = {},
+                    onOutputChanged = { _, _ -> },
+                    onChannelSelected = {},
+                    onFrequencyEdit = { edits++ },
+                    onDutyEdit = {},
+                )
+            }
+        }
+        compose.onNodeWithTag("frequency_edit").performScrollTo().performClick()
+        compose.onNodeWithTag("numeric_confirm").assertExists()
+
+        compose.runOnIdle {
+            connection.value = Disconnected
+            state.value = state.value.copy(controlsEnabled = false)
+        }
+        compose.onNodeWithTag("numeric_confirm").assertDoesNotExist()
+        compose.onNodeWithTag("diagnostics-settings-icon").assertIsNotEnabled()
+        compose.onNodeWithTag("frequency_edit").assertIsNotEnabled()
+        compose.onNodeWithTag("analog_Voltage-value").assertTextEquals("— V")
+        assertEquals(0, edits)
+    }
+
+    @Test
+    fun losingReadinessDismissesChannelChoicesAndMasksRetainedInput() {
+        val connection = MutableLiveData<ConnectionState>(Connected)
+        val input = MutableLiveData<DiagInputPacket?>(DiagInputPacket(voltage = 12.5f))
+        val state = mutableStateOf(DiagnosticsViewModel.UiState(controlsEnabled = true))
+        compose.setContent {
+            SecuComposeTheme {
+                DiagnosticsScreen(
+                    isSecu3T = false,
+                    connectionStatus = connection,
+                    inputLiveData = input,
+                    state = state.value,
+                    onNavigateUp = {},
+                    onAdditionalSettings = {},
+                    onOutputChanged = { _, _ -> },
+                    onChannelSelected = {},
+                    onFrequencyEdit = {},
+                    onDutyEdit = {},
+                )
+            }
+        }
+        compose.onNodeWithTag("output_channel").performScrollTo().performClick()
+        compose.onNodeWithTag("output_channel_option_1").assertExists()
+
+        compose.runOnIdle {
+            connection.value = Disconnected
+            state.value = state.value.copy(controlsEnabled = false)
+        }
+        compose.onNodeWithTag("output_channel_option_1").assertDoesNotExist()
+        compose.onNodeWithTag("analog_Voltage-value").assertTextEquals("— V")
+    }
+
     private data class Fixture(
         val connection: MutableLiveData<ConnectionState>,
         val input: MutableLiveData<DiagInputPacket>,
@@ -282,12 +350,13 @@ class DiagnosticsScreenTest {
         onOutput: (DiagnosticOutput, Boolean) -> Unit = { _, _ -> },
     ) = Fixture(
         connection = connection,
-        input = MutableLiveData(),
+        input = MutableLiveData(DiagInputPacket()),
         state = DiagnosticsViewModel.UiState(
             outputBits = packet.out,
             channel = packet.chan,
             frequency = packet.frq,
             duty = if (packet.chan == 0 && packet.duty == 0f) 50f else packet.duty,
+            controlsEnabled = true,
         ),
         onOutput = onOutput,
     )

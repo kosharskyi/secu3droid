@@ -38,6 +38,7 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.Scaffold
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableFloatStateOf
 import androidx.compose.runtime.mutableIntStateOf
@@ -57,6 +58,7 @@ import androidx.compose.runtime.livedata.observeAsState
 import kotlinx.coroutines.launch
 import org.secu3.android.R
 import org.secu3.android.connection.ConnectionState
+import org.secu3.android.connection.Connected
 import org.secu3.android.models.packets.input.DiagInputPacket
 import org.secu3.android.ui.compose.SecuTopAppBar
 import org.secu3.android.ui.compose.SecuTabRow
@@ -68,7 +70,7 @@ import org.secu3.android.ui.parameters.dialogs.NumericEditDialog
 internal fun DiagnosticsScreen(
     isSecu3T: Boolean?,
     connectionStatus: LiveData<ConnectionState>,
-    inputLiveData: LiveData<DiagInputPacket>,
+    inputLiveData: LiveData<DiagInputPacket?>,
     state: DiagnosticsViewModel.UiState,
     onNavigateUp: () -> Unit,
     onAdditionalSettings: () -> Unit,
@@ -80,12 +82,20 @@ internal fun DiagnosticsScreen(
     hasTpic8101: Boolean? = null,
 ) {
     val status by connectionStatus.observeAsState()
-    val input by inputLiveData.observeAsState()
+    val observedInput by inputLiveData.observeAsState()
+    val input = observedInput.takeIf { state.controlsEnabled && status == Connected }
+    val controlsEnabled = state.controlsEnabled && status == Connected && input != null
     val enableBlDe = state.enableBlDe
     val enableTachO = state.enableTachO
     var editorTarget by rememberSaveable { mutableStateOf<String?>(null) }
     var editorInitialValue by rememberSaveable { mutableFloatStateOf(0f) }
     var editorSessionId by rememberSaveable { mutableLongStateOf(0L) }
+    LaunchedEffect(controlsEnabled) {
+        if (!controlsEnabled) {
+            editorTarget = null
+            editorSessionId++
+        }
+    }
     val pagerState = rememberPagerState(initialPage = initialPage.coerceIn(0, 1), pageCount = { 2 })
     val scope = rememberCoroutineScope()
     val titles = stringArrayResource(R.array.diagnostics_fragments_title)
@@ -101,7 +111,7 @@ internal fun DiagnosticsScreen(
                 showStatus = true,
                 navigationIconModifier = Modifier.testTag("diagnostics-back-icon"),
                 actions = {
-                    IconButton(onClick = onAdditionalSettings, modifier = Modifier.testTag("diagnostics-settings-icon")) {
+                    IconButton(onClick = onAdditionalSettings, enabled = controlsEnabled, modifier = Modifier.testTag("diagnostics-settings-icon")) {
                         Icon(Icons.Default.Settings, contentDescription = stringResource(R.string.title_activity_settings))
                     }
                 },
@@ -134,6 +144,7 @@ internal fun DiagnosticsScreen(
                         frequencyLabel = stringResource(R.string.test_signal_frequency_label),
                         dutyLabel = stringResource(R.string.test_signal_duty_label),
                         hasTpic8101 = hasTpic8101,
+                        controlsEnabled = controlsEnabled,
                         onChannelSelected = onChannelSelected,
                         onFrequencyEdit = {
                             editorInitialValue = state.frequency
@@ -152,6 +163,7 @@ internal fun DiagnosticsScreen(
                         enableBlDe = enableBlDe,
                         enableTachO = enableTachO,
                         selectedChannel = state.channel,
+                        controlsEnabled = controlsEnabled,
                         onOutputChanged = onOutputChanged,
                     )
                 }
@@ -186,7 +198,7 @@ internal fun DiagnosticsScreen(
             request = request,
             sessionId = currentSessionId,
             onConfirm = { value ->
-                if (editorTarget == target && editorSessionId == currentSessionId) {
+                if (controlsEnabled && editorTarget == target && editorSessionId == currentSessionId) {
                     editorTarget = null
                     when (target) {
                         "frequency" -> onFrequencyEdit(value.toFloat())

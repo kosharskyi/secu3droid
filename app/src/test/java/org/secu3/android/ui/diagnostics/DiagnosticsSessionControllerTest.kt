@@ -55,4 +55,25 @@ class DiagnosticsSessionControllerTest {
         )
         assertFalse(session.isActive)
     }
+
+    @Test
+    fun lossDisablesSessionAndLatePacketsStayIgnoredUntilAvailabilityReturns() {
+        val commands = mutableListOf<Task>()
+        val session = DiagnosticsSessionController(commands::add)
+        session.start()
+        session.onInputReceived()
+        assertTrue(session.isActive)
+
+        session.onConnectionChanged(false)
+        session.onOpCode(6)
+        session.onInputReceived()
+        assertFalse(session.isActive)
+        assertEquals(listOf(Task.Secu3OpComEnterDiagnostics), commands)
+
+        session.onConnectionChanged(true)
+        assertFalse(session.isActive)
+        session.onInputReceived()
+        assertTrue(session.isActive)
+        assertEquals(listOf(Task.Secu3OpComEnterDiagnostics), commands)
+    }
 }

@@ -13,10 +13,10 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.animation.EnterTransition
 import androidx.compose.animation.ExitTransition
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.SideEffect
-import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.window.DialogProperties
@@ -158,16 +158,23 @@ internal fun RootNavigation(activity: MainActivity) {
                         extras = graphEntry.defaultViewModelCreationExtras,
                     )
                     val state by viewModel.uiState.collectAsStateWithLifecycle()
+                    LaunchedEffect(state.controlsEnabled, entry) {
+                        if (!state.controlsEnabled && navController.currentBackStackEntry === entry) navController.popBackStack()
+                    }
                     SecuComposeTheme {
                         DiagnosticAdditionalDialogContent(
                             initialEnableBlDe = state.enableBlDe,
                             initialEnableTachO = state.enableTachO,
                             showTachO = viewModel.firmwareInfo?.isSecu3T != true,
                             onOk = { blDe, tachO ->
-                                viewModel.applyAdditionalOptions(blDe, tachO)
-                                navController.popBackStack()
+                                if (state.controlsEnabled && navController.currentBackStackEntry === entry) {
+                                    viewModel.applyAdditionalOptions(blDe, tachO)
+                                    navController.popBackStack()
+                                }
                             },
-                            onCancel = { navController.popBackStack() },
+                            onCancel = {
+                                if (navController.currentBackStackEntry === entry) navController.popBackStack()
+                            },
                         )
                     }
                 }
