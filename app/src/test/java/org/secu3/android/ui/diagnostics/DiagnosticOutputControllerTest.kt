@@ -150,6 +150,72 @@ class DiagnosticOutputControllerTest {
     }
 
     @Test
+    fun unchangedOptionsAreNoOpsAndSingleGroupChangesPreserveOtherHighState() {
+        val packet = DiagOutputPacket()
+        val sends = mutableListOf<Int>()
+        val controller = DiagnosticOutputController(packet) { sends += packet.out }
+        controller.initializeIgnitionOutputs(isSecu3T = false)
+        controller.applyAdditionalOptions(enableBlDe = true, enableTachO = true)
+        controller.setOutput(DiagnosticOutput.BL, true)
+        controller.setOutput(DiagnosticOutput.DE, true)
+        controller.setOutput(DiagnosticOutput.TACH_O, true)
+
+        val blDeHighAndTachHigh = packet.out
+        val sendsAtHigh = sends.size
+        controller.enableBlDe(true)
+        controller.enableBlDe(true)
+        controller.enableTachO(true)
+        controller.enableTachO(true)
+        controller.applyAdditionalOptions(enableBlDe = true, enableTachO = true)
+        assertEquals(blDeHighAndTachHigh, packet.out)
+        assertEquals(sendsAtHigh, sends.size)
+
+        val tachHighMask = (1 shl 23) or (1 shl 24)
+        controller.enableBlDe(false)
+        assertEquals(tachHighMask, packet.out)
+        val afterBlDeDisable = sends.size
+        controller.enableBlDe(false)
+        assertEquals(afterBlDeDisable, sends.size)
+
+        controller.enableBlDe(true)
+        assertEquals(tachHighMask or (1 shl 12) or (1 shl 14), packet.out)
+        controller.setOutput(DiagnosticOutput.BL, true)
+        controller.setOutput(DiagnosticOutput.DE, true)
+        val blDeHighMask = (1 shl 11) or (1 shl 12) or (1 shl 13) or (1 shl 14)
+
+        controller.enableTachO(false)
+        assertEquals(blDeHighMask, packet.out)
+        val afterTachDisable = sends.size
+        controller.enableTachO(false)
+        assertEquals(afterTachDisable, sends.size)
+
+        controller.enableTachO(true)
+        assertEquals(blDeHighMask or (1 shl 24), packet.out)
+        val afterTachEnable = sends.size
+        controller.enableTachO(true)
+        assertEquals(afterTachEnable, sends.size)
+    }
+
+    @Test
+    fun inconsistentBlDeDirectionFlagsAreCorrectedAsOneOptionGroup() {
+        val packet = DiagOutputPacket().apply {
+            blOutputEnabled = true
+            bl = true
+            deOutputEnabled = false
+        }
+        val sends = mutableListOf<Int>()
+        val controller = DiagnosticOutputController(packet) { sends += packet.out }
+        controller.initializeIgnitionOutputs(isSecu3T = false)
+
+        controller.enableBlDe(true)
+
+        assertEquals((1 shl 12) or (1 shl 14), packet.out)
+        assertEquals(listOf((1 shl 12) or (1 shl 14)), sends)
+        controller.enableBlDe(true)
+        assertEquals(1, sends.size)
+    }
+
+    @Test
     fun specialOutputOptionsDriveLowResetStateAndGateStaleCommands() {
         val packet = DiagOutputPacket().apply { out = 1 shl 2 }
         val sends = mutableListOf<Int>()

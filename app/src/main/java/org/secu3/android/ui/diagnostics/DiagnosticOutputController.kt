@@ -36,6 +36,7 @@ internal class DiagnosticOutputController(
     fun editDuty(value: Float) = updateDiagnosticOutputDuty(packet, value, ::sendIfInitialized)
 
     fun enableBlDe(enabled: Boolean) {
+        if (packet.blOutputEnabled == enabled && packet.deOutputEnabled == enabled) return
         packet.bl = false
         packet.de = false
         packet.blOutputEnabled = enabled
@@ -44,6 +45,7 @@ internal class DiagnosticOutputController(
     }
 
     fun enableTachO(enabled: Boolean) {
+        if (packet.tachOOutputEnabled == enabled) return
         packet.tachO = false
         packet.tachOOutputEnabled = enabled
         sendIfInitialized()

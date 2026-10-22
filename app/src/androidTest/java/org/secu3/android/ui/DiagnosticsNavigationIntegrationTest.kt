@@ -19,6 +19,7 @@ import org.junit.Assert.assertSame
 import org.junit.Rule
 import org.junit.Test
 import org.secu3.android.R
+import org.secu3.android.ui.diagnostics.DiagnosticOutput
 import org.secu3.android.ui.diagnostics.DiagnosticsViewModel
 
 class DiagnosticsNavigationIntegrationTest {
@@ -91,6 +92,21 @@ class DiagnosticsNavigationIntegrationTest {
         assertSame(vm, diagnosticsViewModel())
         assertEquals(DIAGNOSTICS_ROUTE, compose.activity.rootNavigationController?.currentDestination?.route)
         assertEquals(true, vm.uiState.value.enableBlDe)
+
+        compose.activityRule.scenario.onActivity {
+            vm.setOutput(DiagnosticOutput.BL, true)
+            vm.setOutput(DiagnosticOutput.DE, true)
+        }
+        val blDeHigh = (1 shl 11) or (1 shl 12) or (1 shl 13) or (1 shl 14)
+        assertEquals(blDeHigh, vm.uiState.value.outputBits)
+
+        compose.onNodeWithTag("diagnostics-settings-icon").performClick()
+        compose.waitForIdle()
+        compose.onNodeWithTag("diagnostic_ok").performClick()
+        compose.waitForIdle()
+        assertSame(vm, diagnosticsViewModel())
+        assertEquals(true, vm.uiState.value.enableBlDe)
+        assertEquals(blDeHigh, vm.uiState.value.outputBits)
 
         compose.activityRule.scenario.onActivity { it.openDiagnostics() }
         compose.waitForIdle()
