@@ -55,6 +55,9 @@ class DiagnosticsViewModel @Inject constructor(private val secu3ConnectionManage
     val firmwareInfo: FirmwareInfoPacket?
         get() = secu3ConnectionManager.fwInfo
 
+    val firmwareLiveData: LiveData<FirmwareInfoPacket>
+        get() = secu3ConnectionManager.firmwareLiveData
+
     data class UiState(
         val outputBits: Int = 0,
         val channel: Int = 0,

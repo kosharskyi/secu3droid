@@ -77,6 +77,7 @@ internal fun DiagnosticsScreen(
     onFrequencyEdit: (Float) -> Unit,
     onDutyEdit: (Float) -> Unit,
     initialPage: Int = 0,
+    hasTpic8101: Boolean? = null,
 ) {
     val status by connectionStatus.observeAsState()
     val input by inputLiveData.observeAsState()
@@ -132,6 +133,7 @@ internal fun DiagnosticsScreen(
                         outputChannelTitle = stringResource(R.string.output_channel_title),
                         frequencyLabel = stringResource(R.string.test_signal_frequency_label),
                         dutyLabel = stringResource(R.string.test_signal_duty_label),
+                        hasTpic8101 = hasTpic8101,
                         onChannelSelected = onChannelSelected,
                         onFrequencyEdit = {
                             editorInitialValue = state.frequency

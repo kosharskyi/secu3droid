@@ -77,7 +77,52 @@ class DiagnosticsInputsScreenTest {
         compose.onAllNodesWithTag("analog_ADD_IO8").assertCountEquals(0)
         compose.onAllNodesWithTag("status_GPA4_I").assertCountEquals(0)
         compose.onAllNodesWithTag("status_COND_I").assertCountEquals(0)
-        compose.onNodeWithText("ADD_IO3").performScrollTo().assertIsDisplayed()
+        compose.onAllNodesWithTag("analog_ADD_IO3").assertCountEquals(0)
+    }
+
+    @Test fun familyLabelsAndAdditionalInputsFollowFirmwareCapabilities() {
+        var input by mutableStateOf<DiagInputPacket?>(DiagInputPacket(map = 1.25f, carb = 2.5f, addI3 = 3.75f, addI4 = 0f))
+        var firmware by mutableStateOf<Boolean?>(false)
+        var hasTpic8101 by mutableStateOf<Boolean?>(false)
+        compose.setContent {
+            DiagnosticsInputsScreen(
+                input = input,
+                isSecu3T = firmware,
+                selectedChannel = 0,
+                frequency = 10f,
+                duty = 50f,
+                onChannelSelected = {},
+                onFrequencyEdit = {},
+                onDutyEdit = {},
+                hasTpic8101 = hasTpic8101,
+            )
+        }
+
+        compose.onNodeWithTag("analog_MAP_I").performScrollTo().assertIsDisplayed()
+        compose.onNodeWithTag("analog_TPS").performScrollTo().assertIsDisplayed()
+        compose.onNodeWithTag("analog_ADD_IO3").performScrollTo().assertIsDisplayed()
+        compose.onNodeWithTag("analog_ADD_IO4-value").assertTextEquals("— V")
+
+        compose.runOnIdle { hasTpic8101 = true }
+        compose.onNodeWithTag("analog_ADD_IO4-value").assertTextEquals("0.000 V")
+        compose.runOnIdle { input = null }
+        compose.onNodeWithTag("analog_ADD_IO4-value").assertTextEquals("— V")
+        compose.runOnIdle { input = DiagInputPacket(map = 1.25f, carb = 2.5f, addI3 = 3.75f, addI4 = 0f) }
+        compose.onNodeWithTag("analog_ADD_IO4-value").assertTextEquals("0.000 V")
+        compose.runOnIdle { hasTpic8101 = false }
+        compose.onNodeWithTag("analog_ADD_IO4-value").assertTextEquals("— V")
+
+        compose.runOnIdle { firmware = true; hasTpic8101 = true }
+        compose.onNodeWithTag("analog_MAP_S").performScrollTo().assertIsDisplayed()
+        compose.onNodeWithTag("analog_CARB").performScrollTo().assertIsDisplayed()
+        compose.onAllNodesWithTag("analog_ADD_IO3").assertCountEquals(0)
+        compose.onNodeWithTag("analog_ADD_IO4-value").assertTextEquals("0.000 V")
+
+        compose.runOnIdle { firmware = null }
+        compose.onNodeWithTag("analog_MAP_S").performScrollTo().assertIsDisplayed()
+        compose.onNodeWithTag("analog_CARB").performScrollTo().assertIsDisplayed()
+        compose.onNodeWithTag("analog_ADD_IO3").performScrollTo().assertIsDisplayed()
+        compose.onNodeWithTag("analog_ADD_IO4-value").assertTextEquals("— V")
     }
 
     @Test fun absentPacketIsUnavailableButARealZeroAndFalseRemainValidReadouts() {

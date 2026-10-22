@@ -29,3 +29,7 @@ Diagnostics starts at 50% duty in both the controls and the desktop manager. The
 ## The generator-selected output cannot be manually toggled
 
 Channel zero is NONE; each nonzero channel index maps through its firmware family's full ordered output list. Use that mapping both to disable the matching output row/checkbox and to reject stale manual callbacks in the controller. Keep TACH_O in the SECU-3i mapping even when its row is hidden by the direction-enable option, because filtering the display must not shift protocol channel indices. Selecting a different channel or NONE unlocks the old output while preserving the existing channel-selection send.
+
+## Firmware family and TPIC capability must stay reactive on diagnostics
+
+The route observes firmware packets and seeds from the manager's cached packet so a reply arriving while diagnostics is open updates family-specific input labels and availability. Preserve the common labels while the family is unknown, show ADD_IO3 only outside SECU-3T, and treat ADD_IO4 as unavailable unless both family and TPIC8101 capability are known and enabled; a supported packet value of 0.000 V is still a real reading.

@@ -181,6 +181,51 @@ class DiagnosticsScreenTest {
     }
 
     @Test
+    fun firmwareFamilyAndTpicFlagsUpdateInputRowsWhileScreenIsOpen() {
+        val firmware = mutableStateOf<Boolean?>(null)
+        val hasTpic8101 = mutableStateOf<Boolean?>(null)
+        val packet = DiagInputPacket(map = 1.25f, carb = 2.5f, addI3 = 3.75f, addI4 = 0f)
+        compose.setContent {
+            SecuComposeTheme {
+                DiagnosticsScreen(
+                    isSecu3T = firmware.value,
+                    hasTpic8101 = hasTpic8101.value,
+                    connectionStatus = MutableLiveData<ConnectionState>(Connected),
+                    inputLiveData = MutableLiveData(packet),
+                    state = DiagnosticsViewModel.UiState(),
+                    onNavigateUp = {},
+                    onAdditionalSettings = {},
+                    onOutputChanged = { _, _ -> },
+                    onChannelSelected = {},
+                    onFrequencyEdit = {},
+                    onDutyEdit = {},
+                )
+            }
+        }
+
+        compose.onNodeWithTag("analog_MAP_S").assertExists()
+        compose.onNodeWithTag("analog_CARB").assertExists()
+        compose.onNodeWithTag("analog_ADD_IO3").assertExists()
+        compose.onNodeWithTag("analog_ADD_IO4-value").assertTextEquals("— V")
+
+        firmware.value = false
+        hasTpic8101.value = true
+        compose.onNodeWithTag("analog_MAP_I").assertExists()
+        compose.onNodeWithTag("analog_TPS").assertExists()
+        compose.onNodeWithTag("analog_ADD_IO3").assertExists()
+        compose.onNodeWithTag("analog_ADD_IO4-value").assertTextEquals("0.000 V")
+
+        firmware.value = true
+        compose.onNodeWithTag("analog_MAP_S").assertExists()
+        compose.onNodeWithTag("analog_CARB").assertExists()
+        compose.onAllNodesWithTag("analog_ADD_IO3").assertCountEquals(0)
+        compose.onNodeWithTag("analog_ADD_IO4-value").assertTextEquals("0.000 V")
+
+        hasTpic8101.value = false
+        compose.onNodeWithTag("analog_ADD_IO4-value").assertTextEquals("— V")
+    }
+
+    @Test
     fun frequencyAndDutyEditorsUseCurrentCompositionCallbacks() {
         val packet = DiagOutputPacket().apply { frq = 123.456f; duty = 24.25f }
         val data = fixture(packet = packet)

@@ -91,23 +91,32 @@ fun DiagnosticsInputsScreen(
     outputChannelTitle: String = "Output channel",
     frequencyLabel: String = "Frequency",
     dutyLabel: String = "Duty cycle",
+    hasTpic8101: Boolean? = null,
 ) {
     val enabled = isSecu3T != null
     val channels = if (isSecu3T == true) secu3TOutputChannels else secu3IOutputChannels
     val chosen = selectedChannel.takeIf { it in channels.indices } ?: 0
     Column(Modifier.fillMaxSize().background(MaterialTheme.colorScheme.background).verticalScroll(rememberScrollState()).padding(16.dp), verticalArrangement = Arrangement.spacedBy(16.dp)) {
         DiagnosticGroupSurface(Modifier.fillMaxWidth()) {
-            val analogInputs = listOf(
-                "Voltage" to input?.voltage, "MAP_S" to input?.map, "TEMP" to input?.temperature,
-                "ADD_IO1" to input?.addI1, "ADD_IO2" to input?.addI2, "ADD_IO3" to input?.addI3, "ADD_IO4" to input?.addI4,
-                "CARB" to input?.carb, "KS_1" to input?.ks1, "KS_2" to input?.ks2,
-            )
+            val addIo4Supported = isSecu3T != null && hasTpic8101 == true
+            val analogInputs = buildList {
+                add("Voltage" to input?.voltage)
+                add((if (isSecu3T == false) "MAP_I" else "MAP_S") to input?.map)
+                add("TEMP" to input?.temperature)
+                add("ADD_IO1" to input?.addI1)
+                add("ADD_IO2" to input?.addI2)
+                if (isSecu3T != true) add("ADD_IO3" to input?.addI3)
+                add("ADD_IO4" to input?.addI4.takeIf { addIo4Supported })
+                add((if (isSecu3T == false) "TPS" else "CARB") to input?.carb)
+                add("KS_1" to input?.ks1)
+                add("KS_2" to input?.ks2)
+            }
             val statuses = listOf(
                 "GAS_V" to input?.gasV, "CKPS" to input?.ckps, "REF_S" to input?.refS,
                 "PS" to input?.ps, "BL jmp" to input?.bl, "DE jmp" to input?.de,
             )
             analogInputs.forEach { (label, value) ->
-                AnalogInput(label, value)
+                AnalogInput(label, value, subdued = label == "ADD_IO4" && !addIo4Supported)
                 HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant)
             }
             statuses.forEachIndexed { index, (label, value) ->
@@ -192,17 +201,18 @@ private fun EditableValueRow(title: String, value: String, enabled: Boolean, tag
 }
 
 @Composable
-private fun AnalogInput(label: String, value: Float?) {
+private fun AnalogInput(label: String, value: Float?, subdued: Boolean = false) {
     val displayValue = value?.let { "%.3f".format(Locale.US, it) } ?: "—"
+    val valueColor = if (subdued) MaterialTheme.colorScheme.onSurfaceVariant else MaterialTheme.colorScheme.onSurface
     Row(
         Modifier.fillMaxWidth().heightIn(min = 64.dp).padding(horizontal = 14.dp, vertical = 8.dp).testTag("analog_$label"),
         horizontalArrangement = Arrangement.spacedBy(12.dp),
         verticalAlignment = Alignment.CenterVertically,
     ) {
-        Text(label, Modifier.weight(1f), style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurface)
+        Text(label, Modifier.weight(1f), style = MaterialTheme.typography.bodyMedium, color = valueColor)
         Text(
             buildAnnotatedString {
-                withStyle(SpanStyle(fontSize = 22.sp, fontWeight = FontWeight.SemiBold, fontFeatureSettings = "tnum")) { append(displayValue) }
+                withStyle(SpanStyle(fontSize = 22.sp, fontWeight = FontWeight.SemiBold, fontFeatureSettings = "tnum", color = valueColor)) { append(displayValue) }
                 withStyle(SpanStyle(fontSize = 12.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)) { append(" V") }
             },
             Modifier.testTag("analog_${label}-value"),
