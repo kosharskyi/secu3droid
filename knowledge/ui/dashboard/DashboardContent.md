@@ -10,6 +10,10 @@ On a light resolved background, blend the theme outline 18% toward the backgroun
 
 The primary gauge region expands to consume remaining height, so `SpaceBetween` cannot also guarantee separation from the status bar and secondary readouts. Keep explicit vertical gaps between those regions and within the narrow stacked gauges; landscape gauge and secondary-tile spacing remain their own layout contracts.
 
+## Primary gauge motion follows connection availability
+
+The RPM and speed arcs and highlighted ticks share normalized spring progress from `ui/compose/GaugeProgress.kt`; their digits and warning colors continue to reflect the latest live reading immediately. Dashboard targets zero when disconnected or when no finite live value is available, keeping the arc and ticks visible while they retract. Because Dashboard keeps this animation state across availability changes, restored readings retarget smoothly from the current drawn progress. Read the animation only in Canvas drawing so it does not remeasure the dashboard at frame rate.
+
 ## Layout changes preserve sensor value and availability semantics
 
 Gauge and readout layout must leave the existing value formatting, units, thresholds, missing-data placeholders, valid zero values, and connected-state gating unchanged.

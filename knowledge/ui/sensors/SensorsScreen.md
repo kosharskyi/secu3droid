@@ -36,7 +36,7 @@ The rounded needle tip stops at least 2dp before major tick marks. Cap its lengt
 
 ## Dial motion animates normalized progress while readings stay immediate
 
-Classic and both modern dial renderers share a spring-animated, clamped normalized progress; numeric readouts, units, and accessibility descriptions continue to use the latest raw reading immediately. The first valid reading after composition or reconnect appears at its target without sweeping from zero. Missing or non-finite data removes the pointer/progress immediately and disposes that animation state, so a later reading also snaps directly to its current target. Read animated state from the Canvas draw callback, not from card layout, to avoid recomposing and remeasuring the card at animation frame rate. Numeric-only cards do not animate dial progress.
+Classic and both modern dial renderers share the spring in `ui/compose/GaugeProgress.kt`; numeric readouts, units, and accessibility descriptions continue to use the latest raw reading immediately. Sensors owns the animation lifecycle: the first valid reading after composition or reconnect appears at its target without sweeping from zero, while missing or non-finite data removes the pointer/progress immediately and disposes that animation state. A later reading therefore snaps directly to its current target. Read animated state from the Canvas draw callback, not from card layout, to avoid recomposing and remeasuring the card at animation frame rate. Numeric-only cards do not animate dial progress.
 
 ## All dial styles share the configured gauge scale
 

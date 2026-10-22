@@ -165,6 +165,99 @@ class DashboardContentTest {
     }
 
     @Test
+    fun primaryGaugeProgressAnimatesBothDirectionsRetargetsAndReturnsToZeroOnDisconnect() {
+        composeRule.mainClock.autoAdvance = false
+        try {
+            dataState = mutableStateOf(null)
+            connectionState = mutableStateOf(Disconnected)
+            narrowLayoutState = mutableStateOf(false)
+            val contentKey = mutableStateOf(0)
+            composeRule.setContent {
+                androidx.compose.runtime.key(contentKey.value) {
+                    dashboardLayout(dataState.value, connectionState.value, narrowLayoutState.value)
+                }
+            }
+            composeRule.mainClock.advanceTimeBy(700)
+            composeRule.waitForIdle()
+            val zeroReference = gaugeRing("dashboard-rpm-progress")
+
+            composeRule.runOnIdle {
+                dataState.value = sampleData().copy(rpm = 5600f, speed = 150f)
+                connectionState.value = Connected
+                contentKey.value++
+            }
+            composeRule.mainClock.advanceTimeBy(700)
+            composeRule.waitForIdle()
+            val restoredEndpoint = gaugeRing("dashboard-rpm-progress")
+
+            composeRule.runOnIdle {
+                dataState.value = sampleData().copy(rpm = 2400f, speed = 66f)
+                contentKey.value++
+            }
+            composeRule.mainClock.advanceTimeBy(700)
+            composeRule.waitForIdle()
+            composeRule.onNodeWithText("2400").assertIsDisplayed()
+            val initial = gaugeRing("dashboard-rpm-progress")
+            val initialSpeed = gaugeRing("dashboard-speed-progress")
+            assertTrue("initial RPM arc has visible active progress", !initial.contentEquals(zeroReference))
+            assertTrue("initial speed arc has visible active progress", !initialSpeed.contentEquals(zeroReference))
+
+            composeRule.runOnIdle { dataState.value = sampleData().copy(rpm = 4000f, speed = 110f) }
+            composeRule.mainClock.advanceTimeByFrame()
+            composeRule.waitForIdle()
+            composeRule.onNodeWithText("4000").assertIsDisplayed()
+            val beforeRising = gaugeRing("dashboard-rpm-progress")
+            composeRule.mainClock.advanceTimeBy(60)
+            composeRule.waitForIdle()
+            val rising = gaugeRing("dashboard-rpm-progress")
+            assertTrue("RPM arc animates upward", !beforeRising.contentEquals(rising))
+            assertTrue("speed arc animates alongside RPM", !initialSpeed.contentEquals(gaugeRing("dashboard-speed-progress")))
+
+            composeRule.runOnIdle { dataState.value = sampleData().copy(rpm = 1600f, speed = 30f) }
+            composeRule.mainClock.advanceTimeByFrame()
+            composeRule.waitForIdle()
+            val beforeFalling = gaugeRing("dashboard-rpm-progress")
+            composeRule.mainClock.advanceTimeBy(60)
+            composeRule.waitForIdle()
+            val falling = gaugeRing("dashboard-rpm-progress")
+            assertTrue("RPM arc animates downward from its current position", !beforeFalling.contentEquals(falling))
+
+            composeRule.runOnIdle { connectionState.value = Disconnected }
+            composeRule.mainClock.advanceTimeByFrame()
+            composeRule.waitForIdle()
+            composeRule.onAllNodesWithText("—", useUnmergedTree = true).assertCountEquals(2)
+            val retracting = gaugeRing("dashboard-rpm-progress")
+            composeRule.mainClock.advanceTimeBy(60)
+            composeRule.waitForIdle()
+            val returningToZero = gaugeRing("dashboard-rpm-progress")
+            assertTrue("connection loss animates the arc toward zero", !retracting.contentEquals(returningToZero))
+
+            composeRule.runOnIdle {
+                dataState.value = sampleData().copy(rpm = 5600f, speed = 150f)
+                connectionState.value = Connected
+            }
+            composeRule.mainClock.advanceTimeByFrame()
+            composeRule.waitForIdle()
+            composeRule.onNodeWithText("5600").assertIsDisplayed()
+            val restoring = gaugeRing("dashboard-rpm-progress")
+            composeRule.mainClock.advanceTimeBy(60)
+            composeRule.waitForIdle()
+            assertTrue("restoration animates from its current progress", !restoring.contentEquals(gaugeRing("dashboard-rpm-progress")))
+            composeRule.mainClock.advanceTimeBy(700)
+            composeRule.waitForIdle()
+            assertTrue("restoration reaches the live RPM target", restoredEndpoint.contentEquals(gaugeRing("dashboard-rpm-progress")))
+
+            composeRule.runOnIdle { connectionState.value = Disconnected }
+            composeRule.mainClock.advanceTimeByFrame()
+            composeRule.mainClock.advanceTimeBy(1200)
+            composeRule.waitForIdle()
+            assertTrue("disconnected RPM arc settles at zero", zeroReference.contentEquals(gaugeRing("dashboard-rpm-progress")))
+        } finally {
+            composeRule.mainClock.autoAdvance = true
+        }
+    }
+
+    @Test
     fun disconnectedConnectionHidesPreviouslyReceivedValues() {
         showDashboard(data = sampleData(), state = Disconnected)
 
@@ -239,6 +332,20 @@ class DashboardContentTest {
         val y = with(composeRule.density) { ((gauge.top + gauge.bottom) / 2).roundToPx() }
         val background = image.getPixel(5, 5)
         assertEquals("gauge gutter should remain on the dashboard background", background, image.getPixel(x, y))
+    }
+
+    private fun captureGauge(tag: String) = composeRule.onNodeWithTag(tag).captureToImage().asAndroidBitmap()
+
+    private fun gaugeRing(tag: String): IntArray {
+        val bitmap = captureGauge(tag)
+        val minDimension = minOf(bitmap.width, bitmap.height).toFloat()
+        return IntArray(bitmap.width * bitmap.height) { index ->
+            val x = index % bitmap.width
+            val y = index / bitmap.width
+            val dx = x - bitmap.width / 2f
+            val dy = y - bitmap.height / 2f
+            if (dx * dx + dy * dy > (minDimension * .29f) * (minDimension * .29f)) bitmap.getPixel(x, y) else 0
+        }
     }
 
     private fun showDashboard(data: DashboardViewData?, state: ConnectionState?) {

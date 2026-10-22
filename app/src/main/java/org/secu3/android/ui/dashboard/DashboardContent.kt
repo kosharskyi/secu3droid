@@ -60,6 +60,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import org.secu3.android.ui.compose.SecuComposeTheme
 import org.secu3.android.ui.compose.LocalSecuPalette
+import org.secu3.android.ui.compose.rememberAnimatedGaugeProgress
 import org.secu3.android.R
 import org.secu3.android.connection.Connected
 import org.secu3.android.connection.ConnectionState
@@ -103,8 +104,8 @@ fun DashboardContent(
                             horizontalAlignment = Alignment.CenterHorizontally,
                             verticalArrangement = Arrangement.spacedBy(12.dp),
                         ) {
-                            ArcGauge(liveData?.rpm, 0f, 8000f, stringResource(R.string.units_rpm), Modifier.weight(1f).fillMaxWidth().testTag("dashboard-rpm-gauge"), compact, .72f, .88f)
-                            ArcGauge(liveData?.speed, 0f, 220f, stringResource(R.string.units_km_h), Modifier.weight(1f).fillMaxWidth().testTag("dashboard-speed-gauge"), compact, .65f, .85f)
+                            ArcGauge(liveData?.rpm, 0f, 8000f, stringResource(R.string.units_rpm), Modifier.weight(1f).fillMaxWidth().testTag("dashboard-rpm-gauge"), compact, .72f, .88f, "dashboard-rpm-progress")
+                            ArcGauge(liveData?.speed, 0f, 220f, stringResource(R.string.units_km_h), Modifier.weight(1f).fillMaxWidth().testTag("dashboard-speed-gauge"), compact, .65f, .85f, "dashboard-speed-progress")
                         }
                     } else {
                         Row(
@@ -112,8 +113,8 @@ fun DashboardContent(
                             horizontalArrangement = Arrangement.spacedBy(28.dp),
                             verticalAlignment = Alignment.CenterVertically,
                         ) {
-                            ArcGauge(liveData?.rpm, 0f, 8000f, stringResource(R.string.units_rpm), Modifier.weight(1f).fillMaxHeight().testTag("dashboard-rpm-gauge"), compact, .72f, .88f)
-                            ArcGauge(liveData?.speed, 0f, 220f, stringResource(R.string.units_km_h), Modifier.weight(1f).fillMaxHeight().testTag("dashboard-speed-gauge"), compact, .65f, .85f)
+                            ArcGauge(liveData?.rpm, 0f, 8000f, stringResource(R.string.units_rpm), Modifier.weight(1f).fillMaxHeight().testTag("dashboard-rpm-gauge"), compact, .72f, .88f, "dashboard-rpm-progress")
+                            ArcGauge(liveData?.speed, 0f, 220f, stringResource(R.string.units_km_h), Modifier.weight(1f).fillMaxHeight().testTag("dashboard-speed-gauge"), compact, .65f, .85f, "dashboard-speed-progress")
                         }
                     }
 
@@ -310,8 +311,12 @@ private fun ArcGauge(
     compact: Boolean,
     cautionAt: Float,
     criticalAt: Float,
+    progressTag: String,
 ) {
-    val normalized = value?.let { ((it - minValue) / (maxValue - minValue)).coerceIn(0f, 1f) } ?: 0f
+    val normalized = value?.takeIf(Float::isFinite)
+        ?.let { ((it - minValue) / (maxValue - minValue)).takeIf(Float::isFinite)?.coerceIn(0f, 1f) }
+    val targetProgress = normalized ?: 0f
+    val animatedProgress = rememberAnimatedGaugeProgress(targetProgress)
     val palette = LocalSecuPalette.current
     val colors = MaterialTheme.colorScheme
     val trackColor = if (colors.background.luminance() > 0.5f) {
@@ -321,8 +326,8 @@ private fun ArcGauge(
     }
     val valueColor = when {
         value == null -> colors.onSurfaceVariant
-        normalized >= criticalAt -> colors.error
-        normalized >= cautionAt -> palette.warning
+        targetProgress >= criticalAt -> colors.error
+        targetProgress >= cautionAt -> palette.warning
         else -> palette.success
     }
 
@@ -334,7 +339,9 @@ private fun ArcGauge(
             modifier = Modifier
                 .fillMaxHeight()
                 .aspectRatio(1.22f)
+                .testTag(progressTag)
         ) {
+            val drawnProgress = animatedProgress()
             val diameter = min(size.width, size.height) * 0.88f
             val strokeWidth = diameter * 0.055f
             val topLeft = Offset(
@@ -358,7 +365,7 @@ private fun ArcGauge(
             drawArc(
                 color = valueColor,
                 startAngle = startAngle,
-                sweepAngle = sweepAngle * normalized,
+                sweepAngle = sweepAngle * drawnProgress,
                 useCenter = false,
                 topLeft = topLeft,
                 size = arcSize,
@@ -373,7 +380,7 @@ private fun ArcGauge(
             repeat(tickCount) { index ->
                 val fraction = index.toFloat() / (tickCount - 1)
                 val angleRad = (startAngle + sweepAngle * fraction) * PI.toFloat() / 180f
-                val tickColor = if (value != null && fraction <= normalized) valueColor else colors.onSurfaceVariant.copy(alpha = 0.38f)
+                val tickColor = if (fraction <= drawnProgress) valueColor else colors.onSurfaceVariant.copy(alpha = 0.38f)
                 val tickStart = Offset(
                     x = center.x + cos(angleRad) * innerRadius,
                     y = center.y + sin(angleRad) * innerRadius

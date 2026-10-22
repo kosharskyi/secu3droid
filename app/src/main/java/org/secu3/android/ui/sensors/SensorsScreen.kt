@@ -26,15 +26,13 @@
 package org.secu3.android.ui.sensors
 
 import org.secu3.android.ui.compose.DropdownShape
+import org.secu3.android.ui.compose.rememberAnimatedGaugeProgress
 
 import android.graphics.Paint as NativePaint
 import androidx.compose.animation.core.Animatable
 import androidx.compose.animation.core.AnimationVector2D
 import androidx.compose.animation.core.VectorConverter
 import androidx.compose.animation.core.tween
-import androidx.compose.animation.core.Spring
-import androidx.compose.animation.core.animateFloatAsState
-import androidx.compose.animation.core.spring
 import androidx.compose.foundation.gestures.detectDragGesturesAfterLongPress
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
@@ -558,16 +556,8 @@ private fun rememberGaugeProgress(scale: GaugeScale, value: Float?, enabled: Boo
                 progressReader
             }
         } else {
-            val animatedProgress = animateFloatAsState(
-                targetValue = target,
-                animationSpec = spring(
-                    dampingRatio = Spring.DampingRatioNoBouncy,
-                    stiffness = Spring.StiffnessMedium,
-                    visibilityThreshold = 0.001f,
-                ),
-                label = "sensorGaugeProgress",
-            )
-            val progressReader: () -> Float? = { animatedProgress.value.coerceIn(0f, 1f) }
+            val animatedProgress = rememberAnimatedGaugeProgress(target)
+            val progressReader: () -> Float? = { animatedProgress() }
             progressReader
         }
     }
