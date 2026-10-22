@@ -60,3 +60,6 @@ obj/
 .externalNativeBuild
 .cxx
 /keystore.properties
+
+# Keep the license accompanying each vendored agent skill despite *.txt above.
+!/.agents/skills/**/LICENSE.txt
