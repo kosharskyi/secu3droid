@@ -101,7 +101,9 @@ class DashboardContentTest {
         }
         composeRule.onNodeWithText("84", substring = true).assertIsDisplayed()
         composeRule.onNodeWithText(context.getString(R.string.units_km_h)).assertIsDisplayed()
-        composeRule.onNodeWithText("CLT").assertIsDisplayed()
+        composeRule.onNodeWithTag("dashboard-readout-clt-label")
+            .assertIsDisplayed()
+            .assertTextEquals(context.getString(R.string.dashboard_readout_clt))
         composeRule.onNodeWithText("87").assertIsDisplayed()
         composeRule.onAllNodesWithText("°C").assertCountEquals(2)
     }
@@ -152,7 +154,9 @@ class DashboardContentTest {
 
         composeRule.onNodeWithText(context.getString(R.string.dashboard_status_no_data)).assertIsDisplayed()
         composeRule.onAllNodesWithText("—", useUnmergedTree = true).assertCountEquals(2)
-        composeRule.onNodeWithText("Aux").assertIsDisplayed()
+        composeRule.onNodeWithTag("dashboard-readout-optional-label")
+            .assertIsDisplayed()
+            .assertTextEquals(context.getString(R.string.dashboard_readout_aux))
         composeRule.onAllNodesWithText("--").assertCountEquals(5)
     }
 
@@ -277,7 +281,9 @@ class DashboardContentTest {
             }
         }
         composeRule.onNodeWithText("2250", substring = true).assertIsDisplayed()
-        composeRule.onNodeWithText("CLT").assertIsDisplayed()
+        composeRule.onNodeWithTag("dashboard-readout-clt-label")
+            .assertIsDisplayed()
+            .assertTextEquals(context.getString(R.string.dashboard_readout_clt))
         composeRule.onRoot().captureToImage()
         assertGaugeGutterMatchesDashboardBackground()
         captureDesignScreenshot("design-dashboard-dark.png")
