@@ -26,6 +26,7 @@
 package org.secu3.android.ui.diagnostics
 
 import androidx.compose.ui.test.assertIsDisplayed
+import androidx.compose.ui.test.assertIsEnabled
 import androidx.compose.ui.test.assertIsNotEnabled
 import androidx.compose.ui.test.assertIsOff
 import androidx.compose.ui.test.assertIsOn
@@ -53,8 +54,8 @@ class DiagnosticsOutputsScreenTest {
     fun displaysFirmwareSpecificControlsAndHidesUnknownFirmware() {
         val firmware = mutableStateOf<Boolean?>(true)
         compose.setContent { SecuComposeTheme { OutputsScreen(firmware = firmware.value) } }
-        compose.onNodeWithText("IE").assertIsDisplayed()
-        compose.onNodeWithText("FE").assertIsDisplayed()
+        compose.onNodeWithText("IE").performScrollTo().assertIsDisplayed()
+        compose.onNodeWithText("FE").performScrollTo().assertIsDisplayed()
         compose.onAllNodesWithText("IGN_OUT5").assertCountEquals(0)
         firmware.value = false
         compose.onNodeWithText("IGN_OUT5").assertIsDisplayed()
@@ -90,12 +91,79 @@ class DiagnosticsOutputsScreenTest {
         compose.onNodeWithTag("output_BL").assertIsNotEnabled()
         compose.onNodeWithTag("output_DE").assertIsNotEnabled()
         compose.onAllNodesWithTag("output_TACH_O").assertCountEquals(0)
-        compose.onNodeWithText("BL").assertIsDisplayed()
+        compose.onNodeWithText("BL").performScrollTo().assertIsDisplayed()
         blDe.value = true
         tach.value = true
         compose.onAllNodesWithTag("output_BL").assertCountEquals(1)
         compose.onNodeWithTag("output_BL").assertIsOff()
         compose.onAllNodesWithTag("output_TACH_O").assertCountEquals(1)
+    }
+
+    @Test
+    fun selectedGeneratorOutputDisablesRowAndCheckboxAndChannelChangesUnlock() {
+        val selectedChannel = mutableIntStateOf(1)
+        var outputCalls = 0
+        compose.setContent {
+            SecuComposeTheme {
+                DiagnosticsOutputsScreen(
+                    isSecu3T = false,
+                    outputBits = 0,
+                    enableBlDe = true,
+                    enableTachO = true,
+                    selectedChannel = selectedChannel.intValue,
+                    onOutputChanged = { _, _ -> outputCalls++ },
+                )
+            }
+        }
+        compose.onNodeWithTag("output_row_IGN_OUT1").assertIsNotEnabled()
+        compose.onNodeWithTag("output_IGN_OUT1").assertIsNotEnabled()
+        compose.onNodeWithTag("generator_control_caption_IGN_OUT1", useUnmergedTree = true).assertIsDisplayed()
+        compose.onAllNodesWithTag("generator_control_caption_IGN_OUT2", useUnmergedTree = true).assertCountEquals(0)
+        compose.onNodeWithTag("output_row_IGN_OUT2").assertIsEnabled()
+
+        selectedChannel.intValue = 2
+        compose.onNodeWithTag("output_row_IGN_OUT1").assertIsEnabled()
+        compose.onNodeWithTag("output_IGN_OUT1").assertIsEnabled()
+        compose.onAllNodesWithTag("generator_control_caption_IGN_OUT1", useUnmergedTree = true).assertCountEquals(0)
+        compose.onNodeWithTag("output_row_IGN_OUT2").assertIsNotEnabled()
+        compose.onNodeWithTag("output_IGN_OUT2").assertIsNotEnabled()
+        compose.onNodeWithTag("generator_control_caption_IGN_OUT2", useUnmergedTree = true).assertIsDisplayed()
+
+        selectedChannel.intValue = 0
+        compose.onNodeWithTag("output_row_IGN_OUT1").assertIsEnabled()
+        compose.onNodeWithTag("output_row_IGN_OUT2").assertIsEnabled()
+        compose.onAllNodesWithTag("generator_control_caption_IGN_OUT1", useUnmergedTree = true).assertCountEquals(0)
+        compose.onAllNodesWithTag("generator_control_caption_IGN_OUT2", useUnmergedTree = true).assertCountEquals(0)
+        assertEquals(0, outputCalls)
+    }
+
+    @Test
+    fun selectedChannelMappingUsesFamilyOrderForEcfAndFilteredTach() {
+        val firmware = mutableStateOf<Boolean?>(false)
+        val selectedChannel = mutableIntStateOf(6) // SECU-3i channel 6 is ECF -> ECF0 bit.
+        compose.setContent {
+            SecuComposeTheme {
+                DiagnosticsOutputsScreen(
+                    isSecu3T = firmware.value,
+                    outputBits = 0,
+                    enableBlDe = true,
+                    enableTachO = true,
+                    selectedChannel = selectedChannel.intValue,
+                    onOutputChanged = { _, _ -> },
+                )
+            }
+        }
+        compose.onNodeWithTag("output_ECF0").assertIsNotEnabled()
+
+        selectedChannel.intValue = 22 // TACH_O remains channel 22 when listed; filtering only hides its row.
+        compose.onNodeWithTag("output_TACH_O").assertIsNotEnabled()
+        selectedChannel.intValue = 7
+        compose.onNodeWithTag("output_ECF0").assertIsEnabled()
+        compose.onNodeWithTag("output_INJ_O1").assertIsNotEnabled()
+
+        firmware.value = true
+        selectedChannel.intValue = 7 // SECU-3T channel 7 is ECF.
+        compose.onNodeWithTag("output_ECF").assertIsNotEnabled()
     }
 
     @Test
@@ -186,11 +254,12 @@ class DiagnosticsOutputsScreenTest {
     }
 
     @androidx.compose.runtime.Composable
-    private fun OutputsScreen(firmware: Boolean?, bits: Int = 0) = DiagnosticsOutputsScreen(
+    private fun OutputsScreen(firmware: Boolean?, bits: Int = 0, selectedChannel: Int = 0) = DiagnosticsOutputsScreen(
         isSecu3T = firmware,
         outputBits = bits,
         enableBlDe = false,
         enableTachO = false,
+        selectedChannel = selectedChannel,
         onOutputChanged = { _, _ -> },
     )
 }

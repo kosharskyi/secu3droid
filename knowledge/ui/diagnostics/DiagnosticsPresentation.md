@@ -21,3 +21,7 @@ The first DIAGINP `flags` byte identifies SECU-3T when nonzero. Set IGN_OUT1/2 t
 ## Keep the displayed initial duty equal to the packet duty
 
 Diagnostics starts at 50% duty in both the controls and the desktop manager. The percentage is serialized as a byte, so 50% becomes 128 after rounding; keep the UI value derived from the packet so the first channel command sends what the control displays.
+
+## The generator-selected output cannot be manually toggled
+
+Channel zero is NONE; each nonzero channel index maps through its firmware family's full ordered output list. Use that mapping both to disable the matching output row/checkbox and to reject stale manual callbacks in the controller. Keep TACH_O in the SECU-3i mapping even when its row is hidden by the direction-enable option, because filtering the display must not shift protocol channel indices. Selecting a different channel or NONE unlocks the old output while preserving the existing channel-selection send.

@@ -120,7 +120,7 @@ class DiagnosticsScreenTest {
     }
 
     @Test
-    fun channelSelectionKeepsDefaultDutyDisplayWithoutChangingProtocolDuty() {
+    fun channelSelectionPreservesDefaultDutyInDisplayAndPacket() {
         val packet = DiagOutputPacket()
         val state = mutableStateOf(DiagnosticsViewModel.UiState())
         compose.setContent {
@@ -147,7 +147,37 @@ class DiagnosticsScreenTest {
         compose.onNodeWithTag("duty_edit").performScrollTo()
         compose.onNodeWithText("50.0 %").assertIsDisplayed()
         assertEquals(1, packet.chan)
-        assertEquals(0f, packet.duty)
+        assertEquals(50f, packet.duty)
+    }
+
+    @Test
+    fun selectedGeneratorChannelLocksCorrespondingOutputOnTheOutputsTab() {
+        val state = mutableStateOf(DiagnosticsViewModel.UiState(channel = 1))
+        val tabTitles = context.resources.getStringArray(R.array.diagnostics_fragments_title)
+        compose.setContent {
+            SecuComposeTheme {
+                DiagnosticsScreen(
+                    isSecu3T = false,
+                    connectionStatus = MutableLiveData<ConnectionState>(Connected),
+                    inputLiveData = MutableLiveData<DiagInputPacket>(),
+                    state = state.value,
+                    onNavigateUp = {},
+                    onAdditionalSettings = {},
+                    onOutputChanged = { _, _ -> },
+                    onChannelSelected = {},
+                    onFrequencyEdit = {},
+                    onDutyEdit = {},
+                )
+            }
+        }
+        compose.onNodeWithText(tabTitles[1]).performClick()
+        compose.onNodeWithTag("output_row_IGN_OUT1").assertIsNotEnabled()
+
+        state.value = state.value.copy(channel = 2)
+        compose.onNodeWithTag("output_row_IGN_OUT1").assertIsEnabled()
+        compose.onNodeWithTag("output_row_IGN_OUT2").assertIsNotEnabled()
+        state.value = state.value.copy(channel = 0)
+        compose.onNodeWithTag("output_row_IGN_OUT1").assertIsEnabled()
     }
 
     @Test

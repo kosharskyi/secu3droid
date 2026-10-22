@@ -27,4 +27,5 @@
     <string name="diag_outputs_ignition_group">Виходи запалювання</string>
     <string name="diag_outputs_other_group">Інші виходи</string>
     <string name="diag_outputs_injection_group">Виходи форсунок та додаткові виходи</string>
+    <string name="diag_output_controlled_by_generator">Керується генератором</string>
 </resources>

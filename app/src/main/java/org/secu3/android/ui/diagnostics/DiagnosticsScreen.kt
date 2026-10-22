@@ -149,6 +149,7 @@ internal fun DiagnosticsScreen(
                         outputBits = state.outputBits,
                         enableBlDe = enableBlDe,
                         enableTachO = enableTachO,
+                        selectedChannel = state.channel,
                         onOutputChanged = onOutputChanged,
                     )
                 }

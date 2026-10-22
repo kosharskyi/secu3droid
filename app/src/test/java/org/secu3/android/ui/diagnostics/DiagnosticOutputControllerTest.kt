@@ -1,6 +1,7 @@
 package org.secu3.android.ui.diagnostics
 
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertNull
 import org.junit.Test
 import org.secu3.android.models.packets.out.DiagOutputPacket
 
@@ -198,6 +199,86 @@ class DiagnosticOutputControllerTest {
         controller.setOutput(DiagnosticOutput.IGN_OUT1, true)
         assertEquals(1 shl 2 or (1 shl 12) or (1 shl 14) or (1 shl 24) or 1, packet.out)
         assertEquals(reenabledSendCount + 1, sends.size)
+    }
+
+    @Test
+    fun generatorChannelLocksManualOutputAndSwitchingOrNoneUnlocksIt() {
+        val packet = DiagOutputPacket()
+        val sends = mutableListOf<Snapshot>()
+        val controller = DiagnosticOutputController(packet) { sends += packet.snapshot() }
+        controller.initializeIgnitionOutputs(isSecu3T = false)
+
+        controller.selectChannel(1)
+        controller.setOutput(DiagnosticOutput.IGN_OUT1, true)
+        assertEquals(0, packet.out)
+        assertEquals(listOf(Snapshot(0, 1, 10f, 50f)), sends)
+
+        controller.selectChannel(2)
+        controller.setOutput(DiagnosticOutput.IGN_OUT1, true)
+        assertEquals(1, packet.out)
+        controller.setOutput(DiagnosticOutput.IGN_OUT2, true)
+        assertEquals(1, packet.out)
+        assertEquals(
+            listOf(Snapshot(0, 1, 10f, 50f), Snapshot(0, 2, 10f, 50f), Snapshot(1, 2, 10f, 50f)),
+            sends,
+        )
+
+        controller.selectChannel(0)
+        controller.setOutput(DiagnosticOutput.IGN_OUT2, true)
+        assertEquals(3, packet.out)
+        assertEquals(Snapshot(3, 0, 10f, 50f), sends.last())
+    }
+
+    @Test
+    fun everyGeneratorChannelMapsByFamilyOrderIncludingFilteredTachChannel() {
+        val secu3T = listOf(
+            null, DiagnosticOutput.IGN_OUT1, DiagnosticOutput.IGN_OUT2, DiagnosticOutput.IGN_OUT3,
+            DiagnosticOutput.IGN_OUT4, DiagnosticOutput.IE, DiagnosticOutput.FE, DiagnosticOutput.ECF,
+            DiagnosticOutput.CE, DiagnosticOutput.ST_BLOCK, DiagnosticOutput.ADD_IO1, DiagnosticOutput.ADD_IO2,
+            DiagnosticOutput.BL, DiagnosticOutput.DE,
+        )
+        val secu3I = listOf(
+            null, DiagnosticOutput.IGN_OUT1, DiagnosticOutput.IGN_OUT2, DiagnosticOutput.IGN_OUT3,
+            DiagnosticOutput.IGN_OUT4, DiagnosticOutput.IGN_OUT5, DiagnosticOutput.ECF0, DiagnosticOutput.INJ_O1,
+            DiagnosticOutput.INJ_O2, DiagnosticOutput.INJ_O3, DiagnosticOutput.INJ_O4, DiagnosticOutput.INJ_O5,
+            DiagnosticOutput.BL, DiagnosticOutput.DE, DiagnosticOutput.STBL_O, DiagnosticOutput.CEL_O,
+            DiagnosticOutput.FPMP_O, DiagnosticOutput.PWRR_O, DiagnosticOutput.EVAP_O, DiagnosticOutput.O2SH_O,
+            DiagnosticOutput.COND_O, DiagnosticOutput.ADD_O2, DiagnosticOutput.TACH_O, DiagnosticOutput.GPA6_O,
+        )
+        secu3T.forEachIndexed { channel, output -> assertEquals(output, diagnosticOutputForChannel(true, channel)) }
+        secu3I.forEachIndexed { channel, output -> assertEquals(output, diagnosticOutputForChannel(false, channel)) }
+        assertNull(diagnosticOutputForChannel(null, 1))
+        assertNull(diagnosticOutputForChannel(false, secu3I.size))
+    }
+
+    @Test
+    fun selectedSpecialGeneratorOutputsRemainProtectedByExistingPermissionGates() {
+        val packet = DiagOutputPacket()
+        val sends = mutableListOf<Int>()
+        val controller = DiagnosticOutputController(packet) { sends += packet.out }
+        controller.initializeIgnitionOutputs(isSecu3T = false)
+        controller.applyAdditionalOptions(enableBlDe = true, enableTachO = true)
+
+        controller.selectChannel(12) // BL
+        val beforeBl = packet.out
+        val sentBeforeBl = sends.size
+        controller.setOutput(DiagnosticOutput.BL, true)
+        assertEquals(beforeBl, packet.out)
+        assertEquals(sentBeforeBl, sends.size)
+
+        controller.selectChannel(13) // DE
+        val beforeDe = packet.out
+        val sentBeforeDe = sends.size
+        controller.setOutput(DiagnosticOutput.DE, true)
+        assertEquals(beforeDe, packet.out)
+        assertEquals(sentBeforeDe, sends.size)
+
+        controller.selectChannel(22) // TACH_O, even when its row is filtered out
+        val beforeTach = packet.out
+        val sentBeforeTach = sends.size
+        controller.setOutput(DiagnosticOutput.TACH_O, true)
+        assertEquals(beforeTach, packet.out)
+        assertEquals(sentBeforeTach, sends.size)
     }
 
     private fun DiagOutputPacket.snapshot() = Snapshot(out, chan, frq, duty)

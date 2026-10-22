@@ -8,9 +8,11 @@ internal class DiagnosticOutputController(
 ) {
     private var initialized = false
     private var initialStateSent = false
+    private var firmwareFamilyIsSecu3T: Boolean? = null
 
     fun initializeIgnitionOutputs(isSecu3T: Boolean) {
         if (initialized) return
+        firmwareFamilyIsSecu3T = isSecu3T
         packet.out = (packet.out and IGNITION_OUTPUT_MASK.inv()) or if (isSecu3T) IGNITION_OUTPUT_MASK else 0
         initialized = true
     }
@@ -23,6 +25,7 @@ internal class DiagnosticOutputController(
     }
 
     fun setOutput(output: DiagnosticOutput, enabled: Boolean) {
+        if (diagnosticOutputForChannel(firmwareFamilyIsSecu3T, packet.chan) == output) return
         if (isDisabledSpecialOutput(output)) return
         setDiagnosticOutput(packet, output, enabled)
         sendIfInitialized()

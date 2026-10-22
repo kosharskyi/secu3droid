@@ -113,13 +113,16 @@ internal fun DiagnosticsOutputsScreen(
     outputBits: Int,
     enableBlDe: Boolean,
     enableTachO: Boolean,
+    selectedChannel: Int = 0,
     onOutputChanged: (DiagnosticOutput, Boolean) -> Unit,
 ) {
-    val outputs = when (isSecu3T) {
+    val familyOutputs = when (isSecu3T) {
         true -> secu3TOutputs
         false -> secu3IOutputs
         null -> emptyList()
-    }.filter { it != DiagnosticOutput.TACH_O || enableTachO }
+    }
+    val outputs = familyOutputs.filter { it != DiagnosticOutput.TACH_O || enableTachO }
+    val generatorOutput = diagnosticOutputForChannel(isSecu3T, selectedChannel)
     Column(
         modifier = Modifier.fillMaxWidth().verticalScroll(rememberScrollState()).padding(16.dp),
         verticalArrangement = Arrangement.spacedBy(16.dp),
@@ -130,6 +133,7 @@ internal fun DiagnosticsOutputsScreen(
             title = stringResource(R.string.diag_outputs_ignition_group),
             outputs = outputs.take(ignitionCount),
             outputBits = outputBits,
+            generatorOutput = generatorOutput,
             enableBlDe = enableBlDe,
             enableTachO = enableTachO,
             onOutputChanged = onOutputChanged,
@@ -138,6 +142,7 @@ internal fun DiagnosticsOutputsScreen(
             title = stringResource(if (isSecu3T) R.string.diag_outputs_other_group else R.string.diag_outputs_injection_group),
             outputs = outputs.drop(ignitionCount),
             outputBits = outputBits,
+            generatorOutput = generatorOutput,
             enableBlDe = enableBlDe,
             enableTachO = enableTachO,
             onOutputChanged = onOutputChanged,
@@ -145,11 +150,23 @@ internal fun DiagnosticsOutputsScreen(
     }
 }
 
+/** Channel zero is NONE; remaining indices follow each ECU family's full channel order. */
+internal fun diagnosticOutputForChannel(isSecu3T: Boolean?, channel: Int): DiagnosticOutput? {
+    if (channel <= 0) return null
+    val outputs = when (isSecu3T) {
+        true -> secu3TOutputs
+        false -> secu3IOutputs
+        null -> return null
+    }
+    return outputs.getOrNull(channel - 1)
+}
+
 @Composable
 private fun OutputGroup(
     title: String,
     outputs: List<DiagnosticOutput>,
     outputBits: Int,
+    generatorOutput: DiagnosticOutput?,
     enableBlDe: Boolean,
     enableTachO: Boolean,
     onOutputChanged: (DiagnosticOutput, Boolean) -> Unit,
@@ -165,7 +182,13 @@ private fun OutputGroup(
             )
             HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant)
             outputs.forEachIndexed { index, output ->
-                OutputToggle(output, outputBits, enabledFor(output, enableBlDe, enableTachO), onOutputChanged)
+                OutputToggle(
+                    output,
+                    outputBits,
+                    enabledFor(output, enableBlDe, enableTachO) && output != generatorOutput,
+                    isGeneratorOutput = output == generatorOutput,
+                    onOutputChanged = onOutputChanged,
+                )
                 if (index != outputs.lastIndex) HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant)
             }
         }
@@ -183,6 +206,7 @@ private fun OutputToggle(
     output: DiagnosticOutput,
     bits: Int,
     enabled: Boolean,
+    isGeneratorOutput: Boolean,
     onOutputChanged: (DiagnosticOutput, Boolean) -> Unit,
 ) {
     val checked = bits and (1 shl output.bit) != 0
@@ -190,11 +214,21 @@ private fun OutputToggle(
         modifier = Modifier.fillMaxWidth().heightIn(min = 64.dp).clickable(enabled = enabled) {
             val newValue = !checked
             onOutputChanged(output, newValue)
-        }.padding(horizontal = 14.dp, vertical = 8.dp),
+        }.padding(horizontal = 14.dp, vertical = 8.dp).testTag("output_row_${output.name}"),
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.SpaceBetween,
     ) {
-        Text(output.label, modifier = Modifier.weight(1f), color = if (enabled) MaterialTheme.colorScheme.onSurface else MaterialTheme.colorScheme.onSurface.copy(alpha = 0.38f))
+        Column(Modifier.weight(1f)) {
+            Text(output.label, color = if (enabled) MaterialTheme.colorScheme.onSurface else MaterialTheme.colorScheme.onSurface.copy(alpha = 0.38f))
+            if (isGeneratorOutput) {
+                Text(
+                    text = stringResource(R.string.diag_output_controlled_by_generator),
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    style = MaterialTheme.typography.bodySmall,
+                    modifier = Modifier.testTag("generator_control_caption_${output.name}"),
+                )
+            }
+        }
         Checkbox(
             modifier = Modifier.testTag("output_${output.name}"),
             checked = checked,

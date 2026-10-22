@@ -27,4 +27,5 @@
     <string name="diag_outputs_ignition_group">Выходы зажигания</string>
     <string name="diag_outputs_other_group">Другие выходы</string>
     <string name="diag_outputs_injection_group">Выходы форсунок и дополнительные выходы</string>
+    <string name="diag_output_controlled_by_generator">Управляется генератором</string>
 </resources>
