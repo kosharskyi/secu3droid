@@ -30,14 +30,13 @@ import android.hardware.usb.UsbManager
 import android.util.Log
 import com.hoho.android.usbserial.driver.UsbSerialPort
 import com.hoho.android.usbserial.driver.UsbSerialProber
+import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import org.secu3.android.models.RawPacket
-import org.secu3.android.models.packets.base.OutputPacket
 import org.secu3.android.models.packets.out.ChangeModePacket
 import org.secu3.android.utils.Task
 import org.secu3.android.utils.UserPrefs
-import org.threeten.bp.LocalTime
 import java.io.IOException
 import javax.inject.Inject
 import javax.inject.Singleton
@@ -46,13 +45,7 @@ import javax.inject.Singleton
 class UsbConnection @Inject constructor(
     private val usbManager: UsbManager,
     prefs: UserPrefs,
-) : Connection(prefs) {
-
-    private var usbSerialPort: UsbSerialPort? = null
-
-    override val isConnected: Boolean
-        get() = usbSerialPort?.isOpen == true
-
+) : Connection<UsbSerialPort>(prefs) {
 
     private var currentDevice: UsbDevice? = null
 
@@ -113,18 +106,29 @@ class UsbConnection @Inject constructor(
         val driver = UsbSerialProber.getDefaultProber().probeDevice(device)
             ?: throw IllegalStateException("No suitable driver found for device")
 
-        usbSerialPort = driver.ports.first()
-        usbSerialPort?.open(connection)
-        usbSerialPort?.setParameters(115200, 8, UsbSerialPort.STOPBITS_1, UsbSerialPort.PARITY_NONE)
+        val port = driver.ports.first()
+        val installed = installEndpoint(port)
+        if (!installed) {
+            connection.close()
+            throw IOException("USB connection is no longer current")
+        }
+        try {
+            port.open(connection)
+            port.setParameters(115200, 8, UsbSerialPort.STOPBITS_1, UsbSerialPort.PARITY_NONE)
+            if (!isCurrentEndpoint(port)) throw IOException("USB connection was stopped while opening")
+        } catch (failure: Exception) {
+            discardEndpoint(port)
+            throw failure
+        }
     }
 
     override fun disconnect() {
         currentDevice = null
+        val port = detachCurrentEndpoint()
         scope.launch {
             try {
                 mConnectionStateFlow.emit(Disconnected)
-                usbSerialPort?.close()
-                usbSerialPort = null
+                port?.close()
             } catch (e: Exception) {
                 mConnectionStateFlow.emit(ConnectionError(e))
                 Log.e(this.javaClass.simpleName, "Error while disconnecting: ${e.message}")
@@ -133,14 +137,17 @@ class UsbConnection @Inject constructor(
     }
 
     private fun startReadingData() {
+        val port = currentEndpoint() ?: throw IOException("USB serial port is null")
+        sendData(ChangeModePacket.getPacket(Task.Secu3ReadFirmwareInfo))
         scope.launch {
+            if (!isCurrentEndpoint(port)) return@launch
             mConnectionStateFlow.emit(Connected)
             try {
                 val receiver = PacketReceiver()
 
-                while (isRunning && usbSerialPort?.isOpen == true) {
+                while (isCurrentEndpoint(port)) {
                     val buffer = ByteArray(MAX_PACKET_SIZE)
-                    val bytesRead = usbSerialPort?.read(buffer, 1000) ?: continue
+                    val bytesRead = port.read(buffer, 1000)
 
                     if (bytesRead <= 0) continue
 
@@ -150,50 +157,30 @@ class UsbConnection @Inject constructor(
                         }
                     }
                 }
-                connectionAttempts = 0
+                if (isCurrentEndpoint(port)) connectionAttempts = 0
             } catch (e: Exception) {
+                if (e is CancellationException) throw e
                 Log.e(this.javaClass.simpleName, "Error while reading data: ${e.message}")
-                connectionAttempts = 0
-                reconnect()
-            }
-        }
-
-        sendData(ChangeModePacket.getPacket(Task.Secu3ReadFirmwareInfo))
-    }
-
-    override fun sendData(sendPacket: OutputPacket) {
-        scope.launch {
-
-            val endTime = LocalTime.now().plusSeconds(10)
-
-            while (LocalTime.now().isBefore(endTime) && (isRunning.not() || usbSerialPort?.isOpen != true)) {
-                delay(200)
-            }
-
-            if (isRunning.not() && usbSerialPort?.isOpen != true) {
-                return@launch
-            }
-
-            try {
-
-                var packet = intArrayOf(OUTPUT_PACKET_SYMBOL) + sendPacket.pack()
-
-                val checksum = calculateChecksum(packet.sliceArray(2 until packet.size))
-
-                packet += checksum[1].toInt()
-                packet += checksum[0].toInt()
-
-                Log.e(this.javaClass.simpleName, packet.toString())
-
-                var escaped = escTxPacket(packet)
-                escaped += END_PACKET_SYMBOL
-
-                val buffer = escaped.map { it.toByte() }.toByteArray()
-
-                usbSerialPort?.write(buffer, 1000) ?: throw IllegalStateException("Output stream is null")
-            } catch (e: IOException) {
-                Log.e(this.javaClass.simpleName, "Error while sending data: ${e.message}")
+                if (invalidateEndpoint(port)) {
+                    connectionAttempts = 0
+                    reconnect()
+                }
             }
         }
     }
+
+    override fun isEndpointOpen(endpoint: UsbSerialPort): Boolean = endpoint.isOpen
+
+    override fun writeEndpoint(endpoint: UsbSerialPort, bytes: ByteArray) {
+        endpoint.write(bytes, 1000)
+    }
+
+    override fun closeEndpoint(endpoint: UsbSerialPort) {
+        try {
+            endpoint.close()
+        } catch (failure: Exception) {
+            Log.e(javaClass.simpleName, "Error while closing failed USB port: ${failure.message}")
+        }
+    }
+
 }

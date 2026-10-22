@@ -21,3 +21,11 @@ Checksum input omits the two literal header/descriptor bytes and the two checksu
 ## A reader returning EOF must enter the connection error path
 
 `readNext` throws `EOFException` on `-1`, including after a partial frame. Continuing the Bluetooth loop on EOF can spin forever while the socket still reports connected. Checksum rejection and malformed frames remain recoverable within the current reader; EOF requires reconnecting.
+
+## Outbound writes snapshot bytes and stay on one physical connection
+
+Encode and escape the complete frame synchronously when `sendData` is called, then queue only those bytes in the transport's single FIFO. Queue entries retain the exact socket or USB port captured at enqueue time; a closed or replaced endpoint drops the entry instead of redirecting it to a reconnect. A failed write is attempted once and must not stop later queued writes. Enqueue the firmware-info bootstrap before reporting `Connected` so consumers cannot overtake it.
+
+## Publish an opening endpoint before its blocking open operation
+
+Install the exact socket or port in the shared connection state before calling Bluetooth `connect` or USB `open`. A concurrent stop can then detach and close that in-progress resource. After opening, verify the same endpoint is still installed; stale completion must close only its captured resource and never replace or detach a newer connection.

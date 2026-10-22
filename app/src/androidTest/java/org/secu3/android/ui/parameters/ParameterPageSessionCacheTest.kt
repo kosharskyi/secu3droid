@@ -7,6 +7,7 @@ import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.withTimeout
+import org.junit.Assert.assertArrayEquals
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertTrue
 import org.junit.Rule
@@ -22,14 +23,19 @@ import org.secu3.android.models.RawPacket
 import org.secu3.android.models.packets.base.OutputPacket
 import org.secu3.android.models.packets.out.params.AnglesParamPacket
 import org.secu3.android.models.packets.out.params.StarterParamPacket
+import org.secu3.android.models.packets.out.ChangeModePacket
 import org.secu3.android.ui.MainActivity
 import org.secu3.android.ui.parameters.pages.compose.AnglesUiState
 import org.secu3.android.ui.parameters.pages.compose.AnglesNumber
 import org.secu3.android.ui.parameters.pages.compose.StarterUiState
 import org.secu3.android.ui.parameters.pages.compose.StarterNumber
 import java.lang.reflect.Proxy
+import java.util.concurrent.CountDownLatch
 import java.util.concurrent.ConcurrentHashMap
+import java.util.concurrent.CopyOnWriteArrayList
+import java.util.concurrent.TimeUnit
 import java.util.concurrent.atomic.AtomicInteger
+import java.util.concurrent.atomic.AtomicReference
 
 @RunWith(AndroidJUnit4::class)
 class ParameterPageSessionCacheTest {
@@ -137,6 +143,36 @@ class ParameterPageSessionCacheTest {
         }
     }
 
+    @Test fun sendDataWritesCallTimeSnapshotInArrivalOrder() = runBlocking {
+        val vm = paramsViewModel()
+        val transport = installFakeUsb(vm)
+        try {
+            val barrier = transport.blockNextWrite()
+            transport.send(ChangeModePacket('w'))
+            assertTrue(barrier.entered.await(3, TimeUnit.SECONDS))
+
+            val payload = intArrayOf('x'.code, 1)
+            val packet = object : OutputPacket {
+                override fun pack(): IntArray = payload
+            }
+            transport.send(packet)
+            payload[1] = 2
+            transport.send(packet)
+            transport.send(ChangeModePacket('s'))
+            assertEquals(0, transport.writes.size)
+            barrier.release.countDown()
+            transport.awaitWriteCount(4)
+
+            assertArrayEquals(byteArrayOf(0x21, 0x68, 0x77, 0, 0x67, 0x79, 0x0D), transport.writes[0])
+            assertArrayEquals(byteArrayOf(0x21, 0x78, 1, 3, 2, 0x0D), transport.writes[1])
+            assertArrayEquals(byteArrayOf(0x21, 0x78, 2, 5, 3, 0x0D), transport.writes[2])
+            assertArrayEquals(byteArrayOf(0x21, 0x68, 0x73, 0, 0x5B, 0x75, 0x0D), transport.writes[3])
+        } finally {
+            transport.close()
+            compose.runOnIdle { vm.clearPageState() }
+        }
+    }
+
     private fun paramsViewModel(): ParamsViewModel {
         lateinit var viewModel: ParamsViewModel
         compose.activityRule.scenario.onActivity { activity ->
@@ -161,13 +197,20 @@ class ParameterPageSessionCacheTest {
         val usbField = Secu3ConnectionManager::class.java.declaredFields.first { UsbConnection::class.java.isAssignableFrom(it.type) }
             .apply { isAccessible = true }
         val connection = usbField.get(manager) as UsbConnection
-        val portField = UsbConnection::class.java.getDeclaredField("usbSerialPort").apply { isAccessible = true }
+        val portField = Connection::class.java.getDeclaredField("endpoint").apply { isAccessible = true }
         val requests = ConcurrentHashMap<Char, AtomicInteger>()
+        val writes = CopyOnWriteArrayList<ByteArray>()
+        val nextWriteBarrier = AtomicReference<WriteBarrier?>(null)
         val fakePort = Proxy.newProxyInstance(UsbSerialPort::class.java.classLoader, arrayOf(UsbSerialPort::class.java)) { _, method, args ->
             when (method.name) {
                 "isOpen" -> true
                 "write" -> {
                     val bytes = args?.get(0) as? ByteArray
+                    nextWriteBarrier.getAndSet(null)?.let { barrier ->
+                        barrier.entered.countDown()
+                        if (!barrier.release.await(3, TimeUnit.SECONDS)) throw AssertionError("write barrier timed out")
+                    }
+                    if (bytes != null) writes += bytes.copyOf()
                     if (bytes != null && bytes.size >= 3 && bytes[0].toInt() == '!'.code && bytes[1].toInt() == 'h'.code) {
                         requests.computeIfAbsent(bytes[2].toInt().toChar()) { AtomicInteger() }.incrementAndGet()
                     }
@@ -187,15 +230,27 @@ class ParameterPageSessionCacheTest {
         val stateFlow = stateFlowField.get(connection) as MutableSharedFlow<ConnectionState>
         delay(100)
         stateFlow.emit(Connected)
-        return FakeUsbTransport(connection, portField, requests)
+        return FakeUsbTransport(connection, portField, requests, writes, nextWriteBarrier)
     }
 
     private class FakeUsbTransport(
         private val connection: UsbConnection,
         private val portField: java.lang.reflect.Field,
         private val requests: ConcurrentHashMap<Char, AtomicInteger>,
+        val writes: CopyOnWriteArrayList<ByteArray>,
+        private val nextWriteBarrier: AtomicReference<WriteBarrier?>,
     ) {
+        fun send(packet: OutputPacket) = connection.sendData(packet)
+
+        fun blockNextWrite(): WriteBarrier = WriteBarrier().also { nextWriteBarrier.set(it) }
+
         fun readRequestCount(descriptor: Char): Int = requests[descriptor]?.get() ?: 0
+
+        suspend fun awaitWriteCount(expected: Int) {
+            withTimeout(3_000) {
+                while (writes.size < expected) delay(10)
+            }
+        }
 
         suspend fun awaitReadRequest(descriptor: Char, expected: Int) {
             withTimeout(3_000) {
@@ -215,5 +270,10 @@ class ParameterPageSessionCacheTest {
             portField.set(connection, null)
             Connection::class.java.getDeclaredField("isRunning").apply { isAccessible = true }.setBoolean(connection, false)
         }
+    }
+
+    private class WriteBarrier {
+        val entered = CountDownLatch(1)
+        val release = CountDownLatch(1)
     }
 }

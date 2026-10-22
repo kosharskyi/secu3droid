@@ -3,7 +3,6 @@ package org.secu3.android.connection
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue
 import org.junit.Test
-import org.secu3.android.models.packets.base.OutputPacket
 import org.secu3.android.utils.UserPrefs
 import sun.misc.Unsafe
 
@@ -52,16 +51,18 @@ class ConnectionChecksumTest {
         return data + checksum[1].toInt() + checksum[0].toInt()
     }
 
-    private class TestConnection : Connection(newUserPrefsWithoutAndroidContext()) {
-        override val isConnected: Boolean = false
-
+    private class TestConnection : Connection<Unit>(newUserPrefsWithoutAndroidContext()) {
         fun isChecksumValidForTest(data: IntArray): Boolean = isChecksumValid(data)
 
         fun calculateChecksumForTest(packet: IntArray): UByteArray = calculateChecksum(packet)
 
-        override fun sendData(sendPacket: OutputPacket) = Unit
-
         override fun disconnect() = Unit
+
+        override fun isEndpointOpen(endpoint: Unit): Boolean = false
+
+        override fun writeEndpoint(endpoint: Unit, bytes: ByteArray) = Unit
+
+        override fun closeEndpoint(endpoint: Unit) = Unit
     }
 
     companion object {

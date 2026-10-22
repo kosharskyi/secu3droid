@@ -32,11 +32,9 @@ import android.util.Log
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import org.secu3.android.models.RawPacket
-import org.secu3.android.models.packets.base.OutputPacket
 import org.secu3.android.models.packets.out.ChangeModePacket
 import org.secu3.android.utils.Task
 import org.secu3.android.utils.UserPrefs
-import org.threeten.bp.LocalTime
 import java.io.BufferedReader
 import java.io.IOException
 import java.io.InputStreamReader
@@ -49,18 +47,13 @@ import javax.inject.Singleton
 class BtConnection @Inject constructor(
     private val prefs: UserPrefs,
     bluetoothManager: BluetoothManager
-) : Connection(prefs) {
+) : Connection<BluetoothSocket>(prefs) {
 
     private val bluetoothAdapter: BluetoothAdapter? = bluetoothManager.adapter
-    private var bluetoothSocket: BluetoothSocket? = null
     private var connectionAddress: String? = null
 
     private val pairedDeviceAddress: String?
         get() = BluetoothDeviceAddress.normalize(prefs.bluetoothDeviceAddress)
-
-    override val isConnected: Boolean
-        get() = bluetoothSocket?.isConnected == true
-
 
     fun startConnection() {
         val deviceAddress = pairedDeviceAddress
@@ -110,6 +103,7 @@ class BtConnection @Inject constructor(
     }
 
     private fun connectToDevice() {
+        var socket: BluetoothSocket? = null
         try {
             val address = connectionAddress ?: throw IOException("Device address is invalid")
             val device = bluetoothAdapter?.bondedDevices?.let {
@@ -117,26 +111,28 @@ class BtConnection @Inject constructor(
             }
                 ?: throw IOException("Paired device address is unavailable")
 
-            bluetoothSocket = device.createRfcommSocketToServiceRecord(UUID.fromString("00001101-0000-1000-8000-00805F9B34FB"))
+            val newSocket = device.createRfcommSocketToServiceRecord(UUID.fromString("00001101-0000-1000-8000-00805F9B34FB"))
+            socket = newSocket
+            val installed = installEndpoint(newSocket)
+            if (!installed) throw IOException("Bluetooth connection is no longer current")
             bluetoothAdapter.cancelDiscovery()
-            bluetoothSocket?.connect()
+            newSocket.connect()
+            if (!isCurrentEndpoint(newSocket)) throw IOException("Bluetooth connection was stopped while connecting")
         } catch (e: SecurityException) {
-            bluetoothSocket?.close()
-            bluetoothSocket = null
+            socket?.let(::discardEndpoint)
             throw IOException("Missing Bluetooth permission", e)
         } catch (e: IOException) {
-            bluetoothSocket?.close()
-            bluetoothSocket = null
+            socket?.let(::discardEndpoint)
             throw e
         }
     }
 
     override fun disconnect() {
+        val socket = detachCurrentEndpoint()
         scope.launch {
             try {
                 mConnectionStateFlow.emit(Disconnected)
-                bluetoothSocket?.close()
-                bluetoothSocket = null
+                socket?.close()
             } catch (e: IOException) {
                 mConnectionStateFlow.emit(ConnectionError(e))
                 Log.e(this.javaClass.simpleName, "Error while disconnecting: ${e.message}")
@@ -145,61 +141,47 @@ class BtConnection @Inject constructor(
     }
 
     private fun startReadingData() {
+        val socket = currentEndpoint() ?: throw IOException("Bluetooth socket is null")
+        sendData(ChangeModePacket.getPacket(Task.Secu3ReadFirmwareInfo))
+
         scope.launch {
+            if (!isCurrentEndpoint(socket)) return@launch
             mConnectionStateFlow.emit(Connected)
             try {
                 val receiver = PacketReceiver()
-                val inputStream = bluetoothSocket?.inputStream ?: throw IOException("Input stream is null")
+                val inputStream = socket.inputStream
                 val reader = BufferedReader(InputStreamReader(inputStream, StandardCharsets.ISO_8859_1))
 
-                while (isRunning && bluetoothSocket?.isConnected == true) {
+                while (isCurrentEndpoint(socket)) {
                     mReceivedPacketFlow.emit(RawPacket(receiver.readNext(reader)))
                 }
-                connectionAttempts = 0
+                if (isCurrentEndpoint(socket)) connectionAttempts = 0
             } catch (e: IOException) {
                 Log.e(this.javaClass.simpleName, "Error while reading data: ${e.message}")
-                connectionAttempts = 0
-                reconnect()
-            }
-        }
-
-        sendData(ChangeModePacket.getPacket(Task.Secu3ReadFirmwareInfo))
-    }
-
-    override fun sendData(sendPacket: OutputPacket) {
-        scope.launch {
-
-            val endTime = LocalTime.now().plusSeconds(10)
-
-            while (LocalTime.now().isBefore(endTime) && (isRunning.not() || bluetoothSocket?.isConnected != true)) {
-                delay(200)
-            }
-
-            if (isRunning.not() && bluetoothSocket?.isConnected != true) {
-                return@launch
-            }
-
-            try {
-                val outputStream = bluetoothSocket?.outputStream ?: throw IOException("Output stream is null")
-
-                var packet = intArrayOf(OUTPUT_PACKET_SYMBOL) + sendPacket.pack()
-
-                val checksum = calculateChecksum(packet.sliceArray(2 until packet.size))
-
-                packet += checksum[1].toInt()
-                packet += checksum[0].toInt()
-
-                Log.e(this.javaClass.simpleName, packet.toString())
-
-                var escaped = escTxPacket(packet)
-                escaped += END_PACKET_SYMBOL
-
-                outputStream.write(escaped.map { it.toByte() }.toByteArray())
-
-                delay(20)
-            } catch (e: IOException) {
-                Log.e(this.javaClass.simpleName, "Error while sending data: ${e.message}")
+                if (invalidateEndpoint(socket)) {
+                    connectionAttempts = 0
+                    reconnect()
+                }
             }
         }
     }
+
+    override fun isEndpointOpen(endpoint: BluetoothSocket): Boolean = endpoint.isConnected
+
+    override fun writeEndpoint(endpoint: BluetoothSocket, bytes: ByteArray) {
+        endpoint.outputStream.write(bytes)
+    }
+
+    override fun closeEndpoint(endpoint: BluetoothSocket) {
+        try {
+            endpoint.close()
+        } catch (failure: IOException) {
+            Log.e(javaClass.simpleName, "Error while closing failed Bluetooth socket: ${failure.message}")
+        }
+    }
+
+    override suspend fun afterEndpointWrite() {
+        delay(20)
+    }
+
 }
