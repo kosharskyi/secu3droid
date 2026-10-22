@@ -60,6 +60,8 @@ internal fun SecuLogsRoute(
                 viewModel.effects.collect { effect ->
                     val message = when (effect) {
                         SecuLogsEffect.PermissionDenied -> activity.getString(R.string.log_export_permission_denied)
+                        SecuLogsEffect.ActiveLogDeleteRejected -> activity.getString(R.string.log_delete_active_rejected)
+                        SecuLogsEffect.DeleteFailed -> activity.getString(R.string.log_delete_failed)
                         is SecuLogsEffect.ExportFinished -> if (effect.result.isSuccess) {
                             activity.getString(R.string.log_export_success, effect.result.destination)
                         } else {

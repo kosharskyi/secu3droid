@@ -26,6 +26,8 @@ import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import org.secu3.android.utils.FileHelper
 import org.secu3.android.utils.LogExportDestination
+import org.secu3.android.utils.LogDeletionResult
+import org.secu3.android.utils.SecuLogger
 import org.secu3.android.utils.UserPrefs
 import java.io.File
 
@@ -34,6 +36,7 @@ class SecuLogsViewModel @Inject constructor(
     private val fileHelper: FileHelper,
     private val userPrefs: UserPrefs,
     private val savedStateHandle: SavedStateHandle,
+    private val secuLogger: SecuLogger,
 ) : ViewModel() {
     private val _state = MutableStateFlow(SecuLogsUiState())
     val state: StateFlow<SecuLogsUiState> = _state.asStateFlow()
@@ -67,8 +70,14 @@ class SecuLogsViewModel @Inject constructor(
         val path = pendingDeletePath.value ?: return
         cancelDelete()
         viewModelScope.launch {
-            withContext(Dispatchers.IO) { File(path).delete() }
+            val result = withContext(Dispatchers.IO) { secuLogger.deleteLogFile(File(path)) }
             refreshFiles()
+            val failureEffect = when (result) {
+                LogDeletionResult.Deleted -> null
+                LogDeletionResult.Active -> SecuLogsEffect.ActiveLogDeleteRejected
+                LogDeletionResult.Failed -> SecuLogsEffect.DeleteFailed
+            }
+            failureEffect?.let { effectsChannel.send(it) }
         }
     }
 
@@ -132,6 +141,8 @@ data class SecuLogsUiState(val files: List<File> = emptyList())
 
 sealed interface SecuLogsEffect {
     data object PermissionDenied : SecuLogsEffect
+    data object ActiveLogDeleteRejected : SecuLogsEffect
+    data object DeleteFailed : SecuLogsEffect
     data class ExportFinished(val result: SaveLogResult) : SecuLogsEffect
 }
 

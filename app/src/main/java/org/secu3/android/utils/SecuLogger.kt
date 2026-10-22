@@ -223,6 +223,23 @@ class SecuLogger @Inject constructor(private val prefs: UserPrefs, private val f
 
     internal fun acknowledgeLoggerError(errorId: Long) = loggerSession.acknowledgeError(errorId)
 
+    /** Deletion shares the logger lock so a file cannot become active between checking and deleting it. */
+    fun deleteLogFile(file: File): LogDeletionResult = synchronized(loggerLock) {
+        val activeFile = mLogFile
+        if (isLoggerStarted && activeFile != null && sameFile(activeFile, file)) {
+            return@synchronized LogDeletionResult.Active
+        }
+        try {
+            if (file.delete()) LogDeletionResult.Deleted else LogDeletionResult.Failed
+        } catch (_: SecurityException) {
+            LogDeletionResult.Failed
+        }
+    }
+
+    private fun sameFile(first: File, second: File): Boolean =
+        runCatching { first.canonicalFile == second.canonicalFile }
+            .getOrElse { first.absoluteFile == second.absoluteFile }
+
     fun prepareToLog() {
         synchronized(loggerLock) {
             if (isLoggerStarted) return
@@ -499,4 +516,10 @@ class SecuLogger @Inject constructor(private val prefs: UserPrefs, private val f
 
         return "$csvRow\r\n"
     }
+}
+
+enum class LogDeletionResult {
+    Deleted,
+    Active,
+    Failed,
 }

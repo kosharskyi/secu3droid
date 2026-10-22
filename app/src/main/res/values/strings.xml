@@ -426,6 +426,8 @@
     <string name="log_export_success">Saved to %1$s</string>
     <string name="log_export_failed">Could not save the log file</string>
     <string name="log_export_permission_denied">Storage permission denied</string>
+    <string name="log_delete_active_rejected">Stop recording before deleting the active log</string>
+    <string name="log_delete_failed">Could not delete the log file</string>
     <string name="pref_log_export_directory_title">Log export folder</string>
     <string name="pref_log_export_directory_default">Downloads/Secu3</string>
     <string name="log_start_writing">Start writing</string>
