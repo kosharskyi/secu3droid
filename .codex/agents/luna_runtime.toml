@@ -1,0 +1,6 @@
+name = "luna_runtime"
+description = "Implement bounded Secu3droid connection, session, queue, logger, or file-operation changes."
+model = "gpt-6-luna"
+model_reasoning_effort = "high"
+model_verbosity = "low"
+developer_instructions = "Implement only the approved bounded plan. Read matching knowledge under knowledge/connection/, knowledge/ui/, and knowledge/utils/ before touching those components. Treat shared runtime contracts project-wide: inspect all consumers and lifecycle paths. Preserve subscribe-before-command ordering, resource generations across reconnect, cancellation, snapshot FIFO, and logger active-file race behavior where relevant. Run relevant checks, self-review, and report changes, checks, unverified items, and risks concisely. Stop and report if scope must expand."

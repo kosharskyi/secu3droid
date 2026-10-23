@@ -51,7 +51,9 @@ The project uses Jetpack Compose for UI, Material3 for Compose components, and N
 
 ## Agent Collaboration Workflow
 
-- The lead agent handles planning, complex architectural decisions, and code review when the change warrants it. Delegate implementation to Luna.
+- Prefer the project agent profile whose role fits the task; use the general-purpose Luna implementation agent only when no profile fits. Keep the existing plan approval requirement in force before implementation.
+- Route clear UI fixes to `luna_compose`, packet parsing/serialization or parameter mapping to `luna_protocol`, and connection/session lifecycle, queues, logging, or file operations to `luna_runtime`. Use `secu_mapper` only when code ownership or data flow is unclear. Use `secu_android_qa` separately only when reproduction or targeted Android validation is needed; it is not an automatic second test pass.
+- Do not launch every role for a task. The lead agent handles planning and architectural choices, assigns one bounded implementation handoff, and joins review for complex, risky, or uncertain changes. Avoid duplicate routine reviews after relevant checks pass.
 - Luna implements the task, reviews her own diff, runs the relevant tests and build checks, and fixes issues discovered during those checks within the task's scope.
 - Do not automatically review all code after every Luna task. For simple changes whose relevant checks passed, use Luna's completion report to close the task.
 - The lead agent joins code review for complex, risky, or architecturally important changes, or when Luna reports uncertainty, failed tests or builds, or parts that could not be verified. Keep the review focused on the relevant changes and risks. Follow any explicit user request for review.
