@@ -6,6 +6,15 @@ import org.junit.Assert.assertTrue
 import org.junit.Test
 
 class HomeExitFlowTest {
+    @Test fun lockedUsbSessionCannotRequestAnExit() {
+        val flow = HomeExitFlow()
+        var stopServiceCalls = 0
+        assertEquals(HomeExitAction.NONE, flow.confirm(connectionRunning = true, usbSessionLocked = true) { stopServiceCalls++ })
+        assertFalse(flow.onDisconnected())
+        assertFalse(flow.consumeNavigation())
+        assertEquals(0, stopServiceCalls)
+    }
+
     @Test fun connectionExitStopsOnceThenNavigatesOnceAfterDisconnect() {
         val flow = HomeExitFlow()
         var stopServiceCalls = 0

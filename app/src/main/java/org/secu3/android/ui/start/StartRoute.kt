@@ -80,14 +80,7 @@ internal fun StartRoute(entry: NavBackStackEntry, activity: MainActivity, onConn
     }
     SideEffect { continueBluetooth.value = checkBluetoothConfiguration }
     val requestUsbPermissionOrConnect: (UsbDevice?) -> Unit = { device ->
-        if (device != null) {
-            if (runCatching { vm.usbManager.hasPermission(device) }.getOrDefault(false)) vm.startConnection(device) else if (vm.beginUsbPermissionRequest(device)) {
-                val intent = Intent(USB_PERMISSION_ACTION).setPackage(context.packageName)
-                val flags = android.app.PendingIntent.FLAG_UPDATE_CURRENT or
-                    if (Build.VERSION.SDK_INT >= 31) android.app.PendingIntent.FLAG_MUTABLE else 0
-                vm.usbManager.requestPermission(device, android.app.PendingIntent.getBroadcast(context, 0, intent, flags))
-            }
-        }
+        if (device != null) activity.requestUsbDeviceConnection(device)
     }
 
     DisposableEffect(lifecycle, context, vm) {
@@ -151,7 +144,7 @@ internal fun StartRoute(entry: NavBackStackEntry, activity: MainActivity, onConn
         }
     }
     LaunchedEffect(connected, isResumed) {
-        if (connected == Connected && isResumed && vm.claimHomeNavigation()) onConnected()
+        if (connected == Connected && isResumed && !vm.isUsbSessionLocked && vm.claimHomeNavigation()) onConnected()
         if (connected != Connected) vm.resetHomeNavigation()
     }
 

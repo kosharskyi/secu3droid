@@ -31,7 +31,6 @@ import android.util.Log
 import com.hoho.android.usbserial.driver.UsbSerialPort
 import com.hoho.android.usbserial.driver.UsbSerialProber
 import kotlinx.coroutines.CancellationException
-import kotlinx.coroutines.delay
 import kotlinx.coroutines.currentCoroutineContext
 import kotlinx.coroutines.ensureActive
 import kotlinx.coroutines.launch
@@ -50,50 +49,30 @@ class UsbConnection @Inject constructor(
 ) : Connection<UsbSerialPort>(prefs) {
 
     private var currentDevice: UsbDevice? = null
+    @Volatile private var attemptGeneration = 0L
 
     fun startConnection(device: UsbDevice) {
+        stopConnection()
+        val attempt = ++attemptGeneration
+        connectionAttempts = 0
         isRunning = true
         currentDevice = device
-        reconnect()
-    }
-
-    private fun reconnect() {
-        if (!isRunning) return
-
         scope.launch {
-
-            if (connectionAttempts >= maxConnectionAttempts) {
-                isRunning = false
-                currentDevice = null
-
-                mConnectionStateFlow.emit(Disconnected)
-                mConnectionStateFlow.emit(ConnectionTimeout)
-
-                Log.i(this.javaClass.simpleName, "Max connection attempts reached. Stopping connection attempts.")
-                return@launch
-            }
-
             mConnectionStateFlow.emit(InProgress)
-
-            connectionAttempts++
-            Log.d(this.javaClass.simpleName, "Attempting to connect: $connectionAttempts/$maxConnectionAttempts")
-            if (connectionAttempts > 1) {
-                mConnectionStateFlow.emit(ConnectionAttempt(connectionAttempts))
-            }
-
-            currentDevice ?: return@launch
-
             try {
-                val port = connectToDevice(currentDevice!!)
+                val port = connectToDevice(device)
                 currentCoroutineContext().ensureActive()
+                if (attempt != attemptGeneration) return@launch
                 Log.d(this.javaClass.simpleName, "Connected to USB device")
-                startReadingData(port)
+                startReadingData(port, attempt)
             } catch (e: Exception) {
                 currentCoroutineContext().ensureActive()
+                if (attempt != attemptGeneration) return@launch
+                isRunning = false
+                currentDevice = null
                 mConnectionStateFlow.emit(ConnectionFailed(e))
+                mConnectionStateFlow.emit(Disconnected)
                 Log.e(this.javaClass.simpleName, "Connection failed: ${e.message}")
-                delay(2000)
-                reconnect()
             }
         }
     }
@@ -107,7 +86,7 @@ class UsbConnection @Inject constructor(
         val driver = UsbSerialProber.getDefaultProber().probeDevice(device)
             ?: throw IllegalStateException("No suitable driver found for device")
 
-        val port = driver.ports.first()
+        val port = driver.ports.firstOrNull() ?: throw IllegalStateException("No serial ports found for USB device")
         val connection = usbManager.openDevice(device)
             ?: throw IllegalStateException("Could not open connection to USB device")
 
@@ -128,6 +107,7 @@ class UsbConnection @Inject constructor(
     }
 
     override fun disconnect() {
+        attemptGeneration++
         currentDevice = null
         val port = detachCurrentEndpoint()
         backgroundScope.launch {
@@ -145,37 +125,40 @@ class UsbConnection @Inject constructor(
         }
     }
 
-    private fun startReadingData(port: UsbSerialPort) {
+    private fun startReadingData(port: UsbSerialPort, attempt: Long) {
         if (!isCurrentEndpoint(port)) return
         sendData(ChangeModePacket.getPacket(Task.Secu3ReadFirmwareInfo))
         scope.launch {
             if (!isCurrentEndpoint(port)) return@launch
-            mConnectionStateFlow.emit(Connected)
             try {
                 val receiver = PacketReceiver()
 
-                while (isCurrentEndpoint(port)) {
+                while (attempt == attemptGeneration && isCurrentEndpoint(port)) {
                     val buffer = ByteArray(MAX_PACKET_SIZE)
                     val bytesRead = port.read(buffer, 1000)
                     currentCoroutineContext().ensureActive()
-                    if (!isCurrentEndpoint(port)) return@launch
+                    if (attempt != attemptGeneration || !isCurrentEndpoint(port)) return@launch
 
                     if (bytesRead <= 0) continue
 
                     for (i in 0 until bytesRead) {
                         receiver.receive(buffer[i].toInt() and 0xFF)?.let { packet ->
+                            if (attempt != attemptGeneration) return@launch
                             mReceivedPacketFlow.emit(RawPacket(packet))
                         }
                     }
                 }
-                if (isCurrentEndpoint(port)) connectionAttempts = 0
             } catch (e: Exception) {
                 if (e is CancellationException) throw e
                 currentCoroutineContext().ensureActive()
+                if (attempt != attemptGeneration) return@launch
                 Log.e(this.javaClass.simpleName, "Error while reading data: ${e.message}")
                 if (invalidateEndpoint(port)) {
-                    connectionAttempts = 0
-                    reconnect()
+                    if (attempt != attemptGeneration) return@launch
+                    isRunning = false
+                    currentDevice = null
+                    mConnectionStateFlow.emit(ConnectionFailed(e))
+                    mConnectionStateFlow.emit(Disconnected)
                 }
             }
         }

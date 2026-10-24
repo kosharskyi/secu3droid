@@ -118,6 +118,22 @@ class HomeScreenTest {
         assertEquals(1, exits)
     }
 
+    @Test fun confirmedUsbHidesExitAndKeepsFeatureNavigationAvailable() {
+        var openedSensors = 0
+        var locked by mutableStateOf(true)
+        compose.setContent {
+            HomeScreen(
+                HomeScreenState(connectionStatus = HomeConnectionStatus.CONNECTED, connectionRunning = true, usbSessionLocked = locked),
+                HomeScreenActions(onSensors = { openedSensors++ }),
+            )
+        }
+        compose.onNodeWithTag("home-exit-button").assertDoesNotExist()
+        compose.onNodeWithText(context.getString(R.string.sensors)).performScrollTo().performClick()
+        assertEquals(1, openedSensors)
+        compose.runOnIdle { locked = false }
+        compose.onNodeWithTag("home-exit-button").assertIsDisplayed()
+    }
+
     @Test fun diagnosticsWarningConfirmationDelegatesThroughCallback() {
         var requested = 0
         var screen by mutableStateOf(HomeScreenState())

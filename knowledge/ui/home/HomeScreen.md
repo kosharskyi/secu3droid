@@ -13,3 +13,7 @@ The release dialog's server-provided message can be long. Keep “Remind me late
 ## The ECU toolbar icon keeps its firmware action description
 
 Home shares the fixed toolbar status slot and state colors with feature screens, but its connected accessibility label must continue to announce that firmware information opens when an update is available. Only make the slot clickable when firmware information is available.
+
+## USB sessions lock the Home exit controls
+
+A confirmed USB session hides the Exit action and consumes system Back while Home is active. Feature navigation remains available, and the Activity returns to StartScreen when the active USB device is physically detached.

@@ -6,7 +6,8 @@ internal class HomeExitFlow {
     private var waitingForDisconnect = false
     private var navigationPending = false
 
-    fun confirm(connectionRunning: Boolean, onAccepted: (HomeExitAction) -> Unit = {}): HomeExitAction {
+    fun confirm(connectionRunning: Boolean, usbSessionLocked: Boolean = false, onAccepted: (HomeExitAction) -> Unit = {}): HomeExitAction {
+        if (usbSessionLocked) return HomeExitAction.NONE
         if (waitingForDisconnect || navigationPending) return HomeExitAction.NONE
         val action = if (connectionRunning) {
             waitingForDisconnect = true

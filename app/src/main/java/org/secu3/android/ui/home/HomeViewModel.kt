@@ -34,6 +34,7 @@ class HomeViewModel @Inject constructor(
     val returnToStart = _returnToStart.asStateFlow()
     val firmware: FirmwareInfoPacket? get() = manager.fwInfo
     val isConnectionRunning get() = manager.isConnectionRunning
+    val isUsbSessionLocked get() = manager.usbSessionLocked.value
 
     init {
         viewModelScope.launch {
@@ -41,6 +42,7 @@ class HomeViewModel @Inject constructor(
                 val mapped = when (status) { Connected -> HomeConnectionStatus.CONNECTED; InProgress -> HomeConnectionStatus.CONNECTING; else -> HomeConnectionStatus.DISCONNECTED }
                 _uiState.value = _uiState.value.copy(
                     connectionStatus = mapped,
+                    usbSessionLocked = manager.usbSessionLocked.value,
                     firmwareAvailable = status == Connected && (_uiState.value.firmwareAvailable || manager.fwInfo != null),
                 )
                 if (status == Disconnected) {
@@ -66,11 +68,12 @@ class HomeViewModel @Inject constructor(
             }
         }
     }
-    fun requestExit() { _uiState.value = _uiState.value.copy(dialog = HomeDialog.EXIT) }
+    fun requestExit() { if (!isUsbSessionLocked) _uiState.value = _uiState.value.copy(dialog = HomeDialog.EXIT) }
     fun dismissDialog() { _uiState.value = _uiState.value.copy(dialog = null) }
     fun confirmExit(onStopService: () -> Unit) {
+        if (isUsbSessionLocked) return
         dismissDialog()
-        when (exitFlow.confirm(manager.isConnectionRunning) { onStopService() }) {
+        when (exitFlow.confirm(manager.isConnectionRunning, usbSessionLocked = isUsbSessionLocked) { onStopService() }) {
             HomeExitAction.STOP_CONNECTION -> manager.stopConnection()
             HomeExitAction.NAVIGATE_START -> _returnToStart.value = true
             HomeExitAction.NONE -> Unit
@@ -93,6 +96,7 @@ class HomeViewModel @Inject constructor(
 
 data class HomeUiState(
     val connectionStatus: HomeConnectionStatus = HomeConnectionStatus.DISCONNECTED,
+    val usbSessionLocked: Boolean = false,
     val firmwareAvailable: Boolean = false,
     val dialog: HomeDialog? = null,
     val releaseName: String? = null,

@@ -94,6 +94,7 @@ data class HomeScreenState(
     val connectionStatus: HomeConnectionStatus = HomeConnectionStatus.DISCONNECTED,
     val firmwareAvailable: Boolean = false,
     val connectionRunning: Boolean = false,
+    val usbSessionLocked: Boolean = false,
     val dialog: HomeDialog? = null,
     val releaseName: String? = null,
     val releaseMessage: String? = null,
@@ -150,12 +151,14 @@ fun HomeScreen(
           Column(Modifier.fillMaxSize().windowInsetsPadding(contentInsets).testTag("home-safe-content")) {
             Row(Modifier.fillMaxWidth().height(64.dp).padding(horizontal = 16.dp), verticalAlignment = Alignment.CenterVertically,
                 horizontalArrangement = Arrangement.SpaceBetween) {
-                TextButton(
+                if (!state.usbSessionLocked) TextButton(
                     modifier = Modifier.testTag("home-exit-button"),
                     onClick = { if (state.connectionRunning) actions.onExitRequested() else actions.onExitImmediately() },
                 ) {
                     Icon(painterResource(R.drawable.ic_logout_24), contentDescription = null, tint = MaterialTheme.colorScheme.onSurface)
                     Text(stringResource(R.string.exit), color = MaterialTheme.colorScheme.onSurface, modifier = Modifier.padding(start = 8.dp))
+                } else {
+                    Box(Modifier.weight(1f))
                 }
                 val statusDescription = when (state.connectionStatus) {
                     HomeConnectionStatus.CONNECTED -> stringResource(

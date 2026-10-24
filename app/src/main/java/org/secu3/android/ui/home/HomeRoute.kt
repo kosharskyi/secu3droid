@@ -56,7 +56,9 @@ internal fun HomeRoute(
         onDispose { lifecycle.removeObserver(observer) }
     }
     BackHandler(enabled = resumed) {
-        if (vm.isConnectionRunning) vm.requestExit() else vm.confirmExit(activity::stopConnectionService)
+        if (!ui.usbSessionLocked) {
+            if (vm.isConnectionRunning) vm.requestExit() else vm.confirmExit(activity::stopConnectionService)
+        }
     }
     LaunchedEffect(vm, resumed, activeRoute) {
         if (!resumed) return@LaunchedEffect
@@ -69,6 +71,7 @@ internal fun HomeRoute(
             connectionStatus = ui.connectionStatus,
             firmwareAvailable = ui.firmwareAvailable,
             connectionRunning = vm.isConnectionRunning,
+            usbSessionLocked = ui.usbSessionLocked,
             dialog = ui.dialog,
             releaseName = ui.releaseName,
             releaseMessage = ui.releaseName?.let { stringResource(R.string.the_version_is_available_do_you_want_to_download, it) },

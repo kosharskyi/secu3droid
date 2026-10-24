@@ -25,15 +25,74 @@
 
 package org.secu3.android.ui
 
+import android.hardware.usb.UsbDevice
 import androidx.lifecycle.ViewModel
 import dagger.hilt.android.lifecycle.HiltViewModel
 import org.secu3.android.utils.UserPrefs
+import org.secu3.android.connection.Secu3ConnectionManager
+import org.secu3.android.connection.UsbAttachmentAttemptGate
 import javax.inject.Inject
 
 @HiltViewModel
 class MainActivityViewModel @Inject constructor(
     val prefs: UserPrefs,
+    val connectionManager: Secu3ConnectionManager,
 ) : ViewModel() {
+    private val usbAttemptGate = UsbAttachmentAttemptGate()
+    private var usbPermissionDevice: UsbDevice? = null
+    private var usbPermissionToken = 0L
+    private var handledUsbGeneration: Long? = null
+    private var pendingStartNavigation = false
+    val hasPendingUsbPermission: Boolean get() = usbPermissionDevice != null
 
+    @Synchronized fun beginUsbAttempt(device: UsbDevice): Long? {
+        val token = usbAttemptGate.begin(device.deviceId) ?: return null
+        usbPermissionDevice = device
+        usbPermissionToken = token
+        return token
+    }
 
+    @Synchronized fun isUsbAttempted(deviceId: Int): Boolean = usbAttemptGate.hasAttempted(deviceId)
+
+    @Synchronized fun hasOpenedUsb(deviceId: Int): Boolean = usbAttemptGate.hasOpened(deviceId)
+
+    @Synchronized fun claimUsbOpen(deviceId: Int): Boolean {
+        if (!usbAttemptGate.claimOpen(deviceId)) return false
+        if (usbPermissionDevice?.deviceId == deviceId) usbPermissionDevice = null
+        return true
+    }
+
+    @Synchronized fun consumePermissionDevice(token: Long, deviceId: Int): UsbDevice? {
+        val device = usbPermissionDevice?.takeIf {
+            usbPermissionToken == token && it.deviceId == deviceId && usbAttemptGate.accepts(deviceId, token)
+        } ?: return null
+        usbPermissionDevice = null
+        return device
+    }
+
+    @Synchronized fun usbDeviceDetached(deviceId: Int) {
+        usbAttemptGate.detach(deviceId)
+        if (usbPermissionDevice?.deviceId == deviceId) {
+            usbPermissionDevice = null
+            usbPermissionToken += 1
+        }
+    }
+
+    @Synchronized fun reconcileUsbAttachments(attachedDeviceIds: Set<Int>) {
+        usbAttemptGate.reconcile(attachedDeviceIds)
+        if (usbPermissionDevice?.let { it.deviceId !in attachedDeviceIds } == true) {
+            usbPermissionDevice = null
+            usbPermissionToken += 1
+        }
+    }
+
+    @Synchronized fun claimUsbHomeNavigation(generation: Long): Boolean {
+        if (handledUsbGeneration == generation) return false
+        handledUsbGeneration = generation
+        pendingStartNavigation = false
+        return true
+    }
+
+    @Synchronized fun requestStartNavigation() { pendingStartNavigation = true }
+    @Synchronized fun consumeStartNavigation(): Boolean = pendingStartNavigation.also { pendingStartNavigation = false }
 }
