@@ -20,11 +20,11 @@ The packet direction flags are the source of truth for whether BL/DE and TACH op
 
 ## Initialize ignition outputs from the diagnostic family before sending
 
-The first DIAGINP `flags` byte identifies SECU-3T when nonzero. Set IGN_OUT1/2 to HIGH for SECU-3T and LOW for SECU-3i before sending any diagnostic output packet. These family-specific defaults match the desktop manager’s protective initialization for legacy SECU-2 Lite ignition transistor/coil hardware. If firmware family is not known yet, suppress output sends until the first DIAGINP supplies it. Send the initialized packet only once; later input packets must not replace output bits the user has changed.
+The first DIAGINP `flags` byte identifies SECU-3T when nonzero. Set IGN_OUT1/2 to HIGH for SECU-3T and LOW for SECU-3i before sending any diagnostic output packet. These family-specific defaults protect legacy SECU-2 Lite ignition transistor/coil hardware. If firmware family is not known yet, suppress output sends until the first DIAGINP supplies it. Send the initialized packet only once; later input packets must not replace output bits the user has changed.
 
 ## Keep the displayed initial duty equal to the packet duty
 
-Diagnostics starts at 50% duty in both the controls and the desktop manager. The percentage is serialized as a byte, so 50% becomes 128 after rounding; keep the UI value derived from the packet so the first channel command sends what the control displays.
+The Diagnostics control starts at 50% duty. The percentage is serialized as a byte, so 50% becomes 128 after rounding; keep the UI value derived from the packet so the first channel command sends what the control displays.
 
 ## The generator-selected output cannot be manually toggled
 
@@ -32,7 +32,7 @@ Channel zero is NONE; each nonzero channel index maps through its firmware famil
 
 ## Firmware family and TPIC capability must stay reactive on diagnostics
 
-The route observes firmware packets and seeds from the manager's cached packet so a reply arriving while diagnostics is open updates family-specific input labels and availability. Preserve the common labels while the family is unknown, show ADD_IO3 only outside SECU-3T, and treat ADD_IO4 as unavailable unless both family and TPIC8101 capability are known and enabled; a supported packet value of 0.000 V is still a real reading.
+The route observes firmware packets and seeds from the connection manager's cached packet so a reply arriving while diagnostics is open updates family-specific input labels and availability. Preserve the common labels while the family is unknown, show ADD_IO3 only outside SECU-3T, and treat ADD_IO4 as unavailable unless both family and TPIC8101 capability are known and enabled; a supported packet value of 0.000 V is still a real reading.
 
 ## A connection loss clears diagnostics readiness and local actuator state
 

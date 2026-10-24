@@ -32,6 +32,8 @@ import com.hoho.android.usbserial.driver.UsbSerialPort
 import com.hoho.android.usbserial.driver.UsbSerialProber
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.delay
+import kotlinx.coroutines.currentCoroutineContext
+import kotlinx.coroutines.ensureActive
 import kotlinx.coroutines.launch
 import org.secu3.android.models.RawPacket
 import org.secu3.android.models.packets.out.ChangeModePacket
@@ -82,10 +84,12 @@ class UsbConnection @Inject constructor(
             currentDevice ?: return@launch
 
             try {
-                connectToDevice(currentDevice!!)
+                val port = connectToDevice(currentDevice!!)
+                currentCoroutineContext().ensureActive()
                 Log.d(this.javaClass.simpleName, "Connected to USB device")
-                startReadingData()
+                startReadingData(port)
             } catch (e: Exception) {
+                currentCoroutineContext().ensureActive()
                 mConnectionStateFlow.emit(ConnectionFailed(e))
                 Log.e(this.javaClass.simpleName, "Connection failed: ${e.message}")
                 delay(2000)
@@ -94,7 +98,7 @@ class UsbConnection @Inject constructor(
         }
     }
 
-    private fun connectToDevice(usbDevice: UsbDevice) {
+    private fun connectToDevice(usbDevice: UsbDevice): UsbSerialPort {
 
         val device = usbManager.deviceList.values.firstOrNull {
             it.deviceId == usbDevice.deviceId
@@ -116,6 +120,7 @@ class UsbConnection @Inject constructor(
             port.open(connection)
             port.setParameters(115200, 8, UsbSerialPort.STOPBITS_1, UsbSerialPort.PARITY_NONE)
             if (!isCurrentEndpoint(port)) throw IOException("USB connection was stopped while opening")
+            return port
         } catch (failure: Exception) {
             discardEndpoint(port)
             throw failure
@@ -125,19 +130,23 @@ class UsbConnection @Inject constructor(
     override fun disconnect() {
         currentDevice = null
         val port = detachCurrentEndpoint()
-        scope.launch {
+        backgroundScope.launch {
+            var closeFailure: Exception? = null
             try {
-                mConnectionStateFlow.emit(Disconnected)
                 port?.close()
             } catch (e: Exception) {
-                mConnectionStateFlow.emit(ConnectionError(e))
-                Log.e(this.javaClass.simpleName, "Error while disconnecting: ${e.message}")
+                closeFailure = e
+            }
+            mConnectionStateFlow.emit(Disconnected)
+            closeFailure?.let { failure ->
+                mConnectionStateFlow.emit(ConnectionError(failure))
+                Log.e(this.javaClass.simpleName, "Error while disconnecting: ${failure.message}")
             }
         }
     }
 
-    private fun startReadingData() {
-        val port = currentEndpoint() ?: throw IOException("USB serial port is null")
+    private fun startReadingData(port: UsbSerialPort) {
+        if (!isCurrentEndpoint(port)) return
         sendData(ChangeModePacket.getPacket(Task.Secu3ReadFirmwareInfo))
         scope.launch {
             if (!isCurrentEndpoint(port)) return@launch
@@ -148,6 +157,8 @@ class UsbConnection @Inject constructor(
                 while (isCurrentEndpoint(port)) {
                     val buffer = ByteArray(MAX_PACKET_SIZE)
                     val bytesRead = port.read(buffer, 1000)
+                    currentCoroutineContext().ensureActive()
+                    if (!isCurrentEndpoint(port)) return@launch
 
                     if (bytesRead <= 0) continue
 
@@ -160,6 +171,7 @@ class UsbConnection @Inject constructor(
                 if (isCurrentEndpoint(port)) connectionAttempts = 0
             } catch (e: Exception) {
                 if (e is CancellationException) throw e
+                currentCoroutineContext().ensureActive()
                 Log.e(this.javaClass.simpleName, "Error while reading data: ${e.message}")
                 if (invalidateEndpoint(port)) {
                     connectionAttempts = 0

@@ -1,6 +1,6 @@
-## Desktop settings defaults override instrument constructor ranges
+## Gauge zones are normalized within each configured range
 
-Parity with the desktop manager uses `metScDef[0]` in `secu3man/Settings/AppSettingsModel.cpp`, applied through `MIDeskDlg::SetMetersCfg` and `SetLimits`. The initial `SetRange` in individual `MI*.cpp` files can disagree with the actual default, notably for oil temperature, torque, and AFR difference. Keep physical zone thresholds and colors aligned with those settings, including uncovered ends of the OTS and AFR-difference bands.
+Gauge sections use normalized fractions of each configured range. Keep physical zone thresholds and colors aligned with those ranges, including the uncovered ends of the OTS and AFR-difference bands.
 
 ## Gauge enum names are part of the persisted card configuration
 

@@ -3,6 +3,8 @@ package org.secu3.android.connection
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
+import kotlinx.coroutines.cancelChildren
+import kotlinx.coroutines.cancel
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.SharedFlow
@@ -20,7 +22,11 @@ abstract class Connection<E : Any> (
     protected val END_PACKET_SYMBOL = 0x0D      // '\r'
 
 
+    /** Coroutines for retry and reading; stopped and reused for the next connection. */
     protected val scope = CoroutineScope(Dispatchers.IO + SupervisorJob())
+
+    // Transport cleanup and writes must survive stop/start.
+    protected val backgroundScope = CoroutineScope(Dispatchers.IO + SupervisorJob())
 
     protected val maxConnectionAttempts: Int
         get() = prefs.connectionRetries
@@ -36,7 +42,7 @@ abstract class Connection<E : Any> (
     private var endpoint: E? = null
     private val outboundWrites by lazy(LazyThreadSafetyMode.SYNCHRONIZED) {
         SerialWriteQueue(
-            scope = scope,
+            scope = backgroundScope,
             isCurrentEndpoint = ::isCurrentEndpoint,
             write = ::writeEndpoint,
             afterWrite = { afterEndpointWrite() },
@@ -57,12 +63,15 @@ abstract class Connection<E : Any> (
 
 
     fun stopConnection() {
-        if (isRunning.not()) {
-            return
-        }
-
+        val wasRunning = isRunning
         isRunning = false
-        disconnect()
+        scope.coroutineContext.cancelChildren()
+        if (wasRunning) disconnect()
+    }
+
+    internal fun cancelScopes() {
+        scope.cancel()
+        backgroundScope.cancel()
     }
 
     final fun sendData(sendPacket: OutputPacket) {

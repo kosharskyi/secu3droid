@@ -4,4 +4,4 @@ The supported ECU platform is ATmega1284, so both reading and writing prime puls
 
 ## After-start stroke values are encoded in four-stroke counts
 
-Petrol and gas after-start values are retained as whole strokes, but wire bytes store counts of four strokes. Encoding divides by `4.0` and applies manager `MathHelpers::Round`, so manually accepted values between the UI's four-stroke spin steps are rounded instead of truncated.
+Petrol and gas after-start values are retained as whole strokes, but wire bytes store counts of four strokes. Encoding divides by `4.0` and rounds half away from zero, so manually accepted values between the UI's four-stroke spin steps are rounded instead of truncated.

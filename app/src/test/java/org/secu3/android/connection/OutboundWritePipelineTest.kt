@@ -4,10 +4,14 @@ import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
+import kotlinx.coroutines.awaitCancellation
 import kotlinx.coroutines.cancelAndJoin
 import kotlinx.coroutines.cancel
+import kotlinx.coroutines.async
+import kotlinx.coroutines.launch
 import kotlin.coroutines.coroutineContext
 import kotlinx.coroutines.runBlocking
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.withTimeout
 import org.junit.Assert.assertArrayEquals
 import org.junit.Assert.assertEquals
@@ -193,8 +197,14 @@ class OutboundWritePipelineTest {
         }
     }
 
+    private suspend fun awaitClosed(endpoint: Endpoint) {
+        withTimeout(2_000) {
+            while (!endpoint.closed) kotlinx.coroutines.delay(1)
+        }
+    }
+
     @Test
-    fun staleInvalidationCannotCloseReplacementAndStopClosesConnectingEndpoint() {
+    fun staleInvalidationCannotCloseReplacementAndStopClosesConnectingEndpoint() = runBlocking {
         val connection = TestConnection()
         val oldEndpoint = Endpoint()
         val replacement = Endpoint()
@@ -208,6 +218,7 @@ class OutboundWritePipelineTest {
         assertTrue(connection.isConnected)
 
         connection.stopConnection()
+        awaitClosed(replacement)
         assertTrue(replacement.closed)
         assertFalse(connection.isConnected)
         connection.shutdown()
@@ -217,9 +228,82 @@ class OutboundWritePipelineTest {
         reconnecting.start()
         assertTrue(reconnecting.attach(connectingEndpoint))
         reconnecting.stopConnection()
+        awaitClosed(connectingEndpoint)
         assertTrue(connectingEndpoint.closed)
         assertFalse(reconnecting.isConnected)
         reconnecting.shutdown()
+    }
+
+    @Test
+    fun stopCancelsConnectionWorkAndQueueStillWritesAfterRestart() = runBlocking {
+        val connection = TestConnection()
+        val firstEndpoint = Endpoint()
+        val workStarted = CompletableDeferred<Unit>()
+        val workCancelled = CompletableDeferred<Unit>()
+
+        try {
+            connection.start()
+            assertTrue(connection.attach(firstEndpoint))
+            connection.startCancelableWork(workStarted, workCancelled)
+            withTimeout(2_000) { workStarted.await() }
+
+            connection.sendData(ChangeModePacket('s'))
+            awaitWrites(connection, 1)
+
+            connection.stopConnection()
+            withTimeout(2_000) { workCancelled.await() }
+            awaitClosed(firstEndpoint)
+            assertTrue(firstEndpoint.closed)
+
+            val secondEndpoint = Endpoint()
+            connection.start()
+            assertTrue(connection.attach(secondEndpoint))
+            connection.sendData(ChangeModePacket('s'))
+            awaitWrites(connection, 2)
+            assertEquals(2, connection.writes.size)
+        } finally {
+            connection.stopConnection()
+            connection.shutdown()
+        }
+    }
+
+    @Test
+    fun secondStopDoesNotCancelPendingDisconnectedNotification() = runBlocking {
+        val connection = TestConnection()
+        val collectorEntered = CompletableDeferred<Unit>()
+        val releaseCollector = CompletableDeferred<Unit>()
+        val disconnectedReceived = CompletableDeferred<Unit>()
+        val collector = launch {
+            connection.connectionStateFlow.collect { state ->
+                when (state) {
+                    InProgress -> {
+                        collectorEntered.complete(Unit)
+                        releaseCollector.await()
+                    }
+                    Disconnected -> disconnectedReceived.complete(Unit)
+                    else -> Unit
+                }
+            }
+        }
+        try {
+            withTimeout(2_000) { connection.awaitStateSubscriber() }
+            val initialState = async { connection.publishState(InProgress) }
+            withTimeout(2_000) { collectorEntered.await() }
+
+            connection.start()
+            connection.stopConnection()
+            withTimeout(2_000) { connection.awaitDisconnectStarted() }
+            connection.stopConnection()
+
+            releaseCollector.complete(Unit)
+            withTimeout(2_000) { disconnectedReceived.await() }
+            initialState.cancelAndJoin()
+        } finally {
+            releaseCollector.complete(Unit)
+            collector.cancelAndJoin()
+            connection.stopConnection()
+            connection.shutdown()
+        }
     }
 
     private fun wire(value: Char) = byteArrayOf('!'.code.toByte(), value.code.toByte())
@@ -228,13 +312,37 @@ class OutboundWritePipelineTest {
 
     private class TestConnection : Connection<Endpoint>(newUserPrefsWithoutAndroidContext()) {
         val writes = CopyOnWriteArrayList<ByteArray>()
+        private val disconnectStarted = CompletableDeferred<Unit>()
 
         fun start() {
             isRunning = true
         }
 
+        fun startCancelableWork(started: CompletableDeferred<Unit>, cancelled: CompletableDeferred<Unit>) {
+            scope.launch {
+                started.complete(Unit)
+                try {
+                    awaitCancellation()
+                } finally {
+                    cancelled.complete(Unit)
+                }
+            }
+        }
+
         fun shutdown() {
-            scope.cancel()
+            cancelScopes()
+        }
+
+        suspend fun publishState(state: ConnectionState) {
+            mConnectionStateFlow.emit(state)
+        }
+
+        suspend fun awaitStateSubscriber() {
+            mConnectionStateFlow.subscriptionCount.first { it > 0 }
+        }
+
+        suspend fun awaitDisconnectStarted() {
+            disconnectStarted.await()
         }
 
         fun attach(endpoint: Endpoint): Boolean = installEndpoint(endpoint)
@@ -244,7 +352,12 @@ class OutboundWritePipelineTest {
         fun fail(endpoint: Endpoint): Boolean = invalidateEndpoint(endpoint)
 
         override fun disconnect() {
-            detachCurrentEndpoint()?.let(::closeEndpoint)
+            val endpoint = detachCurrentEndpoint()
+            backgroundScope.launch {
+                endpoint?.let(::closeEndpoint)
+                disconnectStarted.complete(Unit)
+                mConnectionStateFlow.emit(Disconnected)
+            }
         }
 
         override fun isEndpointOpen(endpoint: Endpoint): Boolean = endpoint.open

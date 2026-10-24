@@ -30,6 +30,8 @@ import android.bluetooth.BluetoothManager
 import android.bluetooth.BluetoothSocket
 import android.util.Log
 import kotlinx.coroutines.delay
+import kotlinx.coroutines.currentCoroutineContext
+import kotlinx.coroutines.ensureActive
 import kotlinx.coroutines.launch
 import org.secu3.android.models.RawPacket
 import org.secu3.android.models.packets.out.ChangeModePacket
@@ -89,11 +91,13 @@ class BtConnection @Inject constructor(
             }
 
             try {
-                connectToDevice()
+                val socket = connectToDevice()
+                currentCoroutineContext().ensureActive()
 
                 Log.i(this.javaClass.simpleName, "Connected to device")
-                startReadingData()
+                startReadingData(socket)
             } catch (e: IOException) {
+                currentCoroutineContext().ensureActive()
                 mConnectionStateFlow.emit(ConnectionFailed(e))
                 Log.e(this.javaClass.simpleName, "Connection failed: ${e.message}")
                 delay(2000)
@@ -102,7 +106,7 @@ class BtConnection @Inject constructor(
         }
     }
 
-    private fun connectToDevice() {
+    private fun connectToDevice(): BluetoothSocket {
         var socket: BluetoothSocket? = null
         try {
             val address = connectionAddress ?: throw IOException("Device address is invalid")
@@ -118,6 +122,7 @@ class BtConnection @Inject constructor(
             bluetoothAdapter.cancelDiscovery()
             newSocket.connect()
             if (!isCurrentEndpoint(newSocket)) throw IOException("Bluetooth connection was stopped while connecting")
+            return newSocket
         } catch (e: SecurityException) {
             socket?.let(::discardEndpoint)
             throw IOException("Missing Bluetooth permission", e)
@@ -129,19 +134,23 @@ class BtConnection @Inject constructor(
 
     override fun disconnect() {
         val socket = detachCurrentEndpoint()
-        scope.launch {
+        backgroundScope.launch {
+            var closeFailure: IOException? = null
             try {
-                mConnectionStateFlow.emit(Disconnected)
                 socket?.close()
             } catch (e: IOException) {
-                mConnectionStateFlow.emit(ConnectionError(e))
-                Log.e(this.javaClass.simpleName, "Error while disconnecting: ${e.message}")
+                closeFailure = e
+            }
+            mConnectionStateFlow.emit(Disconnected)
+            closeFailure?.let { failure ->
+                mConnectionStateFlow.emit(ConnectionError(failure))
+                Log.e(this.javaClass.simpleName, "Error while disconnecting: ${failure.message}")
             }
         }
     }
 
-    private fun startReadingData() {
-        val socket = currentEndpoint() ?: throw IOException("Bluetooth socket is null")
+    private fun startReadingData(socket: BluetoothSocket) {
+        if (!isCurrentEndpoint(socket)) return
         sendData(ChangeModePacket.getPacket(Task.Secu3ReadFirmwareInfo))
 
         scope.launch {
@@ -153,10 +162,14 @@ class BtConnection @Inject constructor(
                 val reader = BufferedReader(InputStreamReader(inputStream, StandardCharsets.ISO_8859_1))
 
                 while (isCurrentEndpoint(socket)) {
-                    mReceivedPacketFlow.emit(RawPacket(receiver.readNext(reader)))
+                    val packet = receiver.readNext(reader)
+                    currentCoroutineContext().ensureActive()
+                    if (!isCurrentEndpoint(socket)) return@launch
+                    mReceivedPacketFlow.emit(RawPacket(packet))
                 }
                 if (isCurrentEndpoint(socket)) connectionAttempts = 0
             } catch (e: IOException) {
+                currentCoroutineContext().ensureActive()
                 Log.e(this.javaClass.simpleName, "Error while reading data: ${e.message}")
                 if (invalidateEndpoint(socket)) {
                     connectionAttempts = 0

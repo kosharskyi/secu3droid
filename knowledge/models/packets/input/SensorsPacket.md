@@ -12,4 +12,4 @@ Fuel tank level, oil pressure and MAF use signed 16-bit wire counts; negative ra
 
 ## App-side fuel consumption uses 16000 pulses per litre
 
-The instantaneous frequency conversion uses the manager's default 16000 pulses per litre for L/h and L/100 km. This app-side constant is separate from the ECU injector `fffConst` parameter and is not automatically linked to it.
+The instantaneous frequency conversion uses the app's fixed 16000 pulses per litre for L/h and L/100 km. This constant is separate from the ECU injector `fffConst` parameter and is not automatically linked to it.

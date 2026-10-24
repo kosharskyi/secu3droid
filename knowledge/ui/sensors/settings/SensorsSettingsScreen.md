@@ -4,4 +4,4 @@ The style choice affects modern dial cards across the Sensors screen. The legacy
 
 ## Injection timing convention is a separate display choice
 
-The four timing conventions affect only the legacy sensor readouts. The default is BTDC 0…720°, matching the desktop manager; choosing a mode must not alter ECU values or the modern gauge scale.
+The four timing conventions affect only the legacy sensor readouts. The default is BTDC 0…720°; choosing a mode must not alter ECU values or the modern gauge scale.

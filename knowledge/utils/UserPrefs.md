@@ -10,7 +10,7 @@ The stable `sensor_gauge_style` values are `current`, `precise_arc`, and `thin_n
 
 ## Injection timing display stores only a presentation convention
 
-The stable `injection_timing_mode` values are `btdc_720`, `atdc_720`, `btdc_360`, and `atdc_360`; missing or unknown values read as the desktop-compatible `btdc_720` default without repairing storage. This preference transforms only the old Sensors readout. ECU timing values and parameter editing remain in their original 0…720 representation.
+The stable `injection_timing_mode` values are `btdc_720`, `atdc_720`, `btdc_360`, and `atdc_360`; missing or unknown values read as the `btdc_720` default without repairing storage. This preference transforms only the old Sensors readout. ECU timing values and parameter editing remain in their original 0…720 representation.
 
 ## Retired sensor column preference is intentionally ignored
 

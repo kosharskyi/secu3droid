@@ -12,4 +12,4 @@ Main and cranking timing for both banks decode as signed 16-bit words divided by
 
 ## Cylinder count is RX metadata and a TX stub
 
-The received cylinder count remains available to derive injector-bank values, but desktop parameter writes always send zero in that byte. Keep the property for receive/UI calculations and emit the zero stub on TX.
+The received cylinder count remains available to derive injector-bank values, but outgoing parameter packets send zero in that byte. Keep the property for receive/UI calculations and emit the zero stub on TX.

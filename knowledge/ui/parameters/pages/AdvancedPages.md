@@ -18,13 +18,13 @@ The injector-availability state hides the whole editor, while individual control
 
 The packet's `15` logic-function code maps to index 4 in the displayed option list. The paired-output setter and each output setter translate the fifth choice back to `15`; other selections retain their displayed index. Unknown codes stay visible as unknown values.
 
-## Reserve-parameter and firmware-CRC flags are read-only in the live manager
+## Reserve-parameter and firmware-CRC flags are read-only during live ECU editing
 
-The desktop PMParamsController disables both via EnableUseResParCheck(false). Editable versions belong to its offline firmware/EEPROM workflows; the Android live Security screen must not expose writes just because the offline desktop form has checkboxes.
+Keep both flags read-only in the live Security screen. Editing them belongs to offline firmware/EEPROM workflows; the live ECU parameter editor must not expose writes for these flags.
 
 ## Firmware options govern dependent parameter controls
 
-ParameterCapabilities maps ECU flags using the live desktop controller rules. Its permissive default supports loading and standalone previews; connected routes pass actual firmware options. Local predicates still apply (load-grid/source, missing teeth, injection table mode), and unsupported incoming values remain visible without selecting a replacement. Do not apply desktop-only user functionality preferences as ECU capabilities.
+ParameterCapabilities derives support from ECU firmware option flags. Its permissive default supports loading and standalone previews; connected routes pass actual firmware options. Local predicates still apply (load-grid/source, missing teeth, injection table mode), and unsupported incoming values remain visible without selecting a replacement. Do not treat user functionality preferences as ECU capabilities.
 
 ## Miscellaneous VSS displays a rounded integer without quantizing the packet
 

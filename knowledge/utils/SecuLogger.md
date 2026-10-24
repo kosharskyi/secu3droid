@@ -1,6 +1,6 @@
-## S3L sensor flags have fixed desktop-compatible padding positions
+## S3L sensor flags have fixed record padding positions
 
-The 252-byte little-endian S3L record stores airflow at byte 32, one padding byte at 33, the main and additional flag words at 34 and 36, then two padding bytes at 38–39 before TPS at 40. These positions are part of the external desktop logger ABI; the padding values are ignored. Android writes `0xCC` as a deterministic filler, while desktop logs may contain arbitrary values there.
+The 252-byte little-endian S3L record stores airflow at byte 32, one padding byte at 33, the main and additional flag words at 34 and 36, then two padding bytes at 38–39 before TPS at 40. Preserve these positions in the record format; readers ignore the padding values. The app writes `0xCC` as deterministic filler.
 
 ## Logger I/O failures stop the singleton session and remain pending until acknowledged
 
@@ -16,8 +16,8 @@ The ECU packet keeps Idling VE in `additionalFlags` bit 0, separate from `servic
 
 ## Log marks keep latest-click-wins replacement semantics
 
-By explicit agreement with the user, retain the Android app's latest-click-wins behavior instead of copying the desktop logger's OR accumulation. Each mark has its own bit, but only the last clicked mark is retained for the next sensor record. Explicit stop and each valid new start clear a pending mark so it cannot cross logger-session boundaries. Starting an already-running session remains a no-op and preserves its pending mark.
+The app uses latest-click-wins mark behavior. Each mark has its own bit, but only the last clicked mark is retained for the next sensor record. Explicit stop and each valid new start clear a pending mark so it cannot cross logger-session boundaries. Starting an already-running session remains a no-op and preserves its pending mark.
 
 ## Sensor packets always reach the logger's preference gate
 
-The connection manager forwards each sensor packet even when logging is disabled. `SecuLogger.logPacket` owns the preference check so it can stop and close an active session when the setting is turned off; filtering packets in the manager would bypass that cleanup.
+The connection manager forwards each sensor packet even when logging is disabled. `SecuLogger.logPacket` owns the preference check so it can stop and close an active session when the setting is turned off; filtering packets in the connection manager would bypass that cleanup.

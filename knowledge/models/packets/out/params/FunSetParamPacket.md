@@ -2,9 +2,9 @@
 
 Both directions use `128 * (64 * 2) * 0.0025`; using `64 * 64` on write amplifies the TPS gradient by 32 even when another Functions setting was edited. Incoming FUNSET adds a read-only TPS ADC word after the MAF constant, so an outgoing payload is not directly an incoming test fixture.
 
-## Signed calibration half-counts follow the manager's rounding rule
+## Signed calibration half-counts round away from zero
 
-The MAP, MAP2, TPS, GPS, FPS, and APPS1 calibration offset and gradient words are signed. Manager MathHelpers::Round rounds a negative half-count away from zero; use protocolRoundToInt for all twelve words so negative half-counts remain symmetric with positive ones. Keep each field's existing multiplier and ordering, including the distinct TPS gradient scale.
+The MAP, MAP2, TPS, GPS, FPS, and APPS1 calibration offset and gradient words are signed. Use `protocolRoundToInt` for all twelve words so negative half-counts round away from zero, symmetrically with positive ones. Keep each field's existing multiplier and ordering, including the distinct TPS gradient scale.
 
 ## APPS1 raw is the final known read-only word
 
