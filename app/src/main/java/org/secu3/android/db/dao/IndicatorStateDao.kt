@@ -30,7 +30,7 @@ import androidx.room.Query
 import androidx.room.Transaction
 import kotlinx.coroutines.flow.Flow
 import org.secu3.android.db.models.IndicatorState
-import org.secu3.android.ui.sensors.models.IndicatorType
+import org.secu3.android.models.sensors.IndicatorType
 
 @Dao
 interface IndicatorStateDao : BaseDao<IndicatorState>{

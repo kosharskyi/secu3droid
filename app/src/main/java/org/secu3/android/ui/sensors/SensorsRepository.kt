@@ -25,6 +25,8 @@
 
 package org.secu3.android.ui.sensors
 
+import org.secu3.android.ui.sensors.models.formatValue
+import org.secu3.android.ui.sensors.models.defaultNumericView
 import androidx.room.withTransaction
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.Flow
@@ -36,9 +38,9 @@ import org.secu3.android.db.models.IndicatorState
 import org.secu3.android.models.packets.input.SensorsPacket
 import org.secu3.android.models.InjectionTimingMode
 import org.secu3.android.ui.sensors.models.GaugeItem
-import org.secu3.android.ui.sensors.models.GaugeType
+import org.secu3.android.models.sensors.GaugeType
 import org.secu3.android.ui.sensors.models.IndicatorItem
-import org.secu3.android.ui.sensors.models.IndicatorType
+import org.secu3.android.models.sensors.IndicatorType
 import org.secu3.android.utils.AppPrefs
 import javax.inject.Inject
 

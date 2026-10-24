@@ -1,5 +1,6 @@
 package org.secu3.android.ui.sensors.models
 
+import org.secu3.android.models.sensors.GaugeType
 import java.util.Locale
 import java.text.DecimalFormatSymbols
 import org.secu3.android.models.InjectionTimingMode

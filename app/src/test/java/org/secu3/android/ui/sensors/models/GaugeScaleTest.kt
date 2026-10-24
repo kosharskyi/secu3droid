@@ -1,5 +1,7 @@
 package org.secu3.android.ui.sensors.models
 
+import org.secu3.android.models.sensors.GaugeType
+import org.secu3.android.models.sensors.IndicatorType
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNull
 import org.junit.Assert.assertSame

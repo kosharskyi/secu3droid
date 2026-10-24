@@ -25,6 +25,7 @@
 
 package org.secu3.android.ui.sensors
 
+import org.secu3.android.ui.sensors.models.title
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.pager.HorizontalPager
 import androidx.compose.foundation.pager.rememberPagerState
@@ -63,9 +64,9 @@ import org.secu3.android.ui.compose.SecuTopAppBar
 import org.secu3.android.ui.compose.SecuTabRow
 import org.secu3.android.ui.sensors.SensorsViewModel.ChoiceRequest
 import org.secu3.android.ui.sensors.models.GaugeItem
-import org.secu3.android.ui.sensors.models.GaugeType
+import org.secu3.android.models.sensors.GaugeType
 import org.secu3.android.ui.sensors.models.IndicatorItem
-import org.secu3.android.ui.sensors.models.IndicatorType
+import org.secu3.android.models.sensors.IndicatorType
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable

@@ -23,9 +23,9 @@ import org.secu3.android.db.AppDatabase
 import org.secu3.android.db.models.GaugeState
 import org.secu3.android.db.models.IndicatorState
 import org.secu3.android.ui.sensors.models.GaugeItem
-import org.secu3.android.ui.sensors.models.GaugeType
+import org.secu3.android.models.sensors.GaugeType
 import org.secu3.android.ui.sensors.models.IndicatorItem
-import org.secu3.android.ui.sensors.models.IndicatorType
+import org.secu3.android.models.sensors.IndicatorType
 import org.secu3.android.utils.AppPrefs
 
 @RunWith(AndroidJUnit4::class)

@@ -7,8 +7,8 @@ import kotlinx.coroutines.runBlocking
 import org.junit.Assert.assertEquals
 import org.junit.Test
 import org.secu3.android.db.models.GaugeState
-import org.secu3.android.ui.sensors.models.GaugeType
-import org.secu3.android.ui.sensors.models.IndicatorType
+import org.secu3.android.models.sensors.GaugeType
+import org.secu3.android.models.sensors.IndicatorType
 import java.util.UUID
 
 class AppDatabaseInitializationTest {

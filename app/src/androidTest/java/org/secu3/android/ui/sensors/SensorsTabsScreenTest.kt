@@ -25,6 +25,7 @@
 
 package org.secu3.android.ui.sensors
 
+import org.secu3.android.ui.sensors.models.title
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.remember
@@ -58,9 +59,9 @@ import org.secu3.android.db.models.GaugeState
 import org.secu3.android.db.models.IndicatorState
 import org.secu3.android.ui.compose.SecuComposeTheme
 import org.secu3.android.ui.sensors.models.GaugeItem
-import org.secu3.android.ui.sensors.models.GaugeType
+import org.secu3.android.models.sensors.GaugeType
 import org.secu3.android.ui.sensors.models.IndicatorItem
-import org.secu3.android.ui.sensors.models.IndicatorType
+import org.secu3.android.models.sensors.IndicatorType
 import org.secu3.android.utils.Task
 import androidx.test.platform.app.InstrumentationRegistry
 

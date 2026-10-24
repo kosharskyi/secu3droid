@@ -24,6 +24,9 @@
  */
 package org.secu3.android.ui.sensors
 
+import org.secu3.android.ui.sensors.models.formatValue
+import org.secu3.android.ui.sensors.models.title
+import org.secu3.android.ui.sensors.models.units
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
@@ -50,8 +53,8 @@ import androidx.compose.ui.unit.sp
 import org.secu3.android.R
 import org.secu3.android.models.packets.input.SensorsPacket
 import org.secu3.android.models.InjectionTimingMode
-import org.secu3.android.ui.sensors.models.GaugeType
-import org.secu3.android.ui.sensors.models.IndicatorType
+import org.secu3.android.models.sensors.GaugeType
+import org.secu3.android.models.sensors.IndicatorType
 
 @Composable
 internal fun OldSensorsScreen(

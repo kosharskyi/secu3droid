@@ -29,7 +29,7 @@ import androidx.room.ColumnInfo
 import androidx.room.Entity
 import androidx.room.Index
 import androidx.room.PrimaryKey
-import org.secu3.android.ui.sensors.models.GaugeType
+import org.secu3.android.models.sensors.GaugeType
 
 @Entity("gauge_state",
     indices = [

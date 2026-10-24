@@ -24,6 +24,12 @@
  */
 package org.secu3.android.ui.sensors
 
+import org.secu3.android.ui.sensors.models.tickCount
+import org.secu3.android.ui.sensors.models.minValue
+import org.secu3.android.ui.sensors.models.maxValue
+import org.secu3.android.ui.sensors.models.formatValue
+import org.secu3.android.ui.sensors.models.title
+import org.secu3.android.ui.sensors.models.units
 import android.graphics.Bitmap
 import androidx.room.Room
 import androidx.compose.ui.test.assert
@@ -78,9 +84,9 @@ import org.secu3.android.db.models.IndicatorState
 import org.secu3.android.ui.compose.SecuComposeTheme
 import org.secu3.android.ui.sensors.models.GaugeItem
 import org.secu3.android.ui.sensors.models.GaugeScale
-import org.secu3.android.ui.sensors.models.GaugeType
+import org.secu3.android.models.sensors.GaugeType
 import org.secu3.android.ui.sensors.models.IndicatorItem
-import org.secu3.android.ui.sensors.models.IndicatorType
+import org.secu3.android.models.sensors.IndicatorType
 
 class SensorsScreenTest {
     @get:Rule val compose = createComposeRule()

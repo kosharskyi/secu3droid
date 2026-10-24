@@ -23,44 +23,40 @@
  *                    email: vetalkosharskiy@gmail.com
  */
 
-package org.secu3.android.ui.sensors.models
+package org.secu3.android.models.sensors
 
-import org.secu3.android.R
 import org.secu3.android.models.packets.input.SensorsPacket
 
-enum class IndicatorType (val title: Int){
-
-    GAS_VALVE(R.string.sensors_frag_status_gas_valve_label),
-    THROTTLE(R.string.sensors_frag_status_throttle_label),
-    FI_FUEL(R.string.sensors_frag_status_fl_fuel_label),
-    POWER_VALVE(R.string.sensors_frag_status_power_valve_label),
-    STARTER_BLOCKING(R.string.sensors_frag_status_starter_blocking_label),
-    AE(R.string.sensors_frag_status_ae_label),
-    COOLING_FAN(R.string.sensors_frag_status_cooling_fan_label),
-    CHECK_ENGINE(R.string.sensors_frag_status_check_engine_label),
-    REV_LIM_FUEL_CUT(R.string.sensors_frag_status_rev_lim_fuel_cut_label),
-    FLOOD_CLEAR_MODE(R.string.sensors_frag_status_flood_clear_mode_label),
-    SYSTEM_LOCKED(R.string.sensors_frag_status_system_locked_label),
-    IGN_I_INPUT(R.string.sensors_frag_status_input_ign_label),
-    COND_I_INPUT(R.string.sensors_frag_status_input_cond_label),
-    EPAS_I_INPUT(R.string.sensors_frag_status_input_epas_label),
-    AFTERSTART_ENR(R.string.sensors_frag_status_afterstart_enr_label),
-    IAC_CLOSED_LOOP(R.string.sensors_frag_status_iac_closed_loop_label),
-
-    UNIV_OUT1(R.string.sensors_frag_status_univ_out_1_label),
-    UNIV_OUT2(R.string.sensors_frag_status_univ_out_2_label),
-    UNIV_OUT3(R.string.sensors_frag_status_univ_out_3_label),
-    UNIV_OUT4(R.string.sensors_frag_status_univ_out_4_label),
-    UNIV_OUT5(R.string.sensors_frag_status_univ_out_5_label),
-    UNIV_OUT6(R.string.sensors_frag_status_univ_out_6_label),
-
-    GPA4_I(R.string.sensors_frag_status_gpa4_input_label),
-    INPUT1(R.string.sensors_frag_status_input1_label),
-    INPUT2(R.string.sensors_frag_status_input2_label),
-    AUTO_I(R.string.sensors_frag_status_auto_i_label),
-    MAPSEL0(R.string.sensors_frag_status_mapsel0_label),
-    REFPRS_I(R.string.sensors_frag_status_refprs_i_label),
-    ALTRN_I(R.string.sensors_frag_status_altrn_i_label);
+enum class IndicatorType {
+    GAS_VALVE,
+    THROTTLE,
+    FI_FUEL,
+    POWER_VALVE,
+    STARTER_BLOCKING,
+    AE,
+    COOLING_FAN,
+    CHECK_ENGINE,
+    REV_LIM_FUEL_CUT,
+    FLOOD_CLEAR_MODE,
+    SYSTEM_LOCKED,
+    IGN_I_INPUT,
+    COND_I_INPUT,
+    EPAS_I_INPUT,
+    AFTERSTART_ENR,
+    IAC_CLOSED_LOOP,
+    UNIV_OUT1,
+    UNIV_OUT2,
+    UNIV_OUT3,
+    UNIV_OUT4,
+    UNIV_OUT5,
+    UNIV_OUT6,
+    GPA4_I,
+    INPUT1,
+    INPUT2,
+    AUTO_I,
+    MAPSEL0,
+    REFPRS_I,
+    ALTRN_I;
 
     fun isActive(packet: SensorsPacket): Boolean = when (this) {
         GAS_VALVE -> packet.gasBit > 0
