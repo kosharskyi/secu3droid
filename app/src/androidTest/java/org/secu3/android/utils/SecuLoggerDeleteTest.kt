@@ -3,9 +3,11 @@ package org.secu3.android.utils
 import android.content.Context
 import android.content.ContextWrapper
 import androidx.test.platform.app.InstrumentationRegistry
+import kotlinx.coroutines.runBlocking
 import org.junit.After
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
+import org.junit.Assert.assertNull
 import org.junit.Assert.assertTrue
 import org.junit.Before
 import org.junit.Test
@@ -43,40 +45,61 @@ class SecuLoggerDeleteTest {
 
     @After
     fun tearDown() {
-        logger.stopLogging()
+        runBlocking {
+            logger.stopLogging()
+            logger.shutdownForTests()
+        }
         testRoot.deleteRecursively()
         context.deleteSharedPreferences(preferenceStoreName)
     }
 
     @Test
-    fun activeCsvLogCannotBeDeletedAndRecordingAndPendingMarkContinue() {
+    fun activeCsvLogCannotBeDeletedAndRecordingAndPendingMarkContinue() = runBlocking {
         prefs.isBinaryLogFormatEnabled = false
-        logger.prepareToLog()
         logger.startLogging()
+        logger.awaitCommandsForTests()
         val activeFile = files.listOfLogs.single()
         logger.setMark1()
+        logger.setMark2()
+        logger.setMark3()
+        logger.startLogging()
 
         assertEquals(LogDeletionResult.Active, logger.deleteLogFile(activeFile))
         assertTrue(logger.isLoggerStarted)
         logger.logPacket(SensorsPacket())
         logger.logPacket(SensorsPacket())
         logger.stopLogging()
+        logger.awaitCommandsForTests()
 
-        assertTrue(activeFile.length() > 0)
-        val markColumns = activeFile.readText().trimEnd().split("\r\n").map { row ->
+        val firstSessionMarks = activeFile.readText().trimEnd().split("\r\n").map { row ->
             val columns = row.split(';')
             columns[columns.lastIndex - 2].trim()
         }
-        assertEquals(listOf("1", "0"), markColumns)
+        assertEquals(listOf("4", "0"), firstSessionMarks)
+
+        val filesBeforeRestart = files.listOfLogs.toSet()
+        logger.setMark2()
+        logger.startLogging()
+        logger.awaitCommandsForTests()
+        val restartedFile = files.listOfLogs.singleOrNull { it !in filesBeforeRestart } ?: activeFile
+        logger.logPacket(SensorsPacket())
+        logger.stopLogging()
+        logger.awaitCommandsForTests()
+
+        val restartedMarkColumns = restartedFile.readText().trimEnd().split("\r\n").map { row ->
+            val columns = row.split(';')
+            columns[columns.lastIndex - 2].trim()
+        }
+        assertEquals("0", restartedMarkColumns.last())
         assertEquals(LogDeletionResult.Deleted, logger.deleteLogFile(activeFile))
         assertFalse(activeFile.exists())
     }
 
     @Test
-    fun activeS3lLogCannotBeDeletedAndRecordingContinues() {
+    fun activeS3lLogCannotBeDeletedAndRecordingContinues() = runBlocking {
         prefs.isBinaryLogFormatEnabled = true
-        logger.prepareToLog()
         logger.startLogging()
+        logger.awaitCommandsForTests()
         val activeFile = files.listOfLogs.single()
 
         assertEquals(LogDeletionResult.Active, logger.deleteLogFile(activeFile))
@@ -88,10 +111,35 @@ class SecuLoggerDeleteTest {
     }
 
     @Test
-    fun unrelatedLogCanBeDeletedWhileRecordingAndDeleteFailureIsReported() {
+    fun openFailureStaysPendingUntilAcknowledgedAndLoggerCanRestart() = runBlocking {
         prefs.isBinaryLogFormatEnabled = false
-        logger.prepareToLog()
+        val logsPath = File(context.filesDir, "logs")
+        logsPath.deleteRecursively()
+        logsPath.writeText("not a directory")
+
         logger.startLogging()
+        logger.awaitCommandsForTests()
+        assertFalse(logger.isLoggerStarted)
+        val errorId = logger.state.value.pendingErrorId
+        assertTrue(errorId != null)
+
+        logger.acknowledgeLoggerError(errorId!!)
+        logger.awaitCommandsForTests()
+        assertNull(logger.state.value.pendingErrorId)
+
+        assertTrue(logsPath.delete())
+        logger.startLogging()
+        logger.awaitCommandsForTests()
+        assertTrue(logger.isLoggerStarted)
+        logger.stopLogging()
+        logger.awaitCommandsForTests()
+    }
+
+    @Test
+    fun unrelatedLogCanBeDeletedWhileRecordingAndDeleteFailureIsReported() = runBlocking {
+        prefs.isBinaryLogFormatEnabled = false
+        logger.startLogging()
+        logger.awaitCommandsForTests()
         val activeFile = files.listOfLogs.single()
         val unrelatedFile = File(files.logsDir, "unrelated.csv").apply { writeText("old") }
 
@@ -109,9 +157,8 @@ class SecuLoggerDeleteTest {
     }
 
     @Test
-    fun startingWaitsUntilDeletionLeavesLoggerCriticalSection() {
+    fun startEnqueuesWithoutWaitingForDeletionAndRunsAfterIt() = runBlocking {
         prefs.isBinaryLogFormatEnabled = false
-        logger.prepareToLog()
         val fileEnteredDelete = CountDownLatch(1)
         val allowDelete = CountDownLatch(1)
         val fileToDelete = File(files.logsDir, "blocking.csv").apply { writeText("old") }
@@ -123,26 +170,20 @@ class SecuLoggerDeleteTest {
             }
         }
         var result: LogDeletionResult? = null
-        val deleteThread = thread { result = logger.deleteLogFile(blockingFile) }
-        var startThread: Thread? = null
-        val startAttempted = CountDownLatch(1)
-        val startFinished = CountDownLatch(1)
+        val deleteThread = thread {
+            result = runBlocking { logger.deleteLogFile(blockingFile) }
+        }
         try {
             assertTrue(fileEnteredDelete.await(5, TimeUnit.SECONDS))
-            startThread = thread {
-                startAttempted.countDown()
-                logger.startLogging()
-                startFinished.countDown()
-            }
-            assertTrue(startAttempted.await(5, TimeUnit.SECONDS))
-            assertFalse(startFinished.await(100, TimeUnit.MILLISECONDS))
+            logger.startLogging()
+            assertFalse(logger.isLoggerStarted)
         } finally {
             allowDelete.countDown()
             deleteThread.join(5_000)
-            startThread?.join(5_000)
         }
 
         assertEquals(LogDeletionResult.Deleted, result)
+        logger.awaitCommandsForTests()
         assertTrue(logger.isLoggerStarted)
         logger.logPacket(SensorsPacket())
         logger.stopLogging()

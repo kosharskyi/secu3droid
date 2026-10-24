@@ -71,7 +71,7 @@ class SecuLogsViewModel @Inject constructor(
         val path = pendingDeletePath.value ?: return
         cancelDelete()
         viewModelScope.launch {
-            val result = withContext(Dispatchers.IO) { secuLogger.deleteLogFile(File(path)) }
+            val result = secuLogger.deleteLogFile(File(path))
             refreshFiles()
             val failureEffect = when (result) {
                 LogDeletionResult.Deleted -> null

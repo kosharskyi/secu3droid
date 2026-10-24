@@ -184,10 +184,7 @@ class SensorsViewModel @Inject constructor(
     }
 
     fun startWriteLog() {
-        if (!secuLogger.isLoggerStarted) {
-            secuLogger.prepareToLog()
-            secuLogger.startLogging()
-        }
+        secuLogger.startLogging()
     }
 
     fun logMark1() = secuLogger.setMark1()

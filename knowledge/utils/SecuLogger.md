@@ -6,9 +6,9 @@ The 252-byte little-endian S3L record stores airflow at byte 32, one padding byt
 
 Binary and CSV sinks are serialized with start and stop. An I/O failure clears the active session and publishes a monotonically increasing pending error ID; the Sensors route acknowledges only the ID it has displayed, so an error raised while that route is inactive can be shown when it resumes.
 
-## Log deletion must share the session lock with writes
+## Logger controls, packet writes, and deletion share one background FIFO
 
-The logs screen delegates deletion to `SecuLogger`, which compares the target with the active file and deletes while holding the same lock used by prepare, start, write, and stop. Keeping the check and delete in that critical section prevents a prepared log from becoming active between the guard and filesystem operation. A rejected active-file deletion leaves the session and pending mark untouched.
+The singleton logger serializes starts, stops, marks, acknowledgments, packet writes, and deletion on a worker that outlives screens and the foreground service. UI controls enqueue without waiting; packet collection awaits its write to prevent an unbounded backlog. Start selects and opens the file as one command, and deletion awaits the worker's result so its active-file check and filesystem operation cannot race a queued start or write. A rejected active-file deletion leaves the session and pending mark untouched.
 
 ## Idling VE is logged as service flag bit 9 from additional flag bit 0
 

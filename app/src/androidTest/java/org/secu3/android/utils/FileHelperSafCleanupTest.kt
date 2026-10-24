@@ -16,6 +16,7 @@ import android.provider.DocumentsContract
 import androidx.test.platform.app.InstrumentationRegistry
 import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.ViewModelStore
+import kotlinx.coroutines.runBlocking
 import org.junit.After
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
@@ -76,10 +77,13 @@ class FileHelperSafCleanupTest {
         val realHelper = FileHelper(base)
         val csv = File.createTempFile("share-mime-", ".CSV", realHelper.logsDir).apply { writeText("csv-data") }
         val s3l = File.createTempFile("share-mime-", ".S3L", realHelper.logsDir).apply { writeBytes(byteArrayOf(1, 2, 3)) }
+        var logger: SecuLogger? = null
         try {
             InstrumentationRegistry.getInstrumentation().runOnMainSync {
                 val prefs = UserPrefs(base)
-                val viewModel = SecuLogsViewModel(realHelper, prefs, SavedStateHandle(), SecuLogger(prefs, realHelper))
+                val testLogger = SecuLogger(prefs, realHelper)
+                logger = testLogger
+                val viewModel = SecuLogsViewModel(realHelper, prefs, SavedStateHandle(), testLogger)
                 val viewModelStore = ViewModelStore().apply { put("logs-share-test", viewModel) }
                 try {
                     val csvIntent = viewModel.getShareIntent(csv)
@@ -101,6 +105,7 @@ class FileHelperSafCleanupTest {
                 }
             }
         } finally {
+            runBlocking { logger?.shutdownForTests() }
             csv.delete()
             s3l.delete()
         }

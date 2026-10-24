@@ -4,7 +4,7 @@ Log rows are keyed by `absolutePath`, while share, save, and delete callbacks re
 
 ## Deletion results come from the logger session owner
 
-Delete confirmation remains pending-state-backed, but the ViewModel must pass the selected path to `SecuLogger` for the active-file check and deletion. The logger serializes that operation with writes, so the screen should report active-file rejection and filesystem failure separately and refresh the list after either result.
+Delete confirmation remains pending-state-backed, but the ViewModel must pass the selected path to `SecuLogger` for the active-file check and deletion. The suspending delete call returns only after the logger's shared FIFO has checked and deleted the file, so the screen can report active-file rejection and filesystem failure separately and refresh the list after either result.
 
 ## Share MIME type follows the selected file's export mapping
 

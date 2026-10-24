@@ -25,6 +25,10 @@
 
 package org.secu3.android.utils
 
+import android.util.Log
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.SupervisorJob
 import org.secu3.android.models.packets.input.SensorsPacket
 import org.threeten.bp.LocalTime
 import org.threeten.bp.format.DateTimeFormatter
@@ -210,7 +214,10 @@ internal fun encodeBinaryLogRecord(packet: SensorsPacket, mark: Int, now: LocalT
 class SecuLogger @Inject constructor(private val prefs: UserPrefs, private val fileHelper: FileHelper) {
 
     private val loggerSession = LoggerSession()
-    private val loggerLock = Any()
+    private val loggerScope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
+    private val commands = LoggerCommandQueue(loggerScope) { failure ->
+        Log.e("SecuLogger", "Logger command failed", failure)
+    }
     private var mLogFile: File? = null
     private var mMark: Int = 0
 
@@ -221,13 +228,15 @@ class SecuLogger @Inject constructor(private val prefs: UserPrefs, private val f
         get() = loggerSession.state.value.started
     internal val state = loggerSession.state
 
-    internal fun acknowledgeLoggerError(errorId: Long) = loggerSession.acknowledgeError(errorId)
+    internal fun acknowledgeLoggerError(errorId: Long) = commands.post {
+        loggerSession.acknowledgeError(errorId)
+    }
 
-    /** Deletion shares the logger lock so a file cannot become active between checking and deleting it. */
-    fun deleteLogFile(file: File): LogDeletionResult = synchronized(loggerLock) {
+    /** Delete shares the command FIFO with writes so a file cannot become active between checking and deleting it. */
+    suspend fun deleteLogFile(file: File): LogDeletionResult = commands.await {
         val activeFile = mLogFile
         if (isLoggerStarted && activeFile != null && sameFile(activeFile, file)) {
-            return@synchronized LogDeletionResult.Active
+            return@await LogDeletionResult.Active
         }
         try {
             if (file.delete()) LogDeletionResult.Deleted else LogDeletionResult.Failed
@@ -240,74 +249,84 @@ class SecuLogger @Inject constructor(private val prefs: UserPrefs, private val f
         runCatching { first.canonicalFile == second.canonicalFile }
             .getOrElse { first.absoluteFile == second.absoluteFile }
 
-    fun prepareToLog() {
-        synchronized(loggerLock) {
-            if (isLoggerStarted) return
-            mLogFile = if (prefs.isBinaryLogFormatEnabled) {
+    fun startLogging() {
+        commands.post {
+            if (isLoggerStarted) return@post
+            mMark = 0
+            val logFile = if (prefs.isBinaryLogFormatEnabled) {
                 fileHelper.generateS3lFile
             } else {
                 fileHelper.generateCsvFile
             }
-        }
-    }
-
-    fun startLogging() {
-        synchronized(loggerLock) {
-            if (isLoggerStarted) return
-            val logFile = mLogFile ?: return
-            mMark = 0
+            mLogFile = logFile
             val binary = logFile.extension == "s3l"
-            val csvHeader = if (!binary) {
-                mCsvDelimeter = prefs.CSVDelimeter
-                if (prefs.isCsvTitleEnabled) generateCsvTitle(delimeter = mCsvDelimeter) else null
+            if (!binary) mCsvDelimeter = prefs.CSVDelimeter
+            val csvHeader = if (!binary && prefs.isCsvTitleEnabled) {
+                generateCsvTitle(delimeter = mCsvDelimeter)
             } else {
                 null
             }
-            loggerSession.start(
-                openOutput = { if (binary) openBinaryOutput(logFile) else FileWriterOutput(FileWriter(logFile, true)) },
-                binary = binary,
-                csvHeader = csvHeader,
-            )
+            try {
+                loggerSession.start(
+                    openOutput = { if (binary) openBinaryOutput(logFile) else FileWriterOutput(FileWriter(logFile, true)) },
+                    binary = binary,
+                    csvHeader = csvHeader,
+                )
+            } catch (failure: Exception) {
+                loggerSession.stop()
+                mLogFile = null
+                throw failure
+            }
+            if (!isLoggerStarted) mLogFile = null
         }
     }
 
     fun stopLogging() {
-        synchronized(loggerLock) {
-            mMark = 0
-            loggerSession.stop()
-            mLogFile = null
-        }
+        commands.post { stopLoggingNow() }
+    }
+
+    private fun stopLoggingNow() {
+        mMark = 0
+        loggerSession.stop()
+        mLogFile = null
     }
 
     fun setMark1() {
-        synchronized(loggerLock) { mMark = 1 }
+        commands.post { mMark = 1 }
     }
 
     fun setMark2() {
-        synchronized(loggerLock) { mMark = 2 }
+        commands.post { mMark = 2 }
     }
 
     fun setMark3() {
-        synchronized(loggerLock) { mMark = 4 }
+        commands.post { mMark = 4 }
     }
 
-    fun logPacket(sensorsPacket: SensorsPacket) {
-        synchronized(loggerLock) {
-            if (isLoggerStarted) {
-                if (prefs.isSensorLoggerEnabled.not()) {
-                    stopLogging()
-                    return
-                }
-
-                if (mLogFile?.extension == "s3l") {
-                    writeBinaryLog(sensorsPacket)
-                } else {
-                    val csvString = sensorsPacket.scvString(mMark, mCsvDelimeter)
-                    writeInCsv(csvString)
-                }
-                mMark = 0
+    suspend fun logPacket(sensorsPacket: SensorsPacket) = commands.await {
+        if (isLoggerStarted) {
+            if (prefs.isSensorLoggerEnabled.not()) {
+                stopLoggingNow()
+                return@await
             }
+
+            val logFile = mLogFile ?: return@await
+            if (logFile.extension == "s3l") {
+                writeBinaryLog(sensorsPacket)
+            } else {
+                val csvString = sensorsPacket.scvString(mMark, mCsvDelimeter)
+                writeInCsv(csvString)
+            }
+            mMark = 0
+            if (!isLoggerStarted) mLogFile = null
         }
+    }
+
+    /** Flush accepted commands and stop the worker in tests before removing its files. */
+    internal suspend fun shutdownForTests() = commands.closeAndJoin()
+
+    internal suspend fun awaitCommandsForTests() {
+        commands.await { Unit }
     }
 
     private fun writeBinaryLog(packet: SensorsPacket) {

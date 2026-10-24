@@ -5,3 +5,7 @@
 ## Gauge and indicator configuration is independent from ECU packet cadence
 
 The ordered Room flows drive the card lists directly. Add, delete, and reorder operations must update those flows without waiting for another ECU packet; packet arrival only refreshes each configured card's displayed reading.
+
+## Logger packet writes backpressure the connection-manager collector
+
+`Secu3ConnectionManager` awaits each `SecuLogger.logPacket` command. The logger's background FIFO therefore processes at most the packet currently being collected before asking the transport flow for another one; do not make packet logging fire-and-forget or move it into an unlimited channel.
