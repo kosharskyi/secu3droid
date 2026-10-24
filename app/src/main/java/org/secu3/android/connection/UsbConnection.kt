@@ -104,13 +104,13 @@ class UsbConnection @Inject constructor(
             it.deviceId == usbDevice.deviceId
         }?: throw IllegalStateException("No USB devices found")
 
-        val connection = usbManager.openDevice(device)
-            ?: throw IllegalStateException("Could not open connection to USB device")
-
         val driver = UsbSerialProber.getDefaultProber().probeDevice(device)
             ?: throw IllegalStateException("No suitable driver found for device")
 
         val port = driver.ports.first()
+        val connection = usbManager.openDevice(device)
+            ?: throw IllegalStateException("Could not open connection to USB device")
+
         val installed = installEndpoint(port)
         if (!installed) {
             connection.close()
