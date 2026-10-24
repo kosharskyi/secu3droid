@@ -29,12 +29,17 @@ import androidx.lifecycle.LiveData
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.asLiveData
 import dagger.hilt.android.lifecycle.HiltViewModel
+import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.filter
+import kotlinx.coroutines.flow.flatMapLatest
+import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.sample
 import org.secu3.android.connection.BluetoothDeviceAddress
+import org.secu3.android.connection.Connected
 import org.secu3.android.connection.ConnectionState
 import org.secu3.android.connection.Secu3ConnectionManager
+import org.secu3.android.models.packets.base.InputPacket
 import org.secu3.android.models.packets.input.SensorsPacket
 import org.secu3.android.utils.UserPrefs
 import org.secu3.android.utils.Task
@@ -44,14 +49,10 @@ import javax.inject.Inject
 class DashboardViewModel @Inject constructor(private val secu3ConnectionManager: Secu3ConnectionManager,
                                              private val mPrefs: UserPrefs) : ViewModel() {
 
-    val packetLiveData: LiveData<DashboardViewData> = secu3ConnectionManager.receivedPacketFlow
-            .filter { it is SensorsPacket }
-            .sample(300)
-            .map { (it as SensorsPacket) }
-            .map {
-                DashboardViewData.inflate(it)
-            }
-            .asLiveData()
+    val packetLiveData: LiveData<DashboardViewData?> = dashboardPacketFlow(
+        secu3ConnectionManager.connectionStateFlow,
+        secu3ConnectionManager.receivedPacketFlow,
+    ).asLiveData()
 
     val statusLiveData: LiveData<ConnectionState> = secu3ConnectionManager.connectionStateFlow.asLiveData()
 
@@ -66,4 +67,19 @@ class DashboardViewModel @Inject constructor(private val secu3ConnectionManager:
         secu3ConnectionManager.sendNewTask(task)
     }
 
+}
+
+@OptIn(kotlinx.coroutines.ExperimentalCoroutinesApi::class, kotlinx.coroutines.FlowPreview::class)
+internal fun dashboardPacketFlow(
+    connectionStates: Flow<ConnectionState>,
+    packets: Flow<InputPacket>,
+): Flow<DashboardViewData?> = connectionStates.flatMapLatest { state ->
+    if (state != Connected) {
+        flowOf(null)
+    } else {
+        packets
+            .filter { it is SensorsPacket }
+            .sample(300)
+            .map { DashboardViewData.inflate(it as SensorsPacket) }
+    }
 }

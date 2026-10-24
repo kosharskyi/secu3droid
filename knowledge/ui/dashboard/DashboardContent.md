@@ -21,3 +21,7 @@ Gauge and readout layout must leave the existing value formatting, units, thresh
 ## Do not infer load units without the ECU load-source configuration
 
 The dashboard receives load and MAP as separate packet values, while firmware can derive load from MAP, TPS, synthetic load, or MAF. Equal load and MAP values therefore do not establish a unit; the dashboard must preserve the received load value without adding a percent label, clamping it, or requesting more ECU configuration. Keep the blank unit line in the load tile so all readout tiles retain consistent height. See the firmware's [load source selection](https://github.com/ashabelnikov/secu3app/blob/master/sources/funconv.c).
+
+## Dashboard packet values expire when the connection drops
+
+Clear the last sampled dashboard packet as soon as the connection state leaves `Connected`. Each newly connected period starts with no packet and only displays a value after a sensor packet arrives; this keeps retained LiveData from showing the previous connection's reading while preserving the UI's existing null and zero-value behavior.
