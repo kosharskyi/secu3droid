@@ -28,17 +28,10 @@ package org.secu3.android.ui.home
 import android.app.DownloadManager
 import android.os.Environment
 import androidx.core.net.toUri
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.withContext
 import org.secu3.android.BuildConfig
-import org.secu3.android.db.AppDatabase
-import org.secu3.android.db.models.GaugeState
-import org.secu3.android.db.models.IndicatorState
 import org.secu3.android.network.ApiService
 import org.secu3.android.network.models.Asset
 import org.secu3.android.network.models.GitHubRelease
-import org.secu3.android.ui.sensors.models.GaugeType
-import org.secu3.android.ui.sensors.models.IndicatorType
 import org.secu3.android.utils.AppPrefs
 import org.secu3.android.utils.toResult
 import org.threeten.bp.LocalDate
@@ -47,8 +40,7 @@ import javax.inject.Inject
 class HomeRepository @Inject constructor(
     private val apiService: ApiService,
     private val downloadManager: DownloadManager,
-    private val appPrefs: AppPrefs,
-    private val db: AppDatabase
+    private val appPrefs: AppPrefs
 ) {
 
     suspend fun getNewRelease(): GitHubRelease? {
@@ -91,36 +83,6 @@ class HomeRepository @Inject constructor(
             setDestinationInExternalPublicDir(Environment.DIRECTORY_DOWNLOADS, asset.name)
         }
         downloadManager.enqueue(request)
-    }
-
-    suspend fun checkAndInitDb() = withContext(Dispatchers.IO) {
-        if (appPrefs.isDbInitNeed) {
-            val gauges = listOf(
-                GaugeState(0, GaugeType.RPM, 0),
-                GaugeState(0, GaugeType.MAP, 1),
-                GaugeState(0, GaugeType.VOLTAGE, 2),
-                GaugeState(0, GaugeType.TEMPERATURE, 3),
-            )
-
-            db.gaugeStateDao().insertAll(gauges)
-
-            val indicators = listOf(
-                IndicatorState(0, IndicatorType.GAS_VALVE, 0),
-                IndicatorState(0, IndicatorType.THROTTLE, 1),
-                IndicatorState(0, IndicatorType.FI_FUEL, 2),
-                IndicatorState(0, IndicatorType.POWER_VALVE, 3),
-                IndicatorState(0, IndicatorType.STARTER_BLOCKING, 4),
-                IndicatorState(0, IndicatorType.AE, 5),
-                IndicatorState(0, IndicatorType.COOLING_FAN, 6),
-                IndicatorState(0, IndicatorType.CHECK_ENGINE, 7),
-                IndicatorState(0, IndicatorType.REV_LIM_FUEL_CUT, 8),
-                IndicatorState(0, IndicatorType.FLOOD_CLEAR_MODE, 9)
-            )
-
-            db.indicatorStateDao().insertAll(indicators)
-
-            appPrefs.isDbInitNeed = false
-        }
     }
 
     companion object {

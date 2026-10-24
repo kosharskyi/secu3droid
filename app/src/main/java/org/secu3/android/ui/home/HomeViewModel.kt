@@ -36,7 +36,6 @@ class HomeViewModel @Inject constructor(
     val isConnectionRunning get() = manager.isConnectionRunning
 
     init {
-        viewModelScope.launch { repository.checkAndInitDb() }
         viewModelScope.launch {
             manager.connectionStateFlow.collect { status ->
                 val mapped = when (status) { Connected -> HomeConnectionStatus.CONNECTED; InProgress -> HomeConnectionStatus.CONNECTING; else -> HomeConnectionStatus.DISCONNECTED }

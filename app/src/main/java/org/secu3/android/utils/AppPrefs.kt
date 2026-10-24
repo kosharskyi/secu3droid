@@ -46,9 +46,4 @@ class AppPrefs @Inject constructor(@ApplicationContext private val ctx: Context)
         }
         set(value) = mPrefs.edit { putString("last_app_version_check_stamp", value.toString()) }
 
-    var isDbInitNeed: Boolean
-        get() = mPrefs.getBoolean("need_db_init", true)
-        set(value) {
-            mPrefs.edit { putBoolean("need_db_init", value) }
-        }
 }
