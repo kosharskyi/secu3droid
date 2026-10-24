@@ -35,7 +35,6 @@ import org.secu3.android.connection.Connected
 import org.secu3.android.ui.MainActivity
 import org.secu3.android.ui.compose.SecuComposeTheme
 
-internal const val USB_PERMISSION_ACTION = "org.secu3.android.USB_PERMISSION"
 
 // Permission constants are strings and this helper returns them only for matching API levels.
 @SuppressLint("InlinedApi")
@@ -75,7 +74,7 @@ internal fun StartRoute(entry: NavBackStackEntry, activity: MainActivity, onConn
                 context.startActivity(Intent(android.provider.Settings.ACTION_LOCATION_SOURCE_SETTINGS))
             }
             vm.isBtDeviceAddressNotSelected() -> vm.startBtDiscovery()
-            else -> vm.startConnection(null)
+            else -> vm.startBluetoothConnection()
         }
     }
     SideEffect { continueBluetooth.value = checkBluetoothConfiguration }
@@ -91,13 +90,6 @@ internal fun StartRoute(entry: NavBackStackEntry, activity: MainActivity, onConn
                     UsbManager.ACTION_USB_DEVICE_ATTACHED -> device?.let(vm::newUsbDeviceAttached)
                     UsbManager.ACTION_USB_DEVICE_DETACHED -> vm.newUsbDeviceDetached()
                 }
-            }
-        }
-        val usbPermissionReceiver = object : BroadcastReceiver() {
-            override fun onReceive(c: Context, intent: Intent) {
-                if (intent.action != USB_PERMISSION_ACTION) return
-                val device = IntentCompat.getParcelableExtra(intent, UsbManager.EXTRA_DEVICE, UsbDevice::class.java)
-                vm.completeUsbPermissionRequest(device, intent.getBooleanExtra(UsbManager.EXTRA_PERMISSION_GRANTED, false))
             }
         }
         val btReceiver = object : BroadcastReceiver() {
@@ -131,7 +123,6 @@ internal fun StartRoute(entry: NavBackStackEntry, activity: MainActivity, onConn
         ContextCompat.registerReceiver(context, usbReceiver, IntentFilter().apply {
             addAction(UsbManager.ACTION_USB_DEVICE_ATTACHED); addAction(UsbManager.ACTION_USB_DEVICE_DETACHED)
         }, ContextCompat.RECEIVER_EXPORTED)
-        ContextCompat.registerReceiver(context, usbPermissionReceiver, IntentFilter(USB_PERMISSION_ACTION), ContextCompat.RECEIVER_NOT_EXPORTED)
         ContextCompat.registerReceiver(context, btReceiver, IntentFilter().apply {
             addAction(BluetoothDevice.ACTION_FOUND); addAction(BluetoothDevice.ACTION_BOND_STATE_CHANGED)
         }, ContextCompat.RECEIVER_EXPORTED)
@@ -140,7 +131,7 @@ internal fun StartRoute(entry: NavBackStackEntry, activity: MainActivity, onConn
         onDispose {
             activity.setStartUsbIntentHandler(null)
             lifecycle.removeObserver(observer)
-            runCatching { context.unregisterReceiver(usbReceiver) }; runCatching { context.unregisterReceiver(usbPermissionReceiver) }; runCatching { context.unregisterReceiver(btReceiver) }
+            runCatching { context.unregisterReceiver(usbReceiver) }; runCatching { context.unregisterReceiver(btReceiver) }
         }
     }
     LaunchedEffect(connected, isResumed) {

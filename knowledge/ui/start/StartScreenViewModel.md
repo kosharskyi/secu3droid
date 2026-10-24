@@ -6,6 +6,6 @@ The persisted MAC address is authoritative. A legacy stored name cannot validate
 
 Returning from pause resumes discovery only while the Bluetooth picker remains visible and idle. Resume must retain the current device list and order; only an explicit user-started scan reseeds it from bonded devices. The route can also return from location settings after its callback already started discovery, so the resume path must be idempotent.
 
-## USB permission and connection are Activity-scoped
+## StartScreen presents USB state but does not own connection admission
 
-USB attachment can happen while any route is visible, so StartScreen only presents device state and manual selection. The Activity handles attach, existing-device enumeration, one permission request per attachment, and terminal connection failure; USB attempts do not use the Bluetooth retry preference.
+USB attachment can happen while any route is visible, so StartScreen only presents device state and forwards manual selection to the Activity. Permission and attachment-attempt decisions live in `Secu3ConnectionManager`; the Activity performs Android's permission API call. USB attempts do not use the Bluetooth retry preference.

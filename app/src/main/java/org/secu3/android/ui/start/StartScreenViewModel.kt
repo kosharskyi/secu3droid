@@ -43,8 +43,6 @@ class StartScreenViewModel @Inject constructor(
     private var homeNavigationSent = false
     var pendingBluetoothPermissions: Array<String> = emptyArray()
     private val bluetoothBondGate = BluetoothBondRequestGate()
-    private val usbPermissionGate = UsbPermissionRequestGate()
-    private var pendingUsbPermissionDevice: UsbDevice? = null
     private var connectionJob: Job? = null
     private var returnFromLocationSettings = false
     private var discoveryActive = false
@@ -122,7 +120,7 @@ class StartScreenViewModel @Inject constructor(
         val device = devices.firstOrNull { bluetoothAddress(it) == address } ?: return
         cancelBtDiscovery()
         when (bondState(device)) {
-            BluetoothDevice.BOND_BONDED -> { saveDevice(device); startConnection(null) }
+            BluetoothDevice.BOND_BONDED -> { saveDevice(device); startBluetoothConnection() }
             else -> {
                 bluetoothBondGate.begin(address)
                 setConnecting(true)
@@ -136,7 +134,7 @@ class StartScreenViewModel @Inject constructor(
         val address = bluetoothAddress(device) ?: return
         if (!bluetoothBondGate.matches(address)) return
         when (bondState(device)) {
-            BluetoothDevice.BOND_BONDED -> { bluetoothBondGate.complete(address); saveDevice(device); startConnection(null) }
+            BluetoothDevice.BOND_BONDED -> { bluetoothBondGate.complete(address); saveDevice(device); startBluetoothConnection() }
             BluetoothDevice.BOND_BONDING -> setConnecting(true)
             else -> { bluetoothBondGate.complete(address); setConnecting(false) }
         }
@@ -151,13 +149,13 @@ class StartScreenViewModel @Inject constructor(
         })
     }
     private fun setConnecting(value: Boolean) { _uiState.value = _uiState.value.copy(connecting = value) }
-    fun startConnection(device: UsbDevice?) {
+    fun startBluetoothConnection() {
         if (connectionJob?.isActive == true) return
         if (!connectionManager.isConnected) homeNavigationSent = false
         cancelBtDiscovery()
         connectionJob = viewModelScope.launch {
             setConnecting(true)
-            if (device != null) connectionManager.startUsbConnection(device) else connectionManager.startBtConnection()
+            connectionManager.startBtConnection()
             while (connectionManager.isConnectionRunning && !connectionManager.isConnected && connectionManager.fwInfo == null) delay(300)
             setConnecting(false)
         }
@@ -166,8 +164,6 @@ class StartScreenViewModel @Inject constructor(
         connectionJob?.cancel()
         connectionJob = null
         bluetoothBondGate.cancel()
-        pendingUsbPermissionDevice = null
-        usbPermissionGate.cancel()
         discoveryActive = false
         setConnecting(false)
         connectionManager.stopConnection()
@@ -179,23 +175,7 @@ class StartScreenViewModel @Inject constructor(
     }
     fun resetHomeNavigation() { if (!connectionManager.isConnected) homeNavigationSent = false }
     fun newUsbDeviceAttached(device: UsbDevice) { usbDevice = device; _uiState.value = _uiState.value.copy(usbDeviceDetected = true) }
-    fun newUsbDeviceDetached() { usbDevice = null; pendingUsbPermissionDevice = null; usbPermissionGate.cancel(); _uiState.value = _uiState.value.copy(usbDeviceDetected = false) }
-    fun beginUsbPermissionRequest(device: UsbDevice): Boolean {
-        if (!usbPermissionGate.begin(device.deviceId)) return false
-        pendingUsbPermissionDevice = device
-        return true
-    }
-    fun completeUsbPermissionRequest(device: UsbDevice?, granted: Boolean) {
-        val pending = pendingUsbPermissionDevice ?: return
-        val hasDevicePermission = device != null && device.deviceId == pending.deviceId && runCatching { usbManager.hasPermission(pending) }.getOrDefault(false)
-        if (!usbPermissionGate.complete(device?.deviceId, granted, hasDevicePermission)) {
-            if (device == null) pendingUsbPermissionDevice = null
-            else if (device.deviceId == pending.deviceId) pendingUsbPermissionDevice = null
-            return
-        }
-        pendingUsbPermissionDevice = null
-        startConnection(pending)
-    }
+    fun newUsbDeviceDetached() { usbDevice = null; _uiState.value = _uiState.value.copy(usbDeviceDetected = false) }
     fun locationSettingsReturned(): Boolean {
         if (!consumeLocationSettingsReturn()) return false
         return isLocationEnabled()

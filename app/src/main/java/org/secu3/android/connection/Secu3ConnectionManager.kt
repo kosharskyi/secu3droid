@@ -48,6 +48,12 @@ import org.secu3.android.utils.UserPrefs
 import javax.inject.Inject
 import javax.inject.Singleton
 
+sealed interface UsbConnectionRequest {
+    data object Ignored : UsbConnectionRequest
+    data class PermissionRequired(val device: UsbDevice, val token: Long) : UsbConnectionRequest
+    data object Started : UsbConnectionRequest
+}
+
 @Singleton
 class Secu3ConnectionManager @Inject constructor(
     private val usbConnection: UsbConnection,
@@ -69,6 +75,8 @@ class Secu3ConnectionManager @Inject constructor(
     private val _usbSessionLocked = MutableStateFlow(false)
     val usbSessionLocked: StateFlow<Boolean> = _usbSessionLocked.asStateFlow()
     private val usbSessionFence = UsbSessionFence()
+    private val usbAttachmentAttempts = UsbAttachmentAttemptGate()
+    private var pendingUsbPermission: Pair<UsbDevice, Long>? = null
     @Volatile private var usbAttemptFailed = false
     @Volatile var fwInfo: FirmwareInfoPacket? = null
         private set
@@ -125,7 +133,80 @@ class Secu3ConnectionManager @Inject constructor(
     val activeUsbDeviceIdOrNull: Int? get() = usbSessionFence.activeDeviceId().takeIf { selectedTransport.value.transport == Transport.USB }
     val activeUsbSessionGeneration: Long? get() = selectedTransport.value.takeIf { it.transport == Transport.USB }?.generation
 
-    @Synchronized fun startUsbConnection(device: UsbDevice) {
+    /** Admit one supported USB serial connection attempt for a physical attachment. */
+    @Synchronized fun requestUsbConnection(device: UsbDevice): UsbConnectionRequest {
+        val attachedDevice = usbConnection.attachedDevice(device) ?: return UsbConnectionRequest.Ignored
+        val supported = usbConnection.supportsSerialConnection(attachedDevice)
+        val activeId = activeUsbDeviceIdOrNull
+        val attachment = attachmentIdentity(attachedDevice)
+        val pendingPermission = pendingUsbPermission
+        if (pendingPermission?.first?.deviceId == attachedDevice.deviceId &&
+            !samePhysicalDevice(pendingPermission.first, attachedDevice)
+        ) pendingUsbPermission = null
+        val decision = usbAttachmentAttempts.request(
+            attachment = attachment,
+            supported = supported,
+            conflictsWithActiveDevice = activeId != null && activeId != attachedDevice.deviceId,
+            hasPermission = usbConnection.hasPermission(attachedDevice),
+        )
+        return when (decision) {
+            UsbAdmissionDecision.Ignored -> UsbConnectionRequest.Ignored
+            is UsbAdmissionDecision.PermissionRequired -> {
+                pendingUsbPermission = attachedDevice to decision.token
+                UsbConnectionRequest.PermissionRequired(attachedDevice, decision.token)
+            }
+            UsbAdmissionDecision.Started -> {
+                if (pendingUsbPermission?.let { attachmentIdentity(it.first) == attachment } == true) pendingUsbPermission = null
+                startUsbConnectionInternal(attachedDevice)
+                UsbConnectionRequest.Started
+            }
+        }
+    }
+
+    /** Completes the single pending Android permission request after fresh platform checks. */
+    @Synchronized fun completeUsbPermissionRequest(
+        device: UsbDevice,
+        token: Long,
+        permissionGranted: Boolean,
+    ): UsbConnectionRequest {
+        val pending = pendingUsbPermission?.takeIf {
+            it.second == token && samePhysicalDevice(it.first, device)
+        } ?: return UsbConnectionRequest.Ignored
+        val deviceId = pending.first.deviceId
+        val attachedDevice = usbConnection.attachedDevice(device)
+        val activeId = activeUsbDeviceIdOrNull
+        val accepted = usbAttachmentAttempts.completePermission(
+            attachment = attachmentIdentity(pending.first),
+            token = token,
+            permissionGranted = permissionGranted,
+            hasPermission = attachedDevice?.let(usbConnection::hasPermission) == true,
+            attached = attachedDevice != null,
+            supported = attachedDevice?.let(usbConnection::supportsSerialConnection) == true,
+            conflictsWithActiveDevice = activeId != null && activeId != deviceId,
+        )
+        pendingUsbPermission = null
+        if (!accepted || attachedDevice == null) return UsbConnectionRequest.Ignored
+        startUsbConnectionInternal(attachedDevice)
+        return UsbConnectionRequest.Started
+    }
+
+    /** Keeps resume's existing first-eligible-device selection in the connection owner. */
+    @Synchronized fun isUsbConnectionCandidate(device: UsbDevice): Boolean {
+        val attached = usbConnection.attachedDevice(device) ?: return false
+        if (!usbConnection.supportsSerialConnection(attached)) return false
+        val identity = attachmentIdentity(attached)
+        return !usbAttachmentAttempts.hasAttempted(identity) ||
+            (!usbAttachmentAttempts.hasOpened(identity) && usbConnection.hasPermission(attached))
+    }
+
+    /** Reconciles attachment history after Activity resume when detach broadcasts were missed. */
+    @Synchronized fun reconcileUsbAttachments(attachedDevices: Collection<UsbDevice>) {
+        val identities = attachedDevices.map(::attachmentIdentity).toSet()
+        usbAttachmentAttempts.reconcile(identities)
+        if (pendingUsbPermission?.let { attachmentIdentity(it.first) !in identities } == true) pendingUsbPermission = null
+    }
+
+    @Synchronized private fun startUsbConnectionInternal(device: UsbDevice) {
         cancelUsbOpenAttempt()
         val attemptGeneration = usbSessionFence.begin(device.deviceId)
         selectedTransport.value = Selection(Transport.NONE, attemptGeneration)
@@ -156,6 +237,8 @@ class Secu3ConnectionManager @Inject constructor(
     }
 
     @Synchronized fun onUsbDeviceDetached(deviceId: Int): Boolean {
+        usbAttachmentAttempts.detach(deviceId)
+        if (pendingUsbPermission?.first?.deviceId == deviceId) pendingUsbPermission = null
         if (selectedTransport.value.transport != Transport.USB || !usbSessionFence.detach(deviceId)) return false
         cancelUsbOpenAttempt()
         val nextGeneration = usbSessionFence.generation()
@@ -211,6 +294,17 @@ class Secu3ConnectionManager @Inject constructor(
         usbOpenJob = null
         synchronized(usbSelectionReady) { usbSelectionReady.clear() }
     }
+
+    private fun samePhysicalDevice(first: UsbDevice, second: UsbDevice): Boolean =
+        first.deviceId == second.deviceId && first.deviceName == second.deviceName &&
+            first.vendorId == second.vendorId && first.productId == second.productId
+
+    private fun attachmentIdentity(device: UsbDevice) = UsbAttachmentIdentity(
+        deviceId = device.deviceId,
+        deviceName = device.deviceName,
+        vendorId = device.vendorId,
+        productId = device.productId,
+    )
 
     @Synchronized private fun confirmUsbFirmware(selection: Selection, packet: FirmwareInfoPacket) {
         if (selectedTransport.value != selection || usbAttemptFailed || !usbConnection.isConnected) return

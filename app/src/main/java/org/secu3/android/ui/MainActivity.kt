@@ -24,12 +24,13 @@ import android.hardware.usb.UsbManager
 import android.app.PendingIntent
 import android.os.Build
 import org.secu3.android.R
-import com.hoho.android.usbserial.driver.UsbSerialProber
 import androidx.core.view.WindowInsetsControllerCompat
 import androidx.lifecycle.Lifecycle
+import androidx.lifecycle.LifecycleEventObserver
 import androidx.navigation.NavDestination
 import androidx.navigation.NavHostController
 import dagger.hilt.android.AndroidEntryPoint
+import org.secu3.android.connection.UsbConnectionRequest
 
 @AndroidEntryPoint
 class MainActivity : ComponentActivity() {
@@ -48,6 +49,12 @@ class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         registerUsbLifecycle()
+        lifecycle.addObserver(LifecycleEventObserver { _, event ->
+            if (event == Lifecycle.Event.ON_RESUME) {
+                processPendingNavigation()
+                deliverPendingUsbIntent()
+            }
+        })
         if (savedInstanceState == null) handleUsbIntent(intent)
         setContent { RootNavigation(this) }
         lifecycleScope.launch {
@@ -64,12 +71,6 @@ class MainActivity : ComponentActivity() {
                 }
             }
         }
-    }
-
-    override fun onPostResume() {
-        super.onPostResume()
-        processPendingNavigation()
-        deliverPendingUsbIntent()
     }
 
     fun openHome() = navigateTo(HOME_ROUTE)
@@ -180,7 +181,6 @@ class MainActivity : ComponentActivity() {
                 when (intent.action) {
                     UsbManager.ACTION_USB_DEVICE_ATTACHED -> requestUsbDeviceConnection(device)
                     UsbManager.ACTION_USB_DEVICE_DETACHED -> {
-                        viewModel.usbDeviceDetached(device.deviceId)
                         if (viewModel.connectionManager.onUsbDeviceDetached(device.deviceId)) {
                             viewModel.requestStartNavigation()
                             openStart()
@@ -194,11 +194,12 @@ class MainActivity : ComponentActivity() {
                 if (intent.action != USB_PERMISSION_ACTION) return
                 val device = IntentCompat.getParcelableExtra(intent, UsbManager.EXTRA_DEVICE, UsbDevice::class.java)
                 val token = intent.getLongExtra(EXTRA_USB_ATTEMPT_TOKEN, -1L)
-                val pending = viewModel.consumePermissionDevice(token, device?.deviceId ?: return) ?: return
-                val manager = getSystemService(USB_SERVICE) as UsbManager
-                if (intent.getBooleanExtra(UsbManager.EXTRA_PERMISSION_GRANTED, false) && manager.hasPermission(pending) && manager.deviceList[pending.deviceName]?.deviceId == pending.deviceId) {
-                    startUsbDevice(pending)
-                }
+                val resultDevice = device ?: return
+                viewModel.connectionManager.completeUsbPermissionRequest(
+                    device = resultDevice,
+                    token = token,
+                    permissionGranted = intent.getBooleanExtra(UsbManager.EXTRA_PERMISSION_GRANTED, false),
+                )
             }
         }
         ContextCompat.registerReceiver(this, usbReceiver, IntentFilter().apply {
@@ -208,26 +209,17 @@ class MainActivity : ComponentActivity() {
     }
 
     internal fun requestUsbDeviceConnection(device: UsbDevice) {
-        if (UsbSerialProber.getDefaultProber().probeDevice(device)?.ports?.isNotEmpty() != true) return
-        val activeUsbId = viewModel.connectionManager.activeUsbDeviceIdOrNull
-        if (activeUsbId != null && activeUsbId != device.deviceId) return
-        if (viewModel.hasPendingUsbPermission && !viewModel.isUsbAttempted(device.deviceId)) return
-        val usbManager = getSystemService(USB_SERVICE) as UsbManager
-        if (runCatching { usbManager.hasPermission(device) }.getOrDefault(false)) {
-            viewModel.beginUsbAttempt(device)
-            startUsbDevice(device)
-        }
-        else {
-            val token = viewModel.beginUsbAttempt(device) ?: return
-            val flags = PendingIntent.FLAG_UPDATE_CURRENT or if (Build.VERSION.SDK_INT >= 31) PendingIntent.FLAG_MUTABLE else 0
-            val permissionIntent = Intent(USB_PERMISSION_ACTION).setPackage(packageName).putExtra(EXTRA_USB_ATTEMPT_TOKEN, token)
-            usbManager.requestPermission(device, PendingIntent.getBroadcast(this, token.toInt(), permissionIntent, flags))
+        when (val request = viewModel.connectionManager.requestUsbConnection(device)) {
+            UsbConnectionRequest.Ignored, UsbConnectionRequest.Started -> Unit
+            is UsbConnectionRequest.PermissionRequired -> requestUsbPermission(request.device, request.token)
         }
     }
 
-    private fun startUsbDevice(device: UsbDevice) {
-        if (!viewModel.claimUsbOpen(device.deviceId)) return
-        viewModel.connectionManager.startUsbConnection(device)
+    private fun requestUsbPermission(device: UsbDevice, token: Long) {
+        val usbManager = getSystemService(USB_SERVICE) as UsbManager
+        val flags = PendingIntent.FLAG_UPDATE_CURRENT or if (Build.VERSION.SDK_INT >= 31) PendingIntent.FLAG_MUTABLE else 0
+        val permissionIntent = Intent(USB_PERMISSION_ACTION).setPackage(packageName).putExtra(EXTRA_USB_ATTEMPT_TOKEN, token)
+        usbManager.requestPermission(device, PendingIntent.getBroadcast(this, token.toInt(), permissionIntent, flags))
     }
 
     private fun openUsbHome() {
@@ -261,8 +253,6 @@ class MainActivity : ComponentActivity() {
         super.onResume()
         if (activeComposeRoute == DASHBOARD_ROUTE) window.addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON)
         else applyKeepScreenOnPreference()
-        processPendingNavigation()
-        deliverPendingUsbIntent()
         if ((viewModel.connectionManager.currentConnectionState is ConnectionFailed || viewModel.connectionManager.currentConnectionState is ConnectionLost) && viewModel.connectionManager.activeUsbDeviceIdOrNull != null) {
             viewModel.requestStartNavigation()
         }
@@ -270,17 +260,13 @@ class MainActivity : ComponentActivity() {
         val usbManager = getSystemService(USB_SERVICE) as UsbManager
         val devices = usbManager.deviceList.values
         val ids = devices.mapTo(mutableSetOf()) { it.deviceId }
-        viewModel.reconcileUsbAttachments(ids)
+        viewModel.connectionManager.reconcileUsbAttachments(devices)
         val activeId = viewModel.connectionManager.activeUsbDeviceIdOrNull
         if (activeId != null && activeId !in ids && viewModel.connectionManager.onUsbDeviceDetached(activeId)) {
-            viewModel.usbDeviceDetached(activeId)
             viewModel.requestStartNavigation()
             openStart()
         }
-        devices.firstOrNull {
-            UsbSerialProber.getDefaultProber().probeDevice(it)?.ports?.isNotEmpty() == true &&
-                (!viewModel.isUsbAttempted(it.deviceId) || (!viewModel.hasOpenedUsb(it.deviceId) && usbManager.hasPermission(it)))
-        }
+        devices.firstOrNull(viewModel.connectionManager::isUsbConnectionCandidate)
             ?.let(::requestUsbDeviceConnection)
         if (viewModel.connectionManager.usbSessionLocked.value) applyConnectionServicePolicy()
     }

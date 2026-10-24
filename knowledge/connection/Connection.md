@@ -6,6 +6,10 @@ Retry and read coroutines are children of the reusable connection scope and are 
 
 Probe the selected `UsbDevice` and choose its first serial port before calling `UsbManager.openDevice`. Unsupported devices or drivers with no ports must fail before acquiring a USB connection that would otherwise need to be closed.
 
+## The connection manager owns USB attachment admission
+
+`Secu3ConnectionManager.requestUsbConnection` is the only app entry point for opening USB. It resolves event payloads against the currently attached device, checks serial support and active-device conflicts, and owns per-attachment attempt tokens keyed by device ID, system device name, vendor ID and product ID. This identity check matters when Android reuses a device ID after replacement. A denied permission result consumes the pending prompt slot but retains that attachment's attempt token, so a later Android attach chooser grant can open it once without repeating the prompt. Permission completion rechecks attachment identity, driver support and platform permission; detach or resume reconciliation against full device identities invalidates stale tokens.
+
 ## Firmware information confirms a USB session
 
 USB open is one attempt per physical attachment. The manager gates protocol consumers and Home navigation until a valid firmware-info packet confirms the ECU; a bounded handshake timeout or transport error ends that attempt. Detach is matched by device ID and invalidates the active generation, so old packet work and unrelated detach broadcasts cannot affect a replacement session. Bluetooth retains its configured retry behavior.

@@ -51,7 +51,21 @@ class UsbConnection @Inject constructor(
     private var currentDevice: UsbDevice? = null
     @Volatile private var attemptGeneration = 0L
 
-    fun startConnection(device: UsbDevice) {
+    /** Resolves an event payload back to the device that is currently attached. */
+    fun attachedDevice(device: UsbDevice): UsbDevice? = runCatching {
+        usbManager.deviceList.values.firstOrNull {
+            it.deviceId == device.deviceId && it.deviceName == device.deviceName &&
+                it.vendorId == device.vendorId && it.productId == device.productId
+        }
+    }.getOrNull()
+
+    fun supportsSerialConnection(device: UsbDevice): Boolean = runCatching {
+        UsbSerialProber.getDefaultProber().probeDevice(device)?.ports?.isNotEmpty() == true
+    }.getOrDefault(false)
+
+    fun hasPermission(device: UsbDevice): Boolean = runCatching { usbManager.hasPermission(device) }.getOrDefault(false)
+
+    internal fun startConnection(device: UsbDevice) {
         stopConnection()
         val attempt = ++attemptGeneration
         connectionAttempts = 0
@@ -79,9 +93,7 @@ class UsbConnection @Inject constructor(
 
     private fun connectToDevice(usbDevice: UsbDevice): UsbSerialPort {
 
-        val device = usbManager.deviceList.values.firstOrNull {
-            it.deviceId == usbDevice.deviceId
-        }?: throw IllegalStateException("No USB devices found")
+        val device = attachedDevice(usbDevice) ?: throw IllegalStateException("No USB devices found")
 
         val driver = UsbSerialProber.getDefaultProber().probeDevice(device)
             ?: throw IllegalStateException("No suitable driver found for device")
