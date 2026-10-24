@@ -14,6 +14,10 @@ Secu3droid is an Android client for the Secu-3 engine control unit (ECU). The ap
 
 The project uses Jetpack Compose for UI, Material3 for Compose components, and Navigation Compose for navigation. Do not add Compose Material2 widgets or Google Material view/XML libraries. Compose Material icon artifacts are allowed for the existing `androidx.compose.material.icons` namespace. XML resources may provide platform-only Activity/window themes. Follow `knowledge/compose-migration.md` for screen and navigation conventions.
 
+Business logic must not be implemented in UI layers, including Activities, Compose routes/screens, ViewModels, adapters, and UI-specific state holders or controllers. Business rules, connection/session lifecycle decisions, protocol behavior, persistence/network policies, and domain error classification belong to the domain, data, or core components that own those responsibilities.
+
+UI code may map domain state to presentation (including localized messages and styling), manage UI-only interaction/navigation state, and forward user actions to the owning components. ViewModels expose presentation state and coordinate those calls; they must not reconstruct domain/session history or duplicate business rules to infer outcomes. If presentation needs a distinction missing from a shared contract, extend the owning component's typed state/result and update its consumers and tests within the approved plan.
+
 ## Important Directories
 
 - `app/src/main/java/org/secu3/android/connection`: Bluetooth/USB connection handling and foreground connection service.
