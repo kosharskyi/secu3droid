@@ -18,6 +18,13 @@ Business logic must not be implemented in UI layers, including Activities, Compo
 
 UI code may map domain state to presentation (including localized messages and styling), manage UI-only interaction/navigation state, and forward user actions to the owning components. ViewModels expose presentation state and coordinate those calls; they must not reconstruct domain/session history or duplicate business rules to infer outcomes. If presentation needs a distinction missing from a shared contract, extend the owning component's typed state/result and update its consumers and tests within the approved plan.
 
+## Class and Helper Organization
+
+- Do not create standalone files that contain only top-level helper functions. Keep helper logic in the class that owns the responsibility, or in a dedicated class when extraction is justified. Compose UI functions continue to follow the existing screen and component conventions.
+- When shared helper behavior would otherwise be implemented as a static utility, use an injectable `@Singleton` class with an `@Inject` constructor and inject it into its consumers. Do not replace dependency injection with a Kotlin `object`, global helper functions, or manual singleton access.
+- Do not introduce a new class solely to hold one method used in a single place. Keep that method in the consuming class, normally as a private method, while respecting the business-logic boundaries above.
+- A group of methods may be extracted into a separate class when they share a cohesive responsibility or context, even if that class currently has only one consumer. Base extraction on the existing responsibility and usage, not hypothetical future reuse.
+
 ## Important Directories
 
 - `app/src/main/java/org/secu3/android/connection`: Bluetooth/USB connection handling and foreground connection service.

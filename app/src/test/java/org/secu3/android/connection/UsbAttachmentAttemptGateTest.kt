@@ -88,6 +88,35 @@ class UsbAttachmentAttemptGateTest {
         assertNotEquals(oldToken, newToken)
     }
 
+    @Test fun firstEligibleAttachmentPreservesOrderAndAllowsChooserGrantWithoutReopening() {
+        val gate = UsbAttachmentAttemptGate()
+        val denied = attachment(41)
+        val next = attachment(42)
+        val third = attachment(43)
+        val token = (gate.request(denied, true, false, false) as UsbAdmissionDecision.PermissionRequired).token
+        gate.completePermission(denied, token, permissionGranted = false, hasPermission = false, attached = true, supported = true, conflictsWithActiveDevice = false)
+
+        fun first(hasPermission: Set<UsbAttachmentIdentity>): UsbAttachmentIdentity? =
+            gate.firstEligibleAttachment(
+                candidates = listOf(denied, next, third),
+                identity = { it },
+                supported = { it != next },
+                hasPermission = { it in hasPermission },
+            )
+
+        assertEquals(third, first(emptySet()))
+        assertEquals(denied, first(setOf(denied)))
+
+        assertEquals(UsbAdmissionDecision.Started, gate.request(denied, true, false, true))
+        assertEquals(third, first(emptySet()))
+        assertEquals(null, gate.firstEligibleAttachment(
+            candidates = listOf(denied),
+            identity = { it },
+            supported = { true },
+            hasPermission = { true },
+        ))
+    }
+
     @Test fun unrelatedDetachCannotInvalidatePendingAttempt() {
         val gate = UsbAttachmentAttemptGate()
         val target = attachment(20)

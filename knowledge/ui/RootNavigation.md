@@ -8,7 +8,7 @@ Dark navigation-bar icons require Android 8.0 (API 26). On Android 7.0/7.1 the n
 
 ## The Activity observes USB lifecycle while the connection manager admits attempts
 
-Attach and detach broadcasts must remain observed while any route or dialog is visible. The Activity forwards attach, detach and resume attachment snapshots to `Secu3ConnectionManager`; the manager owns serial support checks, active-device conflict rules, permission tokens and one open per physical attachment. StartScreen only presents device state and forwards manual selection. After firmware confirms a USB session, navigate to Home while clearing prior feature entries; on matching device detach, clear the stack to StartScreen.
+Attach and detach broadcasts must remain observed while any route or dialog is visible. The Activity forwards attach and detach events and asks `Secu3ConnectionManager` to synchronize attachments on resume; the manager obtains the authoritative snapshot, owns serial support checks, active-device conflict rules, permission tokens and one open per physical attachment. Snapshot query failure must not be interpreted as an empty device list. StartScreen only presents device state and forwards manual selection. After firmware confirms a USB session, navigate to Home while clearing prior feature entries; on matching device detach, clear the stack to StartScreen.
 
 ## Android's attach chooser can grant USB access after the explicit permission result
 

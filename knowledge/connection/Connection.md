@@ -10,6 +10,16 @@ Probe the selected `UsbDevice` and choose its first serial port before calling `
 
 `Secu3ConnectionManager.requestUsbConnection` is the only app entry point for opening USB. It resolves event payloads against the currently attached device, checks serial support and active-device conflicts, and owns per-attachment attempt tokens keyed by device ID, system device name, vendor ID and product ID. This identity check matters when Android reuses a device ID after replacement. A denied permission result consumes the pending prompt slot but retains that attachment's attempt token, so a later Android attach chooser grant can open it once without repeating the prompt. Permission completion rechecks attachment identity, driver support and platform permission; detach or resume reconciliation against full device identities invalidates stale tokens.
 
+## Attachment synchronization never treats an unavailable USB snapshot as empty
+
+`UsbConnection.attachedDevicesSnapshot()` distinguishes an available empty list from failure to query Android's device list. `Secu3ConnectionManager.synchronizeUsbAttachments()` leaves active-session and admission state unchanged on snapshot failure; on success it processes a missed active detach before reconciling pending attachment history and admitting at most the first eligible device. Its typed result carries both USB session termination and any permission/open request so consumers do not infer USB ownership from the shared connection state.
+
+The manager retains the selected session's full physical attachment identity across `ConnectionFailed` and `ConnectionLost`; a same-device-ID replacement in a later snapshot still terminates the old session before it can be admitted.
+
+## Retain the selected USB attachment identity after a connection failure
+
+`ConnectionFailed` and `ConnectionLost` invalidate firmware confirmation but retain the selected USB attachment. Keep its full identity alongside the session fence until matching detach, explicit stop or transport replacement; otherwise a different device reusing the same Android device ID can evade missed-detach detection during synchronization.
+
 ## Firmware information confirms a USB session
 
 USB open is one attempt per physical attachment. The manager gates protocol consumers and Home navigation until a valid firmware-info packet confirms the ECU; a bounded handshake timeout or transport error ends that attempt. Detach is matched by device ID and invalidates the active generation, so old packet work and unrelated detach broadcasts cannot affect a replacement session. Bluetooth retains its configured retry behavior.

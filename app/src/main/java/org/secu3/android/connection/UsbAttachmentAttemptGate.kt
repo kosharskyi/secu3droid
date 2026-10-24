@@ -51,6 +51,16 @@ internal class UsbAttachmentAttemptGate {
 
     @Synchronized fun hasOpened(attachment: UsbAttachmentIdentity): Boolean = attempted[attachment]?.let { it in opened } == true
 
+    @Synchronized fun <T> firstEligibleAttachment(
+        candidates: Iterable<T>,
+        identity: (T) -> UsbAttachmentIdentity,
+        supported: (T) -> Boolean,
+        hasPermission: (T) -> Boolean,
+    ): T? = candidates.firstOrNull { candidate ->
+        val key = identity(candidate)
+        supported(candidate) && (!hasAttempted(key) || (!hasOpened(key) && hasPermission(candidate)))
+    }
+
     @Synchronized fun detach(deviceId: Int) {
         attempted.keys.filter { it.deviceId == deviceId }.toList().forEach { key -> attempted.remove(key)?.let(opened::remove) }
         if (pendingPermission?.first?.deviceId == deviceId) pendingPermission = null

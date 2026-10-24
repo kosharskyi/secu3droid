@@ -2,7 +2,12 @@ package org.secu3.android.connection
 
 import android.bluetooth.BluetoothManager
 import android.content.Context
+import android.hardware.usb.UsbConfiguration
+import android.hardware.usb.UsbDevice
 import android.hardware.usb.UsbManager
+import android.os.Binder
+import android.os.Parcel
+import androidx.test.filters.SdkSuppress
 import androidx.test.platform.app.InstrumentationRegistry
 import com.hoho.android.usbserial.driver.UsbSerialPort
 import java.io.IOException
@@ -80,6 +85,104 @@ class UsbSessionIntegrationTest {
         }
     }
 
+    @Test fun attachmentSynchronizationDetectsMissedDetachBeforeAnotherResume() = runBlocking {
+        val fixture = Fixture()
+        try {
+            fixture.attach(79)
+            fixture.confirmFirmware()
+
+            val first = fixture.manager.synchronizeUsbAttachments(Result.success(emptyList()))
+            assertTrue(first is UsbAttachmentSynchronization.Synchronized)
+            first as UsbAttachmentSynchronization.Synchronized
+            assertEquals(UsbSessionTerminationReason.Detached, first.terminalSession?.reason)
+            assertEquals(79, first.terminalSession?.deviceId)
+            assertEquals(Disconnected, fixture.manager.currentConnectionState)
+            assertFalse(fixture.manager.usbSessionLocked.value)
+
+            val repeated = fixture.manager.synchronizeUsbAttachments(Result.success(emptyList()))
+            assertTrue(repeated is UsbAttachmentSynchronization.Synchronized)
+            assertNull((repeated as UsbAttachmentSynchronization.Synchronized).terminalSession)
+            assertEquals(UsbConnectionRequest.Ignored, repeated.connectionRequest)
+        } finally {
+            fixture.close()
+        }
+    }
+
+    @SdkSuppress(minSdkVersion = 35)
+    @Test fun attachmentSynchronizationRetainsSessionForSamePhysicalDevice() = runBlocking {
+        val fixture = Fixture()
+        val device = usbDevice("/dev/bus/usb/001/055", 0x1234, 0x5678)
+        try {
+            fixture.attach(device.deviceId, device.toIdentity())
+            fixture.confirmFirmware()
+
+            val result = fixture.manager.synchronizeUsbAttachments(Result.success(listOf(device)))
+
+            assertTrue(result is UsbAttachmentSynchronization.Synchronized)
+            result as UsbAttachmentSynchronization.Synchronized
+            assertNull(result.terminalSession)
+            assertEquals(Connected, fixture.manager.currentConnectionState)
+            assertTrue(fixture.manager.usbSessionLocked.value)
+        } finally {
+            fixture.close()
+        }
+    }
+
+    @SdkSuppress(minSdkVersion = 35)
+    @Test fun attachmentSynchronizationDetachesSameIdPhysicalReplacement() = runBlocking {
+        val fixture = Fixture()
+        val original = usbDevice("/dev/bus/usb/001/056", 0x1234, 0x5678)
+        val replacement = usbDevice("/dev/bus/usb/001/056", 0x4321, 0x8765)
+        try {
+            assertEquals(original.deviceId, replacement.deviceId)
+            fixture.attach(original.deviceId, original.toIdentity())
+            fixture.confirmFirmware()
+            val oldGeneration = fixture.manager.activeUsbSessionGeneration
+
+            val result = fixture.manager.synchronizeUsbAttachments(Result.success(listOf(replacement)))
+
+            assertTrue(result is UsbAttachmentSynchronization.Synchronized)
+            result as UsbAttachmentSynchronization.Synchronized
+            assertEquals(UsbSessionTerminationReason.Detached, result.terminalSession?.reason)
+            assertEquals(original.deviceId, result.terminalSession?.deviceId)
+            assertEquals(Disconnected, fixture.manager.currentConnectionState)
+            assertFalse(fixture.manager.usbSessionLocked.value)
+            assertTrue(fixture.manager.activeUsbSessionGeneration != oldGeneration)
+        } finally {
+            fixture.close()
+        }
+    }
+
+    @Test fun unavailableAttachmentSnapshotDoesNotDetachOrEraseUsbTerminalState() = runBlocking {
+        val fixture = Fixture()
+        try {
+            fixture.attach(78)
+            fixture.confirmFirmware()
+            val pendingIdentity = UsbAttachmentIdentity(93, "usb/pending", 0x1234, 0x5678)
+            val gate = fixture.attachmentGate()
+            val pendingToken = (gate.request(pendingIdentity, true, false, false) as UsbAdmissionDecision.PermissionRequired).token
+
+            val whileConnected = fixture.manager.synchronizeUsbAttachments(Result.failure(SecurityException("USB list unavailable")))
+            assertTrue(whileConnected is UsbAttachmentSynchronization.SnapshotUnavailable)
+            assertNull((whileConnected as UsbAttachmentSynchronization.SnapshotUnavailable).terminalSession)
+            assertTrue(fixture.manager.isUsbConnected)
+            assertEquals(Connected, fixture.manager.currentConnectionState)
+            assertTrue(gate.accepts(pendingIdentity, pendingToken))
+
+            fixture.usbStates.emit(ConnectionFailed(IOException("USB read failed")))
+            fixture.await { fixture.manager.currentConnectionState is ConnectionLost }
+            val whileLost = fixture.manager.synchronizeUsbAttachments(Result.failure(SecurityException("USB list unavailable")))
+            assertTrue(whileLost is UsbAttachmentSynchronization.SnapshotUnavailable)
+            val terminal = (whileLost as UsbAttachmentSynchronization.SnapshotUnavailable).terminalSession
+            assertEquals(UsbSessionTerminationReason.Lost, terminal?.reason)
+            assertEquals(78, terminal?.deviceId)
+            assertTrue(fixture.manager.currentConnectionState is ConnectionLost)
+            assertTrue(gate.accepts(pendingIdentity, pendingToken))
+        } finally {
+            fixture.close()
+        }
+    }
+
     @Test fun terminalUsbFailureRejectsLateFirmwareAndFurtherCommands() = runBlocking {
         val fixture = Fixture()
         try {
@@ -149,7 +252,7 @@ class UsbSessionIntegrationTest {
 
         // The endpoint injection matches existing transport integration fixtures. It bypasses only
         // Android's physical USB opening; packet parsing, session identity and send gates are real.
-        suspend fun attach(deviceId: Int) {
+        suspend fun attach(deviceId: Int, activeIdentity: UsbAttachmentIdentity? = null) {
             val open = AtomicBoolean(true)
             val port = Proxy.newProxyInstance(UsbSerialPort::class.java.classLoader, arrayOf(UsbSerialPort::class.java)) { proxy, method, args ->
                 when (method.name) {
@@ -166,6 +269,7 @@ class UsbSessionIntegrationTest {
             connectionField("isRunning").setBoolean(usb, true)
             val fence = managerField("usbSessionFence").get(manager) as UsbSessionFence
             val generation = fence.begin(deviceId)
+            managerField("activeUsbAttachment").set(manager, activeIdentity)
             val selectionClass = Secu3ConnectionManager::class.java.declaredClasses.first { it.simpleName == "Selection" }
             val transportClass = Secu3ConnectionManager::class.java.declaredClasses.first { it.simpleName == "Transport" }
             val usbTransport = transportClass.enumConstants!!.first { (it as Enum<*>).name == "USB" }
@@ -199,8 +303,35 @@ class UsbSessionIntegrationTest {
             (SecuLogger::class.java.getDeclaredField("loggerScope").apply { isAccessible = true }.get(logger) as CoroutineScope).cancel()
         }
 
+        fun attachmentGate() = managerField("usbAttachmentAttempts").get(manager) as UsbAttachmentAttemptGate
+
         private fun managerField(name: String) = Secu3ConnectionManager::class.java.getDeclaredField(name).apply { isAccessible = true }
         private fun connectionField(name: String) = Connection::class.java.getDeclaredField(name).apply { isAccessible = true }
+    }
+
+    private fun UsbDevice.toIdentity() = UsbAttachmentIdentity(deviceId, deviceName, vendorId, productId)
+
+    /** Parcel layout verified against AOSP API 35 and the local API 36 source; callers require API 35+. */
+    private fun usbDevice(name: String, vendorId: Int, productId: Int): UsbDevice {
+        val parcel = Parcel.obtain()
+        return try {
+            parcel.writeString(name)
+            parcel.writeInt(vendorId)
+            parcel.writeInt(productId)
+            parcel.writeInt(0)
+            parcel.writeInt(0)
+            parcel.writeInt(0)
+            parcel.writeString(null)
+            parcel.writeString(null)
+            parcel.writeString("1.0")
+            parcel.writeStrongBinder(Binder())
+            parcel.writeParcelableArray(emptyArray<UsbConfiguration>(), 0)
+            repeat(5) { parcel.writeInt(0) }
+            parcel.setDataPosition(0)
+            UsbDevice.CREATOR.createFromParcel(parcel)
+        } finally {
+            parcel.recycle()
+        }
     }
 
     companion object {

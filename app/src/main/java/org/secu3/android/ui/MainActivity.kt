@@ -30,6 +30,7 @@ import androidx.lifecycle.LifecycleEventObserver
 import androidx.navigation.NavDestination
 import androidx.navigation.NavHostController
 import dagger.hilt.android.AndroidEntryPoint
+import org.secu3.android.connection.UsbAttachmentSynchronization
 import org.secu3.android.connection.UsbConnectionRequest
 
 @AndroidEntryPoint
@@ -195,11 +196,11 @@ class MainActivity : ComponentActivity() {
                 val device = IntentCompat.getParcelableExtra(intent, UsbManager.EXTRA_DEVICE, UsbDevice::class.java)
                 val token = intent.getLongExtra(EXTRA_USB_ATTEMPT_TOKEN, -1L)
                 val resultDevice = device ?: return
-                viewModel.connectionManager.completeUsbPermissionRequest(
+                handleUsbConnectionRequest(viewModel.connectionManager.completeUsbPermissionRequest(
                     device = resultDevice,
                     token = token,
                     permissionGranted = intent.getBooleanExtra(UsbManager.EXTRA_PERMISSION_GRANTED, false),
-                )
+                ))
             }
         }
         ContextCompat.registerReceiver(this, usbReceiver, IntentFilter().apply {
@@ -209,7 +210,11 @@ class MainActivity : ComponentActivity() {
     }
 
     internal fun requestUsbDeviceConnection(device: UsbDevice) {
-        when (val request = viewModel.connectionManager.requestUsbConnection(device)) {
+        handleUsbConnectionRequest(viewModel.connectionManager.requestUsbConnection(device))
+    }
+
+    private fun handleUsbConnectionRequest(request: UsbConnectionRequest) {
+        when (request) {
             UsbConnectionRequest.Ignored, UsbConnectionRequest.Started -> Unit
             is UsbConnectionRequest.PermissionRequired -> requestUsbPermission(request.device, request.token)
         }
@@ -253,21 +258,19 @@ class MainActivity : ComponentActivity() {
         super.onResume()
         if (activeComposeRoute == DASHBOARD_ROUTE) window.addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON)
         else applyKeepScreenOnPreference()
-        if ((viewModel.connectionManager.currentConnectionState is ConnectionFailed || viewModel.connectionManager.currentConnectionState is ConnectionLost) && viewModel.connectionManager.activeUsbDeviceIdOrNull != null) {
-            viewModel.requestStartNavigation()
+        val synchronization = viewModel.connectionManager.synchronizeUsbAttachments()
+        val terminalSession = when (synchronization) {
+            is UsbAttachmentSynchronization.SnapshotUnavailable -> synchronization.terminalSession
+            is UsbAttachmentSynchronization.Synchronized -> synchronization.terminalSession
         }
+        if (terminalSession != null) viewModel.requestStartNavigation()
         if (viewModel.consumeStartNavigation()) openStart()
-        val usbManager = getSystemService(USB_SERVICE) as UsbManager
-        val devices = usbManager.deviceList.values
-        val ids = devices.mapTo(mutableSetOf()) { it.deviceId }
-        viewModel.connectionManager.reconcileUsbAttachments(devices)
-        val activeId = viewModel.connectionManager.activeUsbDeviceIdOrNull
-        if (activeId != null && activeId !in ids && viewModel.connectionManager.onUsbDeviceDetached(activeId)) {
-            viewModel.requestStartNavigation()
-            openStart()
+        when (synchronization) {
+            is UsbAttachmentSynchronization.SnapshotUnavailable -> Unit
+            is UsbAttachmentSynchronization.Synchronized -> {
+                handleUsbConnectionRequest(synchronization.connectionRequest)
+            }
         }
-        devices.firstOrNull(viewModel.connectionManager::isUsbConnectionCandidate)
-            ?.let(::requestUsbDeviceConnection)
         if (viewModel.connectionManager.usbSessionLocked.value) applyConnectionServicePolicy()
     }
 

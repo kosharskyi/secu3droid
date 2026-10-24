@@ -51,6 +51,13 @@ class UsbConnection @Inject constructor(
     private var currentDevice: UsbDevice? = null
     @Volatile private var attemptGeneration = 0L
 
+    /** Distinguishes an unavailable device list from a successful empty list. */
+    fun attachedDevicesSnapshot(): Result<List<UsbDevice>> = try {
+        Result.success(usbManager.deviceList.values.toList())
+    } catch (failure: Exception) {
+        Result.failure(failure)
+    }
+
     /** Resolves an event payload back to the device that is currently attached. */
     fun attachedDevice(device: UsbDevice): UsbDevice? = runCatching {
         usbManager.deviceList.values.firstOrNull {
