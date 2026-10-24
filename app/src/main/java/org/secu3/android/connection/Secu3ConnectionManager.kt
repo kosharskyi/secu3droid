@@ -223,12 +223,14 @@ class Secu3ConnectionManager @Inject constructor(
 
     @Synchronized private fun failUsbSession(state: ConnectionFailed) {
         if (selectedTransport.value.transport != Transport.USB || usbAttemptFailed) return
+        val deviceId = activeUsbDeviceIdOrNull
+        val wasConfirmed = deviceId?.let { usbSessionFence.isConfirmed(it, selectedTransport.value.generation) } == true
         cancelUsbOpenAttempt()
-        activeUsbDeviceIdOrNull?.let { usbSessionFence.invalidateConfirmation(it, selectedTransport.value.generation) }
+        deviceId?.let { usbSessionFence.invalidateConfirmation(it, selectedTransport.value.generation) }
         _usbSessionLocked.value = false
         fwInfo = null
         usbAttemptFailed = true
-        publishConnectionState(state)
+        publishConnectionState(if (wasConfirmed) ConnectionLost(state.e) else state)
         secuLogger.stopLogging()
     }
 

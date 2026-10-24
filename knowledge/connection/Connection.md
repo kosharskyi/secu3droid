@@ -13,3 +13,7 @@ USB open is one attempt per physical attachment. The manager gates protocol cons
 ## Connection loss events must not be conflated
 
 Parameter, sensor and diagnostics consumers invalidate their local data on each non-connected event. Keep the manager's replaying event stream rather than a `StateFlow`: a fast detach/reconnect can otherwise hide the loss and leave old ECU data active. Firmware confirmation and detach also share one coordinator lock so a parsed reply cannot reopen a session after its detach has completed.
+
+## USB terminal state distinguishes an unconfirmed failure from a lost session
+
+The manager checks firmware confirmation before clearing the USB session fence. It publishes `ConnectionFailed` when opening or the initial handshake fails, and `ConnectionLost` when transport failure ends an already confirmed session. UI can choose the matching message from the event itself without retaining session history across Activity recreation. A physical detach still publishes `Disconnected` and does not create a connection-failure notification.

@@ -19,6 +19,7 @@ import kotlinx.coroutines.launch
 import android.widget.Toast
 import org.secu3.android.connection.Connected
 import org.secu3.android.connection.ConnectionFailed
+import org.secu3.android.connection.ConnectionLost
 import android.hardware.usb.UsbManager
 import android.app.PendingIntent
 import android.os.Build
@@ -54,11 +55,12 @@ class MainActivity : ComponentActivity() {
                 if (state == Connected && viewModel.connectionManager.usbSessionLocked.value) {
                     if (lifecycle.currentState.isAtLeast(Lifecycle.State.RESUMED)) applyConnectionServicePolicy()
                     openUsbHome()
-                } else if (state is ConnectionFailed && viewModel.connectionManager.activeUsbDeviceIdOrNull != null) {
+                } else if ((state is ConnectionFailed || state is ConnectionLost) && viewModel.connectionManager.activeUsbDeviceIdOrNull != null) {
+                    val failureMessage = if (state is ConnectionLost) R.string.usb_connection_lost else R.string.usb_connection_failed
                     viewModel.requestStartNavigation()
                     if (lifecycle.currentState.isAtLeast(Lifecycle.State.RESUMED)) openStart()
                     stopConnectionService()
-                    Toast.makeText(this@MainActivity, getString(R.string.usb_connection_failed, state.e.message ?: ""), Toast.LENGTH_LONG).show()
+                    Toast.makeText(this@MainActivity, getString(failureMessage), Toast.LENGTH_LONG).show()
                 }
             }
         }
@@ -261,7 +263,7 @@ class MainActivity : ComponentActivity() {
         else applyKeepScreenOnPreference()
         processPendingNavigation()
         deliverPendingUsbIntent()
-        if (viewModel.connectionManager.currentConnectionState is ConnectionFailed && viewModel.connectionManager.activeUsbDeviceIdOrNull != null) {
+        if ((viewModel.connectionManager.currentConnectionState is ConnectionFailed || viewModel.connectionManager.currentConnectionState is ConnectionLost) && viewModel.connectionManager.activeUsbDeviceIdOrNull != null) {
             viewModel.requestStartNavigation()
         }
         if (viewModel.consumeStartNavigation()) openStart()

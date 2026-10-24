@@ -86,7 +86,7 @@ class UsbSessionIntegrationTest {
             fixture.attach(91)
             fixture.confirmFirmware()
             fixture.usbStates.emit(ConnectionFailed(IOException("USB read failed")))
-            fixture.await { fixture.manager.currentConnectionState is ConnectionFailed }
+            fixture.await { fixture.manager.currentConnectionState is ConnectionLost }
             fixture.rawPackets.emit(firmwarePacket())
             fixture.manager.sendNewTask(Task.Secu3ReadSensors)
             delay(100)
@@ -95,7 +95,22 @@ class UsbSessionIntegrationTest {
             assertFalse(fixture.manager.isConnected)
             assertNull(fixture.manager.fwInfo)
             assertTrue(fixture.writes.isEmpty())
+            assertTrue(fixture.manager.currentConnectionState is ConnectionLost)
+        } finally {
+            fixture.close()
+        }
+    }
+
+    @Test fun initialUsbFailureRemainsConnectionFailed() = runBlocking {
+        val fixture = Fixture()
+        try {
+            fixture.attach(95)
+            fixture.usbStates.emit(ConnectionFailed(IOException("initial USB read failed")))
+            fixture.await { fixture.manager.currentConnectionState is ConnectionFailed }
+
             assertTrue(fixture.manager.currentConnectionState is ConnectionFailed)
+            assertFalse(fixture.manager.usbSessionLocked.value)
+            assertFalse(fixture.manager.isConnected)
         } finally {
             fixture.close()
         }

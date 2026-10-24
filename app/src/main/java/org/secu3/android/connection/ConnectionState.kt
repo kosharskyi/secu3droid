@@ -37,3 +37,4 @@ data object ConnectionTimeout : ConnectionState()
 
 data class ConnectionError(val e: Exception) : ConnectionState()
 data class ConnectionFailed(val e: Exception) : ConnectionState()
+data class ConnectionLost(val e: Exception) : ConnectionState()
