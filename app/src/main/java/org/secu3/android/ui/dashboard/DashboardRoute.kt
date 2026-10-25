@@ -12,7 +12,6 @@ package org.secu3.android.ui.dashboard
 import android.content.pm.ActivityInfo
 import android.view.Window
 import android.view.WindowManager
-import android.widget.Toast
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
@@ -34,6 +33,8 @@ import org.secu3.android.R
 import org.secu3.android.ui.MainActivity
 import org.secu3.android.ui.compose.SecuComposeTheme
 import org.secu3.android.utils.Task
+import org.secu3.android.ui.messages.UiMessageDuration
+import org.secu3.android.ui.DASHBOARD_ROUTE
 
 @Composable
 internal fun DashboardRoute(entry: NavBackStackEntry, activity: MainActivity) {
@@ -62,7 +63,7 @@ internal fun DashboardRoute(entry: NavBackStackEntry, activity: MainActivity) {
     }
     LaunchedEffect(entry, activity) {
         if (viewModel.isBluetoothDeviceAddressNotSelected()) {
-            Toast.makeText(activity, activity.getString(R.string.choose_bluetooth_adapter), Toast.LENGTH_LONG).show()
+            activity.uiMessageQueue.publish(R.string.choose_bluetooth_adapter, UiMessageDuration.LONG, scope = DASHBOARD_ROUTE)
         }
     }
     DisposableEffect(activity) {

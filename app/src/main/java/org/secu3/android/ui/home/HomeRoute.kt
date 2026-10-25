@@ -3,7 +3,6 @@ package org.secu3.android.ui.home
 import android.Manifest
 import android.content.pm.PackageManager
 import android.os.Build
-import android.widget.Toast
 import androidx.activity.compose.BackHandler
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
@@ -27,6 +26,8 @@ import androidx.navigation.NavBackStackEntry
 import org.secu3.android.R
 import androidx.compose.ui.res.stringResource
 import org.secu3.android.ui.MainActivity
+import org.secu3.android.ui.HOME_ROUTE
+import org.secu3.android.ui.messages.UiMessageDuration
 
 @Composable
 internal fun HomeRoute(
@@ -90,7 +91,7 @@ internal fun HomeRoute(
             onDiagnosticsConfirmed = {
                 vm.dismissDialog()
                 if (vm.firmware?.isDiagnosticsEnabled == true) onDiagnostics()
-                else Toast.makeText(context, R.string.diagnostics_not_supported_title, Toast.LENGTH_LONG).show()
+                else activity.uiMessageQueue.publish(R.string.diagnostics_not_supported_title, UiMessageDuration.LONG, scope = HOME_ROUTE)
             },
             onDownloadRelease = {
                 val item = vm.pendingRelease() ?: return@HomeScreenActions

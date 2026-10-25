@@ -25,7 +25,6 @@
 package org.secu3.android.ui.parameters
 
 import android.content.Context
-import android.widget.Toast
 import androidx.lifecycle.LiveData
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.asLiveData
@@ -40,6 +39,9 @@ import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.flow.collect
 import kotlinx.coroutines.launch
 import org.secu3.android.R
+import org.secu3.android.ui.messages.UiMessageDuration
+import org.secu3.android.ui.messages.UiMessageQueue
+import org.secu3.android.ui.PARAMETERS_ROUTE
 import org.secu3.android.connection.ConnectionState
 import org.secu3.android.connection.Secu3ConnectionManager
 import org.secu3.android.domain.parameters.EepromSaveResult
@@ -94,6 +96,7 @@ class ParamsViewModel @Inject constructor(
     @ApplicationContext private val context: Context, // TODO: move this out
     private val secu3ConnectionManager: Secu3ConnectionManager,
     private val parameterSession: ParameterSession,
+    private val uiMessageQueue: UiMessageQueue,
 ) : ViewModel() {
 
     var isSendAllowed: Boolean = false
@@ -252,10 +255,10 @@ class ParamsViewModel @Inject constructor(
             is ParameterSessionEvent.PageLoaded -> applyPageResult(event.page, event.result)
             is ParameterSessionEvent.PageUnavailable -> Unit
             is ParameterSessionEvent.PageFailed -> failedPage = event.page
-            ParameterSessionEvent.SaveStarted -> Toast.makeText(context, R.string.saving, Toast.LENGTH_SHORT).show()
+            ParameterSessionEvent.SaveStarted -> showUiMessage(R.string.saving, UiMessageDuration.SHORT)
             is ParameterSessionEvent.SaveFinished -> when (event.result) {
-                EepromSaveResult.Confirmed -> Toast.makeText(context, R.string.packet_saved, Toast.LENGTH_SHORT).show()
-                EepromSaveResult.Unconfirmed -> Toast.makeText(context, R.string.parameter_save_unconfirmed, Toast.LENGTH_LONG).show()
+                EepromSaveResult.Confirmed -> showUiMessage(R.string.packet_saved, UiMessageDuration.SHORT)
+                EepromSaveResult.Unconfirmed -> showUiMessage(R.string.parameter_save_unconfirmed, UiMessageDuration.LONG)
                 EepromSaveResult.NotStarted -> Unit
             }
         }
@@ -376,8 +379,12 @@ class ParamsViewModel @Inject constructor(
         if (!isSendAllowed || !parameterSession.sendPacket(packet)) {
             return
         }
-        Toast.makeText(context, context.getString(R.string.packet_sent), Toast.LENGTH_SHORT).show()  // TODO: move this out
+        showUiMessage(R.string.packet_sent, UiMessageDuration.SHORT)
     }
 
     fun savePacket() = parameterSession.save()
+
+    internal fun showUiMessage(textRes: Int, duration: UiMessageDuration) {
+        uiMessageQueue.publish(textRes, duration, scope = PARAMETERS_ROUTE)
+    }
 }

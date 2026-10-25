@@ -24,9 +24,7 @@
  */
 package org.secu3.android.ui.parameters
 
-import android.widget.Toast
 import androidx.compose.runtime.*
-import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalResources
 import androidx.compose.ui.res.stringArrayResource
 import androidx.compose.ui.res.stringResource
@@ -38,6 +36,7 @@ import org.secu3.android.ui.parameters.pages.*
 import kotlin.math.roundToInt
 import org.secu3.android.ui.parameters.pages.compose.*
 import org.secu3.android.ui.parameters.compose.ParameterReadError
+import org.secu3.android.ui.messages.UiMessageDuration
 
 /** Direct Compose rendering for every ViewModel-owned parameter page. */
 @Composable
@@ -53,7 +52,6 @@ internal fun ParameterPageContent(
         ParameterReadError(onRetry = { page?.let(viewModel::refreshPage) })
         return
     }
-    val context = LocalContext.current
     val resources = LocalResources.current
     val capabilities = parameterCapabilities(viewModel.fwInfoPacket)
     fun intEdit(title: Int, value: Int, step: Int, max: Int, min: Int, change: (Int) -> Unit) =
@@ -129,7 +127,7 @@ internal fun ParameterPageContent(
                     MiscField.TIMEOUT -> error("Float parameter routed through integer editor")
                 }
                 val bounds = parameter.third
-                if (bounds == null || bounds.first > bounds.second) Toast.makeText(context, R.string.miscel_evap_invalid_range, Toast.LENGTH_LONG).show()
+                if (bounds == null || bounds.first > bounds.second) viewModel.showUiMessage(R.string.miscel_evap_invalid_range, UiMessageDuration.LONG)
                 else intEdit(parameter.first, parameter.second.coerceIn(bounds.first, bounds.second), if (key == MiscField.PERIOD) 10 else 1, bounds.second, bounds.first) { h.editInt(key, it.toInt()) }
             }, { h.currentPacket?.let { floatEdit(R.string.miscel_fuel_pump_working_time_title, it.fpTimeoutStrt, .1f, 25.5f, .1f, 1) { h.editFloat(it.toFloat()) } } }, h::selectBaud, h::toggle, capabilities = capabilities)
         }

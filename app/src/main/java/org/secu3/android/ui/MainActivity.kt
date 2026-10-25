@@ -17,6 +17,9 @@ import androidx.lifecycle.lifecycleScope
 import kotlinx.coroutines.flow.collect
 import kotlinx.coroutines.launch
 import android.widget.Toast
+import android.os.SystemClock
+import android.view.accessibility.AccessibilityManager
+import javax.inject.Inject
 import org.secu3.android.connection.Connected
 import org.secu3.android.connection.ConnectionFailed
 import org.secu3.android.connection.ConnectionLost
@@ -28,15 +31,22 @@ import org.secu3.android.R
 import androidx.core.view.WindowInsetsControllerCompat
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.LifecycleEventObserver
+import androidx.lifecycle.repeatOnLifecycle
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.CancellationException
+import kotlinx.coroutines.flow.first
 import androidx.navigation.NavDestination
 import androidx.navigation.NavHostController
 import dagger.hilt.android.AndroidEntryPoint
 import org.secu3.android.connection.UsbAttachmentSynchronization
 import org.secu3.android.connection.ConnectionSessionTermination
 import org.secu3.android.connection.UsbConnectionRequest
+import org.secu3.android.ui.messages.UiMessageQueue
+import org.secu3.android.ui.messages.UiMessageDuration
 
 @AndroidEntryPoint
 class MainActivity : ComponentActivity() {
+    @Inject lateinit var uiMessageQueue: UiMessageQueue
     private val viewModel: MainActivityViewModel by viewModels()
     internal val userPrefs get() = viewModel.prefs
     private var rootNavController: NavHostController? = null
@@ -52,6 +62,7 @@ class MainActivity : ComponentActivity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+        uiMessageQueue.onActivityAttached()
         registerUsbLifecycle()
         lifecycle.addObserver(LifecycleEventObserver { _, event ->
             if (event == Lifecycle.Event.ON_RESUME) {
@@ -60,6 +71,31 @@ class MainActivity : ComponentActivity() {
                 deliverPendingUsbIntent()
             }
         })
+        lifecycleScope.launch {
+            lifecycle.repeatOnLifecycle(Lifecycle.State.RESUMED) {
+                while (true) {
+                    uiMessageQueue.discardExpired()
+                    val message = uiMessageQueue.availableMessages.first { it.isNotEmpty() }.first()
+                    if (message.expiresAtMillis <= SystemClock.elapsedRealtime()) {
+                        uiMessageQueue.discardExpired()
+                        continue
+                    }
+                    val text = if (message.arguments.isEmpty()) getString(message.textRes) else getString(
+                        message.textRes,
+                        *message.arguments.map { it.value() }.toTypedArray(),
+                    )
+                    val toast = Toast.makeText(this@MainActivity, text, toastLength(message.duration))
+                    try {
+                        toast.show()
+                        uiMessageQueue.acknowledge(message.id)
+                        delay(toastPacingMillis(message.duration))
+                    } catch (cancelled: CancellationException) {
+                        toast.cancel()
+                        throw cancelled
+                    }
+                }
+            }
+        }
         if (savedInstanceState == null) handleUsbIntent(intent)
         setContent { RootNavigation(this) }
         lifecycleScope.launch {
@@ -71,7 +107,7 @@ class MainActivity : ComponentActivity() {
                     openUsbHome()
                 } else if ((state is ConnectionFailed || state is ConnectionLost) && viewModel.connectionManager.activeUsbDeviceIdOrNull != null) {
                     val failureMessage = if (state is ConnectionLost) R.string.usb_connection_lost else R.string.usb_connection_failed
-                    Toast.makeText(this@MainActivity, getString(failureMessage), Toast.LENGTH_LONG).show()
+                    uiMessageQueue.publish(failureMessage, org.secu3.android.ui.messages.UiMessageDuration.LONG)
                 }
             }
         }
@@ -322,7 +358,25 @@ class MainActivity : ComponentActivity() {
         super.onStop()
     }
 
-    internal fun updateActiveComposeRoute(route: String?) { activeComposeRoute = route }
+    internal fun updateActiveComposeRoute(route: String?) {
+        if (route != activeComposeRoute) uiMessageQueue.onActiveScopeChanged(route)
+        activeComposeRoute = route
+    }
+
+    private fun toastLength(duration: UiMessageDuration): Int = when (duration) {
+        UiMessageDuration.SHORT -> Toast.LENGTH_SHORT
+        UiMessageDuration.LONG -> Toast.LENGTH_LONG
+    }
+
+    private fun toastPacingMillis(duration: UiMessageDuration): Long = when (duration) {
+        UiMessageDuration.SHORT -> 2_000L
+        UiMessageDuration.LONG -> 3_500L
+    }.let { nominalMillis ->
+        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.Q) return nominalMillis
+        val accessibility = getSystemService(ACCESSIBILITY_SERVICE) as? AccessibilityManager
+            ?: return nominalMillis
+        accessibility.getRecommendedTimeoutMillis(nominalMillis.toInt(), AccessibilityManager.FLAG_CONTENT_TEXT).toLong()
+    }
 
     private fun onTerminalSessionChanged(termination: ConnectionSessionTermination?) {
         if (termination == null) {

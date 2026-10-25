@@ -33,3 +33,7 @@ USB permission dialogs pause the Activity. Clear a queued return to Start when i
 ## Drain Activity navigation queues on the Lifecycle ON_RESUME event
 
 Android calls `onPostResume()` before `ActivityPostResumed` moves AndroidX Lifecycle to `RESUMED` on API 29+. Queued navigation and USB-intent delivery are gated on that state, so drain them from a lifecycle `ON_RESUME` observer; draining in `onResume()` or `onPostResume()` can leave permission-result work pending until another navigation callback occurs.
+
+## Activity UI messages use destination-scoped queue entries
+
+`UiMessageQueue` is presentation-only and is consumed by `MainActivity` while resumed. A non-null scope is the active Navigation Compose destination route; route changes discard messages for the previous route and reject late producers for inactive routes. A null scope is global and survives navigation. Queue entries survive Activity recreation through the Hilt singleton, but are acknowledged once `Toast.show()` is submitted; Android does not report whether a Toast was actually seen.
