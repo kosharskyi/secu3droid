@@ -38,7 +38,6 @@ import kotlinx.coroutines.flow.first
 import androidx.navigation.NavDestination
 import androidx.navigation.NavHostController
 import dagger.hilt.android.AndroidEntryPoint
-import org.secu3.android.connection.UsbConnectionRequest
 import org.secu3.android.ui.messages.UiMessageQueue
 import org.secu3.android.ui.messages.UiMessageDuration
 
@@ -255,11 +254,11 @@ class MainActivity : ComponentActivity() {
                 val device = IntentCompat.getParcelableExtra(intent, UsbManager.EXTRA_DEVICE, UsbDevice::class.java)
                 val token = intent.getLongExtra(EXTRA_USB_ATTEMPT_TOKEN, -1L)
                 val resultDevice = device ?: return
-                handleUsbConnectionRequest(viewModel.connectionManager.completeUsbPermissionRequest(
+                viewModel.connectionManager.completeUsbPermissionRequest(
                     device = resultDevice,
                     token = token,
                     permissionGranted = intent.getBooleanExtra(UsbManager.EXTRA_PERMISSION_GRANTED, false),
-                ))
+                )
             }
         }
         ContextCompat.registerReceiver(this, usbReceiver, IntentFilter().apply {
@@ -269,13 +268,8 @@ class MainActivity : ComponentActivity() {
     }
 
     internal fun requestUsbDeviceConnection(device: UsbDevice) {
-        handleUsbConnectionRequest(viewModel.connectionManager.requestUsbConnection(device))
-    }
-
-    private fun handleUsbConnectionRequest(request: UsbConnectionRequest) {
-        when (request) {
-            UsbConnectionRequest.Ignored, UsbConnectionRequest.Started -> Unit
-            is UsbConnectionRequest.PermissionRequired -> requestUsbPermission(request.device, request.token)
+        viewModel.connectionManager.requestUsbConnection(device)?.let {
+            requestUsbPermission(it.device, it.token)
         }
     }
 
@@ -322,7 +316,9 @@ class MainActivity : ComponentActivity() {
             return
         }
         viewModel.connectionManager.onAppForegrounded()
-        handleUsbConnectionRequest(viewModel.connectionManager.synchronizeUsbAttachments())
+        viewModel.connectionManager.synchronizeUsbAttachments()?.let {
+            requestUsbPermission(it.device, it.token)
+        }
     }
 
     override fun onWindowFocusChanged(hasFocus: Boolean) {
@@ -331,7 +327,9 @@ class MainActivity : ComponentActivity() {
             viewModel.connectionManager.onAppBackgrounded()
         } else if (hasFocus && lifecycle.currentState.isAtLeast(Lifecycle.State.RESUMED)) {
             viewModel.connectionManager.onAppForegrounded()
-            handleUsbConnectionRequest(viewModel.connectionManager.synchronizeUsbAttachments())
+            viewModel.connectionManager.synchronizeUsbAttachments()?.let {
+                requestUsbPermission(it.device, it.token)
+            }
             processPendingNavigation()
             deliverPendingUsbIntent()
         }

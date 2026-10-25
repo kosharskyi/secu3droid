@@ -12,9 +12,13 @@ Probe the selected `UsbDevice` and choose its first serial port before calling `
 
 ## Attachment synchronization never treats an unavailable USB snapshot as empty
 
-`UsbConnection.attachedDevicesSnapshot()` distinguishes an available empty list from failure to query Android's device list. `Secu3ConnectionManager.synchronizeUsbAttachments()` returns `Ignored` without changing active-session or admission state on snapshot failure; on success it processes a missed active detach before reconciling pending attachment history and returns only the first eligible device's permission/open request. The manager's `terminalSessionGeneration` stream remains the sole source for detach navigation.
+`UsbConnection.attachedDevicesSnapshot()` distinguishes an available empty list from failure to query Android's device list. `Secu3ConnectionManager.synchronizeUsbAttachments()` returns `null` without changing active-session or admission state on snapshot failure; on success it processes a missed active detach before reconciling prompted attachment history and returns only the first eligible device's permission request. The manager's `terminalSessionGeneration` stream remains the sole source for detach navigation.
 
 The manager retains the selected session's full physical attachment identity across transient open and handshake failures; a same-device-ID replacement in a later snapshot still terminates the old session before it can be admitted.
+
+## The manager owns one pending USB permission request
+
+The pending permission request blocks all other USB admissions until its matching callback is consumed or the request is canceled by detach, snapshot reconciliation, stop, or backgrounding. A denied callback releases the pending slot but keeps that physical attachment in prompt history until detach or a successful snapshot shows it missing; a new snapshot still checks current platform permission so an Android chooser grant can start the device without another prompt.
 
 ## Retain the selected USB attachment identity across transient retry failures
 
