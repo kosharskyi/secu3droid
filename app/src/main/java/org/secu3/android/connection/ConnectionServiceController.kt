@@ -12,6 +12,7 @@ import javax.inject.Singleton
 @Singleton
 class ConnectionServiceController @Inject constructor(
     @ApplicationContext private val context: Context,
+    private val notificationPublisher: ConnectionNotificationPublisher,
 ) {
     private data class Owner(val token: Long, val connectionGeneration: Long)
 
@@ -39,6 +40,13 @@ class ConnectionServiceController @Inject constructor(
         if (owner == null) return
         owner = null
         context.stopService(serviceIntent())
+    }
+
+    /** Updates the notification of the current foreground service without touching the ECU session. */
+    @Synchronized
+    fun refreshNotification() {
+        if (owner == null) return
+        notificationPublisher.refreshPostedNotification()
     }
 
     /** Returns the session generation only when this is still the service instance we own. */

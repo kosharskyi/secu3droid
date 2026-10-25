@@ -22,6 +22,7 @@ import org.secu3.android.connection.ConnectionFailed
 import org.secu3.android.connection.ConnectionLost
 import android.hardware.usb.UsbManager
 import android.app.PendingIntent
+import android.app.KeyguardManager
 import android.os.Build
 import org.secu3.android.R
 import androidx.core.view.WindowInsetsControllerCompat
@@ -41,7 +42,7 @@ class MainActivity : ComponentActivity() {
     private var rootNavController: NavHostController? = null
     internal val rootNavigationController: NavHostController? get() = rootNavController
     private var pendingNavigation: String? = null
-    private var pendingUsbHome = false
+    private var pendingUsbHomeGeneration: Long? = null
     private var pendingTerminalStartGeneration: Long? = null
     private var pendingUsbIntentDevice: UsbDevice? = null
     private var startUsbIntentHandler: ((UsbDevice?) -> Unit)? = null
@@ -63,7 +64,7 @@ class MainActivity : ComponentActivity() {
         setContent { RootNavigation(this) }
         lifecycleScope.launch {
             viewModel.connectionManager.connectionStateFlow.collect { state ->
-                if (lifecycle.currentState.isAtLeast(Lifecycle.State.RESUMED)) {
+                if (lifecycle.currentState.isAtLeast(Lifecycle.State.RESUMED) && isDeviceUnlocked()) {
                     viewModel.connectionManager.onConnectionStateObservedInForeground(state)
                 }
                 if (state == Connected && viewModel.connectionManager.usbSessionLocked.value) {
@@ -90,14 +91,22 @@ class MainActivity : ComponentActivity() {
     fun openFirmware() = navigateTo(FIRMWARE_ROUTE)
     fun openDashboard() = navigateTo(DASHBOARD_ROUTE)
     fun openSensors() = navigateTo(SENSORS_ROUTE)
+    internal fun onBackgroundWorkPreferenceChanged(enabled: Boolean) {
+        viewModel.connectionManager.onBackgroundWorkPreferenceChanged(enabled)
+    }
+
+    internal fun refreshConnectionNotification() {
+        viewModel.connectionManager.refreshConnectionNotification()
+    }
+
     fun openStart(): Boolean {
         val controller = rootNavController ?: run { pendingNavigation = START_ROUTE; return false }
-        if (controller.currentDestination == null || !lifecycle.currentState.isAtLeast(Lifecycle.State.RESUMED)) {
+        if (controller.currentDestination == null || !lifecycle.currentState.isAtLeast(Lifecycle.State.RESUMED) || !isDeviceUnlocked()) {
             pendingNavigation = START_ROUTE
             return false
         }
         pendingNavigation = null
-        pendingUsbHome = false
+        pendingUsbHomeGeneration = null
         pendingTerminalStartGeneration?.let(viewModel::completeTerminalStart)
         pendingTerminalStartGeneration = null
         if (controller.currentDestination?.route == START_ROUTE) return true
@@ -109,7 +118,9 @@ class MainActivity : ComponentActivity() {
 
     private fun navigateTo(route: String) {
         val controller = rootNavController
-        if (controller == null || controller.currentDestination == null || !lifecycle.currentState.isAtLeast(Lifecycle.State.RESUMED)) {
+        if (controller == null || controller.currentDestination == null ||
+            !lifecycle.currentState.isAtLeast(Lifecycle.State.RESUMED) || !isDeviceUnlocked()
+        ) {
             pendingNavigation = route
             return
         }
@@ -126,7 +137,11 @@ class MainActivity : ComponentActivity() {
 
     internal fun onRootDestinationChanged(destination: NavDestination?) {
         updateActiveComposeRoute(destination?.route)
-        if (lifecycle.currentState.isAtLeast(Lifecycle.State.RESUMED)) viewModel.connectionManager.onAppForegrounded()
+        if (lifecycle.currentState.isAtLeast(Lifecycle.State.RESUMED) && isDeviceUnlocked()) {
+            viewModel.connectionManager.onAppForegrounded()
+        } else if (!isDeviceUnlocked()) {
+            viewModel.connectionManager.onAppBackgrounded()
+        }
         processPendingNavigation()
         deliverPendingUsbIntent()
     }
@@ -136,7 +151,7 @@ class MainActivity : ComponentActivity() {
     }
 
     private fun processPendingNavigation() {
-        if (!lifecycle.currentState.isAtLeast(Lifecycle.State.RESUMED)) return
+        if (!lifecycle.currentState.isAtLeast(Lifecycle.State.RESUMED) || !isDeviceUnlocked()) return
         val route = pendingNavigation ?: return
         val terminalGeneration = pendingTerminalStartGeneration
         if (route == START_ROUTE && terminalGeneration != null && viewModel.connectionManager.terminalSession.value?.generation != terminalGeneration) {
@@ -150,9 +165,10 @@ class MainActivity : ComponentActivity() {
         pendingNavigation = null
         if (route == START_ROUTE) {
             openStart()
-        } else if (route == HOME_ROUTE && pendingUsbHome) {
-            pendingUsbHome = false
-            if (viewModel.connectionManager.usbSessionLocked.value) openUsbHome() else openStart()
+        } else if (route == HOME_ROUTE && pendingUsbHomeGeneration != null) {
+            val generation = pendingUsbHomeGeneration
+            pendingUsbHomeGeneration = null
+            if (viewModel.connectionManager.activeUsbHomeGeneration == generation) openUsbHome()
         } else if (controller.currentDestination?.route != route &&
             !(route == DIAGNOSTICS_GRAPH_ROUTE && isInsideDiagnosticsGraph(controller.currentDestination))
         ) {
@@ -167,7 +183,7 @@ class MainActivity : ComponentActivity() {
 
     private fun deliverPendingUsbIntent() {
         if (rootNavController?.currentDestination?.route != START_ROUTE ||
-            !lifecycle.currentState.isAtLeast(Lifecycle.State.RESUMED)
+            !lifecycle.currentState.isAtLeast(Lifecycle.State.RESUMED) || !isDeviceUnlocked()
         ) return
         val device = pendingUsbIntentDevice ?: return
         val handler = startUsbIntentHandler ?: return
@@ -237,14 +253,15 @@ class MainActivity : ComponentActivity() {
     }
 
     private fun openUsbHome() {
-        val generation = viewModel.connectionManager.activeUsbSessionGeneration ?: return
-        val controller = rootNavController ?: run { pendingNavigation = HOME_ROUTE; pendingUsbHome = true; return }
-        if (!lifecycle.currentState.isAtLeast(Lifecycle.State.RESUMED) || controller.currentDestination == null) {
+        val generation = viewModel.connectionManager.activeUsbHomeGeneration ?: return
+        val controller = rootNavController ?: run { pendingNavigation = HOME_ROUTE; pendingUsbHomeGeneration = generation; return }
+        if (!lifecycle.currentState.isAtLeast(Lifecycle.State.RESUMED) || !isDeviceUnlocked() || controller.currentDestination == null) {
             pendingNavigation = HOME_ROUTE
-            pendingUsbHome = true
+            pendingUsbHomeGeneration = generation
             return
         }
         if (!viewModel.claimUsbHomeNavigation(generation)) return
+        pendingUsbHomeGeneration = null
         controller.navigate(HOME_ROUTE) {
             popUpTo(controller.graph.id) { inclusive = true }
             launchSingleTop = true
@@ -266,6 +283,11 @@ class MainActivity : ComponentActivity() {
         super.onResume()
         if (activeComposeRoute == DASHBOARD_ROUTE) window.addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON)
         else applyKeepScreenOnPreference()
+        if (!isDeviceUnlocked()) {
+            viewModel.connectionManager.onAppBackgrounded()
+            return
+        }
+        viewModel.connectionManager.onAppForegrounded()
         val synchronization = viewModel.connectionManager.synchronizeUsbAttachments()
         when (synchronization) {
             is UsbAttachmentSynchronization.SnapshotUnavailable -> Unit
@@ -273,7 +295,31 @@ class MainActivity : ComponentActivity() {
                 handleUsbConnectionRequest(synchronization.connectionRequest)
             }
         }
-        viewModel.connectionManager.onAppForegrounded()
+    }
+
+    override fun onWindowFocusChanged(hasFocus: Boolean) {
+        super.onWindowFocusChanged(hasFocus)
+        if (!isDeviceUnlocked()) {
+            viewModel.connectionManager.onAppBackgrounded()
+        } else if (hasFocus && lifecycle.currentState.isAtLeast(Lifecycle.State.RESUMED)) {
+            viewModel.connectionManager.onAppForegrounded()
+            val synchronization = viewModel.connectionManager.synchronizeUsbAttachments()
+            if (synchronization is UsbAttachmentSynchronization.Synchronized) {
+                handleUsbConnectionRequest(synchronization.connectionRequest)
+            }
+            processPendingNavigation()
+            deliverPendingUsbIntent()
+        }
+    }
+
+    private fun isDeviceUnlocked(): Boolean =
+        getSystemService(KeyguardManager::class.java)?.isKeyguardLocked != true
+
+    override fun onStop() {
+        if (!isChangingConfigurations) {
+            viewModel.connectionManager.onAppBackgrounded()
+        }
+        super.onStop()
     }
 
     internal fun updateActiveComposeRoute(route: String?) { activeComposeRoute = route }
@@ -290,7 +336,7 @@ class MainActivity : ComponentActivity() {
         if (!viewModel.queueTerminalStart(termination.generation)) return
         pendingTerminalStartGeneration = termination.generation
         pendingNavigation = START_ROUTE
-        if (lifecycle.currentState.isAtLeast(Lifecycle.State.RESUMED)) openStart()
+        if (lifecycle.currentState.isAtLeast(Lifecycle.State.RESUMED) && isDeviceUnlocked()) openStart()
     }
 
     private fun restorePendingTerminalStart() {

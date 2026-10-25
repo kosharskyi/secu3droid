@@ -19,3 +19,7 @@ Older installs may still contain the `columns_count` SharedPreferences key. No c
 ## Bluetooth selection identity is the stored address
 
 `bluetoothDeviceAddress` is the only Bluetooth identity used to validate, start, or reconnect a connection. `bluetoothDeviceName` is retained as display metadata only; older installs that have only the name must select their device again instead of guessing among bonded devices with duplicate names.
+
+## The `wakelock` setting is the shared USB and Bluetooth background policy
+
+Keep the persisted key `wakelock` and its false default. It now controls both transports: changing it while connected does not disconnect the ECU; when disabled, a true app background transition ends the session, and when enabled the foreground connection service keeps it alive. The connection-notification permission request-history flag records only whether Android's runtime prompt was already shown; permission grant state itself is always queried from Android.

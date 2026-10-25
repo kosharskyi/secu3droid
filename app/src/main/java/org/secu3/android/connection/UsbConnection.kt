@@ -34,6 +34,8 @@ import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.currentCoroutineContext
 import kotlinx.coroutines.ensureActive
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.flow.MutableSharedFlow
+import kotlinx.coroutines.flow.asSharedFlow
 import org.secu3.android.models.RawPacket
 import org.secu3.android.models.packets.out.ChangeModePacket
 import org.secu3.android.utils.Task
@@ -41,6 +43,9 @@ import org.secu3.android.utils.UserPrefs
 import java.io.IOException
 import javax.inject.Inject
 import javax.inject.Singleton
+
+internal data class UsbConnectionAttemptFailure(val attemptId: Long, val error: Exception)
+internal data class UsbAttemptPacket(val attemptId: Long, val packet: RawPacket)
 
 @Singleton
 class UsbConnection @Inject constructor(
@@ -50,6 +55,10 @@ class UsbConnection @Inject constructor(
 
     private var currentDevice: UsbDevice? = null
     @Volatile private var attemptGeneration = 0L
+    private val _attemptFailures = MutableSharedFlow<UsbConnectionAttemptFailure>(extraBufferCapacity = 16)
+    internal val attemptFailures = _attemptFailures.asSharedFlow()
+    private val _attemptPackets = MutableSharedFlow<UsbAttemptPacket>()
+    internal val attemptPackets = _attemptPackets.asSharedFlow()
 
     /** Distinguishes an unavailable device list from a successful empty list. */
     fun attachedDevicesSnapshot(): Result<List<UsbDevice>> = try {
@@ -72,7 +81,7 @@ class UsbConnection @Inject constructor(
 
     fun hasPermission(device: UsbDevice): Boolean = runCatching { usbManager.hasPermission(device) }.getOrDefault(false)
 
-    internal fun startConnection(device: UsbDevice) {
+    internal fun startConnection(device: UsbDevice, attemptId: Long) {
         stopConnection()
         val attempt = ++attemptGeneration
         connectionAttempts = 0
@@ -85,7 +94,7 @@ class UsbConnection @Inject constructor(
                 currentCoroutineContext().ensureActive()
                 if (attempt != attemptGeneration) return@launch
                 Log.d(this.javaClass.simpleName, "Connected to USB device")
-                startReadingData(port, attempt)
+                startReadingData(port, attempt, attemptId)
             } catch (e: Exception) {
                 currentCoroutineContext().ensureActive()
                 if (attempt != attemptGeneration) return@launch
@@ -93,6 +102,7 @@ class UsbConnection @Inject constructor(
                 currentDevice = null
                 mConnectionStateFlow.emit(ConnectionFailed(e))
                 mConnectionStateFlow.emit(Disconnected)
+                _attemptFailures.emit(UsbConnectionAttemptFailure(attemptId, e))
                 Log.e(this.javaClass.simpleName, "Connection failed: ${e.message}")
             }
         }
@@ -144,7 +154,7 @@ class UsbConnection @Inject constructor(
         }
     }
 
-    private fun startReadingData(port: UsbSerialPort, attempt: Long) {
+    private fun startReadingData(port: UsbSerialPort, attempt: Long, attemptId: Long) {
         if (!isCurrentEndpoint(port)) return
         sendData(ChangeModePacket.getPacket(Task.Secu3ReadFirmwareInfo))
         scope.launch {
@@ -163,7 +173,9 @@ class UsbConnection @Inject constructor(
                     for (i in 0 until bytesRead) {
                         receiver.receive(buffer[i].toInt() and 0xFF)?.let { packet ->
                             if (attempt != attemptGeneration) return@launch
-                            mReceivedPacketFlow.emit(RawPacket(packet))
+                            val rawPacket = RawPacket(packet)
+                            _attemptPackets.emit(UsbAttemptPacket(attemptId, rawPacket))
+                            mReceivedPacketFlow.emit(rawPacket)
                         }
                     }
                 }
@@ -178,6 +190,7 @@ class UsbConnection @Inject constructor(
                     currentDevice = null
                     mConnectionStateFlow.emit(ConnectionFailed(e))
                     mConnectionStateFlow.emit(Disconnected)
+                    _attemptFailures.emit(UsbConnectionAttemptFailure(attemptId, e))
                 }
             }
         }

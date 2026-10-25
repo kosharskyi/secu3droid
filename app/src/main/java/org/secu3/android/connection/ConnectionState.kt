@@ -49,7 +49,7 @@ data class BluetoothConnectionEvent(
 
 enum class ConnectionTransport { USB, BLUETOOTH }
 
-enum class ConnectionTerminationReason { RetriesExhausted, UsbDetached, UsbFailed, UsbLost }
+enum class ConnectionTerminationReason { RetriesExhausted, UsbDetached, Backgrounded, ServiceStopped }
 
 /** Latest terminal result remains available across Activity recreation until a new attempt begins. */
 data class ConnectionSessionTermination(

@@ -1,9 +1,8 @@
 package org.secu3.android.connection
 
-/** Keeps USB permission and open attempts unique to one physical attachment. */
+/** Tracks permission prompts for attached devices without limiting reconnect attempts. */
 internal class UsbAttachmentAttemptGate {
-    private val attempted = mutableMapOf<UsbAttachmentIdentity, Long>()
-    private val opened = mutableSetOf<Long>()
+    private val promptedAttachments = mutableSetOf<UsbAttachmentIdentity>()
     private var nextToken = 0L
     private var pendingPermission: Pair<UsbAttachmentIdentity, Long>? = null
 
@@ -14,23 +13,14 @@ internal class UsbAttachmentAttemptGate {
         hasPermission: Boolean,
     ): UsbAdmissionDecision {
         if (!supported || conflictsWithActiveDevice) return UsbAdmissionDecision.Ignored
-        attempted.keys.filter { it.deviceId == attachment.deviceId && it != attachment }
-            .forEach { detach(it.deviceId) }
-        val previous = attempted[attachment]
-        if (previous == null && pendingPermission?.first?.let { it != attachment } == true) return UsbAdmissionDecision.Ignored
-        val token = previous ?: (++nextToken).also { attempted[attachment] = it }
-        if (token in opened) return UsbAdmissionDecision.Ignored
-        if (hasPermission) {
-            if (!opened.add(token)) return UsbAdmissionDecision.Ignored
-            if (pendingPermission == (attachment to token)) pendingPermission = null
-            return UsbAdmissionDecision.Started
-        }
-        if (previous != null) return UsbAdmissionDecision.Ignored
+        if (pendingPermission?.first == attachment) return UsbAdmissionDecision.Ignored
+        if (pendingPermission != null) return UsbAdmissionDecision.Ignored
+        if (hasPermission) return UsbAdmissionDecision.Started
+        if (!promptedAttachments.add(attachment)) return UsbAdmissionDecision.Ignored
+        val token = ++nextToken
         pendingPermission = attachment to token
         return UsbAdmissionDecision.PermissionRequired(token)
     }
-
-    @Synchronized fun accepts(attachment: UsbAttachmentIdentity, token: Long): Boolean = attempted[attachment] == token
 
     @Synchronized fun completePermission(
         attachment: UsbAttachmentIdentity,
@@ -41,15 +31,14 @@ internal class UsbAttachmentAttemptGate {
         supported: Boolean,
         conflictsWithActiveDevice: Boolean,
     ): Boolean {
-        if (pendingPermission != (attachment to token) || !accepts(attachment, token)) return false
+        if (pendingPermission != (attachment to token)) return false
         pendingPermission = null
-        if (!permissionGranted || !hasPermission || !attached || !supported || conflictsWithActiveDevice) return false
-        return opened.add(token)
+        return permissionGranted && hasPermission && attached && supported && !conflictsWithActiveDevice
     }
 
-    @Synchronized fun hasAttempted(attachment: UsbAttachmentIdentity): Boolean = attachment in attempted
-
-    @Synchronized fun hasOpened(attachment: UsbAttachmentIdentity): Boolean = attempted[attachment]?.let { it in opened } == true
+    @Synchronized fun cancelPermission(attachment: UsbAttachmentIdentity, token: Long) {
+        if (pendingPermission == (attachment to token)) pendingPermission = null
+    }
 
     @Synchronized fun <T> firstEligibleAttachment(
         candidates: Iterable<T>,
@@ -58,19 +47,17 @@ internal class UsbAttachmentAttemptGate {
         hasPermission: (T) -> Boolean,
     ): T? = candidates.firstOrNull { candidate ->
         val key = identity(candidate)
-        supported(candidate) && (!hasAttempted(key) || (!hasOpened(key) && hasPermission(candidate)))
+        supported(candidate) && (hasPermission(candidate) || (key !in promptedAttachments && pendingPermission == null))
     }
 
     @Synchronized fun detach(deviceId: Int) {
-        attempted.keys.filter { it.deviceId == deviceId }.toList().forEach { key -> attempted.remove(key)?.let(opened::remove) }
+        promptedAttachments.removeAll { it.deviceId == deviceId }
         if (pendingPermission?.first?.deviceId == deviceId) pendingPermission = null
     }
 
     @Synchronized fun reconcile(attachedDevices: Set<UsbAttachmentIdentity>) {
-        attempted.keys.filter { it !in attachedDevices }.forEach { attachment ->
-            attempted.remove(attachment)?.let(opened::remove)
-            if (pendingPermission?.first == attachment) pendingPermission = null
-        }
+        promptedAttachments.retainAll(attachedDevices)
+        if (pendingPermission?.first !in attachedDevices) pendingPermission = null
     }
 }
 

@@ -68,6 +68,10 @@ class UserPrefs @Inject constructor(@ApplicationContext private val ctx: Context
         get() = mPrefs.getBoolean(ctx.getString(R.string.pref_wakelock_key), false);
         set(value) = mPrefs.edit { putBoolean(ctx.getString(R.string.pref_wakelock_key), value) }
 
+    var hasRequestedConnectionNotificationPermission: Boolean
+        get() = mPrefs.getBoolean(ctx.getString(R.string.connection_notifications_permission_requested_key), false)
+        set(value) = mPrefs.edit { putBoolean(ctx.getString(R.string.connection_notifications_permission_requested_key), value) }
+
     var isDarkTheme: Boolean
         get() = mPrefs.getBoolean(ctx.getString(R.string.pref_night_mode_key), false);
         set(value) = mPrefs.edit { putBoolean(ctx.getString(R.string.pref_night_mode_key), value) }

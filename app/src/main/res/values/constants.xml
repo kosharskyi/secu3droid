@@ -38,6 +38,7 @@
     <string name="pref_night_mode_key" translatable="false">nightMode</string>
     <string name="pref_keep_screen_key" translatable="false">flagKeepScreenOn</string>
     <string name="pref_wakelock_key" translatable="false">wakelock</string>
+    <string name="connection_notifications_permission_requested_key" translatable="false">connection_notifications_permission_requested</string>
     
 
 

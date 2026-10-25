@@ -7,32 +7,28 @@ import org.junit.Assert.assertTrue
 import org.junit.Test
 
 class UsbAttachmentAttemptGateTest {
-    @Test fun unsupportedAndConflictingDevicesNeverAcquireAnAttempt() {
+    @Test fun unsupportedAndConflictingDevicesDoNotPromptOrStart() {
         val gate = UsbAttachmentAttemptGate()
-
-        assertEquals(UsbAdmissionDecision.Ignored, gate.request(attachment(1), supported = false, conflictsWithActiveDevice = false, hasPermission = true))
-        assertEquals(UsbAdmissionDecision.Ignored, gate.request(attachment(2), supported = true, conflictsWithActiveDevice = true, hasPermission = false))
-        assertFalse(gate.hasAttempted(attachment(1)))
-        assertFalse(gate.hasAttempted(attachment(2)))
+        assertEquals(UsbAdmissionDecision.Ignored, gate.request(attachment(1), false, false, false))
+        assertEquals(UsbAdmissionDecision.Ignored, gate.request(attachment(2), true, true, false))
+        assertEquals(UsbAdmissionDecision.PermissionRequired(1), gate.request(attachment(1), true, false, false))
     }
 
-    @Test fun pendingPermissionBlocksOtherDevicesAndLaterChooserGrantOpensOnce() {
+    @Test fun permissionPromptIsDeduplicatedButGrantFromAttachChooserStartsAutomatically() {
         val gate = UsbAttachmentAttemptGate()
-        val first = gate.request(attachment(32), supported = true, conflictsWithActiveDevice = false, hasPermission = false)
+        val device = attachment(32)
+        val first = gate.request(device, supported = true, conflictsWithActiveDevice = false, hasPermission = false)
         assertTrue(first is UsbAdmissionDecision.PermissionRequired)
         val token = (first as UsbAdmissionDecision.PermissionRequired).token
 
-        assertEquals(UsbAdmissionDecision.Ignored, gate.request(attachment(33), supported = true, conflictsWithActiveDevice = false, hasPermission = true))
-        assertEquals(UsbAdmissionDecision.Ignored, gate.request(attachment(32), supported = true, conflictsWithActiveDevice = false, hasPermission = false))
-        assertFalse(gate.completePermission(attachment(32), token, permissionGranted = false, hasPermission = false, attached = true, supported = true, conflictsWithActiveDevice = false))
-        assertTrue(gate.request(attachment(33), supported = true, conflictsWithActiveDevice = false, hasPermission = false) is UsbAdmissionDecision.PermissionRequired)
+        assertEquals(UsbAdmissionDecision.Ignored, gate.request(device, true, false, false))
+        assertFalse(gate.completePermission(device, token, false, false, true, true, false))
+        assertEquals(UsbAdmissionDecision.Ignored, gate.request(device, true, false, false))
 
-        assertEquals(UsbAdmissionDecision.Started, gate.request(attachment(32), supported = true, conflictsWithActiveDevice = false, hasPermission = true))
-        assertEquals(UsbAdmissionDecision.Ignored, gate.request(attachment(32), supported = true, conflictsWithActiveDevice = false, hasPermission = true))
-        assertTrue(gate.hasOpened(attachment(32)))
+        assertEquals(UsbAdmissionDecision.Started, gate.request(device, true, false, true))
     }
 
-    @Test fun completionRequiresFreshPermissionAttachmentSupportAndNoConflict() {
+    @Test fun permissionCompletionRequiresFreshPermissionAttachmentSupportAndNoConflict() {
         fun rejected(attached: Boolean, supported: Boolean, hasPermission: Boolean, conflicts: Boolean): Boolean {
             val gate = UsbAttachmentAttemptGate()
             val target = attachment(12)
@@ -40,10 +36,10 @@ class UsbAttachmentAttemptGateTest {
             return gate.completePermission(target, token, true, hasPermission, attached, supported, conflicts)
         }
 
-        assertFalse(rejected(attached = true, supported = true, hasPermission = false, conflicts = false))
-        assertFalse(rejected(attached = false, supported = true, hasPermission = true, conflicts = false))
-        assertFalse(rejected(attached = true, supported = false, hasPermission = true, conflicts = false))
-        assertFalse(rejected(attached = true, supported = true, hasPermission = true, conflicts = true))
+        assertFalse(rejected(true, true, false, false))
+        assertFalse(rejected(false, true, true, false))
+        assertFalse(rejected(true, false, true, false))
+        assertFalse(rejected(true, true, true, true))
         val gate = UsbAttachmentAttemptGate()
         val target = attachment(12)
         val token = (gate.request(target, true, false, false) as UsbAdmissionDecision.PermissionRequired).token
@@ -51,81 +47,70 @@ class UsbAttachmentAttemptGateTest {
         assertFalse(gate.completePermission(target, token, true, true, true, true, false))
     }
 
-    @Test fun stalePermissionTokenCannotOpenReplacementAttachment() {
+    @Test fun stalePermissionTokenCannotOpenReplacementThatReusesDeviceId() {
         val gate = UsbAttachmentAttemptGate()
-        val oldTarget = attachment(20, "usb/old")
-        val oldToken = (gate.request(oldTarget, true, false, false) as UsbAdmissionDecision.PermissionRequired).token
-        gate.detach(20)
-        val newTarget = attachment(20, "usb/new")
-        val newToken = (gate.request(newTarget, true, false, false) as UsbAdmissionDecision.PermissionRequired).token
+        val old = attachment(20, "usb/old")
+        val oldToken = (gate.request(old, true, false, false) as UsbAdmissionDecision.PermissionRequired).token
+        gate.detach(old.deviceId)
+        val replacement = attachment(20, "usb/replacement")
+        val newToken = (gate.request(replacement, true, false, false) as UsbAdmissionDecision.PermissionRequired).token
 
         assertNotEquals(oldToken, newToken)
-        assertFalse(gate.completePermission(oldTarget, oldToken, true, true, true, true, false))
-        assertTrue(gate.completePermission(newTarget, newToken, true, true, true, true, false))
+        assertFalse(gate.completePermission(old, oldToken, true, true, true, true, false))
+        assertTrue(gate.completePermission(replacement, newToken, true, true, true, true, false))
     }
 
-    @Test fun replacementWithReusedDeviceIdGetsFreshAdmissionAndRejectsOldResult() {
+    @Test fun cancelledBackgroundPermissionCannotBlockAutomaticAdmissionAfterReturning() {
         val gate = UsbAttachmentAttemptGate()
-        val oldTarget = attachment(25, "usb/old")
-        val oldToken = (gate.request(oldTarget, true, false, false) as UsbAdmissionDecision.PermissionRequired).token
-        val replacement = attachment(25, "usb/replacement")
-        val replacementToken = (gate.request(replacement, true, false, false) as UsbAdmissionDecision.PermissionRequired).token
+        val device = attachment(22)
+        val token = (gate.request(device, true, false, false) as UsbAdmissionDecision.PermissionRequired).token
 
-        assertNotEquals(oldToken, replacementToken)
-        assertFalse(gate.completePermission(oldTarget, oldToken, true, true, true, true, false))
-        assertTrue(gate.completePermission(replacement, replacementToken, true, true, true, true, false))
+        gate.cancelPermission(device, token)
+
+        assertFalse(gate.completePermission(device, token, true, true, true, true, false))
+        assertEquals(UsbAdmissionDecision.Started, gate.request(device, true, false, true))
     }
 
-    @Test fun reconcilingMissingAttachmentInvalidatesPendingToken() {
+    @Test fun detachClearsDeniedPromptHistoryAndSnapshotReconciliationInvalidatesPendingPermission() {
         val gate = UsbAttachmentAttemptGate()
-        val target = attachment(28)
-        val oldToken = (gate.request(target, true, false, false) as UsbAdmissionDecision.PermissionRequired).token
+        val device = attachment(28)
+        val token = (gate.request(device, true, false, false) as UsbAdmissionDecision.PermissionRequired).token
+        gate.completePermission(device, token, false, false, true, true, false)
+        assertEquals(UsbAdmissionDecision.Ignored, gate.request(device, true, false, false))
 
         gate.reconcile(emptySet())
-
-        assertFalse(gate.completePermission(target, oldToken, true, true, true, true, false))
-        val newToken = (gate.request(target, true, false, false) as UsbAdmissionDecision.PermissionRequired).token
-        assertNotEquals(oldToken, newToken)
+        val freshToken = (gate.request(device, true, false, false) as UsbAdmissionDecision.PermissionRequired).token
+        assertNotEquals(token, freshToken)
+        gate.detach(device.deviceId)
+        assertFalse(gate.completePermission(device, freshToken, true, true, true, true, false))
     }
 
-    @Test fun firstEligibleAttachmentPreservesOrderAndAllowsChooserGrantWithoutReopening() {
+    @Test fun unlimitedRetriesAreNotGatedByPhysicalAttachmentHistory() {
         val gate = UsbAttachmentAttemptGate()
-        val denied = attachment(41)
-        val next = attachment(42)
-        val third = attachment(43)
+        val device = attachment(41)
+
+        repeat(100) {
+            assertEquals(UsbAdmissionDecision.Started, gate.request(device, true, false, true))
+        }
+    }
+
+    @Test fun firstEligibleDeviceKeepsSnapshotOrderAndSkipsPreviouslyDeniedPermissionPrompt() {
+        val gate = UsbAttachmentAttemptGate()
+        val denied = attachment(51)
+        val unsupported = attachment(52)
+        val next = attachment(53)
         val token = (gate.request(denied, true, false, false) as UsbAdmissionDecision.PermissionRequired).token
-        gate.completePermission(denied, token, permissionGranted = false, hasPermission = false, attached = true, supported = true, conflictsWithActiveDevice = false)
+        gate.completePermission(denied, token, false, false, true, true, false)
 
-        fun first(hasPermission: Set<UsbAttachmentIdentity>): UsbAttachmentIdentity? =
-            gate.firstEligibleAttachment(
-                candidates = listOf(denied, next, third),
-                identity = { it },
-                supported = { it != next },
-                hasPermission = { it in hasPermission },
-            )
-
-        assertEquals(third, first(emptySet()))
-        assertEquals(denied, first(setOf(denied)))
-
-        assertEquals(UsbAdmissionDecision.Started, gate.request(denied, true, false, true))
-        assertEquals(third, first(emptySet()))
-        assertEquals(null, gate.firstEligibleAttachment(
-            candidates = listOf(denied),
+        fun first(hasPermission: Set<UsbAttachmentIdentity>) = gate.firstEligibleAttachment(
+            candidates = listOf(denied, unsupported, next),
             identity = { it },
-            supported = { true },
-            hasPermission = { true },
-        ))
-    }
+            supported = { it != unsupported },
+            hasPermission = { it in hasPermission },
+        )
 
-    @Test fun unrelatedDetachCannotInvalidatePendingAttempt() {
-        val gate = UsbAttachmentAttemptGate()
-        val target = attachment(20)
-        val token = (gate.request(target, true, false, false) as UsbAdmissionDecision.PermissionRequired).token
-
-        gate.detach(21)
-
-        assertTrue(gate.completePermission(target, token, true, true, true, true, false))
-        assertEquals(UsbAdmissionDecision.Ignored, gate.request(target, true, false, false))
+        assertEquals(next, first(emptySet()))
+        assertEquals(denied, first(setOf(denied)))
     }
 
     private fun attachment(id: Int, name: String = "usb/$id") = UsbAttachmentIdentity(id, name, 0x1234, 0x5678)

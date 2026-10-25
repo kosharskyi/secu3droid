@@ -80,6 +80,8 @@ internal fun SettingsContent(
     onDismissDialog: () -> Unit,
     onShowAbout: () -> Unit,
     onSelectAppearance: (AppearanceMode) -> Unit = {},
+    notificationAccessGranted: Boolean = false,
+    onConnectionNotifications: () -> Unit = {},
 ) {
     val delimiterValues = stringArrayResource(R.array.csv_delimeters_values)
     val delimiterLabels = stringArrayResource(R.array.csv_delimeters)
@@ -142,6 +144,23 @@ internal fun SettingsContent(
                     summary = stringResource(R.string.pref_connection_retries_summary, state.connectionRetries),
                     onClick = onEditRetries,
                 )
+                HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant)
+                SettingsToggleRow(
+                    title = stringResource(R.string.pref_wakelock_title),
+                    summary = stringResource(R.string.pref_wakelock_summary),
+                    checked = state.wakeLock,
+                    testTag = "settings-toggle-${R.string.pref_wakelock_key}",
+                ) { onToggle(R.string.pref_wakelock_key, it) }
+                HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant)
+                SettingsActionRow(
+                    title = stringResource(R.string.connection_notifications_title),
+                    summary = stringResource(
+                        if (notificationAccessGranted) R.string.connection_notifications_enabled
+                        else R.string.connection_notifications_disabled,
+                    ),
+                    onClick = onConnectionNotifications,
+                    testTag = "settings-connection-notifications",
+                )
             }
             SettingsSection(title = stringResource(R.string.settings_group_display)) {
                 SettingsToggleRow(
@@ -150,13 +169,6 @@ internal fun SettingsContent(
                     checked = state.keepScreenOn,
                     testTag = "settings-toggle-${R.string.pref_keep_screen_key}",
                 ) { onToggle(R.string.pref_keep_screen_key, it) }
-                HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant)
-                SettingsToggleRow(
-                    title = stringResource(R.string.pref_wakelock_title),
-                    summary = stringResource(R.string.pref_wakelock_summary),
-                    checked = state.wakeLock,
-                    testTag = "settings-toggle-${R.string.pref_wakelock_key}",
-                ) { onToggle(R.string.pref_wakelock_key, it) }
                 HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant)
                 SettingsActionRow(
                     title = stringResource(R.string.pref_about_title),

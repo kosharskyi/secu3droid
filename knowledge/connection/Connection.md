@@ -6,35 +6,43 @@ Retry and read coroutines are children of the reusable connection scope and are 
 
 Probe the selected `UsbDevice` and choose its first serial port before calling `UsbManager.openDevice`. Unsupported devices or drivers with no ports must fail before acquiring a USB connection that would otherwise need to be closed.
 
-## The connection manager owns USB attachment admission
+## The manager owns USB attachment admission and retries without a per-attachment open limit
 
-`Secu3ConnectionManager.requestUsbConnection` is the only app entry point for opening USB. It resolves event payloads against the currently attached device, checks serial support and active-device conflicts, and owns per-attachment attempt tokens keyed by device ID, system device name, vendor ID and product ID. This identity check matters when Android reuses a device ID after replacement. A denied permission result consumes the pending prompt slot but retains that attachment's attempt token, so a later Android attach chooser grant can open it once without repeating the prompt. Permission completion rechecks attachment identity, driver support and platform permission; detach or resume reconciliation against full device identities invalidates stale tokens.
+`Secu3ConnectionManager.requestUsbConnection` resolves event payloads against the attached device, checks serial support and active-device conflicts, and keeps physical identity (device ID, system name, vendor ID and product ID) to detect replacements. A denied permission dialog is not reopened on every resume; snapshots still check current platform permission so an Android attach chooser grant can start automatically. Once permission is available, the same attached device may be opened repeatedly with cancellable delays until firmware confirms or the device detaches/background policy stops the session. Each open attempt tags both failures and raw packets, so stale work from an earlier retry cannot confirm or fail the current attempt. Home navigation is keyed to the successful attempt, while ECU data ownership remains fenced by the physical session generation.
 
 ## Attachment synchronization never treats an unavailable USB snapshot as empty
 
 `UsbConnection.attachedDevicesSnapshot()` distinguishes an available empty list from failure to query Android's device list. `Secu3ConnectionManager.synchronizeUsbAttachments()` leaves active-session and admission state unchanged on snapshot failure; on success it processes a missed active detach before reconciling pending attachment history and admitting at most the first eligible device. Its typed result carries both USB session termination and any permission/open request so consumers do not infer USB ownership from the shared connection state.
 
-The manager retains the selected session's full physical attachment identity across `ConnectionFailed` and `ConnectionLost`; a same-device-ID replacement in a later snapshot still terminates the old session before it can be admitted.
+The manager retains the selected session's full physical attachment identity across transient open and handshake failures; a same-device-ID replacement in a later snapshot still terminates the old session before it can be admitted.
 
-## Retain the selected USB attachment identity after a connection failure
+## Retain the selected USB attachment identity across transient retry failures
 
-`ConnectionFailed` and `ConnectionLost` invalidate firmware confirmation but retain the selected USB attachment. Keep its full identity alongside the session fence until matching detach, explicit stop or transport replacement; otherwise a different device reusing the same Android device ID can evade missed-detach detection during synchronization.
+An individual USB open or handshake failure invalidates firmware confirmation but does not end the selected attachment session. Keep its full identity alongside the session fence until matching detach, explicit stop or transport replacement; otherwise a different device reusing the same Android device ID can evade missed-detach detection during synchronization.
 
-## Firmware information confirms a USB session
+## Firmware information confirms each USB retry before Home or protocol access
 
-USB open is one attempt per physical attachment. The manager gates protocol consumers and Home navigation until a valid firmware-info packet confirms the ECU; a bounded handshake timeout or transport error ends that attempt. Detach is matched by device ID and invalidates the active generation, so old packet work and unrelated detach broadcasts cannot affect a replacement session. Bluetooth retains its configured retry behavior.
+Opening a USB serial port is not proof that an ECU is present. The manager allows protocol consumers and Home navigation only after a valid firmware-info packet for the current attempt. A bounded handshake timeout or transport error schedules another attempt rather than ending the attachment session. Detach is matched by device identity and invalidates the session generation; stale events, packets and open timeouts from earlier attempts cannot confirm a replacement attempt. Bluetooth retains its configured retry behavior.
 
 ## Connection loss events must not be conflated
 
 Parameter, sensor and diagnostics consumers invalidate their local data on each non-connected event. Keep the manager's replaying event stream rather than a `StateFlow`: a fast detach/reconnect can otherwise hide the loss and leave old ECU data active. Firmware confirmation and detach also share one coordinator lock so a parsed reply cannot reopen a session after its detach has completed.
 
-## USB terminal state distinguishes an unconfirmed failure from a lost session
+## One background preference controls both transports
 
-The manager checks firmware confirmation before clearing the USB session fence. It publishes `ConnectionFailed` when opening or the initial handshake fails, and `ConnectionLost` when transport failure ends an already confirmed session. UI can choose the matching message from the event itself without retaining session history across Activity recreation. A physical detach still publishes `Disconnected` and does not create a connection-failure notification.
+The persisted `wakelock` key and default are retained, but the preference applies to both USB and Bluetooth. Toggling it off while connected stops only the foreground service; the live transport and logger continue until the app actually stops or the ECU disconnects. If background work is off, the manager ends either transport and logging on a real Activity stop, publishing a typed `Backgrounded` terminal result; configuration recreation does not count as leaving. With the preference on, the service stays owned through connection retries. `ConnectionServiceController` owns Android service calls, while a service owner token remains distinct from the connection generation so late destruction from an old service cannot stop a replacement session.
 
-## Foreground service ownership follows connection generations
+## Unexpected destruction of the current connection service follows app visibility
 
-`Secu3ConnectionManager` owns the service policy and `ConnectionServiceController` owns Android start/stop calls. A service owner token is distinct from a connection generation: a late `onDestroy` may clear or stop only the service and transport generation it still owns. Starting service ownership for a replacement connection invalidates callbacks from an older instance. Confirmed USB requires the service regardless of the background preference; Bluetooth requires the preference. The manager stops the service immediately on USB detach or after Bluetooth retry exhaustion. Explicit user stops clean up transport, logger and service together in the manager.
+The manager validates the destroyed service owner token and session generation before acting. If the app remains visible, it preserves either transport and restores the service only when background work is enabled. If the app is backgrounded, it stops transport and logging and publishes `ServiceStopped` so navigation returns to StartScreen. Confirmed USB does not bypass this service lifecycle policy; returning to the unlocked app admits the still-attached device again.
+
+## Connection notification permission is requested only from Settings
+
+Android 13+ notification access is requested only after the user enables background work or selects the explicit connection-notifications row. A denied request does not change the background preference or stop a live connection. The permission grant is queried from Android whenever the Settings route resumes; once granted, the current foreground service notification is refreshed in place through `ConnectionNotificationPublisher`, without restarting the ECU transport. The channel ID `Background connection chanel` is stable because Android stores user channel choices against it.
+
+## USB permission dialogs do not mask true background transitions
+
+Only Activity stop or lock handling marks the app backgrounded; a permission dialog's pause alone does not. A true background transition cancels the manager's pending USB permission token, so a late platform result cannot open a connection behind the app and a later foreground snapshot can admit the now-authorized attached device.
 
 ## Bluetooth retry events belong to one manager generation
 
