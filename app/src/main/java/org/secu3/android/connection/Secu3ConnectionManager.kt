@@ -426,7 +426,7 @@ class Secu3ConnectionManager @Inject constructor(
 
     /** Re-posts the active notification after the user grants Android's notification permission. */
     @Synchronized fun refreshConnectionNotification() {
-        if (isConnectionSessionActive()) connectionServiceController.refreshNotification()
+        if (selectedTransport.value.transport != Transport.NONE) connectionServiceController.refreshNotification()
     }
 
     @Synchronized private fun reconcileConnectionService() {
@@ -435,13 +435,10 @@ class Secu3ConnectionManager @Inject constructor(
             return
         }
         val selection = selectedTransport.value
-        if (appVisible && selection.transport != Transport.NONE && isConnectionSessionActive()) {
+        if (appVisible && selection.transport != Transport.NONE) {
             connectionServiceController.ensureStarted(selection.generation)
         }
     }
-
-    @Synchronized private fun isConnectionSessionActive(): Boolean =
-        selectedTransport.value.transport != Transport.NONE
 
     @Synchronized private fun isCurrentUsbSelection(deviceId: Int, selection: Selection): Boolean =
         selectedTransport.value == selection && usbSessionFence.isCurrent(deviceId, selection.generation)

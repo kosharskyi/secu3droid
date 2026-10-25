@@ -52,7 +52,6 @@ class UsbConnection @Inject constructor(
     prefs: UserPrefs,
 ) : Connection<UsbSerialPort>(prefs) {
 
-    private var currentDevice: UsbDevice? = null
     @Volatile private var attemptGeneration = 0L
     private val _attemptFailures = MutableSharedFlow<Long>(extraBufferCapacity = 16)
     internal val attemptFailures = _attemptFailures.asSharedFlow()
@@ -85,7 +84,6 @@ class UsbConnection @Inject constructor(
         val attempt = ++attemptGeneration
         connectionAttempts = 0
         isRunning = true
-        currentDevice = device
         scope.launch {
             mConnectionStateFlow.emit(InProgress)
             try {
@@ -98,7 +96,6 @@ class UsbConnection @Inject constructor(
                 currentCoroutineContext().ensureActive()
                 if (attempt != attemptGeneration) return@launch
                 isRunning = false
-                currentDevice = null
                 mConnectionStateFlow.emit(ConnectionFailed(e))
                 mConnectionStateFlow.emit(Disconnected)
                 _attemptFailures.emit(attemptId)
@@ -136,7 +133,6 @@ class UsbConnection @Inject constructor(
 
     override fun disconnect() {
         attemptGeneration++
-        currentDevice = null
         val port = detachCurrentEndpoint()
         backgroundScope.launch {
             var closeFailure: Exception? = null
@@ -186,7 +182,6 @@ class UsbConnection @Inject constructor(
                 if (invalidateEndpoint(port)) {
                     if (attempt != attemptGeneration) return@launch
                     isRunning = false
-                    currentDevice = null
                     mConnectionStateFlow.emit(ConnectionFailed(e))
                     mConnectionStateFlow.emit(Disconnected)
                     _attemptFailures.emit(attemptId)
