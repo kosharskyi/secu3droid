@@ -40,6 +40,7 @@ import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.withContext
 import kotlinx.coroutines.withTimeoutOrNull
 import kotlin.coroutines.coroutineContext
+import org.secu3.android.models.RawPacket
 import org.secu3.android.models.packets.base.InputPacket
 import org.secu3.android.models.packets.base.OutputPacket
 import org.secu3.android.models.packets.input.FirmwareInfoPacket
@@ -98,53 +99,46 @@ class Secu3ConnectionManager @Inject constructor(
         private set
 
     val receivedPacketFlow: Flow<InputPacket> = selectedTransport.flatMapLatest { selection ->
-        val transport = selection.transport
-        val streamGeneration = selection.generation
-        when (transport) {
-            Transport.USB -> usbConnection.attemptPackets.onSubscription {
-                synchronized(usbSelectionReady) { usbSelectionReady[streamGeneration]?.complete(Unit) }
-            }.map { it.attemptId to it.packet }
-            Transport.BLUETOOTH -> btConnection.receivedPacketFlow.map { null to it }
-            Transport.NONE -> emptyFlow()
-        }.filter { selectedTransport.value == selection && usbSessionFence.generation() == streamGeneration }
-            .mapNotNull { (attemptId, raw) ->
-                val packet = withContext(Dispatchers.IO) { raw.parse(fwInfo) } ?: return@mapNotNull null
-                attemptId to packet
+        packetsForSelection(selection) {
+            if (selection.transport == Transport.USB) {
+                synchronized(usbSelectionReady) { usbSelectionReady[selection.generation]?.complete(Unit) }
             }
-            .onEach { (attemptId, packet) ->
-                if (transport == Transport.USB && packet is FirmwareInfoPacket && selectedTransport.value == selection && usbSessionFence.generation() == streamGeneration) {
-                    attemptId?.let { confirmUsbFirmware(selection, it, packet) }
-                } else if (transport == Transport.BLUETOOTH && packet is FirmwareInfoPacket && selectedTransport.value == selection && usbSessionFence.generation() == streamGeneration) {
-                    fwInfo = packet
-                }
+        }.onEach { packet ->
+            if (selection.transport == Transport.BLUETOOTH && packet is FirmwareInfoPacket &&
+                selectedTransport.value == selection && usbSessionFence.generation() == selection.generation
+            ) {
+                fwInfo = packet
             }
-            .filter { (attemptId, _) -> transport != Transport.USB || attemptId == activeUsbAttemptId }
-            .map { it.second }
+        }
     }.shareIn(scope, SharingStarted.WhileSubscribed(5_000), replay = 0)
 
     /** Subscribe to the active transport before sending the page request. */
     fun receivedPacketFlow(onSubscribed: () -> Unit): Flow<InputPacket> = flow {
         val selection = selectedTransport.value
+        if (selection.transport == Transport.NONE) awaitCancellation()
+        emitAll(packetsForSelection(selection, onSubscribed))
+    }
+
+    private fun packetsForSelection(selection: Selection, onSubscribed: () -> Unit): Flow<InputPacket> {
         val transport = selection.transport
-        val generationAtSubscribe = selection.generation
-        val raw = when (transport) {
+        val raw: Flow<Pair<Long?, RawPacket>> = when (transport) {
             Transport.USB -> usbConnection.attemptPackets.onSubscription { onSubscribed() }
                 .map { it.attemptId to it.packet }
             Transport.BLUETOOTH -> btConnection.receivedPacketFlow.onSubscription { onSubscribed() }.map { null to it }
-            Transport.NONE -> awaitCancellation()
+            Transport.NONE -> emptyFlow()
         }
-        emitAll(raw.filter { selectedTransport.value == selection && usbSessionFence.generation() == generationAtSubscribe }
+        return raw.filter { selectedTransport.value == selection && usbSessionFence.generation() == selection.generation }
             .mapNotNull { (attemptId, item) ->
                 val packet = withContext(Dispatchers.IO) { item.parse(fwInfo) } ?: return@mapNotNull null
                 attemptId to packet
             }
             .onEach { (attemptId, packet) ->
-                if (transport == Transport.USB && packet is FirmwareInfoPacket && selectedTransport.value == selection && usbSessionFence.generation() == generationAtSubscribe) {
+                if (transport == Transport.USB && packet is FirmwareInfoPacket && selectedTransport.value == selection && usbSessionFence.generation() == selection.generation) {
                     attemptId?.let { confirmUsbFirmware(selection, it, packet) }
                 }
             }
             .filter { (attemptId, _) -> transport != Transport.USB || attemptId == activeUsbAttemptId }
-            .map { it.second })
+            .map { it.second }
     }
 
     val firmwareLiveData: LiveData<FirmwareInfoPacket> = receivedPacketFlow.filterIsInstance<FirmwareInfoPacket>().asLiveData()

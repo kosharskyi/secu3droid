@@ -19,13 +19,16 @@ import java.util.concurrent.CopyOnWriteArrayList
 import java.util.concurrent.atomic.AtomicBoolean
 import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.CoroutineStart
 import kotlinx.coroutines.cancel
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.withTimeout
+import kotlinx.coroutines.withTimeoutOrNull
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertNotNull
@@ -34,6 +37,7 @@ import org.junit.Assert.assertSame
 import org.junit.Assert.assertTrue
 import org.junit.Test
 import org.secu3.android.models.RawPacket
+import org.secu3.android.models.packets.input.FirmwareInfoPacket
 import org.secu3.android.utils.FileHelper
 import org.secu3.android.utils.SecuLogger
 import org.secu3.android.utils.Task
@@ -41,6 +45,46 @@ import org.secu3.android.utils.UserPrefs
 
 /** Exercises the production coordinator with an isolated serial port, never a physical ECU. */
 class UsbSessionIntegrationTest {
+    @Test fun requestSubscribesBeforeSendingAndReceivesImmediateFirmwareReply() = runBlocking {
+        val fixture = Fixture()
+        try {
+            fixture.attach(73)
+            val existingSubscribers = fixture.attemptPackets.subscriptionCount.value
+            var requestSent = false
+
+            val reply = withTimeout(3_000) {
+                fixture.manager.receivedPacketFlow {
+                    assertTrue(fixture.attemptPackets.subscriptionCount.value > existingSubscribers)
+                    requestSent = true
+                    launch(start = CoroutineStart.UNDISPATCHED) {
+                        fixture.attemptPackets.emit(UsbAttemptPacket(1L, firmwarePacket()))
+                    }
+                }.first()
+            }
+
+            assertTrue(requestSent)
+            assertTrue(reply is FirmwareInfoPacket)
+            assertTrue(fixture.manager.isUsbConnected)
+        } finally {
+            fixture.close()
+        }
+    }
+
+    @Test fun requestWithoutSelectedTransportWaitsWithoutSending() = runBlocking {
+        val fixture = Fixture()
+        try {
+            var requestSent = false
+            val reply = withTimeoutOrNull(100) {
+                fixture.manager.receivedPacketFlow { requestSent = true }.first()
+            }
+
+            assertNull(reply)
+            assertFalse(requestSent)
+        } finally {
+            fixture.close()
+        }
+    }
+
     @Test fun firmwareHandshakeGatesWritesAndOnlyMatchingDetachEndsTheLockedSession() = runBlocking {
         val fixture = Fixture()
         try {
