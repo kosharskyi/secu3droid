@@ -46,7 +46,6 @@ import dagger.hilt.android.AndroidEntryPoint
 import kotlinx.coroutines.flow.debounce
 import org.secu3.android.R
 import org.secu3.android.ui.MainActivity
-import org.secu3.android.utils.SecuLogger
 import javax.inject.Inject
 
 @AndroidEntryPoint
@@ -55,15 +54,10 @@ class SecuConnectionService : LifecycleService() {
     @Inject
     internal lateinit var secu3ConnectionManager: Secu3ConnectionManager
 
-    @Inject
-    internal lateinit var mLogger: SecuLogger
+    private var ownerToken = INVALID_OWNER_TOKEN
 
     override fun onCreate() {
         super.onCreate()
-
-        if (secu3ConnectionManager.isConnected.not()) {
-            return
-        }
 
         secu3ConnectionManager.connectionStateFlow.debounce(20000).asLiveData().observe(this) {
             Log.e("SecuConnectionService", "Connection state: $it")
@@ -77,6 +71,7 @@ class SecuConnectionService : LifecycleService() {
     }
 
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
+        ownerToken = intent?.getLongExtra(EXTRA_OWNER_TOKEN, INVALID_OWNER_TOKEN) ?: INVALID_OWNER_TOKEN
 
         var foregroundServiceType = 0
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
@@ -122,15 +117,14 @@ class SecuConnectionService : LifecycleService() {
     }
 
     override fun onDestroy() {
-        if (!secu3ConnectionManager.usbSessionLocked.value) {
-            secu3ConnectionManager.stopConnection()
-            mLogger.stopLogging()
-        }
+        if (ownerToken != INVALID_OWNER_TOKEN) secu3ConnectionManager.onConnectionServiceDestroyed(ownerToken)
         ServiceCompat.stopForeground(this@SecuConnectionService, ServiceCompat.STOP_FOREGROUND_REMOVE)
         super.onDestroy()
     }
 
     companion object {
         private const val CHANNEL_ID = "Background connection chanel"
+        internal const val EXTRA_OWNER_TOKEN = "connection_service_owner_token"
+        private const val INVALID_OWNER_TOKEN = -1L
     }
 }

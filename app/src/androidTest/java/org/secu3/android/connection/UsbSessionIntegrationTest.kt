@@ -1,7 +1,10 @@
 package org.secu3.android.connection
 
 import android.bluetooth.BluetoothManager
+import android.content.ComponentName
 import android.content.Context
+import android.content.ContextWrapper
+import android.content.Intent
 import android.hardware.usb.UsbConfiguration
 import android.hardware.usb.UsbDevice
 import android.hardware.usb.UsbManager
@@ -153,6 +156,155 @@ class UsbSessionIntegrationTest {
         }
     }
 
+    @Test fun lateServiceDestroyCannotStopReplacementUsbSession() = runBlocking {
+        val fixture = Fixture()
+        try {
+            fixture.attach(107)
+            fixture.confirmFirmware()
+            fixture.manager.onAppForegrounded()
+            val oldOwner = fixture.serviceController.ownerToken()!!
+            fixture.manager.onAppForegrounded()
+            assertEquals(1, fixture.serviceContext.startedServices.size)
+
+            assertTrue(fixture.manager.onUsbDeviceDetached(107))
+            assertTrue(fixture.serviceContext.stoppedServices.isEmpty())
+            fixture.attach(108)
+            fixture.confirmFirmware()
+            fixture.manager.onAppForegrounded()
+            val replacementOwner = fixture.serviceController.ownerToken()!!
+            assertTrue(oldOwner != replacementOwner)
+            assertEquals(2, fixture.serviceContext.startedServices.size)
+
+            fixture.manager.onConnectionServiceDestroyed(oldOwner)
+
+            assertTrue(fixture.manager.isUsbConnected)
+            assertTrue(fixture.manager.usbSessionLocked.value)
+            assertEquals(replacementOwner, fixture.serviceController.ownerToken())
+        } finally {
+            fixture.close()
+        }
+    }
+
+    @Test fun staleBluetoothServiceOwnerCannotStopUnconfirmedUsbReplacement() = runBlocking {
+        val fixture = Fixture()
+        try {
+            fixture.attach(109)
+            fixture.publishConnectionStateForTest(InProgress)
+            val usbGeneration = fixture.manager.activeUsbSessionGeneration!!
+            fixture.serviceController.ensureStarted(usbGeneration - 1) // previous Bluetooth session owner
+
+            fixture.manager.onAppForegrounded()
+
+            assertEquals(109, fixture.manager.activeUsbDeviceIdOrNull)
+            assertTrue(fixture.manager.isUsbRunning)
+            assertNull(fixture.serviceController.ownerToken())
+        } finally {
+            fixture.close()
+        }
+    }
+
+    @Test fun failedForegroundStartReleasesOwnerForResumeRetry() {
+        val fixture = Fixture()
+        try {
+            fixture.serviceContext.failNextStart = true
+            runCatching { fixture.serviceController.ensureStarted(17) }
+            assertNull(fixture.serviceController.ownerToken())
+
+            val retry = fixture.serviceController.ensureStarted(17)
+
+            assertEquals(retry, fixture.serviceController.ownerToken())
+            assertEquals(1, fixture.serviceContext.startedServices.size)
+        } finally {
+            fixture.close()
+        }
+    }
+
+    @Test fun bluetoothBackgroundPreferenceControlsServiceAndOwnedCleanup() {
+        val fixture = Fixture()
+        try {
+            fixture.selectBluetoothSessionForTest()
+            fixture.prefs.isWakeLockEnabled = false
+            fixture.manager.onAppForegrounded()
+            assertTrue(fixture.serviceContext.startedServices.isEmpty())
+            assertTrue(fixture.manager.isConnectionRunning)
+
+            fixture.prefs.isWakeLockEnabled = true
+            fixture.manager.onAppForegrounded()
+            assertNotNull(fixture.serviceController.ownerToken())
+            assertEquals(1, fixture.serviceContext.startedServices.size)
+
+            fixture.prefs.isWakeLockEnabled = false
+            fixture.manager.onAppForegrounded()
+
+            assertNull(fixture.serviceController.ownerToken())
+            assertFalse(fixture.manager.isConnectionRunning)
+            assertEquals(1, fixture.serviceContext.stoppedServices.size)
+        } finally {
+            fixture.close()
+        }
+    }
+
+    @Test fun lateDestroyFromPreviousBluetoothSessionCannotStopReplacement() {
+        val fixture = Fixture()
+        try {
+            fixture.prefs.isWakeLockEnabled = true
+            fixture.selectBluetoothSessionForTest()
+            fixture.manager.onAppForegrounded()
+            val oldOwner = fixture.serviceController.ownerToken()!!
+
+            fixture.selectBluetoothSessionForTest()
+            fixture.manager.onConnectionStateObservedInForeground(Connected)
+            val replacementOwner = fixture.serviceController.ownerToken()!!
+            assertTrue(oldOwner != replacementOwner)
+
+            fixture.manager.onConnectionServiceDestroyed(oldOwner)
+
+            assertTrue(fixture.manager.isConnectionRunning)
+            assertEquals(replacementOwner, fixture.serviceController.ownerToken())
+        } finally {
+            fixture.close()
+        }
+    }
+
+    @Test fun lateDestroyAfterStopAndRestartCannotStopNewBluetoothSession() {
+        val fixture = Fixture()
+        try {
+            fixture.prefs.isWakeLockEnabled = true
+            fixture.selectBluetoothSessionForTest()
+            fixture.manager.onAppForegrounded()
+            val stoppedOwner = fixture.serviceController.ownerToken()!!
+            assertTrue(fixture.manager.stopConnection())
+
+            fixture.selectBluetoothSessionForTest()
+            fixture.manager.onAppForegrounded()
+            val replacementOwner = fixture.serviceController.ownerToken()!!
+
+            fixture.manager.onConnectionServiceDestroyed(stoppedOwner)
+
+            assertTrue(fixture.manager.isConnectionRunning)
+            assertEquals(replacementOwner, fixture.serviceController.ownerToken())
+        } finally {
+            fixture.close()
+        }
+    }
+
+    @Test fun currentBluetoothServiceDestroyStopsItsOwnedSession() {
+        val fixture = Fixture()
+        try {
+            fixture.prefs.isWakeLockEnabled = true
+            fixture.selectBluetoothSessionForTest()
+            fixture.manager.onAppForegrounded()
+            val owner = fixture.serviceController.ownerToken()!!
+
+            fixture.manager.onConnectionServiceDestroyed(owner)
+
+            assertFalse(fixture.manager.isConnectionRunning)
+            assertNull(fixture.serviceController.ownerToken())
+        } finally {
+            fixture.close()
+        }
+    }
+
     @Test fun unavailableAttachmentSnapshotDoesNotDetachOrEraseUsbTerminalState() = runBlocking {
         val fixture = Fixture()
         try {
@@ -239,12 +391,15 @@ class UsbSessionIntegrationTest {
 
     private class Fixture {
         private val context = InstrumentationRegistry.getInstrumentation().targetContext
-        private val prefs = UserPrefs(context)
+        val prefs = UserPrefs(context)
+        private val originalWakeLockPreference = prefs.isWakeLockEnabled
         private val usb = UsbConnection(context.getSystemService(Context.USB_SERVICE) as UsbManager, prefs)
         private val bluetoothManager = context.getSystemService(Context.BLUETOOTH_SERVICE) as BluetoothManager
         private val bt = BtConnection(prefs, bluetoothManager)
         private val logger = SecuLogger(prefs, FileHelper(context))
-        val manager = Secu3ConnectionManager(usb, bt, prefs, bluetoothManager, logger)
+        val serviceContext = RecordingServiceContext(context)
+        val serviceController = ConnectionServiceController(serviceContext)
+        val manager = Secu3ConnectionManager(usb, bt, prefs, bluetoothManager, logger, serviceController)
         val writes = CopyOnWriteArrayList<ByteArray>()
         val rawPackets: MutableSharedFlow<RawPacket> = connectionField("mReceivedPacketFlow").get(usb) as MutableSharedFlow<RawPacket>
         val usbStates: MutableSharedFlow<ConnectionState> = connectionField("mConnectionStateFlow").get(usb) as MutableSharedFlow<ConnectionState>
@@ -296,7 +451,9 @@ class UsbSessionIntegrationTest {
         }
 
         fun close() {
-            manager.activeUsbDeviceIdOrNull?.let(manager::onUsbDeviceDetached)
+            if (!manager.stopConnection()) manager.activeUsbDeviceIdOrNull?.let(manager::onUsbDeviceDetached)
+            serviceController.stop()
+            prefs.isWakeLockEnabled = originalWakeLockPreference
             (managerField("scope").get(manager) as CoroutineScope).cancel()
             usb.cancelScopes()
             bt.cancelScopes()
@@ -305,8 +462,51 @@ class UsbSessionIntegrationTest {
 
         fun attachmentGate() = managerField("usbAttachmentAttempts").get(manager) as UsbAttachmentAttemptGate
 
+        fun publishConnectionStateForTest(state: ConnectionState) {
+            val publish = Secu3ConnectionManager::class.java.getDeclaredMethod("publishConnectionState", ConnectionState::class.java).apply { isAccessible = true }
+            publish.invoke(manager, state)
+        }
+
+        fun selectBluetoothSessionForTest(): Long {
+            val generation = (managerField("usbSessionFence").get(manager) as UsbSessionFence).advance()
+            val selectionClass = Secu3ConnectionManager::class.java.declaredClasses.first { it.simpleName == "Selection" }
+            val transportClass = Secu3ConnectionManager::class.java.declaredClasses.first { it.simpleName == "Transport" }
+            val bluetoothTransport = transportClass.enumConstants!!.first { (it as Enum<*>).name == "BLUETOOTH" }
+            val selection = selectionClass.declaredConstructors.first().apply { isAccessible = true }.newInstance(bluetoothTransport, generation)
+            @Suppress("UNCHECKED_CAST")
+            val selected = managerField("selectedTransport").get(manager) as MutableStateFlow<Any>
+            selected.value = selection
+            managerField("activeUsbAttachment").set(manager, null)
+            managerField("currentConnectionState").set(manager, Connected)
+            connectionField("isRunning").setBoolean(bt, true)
+            return generation
+        }
+
         private fun managerField(name: String) = Secu3ConnectionManager::class.java.getDeclaredField(name).apply { isAccessible = true }
         private fun connectionField(name: String) = Connection::class.java.getDeclaredField(name).apply { isAccessible = true }
+    }
+
+    private class RecordingServiceContext(base: Context) : ContextWrapper(base) {
+        val startedServices = mutableListOf<Intent>()
+        val stoppedServices = mutableListOf<Intent>()
+        var failNextStart = false
+
+        override fun startForegroundService(service: Intent): ComponentName? {
+            if (failNextStart) { failNextStart = false; throw IllegalStateException("service start failed") }
+            startedServices += Intent(service)
+            return service.component
+        }
+
+        override fun startService(service: Intent): ComponentName? {
+            if (failNextStart) { failNextStart = false; throw IllegalStateException("service start failed") }
+            startedServices += Intent(service)
+            return service.component
+        }
+
+        override fun stopService(name: Intent): Boolean {
+            stoppedServices += Intent(name)
+            return true
+        }
     }
 
     private fun UsbDevice.toIdentity() = UsbAttachmentIdentity(deviceId, deviceName, vendorId, productId)

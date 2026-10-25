@@ -17,3 +17,7 @@ Home shares the fixed toolbar status slot and state colors with feature screens,
 ## USB sessions lock the Home exit controls
 
 A confirmed USB session hides the Exit action and consumes system Back while Home is active. Feature navigation remains available, and the Activity returns to StartScreen when the active USB device is physically detached.
+
+## A rejected connection stop must not navigate away from Home
+
+The manager rechecks the USB session lock when Home confirms an exit. If a USB handshake confirms between the UI snapshot and that request, the manager rejects the stop; keep the exit flow pending state clear and do not navigate to StartScreen. Accepted exits let the manager stop the transport, logger and foreground service as one operation.

@@ -60,14 +60,15 @@ class MainActivity : ComponentActivity() {
         setContent { RootNavigation(this) }
         lifecycleScope.launch {
             viewModel.connectionManager.connectionStateFlow.collect { state ->
+                if (lifecycle.currentState.isAtLeast(Lifecycle.State.RESUMED)) {
+                    viewModel.connectionManager.onConnectionStateObservedInForeground(state)
+                }
                 if (state == Connected && viewModel.connectionManager.usbSessionLocked.value) {
-                    if (lifecycle.currentState.isAtLeast(Lifecycle.State.RESUMED)) applyConnectionServicePolicy()
                     openUsbHome()
                 } else if ((state is ConnectionFailed || state is ConnectionLost) && viewModel.connectionManager.activeUsbDeviceIdOrNull != null) {
                     val failureMessage = if (state is ConnectionLost) R.string.usb_connection_lost else R.string.usb_connection_failed
                     viewModel.requestStartNavigation()
                     if (lifecycle.currentState.isAtLeast(Lifecycle.State.RESUMED)) openStart()
-                    stopConnectionService()
                     Toast.makeText(this@MainActivity, getString(failureMessage), Toast.LENGTH_LONG).show()
                 }
             }
@@ -120,6 +121,7 @@ class MainActivity : ComponentActivity() {
 
     internal fun onRootDestinationChanged(destination: NavDestination?) {
         updateActiveComposeRoute(destination?.route)
+        if (lifecycle.currentState.isAtLeast(Lifecycle.State.RESUMED)) viewModel.connectionManager.onAppForegrounded()
         processPendingNavigation()
         deliverPendingUsbIntent()
     }
@@ -271,7 +273,7 @@ class MainActivity : ComponentActivity() {
                 handleUsbConnectionRequest(synchronization.connectionRequest)
             }
         }
-        if (viewModel.connectionManager.usbSessionLocked.value) applyConnectionServicePolicy()
+        viewModel.connectionManager.onAppForegrounded()
     }
 
     internal fun updateActiveComposeRoute(route: String?) { activeComposeRoute = route }
@@ -295,20 +297,6 @@ class MainActivity : ComponentActivity() {
             isAppearanceLightStatusBars = !dark
             isAppearanceLightNavigationBars = !dark && supportsLightNavigationIcons
         }
-    }
-
-    internal fun applyConnectionServicePolicy() {
-        val intent = Intent(this, org.secu3.android.connection.SecuConnectionService::class.java)
-        if (viewModel.connectionManager.usbSessionLocked.value || viewModel.prefs.isWakeLockEnabled) {
-            if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.O) startForegroundService(intent)
-            else startService(intent)
-        } else {
-            stopConnectionService()
-        }
-    }
-
-    internal fun stopConnectionService() {
-        stopService(Intent(this, org.secu3.android.connection.SecuConnectionService::class.java))
     }
 
     private fun isInsideDiagnosticsGraph(destination: NavDestination?): Boolean {

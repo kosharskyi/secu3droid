@@ -77,6 +77,7 @@ class Secu3ConnectionManager @Inject constructor(
     private val mPrefs: UserPrefs,
     private val bluetoothManager: BluetoothManager,
     private val secuLogger: SecuLogger,
+    private val connectionServiceController: ConnectionServiceController,
 ) {
     private enum class Transport { NONE, USB, BLUETOOTH }
     private data class Selection(val transport: Transport, val generation: Long)
@@ -339,6 +340,35 @@ class Secu3ConnectionManager @Inject constructor(
 
     @Synchronized fun stopConnection(): Boolean {
         if (_usbSessionLocked.value || activeUsbDeviceIdOrNull?.let { usbSessionFence.isConfirmed(it, selectedTransport.value.generation) } == true) return false
+        return stopConnectionInternal(stopService = true)
+    }
+
+    /** Reconciles service ownership only when a foreground UI lifecycle/state callback permits an FGS start. */
+    @Synchronized fun onAppForegrounded() {
+        if (currentConnectionState == Disconnected || currentConnectionState is ConnectionFailed || currentConnectionState is ConnectionLost) return
+        val selection = selectedTransport.value
+        val shouldRunService = _usbSessionLocked.value ||
+            (selection.transport == Transport.BLUETOOTH && btConnection.isRunning && mPrefs.isWakeLockEnabled)
+        if (shouldRunService) connectionServiceController.ensureStarted(selection.generation)
+        else if (connectionServiceController.ownerToken() != null) {
+            val serviceOwnsCurrentConnection = connectionServiceController.ownerConnectionGeneration() == selection.generation
+            connectionServiceController.stop()
+            if (serviceOwnsCurrentConnection && !_usbSessionLocked.value) stopConnectionInternal(stopService = false)
+        }
+    }
+
+    @Synchronized fun onConnectionStateObservedInForeground(state: ConnectionState) {
+        if (state == Connected) onAppForegrounded()
+    }
+
+    /** A delayed destroy from an older service instance must not stop a replacement connection. */
+    @Synchronized fun onConnectionServiceDestroyed(ownerToken: Long) {
+        val serviceConnectionGeneration = connectionServiceController.completeDestruction(ownerToken) ?: return
+        if (selectedTransport.value.generation != serviceConnectionGeneration || _usbSessionLocked.value) return
+        stopConnectionInternal(stopService = false)
+    }
+
+    @Synchronized private fun stopConnectionInternal(stopService: Boolean): Boolean {
         cancelUsbOpenAttempt()
         val nextGeneration = usbSessionFence.advance()
         selectedTransport.value = Selection(Transport.NONE, nextGeneration)
@@ -347,7 +377,9 @@ class Secu3ConnectionManager @Inject constructor(
         _usbSessionLocked.value = false
         usbConnection.stopConnection()
         btConnection.stopConnection()
+        secuLogger.stopLogging()
         publishConnectionState(Disconnected)
+        if (stopService) connectionServiceController.stop()
         return true
     }
 
@@ -397,6 +429,7 @@ class Secu3ConnectionManager @Inject constructor(
         usbAttemptFailed = true
         publishConnectionState(if (wasConfirmed) ConnectionLost(state.e) else state)
         secuLogger.stopLogging()
+        connectionServiceController.stop()
     }
 
     @Synchronized private fun publishConnectionState(state: ConnectionState) {

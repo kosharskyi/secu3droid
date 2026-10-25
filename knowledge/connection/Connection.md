@@ -31,3 +31,7 @@ Parameter, sensor and diagnostics consumers invalidate their local data on each 
 ## USB terminal state distinguishes an unconfirmed failure from a lost session
 
 The manager checks firmware confirmation before clearing the USB session fence. It publishes `ConnectionFailed` when opening or the initial handshake fails, and `ConnectionLost` when transport failure ends an already confirmed session. UI can choose the matching message from the event itself without retaining session history across Activity recreation. A physical detach still publishes `Disconnected` and does not create a connection-failure notification.
+
+## Foreground service ownership follows connection generations
+
+`Secu3ConnectionManager` owns the service policy and `ConnectionServiceController` owns Android start/stop calls. A service owner token is distinct from a connection generation: a late `onDestroy` may clear or stop only the service and transport generation it still owns. Starting service ownership for a replacement connection invalidates callbacks from an older instance. Confirmed USB requires the service regardless of the background preference; Bluetooth requires the preference. USB detach leaves the running service to observe `Disconnected` through its existing 20-second debounce. Explicit user stops clean up transport, logger and service together in the manager.

@@ -49,7 +49,6 @@ internal fun HomeRoute(
             resumed = lifecycle.currentState.isAtLeast(Lifecycle.State.RESUMED)
             if (event == Lifecycle.Event.ON_RESUME) {
                 activity.applyKeepScreenOnPreference()
-                activity.applyConnectionServicePolicy()
             }
         }
         lifecycle.addObserver(observer)
@@ -57,7 +56,7 @@ internal fun HomeRoute(
     }
     BackHandler(enabled = resumed) {
         if (!ui.usbSessionLocked) {
-            if (vm.isConnectionRunning) vm.requestExit() else vm.confirmExit(activity::stopConnectionService)
+            if (vm.isConnectionRunning) vm.requestExit() else vm.confirmExit()
         }
     }
     LaunchedEffect(vm, resumed, activeRoute) {
@@ -79,8 +78,8 @@ internal fun HomeRoute(
         actions = HomeScreenActions(
             onDashboard = onDashboard, onSensors = onSensors, onParameters = onParameters,
             onErrors = onErrors, onLogs = onLogs, onSettings = onSettings, onFirmware = onFirmware,
-            onExitImmediately = { vm.confirmExit(activity::stopConnectionService) }, onExitRequested = vm::requestExit,
-            onExitCancelled = vm::dismissDialog, onExitConfirmed = { vm.confirmExit(activity::stopConnectionService) },
+            onExitImmediately = vm::confirmExit, onExitRequested = vm::requestExit,
+            onExitCancelled = vm::dismissDialog, onExitConfirmed = vm::confirmExit,
             onDiagnosticsRequested = vm::requestDiagnostics,
             onDialogDismissed = vm::dismissDialog,
             onPermissionRationaleConfirmed = {

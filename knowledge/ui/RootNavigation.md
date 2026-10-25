@@ -10,6 +10,12 @@ Dark navigation-bar icons require Android 8.0 (API 26). On Android 7.0/7.1 the n
 
 Attach and detach broadcasts must remain observed while any route or dialog is visible. The Activity forwards attach and detach events and asks `Secu3ConnectionManager` to synchronize attachments on resume; the manager obtains the authoritative snapshot, owns serial support checks, active-device conflict rules, permission tokens and one open per physical attachment. Snapshot query failure must not be interpreted as an empty device list. StartScreen only presents device state and forwards manual selection. After firmware confirms a USB session, navigate to Home while clearing prior feature entries; on matching device detach, clear the stack to StartScreen.
 
+## Foreground connection service policy belongs to the connection manager
+
+The Activity forwards its resumed lifecycle and observed connection states; it does not inspect transport type or start/stop the service. `Secu3ConnectionManager` applies the USB-lock and Bluetooth background-preference rules, while `ConnectionServiceController` issues Android service commands. Home navigation and Activity recreation must not independently stop the service; an accepted user disconnect goes through the manager so its transport and logger cleanup stays coordinated.
+
+While the Activity is resumed, destination changes also forward a neutral synchronization event to the manager. This applies a background-preference change when returning from Settings without making the service policy depend on the Home route; repeated transitions within feature routes must not issue repeated Android starts for the same owner generation.
+
 ## Android's attach chooser can grant USB access after the explicit permission result
 
 The system may ask to open an already visible app independently of its `requestPermission` dialog. A denied permission result releases the one pending prompt slot but retains that attachment's attempt history. Recheck platform permission on a new attach intent and on resume; the manager allows that existing attempt to claim opening once. Manager-owned tokens survive Activity recreation, while detach or resume reconciliation invalidates missing attachments.

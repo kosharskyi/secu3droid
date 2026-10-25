@@ -70,12 +70,15 @@ class HomeViewModel @Inject constructor(
     }
     fun requestExit() { if (!isUsbSessionLocked) _uiState.value = _uiState.value.copy(dialog = HomeDialog.EXIT) }
     fun dismissDialog() { _uiState.value = _uiState.value.copy(dialog = null) }
-    fun confirmExit(onStopService: () -> Unit) {
+    fun confirmExit() {
         if (isUsbSessionLocked) return
         dismissDialog()
-        when (exitFlow.confirm(manager.isConnectionRunning, usbSessionLocked = isUsbSessionLocked) { onStopService() }) {
-            HomeExitAction.STOP_CONNECTION -> manager.stopConnection()
-            HomeExitAction.NAVIGATE_START -> _returnToStart.value = true
+        when (exitFlow.confirm(manager.isConnectionRunning, usbSessionLocked = isUsbSessionLocked)) {
+            HomeExitAction.STOP_CONNECTION -> if (!manager.stopConnection()) exitFlow.cancelPendingExit()
+            HomeExitAction.NAVIGATE_START -> {
+                if (manager.stopConnection()) _returnToStart.value = true
+                else exitFlow.cancelPendingExit()
+            }
             HomeExitAction.NONE -> Unit
         }
     }

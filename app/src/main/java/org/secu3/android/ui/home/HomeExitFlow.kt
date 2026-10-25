@@ -6,7 +6,7 @@ internal class HomeExitFlow {
     private var waitingForDisconnect = false
     private var navigationPending = false
 
-    fun confirm(connectionRunning: Boolean, usbSessionLocked: Boolean = false, onAccepted: (HomeExitAction) -> Unit = {}): HomeExitAction {
+    fun confirm(connectionRunning: Boolean, usbSessionLocked: Boolean = false): HomeExitAction {
         if (usbSessionLocked) return HomeExitAction.NONE
         if (waitingForDisconnect || navigationPending) return HomeExitAction.NONE
         val action = if (connectionRunning) {
@@ -16,7 +16,6 @@ internal class HomeExitFlow {
             navigationPending = true
             HomeExitAction.NAVIGATE_START
         }
-        onAccepted(action)
         return action
     }
 
@@ -31,5 +30,10 @@ internal class HomeExitFlow {
         if (!navigationPending) return false
         navigationPending = false
         return true
+    }
+
+    fun cancelPendingExit() {
+        waitingForDisconnect = false
+        navigationPending = false
     }
 }
