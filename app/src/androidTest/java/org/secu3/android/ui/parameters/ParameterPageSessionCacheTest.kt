@@ -235,17 +235,17 @@ class ParameterPageSessionCacheTest {
             val usbTransport = transportClass.enumConstants!!.first { (it as Enum<*>).name == "USB" }
             val selection = selectionClass.declaredConstructors.first().apply { isAccessible = true }.newInstance(usbTransport, generation)
             val subscribed = CompletableDeferred<Unit>()
-            @Suppress("UNCHECKED_CAST")
-            val barriers = Secu3ConnectionManager::class.java.getDeclaredField("usbSelectionReady").apply { isAccessible = true }
-                .get(manager) as MutableMap<Long, CompletableDeferred<Unit>>
-            synchronized(barriers) { barriers[generation] = subscribed }
+            val readyField = Secu3ConnectionManager::class.java.getDeclaredField("usbSelectionReady").apply { isAccessible = true }
+            synchronized(manager) { readyField.set(manager, subscribed) }
             @Suppress("UNCHECKED_CAST")
             val selected = Secu3ConnectionManager::class.java.getDeclaredField("selectedTransport").apply { isAccessible = true }
                 .get(manager) as MutableStateFlow<Any>
             selected.value = selection
             Secu3ConnectionManager::class.java.getDeclaredField("activeUsbAttemptId").apply { isAccessible = true }.set(manager, 1L)
             withTimeout(3_000) { subscribed.await() }
-            synchronized(barriers) { barriers.remove(generation) }
+            synchronized(manager) {
+                if (readyField.get(manager) === subscribed) readyField.set(manager, null)
+            }
             attemptPackets.emit(UsbAttemptPacket(1L, firmwarePacket()))
             withTimeout(3_000) { while (!manager.isUsbConnected || !manager.isUsbSessionLocked) delay(10) }
             return FakeUsbTransport(manager, connection, portField, attemptPackets, requests, writes, nextWriteBarrier, prefs, originalWakeLockPreference)

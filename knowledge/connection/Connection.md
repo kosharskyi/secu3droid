@@ -38,6 +38,10 @@ Parameter, sensor and diagnostics consumers invalidate their local data on each 
 
 The shared packet stream follows transport selection changes; the per-request stream captures the selection when collected and must never accept a replacement session's reply. Both use the same parsing, generation filtering and USB-attempt confirmation path. Invoke the request callback from the raw transport's `onSubscription`, before parsing operators: a command can produce an immediate reply. With no selected transport, wait for cancellation without sending. Bluetooth firmware caching remains owned by the shared stream.
 
+## USB opening waits on only the selected session's packet subscription
+
+The manager has at most one selected USB session, so its pre-open readiness is a single deferred. A subscription callback may complete it only while its captured selection is still current. Cancellation clears the pending signal, while the waiter clears it after completion only if the field still refers to that same deferred. This prevents a late collector or waiter from releasing or erasing a replacement session.
+
 ## One background preference controls both transports
 
 The persisted `wakelock` key and default are retained, but the preference applies to both USB and Bluetooth. Toggling it off while connected stops only the foreground service; the live transport and logger continue until the app actually stops or the ECU disconnects. If background work is off, the manager ends either transport and logging on a real Activity stop and publishes that ended session's generation; configuration recreation does not count as leaving. With the preference on, the service stays owned through connection retries. `ConnectionServiceController` owns Android service calls, while a service owner token remains distinct from the connection generation so late destruction from an old service cannot stop a replacement session.

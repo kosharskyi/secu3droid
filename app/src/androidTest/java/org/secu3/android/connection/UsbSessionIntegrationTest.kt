@@ -913,15 +913,17 @@ class UsbSessionIntegrationTest {
             val usbTransport = transportClass.enumConstants!!.first { (it as Enum<*>).name == "USB" }
             val selection = selectionClass.declaredConstructors.first().apply { isAccessible = true }.newInstance(usbTransport, generation)
             val subscribed = CompletableDeferred<Unit>()
-            @Suppress("UNCHECKED_CAST")
-            val barriers = managerField("usbSelectionReady").get(manager) as MutableMap<Long, CompletableDeferred<Unit>>
-            synchronized(barriers) { barriers[generation] = subscribed }
+            synchronized(manager) { managerField("usbSelectionReady").set(manager, subscribed) }
             @Suppress("UNCHECKED_CAST")
             val selected = managerField("selectedTransport").get(manager) as MutableStateFlow<Any>
             selected.value = selection
             managerField("activeUsbAttemptId").set(manager, 1L)
             withTimeout(3_000) { subscribed.await() }
-            synchronized(barriers) { barriers.remove(generation) }
+            synchronized(manager) {
+                if (managerField("usbSelectionReady").get(manager) === subscribed) {
+                    managerField("usbSelectionReady").set(manager, null)
+                }
+            }
             await { btEvents.subscriptionCount.value > 0 }
         }
 

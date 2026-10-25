@@ -77,7 +77,7 @@ class Secu3ConnectionManager @Inject constructor(
     }
     private val scope = CoroutineScope(Dispatchers.Default + Job())
     private val selectedTransport = MutableStateFlow(Selection(Transport.NONE, 0))
-    private val usbSelectionReady = mutableMapOf<Long, CompletableDeferred<Unit>>()
+    private var usbSelectionReady: CompletableDeferred<Unit>? = null
     private var usbRetryJob: Job? = null
     private var nextUsbAttemptId = 0L
     @Volatile private var activeUsbAttemptId: Long? = null
@@ -101,7 +101,9 @@ class Secu3ConnectionManager @Inject constructor(
     val receivedPacketFlow: Flow<InputPacket> = selectedTransport.flatMapLatest { selection ->
         packetsForSelection(selection) {
             if (selection.transport == Transport.USB) {
-                synchronized(usbSelectionReady) { usbSelectionReady[selection.generation]?.complete(Unit) }
+                synchronized(this@Secu3ConnectionManager) {
+                    usbSelectionReady?.takeIf { selectedTransport.value == selection }?.complete(Unit)
+                }
             }
         }.onEach { packet ->
             if (selection.transport == Transport.BLUETOOTH && packet is FirmwareInfoPacket &&
@@ -294,13 +296,15 @@ class Secu3ConnectionManager @Inject constructor(
         btConnection.stopConnection()
         usbConnection.stopConnection()
         val selection = Selection(Transport.USB, attemptGeneration)
-        synchronized(usbSelectionReady) { usbSelectionReady[attemptGeneration] = CompletableDeferred() }
+        val ready = CompletableDeferred<Unit>()
+        usbSelectionReady = ready
         selectedTransport.value = selection
         reconcileConnectionService()
         usbRetryJob = scope.launch {
-            val ready = synchronized(usbSelectionReady) { usbSelectionReady[attemptGeneration] } ?: return@launch
             ready.await()
-            synchronized(usbSelectionReady) { usbSelectionReady.remove(attemptGeneration) }
+            synchronized(this@Secu3ConnectionManager) {
+                if (usbSelectionReady === ready) usbSelectionReady = null
+            }
             while (isCurrentUsbSelection(device.deviceId, selection)) {
                 val attemptId: Long
                 val signals: Channel<UsbAttemptSignal>
@@ -501,7 +505,7 @@ class Secu3ConnectionManager @Inject constructor(
         activeUsbAttemptId = null
         usbAttemptSignals?.close()
         usbAttemptSignals = null
-        synchronized(usbSelectionReady) { usbSelectionReady.clear() }
+        synchronized(this) { usbSelectionReady = null }
     }
 
     private fun samePhysicalDevice(first: UsbDevice, second: UsbDevice): Boolean =
