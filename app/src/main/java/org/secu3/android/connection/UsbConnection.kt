@@ -44,7 +44,6 @@ import java.io.IOException
 import javax.inject.Inject
 import javax.inject.Singleton
 
-internal data class UsbConnectionAttemptFailure(val attemptId: Long, val error: Exception)
 internal data class UsbAttemptPacket(val attemptId: Long, val packet: RawPacket)
 
 @Singleton
@@ -55,7 +54,7 @@ class UsbConnection @Inject constructor(
 
     private var currentDevice: UsbDevice? = null
     @Volatile private var attemptGeneration = 0L
-    private val _attemptFailures = MutableSharedFlow<UsbConnectionAttemptFailure>(extraBufferCapacity = 16)
+    private val _attemptFailures = MutableSharedFlow<Long>(extraBufferCapacity = 16)
     internal val attemptFailures = _attemptFailures.asSharedFlow()
     private val _attemptPackets = MutableSharedFlow<UsbAttemptPacket>()
     internal val attemptPackets = _attemptPackets.asSharedFlow()
@@ -102,7 +101,7 @@ class UsbConnection @Inject constructor(
                 currentDevice = null
                 mConnectionStateFlow.emit(ConnectionFailed(e))
                 mConnectionStateFlow.emit(Disconnected)
-                _attemptFailures.emit(UsbConnectionAttemptFailure(attemptId, e))
+                _attemptFailures.emit(attemptId)
                 Log.e(this.javaClass.simpleName, "Connection failed: ${e.message}")
             }
         }
@@ -190,7 +189,7 @@ class UsbConnection @Inject constructor(
                     currentDevice = null
                     mConnectionStateFlow.emit(ConnectionFailed(e))
                     mConnectionStateFlow.emit(Disconnected)
-                    _attemptFailures.emit(UsbConnectionAttemptFailure(attemptId, e))
+                    _attemptFailures.emit(attemptId)
                 }
             }
         }

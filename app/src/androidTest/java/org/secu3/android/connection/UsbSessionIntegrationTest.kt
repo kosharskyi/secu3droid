@@ -20,12 +20,17 @@ import java.util.concurrent.atomic.AtomicBoolean
 import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.CoroutineStart
+import kotlinx.coroutines.async
 import kotlinx.coroutines.cancel
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.filterIsInstance
 import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.flow.take
+import kotlinx.coroutines.flow.toList
 import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.withTimeout
 import kotlinx.coroutines.withTimeoutOrNull
@@ -81,6 +86,85 @@ class UsbSessionIntegrationTest {
             assertNull(reply)
             assertFalse(requestSent)
         } finally {
+            fixture.close()
+        }
+    }
+
+    @Test fun usbOpenFailureEmitsAttemptIdAndManagerRetriesThatAttempt() = runBlocking {
+        val fixture = Fixture()
+        val device = usbDevice("/dev/bus/usb/099/001", 0x1234, 0x5678)
+        val packetCollector = launch(start = CoroutineStart.UNDISPATCHED) {
+            fixture.manager.receivedPacketFlow.collect { }
+        }
+        try {
+            fixture.manager.onAppForegrounded()
+            val permission = fixture.requestPermissionOrStart(device, hasPermission = false)!!
+            val observedFailures = async(start = CoroutineStart.UNDISPATCHED) {
+                withTimeout(10_000) { fixture.attemptFailures.take(2).toList() }
+            }
+            val observedConnectionFailure = async(start = CoroutineStart.UNDISPATCHED) {
+                withTimeout(8_000) { fixture.usb.connectionStateFlow.filterIsInstance<ConnectionFailed>().first() }
+            }
+            fixture.await { fixture.attemptFailures.subscriptionCount.value >= 2 }
+            fixture.completePendingPermission(
+                device = device,
+                token = permission.token,
+                permissionGranted = true,
+                attachedDevice = device,
+                hasPermission = true,
+                supported = true,
+                conflictsWithActiveDevice = false,
+            )
+
+            assertEquals(listOf(1L, 2L), observedFailures.await())
+            assertEquals("No USB devices found", observedConnectionFailure.await().e.message)
+        } finally {
+            packetCollector.cancel()
+            fixture.close()
+        }
+    }
+
+    @Test fun managerIgnoresFailureFromStaleUsbAttempt() = runBlocking {
+        val fixture = Fixture()
+        val signals = Channel<Any>(Channel.UNLIMITED)
+        try {
+            fixture.attach(72)
+            fixture.setUsbAttemptSignals(signals)
+            fixture.handleUsbAttemptFailure(2L)
+            assertFalse(signals.tryReceive().isSuccess)
+
+            fixture.handleUsbAttemptFailure(1L)
+            val signal = withTimeout(3_000) { signals.receive() }
+            assertEquals("FAILED", (signal as Enum<*>).name)
+        } finally {
+            fixture.close()
+        }
+    }
+
+    @Test fun usbFirmwareHandshakeTimeoutRetriesWithoutEndingAttachmentSession() = runBlocking {
+        val fixture = Fixture()
+        val device = usbDevice("/dev/bus/usb/099/002", 0x1234, 0x5678)
+        val packetCollector = launch(start = CoroutineStart.UNDISPATCHED) {
+            fixture.manager.receivedPacketFlow.collect { }
+        }
+        try {
+            // Keep the production manager retry loop active while preventing Android USB I/O.
+            fixture.usb.cancelScopes()
+            fixture.manager.onAppForegrounded()
+            fixture.requestPermissionOrStart(device, hasPermission = true)
+            fixture.await { fixture.activeUsbAttemptId() == 1L }
+            val sessionGeneration = fixture.manager.activeUsbSessionGeneration
+            val startedAt = System.nanoTime()
+
+            fixture.await(timeoutMillis = 10_000) { fixture.activeUsbAttemptId() == 2L }
+
+            val elapsedMillis = (System.nanoTime() - startedAt) / 1_000_000
+            assertTrue("Handshake timeout should wait for the configured deadline", elapsedMillis >= 5_000)
+            assertEquals(sessionGeneration, fixture.manager.activeUsbSessionGeneration)
+            assertNull(fixture.manager.fwInfo)
+            assertNull(fixture.manager.terminalSessionGeneration.value)
+        } finally {
+            packetCollector.cancel()
             fixture.close()
         }
     }
@@ -873,7 +957,7 @@ class UsbSessionIntegrationTest {
         init {
             prefs.isWakeLockEnabled = false
         }
-        private val usb = UsbConnection(context.getSystemService(Context.USB_SERVICE) as UsbManager, prefs)
+        val usb = UsbConnection(context.getSystemService(Context.USB_SERVICE) as UsbManager, prefs)
         private val bluetoothManager = context.getSystemService(Context.BLUETOOTH_SERVICE) as BluetoothManager
         private val bt = BtConnection(prefs, bluetoothManager)
         val logger = SecuLogger(prefs, FileHelper(context))
@@ -883,6 +967,8 @@ class UsbSessionIntegrationTest {
         val writes = CopyOnWriteArrayList<ByteArray>()
         private var fakeEndpointOpen: AtomicBoolean? = null
         val attemptPackets: MutableSharedFlow<UsbAttemptPacket> = usb.javaClass.getDeclaredField("_attemptPackets").apply { isAccessible = true }.get(usb) as MutableSharedFlow<UsbAttemptPacket>
+        @Suppress("UNCHECKED_CAST")
+        val attemptFailures: MutableSharedFlow<Long> = usb.javaClass.getDeclaredField("_attemptFailures").apply { isAccessible = true }.get(usb) as MutableSharedFlow<Long>
         val btStates: MutableSharedFlow<ConnectionState> = connectionField("mConnectionStateFlow").get(bt) as MutableSharedFlow<ConnectionState>
         @Suppress("UNCHECKED_CAST")
         private val btEvents: MutableSharedFlow<BluetoothConnectionEvent> = bt.javaClass.getDeclaredField("_sessionEvents").apply { isAccessible = true }.get(bt) as MutableSharedFlow<BluetoothConnectionEvent>
@@ -946,6 +1032,19 @@ class UsbSessionIntegrationTest {
 
         suspend fun await(timeoutMillis: Long = 3_000, predicate: () -> Boolean) {
             withTimeout(timeoutMillis) { while (!predicate()) delay(10) }
+        }
+
+        fun setUsbAttemptSignals(signals: Channel<Any>) {
+            managerField("usbAttemptSignals").set(manager, signals)
+        }
+
+        fun activeUsbAttemptId() = managerField("activeUsbAttemptId").get(manager) as Long?
+
+        fun handleUsbAttemptFailure(attemptId: Long) {
+            val method = Secu3ConnectionManager::class.java.getDeclaredMethod(
+                "handleUsbAttemptFailure", Long::class.javaPrimitiveType,
+            ).apply { isAccessible = true }
+            method.invoke(manager, attemptId)
         }
 
         fun close() {

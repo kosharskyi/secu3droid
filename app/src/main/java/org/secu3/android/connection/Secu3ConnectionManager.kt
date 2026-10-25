@@ -71,10 +71,7 @@ class Secu3ConnectionManager @Inject constructor(
 ) {
     private enum class Transport { NONE, USB, BLUETOOTH }
     private data class Selection(val transport: Transport, val generation: Long)
-    private sealed interface UsbAttemptSignal {
-        data object FirmwareConfirmed : UsbAttemptSignal
-        data class Failed(val error: Exception) : UsbAttemptSignal
-    }
+    private enum class UsbAttemptSignal { FIRMWARE_CONFIRMED, FAILED }
     private val scope = CoroutineScope(Dispatchers.Default + Job())
     private val selectedTransport = MutableStateFlow(Selection(Transport.NONE, 0))
     private var usbSelectionReady: CompletableDeferred<Unit>? = null
@@ -325,11 +322,11 @@ class Secu3ConnectionManager @Inject constructor(
                         signals.receive()
                     } else {
                         withTimeoutOrNull(USB_FIRMWARE_HANDSHAKE_TIMEOUT_MS) { signals.receive() }
-                            ?: UsbAttemptSignal.Failed(IllegalStateException("No SECU firmware response received"))
+                            ?: UsbAttemptSignal.FAILED
                     }
                     when (signal) {
-                        UsbAttemptSignal.FirmwareConfirmed -> firmwareConfirmed = true
-                        is UsbAttemptSignal.Failed -> {
+                        UsbAttemptSignal.FIRMWARE_CONFIRMED -> firmwareConfirmed = true
+                        UsbAttemptSignal.FAILED -> {
                             retry = true
                             break
                         }
@@ -525,14 +522,14 @@ class Secu3ConnectionManager @Inject constructor(
         if (!usbSessionFence.isCurrent(deviceId, selection.generation)) return
         fwInfo = packet
         confirmedUsbAttemptId = attemptId
-        usbAttemptSignals?.trySend(UsbAttemptSignal.FirmwareConfirmed)
+        usbAttemptSignals?.trySend(UsbAttemptSignal.FIRMWARE_CONFIRMED)
         publishConnectionState(Connected)
         reconcileConnectionService()
     }
 
-    @Synchronized private fun handleUsbAttemptFailure(event: UsbConnectionAttemptFailure) {
-        if (selectedTransport.value.transport != Transport.USB || activeUsbAttemptId != event.attemptId) return
-        usbAttemptSignals?.trySend(UsbAttemptSignal.Failed(event.error))
+    @Synchronized private fun handleUsbAttemptFailure(attemptId: Long) {
+        if (selectedTransport.value.transport != Transport.USB || activeUsbAttemptId != attemptId) return
+        usbAttemptSignals?.trySend(UsbAttemptSignal.FAILED)
     }
 
     @Synchronized private fun finishBluetoothSession(event: BluetoothConnectionEvent) {
