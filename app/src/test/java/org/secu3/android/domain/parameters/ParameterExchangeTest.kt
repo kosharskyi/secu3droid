@@ -20,6 +20,7 @@ import kotlinx.coroutines.launch
 import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.withTimeout
 import kotlinx.coroutines.TimeoutCancellationException
+import org.secu3.android.domain.ecu.EcuExchange
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue
@@ -190,13 +191,11 @@ class ParameterExchangeTest {
         var onSend: ((Task) -> Unit)? = null
 
         val exchange = ParameterExchange(
+            ecuExchange = EcuExchange { onSubscribed -> packets.onSubscription { onSubscribed() } },
             sendTask = { task ->
                 requests += task
                 sentTasks.trySend(task)
                 onSend?.invoke(task)
-            },
-            receivedPackets = { sendRequest ->
-                packets.onSubscription { sendRequest() }
             },
             isConnected = { connected },
             timeoutMillis = timeoutMillis,

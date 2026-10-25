@@ -14,4 +14,4 @@ Use the emitted connection event to invalidate the session, not a later `isConne
 
 ## The parameter exchange component owns response matching and timeout policy
 
-The ViewModel asks `ParameterExchange` for typed packets or a typed EEPROM-save result. `ParameterPageReadGate` still controls when reads run and serializes page cleanup, while the exchange owns subscribe-before-send ordering, response deadlines, Functions fragments, EEPROM acknowledgment matching, and sensor-stream restoration.
+The ViewModel asks `ParameterExchange` for typed packets or a typed EEPROM-save result. `ParameterPageReadGate` still controls when reads run and serializes page cleanup. Shared subscribe-before-send ordering and response deadlines belong to `EcuExchange`; `ParameterExchange` owns Functions fragments, EEPROM acknowledgment matching, and sensor-stream restoration.

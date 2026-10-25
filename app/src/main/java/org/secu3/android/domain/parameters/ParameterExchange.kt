@@ -10,14 +10,11 @@
 package org.secu3.android.domain.parameters
 
 import kotlinx.coroutines.CancellationException
-import kotlinx.coroutines.TimeoutCancellationException
-import kotlinx.coroutines.currentCoroutineContext
-import kotlinx.coroutines.ensureActive
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.filterIsInstance
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.sync.Mutex
-import kotlinx.coroutines.withTimeout
+import org.secu3.android.domain.ecu.EcuExchange
 import org.secu3.android.connection.Secu3ConnectionManager
 import org.secu3.android.models.FnName
 import org.secu3.android.models.packets.base.InputPacket
@@ -25,7 +22,6 @@ import org.secu3.android.models.packets.input.FnNameDatPacket
 import org.secu3.android.models.packets.out.OpCompNc
 import org.secu3.android.models.packets.out.params.FunSetParamPacket
 import org.secu3.android.utils.Task
-import java.util.concurrent.TimeoutException
 import javax.inject.Inject
 import javax.inject.Singleton
 
@@ -42,15 +38,15 @@ enum class EepromSaveResult {
 
 @Singleton
 class ParameterExchange internal constructor(
+    private val ecuExchange: EcuExchange,
     private val sendTask: (Task) -> Unit,
-    private val receivedPackets: (onSubscribed: () -> Unit) -> Flow<InputPacket>,
     private val isConnected: () -> Boolean,
     private val timeoutMillis: Long = RESPONSE_TIMEOUT_MILLIS,
 ) {
     @Inject
-    constructor(connectionManager: Secu3ConnectionManager) : this(
+    constructor(connectionManager: Secu3ConnectionManager, ecuExchange: EcuExchange) : this(
+        ecuExchange = ecuExchange,
         sendTask = connectionManager::sendNewTask,
-        receivedPackets = connectionManager::receivedPacketFlow,
         isConnected = { connectionManager.isConnected },
     )
 
@@ -110,17 +106,14 @@ class ParameterExchange internal constructor(
         receive: suspend (Flow<InputPacket>) -> T,
     ): T {
         try {
-            return try {
-                withTimeout(timeoutMillis) {
-                    receive(receivedPackets {
-                        sendTask(task)
-                        onRequestStarted()
-                    })
-                }
-            } catch (timeout: TimeoutCancellationException) {
-                currentCoroutineContext().ensureActive()
-                throw TimeoutException("ECU parameter response timed out").apply { initCause(timeout) }
-            }
+            return ecuExchange.request(
+                timeoutMillis = timeoutMillis,
+                sendRequest = {
+                    sendTask(task)
+                    onRequestStarted()
+                },
+                receive = receive,
+            )
         } finally {
             if (restoreSensors) sendTask(Task.Secu3ReadSensors)
         }

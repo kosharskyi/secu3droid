@@ -24,4 +24,4 @@ The clear write is an `x` packet with a zero saved mask; it does not clear activ
 
 ## Read timeouts report missing packets without fabricating masks
 
-The initial saved and first active packet waits have independent timeout status. An active timeout keeps the active collector alive so a late `v` packet or firmware-info recovery can still complete the screen; only the first active packet is timed. Explicit retry clears packet masks and starts the full saved-to-active read sequence, while preserving clear outcome status and never repeating a clear write.
+The initial saved and first active packet waits have independent timeout status. `EcuExchange` converts only its own bounded request deadline to a timeout result; cancellation of the route or connection session still cancels the worker. An active timeout keeps the active collector alive so a late `v` packet or firmware-info recovery can still complete the screen; only the first active packet is timed. Explicit retry clears packet masks and starts the full saved-to-active read sequence, while preserving clear outcome status and never repeating a clear write.

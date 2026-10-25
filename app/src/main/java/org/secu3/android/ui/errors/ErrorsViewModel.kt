@@ -37,17 +37,22 @@ import kotlinx.coroutines.flow.collect
 import kotlinx.coroutines.launch
 import org.secu3.android.connection.ConnectionState
 import org.secu3.android.connection.Secu3ConnectionManager
+import org.secu3.android.domain.ecu.EcuExchange
 import org.secu3.android.models.packets.out.CheckEngineSavedErrorsPacket
 import org.secu3.android.utils.Task
 import javax.inject.Inject
 
 @HiltViewModel
-class ErrorsViewModel @Inject constructor(private val secu3ConnectionManager: Secu3ConnectionManager) : ViewModel() {
+class ErrorsViewModel @Inject constructor(
+    private val secu3ConnectionManager: Secu3ConnectionManager,
+    ecuExchange: EcuExchange,
+) : ViewModel() {
 
     val connectionStatusLiveData: LiveData<ConnectionState> = secu3ConnectionManager.connectionStateFlow.asLiveData()
 
     private val session = ErrorsSessionController(
         scope = viewModelScope,
+        ecuExchange = ecuExchange,
         packets = { onSubscribed -> secu3ConnectionManager.receivedPacketFlow(onSubscribed) },
         sendSavedRead = { secu3ConnectionManager.sendNewTask(Task.Secu3ReadEcuSavedErrors) },
         sendActiveRead = { secu3ConnectionManager.sendNewTask(Task.Secu3ReadEcuErrors) },

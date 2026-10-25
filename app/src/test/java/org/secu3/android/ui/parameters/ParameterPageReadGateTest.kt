@@ -17,6 +17,7 @@ import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.onSubscription
+import org.secu3.android.domain.ecu.EcuExchange
 import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.withContext
 import kotlinx.coroutines.withTimeout
@@ -252,8 +253,8 @@ class ParameterPageReadGateTest {
 
     private fun parameterExchange(requests: Channel<Task>, packets: MutableSharedFlow<InputPacket>) =
         ParameterExchange(
+            ecuExchange = EcuExchange { onSubscribed -> packets.onSubscription { onSubscribed() } },
             sendTask = { requests.trySend(it) },
-            receivedPackets = { onSubscribed -> packets.onSubscription { onSubscribed() } },
             isConnected = { true },
             timeoutMillis = 1_000,
         )

@@ -14,6 +14,7 @@ import org.junit.Test
 import org.secu3.android.connection.Connected
 import org.secu3.android.connection.ConnectionAttempt
 import org.secu3.android.connection.Disconnected
+import org.secu3.android.domain.ecu.EcuExchange
 import org.secu3.android.models.packets.base.InputPacket
 import org.secu3.android.models.packets.input.CheckEngineErrorsPacket
 import org.secu3.android.models.packets.input.FirmwareInfoPacket
@@ -439,6 +440,7 @@ class ErrorsSessionControllerTest {
         var onClearWrite: (() -> Unit)? = null
         val controller = ErrorsSessionController(
             scope = scope,
+            ecuExchange = EcuExchange { onSubscribed -> packets.onSubscription { onSubscribed() } },
             packets = { onSubscribed -> packets.onSubscription { onSubscribed() } },
             sendSavedRead = { commands += "saved"; onSavedRead?.invoke() },
             sendActiveRead = { commands += "active" },

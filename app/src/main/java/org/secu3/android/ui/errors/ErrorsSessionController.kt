@@ -11,9 +11,6 @@ package org.secu3.android.ui.errors
 
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Job
-import kotlinx.coroutines.TimeoutCancellationException
-import kotlinx.coroutines.currentCoroutineContext
-import kotlinx.coroutines.ensureActive
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -22,7 +19,7 @@ import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.delay
-import kotlinx.coroutines.withTimeout
+import org.secu3.android.domain.ecu.EcuExchange
 import org.secu3.android.connection.Connected
 import org.secu3.android.connection.ConnectionState
 import org.secu3.android.models.packets.base.InputPacket
@@ -30,6 +27,7 @@ import org.secu3.android.models.packets.input.CheckEngineErrorsPacket
 import org.secu3.android.models.packets.input.FirmwareInfoPacket
 import org.secu3.android.models.packets.out.CheckEngineSavedErrorsPacket
 import org.secu3.android.models.packets.out.OpCompNc
+import java.util.concurrent.TimeoutException
 
 internal enum class ErrorsClearStatus {
     Idle,
@@ -51,6 +49,7 @@ internal data class ErrorsSnapshot(
 /** Owns error packets and reads only while the route is resumed and its transport is connected. */
 internal class ErrorsSessionController(
     private val scope: CoroutineScope,
+    private val ecuExchange: EcuExchange,
     private val packets: (onSubscribed: () -> Unit) -> Flow<InputPacket>,
     private val sendSavedRead: () -> Unit,
     private val sendActiveRead: () -> Unit,
@@ -129,12 +128,13 @@ internal class ErrorsSessionController(
         sessionJob = scope.launch {
             try {
                 val saved = try {
-                    withTimeout(initialReadTimeoutMillis) {
-                        packets { if (isCurrent(session)) sendSavedRead() }
-                            .filterIsInstance<CheckEngineSavedErrorsPacket>().first()
+                    ecuExchange.request(
+                        timeoutMillis = initialReadTimeoutMillis,
+                        sendRequest = { if (isCurrent(session)) sendSavedRead() },
+                    ) { responsePackets ->
+                        responsePackets.filterIsInstance<CheckEngineSavedErrorsPacket>().first()
                     }
-                } catch (_: TimeoutCancellationException) {
-                    currentCoroutineContext().ensureActive()
+                } catch (_: TimeoutException) {
                     if (isCurrent(session)) _snapshot.value = _snapshot.value.copy(readStatus = ErrorsReadStatus.SavedTimeout)
                     return@launch
                 }
@@ -149,13 +149,14 @@ internal class ErrorsSessionController(
 
     private suspend fun performClear(session: Long) {
         try {
-            withTimeout(ackTimeoutMillis) {
-                packets { if (isCurrent(session)) clearSavedErrors() }
-                    .filterIsInstance<OpCompNc>()
+            ecuExchange.request(
+                timeoutMillis = ackTimeoutMillis,
+                sendRequest = { if (isCurrent(session)) clearSavedErrors() },
+            ) { responsePackets ->
+                responsePackets.filterIsInstance<OpCompNc>()
                     .first { it.isSavedErrorsWriteAcknowledgement }
             }
-        } catch (_: TimeoutCancellationException) {
-            currentCoroutineContext().ensureActive()
+        } catch (_: TimeoutException) {
             updateClearStatus(session, ErrorsClearStatus.AckTimeout)
             collectActiveErrors(session)
             return
@@ -163,13 +164,13 @@ internal class ErrorsSessionController(
         if (!isCurrent(session)) return
 
         val refreshedSavedErrors = try {
-            withTimeout(readbackTimeoutMillis) {
-                packets { if (isCurrent(session)) sendSavedRead() }
-                    .filterIsInstance<CheckEngineSavedErrorsPacket>()
-                    .first()
+            ecuExchange.request(
+                timeoutMillis = readbackTimeoutMillis,
+                sendRequest = { if (isCurrent(session)) sendSavedRead() },
+            ) { responsePackets ->
+                responsePackets.filterIsInstance<CheckEngineSavedErrorsPacket>().first()
             }
-        } catch (_: TimeoutCancellationException) {
-            currentCoroutineContext().ensureActive()
+        } catch (_: TimeoutException) {
             updateClearStatus(session, ErrorsClearStatus.ReadbackTimeout)
             collectActiveErrors(session)
             return

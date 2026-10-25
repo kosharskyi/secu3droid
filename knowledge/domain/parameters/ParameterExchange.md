@@ -1,6 +1,6 @@
-## Subscribe to ECU responses before sending each parameter request
+## Parameter requests restore sensor streaming even when the request fails
 
-`ParameterExchange` owns the 10-second response deadline, typed packet matching, and sensor-stream restoration. A cancelled parent remains cancelled; only the exchange's own expired deadline becomes an ordinary timeout so `ParameterPageReadGate` can display a retryable page error.
+Each parameter read restores `Secu3ReadSensors` in `finally`, including timeout or cancellation. `EcuExchange` owns the shared response subscription ordering and deadline conversion; `ParameterExchange` owns packet matching and parameter-specific recovery.
 
 ## Functions needs every name fragment before its settings packet
 
