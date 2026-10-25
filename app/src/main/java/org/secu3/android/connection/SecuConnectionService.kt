@@ -35,15 +35,12 @@ import android.content.Context
 import android.content.Intent
 import android.content.pm.ServiceInfo
 import android.os.Build
-import android.util.Log
 import androidx.core.app.NotificationCompat
 import androidx.core.app.NotificationCompat.PRIORITY_LOW
 import androidx.core.app.NotificationCompat.VISIBILITY_PRIVATE
 import androidx.core.app.ServiceCompat
 import androidx.lifecycle.LifecycleService
-import androidx.lifecycle.asLiveData
 import dagger.hilt.android.AndroidEntryPoint
-import kotlinx.coroutines.flow.debounce
 import org.secu3.android.R
 import org.secu3.android.ui.MainActivity
 import javax.inject.Inject
@@ -55,20 +52,6 @@ class SecuConnectionService : LifecycleService() {
     internal lateinit var secu3ConnectionManager: Secu3ConnectionManager
 
     private var ownerToken = INVALID_OWNER_TOKEN
-
-    override fun onCreate() {
-        super.onCreate()
-
-        secu3ConnectionManager.connectionStateFlow.debounce(20000).asLiveData().observe(this) {
-            Log.e("SecuConnectionService", "Connection state: $it")
-            when (it) {
-                Disconnected -> stopSelf()
-                else -> {
-                    // ignore
-                }
-            }
-        }
-    }
 
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
         ownerToken = intent?.getLongExtra(EXTRA_OWNER_TOKEN, INVALID_OWNER_TOKEN) ?: INVALID_OWNER_TOKEN

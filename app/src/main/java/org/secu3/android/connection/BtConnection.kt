@@ -33,6 +33,8 @@ import kotlinx.coroutines.delay
 import kotlinx.coroutines.currentCoroutineContext
 import kotlinx.coroutines.ensureActive
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.flow.MutableSharedFlow
+import kotlinx.coroutines.flow.asSharedFlow
 import org.secu3.android.models.RawPacket
 import org.secu3.android.models.packets.out.ChangeModePacket
 import org.secu3.android.utils.Task
@@ -51,65 +53,91 @@ class BtConnection @Inject constructor(
     bluetoothManager: BluetoothManager
 ) : Connection<BluetoothSocket>(prefs) {
 
+    private class Session(val generation: Long, val address: String) {
+        var attempts = 0
+        @Volatile var wasConnected = false
+    }
+
     private val bluetoothAdapter: BluetoothAdapter? = bluetoothManager.adapter
-    private var connectionAddress: String? = null
+    private val sessionLock = Any()
+    private var activeSession: Session? = null
+    private val _sessionEvents = MutableSharedFlow<BluetoothConnectionEvent>(extraBufferCapacity = 32)
+    val sessionEvents = _sessionEvents.asSharedFlow()
 
     private val pairedDeviceAddress: String?
         get() = BluetoothDeviceAddress.normalize(prefs.bluetoothDeviceAddress)
 
-    fun startConnection() {
+    fun startConnection(generation: Long) {
         val deviceAddress = pairedDeviceAddress
         if (deviceAddress == null) {
             throw IllegalStateException("Paired device address is not set in SharedPreferences")
         }
-        connectionAddress = deviceAddress
-        isRunning = true
-        connectionAttempts = 0
-        reconnect()
+        val session = Session(generation, deviceAddress)
+        synchronized(sessionLock) {
+            activeSession = session
+            isRunning = true
+            connectionAttempts = 0
+        }
+        reconnect(session)
     }
 
-    private fun reconnect() {
-        if (!isRunning) return
+    private fun reconnect(session: Session) {
+        if (!isActive(session) || !isRunning) return
 
         scope.launch {
-            if (connectionAttempts >= maxConnectionAttempts) {
-                isRunning = false
+            if (!isActive(session) || !isRunning) return@launch
+            if (session.attempts >= maxConnectionAttempts) {
+                val exhausted = synchronized(sessionLock) {
+                    if (activeSession !== session || !isRunning) false
+                    else { isRunning = false; true }
+                }
+                if (!exhausted) return@launch
 
-                mConnectionStateFlow.emit(Disconnected)
-                mConnectionStateFlow.emit(ConnectionTimeout)
+                publishState(session, Disconnected)
+                publishState(session, ConnectionTimeout, retriesExhausted = true)
 
                 Log.i(this.javaClass.simpleName, "Max connection attempts reached. Stopping connection attempts.")
                 return@launch
             }
 
-            mConnectionStateFlow.emit(InProgress)
+            publishState(session, InProgress)
 
-            connectionAttempts++
-            Log.d(this.javaClass.simpleName, "Attempting to connect: $connectionAttempts/$maxConnectionAttempts")
-            if (connectionAttempts > 1) {
-                mConnectionStateFlow.emit(ConnectionAttempt(connectionAttempts))
+            session.attempts++
+            synchronized(sessionLock) {
+                if (activeSession === session) connectionAttempts = session.attempts
+            }
+            Log.d(this.javaClass.simpleName, "Attempting to connect: ${session.attempts}/$maxConnectionAttempts")
+            if (session.attempts > 1) {
+                publishState(session, ConnectionAttempt(session.attempts))
             }
 
             try {
-                val socket = connectToDevice()
+                val socket = connectToDevice(session)
                 currentCoroutineContext().ensureActive()
+                val markedConnected = synchronized(sessionLock) {
+                    if (activeSession !== session || !isRunning) false
+                    else { session.wasConnected = true; true }
+                }
+                if (!markedConnected) return@launch
 
                 Log.i(this.javaClass.simpleName, "Connected to device")
-                startReadingData(socket)
+                startReadingData(socket, session)
             } catch (e: IOException) {
                 currentCoroutineContext().ensureActive()
-                mConnectionStateFlow.emit(ConnectionFailed(e))
+                if (!isActive(session) || !isRunning) return@launch
+                publishState(session, ConnectionFailed(e))
                 Log.e(this.javaClass.simpleName, "Connection failed: ${e.message}")
                 delay(2000)
-                reconnect()
+                reconnect(session)
             }
         }
     }
 
-    private fun connectToDevice(): BluetoothSocket {
+    private fun connectToDevice(session: Session): BluetoothSocket {
         var socket: BluetoothSocket? = null
         try {
-            val address = connectionAddress ?: throw IOException("Device address is invalid")
+            if (!isActive(session)) throw IOException("Bluetooth session was replaced")
+            val address = session.address
             val device = bluetoothAdapter?.bondedDevices?.let {
                 BluetoothDeviceAddress.find(address, it) { device -> device.address }
             }
@@ -117,11 +145,13 @@ class BtConnection @Inject constructor(
 
             val newSocket = device.createRfcommSocketToServiceRecord(UUID.fromString("00001101-0000-1000-8000-00805F9B34FB"))
             socket = newSocket
-            val installed = installEndpoint(newSocket)
+            val installed = synchronized(sessionLock) {
+                activeSession === session && isRunning && installEndpoint(newSocket)
+            }
             if (!installed) throw IOException("Bluetooth connection is no longer current")
             bluetoothAdapter.cancelDiscovery()
             newSocket.connect()
-            if (!isCurrentEndpoint(newSocket)) throw IOException("Bluetooth connection was stopped while connecting")
+            if (!isCurrentEndpoint(newSocket) || !isActive(session)) throw IOException("Bluetooth connection was stopped while connecting")
             return newSocket
         } catch (e: SecurityException) {
             socket?.let(::discardEndpoint)
@@ -149,31 +179,35 @@ class BtConnection @Inject constructor(
         }
     }
 
-    private fun startReadingData(socket: BluetoothSocket) {
-        if (!isCurrentEndpoint(socket)) return
+    private fun startReadingData(socket: BluetoothSocket, session: Session) {
+        if (!isCurrentEndpoint(socket) || !isActive(session)) return
         sendData(ChangeModePacket.getPacket(Task.Secu3ReadFirmwareInfo))
 
         scope.launch {
-            if (!isCurrentEndpoint(socket)) return@launch
-            mConnectionStateFlow.emit(Connected)
+            if (!isCurrentEndpoint(socket) || !isActive(session)) return@launch
+            publishState(session, Connected)
             try {
                 val receiver = PacketReceiver()
                 val inputStream = socket.inputStream
                 val reader = BufferedReader(InputStreamReader(inputStream, StandardCharsets.ISO_8859_1))
 
-                while (isCurrentEndpoint(socket)) {
+                while (isCurrentEndpoint(socket) && isActive(session)) {
                     val packet = receiver.readNext(reader)
                     currentCoroutineContext().ensureActive()
-                    if (!isCurrentEndpoint(socket)) return@launch
+                    if (!isCurrentEndpoint(socket) || !isActive(session)) return@launch
                     mReceivedPacketFlow.emit(RawPacket(packet))
                 }
-                if (isCurrentEndpoint(socket)) connectionAttempts = 0
+                if (isCurrentEndpoint(socket) && isActive(session)) {
+                    session.attempts = 0
+                    synchronized(sessionLock) { if (activeSession === session) connectionAttempts = 0 }
+                }
             } catch (e: IOException) {
                 currentCoroutineContext().ensureActive()
                 Log.e(this.javaClass.simpleName, "Error while reading data: ${e.message}")
-                if (invalidateEndpoint(socket)) {
-                    connectionAttempts = 0
-                    reconnect()
+                if (invalidateEndpoint(socket) && isActive(session) && isRunning) {
+                    session.attempts = 0
+                    synchronized(sessionLock) { if (activeSession === session) connectionAttempts = 0 }
+                    reconnect(session)
                 }
             }
         }
@@ -196,5 +230,25 @@ class BtConnection @Inject constructor(
     override suspend fun afterEndpointWrite() {
         delay(20)
     }
+
+    private suspend fun publishState(
+        session: Session,
+        state: ConnectionState,
+        retriesExhausted: Boolean = false,
+    ) {
+        if (!isActive(session)) return
+        mConnectionStateFlow.emit(state)
+        if (!isActive(session)) return
+        _sessionEvents.emit(
+            BluetoothConnectionEvent(
+                generation = session.generation,
+                state = state,
+                retriesExhausted = retriesExhausted,
+                sessionWasConnected = session.wasConnected,
+            ),
+        )
+    }
+
+    private fun isActive(session: Session): Boolean = synchronized(sessionLock) { activeSession === session }
 
 }

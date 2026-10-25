@@ -37,15 +37,31 @@ class MainActivityViewModel @Inject constructor(
     val connectionManager: Secu3ConnectionManager,
 ) : ViewModel() {
     private var handledUsbGeneration: Long? = null
-    private var pendingStartNavigation = false
+    private var handledTerminalGeneration: Long? = null
+    private var pendingTerminalGeneration: Long? = null
 
     @Synchronized fun claimUsbHomeNavigation(generation: Long): Boolean {
         if (handledUsbGeneration == generation) return false
         handledUsbGeneration = generation
-        pendingStartNavigation = false
         return true
     }
 
-    @Synchronized fun requestStartNavigation() { pendingStartNavigation = true }
-    @Synchronized fun consumeStartNavigation(): Boolean = pendingStartNavigation.also { pendingStartNavigation = false }
+    @Synchronized fun queueTerminalStart(generation: Long): Boolean {
+        if (handledTerminalGeneration == generation) return false
+        pendingTerminalGeneration = generation
+        return true
+    }
+
+    @Synchronized fun pendingTerminalStart(): Long? = pendingTerminalGeneration
+
+    @Synchronized fun completeTerminalStart(generation: Long) {
+        if (pendingTerminalGeneration == generation) {
+            handledTerminalGeneration = generation
+            pendingTerminalGeneration = null
+        }
+    }
+
+    @Synchronized fun cancelPendingTerminalStart(): Long? = pendingTerminalGeneration.also {
+        pendingTerminalGeneration = null
+    }
 }

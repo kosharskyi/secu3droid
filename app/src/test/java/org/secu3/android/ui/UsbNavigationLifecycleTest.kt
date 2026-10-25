@@ -8,24 +8,27 @@ import org.secu3.android.utils.UserPrefs
 import sun.misc.Unsafe
 
 class UsbNavigationLifecycleTest {
-    @Test fun confirmedReplacementSupersedesThePreviousDetachNavigation() {
+    @Test fun terminalNavigationRemainsPendingUntilItIsActuallyHandled() {
         val viewModel = navigationViewModel()
         assertTrue(viewModel.claimUsbHomeNavigation(1))
-        viewModel.requestStartNavigation()
+        assertTrue(viewModel.queueTerminalStart(2))
+        assertTrue(viewModel.queueTerminalStart(2))
+        assertTrue(viewModel.pendingTerminalStart() == 2L)
 
-        assertTrue(viewModel.claimUsbHomeNavigation(2))
-        assertFalse(viewModel.consumeStartNavigation())
-        assertFalse(viewModel.claimUsbHomeNavigation(2))
+        viewModel.completeTerminalStart(2)
+
+        assertTrue(viewModel.pendingTerminalStart() == null)
+        assertFalse(viewModel.queueTerminalStart(2))
     }
 
-    @Test fun replayedFirmwareCannotCancelTheCurrentDetachNavigation() {
+    @Test fun replacementAttemptCanCancelQueuedTerminalNavigation() {
         val viewModel = navigationViewModel()
         assertTrue(viewModel.claimUsbHomeNavigation(3))
-        viewModel.requestStartNavigation()
+        assertTrue(viewModel.queueTerminalStart(4))
 
-        assertFalse(viewModel.claimUsbHomeNavigation(3))
-        assertTrue(viewModel.consumeStartNavigation())
-        assertFalse(viewModel.consumeStartNavigation())
+        assertTrue(viewModel.cancelPendingTerminalStart() == 4L)
+        assertTrue(viewModel.pendingTerminalStart() == null)
+        assertTrue(viewModel.queueTerminalStart(5))
     }
 
     // Navigation bookkeeping does not call platform or transport APIs. Uninitialized dependencies

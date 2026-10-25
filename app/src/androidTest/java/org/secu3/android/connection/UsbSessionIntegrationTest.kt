@@ -21,6 +21,7 @@ import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.cancel
 import kotlinx.coroutines.delay
+import kotlinx.coroutines.launch
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.runBlocking
@@ -111,6 +112,151 @@ class UsbSessionIntegrationTest {
         }
     }
 
+    @Test fun usbDetachStopsOwnedServiceImmediatelyAndPublishesTerminalGeneration() = runBlocking {
+        val fixture = Fixture()
+        try {
+            fixture.attach(80)
+            fixture.confirmFirmware()
+            fixture.manager.onAppForegrounded()
+            val generation = fixture.manager.activeUsbSessionGeneration!!
+            assertNotNull(fixture.serviceController.ownerToken())
+
+            assertTrue(fixture.manager.onUsbDeviceDetached(80))
+
+            assertEquals(1, fixture.serviceContext.stoppedServices.size)
+            assertEquals(
+                ConnectionSessionTermination(
+                    generation = generation,
+                    transport = ConnectionTransport.USB,
+                    reason = ConnectionTerminationReason.UsbDetached,
+                    finalState = Disconnected,
+                    sessionWasConnected = true,
+                ),
+                fixture.manager.terminalSession.value,
+            )
+        } finally {
+            fixture.close()
+        }
+    }
+
+    @Test fun bluetoothRetryExhaustionStopsServiceAndPublishesFinalTimeout() = runBlocking {
+        val fixture = Fixture()
+        val originalRetries = fixture.prefs.connectionRetries
+        val originalAddress = fixture.prefs.bluetoothDeviceAddress
+        try {
+            fixture.prefs.connectionRetries = 2
+            fixture.prefs.bluetoothDeviceAddress = "02:00:00:00:00:01"
+            val generation = fixture.selectBluetoothSessionForTest()
+            fixture.serviceController.ensureStarted(generation)
+            val states = CopyOnWriteArrayList<ConnectionState>()
+            val collector = launch(
+                start = kotlinx.coroutines.CoroutineStart.UNDISPATCHED,
+            ) {
+                fixture.manager.connectionStateFlow.collect(states::add)
+            }
+            fixture.startBluetoothTransport(generation)
+
+            fixture.await { fixture.manager.currentConnectionState is ConnectionFailed }
+            assertNull(fixture.manager.terminalSession.value)
+            assertEquals(generation, fixture.serviceController.ownerConnectionGeneration())
+            assertTrue(fixture.serviceContext.stoppedServices.isEmpty())
+
+            fixture.await(timeoutMillis = 10_000) { fixture.manager.terminalSession.value != null }
+            val termination = fixture.manager.terminalSession.value
+            assertEquals(ConnectionTerminationReason.RetriesExhausted, termination?.reason)
+            assertEquals(generation, termination?.generation)
+            assertEquals(ConnectionTransport.BLUETOOTH, termination?.transport)
+            assertFalse(termination?.sessionWasConnected ?: true)
+            assertEquals(ConnectionTimeout, termination?.finalState)
+            assertEquals(ConnectionTimeout, fixture.manager.currentConnectionState)
+            assertNull(fixture.serviceController.ownerToken())
+            assertEquals(1, fixture.serviceContext.stoppedServices.size)
+
+            fixture.await { states.contains(ConnectionTimeout) }
+            val disconnectedIndex = states.indexOfLast { it == Disconnected }
+            val timeoutIndex = states.indexOfLast { it == ConnectionTimeout }
+            assertTrue("terminal stream must retain Disconnected before ConnectionTimeout", disconnectedIndex >= 0 && timeoutIndex > disconnectedIndex)
+            collector.cancel()
+        } finally {
+            fixture.prefs.connectionRetries = originalRetries
+            fixture.prefs.bluetoothDeviceAddress = originalAddress
+            fixture.close()
+        }
+    }
+
+    @Test fun bluetoothTransientFailureThenSuccessKeepsServiceAndDoesNotPublishTerminalResult() = runBlocking {
+        val fixture = Fixture()
+        try {
+            val generation = fixture.selectBluetoothSessionForTest()
+            val owner = fixture.serviceController.ensureStarted(generation)
+            fixture.emitBluetoothEvent(BluetoothConnectionEvent(generation, ConnectionFailed(IOException("temporary"))))
+            fixture.await { fixture.manager.currentConnectionState is ConnectionFailed }
+
+            assertNull(fixture.manager.terminalSession.value)
+            assertEquals(owner, fixture.serviceController.ownerToken())
+            assertTrue(fixture.serviceContext.stoppedServices.isEmpty())
+
+            fixture.emitBluetoothEvent(BluetoothConnectionEvent(generation, Connected, sessionWasConnected = true))
+            fixture.await { fixture.manager.currentConnectionState == Connected }
+
+            assertNull(fixture.manager.terminalSession.value)
+            assertEquals(owner, fixture.serviceController.ownerToken())
+            assertEquals(Connected, fixture.manager.currentConnectionState)
+            assertTrue(fixture.serviceContext.stoppedServices.isEmpty())
+        } finally {
+            fixture.close()
+        }
+    }
+
+    @Test fun staleBluetoothTerminalEventCannotReplaceNewBluetoothGeneration() = runBlocking {
+        val fixture = Fixture()
+        try {
+            val oldGeneration = fixture.selectBluetoothSessionForTest()
+            fixture.serviceController.ensureStarted(oldGeneration)
+            val newGeneration = fixture.selectBluetoothSessionForTest()
+            fixture.serviceController.ensureStarted(newGeneration)
+            fixture.emitBluetoothEvent(
+                BluetoothConnectionEvent(
+                    generation = oldGeneration,
+                    state = ConnectionTimeout,
+                    retriesExhausted = true,
+                    sessionWasConnected = true,
+                ),
+            )
+            delay(100)
+
+            assertNull(fixture.manager.terminalSession.value)
+            assertEquals(newGeneration, fixture.serviceController.ownerConnectionGeneration())
+            assertTrue(fixture.manager.isConnectionRunning)
+            assertTrue(fixture.serviceContext.stoppedServices.isEmpty())
+        } finally {
+            fixture.close()
+        }
+    }
+
+    @Test fun exhaustedRetriesAfterAnEstablishedBluetoothSessionRemainClassifiedAsLoss() = runBlocking {
+        val fixture = Fixture()
+        try {
+            val generation = fixture.selectBluetoothSessionForTest()
+            fixture.serviceController.ensureStarted(generation)
+            fixture.emitBluetoothEvent(BluetoothConnectionEvent(generation, Connected, sessionWasConnected = true))
+            fixture.await { fixture.manager.currentConnectionState == Connected }
+            fixture.emitBluetoothEvent(BluetoothConnectionEvent(generation, Disconnected, sessionWasConnected = true))
+            fixture.emitBluetoothEvent(
+                BluetoothConnectionEvent(generation, ConnectionTimeout, retriesExhausted = true, sessionWasConnected = true),
+            )
+            fixture.await { fixture.manager.terminalSession.value != null }
+
+            val termination = fixture.manager.terminalSession.value
+            assertEquals(ConnectionTerminationReason.RetriesExhausted, termination?.reason)
+            assertTrue(termination?.sessionWasConnected == true)
+            assertNull(fixture.serviceController.ownerToken())
+            assertEquals(1, fixture.serviceContext.stoppedServices.size)
+        } finally {
+            fixture.close()
+        }
+    }
+
     @SdkSuppress(minSdkVersion = 35)
     @Test fun attachmentSynchronizationRetainsSessionForSamePhysicalDevice() = runBlocking {
         val fixture = Fixture()
@@ -167,7 +313,7 @@ class UsbSessionIntegrationTest {
             assertEquals(1, fixture.serviceContext.startedServices.size)
 
             assertTrue(fixture.manager.onUsbDeviceDetached(107))
-            assertTrue(fixture.serviceContext.stoppedServices.isEmpty())
+            assertEquals(1, fixture.serviceContext.stoppedServices.size)
             fixture.attach(108)
             fixture.confirmFirmware()
             fixture.manager.onAppForegrounded()
@@ -404,6 +550,8 @@ class UsbSessionIntegrationTest {
         val rawPackets: MutableSharedFlow<RawPacket> = connectionField("mReceivedPacketFlow").get(usb) as MutableSharedFlow<RawPacket>
         val usbStates: MutableSharedFlow<ConnectionState> = connectionField("mConnectionStateFlow").get(usb) as MutableSharedFlow<ConnectionState>
         val btStates: MutableSharedFlow<ConnectionState> = connectionField("mConnectionStateFlow").get(bt) as MutableSharedFlow<ConnectionState>
+        @Suppress("UNCHECKED_CAST")
+        private val btEvents: MutableSharedFlow<BluetoothConnectionEvent> = bt.javaClass.getDeclaredField("_sessionEvents").apply { isAccessible = true }.get(bt) as MutableSharedFlow<BluetoothConnectionEvent>
 
         // The endpoint injection matches existing transport integration fixtures. It bypasses only
         // Android's physical USB opening; packet parsing, session identity and send gates are real.
@@ -438,7 +586,7 @@ class UsbSessionIntegrationTest {
             selected.value = selection
             withTimeout(3_000) { subscribed.await() }
             synchronized(barriers) { barriers.remove(generation) }
-            await { usbStates.subscriptionCount.value > 0 && btStates.subscriptionCount.value > 0 }
+            await { usbStates.subscriptionCount.value > 0 && btEvents.subscriptionCount.value > 0 }
         }
 
         suspend fun confirmFirmware() {
@@ -446,8 +594,8 @@ class UsbSessionIntegrationTest {
             await { manager.isUsbConnected && manager.usbSessionLocked.value }
         }
 
-        suspend fun await(predicate: () -> Boolean) {
-            withTimeout(3_000) { while (!predicate()) delay(10) }
+        suspend fun await(timeoutMillis: Long = 3_000, predicate: () -> Boolean) {
+            withTimeout(timeoutMillis) { while (!predicate()) delay(10) }
         }
 
         fun close() {
@@ -481,6 +629,10 @@ class UsbSessionIntegrationTest {
             connectionField("isRunning").setBoolean(bt, true)
             return generation
         }
+
+        fun startBluetoothTransport(generation: Long) = bt.startConnection(generation)
+
+        suspend fun emitBluetoothEvent(event: BluetoothConnectionEvent) = btEvents.emit(event)
 
         private fun managerField(name: String) = Secu3ConnectionManager::class.java.getDeclaredField(name).apply { isAccessible = true }
         private fun connectionField(name: String) = Connection::class.java.getDeclaredField(name).apply { isAccessible = true }

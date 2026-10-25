@@ -34,4 +34,12 @@ The manager checks firmware confirmation before clearing the USB session fence. 
 
 ## Foreground service ownership follows connection generations
 
-`Secu3ConnectionManager` owns the service policy and `ConnectionServiceController` owns Android start/stop calls. A service owner token is distinct from a connection generation: a late `onDestroy` may clear or stop only the service and transport generation it still owns. Starting service ownership for a replacement connection invalidates callbacks from an older instance. Confirmed USB requires the service regardless of the background preference; Bluetooth requires the preference. USB detach leaves the running service to observe `Disconnected` through its existing 20-second debounce. Explicit user stops clean up transport, logger and service together in the manager.
+`Secu3ConnectionManager` owns the service policy and `ConnectionServiceController` owns Android start/stop calls. A service owner token is distinct from a connection generation: a late `onDestroy` may clear or stop only the service and transport generation it still owns. Starting service ownership for a replacement connection invalidates callbacks from an older instance. Confirmed USB requires the service regardless of the background preference; Bluetooth requires the preference. The manager stops the service immediately on USB detach or after Bluetooth retry exhaustion. Explicit user stops clean up transport, logger and service together in the manager.
+
+## Bluetooth retry events belong to one manager generation
+
+`BtConnection` tags every state event with the generation supplied by `Secu3ConnectionManager`. The manager ignores callbacks from replaced Bluetooth attempts, even when the replacement also uses Bluetooth. Transient failures keep the foreground service; only the transport's explicit retry-exhaustion event publishes terminal session state and stops service/logging. The service itself does not infer terminal state from the connection event stream.
+
+## Terminal session results survive Activity recreation until a new attempt
+
+The manager exposes the latest terminal session as a replaying typed result with its transport, generation, final state, and whether the session connected. A new USB or Bluetooth attempt clears that result. UI queues Start navigation against the result generation and must cancel only that queued terminal navigation when the manager clears it; the connection-state event stream remains non-conflated for data consumers.

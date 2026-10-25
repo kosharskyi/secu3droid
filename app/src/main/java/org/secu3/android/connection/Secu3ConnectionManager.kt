@@ -89,6 +89,8 @@ class Secu3ConnectionManager @Inject constructor(
     @Volatile var currentConnectionState: ConnectionState = Disconnected
         private set
     val connectionStateFlow: SharedFlow<ConnectionState> = _connectionState.asSharedFlow()
+    private val _terminalSession = MutableStateFlow<ConnectionSessionTermination?>(null)
+    val terminalSession: StateFlow<ConnectionSessionTermination?> = _terminalSession.asStateFlow()
     private val _usbSessionLocked = MutableStateFlow(false)
     val usbSessionLocked: StateFlow<Boolean> = _usbSessionLocked.asStateFlow()
     private val usbSessionFence = UsbSessionFence()
@@ -275,6 +277,7 @@ class Secu3ConnectionManager @Inject constructor(
     }
 
     @Synchronized private fun startUsbConnectionInternal(device: UsbDevice) {
+        _terminalSession.value = null
         cancelUsbOpenAttempt()
         activeUsbAttachment = attachmentIdentity(device)
         val attemptGeneration = usbSessionFence.begin(device.deviceId)
@@ -308,6 +311,9 @@ class Secu3ConnectionManager @Inject constructor(
     @Synchronized fun onUsbDeviceDetached(deviceId: Int): Boolean {
         usbAttachmentAttempts.detach(deviceId)
         if (pendingUsbPermission?.first?.deviceId == deviceId) pendingUsbPermission = null
+        val endedSelection = selectedTransport.value
+        val wasConnected = endedSelection.transport == Transport.USB &&
+            usbSessionFence.isConfirmed(deviceId, endedSelection.generation)
         if (selectedTransport.value.transport != Transport.USB || !usbSessionFence.detach(deviceId)) return false
         cancelUsbOpenAttempt()
         activeUsbAttachment = null
@@ -318,13 +324,24 @@ class Secu3ConnectionManager @Inject constructor(
         fwInfo = null
         usbConnection.stopConnection()
         secuLogger.stopLogging()
+        connectionServiceController.stop()
         publishConnectionState(Disconnected)
+        publishTerminalSession(
+            ConnectionSessionTermination(
+                generation = endedSelection.generation,
+                transport = ConnectionTransport.USB,
+                reason = ConnectionTerminationReason.UsbDetached,
+                finalState = Disconnected,
+                sessionWasConnected = wasConnected,
+            ),
+        )
         return true
     }
 
     @Synchronized fun startBtConnection() {
         if (BluetoothDeviceAddress.normalize(mPrefs.bluetoothDeviceAddress) == null || runCatching { !bluetoothManager.adapter.isEnabled }.getOrDefault(true)) return
         if (selectedTransport.value.transport == Transport.USB && (usbConnection.isRunning || _usbSessionLocked.value)) return
+        _terminalSession.value = null
         cancelUsbOpenAttempt()
         val nextGeneration = usbSessionFence.advance()
         selectedTransport.value = Selection(Transport.BLUETOOTH, nextGeneration)
@@ -335,7 +352,7 @@ class Secu3ConnectionManager @Inject constructor(
         publishConnectionState(InProgress)
         usbConnection.stopConnection()
         btConnection.stopConnection()
-        btConnection.startConnection()
+        btConnection.startConnection(nextGeneration)
     }
 
     @Synchronized fun stopConnection(): Boolean {
@@ -369,6 +386,7 @@ class Secu3ConnectionManager @Inject constructor(
     }
 
     @Synchronized private fun stopConnectionInternal(stopService: Boolean): Boolean {
+        _terminalSession.value = null
         cancelUsbOpenAttempt()
         val nextGeneration = usbSessionFence.advance()
         selectedTransport.value = Selection(Transport.NONE, nextGeneration)
@@ -427,9 +445,44 @@ class Secu3ConnectionManager @Inject constructor(
         _usbSessionLocked.value = false
         fwInfo = null
         usbAttemptFailed = true
-        publishConnectionState(if (wasConfirmed) ConnectionLost(state.e) else state)
+        val finalState = if (wasConfirmed) ConnectionLost(state.e) else state
+        publishConnectionState(finalState)
         secuLogger.stopLogging()
         connectionServiceController.stop()
+        publishTerminalSession(
+            ConnectionSessionTermination(
+                generation = selectedTransport.value.generation,
+                transport = ConnectionTransport.USB,
+                reason = if (wasConfirmed) ConnectionTerminationReason.UsbLost else ConnectionTerminationReason.UsbFailed,
+                finalState = finalState,
+                sessionWasConnected = wasConfirmed,
+            ),
+        )
+    }
+
+    @Synchronized private fun finishBluetoothSession(event: BluetoothConnectionEvent) {
+        val selection = selectedTransport.value
+        if (selection.transport != Transport.BLUETOOTH || selection.generation != event.generation || !event.retriesExhausted) return
+        // Invalidate transport selection before stop cleanup can publish its asynchronous Disconnected event.
+        selectedTransport.value = Selection(Transport.NONE, usbSessionFence.advance())
+        fwInfo = null
+        publishConnectionState(event.state)
+        btConnection.stopConnection()
+        secuLogger.stopLogging()
+        connectionServiceController.stop()
+        publishTerminalSession(
+            ConnectionSessionTermination(
+                generation = event.generation,
+                transport = ConnectionTransport.BLUETOOTH,
+                reason = ConnectionTerminationReason.RetriesExhausted,
+                finalState = event.state,
+                sessionWasConnected = event.sessionWasConnected,
+            ),
+        )
+    }
+
+    @Synchronized private fun publishTerminalSession(termination: ConnectionSessionTermination) {
+        _terminalSession.value = termination
     }
 
     @Synchronized private fun publishConnectionState(state: ConnectionState) {
@@ -440,19 +493,20 @@ class Secu3ConnectionManager @Inject constructor(
 
     init {
         scope.launch {
-            merge(
-                usbConnection.connectionStateFlow.map { Transport.USB to it },
-                btConnection.connectionStateFlow.map { Transport.BLUETOOTH to it },
-            ).collect { (transport, state) ->
-                if (transport != selectedTransport.value.transport) return@collect
+            usbConnection.connectionStateFlow.collect { state ->
+                if (Transport.USB != selectedTransport.value.transport) return@collect
                 when {
-                    transport == Transport.USB && state is ConnectionFailed -> {
-                        failUsbSession(state)
-                    }
-                    transport == Transport.BLUETOOTH -> {
-                        if (state == Disconnected && btConnection.isRunning) return@collect
-                        publishConnectionState(state)
-                    }
+                    state is ConnectionFailed -> failUsbSession(state)
+                }
+            }
+        }
+        scope.launch {
+            btConnection.sessionEvents.collect { event ->
+                synchronized(this@Secu3ConnectionManager) {
+                    val selection = selectedTransport.value
+                    if (selection.transport != Transport.BLUETOOTH || selection.generation != event.generation) return@synchronized
+                    if (event.retriesExhausted) finishBluetoothSession(event)
+                    else publishConnectionState(event.state)
                 }
             }
         }
