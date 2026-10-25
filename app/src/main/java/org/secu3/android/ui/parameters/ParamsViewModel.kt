@@ -41,20 +41,17 @@ import kotlinx.coroutines.CancellationException
 import dagger.hilt.android.lifecycle.HiltViewModel
 import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.flow.collect
-import kotlinx.coroutines.flow.filter
 import kotlinx.coroutines.flow.first
-import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.launch
 import org.secu3.android.R
 import org.secu3.android.connection.ConnectionState
 import org.secu3.android.connection.Connected
 import org.secu3.android.connection.Secu3ConnectionManager
-import org.secu3.android.models.FnName
+import org.secu3.android.domain.parameters.EepromSaveResult
+import org.secu3.android.domain.parameters.ParameterExchange
 import org.secu3.android.models.packets.base.OutputPacket
 import org.secu3.android.models.packets.base.InputPacket
 import org.secu3.android.models.packets.input.FirmwareInfoPacket
-import org.secu3.android.models.packets.input.FnNameDatPacket
-import org.secu3.android.models.packets.out.OpCompNc
 import org.secu3.android.models.packets.out.params.AccelerationParamPacket
 import org.secu3.android.models.packets.out.params.AdcCorrectionsParamPacket
 import org.secu3.android.models.packets.out.params.AnglesParamPacket
@@ -106,7 +103,9 @@ internal fun cancelAndClearPageReadJobs(jobs: MutableMap<Int, Job>) {
 @HiltViewModel
 class ParamsViewModel @Inject constructor(
     @ApplicationContext private val context: Context, // TODO: move this out
-    private val secu3ConnectionManager: Secu3ConnectionManager) : ViewModel() {
+    private val secu3ConnectionManager: Secu3ConnectionManager,
+    private val parameterExchange: ParameterExchange,
+) : ViewModel() {
 
     var isSendAllowed: Boolean = false
 
@@ -330,11 +329,8 @@ class ParamsViewModel @Inject constructor(
         universalOutputsStateHolder.reset()
     }
 
-    private suspend inline fun <reified T : InputPacket> readPacket(task: Task): T = readParameterPacket(
-        sendRequest = { secu3ConnectionManager.sendNewTask(task) },
-        restoreSensors = { secu3ConnectionManager.sendNewTask(Task.Secu3ReadSensors) },
-        receive = { onSubscribed -> secu3ConnectionManager.receivedPacketFlow(onSubscribed).first { it is T } as T },
-    )
+    private suspend inline fun <reified T : InputPacket> readPacket(task: Task): T =
+        parameterExchange.readPacket(task, T::class.java)
 
     private fun loadViewModelPage(titleRes: Int) {
         if (titleRes in loadedPages) return
@@ -485,33 +481,14 @@ class ParamsViewModel @Inject constructor(
                     }
                     R.string.params_tab_functions_title -> {
                         functionsStateHolder.reset()
-                        val (namesPacket, funSetPacket) = pageReadGate.read(titleRes, onStarted = { readRevision = parameterWriteRevision }) {
-                            val namesPacket = readParameterPacket(
-                                sendRequest = { secu3ConnectionManager.sendNewTask(Task.Secu3ReadFnNameDat) },
-                                restoreSensors = { secu3ConnectionManager.sendNewTask(Task.Secu3ReadSensors) },
-                            ) { onSubscribed ->
-                                var names: FnNameDatPacket? = null
-                                secu3ConnectionManager.receivedPacketFlow(onSubscribed)
-                                    .filter { it is FnNameDatPacket }
-                                    .map { it as FnNameDatPacket }
-                                    .first { packet ->
-                                        val accumulated = names ?: packet.also {
-                                            it.fnNameList = MutableList(packet.tablesNumber) { FnName(-1, "placeholder name") }
-                                            names = it
-                                        }
-                                        accumulated.fnNameList[packet.fnName.index] = packet.fnName
-                                        accumulated.isAllFnNamesReceived
-                                    }
-                                checkNotNull(names)
-                            }
-                            val funSetPacket = readPacket<FunSetParamPacket>(Task.Secu3ReadFunsetParam)
-                            namesPacket to funSetPacket
+                        val functionParameters = pageReadGate.read(titleRes, onStarted = { readRevision = parameterWriteRevision }) {
+                            parameterExchange.readFunctions()
                         }.first()
                         isSendAllowed = false
                         try {
-                            functionsStateHolder.onNamesReceived(namesPacket)
+                            functionsStateHolder.onNamesReceived(functionParameters.names)
                             functionsStateHolder.onPacketReceived(
-                                received = funSetPacket,
+                                received = functionParameters.settings,
                                 loads = context.resources.getStringArray(R.array.load_measurement_items).toList(),
                                 bars = context.resources.getStringArray(R.array.barocorr_items).toList(),
                                 ve2 = context.resources.getStringArray(R.array.ve2_map_func_items).toList(),
@@ -584,24 +561,18 @@ class ParamsViewModel @Inject constructor(
         if (!isConnected || saveJob?.isActive == true) return
         saveJob = viewModelScope.launch {
             try {
-                readParameterPacket(
-                    sendRequest = {
-                        secu3ConnectionManager.sendNewTask(Task.Secu3OpComSaveEeprom)
-                        Toast.makeText(context, R.string.saving, Toast.LENGTH_SHORT).show()
-                    },
-                    restoreSensors = {},
-                ) { onSubscribed ->
-                    secu3ConnectionManager.receivedPacketFlow(onSubscribed)
-                        .first { it is OpCompNc && it.isEepromParamSave }
+                when (parameterExchange.saveEeprom {
+                    Toast.makeText(context, R.string.saving, Toast.LENGTH_SHORT).show()
+                }) {
+                    EepromSaveResult.Confirmed -> Toast.makeText(context, R.string.packet_saved, Toast.LENGTH_SHORT).show()
+                    EepromSaveResult.Unconfirmed -> {
+                        Log.w("ParamsViewModel", "Could not confirm parameter save")
+                        Toast.makeText(context, R.string.parameter_save_unconfirmed, Toast.LENGTH_LONG).show()
+                    }
+                    EepromSaveResult.NotStarted -> Unit
                 }
-                Toast.makeText(context, R.string.packet_saved, Toast.LENGTH_SHORT).show()
-            } catch (_: TimeoutException) {
-                Toast.makeText(context, R.string.parameter_save_unconfirmed, Toast.LENGTH_LONG).show()
             } catch (cancelled: CancellationException) {
                 throw cancelled
-            } catch (error: Exception) {
-                Log.w("ParamsViewModel", "Could not confirm parameter save", error)
-                Toast.makeText(context, R.string.parameter_save_unconfirmed, Toast.LENGTH_LONG).show()
             } finally {
                 if (saveJob == coroutineContext[Job]) saveJob = null
             }
