@@ -14,7 +14,7 @@ Probe the selected `UsbDevice` and choose its first serial port before calling `
 
 `UsbConnection.attachedDevicesSnapshot()` distinguishes an available empty list from failure to query Android's device list. `Secu3ConnectionManager.synchronizeUsbAttachments()` returns `null` without changing active-session or admission state on snapshot failure; on success it processes a missed active detach before reconciling prompted attachment history and returns only the first eligible device's permission request. The manager's `terminalSessionGeneration` stream remains the sole source for detach navigation.
 
-The manager retains the selected session's full physical attachment identity across transient open and handshake failures; a same-device-ID replacement in a later snapshot still terminates the old session before it can be admitted.
+Every selected USB session has a full attachment identity, retained across transient open and handshake failures; null means no active USB attachment. Tests that construct a selected USB session directly must install its complete identity before publishing the selection. A same-device-ID replacement in a later snapshot still terminates the old session before it can be admitted.
 
 ## The manager owns one pending USB permission request
 

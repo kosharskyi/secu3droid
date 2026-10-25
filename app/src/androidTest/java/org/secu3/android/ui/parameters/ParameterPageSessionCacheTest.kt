@@ -20,6 +20,7 @@ import org.secu3.android.connection.Connection
 import org.secu3.android.connection.Secu3ConnectionManager
 import org.secu3.android.connection.UsbConnection
 import org.secu3.android.connection.UsbAttemptPacket
+import org.secu3.android.connection.UsbAttachmentIdentity
 import org.secu3.android.connection.UsbSessionFence
 import org.secu3.android.models.RawPacket
 import org.secu3.android.domain.parameters.ParameterPage
@@ -229,7 +230,8 @@ class ParameterPageSessionCacheTest {
             val fenceField = Secu3ConnectionManager::class.java.getDeclaredField("usbSessionFence").apply { isAccessible = true }
             val fence = fenceField.get(manager) as UsbSessionFence
             val generation = fence.begin(1)
-            Secu3ConnectionManager::class.java.getDeclaredField("activeUsbAttachment").apply { isAccessible = true }.set(manager, null)
+            Secu3ConnectionManager::class.java.getDeclaredField("activeUsbAttachment").apply { isAccessible = true }
+                .set(manager, UsbAttachmentIdentity(1, "/test/parameter-session/1", 0, 0))
             val selectionClass = Secu3ConnectionManager::class.java.declaredClasses.first { it.simpleName == "Selection" }
             val transportClass = Secu3ConnectionManager::class.java.declaredClasses.first { it.simpleName == "Transport" }
             val usbTransport = transportClass.enumConstants!!.first { (it as Enum<*>).name == "USB" }

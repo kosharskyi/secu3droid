@@ -975,7 +975,15 @@ class UsbSessionIntegrationTest {
 
         // The endpoint injection matches existing transport integration fixtures. It bypasses only
         // Android's physical USB opening; packet parsing, session identity and send gates are real.
-        suspend fun attach(deviceId: Int, activeIdentity: UsbAttachmentIdentity? = null) {
+        suspend fun attach(
+            deviceId: Int,
+            activeIdentity: UsbAttachmentIdentity = UsbAttachmentIdentity(
+                deviceId = deviceId,
+                deviceName = "/test/usb/$deviceId",
+                vendorId = 0,
+                productId = 0,
+            ),
+        ) {
             val open = AtomicBoolean(true)
             fakeEndpointOpen = open
             val port = Proxy.newProxyInstance(UsbSerialPort::class.java.classLoader, arrayOf(UsbSerialPort::class.java)) { proxy, method, args ->

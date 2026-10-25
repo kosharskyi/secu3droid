@@ -253,8 +253,10 @@ class Secu3ConnectionManager @Inject constructor(
     ): UsbPermissionRequest? {
         val attachedDevices = snapshot.getOrElse { return null }
         val attachedIdentities = attachedDevices.map(::attachmentIdentity).toSet()
-        val missedDetach = isActiveUsbAttachmentMissing(attachedIdentities)
-        if (missedDetach) activeUsbDeviceIdOrNull?.let(::onUsbDeviceDetached)
+        val activeIdentity = activeUsbAttachment
+        if (activeIdentity != null && activeIdentity !in attachedIdentities) {
+            onUsbDeviceDetached(activeIdentity.deviceId)
+        }
 
         promptedUsbAttachments.retainAll(attachedIdentities)
         if (pendingUsbPermission?.let { attachmentIdentity(it.device) !in attachedIdentities } == true) {
@@ -266,19 +268,6 @@ class Secu3ConnectionManager @Inject constructor(
                     (attachmentIdentity(candidate) !in promptedUsbAttachments && pendingUsbPermission == null))
         }
         return firstEligible?.let(::requestUsbConnection)
-    }
-
-    private fun isActiveUsbAttachmentMissing(
-        attachedIdentities: Set<UsbAttachmentIdentity>,
-    ): Boolean {
-        val activeDeviceId = activeUsbDeviceIdOrNull ?: return false
-        val activeIdentity = activeUsbAttachment
-        return if (activeIdentity != null) {
-            activeIdentity !in attachedIdentities
-        } else {
-            // Legacy and isolated test sessions may have only a fenced device ID.
-            attachedIdentities.none { it.deviceId == activeDeviceId }
-        }
     }
 
     @Synchronized private fun startUsbConnectionInternal(device: UsbDevice) {
