@@ -12,7 +12,7 @@ Probe the selected `UsbDevice` and choose its first serial port before calling `
 
 ## Attachment synchronization never treats an unavailable USB snapshot as empty
 
-`UsbConnection.attachedDevicesSnapshot()` distinguishes an available empty list from failure to query Android's device list. `Secu3ConnectionManager.synchronizeUsbAttachments()` leaves active-session and admission state unchanged on snapshot failure; on success it processes a missed active detach before reconciling pending attachment history and admitting at most the first eligible device. Its typed result carries both USB session termination and any permission/open request so consumers do not infer USB ownership from the shared connection state.
+`UsbConnection.attachedDevicesSnapshot()` distinguishes an available empty list from failure to query Android's device list. `Secu3ConnectionManager.synchronizeUsbAttachments()` returns `Ignored` without changing active-session or admission state on snapshot failure; on success it processes a missed active detach before reconciling pending attachment history and returns only the first eligible device's permission/open request. The manager's `terminalSession` stream remains the sole source for detach navigation and terminal-session details.
 
 The manager retains the selected session's full physical attachment identity across transient open and handshake failures; a same-device-ID replacement in a later snapshot still terminates the old session before it can be admitted.
 

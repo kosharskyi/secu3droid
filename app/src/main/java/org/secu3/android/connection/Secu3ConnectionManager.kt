@@ -56,22 +56,6 @@ sealed interface UsbConnectionRequest {
     data object Started : UsbConnectionRequest
 }
 
-enum class UsbSessionTerminationReason { Detached }
-
-data class UsbSessionTermination(
-    val deviceId: Int,
-    val generation: Long,
-    val reason: UsbSessionTerminationReason,
-)
-
-sealed interface UsbAttachmentSynchronization {
-    data class SnapshotUnavailable(val terminalSession: UsbSessionTermination?) : UsbAttachmentSynchronization
-    data class Synchronized(
-        val terminalSession: UsbSessionTermination?,
-        val connectionRequest: UsbConnectionRequest,
-    ) : UsbAttachmentSynchronization
-}
-
 @Singleton
 class Secu3ConnectionManager @Inject constructor(
     private val usbConnection: UsbConnection,
@@ -240,42 +224,32 @@ class Secu3ConnectionManager @Inject constructor(
     }
 
     /** Synchronizes current USB attachments and admits the first eligible device. */
-    @Synchronized fun synchronizeUsbAttachments(): UsbAttachmentSynchronization =
+    @Synchronized fun synchronizeUsbAttachments(): UsbConnectionRequest =
         synchronizeUsbAttachments(usbConnection.attachedDevicesSnapshot())
 
     /** Applies one device-list snapshot; a failed result must not be interpreted as no attachments. */
     @Synchronized internal fun synchronizeUsbAttachments(
         snapshot: Result<List<UsbDevice>>,
-    ): UsbAttachmentSynchronization {
+    ): UsbConnectionRequest {
         val attachedDevices = snapshot.getOrElse {
-            return UsbAttachmentSynchronization.SnapshotUnavailable(null)
+            return UsbConnectionRequest.Ignored
         }
         val attachedIdentities = attachedDevices.map(::attachmentIdentity).toSet()
-        val previousActiveId = activeUsbDeviceIdOrNull
-        val previousGeneration = activeUsbSessionGeneration
         val missedDetach = isActiveUsbAttachmentMissing(attachedIdentities)
-        val detachedActiveSession = missedDetach && previousActiveId != null && onUsbDeviceDetached(previousActiveId)
+        if (missedDetach) activeUsbDeviceIdOrNull?.let(::onUsbDeviceDetached)
 
         usbAttachmentAttempts.reconcile(attachedIdentities)
         if (pendingUsbPermission?.let { attachmentIdentity(it.first) !in attachedIdentities } == true) {
             pendingUsbPermission = null
         }
 
-        val termination = if (detachedActiveSession) {
-            UsbSessionTermination(
-                deviceId = previousActiveId!!,
-                generation = previousGeneration ?: usbSessionFence.generation(),
-                reason = UsbSessionTerminationReason.Detached,
-            )
-        } else null
         val firstEligible = usbAttachmentAttempts.firstEligibleAttachment(
             candidates = attachedDevices,
             identity = ::attachmentIdentity,
             supported = usbConnection::supportsSerialConnection,
             hasPermission = usbConnection::hasPermission,
         )
-        val request = firstEligible?.let(::requestUsbConnection) ?: UsbConnectionRequest.Ignored
-        return UsbAttachmentSynchronization.Synchronized(termination, request)
+        return firstEligible?.let(::requestUsbConnection) ?: UsbConnectionRequest.Ignored
     }
 
     private fun isActiveUsbAttachmentMissing(

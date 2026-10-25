@@ -38,7 +38,6 @@ import kotlinx.coroutines.flow.first
 import androidx.navigation.NavDestination
 import androidx.navigation.NavHostController
 import dagger.hilt.android.AndroidEntryPoint
-import org.secu3.android.connection.UsbAttachmentSynchronization
 import org.secu3.android.connection.ConnectionSessionTermination
 import org.secu3.android.connection.UsbConnectionRequest
 import org.secu3.android.ui.messages.UiMessageQueue
@@ -324,13 +323,7 @@ class MainActivity : ComponentActivity() {
             return
         }
         viewModel.connectionManager.onAppForegrounded()
-        val synchronization = viewModel.connectionManager.synchronizeUsbAttachments()
-        when (synchronization) {
-            is UsbAttachmentSynchronization.SnapshotUnavailable -> Unit
-            is UsbAttachmentSynchronization.Synchronized -> {
-                handleUsbConnectionRequest(synchronization.connectionRequest)
-            }
-        }
+        handleUsbConnectionRequest(viewModel.connectionManager.synchronizeUsbAttachments())
     }
 
     override fun onWindowFocusChanged(hasFocus: Boolean) {
@@ -339,10 +332,7 @@ class MainActivity : ComponentActivity() {
             viewModel.connectionManager.onAppBackgrounded()
         } else if (hasFocus && lifecycle.currentState.isAtLeast(Lifecycle.State.RESUMED)) {
             viewModel.connectionManager.onAppForegrounded()
-            val synchronization = viewModel.connectionManager.synchronizeUsbAttachments()
-            if (synchronization is UsbAttachmentSynchronization.Synchronized) {
-                handleUsbConnectionRequest(synchronization.connectionRequest)
-            }
+            handleUsbConnectionRequest(viewModel.connectionManager.synchronizeUsbAttachments())
             processPendingNavigation()
             deliverPendingUsbIntent()
         }

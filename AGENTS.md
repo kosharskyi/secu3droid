@@ -20,6 +20,9 @@ UI code may map domain state to presentation (including localized messages and s
 
 ## Class and Helper Organization
 
+- Prefer the simplest concrete implementation that satisfies current requirements. Add an abstraction only when it provides a concrete, present benefit that outweighs the extra types, indirection, and maintenance. This applies to interfaces, base classes, wrappers, enum/sealed hierarchies, and helper or coordinator classes.
+- An interface with a single implementation added merely to abstract that implementation is an anti-pattern. Do not introduce one solely for dependency injection, architectural layering, or a hypothetical future implementation; concrete classes can be injected directly.
+- Reuse existing state and contracts instead of adding parallel representations, pass-through result types, or metadata that production consumers do not need. During refactoring, remove redundant abstractions and duplicated state rather than moving the same complexity into more classes.
 - Do not create standalone files that contain only top-level helper functions. Keep helper logic in the class that owns the responsibility, or in a dedicated class when extraction is justified. Compose UI functions continue to follow the existing screen and component conventions.
 - When shared helper behavior would otherwise be implemented as a static utility, use an injectable `@Singleton` class with an `@Inject` constructor and inject it into its consumers. Do not replace dependency injection with a Kotlin `object`, global helper functions, or manual singleton access.
 - Do not introduce a new class solely to hold one method used in a single place. Keep that method in the consuming class, normally as a private method, while respecting the business-logic boundaries above.

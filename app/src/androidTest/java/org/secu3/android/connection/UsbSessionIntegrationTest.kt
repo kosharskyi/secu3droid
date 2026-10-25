@@ -30,6 +30,7 @@ import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertNotNull
 import org.junit.Assert.assertNull
+import org.junit.Assert.assertSame
 import org.junit.Assert.assertTrue
 import org.junit.Test
 import org.secu3.android.models.RawPacket
@@ -94,19 +95,18 @@ class UsbSessionIntegrationTest {
         try {
             fixture.attach(79)
             fixture.confirmFirmware()
+            val endedGeneration = fixture.manager.activeUsbSessionGeneration
 
-            val first = fixture.manager.synchronizeUsbAttachments(Result.success(emptyList()))
-            assertTrue(first is UsbAttachmentSynchronization.Synchronized)
-            first as UsbAttachmentSynchronization.Synchronized
-            assertEquals(UsbSessionTerminationReason.Detached, first.terminalSession?.reason)
-            assertEquals(79, first.terminalSession?.deviceId)
+            assertEquals(UsbConnectionRequest.Ignored, fixture.manager.synchronizeUsbAttachments(Result.success(emptyList())))
+            val terminalSession = fixture.manager.terminalSession.value
+            assertEquals(ConnectionTerminationReason.UsbDetached, terminalSession?.reason)
+            assertEquals(ConnectionTransport.USB, terminalSession?.transport)
+            assertEquals(endedGeneration, terminalSession?.generation)
             assertEquals(Disconnected, fixture.manager.currentConnectionState)
             assertFalse(fixture.manager.usbSessionLocked.value)
 
-            val repeated = fixture.manager.synchronizeUsbAttachments(Result.success(emptyList()))
-            assertTrue(repeated is UsbAttachmentSynchronization.Synchronized)
-            assertNull((repeated as UsbAttachmentSynchronization.Synchronized).terminalSession)
-            assertEquals(UsbConnectionRequest.Ignored, repeated.connectionRequest)
+            assertEquals(UsbConnectionRequest.Ignored, fixture.manager.synchronizeUsbAttachments(Result.success(emptyList())))
+            assertSame(terminalSession, fixture.manager.terminalSession.value)
         } finally {
             fixture.close()
         }
@@ -272,9 +272,8 @@ class UsbSessionIntegrationTest {
 
             val result = fixture.manager.synchronizeUsbAttachments(Result.success(listOf(device)))
 
-            assertTrue(result is UsbAttachmentSynchronization.Synchronized)
-            result as UsbAttachmentSynchronization.Synchronized
-            assertNull(result.terminalSession)
+            assertEquals(UsbConnectionRequest.Ignored, result)
+            assertNull(fixture.manager.terminalSession.value)
             assertEquals(Connected, fixture.manager.currentConnectionState)
             assertTrue(fixture.manager.usbSessionLocked.value)
         } finally {
@@ -295,10 +294,9 @@ class UsbSessionIntegrationTest {
 
             val result = fixture.manager.synchronizeUsbAttachments(Result.success(listOf(replacement)))
 
-            assertTrue(result is UsbAttachmentSynchronization.Synchronized)
-            result as UsbAttachmentSynchronization.Synchronized
-            assertEquals(UsbSessionTerminationReason.Detached, result.terminalSession?.reason)
-            assertEquals(original.deviceId, result.terminalSession?.deviceId)
+            assertEquals(UsbConnectionRequest.Ignored, result)
+            assertEquals(ConnectionTerminationReason.UsbDetached, fixture.manager.terminalSession.value?.reason)
+            assertEquals(oldGeneration, fixture.manager.terminalSession.value?.generation)
             assertEquals(Disconnected, fixture.manager.currentConnectionState)
             assertFalse(fixture.manager.usbSessionLocked.value)
             assertTrue(fixture.manager.activeUsbSessionGeneration != oldGeneration)
@@ -577,9 +575,10 @@ class UsbSessionIntegrationTest {
             fixture.attach(78)
             fixture.confirmFirmware()
 
+            val terminalBefore = fixture.manager.terminalSession.value
             val whileConnected = fixture.manager.synchronizeUsbAttachments(Result.failure(SecurityException("USB list unavailable")))
-            assertTrue(whileConnected is UsbAttachmentSynchronization.SnapshotUnavailable)
-            assertNull((whileConnected as UsbAttachmentSynchronization.SnapshotUnavailable).terminalSession)
+            assertEquals(UsbConnectionRequest.Ignored, whileConnected)
+            assertSame(terminalBefore, fixture.manager.terminalSession.value)
             assertTrue(fixture.manager.isUsbConnected)
             assertEquals(Connected, fixture.manager.currentConnectionState)
             assertNull(fixture.manager.terminalSession.value)
