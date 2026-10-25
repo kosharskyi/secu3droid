@@ -1,6 +1,8 @@
 package org.secu3.android.ui
 
 import android.view.KeyEvent
+import android.bluetooth.BluetoothAdapter
+import android.bluetooth.BluetoothSocket
 import androidx.compose.ui.test.assertCountEquals
 import androidx.compose.ui.test.assertIsOn
 import androidx.compose.ui.test.assertTextEquals
@@ -14,39 +16,39 @@ import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.ViewModelProvider
 import androidx.navigation.NavHostController
 import androidx.test.platform.app.InstrumentationRegistry
-import com.hoho.android.usbserial.driver.UsbSerialPort
+import java.io.OutputStream
+import java.util.UUID
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.withTimeout
+import org.secu3.android.connection.BluetoothConnectionEvent
+import org.secu3.android.connection.BtConnection
 import org.secu3.android.connection.Connection
-import org.secu3.android.connection.ConnectionState
 import org.secu3.android.connection.Connected
-import org.secu3.android.connection.Disconnected
 import org.secu3.android.connection.Secu3ConnectionManager
-import org.secu3.android.connection.UsbConnection
 import org.secu3.android.models.RawPacket
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertNotSame
 import org.junit.Assert.assertSame
 import org.junit.Assert.assertTrue
+import org.junit.Assume.assumeTrue
 import org.junit.After
 import org.junit.Rule
 import org.junit.Test
 import org.secu3.android.R
 import org.secu3.android.ui.diagnostics.DiagnosticOutput
 import org.secu3.android.ui.diagnostics.DiagnosticsViewModel
-import java.lang.reflect.Proxy
 import java.util.concurrent.CopyOnWriteArrayList
 
 class DiagnosticsNavigationIntegrationTest {
     @get:Rule val compose = createAndroidComposeRule<MainActivity>()
-    private val fakeTransports = mutableListOf<FakeUsbTransport>()
+    private val fakeTransports = mutableListOf<FakeBluetoothTransport>()
 
     @After
     fun closeFakeTransports() {
-        fakeTransports.toList().forEach(FakeUsbTransport::disconnect)
+        fakeTransports.toList().forEach(FakeBluetoothTransport::disconnect)
         fakeTransports.clear()
     }
 
@@ -58,8 +60,7 @@ class DiagnosticsNavigationIntegrationTest {
         assertDiagnosticsHost(nativeHost)
 
         val firstVm = diagnosticsViewModel()
-        val transport = connectFakeUsb(firstVm)
-        await { firstVm.connectionStatusLiveData.value == Connected }
+        val transport = connectFakeBluetooth(firstVm)
         await { transport.enterCount == 1 }
         assertFalse(firstVm.uiState.value.controlsEnabled)
         transport.emitDiagnosticInput(flags = 0)
@@ -115,8 +116,7 @@ class DiagnosticsNavigationIntegrationTest {
         compose.activityRule.scenario.onActivity { it.openDiagnostics() }
         compose.waitForIdle()
         val vm = diagnosticsViewModel()
-        val transport = connectFakeUsb(vm)
-        await { vm.connectionStatusLiveData.value == Connected }
+        val transport = connectFakeBluetooth(vm)
         await { transport.enterCount == 1 }
         assertFalse(vm.uiState.value.controlsEnabled)
         transport.emitDiagnosticInput(flags = 0)
@@ -158,8 +158,7 @@ class DiagnosticsNavigationIntegrationTest {
         compose.waitForIdle()
         val vm = diagnosticsViewModel()
         assertFalse(vm.uiState.value.controlsEnabled)
-        val transport = connectFakeUsb(vm)
-        await { vm.connectionStatusLiveData.value == Connected }
+        val transport = connectFakeBluetooth(vm)
         await { transport.enterCount == 1 }
         assertFalse(vm.uiState.value.controlsEnabled)
         transport.emitDiagnosticInput(flags = 1, voltageRaw = 500)
@@ -184,7 +183,7 @@ class DiagnosticsNavigationIntegrationTest {
         assertEquals(DIAGNOSTICS_ADDITIONAL_ROUTE, compose.activity.rootNavigationController?.currentDestination?.route)
 
         transport.disconnect()
-        await { !vm.uiState.value.controlsEnabled && vm.diagInputLiveData.value == null }
+        await { !vm.uiState.value.controlsEnabled && vm.diagInput.value == null }
         compose.waitForIdle()
         assertEquals(DIAGNOSTICS_ROUTE, compose.activity.rootNavigationController?.currentDestination?.route)
         compose.onNodeWithTag("analog_Voltage-value").assertTextEquals("— V")
@@ -211,8 +210,8 @@ class DiagnosticsNavigationIntegrationTest {
         assertEquals(bitsAfterLoss, vm.uiState.value.outputBits)
         assertEquals(writesAfterLoss, transport.writes.size)
 
-        val reconnected = connectFakeUsb(vm)
-        await { vm.connectionStatusLiveData.value == Connected }
+        val reconnected = connectFakeBluetooth(vm)
+        await { transport.enterCount == 1 }
         await { reconnected.enterCount == 1 }
         assertFalse(vm.uiState.value.controlsEnabled)
         val writesBeforeFreshInput = reconnected.writes.size
@@ -242,9 +241,9 @@ class DiagnosticsNavigationIntegrationTest {
         compose.activityRule.scenario.onActivity { it.openDiagnostics() }
         compose.waitForIdle()
         val vm = diagnosticsViewModel()
-        val transport = connectFakeUsb(vm, acknowledgeEnterImmediately = true)
+        val transport = connectFakeBluetooth(vm, acknowledgeEnterImmediately = true)
 
-        await { vm.connectionStatusLiveData.value == Connected }
+        await { transport.enterCount == 1 }
         await { transport.enterCount == 1 && transport.diagInputRequestCount == 1 }
         assertFalse(vm.uiState.value.controlsEnabled)
         transport.emitDiagnosticInput(flags = 1)
@@ -253,7 +252,7 @@ class DiagnosticsNavigationIntegrationTest {
 
         transport.emitOpcode(6)
         transport.emitDiagnosticInput(flags = 1, voltageRaw = 600)
-        await { vm.diagInputLiveData.value?.voltage == 1.5f }
+        await { vm.diagInput.value?.voltage == 1.5f }
         compose.activityRule.scenario.onActivity { vm.selectChannel(1) }
         await { transport.outputCount == 2 }
         assertEquals(1, transport.diagInputRequestCount)
@@ -306,62 +305,80 @@ class DiagnosticsNavigationIntegrationTest {
         compose.onNodeWithTag("home-card-diagnostics").assertExists()
     }
 
-    private fun connectFakeUsb(
+    private fun connectFakeBluetooth(
         viewModel: DiagnosticsViewModel,
         acknowledgeEnterImmediately: Boolean = false,
-    ): FakeUsbTransport = runBlocking {
-        val managerField = DiagnosticsViewModel::class.java.getDeclaredField("secu3ConnectionManager").apply { isAccessible = true }
-        val manager = managerField.get(viewModel) as Secu3ConnectionManager
-        val usbField = Secu3ConnectionManager::class.java.declaredFields.first { UsbConnection::class.java.isAssignableFrom(it.type) }
+    ): FakeBluetoothTransport = runBlocking {
+        val manager = DiagnosticsViewModel::class.java.getDeclaredField("secu3ConnectionManager")
+            .apply { isAccessible = true }.get(viewModel) as Secu3ConnectionManager
+        val btField = Secu3ConnectionManager::class.java.declaredFields.first { BtConnection::class.java.isAssignableFrom(it.type) }
             .apply { isAccessible = true }
-        val connection = usbField.get(manager) as UsbConnection
-        val endpointField = Connection::class.java.getDeclaredField("endpoint").apply { isAccessible = true }
+        val connection = btField.get(manager) as BtConnection
+        val rawFlow = Connection::class.java.getDeclaredField("mReceivedPacketFlow").apply { isAccessible = true }
+            .get(connection) as MutableSharedFlow<RawPacket>
         val writes = CopyOnWriteArrayList<ByteArray>()
-        val rawFlowField = Connection::class.java.getDeclaredField("mReceivedPacketFlow").apply { isAccessible = true }
-        @Suppress("UNCHECKED_CAST")
-        val rawFlow = rawFlowField.get(connection) as MutableSharedFlow<RawPacket>
-        val port = Proxy.newProxyInstance(UsbSerialPort::class.java.classLoader, arrayOf(UsbSerialPort::class.java)) { _, method, args ->
-            when (method.name) {
-                "isOpen" -> true
-                "write" -> {
-                    (args?.firstOrNull() as? ByteArray)?.let { bytes ->
-                        writes += bytes.copyOf()
-                        if (acknowledgeEnterImmediately && bytes.size > 3 && bytes[1] == 'u'.code.toByte() && bytes[3] == 6.toByte()) {
-                            runBlocking {
-                                withTimeout(3_000) {
-                                    rawFlow.emit(RawPacket(intArrayOf('@'.code, 'u'.code, 0, 6, 0, 0)))
-                                }
-                            }
+        val adapter = requireNotNull(BluetoothAdapter.getDefaultAdapter()) { "Bluetooth adapter is unavailable" }
+        val socket = adapter.getRemoteDevice("00:11:22:33:44:55").createRfcommSocketToServiceRecord(UUID.randomUUID())
+        val socketState = runCatching { BluetoothSocket::class.java.getDeclaredField("mSocketState").apply { isAccessible = true } }.getOrNull()
+        assumeTrue("Run DiagnosticsNavigationIntegrationTest with --no-hidden-api-checks", socketState != null)
+        val socketStateField = socketState!!
+        socketStateField.set(socket, socketStateField.type.enumConstants!!.first { (it as Enum<*>).name == "CONNECTED" })
+        val socketOutput = object : OutputStream() {
+            override fun write(value: Int) { writes += byteArrayOf(value.toByte()) }
+            override fun write(bytes: ByteArray, offset: Int, length: Int) {
+                val copy = bytes.copyOfRange(offset, offset + length)
+                writes += copy
+                if (acknowledgeEnterImmediately && copy.size > 3 && copy[1] == 'u'.code.toByte() && copy[3] == 6.toByte()) {
+                    runBlocking {
+                        withTimeout(3_000) {
+                            rawFlow.emit(RawPacket(intArrayOf('@'.code, 'u'.code, 0, 6, 0, 0)))
                         }
                     }
-                    null
                 }
-                "read" -> 0
-                "toString" -> "diagnostics-test-usb"
-                "hashCode" -> System.identityHashCode(this)
-                "equals" -> false
-                else -> null
             }
-        } as UsbSerialPort
-        endpointField.set(connection, port)
+        }
+        val socketOutputField = runCatching { BluetoothSocket::class.java.getDeclaredField("mSocketOS").apply { isAccessible = true } }.getOrNull()
+        assumeTrue("Run DiagnosticsNavigationIntegrationTest with --no-hidden-api-checks", socketOutputField != null)
+        socketOutputField!!.set(socket, socketOutput)
         Connection::class.java.getDeclaredField("isRunning").apply { isAccessible = true }.setBoolean(connection, true)
-        val stateFlowField = Connection::class.java.getDeclaredField("mConnectionStateFlow").apply { isAccessible = true }
+        check(
+            Connection::class.java.getDeclaredMethod("installEndpoint", Any::class.java).apply { isAccessible = true }
+                .invoke(connection, socket) == true,
+        )
+
+        val fence = Secu3ConnectionManager::class.java.getDeclaredField("usbSessionFence")
+            .apply { isAccessible = true }.get(manager) as org.secu3.android.connection.UsbSessionFence
+        val generation = fence.advance()
+        val selectionClass = Secu3ConnectionManager::class.java.declaredClasses.first { it.simpleName == "Selection" }
+        val transportClass = Secu3ConnectionManager::class.java.declaredClasses.first { it.simpleName == "Transport" }
+        val bluetoothTransport = transportClass.enumConstants!!.first { (it as Enum<*>).name == "BLUETOOTH" }
+        val selection = selectionClass.declaredConstructors.first().apply { isAccessible = true }
+            .newInstance(bluetoothTransport, generation)
         @Suppress("UNCHECKED_CAST")
-        val stateFlow = stateFlowField.get(connection) as MutableSharedFlow<ConnectionState>
-        delay(100)
-        stateFlow.emit(Connected)
-        FakeUsbTransport(connection, endpointField, port, stateFlow, rawFlow, writes).also(fakeTransports::add)
+        val selected = Secu3ConnectionManager::class.java.getDeclaredField("selectedTransport").apply { isAccessible = true }
+            .get(manager) as kotlinx.coroutines.flow.MutableStateFlow<Any>
+        selected.value = selection
+        Secu3ConnectionManager::class.java.getDeclaredField("activeUsbAttachment").apply { isAccessible = true }
+            .set(manager, null)
+
+        val btEvents = BtConnection::class.java.getDeclaredField("_sessionEvents").apply { isAccessible = true }
+            .get(connection) as MutableSharedFlow<BluetoothConnectionEvent>
+        await { rawFlow.subscriptionCount.value > 0 && btEvents.subscriptionCount.value > 0 }
+        rawFlow.emit(firmwarePacket())
+        await { manager.firmwareInfo.value != null }
+        btEvents.emit(BluetoothConnectionEvent(generation, Connected))
+        await { manager.currentConnectionState == Connected }
+        FakeBluetoothTransport(manager, generation, socket, rawFlow, writes).also(fakeTransports::add)
     }
 
     private suspend fun await(predicate: () -> Boolean) {
         withTimeout(4_000) { while (!predicate()) delay(10) }
     }
 
-    private class FakeUsbTransport(
-        private val connection: UsbConnection,
-        private val endpointField: java.lang.reflect.Field,
-        private val port: UsbSerialPort,
-        private val stateFlow: MutableSharedFlow<ConnectionState>,
+    private class FakeBluetoothTransport(
+        private val manager: Secu3ConnectionManager,
+        private val generation: Long,
+        private val socket: BluetoothSocket,
         private val rawFlow: MutableSharedFlow<RawPacket>,
         val writes: CopyOnWriteArrayList<ByteArray>,
     ) {
@@ -383,10 +400,19 @@ class DiagnosticsNavigationIntegrationTest {
         }
 
         fun disconnect() = runBlocking {
-            if (endpointField.get(connection) === port) endpointField.set(connection, null)
-            Connection::class.java.getDeclaredField("isRunning").apply { isAccessible = true }.setBoolean(connection, false)
-            stateFlow.emit(Disconnected)
+            val selectedField = Secu3ConnectionManager::class.java.getDeclaredField("selectedTransport").apply { isAccessible = true }
+            val selected = selectedField.get(manager) as kotlinx.coroutines.flow.StateFlow<*>
+            val currentGeneration = selected.value?.let { selection ->
+                selection.javaClass.getDeclaredField("generation").apply { isAccessible = true }.get(selection) as Long
+            }
+            if (currentGeneration == generation) manager.stopConnection()
+            runCatching { socket.close() }
         }
     }
+
+    private fun firmwarePacket() = RawPacket(
+        intArrayOf('@'.code, 'y'.code) + "SECU-3 navigation test firmware".padEnd(52).map { it.code }.toIntArray() +
+            intArrayOf(0, 0, 0, 0, 0x10, 0, 0),
+    )
 
 }

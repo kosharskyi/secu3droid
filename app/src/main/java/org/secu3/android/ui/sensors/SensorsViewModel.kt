@@ -14,10 +14,8 @@ package org.secu3.android.ui.sensors
 
 import android.content.Context
 import android.content.SharedPreferences
-import androidx.lifecycle.LiveData
 import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.ViewModel
-import androidx.lifecycle.asLiveData
 import androidx.lifecycle.viewModelScope
 import dagger.hilt.android.lifecycle.HiltViewModel
 import dagger.hilt.android.qualifiers.ApplicationContext
@@ -83,7 +81,7 @@ class SensorsViewModel @Inject constructor(
         }
     }
 
-    val connectionStatusLiveData: LiveData<ConnectionState> = secu3ConnectionManager.connectionStateFlow.asLiveData()
+    val connectionState = secu3ConnectionManager.connectionStateFlow
     private val initialFirmwareInfo = secu3ConnectionManager.fwInfo.takeIf { secu3ConnectionManager.isConnected }
     private val sensorSession = sensorSessionFlow(
         secu3ConnectionManager.connectionStateFlow,
@@ -91,22 +89,22 @@ class SensorsViewModel @Inject constructor(
         initialFirmware = initialFirmwareInfo,
     )
         .stateIn(viewModelScope, SharingStarted.Eagerly, SensorSessionSnapshot(firmware = initialFirmwareInfo))
-    val sensorsLiveData: LiveData<SensorsPacket?> = sensorSession.map { it.sensors }.distinctUntilChanged().asLiveData()
-    val rawSensorsLiveData: LiveData<AdcRawDatPacket?> = sensorSession.map { it.rawSensors }.distinctUntilChanged().asLiveData()
-    val firmwareInfoLiveData: LiveData<FirmwareInfoPacket?> = sensorSession.map { it.firmware }.distinctUntilChanged().asLiveData()
-    val gaugesLiveData: LiveData<List<GaugeItem>> = repository.observeGaugeItems(
+    val sensors = sensorSession.map { it.sensors }.distinctUntilChanged()
+    val rawSensors = sensorSession.map { it.rawSensors }.distinctUntilChanged()
+    val sessionFirmware = sensorSession.map { it.firmware }.distinctUntilChanged()
+    val gauges = repository.observeGaugeItems(
         sensorSession.map { it.sensors }.distinctUntilChanged(),
         state.map { it.injectionTimingMode }.distinctUntilChanged(),
-    ).asLiveData()
-    val indicatorLiveData: LiveData<List<IndicatorItem>> = repository.observeIndicatorItems(
+    )
+    val indicators = repository.observeIndicatorItems(
         sensorSession.map { it.sensors }.distinctUntilChanged(),
-    ).asLiveData()
+    )
 
     private var nextChoiceRequestId = 0L
     private val showAddGaugeFlow = MutableStateFlow<ChoiceRequest<GaugeType>?>(null)
-    val showAddGaugeLiveData: LiveData<ChoiceRequest<GaugeType>?> = showAddGaugeFlow.asLiveData()
+    val showAddGauge = showAddGaugeFlow.asStateFlow()
     private val showAddIndicatorFlow = MutableStateFlow<ChoiceRequest<IndicatorType>?>(null)
-    val showAddIndicatorLiveData: LiveData<ChoiceRequest<IndicatorType>?> = showAddIndicatorFlow.asLiveData()
+    val showAddIndicator = showAddIndicatorFlow.asStateFlow()
 
     init {
         preferences.registerOnSharedPreferenceChangeListener(preferenceListener)

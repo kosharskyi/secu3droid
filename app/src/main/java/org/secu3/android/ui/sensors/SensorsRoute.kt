@@ -1,20 +1,15 @@
 package org.secu3.android.ui.sensors
 
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
-import androidx.compose.runtime.livedata.observeAsState
 import androidx.compose.material3.SnackbarHostState
 import androidx.compose.ui.platform.LocalLifecycleOwner
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.LifecycleEventObserver
-import androidx.lifecycle.repeatOnLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.navigation.NavBackStackEntry
-import kotlinx.coroutines.flow.collect
 import org.secu3.android.models.packets.input.AdcRawDatPacket
 import org.secu3.android.models.packets.input.FirmwareInfoPacket
 import org.secu3.android.models.packets.input.SensorsPacket
@@ -33,15 +28,15 @@ internal fun SensorsRoute(
         factory = activity.defaultViewModelProviderFactory,
         extras = entry.defaultViewModelCreationExtras,
     )
-    val connection by remember(viewModel) { viewModel.connectionStatusLiveData }.observeAsState()
-    val gauges = remember(viewModel) { viewModel.gaugesLiveData }.observeAsState().value.orEmpty()
-    val indicators = remember(viewModel) { viewModel.indicatorLiveData }.observeAsState().value.orEmpty()
-    val gaugeChoices by remember(viewModel) { viewModel.showAddGaugeLiveData }.observeAsState()
-    val indicatorChoices by remember(viewModel) { viewModel.showAddIndicatorLiveData }.observeAsState()
-    val sensors: SensorsPacket? by remember(viewModel) { viewModel.sensorsLiveData }.observeAsState()
-    val rawSensors: AdcRawDatPacket? by remember(viewModel) { viewModel.rawSensorsLiveData }.observeAsState()
-    val firmware: FirmwareInfoPacket? by remember(viewModel) { viewModel.firmwareInfoLiveData }.observeAsState()
-    var state by remember(viewModel) { mutableStateOf(viewModel.state.value) }
+    val connection by viewModel.connectionState.collectAsStateWithLifecycle(initialValue = null)
+    val gauges by viewModel.gauges.collectAsStateWithLifecycle(emptyList())
+    val indicators by viewModel.indicators.collectAsStateWithLifecycle(emptyList())
+    val gaugeChoices by viewModel.showAddGauge.collectAsStateWithLifecycle()
+    val indicatorChoices by viewModel.showAddIndicator.collectAsStateWithLifecycle()
+    val sensors: SensorsPacket? by viewModel.sensors.collectAsStateWithLifecycle(initialValue = null)
+    val rawSensors: AdcRawDatPacket? by viewModel.rawSensors.collectAsStateWithLifecycle(initialValue = null)
+    val firmware: FirmwareInfoPacket? by viewModel.sessionFirmware.collectAsStateWithLifecycle(initialValue = null)
+    val state by viewModel.state.collectAsStateWithLifecycle()
     val lifecycle = LocalLifecycleOwner.current.lifecycle
     val snackbarHostState = remember(viewModel) { SnackbarHostState() }
 
@@ -59,12 +54,6 @@ internal fun SensorsRoute(
             lifecycle.removeObserver(observer)
         }
     }
-    LaunchedEffect(lifecycle, viewModel) {
-        lifecycle.repeatOnLifecycle(Lifecycle.State.STARTED) {
-            viewModel.state.collect { state = it }
-        }
-    }
-
     SecuComposeTheme {
         SensorsTabsScreen(
             initialPage = state.selectedPage,

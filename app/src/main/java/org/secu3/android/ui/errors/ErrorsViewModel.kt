@@ -25,9 +25,7 @@
 
 package org.secu3.android.ui.errors
 
-import androidx.lifecycle.LiveData
 import androidx.lifecycle.ViewModel
-import androidx.lifecycle.asLiveData
 import androidx.lifecycle.viewModelScope
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -48,7 +46,7 @@ class ErrorsViewModel @Inject constructor(
     ecuExchange: EcuExchange,
 ) : ViewModel() {
 
-    val connectionStatusLiveData: LiveData<ConnectionState> = secu3ConnectionManager.connectionStateFlow.asLiveData()
+    val connectionState = secu3ConnectionManager.connectionStateFlow
 
     private val session = ErrorsSessionController(
         scope = viewModelScope,

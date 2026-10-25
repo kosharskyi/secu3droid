@@ -25,10 +25,7 @@
 package org.secu3.android.ui.parameters
 
 import android.content.Context
-import androidx.lifecycle.LiveData
 import androidx.lifecycle.ViewModel
-import androidx.lifecycle.asLiveData
-import androidx.lifecycle.asFlow
 import androidx.lifecycle.viewModelScope
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -42,7 +39,6 @@ import org.secu3.android.R
 import org.secu3.android.ui.messages.UiMessageDuration
 import org.secu3.android.ui.messages.UiMessageQueue
 import org.secu3.android.ui.PARAMETERS_ROUTE
-import org.secu3.android.connection.ConnectionState
 import org.secu3.android.connection.Secu3ConnectionManager
 import org.secu3.android.domain.parameters.EepromSaveResult
 import org.secu3.android.domain.parameters.ParameterPage
@@ -50,7 +46,6 @@ import org.secu3.android.domain.parameters.ParameterReadResult
 import org.secu3.android.domain.parameters.ParameterSession
 import org.secu3.android.domain.parameters.ParameterSessionEvent
 import org.secu3.android.models.packets.base.OutputPacket
-import org.secu3.android.models.packets.input.FirmwareInfoPacket
 import org.secu3.android.models.packets.out.params.AccelerationParamPacket
 import org.secu3.android.models.packets.out.params.AdcCorrectionsParamPacket
 import org.secu3.android.models.packets.out.params.AnglesParamPacket
@@ -110,6 +105,9 @@ class ParamsViewModel @Inject constructor(
     internal var failedPage: ParameterPage? by mutableStateOf(null)
         private set
 
+    val connectionState = secu3ConnectionManager.connectionStateFlow
+    val firmwareInfo = secu3ConnectionManager.firmwareInfo
+
     internal val starterStateHolder by lazy {
         StarterStateHolder(::sendPacket) { isSendAllowed = true }
     }
@@ -166,7 +164,7 @@ class ParamsViewModel @Inject constructor(
 
     internal val gasDoseStateHolder by lazy {
         GasDoseStateHolder({}, ::sendPacket).also {
-            it.setFirmwareAvailable(fwInfoPacket?.isGdControlEnabled ?: true)
+            it.setFirmwareAvailable(firmwareInfo.value?.isGdControlEnabled ?: true)
         }
     }
 
@@ -193,9 +191,10 @@ class ParamsViewModel @Inject constructor(
     init {
         parameterSession.start(viewModelScope, ::onParameterSessionEvent)
         viewModelScope.launch {
-            secu3ConnectionManager.firmwareLiveData.asFlow().collect { firmware ->
-                gasDoseStateHolder.setFirmwareAvailable(firmware.isGdControlEnabled)
-                fuelInjectionStateHolder.updateFirmware(firmware.isFuelInjectEnabled, firmware.isSecu3T)
+            secu3ConnectionManager.firmwareInfo.collect { firmware ->
+                gasDoseStateHolder.setFirmwareAvailable(firmware?.isGdControlEnabled ?: true)
+                if (firmware == null) fuelInjectionStateHolder.updateFirmware(injectorEnabled = true, secu3t = false)
+                else fuelInjectionStateHolder.updateFirmware(firmware.isFuelInjectEnabled, firmware.isSecu3T)
             }
         }
     }
@@ -283,12 +282,12 @@ class ParamsViewModel @Inject constructor(
             ParameterPage.CHOKE_CONTROL -> chokeControlStateHolder.reset()
             ParameterPage.GAS_DOSE -> {
                 gasDoseStateHolder.reset()
-                gasDoseStateHolder.setFirmwareAvailable(fwInfoPacket?.isGdControlEnabled ?: true)
+                gasDoseStateHolder.setFirmwareAvailable(firmwareInfo.value?.isGdControlEnabled ?: true)
             }
             ParameterPage.EL_THROTTLE -> dbwStateHolder.reset()
             ParameterPage.FUEL_INJECTION -> {
                 fuelInjectionStateHolder.reset()
-                fwInfoPacket?.let { fuelInjectionStateHolder.updateFirmware(it.isFuelInjectEnabled, it.isSecu3T) }
+                firmwareInfo.value?.let { fuelInjectionStateHolder.updateFirmware(it.isFuelInjectEnabled, it.isSecu3T) }
                     ?: fuelInjectionStateHolder.updateFirmware(injectorEnabled = true, secu3t = false)
             }
             ParameterPage.UNIVERSAL_OUTPUTS -> universalOutputsStateHolder.reset()
@@ -367,13 +366,6 @@ class ParamsViewModel @Inject constructor(
 
     private inline fun <reified T : org.secu3.android.models.packets.base.InputPacket> packet(result: ParameterReadResult): T =
         (result as ParameterReadResult.Packet).packet as T
-
-    val connectionStatusLiveData: LiveData<ConnectionState> = secu3ConnectionManager.connectionStateFlow.asLiveData()
-
-    val fwInfoPacket: FirmwareInfoPacket?
-        get() = secu3ConnectionManager.fwInfo
-
-
 
     fun sendPacket(packet: OutputPacket) {
         if (!isSendAllowed || !parameterSession.sendPacket(packet)) {

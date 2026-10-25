@@ -16,7 +16,6 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.livedata.observeAsState
 import androidx.compose.runtime.saveable.mapSaver
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.platform.LocalLifecycleOwner
@@ -25,6 +24,7 @@ import androidx.core.view.WindowCompat
 import androidx.core.view.WindowInsetsCompat
 import androidx.core.view.WindowInsetsControllerCompat
 import androidx.lifecycle.Lifecycle
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.repeatOnLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavBackStackEntry
@@ -43,8 +43,8 @@ internal fun DashboardRoute(entry: NavBackStackEntry, activity: MainActivity) {
         factory = activity.defaultViewModelProviderFactory,
         extras = entry.defaultViewModelCreationExtras,
     )
-    val packet by viewModel.packetLiveData.observeAsState()
-    val connection by viewModel.statusLiveData.observeAsState()
+    val packet by viewModel.packetFlow.collectAsStateWithLifecycle(initialValue = null)
+    val connection by viewModel.connectionState.collectAsStateWithLifecycle(initialValue = null)
     val lifecycle = LocalLifecycleOwner.current.lifecycle
     val previousWindowState = rememberSaveable(entry.id, saver = DashboardWindowState.Saver) {
         DashboardWindowState.capture(activity.window)

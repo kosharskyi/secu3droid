@@ -32,7 +32,7 @@ Channel zero is NONE; each nonzero channel index maps through its firmware famil
 
 ## Firmware family and TPIC capability must stay reactive on diagnostics
 
-The route observes firmware packets and seeds from the connection manager's cached packet so a reply arriving while diagnostics is open updates family-specific input labels and availability. Preserve the common labels while the family is unknown, show ADD_IO3 only outside SECU-3T, and treat ADD_IO4 as unavailable unless both family and TPIC8101 capability are known and enabled; a supported packet value of 0.000 V is still a real reading.
+The route collects the connection manager's nullable firmware state so a reply arriving while diagnostics is open updates family-specific input labels and availability, and clearing the state removes stale capability presentation. Preserve the common labels while the family is unknown, show ADD_IO3 only outside SECU-3T, and treat ADD_IO4 as unavailable unless both family and TPIC8101 capability are known and enabled; a supported packet value of 0.000 V is still a real reading.
 
 ## A connection loss clears diagnostics readiness and local actuator state
 
@@ -41,3 +41,11 @@ On any observed non-connected state, clear the last DIAGINP from presentation an
 ## Re-enter diagnostics only after the transport packet stream is subscribed
 
 The diagnostics ViewModel starts the session intent while offline, but sends ENTER only after the selected transport's received-packet flow confirms subscription. This ordering prevents a fast ACK from arriving before its collector exists. Each available connection gets one ENTER and at most one DIAGINP request from repeated ACK6 packets; the UI remains unavailable until a fresh DIAGINP arrives. Loss cancels that transport collector and resets entry bookkeeping so reconnect can enter again. Closing while offline or before entry was requested sends no cleanup commands; closing an entered, still-available session queues LEAVE then sensor streaming restore.
+
+## Navigation integration fixture needs a test-process hidden-API exemption
+
+The navigation fixture reflects into Android Bluetooth socket state and its output stream to provide a connected fake transport. Run this class with the exemption scoped to the instrumentation process:
+
+```sh
+adb shell am instrument --no-hidden-api-checks -w -e class org.secu3.android.ui.DiagnosticsNavigationIntegrationTest org.secu3.android.debug.test/androidx.test.runner.AndroidJUnitRunner
+```

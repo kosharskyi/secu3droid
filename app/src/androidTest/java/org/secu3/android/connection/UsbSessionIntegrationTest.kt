@@ -50,6 +50,48 @@ import org.secu3.android.utils.UserPrefs
 
 /** Exercises the production coordinator with an isolated serial port, never a physical ECU. */
 class UsbSessionIntegrationTest {
+    @Test fun firmwareStateReplaysCurrentUsbFirmwareAndClearsOnSessionReplacement() = runBlocking {
+        val fixture = Fixture()
+        try {
+            assertNull(fixture.manager.firmwareInfo.value)
+            fixture.attach(74)
+            fixture.confirmFirmware()
+            val firstFirmware = fixture.manager.fwInfo
+            assertNotNull(firstFirmware)
+            assertSame(firstFirmware, fixture.manager.firmwareInfo.first())
+
+            assertTrue(fixture.manager.onUsbDeviceDetached(74))
+            assertNull(fixture.manager.firmwareInfo.value)
+            assertNull(fixture.manager.fwInfo)
+
+            fixture.attach(75)
+            assertNull(fixture.manager.firmwareInfo.first())
+            fixture.confirmFirmware()
+            assertNotNull(fixture.manager.firmwareInfo.value)
+            assertSame(fixture.manager.fwInfo, fixture.manager.firmwareInfo.value)
+            assertTrue(firstFirmware !== fixture.manager.firmwareInfo.value)
+        } finally {
+            fixture.close()
+        }
+    }
+
+    @Test fun firmwareStateClearsWhenBluetoothSessionStops() = runBlocking {
+        val fixture = Fixture()
+        try {
+            fixture.selectBluetoothSessionForTest()
+            fixture.await { fixture.btPackets.subscriptionCount.value > 0 }
+            fixture.btPackets.emit(firmwarePacket())
+            fixture.await { fixture.manager.firmwareInfo.value != null }
+            assertSame(fixture.manager.fwInfo, fixture.manager.firmwareInfo.first())
+
+            assertTrue(fixture.manager.stopConnection())
+            assertNull(fixture.manager.firmwareInfo.value)
+            assertNull(fixture.manager.fwInfo)
+        } finally {
+            fixture.close()
+        }
+    }
+
     @Test fun requestSubscribesBeforeSendingAndReceivesImmediateFirmwareReply() = runBlocking {
         val fixture = Fixture()
         try {
@@ -970,6 +1012,8 @@ class UsbSessionIntegrationTest {
         @Suppress("UNCHECKED_CAST")
         val attemptFailures: MutableSharedFlow<Long> = usb.javaClass.getDeclaredField("_attemptFailures").apply { isAccessible = true }.get(usb) as MutableSharedFlow<Long>
         val btStates: MutableSharedFlow<ConnectionState> = connectionField("mConnectionStateFlow").get(bt) as MutableSharedFlow<ConnectionState>
+        @Suppress("UNCHECKED_CAST")
+        val btPackets: MutableSharedFlow<RawPacket> = connectionField("mReceivedPacketFlow").get(bt) as MutableSharedFlow<RawPacket>
         @Suppress("UNCHECKED_CAST")
         private val btEvents: MutableSharedFlow<BluetoothConnectionEvent> = bt.javaClass.getDeclaredField("_sessionEvents").apply { isAccessible = true }.get(bt) as MutableSharedFlow<BluetoothConnectionEvent>
 

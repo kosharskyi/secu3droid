@@ -25,7 +25,6 @@
 
 package org.secu3.android.ui.firmware
 
-import androidx.lifecycle.LiveData
 import androidx.lifecycle.ViewModel
 import dagger.hilt.android.lifecycle.HiltViewModel
 import org.secu3.android.connection.Secu3ConnectionManager
@@ -35,9 +34,6 @@ import javax.inject.Inject
 @HiltViewModel
 class FirmwareViewModel @Inject constructor(private val secu3ConnectionManager: Secu3ConnectionManager) : ViewModel() {
 
-    val initialFirmware: FirmwareInfoPacket?
-        get() = secu3ConnectionManager.fwInfo
-
-    val firmwareLiveData: LiveData<FirmwareInfoPacket> = secu3ConnectionManager.firmwareLiveData
+    val firmwareInfo = secu3ConnectionManager.firmwareInfo
 
 }

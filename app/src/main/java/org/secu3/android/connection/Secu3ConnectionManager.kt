@@ -26,8 +26,6 @@ package org.secu3.android.connection
 
 import android.bluetooth.BluetoothManager
 import android.hardware.usb.UsbDevice
-import androidx.lifecycle.LiveData
-import androidx.lifecycle.asLiveData
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
@@ -92,8 +90,9 @@ class Secu3ConnectionManager @Inject constructor(
     private var pendingUsbPermission: UsbPermissionRequest? = null
     private var activeUsbAttachment: UsbAttachmentIdentity? = null
     private var appVisible = false
-    @Volatile var fwInfo: FirmwareInfoPacket? = null
-        private set
+    private val _firmwareInfo = MutableStateFlow<FirmwareInfoPacket?>(null)
+    val firmwareInfo: StateFlow<FirmwareInfoPacket?> = _firmwareInfo.asStateFlow()
+    val fwInfo: FirmwareInfoPacket? get() = firmwareInfo.value
 
     val receivedPacketFlow: Flow<InputPacket> = selectedTransport.flatMapLatest { selection ->
         packetsForSelection(selection) {
@@ -103,10 +102,12 @@ class Secu3ConnectionManager @Inject constructor(
                 }
             }
         }.onEach { packet ->
-            if (selection.transport == Transport.BLUETOOTH && packet is FirmwareInfoPacket &&
-                selectedTransport.value == selection && usbSessionFence.generation() == selection.generation
-            ) {
-                fwInfo = packet
+            if (selection.transport == Transport.BLUETOOTH && packet is FirmwareInfoPacket) {
+                synchronized(this@Secu3ConnectionManager) {
+                    if (selectedTransport.value == selection && usbSessionFence.generation() == selection.generation) {
+                        _firmwareInfo.value = packet
+                    }
+                }
             }
         }
     }.shareIn(scope, SharingStarted.WhileSubscribed(5_000), replay = 0)
@@ -140,7 +141,6 @@ class Secu3ConnectionManager @Inject constructor(
             .map { it.second }
     }
 
-    val firmwareLiveData: LiveData<FirmwareInfoPacket> = receivedPacketFlow.filterIsInstance<FirmwareInfoPacket>().asLiveData()
     val isConnectionRunning get() = isUsbRunning || isBtRunning
     val isBtRunning get() = btConnection.isRunning
     val isUsbRunning get() = usbConnection.isRunning
@@ -277,7 +277,7 @@ class Secu3ConnectionManager @Inject constructor(
         activeUsbAttachment = attachmentIdentity(device)
         val attemptGeneration = usbSessionFence.begin(device.deviceId)
         selectedTransport.value = Selection(Transport.NONE, attemptGeneration)
-        fwInfo = null
+        _firmwareInfo.value = null
         publishConnectionState(InProgress)
         btConnection.stopConnection()
         usbConnection.stopConnection()
@@ -326,7 +326,7 @@ class Secu3ConnectionManager @Inject constructor(
                     if (!isCurrentUsbSelection(device.deviceId, selection)) return@launch
                     if (retry) {
                         confirmedUsbAttemptId = null
-                        fwInfo = null
+                        _firmwareInfo.value = null
                         publishConnectionState(InProgress)
                         usbConnection.stopConnection()
                     }
@@ -355,7 +355,7 @@ class Secu3ConnectionManager @Inject constructor(
         confirmedUsbAttemptId = null
         val nextGeneration = usbSessionFence.generation()
         selectedTransport.value = Selection(Transport.NONE, nextGeneration)
-        fwInfo = null
+        _firmwareInfo.value = null
         usbConnection.stopConnection()
         secuLogger.stopLogging()
         connectionServiceController.stop()
@@ -373,7 +373,7 @@ class Secu3ConnectionManager @Inject constructor(
         val nextGeneration = usbSessionFence.advance()
         selectedTransport.value = Selection(Transport.BLUETOOTH, nextGeneration)
         activeUsbAttachment = null
-        fwInfo = null
+        _firmwareInfo.value = null
         publishConnectionState(InProgress)
         usbConnection.stopConnection()
         btConnection.stopConnection()
@@ -461,7 +461,7 @@ class Secu3ConnectionManager @Inject constructor(
         val nextGeneration = usbSessionFence.advance()
         selectedTransport.value = Selection(Transport.NONE, nextGeneration)
         activeUsbAttachment = null
-        fwInfo = null
+        _firmwareInfo.value = null
         usbConnection.stopConnection()
         btConnection.stopConnection()
         secuLogger.stopLogging()
@@ -506,7 +506,7 @@ class Secu3ConnectionManager @Inject constructor(
         if (selectedTransport.value != selection || activeUsbAttemptId != attemptId || !usbConnection.isConnected) return
         val deviceId = activeUsbDeviceIdOrNull ?: return
         if (!usbSessionFence.isCurrent(deviceId, selection.generation)) return
-        fwInfo = packet
+        _firmwareInfo.value = packet
         confirmedUsbAttemptId = attemptId
         usbAttemptSignals?.trySend(UsbAttemptSignal.FIRMWARE_CONFIRMED)
         publishConnectionState(Connected)
@@ -523,7 +523,7 @@ class Secu3ConnectionManager @Inject constructor(
         if (selection.transport != Transport.BLUETOOTH || selection.generation != event.generation || !event.retriesExhausted) return
         // Invalidate transport selection before stop cleanup can publish its asynchronous Disconnected event.
         selectedTransport.value = Selection(Transport.NONE, usbSessionFence.advance())
-        fwInfo = null
+        _firmwareInfo.value = null
         publishConnectionState(event.state)
         btConnection.stopConnection()
         secuLogger.stopLogging()

@@ -158,6 +158,7 @@ internal fun RootNavigation(activity: MainActivity) {
                         extras = graphEntry.defaultViewModelCreationExtras,
                     )
                     val state by viewModel.uiState.collectAsStateWithLifecycle()
+                    val firmware by viewModel.firmwareInfo.collectAsStateWithLifecycle()
                     LaunchedEffect(state.controlsEnabled, entry) {
                         if (!state.controlsEnabled && navController.currentBackStackEntry === entry) navController.popBackStack()
                     }
@@ -165,7 +166,7 @@ internal fun RootNavigation(activity: MainActivity) {
                         DiagnosticAdditionalDialogContent(
                             initialEnableBlDe = state.enableBlDe,
                             initialEnableTachO = state.enableTachO,
-                            showTachO = viewModel.firmwareInfo?.isSecu3T != true,
+                            showTachO = firmware?.isSecu3T != true,
                             onOk = { blDe, tachO ->
                                 if (state.controlsEnabled && navController.currentBackStackEntry === entry) {
                                     viewModel.applyAdditionalOptions(blDe, tachO)

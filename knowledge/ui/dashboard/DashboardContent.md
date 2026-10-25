@@ -24,4 +24,4 @@ The dashboard receives load and MAP as separate packet values, while firmware ca
 
 ## Dashboard packet values expire when the connection drops
 
-Clear the last sampled dashboard packet as soon as the connection state leaves `Connected`. Each newly connected period starts with no packet and only displays a value after a sensor packet arrives; this keeps retained LiveData from showing the previous connection's reading while preserving the UI's existing null and zero-value behavior.
+Clear the last sampled dashboard packet as soon as the connection state leaves `Connected`. Dashboard packets stay a non-replaying flow: each route collection starts without a packet and shows a value only after a fresh sensor packet arrives. Keep the Compose initial value null so stopping and resuming the route cannot reveal the previous session's reading; preserve existing null and zero-value behavior.

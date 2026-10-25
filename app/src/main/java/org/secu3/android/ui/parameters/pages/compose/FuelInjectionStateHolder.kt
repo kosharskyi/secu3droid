@@ -29,8 +29,6 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
 import org.secu3.android.R
 import org.secu3.android.models.packets.out.params.InjctrParPacket
-import org.secu3.android.ui.parameters.pages.injection.validInjectorConfigurations
-import org.secu3.android.ui.parameters.pages.injection.validInjectorPulses
 
 data class FuelInjectionEditSpec(
     val title: Int, val value: Float, val step: Float, val min: Float,
@@ -115,8 +113,8 @@ class FuelInjectionStateHolder(
 
     fun changeConfig(bank: Int, config: Int) {
         val p = packet ?: return
-        if (bank !in 0..1 || config !in validInjectorConfigurations(p.ckpsEngineCyl)) return
-        val choices = validInjectorPulses(config, p.ckpsEngineCyl)
+        if (bank !in 0..1 || config !in p.validConfigurations()) return
+        val choices = p.validPulses(config)
         if (choices.isEmpty()) return
         val oldPulses = if (bank == 0) p.config0Pulses else p.config1Pulses
         val nextPulses = oldPulses.takeIf(choices::contains) ?: choices.first()
@@ -129,7 +127,7 @@ class FuelInjectionStateHolder(
         val p = packet ?: return
         if (bank !in 0..1) return
         val config = if (bank == 0) p.config0 else p.config1
-        if (pulses !in validInjectorPulses(config, p.ckpsEngineCyl)) return
+        if (pulses !in p.validPulses(config)) return
         if (bank == 0) p.config0Pulses = pulses else p.config1Pulses = pulses
         publishAndSend(p)
     }

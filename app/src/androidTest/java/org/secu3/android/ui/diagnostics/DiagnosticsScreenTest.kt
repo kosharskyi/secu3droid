@@ -44,7 +44,6 @@ import androidx.compose.ui.test.performTextClearance
 import androidx.compose.ui.test.performTextInput
 import androidx.compose.ui.test.swipeLeft
 import androidx.compose.ui.test.swipeRight
-import androidx.lifecycle.MutableLiveData
 import org.junit.Assert.assertEquals
 import org.junit.Rule
 import org.junit.Test
@@ -85,11 +84,11 @@ class DiagnosticsScreenTest {
     fun toolbarCallbacksAndAccessibleConnectionStatusAreReactive() {
         var backCalls = 0
         var settingsCalls = 0
-        val connection = MutableLiveData<ConnectionState>(Connected)
-        val data = fixture(connection = connection)
+        val connection = mutableStateOf<ConnectionState>(Connected)
+        val data = fixture()
         compose.setContent {
             SecuComposeTheme {
-                Render(data, onNavigateUp = { backCalls++ }, onAdditionalSettings = { settingsCalls++ })
+                Render(data.copy(connection = connection.value), onNavigateUp = { backCalls++ }, onAdditionalSettings = { settingsCalls++ })
             }
         }
         compose.waitForIdle()
@@ -127,8 +126,8 @@ class DiagnosticsScreenTest {
             SecuComposeTheme {
                 DiagnosticsScreen(
                     isSecu3T = false,
-                    connectionStatus = MutableLiveData<ConnectionState>(Connected),
-                    inputLiveData = MutableLiveData<DiagInputPacket?>(DiagInputPacket()),
+                    connectionStatus = Connected,
+                    diagnosticInput = DiagInputPacket(),
                     state = state.value,
                     onNavigateUp = {},
                     onAdditionalSettings = {},
@@ -158,8 +157,8 @@ class DiagnosticsScreenTest {
             SecuComposeTheme {
                 DiagnosticsScreen(
                     isSecu3T = false,
-                    connectionStatus = MutableLiveData<ConnectionState>(Connected),
-                    inputLiveData = MutableLiveData<DiagInputPacket?>(DiagInputPacket()),
+                    connectionStatus = Connected,
+                    diagnosticInput = DiagInputPacket(),
                     state = state.value,
                     onNavigateUp = {},
                     onAdditionalSettings = {},
@@ -190,8 +189,8 @@ class DiagnosticsScreenTest {
                 DiagnosticsScreen(
                     isSecu3T = firmware.value,
                     hasTpic8101 = hasTpic8101.value,
-                    connectionStatus = MutableLiveData<ConnectionState>(Connected),
-                    inputLiveData = MutableLiveData(packet),
+                    connectionStatus = Connected,
+                    diagnosticInput = packet,
                     state = DiagnosticsViewModel.UiState(controlsEnabled = true),
                     onNavigateUp = {},
                     onAdditionalSettings = {},
@@ -251,16 +250,16 @@ class DiagnosticsScreenTest {
 
     @Test
     fun losingReadinessClosesNumericEditorAndDisablesControls() {
-        val connection = MutableLiveData<ConnectionState>(Connected)
-        val input = MutableLiveData<DiagInputPacket?>(DiagInputPacket(voltage = 12.5f))
+        val connection = mutableStateOf<ConnectionState>(Connected)
+        val input = mutableStateOf<DiagInputPacket?>(DiagInputPacket(voltage = 12.5f))
         val state = mutableStateOf(DiagnosticsViewModel.UiState(controlsEnabled = true))
         var edits = 0
         compose.setContent {
             SecuComposeTheme {
                 DiagnosticsScreen(
                     isSecu3T = false,
-                    connectionStatus = connection,
-                    inputLiveData = input,
+                    connectionStatus = connection.value,
+                    diagnosticInput = input.value,
                     state = state.value,
                     onNavigateUp = {},
                     onAdditionalSettings = {},
@@ -287,15 +286,15 @@ class DiagnosticsScreenTest {
 
     @Test
     fun losingReadinessDismissesChannelChoicesAndMasksRetainedInput() {
-        val connection = MutableLiveData<ConnectionState>(Connected)
-        val input = MutableLiveData<DiagInputPacket?>(DiagInputPacket(voltage = 12.5f))
+        val connection = mutableStateOf<ConnectionState>(Connected)
+        val input = mutableStateOf<DiagInputPacket?>(DiagInputPacket(voltage = 12.5f))
         val state = mutableStateOf(DiagnosticsViewModel.UiState(controlsEnabled = true))
         compose.setContent {
             SecuComposeTheme {
                 DiagnosticsScreen(
                     isSecu3T = false,
-                    connectionStatus = connection,
-                    inputLiveData = input,
+                    connectionStatus = connection.value,
+                    diagnosticInput = input.value,
                     state = state.value,
                     onNavigateUp = {},
                     onAdditionalSettings = {},
@@ -318,8 +317,8 @@ class DiagnosticsScreenTest {
     }
 
     private data class Fixture(
-        val connection: MutableLiveData<ConnectionState>,
-        val input: MutableLiveData<DiagInputPacket>,
+        val connection: ConnectionState,
+        val input: DiagInputPacket?,
         val state: DiagnosticsViewModel.UiState,
         val onOutput: (DiagnosticOutput, Boolean) -> Unit,
     )
@@ -334,7 +333,7 @@ class DiagnosticsScreenTest {
     ) = DiagnosticsScreen(
         isSecu3T = false,
         connectionStatus = data.connection,
-        inputLiveData = data.input,
+        diagnosticInput = data.input,
         state = data.state,
         onNavigateUp = onNavigateUp,
         onAdditionalSettings = onAdditionalSettings,
@@ -345,12 +344,12 @@ class DiagnosticsScreenTest {
     )
 
     private fun fixture(
-        connection: MutableLiveData<ConnectionState> = MutableLiveData(Connected),
+        connection: ConnectionState = Connected,
         packet: DiagOutputPacket = DiagOutputPacket(),
         onOutput: (DiagnosticOutput, Boolean) -> Unit = { _, _ -> },
     ) = Fixture(
         connection = connection,
-        input = MutableLiveData(DiagInputPacket()),
+        input = DiagInputPacket(),
         state = DiagnosticsViewModel.UiState(
             outputBits = packet.out,
             channel = packet.chan,

@@ -59,8 +59,6 @@ import org.secu3.android.ui.parameters.dialogs.ParameterChoiceList
 import org.secu3.android.ui.parameters.dialogs.ParameterChoiceOption
 import org.secu3.android.ui.parameters.compose.ParameterTextValueRow
 import kotlin.math.roundToInt
-import org.secu3.android.ui.parameters.pages.injection.validInjectorConfigurations
-import org.secu3.android.ui.parameters.pages.injection.validInjectorPulses
 
 data class FuelBankValues(
     val flow: Float, val config: Int, val pulses: Int, val timing: Int, val cranking: Int,
@@ -83,11 +81,11 @@ fun fuelInjectionValues(packet: InjctrParPacket): FuelInjectionValues = FuelInje
     packet.engineDisp,
     (0..1).map { bank ->
         val cfg = if (bank == 0) packet.config0 else packet.config1
-        val pulseList = validInjectorPulses(cfg, packet.ckpsEngineCyl)
+        val pulseList = packet.validPulses(cfg)
         FuelBankValues(packet.flowRate[bank], cfg, if (bank == 0) packet.config0Pulses else packet.config1Pulses,
             packet.timing[bank].roundToInt(), packet.timingCrk[bank].roundToInt(), if (bank == 0) packet.useTimingMap else packet.useTimingMapG,
             if (bank == 0) packet.angleSpec0 else packet.angleSpec1, if (bank == 0) packet.minPw0 else packet.minPw1,
-            packet.injMaxPw[bank], validInjectorConfigurations(packet.ckpsEngineCyl), pulseList)
+            packet.injMaxPw[bank], packet.validConfigurations(), pulseList)
     }, packet.fffConst.roundToInt(), packet.useAdditionalCorrections, packet.useAirDensity, packet.useDifferentialPressure,
     packet.switchSecondInjRow, packet.fullSequentialAfterStart, packet.injPwDecSpeed, packet.injPwIncSpeed,
 )

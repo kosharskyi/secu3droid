@@ -53,8 +53,6 @@ import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.stringArrayResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
-import androidx.lifecycle.LiveData
-import androidx.compose.runtime.livedata.observeAsState
 import kotlinx.coroutines.launch
 import org.secu3.android.R
 import org.secu3.android.connection.ConnectionState
@@ -69,8 +67,8 @@ import org.secu3.android.ui.parameters.dialogs.NumericEditDialog
 @Composable
 internal fun DiagnosticsScreen(
     isSecu3T: Boolean?,
-    connectionStatus: LiveData<ConnectionState>,
-    inputLiveData: LiveData<DiagInputPacket?>,
+    connectionStatus: ConnectionState?,
+    diagnosticInput: DiagInputPacket?,
     state: DiagnosticsViewModel.UiState,
     onNavigateUp: () -> Unit,
     onAdditionalSettings: () -> Unit,
@@ -81,9 +79,8 @@ internal fun DiagnosticsScreen(
     initialPage: Int = 0,
     hasTpic8101: Boolean? = null,
 ) {
-    val status by connectionStatus.observeAsState()
-    val observedInput by inputLiveData.observeAsState()
-    val input = observedInput.takeIf { state.controlsEnabled && status == Connected }
+    val status = connectionStatus
+    val input = diagnosticInput.takeIf { state.controlsEnabled && status == Connected }
     val controlsEnabled = state.controlsEnabled && status == Connected && input != null
     val enableBlDe = state.enableBlDe
     val enableTachO = state.enableTachO

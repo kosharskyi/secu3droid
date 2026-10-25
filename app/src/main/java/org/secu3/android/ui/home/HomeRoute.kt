@@ -38,6 +38,7 @@ internal fun HomeRoute(
 ) {
     val vm: HomeViewModel = viewModel(viewModelStoreOwner = entry, factory = activity.defaultViewModelProviderFactory, extras = entry.defaultViewModelCreationExtras)
     val ui by vm.uiState.collectAsStateWithLifecycle()
+    val firmware by vm.firmwareInfo.collectAsStateWithLifecycle()
     val context = LocalContext.current
     val lifecycle = LocalLifecycleOwner.current.lifecycle
     var resumed by remember { mutableStateOf(lifecycle.currentState.isAtLeast(Lifecycle.State.RESUMED)) }
@@ -90,7 +91,7 @@ internal fun HomeRoute(
             onPermissionRationaleCancelled = { vm.cancelReleasePermission(); vm.dismissDialog() },
             onDiagnosticsConfirmed = {
                 vm.dismissDialog()
-                if (vm.firmware?.isDiagnosticsEnabled == true) onDiagnostics()
+                if (firmware?.isDiagnosticsEnabled == true) onDiagnostics()
                 else activity.uiMessageQueue.publish(R.string.diagnostics_not_supported_title, UiMessageDuration.LONG, scope = HOME_ROUTE)
             },
             onDownloadRelease = {

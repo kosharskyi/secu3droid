@@ -241,7 +241,7 @@ data class InjctrParPacket(
             !flowRate[configNum].isFinite() || !cylDisp.isFinite() || cylDisp <= 0f) return
 
         val cfg = if (configNum == 0) config0 else config1
-        if (InjConfig.entries.none { it.id == cfg } || pulses !in validPulses(cfg, ckpsEngineCyl)) return
+        if (InjConfig.entries.none { it.id == cfg } || pulses !in validPulses(cfg)) return
 
         val bnkNum = bnkNum(cfg).toFloat()
         val injNum = injNum(cfg).toFloat()
@@ -253,16 +253,27 @@ data class InjctrParPacket(
             (bnkNum.toDouble() / (injNum.toDouble() * pulses.toDouble())) / 64.0).toInt()).coerceAtMost(103200 * 4)
     }
 
-    private fun validPulses(config: Int, cylinders: Int): List<Int> = when (config) {
-        InjConfig.THROTTLEBODY.id, InjConfig.SIMULTANEOUS.id -> when (cylinders) {
+    fun validConfigurations(): List<Int> = buildList {
+        add(InjConfig.THROTTLEBODY.id)
+        add(InjConfig.SIMULTANEOUS.id)
+        if (ckpsEngineCyl !in listOf(1, 2, 3, 5)) add(InjConfig.TWO_BANK_ALTERN.id)
+        if (ckpsEngineCyl !in listOf(1, 3, 5)) {
+            add(InjConfig.SEMISEQUENTIAL.id)
+            add(InjConfig.SEMISEQSEPAR.id)
+        }
+        add(InjConfig.FULLSEQUENTIAL.id)
+    }
+
+    fun validPulses(config: Int): List<Int> = when (config) {
+        InjConfig.THROTTLEBODY.id, InjConfig.SIMULTANEOUS.id -> when (ckpsEngineCyl) {
             1 -> listOf(1); 2 -> listOf(1, 2); 3 -> listOf(1, 3); 4 -> listOf(1, 2, 4)
             5 -> listOf(1, 5); 6 -> listOf(1, 2, 3, 6); 8 -> listOf(1, 2, 4, 8); else -> emptyList()
         }
-        InjConfig.TWO_BANK_ALTERN.id -> when (cylinders) { 4 -> listOf(2, 4); 6 -> listOf(2, 6); 8 -> listOf(2, 4, 8); else -> emptyList() }
-        InjConfig.SEMISEQUENTIAL.id, InjConfig.SEMISEQSEPAR.id -> when (cylinders) {
+        InjConfig.TWO_BANK_ALTERN.id -> when (ckpsEngineCyl) { 4 -> listOf(2, 4); 6 -> listOf(2, 6); 8 -> listOf(2, 4, 8); else -> emptyList() }
+        InjConfig.SEMISEQUENTIAL.id, InjConfig.SEMISEQSEPAR.id -> when (ckpsEngineCyl) {
             2 -> listOf(1, 2); 4 -> listOf(2, 4); 6 -> listOf(3, 6); 8 -> listOf(4, 8); else -> emptyList()
         }
-        InjConfig.FULLSEQUENTIAL.id -> listOf(cylinders).filter { it > 0 }
+        InjConfig.FULLSEQUENTIAL.id -> listOf(ckpsEngineCyl).filter { it > 0 }
         else -> emptyList()
     }
 

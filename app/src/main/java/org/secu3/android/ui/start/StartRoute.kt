@@ -21,7 +21,6 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.setValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
-import androidx.compose.runtime.livedata.observeAsState
 import androidx.compose.ui.platform.LocalContext
 import androidx.core.content.ContextCompat
 import androidx.core.content.IntentCompat
@@ -55,7 +54,7 @@ internal fun StartRoute(entry: NavBackStackEntry, activity: MainActivity, onConn
     val context = LocalContext.current
     val lifecycle = LocalLifecycleOwner.current.lifecycle
     val state by vm.uiState.collectAsStateWithLifecycle()
-    val connected by vm.isConnectedLiveData.observeAsState()
+    val connected by vm.connectionState.collectAsStateWithLifecycle(initialValue = null)
     var isResumed by remember { mutableStateOf(lifecycle.currentState.isAtLeast(Lifecycle.State.RESUMED)) }
     val continueBluetooth = remember { mutableStateOf<(() -> Unit)?>(null) }
     val btPermissionLauncher = rememberLauncherForActivityResult(ActivityResultContracts.RequestMultiplePermissions()) { grants ->

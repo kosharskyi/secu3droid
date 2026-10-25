@@ -6,6 +6,10 @@ When the connection is not `Connected`, render the connection status instead of 
 
 `ParameterPageSpec` keeps each tab's resource title beside its `ParameterPage` ID. Pass the ID to the session and retain the resource only for rendering, test tags, and pager keys.
 
+## Conditional pages and capabilities follow the current firmware packet
+
+The route collects nullable firmware state from the connection manager and rebuilds page specs and capability presentation when it changes. Clearing firmware on session loss must not leave a prior ECU family's pages or capabilities visible; null retains the existing permissive unknown-firmware rules.
+
 ## Pager motion does not end the settled page's read session
 
 Keep the active page activation while a horizontal pager gesture is in progress, including boundary overscroll or a canceled swipe. A vertical child scroll, overscroll, or nested fling can also toggle pager `isScrollInProgress` without changing its settled page, so scrolling is not an activation boundary on either axis. Manual-command predicates still become false during movement. Once the pager settles, activate only if its settled index changed; connection loss, lifecycle pause, and connection-session replacement still invalidate the session immediately.

@@ -5,14 +5,12 @@ import androidx.lifecycle.viewModelScope
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
-import androidx.lifecycle.asFlow
 import kotlinx.coroutines.launch
 import org.secu3.android.BuildConfig
 import org.secu3.android.connection.Connected
 import org.secu3.android.connection.Disconnected
 import org.secu3.android.connection.InProgress
 import org.secu3.android.connection.Secu3ConnectionManager
-import org.secu3.android.models.packets.input.FirmwareInfoPacket
 import org.secu3.android.network.models.GitHubRelease
 import org.secu3.android.utils.AppPrefs
 import org.secu3.android.utils.UserPrefs
@@ -32,7 +30,7 @@ class HomeViewModel @Inject constructor(
     private var release: GitHubRelease? = null
     private val _returnToStart = MutableStateFlow(false)
     val returnToStart = _returnToStart.asStateFlow()
-    val firmware: FirmwareInfoPacket? get() = manager.fwInfo
+    val firmwareInfo = manager.firmwareInfo
     val isConnectionRunning get() = manager.isConnectionRunning
     val isUsbSessionLocked get() = manager.isUsbSessionLocked
 
@@ -43,7 +41,7 @@ class HomeViewModel @Inject constructor(
                 _uiState.value = _uiState.value.copy(
                     connectionStatus = mapped,
                     usbSessionLocked = manager.isUsbSessionLocked,
-                    firmwareAvailable = status == Connected && (_uiState.value.firmwareAvailable || manager.fwInfo != null),
+                    firmwareAvailable = status == Connected && manager.firmwareInfo.value != null,
                 )
                 if (status == Disconnected) {
                     if (exitFlow.onDisconnected()) _returnToStart.value = true
@@ -61,10 +59,10 @@ class HomeViewModel @Inject constructor(
             }
         }
         viewModelScope.launch {
-            manager.firmwareLiveData.asFlow().collect {
-                if (_uiState.value.connectionStatus == HomeConnectionStatus.CONNECTED && manager.isConnected) {
-                    _uiState.value = _uiState.value.copy(firmwareAvailable = true)
-                }
+            manager.firmwareInfo.collect { firmware ->
+                _uiState.value = _uiState.value.copy(
+                    firmwareAvailable = firmware != null && _uiState.value.connectionStatus == HomeConnectionStatus.CONNECTED && manager.isConnected,
+                )
             }
         }
     }

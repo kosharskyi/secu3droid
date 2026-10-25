@@ -21,7 +21,6 @@ import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.*
-import androidx.compose.runtime.livedata.observeAsState
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.layout.onSizeChanged
@@ -36,6 +35,7 @@ import androidx.lifecycle.LifecycleEventObserver
 import androidx.lifecycle.repeatOnLifecycle
 import androidx.navigation.NavBackStackEntry
 import androidx.lifecycle.viewmodel.compose.viewModel
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.launch
 import org.secu3.android.R
@@ -59,8 +59,9 @@ internal fun ParametersRoute(
         factory = activity.defaultViewModelProviderFactory,
         extras = entry.defaultViewModelCreationExtras,
     )
-    val pages = remember(viewModel) { parameterPageSpecs(viewModel.fwInfoPacket) }
-    val connectionState by viewModel.connectionStatusLiveData.observeAsState()
+    val firmware by viewModel.firmwareInfo.collectAsStateWithLifecycle()
+    val pages = remember(firmware) { parameterPageSpecs(firmware) }
+    val connectionState by viewModel.connectionState.collectAsStateWithLifecycle(initialValue = null)
     val lifecycle = LocalLifecycleOwner.current.lifecycle
 
     DisposableEffect(lifecycle, viewModel) {
@@ -95,7 +96,7 @@ internal fun ParametersRoute(
             onPageSettled = { index -> pages.getOrNull(index)?.page?.let(viewModel::activatePage) },
             onPageUnsettled = viewModel::deactivatePage,
             pageContent = { index, active, isActiveNow -> pages.getOrNull(index)?.let { page ->
-                ParameterPageContent(page.titleRes, viewModel, active, isActiveNow, viewModel::openParameterEditor)
+                ParameterPageContent(page.titleRes, viewModel, firmware, active, isActiveNow, viewModel::openParameterEditor)
             } },
         )
     }

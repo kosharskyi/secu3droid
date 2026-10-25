@@ -4,6 +4,8 @@ import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.flow.emptyFlow
+import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.withTimeout
@@ -18,6 +20,11 @@ import org.secu3.android.models.packets.input.SensorsPacket
 
 class DashboardPacketFlowTest {
     @Test
+    fun freshCollectionWhileConnectedStartsWithoutPacket() = runBlocking {
+        assertEquals(null, dashboardPacketFlow(flowOf(Connected), emptyFlow()).first())
+    }
+
+    @Test
     fun clearsLastPacketOnDisconnectAndWaitsForFreshPacketAfterReconnect() = runBlocking {
         val connection = MutableStateFlow<ConnectionState>(Connected)
         val packets = MutableSharedFlow<InputPacket>()
@@ -25,6 +32,7 @@ class DashboardPacketFlowTest {
         val collector = launch { dashboardPacketFlow(connection, packets).collect(updates::send) }
 
         withTimeout(1_000) { packets.subscriptionCount.first { it > 0 } }
+        assertEquals(null, withTimeout(1_000) { updates.receive() })
         val oldPacket = SensorsPacket(rpm = 3000)
         packets.emit(oldPacket)
         assertEquals(3000f, withTimeout(1_000) { updates.receive() }?.rpm)
@@ -35,6 +43,7 @@ class DashboardPacketFlowTest {
 
         connection.value = Connected
         withTimeout(1_000) { packets.subscriptionCount.first { it > 0 } }
+        assertEquals(null, withTimeout(1_000) { updates.receive() })
         assertEquals(null, withTimeoutOrNull(350) { updates.receive() })
         val freshPacket = SensorsPacket(rpm = 900)
         packets.emit(freshPacket)

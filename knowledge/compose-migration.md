@@ -1,7 +1,8 @@
 # Compose screen and navigation conventions
 
 - Use Navigation Compose for new or migrated destinations. Define routes in a Compose `NavHost`; screen composables report navigation intent through callbacks instead of owning a `NavController`.
-- The ViewModel owns screen state and user actions. Render immutable state and report user intent through callbacks. During the migration, observing LiveData with `observeAsState()` is acceptable; use lifecycle-aware Flow collection for new Flow state.
+- The ViewModel owns screen state and user actions. Render immutable state and report user intent through callbacks. Collect Flow-backed screen state with `collectAsStateWithLifecycle()` at the route boundary.
+- App Compose state uses Flow and StateFlow rather than LiveData. Keep direct LiveData dependencies and Compose LiveData adapters out of the app; some AndroidX lifecycle artifacts may still arrive transitively through other libraries, so inspect the dependency graph before adding exclusions.
 - Recomposition must remain safe to repeat: do not send ECU commands, navigate, show dialogs, or perform other one-shot effects from the body of a composable. Handle those actions from explicit callbacks or lifecycle-aware effect APIs when needed.
 - `MainActivity` is a `ComponentActivity` whose content is the single root Compose `NavHost`. Keep platform result launchers in routes and register/unregister platform receivers with the route lifecycle.
 - Give each route its own Hilt ViewModel scoped to its `NavBackStackEntry`. Use a navigation graph entry when a group of child destinations must share one session ViewModel.

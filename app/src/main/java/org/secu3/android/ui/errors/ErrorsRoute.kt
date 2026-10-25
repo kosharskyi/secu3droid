@@ -16,7 +16,6 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
-import androidx.compose.runtime.livedata.observeAsState
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.LifecycleEventObserver
@@ -42,7 +41,7 @@ internal fun ErrorsRoute(
         factory = activity.defaultViewModelProviderFactory,
         extras = entry.defaultViewModelCreationExtras,
     )
-    val connection by remember(viewModel) { viewModel.connectionStatusLiveData }.observeAsState()
+    val connection by viewModel.connectionState.collectAsStateWithLifecycle(initialValue = null)
     val snapshot by viewModel.errorsSnapshot.collectAsStateWithLifecycle()
     val lifecycle = LocalLifecycleOwner.current.lifecycle
     var confirmClear by remember(viewModel) { mutableStateOf(viewModel.showClearConfirmation.value) }

@@ -34,6 +34,10 @@ Opening a USB serial port is not proof that an ECU is present. The manager allow
 
 Parameter, sensor and diagnostics consumers invalidate their local data on each non-connected event. Keep the manager's replaying event stream rather than a `StateFlow`: a fast detach/reconnect can otherwise hide the loss and leave old ECU data active. Firmware confirmation and detach also share one coordinator lock so a parsed reply cannot reopen a session after its detach has completed.
 
+## Firmware state belongs to the selected session and replays only its current value
+
+`firmwareInfo` is the manager's canonical nullable state; `fwInfo` reads that same value. Clear it on replacement, retry, detach and stop, and publish confirmed USB firmware before `Connected`. Bluetooth firmware publication shares the manager lock with session cleanup so a parsed old reply cannot repopulate the state after stop. A late observer receives the current firmware or null, never a separate cache from an earlier session. Connection-loss events remain separate and non-conflated.
+
 ## A request subscribes before sending and remains bound to its starting session
 
 The shared packet stream follows transport selection changes; the per-request stream captures the selection when collected and must never accept a replacement session's reply. Both use the same parsing, generation filtering and USB-attempt confirmation path. Invoke the request callback from the raw transport's `onSubscription`, before parsing operators: a command can produce an immediate reply. With no selected transport, wait for cancellation without sending. Bluetooth firmware caching remains owned by the shared stream.

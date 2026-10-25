@@ -35,13 +35,12 @@ import org.junit.Rule
 import org.junit.Test
 import org.secu3.android.models.packets.out.params.InjctrParPacket
 import org.secu3.android.ui.compose.SecuComposeTheme
-import org.secu3.android.ui.parameters.pages.injection.validInjectorPulses
 
 class FuelInjectionScreenTest {
     @get:Rule val compose = createComposeRule()
     private val labels = InjctrParPacket.InjConfig.entries.associate { it.id to it.name }
     private fun bank(config: Int = 1, pulses: Int = 2, map: Boolean = false) = FuelBankValues(
-        300f, config, pulses, 10, 5, map, 0, 1f, 10f, listOf(0, 1, 2, 3, 5, 4), validInjectorPulses(config, 4))
+        300f, config, pulses, 10, 5, map, 0, 1f, 10f, listOf(0, 1, 2, 3, 5, 4), InjctrParPacket(ckpsEngineCyl = 4).validPulses(config))
     private fun data() = FuelInjectionValues(2f, listOf(bank(), bank(4, 4, true)), 120, true, false, true, false, true, 0.2f, 0.3f)
     private fun show(state: FuelInjectionUiState, configs: (Int, Int) -> Unit = { _, _ -> }, pulses: (Int, Int) -> Unit = { _, _ -> }) {
         compose.setContent { SecuComposeTheme { FuelInjectionScreen(state, labels, {}, configs, pulses, { _, _ -> }, { _, _ -> }) } }

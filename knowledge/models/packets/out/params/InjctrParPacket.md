@@ -13,3 +13,7 @@ Main and cranking timing for both banks decode as signed 16-bit words divided by
 ## Cylinder count is RX metadata and a TX stub
 
 The received cylinder count remains available to derive injector-bank values, but outgoing parameter packets send zero in that byte. Keep the property for receive/UI calculations and emit the zero stub on TX.
+
+## Editor pulse choices and derived-constant validation share the same rules
+
+Use the packet's cylinder metadata with `validConfigurations()` and `validPulses(config)` for editor choices. The derived-constant calculation uses that same pulse validation; duplicating these rules in a ViewModel can allow a displayed choice that the packet rejects. Unsupported configuration codes remain stored, while their pulse choices are empty.

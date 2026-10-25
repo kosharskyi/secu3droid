@@ -25,15 +25,14 @@
 
 package org.secu3.android.ui.dashboard
 
-import androidx.lifecycle.LiveData
 import androidx.lifecycle.ViewModel
-import androidx.lifecycle.asLiveData
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.filter
 import kotlinx.coroutines.flow.flatMapLatest
 import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.flow.map
+import kotlinx.coroutines.flow.onStart
 import kotlinx.coroutines.flow.sample
 import org.secu3.android.connection.BluetoothDeviceAddress
 import org.secu3.android.connection.Connected
@@ -49,12 +48,12 @@ import javax.inject.Inject
 class DashboardViewModel @Inject constructor(private val secu3ConnectionManager: Secu3ConnectionManager,
                                              private val mPrefs: UserPrefs) : ViewModel() {
 
-    val packetLiveData: LiveData<DashboardViewData?> = dashboardPacketFlow(
+    val packetFlow = dashboardPacketFlow(
         secu3ConnectionManager.connectionStateFlow,
         secu3ConnectionManager.receivedPacketFlow,
-    ).asLiveData()
+    )
 
-    val statusLiveData: LiveData<ConnectionState> = secu3ConnectionManager.connectionStateFlow.asLiveData()
+    val connectionState = secu3ConnectionManager.connectionStateFlow
 
     val isKeepScreenAliveActive: Boolean
         get() = mPrefs.isKeepScreenAliveActive
@@ -80,6 +79,7 @@ internal fun dashboardPacketFlow(
         packets
             .filter { it is SensorsPacket }
             .sample(300)
-            .map { DashboardViewData.inflate(it as SensorsPacket) }
+            .map<InputPacket, DashboardViewData?> { DashboardViewData.inflate(it as SensorsPacket) }
+            .onStart { emit(null) }
     }
 }

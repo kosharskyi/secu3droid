@@ -29,22 +29,20 @@ import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue
 import org.junit.Test
 import org.secu3.android.models.packets.out.params.InjctrParPacket
-import org.secu3.android.ui.parameters.pages.injection.validInjectorConfigurations
-import org.secu3.android.ui.parameters.pages.injection.validInjectorPulses
 
 class FuelInjectionMappingTest {
     @Test fun configurationIdsAreFilteredByCylinderCount() {
-        assertEquals(listOf(0, 1, 4), validInjectorConfigurations(1))
-        assertEquals(listOf(0, 1, 2, 3, 5, 4), validInjectorConfigurations(4))
-        assertEquals(listOf(0, 1, 2, 3, 5, 4), validInjectorConfigurations(6))
+        assertEquals(listOf(0, 1, 4), InjctrParPacket(ckpsEngineCyl = 1).validConfigurations())
+        assertEquals(listOf(0, 1, 2, 3, 5, 4), InjctrParPacket(ckpsEngineCyl = 4).validConfigurations())
+        assertEquals(listOf(0, 1, 2, 3, 5, 4), InjctrParPacket(ckpsEngineCyl = 6).validConfigurations())
     }
 
     @Test fun squirtsMatchDesktopRulesAndUnknownConfigHasNoChoices() {
-        assertEquals(listOf(1, 2, 4), validInjectorPulses(InjctrParPacket.InjConfig.SIMULTANEOUS.id, 4))
-        assertEquals(listOf(2, 4), validInjectorPulses(InjctrParPacket.InjConfig.TWO_BANK_ALTERN.id, 4))
-        assertEquals(listOf(3, 6), validInjectorPulses(InjctrParPacket.InjConfig.SEMISEQUENTIAL.id, 6))
-        assertEquals(listOf(8), validInjectorPulses(InjctrParPacket.InjConfig.FULLSEQUENTIAL.id, 8))
-        assertTrue(validInjectorPulses(9, 4).isEmpty())
+        assertEquals(listOf(1, 2, 4), InjctrParPacket(ckpsEngineCyl = 4).validPulses(InjctrParPacket.InjConfig.SIMULTANEOUS.id))
+        assertEquals(listOf(2, 4), InjctrParPacket(ckpsEngineCyl = 4).validPulses(InjctrParPacket.InjConfig.TWO_BANK_ALTERN.id))
+        assertEquals(listOf(3, 6), InjctrParPacket(ckpsEngineCyl = 6).validPulses(InjctrParPacket.InjConfig.SEMISEQUENTIAL.id))
+        assertEquals(listOf(8), InjctrParPacket(ckpsEngineCyl = 8).validPulses(InjctrParPacket.InjConfig.FULLSEQUENTIAL.id))
+        assertTrue(InjctrParPacket(ckpsEngineCyl = 4).validPulses(9).isEmpty())
     }
 
     @Test fun configAndFlagMutationsPreserveOtherPackedBitsAndUnknownConfig() {

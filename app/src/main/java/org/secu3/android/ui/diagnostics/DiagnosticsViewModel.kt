@@ -24,8 +24,6 @@
  */
 package org.secu3.android.ui.diagnostics
 
-import androidx.lifecycle.LiveData
-import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import dagger.hilt.android.lifecycle.HiltViewModel
@@ -34,12 +32,10 @@ import kotlinx.coroutines.launch
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
-import org.secu3.android.connection.ConnectionState
 import org.secu3.android.connection.Connected
 import org.secu3.android.connection.Secu3ConnectionManager
 import org.secu3.android.models.packets.input.DiagInputPacket
 import org.secu3.android.models.packets.out.DiagOutputPacket
-import org.secu3.android.models.packets.input.FirmwareInfoPacket
 import org.secu3.android.models.packets.base.InputPacket
 import org.secu3.android.models.packets.out.OpCompNc
 import org.secu3.android.utils.Task
@@ -54,14 +50,10 @@ class DiagnosticsViewModel @Inject constructor(private val secu3ConnectionManage
     private val session = DiagnosticsSessionController(secu3ConnectionManager::sendNewTask)
     private var connectionAvailable = false
     private var hasFreshInput = false
-    private val _diagInput = MutableLiveData<DiagInputPacket?>(null)
-    private val _connectionStatus = MutableLiveData<ConnectionState>()
+    private val _diagInput = MutableStateFlow<DiagInputPacket?>(null)
+    val connectionState = secu3ConnectionManager.connectionStateFlow
 
-    val firmwareInfo: FirmwareInfoPacket?
-        get() = secu3ConnectionManager.fwInfo
-
-    val firmwareLiveData: LiveData<FirmwareInfoPacket>
-        get() = secu3ConnectionManager.firmwareLiveData
+    val firmwareInfo = secu3ConnectionManager.firmwareInfo
 
     data class UiState(
         val outputBits: Int = 0,
@@ -84,7 +76,6 @@ class DiagnosticsViewModel @Inject constructor(private val secu3ConnectionManage
         session.start()
         viewModelScope.launch {
             secu3ConnectionManager.connectionStateFlow.collectLatest { state ->
-                _connectionStatus.value = state
                 if (state == Connected && secu3ConnectionManager.isConnected) {
                     secu3ConnectionManager.receivedPacketFlow(onSubscribed = {
                         if (secu3ConnectionManager.isConnected) {
@@ -102,11 +93,7 @@ class DiagnosticsViewModel @Inject constructor(private val secu3ConnectionManage
         }
     }
 
-    val connectionStatusLiveData: LiveData<ConnectionState>
-        get() = _connectionStatus
-
-    val diagInputLiveData: LiveData<DiagInputPacket?>
-        get() = _diagInput
+    val diagInput: StateFlow<DiagInputPacket?> = _diagInput.asStateFlow()
 
     private fun onReceivedPacket(packet: InputPacket) {
         if (!connectionAvailable || !secu3ConnectionManager.isConnected) {

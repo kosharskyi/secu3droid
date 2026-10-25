@@ -8,9 +8,7 @@ import android.hardware.usb.UsbDevice
 import android.hardware.usb.UsbManager
 import android.location.LocationManager
 import android.os.Build
-import androidx.lifecycle.LiveData
 import androidx.lifecycle.ViewModel
-import androidx.lifecycle.asLiveData
 import androidx.lifecycle.viewModelScope
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.delay
@@ -18,7 +16,6 @@ import kotlinx.coroutines.Job
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
-import org.secu3.android.connection.ConnectionState
 import org.secu3.android.connection.BluetoothDeviceAddress
 import org.secu3.android.connection.Secu3ConnectionManager
 import org.secu3.android.utils.UserPrefs
@@ -35,7 +32,7 @@ class StartScreenViewModel @Inject constructor(
 ) : ViewModel() {
     private val _uiState = MutableStateFlow(StartUiState())
     val uiState = _uiState.asStateFlow()
-    val isConnectedLiveData: LiveData<ConnectionState> = connectionManager.connectionStateFlow.asLiveData()
+    val connectionState = connectionManager.connectionStateFlow
     val isUsbSessionLocked get() = connectionManager.isUsbSessionLocked
     private val bluetoothAdapter: BluetoothAdapter? get() = runCatching { bluetoothManager.adapter }.getOrNull()
     private var usbDevice: UsbDevice? = null

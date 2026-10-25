@@ -138,7 +138,6 @@ dependencies {
 
     implementation(libs.lifecycle.viewmodel)
     implementation(libs.lifecycle.runtime)
-    implementation(libs.lifecycle.livedata.ktx)
     implementation(libs.lifecycle.service)
 
     implementation(libs.navigation.compose)
@@ -160,7 +159,7 @@ dependencies {
     debugImplementation(libs.compose.ui.test.manifest)
     implementation(libs.compose.runtime)
     implementation(libs.compose.viewmodel)
-    implementation(libs.compose.livedata)
+    implementation(libs.compose.lifecycle.runtime)
     implementation(libs.compose.foundation)
 
     implementation(libs.androidx.activity.compose)
