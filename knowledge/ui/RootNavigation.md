@@ -12,6 +12,8 @@ Attach and detach broadcasts remain observed while any route or dialog is visibl
 
 Bluetooth retry exhaustion, USB detach, and background/service stops publish the ended session generation through the connection manager. The Activity returns to Start for each new marker and retains it until navigation can run; clearing the marker on a new attempt or manual stop must also remove only the queued terminal Start route. A stale replay must not redirect the user after that generation was already handled.
 
+USB lock is a computed manager snapshot. Read it when mapping connection-state events; confirmation is set or cleared before those events, so Home and Start do not need a separate lock stream.
+
 ## Foreground connection service policy belongs to the connection manager
 
 The Activity forwards actual foreground/unlocked visibility and observed connection states; it does not inspect transport type or start/stop the service. `Secu3ConnectionManager` applies the shared background-preference rules, while `ConnectionServiceController` issues Android service commands. Home navigation and Activity recreation must not independently stop the service; an accepted user disconnect goes through the manager so its transport and logger cleanup stays coordinated.

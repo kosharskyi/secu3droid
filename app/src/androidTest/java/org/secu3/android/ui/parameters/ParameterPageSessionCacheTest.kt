@@ -247,7 +247,7 @@ class ParameterPageSessionCacheTest {
             withTimeout(3_000) { subscribed.await() }
             synchronized(barriers) { barriers.remove(generation) }
             attemptPackets.emit(UsbAttemptPacket(1L, firmwarePacket()))
-            withTimeout(3_000) { while (!manager.isUsbConnected || !manager.usbSessionLocked.value) delay(10) }
+            withTimeout(3_000) { while (!manager.isUsbConnected || !manager.isUsbSessionLocked) delay(10) }
             return FakeUsbTransport(manager, connection, portField, attemptPackets, requests, writes, nextWriteBarrier, prefs, originalWakeLockPreference)
         } catch (failure: Throwable) {
             try {

@@ -36,7 +36,7 @@ class StartScreenViewModel @Inject constructor(
     private val _uiState = MutableStateFlow(StartUiState())
     val uiState = _uiState.asStateFlow()
     val isConnectedLiveData: LiveData<ConnectionState> = connectionManager.connectionStateFlow.asLiveData()
-    val isUsbSessionLocked get() = connectionManager.usbSessionLocked.value
+    val isUsbSessionLocked get() = connectionManager.isUsbSessionLocked
     private val bluetoothAdapter: BluetoothAdapter? get() = runCatching { bluetoothManager.adapter }.getOrNull()
     private var usbDevice: UsbDevice? = null
     private val devices = mutableListOf<BluetoothDevice>()

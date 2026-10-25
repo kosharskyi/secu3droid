@@ -100,7 +100,7 @@ class MainActivity : ComponentActivity() {
                 if (lifecycle.currentState.isAtLeast(Lifecycle.State.RESUMED) && isDeviceUnlocked()) {
                     viewModel.connectionManager.onConnectionStateObservedInForeground(state)
                 }
-                if (state == Connected && viewModel.connectionManager.usbSessionLocked.value) {
+                if (state == Connected && viewModel.connectionManager.isUsbSessionLocked) {
                     openUsbHome()
                 } else if ((state is ConnectionFailed || state is ConnectionLost) && viewModel.connectionManager.activeUsbDeviceIdOrNull != null) {
                     val failureMessage = if (state is ConnectionLost) R.string.usb_connection_lost else R.string.usb_connection_failed

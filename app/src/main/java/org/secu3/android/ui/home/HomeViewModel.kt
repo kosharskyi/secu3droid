@@ -34,7 +34,7 @@ class HomeViewModel @Inject constructor(
     val returnToStart = _returnToStart.asStateFlow()
     val firmware: FirmwareInfoPacket? get() = manager.fwInfo
     val isConnectionRunning get() = manager.isConnectionRunning
-    val isUsbSessionLocked get() = manager.usbSessionLocked.value
+    val isUsbSessionLocked get() = manager.isUsbSessionLocked
 
     init {
         viewModelScope.launch {
@@ -42,7 +42,7 @@ class HomeViewModel @Inject constructor(
                 val mapped = when (status) { Connected -> HomeConnectionStatus.CONNECTED; InProgress -> HomeConnectionStatus.CONNECTING; else -> HomeConnectionStatus.DISCONNECTED }
                 _uiState.value = _uiState.value.copy(
                     connectionStatus = mapped,
-                    usbSessionLocked = manager.usbSessionLocked.value,
+                    usbSessionLocked = manager.isUsbSessionLocked,
                     firmwareAvailable = status == Connected && (_uiState.value.firmwareAvailable || manager.fwInfo != null),
                 )
                 if (status == Disconnected) {

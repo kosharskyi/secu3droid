@@ -80,7 +80,7 @@ class Secu3ConnectionManager @Inject constructor(
     private var usbRetryJob: Job? = null
     private var nextUsbAttemptId = 0L
     @Volatile private var activeUsbAttemptId: Long? = null
-    @Volatile private var confirmedUsbHomeAttemptId: Long? = null
+    @Volatile private var confirmedUsbAttemptId: Long? = null
     private var usbAttemptSignals: Channel<UsbAttemptSignal>? = null
     private val _connectionState = MutableSharedFlow<ConnectionState>(replay = 1, extraBufferCapacity = 32).also { it.tryEmit(Disconnected) }
     @Volatile var currentConnectionState: ConnectionState = Disconnected
@@ -88,8 +88,6 @@ class Secu3ConnectionManager @Inject constructor(
     val connectionStateFlow: SharedFlow<ConnectionState> = _connectionState.asSharedFlow()
     private val _terminalSessionGeneration = MutableStateFlow<Long?>(null)
     val terminalSessionGeneration: StateFlow<Long?> = _terminalSessionGeneration.asStateFlow()
-    private val _usbSessionLocked = MutableStateFlow(false)
-    val usbSessionLocked: StateFlow<Boolean> = _usbSessionLocked.asStateFlow()
     private val usbSessionFence = UsbSessionFence()
     private val promptedUsbAttachments = mutableSetOf<UsbAttachmentIdentity>()
     private var nextUsbPermissionToken = 0L
@@ -154,12 +152,20 @@ class Secu3ConnectionManager @Inject constructor(
     val isBtRunning get() = btConnection.isRunning
     val isUsbRunning get() = usbConnection.isRunning
     val isConnected get() = isUsbConnected || (selectedTransport.value.transport == Transport.BLUETOOTH && btConnection.isConnected)
-    val isUsbConnected get() = selectedTransport.value.let { selection -> selection.transport == Transport.USB && activeUsbDeviceIdOrNull?.let { usbSessionFence.isConfirmed(it, selection.generation) } == true && usbConnection.isConnected }
+    val isUsbSessionLocked: Boolean
+        get() {
+            val confirmedAttemptId = confirmedUsbAttemptId ?: return false
+            val selection = selectedTransport.value
+            val deviceId = activeUsbDeviceIdOrNull ?: return false
+            return selection.transport == Transport.USB && confirmedAttemptId == activeUsbAttemptId &&
+                usbSessionFence.isCurrent(deviceId, selection.generation)
+        }
+    val isUsbConnected get() = isUsbSessionLocked && usbConnection.isConnected
     val isBtConnected get() = selectedTransport.value.transport == Transport.BLUETOOTH && btConnection.isConnected
     val activeUsbDeviceIdOrNull: Int? get() = usbSessionFence.activeDeviceId().takeIf { selectedTransport.value.transport == Transport.USB }
     val activeUsbSessionGeneration: Long? get() = selectedTransport.value.takeIf { it.transport == Transport.USB }?.generation
-    val activeUsbHomeGeneration: Long? get() = confirmedUsbHomeAttemptId.takeIf {
-        it != null && selectedTransport.value.transport == Transport.USB && _usbSessionLocked.value
+    val activeUsbHomeGeneration: Long? get() = confirmedUsbAttemptId.takeIf {
+        it != null && isUsbSessionLocked
     }
 
     /** Admit or restart USB retries for the currently attached supported ECU. */
@@ -283,12 +289,12 @@ class Secu3ConnectionManager @Inject constructor(
     }
 
     @Synchronized private fun startUsbConnectionInternal(device: UsbDevice) {
+        confirmedUsbAttemptId = null
         _terminalSessionGeneration.value = null
         cancelUsbRetrySession()
         activeUsbAttachment = attachmentIdentity(device)
         val attemptGeneration = usbSessionFence.begin(device.deviceId)
         selectedTransport.value = Selection(Transport.NONE, attemptGeneration)
-        _usbSessionLocked.value = false
         fwInfo = null
         publishConnectionState(InProgress)
         btConnection.stopConnection()
@@ -310,7 +316,7 @@ class Secu3ConnectionManager @Inject constructor(
                     signals = Channel(Channel.UNLIMITED)
                     activeUsbAttemptId = attemptId
                     usbAttemptSignals = signals
-                    confirmedUsbHomeAttemptId = null
+                    confirmedUsbAttemptId = null
                 }
                 usbConnection.startConnection(device, attemptId)
 
@@ -335,10 +341,7 @@ class Secu3ConnectionManager @Inject constructor(
                 synchronized(this@Secu3ConnectionManager) {
                     if (!isCurrentUsbSelection(device.deviceId, selection)) return@launch
                     if (retry) {
-                        val wasConfirmed = usbSessionFence.isConfirmed(device.deviceId, selection.generation)
-                        if (wasConfirmed) usbSessionFence.invalidateConfirmation(device.deviceId, selection.generation)
-                        _usbSessionLocked.value = false
-                        confirmedUsbHomeAttemptId = null
+                        confirmedUsbAttemptId = null
                         fwInfo = null
                         publishConnectionState(InProgress)
                         usbConnection.stopConnection()
@@ -365,10 +368,9 @@ class Secu3ConnectionManager @Inject constructor(
         if (selectedTransport.value.transport != Transport.USB || !usbSessionFence.detach(deviceId)) return false
         cancelUsbRetrySession()
         activeUsbAttachment = null
-        confirmedUsbHomeAttemptId = null
+        confirmedUsbAttemptId = null
         val nextGeneration = usbSessionFence.generation()
         selectedTransport.value = Selection(Transport.NONE, nextGeneration)
-        _usbSessionLocked.value = false
         fwInfo = null
         usbConnection.stopConnection()
         secuLogger.stopLogging()
@@ -381,13 +383,12 @@ class Secu3ConnectionManager @Inject constructor(
     @Synchronized fun startBtConnection() {
         if (BluetoothDeviceAddress.normalize(mPrefs.bluetoothDeviceAddress) == null || runCatching { !bluetoothManager.adapter.isEnabled }.getOrDefault(true)) return
         if (selectedTransport.value.transport == Transport.USB && activeUsbAttachment != null) return
+        confirmedUsbAttemptId = null
         _terminalSessionGeneration.value = null
         cancelUsbRetrySession()
         val nextGeneration = usbSessionFence.advance()
         selectedTransport.value = Selection(Transport.BLUETOOTH, nextGeneration)
         activeUsbAttachment = null
-        confirmedUsbHomeAttemptId = null
-        _usbSessionLocked.value = false
         fwInfo = null
         publishConnectionState(InProgress)
         usbConnection.stopConnection()
@@ -397,7 +398,7 @@ class Secu3ConnectionManager @Inject constructor(
     }
 
     @Synchronized fun stopConnection(): Boolean {
-        if (_usbSessionLocked.value || activeUsbDeviceIdOrNull?.let { usbSessionFence.isConfirmed(it, selectedTransport.value.generation) } == true) return false
+        if (isUsbSessionLocked) return false
         return stopConnectionInternal(stopService = true)
     }
 
@@ -474,13 +475,12 @@ class Secu3ConnectionManager @Inject constructor(
         val endingSelection = selectedTransport.value
         _terminalSessionGeneration.value = null
         pendingUsbPermission = null
+        confirmedUsbAttemptId = null
         cancelUsbRetrySession()
         val nextGeneration = usbSessionFence.advance()
         selectedTransport.value = Selection(Transport.NONE, nextGeneration)
         activeUsbAttachment = null
-        confirmedUsbHomeAttemptId = null
         fwInfo = null
-        _usbSessionLocked.value = false
         usbConnection.stopConnection()
         btConnection.stopConnection()
         secuLogger.stopLogging()
@@ -524,10 +524,9 @@ class Secu3ConnectionManager @Inject constructor(
     @Synchronized private fun confirmUsbFirmware(selection: Selection, attemptId: Long, packet: FirmwareInfoPacket) {
         if (selectedTransport.value != selection || activeUsbAttemptId != attemptId || !usbConnection.isConnected) return
         val deviceId = activeUsbDeviceIdOrNull ?: return
-        if (!usbSessionFence.confirm(deviceId, selection.generation)) return
+        if (!usbSessionFence.isCurrent(deviceId, selection.generation)) return
         fwInfo = packet
-        _usbSessionLocked.value = true
-        confirmedUsbHomeAttemptId = attemptId
+        confirmedUsbAttemptId = attemptId
         usbAttemptSignals?.trySend(UsbAttemptSignal.FirmwareConfirmed)
         publishConnectionState(Connected)
         reconcileConnectionService()

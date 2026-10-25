@@ -28,6 +28,8 @@ An individual USB open or handshake failure invalidates firmware confirmation bu
 
 Opening a USB serial port is not proof that an ECU is present. The manager allows protocol consumers and Home navigation only after a valid firmware-info packet for the current attempt. A bounded handshake timeout or transport error schedules another attempt rather than ending the attachment session. Detach is matched by device identity and invalidates the session generation; stale events, packets and open timeouts from earlier attempts cannot confirm a replacement attempt. Bluetooth retains its configured retry behavior.
 
+`confirmedUsbAttemptId` is the only stored firmware confirmation; the fence tracks device/session identity only. Clear confirmation before starting a replacement or publishing retry progress, and set it before publishing `Connected`. The computed USB lock remains set if the endpoint closes before retry cleanup; only the connected/send gate additionally requires an open endpoint.
+
 ## Connection loss events must not be conflated
 
 Parameter, sensor and diagnostics consumers invalidate their local data on each non-connected event. Keep the manager's replaying event stream rather than a `StateFlow`: a fast detach/reconnect can otherwise hide the loss and leave old ECU data active. Firmware confirmation and detach also share one coordinator lock so a parsed reply cannot reopen a session after its detach has completed.

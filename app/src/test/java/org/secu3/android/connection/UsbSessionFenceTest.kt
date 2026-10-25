@@ -26,18 +26,4 @@ class UsbSessionFenceTest {
         assertFalse(fence.isCurrent(deviceId = 60, generation = oldGeneration))
         assertTrue(fence.isCurrent(deviceId = 60, generation = newGeneration))
     }
-
-    @Test fun protocolGateOpensOnlyAfterCurrentFirmwareHandshake() {
-        val fence = UsbSessionFence()
-        val generation = fence.begin(deviceId = 72)
-
-        assertFalse(fence.isConfirmed(deviceId = 72, generation = generation))
-        assertFalse(fence.confirm(deviceId = 73, generation = generation))
-        assertFalse(fence.isConfirmed(deviceId = 72, generation = generation))
-        assertTrue(fence.confirm(deviceId = 72, generation = generation))
-        assertTrue(fence.isConfirmed(deviceId = 72, generation = generation))
-
-        fence.invalidateConfirmation(deviceId = 72, generation = generation)
-        assertFalse(fence.isConfirmed(deviceId = 72, generation = generation))
-    }
 }
