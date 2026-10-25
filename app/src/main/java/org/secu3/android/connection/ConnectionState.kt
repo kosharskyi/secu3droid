@@ -44,18 +44,4 @@ data class BluetoothConnectionEvent(
     val generation: Long,
     val state: ConnectionState,
     val retriesExhausted: Boolean = false,
-    val sessionWasConnected: Boolean = false,
-)
-
-enum class ConnectionTransport { USB, BLUETOOTH }
-
-enum class ConnectionTerminationReason { RetriesExhausted, UsbDetached, Backgrounded, ServiceStopped }
-
-/** Latest terminal result remains available across Activity recreation until a new attempt begins. */
-data class ConnectionSessionTermination(
-    val generation: Long,
-    val transport: ConnectionTransport,
-    val reason: ConnectionTerminationReason,
-    val finalState: ConnectionState,
-    val sessionWasConnected: Boolean,
 )

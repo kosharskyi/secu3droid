@@ -55,7 +55,6 @@ class BtConnection @Inject constructor(
 
     private class Session(val generation: Long, val address: String) {
         var attempts = 0
-        @Volatile var wasConnected = false
     }
 
     private val bluetoothAdapter: BluetoothAdapter? = bluetoothManager.adapter
@@ -114,11 +113,8 @@ class BtConnection @Inject constructor(
             try {
                 val socket = connectToDevice(session)
                 currentCoroutineContext().ensureActive()
-                val markedConnected = synchronized(sessionLock) {
-                    if (activeSession !== session || !isRunning) false
-                    else { session.wasConnected = true; true }
-                }
-                if (!markedConnected) return@launch
+                val sessionStillActive = synchronized(sessionLock) { activeSession === session && isRunning }
+                if (!sessionStillActive) return@launch
 
                 Log.i(this.javaClass.simpleName, "Connected to device")
                 startReadingData(socket, session)
@@ -244,7 +240,6 @@ class BtConnection @Inject constructor(
                 generation = session.generation,
                 state = state,
                 retriesExhausted = retriesExhausted,
-                sessionWasConnected = session.wasConnected,
             ),
         )
     }

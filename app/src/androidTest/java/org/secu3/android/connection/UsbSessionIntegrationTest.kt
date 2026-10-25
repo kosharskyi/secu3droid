@@ -30,7 +30,6 @@ import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertNotNull
 import org.junit.Assert.assertNull
-import org.junit.Assert.assertSame
 import org.junit.Assert.assertTrue
 import org.junit.Test
 import org.secu3.android.models.RawPacket
@@ -98,15 +97,12 @@ class UsbSessionIntegrationTest {
             val endedGeneration = fixture.manager.activeUsbSessionGeneration
 
             assertEquals(UsbConnectionRequest.Ignored, fixture.manager.synchronizeUsbAttachments(Result.success(emptyList())))
-            val terminalSession = fixture.manager.terminalSession.value
-            assertEquals(ConnectionTerminationReason.UsbDetached, terminalSession?.reason)
-            assertEquals(ConnectionTransport.USB, terminalSession?.transport)
-            assertEquals(endedGeneration, terminalSession?.generation)
+            assertEquals(endedGeneration, fixture.manager.terminalSessionGeneration.value)
             assertEquals(Disconnected, fixture.manager.currentConnectionState)
             assertFalse(fixture.manager.usbSessionLocked.value)
 
             assertEquals(UsbConnectionRequest.Ignored, fixture.manager.synchronizeUsbAttachments(Result.success(emptyList())))
-            assertSame(terminalSession, fixture.manager.terminalSession.value)
+            assertEquals(endedGeneration, fixture.manager.terminalSessionGeneration.value)
         } finally {
             fixture.close()
         }
@@ -125,16 +121,7 @@ class UsbSessionIntegrationTest {
             assertTrue(fixture.manager.onUsbDeviceDetached(80))
 
             assertEquals(1, fixture.serviceContext.stoppedServices.size)
-            assertEquals(
-                ConnectionSessionTermination(
-                    generation = generation,
-                    transport = ConnectionTransport.USB,
-                    reason = ConnectionTerminationReason.UsbDetached,
-                    finalState = Disconnected,
-                    sessionWasConnected = true,
-                ),
-                fixture.manager.terminalSession.value,
-            )
+            assertEquals(generation, fixture.manager.terminalSessionGeneration.value)
         } finally {
             fixture.close()
         }
@@ -159,17 +146,12 @@ class UsbSessionIntegrationTest {
             fixture.startBluetoothTransport(generation)
 
             fixture.await { fixture.manager.currentConnectionState is ConnectionFailed }
-            assertNull(fixture.manager.terminalSession.value)
+            assertNull(fixture.manager.terminalSessionGeneration.value)
             assertEquals(generation, fixture.serviceController.ownerConnectionGeneration())
             assertTrue(fixture.serviceContext.stoppedServices.isEmpty())
 
-            fixture.await(timeoutMillis = 10_000) { fixture.manager.terminalSession.value != null }
-            val termination = fixture.manager.terminalSession.value
-            assertEquals(ConnectionTerminationReason.RetriesExhausted, termination?.reason)
-            assertEquals(generation, termination?.generation)
-            assertEquals(ConnectionTransport.BLUETOOTH, termination?.transport)
-            assertFalse(termination?.sessionWasConnected ?: true)
-            assertEquals(ConnectionTimeout, termination?.finalState)
+            fixture.await(timeoutMillis = 10_000) { fixture.manager.terminalSessionGeneration.value != null }
+            assertEquals(generation, fixture.manager.terminalSessionGeneration.value)
             assertEquals(ConnectionTimeout, fixture.manager.currentConnectionState)
             assertNull(fixture.serviceController.ownerToken())
             assertEquals(1, fixture.serviceContext.stoppedServices.size)
@@ -195,14 +177,14 @@ class UsbSessionIntegrationTest {
             fixture.emitBluetoothEvent(BluetoothConnectionEvent(generation, ConnectionFailed(IOException("temporary"))))
             fixture.await { fixture.manager.currentConnectionState is ConnectionFailed }
 
-            assertNull(fixture.manager.terminalSession.value)
+            assertNull(fixture.manager.terminalSessionGeneration.value)
             assertEquals(owner, fixture.serviceController.ownerToken())
             assertTrue(fixture.serviceContext.stoppedServices.isEmpty())
 
-            fixture.emitBluetoothEvent(BluetoothConnectionEvent(generation, Connected, sessionWasConnected = true))
+            fixture.emitBluetoothEvent(BluetoothConnectionEvent(generation, Connected))
             fixture.await { fixture.manager.currentConnectionState == Connected }
 
-            assertNull(fixture.manager.terminalSession.value)
+            assertNull(fixture.manager.terminalSessionGeneration.value)
             assertEquals(owner, fixture.serviceController.ownerToken())
             assertEquals(Connected, fixture.manager.currentConnectionState)
             assertTrue(fixture.serviceContext.stoppedServices.isEmpty())
@@ -224,12 +206,11 @@ class UsbSessionIntegrationTest {
                     generation = oldGeneration,
                     state = ConnectionTimeout,
                     retriesExhausted = true,
-                    sessionWasConnected = true,
                 ),
             )
             delay(100)
 
-            assertNull(fixture.manager.terminalSession.value)
+            assertNull(fixture.manager.terminalSessionGeneration.value)
             assertEquals(newGeneration, fixture.serviceController.ownerConnectionGeneration())
             assertTrue(fixture.manager.isConnectionRunning)
             assertTrue(fixture.serviceContext.stoppedServices.isEmpty())
@@ -238,23 +219,22 @@ class UsbSessionIntegrationTest {
         }
     }
 
-    @Test fun exhaustedRetriesAfterAnEstablishedBluetoothSessionRemainClassifiedAsLoss() = runBlocking {
+    @Test fun bluetoothRetryExhaustionAfterDisconnectPublishesEndedGeneration() = runBlocking {
         val fixture = Fixture()
         try {
             fixture.prefs.isWakeLockEnabled = true
             val generation = fixture.selectBluetoothSessionForTest()
             fixture.serviceController.ensureStarted(generation)
-            fixture.emitBluetoothEvent(BluetoothConnectionEvent(generation, Connected, sessionWasConnected = true))
+            fixture.emitBluetoothEvent(BluetoothConnectionEvent(generation, Connected))
             fixture.await { fixture.manager.currentConnectionState == Connected }
-            fixture.emitBluetoothEvent(BluetoothConnectionEvent(generation, Disconnected, sessionWasConnected = true))
+            fixture.emitBluetoothEvent(BluetoothConnectionEvent(generation, Disconnected))
             fixture.emitBluetoothEvent(
-                BluetoothConnectionEvent(generation, ConnectionTimeout, retriesExhausted = true, sessionWasConnected = true),
+                BluetoothConnectionEvent(generation, ConnectionTimeout, retriesExhausted = true),
             )
-            fixture.await { fixture.manager.terminalSession.value != null }
+            fixture.await { fixture.manager.terminalSessionGeneration.value != null }
 
-            val termination = fixture.manager.terminalSession.value
-            assertEquals(ConnectionTerminationReason.RetriesExhausted, termination?.reason)
-            assertTrue(termination?.sessionWasConnected == true)
+            assertEquals(generation, fixture.manager.terminalSessionGeneration.value)
+            assertEquals(ConnectionTimeout, fixture.manager.currentConnectionState)
             assertNull(fixture.serviceController.ownerToken())
             assertEquals(1, fixture.serviceContext.stoppedServices.size)
         } finally {
@@ -273,7 +253,7 @@ class UsbSessionIntegrationTest {
             val result = fixture.manager.synchronizeUsbAttachments(Result.success(listOf(device)))
 
             assertEquals(UsbConnectionRequest.Ignored, result)
-            assertNull(fixture.manager.terminalSession.value)
+            assertNull(fixture.manager.terminalSessionGeneration.value)
             assertEquals(Connected, fixture.manager.currentConnectionState)
             assertTrue(fixture.manager.usbSessionLocked.value)
         } finally {
@@ -295,8 +275,7 @@ class UsbSessionIntegrationTest {
             val result = fixture.manager.synchronizeUsbAttachments(Result.success(listOf(replacement)))
 
             assertEquals(UsbConnectionRequest.Ignored, result)
-            assertEquals(ConnectionTerminationReason.UsbDetached, fixture.manager.terminalSession.value?.reason)
-            assertEquals(oldGeneration, fixture.manager.terminalSession.value?.generation)
+            assertEquals(oldGeneration, fixture.manager.terminalSessionGeneration.value)
             assertEquals(Disconnected, fixture.manager.currentConnectionState)
             assertFalse(fixture.manager.usbSessionLocked.value)
             assertTrue(fixture.manager.activeUsbSessionGeneration != oldGeneration)
@@ -354,7 +333,7 @@ class UsbSessionIntegrationTest {
             assertEquals(2, fixture.serviceContext.startedServices.size)
             assertTrue(fixture.manager.isUsbConnected)
             assertTrue(fixture.manager.usbSessionLocked.value)
-            assertNull(fixture.manager.terminalSession.value)
+            assertNull(fixture.manager.terminalSessionGeneration.value)
         } finally {
             fixture.close()
         }
@@ -368,6 +347,7 @@ class UsbSessionIntegrationTest {
             fixture.confirmFirmware()
             fixture.manager.onAppForegrounded()
             val owner = fixture.serviceController.ownerToken()!!
+            val generation = fixture.manager.activeUsbSessionGeneration
             fixture.logger.startLogging()
             fixture.await { fixture.logger.isLoggerStarted }
             fixture.manager.onAppBackgrounded()
@@ -380,9 +360,7 @@ class UsbSessionIntegrationTest {
             assertFalse(fixture.manager.usbSessionLocked.value)
             assertFalse(fixture.logger.isLoggerStarted)
             assertNull(fixture.serviceController.ownerToken())
-            assertEquals(ConnectionTerminationReason.ServiceStopped, fixture.manager.terminalSession.value?.reason)
-            assertEquals(ConnectionTransport.USB, fixture.manager.terminalSession.value?.transport)
-            assertTrue(fixture.manager.terminalSession.value?.sessionWasConnected == true)
+            assertEquals(generation, fixture.manager.terminalSessionGeneration.value)
         } finally {
             fixture.close()
         }
@@ -426,7 +404,7 @@ class UsbSessionIntegrationTest {
         val fixture = Fixture()
         try {
             fixture.manager.onAppForegrounded()
-            fixture.selectBluetoothSessionForTest()
+            val generation = fixture.selectBluetoothSessionForTest()
             fixture.manager.onBackgroundWorkPreferenceChanged(false)
             assertTrue(fixture.serviceContext.startedServices.isEmpty())
             assertTrue(fixture.manager.isConnectionRunning)
@@ -448,7 +426,7 @@ class UsbSessionIntegrationTest {
     @Test fun backgroundPreferenceEndsBtOnlyWhenTheAppActuallyLeavesForeground() {
         val fixture = Fixture()
         try {
-            fixture.selectBluetoothSessionForTest()
+            val generation = fixture.selectBluetoothSessionForTest()
             fixture.manager.onAppForegrounded()
             fixture.manager.onBackgroundWorkPreferenceChanged(false)
 
@@ -456,8 +434,7 @@ class UsbSessionIntegrationTest {
             fixture.manager.onAppBackgrounded()
 
             assertFalse(fixture.manager.isConnectionRunning)
-            assertEquals(ConnectionTerminationReason.Backgrounded, fixture.manager.terminalSession.value?.reason)
-            assertEquals(ConnectionTransport.BLUETOOTH, fixture.manager.terminalSession.value?.transport)
+            assertEquals(generation, fixture.manager.terminalSessionGeneration.value)
         } finally {
             fixture.close()
         }
@@ -477,7 +454,7 @@ class UsbSessionIntegrationTest {
 
             assertTrue(fixture.manager.isConnectionRunning)
             assertEquals(owner, fixture.serviceController.ownerToken())
-            assertNull(fixture.manager.terminalSession.value)
+            assertNull(fixture.manager.terminalSessionGeneration.value)
         } finally {
             fixture.close()
         }
@@ -513,6 +490,7 @@ class UsbSessionIntegrationTest {
             fixture.manager.onAppForegrounded()
             val stoppedOwner = fixture.serviceController.ownerToken()!!
             assertTrue(fixture.manager.stopConnection())
+            assertNull(fixture.manager.terminalSessionGeneration.value)
 
             fixture.selectBluetoothSessionForTest()
             fixture.manager.onAppForegrounded()
@@ -531,7 +509,7 @@ class UsbSessionIntegrationTest {
         val fixture = Fixture()
         try {
             fixture.prefs.isWakeLockEnabled = true
-            fixture.selectBluetoothSessionForTest()
+            val generation = fixture.selectBluetoothSessionForTest()
             fixture.manager.onAppForegrounded()
             val owner = fixture.serviceController.ownerToken()!!
             fixture.manager.onAppBackgrounded()
@@ -540,8 +518,7 @@ class UsbSessionIntegrationTest {
 
             assertFalse(fixture.manager.isConnectionRunning)
             assertNull(fixture.serviceController.ownerToken())
-            assertEquals(ConnectionTerminationReason.ServiceStopped, fixture.manager.terminalSession.value?.reason)
-            assertEquals(ConnectionTransport.BLUETOOTH, fixture.manager.terminalSession.value?.transport)
+            assertEquals(generation, fixture.manager.terminalSessionGeneration.value)
         } finally {
             fixture.close()
         }
@@ -563,7 +540,7 @@ class UsbSessionIntegrationTest {
             assertEquals(generation, fixture.serviceController.ownerConnectionGeneration())
             assertEquals(2, fixture.serviceContext.startedServices.size)
             assertTrue(fixture.manager.isConnectionRunning)
-            assertNull(fixture.manager.terminalSession.value)
+            assertNull(fixture.manager.terminalSessionGeneration.value)
         } finally {
             fixture.close()
         }
@@ -575,13 +552,11 @@ class UsbSessionIntegrationTest {
             fixture.attach(78)
             fixture.confirmFirmware()
 
-            val terminalBefore = fixture.manager.terminalSession.value
             val whileConnected = fixture.manager.synchronizeUsbAttachments(Result.failure(SecurityException("USB list unavailable")))
             assertEquals(UsbConnectionRequest.Ignored, whileConnected)
-            assertSame(terminalBefore, fixture.manager.terminalSession.value)
             assertTrue(fixture.manager.isUsbConnected)
             assertEquals(Connected, fixture.manager.currentConnectionState)
-            assertNull(fixture.manager.terminalSession.value)
+            assertNull(fixture.manager.terminalSessionGeneration.value)
         } finally {
             fixture.close()
         }
@@ -611,19 +586,19 @@ class UsbSessionIntegrationTest {
         }
     }
 
-    @Test fun backgroundPolicyStopBypassesUsbManualStopGuardAndPublishesTypedReason() = runBlocking {
+    @Test fun backgroundPolicyStopBypassesUsbManualStopGuardAndPublishesTerminalGeneration() = runBlocking {
         val fixture = Fixture()
         try {
             fixture.attach(95)
             fixture.confirmFirmware()
+            val generation = fixture.manager.activeUsbSessionGeneration
             assertFalse(fixture.manager.stopConnection())
 
             fixture.manager.onAppBackgrounded()
 
             assertFalse(fixture.manager.isConnectionRunning)
             assertFalse(fixture.manager.usbSessionLocked.value)
-            assertEquals(ConnectionTerminationReason.Backgrounded, fixture.manager.terminalSession.value?.reason)
-            assertEquals(ConnectionTransport.USB, fixture.manager.terminalSession.value?.transport)
+            assertEquals(generation, fixture.manager.terminalSessionGeneration.value)
         } finally {
             fixture.close()
         }

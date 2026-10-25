@@ -4,10 +4,6 @@ import androidx.test.core.app.ActivityScenario
 import androidx.lifecycle.ViewModelProvider
 import androidx.test.platform.app.InstrumentationRegistry
 import kotlinx.coroutines.flow.MutableStateFlow
-import org.secu3.android.connection.ConnectionSessionTermination
-import org.secu3.android.connection.ConnectionTerminationReason
-import org.secu3.android.connection.ConnectionTransport
-import org.secu3.android.connection.ConnectionTimeout
 import org.junit.Assert.assertEquals
 import org.junit.Test
 
@@ -35,14 +31,7 @@ class ActivityNavigationResumeTest {
             }
             scenario.moveToState(androidx.lifecycle.Lifecycle.State.STARTED)
             scenario.onActivity { activity ->
-                val termination = ConnectionSessionTermination(
-                    generation = 700,
-                    transport = ConnectionTransport.BLUETOOTH,
-                    reason = ConnectionTerminationReason.RetriesExhausted,
-                    finalState = ConnectionTimeout,
-                    sessionWasConnected = true,
-                )
-                terminalFlow(activity).value = termination
+                terminalFlow(activity).value = 700L
             }
             InstrumentationRegistry.getInstrumentation().waitForIdleSync()
             scenario.onActivity { activity ->
@@ -64,14 +53,7 @@ class ActivityNavigationResumeTest {
             }
             scenario.moveToState(androidx.lifecycle.Lifecycle.State.STARTED)
             scenario.onActivity { activity ->
-                val termination = ConnectionSessionTermination(
-                    generation = 701,
-                    transport = ConnectionTransport.BLUETOOTH,
-                    reason = ConnectionTerminationReason.RetriesExhausted,
-                    finalState = ConnectionTimeout,
-                    sessionWasConnected = true,
-                )
-                terminalFlow(activity).value = termination
+                terminalFlow(activity).value = 701L
             }
             InstrumentationRegistry.getInstrumentation().waitForIdleSync()
             scenario.onActivity { activity ->
@@ -91,14 +73,7 @@ class ActivityNavigationResumeTest {
         ActivityScenario.launch(MainActivity::class.java).use { scenario ->
             scenario.onActivity { activity ->
                 activity.openSettings()
-                val termination = ConnectionSessionTermination(
-                    generation = 702,
-                    transport = ConnectionTransport.BLUETOOTH,
-                    reason = ConnectionTerminationReason.RetriesExhausted,
-                    finalState = ConnectionTimeout,
-                    sessionWasConnected = true,
-                )
-                terminalFlow(activity).value = termination
+                terminalFlow(activity).value = 702L
             }
             InstrumentationRegistry.getInstrumentation().waitForIdleSync()
             scenario.onActivity { activity ->
@@ -116,9 +91,9 @@ class ActivityNavigationResumeTest {
     }
 
     @Suppress("UNCHECKED_CAST")
-    private fun terminalFlow(activity: MainActivity): MutableStateFlow<ConnectionSessionTermination?> {
+    private fun terminalFlow(activity: MainActivity): MutableStateFlow<Long?> {
         val manager = ViewModelProvider(activity)[MainActivityViewModel::class.java].connectionManager
-        return manager.javaClass.getDeclaredField("_terminalSession").apply { isAccessible = true }
-            .get(manager) as MutableStateFlow<ConnectionSessionTermination?>
+        return manager.javaClass.getDeclaredField("_terminalSessionGeneration").apply { isAccessible = true }
+            .get(manager) as MutableStateFlow<Long?>
     }
 }

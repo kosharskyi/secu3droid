@@ -12,7 +12,7 @@ Probe the selected `UsbDevice` and choose its first serial port before calling `
 
 ## Attachment synchronization never treats an unavailable USB snapshot as empty
 
-`UsbConnection.attachedDevicesSnapshot()` distinguishes an available empty list from failure to query Android's device list. `Secu3ConnectionManager.synchronizeUsbAttachments()` returns `Ignored` without changing active-session or admission state on snapshot failure; on success it processes a missed active detach before reconciling pending attachment history and returns only the first eligible device's permission/open request. The manager's `terminalSession` stream remains the sole source for detach navigation and terminal-session details.
+`UsbConnection.attachedDevicesSnapshot()` distinguishes an available empty list from failure to query Android's device list. `Secu3ConnectionManager.synchronizeUsbAttachments()` returns `Ignored` without changing active-session or admission state on snapshot failure; on success it processes a missed active detach before reconciling pending attachment history and returns only the first eligible device's permission/open request. The manager's `terminalSessionGeneration` stream remains the sole source for detach navigation.
 
 The manager retains the selected session's full physical attachment identity across transient open and handshake failures; a same-device-ID replacement in a later snapshot still terminates the old session before it can be admitted.
 
@@ -30,11 +30,11 @@ Parameter, sensor and diagnostics consumers invalidate their local data on each 
 
 ## One background preference controls both transports
 
-The persisted `wakelock` key and default are retained, but the preference applies to both USB and Bluetooth. Toggling it off while connected stops only the foreground service; the live transport and logger continue until the app actually stops or the ECU disconnects. If background work is off, the manager ends either transport and logging on a real Activity stop, publishing a typed `Backgrounded` terminal result; configuration recreation does not count as leaving. With the preference on, the service stays owned through connection retries. `ConnectionServiceController` owns Android service calls, while a service owner token remains distinct from the connection generation so late destruction from an old service cannot stop a replacement session.
+The persisted `wakelock` key and default are retained, but the preference applies to both USB and Bluetooth. Toggling it off while connected stops only the foreground service; the live transport and logger continue until the app actually stops or the ECU disconnects. If background work is off, the manager ends either transport and logging on a real Activity stop and publishes that ended session's generation; configuration recreation does not count as leaving. With the preference on, the service stays owned through connection retries. `ConnectionServiceController` owns Android service calls, while a service owner token remains distinct from the connection generation so late destruction from an old service cannot stop a replacement session.
 
 ## Unexpected destruction of the current connection service follows app visibility
 
-The manager validates the destroyed service owner token and session generation before acting. If the app remains visible, it preserves either transport and restores the service only when background work is enabled. If the app is backgrounded, it stops transport and logging and publishes `ServiceStopped` so navigation returns to StartScreen. Confirmed USB does not bypass this service lifecycle policy; returning to the unlocked app admits the still-attached device again.
+The manager validates the destroyed service owner token and session generation before acting. If the app remains visible, it preserves either transport and restores the service only when background work is enabled. If the app is backgrounded, it stops transport and logging and publishes the ended session's generation so navigation returns to StartScreen. Confirmed USB does not bypass this service lifecycle policy; returning to the unlocked app admits the still-attached device again.
 
 ## Connection notification permission is requested only from Settings
 
@@ -46,8 +46,8 @@ Only Activity stop or lock handling marks the app backgrounded; a permission dia
 
 ## Bluetooth retry events belong to one manager generation
 
-`BtConnection` tags every state event with the generation supplied by `Secu3ConnectionManager`. The manager ignores callbacks from replaced Bluetooth attempts, even when the replacement also uses Bluetooth. Transient failures keep the foreground service; only the transport's explicit retry-exhaustion event publishes terminal session state and stops service/logging. The service itself does not infer terminal state from the connection event stream.
+`BtConnection` tags every state event with the generation supplied by `Secu3ConnectionManager`. The manager ignores callbacks from replaced Bluetooth attempts, even when the replacement also uses Bluetooth. Transient failures keep the foreground service; only the transport's explicit retry-exhaustion event publishes the ended generation and stops service/logging. The service itself does not infer terminal state from the connection event stream.
 
 ## Terminal session results survive Activity recreation until a new attempt
 
-The manager exposes the latest terminal session as a replaying typed result with its transport, generation, final state, and whether the session connected. A new USB or Bluetooth attempt clears that result. UI queues Start navigation against the result generation and must cancel only that queued terminal navigation when the manager clears it; the connection-state event stream remains non-conflated for data consumers.
+The manager exposes the latest ended session generation as a replaying nullable value. A new USB or Bluetooth attempt, or a manual stop, clears that marker; a manual stop does not publish a terminal generation. Background and service stops publish the ended generation after cleanup. UI queues Start navigation against the generation and cancels only that queued terminal navigation when the manager clears it; the connection-state event stream remains non-conflated for data consumers.

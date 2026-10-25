@@ -38,7 +38,6 @@ import kotlinx.coroutines.flow.first
 import androidx.navigation.NavDestination
 import androidx.navigation.NavHostController
 import dagger.hilt.android.AndroidEntryPoint
-import org.secu3.android.connection.ConnectionSessionTermination
 import org.secu3.android.connection.UsbConnectionRequest
 import org.secu3.android.ui.messages.UiMessageQueue
 import org.secu3.android.ui.messages.UiMessageDuration
@@ -111,7 +110,7 @@ class MainActivity : ComponentActivity() {
             }
         }
         lifecycleScope.launch {
-            viewModel.connectionManager.terminalSession.collect(::onTerminalSessionChanged)
+            viewModel.connectionManager.terminalSessionGeneration.collect(::onTerminalSessionChanged)
         }
     }
 
@@ -189,7 +188,7 @@ class MainActivity : ComponentActivity() {
         if (!lifecycle.currentState.isAtLeast(Lifecycle.State.RESUMED) || !isDeviceUnlocked()) return
         val route = pendingNavigation ?: return
         val terminalGeneration = pendingTerminalStartGeneration
-        if (route == START_ROUTE && terminalGeneration != null && viewModel.connectionManager.terminalSession.value?.generation != terminalGeneration) {
+        if (route == START_ROUTE && terminalGeneration != null && viewModel.connectionManager.terminalSessionGeneration.value != terminalGeneration) {
             pendingTerminalStartGeneration = null
             viewModel.completeTerminalStart(terminalGeneration)
             if (route == START_ROUTE) pendingNavigation = null
@@ -368,24 +367,24 @@ class MainActivity : ComponentActivity() {
         accessibility.getRecommendedTimeoutMillis(nominalMillis.toInt(), AccessibilityManager.FLAG_CONTENT_TEXT).toLong()
     }
 
-    private fun onTerminalSessionChanged(termination: ConnectionSessionTermination?) {
-        if (termination == null) {
+    private fun onTerminalSessionChanged(generation: Long?) {
+        if (generation == null) {
             val pendingGeneration = viewModel.cancelPendingTerminalStart()
             val wasQueued = pendingTerminalStartGeneration != null || pendingGeneration != null
             pendingTerminalStartGeneration = null
             if (wasQueued && pendingNavigation == START_ROUTE) pendingNavigation = null
             return
         }
-        if (viewModel.connectionManager.terminalSession.value?.generation != termination.generation) return
-        if (!viewModel.queueTerminalStart(termination.generation)) return
-        pendingTerminalStartGeneration = termination.generation
+        if (viewModel.connectionManager.terminalSessionGeneration.value != generation) return
+        if (!viewModel.queueTerminalStart(generation)) return
+        pendingTerminalStartGeneration = generation
         pendingNavigation = START_ROUTE
         if (lifecycle.currentState.isAtLeast(Lifecycle.State.RESUMED) && isDeviceUnlocked()) openStart()
     }
 
     private fun restorePendingTerminalStart() {
         val generation = viewModel.pendingTerminalStart() ?: return
-        if (viewModel.connectionManager.terminalSession.value?.generation == generation) {
+        if (viewModel.connectionManager.terminalSessionGeneration.value == generation) {
             pendingTerminalStartGeneration = generation
             pendingNavigation = START_ROUTE
         } else {
