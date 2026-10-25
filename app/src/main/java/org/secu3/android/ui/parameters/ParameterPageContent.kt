@@ -33,6 +33,7 @@ import androidx.compose.ui.res.stringResource
 import org.secu3.android.R
 import org.secu3.android.models.packets.out.params.InjctrParPacket
 import org.secu3.android.models.packets.out.params.UniOutParamPacket
+import org.secu3.android.domain.parameters.ParameterPage
 import org.secu3.android.ui.parameters.pages.*
 import kotlin.math.roundToInt
 import org.secu3.android.ui.parameters.pages.compose.*
@@ -47,8 +48,9 @@ internal fun ParameterPageContent(
     isActiveNow: () -> Boolean,
     onEdit: (ParameterEditRequest) -> Unit,
 ) {
-    if (viewModel.failedPage == titleRes) {
-        ParameterReadError(onRetry = { viewModel.refreshPage(titleRes) })
+    val page = parameterPageForTitle(titleRes)
+    if (viewModel.failedPage == page) {
+        ParameterReadError(onRetry = { page?.let(viewModel::refreshPage) })
         return
     }
     val context = LocalContext.current
@@ -175,7 +177,7 @@ internal fun ParameterPageContent(
         }
         R.string.params_tab_el_throttle_title -> {
             val h = viewModel.dbwStateHolder
-            DbwScreen(h.uiState, { n -> (h.uiState as? DbwUiState.Data)?.values?.let { v -> floatEdit(n.titleRes, v.value(n), n.step, n.max, n.min, n.precision) { h.edit(n, it.toFloat()) } } }, onRefresh = { viewModel.refreshPage(R.string.params_tab_el_throttle_title) })
+            DbwScreen(h.uiState, { n -> (h.uiState as? DbwUiState.Data)?.values?.let { v -> floatEdit(n.titleRes, v.value(n), n.step, n.max, n.min, n.precision) { h.edit(n, it.toFloat()) } } }, onRefresh = { viewModel.refreshPage(ParameterPage.EL_THROTTLE) })
         }
     }
 }

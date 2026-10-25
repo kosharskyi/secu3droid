@@ -25,9 +25,33 @@
 package org.secu3.android.ui.parameters
 
 import org.secu3.android.R
+import org.secu3.android.domain.parameters.ParameterPage
 import org.secu3.android.models.packets.input.FirmwareInfoPacket
 
-internal data class ParameterPageSpec(val titleRes: Int)
+internal data class ParameterPageSpec(val page: ParameterPage, val titleRes: Int)
+
+internal fun parameterPageForTitle(titleRes: Int): ParameterPage? = when (titleRes) {
+    R.string.params_tab_start_title -> ParameterPage.STARTER
+    R.string.params_tab_angles_title -> ParameterPage.ANGLES
+    R.string.params_tab_idling_title -> ParameterPage.IDLING
+    R.string.params_tab_temperature_title -> ParameterPage.TEMPERATURE
+    R.string.params_tab_fuel_cutoff_title -> ParameterPage.FUEL_CUTOFF
+    R.string.params_tab_ckps_title -> ParameterPage.CKPS
+    R.string.params_tab_adc_errors_corr_title -> ParameterPage.ADC_ERRORS
+    R.string.params_tab_knock_title -> ParameterPage.KNOCK
+    R.string.params_tab_lambda_control_title -> ParameterPage.LAMBDA_CONTROL
+    R.string.params_tab_acceleration_title -> ParameterPage.ACCELERATION
+    R.string.params_tab_ltft_title -> ParameterPage.LTFT
+    R.string.params_tab_functions_title -> ParameterPage.FUNCTIONS
+    R.string.params_tab_miscellaneous_title -> ParameterPage.MISCELLANEOUS
+    R.string.params_tab_security_title -> ParameterPage.SECURITY
+    R.string.params_tab_choke_control_title -> ParameterPage.CHOKE_CONTROL
+    R.string.params_tab_gas_dose_title -> ParameterPage.GAS_DOSE
+    R.string.params_tab_el_throttle_title -> ParameterPage.EL_THROTTLE
+    R.string.params_tab_fuel_injection_title -> ParameterPage.FUEL_INJECTION
+    R.string.params_tab_universal_outputs_title -> ParameterPage.UNIVERSAL_OUTPUTS
+    else -> null
+}
 
 /** Page order and firmware visibility rules for the parameter pager. */
 internal fun parameterPageSpecs(fwInfoPacket: FirmwareInfoPacket?): List<ParameterPageSpec> {
@@ -54,5 +78,5 @@ internal fun parameterPageSpecs(fwInfoPacket: FirmwareInfoPacket?): List<Paramet
         if (firmware.isFuelInjectEnabled) pages += R.string.params_tab_ltft_title
         if (!firmware.isSecu3T) pages += R.string.params_tab_el_throttle_title
     }
-    return pages.map(::ParameterPageSpec)
+    return pages.mapNotNull { title -> parameterPageForTitle(title)?.let { ParameterPageSpec(it, title) } }
 }

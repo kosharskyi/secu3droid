@@ -59,15 +59,14 @@ internal fun ParametersRoute(
         factory = activity.defaultViewModelProviderFactory,
         extras = entry.defaultViewModelCreationExtras,
     )
-    val pages = remember(viewModel) { parameterPageSpecs(viewModel.fwInfoPacket).map { it.titleRes } }
+    val pages = remember(viewModel) { parameterPageSpecs(viewModel.fwInfoPacket) }
     val connectionState by viewModel.connectionStatusLiveData.observeAsState()
     val lifecycle = LocalLifecycleOwner.current.lifecycle
 
     DisposableEffect(lifecycle, viewModel) {
         val observer = LifecycleEventObserver { _, event ->
             if (event == Lifecycle.Event.ON_PAUSE) {
-                viewModel.deactivatePage()
-                viewModel.invalidatePageCache()
+                viewModel.pausePageSession()
                 viewModel.cancelManualCommands()
             }
         }
@@ -84,8 +83,8 @@ internal fun ParametersRoute(
     }
     SecuComposeTheme {
         ParametersScreen(
-            titles = pages.map { stringResource(it) },
-            pageKeys = pages,
+            titles = pages.map { stringResource(it.titleRes) },
+            pageKeys = pages.map { it.titleRes },
             connectionState = connectionState,
             connectionSession = viewModel.connectionSession,
             editorSession = viewModel.parameterEditSession,
@@ -93,10 +92,10 @@ internal fun ParametersRoute(
             onEditDismiss = viewModel::dismissParameterEditor,
             onBack = onNavigateUp,
             onSave = viewModel::savePacket,
-            onPageSettled = { index -> pages.getOrNull(index)?.let(viewModel::activatePage) },
+            onPageSettled = { index -> pages.getOrNull(index)?.page?.let(viewModel::activatePage) },
             onPageUnsettled = viewModel::deactivatePage,
-            pageContent = { index, active, isActiveNow -> pages.getOrNull(index)?.let { title ->
-                ParameterPageContent(title, viewModel, active, isActiveNow, viewModel::openParameterEditor)
+            pageContent = { index, active, isActiveNow -> pages.getOrNull(index)?.let { page ->
+                ParameterPageContent(page.titleRes, viewModel, active, isActiveNow, viewModel::openParameterEditor)
             } },
         )
     }

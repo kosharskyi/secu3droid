@@ -2,6 +2,10 @@
 
 When the connection is not `Connected`, render the connection status instead of page contents, hide the numeric editor and disable Save. The ViewModel independently clears packet holders and pending operations, but that coroutine cleanup must not be the only barrier against a queued UI action after disconnect. Reconnection reactivates only the settled, visible page; adjacent precomposed pages must not read the ECU.
 
+## Resource-backed tabs map to stable domain page IDs
+
+`ParameterPageSpec` keeps each tab's resource title beside its `ParameterPage` ID. Pass the ID to the session and retain the resource only for rendering, test tags, and pager keys.
+
 ## Pager motion does not end the settled page's read session
 
 Keep the active page activation while a horizontal pager gesture is in progress, including boundary overscroll or a canceled swipe. A vertical child scroll, overscroll, or nested fling can also toggle pager `isScrollInProgress` without changing its settled page, so scrolling is not an activation boundary on either axis. Manual-command predicates still become false during movement. Once the pager settles, activate only if its settled index changed; connection loss, lifecycle pause, and connection-session replacement still invalidate the session immediately.

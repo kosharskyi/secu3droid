@@ -7,7 +7,7 @@
  *    the Free Software Foundation, either version 3 of the License, or
  *    (at your option) any later version.
  */
-package org.secu3.android.ui.parameters
+package org.secu3.android.domain.parameters
 
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.Flow
@@ -20,11 +20,11 @@ import kotlinx.coroutines.sync.withLock
 
 /** A preloaded page may observe its data, but may read the ECU only after it is displayed. */
 internal class ParameterPageReadGate {
-    private val activePage = MutableStateFlow<Int?>(null)
+    private val activePage = MutableStateFlow<ParameterPage?>(null)
     private val readMutex = Mutex()
 
-    fun activate(titleRes: Int) {
-        activePage.value = titleRes
+    fun activate(page: ParameterPage) {
+        activePage.value = page
     }
 
     fun deactivate() {
@@ -34,11 +34,11 @@ internal class ParameterPageReadGate {
     /** Cancels an unfinished read when the page hides, and retries when it becomes active again. */
     @OptIn(ExperimentalCoroutinesApi::class)
     fun <T> read(
-        titleRes: Int,
+        page: ParameterPage,
         onStarted: () -> Unit = {},
         receive: suspend () -> T,
-    ): Flow<T> = activePage.transformLatest { page ->
-        if (page == titleRes) {
+    ): Flow<T> = activePage.transformLatest { currentPage ->
+        if (currentPage == page) {
             // ECU requests change its streaming mode. Finish cancellation cleanup before
             // allowing another page (or the next Functions request) to change that mode.
             readMutex.withLock {

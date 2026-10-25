@@ -27,6 +27,8 @@ import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue
 import org.junit.Test
 import org.secu3.android.domain.parameters.ParameterExchange
+import org.secu3.android.domain.parameters.ParameterPage
+import org.secu3.android.domain.parameters.ParameterPageReadGate
 import org.secu3.android.models.packets.base.InputPacket
 import org.secu3.android.models.packets.input.FnNameDatPacket
 import org.secu3.android.models.packets.out.params.AnglesParamPacket
@@ -41,11 +43,11 @@ class ParameterPageReadGateTest {
         val packets = MutableSharedFlow<InputPacket>()
         val requests = Channel<Task>(Channel.UNLIMITED)
         val exchange = parameterExchange(requests, packets)
-        suspend fun read() = gate.read(0) {
+        suspend fun read() = gate.read(ParameterPage.STARTER) {
             exchange.readPacket(Task.Secu3ReadStarterParam, StarterParamPacket::class.java)
         }.first()
         val old = async(start = CoroutineStart.UNDISPATCHED) { read() }
-        gate.activate(0)
+        gate.activate(ParameterPage.STARTER)
         assertEquals(Task.Secu3ReadStarterParam, withTimeout(1_000) { requests.receive() })
         gate.deactivate()
         old.cancel()
@@ -53,7 +55,7 @@ class ParameterPageReadGateTest {
         assertEquals(Task.Secu3ReadSensors, withTimeout(1_000) { requests.receive() })
         packets.emit(StarterParamPacket(starterOff = 99)) // A reply from the cancelled read has no active subscriber.
         val fresh = async(start = CoroutineStart.UNDISPATCHED) { read() }
-        gate.activate(0)
+        gate.activate(ParameterPage.STARTER)
         assertEquals(Task.Secu3ReadStarterParam, withTimeout(1_000) { requests.receive() })
         assertFalse(fresh.isCompleted)
         val freshPacket = StarterParamPacket(starterOff = 1)
@@ -71,17 +73,17 @@ class ParameterPageReadGateTest {
         var volumePerCylinder = .5f
         var requests = 0
         suspend fun reload() {
-            val packet = gate.read(4) {
+            val packet = gate.read(ParameterPage.FUNCTIONS) {
                 requests++
                 org.secu3.android.models.packets.out.params.FunSetParamPacket(ckpsEngineCyl = 4, injCylDisp = volumePerCylinder)
             }.first()
             holder.onPacketReceived(packet, emptyList(), emptyList(), emptyList())
         }
-        gate.activate(4)
+        gate.activate(ParameterPage.FUNCTIONS)
         reload()
-        gate.activate(14) // Injection changes a value also present in FUNSET.
+        gate.activate(ParameterPage.FUEL_INJECTION) // Injection changes a value also present in FUNSET.
         volumePerCylinder = .75f
-        gate.activate(4)
+        gate.activate(ParameterPage.FUNCTIONS)
         reload()
         holder.updateFlag(true)
         assertEquals(2, requests)
@@ -92,22 +94,22 @@ class ParameterPageReadGateTest {
     fun preloadedAndSkippedPagesDoNotRead() {
         runBlocking {
             val gate = ParameterPageReadGate()
-            val commands = Channel<Int>(Channel.UNLIMITED)
-            val pages = (0..2).map { page ->
+            val commands = Channel<ParameterPage>(Channel.UNLIMITED)
+            val pages = listOf(ParameterPage.STARTER, ParameterPage.ANGLES, ParameterPage.IDLING).map { page ->
                 async(start = CoroutineStart.UNDISPATCHED) {
                     gate.read(page) { commands.send(page); page }.first()
                 }
             }
-            gate.activate(0)
-            assertEquals(0, withTimeout(1_000) { commands.receive() })
-            assertEquals(0, pages[0].await())
+            gate.activate(ParameterPage.STARTER)
+            assertEquals(ParameterPage.STARTER, withTimeout(1_000) { commands.receive() })
+            assertEquals(ParameterPage.STARTER, pages[0].await())
             assertFalse(pages[1].isCompleted)
             assertFalse(pages[2].isCompleted)
             assertTrue(commands.tryReceive().isFailure)
 
-            gate.activate(2)
-            assertEquals(2, withTimeout(1_000) { commands.receive() })
-            assertEquals(2, pages[2].await())
+            gate.activate(ParameterPage.IDLING)
+            assertEquals(ParameterPage.IDLING, withTimeout(1_000) { commands.receive() })
+            assertEquals(ParameterPage.IDLING, pages[2].await())
             assertFalse("The skipped neighbor must not read", pages[1].isCompleted)
             assertTrue(commands.tryReceive().isFailure)
             pages[1].cancel()
@@ -121,10 +123,10 @@ class ParameterPageReadGateTest {
             val requests = Channel<Task>(Channel.UNLIMITED)
             val packets = MutableSharedFlow<InputPacket>()
             val exchange = parameterExchange(requests, packets)
-            val pages = (0..1).map { page ->
+            val pages = listOf(ParameterPage.STARTER, ParameterPage.ANGLES).map { page ->
                 async(start = CoroutineStart.UNDISPATCHED) {
                     gate.read(page) {
-                        if (page == 0) {
+                        if (page == ParameterPage.STARTER) {
                             exchange.readPacket(Task.Secu3ReadStarterParam, StarterParamPacket::class.java)
                         } else {
                             exchange.readPacket(Task.Secu3ReadAnglesParam, AnglesParamPacket::class.java)
@@ -132,9 +134,9 @@ class ParameterPageReadGateTest {
                     }.first()
                 }
             }
-            gate.activate(0)
+            gate.activate(ParameterPage.STARTER)
             assertEquals(Task.Secu3ReadStarterParam, withTimeout(1_000) { requests.receive() })
-            gate.activate(1)
+            gate.activate(ParameterPage.ANGLES)
             assertEquals(Task.Secu3ReadSensors, withTimeout(1_000) { requests.receive() })
             assertEquals(Task.Secu3ReadAnglesParam, withTimeout(1_000) { requests.receive() })
             packets.emit(StarterParamPacket(starterOff = 99)) // The second page must ignore the old packet type.
@@ -144,7 +146,7 @@ class ParameterPageReadGateTest {
             assertEquals(secondPage, withTimeout(1_000) { pages[1].await() })
             assertEquals(Task.Secu3ReadSensors, requests.receive())
 
-            gate.activate(0)
+            gate.activate(ParameterPage.STARTER)
             assertEquals(Task.Secu3ReadStarterParam, withTimeout(1_000) { requests.receive() })
             val freshPacket = StarterParamPacket(starterOff = 1)
             packets.emit(freshPacket)
@@ -161,18 +163,18 @@ class ParameterPageReadGateTest {
             val packets = MutableSharedFlow<InputPacket>()
             val exchange = parameterExchange(requests, packets)
             val page = async(start = CoroutineStart.UNDISPATCHED) {
-                gate.read(0) {
+                gate.read(ParameterPage.STARTER) {
                     exchange.readPacket(Task.Secu3ReadStarterParam, StarterParamPacket::class.java)
                 }.first()
             }
-            gate.activate(0)
+            gate.activate(ParameterPage.STARTER)
             assertEquals(Task.Secu3ReadStarterParam, withTimeout(1_000) { requests.receive() })
             gate.deactivate()
             assertEquals(Task.Secu3ReadSensors, withTimeout(1_000) { requests.receive() })
             yield()
             assertFalse(page.isCompleted)
             assertTrue(requests.tryReceive().isFailure)
-            gate.activate(0)
+            gate.activate(ParameterPage.STARTER)
             assertEquals(Task.Secu3ReadStarterParam, withTimeout(1_000) { requests.receive() })
             val resumed = StarterParamPacket(starterOff = 2)
             packets.emit(resumed)
@@ -189,7 +191,7 @@ class ParameterPageReadGateTest {
             val cleaning = CompletableDeferred<Unit>()
             val releaseCleanup = CompletableDeferred<Unit>()
             val first = async(start = CoroutineStart.UNDISPATCHED) {
-                gate.read(0) {
+                    gate.read(ParameterPage.STARTER) {
                     try {
                         started.complete(Unit)
                         CompletableDeferred<Unit>().await()
@@ -203,11 +205,11 @@ class ParameterPageReadGateTest {
             }
             val secondStarted = CompletableDeferred<Unit>()
             val second = async(start = CoroutineStart.UNDISPATCHED) {
-                gate.read(1) { secondStarted.complete(Unit) }.first()
+                gate.read(ParameterPage.ANGLES) { secondStarted.complete(Unit) }.first()
             }
-            gate.activate(0)
+            gate.activate(ParameterPage.STARTER)
             withTimeout(1_000) { started.await() }
-            gate.activate(1)
+            gate.activate(ParameterPage.ANGLES)
             withTimeout(1_000) { cleaning.await() }
             yield()
             assertFalse(secondStarted.isCompleted)
@@ -225,14 +227,14 @@ class ParameterPageReadGateTest {
             val requests = Channel<Task>(Channel.UNLIMITED)
             val packets = MutableSharedFlow<InputPacket>()
             val exchange = parameterExchange(requests, packets)
-            val functionsPage = 10
+            val functionsPage = ParameterPage.FUNCTIONS
             val read = async(start = CoroutineStart.UNDISPATCHED) {
                 gate.read(functionsPage) { exchange.readFunctions() }.first()
             }
 
             gate.activate(functionsPage)
             assertEquals(Task.Secu3ReadFnNameDat, withTimeout(1_000) { requests.receive() })
-            gate.activate(functionsPage + 1)
+            gate.activate(ParameterPage.ANGLES)
             assertEquals(Task.Secu3ReadSensors, withTimeout(1_000) { requests.receive() })
             yield()
             assertTrue("Cancelled names stage must not issue the funset request", requests.tryReceive().isFailure)
