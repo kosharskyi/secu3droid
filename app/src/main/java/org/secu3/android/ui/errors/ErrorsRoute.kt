@@ -72,9 +72,6 @@ internal fun ErrorsRoute(
             connectionState = connection,
             snapshot = snapshot,
             errorTitles = titles.toList(),
-            canClearErrors = snapshot.saved != null &&
-                snapshot.clearStatus != ErrorsClearStatus.Clearing &&
-                connection == org.secu3.android.connection.Connected,
             onBackClick = onNavigateUp,
             onClearClick = viewModel::requestClearConfirmation,
             onRetryClick = viewModel::retryRead,

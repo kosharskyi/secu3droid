@@ -49,9 +49,11 @@ import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import org.secu3.android.ui.compose.ConfirmationDialog
 import org.secu3.android.R
 import org.secu3.android.connection.ConnectionState
+import org.secu3.android.domain.errors.ErrorsClearStatus
+import org.secu3.android.domain.errors.ErrorsReadStatus
+import org.secu3.android.domain.errors.ErrorsSnapshot
 import org.secu3.android.models.CheckEngineError
 import org.secu3.android.ui.compose.SecuComposeTheme
 import org.secu3.android.ui.compose.LocalSecuPalette
@@ -62,7 +64,6 @@ internal fun ErrorsContent(
     connectionState: ConnectionState?,
     snapshot: ErrorsSnapshot,
     errorTitles: List<String>,
-    canClearErrors: Boolean,
     onBackClick: () -> Unit,
     onClearClick: () -> Unit,
     onRetryClick: () -> Unit = {},
@@ -78,9 +79,7 @@ internal fun ErrorsContent(
         connectionState = connectionState,
         errors = errors,
         isLoading = snapshot.saved == null || snapshot.active == null,
-        clearStatus = snapshot.clearStatus,
-        readStatus = snapshot.readStatus,
-        canClearErrors = canClearErrors,
+        snapshot = snapshot,
         onBackClick = onBackClick,
         onClearClick = onClearClick,
         onRetryClick = onRetryClick,
@@ -92,15 +91,14 @@ internal fun ErrorsScreen(
     connectionState: ConnectionState?,
     errors: List<CheckEngineError>,
     isLoading: Boolean,
-    clearStatus: ErrorsClearStatus = ErrorsClearStatus.Idle,
-    canClearErrors: Boolean = true,
+    snapshot: ErrorsSnapshot = ErrorsSnapshot(),
     onBackClick: () -> Unit,
     onClearClick: () -> Unit,
-    readStatus: ErrorsReadStatus = ErrorsReadStatus.Idle,
     onRetryClick: () -> Unit = {},
 ) {
     val displayedErrors = errors.filter { it.isActive || it.isSaved }
-    val isClearing = clearStatus == ErrorsClearStatus.Clearing
+    val clearStatus = snapshot.clearStatus
+    val readStatus = snapshot.readStatus
 
     SecuComposeTheme {
         Surface(
@@ -124,7 +122,10 @@ internal fun ErrorsScreen(
                                 .background(MaterialTheme.colorScheme.errorContainer)
                                 .border(1.dp, MaterialTheme.colorScheme.error, RoundedCornerShape(12.dp))
                                 .testTag("errors-clear-button")
-                                .clickable(enabled = canClearErrors && !isClearing, onClick = onClearClick),
+                                .clickable(
+                                    enabled = snapshot.canClearErrors && connectionState == org.secu3.android.connection.Connected,
+                                    onClick = onClearClick,
+                                ),
                             contentAlignment = Alignment.Center,
                         ) {
                             Icon(
@@ -148,7 +149,7 @@ internal fun ErrorsScreen(
                 if (readStatus != ErrorsReadStatus.Idle) {
                     ReadFailureState(
                         status = readStatus,
-                        retryEnabled = connectionState == org.secu3.android.connection.Connected && !isClearing,
+                        retryEnabled = snapshot.canRetryRead && connectionState == org.secu3.android.connection.Connected,
                         onRetryClick = onRetryClick,
                     )
                 } else if (isLoading) {

@@ -1,35 +1,39 @@
 /*
  *    SecuDroid  - An open source, free manager for SECU-3 engine control unit
- *    Copyright (C) 2026 Vitaliy O. Kosharskyi. Ukraine, Kyiv
+ *    Copyright (C) 2026 Vitalii O. Kosharskyi. Ukraine, Kyiv
  *
  *    This program is free software: you can redistribute it and/or modify
  *    it under the terms of the GNU General Public License as published by
  *    the Free Software Foundation, either version 3 of the License, or
  *    (at your option) any later version.
  */
-package org.secu3.android.ui.errors
+package org.secu3.android.domain.errors
 
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Job
+import kotlinx.coroutines.coroutineScope
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.collect
 import kotlinx.coroutines.flow.filterIsInstance
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
-import kotlinx.coroutines.coroutineScope
-import kotlinx.coroutines.delay
-import org.secu3.android.domain.ecu.EcuExchange
 import org.secu3.android.connection.Connected
 import org.secu3.android.connection.ConnectionState
+import org.secu3.android.connection.Secu3ConnectionManager
+import org.secu3.android.domain.ecu.EcuExchange
 import org.secu3.android.models.packets.base.InputPacket
 import org.secu3.android.models.packets.input.CheckEngineErrorsPacket
 import org.secu3.android.models.packets.input.FirmwareInfoPacket
 import org.secu3.android.models.packets.out.CheckEngineSavedErrorsPacket
 import org.secu3.android.models.packets.out.OpCompNc
+import org.secu3.android.utils.Task
 import java.util.concurrent.TimeoutException
+import javax.inject.Inject
 
-internal enum class ErrorsClearStatus {
+enum class ErrorsClearStatus {
     Idle,
     Clearing,
     Succeeded,
@@ -37,53 +41,60 @@ internal enum class ErrorsClearStatus {
     ReadbackTimeout,
 }
 
-internal enum class ErrorsReadStatus { Idle, SavedTimeout, ActiveTimeout }
+enum class ErrorsReadStatus { Idle, SavedTimeout, ActiveTimeout }
 
-internal data class ErrorsSnapshot(
+data class ErrorsSnapshot(
     val saved: CheckEngineSavedErrorsPacket? = null,
     val active: CheckEngineErrorsPacket? = null,
     val clearStatus: ErrorsClearStatus = ErrorsClearStatus.Idle,
     val readStatus: ErrorsReadStatus = ErrorsReadStatus.Idle,
-)
+) {
+    val canClearErrors: Boolean get() = saved != null && clearStatus != ErrorsClearStatus.Clearing
+    val canRetryRead: Boolean get() = readStatus != ErrorsReadStatus.Idle && clearStatus != ErrorsClearStatus.Clearing
+}
 
-/** Owns error packets and reads only while the route is resumed and its transport is connected. */
-internal class ErrorsSessionController(
-    private val scope: CoroutineScope,
+/** Owns ECU error reads and clear transactions while the route is resumed and connected. */
+class ErrorsSession internal constructor(
+    private val connectionStates: Flow<ConnectionState>,
     private val ecuExchange: EcuExchange,
     private val packets: (onSubscribed: () -> Unit) -> Flow<InputPacket>,
     private val sendSavedRead: () -> Unit,
     private val sendActiveRead: () -> Unit,
     private val clearSavedErrors: () -> Unit,
-    private val onSessionInvalidated: () -> Unit = {},
     private val ackTimeoutMillis: Long = 10_000,
     private val readbackTimeoutMillis: Long = 10_000,
     private val initialReadTimeoutMillis: Long = 10_000,
 ) {
+    @Inject
+    constructor(connectionManager: Secu3ConnectionManager, ecuExchange: EcuExchange) : this(
+        connectionStates = connectionManager.connectionStateFlow,
+        ecuExchange = ecuExchange,
+        packets = connectionManager::receivedPacketFlow,
+        sendSavedRead = { connectionManager.sendNewTask(Task.Secu3ReadEcuSavedErrors) },
+        sendActiveRead = { connectionManager.sendNewTask(Task.Secu3ReadEcuErrors) },
+        clearSavedErrors = { connectionManager.sendOutPacket(CheckEngineSavedErrorsPacket()) },
+    )
+
     private val _snapshot = MutableStateFlow(ErrorsSnapshot())
     val snapshot = _snapshot.asStateFlow()
 
     private var connected = false
     private var resumed = false
+    private var closed = false
     private var generation = 0L
     private var sessionJob: Job? = null
+    private var connectionJob: Job? = null
 
-    val canClearErrors: Boolean
-        get() = connected && resumed && _snapshot.value.saved != null &&
-            _snapshot.value.clearStatus != ErrorsClearStatus.Clearing
-
-    fun onConnectionState(state: ConnectionState) {
-        if (state != Connected) {
-            connected = false
-            stopSession()
-            return
+    fun start(scope: CoroutineScope) {
+        if (closed || connectionJob != null) return
+        sessionScope = scope
+        connectionJob = scope.launch(start = kotlinx.coroutines.CoroutineStart.UNDISPATCHED) {
+            connectionStates.collect(::onConnectionState)
         }
-        if (connected) return
-        connected = true
-        startSessionIfEligible()
     }
 
     fun onRouteResumed() {
-        if (resumed) return
+        if (closed || resumed) return
         resumed = true
         startSessionIfEligible()
     }
@@ -95,11 +106,11 @@ internal class ErrorsSessionController(
     }
 
     fun clearErrors() {
-        if (!canClearErrors) return
+        if (!connected || !resumed || !_snapshot.value.canClearErrors) return
         cancelWorkerPreservingSnapshot()
         _snapshot.value = _snapshot.value.copy(clearStatus = ErrorsClearStatus.Clearing, readStatus = ErrorsReadStatus.Idle)
         val session = generation
-        sessionJob = scope.launch {
+        sessionJob = sessionScope?.launch {
             try {
                 performClear(session)
             } finally {
@@ -109,20 +120,39 @@ internal class ErrorsSessionController(
     }
 
     fun retryRead() {
-        if (!connected || !resumed || _snapshot.value.readStatus == ErrorsReadStatus.Idle ||
-            _snapshot.value.clearStatus == ErrorsClearStatus.Clearing) return
+        if (!connected || !resumed || !_snapshot.value.canRetryRead) return
         cancelWorkerPreservingSnapshot()
         _snapshot.value = _snapshot.value.copy(saved = null, active = null, readStatus = ErrorsReadStatus.Idle)
         startSessionIfEligible()
     }
 
     fun close() {
+        if (closed) return
+        closed = true
         resumed = false
         connected = false
         stopSession()
+        connectionJob?.cancel()
+        connectionJob = null
+        sessionScope = null
+    }
+
+    private var sessionScope: CoroutineScope? = null
+
+    private fun onConnectionState(state: ConnectionState) {
+        if (closed) return
+        if (state != Connected) {
+            connected = false
+            stopSession()
+            return
+        }
+        if (connected) return
+        connected = true
+        startSessionIfEligible()
     }
 
     private fun startSessionIfEligible() {
+        val scope = sessionScope ?: return
         if (!connected || !resumed || sessionJob != null) return
         val session = ++generation
         sessionJob = scope.launch {
@@ -207,8 +237,7 @@ internal class ErrorsSessionController(
                             timer?.cancel()
                         }
                     }
-                    // Connection setup can send h/y concurrently with this read. Reassert v
-                    // after its firmware packet so the ECU returns to the active-error mode.
+                    // Firmware setup can overtake the active read; reselect v mode after its reply.
                     is FirmwareInfoPacket -> sendActiveRead()
                 }
             }
@@ -230,8 +259,7 @@ internal class ErrorsSessionController(
         sessionJob?.cancel()
         sessionJob = null
         _snapshot.value = ErrorsSnapshot()
-        onSessionInvalidated()
     }
 
-    private fun isCurrent(session: Long): Boolean = connected && resumed && generation == session
+    private fun isCurrent(session: Long): Boolean = !closed && connected && resumed && generation == session
 }

@@ -21,6 +21,9 @@ import org.junit.Rule
 import org.junit.Test
 import org.secu3.android.R
 import org.secu3.android.connection.Connected
+import org.secu3.android.domain.errors.ErrorsClearStatus
+import org.secu3.android.domain.errors.ErrorsReadStatus
+import org.secu3.android.domain.errors.ErrorsSnapshot
 import org.secu3.android.models.CheckEngineError
 import org.secu3.android.models.packets.input.CheckEngineErrorsPacket
 import org.secu3.android.models.packets.out.CheckEngineSavedErrorsPacket
@@ -36,7 +39,7 @@ class ErrorsScreenTest {
     fun savedOnlyZeroMaskStaysLoadingUntilActiveZeroArrives() {
         var snapshot by mutableStateOf(ErrorsSnapshot())
         composeTestRule.setContent {
-            ErrorsContent(Connected, snapshot, listOf("Test fault"), true, {}, {})
+            ErrorsContent(Connected, snapshot, listOf("Test fault"), {}, {})
         }
 
         composeTestRule.onNodeWithText(context.getString(R.string.errors_loading_state)).assertIsDisplayed()
@@ -57,7 +60,7 @@ class ErrorsScreenTest {
     fun activeOnlyAndNewSessionResetRemainLoadingUntilBothMasksArrive() {
         var snapshot by mutableStateOf(ErrorsSnapshot())
         composeTestRule.setContent {
-            ErrorsContent(Connected, snapshot, listOf("Test fault"), true, {}, {})
+            ErrorsContent(Connected, snapshot, listOf("Test fault"), {}, {})
         }
 
         composeTestRule.runOnIdle { snapshot = snapshot.copy(active = CheckEngineErrorsPacket(errors = 0)) }
@@ -101,7 +104,7 @@ class ErrorsScreenTest {
         var snapshot by mutableStateOf(ErrorsSnapshot(readStatus = ErrorsReadStatus.ActiveTimeout))
         var clicked = false
         composeTestRule.setContent {
-            ErrorsContent(Connected, snapshot, listOf("Test fault"), true, {}, {}, {
+            ErrorsContent(Connected, snapshot, listOf("Test fault"), {}, {}, {
                 clicked = true
                 snapshot = ErrorsSnapshot()
             })
@@ -125,7 +128,7 @@ class ErrorsScreenTest {
         var snapshot by mutableStateOf(ErrorsSnapshot(readStatus = ErrorsReadStatus.SavedTimeout))
         var connected by mutableStateOf(false)
         composeTestRule.setContent {
-            ErrorsContent(if (connected) Connected else null, snapshot, listOf("Test fault"), false, {}, {}, {})
+            ErrorsContent(if (connected) Connected else null, snapshot, listOf("Test fault"), {}, {}, {})
         }
         composeTestRule.onNodeWithText(context.getString(R.string.retry)).assertIsNotEnabled()
         composeTestRule.runOnIdle {
@@ -192,6 +195,7 @@ class ErrorsScreenTest {
                 connectionState = Connected,
                 errors = emptyList(),
                 isLoading = false,
+                snapshot = ErrorsSnapshot(saved = CheckEngineSavedErrorsPacket(errors = 0)),
                 onBackClick = {},
                 onClearClick = { clicked = true },
             )
@@ -209,8 +213,7 @@ class ErrorsScreenTest {
                 connectionState = Connected,
                 errors = emptyList(),
                 isLoading = false,
-                clearStatus = ErrorsClearStatus.Clearing,
-                canClearErrors = false,
+                snapshot = ErrorsSnapshot(clearStatus = ErrorsClearStatus.Clearing),
                 onBackClick = {},
                 onClearClick = {},
             )
@@ -228,8 +231,10 @@ class ErrorsScreenTest {
                 connectionState = Connected,
                 errors = emptyList(),
                 isLoading = false,
-                clearStatus = status,
-                canClearErrors = true,
+                snapshot = ErrorsSnapshot(
+                    saved = CheckEngineSavedErrorsPacket(errors = 1),
+                    clearStatus = status,
+                ),
                 onBackClick = {},
                 onClearClick = {},
             )

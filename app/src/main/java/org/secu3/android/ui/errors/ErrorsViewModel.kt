@@ -33,30 +33,18 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.collect
 import kotlinx.coroutines.launch
-import org.secu3.android.connection.ConnectionState
+import org.secu3.android.domain.errors.ErrorsSession
+import org.secu3.android.domain.errors.ErrorsSnapshot
 import org.secu3.android.connection.Secu3ConnectionManager
-import org.secu3.android.domain.ecu.EcuExchange
-import org.secu3.android.models.packets.out.CheckEngineSavedErrorsPacket
-import org.secu3.android.utils.Task
 import javax.inject.Inject
 
 @HiltViewModel
 class ErrorsViewModel @Inject constructor(
     private val secu3ConnectionManager: Secu3ConnectionManager,
-    ecuExchange: EcuExchange,
+    private val session: ErrorsSession,
 ) : ViewModel() {
 
     val connectionState = secu3ConnectionManager.connectionStateFlow
-
-    private val session = ErrorsSessionController(
-        scope = viewModelScope,
-        ecuExchange = ecuExchange,
-        packets = { onSubscribed -> secu3ConnectionManager.receivedPacketFlow(onSubscribed) },
-        sendSavedRead = { secu3ConnectionManager.sendNewTask(Task.Secu3ReadEcuSavedErrors) },
-        sendActiveRead = { secu3ConnectionManager.sendNewTask(Task.Secu3ReadEcuErrors) },
-        clearSavedErrors = { secu3ConnectionManager.sendOutPacket(CheckEngineSavedErrorsPacket()) },
-        onSessionInvalidated = { _showClearConfirmation.value = false },
-    )
 
     internal val errorsSnapshot: StateFlow<ErrorsSnapshot> = session.snapshot
 
@@ -64,14 +52,22 @@ class ErrorsViewModel @Inject constructor(
     val showClearConfirmation: StateFlow<Boolean> = _showClearConfirmation.asStateFlow()
 
     init {
+        session.start(viewModelScope)
         viewModelScope.launch {
-            secu3ConnectionManager.connectionStateFlow.collect(session::onConnectionState)
+            secu3ConnectionManager.connectionStateFlow.collect { state ->
+                if (state != org.secu3.android.connection.Connected) {
+                    _showClearConfirmation.value = false
+                }
+            }
         }
     }
 
     fun onRouteResumed() = session.onRouteResumed()
 
-    fun onRoutePaused() = session.onRoutePaused()
+    fun onRoutePaused() {
+        _showClearConfirmation.value = false
+        session.onRoutePaused()
+    }
 
     fun clearErrors() {
         session.clearErrors()
@@ -83,7 +79,8 @@ class ErrorsViewModel @Inject constructor(
     }
 
     fun requestClearConfirmation() {
-        _showClearConfirmation.value = session.canClearErrors
+        _showClearConfirmation.value = errorsSnapshot.value.canClearErrors &&
+            secu3ConnectionManager.currentConnectionState == org.secu3.android.connection.Connected
     }
 
     fun dismissClearConfirmation() {
