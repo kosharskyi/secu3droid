@@ -33,11 +33,9 @@ import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.setValue
 import dagger.hilt.android.lifecycle.HiltViewModel
 import dagger.hilt.android.qualifiers.ApplicationContext
-import kotlinx.coroutines.flow.collect
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
-import kotlinx.coroutines.launch
 import org.secu3.android.R
 import org.secu3.android.ui.messages.UiMessageDuration
 import org.secu3.android.ui.messages.UiMessageQueue
@@ -49,6 +47,7 @@ import org.secu3.android.domain.parameters.ParameterCapabilities
 import org.secu3.android.domain.parameters.ParameterReadResult
 import org.secu3.android.domain.parameters.ParameterSession
 import org.secu3.android.domain.parameters.ParameterSessionEvent
+import org.secu3.android.domain.parameters.GasDoseControl
 import org.secu3.android.models.packets.base.OutputPacket
 import org.secu3.android.models.packets.out.params.AccelerationParamPacket
 import org.secu3.android.models.packets.out.params.AdcCorrectionsParamPacket
@@ -84,7 +83,7 @@ import org.secu3.android.ui.parameters.pages.MiscellaneousStateHolder
 import org.secu3.android.ui.parameters.pages.SecurityStateHolder
 import org.secu3.android.ui.parameters.pages.compose.FunctionsStateHolder
 import org.secu3.android.ui.parameters.pages.compose.ChokeControlStateHolder
-import org.secu3.android.ui.parameters.pages.compose.GasDoseStateHolder
+import org.secu3.android.ui.parameters.pages.compose.GasDoseNumber
 import org.secu3.android.ui.parameters.pages.compose.DbwStateHolder
 import org.secu3.android.ui.parameters.pages.compose.FuelInjectionStateHolder
 import org.secu3.android.ui.parameters.pages.UniversalOutputsStateHolder
@@ -95,6 +94,7 @@ class ParamsViewModel @Inject constructor(
     @ApplicationContext private val context: Context, // TODO: move this out
     private val secu3ConnectionManager: Secu3ConnectionManager,
     private val parameterSession: ParameterSession,
+    internal val gasDoseControl: GasDoseControl,
     private val uiMessageQueue: UiMessageQueue,
     private val parameterPageCatalog: ParameterPageCatalog,
 ) : ViewModel() {
@@ -172,12 +172,6 @@ class ParamsViewModel @Inject constructor(
         ChokeControlStateHolder({}, ::sendPacket)
     }
 
-    internal val gasDoseStateHolder by lazy {
-        GasDoseStateHolder({}, ::sendPacket).also {
-            it.setFirmwareAvailable(capabilities.value.gasDose)
-        }
-    }
-
     internal val dbwStateHolder by lazy {
         DbwStateHolder(::sendPacket) { isSendAllowed = it }
     }
@@ -200,11 +194,7 @@ class ParamsViewModel @Inject constructor(
 
     init {
         parameterSession.start(viewModelScope, ::onParameterSessionEvent)
-        viewModelScope.launch {
-            capabilities.collect { current ->
-                gasDoseStateHolder.setFirmwareAvailable(current.gasDose)
-            }
-        }
+        gasDoseControl.start(viewModelScope)
     }
 
     internal fun activatePage(page: ParameterPage) = parameterSession.activatePage(page)
@@ -217,7 +207,37 @@ class ParamsViewModel @Inject constructor(
 
     internal fun cancelManualCommands() {
         chokeControlStateHolder.cancelManual()
-        gasDoseStateHolder.cancelManual()
+        gasDoseControl.cancelManual()
+    }
+
+    internal fun editGasDose(number: GasDoseNumber, value: Float) {
+        val sent = when (number) {
+            GasDoseNumber.STEPS -> gasDoseControl.editSteps(value)
+            GasDoseNumber.STOICHIOMETRIC_RATIO -> gasDoseControl.editStoichiometricRatio(value)
+            GasDoseNumber.FUEL_CUT_CLOSING -> gasDoseControl.editFuelCutClosing(value)
+            GasDoseNumber.CORRECTION_POSITIVE -> gasDoseControl.editCorrectionPositive(value)
+            GasDoseNumber.CORRECTION_NEGATIVE -> gasDoseControl.editCorrectionNegative(value)
+        }
+        showGasDoseSentMessage(sent)
+    }
+
+    internal fun selectGasDoseFrequency(index: Int) = showGasDoseSentMessage(gasDoseControl.selectFrequency(index))
+
+    internal fun setGasDoseMaximumFrequency(enabled: Boolean) =
+        showGasDoseSentMessage(gasDoseControl.setMaximumFrequency(enabled))
+
+    internal fun toggleGasDoseTest() = showGasDoseSentMessage(gasDoseControl.toggleTest())
+
+    internal fun stepGasDose(direction: Int) = gasDoseControl.manualStep(direction)
+
+    internal fun flushGasDoseManual() = showGasDoseSentMessage(gasDoseControl.flushManual())
+
+    internal fun finishGasDoseManual() = showGasDoseSentMessage(gasDoseControl.finishManual())
+
+    internal fun cancelGasDoseManual() = gasDoseControl.cancelManual()
+
+    private fun showGasDoseSentMessage(sent: Boolean) {
+        if (sent) showUiMessage(R.string.packet_sent, UiMessageDuration.SHORT)
     }
 
     internal fun openParameterEditor(request: ParameterEditRequest) {
@@ -284,10 +304,7 @@ class ParamsViewModel @Inject constructor(
             ParameterPage.MISCELLANEOUS -> miscellaneousStateHolder.reset()
             ParameterPage.SECURITY -> securityStateHolder.reset()
             ParameterPage.CHOKE_CONTROL -> chokeControlStateHolder.reset()
-            ParameterPage.GAS_DOSE -> {
-                gasDoseStateHolder.reset()
-                gasDoseStateHolder.setFirmwareAvailable(capabilities.value.gasDose)
-            }
+            ParameterPage.GAS_DOSE -> gasDoseControl.reset()
             ParameterPage.EL_THROTTLE -> dbwStateHolder.reset()
             ParameterPage.FUEL_INJECTION -> {
                 fuelInjectionStateHolder.reset()
@@ -353,12 +370,7 @@ class ParamsViewModel @Inject constructor(
                 }
             }
             ParameterPage.GAS_DOSE -> {
-                isSendAllowed = false
-                try {
-                    gasDoseStateHolder.receive(packet<GasDoseParamPacket>(result))
-                } finally {
-                    isSendAllowed = true
-                }
+                gasDoseControl.receive(packet<GasDoseParamPacket>(result))
             }
             ParameterPage.EL_THROTTLE -> dbwStateHolder.receive(packet<DbwParamPacket>(result))
             ParameterPage.FUEL_INJECTION -> fuelInjectionStateHolder.receive(packet<InjctrParPacket>(result))

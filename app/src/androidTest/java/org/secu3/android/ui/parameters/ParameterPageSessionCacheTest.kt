@@ -1,16 +1,23 @@
 package org.secu3.android.ui.parameters
 
+import android.Manifest
+import android.os.Build
 import androidx.lifecycle.ViewModelProvider
+import androidx.lifecycle.Lifecycle
 import androidx.test.ext.junit.runners.AndroidJUnit4
+import androidx.test.platform.app.InstrumentationRegistry
 import com.hoho.android.usbserial.driver.UsbSerialPort
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.runBlocking
+import kotlinx.coroutines.TimeoutCancellationException
 import kotlinx.coroutines.withTimeout
+import org.junit.Before
 import org.junit.Assert.assertArrayEquals
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue
 import org.junit.Rule
 import org.junit.Test
@@ -26,10 +33,12 @@ import org.secu3.android.models.RawPacket
 import org.secu3.android.domain.parameters.ParameterPage
 import org.secu3.android.models.packets.base.OutputPacket
 import org.secu3.android.models.packets.out.params.AnglesParamPacket
+import org.secu3.android.models.packets.out.params.GasDoseParamPacket
 import org.secu3.android.models.packets.out.params.StarterParamPacket
 import org.secu3.android.models.packets.out.ChangeModePacket
 import org.secu3.android.utils.UserPrefs
 import org.secu3.android.ui.MainActivity
+import org.secu3.android.ui.PARAMETERS_ROUTE
 import org.secu3.android.ui.parameters.pages.compose.AnglesUiState
 import org.secu3.android.ui.parameters.pages.compose.AnglesNumber
 import org.secu3.android.ui.parameters.pages.compose.StarterUiState
@@ -45,6 +54,20 @@ import java.util.concurrent.atomic.AtomicReference
 @RunWith(AndroidJUnit4::class)
 class ParameterPageSessionCacheTest {
     @get:Rule val compose = androidx.compose.ui.test.junit4.v2.createAndroidComposeRule<MainActivity>()
+
+    @Before fun grantBluetoothPermissions() {
+        val targetPackageName = compose.activity.packageName
+        val needed = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
+            listOf(Manifest.permission.BLUETOOTH_SCAN, Manifest.permission.BLUETOOTH_CONNECT)
+        } else {
+            listOf(Manifest.permission.ACCESS_FINE_LOCATION)
+        }
+        needed.forEach { permission ->
+            if (compose.activity.checkSelfPermission(permission) != android.content.pm.PackageManager.PERMISSION_GRANTED) {
+                InstrumentationRegistry.getInstrumentation().uiAutomation.grantRuntimePermission(targetPackageName, permission)
+            }
+        }
+    }
 
     @Test fun pageReturnUsesSessionCacheAndWritesRefreshOtherPages() = runBlocking {
         val vm = paramsViewModel()
@@ -168,6 +191,90 @@ class ParameterPageSessionCacheTest {
         }
     }
 
+    @Test fun gasDoseCommandsUseCurrentFirmwareAndReportSuccessfulSessionAdmission() = runBlocking {
+        val vm = paramsViewModel()
+        var stage = "install USB"
+        var transport: FakeUsbTransport? = null
+        val queueField = ParamsViewModel::class.java.getDeclaredField("uiMessageQueue").apply { isAccessible = true }
+        val queue = queueField.get(vm) as org.secu3.android.ui.messages.UiMessageQueue
+        val originalActiveScope = queue.activeScope.value
+        try {
+            val usb = installFakeUsb(vm, firmwareOptions = 1 shl 29).also { transport = it }
+            stage = "wait for Gas Dose read request"
+            activate(vm, R.string.params_tab_gas_dose_title)
+            usb.awaitReadRequest('*', 1)
+            stage = "emit and receive Gas Dose values"
+            usb.emit(GasDoseParamPacket(steps = 120, fcClosing = 10f, lambdaCorrLimitP = 10f, lambdaCorrLimitM = 10f, lambdaStoichval = 14.7f))
+            await { vm.gasDoseControl.values.value?.steps == 120f }
+
+            stage = "pause Activity at STARTED and isolate toast scope"
+            compose.activityRule.scenario.moveToState(Lifecycle.State.STARTED)
+            compose.waitForIdle()
+            queue.onActiveScopeChanged(PARAMETERS_ROUTE)
+            val baseline = usb.writes.size
+            queue.pending.value.forEach { queue.acknowledge(it.id) }
+
+            stage = "ordinary command write"
+            compose.runOnIdle { vm.editGasDose(org.secu3.android.ui.parameters.pages.compose.GasDoseNumber.STEPS, 500f) }
+            usb.awaitWriteCount(baseline + 1)
+            assertEquals('!', usb.writes[baseline][0].toInt().toChar())
+            assertEquals('*', usb.writes[baseline][1].toInt().toChar())
+            assertEquals(0, usb.writes[baseline][5].toInt() and 0xff)
+
+            assertTrue(queue.pending.value.any { it.textRes == R.string.packet_sent })
+
+            compose.runOnIdle { vm.stepGasDose(1) }
+            stage = "firmware support loss"
+            usb.emitFirmware(options = 0)
+            await { vm.capabilities.value.known && !vm.capabilities.value.gasDose }
+            delay(100)
+            stage = "firmware support recovery"
+            usb.emitFirmware(options = 1 shl 29)
+            await { vm.capabilities.value.gasDose }
+            compose.runOnIdle { vm.finishGasDoseManual() }
+            assertEquals(baseline + 1, usb.writes.size)
+
+            stage = "manual command write"
+            compose.runOnIdle {
+                vm.stepGasDose(-1)
+                vm.finishGasDoseManual()
+            }
+            usb.awaitWriteCount(baseline + 2)
+            assertEquals(255, usb.writes[baseline + 1][5].toInt() and 0xff)
+
+            queue.pending.value.forEach { queue.acknowledge(it.id) }
+            val beforePausedFlush = usb.writes.size
+            stage = "paused manual-send admission"
+            compose.runOnIdle {
+                vm.pausePageSession()
+                vm.stepGasDose(1)
+                vm.finishGasDoseManual()
+            }
+            assertEquals(beforePausedFlush, usb.writes.size)
+            assertFalse(queue.pending.value.any { it.textRes == R.string.packet_sent })
+            compose.runOnIdle { vm.finishGasDoseManual() }
+            assertEquals(beforePausedFlush, usb.writes.size)
+        } catch (failure: Throwable) {
+            val capabilities = vm.capabilities.value
+            throw AssertionError(
+                "Gas Dose test failed during $stage; capabilities=(known=${capabilities.known}, gasDose=${capabilities.gasDose}), " +
+                    "values=${vm.gasDoseControl.values.value}, writes=${transport?.writes?.size ?: 0}",
+                failure,
+            )
+        } finally {
+            try {
+                transport?.close()
+            } finally {
+                try {
+                    compose.runOnIdle { vm.clearPageState() }
+                } finally {
+                    queue.onActiveScopeChanged(originalActiveScope)
+                    compose.activityRule.scenario.moveToState(Lifecycle.State.RESUMED)
+                }
+            }
+        }
+    }
+
     private fun paramsViewModel(): ParamsViewModel {
         lateinit var viewModel: ParamsViewModel
         compose.activityRule.scenario.onActivity { activity ->
@@ -186,7 +293,13 @@ class ParameterPageSessionCacheTest {
         }
     }
 
-    private suspend fun installFakeUsb(vm: ParamsViewModel): FakeUsbTransport {
+    private suspend fun installFakeUsb(vm: ParamsViewModel, firmwareOptions: Int = 0): FakeUsbTransport {
+        compose.waitForIdle()
+        try {
+            withTimeout(3_000) { while (!compose.runOnIdle { compose.activity.hasWindowFocus() }) delay(10) }
+        } catch (failure: TimeoutCancellationException) {
+            throw AssertionError("MainActivity did not regain window focus before fake USB installation", failure)
+        }
         val managerField = ParamsViewModel::class.java.getDeclaredField("secu3ConnectionManager").apply { isAccessible = true }
         val manager = managerField.get(vm) as Secu3ConnectionManager
         val prefs = UserPrefs(androidx.test.platform.app.InstrumentationRegistry.getInstrumentation().targetContext)
@@ -244,12 +357,29 @@ class ParameterPageSessionCacheTest {
                 .get(manager) as MutableStateFlow<Any>
             selected.value = selection
             Secu3ConnectionManager::class.java.getDeclaredField("activeUsbAttemptId").apply { isAccessible = true }.set(manager, 1L)
-            withTimeout(3_000) { subscribed.await() }
+            try {
+                withTimeout(3_000) { subscribed.await() }
+            } catch (failure: TimeoutCancellationException) {
+                throw AssertionError(
+                    "Fake USB setup timed out waiting for transport subscription; selected=$selection, " +
+                        "subscriptionComplete=${subscribed.isCompleted}, running=${connection.isRunning}, connected=${connection.isConnected}",
+                    failure,
+                )
+            }
             synchronized(manager) {
                 if (readyField.get(manager) === subscribed) readyField.set(manager, null)
             }
-            attemptPackets.emit(UsbAttemptPacket(1L, firmwarePacket()))
-            withTimeout(3_000) { while (!manager.isUsbConnected || !manager.isUsbSessionLocked) delay(10) }
+            attemptPackets.emit(UsbAttemptPacket(1L, firmwarePacket(firmwareOptions)))
+            try {
+                withTimeout(3_000) { while (!manager.isUsbConnected || !manager.isUsbSessionLocked) delay(10) }
+            } catch (failure: TimeoutCancellationException) {
+                throw AssertionError(
+                    "Fake USB setup timed out waiting for firmware confirmation; usbConnected=${manager.isUsbConnected}, " +
+                        "sessionLocked=${manager.isUsbSessionLocked}, connectionState=${manager.currentConnectionState}, " +
+                        "firmware=${manager.fwInfo}, running=${connection.isRunning}, connected=${connection.isConnected}, selected=$selection",
+                    failure,
+                )
+            }
             return FakeUsbTransport(manager, connection, portField, attemptPackets, requests, writes, nextWriteBarrier, prefs, originalWakeLockPreference)
         } catch (failure: Throwable) {
             try {
@@ -295,6 +425,12 @@ class ParameterPageSessionCacheTest {
             attemptPackets.emit(UsbAttemptPacket(1L, RawPacket(input)))
         }
 
+        suspend fun emitFirmware(options: Int) {
+            val raw = intArrayOf('@'.code, 'y'.code) + "SECU-3 test firmware".padEnd(52).map(Char::code).toIntArray() +
+                intArrayOf((options shr 24) and 0xff, (options shr 16) and 0xff, (options shr 8) and 0xff, options and 0xff, 0x10, 0, 0)
+            attemptPackets.emit(UsbAttemptPacket(1L, RawPacket(raw)))
+        }
+
         fun close() {
             try {
                 manager.onUsbDeviceDetached(1)
@@ -314,8 +450,8 @@ class ParameterPageSessionCacheTest {
         val release = CountDownLatch(1)
     }
 
-    private fun firmwarePacket() = RawPacket(
+    private fun firmwarePacket(options: Int = 0) = RawPacket(
         intArrayOf('@'.code, 'y'.code) + "SECU-3 test firmware".padEnd(52).map(Char::code).toIntArray() +
-            intArrayOf(0, 0, 0, 0, 0x10, 0, 0),
+            intArrayOf((options shr 24) and 0xff, (options shr 16) and 0xff, (options shr 8) and 0xff, options and 0xff, 0x10, 0, 0),
     )
 }

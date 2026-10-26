@@ -48,7 +48,9 @@ import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import org.secu3.android.R
-import org.secu3.android.models.packets.out.params.GasDoseParamPacket
+import org.secu3.android.domain.parameters.GasDoseValues
+import org.secu3.android.domain.parameters.GasDoseControl
+import org.secu3.android.domain.parameters.ParameterCapabilities
 import org.secu3.android.ui.parameters.compose.ParameterLoadingIndicator
 import org.secu3.android.ui.parameters.compose.ParameterPage
 import org.secu3.android.ui.parameters.compose.ParameterSection
@@ -59,43 +61,27 @@ import org.secu3.android.ui.parameters.compose.ParameterValueRow
 import org.secu3.android.ui.parameters.dialogs.ParameterChoice
 import org.secu3.android.ui.parameters.dialogs.ParameterChoiceDialog
 
-private val gasDoseFrequencies = listOf("300", "150", "100", "75")
-
 enum class GasDoseNumber(@StringRes val title: Int, @StringRes val units: Int, val precision: Int, val min: Float, val max: Float, val step: Float, val integer: Boolean = false) {
-    STEPS(R.string.choke_steps_title, R.string.units_str, 0, 10f, 2000f, 1f, true),
-    STOICHIOMETRIC_RATIO(R.string.gasdose_par_stoich_ratio, R.string.units_afr, 1, 8f, 22f, .1f),
-    FUEL_CUT_CLOSING(R.string.gasdose_par_closing_on_fuel_cut, R.string.units_percents, 1, 0f, 100f, .5f),
-    CORRECTION_POSITIVE(R.string.lambda_par_correction_positive_limit_title, R.string.units_percents, 2, .5f, 100f, .5f),
-    CORRECTION_NEGATIVE(R.string.lambda_par_correction_negative_limit_title, R.string.units_percents, 2, .5f, 100f, .5f),
-}
+    STEPS(R.string.choke_steps_title, R.string.units_str, 0, GasDoseControl.STEPS_MIN, GasDoseControl.STEPS_MAX, 1f, true),
+    STOICHIOMETRIC_RATIO(R.string.gasdose_par_stoich_ratio, R.string.units_afr, 1, GasDoseControl.STOICHIOMETRIC_RATIO_MIN, GasDoseControl.STOICHIOMETRIC_RATIO_MAX, .1f),
+    FUEL_CUT_CLOSING(R.string.gasdose_par_closing_on_fuel_cut, R.string.units_percents, 1, GasDoseControl.FUEL_CUT_CLOSING_MIN, GasDoseControl.FUEL_CUT_CLOSING_MAX, .5f),
+    CORRECTION_POSITIVE(R.string.lambda_par_correction_positive_limit_title, R.string.units_percents, 2, GasDoseControl.CORRECTION_MIN, GasDoseControl.CORRECTION_MAX, .5f),
+    CORRECTION_NEGATIVE(R.string.lambda_par_correction_negative_limit_title, R.string.units_percents, 2, GasDoseControl.CORRECTION_MIN, GasDoseControl.CORRECTION_MAX, .5f);
 
-data class GasDoseValues(val steps: Float, val stoichiometricRatio: Float, val fuelCutClosing: Float, val correctionPositive: Float, val correctionNegative: Float, val testing: Boolean, val frequency: Int, val maxFrequencyAtInit: Boolean) {
-    fun value(number: GasDoseNumber) = when (number) {
-        GasDoseNumber.STEPS -> steps
-        GasDoseNumber.STOICHIOMETRIC_RATIO -> stoichiometricRatio
-        GasDoseNumber.FUEL_CUT_CLOSING -> fuelCutClosing
-        GasDoseNumber.CORRECTION_POSITIVE -> correctionPositive
-        GasDoseNumber.CORRECTION_NEGATIVE -> correctionNegative
-    }
-    companion object {
-        fun from(p: GasDoseParamPacket) = GasDoseValues(p.steps.toFloat(), p.lambdaStoichval, p.fcClosing, p.lambdaCorrLimitP, p.lambdaCorrLimitM, p.testing, p.freq, p.maxFreqInit > 0)
-    }
-}
-
-fun applyGasDoseNumber(p: GasDoseParamPacket, n: GasDoseNumber, value: Float) {
-    when (n) {
-        GasDoseNumber.STEPS -> p.steps = value.toInt().coerceIn(10, 2000)
-        GasDoseNumber.STOICHIOMETRIC_RATIO -> p.lambdaStoichval = value.coerceIn(8f, 22f)
-        GasDoseNumber.FUEL_CUT_CLOSING -> p.fcClosing = value.coerceIn(0f, 100f)
-        GasDoseNumber.CORRECTION_POSITIVE -> p.lambdaCorrLimitP = value.coerceIn(.5f, 100f)
-        GasDoseNumber.CORRECTION_NEGATIVE -> p.lambdaCorrLimitM = value.coerceIn(.5f, 100f)
+    fun value(values: GasDoseValues) = when (this) {
+        STEPS -> values.steps
+        STOICHIOMETRIC_RATIO -> values.stoichiometricRatio
+        FUEL_CUT_CLOSING -> values.fuelCutClosing
+        CORRECTION_POSITIVE -> values.correctionPositive
+        CORRECTION_NEGATIVE -> values.correctionNegative
     }
 }
 
 @Composable
-fun GasDoseScreen(values: GasDoseValues?, firmwareAvailable: Boolean, onEdit: (GasDoseNumber) -> Unit, onFrequency: (Int) -> Unit, onMaximumFrequency: (Boolean) -> Unit, onManualStep: (Int) -> Unit, onManualRelease: () -> Unit, onManualCancel: () -> Unit, onTest: () -> Unit, onManualFlush: () -> Unit = {}, isActive: Boolean = true) {
+fun GasDoseScreen(values: GasDoseValues?, capabilities: ParameterCapabilities, onEdit: (GasDoseNumber) -> Unit, onFrequency: (Int) -> Unit, onMaximumFrequency: (Boolean) -> Unit, onManualStep: (Int) -> Unit, onManualRelease: () -> Unit, onManualCancel: () -> Unit, onTest: () -> Unit, onManualFlush: () -> Unit = {}, isActive: Boolean = true) {
+    val frequencies = listOf("300", "150", "100", "75")
     val pageScrollState = rememberScrollState()
-    if (!firmwareAvailable) {
+    if (!capabilities.gasDose) {
         Box(Modifier.fillMaxSize().testTag("gas_dose_unavailable"), contentAlignment = androidx.compose.ui.Alignment.Center) {
             Text(stringResource(R.string.gas_dose_unavailable), modifier = Modifier.padding(24.dp))
         }
@@ -125,11 +111,11 @@ fun GasDoseScreen(values: GasDoseValues?, firmwareAvailable: Boolean, onEdit: (G
         NumberRow(GasDoseNumber.CORRECTION_NEGATIVE, values, onEdit)
         val frequencyDialogOpen = androidx.compose.runtime.remember { androidx.compose.runtime.mutableStateOf(false) }
         Box {
-            ParameterSelectionRow(stringResource(R.string.choke_frequency_of_pulses), gasDoseFrequencies.getOrNull(values.frequency) ?: "Code ${values.frequency}", "gas_dose_frequency") { frequencyDialogOpen.value = true }
+            ParameterSelectionRow(stringResource(R.string.choke_frequency_of_pulses), frequencies.getOrNull(values.frequency) ?: "Code ${values.frequency}", "gas_dose_frequency") { frequencyDialogOpen.value = true }
         }
         if (frequencyDialogOpen.value) ParameterChoiceDialog(
             title = stringResource(R.string.choke_frequency_of_pulses),
-            choices = gasDoseFrequencies.mapIndexed { i, option -> ParameterChoice(i, option, "gas_dose_frequency_option_$i") },
+            choices = frequencies.mapIndexed { i, option -> ParameterChoice(i, option, "gas_dose_frequency_option_$i") },
             onDismiss = { frequencyDialogOpen.value = false },
             onSelect = onFrequency,
         )
@@ -139,7 +125,7 @@ fun GasDoseScreen(values: GasDoseValues?, firmwareAvailable: Boolean, onEdit: (G
 }
 
 @Composable private fun NumberRow(n: GasDoseNumber, values: GasDoseValues, onEdit: (GasDoseNumber) -> Unit) {
-    ParameterValueRow(stringResource(n.title), if (n.units == R.string.units_str) "" else stringResource(n.units), values.value(n), n.precision, "gas_dose_${n.name.lowercase()}") { onEdit(n) }
+    ParameterValueRow(stringResource(n.title), if (n.units == R.string.units_str) "" else stringResource(n.units), n.value(values), n.precision, "gas_dose_${n.name.lowercase()}") { onEdit(n) }
 }
 
 @OptIn(androidx.compose.foundation.ExperimentalFoundationApi::class)

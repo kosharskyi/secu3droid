@@ -28,6 +28,7 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.platform.LocalResources
 import androidx.compose.ui.res.stringArrayResource
 import androidx.compose.ui.res.stringResource
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import org.secu3.android.R
 import org.secu3.android.domain.parameters.ParameterCapabilities
 import org.secu3.android.models.packets.out.params.InjctrParPacket
@@ -166,9 +167,13 @@ internal fun ParameterPageContent(
             AccelerationScreen(h.values?.let(AccelerationUiState::Data) ?: AccelerationUiState.Loading, { n -> h.values?.let { v -> intEdit(n.titleRes, if (n == AccelerationNumber.COLD_MULTIPLIER) v.value(n).roundToInt() else v.value(n).toInt(), n.step.toInt(), n.max.toInt(), n.min.toInt()) { h.updateNumber(n, it.toFloat()) } } }, h::selectAeType, h::selectWallwetModel, h::setBalance, capabilities = capabilities)
         }
         R.string.params_tab_gas_dose_title -> {
-            val h = viewModel.gasDoseStateHolder
-            GasDoseScreen(h.values, h.isFirmwareAvailable, { n -> h.values?.let { v -> if (n.integer) intEdit(n.title, v.value(n).toInt(), n.step.toInt(), n.max.toInt(), n.min.toInt()) { h.edit(n, it.toFloat()) } else floatEdit(n.title, v.value(n), n.step, n.max, n.min, n.precision) { h.edit(n, it.toFloat()) } } }, h::selectFrequency, h::setMaximumFrequency,
-                { if (isActiveNow()) h.manualStep(it) }, { if (isActiveNow()) h.finishManual() }, h::cancelManual, h::toggleTest, { if (isActiveNow()) h.flushManual() }, isActive = isActive)
+            val values by viewModel.gasDoseControl.values.collectAsStateWithLifecycle()
+            GasDoseScreen(values, capabilities, { n -> values?.let { v ->
+                if (n.integer) intEdit(n.title, n.value(v).toInt(), n.step.toInt(), n.max.toInt(), n.min.toInt()) { viewModel.editGasDose(n, it.toFloat()) }
+                else floatEdit(n.title, n.value(v), n.step, n.max, n.min, n.precision) { viewModel.editGasDose(n, it.toFloat()) }
+            } }, viewModel::selectGasDoseFrequency, viewModel::setGasDoseMaximumFrequency,
+                { if (isActiveNow()) viewModel.stepGasDose(it) }, viewModel::finishGasDoseManual, viewModel::cancelGasDoseManual,
+                viewModel::toggleGasDoseTest, { if (isActiveNow()) viewModel.flushGasDoseManual() }, isActive = isActive)
         }
         R.string.params_tab_ltft_title -> {
             val h = viewModel.ltftStateHolder

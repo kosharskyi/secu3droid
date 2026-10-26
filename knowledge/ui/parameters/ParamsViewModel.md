@@ -1,6 +1,6 @@
-## The parameter session owns request lifecycle; the ViewModel maps results to holders
+## The parameter session owns request lifecycle; the ViewModel maps results to editors
 
-`ParameterSession` owns connection-event invalidation, page-read jobs, cache validity, and pending EEPROM-save cancellation. The ViewModel keeps editable holder state and translates typed session events into holder updates and UI messages. Close the UI send gate before resetting holders on invalidation.
+`ParameterSession` owns connection-event invalidation, page-read jobs, cache validity, and pending EEPROM-save cancellation. The ViewModel translates typed session events into editor updates and UI messages. Close the UI send gate before resetting UI-owned holders on invalidation.
 
 ## UI page resources map to domain page IDs at the screen boundary
 
@@ -12,4 +12,4 @@ The ViewModel receives typed page results from `ParameterSession`, which delegat
 
 ## Firmware-derived parameter availability is exposed as one snapshot
 
-Derive a single `ParameterCapabilities` state from `Secu3ConnectionManager.firmwareInfo`. The route and page screens consume that state; do not decode firmware flags in individual consumers. GasDose command availability follows the same snapshot while its holder retains the existing pending-command cancellation and guard lifecycle.
+Derive a single `ParameterCapabilities` state from `Secu3ConnectionManager.firmwareInfo`. The route and page screens consume that state; do not decode firmware flags in individual consumers. `GasDoseControl` reads the manager's current firmware for command admission and observes firmware changes to discard held movement; the ViewModel does not copy its presentation snapshot into the control.

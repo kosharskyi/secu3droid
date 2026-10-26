@@ -36,7 +36,8 @@ import org.secu3.android.ui.parameters.pages.compose.FunctionsScreen
 import org.secu3.android.ui.parameters.pages.compose.FunctionsUiState
 import org.secu3.android.ui.parameters.pages.compose.FunctionsValues
 import org.secu3.android.ui.parameters.pages.compose.GasDoseScreen
-import org.secu3.android.ui.parameters.pages.compose.GasDoseValues
+import org.secu3.android.domain.parameters.GasDoseValues
+import org.secu3.android.domain.parameters.ParameterCapabilities
 import org.secu3.android.ui.parameters.pages.compose.LambdaControlScreen
 import org.secu3.android.ui.parameters.pages.compose.LambdaFlag
 import org.secu3.android.ui.parameters.pages.compose.LambdaNumber
@@ -142,7 +143,7 @@ internal fun advancedParameterAppearanceFixtures(): List<ParameterAppearanceFixt
             ChokeScreen(ChokeValues.from(ChokeControlParPacket()), {}, { _, _ -> }, {}, {}, {}, {}, {}, {})
         },
         ParameterAppearanceFixture("gas-dose") {
-            GasDoseScreen(GasDoseValues(500f, 14.7f, 20f, 15f, 15f, false, 1, true), true, {}, {}, {}, {}, {}, {}, {}, {})
+            GasDoseScreen(GasDoseValues(500f, 14.7f, 20f, 15f, 15f, false, 1, true), ParameterCapabilities.All, {}, {}, {}, {}, {}, {}, {}, {})
         },
         ParameterAppearanceFixture("fuel-injection") {
             FuelInjectionScreen(FuelInjectionUiState.Data(fuel), mapOf(0 to "Batch", 1 to "Semi-sequential", 2 to "Sequential"), {}, { _, _ -> }, { _, _ -> }, { _, _ -> }, { _, _ -> })

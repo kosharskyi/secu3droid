@@ -31,35 +31,37 @@ import org.junit.Assert.assertEquals
 import org.junit.Assert.assertTrue
 import org.junit.Rule
 import org.junit.Test
-import org.secu3.android.models.packets.out.params.GasDoseParamPacket
+import org.secu3.android.domain.parameters.GasDoseValues
+import org.secu3.android.domain.parameters.ParameterCapabilities
+import org.secu3.android.models.packets.input.FirmwareInfoPacket
 import org.secu3.android.ui.compose.SecuComposeTheme
 
 class GasDoseScreenTest {
     @get:Rule val compose = createComposeRule()
 
     @Test fun loadingAndUnavailableStatesRenderWithoutSending() {
-        val firmwareAvailable = mutableStateOf(true)
+        val capabilities = mutableStateOf(ParameterCapabilities.All)
         val values = mutableStateOf<GasDoseValues?>(null)
         var calls = 0
         compose.setContent {
             SecuComposeTheme {
-                GasDoseScreen(values.value, firmwareAvailable.value, { calls++ }, { calls++ }, { calls++ }, { calls++ }, { calls++ }, { calls++ }, { calls++ })
+                GasDoseScreen(values.value, capabilities.value, { calls++ }, { calls++ }, { calls++ }, { calls++ }, { calls++ }, { calls++ }, { calls++ })
             }
         }
         compose.onNodeWithTag("gas_dose_loading").assertExists()
-        compose.runOnIdle { firmwareAvailable.value = false }
+        compose.runOnIdle { capabilities.value = ParameterCapabilities(FirmwareInfoPacket(options = 0)) }
         compose.onNodeWithTag("gas_dose_unavailable").assertExists()
         assertEquals(0, calls)
         compose.runOnIdle {
-            firmwareAvailable.value = true
-            values.value = GasDoseValues.from(GasDoseParamPacket())
+            capabilities.value = ParameterCapabilities.All
+            values.value = GasDoseValues(200f, 14.7f, 20f, 15f, 15f, false, 1, false)
         }
         compose.onNodeWithTag("gas_dose_test").performClick()
         assertEquals(1, calls)
     }
 
     @Test fun renderRecompositionAndExplicitActions() {
-        val state = mutableStateOf(GasDoseValues.from(GasDoseParamPacket(freq = 7)))
+        val state = mutableStateOf(GasDoseValues(200f, 14.7f, 20f, 15f, 15f, false, 7, false))
         var edits = 0
         val frequencies = mutableListOf<Int>()
         var maximumFrequencyChanges = 0
@@ -70,7 +72,7 @@ class GasDoseScreenTest {
         compose.setContent {
             SecuComposeTheme {
                 GasDoseScreen(
-                    state.value, true, { edits++ }, frequencies::add,
+                    state.value, ParameterCapabilities.All, { edits++ }, frequencies::add,
                     { maximumFrequencyChanges++ }, { manualDelta += it },
                     { manualReleases++ }, { manualCancels++ }, { tests++ },
                 )
@@ -101,13 +103,13 @@ class GasDoseScreenTest {
     }
 
     @Test fun manualHoldRepeatsAndFlushesBeforeRelease() {
-        val state = GasDoseValues.from(GasDoseParamPacket())
+        val state = GasDoseValues(200f, 14.7f, 20f, 15f, 15f, false, 1, false)
         val steps = mutableListOf<Int>()
         var flushes = 0
         var releases = 0
         compose.setContent {
             SecuComposeTheme {
-                GasDoseScreen(state, true, {}, {}, {}, steps::add, { releases++ }, {}, {}, { flushes++ })
+                GasDoseScreen(state, ParameterCapabilities.All, {}, {}, {}, steps::add, { releases++ }, {}, {}, { flushes++ })
             }
         }
         val button = compose.onNodeWithTag("gas_dose_manual_inc")
@@ -139,7 +141,7 @@ class GasDoseScreenTest {
         compose.setContent {
             SecuComposeTheme {
                 GasDoseScreen(
-                    GasDoseValues.from(GasDoseParamPacket()), true, {}, {}, {}, steps::add,
+                    GasDoseValues(200f, 14.7f, 20f, 15f, 15f, false, 1, false), ParameterCapabilities.All, {}, {}, {}, steps::add,
                     {}, { cancels++ }, {}, { flushes++ }, isActive = active.value,
                 )
             }
