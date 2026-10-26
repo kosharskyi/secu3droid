@@ -4,7 +4,7 @@
 
 ## UI page resources map to domain page IDs at the screen boundary
 
-Use `parameterPageForTitle` when routing a resource-backed page to the domain session. The session should not depend on string resources or Compose navigation state.
+`ParameterPageSpec` resolves the resource-backed page to its domain ID before rendering. Pass that existing ID into `ParameterPageContent` for retry and failure matching instead of recovering it from the title resource. The session should not depend on string resources or Compose navigation state.
 
 ## The parameter exchange component owns response matching and timeout policy
 

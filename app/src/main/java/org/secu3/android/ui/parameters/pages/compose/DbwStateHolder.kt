@@ -38,8 +38,6 @@ class DbwStateHolder(
     var uiState: DbwUiState by mutableStateOf(DbwUiState.Loading)
         private set
 
-    val isSendAllowed: Boolean get() = packet != null
-
     fun reset() {
         packet = null
         uiState = DbwUiState.Loading

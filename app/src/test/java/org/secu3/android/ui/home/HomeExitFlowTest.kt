@@ -9,39 +9,56 @@ class HomeExitFlowTest {
     @Test fun lockedUsbSessionCannotRequestAnExit() {
         val flow = HomeExitFlow()
         assertEquals(HomeExitAction.NONE, flow.confirm(connectionRunning = true, usbSessionLocked = true))
-        assertFalse(flow.onDisconnected())
-        assertFalse(flow.consumeNavigation())
+        flow.onDisconnected()
+        assertFalse(flow.navigationPending.value)
+        flow.consumeNavigation()
+        assertFalse(flow.navigationPending.value)
     }
 
     @Test fun connectionExitStopsOnceThenNavigatesOnceAfterDisconnect() {
         val flow = HomeExitFlow()
         assertEquals(HomeExitAction.STOP_CONNECTION, flow.confirm(connectionRunning = true))
+        assertFalse(flow.navigationPending.value)
         assertEquals(HomeExitAction.NONE, flow.confirm(connectionRunning = true))
-        assertTrue(flow.onDisconnected())
-        assertFalse(flow.onDisconnected())
-        assertTrue(flow.consumeNavigation())
-        assertFalse(flow.consumeNavigation())
+        flow.onDisconnected()
+        assertTrue(flow.navigationPending.value)
+        flow.onDisconnected()
+        assertTrue(flow.navigationPending.value)
+        flow.consumeNavigation()
+        assertFalse(flow.navigationPending.value)
+        flow.consumeNavigation()
+        assertFalse(flow.navigationPending.value)
     }
 
-    @Test fun disconnectedExitNavigatesOnceWithoutStoppingConnection() {
+    @Test fun disconnectedExitWaitsForStopAcceptanceThenNavigatesOnce() {
         val flow = HomeExitFlow()
         assertEquals(HomeExitAction.NAVIGATE_START, flow.confirm(connectionRunning = false))
         assertEquals(HomeExitAction.NONE, flow.confirm(connectionRunning = false))
-        assertFalse(flow.onDisconnected())
-        assertTrue(flow.consumeNavigation())
+        assertFalse(flow.navigationPending.value)
+        flow.consumeNavigation()
+        assertFalse(flow.navigationPending.value)
+        flow.onDisconnected()
+        assertTrue(flow.navigationPending.value)
+        flow.consumeNavigation()
+        assertFalse(flow.navigationPending.value)
     }
 
     @Test fun cancellingRejectedExitClearsPendingStateAndAllowsAnotherConfirmation() {
         val waitingForDisconnect = HomeExitFlow()
         assertEquals(HomeExitAction.STOP_CONNECTION, waitingForDisconnect.confirm(connectionRunning = true))
         waitingForDisconnect.cancelPendingExit()
-        assertFalse(waitingForDisconnect.onDisconnected())
+        waitingForDisconnect.onDisconnected()
+        assertFalse(waitingForDisconnect.navigationPending.value)
         assertEquals(HomeExitAction.STOP_CONNECTION, waitingForDisconnect.confirm(connectionRunning = true))
 
         val navigationPending = HomeExitFlow()
         assertEquals(HomeExitAction.NAVIGATE_START, navigationPending.confirm(connectionRunning = false))
+        assertFalse(navigationPending.navigationPending.value)
         navigationPending.cancelPendingExit()
-        assertFalse(navigationPending.consumeNavigation())
+        navigationPending.onDisconnected()
+        assertFalse(navigationPending.navigationPending.value)
+        navigationPending.consumeNavigation()
+        assertFalse(navigationPending.navigationPending.value)
         assertEquals(HomeExitAction.NAVIGATE_START, navigationPending.confirm(connectionRunning = false))
     }
 }

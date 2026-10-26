@@ -86,14 +86,4 @@ class UiMessageQueueTest {
         assertTrue(queue.pending.value.isEmpty())
     }
 
-    @Test
-    fun formattedArgumentsAreSnapshottedAndPartOfDuplicateIdentity() {
-        val args = mutableListOf<UiMessageArgument>(UiMessageArgument.Text("before"))
-        queue.publish(1, UiMessageDuration.SHORT, arguments = args)
-        args[0] = UiMessageArgument.Text("after")
-        queue.publish(1, UiMessageDuration.SHORT, arguments = listOf(UiMessageArgument.Text("after")))
-
-        assertEquals(2, queue.pending.value.size)
-        assertEquals(UiMessageArgument.Text("before"), queue.pending.value.first().arguments.single())
-    }
 }

@@ -39,8 +39,6 @@ class LtftStateHolder(
     var uiState: LtftUiState by mutableStateOf(LtftUiState.Loading)
         private set
 
-    val isSendAllowed: Boolean get() = packet != null
-
     fun reset() {
         packet = null
         uiState = LtftUiState.Loading

@@ -25,7 +25,6 @@
 package org.secu3.android.ui.parameters.pages.compose
 
 import org.junit.Assert.assertEquals
-import org.junit.Assert.assertFalse
 import org.junit.Assert.assertSame
 import org.junit.Assert.assertTrue
 import org.junit.Test
@@ -37,20 +36,17 @@ class DbwStateHolderTest {
         val allowed = mutableListOf<Boolean>()
         val holder = DbwStateHolder(sent::add, allowed::add)
         assertEquals(DbwUiState.Loading, holder.uiState)
-        assertFalse(holder.isSendAllowed)
         holder.edit(DbwNumber.ETC_P, 1.25f)
         assertTrue(sent.isEmpty())
 
         val packet = DbwParamPacket(homePosition_edited = 31.25f)
         holder.receive(packet)
-        assertTrue(holder.isSendAllowed)
         assertEquals(31.25f, (holder.uiState as DbwUiState.Data).values.homePosition, .0001f)
         assertTrue(sent.isEmpty())
         assertEquals(listOf(false, true), allowed)
 
         holder.reset()
         assertEquals(DbwUiState.Loading, holder.uiState)
-        assertFalse(holder.isSendAllowed)
         holder.edit(DbwNumber.ETC_I, 1f)
         assertTrue(sent.isEmpty())
         assertEquals("Resetting an unloaded neighbor must not block the active page", listOf(false, true), allowed)

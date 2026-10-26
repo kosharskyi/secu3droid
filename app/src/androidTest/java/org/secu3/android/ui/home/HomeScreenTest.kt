@@ -55,6 +55,9 @@ import org.junit.Assert.assertTrue
 import org.junit.Rule
 import org.junit.Test
 import org.secu3.android.R
+import org.secu3.android.connection.Connected
+import org.secu3.android.connection.ConnectionState
+import org.secu3.android.connection.InProgress
 import org.secu3.android.ui.compose.SecuComposeTheme
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.Density
@@ -94,14 +97,14 @@ class HomeScreenTest {
     @Test fun firmwareIconIsAccessibleAndOnlyClickableWhenFirmwareExists() {
         var opened = 0
         var firmwareAvailable by mutableStateOf(false)
-        var status by mutableStateOf(HomeConnectionStatus.CONNECTED)
+        var status by mutableStateOf<ConnectionState>(Connected)
         compose.setContent { HomeScreen(HomeScreenState(connectionStatus = status, firmwareAvailable = firmwareAvailable), HomeScreenActions(onFirmware = { opened++ })) }
         compose.onNodeWithContentDescription(context.getString(R.string.home_connection_connected)).assertIsDisplayed().performClick()
         assertEquals(0, opened)
         compose.runOnIdle { firmwareAvailable = true }
         compose.onNodeWithContentDescription(context.getString(R.string.home_connection_connected_firmware)).performClick()
         assertEquals(1, opened)
-        compose.runOnIdle { status = HomeConnectionStatus.CONNECTING }
+        compose.runOnIdle { status = InProgress }
         compose.onNodeWithContentDescription(context.getString(R.string.home_connection_connecting)).assertIsDisplayed()
     }
 
@@ -123,7 +126,7 @@ class HomeScreenTest {
         var locked by mutableStateOf(true)
         compose.setContent {
             HomeScreen(
-                HomeScreenState(connectionStatus = HomeConnectionStatus.CONNECTED, connectionRunning = true, usbSessionLocked = locked),
+                HomeScreenState(connectionStatus = Connected, connectionRunning = true, usbSessionLocked = locked),
                 HomeScreenActions(onSensors = { openedSensors++ }),
             )
         }
@@ -146,7 +149,7 @@ class HomeScreenTest {
 
     @Test fun releaseDialogOffersDownloadNotesAndRemindChoices() {
         val choices = mutableListOf<String>()
-        var screen by mutableStateOf(HomeScreenState(dialog = HomeDialog.RELEASE, releaseName = "v1", releaseMessage = "Release v1"))
+        var screen by mutableStateOf(HomeScreenState(dialog = HomeDialog.RELEASE, releaseMessage = "Release v1"))
         compose.setContent { HomeScreen(screen, HomeScreenActions(onDialogDismissed = { screen = screen.copy(dialog = null) }, onDownloadRelease = { choices += "download" }, onReleaseNotes = { choices += "notes" })) }
         compose.onNodeWithText("Release v1").assertIsDisplayed()
         compose.onNodeWithText(context.getString(R.string.download)).performClick()
@@ -163,7 +166,7 @@ class HomeScreenTest {
         val largeFontDensity = Density(compose.density.density, fontScale = 1.6f)
         val releaseMessage = ("Long release notes describe compatibility, fixes, and installation details.\n\n").repeat(40)
         var dismissed = 0
-        val screen = HomeScreenState(dialog = HomeDialog.RELEASE, releaseName = "v2", releaseMessage = releaseMessage)
+        val screen = HomeScreenState(dialog = HomeDialog.RELEASE, releaseMessage = releaseMessage)
         compose.setContent {
             CompositionLocalProvider(
                 LocalConfiguration provides configuration,

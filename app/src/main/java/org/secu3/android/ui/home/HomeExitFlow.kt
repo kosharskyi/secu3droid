@@ -1,39 +1,35 @@
 package org.secu3.android.ui.home
 
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.asStateFlow
+
 internal enum class HomeExitAction { NONE, STOP_CONNECTION, NAVIGATE_START }
 
 internal class HomeExitFlow {
     private var waitingForDisconnect = false
-    private var navigationPending = false
+    private val mutableNavigationPending = MutableStateFlow(false)
+    val navigationPending: StateFlow<Boolean> = mutableNavigationPending.asStateFlow()
 
     fun confirm(connectionRunning: Boolean, usbSessionLocked: Boolean = false): HomeExitAction {
         if (usbSessionLocked) return HomeExitAction.NONE
-        if (waitingForDisconnect || navigationPending) return HomeExitAction.NONE
-        val action = if (connectionRunning) {
-            waitingForDisconnect = true
-            HomeExitAction.STOP_CONNECTION
-        } else {
-            navigationPending = true
-            HomeExitAction.NAVIGATE_START
-        }
-        return action
+        if (waitingForDisconnect || mutableNavigationPending.value) return HomeExitAction.NONE
+        waitingForDisconnect = true
+        return if (connectionRunning) HomeExitAction.STOP_CONNECTION else HomeExitAction.NAVIGATE_START
     }
 
-    fun onDisconnected(): Boolean {
-        if (!waitingForDisconnect) return false
+    fun onDisconnected() {
+        if (!waitingForDisconnect) return
         waitingForDisconnect = false
-        navigationPending = true
-        return true
+        mutableNavigationPending.value = true
     }
 
-    fun consumeNavigation(): Boolean {
-        if (!navigationPending) return false
-        navigationPending = false
-        return true
+    fun consumeNavigation() {
+        mutableNavigationPending.value = false
     }
 
     fun cancelPendingExit() {
         waitingForDisconnect = false
-        navigationPending = false
+        mutableNavigationPending.value = false
     }
 }

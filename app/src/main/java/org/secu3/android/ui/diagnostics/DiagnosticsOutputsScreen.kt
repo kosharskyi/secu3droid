@@ -49,13 +49,13 @@ import androidx.compose.ui.res.stringResource
 import org.secu3.android.R
 import org.secu3.android.models.packets.out.DiagOutputPacket
 
-internal enum class DiagnosticOutput(val label: String, val bit: Int, val secondBit: Int? = null) {
+internal enum class DiagnosticOutput(val label: String, val bit: Int) {
     IGN_OUT1("IGN_OUT1", 0), IGN_OUT2("IGN_OUT2", 1), IGN_OUT3("IGN_OUT3", 2), IGN_OUT4("IGN_OUT4", 3),
     IE("IE", 4), FE("FE", 5), ECF("ECF", 6), CE("CE", 7), ST_BLOCK("ST_BLOCK", 8), ADD_IO1("ADD_IO1", 9), ADD_IO2("ADD_IO2", 10),
     IGN_OUT5("IGN_OUT5", 4), ECF0("ECF0", 5), INJ_O1("INJ_O1", 6), INJ_O2("INJ_O2", 7), INJ_O3("INJ_O3", 8),
-    INJ_O4("INJ_O4", 9), INJ_O5("INJ_O5", 10), BL("BL", 11, 12), DE("DE", 13, 14), STBL_O("STBL_O", 15),
+    INJ_O4("INJ_O4", 9), INJ_O5("INJ_O5", 10), BL("BL", 11), DE("DE", 13), STBL_O("STBL_O", 15),
     CEL_O("CEL_O", 16), FPMP_O("FPMP_O", 17), PWRR_O("PWRR_O", 18), EVAP_O("EVAP_O", 19), O2SH_O("O2SH_O", 20),
-    COND_O("COND_O", 21), ADD_O2("ADD_O2", 22), TACH_O("TACH_O", 23, 24), GPA6_O("GPA6_O", 25),
+    COND_O("COND_O", 21), ADD_O2("ADD_O2", 22), TACH_O("TACH_O", 23), GPA6_O("GPA6_O", 25),
 }
 
 internal fun setDiagnosticOutput(packet: DiagOutputPacket, output: DiagnosticOutput, enabled: Boolean) {

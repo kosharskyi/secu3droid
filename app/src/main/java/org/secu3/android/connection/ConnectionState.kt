@@ -31,7 +31,6 @@ data object Connected : ConnectionState()
 data object InProgress : ConnectionState()
 data object Disconnected : ConnectionState()
 data class ConnectionAttempt(val currentAttempt: Int) : ConnectionState()
-data object ConnectionCanceled : ConnectionState()
 
 data object ConnectionTimeout : ConnectionState()
 

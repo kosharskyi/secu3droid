@@ -83,20 +83,19 @@ import org.secu3.android.R
 import org.secu3.android.ui.compose.SecuComposeTheme
 import org.secu3.android.ui.compose.ConfirmationDialog
 import org.secu3.android.ui.compose.ConnectionStatusIndicator
+import org.secu3.android.connection.ConnectionState
 import org.secu3.android.connection.Connected
-import org.secu3.android.connection.Disconnected
 import org.secu3.android.connection.InProgress
+import org.secu3.android.connection.Disconnected
 
-enum class HomeConnectionStatus { CONNECTED, CONNECTING, DISCONNECTED }
 enum class HomeLayout { GRID, LANDSCAPE_COLUMNS }
 
 data class HomeScreenState(
-    val connectionStatus: HomeConnectionStatus = HomeConnectionStatus.DISCONNECTED,
+    val connectionStatus: ConnectionState = Disconnected,
     val firmwareAvailable: Boolean = false,
     val connectionRunning: Boolean = false,
     val usbSessionLocked: Boolean = false,
     val dialog: HomeDialog? = null,
-    val releaseName: String? = null,
     val releaseMessage: String? = null,
 )
 
@@ -161,19 +160,14 @@ fun HomeScreen(
                     Box(Modifier.weight(1f))
                 }
                 val statusDescription = when (state.connectionStatus) {
-                    HomeConnectionStatus.CONNECTED -> stringResource(
+                    Connected -> stringResource(
                         if (state.firmwareAvailable) R.string.home_connection_connected_firmware else R.string.home_connection_connected,
                     )
-                    HomeConnectionStatus.CONNECTING -> stringResource(R.string.home_connection_connecting)
-                    HomeConnectionStatus.DISCONNECTED -> stringResource(R.string.home_connection_disconnected)
-                }
-                val connectionState = when (state.connectionStatus) {
-                    HomeConnectionStatus.CONNECTED -> Connected
-                    HomeConnectionStatus.CONNECTING -> InProgress
-                    HomeConnectionStatus.DISCONNECTED -> Disconnected
+                    InProgress -> stringResource(R.string.home_connection_connecting)
+                    else -> stringResource(R.string.home_connection_disconnected)
                 }
                 ConnectionStatusIndicator(
-                    connectionState = connectionState,
+                    connectionState = state.connectionStatus,
                     contentDescriptionOverride = statusDescription,
                     onClick = if (state.firmwareAvailable) actions.onFirmware else null,
                     testTag = "home-ecu-status",

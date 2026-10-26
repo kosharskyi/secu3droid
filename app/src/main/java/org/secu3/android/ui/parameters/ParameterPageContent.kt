@@ -42,6 +42,7 @@ import org.secu3.android.ui.messages.UiMessageDuration
 /** Direct Compose rendering for every ViewModel-owned parameter page. */
 @Composable
 internal fun ParameterPageContent(
+    page: ParameterPage,
     titleRes: Int,
     viewModel: ParamsViewModel,
     firmwareInfo: FirmwareInfoPacket?,
@@ -49,9 +50,8 @@ internal fun ParameterPageContent(
     isActiveNow: () -> Boolean,
     onEdit: (ParameterEditRequest) -> Unit,
 ) {
-    val page = parameterPageForTitle(titleRes)
     if (viewModel.failedPage == page) {
-        ParameterReadError(onRetry = { page?.let(viewModel::refreshPage) })
+        ParameterReadError(onRetry = { viewModel.refreshPage(page) })
         return
     }
     val resources = LocalResources.current

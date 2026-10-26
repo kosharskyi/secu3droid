@@ -46,8 +46,6 @@ class FuelInjectionStateHolder(
     var uiState: FuelInjectionUiState by mutableStateOf(FuelInjectionUiState.Loading)
         private set
 
-    val isSendAllowed: Boolean get() = packet != null
-
     fun reset() {
         packet = null
         injectorEnabled = true

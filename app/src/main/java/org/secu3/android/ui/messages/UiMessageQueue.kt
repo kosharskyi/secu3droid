@@ -31,17 +31,15 @@ class UiMessageQueue @Inject constructor() {
         textRes: Int,
         duration: UiMessageDuration,
         scope: String? = null,
-        arguments: List<UiMessageArgument> = emptyList(),
     ) {
         val nowMillis = clock()
         if (scope != null && mutableActiveScope.value != null && scope != mutableActiveScope.value) return
         val live = mutablePending.value.filter { it.expiresAtMillis > nowMillis }
-        val immutableArguments = arguments.toList()
-        if (live.any { it.textRes == textRes && it.scope == scope && it.duration == duration && it.arguments == immutableArguments }) {
+        if (live.any { it.textRes == textRes && it.scope == scope && it.duration == duration }) {
             mutablePending.value = live
             return
         }
-        val message = UiMessage(nextId++, textRes, immutableArguments, duration, scope, nowMillis + TTL_MILLIS)
+        val message = UiMessage(nextId++, textRes, duration, scope, nowMillis + TTL_MILLIS)
         mutablePending.value = (live + message).takeLast(CAPACITY)
     }
 
@@ -79,7 +77,6 @@ class UiMessageQueue @Inject constructor() {
 data class UiMessage(
     val id: Long,
     val textRes: Int,
-    val arguments: List<UiMessageArgument>,
     val duration: UiMessageDuration,
     /** Navigation destination route, or null for a message that survives navigation. */
     val scope: String?,
@@ -87,12 +84,3 @@ data class UiMessage(
 )
 
 enum class UiMessageDuration { SHORT, LONG }
-
-sealed interface UiMessageArgument {
-    fun value(): Any
-
-    data class Text(val value: String) : UiMessageArgument { override fun value(): Any = value }
-    data class Integer(val value: Int) : UiMessageArgument { override fun value(): Any = value }
-    data class Decimal(val value: Float) : UiMessageArgument { override fun value(): Any = value }
-    data class LongInteger(val value: Long) : UiMessageArgument { override fun value(): Any = value }
-}

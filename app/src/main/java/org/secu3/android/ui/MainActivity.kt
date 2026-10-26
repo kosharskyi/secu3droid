@@ -50,7 +50,6 @@ class MainActivity : ComponentActivity() {
     internal val rootNavigationController: NavHostController? get() = rootNavController
     private var pendingNavigation: String? = null
     private var pendingUsbHomeGeneration: Long? = null
-    private var pendingTerminalStartGeneration: Long? = null
     private var pendingUsbIntentDevice: UsbDevice? = null
     private var startUsbIntentHandler: ((UsbDevice?) -> Unit)? = null
     private var activeComposeRoute: String? = null
@@ -77,10 +76,7 @@ class MainActivity : ComponentActivity() {
                         uiMessageQueue.discardExpired()
                         continue
                     }
-                    val text = if (message.arguments.isEmpty()) getString(message.textRes) else getString(
-                        message.textRes,
-                        *message.arguments.map { it.value() }.toTypedArray(),
-                    )
+                    val text = getString(message.textRes)
                     val toast = Toast.makeText(this@MainActivity, text, toastLength(message.duration))
                     try {
                         toast.show()
@@ -140,8 +136,7 @@ class MainActivity : ComponentActivity() {
         }
         pendingNavigation = null
         pendingUsbHomeGeneration = null
-        pendingTerminalStartGeneration?.let(viewModel::completeTerminalStart)
-        pendingTerminalStartGeneration = null
+        viewModel.pendingTerminalStart()?.let(viewModel::completeTerminalStart)
         if (controller.currentDestination?.route == START_ROUTE) return true
         if (!controller.popBackStack(START_ROUTE, inclusive = false)) {
             controller.navigate(START_ROUTE) { popUpTo(controller.graph.id) { inclusive = true }; launchSingleTop = true }
@@ -186,9 +181,8 @@ class MainActivity : ComponentActivity() {
     private fun processPendingNavigation() {
         if (!lifecycle.currentState.isAtLeast(Lifecycle.State.RESUMED) || !isDeviceUnlocked()) return
         val route = pendingNavigation ?: return
-        val terminalGeneration = pendingTerminalStartGeneration
+        val terminalGeneration = viewModel.pendingTerminalStart()
         if (route == START_ROUTE && terminalGeneration != null && viewModel.connectionManager.terminalSessionGeneration.value != terminalGeneration) {
-            pendingTerminalStartGeneration = null
             viewModel.completeTerminalStart(terminalGeneration)
             if (route == START_ROUTE) pendingNavigation = null
             return
@@ -368,14 +362,12 @@ class MainActivity : ComponentActivity() {
     private fun onTerminalSessionChanged(generation: Long?) {
         if (generation == null) {
             val pendingGeneration = viewModel.cancelPendingTerminalStart()
-            val wasQueued = pendingTerminalStartGeneration != null || pendingGeneration != null
-            pendingTerminalStartGeneration = null
+            val wasQueued = pendingGeneration != null
             if (wasQueued && pendingNavigation == START_ROUTE) pendingNavigation = null
             return
         }
         if (viewModel.connectionManager.terminalSessionGeneration.value != generation) return
         if (!viewModel.queueTerminalStart(generation)) return
-        pendingTerminalStartGeneration = generation
         pendingNavigation = START_ROUTE
         if (lifecycle.currentState.isAtLeast(Lifecycle.State.RESUMED) && isDeviceUnlocked()) openStart()
     }
@@ -383,12 +375,10 @@ class MainActivity : ComponentActivity() {
     private fun restorePendingTerminalStart() {
         val generation = viewModel.pendingTerminalStart() ?: return
         if (viewModel.connectionManager.terminalSessionGeneration.value == generation) {
-            pendingTerminalStartGeneration = generation
             pendingNavigation = START_ROUTE
         } else {
             viewModel.cancelPendingTerminalStart()
-            if (pendingTerminalStartGeneration == generation && pendingNavigation == START_ROUTE) pendingNavigation = null
-            pendingTerminalStartGeneration = null
+            if (pendingNavigation == START_ROUTE) pendingNavigation = null
         }
     }
 

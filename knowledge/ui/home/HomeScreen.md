@@ -20,4 +20,4 @@ A confirmed USB session hides the Exit action and consumes system Back while Hom
 
 ## A rejected connection stop must not navigate away from Home
 
-The manager rechecks the USB session lock when Home confirms an exit. If a USB handshake confirms between the UI snapshot and that request, the manager rejects the stop; keep the exit flow pending state clear and do not navigate to StartScreen. Accepted exits let the manager stop the transport, logger and foreground service as one operation.
+The manager rechecks the USB session lock when Home confirms an exit. If a USB handshake confirms between the UI snapshot and that request, the manager rejects the stop; keep the exit flow pending state clear and do not navigate to StartScreen. `HomeExitFlow` owns the observable navigation flag exposed by the ViewModel. A disconnected exit reserves the request without publishing navigation until the manager accepts the stop; a running exit waits for the disconnect event. Accepted exits let the manager stop the transport, logger and foreground service as one operation.

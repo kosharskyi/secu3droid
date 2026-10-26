@@ -30,7 +30,7 @@ class StartScreenViewModel @Inject constructor(
     private val packageManager: PackageManager,
     val usbManager: UsbManager,
 ) : ViewModel() {
-    private val _uiState = MutableStateFlow(StartUiState())
+    private val _uiState = MutableStateFlow(StartScreenState())
     val uiState = _uiState.asStateFlow()
     val connectionState = connectionManager.connectionStateFlow
     val isUsbSessionLocked get() = connectionManager.isUsbSessionLocked
@@ -179,11 +179,3 @@ class StartScreenViewModel @Inject constructor(
     }
     override fun onCleared() { cancelBtDiscovery() }
 }
-
-data class StartUiState(
-    val connecting: Boolean = false,
-    val usbDeviceDetected: Boolean = false,
-    val showBluetoothDevices: Boolean = false,
-    val bluetoothDevices: List<StartBluetoothDevice> = emptyList(),
-    val showBluetoothRationale: Boolean = false,
-)

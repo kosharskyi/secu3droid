@@ -25,7 +25,6 @@
 package org.secu3.android.ui.parameters.pages.compose
 
 import org.junit.Assert.assertEquals
-import org.junit.Assert.assertFalse
 import org.junit.Assert.assertSame
 import org.junit.Assert.assertTrue
 import org.junit.Test
@@ -35,7 +34,6 @@ class LtftStateHolderTest {
     @Test fun startsAndResetsLoadingAndReceiveDoesNotSend() {
         val sent = mutableListOf<LtftParamPacket>()
         val holder = LtftStateHolder(sent::add)
-        assertFalse(holder.isSendAllowed)
         assertEquals(LtftUiState.Loading, holder.uiState)
         holder.edit(LtftNumber.LOWER_CLT, 12f)
         holder.selectMode(2)
@@ -43,13 +41,11 @@ class LtftStateHolderTest {
 
         val packet = LtftParamPacket(mode = 3)
         holder.receive(packet)
-        assertTrue(holder.isSendAllowed)
         assertEquals(3, (holder.uiState as LtftUiState.Data).values.mode)
         assertTrue(sent.isEmpty())
         holder.reset()
         holder.edit(LtftNumber.LOWER_CLT, 12f)
         holder.selectMode(2)
-        assertFalse(holder.isSendAllowed)
         assertEquals(LtftUiState.Loading, holder.uiState)
         assertTrue(sent.isEmpty())
     }

@@ -287,26 +287,21 @@ internal fun sensorSessionFlow(
                     val packetFeed = packets.filter {
                         it is SensorsPacket || it is AdcRawDatPacket || it is FirmwareInfoPacket
                     }.shareIn(this, SharingStarted.WhileSubscribed(), replay = 0)
-                    val updates = merge(
-                        packetFeed.filterIsInstance<SensorsPacket>().sample(100).map(SensorPacketUpdate::Sensors),
-                        packetFeed.filterIsInstance<AdcRawDatPacket>().sample(100).map(SensorPacketUpdate::RawSensors),
-                        packetFeed.filterIsInstance<FirmwareInfoPacket>().map(SensorPacketUpdate::Firmware),
+                    val updates = merge<org.secu3.android.models.packets.base.InputPacket>(
+                        packetFeed.filterIsInstance<SensorsPacket>().sample(100),
+                        packetFeed.filterIsInstance<AdcRawDatPacket>().sample(100),
+                        packetFeed.filterIsInstance<FirmwareInfoPacket>(),
                     )
                     updates.runningFold(SensorSessionSnapshot(firmware = firmwareSeed)) { snapshot, update ->
                         when (update) {
-                            is SensorPacketUpdate.Sensors -> snapshot.copy(sensors = update.packet)
-                            is SensorPacketUpdate.RawSensors -> snapshot.copy(rawSensors = update.packet)
-                            is SensorPacketUpdate.Firmware -> snapshot.copy(firmware = update.packet)
+                            is SensorsPacket -> snapshot.copy(sensors = update)
+                            is AdcRawDatPacket -> snapshot.copy(rawSensors = update)
+                            is FirmwareInfoPacket -> snapshot.copy(firmware = update)
+                            else -> snapshot
                         }
                     }.collect { send(it) }
                 }
             }
         })
     }
-}
-
-private sealed interface SensorPacketUpdate {
-    data class Sensors(val packet: SensorsPacket) : SensorPacketUpdate
-    data class RawSensors(val packet: AdcRawDatPacket) : SensorPacketUpdate
-    data class Firmware(val packet: FirmwareInfoPacket) : SensorPacketUpdate
 }

@@ -140,7 +140,7 @@ internal fun StartRoute(entry: NavBackStackEntry, activity: MainActivity, onConn
 
     SecuComposeTheme {
         StartScreenContent(
-            StartScreenState(state.connecting, state.usbDeviceDetected, state.showBluetoothDevices, state.bluetoothDevices, state.showBluetoothRationale),
+            state,
             StartScreenActions(
                 onConnectOrCancel = { inProgress ->
                     if (inProgress) vm.cancelConnection()

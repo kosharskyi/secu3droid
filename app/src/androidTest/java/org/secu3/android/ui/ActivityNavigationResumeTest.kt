@@ -90,6 +90,27 @@ class ActivityNavigationResumeTest {
         }
     }
 
+    @Test fun queuedTerminalNavigationSurvivesActivityRecreation() {
+        ActivityScenario.launch(MainActivity::class.java).use { scenario ->
+            scenario.onActivity { it.openSettings() }
+            scenario.moveToState(androidx.lifecycle.Lifecycle.State.STARTED)
+            scenario.onActivity { terminalFlow(it).value = 703L }
+            InstrumentationRegistry.getInstrumentation().waitForIdleSync()
+
+            scenario.onActivity { activity ->
+                assertEquals(SETTINGS_ROUTE, activity.rootNavigationController?.currentDestination?.route)
+                assertEquals(703L, ViewModelProvider(activity)[MainActivityViewModel::class.java].pendingTerminalStart())
+            }
+            scenario.recreate()
+            scenario.moveToState(androidx.lifecycle.Lifecycle.State.RESUMED)
+
+            scenario.onActivity { activity ->
+                assertEquals(START_ROUTE, activity.rootNavigationController?.currentDestination?.route)
+                assertEquals(null, ViewModelProvider(activity)[MainActivityViewModel::class.java].pendingTerminalStart())
+            }
+        }
+    }
+
     @Suppress("UNCHECKED_CAST")
     private fun terminalFlow(activity: MainActivity): MutableStateFlow<Long?> {
         val manager = ViewModelProvider(activity)[MainActivityViewModel::class.java].connectionManager

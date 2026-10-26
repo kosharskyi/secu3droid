@@ -97,17 +97,16 @@ class SecuLogsViewModel @Inject constructor(
 
     fun exportFile(file: File) {
         viewModelScope.launch {
-            val result = saveLogFile(file)
-            effectsChannel.send(SecuLogsEffect.ExportFinished(result))
+            effectsChannel.send(saveLogFile(file))
         }
     }
 
-    suspend fun saveLogFile(file: File): SaveLogResult = withContext(Dispatchers.IO) {
+    private suspend fun saveLogFile(file: File): SecuLogsEffect = withContext(Dispatchers.IO) {
         runCatching {
             val destination = fileHelper.saveLog(file, userPrefs.logExportDestination)
-            SaveLogResult(isSuccess = true, destination = destination)
+            SecuLogsEffect.ExportSucceeded(destination)
         }.getOrElse {
-            SaveLogResult(isSuccess = false, destination = "")
+            SecuLogsEffect.ExportFailed
         }
     }
 
@@ -144,10 +143,6 @@ sealed interface SecuLogsEffect {
     data object PermissionDenied : SecuLogsEffect
     data object ActiveLogDeleteRejected : SecuLogsEffect
     data object DeleteFailed : SecuLogsEffect
-    data class ExportFinished(val result: SaveLogResult) : SecuLogsEffect
+    data class ExportSucceeded(val destination: String) : SecuLogsEffect
+    data object ExportFailed : SecuLogsEffect
 }
-
-data class SaveLogResult(
-    val isSuccess: Boolean,
-    val destination: String,
-)

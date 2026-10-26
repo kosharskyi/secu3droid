@@ -7,6 +7,7 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
 import org.secu3.android.BuildConfig
+import org.secu3.android.connection.ConnectionState
 import org.secu3.android.connection.Connected
 import org.secu3.android.connection.Disconnected
 import org.secu3.android.connection.InProgress
@@ -27,9 +28,8 @@ class HomeViewModel @Inject constructor(
     private val _uiState = MutableStateFlow(HomeUiState())
     val uiState = _uiState.asStateFlow()
     private val exitFlow = HomeExitFlow()
+    val returnToStart = exitFlow.navigationPending
     private var release: GitHubRelease? = null
-    private val _returnToStart = MutableStateFlow(false)
-    val returnToStart = _returnToStart.asStateFlow()
     val firmwareInfo = manager.firmwareInfo
     val isConnectionRunning get() = manager.isConnectionRunning
     val isUsbSessionLocked get() = manager.isUsbSessionLocked
@@ -37,14 +37,14 @@ class HomeViewModel @Inject constructor(
     init {
         viewModelScope.launch {
             manager.connectionStateFlow.collect { status ->
-                val mapped = when (status) { Connected -> HomeConnectionStatus.CONNECTED; InProgress -> HomeConnectionStatus.CONNECTING; else -> HomeConnectionStatus.DISCONNECTED }
+                val mapped = status.takeIf { it == Connected || it == InProgress } ?: Disconnected
                 _uiState.value = _uiState.value.copy(
                     connectionStatus = mapped,
                     usbSessionLocked = manager.isUsbSessionLocked,
                     firmwareAvailable = status == Connected && manager.firmwareInfo.value != null,
                 )
                 if (status == Disconnected) {
-                    if (exitFlow.onDisconnected()) _returnToStart.value = true
+                    exitFlow.onDisconnected()
                 }
             }
         }
@@ -61,7 +61,7 @@ class HomeViewModel @Inject constructor(
         viewModelScope.launch {
             manager.firmwareInfo.collect { firmware ->
                 _uiState.value = _uiState.value.copy(
-                    firmwareAvailable = firmware != null && _uiState.value.connectionStatus == HomeConnectionStatus.CONNECTED && manager.isConnected,
+                    firmwareAvailable = firmware != null && _uiState.value.connectionStatus == Connected && manager.isConnected,
                 )
             }
         }
@@ -74,14 +74,14 @@ class HomeViewModel @Inject constructor(
         when (exitFlow.confirm(manager.isConnectionRunning, usbSessionLocked = isUsbSessionLocked)) {
             HomeExitAction.STOP_CONNECTION -> if (!manager.stopConnection()) exitFlow.cancelPendingExit()
             HomeExitAction.NAVIGATE_START -> {
-                if (manager.stopConnection()) _returnToStart.value = true
+                if (manager.stopConnection()) exitFlow.onDisconnected()
                 else exitFlow.cancelPendingExit()
             }
             HomeExitAction.NONE -> Unit
         }
     }
     fun consumeReturnToStart() {
-        if (exitFlow.consumeNavigation()) _returnToStart.value = false
+        exitFlow.consumeNavigation()
     }
     fun requestDiagnostics() { _uiState.value = _uiState.value.copy(dialog = HomeDialog.DIAGNOSTICS) }
     fun requestReleasePermissionRationale() { _uiState.value = _uiState.value.copy(dialog = HomeDialog.RELEASE_PERMISSION_RATIONALE) }
@@ -96,7 +96,7 @@ class HomeViewModel @Inject constructor(
 }
 
 data class HomeUiState(
-    val connectionStatus: HomeConnectionStatus = HomeConnectionStatus.DISCONNECTED,
+    val connectionStatus: ConnectionState = Disconnected,
     val usbSessionLocked: Boolean = false,
     val firmwareAvailable: Boolean = false,
     val dialog: HomeDialog? = null,

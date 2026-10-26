@@ -233,9 +233,6 @@ class ParamsViewModel @Inject constructor(
         }
     }
 
-    internal val isConnected: Boolean
-        get() = secu3ConnectionManager.isConnected
-
     internal fun clearPageState() = parameterSession.closePageSession()
 
     private fun onParameterSessionEvent(event: ParameterSessionEvent) {
@@ -252,7 +249,6 @@ class ParamsViewModel @Inject constructor(
                 resetStateHolder(event.page)
             }
             is ParameterSessionEvent.PageLoaded -> applyPageResult(event.page, event.result)
-            is ParameterSessionEvent.PageUnavailable -> Unit
             is ParameterSessionEvent.PageFailed -> failedPage = event.page
             ParameterSessionEvent.SaveStarted -> showUiMessage(R.string.saving, UiMessageDuration.SHORT)
             is ParameterSessionEvent.SaveFinished -> when (event.result) {

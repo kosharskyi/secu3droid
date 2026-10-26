@@ -56,7 +56,6 @@ sealed interface ParameterSessionEvent {
     data class Invalidated(val sessionId: Int) : ParameterSessionEvent
     data class PageLoading(val page: ParameterPage) : ParameterSessionEvent
     data class PageLoaded(val page: ParameterPage, val result: ParameterReadResult) : ParameterSessionEvent
-    data class PageUnavailable(val page: ParameterPage) : ParameterSessionEvent
     data class PageFailed(val page: ParameterPage) : ParameterSessionEvent
     data object SaveStarted : ParameterSessionEvent
     data class SaveFinished(val result: EepromSaveResult) : ParameterSessionEvent
@@ -205,12 +204,9 @@ class ParameterSession internal constructor(
                     if (isCurrent(session) && isTransportConnected()) readPage(page) else null
                 }.first()
                 if (!isCurrent(session)) return@launch
-                if (result == null) {
-                    eventHandler?.invoke(ParameterSessionEvent.PageUnavailable(page))
-                } else {
-                    if (writeRevision == readRevision) loadedPages += page
-                    eventHandler?.invoke(ParameterSessionEvent.PageLoaded(page, result))
-                }
+                if (result == null) return@launch
+                if (writeRevision == readRevision) loadedPages += page
+                eventHandler?.invoke(ParameterSessionEvent.PageLoaded(page, result))
             } catch (_: TimeoutException) {
                 if (isCurrent(session)) eventHandler?.invoke(ParameterSessionEvent.PageFailed(page))
             } catch (cancelled: CancellationException) {
