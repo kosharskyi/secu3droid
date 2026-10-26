@@ -18,6 +18,10 @@ Business logic must not be implemented in UI layers, including Activities, Compo
 
 UI code may map domain state to presentation (including localized messages and styling), manage UI-only interaction/navigation state, and forward user actions to the owning components. ViewModels expose presentation state and coordinate those calls; they must not reconstruct domain/session history or duplicate business rules to infer outcomes. If presentation needs a distinction missing from a shared contract, extend the owning component's typed state/result and update its consumers and tests within the approved plan.
 
+Connection managers own connection establishment, reconnection, cancellation, transport-resource cleanup, connection status, and the common incoming packet stream. They must not know about screens, routes, ViewModels, or how packets are delivered to or displayed by particular UI consumers.
+
+Do not put display-state ownership into a connection manager: no latest-packet caches, per-packet-type state streams, replay, sampling, filtering, or reset policies introduced for screen consumption. Packet-derived consumer state and its presentation lifecycle belong outside the connection manager. Shared consumer behavior must follow the class/helper ownership rules below rather than expanding the manager's responsibilities.
+
 ## Class and Helper Organization
 
 - Prefer the simplest concrete implementation that satisfies current requirements. Add an abstraction only when it provides a concrete, present benefit that outweighs the extra types, indirection, and maintenance. This applies to interfaces, base classes, wrappers, enum/sealed hierarchies, and helper or coordinator classes.

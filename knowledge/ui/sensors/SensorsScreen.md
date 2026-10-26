@@ -2,6 +2,8 @@
 
 Room-configured cards and their order remain available while disconnected. The modern gauge keeps its configuration but displays an em dash when there is no reading; indicators must communicate unavailable state rather than a false inactive value. A null gauge reading means no needle, not a zero reading. Legacy/raw sensors must receive a null packet while disconnected so stale readings are not presented as live.
 
+Add, delete, and reorder operations must update the Room-driven card lists without waiting for another ECU packet. Packet arrival only refreshes each configured card's displayed reading.
+
 ## Preserve legacy gauge range colors
 
 Legacy gauge section colors encode ECU ranges. Theme the dial text, needle, and background while preserving those range colors.

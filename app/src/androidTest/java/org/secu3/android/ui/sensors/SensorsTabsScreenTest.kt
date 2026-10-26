@@ -62,7 +62,6 @@ import org.secu3.android.ui.sensors.models.GaugeItem
 import org.secu3.android.models.sensors.GaugeType
 import org.secu3.android.ui.sensors.models.IndicatorItem
 import org.secu3.android.models.sensors.IndicatorType
-import org.secu3.android.utils.Task
 import androidx.test.platform.app.InstrumentationRegistry
 
 class SensorsTabsScreenTest {
@@ -237,11 +236,6 @@ class SensorsTabsScreenTest {
             .assert(SemanticsMatcher.expectValue(SemanticsProperties.StateDescription, context.getString(R.string.sensors_status_accessibility_unavailable)))
         compose.onNodeWithText(context.getString(R.string.sensors_status_accessibility_unavailable)).assertDoesNotExist()
         compose.onNodeWithText(context.getString(R.string.sensors_status_accessibility_off)).assertDoesNotExist()
-    }
-
-    @Test fun pageTaskMappingSelectsSensorAndRawTasks() {
-        assertEquals(Task.Secu3ReadSensors, taskForPage(0))
-        assertEquals(Task.Secu3ReadRawSensors, taskForPage(1))
     }
 
     @Test fun changingOldViewPreferenceReplacesGaugeScreenWithLegacyScreen() {

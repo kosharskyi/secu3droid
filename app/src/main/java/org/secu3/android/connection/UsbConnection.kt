@@ -82,7 +82,6 @@ class UsbConnection @Inject constructor(
     internal fun startConnection(device: UsbDevice, attemptId: Long) {
         stopConnection()
         val attempt = ++attemptGeneration
-        connectionAttempts = 0
         isRunning = true
         scope.launch {
             mConnectionStateFlow.emit(InProgress)

@@ -31,9 +31,6 @@ abstract class Connection<E : Any> (
     protected val maxConnectionAttempts: Int
         get() = prefs.connectionRetries
 
-    var connectionAttempts = 0
-        protected set
-
     @Volatile
     var isRunning = false
         protected set

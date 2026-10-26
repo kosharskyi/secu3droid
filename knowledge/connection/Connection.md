@@ -2,6 +2,10 @@
 
 Retry and read coroutines are children of the reusable connection scope and are cancelled on stop. Transport cleanup notifications and the serial write queue use a background scope that survives stop/start; cancelling it would lose a pending `Disconnected` event and permanently kill writes for a later reconnect. Stop detaches the endpoint immediately, then closes it and publishes its state from the background scope.
 
+## Logger packet writes backpressure the connection-manager collector
+
+`Secu3ConnectionManager` awaits each `SecuLogger.logPacket` command. Keep this collector independent from UI sampling: logging must receive every sensor packet, and fire-and-forget logging or an additional unlimited channel would remove its existing backpressure.
+
 ## Resolve a USB driver and port before opening the USB device
 
 Probe the selected `UsbDevice` and choose its first serial port before calling `UsbManager.openDevice`. Unsupported devices or drivers with no ports must fail before acquiring a USB connection that would otherwise need to be closed.
@@ -37,6 +41,8 @@ Parameter, sensor and diagnostics consumers invalidate their local data on each 
 ## Firmware state belongs to the selected session and replays only its current value
 
 `firmwareInfo` is the manager's canonical nullable state; `fwInfo` reads that same value. Clear it on replacement, retry, detach and stop, and publish confirmed USB firmware before `Connected`. Bluetooth firmware publication shares the manager lock with session cleanup so a parsed old reply cannot repopulate the state after stop. A late observer receives the current firmware or null, never a separate cache from an earlier session. Connection-loss events remain separate and non-conflated.
+
+For Bluetooth, the manager also clears `firmwareInfo` on each current-generation non-Connected retry event before publishing that state. Sensors consumes this canonical flow directly, so a reconnect cannot keep presenting firmware from the previous link.
 
 ## A request subscribes before sending and remains bound to its starting session
 

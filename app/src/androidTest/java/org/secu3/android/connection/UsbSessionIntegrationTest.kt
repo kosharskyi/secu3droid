@@ -356,6 +356,37 @@ class UsbSessionIntegrationTest {
         }
     }
 
+    @Test fun replacingBluetoothConnectionJobCancelsOldRetryLoop() = runBlocking {
+        val fixture = Fixture()
+        val originalRetries = fixture.prefs.connectionRetries
+        val originalAddress = fixture.prefs.bluetoothDeviceAddress
+        val events = CopyOnWriteArrayList<BluetoothConnectionEvent>()
+        val collector = launch(start = CoroutineStart.UNDISPATCHED) {
+            fixture.btEvents.collect(events::add)
+        }
+        try {
+            fixture.prefs.connectionRetries = 3
+            fixture.prefs.bluetoothDeviceAddress = "02:00:00:00:00:01"
+            val oldGeneration = fixture.selectBluetoothSessionForTest()
+            fixture.startBluetoothTransport(oldGeneration)
+            fixture.await { events.any { it.generation == oldGeneration && it.state is ConnectionFailed } }
+
+            val newGeneration = fixture.selectBluetoothSessionForTest()
+            fixture.startBluetoothTransport(newGeneration)
+            fixture.await { events.any { it.generation == newGeneration && it.state is ConnectionFailed } }
+            delay(2_300)
+
+            assertTrue(events.any { it.generation == newGeneration && it.state == ConnectionAttempt(2) })
+            assertFalse(events.any { it.generation == oldGeneration && it.state == ConnectionAttempt(2) })
+            assertFalse(events.any { it.generation == oldGeneration && it.retriesExhausted })
+        } finally {
+            collector.cancel()
+            fixture.prefs.connectionRetries = originalRetries
+            fixture.prefs.bluetoothDeviceAddress = originalAddress
+            fixture.close()
+        }
+    }
+
     @Test fun bluetoothTransientFailureThenSuccessKeepsServiceAndDoesNotPublishTerminalResult() = runBlocking {
         val fixture = Fixture()
         try {
@@ -376,6 +407,21 @@ class UsbSessionIntegrationTest {
             assertEquals(owner, fixture.serviceController.ownerToken())
             assertEquals(Connected, fixture.manager.currentConnectionState)
             assertTrue(fixture.serviceContext.stoppedServices.isEmpty())
+        } finally {
+            fixture.close()
+        }
+    }
+
+    @Test fun bluetoothRetryStateClearsCanonicalFirmwareBeforeNextConnection() = runBlocking {
+        val fixture = Fixture()
+        try {
+            val generation = fixture.selectBluetoothSessionForTest()
+            fixture.await { fixture.btPackets.subscriptionCount.value > 0 }
+            fixture.btPackets.emit(firmwarePacket())
+            fixture.await { fixture.manager.firmwareInfo.value != null }
+
+            fixture.emitBluetoothEvent(BluetoothConnectionEvent(generation, InProgress))
+            fixture.await { fixture.manager.firmwareInfo.value == null }
         } finally {
             fixture.close()
         }
@@ -1015,7 +1061,7 @@ class UsbSessionIntegrationTest {
         @Suppress("UNCHECKED_CAST")
         val btPackets: MutableSharedFlow<RawPacket> = connectionField("mReceivedPacketFlow").get(bt) as MutableSharedFlow<RawPacket>
         @Suppress("UNCHECKED_CAST")
-        private val btEvents: MutableSharedFlow<BluetoothConnectionEvent> = bt.javaClass.getDeclaredField("_sessionEvents").apply { isAccessible = true }.get(bt) as MutableSharedFlow<BluetoothConnectionEvent>
+        val btEvents: MutableSharedFlow<BluetoothConnectionEvent> = bt.javaClass.getDeclaredField("_sessionEvents").apply { isAccessible = true }.get(bt) as MutableSharedFlow<BluetoothConnectionEvent>
 
         // The endpoint injection matches existing transport integration fixtures. It bypasses only
         // Android's physical USB opening; packet parsing, session identity and send gates are real.

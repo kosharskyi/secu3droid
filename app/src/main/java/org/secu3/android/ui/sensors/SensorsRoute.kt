@@ -35,7 +35,7 @@ internal fun SensorsRoute(
     val indicatorChoices by viewModel.showAddIndicator.collectAsStateWithLifecycle()
     val sensors: SensorsPacket? by viewModel.sensors.collectAsStateWithLifecycle(initialValue = null)
     val rawSensors: AdcRawDatPacket? by viewModel.rawSensors.collectAsStateWithLifecycle(initialValue = null)
-    val firmware: FirmwareInfoPacket? by viewModel.sessionFirmware.collectAsStateWithLifecycle(initialValue = null)
+    val firmware: FirmwareInfoPacket? by viewModel.firmwareInfo.collectAsStateWithLifecycle()
     val state by viewModel.state.collectAsStateWithLifecycle()
     val lifecycle = LocalLifecycleOwner.current.lifecycle
     val snackbarHostState = remember(viewModel) { SnackbarHostState() }

@@ -548,6 +548,7 @@ class Secu3ConnectionManager @Inject constructor(
                     if (selection.transport != Transport.BLUETOOTH || selection.generation != event.generation) return@synchronized
                     if (event.retriesExhausted) finishBluetoothSession(event)
                     else {
+                        if (event.state != Connected) _firmwareInfo.value = null
                         publishConnectionState(event.state)
                         reconcileConnectionService()
                     }
