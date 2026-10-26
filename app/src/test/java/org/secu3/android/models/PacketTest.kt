@@ -15,8 +15,9 @@ import org.secu3.android.models.packets.out.ChangeModePacket
 import org.secu3.android.models.packets.out.CheckEngineSavedErrorsPacket
 import org.secu3.android.models.packets.out.OpCompNc
 import org.secu3.android.models.packets.out.params.StarterParamPacket
-import org.secu3.android.ui.parameters.parameterCapabilities
-import org.secu3.android.ui.parameters.parameterPageSpecs
+import org.secu3.android.domain.parameters.ParameterCapabilities
+import org.secu3.android.domain.parameters.ParameterPage
+import org.secu3.android.ui.parameters.ParameterPageCatalog
 import org.secu3.android.utils.Task
 
 class PacketTest {
@@ -134,8 +135,10 @@ class PacketTest {
         assertEquals(0, parsed.version[0])
         assertEquals(5, parsed.version[1])
         assertTrue(parsed.isSecu3T)
-        assertFalse(parameterCapabilities(parsed).dbw)
-        assertFalse(parameterPageSpecs(parsed).any { it.titleRes == R.string.params_tab_el_throttle_title })
+        val capabilities = ParameterCapabilities(parsed)
+        assertFalse(capabilities.dbw)
+        assertFalse(capabilities.supports(ParameterPage.EL_THROTTLE))
+        assertFalse(ParameterPageCatalog().pages(capabilities).any { it.titleRes == R.string.params_tab_el_throttle_title })
     }
 
     @Test

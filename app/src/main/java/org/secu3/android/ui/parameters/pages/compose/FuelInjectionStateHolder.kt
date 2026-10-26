@@ -41,30 +41,19 @@ class FuelInjectionStateHolder(
     private val setSendAllowed: (Boolean) -> Unit = {},
 ) {
     private var packet: InjctrParPacket? = null
-    private var injectorEnabled = true
-    private var secu3t = false
     var uiState: FuelInjectionUiState by mutableStateOf(FuelInjectionUiState.Loading)
         private set
 
     fun reset() {
         packet = null
-        injectorEnabled = true
-        secu3t = false
         uiState = FuelInjectionUiState.Loading
-    }
-
-    fun updateFirmware(injectorEnabled: Boolean, secu3t: Boolean) {
-        this.injectorEnabled = injectorEnabled
-        this.secu3t = secu3t
-        val state = uiState as? FuelInjectionUiState.Data ?: return
-        uiState = state.copy(injectorEnabled = injectorEnabled, secu3t = secu3t)
     }
 
     /** Receiving initializes state and enables later edits without echoing the packet. */
     fun receive(received: InjctrParPacket) {
         setSendAllowed(false)
         packet = received
-        uiState = FuelInjectionUiState.Data(fuelInjectionValues(received), injectorEnabled, secu3t)
+        uiState = FuelInjectionUiState.Data(fuelInjectionValues(received))
         setSendAllowed(true)
     }
 
@@ -152,7 +141,7 @@ class FuelInjectionStateHolder(
     }
 
     private fun publishAndSend(p: InjctrParPacket) {
-        uiState = FuelInjectionUiState.Data(fuelInjectionValues(p), injectorEnabled, secu3t)
+        uiState = FuelInjectionUiState.Data(fuelInjectionValues(p))
         sendPacket(p)
     }
 }

@@ -7,6 +7,7 @@ import org.junit.Assert.assertEquals
 import org.junit.Rule
 import org.junit.Test
 import org.secu3.android.models.packets.input.FirmwareInfoPacket
+import org.secu3.android.domain.parameters.ParameterCapabilities
 import org.secu3.android.models.packets.out.params.StarterParamPacket
 import org.secu3.android.models.packets.out.params.TemperatureParamPacket
 import org.secu3.android.ui.compose.SecuComposeTheme
@@ -21,7 +22,7 @@ class ParameterAvailabilityTest {
         compose.setContent {
             SecuComposeTheme {
                 TemperatureScreen(TemperatureUiState.Data(TemperatureValues.from(TemperatureParamPacket())),
-                    { edits++ }, { _, _ -> }, capabilities = parameterCapabilities(FirmwareInfoPacket(options = options.value)))
+                    { edits++ }, { _, _ -> }, capabilities = ParameterCapabilities(FirmwareInfoPacket(options = options.value)))
             }
         }
         compose.onNodeWithTag("temperature_flag_pwm_control-switch").assertIsNotEnabled()

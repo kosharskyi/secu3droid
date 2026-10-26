@@ -26,9 +26,25 @@ package org.secu3.android.ui.parameters.pages.compose
 
 import org.junit.Assert.*
 import org.junit.Test
+import org.secu3.android.domain.parameters.ParameterCapabilities
+import org.secu3.android.models.packets.input.FirmwareInfoPacket
 import org.secu3.android.models.packets.out.params.CkpsParamPacket
 
 class CkpsMappingTest {
+    @Test
+    fun wheelGeometryAndIgnitionModeDetermineCkpsChoices() {
+        assertEquals((11..55).toList(), ckpsTdcOptions(60, 4))
+        assertEquals((2..10).toList(), ckpsTdcOptions(10, 4))
+        assertEquals((11..90).toList(), ckpsTdcOptions(60, 2))
+        assertTrue(ckpsTdcOptions(0, 4).isEmpty())
+
+        val values = CkpsValues.from(CkpsParamPacket())
+        val capabilities = ParameterCapabilities(FirmwareInfoPacket())
+        assertEquals(listOf(2, 4, 6, 8), capabilities.ckpsCylinderOptions(values.mergeOuts))
+        assertEquals(listOf(1, 2, 3, 4, 5, 6, 8), capabilities.ckpsCylinderOptions(true))
+        assertEquals((1..8).toList(), ParameterCapabilities(FirmwareInfoPacket(options = 1 shl 2)).ckpsCylinderOptions(true))
+    }
+
     @Test
     fun everyNumericFieldMapsAndPreservesUnknownPacketData() {
         val source = CkpsParamPacket(

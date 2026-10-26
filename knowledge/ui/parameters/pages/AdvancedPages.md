@@ -24,7 +24,7 @@ Keep both flags read-only in the live Security screen. Editing them belongs to o
 
 ## Firmware options govern dependent parameter controls
 
-ParameterCapabilities derives support from ECU firmware option flags. Its permissive default supports loading and standalone previews; connected routes pass actual firmware options. Local predicates still apply (load-grid/source, missing teeth, injection table mode), and unsupported incoming values remain visible without selecting a replacement. Do not treat user functionality preferences as ECU capabilities.
+The shared domain `ParameterCapabilities` snapshot derives support from the current nullable ECU firmware packet. It is permissive for field previews when firmware is unknown, while optional pages stay hidden except Choke in its fixed base slot. Screens add only predicates that depend on their current parameter values (such as missing teeth or load source); unsupported incoming values remain visible without selecting a replacement. Do not decode the same firmware options again in screens or treat user functionality preferences as ECU capabilities.
 
 ## Miscellaneous VSS displays a rounded integer without quantizing the packet
 

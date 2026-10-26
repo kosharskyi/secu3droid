@@ -24,6 +24,8 @@
  */
 package org.secu3.android.ui.parameters.pages.compose
 
+import org.secu3.android.domain.parameters.ParameterCapabilities
+
 import androidx.compose.foundation.rememberScrollState
 import androidx.annotation.StringRes
 import androidx.compose.foundation.BorderStroke
@@ -168,11 +170,18 @@ fun StarterScreen(
             ) {
                 Column {
                     StarterNumber.entries.forEach { number ->
-                        StarterNumberRow(number, state.values.value(number), starterNumberEnabled(number, capabilities)) { onEdit(number) }
+                        val enabled = when (number) {
+                            StarterNumber.CRANK_TO_RUN_COLD, StarterNumber.CRANK_TO_RUN_HOT,
+                            StarterNumber.PRIME_COLD, StarterNumber.PRIME_HOT, StarterNumber.PRIME_DELAY -> capabilities.fuelInjection
+                            StarterNumber.AFTERSTART_PETROL, StarterNumber.AFTERSTART_GAS -> capabilities.fuelOrGasDose
+                            StarterNumber.FLOOD_CLEAR_THRESHOLD -> capabilities.floodClearThreshold
+                            else -> true
+                        }
+                        StarterNumberRow(number, state.values.value(number), enabled) { onEdit(number) }
                         HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant)
                     }
                     StarterFlag.entries.forEachIndexed { index, flag ->
-                        StarterFlagRow(flag, state.values.flags.getValue(flag), if (flag == StarterFlag.LIMIT_CRANKING_PW) capabilities.fuelInjection else capabilities.fuelInjection || capabilities.gasDose || capabilities.choke) {
+                        StarterFlagRow(flag, state.values.flags.getValue(flag), if (flag == StarterFlag.LIMIT_CRANKING_PW) capabilities.fuelInjection else capabilities.floodClearThreshold) {
                             onFlagChanged(flag, it)
                         }
                         if (index < StarterFlag.entries.lastIndex) {

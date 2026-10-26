@@ -24,6 +24,8 @@
  */
 package org.secu3.android.ui.parameters.pages.compose
 
+import org.secu3.android.domain.parameters.ParameterCapabilities
+
 import org.secu3.android.ui.compose.DropdownShape
 
 import androidx.compose.foundation.BorderStroke
@@ -66,10 +68,6 @@ internal fun ckpsTdcOptions(wheel: Int, cylinders: Int): List<Int> {
     return (low..high).toList()
 }
 private val cylinderOptions = (1..8).toList()
-internal fun ckpsCylinderOptions(values: CkpsValues, capabilities: ParameterCapabilities): List<Int> {
-    val odd = capabilities.oddCylinders || values.mergeOuts
-    return cylinderOptions.filter { if (it == 7) odd && capabilities.sevenCylinders else it % 2 == 0 || odd }
-}
 private val mttfByMissingTeeth = listOf(0f, 1.5f, 2.5f, 3f, 4f, 5f, 6f)
 
 enum class CkpsFlag {
@@ -189,7 +187,7 @@ fun CkpsScreen(
 
     val values = (state as CkpsUiState.Data).values
     val tdcOptions = ckpsTdcOptions(values.numbers.getValue(CkpsNumber.WHEEL).toInt(), values.cylinders)
-    val availableCylinders = ckpsCylinderOptions(values, capabilities)
+    val availableCylinders = capabilities.ckpsCylinderOptions(values.mergeOuts)
     var open by remember { mutableStateOf<Boolean?>(null) }
 
     ParameterPage(scrollState = pageScrollState) {
@@ -231,21 +229,26 @@ fun CkpsScreen(
                 value = values.numbers.getValue(n),
                 precision = n.precision,
                 testTag = "ckps_${n.name.lowercase()}",
-                enabled = ckpsNumberEnabled(n, values, capabilities),
+                enabled = when (n) {
+                    CkpsNumber.WHEEL, CkpsNumber.MISSING -> capabilities.ckps
+                    CkpsNumber.PULSE -> capabilities.ignitionCogs
+                    CkpsNumber.HALL_WIDTH, CkpsNumber.DEGREES -> capabilities.hallWindow
+                    CkpsNumber.MTTF -> capabilities.mttfEnabled(values.numbers.getValue(CkpsNumber.MISSING))
+                },
             ) { onEdit(n) }
         }
 
         ParameterSwitchRow(
             stringResource(R.string.ckps_use_cam_sensor_title),
             values.useCamRef,
-            "ckps_cam", enabled = !capabilities.known || (capabilities.camRef && values.numbers.getValue(CkpsNumber.MISSING) == 0f),
+            "ckps_cam", enabled = capabilities.camReferenceEnabled(values.numbers.getValue(CkpsNumber.MISSING)),
         ) { onFlag(CkpsFlag.USE_CAM_REFERENCE, it) }
         ParameterValueRow(
             title = stringResource(CkpsNumber.MTTF.title),
             units = stringResource(CkpsNumber.MTTF.units),
             value = values.numbers.getValue(CkpsNumber.MTTF),
             precision = CkpsNumber.MTTF.precision,
-            testTag = "ckps_mttf", enabled = ckpsNumberEnabled(CkpsNumber.MTTF, values, capabilities),
+            testTag = "ckps_mttf", enabled = capabilities.mttfEnabled(values.numbers.getValue(CkpsNumber.MISSING)),
         ) { onEdit(CkpsNumber.MTTF) }
     }
 

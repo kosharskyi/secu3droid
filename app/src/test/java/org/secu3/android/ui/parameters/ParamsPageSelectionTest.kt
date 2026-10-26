@@ -23,9 +23,12 @@ package org.secu3.android.ui.parameters
 import org.junit.Assert.assertEquals
 import org.junit.Test
 import org.secu3.android.R
+import org.secu3.android.domain.parameters.ParameterCapabilities
 import org.secu3.android.models.packets.input.FirmwareInfoPacket
 
 class ParamsPageSelectionTest {
+    private val catalog = ParameterPageCatalog()
+
     @Test fun selectionIsClampedWhenSavedIndexIsOutsidePageRange() {
         assertEquals(0, clampPageIndex(-1, 4))
         assertEquals(3, clampPageIndex(8, 4))
@@ -49,7 +52,7 @@ class ParamsPageSelectionTest {
             R.string.params_tab_security_title,
             R.string.params_tab_universal_outputs_title,
         )
-        assertEquals(base, parameterPageSpecs(null).map { it.titleRes })
+        assertEquals(base, catalog.pages(ParameterCapabilities(null)).map { it.titleRes })
 
         val supportedBase = base - R.string.params_tab_choke_control_title
         val allFeatures = FirmwareInfoPacket(options = (1 shl 28) or (1 shl 29) or (1 shl 30) or (1 shl 17))
@@ -61,13 +64,13 @@ class ParamsPageSelectionTest {
                 R.string.params_tab_gas_dose_title,
                 R.string.params_tab_ltft_title,
             ),
-            parameterPageSpecs(allFeatures).map { it.titleRes },
+            catalog.pages(ParameterCapabilities(allFeatures)).map { it.titleRes },
         )
 
         val carbAfrOnly = FirmwareInfoPacket(options = 1 shl 30)
         assertEquals(
             supportedBase + listOf(R.string.params_tab_lambda_control_title, R.string.params_tab_el_throttle_title),
-            parameterPageSpecs(carbAfrOnly).map { it.titleRes },
+            catalog.pages(ParameterCapabilities(carbAfrOnly)).map { it.titleRes },
         )
 
         val gasDoseOnly = FirmwareInfoPacket(options = 1 shl 29)
@@ -78,7 +81,7 @@ class ParamsPageSelectionTest {
                 R.string.params_tab_gas_dose_title,
                 R.string.params_tab_el_throttle_title,
             ),
-            parameterPageSpecs(gasDoseOnly).map { it.titleRes },
+            catalog.pages(ParameterCapabilities(gasDoseOnly)).map { it.titleRes },
         )
     }
 }

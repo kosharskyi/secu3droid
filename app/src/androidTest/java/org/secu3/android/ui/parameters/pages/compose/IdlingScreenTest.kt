@@ -26,6 +26,8 @@ package org.secu3.android.ui.parameters.pages.compose
 
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.ui.test.assertIsDisplayed
+import androidx.compose.ui.test.assertIsEnabled
+import androidx.compose.ui.test.assertIsNotEnabled
 import androidx.compose.ui.test.assertTextEquals
 import androidx.compose.ui.test.junit4.v2.createComposeRule
 import androidx.compose.ui.test.onNodeWithTag
@@ -35,6 +37,8 @@ import org.junit.Assert.assertEquals
 import org.junit.Rule
 import org.junit.Test
 import org.secu3.android.ui.compose.SecuComposeTheme
+import org.secu3.android.domain.parameters.ParameterCapabilities
+import org.secu3.android.models.packets.input.FirmwareInfoPacket
 
 class IdlingScreenTest {
     @get:Rule
@@ -42,6 +46,27 @@ class IdlingScreenTest {
 
     private val context
         get() = androidx.test.platform.app.InstrumentationRegistry.getInstrumentation().targetContext
+
+    @Test
+    fun firmwareAndCurrentThrottleModeGateOnlyTheirDependentFields() {
+        val values = IdlingValues(
+            numbers = IdlingNumber.entries.associateWith { 1f },
+            flags = IdlingFlag.entries.associateWith { false },
+        )
+        compose.setContent {
+            SecuComposeTheme {
+                IdlingScreen(
+                    IdlingUiState.Data(values),
+                    {},
+                    { _, _ -> },
+                    capabilities = ParameterCapabilities(FirmwareInfoPacket(options = 0)),
+                )
+            }
+        }
+
+        compose.onNodeWithTag("idling_iac_add").assertIsNotEnabled()
+        compose.onNodeWithTag("idling_ifac1").assertIsEnabled()
+    }
 
     @Test
     fun loadingDataScrollAndRecompositionHaveNoCallbacks() {

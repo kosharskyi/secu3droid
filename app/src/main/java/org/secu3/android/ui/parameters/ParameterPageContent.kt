@@ -29,7 +29,7 @@ import androidx.compose.ui.platform.LocalResources
 import androidx.compose.ui.res.stringArrayResource
 import androidx.compose.ui.res.stringResource
 import org.secu3.android.R
-import org.secu3.android.models.packets.input.FirmwareInfoPacket
+import org.secu3.android.domain.parameters.ParameterCapabilities
 import org.secu3.android.models.packets.out.params.InjctrParPacket
 import org.secu3.android.models.packets.out.params.UniOutParamPacket
 import org.secu3.android.domain.parameters.ParameterPage
@@ -45,7 +45,7 @@ internal fun ParameterPageContent(
     page: ParameterPage,
     titleRes: Int,
     viewModel: ParamsViewModel,
-    firmwareInfo: FirmwareInfoPacket?,
+    capabilities: ParameterCapabilities,
     isActive: Boolean,
     isActiveNow: () -> Boolean,
     onEdit: (ParameterEditRequest) -> Unit,
@@ -55,7 +55,6 @@ internal fun ParameterPageContent(
         return
     }
     val resources = LocalResources.current
-    val capabilities = parameterCapabilities(firmwareInfo)
     fun intEdit(title: Int, value: Int, step: Int, max: Int, min: Int, change: (Int) -> Unit) =
         onEdit(ParameterEditRequest.IntValue(resources.getString(title), value, min, max, step, change))
     fun floatEdit(title: Int, value: Float, step: Float, max: Float, min: Float, precision: Int, change: (Float) -> Unit) =
@@ -155,12 +154,12 @@ internal fun ParameterPageContent(
             val h = viewModel.fuelInjectionStateHolder
             FuelInjectionScreen(h.uiState, InjctrParPacket.InjConfig.entries.associate { it.id to resources.getString(it.strId) }, { n ->
                 h.editSpec(n)?.let { s -> if (s.integer) intEdit(s.title, s.value.roundToInt(), s.step.toInt(), s.max.toInt(), s.min.toInt()) { h.edit(n, it.toFloat()) } else floatEdit(s.title, s.value, s.step, s.max, s.min, s.precision) { h.edit(n, it.toFloat()) } }
-            }, h::changeConfig, h::changePulses, h::changeAngleSpec, h::changeFlag)
+            }, h::changeConfig, h::changePulses, h::changeAngleSpec, h::changeFlag, capabilities)
         }
         R.string.params_tab_lambda_control_title -> {
             val h = viewModel.lambdaControlStateHolder
             val sensorTypes = stringArrayResource(R.array.lambda_sensors_types).toList()
-            LambdaControlScreen(h.values, sensorTypes, firmwareInfo?.let { it.isFuelInjectEnabled || it.isGdControlEnabled } == true, { n -> h.values?.let { v -> if (n.integer) intEdit(n.title, v.value(n).toInt(), n.step.toInt(), n.max.toInt(), n.min.toInt()) { h.updateValue(n, it.toFloat()) } else floatEdit(n.title, v.value(n), n.step, n.max, n.min, n.precision) { h.updateValue(n, it.toFloat()) } } }, h::updateFlag, { h.updateSensorType(it, sensorTypes.size) }, { i, checked -> h.updateChannel(i, checked) })
+            LambdaControlScreen(h.values, sensorTypes, capabilities.lambdaChannelSelection, { n -> h.values?.let { v -> if (n.integer) intEdit(n.title, v.value(n).toInt(), n.step.toInt(), n.max.toInt(), n.min.toInt()) { h.updateValue(n, it.toFloat()) } else floatEdit(n.title, v.value(n), n.step, n.max, n.min, n.precision) { h.updateValue(n, it.toFloat()) } } }, h::updateFlag, { h.updateSensorType(it, sensorTypes.size) }, { i, checked -> h.updateChannel(i, checked) })
         }
         R.string.params_tab_acceleration_title -> {
             val h = viewModel.accelerationStateHolder

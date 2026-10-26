@@ -24,6 +24,8 @@
  */
 package org.secu3.android.ui.parameters.pages.compose
 
+import org.secu3.android.domain.parameters.ParameterCapabilities
+
 import androidx.annotation.StringRes
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Column
@@ -160,7 +162,7 @@ fun CarburScreen(state: CarburUiState, options: List<String>, onEdit: (CarburNum
                     value = data.numbers.getValue(number),
                     precision = number.precision,
                     testTag = "carbur_${number.name.lowercase()}",
-                    enabled = capabilities.fuelInjection || capabilities.gasDose,
+                    enabled = capabilities.fuelOrGasDose,
                     onClick = { onEdit(number) },
                 )
             }

@@ -34,6 +34,26 @@ import org.secu3.android.models.packets.out.params.FunSetParamPacket
 
 class FunctionsStateHolderTest {
     @Test
+    fun ignitionOnlyMafCanChangeDisplacementAndOnlyItsSharedFields() {
+        val sent = mutableListOf<FunSetParamPacket>()
+        val holder = FunctionsStateHolder(sent::add)
+        holder.onNamesReceived(FnNameDatPacket())
+        val packet = FunSetParamPacket(ckpsEngineCyl = 4, injCylDisp = .5f, tpsCurveGradient = -2.5f)
+        holder.onPacketReceived(packet, listOf("MAP", "MAP baro", "TPS", "MAP+TPS", "MAF"), emptyList(), emptyList())
+
+        holder.updateChoice(FunctionsChoices.Selector.LOAD_SOURCE, 4)
+        assertEquals(4, (holder.state as FunctionsUiState.Data).values.loadSource)
+        assertEquals(2f, holder.engineDisplacement!!, 0f)
+        holder.updateEngineDisplacement(3f)
+        assertEquals(.75f, packet.injCylDisp, 0f)
+        assertTrue(packet.mafload_const > 0)
+        assertEquals(-2.5f, packet.tpsCurveGradient, 0f)
+        assertEquals(2, sent.size)
+        holder.updateEngineDisplacement(0f)
+        assertEquals(2, sent.size)
+    }
+
+    @Test
     fun waitsForNamesBeforePublishingPacketDataAndMapsNamesToChoices() {
         val sent = mutableListOf<FunSetParamPacket>()
         val holder = FunctionsStateHolder(sent::add)

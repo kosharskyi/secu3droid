@@ -19,6 +19,7 @@ import androidx.compose.ui.test.junit4.v2.createAndroidComposeRule
 import androidx.compose.ui.test.onNodeWithContentDescription
 import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.onNodeWithText
+import androidx.compose.ui.test.onChild
 import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.performScrollTo
 import androidx.compose.ui.test.performTextClearance
@@ -30,6 +31,7 @@ import androidx.compose.ui.test.click
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.ViewModelProvider
 import androidx.core.view.WindowInsetsControllerCompat
+import kotlinx.coroutines.flow.MutableStateFlow
 import androidx.navigation.NavHostController
 import androidx.test.platform.app.InstrumentationRegistry
 import org.junit.Assert.assertEquals
@@ -39,11 +41,73 @@ import org.junit.Assert.assertSame
 import org.junit.Rule
 import org.junit.Test
 import org.secu3.android.R
+import org.secu3.android.models.packets.input.FirmwareInfoPacket
+import org.secu3.android.connection.Secu3ConnectionManager
+import org.secu3.android.ui.MainActivityViewModel
 import org.secu3.android.ui.parameters.ParameterEditRequest
 import org.secu3.android.ui.parameters.ParamsViewModel
 
 class ParametersNavigationIntegrationTest {
     @get:Rule val compose = createAndroidComposeRule<MainActivity>()
+
+    @Test fun parameterTabsFollowFirmwareUpdatesAndResetWhenFirmwareClears() {
+        navigateNativeHostToHome()
+        compose.onNodeWithTag("home-card-parameters").performClick()
+        compose.waitForIdle()
+        val firmware = firmwareInfoFlow()
+        val choke = compose.activity.getString(R.string.params_tab_choke_control_title)
+        val injection = compose.activity.getString(R.string.params_tab_fuel_injection_title)
+        val lambda = compose.activity.getString(R.string.params_tab_lambda_control_title)
+        val gasDose = compose.activity.getString(R.string.params_tab_gas_dose_title)
+        val throttle = compose.activity.getString(R.string.params_tab_el_throttle_title)
+        val starter = compose.activity.getString(R.string.params_tab_start_title)
+        val angles = compose.activity.getString(R.string.params_tab_angles_title)
+        val security = compose.activity.getString(R.string.params_tab_security_title)
+        val universalOutputs = compose.activity.getString(R.string.params_tab_universal_outputs_title)
+
+        fun assertTab(title: String, count: Int) = compose.onAllNodesWithText(title).assertCountEquals(count)
+        fun assertStableBaseOrder() {
+            compose.onNodeWithTag("parameters-tabs-pill-0", useUnmergedTree = true).onChild().assertTextEquals(starter)
+            compose.onNodeWithTag("parameters-tabs-pill-1", useUnmergedTree = true).onChild().assertTextEquals(angles)
+            compose.onNodeWithTag("parameters-tabs-pill-11", useUnmergedTree = true).onChild().assertTextEquals(security)
+            compose.onNodeWithTag("parameters-tabs-pill-12", useUnmergedTree = true).onChild().assertTextEquals(universalOutputs)
+        }
+        fun assertUnknownTabs() {
+            assertTab(choke, 1)
+            assertTab(injection, 0)
+            assertTab(lambda, 0)
+            assertTab(gasDose, 0)
+            assertTab(throttle, 0)
+            assertStableBaseOrder()
+            compose.onNodeWithTag("parameters-tabs-pill-10", useUnmergedTree = true).onChild().assertTextEquals(choke)
+        }
+
+        try {
+            assertUnknownTabs()
+            compose.runOnIdle {
+                firmware.value = FirmwareInfoPacket(options = (1 shl 28) or (1 shl 29) or (1 shl 30) or (1 shl 17) or (1 shl 22))
+            }
+            compose.waitUntil(5_000) {
+                compose.onAllNodesWithText(injection).fetchSemanticsNodes().isNotEmpty() &&
+                    compose.onAllNodesWithText(gasDose).fetchSemanticsNodes().isNotEmpty()
+            }
+            assertTab(choke, 1)
+            assertTab(injection, 1)
+            assertTab(lambda, 1)
+            assertTab(gasDose, 1)
+            assertTab(throttle, 0)
+            assertStableBaseOrder()
+
+            compose.runOnIdle { firmware.value = null }
+            compose.waitUntil(5_000) {
+                compose.onAllNodesWithText(injection).fetchSemanticsNodes().isEmpty() &&
+                    compose.onAllNodesWithText(gasDose).fetchSemanticsNodes().isEmpty()
+            }
+            assertUnknownTabs()
+        } finally {
+            compose.runOnIdle { firmware.value = null }
+        }
+    }
 
     @Test fun homeBridgeCapsNativeHostAndBothBackPathsRestoreHome() {
         val nativeHost = navigateNativeHostToHome()
@@ -333,6 +397,18 @@ class ParametersNavigationIntegrationTest {
             )[ParamsViewModel::class.java]
         }
         return viewModel
+    }
+
+    @Suppress("UNCHECKED_CAST")
+    private fun firmwareInfoFlow(): MutableStateFlow<FirmwareInfoPacket?> {
+        lateinit var flow: MutableStateFlow<FirmwareInfoPacket?>
+        compose.activityRule.scenario.onActivity { activity ->
+            val manager = ViewModelProvider(activity)[MainActivityViewModel::class.java].connectionManager
+            val field = Secu3ConnectionManager::class.java.getDeclaredField("_firmwareInfo")
+            field.isAccessible = true
+            flow = field.get(manager) as MutableStateFlow<FirmwareInfoPacket?>
+        }
+        return flow
     }
 
     private fun currentHomeViewModel(): org.secu3.android.ui.home.HomeViewModel {

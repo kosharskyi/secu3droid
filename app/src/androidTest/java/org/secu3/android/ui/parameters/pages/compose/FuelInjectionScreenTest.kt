@@ -34,6 +34,8 @@ import androidx.compose.ui.test.performScrollTo
 import org.junit.Rule
 import org.junit.Test
 import org.secu3.android.models.packets.out.params.InjctrParPacket
+import org.secu3.android.models.packets.input.FirmwareInfoPacket
+import org.secu3.android.domain.parameters.ParameterCapabilities
 import org.secu3.android.ui.compose.SecuComposeTheme
 
 class FuelInjectionScreenTest {
@@ -42,8 +44,9 @@ class FuelInjectionScreenTest {
     private fun bank(config: Int = 1, pulses: Int = 2, map: Boolean = false) = FuelBankValues(
         300f, config, pulses, 10, 5, map, 0, 1f, 10f, listOf(0, 1, 2, 3, 5, 4), InjctrParPacket(ckpsEngineCyl = 4).validPulses(config))
     private fun data() = FuelInjectionValues(2f, listOf(bank(), bank(4, 4, true)), 120, true, false, true, false, true, 0.2f, 0.3f)
-    private fun show(state: FuelInjectionUiState, configs: (Int, Int) -> Unit = { _, _ -> }, pulses: (Int, Int) -> Unit = { _, _ -> }) {
-        compose.setContent { SecuComposeTheme { FuelInjectionScreen(state, labels, {}, configs, pulses, { _, _ -> }, { _, _ -> }) } }
+    private fun show(state: FuelInjectionUiState, capabilities: ParameterCapabilities = ParameterCapabilities.All,
+                     configs: (Int, Int) -> Unit = { _, _ -> }, pulses: (Int, Int) -> Unit = { _, _ -> }) {
+        compose.setContent { SecuComposeTheme { FuelInjectionScreen(state, labels, {}, configs, pulses, { _, _ -> }, { _, _ -> }, capabilities) } }
     }
 
     @Test fun loadingIsCenteredAndDoesNotExposeEditableControls() {
@@ -64,14 +67,14 @@ class FuelInjectionScreenTest {
     }
 
     @Test fun secu3tDisablesDesktopRestrictedGeneralFlags() {
-        show(FuelInjectionUiState.Data(data(), secu3t = true))
+        show(FuelInjectionUiState.Data(data()), ParameterCapabilities(FirmwareInfoPacket(options = (1 shl 17) or (1 shl 28))))
         compose.onNodeWithTag("inj-additional-corrections-switch").performScrollTo().assertIsNotEnabled()
         compose.onNodeWithTag("inj-differential-pressure-switch").performScrollTo().assertIsNotEnabled()
         compose.onNodeWithTag("inj-switch-rows-switch").performScrollTo().assertIsNotEnabled()
     }
 
     @Test fun firmwareWithoutInjectionShowsUnavailableMessage() {
-        show(FuelInjectionUiState.Data(data(), injectorEnabled = false))
+        show(FuelInjectionUiState.Data(data()), ParameterCapabilities(FirmwareInfoPacket(options = 0)))
         compose.onNodeWithTag("fuel_injection_disabled").assertIsDisplayed()
         compose.onNodeWithTag("inj-engine-displacement").assertDoesNotExist()
     }

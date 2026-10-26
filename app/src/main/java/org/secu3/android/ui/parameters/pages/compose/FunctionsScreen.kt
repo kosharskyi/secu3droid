@@ -24,6 +24,8 @@
  */
 package org.secu3.android.ui.parameters.pages.compose
 
+import org.secu3.android.domain.parameters.ParameterCapabilities
+
 import androidx.annotation.StringRes
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.BorderStroke
@@ -290,8 +292,8 @@ fun FunctionsScreen(
                                 testTag = "functions_${n.name.lowercase()}",
                                 enabled = functionsNumberEnabled(n, state.values) && when (n) {
                                     FunctionsNumber.GPS_OFFSET, FunctionsNumber.GPS_GRADIENT,
-                                    FunctionsNumber.FPS_OFFSET, FunctionsNumber.FPS_GRADIENT -> !capabilities.secu3T
-                                    FunctionsNumber.APPS_OFFSET, FunctionsNumber.APPS_GRADIENT -> capabilities.dbw && !capabilities.secu3T
+                                    FunctionsNumber.FPS_OFFSET, FunctionsNumber.FPS_GRADIENT -> capabilities.dbw
+                                    FunctionsNumber.APPS_OFFSET, FunctionsNumber.APPS_GRADIENT -> capabilities.dbw
                                     else -> true
                                 },
                             ) { onEdit(n) }

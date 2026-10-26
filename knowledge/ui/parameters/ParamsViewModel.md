@@ -4,8 +4,12 @@
 
 ## UI page resources map to domain page IDs at the screen boundary
 
-`ParameterPageSpec` resolves the resource-backed page to its domain ID before rendering. Pass that existing ID into `ParameterPageContent` for retry and failure matching instead of recovering it from the title resource. The session should not depend on string resources or Compose navigation state.
+`ParameterPageCatalog` is the injected owner of resource-title ordering and lookup. Resolve the page to its domain ID before rendering and pass that ID into `ParameterPageContent` for retry and failure matching; the session should not depend on string resources or Compose navigation state.
 
 ## The parameter exchange component owns response matching and timeout policy
 
 The ViewModel receives typed page results from `ParameterSession`, which delegates packet matching to `ParameterExchange`. Shared subscribe-before-send ordering and response deadlines belong to `EcuExchange`; `ParameterExchange` owns Functions fragments, EEPROM acknowledgment matching, and sensor-stream restoration.
+
+## Firmware-derived parameter availability is exposed as one snapshot
+
+Derive a single `ParameterCapabilities` state from `Secu3ConnectionManager.firmwareInfo`. The route and page screens consume that state; do not decode firmware flags in individual consumers. GasDose command availability follows the same snapshot while its holder retains the existing pending-command cancellation and guard lifecycle.

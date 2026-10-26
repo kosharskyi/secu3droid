@@ -193,32 +193,6 @@ class FuelInjectionStateHolderTest {
         assertEquals(0x80, p.flags)
     }
 
-    @Test fun firmwareReseedAfterResetIsPreservedBySubsequentPacketReceive() {
-        val p = packet()
-        holder.receive(p)
-        holder.reset()
-        holder.updateFirmware(injectorEnabled = false, secu3t = true)
-        holder.receive(packet())
-
-        val state = holder.uiState as FuelInjectionUiState.Data
-        assertFalse(state.injectorEnabled)
-        assertTrue(state.secu3t)
-        assertTrue("receiving after reset still must not echo", sends.isEmpty())
-    }
-
-    @Test fun firmwareUpdatesPresentationWithoutMutatingOrSendingAndSurvivesPacketReceive() {
-        val p = packet()
-        holder.updateFirmware(injectorEnabled = false, secu3t = true)
-        holder.receive(p)
-        val data = holder.uiState as FuelInjectionUiState.Data
-        assertFalse(data.injectorEnabled); assertTrue(data.secu3t)
-        assertTrue(sends.isEmpty())
-        holder.updateFirmware(injectorEnabled = true, secu3t = false)
-        val updated = holder.uiState as FuelInjectionUiState.Data
-        assertTrue(updated.injectorEnabled); assertFalse(updated.secu3t)
-        assertTrue(sends.isEmpty())
-    }
-
     @Test fun editMetadataRetainsDialogParametersAndPacketRoundTripPreservesUnknownData() {
         holder.receive(packet())
         val spec = holder.editSpec(FuelInjectionNumber.FLOW_1)!!

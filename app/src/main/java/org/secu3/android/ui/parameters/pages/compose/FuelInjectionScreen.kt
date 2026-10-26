@@ -50,6 +50,7 @@ import org.secu3.android.R
 import org.secu3.android.models.packets.out.params.InjctrParPacket
 import org.secu3.android.ui.compose.DropdownShape
 import org.secu3.android.ui.parameters.compose.ParameterLoadingIndicator
+import org.secu3.android.domain.parameters.ParameterCapabilities
 import org.secu3.android.ui.parameters.compose.ParameterPage
 import org.secu3.android.ui.parameters.compose.ParameterSection
 import org.secu3.android.ui.parameters.compose.ParameterSelectionRow
@@ -72,7 +73,7 @@ data class FuelInjectionValues(
 )
 sealed interface FuelInjectionUiState {
     data object Loading : FuelInjectionUiState
-    data class Data(val values: FuelInjectionValues, val injectorEnabled: Boolean = true, val secu3t: Boolean = false) : FuelInjectionUiState
+    data class Data(val values: FuelInjectionValues) : FuelInjectionUiState
 }
 enum class FuelInjectionNumber { ENGINE_DISPLACEMENT, FLOW_0, TIMING_0, CRANKING_0, MIN_PW_0, MAX_PW_0, FLOW_1, TIMING_1, CRANKING_1, MIN_PW_1, MAX_PW_1, PULSES_PER_LITER, DECREASE_RATE, INCREASE_RATE }
 enum class FuelInjectionFlag { USE_MAP_0, USE_MAP_1, ADDITIONAL_CORRECTIONS, AIR_DENSITY, DIFFERENTIAL_PRESSURE, SWITCH_ROWS, FULL_SEQUENTIAL_AFTER_START }
@@ -93,14 +94,15 @@ fun fuelInjectionValues(packet: InjctrParPacket): FuelInjectionValues = FuelInje
 @Composable
 fun FuelInjectionScreen(state: FuelInjectionUiState, configLabels: Map<Int, String>, onEdit: (FuelInjectionNumber) -> Unit,
                         onConfig: (Int, Int) -> Unit, onPulses: (Int, Int) -> Unit,
-                        onAngleSpec: (Int, Int) -> Unit, onFlag: (FuelInjectionFlag, Boolean) -> Unit) {
+                        onAngleSpec: (Int, Int) -> Unit, onFlag: (FuelInjectionFlag, Boolean) -> Unit,
+                        capabilities: ParameterCapabilities = ParameterCapabilities.All) {
     val pageScrollState = rememberScrollState()
     if (state is FuelInjectionUiState.Loading) { ParameterLoadingIndicator("fuel_injection_loading"); return }
     val data = (state as FuelInjectionUiState.Data).values
     val timings = stringArrayResource(R.array.inj_timing_specifies).toList()
     var choice by remember { mutableStateOf<Pair<Int, Int>?>(null) }
     ParameterPage(scrollState = pageScrollState) {
-        if (!state.injectorEnabled) {
+        if (!capabilities.fuelInjection) {
             Text(stringResource(R.string.fuel_injection_unavailable), Modifier.testTag("fuel_injection_disabled").padding(bottom = 8.dp))
         } else {
             ParameterSection(stringResource(R.string.injctr_par_primary_fuel_title)) {
@@ -112,10 +114,10 @@ fun FuelInjectionScreen(state: FuelInjectionUiState, configLabels: Map<Int, Stri
             }
             ParameterSection(stringResource(R.string.injctr_par_general_title)) {
                 NumberRow(stringResource(R.string.injctr_par_pulses_per_litter_of_fuel), "", data.pulsesPerLiter.toFloat(), 0, "inj-pulses-per-liter") { onEdit(FuelInjectionNumber.PULSES_PER_LITER) }
-                FlagRow(stringResource(R.string.injctr_par_additional_corrections_title), data.additionalCorrections, "inj-additional-corrections", onFlag, FuelInjectionFlag.ADDITIONAL_CORRECTIONS, enabled = !state.secu3t)
+                FlagRow(stringResource(R.string.injctr_par_additional_corrections_title), data.additionalCorrections, "inj-additional-corrections", onFlag, FuelInjectionFlag.ADDITIONAL_CORRECTIONS, enabled = capabilities.dbw)
                 FlagRow(stringResource(R.string.injctr_par_use_air_density_correction_map_title), data.airDensity, "inj-air-density", onFlag, FuelInjectionFlag.AIR_DENSITY)
-                FlagRow(stringResource(R.string.injctr_par_diff_press_for_pw_corr_from_gps_title), data.differentialPressure, "inj-differential-pressure", onFlag, FuelInjectionFlag.DIFFERENTIAL_PRESSURE, enabled = !state.secu3t)
-                FlagRow(stringResource(R.string.injctr_par_switch_between_injectors_rows_title), data.switchRows, "inj-switch-rows", onFlag, FuelInjectionFlag.SWITCH_ROWS, enabled = !state.secu3t)
+                FlagRow(stringResource(R.string.injctr_par_diff_press_for_pw_corr_from_gps_title), data.differentialPressure, "inj-differential-pressure", onFlag, FuelInjectionFlag.DIFFERENTIAL_PRESSURE, enabled = capabilities.dbw)
+                FlagRow(stringResource(R.string.injctr_par_switch_between_injectors_rows_title), data.switchRows, "inj-switch-rows", onFlag, FuelInjectionFlag.SWITCH_ROWS, enabled = capabilities.dbw)
                 FlagRow(stringResource(R.string.injctr_par_full_sequential_after_start_title), data.fullSequentialAfterStart, "inj-full-sequential-after-start", onFlag, FuelInjectionFlag.FULL_SEQUENTIAL_AFTER_START)
                 NumberRow(stringResource(R.string.injctr_par_inj_pw_dec_speed_title), "ms", data.decreaseRate, 2, "inj-decrease-rate") { onEdit(FuelInjectionNumber.DECREASE_RATE) }
                 NumberRow(stringResource(R.string.injctr_par_inj_pw_inc_speed_title), "ms", data.increaseRate, 2, "inj-increase-rate") { onEdit(FuelInjectionNumber.INCREASE_RATE) }

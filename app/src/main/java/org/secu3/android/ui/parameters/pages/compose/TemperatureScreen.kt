@@ -24,6 +24,8 @@
  */
 package org.secu3.android.ui.parameters.pages.compose
 
+import org.secu3.android.domain.parameters.ParameterCapabilities
+
 import androidx.compose.foundation.rememberScrollState
 import androidx.annotation.StringRes
 import androidx.compose.runtime.Composable
@@ -138,7 +140,7 @@ fun TemperatureScreen(
                     testTag = "temperature_${number.name.lowercase()}",
                     enabled = when (number) {
                         TemperatureNumber.PWM_FREQUENCY -> capabilities.fanPwm
-                        TemperatureNumber.AC_ON, TemperatureNumber.AC_OFF -> capabilities.fuelInjection && !capabilities.secu3T
+                        TemperatureNumber.AC_ON, TemperatureNumber.AC_OFF -> capabilities.nonSecu3TFuelInjection
                         TemperatureNumber.AC_MIN_RPM -> capabilities.fuelInjection
                         else -> true
                     },

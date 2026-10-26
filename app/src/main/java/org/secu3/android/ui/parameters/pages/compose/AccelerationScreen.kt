@@ -24,6 +24,8 @@
  */
 package org.secu3.android.ui.parameters.pages.compose
 
+import org.secu3.android.domain.parameters.ParameterCapabilities
+
 
 import androidx.annotation.StringRes
 import androidx.compose.foundation.clickable
@@ -128,7 +130,7 @@ fun AccelerationScreen(
             ParameterSection {
         AccelerationNumber.entries.take(3).forEach { number -> NumberRow(values, number, onEdit) }
         Selector(stringResource(R.string.accel_par_ae_type_title), aeTypes, values.aeType, "acceleration_ae_type", onAeType)
-        if (values.aeType != 0) NumberRow(values, AccelerationNumber.AE_TIME, onEdit, capabilities.fuelInjection && values.aeType == 1)
+        if (values.aeType != 0) NumberRow(values, AccelerationNumber.AE_TIME, onEdit, capabilities.accelerationTimeEnabled(values.aeType))
         Column(Modifier.fillMaxWidth().padding(horizontal = 14.dp, vertical = 11.dp)) {
             Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
                 Text(stringResource(R.string.accel_par_ae_ballance_title), Modifier.weight(1f))

@@ -26,57 +26,40 @@ package org.secu3.android.ui.parameters
 
 import org.secu3.android.R
 import org.secu3.android.domain.parameters.ParameterPage
-import org.secu3.android.models.packets.input.FirmwareInfoPacket
+import org.secu3.android.domain.parameters.ParameterCapabilities
+import javax.inject.Inject
+import javax.inject.Singleton
 
 internal data class ParameterPageSpec(val page: ParameterPage, val titleRes: Int)
 
-internal fun parameterPageForTitle(titleRes: Int): ParameterPage? = when (titleRes) {
-    R.string.params_tab_start_title -> ParameterPage.STARTER
-    R.string.params_tab_angles_title -> ParameterPage.ANGLES
-    R.string.params_tab_idling_title -> ParameterPage.IDLING
-    R.string.params_tab_temperature_title -> ParameterPage.TEMPERATURE
-    R.string.params_tab_fuel_cutoff_title -> ParameterPage.FUEL_CUTOFF
-    R.string.params_tab_ckps_title -> ParameterPage.CKPS
-    R.string.params_tab_adc_errors_corr_title -> ParameterPage.ADC_ERRORS
-    R.string.params_tab_knock_title -> ParameterPage.KNOCK
-    R.string.params_tab_lambda_control_title -> ParameterPage.LAMBDA_CONTROL
-    R.string.params_tab_acceleration_title -> ParameterPage.ACCELERATION
-    R.string.params_tab_ltft_title -> ParameterPage.LTFT
-    R.string.params_tab_functions_title -> ParameterPage.FUNCTIONS
-    R.string.params_tab_miscellaneous_title -> ParameterPage.MISCELLANEOUS
-    R.string.params_tab_security_title -> ParameterPage.SECURITY
-    R.string.params_tab_choke_control_title -> ParameterPage.CHOKE_CONTROL
-    R.string.params_tab_gas_dose_title -> ParameterPage.GAS_DOSE
-    R.string.params_tab_el_throttle_title -> ParameterPage.EL_THROTTLE
-    R.string.params_tab_fuel_injection_title -> ParameterPage.FUEL_INJECTION
-    R.string.params_tab_universal_outputs_title -> ParameterPage.UNIVERSAL_OUTPUTS
-    else -> null
-}
-
-/** Page order and firmware visibility rules for the parameter pager. */
-internal fun parameterPageSpecs(fwInfoPacket: FirmwareInfoPacket?): List<ParameterPageSpec> {
-    val pages = mutableListOf(
-        R.string.params_tab_start_title,
-        R.string.params_tab_angles_title,
-        R.string.params_tab_idling_title,
-        R.string.params_tab_functions_title,
-        R.string.params_tab_temperature_title,
-        R.string.params_tab_fuel_cutoff_title,
-        R.string.params_tab_adc_errors_corr_title,
-        R.string.params_tab_ckps_title,
-        R.string.params_tab_knock_title,
-        R.string.params_tab_miscellaneous_title,
-        R.string.params_tab_security_title,
-        R.string.params_tab_universal_outputs_title,
+/** UI owns tab labels and order; the domain snapshot decides which entries are available. */
+@Singleton
+class ParameterPageCatalog @Inject constructor() {
+    private val orderedPages = listOf(
+        ParameterPageSpec(ParameterPage.STARTER, R.string.params_tab_start_title),
+        ParameterPageSpec(ParameterPage.ANGLES, R.string.params_tab_angles_title),
+        ParameterPageSpec(ParameterPage.IDLING, R.string.params_tab_idling_title),
+        ParameterPageSpec(ParameterPage.FUNCTIONS, R.string.params_tab_functions_title),
+        ParameterPageSpec(ParameterPage.TEMPERATURE, R.string.params_tab_temperature_title),
+        ParameterPageSpec(ParameterPage.FUEL_CUTOFF, R.string.params_tab_fuel_cutoff_title),
+        ParameterPageSpec(ParameterPage.ADC_ERRORS, R.string.params_tab_adc_errors_corr_title),
+        ParameterPageSpec(ParameterPage.CKPS, R.string.params_tab_ckps_title),
+        ParameterPageSpec(ParameterPage.KNOCK, R.string.params_tab_knock_title),
+        ParameterPageSpec(ParameterPage.MISCELLANEOUS, R.string.params_tab_miscellaneous_title),
+        ParameterPageSpec(ParameterPage.CHOKE_CONTROL, R.string.params_tab_choke_control_title),
+        ParameterPageSpec(ParameterPage.SECURITY, R.string.params_tab_security_title),
+        ParameterPageSpec(ParameterPage.UNIVERSAL_OUTPUTS, R.string.params_tab_universal_outputs_title),
+        ParameterPageSpec(ParameterPage.FUEL_INJECTION, R.string.params_tab_fuel_injection_title),
+        ParameterPageSpec(ParameterPage.LAMBDA_CONTROL, R.string.params_tab_lambda_control_title),
+        ParameterPageSpec(ParameterPage.ACCELERATION, R.string.params_tab_acceleration_title),
+        ParameterPageSpec(ParameterPage.GAS_DOSE, R.string.params_tab_gas_dose_title),
+        ParameterPageSpec(ParameterPage.LTFT, R.string.params_tab_ltft_title),
+        ParameterPageSpec(ParameterPage.EL_THROTTLE, R.string.params_tab_el_throttle_title),
     )
-    if (fwInfoPacket == null || fwInfoPacket.isSmControlEnabled) pages.add(10, R.string.params_tab_choke_control_title)
-    fwInfoPacket?.let { firmware ->
-        if (firmware.isFuelInjectEnabled) pages += R.string.params_tab_fuel_injection_title
-        if (firmware.isFuelInjectEnabled || firmware.isCarbAfrEnabled || firmware.isGdControlEnabled) pages += R.string.params_tab_lambda_control_title
-        if (firmware.isFuelInjectEnabled || firmware.isGdControlEnabled) pages += R.string.params_tab_acceleration_title
-        if (firmware.isGdControlEnabled) pages += R.string.params_tab_gas_dose_title
-        if (firmware.isFuelInjectEnabled) pages += R.string.params_tab_ltft_title
-        if (!firmware.isSecu3T) pages += R.string.params_tab_el_throttle_title
-    }
-    return pages.mapNotNull { title -> parameterPageForTitle(title)?.let { ParameterPageSpec(it, title) } }
+
+    internal fun pageForTitle(titleRes: Int): ParameterPage? =
+        orderedPages.firstOrNull { it.titleRes == titleRes }?.page
+
+    internal fun pages(capabilities: ParameterCapabilities): List<ParameterPageSpec> =
+        orderedPages.filter { capabilities.supports(it.page) }
 }

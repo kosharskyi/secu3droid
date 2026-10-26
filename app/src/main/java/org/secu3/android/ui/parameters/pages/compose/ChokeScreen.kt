@@ -24,6 +24,8 @@
  */
 package org.secu3.android.ui.parameters.pages.compose
 
+import org.secu3.android.domain.parameters.ParameterCapabilities
+
 
 import androidx.annotation.StringRes
 import androidx.compose.foundation.ExperimentalFoundationApi

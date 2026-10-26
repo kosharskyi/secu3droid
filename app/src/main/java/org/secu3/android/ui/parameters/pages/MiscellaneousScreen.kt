@@ -24,6 +24,8 @@
  */
 package org.secu3.android.ui.parameters.pages
 
+import org.secu3.android.domain.parameters.ParameterCapabilities
+
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
@@ -107,8 +109,8 @@ internal fun MiscellaneousScreen(
             CheckRow(stringResource(R.string.miscel_turn_off_injectors_pump_after_switching_petrol_title),s.petrol,"petrol", enabled = capabilities.fuelInjection){toggleAction(MiscToggle.PETROL,it)}
         }
         ParameterSection {
-            IntRow(stringResource(R.string.miscel_evap_starting_air_flow_title),s.begin.toString(),"RxL",MiscField.BEGIN, enabled = capabilities.fuelInjection && !capabilities.secu3T){intEdit(MiscField.BEGIN)}
-            IntRow(stringResource(R.string.miscel_evap_ending_air_flow_title),s.end.toString(),"RxL",MiscField.END, enabled = capabilities.fuelInjection && !capabilities.secu3T){intEdit(MiscField.END)}
+            IntRow(stringResource(R.string.miscel_evap_starting_air_flow_title),s.begin.toString(),"RxL",MiscField.BEGIN, enabled = capabilities.nonSecu3TFuelInjection){intEdit(MiscField.BEGIN)}
+            IntRow(stringResource(R.string.miscel_evap_ending_air_flow_title),s.end.toString(),"RxL",MiscField.END, enabled = capabilities.nonSecu3TFuelInjection){intEdit(MiscField.END)}
         }
         ParameterSection {
             val timeout = String.format(locale, "%.1f", s.timeout)

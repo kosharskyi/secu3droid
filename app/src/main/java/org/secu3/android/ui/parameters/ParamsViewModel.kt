@@ -34,6 +34,9 @@ import androidx.compose.runtime.setValue
 import dagger.hilt.android.lifecycle.HiltViewModel
 import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.flow.collect
+import kotlinx.coroutines.flow.SharingStarted
+import kotlinx.coroutines.flow.map
+import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 import org.secu3.android.R
 import org.secu3.android.ui.messages.UiMessageDuration
@@ -42,6 +45,7 @@ import org.secu3.android.ui.PARAMETERS_ROUTE
 import org.secu3.android.connection.Secu3ConnectionManager
 import org.secu3.android.domain.parameters.EepromSaveResult
 import org.secu3.android.domain.parameters.ParameterPage
+import org.secu3.android.domain.parameters.ParameterCapabilities
 import org.secu3.android.domain.parameters.ParameterReadResult
 import org.secu3.android.domain.parameters.ParameterSession
 import org.secu3.android.domain.parameters.ParameterSessionEvent
@@ -92,6 +96,7 @@ class ParamsViewModel @Inject constructor(
     private val secu3ConnectionManager: Secu3ConnectionManager,
     private val parameterSession: ParameterSession,
     private val uiMessageQueue: UiMessageQueue,
+    private val parameterPageCatalog: ParameterPageCatalog,
 ) : ViewModel() {
 
     var isSendAllowed: Boolean = false
@@ -106,7 +111,12 @@ class ParamsViewModel @Inject constructor(
         private set
 
     val connectionState = secu3ConnectionManager.connectionStateFlow
-    val firmwareInfo = secu3ConnectionManager.firmwareInfo
+    val capabilities = secu3ConnectionManager.firmwareInfo
+        .map(::ParameterCapabilities)
+        .stateIn(viewModelScope, SharingStarted.Eagerly, ParameterCapabilities(secu3ConnectionManager.fwInfo))
+
+    internal fun parameterPages(capabilities: ParameterCapabilities): List<ParameterPageSpec> =
+        parameterPageCatalog.pages(capabilities)
 
     internal val starterStateHolder by lazy {
         StarterStateHolder(::sendPacket) { isSendAllowed = true }
@@ -164,7 +174,7 @@ class ParamsViewModel @Inject constructor(
 
     internal val gasDoseStateHolder by lazy {
         GasDoseStateHolder({}, ::sendPacket).also {
-            it.setFirmwareAvailable(firmwareInfo.value?.isGdControlEnabled ?: true)
+            it.setFirmwareAvailable(capabilities.value.gasDose)
         }
     }
 
@@ -191,10 +201,8 @@ class ParamsViewModel @Inject constructor(
     init {
         parameterSession.start(viewModelScope, ::onParameterSessionEvent)
         viewModelScope.launch {
-            secu3ConnectionManager.firmwareInfo.collect { firmware ->
-                gasDoseStateHolder.setFirmwareAvailable(firmware?.isGdControlEnabled ?: true)
-                if (firmware == null) fuelInjectionStateHolder.updateFirmware(injectorEnabled = true, secu3t = false)
-                else fuelInjectionStateHolder.updateFirmware(firmware.isFuelInjectEnabled, firmware.isSecu3T)
+            capabilities.collect { current ->
+                gasDoseStateHolder.setFirmwareAvailable(current.gasDose)
             }
         }
     }
@@ -278,13 +286,11 @@ class ParamsViewModel @Inject constructor(
             ParameterPage.CHOKE_CONTROL -> chokeControlStateHolder.reset()
             ParameterPage.GAS_DOSE -> {
                 gasDoseStateHolder.reset()
-                gasDoseStateHolder.setFirmwareAvailable(firmwareInfo.value?.isGdControlEnabled ?: true)
+                gasDoseStateHolder.setFirmwareAvailable(capabilities.value.gasDose)
             }
             ParameterPage.EL_THROTTLE -> dbwStateHolder.reset()
             ParameterPage.FUEL_INJECTION -> {
                 fuelInjectionStateHolder.reset()
-                firmwareInfo.value?.let { fuelInjectionStateHolder.updateFirmware(it.isFuelInjectEnabled, it.isSecu3T) }
-                    ?: fuelInjectionStateHolder.updateFirmware(injectorEnabled = true, secu3t = false)
             }
             ParameterPage.UNIVERSAL_OUTPUTS -> universalOutputsStateHolder.reset()
         }

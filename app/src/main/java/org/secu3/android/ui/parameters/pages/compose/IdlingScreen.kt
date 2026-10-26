@@ -24,6 +24,8 @@
  */
 package org.secu3.android.ui.parameters.pages.compose
 
+import org.secu3.android.domain.parameters.ParameterCapabilities
+
 import androidx.compose.foundation.rememberScrollState
 import androidx.annotation.StringRes
 import androidx.compose.runtime.Composable
@@ -197,7 +199,12 @@ fun IdlingScreen(
                     value = state.values.value(number),
                     precision = number.precision,
                     testTag = "idling_${number.name.lowercase()}",
-                    enabled = idlingNumberEnabled(number, state.values, capabilities),
+                    enabled = when (number) {
+                        IdlingNumber.IFAC1, IdlingNumber.IFAC2, IdlingNumber.MAX_ANGLE, IdlingNumber.MIN_ANGLE,
+                        IdlingNumber.RPM, IdlingNumber.DEAD_BAND, IdlingNumber.ON_TEMP -> true
+                        IdlingNumber.IAC_ADD -> capabilities.iacAdditionEnabled(state.values.flags.getValue(IdlingFlag.THRASSMAP))
+                        else -> capabilities.fuelInjection
+                    },
                     onClick = { onEdit(number) },
                 )
             }

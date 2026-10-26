@@ -177,7 +177,7 @@ class ParameterPageSessionCacheTest {
     }
 
     private fun activate(vm: ParamsViewModel, titleRes: Int) {
-        compose.runOnIdle { vm.activatePage(parameterPageForTitle(titleRes)!!) }
+        compose.runOnIdle { vm.activatePage(requireNotNull(ParameterPageCatalog().pageForTitle(titleRes))) }
     }
 
     private suspend fun await(predicate: () -> Boolean) {

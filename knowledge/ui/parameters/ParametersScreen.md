@@ -4,11 +4,11 @@ When the connection is not `Connected`, render the connection status instead of 
 
 ## Resource-backed tabs map to stable domain page IDs
 
-`ParameterPageSpec` keeps each tab's resource title beside its `ParameterPage` ID. Pass the ID to the session and retain the resource only for rendering, test tags, and pager keys.
+`ParameterPageCatalog` owns the ordered resource-title and `ParameterPage` mapping. The route asks the ViewModel to filter that mapping with the exact collected capability snapshot; pass the resolved ID to the session and retain the resource only for rendering, test tags, and pager keys.
 
-## Conditional pages and capabilities follow the current firmware packet
+## Conditional pages and field capabilities share one derived snapshot
 
-The route collects nullable firmware state from the connection manager and rebuilds page specs and capability presentation when it changes. Clearing firmware on session loss must not leave a prior ECU family's pages or capabilities visible; null retains the existing permissive unknown-firmware rules.
+The ViewModel derives one immutable domain capability snapshot from the manager's nullable firmware flow. The route uses that same snapshot to filter UI-owned page specs and to render all dependent screens. Clearing firmware on session loss must update both together; null retains permissive field previews, hides optional pages except Choke in its base position, and keeps Lambda channel selection disabled.
 
 ## Pager motion does not end the settled page's read session
 

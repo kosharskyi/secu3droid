@@ -59,8 +59,8 @@ internal fun ParametersRoute(
         factory = activity.defaultViewModelProviderFactory,
         extras = entry.defaultViewModelCreationExtras,
     )
-    val firmware by viewModel.firmwareInfo.collectAsStateWithLifecycle()
-    val pages = remember(firmware) { parameterPageSpecs(firmware) }
+    val capabilities by viewModel.capabilities.collectAsStateWithLifecycle()
+    val pages = remember(capabilities) { viewModel.parameterPages(capabilities) }
     val connectionState by viewModel.connectionState.collectAsStateWithLifecycle(initialValue = null)
     val lifecycle = LocalLifecycleOwner.current.lifecycle
 
@@ -96,7 +96,7 @@ internal fun ParametersRoute(
             onPageSettled = { index -> pages.getOrNull(index)?.page?.let(viewModel::activatePage) },
             onPageUnsettled = viewModel::deactivatePage,
             pageContent = { index, active, isActiveNow -> pages.getOrNull(index)?.let { page ->
-                ParameterPageContent(page.page, page.titleRes, viewModel, firmware, active, isActiveNow, viewModel::openParameterEditor)
+                ParameterPageContent(page.page, page.titleRes, viewModel, capabilities, active, isActiveNow, viewModel::openParameterEditor)
             } },
         )
     }

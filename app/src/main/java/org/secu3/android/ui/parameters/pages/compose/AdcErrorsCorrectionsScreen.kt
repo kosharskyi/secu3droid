@@ -24,6 +24,8 @@
  */
 package org.secu3.android.ui.parameters.pages.compose
 
+import org.secu3.android.domain.parameters.ParameterCapabilities
+
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.runtime.Composable
 import androidx.compose.foundation.layout.Column
@@ -156,7 +158,7 @@ fun AdcErrorsCorrectionsScreen(
                                 testTag = "adc_${number.name.lowercase()}",
                                 enabled = when {
                                     number.name.startsWith("ADD_I4") -> capabilities.extraAnalogInputs
-                                    number.ordinal >= AdcNumber.ADD_I3_FACTOR.ordinal -> !capabilities.secu3T
+                                    number.ordinal >= AdcNumber.ADD_I3_FACTOR.ordinal -> capabilities.dbw
                                     else -> true
                                 }, onClick = { onEdit(number) },
                             )
