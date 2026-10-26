@@ -1,6 +1,6 @@
 ## Hold controls must cancel and flush independently of their visual layout
 
-Choke and gas-dose manual controls issue repeated ECU step commands while pressed and periodic flush callbacks while held. Keep their pointer gesture jobs, release/cancel callbacks, and `isActive` gates together; moving them into shared page or section surfaces must not replace the gesture handler with a click control. Gas Dose packet state and pending movement live in the domain `GasDoseControl`; when a page session is invalidated, firmware support disappears, or the screen leaves composition, pending movement is discarded.
+Choke and gas-dose manual controls use the shared `ManualPositionButton` for repeated ECU step commands and periodic flush callbacks. The screen passes current activity and firmware support as enabled state, and controller cancellation discards pending movement when the page session is invalidated, firmware support disappears, or the screen leaves composition. Choke and Gas Dose packet state and command admission live in their domain controls.
 
 ## Security credentials are write-only and may only be applied when valid
 

@@ -160,10 +160,14 @@ class GasDoseControlTest {
         val sent = mutableListOf<OutputPacket>()
         var admitted = true
         private val scope = CoroutineScope(SupervisorJob() + Dispatchers.Unconfined)
-        val control = GasDoseControl(firmware) { packet ->
-            sent += packet
-            admitted
-        }
+        val control = GasDoseControl(
+            firmware,
+            { packet ->
+                sent += packet
+                admitted
+            },
+            ManualPositionDelta(),
+        )
 
         init {
             control.start(scope)

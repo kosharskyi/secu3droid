@@ -34,6 +34,7 @@ import org.secu3.android.domain.parameters.ParameterPage
 import org.secu3.android.models.packets.base.OutputPacket
 import org.secu3.android.models.packets.out.params.AnglesParamPacket
 import org.secu3.android.models.packets.out.params.GasDoseParamPacket
+import org.secu3.android.models.packets.out.params.ChokeControlParPacket
 import org.secu3.android.models.packets.out.params.StarterParamPacket
 import org.secu3.android.models.packets.out.ChangeModePacket
 import org.secu3.android.utils.UserPrefs
@@ -43,6 +44,7 @@ import org.secu3.android.ui.parameters.pages.compose.AnglesUiState
 import org.secu3.android.ui.parameters.pages.compose.AnglesNumber
 import org.secu3.android.ui.parameters.pages.compose.StarterUiState
 import org.secu3.android.ui.parameters.pages.compose.StarterNumber
+import org.secu3.android.ui.parameters.pages.compose.ChokeNumber
 import java.lang.reflect.Proxy
 import java.util.concurrent.CountDownLatch
 import java.util.concurrent.ConcurrentHashMap
@@ -261,6 +263,71 @@ class ParameterPageSessionCacheTest {
                     "values=${vm.gasDoseControl.values.value}, writes=${transport?.writes?.size ?: 0}",
                 failure,
             )
+        } finally {
+            try {
+                transport?.close()
+            } finally {
+                try {
+                    compose.runOnIdle { vm.clearPageState() }
+                } finally {
+                    queue.onActiveScopeChanged(originalActiveScope)
+                    compose.activityRule.scenario.moveToState(Lifecycle.State.RESUMED)
+                }
+            }
+        }
+    }
+
+    @Test fun chokeCommandsUseCurrentFirmwareAndRespectSessionAdmission() = runBlocking {
+        val vm = paramsViewModel()
+        var transport: FakeUsbTransport? = null
+        val queueField = ParamsViewModel::class.java.getDeclaredField("uiMessageQueue").apply { isAccessible = true }
+        val queue = queueField.get(vm) as org.secu3.android.ui.messages.UiMessageQueue
+        val originalActiveScope = queue.activeScope.value
+        try {
+            val options = (1 shl 22) or (1 shl 28)
+            val usb = installFakeUsb(vm, firmwareOptions = options).also { transport = it }
+            activate(vm, R.string.params_tab_choke_control_title)
+            usb.awaitReadRequest('%', 1)
+            usb.emit(ChokeControlParPacket(smSteps = 120))
+            await { vm.chokeControl.values.value?.steps == 120 }
+
+            compose.activityRule.scenario.moveToState(Lifecycle.State.STARTED)
+            compose.waitForIdle()
+            queue.onActiveScopeChanged(PARAMETERS_ROUTE)
+            val baseline = usb.writes.size
+            queue.pending.value.forEach { queue.acknowledge(it.id) }
+
+            compose.runOnIdle { vm.editChoke(ChokeNumber.STEPS, 500f) }
+            usb.awaitWriteCount(baseline + 1)
+            assertEquals('%', usb.writes[baseline][1].toInt().toChar())
+            assertEquals(0, usb.writes[baseline][5].toInt() and 0xff)
+            assertTrue(queue.pending.value.any { it.textRes == R.string.packet_sent })
+
+            compose.runOnIdle { vm.stepChoke(1) }
+            usb.emitFirmware(options = 0)
+            await { vm.capabilities.value.known && !vm.capabilities.value.choke }
+            delay(100)
+            usb.emitFirmware(options = options)
+            await { vm.capabilities.value.choke }
+            compose.runOnIdle { vm.finishChokeManual() }
+            assertEquals(baseline + 1, usb.writes.size)
+
+            compose.runOnIdle {
+                vm.stepChoke(-1)
+                vm.finishChokeManual()
+            }
+            usb.awaitWriteCount(baseline + 2)
+            assertEquals(255, usb.writes[baseline + 1][5].toInt() and 0xff)
+
+            queue.pending.value.forEach { queue.acknowledge(it.id) }
+            val beforePausedFlush = usb.writes.size
+            compose.runOnIdle {
+                vm.pausePageSession()
+                vm.stepChoke(1)
+                vm.finishChokeManual()
+            }
+            assertEquals(beforePausedFlush, usb.writes.size)
+            assertFalse(queue.pending.value.any { it.textRes == R.string.packet_sent })
         } finally {
             try {
                 transport?.close()

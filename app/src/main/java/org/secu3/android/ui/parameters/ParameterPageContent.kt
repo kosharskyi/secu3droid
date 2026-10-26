@@ -134,9 +134,23 @@ internal fun ParameterPageContent(
             }, { h.currentPacket?.let { floatEdit(R.string.miscel_fuel_pump_working_time_title, it.fpTimeoutStrt, .1f, 25.5f, .1f, 1) { h.editFloat(it.toFloat()) } } }, h::selectBaud, h::toggle, capabilities = capabilities)
         }
         R.string.params_tab_choke_control_title -> {
-            val h = viewModel.chokeControlStateHolder
-            ChokeScreen(h.values, { n -> h.values?.let { v -> if (n == ChokeNumber.STEPS) intEdit(n.title, v.value(n).toInt(), 1, n.max.toInt(), n.min.toInt()) { h.edit(n, it.toFloat()) } else floatEdit(n.title, v.value(n), n.step, n.max, n.min, n.precision) { h.edit(n, it.toFloat()) } } }, h::toggle, h::selectFrequency,
-                { if (isActiveNow()) h.manualStep(it) }, { if (isActiveNow()) h.flushManual() }, { if (isActiveNow()) h.finishManual() }, h::cancelManual, h::toggleTest, isActive = isActive, capabilities = capabilities)
+            val values by viewModel.chokeControl.values.collectAsStateWithLifecycle()
+            ChokeScreen(values, { number ->
+                values?.let { current ->
+                    if (number == ChokeNumber.STEPS) {
+                        intEdit(number.title, number.value(current).toInt(), 1, number.max.toInt(), number.min.toInt()) {
+                            viewModel.editChoke(number, it.toFloat())
+                        }
+                    } else {
+                        floatEdit(number.title, number.value(current), number.step, number.max, number.min, number.precision) {
+                            viewModel.editChoke(number, it)
+                        }
+                    }
+                }
+            }, viewModel::toggleChoke, viewModel::selectChokeFrequency,
+                { if (isActiveNow()) viewModel.stepChoke(it) }, { if (isActiveNow()) viewModel.flushChokeManual() },
+                { if (isActiveNow()) viewModel.finishChokeManual() }, viewModel::cancelChokeManual,
+                viewModel::toggleChokeTest, isActive = isActive, capabilities = capabilities)
         }
         R.string.params_tab_security_title -> {
             val h = viewModel.securityStateHolder

@@ -32,7 +32,7 @@ import org.junit.Assert.assertEquals
 import org.junit.Assert.assertTrue
 import org.junit.Rule
 import org.junit.Test
-import org.secu3.android.models.packets.out.params.ChokeControlParPacket
+import org.secu3.android.domain.parameters.ChokeValues
 import org.secu3.android.ui.compose.SecuComposeTheme
 
 class ChokeScreenTest {
@@ -40,7 +40,7 @@ class ChokeScreenTest {
 
     @Test fun initialRenderAndRecompositionDoNotSendOrEditAnything() {
         var calls = 0
-        val state = mutableStateOf(ChokeValues.from(ChokeControlParPacket(smFreq = 8)))
+        val state = mutableStateOf(values(frequency = 8))
         compose.setContent { SecuComposeTheme { ChokeScreen(state.value, {}, { _, _ -> calls++ }, { calls++ }, { calls++ }, { calls++ }, { calls++ }, { calls++ }, { calls++ }) } }
         compose.waitForIdle()
         compose.onNodeWithTag("choke_frequency").assertTextContains("Code 8")
@@ -71,7 +71,7 @@ class ChokeScreenTest {
         val frequencies = mutableListOf<Int>()
         compose.setContent {
             SecuComposeTheme {
-                ChokeScreen(ChokeValues.from(ChokeControlParPacket()), { edits += it }, { number, checked -> toggles += number to checked },
+                ChokeScreen(values(), { edits += it }, { number, checked -> toggles += number to checked },
                     frequencies::add, { delta += it }, { flushes++ }, { releases++ }, { cancels++ }, { tests++ })
             }
         }
@@ -93,12 +93,12 @@ class ChokeScreenTest {
         increaseNode.performTouchInput { down(center) }
         compose.mainClock.advanceTimeBy(550L)
         compose.runOnIdle {
-            assert(delta >= 2) { "Expected repeat steps before release; got $delta" }
-            assert(flushes >= 1) { "Expected periodic flush before release; got $flushes" }
+            assertTrue("Expected repeat steps before release; got $delta", delta >= 2)
+            assertTrue("Expected periodic flush before release; got $flushes", flushes >= 1)
         }
         increaseNode.performTouchInput { up() }
-        assert(delta >= 2) { "Expected steps while still held; got $delta" }
-        assert(flushes >= 1) { "Expected periodic flush while still held; got $flushes" }
+        assertTrue("Expected steps while still held; got $delta", delta >= 2)
+        assertTrue("Expected periodic flush while still held; got $flushes", flushes >= 1)
         assertEquals(2, releases)
 
         compose.onNodeWithTag("choke_manual_dec").performTouchInput { down(center); moveTo(Offset(-10f, -10f)); up() }
@@ -133,7 +133,7 @@ class ChokeScreenTest {
         compose.setContent {
             SecuComposeTheme {
                 ChokeScreen(
-                    ChokeValues.from(ChokeControlParPacket()), {}, { _, _ -> }, {},
+                    values(), {}, { _, _ -> }, {},
                     { steps++ }, { flushes++ }, {}, { cancels++ }, {}, isActive = active.value,
                 )
             }
@@ -158,4 +158,62 @@ class ChokeScreenTest {
             assertEquals(pausedFlushes, flushes)
         }
     }
+
+    @Test fun replacingCallbacksDuringHoldKeepsGestureRunningAndUsesLatestCallbacks() {
+        data class Callbacks(
+            val step: (Int) -> Unit,
+            val flush: () -> Unit,
+            val release: () -> Unit,
+            val cancel: () -> Unit,
+        )
+        var originalSteps = 0
+        var updatedSteps = 0
+        var updatedReleases = 0
+        var updatedCancels = 0
+        var updatedFlushes = 0
+        val callbacks = mutableStateOf(
+            Callbacks({ originalSteps++ }, {}, {}, {}),
+        )
+        compose.setContent {
+            val current = callbacks.value
+            SecuComposeTheme {
+                ChokeScreen(values(), {}, { _, _ -> }, {}, current.step, current.flush,
+                    current.release, current.cancel, {})
+            }
+        }
+        val button = compose.onNodeWithTag("choke_manual_inc")
+        button.performTouchInput { down(center) }
+        compose.mainClock.advanceTimeBy(250)
+        compose.runOnIdle {
+            callbacks.value = Callbacks(
+                { updatedSteps++ },
+                { updatedFlushes++ },
+                { updatedReleases++ },
+                { updatedCancels++ },
+            )
+        }
+        compose.mainClock.advanceTimeBy(300)
+        button.performTouchInput { up() }
+        compose.runOnIdle {
+            assertEquals(1, originalSteps)
+            assertTrue(updatedSteps > 0)
+            assertTrue(updatedFlushes > 0)
+            assertEquals(1, updatedReleases)
+            assertEquals(0, updatedCancels)
+        }
+    }
+
+    private fun values(frequency: Int = 1) = ChokeValues(
+        steps = 500,
+        regulatorFactor = .5f,
+        coldDuration = 2f,
+        hotDuration = 3f,
+        crankToRunDuration = 4f,
+        closedLoopRegulator = false,
+        disableRegulatorOnGas = false,
+        throttlePositionAtInit = false,
+        maximumFrequencyAtInit = false,
+        testing = false,
+        frequency = frequency,
+    )
 }

@@ -3,7 +3,6 @@ package org.secu3.android.ui.parameters
 import androidx.compose.runtime.Composable
 import org.secu3.android.models.packets.out.params.AccelerationParamPacket
 import org.secu3.android.models.packets.out.params.CkpsParamPacket
-import org.secu3.android.models.packets.out.params.ChokeControlParPacket
 import org.secu3.android.models.packets.out.params.FunSetParamPacket
 import org.secu3.android.models.packets.out.params.GasDoseParamPacket
 import org.secu3.android.models.packets.out.params.InjctrParPacket
@@ -25,7 +24,7 @@ import org.secu3.android.ui.parameters.pages.compose.CkpsScreen
 import org.secu3.android.ui.parameters.pages.compose.CkpsUiState
 import org.secu3.android.ui.parameters.pages.compose.CkpsValues
 import org.secu3.android.ui.parameters.pages.compose.ChokeScreen
-import org.secu3.android.ui.parameters.pages.compose.ChokeValues
+import org.secu3.android.domain.parameters.ChokeValues
 import org.secu3.android.ui.parameters.pages.compose.FuelBankValues
 import org.secu3.android.ui.parameters.pages.compose.FuelInjectionScreen
 import org.secu3.android.ui.parameters.pages.compose.FuelInjectionUiState
@@ -140,7 +139,7 @@ internal fun advancedParameterAppearanceFixtures(): List<ParameterAppearanceFixt
             CkpsScreen(CkpsUiState.Data(ckps), {}, { _, _ -> }, { _, _ -> })
         },
         ParameterAppearanceFixture("choke") {
-            ChokeScreen(ChokeValues.from(ChokeControlParPacket()), {}, { _, _ -> }, {}, {}, {}, {}, {}, {})
+            ChokeScreen(ChokeValues(500, .5f, 2f, 3f, 4f, false, false, false, false, false, 1), {}, { _, _ -> }, {}, {}, {}, {}, {}, {})
         },
         ParameterAppearanceFixture("gas-dose") {
             GasDoseScreen(GasDoseValues(500f, 14.7f, 20f, 15f, 15f, false, 1, true), ParameterCapabilities.All, {}, {}, {}, {}, {}, {}, {}, {})

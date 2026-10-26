@@ -48,6 +48,7 @@ import org.secu3.android.domain.parameters.ParameterReadResult
 import org.secu3.android.domain.parameters.ParameterSession
 import org.secu3.android.domain.parameters.ParameterSessionEvent
 import org.secu3.android.domain.parameters.GasDoseControl
+import org.secu3.android.domain.parameters.ChokeControl
 import org.secu3.android.models.packets.base.OutputPacket
 import org.secu3.android.models.packets.out.params.AccelerationParamPacket
 import org.secu3.android.models.packets.out.params.AdcCorrectionsParamPacket
@@ -82,7 +83,7 @@ import org.secu3.android.ui.parameters.pages.AccelerationStateHolder
 import org.secu3.android.ui.parameters.pages.MiscellaneousStateHolder
 import org.secu3.android.ui.parameters.pages.SecurityStateHolder
 import org.secu3.android.ui.parameters.pages.compose.FunctionsStateHolder
-import org.secu3.android.ui.parameters.pages.compose.ChokeControlStateHolder
+import org.secu3.android.ui.parameters.pages.compose.ChokeNumber
 import org.secu3.android.ui.parameters.pages.compose.GasDoseNumber
 import org.secu3.android.ui.parameters.pages.compose.DbwStateHolder
 import org.secu3.android.ui.parameters.pages.compose.FuelInjectionStateHolder
@@ -94,6 +95,7 @@ class ParamsViewModel @Inject constructor(
     @ApplicationContext private val context: Context, // TODO: move this out
     private val secu3ConnectionManager: Secu3ConnectionManager,
     private val parameterSession: ParameterSession,
+    internal val chokeControl: ChokeControl,
     internal val gasDoseControl: GasDoseControl,
     private val uiMessageQueue: UiMessageQueue,
     private val parameterPageCatalog: ParameterPageCatalog,
@@ -168,10 +170,6 @@ class ParamsViewModel @Inject constructor(
         LtftStateHolder(::sendPacket, { isSendAllowed = false }, { isSendAllowed = true })
     }
 
-    internal val chokeControlStateHolder by lazy {
-        ChokeControlStateHolder({}, ::sendPacket)
-    }
-
     internal val dbwStateHolder by lazy {
         DbwStateHolder(::sendPacket) { isSendAllowed = it }
     }
@@ -194,6 +192,7 @@ class ParamsViewModel @Inject constructor(
 
     init {
         parameterSession.start(viewModelScope, ::onParameterSessionEvent)
+        chokeControl.start(viewModelScope)
         gasDoseControl.start(viewModelScope)
     }
 
@@ -206,9 +205,44 @@ class ParamsViewModel @Inject constructor(
     internal fun refreshPage(page: ParameterPage) = parameterSession.refreshPage(page)
 
     internal fun cancelManualCommands() {
-        chokeControlStateHolder.cancelManual()
+        chokeControl.cancelManual()
         gasDoseControl.cancelManual()
     }
+
+    internal fun editChoke(number: ChokeNumber, value: Float) {
+        val sent = when (number) {
+            ChokeNumber.STEPS -> chokeControl.editSteps(value)
+            ChokeNumber.REGULATOR_FACTOR -> chokeControl.editRegulatorFactor(value)
+            ChokeNumber.COLD_DURATION -> chokeControl.editColdDuration(value)
+            ChokeNumber.HOT_DURATION -> chokeControl.editHotDuration(value)
+            ChokeNumber.CRANK_TO_RUN -> chokeControl.editCrankToRunDuration(value)
+            else -> false
+        }
+        showParameterPacketSentMessage(sent)
+    }
+
+    internal fun toggleChoke(number: ChokeNumber, enabled: Boolean) {
+        val sent = when (number) {
+            ChokeNumber.CLOSED_LOOP -> chokeControl.setClosedLoopRegulator(enabled)
+            ChokeNumber.DISABLE_ON_GAS -> chokeControl.setRegulatorDisabledOnGas(enabled)
+            ChokeNumber.THROTTLE_INIT -> chokeControl.setThrottlePositionAtInit(enabled)
+            ChokeNumber.MAX_FREQUENCY_INIT -> chokeControl.setMaximumFrequencyAtInit(enabled)
+            else -> false
+        }
+        showParameterPacketSentMessage(sent)
+    }
+
+    internal fun selectChokeFrequency(index: Int) = showParameterPacketSentMessage(chokeControl.selectFrequency(index))
+
+    internal fun toggleChokeTest() = showParameterPacketSentMessage(chokeControl.toggleTest())
+
+    internal fun stepChoke(direction: Int) = chokeControl.manualStep(direction)
+
+    internal fun flushChokeManual() = showParameterPacketSentMessage(chokeControl.flushManual())
+
+    internal fun finishChokeManual() = showParameterPacketSentMessage(chokeControl.finishManual())
+
+    internal fun cancelChokeManual() = chokeControl.cancelManual()
 
     internal fun editGasDose(number: GasDoseNumber, value: Float) {
         val sent = when (number) {
@@ -218,25 +252,25 @@ class ParamsViewModel @Inject constructor(
             GasDoseNumber.CORRECTION_POSITIVE -> gasDoseControl.editCorrectionPositive(value)
             GasDoseNumber.CORRECTION_NEGATIVE -> gasDoseControl.editCorrectionNegative(value)
         }
-        showGasDoseSentMessage(sent)
+        showParameterPacketSentMessage(sent)
     }
 
-    internal fun selectGasDoseFrequency(index: Int) = showGasDoseSentMessage(gasDoseControl.selectFrequency(index))
+    internal fun selectGasDoseFrequency(index: Int) = showParameterPacketSentMessage(gasDoseControl.selectFrequency(index))
 
     internal fun setGasDoseMaximumFrequency(enabled: Boolean) =
-        showGasDoseSentMessage(gasDoseControl.setMaximumFrequency(enabled))
+        showParameterPacketSentMessage(gasDoseControl.setMaximumFrequency(enabled))
 
-    internal fun toggleGasDoseTest() = showGasDoseSentMessage(gasDoseControl.toggleTest())
+    internal fun toggleGasDoseTest() = showParameterPacketSentMessage(gasDoseControl.toggleTest())
 
     internal fun stepGasDose(direction: Int) = gasDoseControl.manualStep(direction)
 
-    internal fun flushGasDoseManual() = showGasDoseSentMessage(gasDoseControl.flushManual())
+    internal fun flushGasDoseManual() = showParameterPacketSentMessage(gasDoseControl.flushManual())
 
-    internal fun finishGasDoseManual() = showGasDoseSentMessage(gasDoseControl.finishManual())
+    internal fun finishGasDoseManual() = showParameterPacketSentMessage(gasDoseControl.finishManual())
 
     internal fun cancelGasDoseManual() = gasDoseControl.cancelManual()
 
-    private fun showGasDoseSentMessage(sent: Boolean) {
+    private fun showParameterPacketSentMessage(sent: Boolean) {
         if (sent) showUiMessage(R.string.packet_sent, UiMessageDuration.SHORT)
     }
 
@@ -303,7 +337,7 @@ class ParamsViewModel @Inject constructor(
             ParameterPage.FUNCTIONS -> functionsStateHolder.reset()
             ParameterPage.MISCELLANEOUS -> miscellaneousStateHolder.reset()
             ParameterPage.SECURITY -> securityStateHolder.reset()
-            ParameterPage.CHOKE_CONTROL -> chokeControlStateHolder.reset()
+            ParameterPage.CHOKE_CONTROL -> chokeControl.reset()
             ParameterPage.GAS_DOSE -> gasDoseControl.reset()
             ParameterPage.EL_THROTTLE -> dbwStateHolder.reset()
             ParameterPage.FUEL_INJECTION -> {
@@ -362,12 +396,7 @@ class ParamsViewModel @Inject constructor(
                 }
             }
             ParameterPage.CHOKE_CONTROL -> {
-                isSendAllowed = false
-                try {
-                    chokeControlStateHolder.receive(packet<ChokeControlParPacket>(result))
-                } finally {
-                    isSendAllowed = true
-                }
+                chokeControl.receive(packet<ChokeControlParPacket>(result))
             }
             ParameterPage.GAS_DOSE -> {
                 gasDoseControl.receive(packet<GasDoseParamPacket>(result))

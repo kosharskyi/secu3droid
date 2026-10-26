@@ -9,3 +9,7 @@ Manual presses accumulate at most -127..127. Release or periodic flush consumes 
 ## UI bounds are sourced from the domain editor
 
 `GasDoseControl` owns the numeric limits and frequency range used for both validation and the Compose editor metadata. The UI enum adds only labels, units, precision, and editor step size; it does not mutate packets or carry a second copy of the limits.
+
+## Manual movement state is per controller, not shared by injection scope
+
+`ManualPositionDelta` is injected without a Hilt scope. Each `GasDoseControl` and `ChokeControl` must receive its own helper instance so a flush, cancel, firmware loss, or receive on one page cannot consume or clear the other page's pending movement.

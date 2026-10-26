@@ -12,4 +12,4 @@ The ViewModel receives typed page results from `ParameterSession`, which delegat
 
 ## Firmware-derived parameter availability is exposed as one snapshot
 
-Derive a single `ParameterCapabilities` state from `Secu3ConnectionManager.firmwareInfo`. The route and page screens consume that state; do not decode firmware flags in individual consumers. `GasDoseControl` reads the manager's current firmware for command admission and observes firmware changes to discard held movement; the ViewModel does not copy its presentation snapshot into the control.
+Derive a single `ParameterCapabilities` state from `Secu3ConnectionManager.firmwareInfo`. The route and page screens consume that state; do not decode firmware flags in individual consumers. `GasDoseControl` and `ChokeControl` read the manager's current firmware for command admission and observe firmware changes to discard held movement; the ViewModel does not copy its presentation snapshot into either control. Choke rejects stale callbacks as soon as firmware removes Choke support, even before page navigation settles.

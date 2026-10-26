@@ -39,37 +39,42 @@ data class GasDoseValues(
 class GasDoseControl internal constructor(
     private val firmwareInfo: StateFlow<FirmwareInfoPacket?>,
     private val sendPacket: (OutputPacket) -> Boolean,
+    private val manualPosition: ManualPositionDelta = ManualPositionDelta(),
 ) {
     @Inject
-    constructor(connectionManager: Secu3ConnectionManager, parameterSession: ParameterSession) : this(
+    constructor(
+        connectionManager: Secu3ConnectionManager,
+        parameterSession: ParameterSession,
+        manualPosition: ManualPositionDelta,
+    ) : this(
         connectionManager.firmwareInfo,
         parameterSession::sendPacket,
+        manualPosition,
     )
 
     private val mutableValues = MutableStateFlow<GasDoseValues?>(null)
     val values: StateFlow<GasDoseValues?> = mutableValues.asStateFlow()
 
     private var packet: GasDoseParamPacket? = null
-    private var manualDelta = 0
     private var firmwareJob: Job? = null
 
     fun start(scope: CoroutineScope) {
         if (firmwareJob != null) return
         firmwareJob = scope.launch {
             firmwareInfo.collect { firmware ->
-                if (!ParameterCapabilities(firmware).gasDose) manualDelta = 0
+                if (!ParameterCapabilities(firmware).gasDose) manualPosition.clear()
             }
         }
     }
 
     fun reset() {
         packet = null
-        manualDelta = 0
+        manualPosition.clear()
         mutableValues.value = null
     }
 
     fun receive(received: GasDoseParamPacket) {
-        manualDelta = 0
+        manualPosition.clear()
         received.manualPositionD = 0
         packet = received
         publishValues()
@@ -133,17 +138,16 @@ class GasDoseControl internal constructor(
 
     fun manualStep(direction: Int) {
         if (!canControl() || packet == null) return
-        manualDelta = (manualDelta + direction.coerceIn(-1, 1)).coerceIn(MANUAL_DELTA_MIN, MANUAL_DELTA_MAX)
+        manualPosition.add(direction)
     }
 
     fun flushManual(): Boolean {
         if (!canControl()) {
-            manualDelta = 0
+            manualPosition.clear()
             return false
         }
         val current = packet ?: return false
-        val delta = manualDelta
-        manualDelta = 0
+        val delta = manualPosition.take()
         if (delta == 0) return false
         return sendPacket(current.snapshotWithManualPosition(delta))
     }
@@ -151,7 +155,7 @@ class GasDoseControl internal constructor(
     fun finishManual(): Boolean = flushManual()
 
     fun cancelManual() {
-        manualDelta = 0
+        manualPosition.clear()
         packet?.manualPositionD = 0
     }
 
@@ -188,7 +192,5 @@ class GasDoseControl internal constructor(
         const val CORRECTION_MAX = 100f
         const val FREQUENCY_MIN = 0
         const val FREQUENCY_MAX = 3
-        const val MANUAL_DELTA_MIN = -127
-        const val MANUAL_DELTA_MAX = 127
     }
 }

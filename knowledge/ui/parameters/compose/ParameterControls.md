@@ -29,3 +29,7 @@ The shared dialog shell owns presentation only. Numeric edit text, cursor select
 ## Parameter choices use the shared dialog and commit only on selection
 
 Remaining enum and choice selectors use `ParameterChoiceDialog`; Functions, CKPS, Fuel Injection, and Carbur retain their equivalent existing composition from the same shared dialog parts. In both forms, callers own display fallback, ordered option IDs, and option test tags. Choosing invokes the existing callback and closes the dialog; Cancel, Back, or outside dismissal only closes it and sends no selection callback.
+
+## Manual hold buttons share timing and cancellation behavior
+
+Choke and Gas Dose use `ManualPositionButton`, which emits one step immediately, waits 400 ms before 80 ms repeats, and invokes periodic flush callbacks every 250 ms. It reads callbacks through `rememberUpdatedState` so recomposition does not restart an active pointer gesture. A normal release calls release once; pointer cancellation or gesture coroutine cancellation calls cancel once and discards pending movement. Page deactivation also cancels the owning controller's pending delta.
