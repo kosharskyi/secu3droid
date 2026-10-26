@@ -57,7 +57,9 @@ import kotlinx.coroutines.launch
 import org.secu3.android.R
 import org.secu3.android.connection.ConnectionState
 import org.secu3.android.connection.Connected
-import org.secu3.android.models.packets.input.DiagInputPacket
+import org.secu3.android.domain.diagnostics.DiagnosticsSession
+import org.secu3.android.domain.diagnostics.DiagnosticsState
+import org.secu3.android.domain.diagnostics.DiagnosticOutput
 import org.secu3.android.ui.compose.SecuTopAppBar
 import org.secu3.android.ui.compose.SecuTabRow
 import org.secu3.android.ui.parameters.ParameterEditRequest
@@ -68,8 +70,7 @@ import org.secu3.android.ui.parameters.dialogs.NumericEditDialog
 internal fun DiagnosticsScreen(
     isSecu3T: Boolean?,
     connectionStatus: ConnectionState?,
-    diagnosticInput: DiagInputPacket?,
-    state: DiagnosticsViewModel.UiState,
+    state: DiagnosticsState,
     onNavigateUp: () -> Unit,
     onAdditionalSettings: () -> Unit,
     onOutputChanged: (DiagnosticOutput, Boolean) -> Unit,
@@ -80,7 +81,7 @@ internal fun DiagnosticsScreen(
     hasTpic8101: Boolean? = null,
 ) {
     val status = connectionStatus
-    val input = diagnosticInput.takeIf { state.controlsEnabled && status == Connected }
+    val input = state.input.takeIf { state.controlsEnabled && status == Connected }
     val controlsEnabled = state.controlsEnabled && status == Connected && input != null
     val enableBlDe = state.enableBlDe
     val enableTachO = state.enableTachO
@@ -159,7 +160,7 @@ internal fun DiagnosticsScreen(
                         outputBits = state.outputBits,
                         enableBlDe = enableBlDe,
                         enableTachO = enableTachO,
-                        selectedChannel = state.channel,
+                        generatorOutput = state.generatorOutput,
                         controlsEnabled = controlsEnabled,
                         onOutputChanged = onOutputChanged,
                     )
@@ -171,8 +172,8 @@ internal fun DiagnosticsScreen(
         "frequency" -> ParameterEditRequest.FloatValue(
             title = stringResource(R.string.test_signal_frequency_hz),
             value = editorInitialValue,
-            min = 10f,
-            max = 5000f,
+            min = DiagnosticsSession.MIN_FREQUENCY,
+            max = DiagnosticsSession.MAX_FREQUENCY,
             step = .1f,
             precision = 1,
             onValue = {},
@@ -180,8 +181,8 @@ internal fun DiagnosticsScreen(
         "duty" -> ParameterEditRequest.FloatValue(
             title = stringResource(R.string.test_signal_duty),
             value = editorInitialValue,
-            min = 0f,
-            max = 100f,
+            min = DiagnosticsSession.MIN_DUTY,
+            max = DiagnosticsSession.MAX_DUTY,
             step = .5f,
             precision = 1,
             onValue = {},

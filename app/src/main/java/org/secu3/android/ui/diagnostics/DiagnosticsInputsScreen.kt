@@ -68,15 +68,12 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import org.secu3.android.R
 import org.secu3.android.models.packets.input.DiagInputPacket
-import org.secu3.android.models.packets.out.DiagOutputPacket
+import org.secu3.android.domain.diagnostics.DiagnosticOutput
 import org.secu3.android.ui.compose.LocalSecuPalette
 import org.secu3.android.ui.parameters.compose.ParameterSelectionRow
 import org.secu3.android.ui.parameters.dialogs.ParameterChoice
 import org.secu3.android.ui.parameters.dialogs.ParameterChoiceDialog
 import java.util.Locale
-
-val secu3TOutputChannels = listOf("NONE", "IGN_OUT1", "IGN_OUT2", "IGN_OUT3", "IGN_OUT4", "IE", "FE", "ECF", "CE", "ST_BLOCK", "ADD_IO1", "ADD_IO2", "BL", "DE")
-val secu3IOutputChannels = listOf("NONE", "IGN_OUT1", "IGN_OUT2", "IGN_OUT3", "IGN_OUT4", "IGN_OUT5", "ECF", "INJ_O1", "INJ_O2", "INJ_O3", "INJ_O4", "INJ_O5", "BL", "DE", "STBL_O", "CEL_O", "FPMP_O", "PWRR_O", "EVAP_O", "O2SH_0", "COND_O", "ADD_O2", "TACH_O", "GPA6_O")
 
 @Composable
 fun DiagnosticsInputsScreen(
@@ -96,7 +93,15 @@ fun DiagnosticsInputsScreen(
     controlsEnabled: Boolean = false,
 ) {
     val enabled = controlsEnabled && isSecu3T != null
-    val channels = if (isSecu3T == true) secu3TOutputChannels else secu3IOutputChannels
+    val channelOutputs = if (isSecu3T == true) DiagnosticOutput.secu3TChannels else DiagnosticOutput.secu3IChannels
+    val channels = listOf("NONE") + channelOutputs.map { output ->
+        when (output) {
+            DiagnosticOutput.ECF -> "ECF"
+            DiagnosticOutput.ECF0 -> "ECF"
+            DiagnosticOutput.O2SH_O -> "O2SH_0"
+            else -> output.name
+        }
+    }
     val chosen = selectedChannel.takeIf { it in channels.indices } ?: 0
     Column(Modifier.fillMaxSize().background(MaterialTheme.colorScheme.background).verticalScroll(rememberScrollState()).padding(16.dp), verticalArrangement = Arrangement.spacedBy(16.dp)) {
         DiagnosticGroupSurface(Modifier.fillMaxWidth()) {
@@ -263,19 +268,4 @@ private fun StatusInput(label: String, checked: Boolean?) {
             color = statusColor,
         )
     }
-}
-
-internal fun selectDiagnosticOutputChannel(packet: DiagOutputPacket, channelIndex: Int, send: () -> Unit) {
-    packet.chan = channelIndex
-    send()
-}
-
-internal fun updateDiagnosticOutputFrequency(packet: DiagOutputPacket, value: Float, send: () -> Unit) {
-    packet.frq = value
-    if (packet.chan > 0) send()
-}
-
-internal fun updateDiagnosticOutputDuty(packet: DiagOutputPacket, value: Float, send: () -> Unit) {
-    packet.duty = value
-    if (packet.chan > 0) send()
 }

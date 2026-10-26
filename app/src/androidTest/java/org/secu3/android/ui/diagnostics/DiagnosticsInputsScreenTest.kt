@@ -55,7 +55,6 @@ import org.junit.Assert.assertEquals
 import org.junit.Rule
 import org.junit.Test
 import org.secu3.android.models.packets.input.DiagInputPacket
-import org.secu3.android.models.packets.out.DiagOutputPacket
 
 class DiagnosticsInputsScreenTest {
     @get:Rule val compose = createComposeRule()
@@ -149,33 +148,28 @@ class DiagnosticsInputsScreenTest {
         compose.onNodeWithTag("status_GAS_V-value").assertTextEquals(context.getString(R.string.sensors_status_accessibility_off))
     }
 
-    @Test fun secu3TChannelSelectionSendsSameIndexAsProtocolChannelAndRenderIsSilent() {
-        assertEquals(listOf("NONE", "IGN_OUT1", "IGN_OUT2", "IGN_OUT3", "IGN_OUT4", "IE", "FE", "ECF", "CE", "ST_BLOCK", "ADD_IO1", "ADD_IO2", "BL", "DE"), secu3TOutputChannels)
-        val packet = DiagOutputPacket()
-        var sendCount = 0
+    @Test fun channelSelectionReportsSelectedIndexAndRenderIsSilent() {
+        var selected = -1
         var current by mutableStateOf(0)
+        var renderCount = 0
         compose.setContent {
-            DiagnosticsInputsScreen(null, true, current, 10f, 50f, { current = it; selectDiagnosticOutputChannel(packet, it) { sendCount++ } }, { sendCount++ }, { sendCount++ }, controlsEnabled = true)
+            DiagnosticsInputsScreen(
+                null,
+                true,
+                current,
+                10f,
+                50f,
+                { selected = it; current = it },
+                { renderCount++ },
+                { renderCount++ },
+                controlsEnabled = true,
+            )
         }
-        compose.runOnIdle { assertEquals(0, sendCount) }
+        compose.runOnIdle { assertEquals(-1, selected); assertEquals(0, renderCount) }
         compose.onNodeWithTag("output_channel").performScrollTo().performClick()
         compose.onNodeWithText("ST_BLOCK").performScrollTo().performClick()
-        compose.runOnIdle { assertEquals(9, packet.chan); assertEquals(1, sendCount) }
+        compose.runOnIdle { assertEquals(9, selected); assertEquals(0, renderCount) }
         compose.onNodeWithText("ST_BLOCK").assertIsDisplayed()
-
-        assertEquals(1, sendCount)
-    }
-
-    @Test fun secu3iChannelSelectionSendsSameIndexAsProtocolChannel() {
-        assertEquals(listOf("NONE", "IGN_OUT1", "IGN_OUT2", "IGN_OUT3", "IGN_OUT4", "IGN_OUT5", "ECF", "INJ_O1", "INJ_O2", "INJ_O3", "INJ_O4", "INJ_O5", "BL", "DE", "STBL_O", "CEL_O", "FPMP_O", "PWRR_O", "EVAP_O", "O2SH_0", "COND_O", "ADD_O2", "TACH_O", "GPA6_O"), secu3IOutputChannels)
-        val packet = DiagOutputPacket()
-        var sendCount = 0
-        compose.setContent {
-            DiagnosticsInputsScreen(null, false, 0, 10f, 50f, { selectDiagnosticOutputChannel(packet, it) { sendCount++ } }, { sendCount++ }, { sendCount++ }, controlsEnabled = true)
-        }
-        compose.onNodeWithTag("output_channel").performScrollTo().performClick()
-        compose.onNodeWithText("GPA6_O").performScrollTo().performClick()
-        compose.runOnIdle { assertEquals(23, packet.chan); assertEquals(1, sendCount) }
     }
 
     @Test fun absentFirmwareDisablesEditsAndRecompositionDoesNotCallSends() {
@@ -208,41 +202,16 @@ class DiagnosticsInputsScreenTest {
         compose.runOnIdle { assertEquals(0, sends) }
     }
 
-    @Test fun frequencyAndDutyEditRequestsOnlyComeFromUserConfirmationEntryPoints() {
+    @Test fun frequencyAndDutyEditCallbacksOnlyComeFromUserInteraction() {
         var frequencyRequests = 0
         var dutyRequests = 0
-        var frequency by mutableStateOf(10f)
-        var duty by mutableStateOf(50f)
-        val packet = DiagOutputPacket()
         compose.setContent {
-            DiagnosticsInputsScreen(null, true, 0, frequency, duty, {}, {
-                frequencyRequests++
-                frequency = 11.2f
-                updateDiagnosticOutputFrequency(packet, frequency) { frequencyRequests += 100 }
-            }, {
-                dutyRequests++
-                duty = 51.5f
-                updateDiagnosticOutputDuty(packet, duty) { dutyRequests += 100 }
-            }, controlsEnabled = true)
+            DiagnosticsInputsScreen(null, true, 0, 10f, 50f, {}, { frequencyRequests++ }, { dutyRequests++ }, controlsEnabled = true)
         }
         compose.runOnIdle { assertEquals(0, frequencyRequests); assertEquals(0, dutyRequests) }
         compose.onNodeWithTag("frequency_edit").performScrollTo().performClick()
         compose.onNodeWithTag("duty_edit").performScrollTo().performClick()
-        compose.runOnIdle {
-            assertEquals(1, frequencyRequests)
-            assertEquals(1, dutyRequests)
-            assertEquals(11.2f, packet.frq)
-            assertEquals(51.5f, packet.duty)
-        }
-        compose.onNodeWithText("11.2 Hz").performScrollTo().assertIsDisplayed()
-        compose.onNodeWithText("51.5 %").performScrollTo().assertIsDisplayed()
-        compose.runOnIdle {
-            packet.chan = 1
-            updateDiagnosticOutputFrequency(packet, 20f) { frequencyRequests++ }
-            updateDiagnosticOutputDuty(packet, 60f) { dutyRequests++ }
-            assertEquals(2, frequencyRequests)
-            assertEquals(2, dutyRequests)
-        }
+        compose.runOnIdle { assertEquals(1, frequencyRequests); assertEquals(1, dutyRequests) }
     }
 
     @Test fun outputFieldsRemainTappableAndReadableAtNarrowWidth() {

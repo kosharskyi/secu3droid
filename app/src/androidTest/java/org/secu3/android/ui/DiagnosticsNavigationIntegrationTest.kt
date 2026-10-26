@@ -38,7 +38,7 @@ import org.junit.After
 import org.junit.Rule
 import org.junit.Test
 import org.secu3.android.R
-import org.secu3.android.ui.diagnostics.DiagnosticOutput
+import org.secu3.android.domain.diagnostics.DiagnosticOutput
 import org.secu3.android.ui.diagnostics.DiagnosticsViewModel
 import java.util.concurrent.CopyOnWriteArrayList
 
@@ -60,15 +60,15 @@ class DiagnosticsNavigationIntegrationTest {
         assertDiagnosticsHost(nativeHost)
 
         val firstVm = diagnosticsViewModel()
-        val transport = connectFakeBluetooth(firstVm)
+        val transport = connectFakeBluetooth(connectionManager())
         await { transport.enterCount == 1 }
-        assertFalse(firstVm.uiState.value.controlsEnabled)
+        assertFalse(firstVm.state.value.controlsEnabled)
         transport.emitDiagnosticInput(flags = 0)
-        await { firstVm.uiState.value.controlsEnabled }
+        await { firstVm.state.value.controlsEnabled }
         compose.activityRule.scenario.onActivity {
-            assertEquals(50f, firstVm.uiState.value.duty)
+            assertEquals(50f, firstVm.state.value.duty)
             firstVm.selectChannel(3)
-            assertEquals(50f, firstVm.uiState.value.duty)
+            assertEquals(50f, firstVm.state.value.duty)
             firstVm.editFrequency(321f)
             firstVm.editDuty(37.5f)
         }
@@ -83,16 +83,16 @@ class DiagnosticsNavigationIntegrationTest {
         val restoredHost = nativeHost()
         val restoredVm = diagnosticsViewModel()
         assertSame(firstVm, restoredVm)
-        assertEquals(3, restoredVm.uiState.value.channel)
-        assertEquals(321f, restoredVm.uiState.value.frequency)
-        assertEquals(37.5f, restoredVm.uiState.value.duty)
+        assertEquals(3, restoredVm.state.value.channel)
+        assertEquals(321f, restoredVm.state.value.frequency)
+        assertEquals(37.5f, restoredVm.state.value.duty)
         compose.onNodeWithTag("enable_bl_de_checkbox").assertIsOn()
 
         InstrumentationRegistry.getInstrumentation().sendKeyDownUpSync(KeyEvent.KEYCODE_BACK)
         compose.waitForIdle()
         assertEquals(DIAGNOSTICS_ROUTE, compose.activity.rootNavigationController?.currentDestination?.route)
         assertSame(restoredVm, diagnosticsViewModel())
-        assertEquals(false, restoredVm.uiState.value.enableBlDe)
+        assertEquals(false, restoredVm.state.value.enableBlDe)
         compose.onNodeWithText("IGN_OUT3").assertExists()
         compose.onNodeWithText("321.0 Hz").assertExists()
         compose.onNodeWithText("37.5 %").assertExists()
@@ -116,11 +116,11 @@ class DiagnosticsNavigationIntegrationTest {
         compose.activityRule.scenario.onActivity { it.openDiagnostics() }
         compose.waitForIdle()
         val vm = diagnosticsViewModel()
-        val transport = connectFakeBluetooth(vm)
+        val transport = connectFakeBluetooth(connectionManager())
         await { transport.enterCount == 1 }
-        assertFalse(vm.uiState.value.controlsEnabled)
+        assertFalse(vm.state.value.controlsEnabled)
         transport.emitDiagnosticInput(flags = 0)
-        await { vm.uiState.value.controlsEnabled }
+        await { vm.state.value.controlsEnabled }
         compose.onNodeWithTag("diagnostics-settings-icon").performClick()
         compose.waitForIdle()
         compose.onNodeWithTag("enable_bl_de_checkbox").performClick()
@@ -128,22 +128,22 @@ class DiagnosticsNavigationIntegrationTest {
         compose.waitForIdle()
         assertSame(vm, diagnosticsViewModel())
         assertEquals(DIAGNOSTICS_ROUTE, compose.activity.rootNavigationController?.currentDestination?.route)
-        assertEquals(true, vm.uiState.value.enableBlDe)
+        assertEquals(true, vm.state.value.enableBlDe)
 
         compose.activityRule.scenario.onActivity {
             vm.setOutput(DiagnosticOutput.BL, true)
             vm.setOutput(DiagnosticOutput.DE, true)
         }
         val blDeHigh = (1 shl 11) or (1 shl 12) or (1 shl 13) or (1 shl 14)
-        assertEquals(blDeHigh, vm.uiState.value.outputBits)
+        assertEquals(blDeHigh, vm.state.value.outputBits)
 
         compose.onNodeWithTag("diagnostics-settings-icon").performClick()
         compose.waitForIdle()
         compose.onNodeWithTag("diagnostic_ok").performClick()
         compose.waitForIdle()
         assertSame(vm, diagnosticsViewModel())
-        assertEquals(true, vm.uiState.value.enableBlDe)
-        assertEquals(blDeHigh, vm.uiState.value.outputBits)
+        assertEquals(true, vm.state.value.enableBlDe)
+        assertEquals(blDeHigh, vm.state.value.outputBits)
 
         compose.activityRule.scenario.onActivity { it.openDiagnostics() }
         compose.waitForIdle()
@@ -157,12 +157,12 @@ class DiagnosticsNavigationIntegrationTest {
         compose.activityRule.scenario.onActivity { it.openDiagnostics() }
         compose.waitForIdle()
         val vm = diagnosticsViewModel()
-        assertFalse(vm.uiState.value.controlsEnabled)
-        val transport = connectFakeBluetooth(vm)
+        assertFalse(vm.state.value.controlsEnabled)
+        val transport = connectFakeBluetooth(connectionManager())
         await { transport.enterCount == 1 }
-        assertFalse(vm.uiState.value.controlsEnabled)
+        assertFalse(vm.state.value.controlsEnabled)
         transport.emitDiagnosticInput(flags = 1, voltageRaw = 500)
-        await { vm.uiState.value.controlsEnabled }
+        await { vm.state.value.controlsEnabled }
         compose.onNodeWithTag("analog_Voltage-value").assertTextEquals("1.250 V")
 
         compose.activityRule.scenario.onActivity {
@@ -175,64 +175,58 @@ class DiagnosticsNavigationIntegrationTest {
             vm.setOutput(DiagnosticOutput.DE, true)
             vm.setOutput(DiagnosticOutput.TACH_O, true)
         }
-        val activeFrequency = vm.uiState.value.frequency
-        val activeDuty = vm.uiState.value.duty
+        val activeFrequency = vm.state.value.frequency
+        val activeDuty = vm.state.value.duty
         compose.waitForIdle()
         compose.onNodeWithTag("diagnostics-settings-icon").performClick()
         compose.waitForIdle()
         assertEquals(DIAGNOSTICS_ADDITIONAL_ROUTE, compose.activity.rootNavigationController?.currentDestination?.route)
 
         transport.disconnect()
-        await { !vm.uiState.value.controlsEnabled && vm.diagInput.value == null }
+        await { !vm.state.value.controlsEnabled && vm.state.value.input == null }
         compose.waitForIdle()
         assertEquals(DIAGNOSTICS_ROUTE, compose.activity.rootNavigationController?.currentDestination?.route)
         compose.onNodeWithTag("analog_Voltage-value").assertTextEquals("— V")
-        assertEquals(0, vm.uiState.value.channel)
-        assertEquals(0b11, vm.uiState.value.outputBits)
-        assertEquals(activeFrequency, vm.uiState.value.frequency)
-        assertEquals(activeDuty, vm.uiState.value.duty)
+        assertEquals(0, vm.state.value.channel)
+        assertEquals(0b11, vm.state.value.outputBits)
+        assertEquals(activeFrequency, vm.state.value.frequency)
+        assertEquals(activeDuty, vm.state.value.duty)
 
-        val bitsAfterLoss = vm.uiState.value.outputBits
+        val bitsAfterLoss = vm.state.value.outputBits
         val writesAfterLoss = transport.writes.size
         compose.activityRule.scenario.onActivity {
             vm.selectChannel(5)
             vm.editFrequency(999f)
             vm.editDuty(99f)
             vm.setOutput(DiagnosticOutput.IGN_OUT1, false)
-            vm.enableBlDe(false)
-            vm.enableTachO(false)
             vm.applyAdditionalOptions(enableBlDe = true, enableTachO = true)
-            vm.sendDiagOutPacket()
         }
-        assertEquals(0, vm.uiState.value.channel)
-        assertEquals(activeFrequency, vm.uiState.value.frequency)
-        assertEquals(activeDuty, vm.uiState.value.duty)
-        assertEquals(bitsAfterLoss, vm.uiState.value.outputBits)
+        assertEquals(0, vm.state.value.channel)
+        assertEquals(activeFrequency, vm.state.value.frequency)
+        assertEquals(activeDuty, vm.state.value.duty)
+        assertEquals(bitsAfterLoss, vm.state.value.outputBits)
         assertEquals(writesAfterLoss, transport.writes.size)
 
-        val reconnected = connectFakeBluetooth(vm)
+        val reconnected = connectFakeBluetooth(connectionManager())
         await { transport.enterCount == 1 }
         await { reconnected.enterCount == 1 }
-        assertFalse(vm.uiState.value.controlsEnabled)
+        assertFalse(vm.state.value.controlsEnabled)
         val writesBeforeFreshInput = reconnected.writes.size
         compose.activityRule.scenario.onActivity {
             vm.selectChannel(2)
             vm.editFrequency(999f)
             vm.editDuty(99f)
-            vm.enableBlDe(true)
-            vm.enableTachO(true)
-            vm.sendDiagOutPacket()
         }
-        assertEquals(0, vm.uiState.value.channel)
-        assertEquals(activeFrequency, vm.uiState.value.frequency)
-        assertEquals(activeDuty, vm.uiState.value.duty)
+        assertEquals(0, vm.state.value.channel)
+        assertEquals(activeFrequency, vm.state.value.frequency)
+        assertEquals(activeDuty, vm.state.value.duty)
         assertEquals(writesBeforeFreshInput, reconnected.writes.size)
         reconnected.emitDiagnosticInput(flags = 0)
-        await { vm.uiState.value.controlsEnabled }
-        assertEquals(0, vm.uiState.value.outputBits)
-        assertEquals(0, vm.uiState.value.channel)
-        assertEquals(activeFrequency, vm.uiState.value.frequency)
-        assertEquals(activeDuty, vm.uiState.value.duty)
+        await { vm.state.value.controlsEnabled }
+        assertEquals(0, vm.state.value.outputBits)
+        assertEquals(0, vm.state.value.channel)
+        assertEquals(activeFrequency, vm.state.value.frequency)
+        assertEquals(activeDuty, vm.state.value.duty)
     }
 
     @Test
@@ -241,18 +235,18 @@ class DiagnosticsNavigationIntegrationTest {
         compose.activityRule.scenario.onActivity { it.openDiagnostics() }
         compose.waitForIdle()
         val vm = diagnosticsViewModel()
-        val transport = connectFakeBluetooth(vm, acknowledgeEnterImmediately = true)
+        val transport = connectFakeBluetooth(connectionManager(), acknowledgeEnterImmediately = true)
 
         await { transport.enterCount == 1 }
         await { transport.enterCount == 1 && transport.diagInputRequestCount == 1 }
-        assertFalse(vm.uiState.value.controlsEnabled)
+        assertFalse(vm.state.value.controlsEnabled)
         transport.emitDiagnosticInput(flags = 1)
-        await { vm.uiState.value.controlsEnabled && transport.outputCount == 1 }
-        assertEquals(0b11, vm.uiState.value.outputBits)
+        await { vm.state.value.controlsEnabled && transport.outputCount == 1 }
+        assertEquals(0b11, vm.state.value.outputBits)
 
         transport.emitOpcode(6)
         transport.emitDiagnosticInput(flags = 1, voltageRaw = 600)
-        await { vm.diagInput.value?.voltage == 1.5f }
+        await { vm.state.value.input?.voltage == 1.5f }
         compose.activityRule.scenario.onActivity { vm.selectChannel(1) }
         await { transport.outputCount == 2 }
         assertEquals(1, transport.diagInputRequestCount)
@@ -305,12 +299,13 @@ class DiagnosticsNavigationIntegrationTest {
         compose.onNodeWithTag("home-card-diagnostics").assertExists()
     }
 
+    private fun connectionManager(): Secu3ConnectionManager =
+        ViewModelProvider(compose.activity)[MainActivityViewModel::class.java].connectionManager
+
     private fun connectFakeBluetooth(
-        viewModel: DiagnosticsViewModel,
+        manager: Secu3ConnectionManager,
         acknowledgeEnterImmediately: Boolean = false,
     ): FakeBluetoothTransport = runBlocking {
-        val manager = DiagnosticsViewModel::class.java.getDeclaredField("secu3ConnectionManager")
-            .apply { isAccessible = true }.get(viewModel) as Secu3ConnectionManager
         val btField = Secu3ConnectionManager::class.java.declaredFields.first { BtConnection::class.java.isAssignableFrom(it.type) }
             .apply { isAccessible = true }
         val connection = btField.get(manager) as BtConnection

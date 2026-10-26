@@ -157,7 +157,7 @@ internal fun RootNavigation(activity: MainActivity) {
                         factory = activity.defaultViewModelProviderFactory,
                         extras = graphEntry.defaultViewModelCreationExtras,
                     )
-                    val state by viewModel.uiState.collectAsStateWithLifecycle()
+                    val state by viewModel.state.collectAsStateWithLifecycle()
                     val firmware by viewModel.firmwareInfo.collectAsStateWithLifecycle()
                     LaunchedEffect(state.controlsEnabled, entry) {
                         if (!state.controlsEnabled && navController.currentBackStackEntry === entry) navController.popBackStack()

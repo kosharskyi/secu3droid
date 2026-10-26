@@ -11,16 +11,14 @@ internal fun DiagnosticsRoute(
     onNavigateUp: () -> Unit,
     onAdditionalSettings: () -> Unit,
 ) {
-    val state by viewModel.uiState.collectAsStateWithLifecycle()
+    val state by viewModel.state.collectAsStateWithLifecycle()
     val firmware by viewModel.firmwareInfo.collectAsStateWithLifecycle()
     val connection by viewModel.connectionState.collectAsStateWithLifecycle(initialValue = null)
-    val input by viewModel.diagInput.collectAsStateWithLifecycle()
     SecuComposeTheme {
         DiagnosticsScreen(
             isSecu3T = firmware?.isSecu3T,
             hasTpic8101 = firmware?.isTPIC8101,
             connectionStatus = connection,
-            diagnosticInput = input,
             state = state,
             onNavigateUp = onNavigateUp,
             onAdditionalSettings = onAdditionalSettings,

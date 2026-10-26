@@ -53,7 +53,8 @@ import org.secu3.android.connection.Connected
 import org.secu3.android.connection.ConnectionState
 import org.secu3.android.connection.Disconnected
 import org.secu3.android.models.packets.input.DiagInputPacket
-import org.secu3.android.models.packets.out.DiagOutputPacket
+import org.secu3.android.domain.diagnostics.DiagnosticsState
+import org.secu3.android.domain.diagnostics.DiagnosticOutput
 import org.secu3.android.ui.compose.SecuComposeTheme
 
 class DiagnosticsScreenTest {
@@ -119,23 +120,18 @@ class DiagnosticsScreenTest {
     }
 
     @Test
-    fun channelSelectionPreservesDefaultDutyInDisplayAndPacket() {
-        val packet = DiagOutputPacket()
-        val state = mutableStateOf(DiagnosticsViewModel.UiState(controlsEnabled = true))
+    fun channelSelectionPreservesDefaultDutyInDisplay() {
+        val state = mutableStateOf(DiagnosticsState(input = DiagInputPacket(), controlsEnabled = true))
         compose.setContent {
             SecuComposeTheme {
                 DiagnosticsScreen(
                     isSecu3T = false,
                     connectionStatus = Connected,
-                    diagnosticInput = DiagInputPacket(),
                     state = state.value,
                     onNavigateUp = {},
                     onAdditionalSettings = {},
                     onOutputChanged = { _, _ -> },
-                    onChannelSelected = { channel ->
-                        packet.chan = channel
-                        state.value = state.value.copy(channel = channel)
-                    },
+                    onChannelSelected = { channel -> state.value = state.value.copy(channel = channel) },
                     onFrequencyEdit = {},
                     onDutyEdit = {},
                 )
@@ -145,20 +141,26 @@ class DiagnosticsScreenTest {
         compose.onNodeWithText("IGN_OUT1").performClick()
         compose.onNodeWithTag("duty_edit").performScrollTo()
         compose.onNodeWithText("50.0 %").assertIsDisplayed()
-        assertEquals(1, packet.chan)
-        assertEquals(50f, packet.duty)
+        assertEquals(1, state.value.channel)
+        assertEquals(50f, state.value.duty)
     }
 
     @Test
     fun selectedGeneratorChannelLocksCorrespondingOutputOnTheOutputsTab() {
-        val state = mutableStateOf(DiagnosticsViewModel.UiState(channel = 1, controlsEnabled = true))
+        val state = mutableStateOf(
+            DiagnosticsState(
+                input = DiagInputPacket(),
+                channel = 1,
+                generatorOutput = DiagnosticOutput.IGN_OUT1,
+                controlsEnabled = true,
+            ),
+        )
         val tabTitles = context.resources.getStringArray(R.array.diagnostics_fragments_title)
         compose.setContent {
             SecuComposeTheme {
                 DiagnosticsScreen(
                     isSecu3T = false,
                     connectionStatus = Connected,
-                    diagnosticInput = DiagInputPacket(),
                     state = state.value,
                     onNavigateUp = {},
                     onAdditionalSettings = {},
@@ -172,10 +174,10 @@ class DiagnosticsScreenTest {
         compose.onNodeWithText(tabTitles[1]).performClick()
         compose.onNodeWithTag("output_row_IGN_OUT1").assertIsNotEnabled()
 
-        state.value = state.value.copy(channel = 2)
+        state.value = state.value.copy(channel = 2, generatorOutput = DiagnosticOutput.IGN_OUT2)
         compose.onNodeWithTag("output_row_IGN_OUT1").assertIsEnabled()
         compose.onNodeWithTag("output_row_IGN_OUT2").assertIsNotEnabled()
-        state.value = state.value.copy(channel = 0)
+        state.value = state.value.copy(channel = 0, generatorOutput = null)
         compose.onNodeWithTag("output_row_IGN_OUT1").assertIsEnabled()
     }
 
@@ -190,8 +192,7 @@ class DiagnosticsScreenTest {
                     isSecu3T = firmware.value,
                     hasTpic8101 = hasTpic8101.value,
                     connectionStatus = Connected,
-                    diagnosticInput = packet,
-                    state = DiagnosticsViewModel.UiState(controlsEnabled = true),
+                    state = DiagnosticsState(input = packet, controlsEnabled = true),
                     onNavigateUp = {},
                     onAdditionalSettings = {},
                     onOutputChanged = { _, _ -> },
@@ -226,8 +227,7 @@ class DiagnosticsScreenTest {
 
     @Test
     fun frequencyAndDutyEditorsUseCurrentCompositionCallbacks() {
-        val packet = DiagOutputPacket().apply { frq = 123.456f; duty = 24.25f }
-        val data = fixture(packet = packet)
+        val data = fixture(state = DiagnosticsState(input = DiagInputPacket(), frequency = 123.456f, duty = 24.25f, controlsEnabled = true))
         val frequencies = mutableListOf<Float>()
         val duties = mutableListOf<Float>()
         compose.setContent {
@@ -251,15 +251,13 @@ class DiagnosticsScreenTest {
     @Test
     fun losingReadinessClosesNumericEditorAndDisablesControls() {
         val connection = mutableStateOf<ConnectionState>(Connected)
-        val input = mutableStateOf<DiagInputPacket?>(DiagInputPacket(voltage = 12.5f))
-        val state = mutableStateOf(DiagnosticsViewModel.UiState(controlsEnabled = true))
+        val state = mutableStateOf(DiagnosticsState(input = DiagInputPacket(voltage = 12.5f), controlsEnabled = true))
         var edits = 0
         compose.setContent {
             SecuComposeTheme {
                 DiagnosticsScreen(
                     isSecu3T = false,
                     connectionStatus = connection.value,
-                    diagnosticInput = input.value,
                     state = state.value,
                     onNavigateUp = {},
                     onAdditionalSettings = {},
@@ -275,7 +273,7 @@ class DiagnosticsScreenTest {
 
         compose.runOnIdle {
             connection.value = Disconnected
-            state.value = state.value.copy(controlsEnabled = false)
+            state.value = state.value.copy(input = null, controlsEnabled = false)
         }
         compose.onNodeWithTag("numeric_confirm").assertDoesNotExist()
         compose.onNodeWithTag("diagnostics-settings-icon").assertIsNotEnabled()
@@ -287,14 +285,12 @@ class DiagnosticsScreenTest {
     @Test
     fun losingReadinessDismissesChannelChoicesAndMasksRetainedInput() {
         val connection = mutableStateOf<ConnectionState>(Connected)
-        val input = mutableStateOf<DiagInputPacket?>(DiagInputPacket(voltage = 12.5f))
-        val state = mutableStateOf(DiagnosticsViewModel.UiState(controlsEnabled = true))
+        val state = mutableStateOf(DiagnosticsState(input = DiagInputPacket(voltage = 12.5f), controlsEnabled = true))
         compose.setContent {
             SecuComposeTheme {
                 DiagnosticsScreen(
                     isSecu3T = false,
                     connectionStatus = connection.value,
-                    diagnosticInput = input.value,
                     state = state.value,
                     onNavigateUp = {},
                     onAdditionalSettings = {},
@@ -310,7 +306,7 @@ class DiagnosticsScreenTest {
 
         compose.runOnIdle {
             connection.value = Disconnected
-            state.value = state.value.copy(controlsEnabled = false)
+            state.value = state.value.copy(input = null, controlsEnabled = false)
         }
         compose.onNodeWithTag("output_channel_option_1").assertDoesNotExist()
         compose.onNodeWithTag("analog_Voltage-value").assertTextEquals("— V")
@@ -318,8 +314,7 @@ class DiagnosticsScreenTest {
 
     private data class Fixture(
         val connection: ConnectionState,
-        val input: DiagInputPacket?,
-        val state: DiagnosticsViewModel.UiState,
+        val state: DiagnosticsState,
         val onOutput: (DiagnosticOutput, Boolean) -> Unit,
     )
 
@@ -333,7 +328,6 @@ class DiagnosticsScreenTest {
     ) = DiagnosticsScreen(
         isSecu3T = false,
         connectionStatus = data.connection,
-        diagnosticInput = data.input,
         state = data.state,
         onNavigateUp = onNavigateUp,
         onAdditionalSettings = onAdditionalSettings,
@@ -345,18 +339,11 @@ class DiagnosticsScreenTest {
 
     private fun fixture(
         connection: ConnectionState = Connected,
-        packet: DiagOutputPacket = DiagOutputPacket(),
+        state: DiagnosticsState = DiagnosticsState(input = DiagInputPacket(), controlsEnabled = true),
         onOutput: (DiagnosticOutput, Boolean) -> Unit = { _, _ -> },
     ) = Fixture(
         connection = connection,
-        input = DiagInputPacket(),
-        state = DiagnosticsViewModel.UiState(
-            outputBits = packet.out,
-            channel = packet.chan,
-            frequency = packet.frq,
-            duty = if (packet.chan == 0 && packet.duty == 0f) 50f else packet.duty,
-            controlsEnabled = true,
-        ),
+        state = state,
         onOutput = onOutput,
     )
 }

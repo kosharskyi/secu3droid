@@ -39,12 +39,11 @@ import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.onAllNodesWithTag
 import androidx.compose.ui.test.onAllNodesWithText
 import androidx.compose.ui.test.performClick
-import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import org.junit.Assert.assertEquals
 import org.junit.Rule
 import org.junit.Test
-import org.secu3.android.models.packets.out.DiagOutputPacket
+import org.secu3.android.domain.diagnostics.DiagnosticOutput
 import org.secu3.android.ui.compose.SecuComposeTheme
 
 class DiagnosticsOutputsScreenTest {
@@ -101,7 +100,7 @@ class DiagnosticsOutputsScreenTest {
 
     @Test
     fun selectedGeneratorOutputDisablesRowAndCheckboxAndChannelChangesUnlock() {
-        val selectedChannel = mutableIntStateOf(1)
+        val generatorOutput = mutableStateOf<DiagnosticOutput?>(DiagnosticOutput.IGN_OUT1)
         var outputCalls = 0
         compose.setContent {
             SecuComposeTheme {
@@ -110,7 +109,7 @@ class DiagnosticsOutputsScreenTest {
                     outputBits = 0,
                     enableBlDe = true,
                     enableTachO = true,
-                    selectedChannel = selectedChannel.intValue,
+                    generatorOutput = generatorOutput.value,
                     onOutputChanged = { _, _ -> outputCalls++ },
                     controlsEnabled = true,
                 )
@@ -122,7 +121,7 @@ class DiagnosticsOutputsScreenTest {
         compose.onAllNodesWithTag("generator_control_caption_IGN_OUT2", useUnmergedTree = true).assertCountEquals(0)
         compose.onNodeWithTag("output_row_IGN_OUT2").assertIsEnabled()
 
-        selectedChannel.intValue = 2
+        generatorOutput.value = DiagnosticOutput.IGN_OUT2
         compose.onNodeWithTag("output_row_IGN_OUT1").assertIsEnabled()
         compose.onNodeWithTag("output_IGN_OUT1").assertIsEnabled()
         compose.onAllNodesWithTag("generator_control_caption_IGN_OUT1", useUnmergedTree = true).assertCountEquals(0)
@@ -130,7 +129,7 @@ class DiagnosticsOutputsScreenTest {
         compose.onNodeWithTag("output_IGN_OUT2").assertIsNotEnabled()
         compose.onNodeWithTag("generator_control_caption_IGN_OUT2", useUnmergedTree = true).assertIsDisplayed()
 
-        selectedChannel.intValue = 0
+        generatorOutput.value = null
         compose.onNodeWithTag("output_row_IGN_OUT1").assertIsEnabled()
         compose.onNodeWithTag("output_row_IGN_OUT2").assertIsEnabled()
         compose.onAllNodesWithTag("generator_control_caption_IGN_OUT1", useUnmergedTree = true).assertCountEquals(0)
@@ -139,9 +138,9 @@ class DiagnosticsOutputsScreenTest {
     }
 
     @Test
-    fun selectedChannelMappingUsesFamilyOrderForEcfAndFilteredTach() {
+    fun generatorOutputStateLocksRowsAndTachFilteringKeepsRowsStable() {
         val firmware = mutableStateOf<Boolean?>(false)
-        val selectedChannel = mutableIntStateOf(6) // SECU-3i channel 6 is ECF -> ECF0 bit.
+        val generatorOutput = mutableStateOf<DiagnosticOutput?>(DiagnosticOutput.ECF0)
         compose.setContent {
             SecuComposeTheme {
                 DiagnosticsOutputsScreen(
@@ -149,7 +148,7 @@ class DiagnosticsOutputsScreenTest {
                     outputBits = 0,
                     enableBlDe = true,
                     enableTachO = true,
-                    selectedChannel = selectedChannel.intValue,
+                    generatorOutput = generatorOutput.value,
                     onOutputChanged = { _, _ -> },
                     controlsEnabled = true,
                 )
@@ -157,111 +156,63 @@ class DiagnosticsOutputsScreenTest {
         }
         compose.onNodeWithTag("output_ECF0").assertIsNotEnabled()
 
-        selectedChannel.intValue = 22 // TACH_O remains channel 22 when listed; filtering only hides its row.
+        generatorOutput.value = DiagnosticOutput.TACH_O
         compose.onNodeWithTag("output_TACH_O").assertIsNotEnabled()
-        selectedChannel.intValue = 7
+        generatorOutput.value = DiagnosticOutput.INJ_O1
         compose.onNodeWithTag("output_ECF0").assertIsEnabled()
         compose.onNodeWithTag("output_INJ_O1").assertIsNotEnabled()
 
         firmware.value = true
-        selectedChannel.intValue = 7 // SECU-3T channel 7 is ECF.
+        generatorOutput.value = DiagnosticOutput.ECF
         compose.onNodeWithTag("output_ECF").assertIsNotEnabled()
     }
 
     @Test
-    fun enabledTachOAndBlDeCanBeChangedOnceAndUpdateTheirProtocolBits() {
-        val packet = DiagOutputPacket()
-        val sends = mutableListOf<Int>()
-        val bits = mutableIntStateOf(packet.out)
-        val blDe = mutableStateOf(true)
-        val tach = mutableStateOf(true)
+    fun outputToggleCallbacksOnlyComeFromUserActions() {
+        val changes = mutableListOf<Pair<DiagnosticOutput, Boolean>>()
         compose.setContent {
             SecuComposeTheme {
-                DiagnosticsOutputsScreen(false, bits.intValue, blDe.value, tach.value, controlsEnabled = true) { output, enabled ->
-                    setDiagnosticOutput(packet, output, enabled)
-                    bits.intValue = packet.out
-                    sends += packet.out
+                DiagnosticsOutputsScreen(false, 0, true, true, controlsEnabled = true) { output, enabled ->
+                    changes += output to enabled
                 }
             }
         }
+        assertEquals(emptyList<Pair<DiagnosticOutput, Boolean>>(), changes)
         compose.onNodeWithTag("output_TACH_O").performScrollTo().assertIsOff().performClick()
-        assertEquals(1, sends.size)
-        assertEquals((1 shl 23) or (1 shl 24), packet.out)
         compose.onNodeWithTag("output_BL").performScrollTo().performClick()
-        assertEquals(2, sends.size)
-        assertEquals((1 shl 11) or (1 shl 12) or (1 shl 23) or (1 shl 24), packet.out)
         compose.onNodeWithTag("output_DE").performScrollTo().performClick()
-        assertEquals(3, sends.size)
-        assertEquals((1 shl 11) or (1 shl 12) or (1 shl 13) or (1 shl 14) or (1 shl 23) or (1 shl 24), packet.out)
-        compose.onNodeWithText("GPA6_O").performScrollTo().performClick()
-        assertEquals(4, sends.size)
-        assertEquals((1 shl 11) or (1 shl 12) or (1 shl 13) or (1 shl 14) or (1 shl 23) or (1 shl 24) or (1 shl 25), packet.out)
-        compose.onNodeWithTag("output_DE").performScrollTo().performClick()
-        assertEquals(5, sends.size)
-        assertEquals((1 shl 11) or (1 shl 12) or (1 shl 14) or (1 shl 23) or (1 shl 24) or (1 shl 25), packet.out)
+        assertEquals(
+            listOf(DiagnosticOutput.TACH_O to true, DiagnosticOutput.BL to true, DiagnosticOutput.DE to true),
+            changes,
+        )
     }
 
     @Test
-    fun renderRecompositionAndStateRestorationDoNotSendPackets() {
-        val packet = DiagOutputPacket().apply { ignOut1 = true; ecf0 = true }
-        val sends = mutableListOf<Int>()
-        val bits = mutableIntStateOf(packet.out)
+    fun renderRecompositionAndStateRestorationDoNotInvokeOutputCallbacks() {
+        val changes = mutableListOf<Pair<DiagnosticOutput, Boolean>>()
         val permission = mutableStateOf(false)
         val restorationTester = StateRestorationTester(compose)
         restorationTester.setContent {
             SecuComposeTheme {
-                DiagnosticsOutputsScreen(false, bits.intValue, permission.value, false, controlsEnabled = true) { output, enabled ->
-                    setDiagnosticOutput(packet, output, enabled)
-                    bits.intValue = packet.out
-                    sends += packet.out
+                DiagnosticsOutputsScreen(false, 0, permission.value, false, controlsEnabled = true) { output, enabled ->
+                    changes += output to enabled
                 }
             }
         }
-        assertEquals(emptyList<Int>(), sends)
-        compose.onNodeWithTag("output_IGN_OUT1").assertIsOn()
-        compose.onNodeWithTag("output_ECF0").assertIsOn()
+        assertEquals(emptyList<Pair<DiagnosticOutput, Boolean>>(), changes)
         permission.value = true
         restorationTester.emulateSavedInstanceStateRestore()
-        assertEquals(emptyList<Int>(), sends)
-        compose.onNodeWithTag("output_IGN_OUT1").assertIsOn()
-        compose.onNodeWithTag("output_ECF0").assertIsOn()
-    }
-
-    @Test
-    fun everyOutputMapsToExpectedPacketBits() {
-        val expectedBits = mapOf(
-            DiagnosticOutput.IGN_OUT1 to (1 shl 0), DiagnosticOutput.IGN_OUT2 to (1 shl 1), DiagnosticOutput.IGN_OUT3 to (1 shl 2), DiagnosticOutput.IGN_OUT4 to (1 shl 3),
-            DiagnosticOutput.IE to (1 shl 4), DiagnosticOutput.FE to (1 shl 5), DiagnosticOutput.ECF to (1 shl 6), DiagnosticOutput.CE to (1 shl 7), DiagnosticOutput.ST_BLOCK to (1 shl 8),
-            DiagnosticOutput.ADD_IO1 to (1 shl 9), DiagnosticOutput.ADD_IO2 to (1 shl 10), DiagnosticOutput.IGN_OUT5 to (1 shl 4), DiagnosticOutput.ECF0 to (1 shl 5),
-            DiagnosticOutput.INJ_O1 to (1 shl 6), DiagnosticOutput.INJ_O2 to (1 shl 7), DiagnosticOutput.INJ_O3 to (1 shl 8), DiagnosticOutput.INJ_O4 to (1 shl 9),
-            DiagnosticOutput.INJ_O5 to (1 shl 10), DiagnosticOutput.BL to ((1 shl 11) or (1 shl 12)), DiagnosticOutput.DE to ((1 shl 13) or (1 shl 14)),
-            DiagnosticOutput.STBL_O to (1 shl 15), DiagnosticOutput.CEL_O to (1 shl 16), DiagnosticOutput.FPMP_O to (1 shl 17), DiagnosticOutput.PWRR_O to (1 shl 18),
-            DiagnosticOutput.EVAP_O to (1 shl 19), DiagnosticOutput.O2SH_O to (1 shl 20), DiagnosticOutput.COND_O to (1 shl 21), DiagnosticOutput.ADD_O2 to (1 shl 22),
-            DiagnosticOutput.TACH_O to ((1 shl 23) or (1 shl 24)), DiagnosticOutput.GPA6_O to (1 shl 25),
-        )
-        DiagnosticOutput.entries.forEach { output ->
-            val packet = DiagOutputPacket()
-            setDiagnosticOutput(packet, output, true)
-            val expected = expectedBits.getValue(output)
-            assertEquals(output.name, expected, packet.out)
-            setDiagnosticOutput(packet, output, false)
-            val expectedOff = when (output) {
-                DiagnosticOutput.BL -> 1 shl 12
-                DiagnosticOutput.DE -> 1 shl 14
-                DiagnosticOutput.TACH_O -> 1 shl 24
-                else -> 0
-            }
-            assertEquals(output.name, expectedOff, packet.out)
-        }
+        assertEquals(emptyList<Pair<DiagnosticOutput, Boolean>>(), changes)
+        compose.onNodeWithTag("output_IGN_OUT1").assertIsOff()
     }
 
     @androidx.compose.runtime.Composable
-    private fun OutputsScreen(firmware: Boolean?, bits: Int = 0, selectedChannel: Int = 0) = DiagnosticsOutputsScreen(
+    private fun OutputsScreen(firmware: Boolean?, bits: Int = 0, generatorOutput: DiagnosticOutput? = null) = DiagnosticsOutputsScreen(
         isSecu3T = firmware,
         outputBits = bits,
         enableBlDe = false,
         enableTachO = false,
-        selectedChannel = selectedChannel,
+        generatorOutput = generatorOutput,
         onOutputChanged = { _, _ -> },
         controlsEnabled = true,
     )
