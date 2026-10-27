@@ -26,6 +26,7 @@ package org.secu3.android.utils
 
 import android.content.Context
 import android.content.SharedPreferences
+import android.content.Context.MODE_PRIVATE
 import androidx.core.content.edit
 import dagger.hilt.android.qualifiers.ApplicationContext
 import org.secu3.android.R
@@ -34,13 +35,24 @@ import org.secu3.android.models.InjectionTimingMode
 import kotlinx.coroutines.channels.awaitClose
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.callbackFlow
+import kotlinx.coroutines.flow.distinctUntilChanged
+import kotlinx.coroutines.flow.map
 import javax.inject.Inject
 import javax.inject.Singleton
 
 @Singleton
 class UserPrefs @Inject constructor(@ApplicationContext private val ctx: Context) {
 
-    private var mPrefs: SharedPreferences = ctx.getDefaultSharedPreferences()
+    private val mPrefs: SharedPreferences = ctx.getSharedPreferences("${ctx.packageName}_preferences", MODE_PRIVATE)
+
+    /** Emits once on collection and again whenever a stored preference changes. */
+    val preferenceChanges: Flow<Unit>
+        get() = callbackFlow {
+            val listener = SharedPreferences.OnSharedPreferenceChangeListener { _, _ -> trySend(Unit) }
+            mPrefs.registerOnSharedPreferenceChangeListener(listener)
+            trySend(Unit)
+            awaitClose { mPrefs.unregisterOnSharedPreferenceChangeListener(listener) }
+        }
 
     var isSensorLoggerEnabled: Boolean
         get() = mPrefs.getBoolean(ctx.getString(R.string.pref_write_log_key), false)
@@ -90,17 +102,7 @@ class UserPrefs @Inject constructor(@ApplicationContext private val ctx: Context
 
     /** Emits current and externally edited appearance values while collected. */
     val appearanceModeFlow: Flow<AppearanceMode>
-        get() = callbackFlow {
-            val key = ctx.getString(R.string.pref_appearance_mode_key)
-            val listener = SharedPreferences.OnSharedPreferenceChangeListener { _, changedKey ->
-                if (changedKey == null || changedKey == key || changedKey == ctx.getString(R.string.pref_night_mode_key)) {
-                    trySend(appearanceMode)
-                }
-            }
-            mPrefs.registerOnSharedPreferenceChangeListener(listener)
-            trySend(appearanceMode)
-            awaitClose { mPrefs.unregisterOnSharedPreferenceChangeListener(listener) }
-        }
+        get() = preferenceChanges.map { appearanceMode }.distinctUntilChanged()
 
     var bluetoothDeviceName: String?
         get() = mPrefs.getString(ctx.getString(R.string.pref_bluetooth_device_key), null);
@@ -111,8 +113,21 @@ class UserPrefs @Inject constructor(@ApplicationContext private val ctx: Context
         set(value) = mPrefs.edit { putString(ctx.getString(R.string.pref_bluetooth_device_address_key), value) }
 
     var connectionRetries: Int
-        get() = mPrefs.getString(ctx.getString(R.string.pref_connection_retries_key), ctx.getString(R.string.defaultConnectionRetries))!!.toInt()
+        get() = connectionRetriesText.toInt()
         set(value) = mPrefs.edit { putString(ctx.getString(R.string.pref_connection_retries_key), value.toString()) }
+
+    /** Raw value for the Settings text field; connection consumers use [connectionRetries]. */
+    val connectionRetriesText: String
+        get() = mPrefs.getString(ctx.getString(R.string.pref_connection_retries_key), ctx.getString(R.string.defaultConnectionRetries))
+            ?: ctx.getString(R.string.defaultConnectionRetries)
+
+    fun parsePositiveConnectionRetries(value: String): Int? = value.toIntOrNull()?.takeIf { it > 0 }
+
+    fun saveConnectionRetries(value: String): Boolean {
+        val retries = parsePositiveConnectionRetries(value) ?: return false
+        connectionRetries = retries
+        return true
+    }
 
     val logExportDestination: LogExportDestination
         get() {

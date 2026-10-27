@@ -2,7 +2,11 @@
 
 The new appearance key takes precedence whenever present; unknown or null values resolve to System. Only when it is absent does the legacy boolean apply (`false` = Light, `true` = Dark); when both keys are absent, use System. Reading this fallback is read-only and must not persist either key.
 
-`UserPrefs.appearanceMode` and `SettingsViewModel.readSettings` duplicate this precedence and must remain aligned. The legacy `isDarkTheme` setter cannot override an explicit new key. Persisted values are the stable strings `system`, `light`, and `dark`.
+`UserPrefs.appearanceMode` is the single owner of this precedence; Settings reads it through `UserPrefs`. The legacy `isDarkTheme` setter cannot override an explicit new key. Persisted values are the stable strings `system`, `light`, and `dark`.
+
+## The preferences file name remains stable while storage is owned by UserPrefs
+
+`UserPrefs` opens the existing `${packageName}_preferences` file directly so installed app settings remain readable. Production consumers must use its typed properties and change flow instead of opening this file or using a shared default-preferences helper.
 
 ## Sensor gauge style defaults to the precise arc without repairing storage
 

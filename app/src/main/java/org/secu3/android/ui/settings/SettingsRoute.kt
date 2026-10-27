@@ -150,6 +150,7 @@ internal fun SettingsRoute(
                 directoryPicker.launch(folderPickerIntent())
             },
             onEditRetries = { viewModel.showDialog(SettingsDialog.Retries) },
+            onValidateRetries = viewModel::isValidRetries,
             onSaveRetries = viewModel::saveRetries,
             onSelectDialog = viewModel::showDialog,
             onDismissDialog = viewModel::dismissDialog,

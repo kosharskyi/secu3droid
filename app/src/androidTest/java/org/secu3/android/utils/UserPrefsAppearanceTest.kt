@@ -1,6 +1,7 @@
 package org.secu3.android.utils
 
 import androidx.core.content.edit
+import androidx.lifecycle.ViewModelStore
 import androidx.test.platform.app.InstrumentationRegistry
 import kotlinx.coroutines.CoroutineStart
 import kotlinx.coroutines.CompletableDeferred
@@ -13,10 +14,11 @@ import kotlinx.coroutines.flow.toList
 import org.junit.Assert.assertEquals
 import org.junit.Test
 import org.secu3.android.R
+import org.secu3.android.ui.settings.SettingsViewModel
 
 class UserPrefsAppearanceTest {
     private val context = InstrumentationRegistry.getInstrumentation().targetContext
-    private val rawPreferences = context.getDefaultSharedPreferences()
+    private val rawPreferences = context.getSharedPreferences("${context.packageName}_preferences", android.content.Context.MODE_PRIVATE)
     private val modeKey = context.getString(R.string.pref_appearance_mode_key)
     private val legacyKey = context.getString(R.string.pref_night_mode_key)
 
@@ -48,6 +50,31 @@ class UserPrefsAppearanceTest {
             withTimeout(5_000) { collector.join() }
         }
         assertEquals(listOf(AppearanceMode.System, AppearanceMode.Light), values)
+    }
+
+    @Test
+    fun legacyFalseAndUnknownExplicitValueUseTheCanonicalAppearanceFallback() = withIsolatedKeys {
+        val prefs = UserPrefs(context)
+        val store = ViewModelStore()
+        val settings = SettingsViewModel(context, prefs)
+        store.put("settings", settings)
+        try {
+            rawPreferences.edit { putBoolean(legacyKey, false) }
+            InstrumentationRegistry.getInstrumentation().waitForIdleSync()
+            assertEquals(AppearanceMode.Light, prefs.appearanceMode)
+            assertEquals(AppearanceMode.Light, settings.state.value.appearanceMode)
+
+            rawPreferences.edit {
+                putBoolean(legacyKey, true)
+                putString(modeKey, "future_theme")
+            }
+            InstrumentationRegistry.getInstrumentation().waitForIdleSync()
+            assertEquals(AppearanceMode.System, prefs.appearanceMode)
+            assertEquals(AppearanceMode.System, settings.state.value.appearanceMode)
+            assertEquals("future_theme", rawPreferences.getString(modeKey, null))
+        } finally {
+            InstrumentationRegistry.getInstrumentation().runOnMainSync { store.clear() }
+        }
     }
 
     private fun withIsolatedKeys(block: () -> Unit) {

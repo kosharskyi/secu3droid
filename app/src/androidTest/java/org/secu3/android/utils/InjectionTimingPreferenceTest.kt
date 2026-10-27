@@ -10,7 +10,7 @@ import org.secu3.android.ui.sensors.settings.SensorsSettingsViewModel
 
 class InjectionTimingPreferenceTest {
     private val context = InstrumentationRegistry.getInstrumentation().targetContext
-    private val preferences = context.getDefaultSharedPreferences()
+    private val preferences = context.getSharedPreferences("${context.packageName}_preferences", android.content.Context.MODE_PRIVATE)
 
     @Test
     fun timingChoicePersistsAndExternalPreferenceChangesRefreshSettingsViewModel() {
@@ -24,19 +24,21 @@ class InjectionTimingPreferenceTest {
             assertEquals(InjectionTimingMode.Default, userPrefs.injectionTimingMode)
             assertFalse("reading the default must not create a stored preference", preferences.contains(key))
 
-            val viewModel = SensorsSettingsViewModel(userPrefs, context)
+            val viewModel = SensorsSettingsViewModel(userPrefs)
             viewModelStore.put("sensors-settings", viewModel)
             assertEquals(InjectionTimingMode.Default, viewModel.state.value.injectionTimingMode)
 
             InstrumentationRegistry.getInstrumentation().runOnMainSync {
                 preferences.edit().putString(key, "atdc_360").commit()
             }
+            InstrumentationRegistry.getInstrumentation().waitForIdleSync()
             assertEquals(InjectionTimingMode.Atdc360, UserPrefs(context).injectionTimingMode)
             assertEquals(InjectionTimingMode.Atdc360, viewModel.state.value.injectionTimingMode)
 
             InstrumentationRegistry.getInstrumentation().runOnMainSync {
                 UserPrefs(context).injectionTimingMode = InjectionTimingMode.Btdc360
             }
+            InstrumentationRegistry.getInstrumentation().waitForIdleSync()
             assertEquals("btdc_360", preferences.getString(key, null))
             assertEquals(InjectionTimingMode.Btdc360, viewModel.state.value.injectionTimingMode)
         } finally {

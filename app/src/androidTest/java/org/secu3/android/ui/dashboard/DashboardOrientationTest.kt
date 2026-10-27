@@ -20,13 +20,12 @@ import org.junit.Test
 import org.secu3.android.R
 import org.secu3.android.ui.DASHBOARD_ROUTE
 import org.secu3.android.ui.MainActivity
-import org.secu3.android.utils.getDefaultSharedPreferences
 
 class DashboardOrientationTest {
     @Test
     fun dashboardRestoresLandscapeLockImmersiveBarsAndKeepScreenPolicy() {
         val context = InstrumentationRegistry.getInstrumentation().targetContext
-        val preferences = context.getDefaultSharedPreferences()
+        val preferences = context.getSharedPreferences("${context.packageName}_preferences", android.content.Context.MODE_PRIVATE)
         val preferenceKey = context.getString(R.string.pref_keep_screen_key)
         val hadPreference = preferences.contains(preferenceKey)
         val originalPreference = preferences.getBoolean(preferenceKey, false)

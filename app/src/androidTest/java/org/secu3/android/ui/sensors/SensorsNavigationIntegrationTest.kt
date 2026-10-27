@@ -24,7 +24,6 @@ import org.secu3.android.models.SensorGaugeStyle
 import org.secu3.android.ui.MainActivity
 import org.secu3.android.ui.SENSOR_SETTINGS_ROUTE
 import org.secu3.android.ui.SENSORS_ROUTE
-import org.secu3.android.utils.getDefaultSharedPreferences
 
 class SensorsNavigationIntegrationTest {
     @get:Rule val compose = createAndroidComposeRule<MainActivity>()
@@ -32,7 +31,7 @@ class SensorsNavigationIntegrationTest {
     private val context = InstrumentationRegistry.getInstrumentation().targetContext
 
     @Test fun rawPageAndSensorsViewModelSurviveSettingsNavigationAndRecreation() {
-        val preferences = context.getDefaultSharedPreferences()
+        val preferences = context.getSharedPreferences("${context.packageName}_preferences", android.content.Context.MODE_PRIVATE)
         val oldViewKey = "old_sensors_view"
         val hadOldView = preferences.contains(oldViewKey)
         val originalOldView = preferences.getBoolean(oldViewKey, false)
@@ -98,7 +97,7 @@ class SensorsNavigationIntegrationTest {
     }
 
     @Test fun gaugeStylePersistsAndUpdatesAcrossSettingsAndSensorsRoutes() {
-        val preferences = context.getDefaultSharedPreferences()
+        val preferences = context.getSharedPreferences("${context.packageName}_preferences", android.content.Context.MODE_PRIVATE)
         val key = "sensor_gauge_style"
         val hadStyle = preferences.contains(key)
         val originalStyle = preferences.getString(key, null)

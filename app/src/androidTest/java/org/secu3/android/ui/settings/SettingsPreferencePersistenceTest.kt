@@ -34,6 +34,7 @@ import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.onNodeWithContentDescription
 import androidx.compose.ui.test.performClick
+import androidx.compose.ui.test.performScrollTo
 import androidx.compose.ui.test.junit4.v2.createAndroidComposeRule
 import androidx.test.platform.app.InstrumentationRegistry
 import org.junit.Assert.assertEquals
@@ -42,14 +43,13 @@ import org.junit.Test
 import org.secu3.android.R
 import org.secu3.android.ui.MainActivity
 import org.secu3.android.ui.SETTINGS_ROUTE
-import org.secu3.android.utils.getDefaultSharedPreferences
 
 class SettingsPreferencePersistenceTest {
     @get:Rule val compose = createAndroidComposeRule<MainActivity>()
 
     @Test fun settingsPersistsAcrossRecreationAndReentryAndTracksExternalChanges() {
         val key = compose.activity.getString(R.string.pref_write_log_key)
-        val preference = compose.activity.getDefaultSharedPreferences()
+        val preference = compose.activity.getSharedPreferences("${compose.activity.packageName}_preferences", android.content.Context.MODE_PRIVATE)
         val originalValue = preference.getBoolean(key, false)
         try {
             compose.onNodeWithContentDescription("Settings icon").performClick()
@@ -90,7 +90,7 @@ class SettingsPreferencePersistenceTest {
     @Test fun aboutDialogOpensAndDismissesWithBack() {
         compose.onNodeWithContentDescription("Settings icon").performClick()
         compose.waitForIdle()
-        compose.onNodeWithText(compose.activity.getString(R.string.pref_about_title)).performClick()
+        compose.onNodeWithText(compose.activity.getString(R.string.pref_about_title)).performScrollTo().performClick()
         compose.onNodeWithTag("settings-about-dialog").assertIsDisplayed()
         InstrumentationRegistry.getInstrumentation().sendKeyDownUpSync(android.view.KeyEvent.KEYCODE_BACK)
         compose.waitForIdle()

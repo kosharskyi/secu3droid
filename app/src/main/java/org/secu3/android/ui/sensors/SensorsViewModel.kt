@@ -12,13 +12,10 @@
  */
 package org.secu3.android.ui.sensors
 
-import android.content.Context
-import android.content.SharedPreferences
 import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import dagger.hilt.android.lifecycle.HiltViewModel
-import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -28,7 +25,6 @@ import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
-import org.secu3.android.R
 import org.secu3.android.connection.Secu3ConnectionManager
 import org.secu3.android.ui.common.SensorPacketObserver
 import org.secu3.android.db.models.GaugeState
@@ -42,7 +38,6 @@ import org.secu3.android.models.sensors.IndicatorType
 import org.secu3.android.utils.SecuLogger
 import org.secu3.android.utils.Task
 import org.secu3.android.utils.UserPrefs
-import org.secu3.android.utils.getDefaultSharedPreferences
 import javax.inject.Inject
 
 @HiltViewModel
@@ -53,21 +48,14 @@ class SensorsViewModel @Inject constructor(
     private val secuLogger: SecuLogger,
     private val repository: SensorsRepository,
     private val savedStateHandle: SavedStateHandle,
-    @ApplicationContext private val context: Context,
 ) : ViewModel() {
 
     data class ChoiceRequest<T>(val requestId: Long, val choices: List<T>)
 
-    private val preferences = context.getDefaultSharedPreferences()
     private val _state = MutableStateFlow(readUiState())
     val state: StateFlow<SensorsUiState> = _state.asStateFlow()
     private val taskGate = SensorTaskGate(_state.value.selectedPage, secu3ConnectionManager::sendNewTask)
     private val sensorUpdateIntervalMs = 100L
-    private val preferenceListener = SharedPreferences.OnSharedPreferenceChangeListener { _, key ->
-        if (key == null || key == OLD_VIEW_KEY || key == UserPrefs.SENSOR_GAUGE_STYLE_KEY || key == UserPrefs.INJECTION_TIMING_MODE_KEY || key == context.getString(R.string.pref_write_log_key)) {
-            refreshPreferences()
-        }
-    }
 
     val connectionState = secu3ConnectionManager.connectionStateFlow
     val sensors = sensorPacketObserver.observeSensors(sensorUpdateIntervalMs)
@@ -90,7 +78,9 @@ class SensorsViewModel @Inject constructor(
     val showAddIndicator = showAddIndicatorFlow.asStateFlow()
 
     init {
-        preferences.registerOnSharedPreferenceChangeListener(preferenceListener)
+        viewModelScope.launch {
+            userPrefs.preferenceChanges.collect { refreshPreferences() }
+        }
         viewModelScope.launch {
             secuLogger.state.collect { loggerState ->
                 _state.update {
@@ -114,7 +104,6 @@ class SensorsViewModel @Inject constructor(
     )
 
     fun onRouteResumed() {
-        refreshPreferences()
         _state.update {
             it.copy(
                 loggerStarted = secuLogger.isLoggerStarted,
@@ -138,7 +127,6 @@ class SensorsViewModel @Inject constructor(
 
     fun setOldViewEnabled(enabled: Boolean) {
         userPrefs.oldSensorViewEnabled = enabled
-        _state.update { it.copy(oldViewEnabled = enabled) }
     }
 
     private fun refreshPreferences() {
@@ -150,10 +138,6 @@ class SensorsViewModel @Inject constructor(
                 loggerEnabled = userPrefs.isSensorLoggerEnabled,
             )
         }
-    }
-
-    override fun onCleared() {
-        preferences.unregisterOnSharedPreferenceChangeListener(preferenceListener)
     }
 
     fun consumeGaugeChoices(requestId: Long) {

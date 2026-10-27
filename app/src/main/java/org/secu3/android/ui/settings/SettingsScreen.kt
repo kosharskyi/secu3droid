@@ -62,10 +62,6 @@ data class SettingsUiState(
     val appearanceMode: AppearanceMode = AppearanceMode.System,
 )
 
-/** Returns a positive Int value that remains safe for UserPrefs.connectionRetries.toInt(). */
-internal fun parsePositiveRetries(value: String): Int? = value.toIntOrNull()?.takeIf { it > 0 }
-
-
 @Composable
 internal fun SettingsContent(
     state: SettingsUiState,
@@ -75,6 +71,7 @@ internal fun SettingsContent(
     onSelectDelimiter: (String) -> Unit,
     onChooseFolder: () -> Unit,
     onEditRetries: () -> Unit,
+    onValidateRetries: (String) -> Boolean,
     onSaveRetries: (String) -> Unit,
     onSelectDialog: (SettingsDialog?) -> Unit,
     onDismissDialog: () -> Unit,
@@ -189,6 +186,7 @@ internal fun SettingsContent(
         )
         SettingsDialog.Retries -> RetryDialog(
             initialValue = state.connectionRetries,
+            onValidate = onValidateRetries,
             onConfirm = onSaveRetries,
             onDismiss = onDismissDialog,
         )
@@ -269,9 +267,9 @@ private fun DelimiterDialog(
 }
 
 @Composable
-private fun RetryDialog(initialValue: String, onConfirm: (String) -> Unit, onDismiss: () -> Unit) {
+private fun RetryDialog(initialValue: String, onValidate: (String) -> Boolean, onConfirm: (String) -> Unit, onDismiss: () -> Unit) {
     var text by androidx.compose.runtime.remember(initialValue) { mutableStateOf(initialValue) }
-    val parsedValue = parsePositiveRetries(text)
+    val valid = onValidate(text)
     AlertDialog(
         onDismissRequest = onDismiss,
         shape = RoundedCornerShape(24.dp),
@@ -282,7 +280,7 @@ private fun RetryDialog(initialValue: String, onConfirm: (String) -> Unit, onDis
                 value = text,
                 onValueChange = { value -> text = value.filter(Char::isDigit) },
                 singleLine = true,
-                isError = parsedValue == null,
+                isError = !valid,
                 shape = RoundedCornerShape(12.dp),
                 colors = OutlinedTextFieldDefaults.colors(
                     focusedContainerColor = MaterialTheme.colorScheme.surfaceContainerLow,
@@ -291,7 +289,7 @@ private fun RetryDialog(initialValue: String, onConfirm: (String) -> Unit, onDis
             )
         },
         confirmButton = {
-            Button(onClick = { parsedValue?.let { onConfirm(it.toString()) } }, enabled = parsedValue != null) {
+            Button(onClick = { if (valid) onConfirm(text) }, enabled = valid) {
                 Text(stringResource(android.R.string.ok))
             }
         },

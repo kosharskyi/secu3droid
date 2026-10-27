@@ -75,7 +75,7 @@ class SettingsScreenTest {
                         else -> state.value
                     }
                 }, {},
-                    { folder = true }, {}, {}, {}, {}, { about = true })
+                    { folder = true }, {}, { true }, {}, {}, {}, { about = true })
             }
         }
         listOf(R.string.pref_write_log_title, R.string.pref_log_csv_write_title, R.string.pref_log_csv_delimeter_title,
@@ -120,7 +120,7 @@ class SettingsScreenTest {
         compose.setContent {
             SecuComposeTheme {
                 SettingsContent(current.value, dialog.value, {}, { _, _ -> }, { selected = it; current.value = current.value.copy(csvDelimiter = it); dialog.value = null },
-                    {}, { dialog.value = SettingsDialog.Retries }, { confirmed = it; current.value = current.value.copy(connectionRetries = it); dialog.value = null },
+                    {}, { dialog.value = SettingsDialog.Retries }, { it == "3" || it == "9" }, { confirmed = it; current.value = current.value.copy(connectionRetries = it); dialog.value = null },
                     { dialog.value = it }, { dialog.value = null }, {})
             }
         }
@@ -163,6 +163,7 @@ class SettingsScreenTest {
                             onSelectDelimiter = {},
                             onChooseFolder = { folderSelections++ },
                             onEditRetries = {},
+                            onValidateRetries = { true },
                             onSaveRetries = {},
                             onSelectDialog = {},
                             onDismissDialog = {},

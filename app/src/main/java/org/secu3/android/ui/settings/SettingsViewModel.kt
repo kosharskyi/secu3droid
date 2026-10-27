@@ -10,60 +10,65 @@
 package org.secu3.android.ui.settings
 
 import android.content.Context
-import android.content.SharedPreferences
 import android.provider.DocumentsContract
-import androidx.core.content.edit
 import androidx.core.net.toUri
 import androidx.lifecycle.ViewModel
+import androidx.lifecycle.viewModelScope
 import dagger.hilt.android.lifecycle.HiltViewModel
 import dagger.hilt.android.qualifiers.ApplicationContext
 import javax.inject.Inject
+import kotlinx.coroutines.launch
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import org.secu3.android.R
-import org.secu3.android.utils.getDefaultSharedPreferences
 import org.secu3.android.utils.AppearanceMode
+import org.secu3.android.utils.UserPrefs
 
 @HiltViewModel
 class SettingsViewModel @Inject constructor(
     @ApplicationContext private val context: Context,
-) : ViewModel(), SharedPreferences.OnSharedPreferenceChangeListener {
-    private val preferences = context.getDefaultSharedPreferences()
+    private val userPrefs: UserPrefs,
+) : ViewModel() {
     private val _state = MutableStateFlow(readSettings())
     val state: StateFlow<SettingsUiState> = _state.asStateFlow()
     private val _dialog = MutableStateFlow<SettingsDialog?>(null)
     val dialog: StateFlow<SettingsDialog?> = _dialog.asStateFlow()
 
     init {
-        preferences.registerOnSharedPreferenceChangeListener(this)
-    }
-
-    override fun onSharedPreferenceChanged(sharedPreferences: SharedPreferences?, key: String?) {
-        _state.value = readSettings()
+        viewModelScope.launch {
+            userPrefs.preferenceChanges.collect { _state.value = readSettings() }
+        }
     }
 
     fun setBooleanPreference(keyResource: Int, value: Boolean) {
-        preferences.edit { putBoolean(context.getString(keyResource), value) }
+        when (keyResource) {
+            R.string.pref_write_log_key -> userPrefs.isSensorLoggerEnabled = value
+            R.string.pref_log_csv_write_title_key -> userPrefs.isCsvTitleEnabled = value
+            R.string.pref_write_binary_log_key -> userPrefs.isBinaryLogFormatEnabled = value
+            R.string.pref_keep_screen_key -> userPrefs.isKeepScreenAliveActive = value
+            R.string.pref_wakelock_key -> userPrefs.isWakeLockEnabled = value
+        }
     }
 
     fun setDelimiter(value: String) {
-        preferences.edit { putString(context.getString(R.string.pref_log_csv_delimeter_key), value) }
+        userPrefs.CSVDelimeter = value
         dismissDialog()
     }
 
     fun saveRetries(value: String) {
-        if (parsePositiveRetries(value) == null) return
-        preferences.edit { putString(context.getString(R.string.pref_connection_retries_key), value) }
+        if (!userPrefs.saveConnectionRetries(value)) return
         dismissDialog()
     }
 
+    fun isValidRetries(value: String): Boolean = userPrefs.parsePositiveConnectionRetries(value) != null
+
     fun saveExportFolder(uri: String) {
-        preferences.edit { putString(context.getString(R.string.pref_log_export_directory_key), uri) }
+        userPrefs.logExportDirectoryUri = uri
     }
 
     fun setAppearanceMode(mode: AppearanceMode) {
-        preferences.edit { putString(context.getString(R.string.pref_appearance_mode_key), mode.preferenceValue) }
+        userPrefs.appearanceMode = mode
         dismissDialog()
     }
 
@@ -75,32 +80,18 @@ class SettingsViewModel @Inject constructor(
         _dialog.value = null
     }
 
-    override fun onCleared() {
-        preferences.unregisterOnSharedPreferenceChangeListener(this)
-    }
-
     private fun readSettings(): SettingsUiState {
-        val delimiterKey = context.getString(R.string.pref_log_csv_delimeter_key)
-        val retriesKey = context.getString(R.string.pref_connection_retries_key)
-        val exportFolder = preferences.getString(context.getString(R.string.pref_log_export_directory_key), null)
+        val exportFolder = userPrefs.logExportDirectoryUri
         return SettingsUiState(
-            writeLog = preferences.getBoolean(context.getString(R.string.pref_write_log_key), false),
-            writeCsvHeader = preferences.getBoolean(context.getString(R.string.pref_log_csv_write_title_key), false),
-            csvDelimiter = preferences.getString(delimiterKey, ";") ?: ";",
-            writeBinaryLog = preferences.getBoolean(context.getString(R.string.pref_write_binary_log_key), false),
+            writeLog = userPrefs.isSensorLoggerEnabled,
+            writeCsvHeader = userPrefs.isCsvTitleEnabled,
+            csvDelimiter = userPrefs.CSVDelimeter,
+            writeBinaryLog = userPrefs.isBinaryLogFormatEnabled,
             exportFolder = exportFolder?.let(::folderSummary) ?: context.getString(R.string.pref_log_export_directory_default),
-            connectionRetries = preferences.getString(retriesKey, context.getString(R.string.defaultConnectionRetries))
-                ?: context.getString(R.string.defaultConnectionRetries),
-            keepScreenOn = preferences.getBoolean(context.getString(R.string.pref_keep_screen_key), false),
-            wakeLock = preferences.getBoolean(context.getString(R.string.pref_wakelock_key), false),
-            appearanceMode = AppearanceMode.fromPreference(
-                preferences.getString(context.getString(R.string.pref_appearance_mode_key), null)
-            ).let { mode ->
-                if (preferences.contains(context.getString(R.string.pref_appearance_mode_key))) mode
-                else if (preferences.contains(context.getString(R.string.pref_night_mode_key))) {
-                    if (preferences.getBoolean(context.getString(R.string.pref_night_mode_key), false)) AppearanceMode.Dark else AppearanceMode.Light
-                } else AppearanceMode.System
-            },
+            connectionRetries = userPrefs.connectionRetriesText,
+            keepScreenOn = userPrefs.isKeepScreenAliveActive,
+            wakeLock = userPrefs.isWakeLockEnabled,
+            appearanceMode = userPrefs.appearanceMode,
         )
     }
 

@@ -1,8 +1,19 @@
 package org.secu3.android.utils
 
 import androidx.core.content.edit
+import android.content.ContextWrapper
+import android.content.SharedPreferences
 import androidx.test.platform.app.InstrumentationRegistry
 import androidx.lifecycle.ViewModelStore
+import kotlinx.coroutines.CompletableDeferred
+import kotlinx.coroutines.CoroutineStart
+import kotlinx.coroutines.cancelAndJoin
+import kotlinx.coroutines.flow.collect
+import kotlinx.coroutines.flow.onEach
+import kotlinx.coroutines.flow.take
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.runBlocking
+import kotlinx.coroutines.withTimeout
 import org.junit.After
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNull
@@ -18,7 +29,7 @@ import org.secu3.android.ui.settings.SettingsViewModel
 class UserPrefsTest {
 
     private val context = InstrumentationRegistry.getInstrumentation().targetContext
-    private val sharedPreferences = context.getDefaultSharedPreferences()
+    private val sharedPreferences = context.getSharedPreferences("${context.packageName}_preferences", android.content.Context.MODE_PRIVATE)
     private val logExportDirectoryKey = context.getString(R.string.pref_log_export_directory_key)
 
     @Before
@@ -132,8 +143,8 @@ class UserPrefsTest {
             userPrefs.isSensorLoggerEnabled = false
             assertFalse(legacyStore.getBoolean(logKey, true))
 
-            val settings = SettingsViewModel(context)
-            val sensors = SensorsSettingsViewModel(UserPrefs(context), context)
+            val settings = SettingsViewModel(context, userPrefs)
+            val sensors = SensorsSettingsViewModel(userPrefs)
             viewModelStore.put("settings", settings)
             viewModelStore.put("sensors", sensors)
             assertTrue(settings.state.value.writeLog.not())
@@ -144,6 +155,7 @@ class UserPrefsTest {
             InstrumentationRegistry.getInstrumentation().runOnMainSync {
                 legacyStore.edit().putBoolean(logKey, true).putBoolean(oldViewKey, true).putInt(columnsKey, 6).commit()
             }
+            InstrumentationRegistry.getInstrumentation().waitForIdleSync()
             assertTrue(settings.state.value.writeLog)
             assertTrue(sensors.state.value.oldView)
             assertEquals(6, legacyStore.getInt(columnsKey, -1))
@@ -160,6 +172,113 @@ class UserPrefsTest {
             }.commit()
             InstrumentationRegistry.getInstrumentation().runOnMainSync { viewModelStore.clear() }
         }
+    }
+
+    @Test
+    fun connectionRetryPreferenceRejectsInvalidValuesAndStoresCanonicalPositiveValues() {
+        val key = context.getString(R.string.pref_connection_retries_key)
+        val hadValue = sharedPreferences.contains(key)
+        val previous = sharedPreferences.getString(key, null)
+        try {
+            sharedPreferences.edit().putString(key, "7").commit()
+            val prefs = UserPrefs(context)
+            assertEquals(1, prefs.parsePositiveConnectionRetries("1"))
+            assertEquals(250, prefs.parsePositiveConnectionRetries("250"))
+            listOf("0", "-1", "2147483648", "").forEach {
+                assertNull(prefs.parsePositiveConnectionRetries(it))
+                assertFalse(prefs.saveConnectionRetries(it))
+                assertEquals("7", sharedPreferences.getString(key, null))
+            }
+            assertTrue(prefs.saveConnectionRetries("009"))
+            assertEquals("9", prefs.connectionRetriesText)
+            assertEquals(9, prefs.connectionRetries)
+        } finally {
+            sharedPreferences.edit().apply {
+                if (hadValue) putString(key, previous) else remove(key)
+            }.commit()
+        }
+    }
+
+    @Test
+    fun preferenceChangeFlowEmitsInitialAndExternalValuesAndUnregistersOnCancellation() = runBlocking {
+        val changedKey = "preference-flow-test"
+        val activeListeners = mutableSetOf<SharedPreferences.OnSharedPreferenceChangeListener>()
+        val (prefs, rawStore, contextWithTrackedPreferences) = createTrackedUserPrefs(activeListeners)
+        val values = mutableListOf<Unit>()
+        val initialEmission = CompletableDeferred<Unit>()
+        val secondEmission = CompletableDeferred<Unit>()
+        var emissionsCollector: kotlinx.coroutines.Job? = null
+        var cancellationCollector: kotlinx.coroutines.Job? = null
+        var viewModelStore: ViewModelStore? = null
+        try {
+            val twoEmissionCollector = launch(start = CoroutineStart.UNDISPATCHED) {
+                prefs.preferenceChanges
+                    .onEach {
+                        values += it
+                        if (values.size == 1) initialEmission.complete(Unit)
+                        if (values.size == 2) secondEmission.complete(Unit)
+                    }
+                    .take(2)
+                    .collect()
+            }
+            emissionsCollector = twoEmissionCollector
+            withTimeout(5_000) { initialEmission.await() }
+            assertEquals(1, activeListeners.size)
+
+            rawStore.edit().putBoolean(changedKey, true).commit()
+            withTimeout(5_000) { secondEmission.await() }
+            withTimeout(5_000) { twoEmissionCollector.join() }
+            assertEquals(listOf(Unit, Unit), values)
+            assertTrue(activeListeners.isEmpty())
+
+            val cancellationInitial = CompletableDeferred<Unit>()
+            val activeCollector = launch(start = CoroutineStart.UNDISPATCHED) {
+                prefs.preferenceChanges.onEach { cancellationInitial.complete(Unit) }.collect()
+            }
+            cancellationCollector = activeCollector
+            withTimeout(5_000) { cancellationInitial.await() }
+            assertEquals(1, activeListeners.size)
+            withTimeout(5_000) { activeCollector.cancelAndJoin() }
+            assertTrue(activeListeners.isEmpty())
+
+            val store = ViewModelStore()
+            viewModelStore = store
+            store.put("settings", SettingsViewModel(contextWithTrackedPreferences, prefs))
+            InstrumentationRegistry.getInstrumentation().waitForIdleSync()
+            assertEquals(1, activeListeners.size)
+            InstrumentationRegistry.getInstrumentation().runOnMainSync { store.clear() }
+            InstrumentationRegistry.getInstrumentation().waitForIdleSync()
+            assertTrue(activeListeners.isEmpty())
+        } finally {
+            emissionsCollector?.let { withTimeout(5_000) { it.cancelAndJoin() } }
+            cancellationCollector?.let { withTimeout(5_000) { it.cancelAndJoin() } }
+            viewModelStore?.let { store ->
+                InstrumentationRegistry.getInstrumentation().runOnMainSync { store.clear() }
+                InstrumentationRegistry.getInstrumentation().waitForIdleSync()
+            }
+            rawStore.edit().remove(changedKey).commit()
+        }
+    }
+
+    private fun createTrackedUserPrefs(
+        activeListeners: MutableSet<SharedPreferences.OnSharedPreferenceChangeListener>,
+    ): Triple<UserPrefs, SharedPreferences, ContextWrapper> {
+        val rawStore = context.getSharedPreferences("${context.packageName}_preferences", android.content.Context.MODE_PRIVATE)
+        val trackedStore = object : SharedPreferences by rawStore {
+            override fun registerOnSharedPreferenceChangeListener(listener: SharedPreferences.OnSharedPreferenceChangeListener) {
+                activeListeners += listener
+                rawStore.registerOnSharedPreferenceChangeListener(listener)
+            }
+
+            override fun unregisterOnSharedPreferenceChangeListener(listener: SharedPreferences.OnSharedPreferenceChangeListener) {
+                activeListeners -= listener
+                rawStore.unregisterOnSharedPreferenceChangeListener(listener)
+            }
+        }
+        val wrappedContext = object : ContextWrapper(context) {
+            override fun getSharedPreferences(name: String, mode: Int): SharedPreferences = trackedStore
+        }
+        return Triple(UserPrefs(wrappedContext), rawStore, wrappedContext)
     }
 
     private fun clearLogExportDirectory() {
