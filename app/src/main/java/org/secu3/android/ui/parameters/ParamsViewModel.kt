@@ -51,6 +51,7 @@ import org.secu3.android.domain.parameters.GasDoseControl
 import org.secu3.android.domain.parameters.FuelInjectionControl
 import org.secu3.android.domain.parameters.ChokeControl
 import org.secu3.android.domain.parameters.CkpsControl
+import org.secu3.android.domain.parameters.MiscellaneousControl
 import org.secu3.android.models.packets.base.OutputPacket
 import org.secu3.android.models.packets.out.params.AccelerationParamPacket
 import org.secu3.android.models.packets.out.params.AdcCorrectionsParamPacket
@@ -81,7 +82,8 @@ import org.secu3.android.ui.parameters.pages.compose.IdlingStateHolder
 import org.secu3.android.ui.parameters.pages.compose.TemperatureStateHolder
 import org.secu3.android.ui.parameters.pages.compose.StarterStateHolder
 import org.secu3.android.ui.parameters.pages.AccelerationStateHolder
-import org.secu3.android.ui.parameters.pages.MiscellaneousStateHolder
+import org.secu3.android.ui.parameters.pages.MiscField
+import org.secu3.android.ui.parameters.pages.MiscToggle
 import org.secu3.android.ui.parameters.pages.SecurityStateHolder
 import org.secu3.android.ui.parameters.pages.compose.FunctionsStateHolder
 import org.secu3.android.ui.parameters.pages.compose.ChokeNumber
@@ -103,6 +105,7 @@ class ParamsViewModel @Inject constructor(
     internal val gasDoseControl: GasDoseControl,
     internal val fuelInjectionControl: FuelInjectionControl,
     internal val ckpsControl: CkpsControl,
+    internal val miscellaneousControl: MiscellaneousControl,
     private val uiMessageQueue: UiMessageQueue,
     private val parameterPageCatalog: ParameterPageCatalog,
 ) : ViewModel() {
@@ -181,8 +184,6 @@ class ParamsViewModel @Inject constructor(
     }
 
     internal val functionsStateHolder by lazy { FunctionsStateHolder(::sendPacket) }
-
-    internal val miscellaneousStateHolder by lazy { MiscellaneousStateHolder(::sendPacket) }
 
     internal val securityStateHolder by lazy {
         SecurityStateHolder(::sendPacket, context.getString(R.string.sec_invalid_credentials))
@@ -315,6 +316,38 @@ class ParamsViewModel @Inject constructor(
         showParameterPacketSentMessage(if (teeth) ckpsControl.selectTeethBeforeTdc(value) else ckpsControl.selectCylinders(value))
     }
 
+    internal fun editMiscellaneous(field: MiscField, value: Int) {
+        val sent = when (field) {
+            MiscField.PERIOD -> miscellaneousControl.editPeriod(value)
+            MiscField.CUTOFF -> miscellaneousControl.editCutoff(value)
+            MiscField.START -> miscellaneousControl.editStart(value)
+            MiscField.DURATION -> miscellaneousControl.editDuration(value)
+            MiscField.BEGIN -> miscellaneousControl.editEvapBegin(value)
+            MiscField.END -> miscellaneousControl.editEvapEnd(value)
+            MiscField.PWM0 -> miscellaneousControl.editPwm0(value)
+            MiscField.PWM1 -> miscellaneousControl.editPwm1(value)
+            MiscField.VSS -> miscellaneousControl.editVss(value)
+            MiscField.TIMEOUT -> false
+        }
+        showParameterPacketSentMessage(sent)
+    }
+
+    internal fun editMiscellaneousTimeout(value: Float) =
+        showParameterPacketSentMessage(miscellaneousControl.editTimeout(value))
+
+    internal fun selectMiscellaneousBaud(value: Int) =
+        showParameterPacketSentMessage(miscellaneousControl.selectBaudDivisor(value))
+
+    internal fun toggleMiscellaneous(flag: MiscToggle, value: Boolean) {
+        val sent = when (flag) {
+            MiscToggle.IGN -> miscellaneousControl.setIgnitionCutoff(value)
+            MiscToggle.PUMP -> miscellaneousControl.setPumpOffOnGas(value)
+            MiscToggle.GAS -> miscellaneousControl.setInjectorsOffOnGas(value)
+            MiscToggle.PETROL -> miscellaneousControl.setInjectorsOffOnPetrol(value)
+        }
+        showParameterPacketSentMessage(sent)
+    }
+
     internal fun changeFuelInjectionConfig(bank: Int, value: Int) =
         showParameterPacketSentMessage(fuelInjectionControl.changeConfig(bank, value))
 
@@ -402,7 +435,7 @@ class ParamsViewModel @Inject constructor(
             ParameterPage.ACCELERATION -> accelerationStateHolder.reset()
             ParameterPage.LTFT -> ltftStateHolder.reset()
             ParameterPage.FUNCTIONS -> functionsStateHolder.reset()
-            ParameterPage.MISCELLANEOUS -> miscellaneousStateHolder.reset()
+            ParameterPage.MISCELLANEOUS -> miscellaneousControl.reset()
             ParameterPage.SECURITY -> securityStateHolder.reset()
             ParameterPage.CHOKE_CONTROL -> chokeControl.reset()
             ParameterPage.GAS_DOSE -> gasDoseControl.reset()
@@ -447,7 +480,7 @@ class ParamsViewModel @Inject constructor(
             ParameterPage.MISCELLANEOUS -> {
                 isSendAllowed = false
                 try {
-                    miscellaneousStateHolder.onPacketReceived(packet<MiscellaneousParamPacket>(result))
+                    miscellaneousControl.receive(packet<MiscellaneousParamPacket>(result))
                 } finally {
                     isSendAllowed = true
                 }

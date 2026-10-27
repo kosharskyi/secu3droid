@@ -109,6 +109,8 @@ data class MiscellaneousParamPacket(
         return data
     }
 
+    fun snapshot(): OutputPacket = PackedMiscellaneousParamPacket(pack().copyOf())
+
     override fun parse(data: IntArray): InputPacket {
         uartDivisor = data.get2Bytes()
         uartPeriodTms = data.get1Byte() * 10
@@ -150,4 +152,8 @@ data class MiscellaneousParamPacket(
         internal const val DESCRIPTOR = 'z'
         const val MIN_EVAP_AIRFLOW_DELTA = 16500
     }
+}
+
+private class PackedMiscellaneousParamPacket(private val bytes: IntArray) : OutputPacket {
+    override fun pack(): IntArray = bytes.copyOf()
 }

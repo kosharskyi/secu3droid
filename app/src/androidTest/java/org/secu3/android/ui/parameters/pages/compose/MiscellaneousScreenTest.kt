@@ -32,28 +32,30 @@ import org.junit.Rule
 import org.junit.Test
 import org.secu3.android.R
 import org.secu3.android.ui.compose.SecuComposeTheme
-import org.secu3.android.ui.parameters.pages.MiscState
-import org.secu3.android.ui.parameters.pages.BAUD_RATE_CODES
+import org.secu3.android.domain.parameters.MiscellaneousControl
+import org.secu3.android.domain.parameters.MiscellaneousValues
 import org.secu3.android.ui.parameters.pages.MiscToggle
 import org.secu3.android.ui.parameters.pages.MiscellaneousScreen
 
 class MiscellaneousScreenTest {
     @get:Rule val compose = createComposeRule()
     private val context get() = androidx.test.platform.app.InstrumentationRegistry.getInstrumentation().targetContext
-    private val initial = MiscState(0x0103,20,true,5000,-2,5,true,false,true,5000,175000,2.5f,100,200,400)
+    private val initial = MiscellaneousValues(0x0103,20,true,5000,33f / 32f,65f / 32f,true,false,true,5000,175000,100 to 158500,21500 to 2_000_000,2.5f,100,200,400f,false)
+    private val rates = MiscellaneousControl.BAUD_RATES.mapValues { it.value.toString() }
 
     @Test fun loadingScrollAndRecompositionHaveNoCallbacks() {
         var calls=0
-        val state=mutableStateOf<MiscState?>(null)
-        val error=mutableStateOf(false)
-        compose.setContent { SecuComposeTheme { MiscellaneousScreen(state.value,error.value,BAUD_RATE_CODES,{calls++},{calls++},{calls++},{_,_->calls++}) } }
+        val state=mutableStateOf<MiscellaneousValues?>(null)
+        compose.setContent { SecuComposeTheme { MiscellaneousScreen(state.value,rates,{calls++},{calls++},{calls++},{_,_->calls++}) } }
         compose.onNodeWithTag("misc-loading").assertIsDisplayed()
         compose.runOnIdle { state.value=initial }
         compose.onNodeWithTag("misc-baud-selector").assertIsDisplayed()
+        compose.onNodeWithTag("misc-start-value", useUnmergedTree=true).assertTextEquals("1 ${context.getString(R.string.units_degrees_cs)}")
+        compose.onNodeWithTag("misc-duration-value", useUnmergedTree=true).assertTextEquals("2 ${context.getString(R.string.units_degrees_cs)}")
         compose.onNodeWithTag("misc-vss").performScrollTo().assertIsDisplayed()
         compose.runOnIdle { state.value=initial.copy(period=30) }
         compose.onNodeWithTag("misc-period-value",useUnmergedTree=true).assertTextEquals("30 ${context.getString(R.string.units_ms)}")
-        compose.runOnIdle { error.value=true }
+        compose.runOnIdle { state.value=initial.copy(hasValidationError=true) }
         compose.onNodeWithTag("misc-validation-error").performScrollTo().assertIsDisplayed()
         assertEquals(0,calls)
     }
@@ -61,7 +63,7 @@ class MiscellaneousScreenTest {
     @Test fun selectorAndEveryControlDispatchOnlyExplicitAction() {
         val actions=mutableListOf<String>()
         val state=mutableStateOf(initial.copy(baudDivisor=0x1234))
-        compose.setContent { SecuComposeTheme { MiscellaneousScreen(state.value,false,BAUD_RATE_CODES,
+        compose.setContent { SecuComposeTheme { MiscellaneousScreen(state.value,rates,
             {key -> actions += "int:$key"; if(key.name=="PERIOD") state.value=state.value.copy(period=40)},
             {actions += "float"}, {code -> actions += "baud:$code"; state.value=state.value.copy(baudDivisor=code)},
             {toggle,value -> actions += "toggle:$toggle:$value"}) } }

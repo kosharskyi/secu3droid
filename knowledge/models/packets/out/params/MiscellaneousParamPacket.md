@@ -13,3 +13,6 @@ The ignition cutoff threshold word is signed 16-bit. It remains an integer field
 ## EVAP airflow start rounds to 32-RxL wire counts
 
 The outgoing start value is scaled by 1/32 and rounded half away from zero. Preserve that rounding for manually entered values not divisible by 32; truncating integer division changes the encoded airflow start.
+## Asynchronous sends use a packed snapshot
+
+The packet is mutable and `Secu3Packet`'s unknown tail is not copied by the data-class `copy()`. `snapshot()` captures packed bytes for queued writes and returns a fresh array from every `pack()` call, so later edits or a caller mutation cannot change an already admitted command.

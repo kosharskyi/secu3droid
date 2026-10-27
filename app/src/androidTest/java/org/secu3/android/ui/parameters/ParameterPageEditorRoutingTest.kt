@@ -83,10 +83,10 @@ class ParameterPageEditorRoutingTest {
 
     @Test fun miscellaneousEvapEditorsPreserveDependentBounds() {
         val vm = paramsViewModel()
-        val holder = vm.miscellaneousStateHolder
-        holder.reset()
+        val control = vm.miscellaneousControl
+        control.reset()
         val packet = MiscellaneousParamPacket(evapAfbegin = 5_000).apply { evapAfEnd = 175_000 }
-        holder.onPacketReceived(packet)
+        control.receive(packet)
         vm.isSendAllowed = false
         renderPage(R.string.params_tab_miscellaneous_title, vm)
 
@@ -99,20 +99,20 @@ class ParameterPageEditorRoutingTest {
         assertEquals(158_500, begin.max)
         assertEquals(1, begin.step)
         compose.runOnIdle { vm.acceptParameterEditor(beginSession.id, 10_000) }
-        assertEquals(10_000, holder.currentPacket?.evapAfbegin)
+        assertEquals(10_000, control.values.value?.begin)
 
         compose.onNodeWithTag("misc-end").performScrollTo().performClick()
         val endSession = requireNotNull(vm.parameterEditSession)
         val end = endSession.request as ParameterEditRequest.IntValue
-        assertEquals(holder.currentPacket?.evapAfEnd, end.value)
+        assertEquals(control.values.value?.end, end.value)
         assertEquals(26_500, end.min)
         assertEquals(2_000_000, end.max)
         assertEquals(1, end.step)
-        val previousSlope = holder.currentPacket?.evapAfslope
+        val previousSlope = packet.evapAfslope
         compose.runOnIdle { vm.acceptParameterEditor(endSession.id, 180_000) }
-        assertTrue(holder.currentPacket?.evapAfslope != previousSlope)
+        assertTrue(packet.evapAfslope != previousSlope)
         assertEquals(false, vm.isSendAllowed)
-        assertTrue(holder.state != null)
+        assertTrue(control.values.value != null)
     }
 
     @Test fun parameterEditSessionRejectsStaleAndRepeatedConfirmations() {

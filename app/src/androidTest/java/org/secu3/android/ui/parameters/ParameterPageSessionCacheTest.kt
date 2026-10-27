@@ -37,6 +37,7 @@ import org.secu3.android.models.packets.out.params.GasDoseParamPacket
 import org.secu3.android.models.packets.out.params.ChokeControlParPacket
 import org.secu3.android.models.packets.out.params.InjctrParPacket
 import org.secu3.android.models.packets.out.params.CkpsParamPacket
+import org.secu3.android.models.packets.out.params.MiscellaneousParamPacket
 import org.secu3.android.models.packets.out.params.StarterParamPacket
 import org.secu3.android.models.packets.out.ChangeModePacket
 import org.secu3.android.utils.UserPrefs
@@ -268,6 +269,60 @@ class ParameterPageSessionCacheTest {
         } finally {
             try {
                 transport?.close()
+            } finally {
+                try {
+                    compose.runOnIdle { vm.clearPageState() }
+                } finally {
+                    queue.onActiveScopeChanged(originalActiveScope)
+                    compose.activityRule.scenario.moveToState(Lifecycle.State.RESUMED)
+                }
+            }
+        }
+    }
+
+    @Test fun miscellaneousCommandsUseCurrentFirmwareAndReportSessionAdmission() = runBlocking {
+        val vm = paramsViewModel()
+        val transport = installFakeUsb(vm, firmwareOptions = (1 shl 28) or (1 shl 19))
+        val queueField = ParamsViewModel::class.java.getDeclaredField("uiMessageQueue").apply { isAccessible = true }
+        val queue = queueField.get(vm) as org.secu3.android.ui.messages.UiMessageQueue
+        val originalActiveScope = queue.activeScope.value
+        try {
+            activate(vm, R.string.params_tab_miscellaneous_title)
+            transport.awaitReadRequest('z', 1)
+            transport.emit(MiscellaneousParamPacket(
+                ignCutoff = 1, evapAfbegin = 5000, evapAfslope = 32f / 170000f,
+                pwmFrq0 = 100, pwmFrq1 = 200, vssPeriodDist = 1000f,
+            ))
+            await { vm.miscellaneousControl.values.value != null }
+            compose.activityRule.scenario.moveToState(Lifecycle.State.STARTED)
+            compose.waitForIdle()
+            queue.onActiveScopeChanged(PARAMETERS_ROUTE)
+            queue.pending.value.forEach { queue.acknowledge(it.id) }
+            val baseline = transport.writes.size
+
+            compose.runOnIdle { vm.editMiscellaneous(org.secu3.android.ui.parameters.pages.MiscField.PERIOD, 120) }
+            transport.awaitWriteCount(baseline + 1)
+            assertEquals('z', transport.writes[baseline][1].toInt().toChar())
+            assertTrue(transport.writes[baseline].size > 6)
+            assertTrue(queue.pending.value.any { it.textRes == R.string.packet_sent })
+
+            queue.pending.value.forEach { queue.acknowledge(it.id) }
+            transport.emitFirmware(options = 0)
+            await { vm.capabilities.value.known && !vm.capabilities.value.fuelInjection }
+            compose.runOnIdle { vm.toggleMiscellaneous(org.secu3.android.ui.parameters.pages.MiscToggle.GAS, true) }
+            assertEquals(baseline + 1, transport.writes.size)
+            assertFalse(queue.pending.value.any { it.textRes == R.string.packet_sent })
+
+            queue.pending.value.forEach { queue.acknowledge(it.id) }
+            compose.runOnIdle {
+                vm.pausePageSession()
+                vm.editMiscellaneous(org.secu3.android.ui.parameters.pages.MiscField.PERIOD, 130)
+            }
+            assertEquals(baseline + 1, transport.writes.size)
+            assertFalse(queue.pending.value.any { it.textRes == R.string.packet_sent })
+        } finally {
+            try {
+                transport.close()
             } finally {
                 try {
                     compose.runOnIdle { vm.clearPageState() }

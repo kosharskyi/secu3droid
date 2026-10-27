@@ -16,6 +16,8 @@ Derive a single `ParameterCapabilities` state from `Secu3ConnectionManager.firmw
 
 `CkpsControl` owns CKPS edits and reads live firmware for each command. The ViewModel only routes UI actions, maps the session's CKPS packet result into the control, and reports the control's Boolean send admission; CKPS packet mapping must not toggle the legacy `isSendAllowed` gate.
 
+`MiscellaneousControl` similarly owns the mutable Miscellaneous packet, numeric validation, current firmware admission, and the immutable packet snapshot sent through `ParameterSession`. Its nullable values state includes the validation flag and raw hop-angle/VSS Floats; the screen rounds only for integer presentation and editors.
+
 ## Fuel Injection command admission belongs to its domain control
 
 `FuelInjectionControl` reads the manager's current firmware and sends through `ParameterSession.sendPacket`, whose Boolean result drives the packet-sent message. It does not use the legacy ViewModel `isSendAllowed` gate. The screen collects its nullable values flow directly; no second Loading/Data wrapper or packet mapping belongs in the ViewModel.

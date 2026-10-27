@@ -50,32 +50,15 @@ import org.secu3.android.ui.parameters.dialogs.ParameterChoice
 import org.secu3.android.ui.parameters.dialogs.ParameterChoiceDialog
 import org.secu3.android.ui.parameters.compose.ParameterTextValueRow
 import org.secu3.android.ui.parameters.compose.ParameterSwitchRow
+import org.secu3.android.domain.parameters.MiscellaneousValues
+import kotlin.math.roundToInt
 
-internal val BAUD_RATE_CODES = linkedMapOf(0x0411 to "2400", 0x0208 to "4800", 0x0103 to "9600", 0x00AD to "14400", 0x0081 to "19200", 0x0056 to "28800", 0x0040 to "38400", 0x002A to "57600", 0x0015 to "115200", 0x0009 to "250000", 0x0004 to "500000")
-
-internal data class MiscState(val baudDivisor:Int,val period:Int,val ign:Boolean,val cutoff:Int,val start:Int,val duration:Int,val pump:Boolean,val gas:Boolean,val petrol:Boolean,val begin:Int,val end:Int,val timeout:Float,val pwm0:Int,val pwm1:Int,val vss:Int)
 internal enum class MiscToggle { IGN, PUMP, GAS, PETROL }
 internal enum class MiscField { PERIOD, CUTOFF, START, DURATION, BEGIN, END, TIMEOUT, PWM0, PWM1, VSS }
-internal fun miscFieldEnabled(field: MiscField, ignitionCutoffEnabled: Boolean): Boolean =
-    field != MiscField.CUTOFF || ignitionCutoffEnabled
-internal fun evapEditBounds(field:MiscField, begin:Int, end:Int): Pair<Int,Int>? {
-    val min = EVAP_MIN
-    val max = EVAP_MAX
-    val gap = MiscellaneousParamPacket.MIN_EVAP_AIRFLOW_DELTA
-    val bounds = when (field) {
-        MiscField.BEGIN -> min to minOf(max, end - gap)
-        MiscField.END -> maxOf(min, begin + gap) to max
-        else -> return null
-    }
-    return bounds.takeIf { it.first <= it.second }
-}
-
-private const val EVAP_MIN = 100
-private const val EVAP_MAX = 2_000_000
 
 @Composable
 internal fun MiscellaneousScreen(
-    s: MiscState?, hasValidationError:Boolean, rates: Map<Int,String>, intEdit: (MiscField)->Unit, floatEdit: ()->Unit,
+    s: MiscellaneousValues?, rates: Map<Int,String>, intEdit: (MiscField)->Unit, floatEdit: ()->Unit,
     baud: (Int)->Unit, toggleAction:(MiscToggle,Boolean)->Unit,
     capabilities: ParameterCapabilities = ParameterCapabilities.All,
 ) {
@@ -96,17 +79,17 @@ internal fun MiscellaneousScreen(
             }
             IntRow(stringResource(R.string.miscel_period_title),s.period.toString(),stringResource(R.string.units_ms),MiscField.PERIOD){intEdit(MiscField.PERIOD)}
         }
-        if (hasValidationError) Text(stringResource(R.string.misc_invalid_packet),color=MaterialTheme.colorScheme.error,modifier=Modifier.testTag("misc-validation-error"))
+        if (s.hasValidationError) Text(stringResource(R.string.misc_invalid_packet),color=MaterialTheme.colorScheme.error,modifier=Modifier.testTag("misc-validation-error"))
         ParameterSection {
-            CheckRow(stringResource(R.string.miscel_ignition_cutoff_title),s.ign,"ign"){toggleAction(MiscToggle.IGN,it)}
-            IntRow(stringResource(R.string.miscel_ignition_cutoff_rpm_title),s.cutoff.toString(),stringResource(R.string.units_rpm),MiscField.CUTOFF, enabled = miscFieldEnabled(MiscField.CUTOFF, s.ign)){intEdit(MiscField.CUTOFF)}
-            IntRow(stringResource(R.string.miscel_start_rel_to_tdc_title),s.start.toString(),stringResource(R.string.units_degrees_cs),MiscField.START, enabled = capabilities.hallOutput){intEdit(MiscField.START)}
-            IntRow(stringResource(R.string.miscel_hall_output_delay_title),s.duration.toString(),stringResource(R.string.units_degrees_cs),MiscField.DURATION, enabled = capabilities.hallOutput){intEdit(MiscField.DURATION)}
+            CheckRow(stringResource(R.string.miscel_ignition_cutoff_title),s.ignitionCutoff,"ign"){toggleAction(MiscToggle.IGN,it)}
+            IntRow(stringResource(R.string.miscel_ignition_cutoff_rpm_title),s.cutoff.toString(),stringResource(R.string.units_rpm),MiscField.CUTOFF, enabled = s.ignitionCutoff){intEdit(MiscField.CUTOFF)}
+            IntRow(stringResource(R.string.miscel_start_rel_to_tdc_title),s.start.roundToInt().toString(),stringResource(R.string.units_degrees_cs),MiscField.START, enabled = capabilities.hallOutput){intEdit(MiscField.START)}
+            IntRow(stringResource(R.string.miscel_hall_output_delay_title),s.duration.roundToInt().toString(),stringResource(R.string.units_degrees_cs),MiscField.DURATION, enabled = capabilities.hallOutput){intEdit(MiscField.DURATION)}
         }
         ParameterSection {
-            CheckRow(stringResource(R.string.miscel_turn_off_fuel_pump_after_switching_gas_title),s.pump,"pump"){toggleAction(MiscToggle.PUMP,it)}
-            CheckRow(stringResource(R.string.miscel_turn_off_injectors_pump_after_switching_gas_title),s.gas,"gas", enabled = capabilities.fuelInjection){toggleAction(MiscToggle.GAS,it)}
-            CheckRow(stringResource(R.string.miscel_turn_off_injectors_pump_after_switching_petrol_title),s.petrol,"petrol", enabled = capabilities.fuelInjection){toggleAction(MiscToggle.PETROL,it)}
+            CheckRow(stringResource(R.string.miscel_turn_off_fuel_pump_after_switching_gas_title),s.pumpOffOnGas,"pump"){toggleAction(MiscToggle.PUMP,it)}
+            CheckRow(stringResource(R.string.miscel_turn_off_injectors_pump_after_switching_gas_title),s.injectorsOffOnGas,"gas", enabled = capabilities.fuelInjection){toggleAction(MiscToggle.GAS,it)}
+            CheckRow(stringResource(R.string.miscel_turn_off_injectors_pump_after_switching_petrol_title),s.injectorsOffOnPetrol,"petrol", enabled = capabilities.fuelInjection){toggleAction(MiscToggle.PETROL,it)}
         }
         ParameterSection {
             IntRow(stringResource(R.string.miscel_evap_starting_air_flow_title),s.begin.toString(),"RxL",MiscField.BEGIN, enabled = capabilities.nonSecu3TFuelInjection){intEdit(MiscField.BEGIN)}
@@ -117,7 +100,7 @@ internal fun MiscellaneousScreen(
             IntRow(stringResource(R.string.miscel_fuel_pump_working_time_title),timeout,stringResource(R.string.units_sec),MiscField.TIMEOUT){floatEdit()}
             IntRow(stringResource(R.string.miscel_pwmfrq1_title),s.pwm0.toString(),stringResource(R.string.units_hertz),MiscField.PWM0){intEdit(MiscField.PWM0)}
             IntRow(stringResource(R.string.miscel_pwmfrq2_title),s.pwm1.toString(),stringResource(R.string.units_hertz),MiscField.PWM1){intEdit(MiscField.PWM1)}
-            IntRow(stringResource(R.string.miscel_num_vss_pulsed_per_dist_title),s.vss.toString(),"",MiscField.VSS){intEdit(MiscField.VSS)}
+            IntRow(stringResource(R.string.miscel_num_vss_pulsed_per_dist_title),s.vss.roundToInt().toString(),"",MiscField.VSS){intEdit(MiscField.VSS)}
         }
     }
 }

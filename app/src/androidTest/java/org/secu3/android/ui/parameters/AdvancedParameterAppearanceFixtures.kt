@@ -7,9 +7,9 @@ import org.secu3.android.models.packets.out.params.GasDoseParamPacket
 import org.secu3.android.models.packets.out.params.InjctrParPacket
 import org.secu3.android.models.packets.out.params.LambdaParamPacket
 import org.secu3.android.models.packets.out.params.UniOutParamPacket
-import org.secu3.android.ui.parameters.pages.BAUD_RATE_CODES
+import org.secu3.android.domain.parameters.MiscellaneousControl
+import org.secu3.android.domain.parameters.MiscellaneousValues
 import org.secu3.android.ui.parameters.pages.MiscField
-import org.secu3.android.ui.parameters.pages.MiscState
 import org.secu3.android.ui.parameters.pages.MiscellaneousScreen
 import org.secu3.android.ui.parameters.pages.SecurityScreen
 import org.secu3.android.ui.parameters.pages.UniversalOutputValues
@@ -98,9 +98,8 @@ internal fun advancedParameterAppearanceFixtures(): List<ParameterAppearanceFixt
     return listOf(
         ParameterAppearanceFixture("miscellaneous") {
             MiscellaneousScreen(
-                MiscState(0x0015, 100, true, 6000, 10, 20, true, false, true, 500, 1500, 2.5f, 200, 400, 4),
-                hasValidationError = false,
-                rates = BAUD_RATE_CODES,
+                MiscellaneousValues(0x0015, 100, true, 6000, 10f, 20f, true, false, true, 500, 20000, 100 to 3500, 17000 to 2_000_000, 2.5f, 200, 400, 4f, false),
+                rates = MiscellaneousControl.BAUD_RATES.mapValues { it.value.toString() },
                 intEdit = {},
                 floatEdit = {},
                 baud = {},

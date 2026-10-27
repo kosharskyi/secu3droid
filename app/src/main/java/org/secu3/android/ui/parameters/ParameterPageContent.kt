@@ -31,6 +31,7 @@ import androidx.compose.ui.res.stringResource
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import org.secu3.android.R
 import org.secu3.android.domain.parameters.ParameterCapabilities
+import org.secu3.android.domain.parameters.MiscellaneousControl
 import org.secu3.android.models.packets.out.params.InjctrParPacket
 import org.secu3.android.models.packets.out.params.UniOutParamPacket
 import org.secu3.android.domain.parameters.ParameterPage
@@ -113,25 +114,27 @@ internal fun ParameterPageContent(
             KnockScreen(h.state, { n -> (h.state as? KnockUiState.Data)?.values?.let { v -> if (n == KnockNumber.DELAY) intEdit(n.title, v.value(n).toInt(), n.step.toInt(), n.max.toInt(), n.min.toInt()) { h.updateValue(n, it.toFloat()) } else floatEdit(n.title, v.value(n), n.step, n.max, n.min, n.precision) { h.updateValue(n, it.toFloat()) } } }, h::updateEnabled, h::updateChannel, h::updateSelector)
         }
         R.string.params_tab_miscellaneous_title -> {
-            val h = viewModel.miscellaneousStateHolder
-            MiscellaneousScreen(h.state, h.hasValidationError, BAUD_RATE_CODES, { key ->
-                val p = h.currentPacket ?: return@MiscellaneousScreen
+            val control = viewModel.miscellaneousControl
+            val values by control.values.collectAsStateWithLifecycle()
+            val rates = MiscellaneousControl.BAUD_RATES.mapValues { it.value.toString() }
+            MiscellaneousScreen(values, rates, { key ->
+                val current = values ?: return@MiscellaneousScreen
                 val parameter = when (key) {
-                    MiscField.PERIOD -> Triple(R.string.miscel_period_title, p.uartPeriodTms, 0 to 500)
-                    MiscField.CUTOFF -> Triple(R.string.miscel_ignition_cutoff_rpm_title, p.ignCutoffThrd, 1000 to 30000)
-                    MiscField.START -> Triple(R.string.miscel_start_rel_to_tdc_title, p.hopStartAng.roundToInt(), -36 to 72)
-                    MiscField.DURATION -> Triple(R.string.miscel_hall_output_delay_title, p.hopDuratAng.roundToInt(), 6 to 180)
-                    MiscField.BEGIN -> Triple(R.string.miscel_evap_starting_air_flow_title, p.evapAfbegin, evapEditBounds(MiscField.BEGIN, p.evapAfbegin, p.evapAfEnd))
-                    MiscField.END -> Triple(R.string.miscel_evap_ending_air_flow_title, p.evapAfEnd, evapEditBounds(MiscField.END, p.evapAfbegin, p.evapAfEnd))
-                    MiscField.PWM0 -> Triple(R.string.miscel_pwmfrq1_title, p.pwmFrq0, 10 to 5000)
-                    MiscField.PWM1 -> Triple(R.string.miscel_pwmfrq2_title, p.pwmFrq1, 10 to 5000)
-                    MiscField.VSS -> Triple(R.string.miscel_num_vss_pulsed_per_dist_title, p.vssPeriodDist.roundToInt(), 100 to 60000)
+                    MiscField.PERIOD -> Triple(R.string.miscel_period_title, current.period, MiscellaneousControl.PERIOD_MIN to MiscellaneousControl.PERIOD_MAX)
+                    MiscField.CUTOFF -> Triple(R.string.miscel_ignition_cutoff_rpm_title, current.cutoff, MiscellaneousControl.CUTOFF_MIN to MiscellaneousControl.CUTOFF_MAX)
+                    MiscField.START -> Triple(R.string.miscel_start_rel_to_tdc_title, current.start.roundToInt(), MiscellaneousControl.START_MIN to MiscellaneousControl.START_MAX)
+                    MiscField.DURATION -> Triple(R.string.miscel_hall_output_delay_title, current.duration.roundToInt(), MiscellaneousControl.DURATION_MIN to MiscellaneousControl.DURATION_MAX)
+                    MiscField.BEGIN -> Triple(R.string.miscel_evap_starting_air_flow_title, current.begin, current.beginBounds)
+                    MiscField.END -> Triple(R.string.miscel_evap_ending_air_flow_title, current.end, current.endBounds)
+                    MiscField.PWM0 -> Triple(R.string.miscel_pwmfrq1_title, current.pwm0, MiscellaneousControl.PWM_MIN to MiscellaneousControl.PWM_MAX)
+                    MiscField.PWM1 -> Triple(R.string.miscel_pwmfrq2_title, current.pwm1, MiscellaneousControl.PWM_MIN to MiscellaneousControl.PWM_MAX)
+                    MiscField.VSS -> Triple(R.string.miscel_num_vss_pulsed_per_dist_title, current.vss.roundToInt(), MiscellaneousControl.VSS_MIN to MiscellaneousControl.VSS_MAX)
                     MiscField.TIMEOUT -> error("Float parameter routed through integer editor")
                 }
                 val bounds = parameter.third
                 if (bounds == null || bounds.first > bounds.second) viewModel.showUiMessage(R.string.miscel_evap_invalid_range, UiMessageDuration.LONG)
-                else intEdit(parameter.first, parameter.second.coerceIn(bounds.first, bounds.second), if (key == MiscField.PERIOD) 10 else 1, bounds.second, bounds.first) { h.editInt(key, it.toInt()) }
-            }, { h.currentPacket?.let { floatEdit(R.string.miscel_fuel_pump_working_time_title, it.fpTimeoutStrt, .1f, 25.5f, .1f, 1) { h.editFloat(it.toFloat()) } } }, h::selectBaud, h::toggle, capabilities = capabilities)
+                else intEdit(parameter.first, parameter.second.coerceIn(bounds.first, bounds.second), if (key == MiscField.PERIOD) 10 else 1, bounds.second, bounds.first) { viewModel.editMiscellaneous(key, it.toInt()) }
+            }, { values?.let { current -> floatEdit(R.string.miscel_fuel_pump_working_time_title, current.timeout, MiscellaneousControl.TIMEOUT_MIN, MiscellaneousControl.TIMEOUT_MAX, .1f, 1) { viewModel.editMiscellaneousTimeout(it.toFloat()) } } }, viewModel::selectMiscellaneousBaud, viewModel::toggleMiscellaneous, capabilities = capabilities)
         }
         R.string.params_tab_choke_control_title -> {
             val values by viewModel.chokeControl.values.collectAsStateWithLifecycle()
