@@ -25,6 +25,8 @@
 package org.secu3.android.ui.parameters.pages.compose
 
 import org.secu3.android.domain.parameters.ParameterCapabilities
+import org.secu3.android.domain.parameters.CkpsControl
+import org.secu3.android.domain.parameters.CkpsValues
 
 import org.secu3.android.ui.compose.DropdownShape
 
@@ -52,23 +54,12 @@ import org.secu3.android.ui.parameters.compose.ParameterSelectionRow
 import org.secu3.android.ui.parameters.compose.ParameterTextValueRow
 import org.secu3.android.ui.parameters.*
 import org.secu3.android.R
-import org.secu3.android.models.packets.out.params.CkpsParamPacket
 import org.secu3.android.ui.parameters.compose.ParameterSwitchRow
 import org.secu3.android.ui.parameters.compose.ParameterValueRow
 import org.secu3.android.ui.parameters.dialogs.ParameterAlertDialog
 import org.secu3.android.ui.parameters.dialogs.ParameterCancelButton
 import org.secu3.android.ui.parameters.dialogs.ParameterChoiceList
 import org.secu3.android.ui.parameters.dialogs.ParameterChoiceOption
-
-internal fun ckpsTdcOptions(wheel: Int, cylinders: Int): List<Int> {
-    if (wheel <= 0 || cylinders !in 1..8) return emptyList()
-    val degrees = when (cylinders) { 1, 2 -> 540.0; 3, 4, 5 -> 330.0; else -> 270.0 }
-    val low = kotlin.math.ceil(66.0 * wheel / 360.0).toInt()
-    val high = kotlin.math.ceil(degrees * wheel / 360.0).toInt().coerceAtMost(255)
-    return (low..high).toList()
-}
-private val cylinderOptions = (1..8).toList()
-private val mttfByMissingTeeth = listOf(0f, 1.5f, 2.5f, 3f, 4f, 5f, 6f)
 
 enum class CkpsFlag {
     CKPS_EDGE,
@@ -87,107 +78,39 @@ enum class CkpsNumber(
     val step: Float,
     val integer: Boolean = false,
 ) {
-    WHEEL(R.string.ckps_cogs_number_title, R.string.units_empty, 0, 10f, 200f, 1f, true),
-    MISSING(R.string.ckps_missing_cogs_number_title, R.string.units_empty, 0, 0f, 6f, 1f, true),
-    PULSE(R.string.ckps_ignition_pulse_delay_title, R.string.units_empty, 0, 1f, 200f, 1f, true),
-    HALL_WIDTH(R.string.ckps_hall_wnd_width_title, R.string.units_degrees_cs, 1, 0f, 120f, .1f),
-    DEGREES(R.string.ckps_degrees_before_tdc_title, R.string.units_degrees_cs, 1, 30f, 120f, .1f),
-    MTTF(R.string.ckps_missing_teeths_detection_factor_title, R.string.units_empty, 2, 1f, 8f, .01f),
-}
+    WHEEL(R.string.ckps_cogs_number_title, R.string.units_empty, 0, CkpsControl.WHEEL_MIN, CkpsControl.WHEEL_MAX, 1f, true),
+    MISSING(R.string.ckps_missing_cogs_number_title, R.string.units_empty, 0, CkpsControl.MISSING_MIN, CkpsControl.MISSING_MAX, 1f, true),
+    PULSE(R.string.ckps_ignition_pulse_delay_title, R.string.units_empty, 0, CkpsControl.PULSE_MIN, CkpsControl.PULSE_MAX, 1f, true),
+    HALL_WIDTH(R.string.ckps_hall_wnd_width_title, R.string.units_degrees_cs, 1, CkpsControl.HALL_WIDTH_MIN, CkpsControl.HALL_WIDTH_MAX, .1f),
+    DEGREES(R.string.ckps_degrees_before_tdc_title, R.string.units_degrees_cs, 1, CkpsControl.DEGREES_MIN, CkpsControl.DEGREES_MAX, .1f),
+    MTTF(R.string.ckps_missing_teeths_detection_factor_title, R.string.units_empty, 2, CkpsControl.MTTF_MIN, CkpsControl.MTTF_MAX, .01f);
 
-data class CkpsValues(
-    val numbers: Map<CkpsNumber, Float>,
-    val ckpsEdge: Boolean,
-    val refsEdge: Boolean,
-    val risingSpark: Boolean,
-    val mergeOuts: Boolean,
-    val useCamRef: Boolean,
-    val teethBtdc: Int,
-    val cylinders: Int,
-) {
-    fun withNumber(number: CkpsNumber, value: Float) =
-        copy(numbers = numbers + (number to value))
-
-    companion object {
-        fun from(packet: CkpsParamPacket) = CkpsValues(
-            numbers = mapOf(
-                CkpsNumber.WHEEL to packet.ckpsCogsNum.toFloat(),
-                CkpsNumber.MISSING to packet.ckpsMissNum.toFloat(),
-                CkpsNumber.PULSE to packet.ckpsIgnitCogs.toFloat(),
-                CkpsNumber.HALL_WIDTH to packet.hallWndWidth,
-                CkpsNumber.DEGREES to packet.hallDegreesBtdc,
-                CkpsNumber.MTTF to packet.mttf,
-            ),
-            ckpsEdge = packet.ckpsEdge,
-            refsEdge = packet.refsEdge,
-            risingSpark = packet.risingSpark,
-            mergeOuts = packet.mergeOuts,
-            useCamRef = packet.useCamRef,
-            teethBtdc = packet.ckpsCogsBtdc,
-            cylinders = packet.ckpsEngineCyl,
-        )
+    fun value(values: CkpsValues): Float = when (this) {
+        WHEEL -> values.wheel.toFloat()
+        MISSING -> values.missingTeeth.toFloat()
+        PULSE -> values.ignitionPulseCount.toFloat()
+        HALL_WIDTH -> values.hallWindowWidth
+        DEGREES -> values.hallDegreesBeforeTdc
+        MTTF -> values.mttf
     }
-}
-
-fun applyCkpsNumber(packet: CkpsParamPacket, number: CkpsNumber, value: Float) {
-    when (number) {
-        CkpsNumber.WHEEL -> packet.ckpsCogsNum = value.toInt()
-        CkpsNumber.MISSING -> {
-            packet.ckpsMissNum = value.toInt()
-            if (packet.ckpsMissNum > 0) {
-                packet.mttf = mttfByMissingTeeth[packet.ckpsMissNum]
-            }
-        }
-        CkpsNumber.PULSE -> packet.ckpsIgnitCogs = value.toInt()
-        CkpsNumber.HALL_WIDTH -> packet.hallWndWidth = value
-        CkpsNumber.DEGREES -> packet.hallDegreesBtdc = value
-        CkpsNumber.MTTF -> packet.mttf = value
-    }
-}
-
-fun applyCkpsFlag(packet: CkpsParamPacket, flag: CkpsFlag, value: Boolean) {
-    when (flag) {
-        CkpsFlag.CKPS_EDGE -> packet.ckpsEdge = value
-        CkpsFlag.REFERENCE_EDGE -> packet.refsEdge = value
-        CkpsFlag.SPARK_RISING -> packet.risingSpark = value
-        CkpsFlag.MERGE_OUTPUTS -> packet.mergeOuts = value
-        CkpsFlag.USE_CAM_REFERENCE -> packet.useCamRef = value
-    }
-}
-
-fun applyCkpsChoice(packet: CkpsParamPacket, teeth: Boolean, value: Int): Boolean {
-    if (teeth) {
-        if (value !in ckpsTdcOptions(packet.ckpsCogsNum, packet.ckpsEngineCyl)) return false
-        packet.ckpsCogsBtdc = value
-    } else {
-        if (value !in cylinderOptions) return false
-        packet.ckpsEngineCyl = value
-    }
-    return true
-}
-
-sealed interface CkpsUiState {
-    data object Loading : CkpsUiState
-    data class Data(val values: CkpsValues) : CkpsUiState
 }
 
 @Composable
 fun CkpsScreen(
-    state: CkpsUiState,
+    values: CkpsValues?,
     onEdit: (CkpsNumber) -> Unit,
     onFlag: (CkpsFlag, Boolean) -> Unit,
     onChoice: (Boolean, Int) -> Unit,
     capabilities: ParameterCapabilities = ParameterCapabilities.All,
 ) {
     val pageScrollState = rememberScrollState()
-    if (state is CkpsUiState.Loading) {
+    if (values == null) {
         ParameterLoadingIndicator("ckps_loading")
         return
     }
 
-    val values = (state as CkpsUiState.Data).values
-    val tdcOptions = ckpsTdcOptions(values.numbers.getValue(CkpsNumber.WHEEL).toInt(), values.cylinders)
-    val availableCylinders = capabilities.ckpsCylinderOptions(values.mergeOuts)
+    val tdcOptions = values.teethBeforeTdcOptions
+    val availableCylinders = capabilities.ckpsCylinderOptions(values.mergeOutputs)
     var open by remember { mutableStateOf<Boolean?>(null) }
 
     ParameterPage(scrollState = pageScrollState) {
@@ -195,7 +118,7 @@ fun CkpsScreen(
         EdgeGroup(stringResource(R.string.ckps_ckps_edge_title), values.ckpsEdge, "ckps_edge") {
             onFlag(CkpsFlag.CKPS_EDGE, it)
         }
-        EdgeGroup(stringResource(R.string.ckps_ref_s_edge_title), values.refsEdge, "ckps_ref") {
+        EdgeGroup(stringResource(R.string.ckps_ref_s_edge_title), values.referenceEdge, "ckps_ref") {
             onFlag(CkpsFlag.REFERENCE_EDGE, it)
         }
         ParameterSwitchRow(
@@ -205,7 +128,7 @@ fun CkpsScreen(
         ) { onFlag(CkpsFlag.SPARK_RISING, it) }
         ParameterSwitchRow(
             stringResource(R.string.ckps_merge_outputs_title),
-            values.mergeOuts,
+            values.mergeOutputs,
             "ckps_merge", enabled = capabilities.inputsMerging,
         ) { onFlag(CkpsFlag.MERGE_OUTPUTS, it) }
 
@@ -213,12 +136,12 @@ fun CkpsScreen(
             if (n == CkpsNumber.PULSE) {
                 Choice(
                     title = stringResource(R.string.ckps_cogs_before_tdc_title),
-                    value = selectorValue(values.teethBtdc, tdcOptions),
+                    value = values.teethBeforeTdc.toString().takeIf { values.teethBeforeTdc in tdcOptions } ?: "Code ${values.teethBeforeTdc}",
                     tag = "ckps_teeth_btdc", enabled = capabilities.cogsBtdc,
                 ) { open = true }
                 Choice(
                     title = stringResource(R.string.ckps_engine_cylinders_title),
-                    value = selectorValue(values.cylinders, cylinderOptions),
+                    value = values.cylinders.toString().takeIf { values.cylinders in 1..8 } ?: "Code ${values.cylinders}",
                     tag = "ckps_cylinders",
                 ) { open = false }
             }
@@ -226,29 +149,29 @@ fun CkpsScreen(
             ParameterValueRow(
                 title = stringResource(n.title),
                 units = stringResource(n.units),
-                value = values.numbers.getValue(n),
+                value = n.value(values),
                 precision = n.precision,
                 testTag = "ckps_${n.name.lowercase()}",
                 enabled = when (n) {
                     CkpsNumber.WHEEL, CkpsNumber.MISSING -> capabilities.ckps
                     CkpsNumber.PULSE -> capabilities.ignitionCogs
                     CkpsNumber.HALL_WIDTH, CkpsNumber.DEGREES -> capabilities.hallWindow
-                    CkpsNumber.MTTF -> capabilities.mttfEnabled(values.numbers.getValue(CkpsNumber.MISSING))
+                    CkpsNumber.MTTF -> capabilities.mttfEnabled(values.missingTeeth.toFloat())
                 },
             ) { onEdit(n) }
         }
 
         ParameterSwitchRow(
             stringResource(R.string.ckps_use_cam_sensor_title),
-            values.useCamRef,
-            "ckps_cam", enabled = capabilities.camReferenceEnabled(values.numbers.getValue(CkpsNumber.MISSING)),
+            values.camReference,
+            "ckps_cam", enabled = capabilities.camReferenceEnabled(values.missingTeeth.toFloat()),
         ) { onFlag(CkpsFlag.USE_CAM_REFERENCE, it) }
         ParameterValueRow(
             title = stringResource(CkpsNumber.MTTF.title),
             units = stringResource(CkpsNumber.MTTF.units),
-            value = values.numbers.getValue(CkpsNumber.MTTF),
+            value = values.mttf,
             precision = CkpsNumber.MTTF.precision,
-            testTag = "ckps_mttf", enabled = capabilities.mttfEnabled(values.numbers.getValue(CkpsNumber.MISSING)),
+            testTag = "ckps_mttf", enabled = capabilities.mttfEnabled(values.missingTeeth.toFloat()),
         ) { onEdit(CkpsNumber.MTTF) }
     }
 
@@ -279,9 +202,6 @@ fun CkpsScreen(
     }
             }
         }
-
-private fun selectorValue(value: Int, options: List<Int>): String =
-    value.toString().takeIf { value in options } ?: "Code $value"
 
 @Composable
 private fun EdgeGroup(

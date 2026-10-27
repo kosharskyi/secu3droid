@@ -105,8 +105,8 @@ internal fun ParameterPageContent(
             AdcErrorsCorrectionsScreen(h.state, { n -> (h.state as? AdcCorrectionsUiState.Data)?.values?.let { onEdit(ParameterEditRequest.FloatValue(n.title, it.value(n), n.min, n.max, n.step, n.precision) { h.updateValue(n, it.toFloat()) }) } }, h::updateCompMode, capabilities = capabilities)
         }
         R.string.params_tab_ckps_title -> {
-            val h = viewModel.ckpsStateHolder
-            CkpsScreen(h.state, { n -> (h.state as? CkpsUiState.Data)?.values?.let { v -> if (n.integer) intEdit(n.title, v.numbers.getValue(n).toInt(), n.step.toInt(), n.max.toInt(), n.min.toInt()) { h.updateNumber(n, it.toFloat()) } else floatEdit(n.title, v.numbers.getValue(n), n.step, n.max, n.min, n.precision) { h.updateNumber(n, it.toFloat()) } } }, h::updateFlag, h::updateChoice, capabilities = capabilities)
+            val values by viewModel.ckpsControl.values.collectAsStateWithLifecycle()
+            CkpsScreen(values, { n -> values?.let { v -> if (n.integer) intEdit(n.title, n.value(v).toInt(), n.step.toInt(), n.max.toInt(), n.min.toInt()) { viewModel.editCkps(n, it.toFloat()) } else floatEdit(n.title, n.value(v), n.step, n.max, n.min, n.precision) { viewModel.editCkps(n, it.toFloat()) } } }, viewModel::toggleCkps, viewModel::selectCkpsChoice, capabilities = capabilities)
         }
         R.string.params_tab_knock_title -> {
             val h = viewModel.knockStateHolder

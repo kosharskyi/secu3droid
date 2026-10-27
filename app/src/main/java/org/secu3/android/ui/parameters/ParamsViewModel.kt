@@ -50,6 +50,7 @@ import org.secu3.android.domain.parameters.ParameterSessionEvent
 import org.secu3.android.domain.parameters.GasDoseControl
 import org.secu3.android.domain.parameters.FuelInjectionControl
 import org.secu3.android.domain.parameters.ChokeControl
+import org.secu3.android.domain.parameters.CkpsControl
 import org.secu3.android.models.packets.base.OutputPacket
 import org.secu3.android.models.packets.out.params.AccelerationParamPacket
 import org.secu3.android.models.packets.out.params.AdcCorrectionsParamPacket
@@ -72,7 +73,6 @@ import org.secu3.android.models.packets.out.params.TemperatureParamPacket
 import org.secu3.android.models.packets.out.params.UniOutParamPacket
 import org.secu3.android.ui.parameters.pages.compose.AnglesStateHolder
 import org.secu3.android.ui.parameters.pages.compose.CarburStateHolder
-import org.secu3.android.ui.parameters.pages.compose.CkpsStateHolder
 import org.secu3.android.ui.parameters.pages.compose.AdcCorrectionsStateHolder
 import org.secu3.android.ui.parameters.pages.compose.KnockStateHolder
 import org.secu3.android.ui.parameters.pages.compose.LambdaControlStateHolder
@@ -89,6 +89,8 @@ import org.secu3.android.ui.parameters.pages.compose.GasDoseNumber
 import org.secu3.android.ui.parameters.pages.compose.DbwStateHolder
 import org.secu3.android.ui.parameters.pages.compose.FuelInjectionNumber
 import org.secu3.android.ui.parameters.pages.compose.FuelInjectionFlag
+import org.secu3.android.ui.parameters.pages.compose.CkpsNumber
+import org.secu3.android.ui.parameters.pages.compose.CkpsFlag
 import org.secu3.android.ui.parameters.pages.UniversalOutputsStateHolder
 import javax.inject.Inject
 
@@ -100,6 +102,7 @@ class ParamsViewModel @Inject constructor(
     internal val chokeControl: ChokeControl,
     internal val gasDoseControl: GasDoseControl,
     internal val fuelInjectionControl: FuelInjectionControl,
+    internal val ckpsControl: CkpsControl,
     private val uiMessageQueue: UiMessageQueue,
     private val parameterPageCatalog: ParameterPageCatalog,
 ) : ViewModel() {
@@ -141,10 +144,6 @@ class ParamsViewModel @Inject constructor(
 
     internal val carburStateHolder by lazy {
         CarburStateHolder(::sendPacket, { isSendAllowed = false }, { isSendAllowed = true })
-    }
-
-    internal val ckpsStateHolder by lazy {
-        CkpsStateHolder(::sendPacket, { isSendAllowed = false }, { isSendAllowed = true })
     }
 
     internal val adcCorrectionsStateHolder by lazy {
@@ -289,6 +288,33 @@ class ParamsViewModel @Inject constructor(
         showParameterPacketSentMessage(sent)
     }
 
+    internal fun editCkps(number: CkpsNumber, value: Float) {
+        val sent = when (number) {
+            CkpsNumber.WHEEL -> ckpsControl.editWheel(value)
+            CkpsNumber.MISSING -> ckpsControl.editMissingTeeth(value)
+            CkpsNumber.PULSE -> ckpsControl.editIgnitionPulseCount(value)
+            CkpsNumber.HALL_WIDTH -> ckpsControl.editHallWindowWidth(value)
+            CkpsNumber.DEGREES -> ckpsControl.editHallDegreesBeforeTdc(value)
+            CkpsNumber.MTTF -> ckpsControl.editMttf(value)
+        }
+        showParameterPacketSentMessage(sent)
+    }
+
+    internal fun toggleCkps(flag: CkpsFlag, value: Boolean) {
+        val sent = when (flag) {
+            CkpsFlag.CKPS_EDGE -> ckpsControl.setCkpsEdge(value)
+            CkpsFlag.REFERENCE_EDGE -> ckpsControl.setReferenceEdge(value)
+            CkpsFlag.SPARK_RISING -> ckpsControl.setRisingSpark(value)
+            CkpsFlag.MERGE_OUTPUTS -> ckpsControl.setMergeOutputs(value)
+            CkpsFlag.USE_CAM_REFERENCE -> ckpsControl.setCamReference(value)
+        }
+        showParameterPacketSentMessage(sent)
+    }
+
+    internal fun selectCkpsChoice(teeth: Boolean, value: Int) {
+        showParameterPacketSentMessage(if (teeth) ckpsControl.selectTeethBeforeTdc(value) else ckpsControl.selectCylinders(value))
+    }
+
     internal fun changeFuelInjectionConfig(bank: Int, value: Int) =
         showParameterPacketSentMessage(fuelInjectionControl.changeConfig(bank, value))
 
@@ -369,7 +395,7 @@ class ParamsViewModel @Inject constructor(
             ParameterPage.IDLING -> idlingStateHolder.reset()
             ParameterPage.TEMPERATURE -> temperatureStateHolder.reset()
             ParameterPage.FUEL_CUTOFF -> carburStateHolder.reset()
-            ParameterPage.CKPS -> ckpsStateHolder.reset()
+            ParameterPage.CKPS -> ckpsControl.reset()
             ParameterPage.ADC_ERRORS -> adcCorrectionsStateHolder.reset()
             ParameterPage.KNOCK -> knockStateHolder.reset()
             ParameterPage.LAMBDA_CONTROL -> lambdaControlStateHolder.reset()
@@ -397,7 +423,7 @@ class ParamsViewModel @Inject constructor(
             ParameterPage.IDLING -> idlingStateHolder.onPacketReceived(packet<IdlingParamPacket>(result))
             ParameterPage.TEMPERATURE -> temperatureStateHolder.onPacketReceived(packet<TemperatureParamPacket>(result))
             ParameterPage.FUEL_CUTOFF -> carburStateHolder.onPacketReceived(packet<CarburParamPacket>(result))
-            ParameterPage.CKPS -> ckpsStateHolder.onPacketReceived(packet<CkpsParamPacket>(result))
+            ParameterPage.CKPS -> ckpsControl.receive(packet<CkpsParamPacket>(result))
             ParameterPage.ADC_ERRORS -> adcCorrectionsStateHolder.onPacketReceived(packet<AdcCorrectionsParamPacket>(result))
             ParameterPage.KNOCK -> knockStateHolder.onPacketReceived(packet<KnockParamPacket>(result))
             ParameterPage.LAMBDA_CONTROL -> lambdaControlStateHolder.onPacketReceived(packet<LambdaParamPacket>(result))

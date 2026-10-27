@@ -2,7 +2,6 @@ package org.secu3.android.ui.parameters
 
 import androidx.compose.runtime.Composable
 import org.secu3.android.models.packets.out.params.AccelerationParamPacket
-import org.secu3.android.models.packets.out.params.CkpsParamPacket
 import org.secu3.android.models.packets.out.params.FunSetParamPacket
 import org.secu3.android.models.packets.out.params.GasDoseParamPacket
 import org.secu3.android.models.packets.out.params.InjctrParPacket
@@ -21,8 +20,7 @@ import org.secu3.android.ui.parameters.pages.compose.AccelerationScreen
 import org.secu3.android.ui.parameters.pages.compose.AccelerationUiState
 import org.secu3.android.ui.parameters.pages.compose.AccelerationValues
 import org.secu3.android.ui.parameters.pages.compose.CkpsScreen
-import org.secu3.android.ui.parameters.pages.compose.CkpsUiState
-import org.secu3.android.ui.parameters.pages.compose.CkpsValues
+import org.secu3.android.domain.parameters.CkpsValues
 import org.secu3.android.ui.parameters.pages.compose.ChokeScreen
 import org.secu3.android.domain.parameters.ChokeValues
 import org.secu3.android.domain.parameters.FuelBankValues
@@ -61,7 +59,7 @@ internal fun advancedParameterAppearanceFixtures(): List<ParameterAppearanceFixt
         },
         useLoadGrid = true,
     )
-    val ckps = CkpsValues.from(CkpsParamPacket())
+    val ckps = CkpsValues(60, 2, 5, 12f, 40f, 2.5f, false, true, true, false, false, 24, 4, (11..55).toList())
     val lambda = LambdaValues(
         numbers = LambdaNumber.entries.associateWith { number -> if (number.integer) 4f else 1.25f },
         flags = LambdaFlag.entries.associateWith { it == LambdaFlag.HEATING_VOLTAGE },
@@ -135,7 +133,7 @@ internal fun advancedParameterAppearanceFixtures(): List<ParameterAppearanceFixt
             FunctionsScreen(FunctionsUiState.Data(functions, functionChoices), {}, {}, { _, _ -> })
         },
         ParameterAppearanceFixture("ckps") {
-            CkpsScreen(CkpsUiState.Data(ckps), {}, { _, _ -> }, { _, _ -> })
+            CkpsScreen(ckps, {}, { _, _ -> }, { _, _ -> })
         },
         ParameterAppearanceFixture("choke") {
             ChokeScreen(ChokeValues(500, .5f, 2f, 3f, 4f, false, false, false, false, false, 1), {}, { _, _ -> }, {}, {}, {}, {}, {}, {})

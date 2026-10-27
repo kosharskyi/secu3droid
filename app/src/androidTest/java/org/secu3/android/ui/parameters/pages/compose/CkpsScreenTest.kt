@@ -27,33 +27,28 @@ package org.secu3.android.ui.parameters.pages.compose
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.ui.test.assertHasClickAction
 import androidx.compose.ui.test.assertIsDisplayed
+import androidx.compose.ui.test.assertTextEquals
+import androidx.compose.ui.test.assertCountEquals
 import androidx.compose.ui.test.junit4.v2.createComposeRule
 import androidx.compose.ui.test.onNodeWithTag
+import androidx.compose.ui.test.onAllNodesWithTag
 import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.performScrollTo
 import org.junit.Assert.assertEquals
 import org.junit.Rule
 import org.junit.Test
+import org.secu3.android.domain.parameters.CkpsValues
+import org.secu3.android.domain.parameters.ParameterCapabilities
+import org.secu3.android.models.packets.input.FirmwareInfoPacket
 import org.secu3.android.ui.compose.SecuComposeTheme
 
 class CkpsScreenTest {
     @get:Rule val compose = createComposeRule()
-    private fun state() = CkpsUiState.Data(
-        CkpsValues(
-            CkpsNumber.entries.associateWith { if (it == CkpsNumber.WHEEL) 60f else it.ordinal.toFloat() },
-            false,
-            true,
-            true,
-            false,
-            false,
-            24,
-            4,
-        ),
-    )
+    private fun state() = CkpsValues(60, 2, 5, 12f, 40f, 2.5f, false, true, true, false, false, 24, 4, (11..55).toList())
     @Test
     fun loadingScrollAndRecompositionHaveNoCallbacks() {
         var callbacks = 0
-        val state = mutableStateOf<CkpsUiState>(CkpsUiState.Loading)
+        val state = mutableStateOf<CkpsValues?>(null)
         compose.setContent {
             SecuComposeTheme {
                 CkpsScreen(
@@ -131,5 +126,20 @@ class CkpsScreenTest {
         compose.onNodeWithTag("ckps_cylinders").performScrollTo().performClick()
         compose.onNodeWithTag("ckps_option_8").performScrollTo().performClick()
         assertEquals(listOf(true to 55, false to 8), choices)
+    }
+
+    @Test
+    fun excludedRawSelectorValuesRemainVisibleWhileChoicesUseCurrentCapabilities() {
+        val raw = state().copy(teethBeforeTdc = 56, cylinders = 3)
+        compose.setContent {
+            SecuComposeTheme {
+                CkpsScreen(raw, {}, { _, _ -> }, { _, _ -> }, ParameterCapabilities(FirmwareInfoPacket()))
+            }
+        }
+        compose.onNodeWithTag("ckps_teeth_btdc-value", useUnmergedTree = true).performScrollTo().assertTextEquals("Code 56")
+        compose.onNodeWithTag("ckps_cylinders-value", useUnmergedTree = true).performScrollTo().assertTextEquals("3")
+        compose.onNodeWithTag("ckps_cylinders").performScrollTo().performClick()
+        compose.onNodeWithTag("ckps_option_6").assertIsDisplayed()
+        compose.onAllNodesWithTag("ckps_option_3").assertCountEquals(0)
     }
 }

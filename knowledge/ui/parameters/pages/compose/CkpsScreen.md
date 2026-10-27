@@ -1,5 +1,5 @@
-## CKPS selector options depend on the wheel and ignition mode
+## CKPS selector options are supplied by the domain control
 
-Teeth-before-TDC bounds follow the wheel/cylinder geometry (66-degree lower bound, upper bound 540/330/270 degrees depending on cylinder count). Keep the byte limit 255 even if the computed range exceeds it. Do not replace a received value merely because the new geometry excludes it. Unknown geometry yields no choices instead of inventing a default.
+The screen renders the control's current teeth-before-TDC choices and preserves the raw displayed ECU value when geometry excludes it. Cylinder fallback text recognizes raw protocol IDs 1–8 even when current firmware filters one out of the dialog choices.
 
-Odd cylinders require phased ignition, Hall sync, or merged outputs; seven cylinders additionally require ODDFIRE_ALGO. The domain capability snapshot owns this firmware-dependent filtering; the screen passes current merged-output state and preserves the raw displayed ECU value. Teeth-before-TDC geometry remains screen-specific, and packet mutation accepts protocol IDs.
+Odd cylinders require phased ignition, Hall sync, or merged outputs; seven cylinders additionally require ODDFIRE_ALGO. The existing domain capability snapshot owns this firmware-dependent filtering; the screen passes current merged-output state.

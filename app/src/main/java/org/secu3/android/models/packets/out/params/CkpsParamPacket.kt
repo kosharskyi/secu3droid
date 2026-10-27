@@ -119,8 +119,15 @@ data class CkpsParamPacket(
         return this
     }
 
+    /** Captures packed bytes so later edits to this mutable packet cannot change an admitted command. */
+    fun snapshot(): OutputPacket = PackedCkpsParamPacket(pack().copyOf())
+
     companion object {
         internal const val DESCRIPTOR = 't'
     }
+}
+
+private class PackedCkpsParamPacket(private val bytes: IntArray) : OutputPacket {
+    override fun pack(): IntArray = bytes.copyOf()
 }
 

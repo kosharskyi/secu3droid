@@ -36,6 +36,7 @@ import org.secu3.android.models.packets.out.params.AnglesParamPacket
 import org.secu3.android.models.packets.out.params.GasDoseParamPacket
 import org.secu3.android.models.packets.out.params.ChokeControlParPacket
 import org.secu3.android.models.packets.out.params.InjctrParPacket
+import org.secu3.android.models.packets.out.params.CkpsParamPacket
 import org.secu3.android.models.packets.out.params.StarterParamPacket
 import org.secu3.android.models.packets.out.ChangeModePacket
 import org.secu3.android.utils.UserPrefs
@@ -403,6 +404,67 @@ class ParameterPageSessionCacheTest {
             compose.runOnIdle {
                 vm.pausePageSession()
                 vm.editFuelInjection(org.secu3.android.ui.parameters.pages.compose.FuelInjectionNumber.FLOW_0, 600f)
+            }
+            assertEquals(beforePausedEdit, usb.writes.size)
+            assertFalse(queue.pending.value.any { it.textRes == R.string.packet_sent })
+        } finally {
+            try {
+                transport?.close()
+            } finally {
+                try {
+                    compose.runOnIdle { vm.clearPageState() }
+                } finally {
+                    queue.onActiveScopeChanged(originalActiveScope)
+                    compose.activityRule.scenario.moveToState(Lifecycle.State.RESUMED)
+                }
+            }
+        }
+    }
+
+    @Test fun ckpsCommandsUseCurrentFirmwareAndReportOnlyAdmittedSessionWrites() = runBlocking {
+        val vm = paramsViewModel()
+        var transport: FakeUsbTransport? = null
+        val queueField = ParamsViewModel::class.java.getDeclaredField("uiMessageQueue").apply { isAccessible = true }
+        val queue = queueField.get(vm) as org.secu3.android.ui.messages.UiMessageQueue
+        val originalActiveScope = queue.activeScope.value
+        try {
+            val usb = installFakeUsb(vm, firmwareOptions = 0).also { transport = it }
+            activate(vm, R.string.params_tab_ckps_title)
+            usb.awaitReadRequest('t', 1)
+            usb.emit(CkpsParamPacket(ckpsCogsBtdc = 20, ckpsIgnitCogs = 5, ckpsEngineCyl = 4, ckpsCogsNum = 60, ckpsMissNum = 2, hallFlags = 0xE0, hallWndWidth = -12.3f, hallDegreesBtdc = -45.6f, mttf = 2.5f))
+            await { vm.ckpsControl.values.value?.wheel == 60 }
+            // Hall angles arrive quantized to the protocol's 1/32-degree words.
+            assertEquals(-12.3125f, vm.ckpsControl.values.value?.hallWindowWidth)
+            assertEquals(-45.59375f, vm.ckpsControl.values.value?.hallDegreesBeforeTdc)
+
+            compose.activityRule.scenario.moveToState(Lifecycle.State.STARTED)
+            compose.waitForIdle()
+            queue.onActiveScopeChanged(PARAMETERS_ROUTE)
+            val baseline = usb.writes.size
+            queue.pending.value.forEach { queue.acknowledge(it.id) }
+
+            compose.runOnIdle { vm.editCkps(org.secu3.android.ui.parameters.pages.compose.CkpsNumber.WHEEL, 80f) }
+            usb.awaitWriteCount(baseline + 1)
+            assertEquals('t', usb.writes[baseline][1].toInt().toChar())
+            assertEquals(80, usb.writes[baseline][5].toInt() and 0xff)
+            assertEquals(0xE0, usb.writes[baseline][7].toInt() and 0xff)
+            assertEquals(-12.3125f, vm.ckpsControl.values.value?.hallWindowWidth)
+            assertEquals(-45.59375f, vm.ckpsControl.values.value?.hallDegreesBeforeTdc)
+            assertTrue(queue.pending.value.any { it.textRes == R.string.packet_sent })
+
+            queue.pending.value.forEach { queue.acknowledge(it.id) }
+            usb.emitFirmware(options = 1 shl 2)
+            await { vm.capabilities.value.known && !vm.capabilities.value.cogsBtdc }
+            val beforeRestrictedChoice = usb.writes.size
+            compose.runOnIdle { vm.selectCkpsChoice(true, 21) }
+            delay(100)
+            assertEquals(beforeRestrictedChoice, usb.writes.size)
+            assertFalse(queue.pending.value.any { it.textRes == R.string.packet_sent })
+
+            val beforePausedEdit = usb.writes.size
+            compose.runOnIdle {
+                vm.pausePageSession()
+                vm.editCkps(org.secu3.android.ui.parameters.pages.compose.CkpsNumber.WHEEL, 90f)
             }
             assertEquals(beforePausedEdit, usb.writes.size)
             assertFalse(queue.pending.value.any { it.textRes == R.string.packet_sent })
