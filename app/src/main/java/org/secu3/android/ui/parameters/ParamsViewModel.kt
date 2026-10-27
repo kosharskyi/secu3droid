@@ -48,6 +48,7 @@ import org.secu3.android.domain.parameters.ParameterReadResult
 import org.secu3.android.domain.parameters.ParameterSession
 import org.secu3.android.domain.parameters.ParameterSessionEvent
 import org.secu3.android.domain.parameters.GasDoseControl
+import org.secu3.android.domain.parameters.FuelInjectionControl
 import org.secu3.android.domain.parameters.ChokeControl
 import org.secu3.android.models.packets.base.OutputPacket
 import org.secu3.android.models.packets.out.params.AccelerationParamPacket
@@ -86,7 +87,8 @@ import org.secu3.android.ui.parameters.pages.compose.FunctionsStateHolder
 import org.secu3.android.ui.parameters.pages.compose.ChokeNumber
 import org.secu3.android.ui.parameters.pages.compose.GasDoseNumber
 import org.secu3.android.ui.parameters.pages.compose.DbwStateHolder
-import org.secu3.android.ui.parameters.pages.compose.FuelInjectionStateHolder
+import org.secu3.android.ui.parameters.pages.compose.FuelInjectionNumber
+import org.secu3.android.ui.parameters.pages.compose.FuelInjectionFlag
 import org.secu3.android.ui.parameters.pages.UniversalOutputsStateHolder
 import javax.inject.Inject
 
@@ -97,6 +99,7 @@ class ParamsViewModel @Inject constructor(
     private val parameterSession: ParameterSession,
     internal val chokeControl: ChokeControl,
     internal val gasDoseControl: GasDoseControl,
+    internal val fuelInjectionControl: FuelInjectionControl,
     private val uiMessageQueue: UiMessageQueue,
     private val parameterPageCatalog: ParameterPageCatalog,
 ) : ViewModel() {
@@ -172,10 +175,6 @@ class ParamsViewModel @Inject constructor(
 
     internal val dbwStateHolder by lazy {
         DbwStateHolder(::sendPacket) { isSendAllowed = it }
-    }
-
-    internal val fuelInjectionStateHolder by lazy {
-        FuelInjectionStateHolder(::sendPacket) { isSendAllowed = it }
     }
 
     internal val universalOutputsStateHolder by lazy {
@@ -270,6 +269,48 @@ class ParamsViewModel @Inject constructor(
 
     internal fun cancelGasDoseManual() = gasDoseControl.cancelManual()
 
+    internal fun editFuelInjection(number: FuelInjectionNumber, value: Float) {
+        val sent = when (number) {
+            FuelInjectionNumber.ENGINE_DISPLACEMENT -> fuelInjectionControl.editEngineDisplacement(value)
+            FuelInjectionNumber.FLOW_0 -> fuelInjectionControl.editFlow(0, value)
+            FuelInjectionNumber.TIMING_0 -> fuelInjectionControl.editTiming(0, value)
+            FuelInjectionNumber.CRANKING_0 -> fuelInjectionControl.editCrankingTiming(0, value)
+            FuelInjectionNumber.MIN_PW_0 -> fuelInjectionControl.editMinimumPulseWidth(0, value)
+            FuelInjectionNumber.MAX_PW_0 -> fuelInjectionControl.editMaximumPulseWidth(0, value)
+            FuelInjectionNumber.FLOW_1 -> fuelInjectionControl.editFlow(1, value)
+            FuelInjectionNumber.TIMING_1 -> fuelInjectionControl.editTiming(1, value)
+            FuelInjectionNumber.CRANKING_1 -> fuelInjectionControl.editCrankingTiming(1, value)
+            FuelInjectionNumber.MIN_PW_1 -> fuelInjectionControl.editMinimumPulseWidth(1, value)
+            FuelInjectionNumber.MAX_PW_1 -> fuelInjectionControl.editMaximumPulseWidth(1, value)
+            FuelInjectionNumber.PULSES_PER_LITER -> fuelInjectionControl.editPulsesPerLiter(value)
+            FuelInjectionNumber.DECREASE_RATE -> fuelInjectionControl.editDecreaseRate(value)
+            FuelInjectionNumber.INCREASE_RATE -> fuelInjectionControl.editIncreaseRate(value)
+        }
+        showParameterPacketSentMessage(sent)
+    }
+
+    internal fun changeFuelInjectionConfig(bank: Int, value: Int) =
+        showParameterPacketSentMessage(fuelInjectionControl.changeConfig(bank, value))
+
+    internal fun changeFuelInjectionPulses(bank: Int, value: Int) =
+        showParameterPacketSentMessage(fuelInjectionControl.changePulses(bank, value))
+
+    internal fun changeFuelInjectionAngleSpec(bank: Int, value: Int) =
+        showParameterPacketSentMessage(fuelInjectionControl.changeAngleSpec(bank, value))
+
+    internal fun changeFuelInjectionFlag(flag: FuelInjectionFlag, value: Boolean) {
+        val sent = when (flag) {
+            FuelInjectionFlag.USE_MAP_0 -> fuelInjectionControl.setUseMap(0, value)
+            FuelInjectionFlag.USE_MAP_1 -> fuelInjectionControl.setUseMap(1, value)
+            FuelInjectionFlag.ADDITIONAL_CORRECTIONS -> fuelInjectionControl.setAdditionalCorrections(value)
+            FuelInjectionFlag.AIR_DENSITY -> fuelInjectionControl.setAirDensity(value)
+            FuelInjectionFlag.DIFFERENTIAL_PRESSURE -> fuelInjectionControl.setDifferentialPressure(value)
+            FuelInjectionFlag.SWITCH_ROWS -> fuelInjectionControl.setSwitchRows(value)
+            FuelInjectionFlag.FULL_SEQUENTIAL_AFTER_START -> fuelInjectionControl.setFullSequentialAfterStart(value)
+        }
+        showParameterPacketSentMessage(sent)
+    }
+
     private fun showParameterPacketSentMessage(sent: Boolean) {
         if (sent) showUiMessage(R.string.packet_sent, UiMessageDuration.SHORT)
     }
@@ -340,9 +381,7 @@ class ParamsViewModel @Inject constructor(
             ParameterPage.CHOKE_CONTROL -> chokeControl.reset()
             ParameterPage.GAS_DOSE -> gasDoseControl.reset()
             ParameterPage.EL_THROTTLE -> dbwStateHolder.reset()
-            ParameterPage.FUEL_INJECTION -> {
-                fuelInjectionStateHolder.reset()
-            }
+            ParameterPage.FUEL_INJECTION -> fuelInjectionControl.reset()
             ParameterPage.UNIVERSAL_OUTPUTS -> universalOutputsStateHolder.reset()
         }
     }
@@ -402,7 +441,7 @@ class ParamsViewModel @Inject constructor(
                 gasDoseControl.receive(packet<GasDoseParamPacket>(result))
             }
             ParameterPage.EL_THROTTLE -> dbwStateHolder.receive(packet<DbwParamPacket>(result))
-            ParameterPage.FUEL_INJECTION -> fuelInjectionStateHolder.receive(packet<InjctrParPacket>(result))
+            ParameterPage.FUEL_INJECTION -> fuelInjectionControl.receive(packet<InjctrParPacket>(result))
             ParameterPage.UNIVERSAL_OUTPUTS -> universalOutputsStateHolder.onPacketReceived(packet<UniOutParamPacket>(result))
         }
     }

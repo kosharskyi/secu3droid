@@ -25,10 +25,9 @@ import org.secu3.android.ui.parameters.pages.compose.CkpsUiState
 import org.secu3.android.ui.parameters.pages.compose.CkpsValues
 import org.secu3.android.ui.parameters.pages.compose.ChokeScreen
 import org.secu3.android.domain.parameters.ChokeValues
-import org.secu3.android.ui.parameters.pages.compose.FuelBankValues
+import org.secu3.android.domain.parameters.FuelBankValues
 import org.secu3.android.ui.parameters.pages.compose.FuelInjectionScreen
-import org.secu3.android.ui.parameters.pages.compose.FuelInjectionUiState
-import org.secu3.android.ui.parameters.pages.compose.FuelInjectionValues
+import org.secu3.android.domain.parameters.FuelInjectionValues
 import org.secu3.android.ui.parameters.pages.compose.FunctionsChoices
 import org.secu3.android.ui.parameters.pages.compose.FunctionsNumber
 import org.secu3.android.ui.parameters.pages.compose.FunctionsScreen
@@ -69,9 +68,9 @@ internal fun advancedParameterAppearanceFixtures(): List<ParameterAppearanceFixt
         sensorType = 0,
         channels = listOf(true, true, false, false, true, false, false, false),
     )
-    val bank0 = FuelBankValues(240f, 1, 2, 360, 10, false, 0, 0.8f, 8f, listOf(0, 1, 2), listOf(1, 2, 3))
-    val bank1 = FuelBankValues(240f, 2, 2, 360, 10, true, 1, 0.8f, 8f, listOf(0, 1, 2), listOf(1, 2, 3))
-    val fuel = FuelInjectionValues(2.0f, listOf(bank0, bank1), 5500, true, true, false, false, true, 2f, 2f)
+    val bank0 = FuelBankValues(240f, 1, 2, 360f, 10f, false, 0, 0.8f, 8f, listOf(0, 1, 2), listOf(1, 2, 3))
+    val bank1 = FuelBankValues(240f, 2, 2, 360f, 10f, true, 1, 0.8f, 8f, listOf(0, 1, 2), listOf(1, 2, 3))
+    val fuel = FuelInjectionValues(2.0f, listOf(bank0, bank1), 5500f, true, true, false, false, true, 2f, 2f)
     val acceleration = AccelerationValues(
         numbers = AccelerationNumber.entries.associateWith { 10f },
         aeType = 1,
@@ -145,7 +144,7 @@ internal fun advancedParameterAppearanceFixtures(): List<ParameterAppearanceFixt
             GasDoseScreen(GasDoseValues(500f, 14.7f, 20f, 15f, 15f, false, 1, true), ParameterCapabilities.All, {}, {}, {}, {}, {}, {}, {}, {})
         },
         ParameterAppearanceFixture("fuel-injection") {
-            FuelInjectionScreen(FuelInjectionUiState.Data(fuel), mapOf(0 to "Batch", 1 to "Semi-sequential", 2 to "Sequential"), {}, { _, _ -> }, { _, _ -> }, { _, _ -> }, { _, _ -> })
+            FuelInjectionScreen(fuel, mapOf(0 to "Batch", 1 to "Semi-sequential", 2 to "Sequential"), {}, { _, _ -> }, { _, _ -> }, { _, _ -> }, { _, _ -> })
         },
         ParameterAppearanceFixture("lambda-control") {
             LambdaControlScreen(lambda, listOf("Narrowband", "Wideband"), true, {}, { _, _ -> }, {}, { _, _ -> })

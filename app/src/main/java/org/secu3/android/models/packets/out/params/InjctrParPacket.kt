@@ -116,6 +116,9 @@ data class InjctrParPacket(
         return data
     }
 
+    /** Captures the current wire representation before an asynchronous connection send. */
+    fun snapshot(): OutputPacket = PackedInjctrParPacket(pack().copyOf())
+
     var config0: Int
         get() = config[0].shr(4)
         set(value) {
@@ -398,4 +401,8 @@ data class InjctrParPacket(
             0.536f  //LPG density (0.536 g/cc)
         )
     }
+}
+
+private class PackedInjctrParPacket(private val bytes: IntArray) : OutputPacket {
+    override fun pack(): IntArray = bytes.copyOf()
 }

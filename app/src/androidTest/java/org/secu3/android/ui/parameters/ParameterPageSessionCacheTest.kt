@@ -35,6 +35,7 @@ import org.secu3.android.models.packets.base.OutputPacket
 import org.secu3.android.models.packets.out.params.AnglesParamPacket
 import org.secu3.android.models.packets.out.params.GasDoseParamPacket
 import org.secu3.android.models.packets.out.params.ChokeControlParPacket
+import org.secu3.android.models.packets.out.params.InjctrParPacket
 import org.secu3.android.models.packets.out.params.StarterParamPacket
 import org.secu3.android.models.packets.out.ChangeModePacket
 import org.secu3.android.utils.UserPrefs
@@ -342,6 +343,83 @@ class ParameterPageSessionCacheTest {
         }
     }
 
+    @Test fun fuelInjectionCommandsUseCurrentFirmwareAndSnapshotRealCylinderMetadata() = runBlocking {
+        val vm = paramsViewModel()
+        var transport: FakeUsbTransport? = null
+        val queueField = ParamsViewModel::class.java.getDeclaredField("uiMessageQueue").apply { isAccessible = true }
+        val queue = queueField.get(vm) as org.secu3.android.ui.messages.UiMessageQueue
+        val originalActiveScope = queue.activeScope.value
+        try {
+            val options = (1 shl 17) or (1 shl 28)
+            val usb = installFakeUsb(vm, firmwareOptions = options).also { transport = it }
+            activate(vm, R.string.params_tab_fuel_injection_title)
+            usb.awaitReadRequest(';', 1)
+            val received = InjctrParPacket(
+                config = intArrayOf(0x11, 0x11),
+                flowRate = floatArrayOf(300f, 400f),
+                ckpsEngineCyl = 4,
+                injMaxPw = floatArrayOf(10f, 11f),
+            ).also { it.engineDisp = 2f }
+            usb.emitFuelInjection(received)
+            await { vm.fuelInjectionControl.values.value?.banks?.getOrNull(0)?.flow == 300f }
+
+            compose.activityRule.scenario.moveToState(Lifecycle.State.STARTED)
+            compose.waitForIdle()
+            queue.onActiveScopeChanged(PARAMETERS_ROUTE)
+            val baseline = usb.writes.size
+            queue.pending.value.forEach { queue.acknowledge(it.id) }
+
+            compose.runOnIdle {
+                vm.editFuelInjection(org.secu3.android.ui.parameters.pages.compose.FuelInjectionNumber.FLOW_0, 321f)
+            }
+            usb.awaitWriteCount(baseline + 1)
+            assertEquals(';', usb.writes[baseline][1].toInt().toChar())
+            assertEquals(0x11, usb.writes[baseline][3].toInt() and 0xff)
+            assertEquals(0x50, usb.writes[baseline][5].toInt() and 0xff)
+            assertEquals(0x40, usb.writes[baseline][6].toInt() and 0xff)
+            assertEquals(0, usb.writes[baseline][19].toInt() and 0xff) // Outgoing packet keeps the ECU's zero RX-only cylinder stub.
+            assertTrue(queue.pending.value.any { it.textRes == R.string.packet_sent })
+
+            queue.pending.value.forEach { queue.acknowledge(it.id) }
+            usb.emitFirmware(options = 0)
+            await { vm.capabilities.value.known && !vm.capabilities.value.fuelInjection }
+            val beforeUnsupportedEdit = usb.writes.size
+            compose.runOnIdle {
+                vm.editFuelInjection(org.secu3.android.ui.parameters.pages.compose.FuelInjectionNumber.FLOW_0, 500f)
+            }
+            delay(100)
+            assertEquals(beforeUnsupportedEdit, usb.writes.size)
+            assertFalse(queue.pending.value.any { it.textRes == R.string.packet_sent })
+
+            usb.emitFirmware(options = options)
+            await { vm.capabilities.value.fuelInjection }
+            val beforeRestrictedFlag = usb.writes.size
+            compose.runOnIdle { vm.changeFuelInjectionFlag(org.secu3.android.ui.parameters.pages.compose.FuelInjectionFlag.SWITCH_ROWS, true) }
+            delay(100)
+            assertEquals(beforeRestrictedFlag, usb.writes.size)
+
+            queue.pending.value.forEach { queue.acknowledge(it.id) }
+            val beforePausedEdit = usb.writes.size
+            compose.runOnIdle {
+                vm.pausePageSession()
+                vm.editFuelInjection(org.secu3.android.ui.parameters.pages.compose.FuelInjectionNumber.FLOW_0, 600f)
+            }
+            assertEquals(beforePausedEdit, usb.writes.size)
+            assertFalse(queue.pending.value.any { it.textRes == R.string.packet_sent })
+        } finally {
+            try {
+                transport?.close()
+            } finally {
+                try {
+                    compose.runOnIdle { vm.clearPageState() }
+                } finally {
+                    queue.onActiveScopeChanged(originalActiveScope)
+                    compose.activityRule.scenario.moveToState(Lifecycle.State.RESUMED)
+                }
+            }
+        }
+    }
+
     private fun paramsViewModel(): ParamsViewModel {
         lateinit var viewModel: ParamsViewModel
         compose.activityRule.scenario.onActivity { activity ->
@@ -489,6 +567,12 @@ class ParameterPageSessionCacheTest {
 
         suspend fun emit(packet: OutputPacket) {
             val input = intArrayOf('@'.code) + packet.pack() + intArrayOf(0, 0)
+            attemptPackets.emit(UsbAttemptPacket(1L, RawPacket(input)))
+        }
+
+        suspend fun emitFuelInjection(packet: InjctrParPacket) {
+            val input = intArrayOf('@'.code) + packet.pack() + intArrayOf(0, 0)
+            input[19] = packet.ckpsEngineCyl
             attemptPackets.emit(UsbAttemptPacket(1L, RawPacket(input)))
         }
 

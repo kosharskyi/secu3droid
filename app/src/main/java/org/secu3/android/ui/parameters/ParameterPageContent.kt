@@ -166,10 +166,13 @@ internal fun ParameterPageContent(
                 stringArrayResource(R.array.logical_functions).toList(), h::updateOutput, h::updatePairFunction)
         }
         R.string.params_tab_fuel_injection_title -> {
-            val h = viewModel.fuelInjectionStateHolder
-            FuelInjectionScreen(h.uiState, InjctrParPacket.InjConfig.entries.associate { it.id to resources.getString(it.strId) }, { n ->
-                h.editSpec(n)?.let { s -> if (s.integer) intEdit(s.title, s.value.roundToInt(), s.step.toInt(), s.max.toInt(), s.min.toInt()) { h.edit(n, it.toFloat()) } else floatEdit(s.title, s.value, s.step, s.max, s.min, s.precision) { h.edit(n, it.toFloat()) } }
-            }, h::changeConfig, h::changePulses, h::changeAngleSpec, h::changeFlag, capabilities)
+            val values by viewModel.fuelInjectionControl.values.collectAsStateWithLifecycle()
+            FuelInjectionScreen(values, InjctrParPacket.InjConfig.entries.associate { it.id to resources.getString(it.strId) }, { number ->
+                values?.let { current ->
+                    if (number.integer) intEdit(number.title, number.value(current).roundToInt(), number.step.toInt(), number.max.toInt(), number.min.toInt()) { viewModel.editFuelInjection(number, it.toFloat()) }
+                    else floatEdit(number.title, number.value(current), number.step, number.max, number.min, number.precision) { viewModel.editFuelInjection(number, it) }
+                }
+            }, viewModel::changeFuelInjectionConfig, viewModel::changeFuelInjectionPulses, viewModel::changeFuelInjectionAngleSpec, viewModel::changeFuelInjectionFlag, capabilities)
         }
         R.string.params_tab_lambda_control_title -> {
             val h = viewModel.lambdaControlStateHolder

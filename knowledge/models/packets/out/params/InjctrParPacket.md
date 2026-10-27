@@ -17,3 +17,7 @@ The received cylinder count remains available to derive injector-bank values, bu
 ## Editor pulse choices and derived-constant validation share the same rules
 
 Use the packet's cylinder metadata with `validConfigurations()` and `validPulses(config)` for editor choices. The derived-constant calculation uses that same pulse validation; duplicating these rules in a ViewModel can allow a displayed choice that the packet rejects. Unsupported configuration codes remain stored, while their pulse choices are empty.
+
+## Queue Fuel Injection commands as packed snapshots
+
+`snapshot()` captures the current wire bytes for asynchronous sending while keeping this mutable packet as the receive/edit model. Do not retain or enqueue the live packet instance: later edits must not change an already admitted command.

@@ -13,3 +13,7 @@ The ViewModel receives typed page results from `ParameterSession`, which delegat
 ## Firmware-derived parameter availability is exposed as one snapshot
 
 Derive a single `ParameterCapabilities` state from `Secu3ConnectionManager.firmwareInfo`. The route and page screens consume that state; do not decode firmware flags in individual consumers. `GasDoseControl` and `ChokeControl` read the manager's current firmware for command admission and observe firmware changes to discard held movement; the ViewModel does not copy its presentation snapshot into either control. Choke rejects stale callbacks as soon as firmware removes Choke support, even before page navigation settles.
+
+## Fuel Injection command admission belongs to its domain control
+
+`FuelInjectionControl` reads the manager's current firmware and sends through `ParameterSession.sendPacket`, whose Boolean result drives the packet-sent message. It does not use the legacy ViewModel `isSendAllowed` gate. The screen collects its nullable values flow directly; no second Loading/Data wrapper or packet mapping belongs in the ViewModel.
