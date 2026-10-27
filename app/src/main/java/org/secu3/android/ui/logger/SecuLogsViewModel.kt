@@ -24,6 +24,8 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.receiveAsFlow
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
+import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.CancellationException
 import org.secu3.android.utils.FileHelper
 import org.secu3.android.utils.LogExportDestination
 import org.secu3.android.utils.LogDeletionResult
@@ -31,6 +33,10 @@ import org.secu3.android.utils.SecuLogger
 import org.secu3.android.utils.UserPrefs
 import org.secu3.android.utils.logFileMimeType
 import java.io.File
+import java.io.IOException
+import org.secu3.android.R
+import org.secu3.android.ui.messages.UiMessageDuration
+import org.secu3.android.ui.messages.UiMessageQueue
 
 @HiltViewModel
 class SecuLogsViewModel @Inject constructor(
@@ -38,6 +44,7 @@ class SecuLogsViewModel @Inject constructor(
     private val userPrefs: UserPrefs,
     private val savedStateHandle: SavedStateHandle,
     private val secuLogger: SecuLogger,
+    private val uiMessageQueue: UiMessageQueue,
 ) : ViewModel() {
     private val _state = MutableStateFlow(SecuLogsUiState())
     val state: StateFlow<SecuLogsUiState> = _state.asStateFlow()
@@ -56,8 +63,8 @@ class SecuLogsViewModel @Inject constructor(
         }
     }
 
-    fun requiresDefaultDownloadsPermission(): Boolean =
-        userPrefs.logExportDestination is LogExportDestination.DefaultDownloads && Build.VERSION.SDK_INT <= Build.VERSION_CODES.P
+    suspend fun requiresDefaultDownloadsPermission(): Boolean =
+        userPrefs.settings.first().logExportDestination is LogExportDestination.DefaultDownloads && Build.VERSION.SDK_INT <= Build.VERSION_CODES.P
 
     fun requestDelete(file: File) {
         savedStateHandle[KEY_PENDING_DELETE] = file.absolutePath
@@ -102,10 +109,15 @@ class SecuLogsViewModel @Inject constructor(
     }
 
     private suspend fun saveLogFile(file: File): SecuLogsEffect = withContext(Dispatchers.IO) {
-        runCatching {
-            val destination = fileHelper.saveLog(file, userPrefs.logExportDestination)
+        try {
+            val destination = fileHelper.saveLog(file, userPrefs.settings.first().logExportDestination)
             SecuLogsEffect.ExportSucceeded(destination)
-        }.getOrElse {
+        } catch (cancelled: CancellationException) {
+            throw cancelled
+        } catch (failure: IOException) {
+            uiMessageQueue.publish(R.string.preferences_storage_error, UiMessageDuration.LONG, scope = "logs")
+            SecuLogsEffect.ExportFailed
+        } catch (failure: Exception) {
             SecuLogsEffect.ExportFailed
         }
     }

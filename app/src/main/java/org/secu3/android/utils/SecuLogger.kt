@@ -29,6 +29,8 @@ import android.util.Log
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
+import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.CancellationException
 import org.secu3.android.models.packets.input.SensorsPacket
 import org.threeten.bp.LocalTime
 import org.threeten.bp.format.DateTimeFormatter
@@ -253,15 +255,20 @@ class SecuLogger @Inject constructor(private val prefs: UserPrefs, private val f
         commands.post {
             if (isLoggerStarted) return@post
             mMark = 0
-            val logFile = if (prefs.isBinaryLogFormatEnabled) {
-                fileHelper.generateS3lFile
-            } else {
-                fileHelper.generateCsvFile
+            val settings = try {
+                prefs.settings.first()
+            } catch (cancelled: CancellationException) {
+                throw cancelled
+            } catch (failure: IOException) {
+                mLogFile = null
+                loggerSession.fail()
+                return@post
             }
+            val logFile = if (settings.isBinaryLogFormatEnabled) fileHelper.generateS3lFile else fileHelper.generateCsvFile
             mLogFile = logFile
             val binary = logFile.extension == "s3l"
-            if (!binary) mCsvDelimeter = prefs.CSVDelimeter
-            val csvHeader = if (!binary && prefs.isCsvTitleEnabled) {
+            if (!binary) mCsvDelimeter = settings.csvDelimiter
+            val csvHeader = if (!binary && settings.isCsvTitleEnabled) {
                 generateCsvTitle(delimeter = mCsvDelimeter)
             } else {
                 null
@@ -304,22 +311,31 @@ class SecuLogger @Inject constructor(private val prefs: UserPrefs, private val f
     }
 
     suspend fun logPacket(sensorsPacket: SensorsPacket) = commands.await {
-        if (isLoggerStarted) {
-            if (prefs.isSensorLoggerEnabled.not()) {
-                stopLoggingNow()
-                return@await
-            }
-
-            val logFile = mLogFile ?: return@await
-            if (logFile.extension == "s3l") {
-                writeBinaryLog(sensorsPacket)
-            } else {
-                val csvString = sensorsPacket.scvString(mMark, mCsvDelimeter)
-                writeInCsv(csvString)
-            }
+        if (!isLoggerStarted) return@await
+        val loggingEnabled = try {
+            prefs.settings.first().isSensorLoggerEnabled
+        } catch (cancelled: CancellationException) {
+            throw cancelled
+        } catch (failure: IOException) {
             mMark = 0
-            if (!isLoggerStarted) mLogFile = null
+            mLogFile = null
+            loggerSession.fail()
+            return@await
         }
+        if (!loggingEnabled) {
+            stopLoggingNow()
+            return@await
+        }
+
+        val logFile = mLogFile ?: return@await
+        if (logFile.extension == "s3l") {
+            writeBinaryLog(sensorsPacket)
+        } else {
+            val csvString = sensorsPacket.scvString(mMark, mCsvDelimeter)
+            writeInCsv(csvString)
+        }
+        mMark = 0
+        if (!isLoggerStarted) mLogFile = null
     }
 
     /** Flush accepted commands and stop the worker in tests before removing its files. */

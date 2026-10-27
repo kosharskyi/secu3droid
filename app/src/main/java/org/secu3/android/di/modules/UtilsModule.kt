@@ -31,12 +31,23 @@ import android.content.Context
 import android.content.pm.PackageManager
 import android.hardware.usb.UsbManager
 import android.location.LocationManager
+import androidx.datastore.core.DataStore
+import androidx.datastore.preferences.core.Preferences
+import androidx.datastore.preferences.core.PreferenceDataStoreFactory
+import androidx.datastore.preferences.preferencesDataStoreFile
 import androidx.room.Room
-import dagger.Module
 import dagger.Provides
+import dagger.Module
 import dagger.hilt.InstallIn
 import dagger.hilt.android.qualifiers.ApplicationContext
 import dagger.hilt.components.SingletonComponent
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.SupervisorJob
+import javax.inject.Named
+import org.secu3.android.utils.AppPrefs
+import org.secu3.android.utils.PreferencesMigrations
+import org.secu3.android.utils.UserPrefs
 import org.secu3.android.db.AppDatabase
 import org.secu3.android.network.ApiManager
 import org.secu3.android.network.ApiService
@@ -45,6 +56,39 @@ import javax.inject.Singleton
 @InstallIn(SingletonComponent::class)
 @Module
 object UtilsModule {
+
+    @Singleton
+    @Provides
+    @Named(PREFERENCE_DATASTORE_SCOPE)
+    fun providePreferenceDataStoreScope(): CoroutineScope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
+
+    @Singleton
+    @Provides
+    @Named(UserPrefs.USER_PREFS_DATASTORE)
+    fun getUserPrefsDataStore(
+        @ApplicationContext context: Context,
+        @Named(PREFERENCE_DATASTORE_SCOPE) scope: CoroutineScope,
+        migrations: PreferencesMigrations,
+    ): DataStore<Preferences> {
+        return PreferenceDataStoreFactory.create(
+            migrations = listOf(migrations.userPrefsMigration()),
+            scope = scope,
+            produceFile = { context.preferencesDataStoreFile("user_preferences") },
+        )
+    }
+
+    @Singleton
+    @Provides
+    @Named(AppPrefs.APP_PREFS_DATASTORE)
+    fun getAppPrefsDataStore(
+        @ApplicationContext context: Context,
+        @Named(PREFERENCE_DATASTORE_SCOPE) scope: CoroutineScope,
+        migrations: PreferencesMigrations,
+    ): DataStore<Preferences> = PreferenceDataStoreFactory.create(
+        migrations = listOf(migrations.appPrefsMigration()),
+        scope = scope,
+        produceFile = { context.preferencesDataStoreFile("app_preferences") },
+    )
 
     @Singleton
     @Provides
@@ -89,4 +133,6 @@ object UtilsModule {
     fun getDownloadManager(@ApplicationContext context: Context): DownloadManager {
         return context.getSystemService(Context.DOWNLOAD_SERVICE) as DownloadManager
     }
+
+    private const val PREFERENCE_DATASTORE_SCOPE = "preferenceDataStoreScope"
 }

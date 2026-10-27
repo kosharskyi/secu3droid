@@ -25,3 +25,7 @@ The dashboard receives load and MAP as separate packet values, while firmware ca
 ## Dashboard packet values expire when the connection drops
 
 Clear the last sampled dashboard packet as soon as the connection state leaves `Connected`. Dashboard packets stay a non-replaying flow: each route collection starts without a packet and shows a value only after a fresh sensor packet arrives. Keep the Compose initial value null so stopping and resuming the route cannot reveal the previous session's reading; preserve existing null and zero-value behavior.
+
+## System bars must restore without awaiting preferences
+
+Dashboard's lifecycle cleanup runs in a canceled coroutine. Restore the captured system bars synchronously; awaiting DataStore there would throw cancellation before restoration. Forward the keep-screen preference to the Activity's existing scope, which applies it against the current route and handles storage failures independently.

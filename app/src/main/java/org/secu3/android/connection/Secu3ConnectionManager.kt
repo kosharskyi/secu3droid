@@ -24,9 +24,11 @@
  */
 package org.secu3.android.connection
 
+import android.util.Log
 import android.bluetooth.BluetoothManager
 import android.hardware.usb.UsbDevice
 import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.launch
@@ -34,9 +36,15 @@ import kotlinx.coroutines.delay
 import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.awaitCancellation
+import kotlinx.coroutines.currentCoroutineContext
+import kotlinx.coroutines.ensureActive
 import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.withContext
 import kotlinx.coroutines.withTimeoutOrNull
+import kotlinx.coroutines.isActive
+import kotlinx.coroutines.sync.Mutex
+import kotlinx.coroutines.sync.withLock
+import java.io.IOException
 import kotlin.coroutines.coroutineContext
 import org.secu3.android.models.RawPacket
 import org.secu3.android.models.packets.base.InputPacket
@@ -70,7 +78,7 @@ class Secu3ConnectionManager @Inject constructor(
     private enum class Transport { NONE, USB, BLUETOOTH }
     private data class Selection(val transport: Transport, val generation: Long)
     private enum class UsbAttemptSignal { FIRMWARE_CONFIRMED, FAILED }
-    private val scope = CoroutineScope(Dispatchers.Default + Job())
+    private val scope = CoroutineScope(Dispatchers.Default + SupervisorJob())
     private val selectedTransport = MutableStateFlow(Selection(Transport.NONE, 0))
     private var usbSelectionReady: CompletableDeferred<Unit>? = null
     private var usbRetryJob: Job? = null
@@ -90,6 +98,8 @@ class Secu3ConnectionManager @Inject constructor(
     private var pendingUsbPermission: UsbPermissionRequest? = null
     private var activeUsbAttachment: UsbAttachmentIdentity? = null
     private var appVisible = false
+    private val backgroundWorkEnabled = MutableStateFlow<Boolean?>(null)
+    private val backgroundPreferenceMutex = Mutex()
     private val _firmwareInfo = MutableStateFlow<FirmwareInfoPacket?>(null)
     val firmwareInfo: StateFlow<FirmwareInfoPacket?> = _firmwareInfo.asStateFlow()
     val fwInfo: FirmwareInfoPacket? get() = firmwareInfo.value
@@ -364,21 +374,47 @@ class Secu3ConnectionManager @Inject constructor(
         return true
     }
 
-    @Synchronized fun startBtConnection() {
-        if (BluetoothDeviceAddress.normalize(mPrefs.bluetoothDeviceAddress) == null || runCatching { !bluetoothManager.adapter.isEnabled }.getOrDefault(true)) return
-        if (selectedTransport.value.transport == Transport.USB && activeUsbAttachment != null) return
-        confirmedUsbAttemptId = null
-        _terminalSessionGeneration.value = null
-        cancelUsbRetrySession()
-        val nextGeneration = usbSessionFence.advance()
-        selectedTransport.value = Selection(Transport.BLUETOOTH, nextGeneration)
-        activeUsbAttachment = null
-        _firmwareInfo.value = null
-        publishConnectionState(InProgress)
-        usbConnection.stopConnection()
-        btConnection.stopConnection()
-        btConnection.startConnection(nextGeneration)
-        reconcileConnectionService()
+    suspend fun startBtConnection() {
+        val requestSelection: Selection
+        val requestGeneration: Long
+        synchronized(this) {
+            if (selectedTransport.value.transport == Transport.USB && activeUsbAttachment != null) return
+            requestSelection = selectedTransport.value
+            requestGeneration = usbSessionFence.generation()
+        }
+
+        val preferences = try {
+            mPrefs.settings.first()
+        } catch (failure: IOException) {
+            currentCoroutineContext().ensureActive()
+            Log.e(javaClass.simpleName, "Could not read Bluetooth connection preferences", failure)
+            synchronized(this) {
+                if (selectedTransport.value == requestSelection && usbSessionFence.generation() == requestGeneration && appVisible) {
+                    publishConnectionState(ConnectionFailed(failure))
+                }
+            }
+            throw failure
+        }
+        currentCoroutineContext().ensureActive()
+        val address = BluetoothDeviceAddress.normalize(preferences.bluetoothDeviceAddress) ?: return
+
+        synchronized(this) {
+            if (selectedTransport.value != requestSelection || usbSessionFence.generation() != requestGeneration || !appVisible) return
+            if (BluetoothDeviceAddress.normalize(preferences.bluetoothDeviceAddress) == null || runCatching { !bluetoothManager.adapter.isEnabled }.getOrDefault(true)) return
+            if (selectedTransport.value.transport == Transport.USB && activeUsbAttachment != null) return
+            confirmedUsbAttemptId = null
+            _terminalSessionGeneration.value = null
+            cancelUsbRetrySession()
+            val nextGeneration = usbSessionFence.advance()
+            selectedTransport.value = Selection(Transport.BLUETOOTH, nextGeneration)
+            activeUsbAttachment = null
+            _firmwareInfo.value = null
+            publishConnectionState(InProgress)
+            usbConnection.stopConnection()
+            btConnection.stopConnection()
+            btConnection.startConnection(nextGeneration, address)
+            reconcileConnectionService()
+        }
     }
 
     @Synchronized fun stopConnection(): Boolean {
@@ -400,7 +436,11 @@ class Secu3ConnectionManager @Inject constructor(
     @Synchronized fun onAppBackgrounded() {
         appVisible = false
         pendingUsbPermission = null
-        if (mPrefs.isWakeLockEnabled || selectedTransport.value.transport == Transport.NONE) return
+        if (selectedTransport.value.transport == Transport.NONE) {
+            usbSessionFence.advance()
+            return
+        }
+        if (backgroundWorkEnabled.value != false) return
         stopConnectionInternal(
             stopService = true,
             publishTerminal = true,
@@ -408,9 +448,12 @@ class Secu3ConnectionManager @Inject constructor(
     }
 
     /** Preference changes apply immediately to service ownership without ending a live session. */
-    @Synchronized fun onBackgroundWorkPreferenceChanged(enabled: Boolean) {
-        mPrefs.isWakeLockEnabled = enabled
-        reconcileConnectionService()
+    suspend fun onBackgroundWorkPreferenceChanged(enabled: Boolean) {
+        backgroundPreferenceMutex.withLock {
+            mPrefs.setWakeLockEnabled(enabled)
+            val persistedValue = mPrefs.settings.first().isWakeLockEnabled
+            backgroundWorkEnabled.first { it == persistedValue }
+        }
     }
 
     /** Re-posts the active notification after the user grants Android's notification permission. */
@@ -419,7 +462,8 @@ class Secu3ConnectionManager @Inject constructor(
     }
 
     @Synchronized private fun reconcileConnectionService() {
-        if (!mPrefs.isWakeLockEnabled) {
+        val policy = backgroundWorkEnabled.value ?: return
+        if (!policy) {
             connectionServiceController.stop()
             return
         }
@@ -539,6 +583,17 @@ class Secu3ConnectionManager @Inject constructor(
 
     init {
         scope.launch {
+            mPrefs.observeSettings { failure ->
+                synchronized(this@Secu3ConnectionManager) { backgroundWorkEnabled.value = null }
+                Log.e(javaClass.simpleName, "Could not read background connection preference", failure)
+            }.map { it.isWakeLockEnabled }.collect { enabled ->
+                synchronized(this@Secu3ConnectionManager) {
+                    backgroundWorkEnabled.value = enabled
+                    applyBackgroundWorkPolicy(enabled)
+                }
+            }
+        }
+        scope.launch {
             usbConnection.attemptFailures.collect(::handleUsbAttemptFailure)
         }
         scope.launch {
@@ -563,5 +618,17 @@ class Secu3ConnectionManager @Inject constructor(
     private companion object {
         const val USB_FIRMWARE_HANDSHAKE_TIMEOUT_MS = 5_000L
         const val USB_RETRY_DELAY_MS = 2_000L
+        const val PREFERENCE_READ_RETRY_MS = 1_000L
+    }
+
+    private fun applyBackgroundWorkPolicy(enabled: Boolean) {
+        if (!enabled && !appVisible && selectedTransport.value.transport != Transport.NONE) {
+            stopConnectionInternal(
+                stopService = true,
+                publishTerminal = true,
+            )
+        } else {
+            reconcileConnectionService()
+        }
     }
 }

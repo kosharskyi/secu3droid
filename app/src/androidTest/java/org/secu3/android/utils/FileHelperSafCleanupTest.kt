@@ -78,12 +78,15 @@ class FileHelperSafCleanupTest {
         val csv = File.createTempFile("share-mime-", ".CSV", realHelper.logsDir).apply { writeText("csv-data") }
         val s3l = File.createTempFile("share-mime-", ".S3L", realHelper.logsDir).apply { writeBytes(byteArrayOf(1, 2, 3)) }
         var logger: SecuLogger? = null
+        var prefsFixture: IsolatedUserPrefs? = null
         try {
             InstrumentationRegistry.getInstrumentation().runOnMainSync {
-                val prefs = UserPrefs(base)
+                val fixture = IsolatedUserPrefs(base, "share-mime-${System.nanoTime()}")
+                prefsFixture = fixture
+                val prefs = fixture.prefs
                 val testLogger = SecuLogger(prefs, realHelper)
                 logger = testLogger
-                val viewModel = SecuLogsViewModel(realHelper, prefs, SavedStateHandle(), testLogger)
+                val viewModel = SecuLogsViewModel(realHelper, prefs, SavedStateHandle(), testLogger, org.secu3.android.ui.messages.UiMessageQueue())
                 val viewModelStore = ViewModelStore().apply { put("logs-share-test", viewModel) }
                 try {
                     val csvIntent = viewModel.getShareIntent(csv)
@@ -105,7 +108,10 @@ class FileHelperSafCleanupTest {
                 }
             }
         } finally {
-            runBlocking { logger?.shutdownForTests() }
+            runBlocking {
+                logger?.shutdownForTests()
+                prefsFixture?.close()
+            }
             csv.delete()
             s3l.delete()
         }

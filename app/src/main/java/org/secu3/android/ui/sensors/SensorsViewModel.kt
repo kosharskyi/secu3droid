@@ -38,6 +38,10 @@ import org.secu3.android.models.sensors.IndicatorType
 import org.secu3.android.utils.SecuLogger
 import org.secu3.android.utils.Task
 import org.secu3.android.utils.UserPrefs
+import org.secu3.android.ui.messages.UiMessageDuration
+import org.secu3.android.ui.messages.UiMessageQueue
+import java.io.IOException
+import kotlinx.coroutines.CancellationException
 import javax.inject.Inject
 
 @HiltViewModel
@@ -48,6 +52,7 @@ class SensorsViewModel @Inject constructor(
     private val secuLogger: SecuLogger,
     private val repository: SensorsRepository,
     private val savedStateHandle: SavedStateHandle,
+    private val uiMessageQueue: UiMessageQueue,
 ) : ViewModel() {
 
     data class ChoiceRequest<T>(val requestId: Long, val choices: List<T>)
@@ -79,7 +84,8 @@ class SensorsViewModel @Inject constructor(
 
     init {
         viewModelScope.launch {
-            userPrefs.preferenceChanges.collect { refreshPreferences() }
+            userPrefs.observeSettings { uiMessageQueue.publish(org.secu3.android.R.string.preferences_storage_error, UiMessageDuration.LONG, scope = "sensors") }
+                .collect(::refreshPreferences)
         }
         viewModelScope.launch {
             secuLogger.state.collect { loggerState ->
@@ -95,10 +101,6 @@ class SensorsViewModel @Inject constructor(
 
     private fun readUiState() = SensorsUiState(
         selectedPage = (savedStateHandle.get<Int>(KEY_SELECTED_PAGE) ?: 0).coerceIn(0, 1),
-        oldViewEnabled = userPrefs.oldSensorViewEnabled,
-        gaugeStyle = userPrefs.sensorGaugeStyle,
-        injectionTimingMode = userPrefs.injectionTimingMode,
-        loggerEnabled = userPrefs.isSensorLoggerEnabled,
         loggerStarted = secuLogger.isLoggerStarted,
         loggerErrorId = secuLogger.state.value.pendingErrorId ?: 0,
     )
@@ -126,16 +128,24 @@ class SensorsViewModel @Inject constructor(
     }
 
     fun setOldViewEnabled(enabled: Boolean) {
-        userPrefs.oldSensorViewEnabled = enabled
+        viewModelScope.launch {
+            try {
+                userPrefs.setOldSensorViewEnabled(enabled)
+            } catch (cancelled: CancellationException) {
+                throw cancelled
+            } catch (failure: IOException) {
+                uiMessageQueue.publish(org.secu3.android.R.string.preferences_storage_error, UiMessageDuration.LONG, scope = "sensors")
+            }
+        }
     }
 
-    private fun refreshPreferences() {
+    private fun refreshPreferences(settings: UserPrefs.Settings) {
         _state.update {
             it.copy(
-                oldViewEnabled = userPrefs.oldSensorViewEnabled,
-                gaugeStyle = userPrefs.sensorGaugeStyle,
-                injectionTimingMode = userPrefs.injectionTimingMode,
-                loggerEnabled = userPrefs.isSensorLoggerEnabled,
+                oldViewEnabled = settings.oldSensorViewEnabled,
+                gaugeStyle = settings.sensorGaugeStyle,
+                injectionTimingMode = settings.injectionTimingMode,
+                loggerEnabled = settings.isSensorLoggerEnabled,
             )
         }
     }

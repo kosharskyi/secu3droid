@@ -57,13 +57,18 @@ internal fun DashboardRoute(entry: NavBackStackEntry, activity: MainActivity) {
             try {
                 awaitCancellation()
             } finally {
-                previousWindowState.restore(activity.window, viewModel.isKeepScreenAliveActive)
+                previousWindowState.restore(activity.window)
+                activity.applyKeepScreenOnPreference()
             }
         }
     }
     LaunchedEffect(entry, activity) {
-        if (viewModel.isBluetoothDeviceAddressNotSelected()) {
-            activity.uiMessageQueue.publish(R.string.choose_bluetooth_adapter, UiMessageDuration.LONG, scope = DASHBOARD_ROUTE)
+        try {
+            if (viewModel.isBluetoothDeviceAddressNotSelected()) {
+                activity.uiMessageQueue.publish(R.string.choose_bluetooth_adapter, UiMessageDuration.LONG, scope = DASHBOARD_ROUTE)
+            }
+        } catch (failure: java.io.IOException) {
+            activity.uiMessageQueue.publish(R.string.preferences_storage_error, UiMessageDuration.LONG, scope = DASHBOARD_ROUTE)
         }
     }
     DisposableEffect(activity) {
@@ -93,15 +98,13 @@ private data class DashboardWindowState(
         window.addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON)
     }
 
-    fun restore(window: Window, keepScreenOnPreference: Boolean) {
+    fun restore(window: Window) {
         WindowCompat.setDecorFitsSystemWindows(window, true)
         WindowInsetsControllerCompat(window, window.decorView).apply {
             systemBarsBehavior = this@DashboardWindowState.systemBarsBehavior
             show(visibleSystemBarsMask)
             hide(WindowInsetsCompat.Type.systemBars() and visibleSystemBarsMask.inv())
         }
-        if (keepScreenOnPreference) window.addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON)
-        else window.clearFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON)
     }
 
     companion object {

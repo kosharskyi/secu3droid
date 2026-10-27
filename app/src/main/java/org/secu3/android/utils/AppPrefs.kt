@@ -1,6 +1,6 @@
 /*
  *    SecuDroid  - An open source, free manager for SECU-3 engine control unit
- *    Copyright (C) 2024 Vitalii O. Kosharskyi. Ukraine, Kyiv
+ *    Copyright (C) 2024 Vitaliy O. Kosharskyi. Ukraine, Kyiv
  *
  *    SECU-3  - An open source, free engine control unit
  *    Copyright (C) 2007-2024 Alexey A. Shabelnikov. Ukraine, Kyiv
@@ -22,28 +22,35 @@
  *                    http://secu-3.org
  *                    email: vetalkosharskiy@gmail.com
  */
-
 package org.secu3.android.utils
 
-import android.content.Context
-import android.content.Context.MODE_PRIVATE
-import android.content.SharedPreferences
-import androidx.core.content.edit
-import dagger.hilt.android.qualifiers.ApplicationContext
-import org.threeten.bp.LocalDate
+import androidx.datastore.core.DataStore
+import androidx.datastore.preferences.core.Preferences
+import androidx.datastore.preferences.core.edit
+import androidx.datastore.preferences.core.stringPreferencesKey
 import javax.inject.Inject
+import javax.inject.Named
 import javax.inject.Singleton
+import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.map
+import org.threeten.bp.LocalDate
 
 @Singleton
-class AppPrefs @Inject constructor(@ApplicationContext private val ctx: Context) {
+class AppPrefs @Inject constructor(
+    @Named(APP_PREFS_DATASTORE) private val dataStore: DataStore<Preferences>,
+) {
+    private val lastAppVersionCheckKey = stringPreferencesKey(LAST_APP_VERSION_CHECK_KEY)
 
-    private var mPrefs: SharedPreferences = ctx.getSharedPreferences("app_shared_prefs", MODE_PRIVATE)
+    val lastAppVersionCheck: Flow<LocalDate> = dataStore.data.map { preferences ->
+        preferences[lastAppVersionCheckKey]?.let(LocalDate::parse) ?: LocalDate.of(2000, 1, 1)
+    }
 
+    suspend fun setLastAppVersionCheck(value: LocalDate) {
+        dataStore.edit { it[lastAppVersionCheckKey] = value.toString() }
+    }
 
-    var lastAppVersionCheck: LocalDate
-        get() {
-            return mPrefs.getString("last_app_version_check_stamp", null)?.let { LocalDate.parse(it) } ?: LocalDate.of(2000, 1, 1)
-        }
-        set(value) = mPrefs.edit { putString("last_app_version_check_stamp", value.toString()) }
-
+    companion object {
+        const val APP_PREFS_DATASTORE = "appPrefsDataStore"
+        const val LAST_APP_VERSION_CHECK_KEY = "last_app_version_check_stamp"
+    }
 }

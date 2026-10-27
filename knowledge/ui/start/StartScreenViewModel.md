@@ -2,6 +2,10 @@
 
 The persisted MAC address is authoritative. A legacy stored name cannot validate a selection, and an address that is malformed or no longer bonded must send the user through device selection again. Names may change or collide, so they are display metadata only.
 
+## Bluetooth preference work belongs to the cancellable connection job
+
+Saving a selected bonded device and validating the stored bonded address happen inside the same `connectionJob` that awaits manager preflight. Canceling the UI action must cancel that entire continuation so a late preference read cannot start a new connection after the user presses Cancel.
+
 ## Resuming an open Bluetooth picker retains its rows
 
 Returning from pause resumes discovery only while the Bluetooth picker remains visible and idle. Resume must retain the current device list and order; only an explicit user-started scan reseeds it from bonded devices. The route can also return from location settings after its callback already started discovery, so the resume path must be idempotent.

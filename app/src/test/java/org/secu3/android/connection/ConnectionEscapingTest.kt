@@ -3,8 +3,6 @@ package org.secu3.android.connection
 import org.junit.Assert.assertArrayEquals
 import org.junit.Assert.assertNull
 import org.junit.Test
-import org.secu3.android.utils.UserPrefs
-import sun.misc.Unsafe
 
 class ConnectionEscapingTest {
 
@@ -58,7 +56,7 @@ class ConnectionEscapingTest {
         assertArrayEquals(intArrayOf(0x40, 'x'.code, 0x40, 0x0D, 0x0A), unescaped)
     }
 
-    private class TestConnection : Connection<Unit>(newUserPrefsWithoutAndroidContext()) {
+    private class TestConnection : Connection<Unit>() {
         fun escapeTxForTest(packet: IntArray): IntArray = escTxPacket(packet)
 
         fun escapeRxForTest(packet: IntArray): IntArray? = escRxPacket(packet)
@@ -72,13 +70,5 @@ class ConnectionEscapingTest {
         override fun closeEndpoint(endpoint: Unit) = Unit
     }
 
-    companion object {
-        private fun newUserPrefsWithoutAndroidContext(): UserPrefs {
-            val unsafeField = Unsafe::class.java.getDeclaredField("theUnsafe").apply {
-                isAccessible = true
-            }
-            val unsafe = unsafeField.get(null) as Unsafe
-            return unsafe.allocateInstance(UserPrefs::class.java) as UserPrefs
-        }
-    }
+
 }

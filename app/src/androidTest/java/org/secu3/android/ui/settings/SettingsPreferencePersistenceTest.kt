@@ -43,14 +43,14 @@ import org.junit.Test
 import org.secu3.android.R
 import org.secu3.android.ui.MainActivity
 import org.secu3.android.ui.SETTINGS_ROUTE
+import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.runBlocking
 
 class SettingsPreferencePersistenceTest {
     @get:Rule val compose = createAndroidComposeRule<MainActivity>()
 
     @Test fun settingsPersistsAcrossRecreationAndReentryAndTracksExternalChanges() {
-        val key = compose.activity.getString(R.string.pref_write_log_key)
-        val preference = compose.activity.getSharedPreferences("${compose.activity.packageName}_preferences", android.content.Context.MODE_PRIVATE)
-        val originalValue = preference.getBoolean(key, false)
+        val originalValue = runBlocking { compose.activity.userPrefs.settings.first().isSensorLoggerEnabled }
         try {
             compose.onNodeWithContentDescription("Settings icon").performClick()
             compose.waitForIdle()
@@ -61,16 +61,17 @@ class SettingsPreferencePersistenceTest {
             compose.waitForIdle()
             val changedValue = !originalValue
             if (changedValue) toggle.assertIsOn() else toggle.assertIsOff()
-            assertEquals(changedValue, preference.getBoolean(key, originalValue))
+            compose.waitUntil(5_000) {
+                runBlocking { compose.activity.userPrefs.settings.first().isSensorLoggerEnabled == changedValue }
+            }
+            assertEquals(changedValue, runBlocking { compose.activity.userPrefs.settings.first().isSensorLoggerEnabled })
 
             compose.activityRule.scenario.recreate()
             compose.waitForIdle()
             if (changedValue) compose.onNodeWithTag("settings-toggle-${R.string.pref_write_log_key}").assertIsOn()
             else compose.onNodeWithTag("settings-toggle-${R.string.pref_write_log_key}").assertIsOff()
 
-            InstrumentationRegistry.getInstrumentation().runOnMainSync {
-                preference.edit().putBoolean(key, originalValue).commit()
-            }
+            runBlocking { compose.activity.userPrefs.setSensorLoggerEnabled(originalValue) }
             compose.waitForIdle()
             if (originalValue) compose.onNodeWithTag("settings-toggle-${R.string.pref_write_log_key}").assertIsOn()
             else compose.onNodeWithTag("settings-toggle-${R.string.pref_write_log_key}").assertIsOff()
@@ -82,7 +83,7 @@ class SettingsPreferencePersistenceTest {
             if (originalValue) compose.onNodeWithTag("settings-toggle-${R.string.pref_write_log_key}").assertIsOn()
             else compose.onNodeWithTag("settings-toggle-${R.string.pref_write_log_key}").assertIsOff()
         } finally {
-            preference.edit().putBoolean(key, originalValue).commit()
+            runBlocking { compose.activity.userPrefs.setSensorLoggerEnabled(originalValue) }
             compose.waitForIdle()
         }
     }

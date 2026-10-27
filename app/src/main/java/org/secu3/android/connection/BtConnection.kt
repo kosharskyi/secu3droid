@@ -46,6 +46,7 @@ import java.io.IOException
 import java.io.InputStreamReader
 import java.nio.charset.StandardCharsets
 import java.util.UUID
+import kotlinx.coroutines.flow.first
 import javax.inject.Inject
 import javax.inject.Singleton
 
@@ -53,7 +54,7 @@ import javax.inject.Singleton
 class BtConnection @Inject constructor(
     private val prefs: UserPrefs,
     bluetoothManager: BluetoothManager
-) : Connection<BluetoothSocket>(prefs) {
+) : Connection<BluetoothSocket>() {
 
     private val bluetoothAdapter: BluetoothAdapter? = bluetoothManager.adapter
     private val connectionLock = Any()
@@ -61,14 +62,7 @@ class BtConnection @Inject constructor(
     private val _sessionEvents = MutableSharedFlow<BluetoothConnectionEvent>(extraBufferCapacity = 32)
     val sessionEvents = _sessionEvents.asSharedFlow()
 
-    private val pairedDeviceAddress: String?
-        get() = BluetoothDeviceAddress.normalize(prefs.bluetoothDeviceAddress)
-
-    fun startConnection(generation: Long) {
-        val deviceAddress = pairedDeviceAddress
-        if (deviceAddress == null) {
-            throw IllegalStateException("Paired device address is not set in SharedPreferences")
-        }
+    fun startConnection(generation: Long, deviceAddress: String) {
         stopConnection()
         val job = scope.launch(start = CoroutineStart.LAZY) {
             runConnection(currentCoroutineContext()[Job]!!, generation, deviceAddress)
@@ -84,6 +78,16 @@ class BtConnection @Inject constructor(
         try {
             var attempts = 0
             while (isCurrent(job)) {
+                val maxConnectionAttempts = try {
+                    prefs.settings.first().connectionRetries
+                } catch (failure: IOException) {
+                    currentCoroutineContext().ensureActive()
+                    if (!isCurrent(job)) return
+                    publishState(job, generation, ConnectionFailed(failure))
+                    Log.e(javaClass.simpleName, "Could not read Bluetooth retry preference: ${failure.message}")
+                    delay(RETRY_DELAY_MS)
+                    continue
+                }
                 if (attempts >= maxConnectionAttempts) {
                     synchronized(connectionLock) {
                         if (connectionJob === job && isRunning) isRunning = false

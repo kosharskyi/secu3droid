@@ -3,8 +3,6 @@ package org.secu3.android.connection
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue
 import org.junit.Test
-import org.secu3.android.utils.UserPrefs
-import sun.misc.Unsafe
 
 @OptIn(ExperimentalUnsignedTypes::class)
 class ConnectionChecksumTest {
@@ -51,7 +49,7 @@ class ConnectionChecksumTest {
         return data + checksum[1].toInt() + checksum[0].toInt()
     }
 
-    private class TestConnection : Connection<Unit>(newUserPrefsWithoutAndroidContext()) {
+    private class TestConnection : Connection<Unit>() {
         fun isChecksumValidForTest(data: IntArray): Boolean = isChecksumValid(data)
 
         fun calculateChecksumForTest(packet: IntArray): UByteArray = calculateChecksum(packet)
@@ -65,13 +63,5 @@ class ConnectionChecksumTest {
         override fun closeEndpoint(endpoint: Unit) = Unit
     }
 
-    companion object {
-        private fun newUserPrefsWithoutAndroidContext(): UserPrefs {
-            val unsafeField = Unsafe::class.java.getDeclaredField("theUnsafe").apply {
-                isAccessible = true
-            }
-            val unsafe = unsafeField.get(null) as Unsafe
-            return unsafe.allocateInstance(UserPrefs::class.java) as UserPrefs
-        }
-    }
+
 }

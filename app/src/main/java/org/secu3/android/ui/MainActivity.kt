@@ -68,6 +68,16 @@ class MainActivity : ComponentActivity() {
             }
         })
         lifecycleScope.launch {
+            userPrefs.observeSettings {
+                uiMessageQueue.publish(R.string.preferences_storage_error, UiMessageDuration.LONG)
+            }.collect { settings ->
+                if (activeComposeRoute != DASHBOARD_ROUTE) {
+                    if (settings.isKeepScreenAliveActive) window.addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON)
+                    else window.clearFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON)
+                }
+            }
+        }
+        lifecycleScope.launch {
             lifecycle.repeatOnLifecycle(Lifecycle.State.RESUMED) {
                 while (true) {
                     uiMessageQueue.discardExpired()
@@ -120,7 +130,7 @@ class MainActivity : ComponentActivity() {
     fun openFirmware() = navigateTo(FIRMWARE_ROUTE)
     fun openDashboard() = navigateTo(DASHBOARD_ROUTE)
     fun openSensors() = navigateTo(SENSORS_ROUTE)
-    internal fun onBackgroundWorkPreferenceChanged(enabled: Boolean) {
+    internal suspend fun onBackgroundWorkPreferenceChanged(enabled: Boolean) {
         viewModel.connectionManager.onBackgroundWorkPreferenceChanged(enabled)
     }
 
@@ -383,10 +393,19 @@ class MainActivity : ComponentActivity() {
     }
 
     internal fun applyKeepScreenOnPreference() {
-        if (viewModel.prefs.isKeepScreenAliveActive) {
-            window.addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON)
-        } else {
-            window.clearFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON)
+        lifecycleScope.launch {
+            try {
+                val keepScreenOn = viewModel.prefs.settings.first().isKeepScreenAliveActive
+                if (activeComposeRoute == DASHBOARD_ROUTE || keepScreenOn) {
+                    window.addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON)
+                } else {
+                    window.clearFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON)
+                }
+            } catch (cancelled: CancellationException) {
+                throw cancelled
+            } catch (failure: java.io.IOException) {
+                uiMessageQueue.publish(R.string.preferences_storage_error, UiMessageDuration.LONG)
+            }
         }
     }
 

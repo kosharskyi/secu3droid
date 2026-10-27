@@ -11,6 +11,7 @@ import kotlinx.coroutines.delay
 import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.TimeoutCancellationException
 import kotlinx.coroutines.withTimeout
@@ -564,9 +565,9 @@ class ParameterPageSessionCacheTest {
         }
         val managerField = ParamsViewModel::class.java.getDeclaredField("secu3ConnectionManager").apply { isAccessible = true }
         val manager = managerField.get(vm) as Secu3ConnectionManager
-        val prefs = UserPrefs(androidx.test.platform.app.InstrumentationRegistry.getInstrumentation().targetContext)
-        val originalWakeLockPreference = prefs.isWakeLockEnabled
-        prefs.isWakeLockEnabled = false
+        val prefs = Secu3ConnectionManager::class.java.getDeclaredField("mPrefs").apply { isAccessible = true }.get(manager) as UserPrefs
+        val originalWakeLockPreference = prefs.settings.first().isWakeLockEnabled
+        manager.onBackgroundWorkPreferenceChanged(false)
         try {
             val usbField = Secu3ConnectionManager::class.java.declaredFields.first { UsbConnection::class.java.isAssignableFrom(it.type) }
                 .apply { isAccessible = true }
@@ -642,12 +643,12 @@ class ParameterPageSessionCacheTest {
                     failure,
                 )
             }
-            return FakeUsbTransport(manager, connection, portField, attemptPackets, requests, writes, nextWriteBarrier, prefs, originalWakeLockPreference)
+            return FakeUsbTransport(manager, connection, portField, attemptPackets, requests, writes, nextWriteBarrier, originalWakeLockPreference)
         } catch (failure: Throwable) {
             try {
                 manager.onUsbDeviceDetached(1)
             } finally {
-                prefs.isWakeLockEnabled = originalWakeLockPreference
+                manager.onBackgroundWorkPreferenceChanged(originalWakeLockPreference)
             }
             throw failure
         }
@@ -661,7 +662,6 @@ class ParameterPageSessionCacheTest {
         private val requests: ConcurrentHashMap<Char, AtomicInteger>,
         val writes: CopyOnWriteArrayList<ByteArray>,
         private val nextWriteBarrier: AtomicReference<WriteBarrier?>,
-        private val prefs: UserPrefs,
         private val originalWakeLockPreference: Boolean,
     ) {
         fun send(packet: OutputPacket) = connection.sendData(packet)
@@ -707,7 +707,7 @@ class ParameterPageSessionCacheTest {
                     portField.set(connection, null)
                     Connection::class.java.getDeclaredField("isRunning").apply { isAccessible = true }.setBoolean(connection, false)
                 } finally {
-                    prefs.isWakeLockEnabled = originalWakeLockPreference
+                    kotlinx.coroutines.runBlocking { manager.onBackgroundWorkPreferenceChanged(originalWakeLockPreference) }
                 }
             }
         }

@@ -25,143 +25,162 @@
 package org.secu3.android.utils
 
 import android.content.Context
-import android.content.SharedPreferences
-import android.content.Context.MODE_PRIVATE
-import androidx.core.content.edit
+import androidx.datastore.core.DataStore
+import androidx.datastore.preferences.core.MutablePreferences
+import androidx.datastore.preferences.core.Preferences
+import androidx.datastore.preferences.core.booleanPreferencesKey
+import androidx.datastore.preferences.core.edit
+import androidx.datastore.preferences.core.stringPreferencesKey
 import dagger.hilt.android.qualifiers.ApplicationContext
-import org.secu3.android.R
-import org.secu3.android.models.SensorGaugeStyle
-import org.secu3.android.models.InjectionTimingMode
-import kotlinx.coroutines.channels.awaitClose
+import javax.inject.Inject
+import javax.inject.Named
+import javax.inject.Singleton
 import kotlinx.coroutines.flow.Flow
-import kotlinx.coroutines.flow.callbackFlow
 import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.map
-import javax.inject.Inject
-import javax.inject.Singleton
+import kotlinx.coroutines.flow.onEach
+import kotlinx.coroutines.flow.flow
+import kotlinx.coroutines.flow.collect
+import kotlinx.coroutines.flow.emitAll
+import kotlinx.coroutines.flow.retryWhen
+import kotlinx.coroutines.delay
+import java.io.IOException
+import org.secu3.android.R
+import org.secu3.android.models.InjectionTimingMode
+import org.secu3.android.models.SensorGaugeStyle
 
 @Singleton
-class UserPrefs @Inject constructor(@ApplicationContext private val ctx: Context) {
+class UserPrefs @Inject constructor(
+    @ApplicationContext private val context: Context,
+    @Named(USER_PREFS_DATASTORE) private val dataStore: DataStore<Preferences>,
+) {
+    private val writeLogKey = booleanPreferencesKey(context.getString(R.string.pref_write_log_key))
+    private val writeBinaryKey = booleanPreferencesKey(context.getString(R.string.pref_write_binary_log_key))
+    private val csvTitleKey = booleanPreferencesKey(context.getString(R.string.pref_log_csv_write_title_key))
+    private val csvDelimiterKey = stringPreferencesKey(context.getString(R.string.pref_log_csv_delimeter_key))
+    private val keepScreenKey = booleanPreferencesKey(context.getString(R.string.pref_keep_screen_key))
+    private val wakeLockKey = booleanPreferencesKey(context.getString(R.string.pref_wakelock_key))
+    private val notificationPermissionRequestedKey = booleanPreferencesKey(context.getString(R.string.connection_notifications_permission_requested_key))
+    private val legacyAppearanceKey = booleanPreferencesKey(context.getString(R.string.pref_night_mode_key))
+    private val appearanceKey = stringPreferencesKey(context.getString(R.string.pref_appearance_mode_key))
+    private val bluetoothNameKey = stringPreferencesKey(context.getString(R.string.pref_bluetooth_device_key))
+    private val bluetoothAddressKey = stringPreferencesKey(context.getString(R.string.pref_bluetooth_device_address_key))
+    private val connectionRetriesKey = stringPreferencesKey(context.getString(R.string.pref_connection_retries_key))
+    private val logExportDirectoryKey = stringPreferencesKey(context.getString(R.string.pref_log_export_directory_key))
+    private val oldSensorsViewKey = booleanPreferencesKey(OLD_SENSORS_VIEW_KEY)
+    private val sensorGaugeStyleKey = stringPreferencesKey(SENSOR_GAUGE_STYLE_KEY)
+    private val injectionTimingModeKey = stringPreferencesKey(INJECTION_TIMING_MODE_KEY)
 
-    private val mPrefs: SharedPreferences = ctx.getSharedPreferences("${ctx.packageName}_preferences", MODE_PRIVATE)
+    val settings: Flow<Settings> = dataStore.data
+        .map(::readSettings)
+        .distinctUntilChanged()
 
-    /** Emits once on collection and again whenever a stored preference changes. */
-    val preferenceChanges: Flow<Unit>
-        get() = callbackFlow {
-            val listener = SharedPreferences.OnSharedPreferenceChangeListener { _, _ -> trySend(Unit) }
-            mPrefs.registerOnSharedPreferenceChangeListener(listener)
-            trySend(Unit)
-            awaitClose { mPrefs.unregisterOnSharedPreferenceChangeListener(listener) }
+    fun observeSettings(onReadFailure: (IOException) -> Unit): Flow<Settings> {
+        return flow {
+            var failureReported = false
+            emitAll(settings
+                .onEach { failureReported = false }
+                .retryWhen { failure, _ ->
+                    if (failure !is IOException) return@retryWhen false
+                    if (!failureReported) onReadFailure(failure)
+                    failureReported = true
+                    delay(1_000)
+                    true
+                })
         }
+    }
 
-    var isSensorLoggerEnabled: Boolean
-        get() = mPrefs.getBoolean(ctx.getString(R.string.pref_write_log_key), false)
-        set(value) = mPrefs.edit { putBoolean(ctx.getString(R.string.pref_write_log_key), value) }
+    private fun readSettings(preferences: Preferences) = Settings(
+        isSensorLoggerEnabled = preferences[writeLogKey] ?: false,
+        isBinaryLogFormatEnabled = preferences[writeBinaryKey] ?: false,
+        isCsvTitleEnabled = preferences[csvTitleKey] ?: false,
+        csvDelimiter = preferences[csvDelimiterKey] ?: ";",
+        isKeepScreenAliveActive = preferences[keepScreenKey] ?: false,
+        isWakeLockEnabled = preferences[wakeLockKey] ?: false,
+        hasRequestedConnectionNotificationPermission = preferences[notificationPermissionRequestedKey] ?: false,
+        appearanceMode = readAppearanceMode(preferences),
+        bluetoothDeviceName = preferences[bluetoothNameKey],
+        bluetoothDeviceAddress = preferences[bluetoothAddressKey],
+        connectionRetriesText = preferences[connectionRetriesKey] ?: context.getString(R.string.defaultConnectionRetries),
+        logExportDirectoryUri = preferences[logExportDirectoryKey],
+        oldSensorViewEnabled = preferences[oldSensorsViewKey] ?: false,
+        sensorGaugeStyle = SensorGaugeStyle.fromPreference(preferences[sensorGaugeStyleKey]),
+        injectionTimingMode = InjectionTimingMode.fromPreference(preferences[injectionTimingModeKey]),
+    )
 
-    var isBinaryLogFormatEnabled: Boolean
-        get() = mPrefs.getBoolean(ctx.getString(R.string.pref_write_binary_log_key), false)
-        set(value) = mPrefs.edit { putBoolean(ctx.getString(R.string.pref_write_binary_log_key), value) }
-
-    var isCsvTitleEnabled: Boolean
-        get() = mPrefs.getBoolean(ctx.getString(R.string.pref_log_csv_write_title_key), false)
-        set(value) = mPrefs.edit { putBoolean(ctx.getString(R.string.pref_log_csv_write_title_key), value) }
-
-    var CSVDelimeter: String
-        get() {
-            return mPrefs.getString(ctx.getString(R.string.pref_log_csv_delimeter_key),";")!!
+    private fun readAppearanceMode(preferences: Preferences): AppearanceMode {
+        if (preferences.contains(appearanceKey)) return AppearanceMode.fromPreference(preferences[appearanceKey])
+        return when (preferences[legacyAppearanceKey]) {
+            true -> AppearanceMode.Dark
+            false -> AppearanceMode.Light
+            null -> AppearanceMode.System
         }
-        set(value) = mPrefs.edit { putString(ctx.getString(R.string.pref_log_csv_delimeter_key), value) }
+    }
 
-    var isKeepScreenAliveActive: Boolean
-        get() = mPrefs.getBoolean(ctx.getString(R.string.pref_keep_screen_key), false);
-        set(value) = mPrefs.edit { putBoolean(ctx.getString(R.string.pref_keep_screen_key), value) }
+    suspend fun setSensorLoggerEnabled(value: Boolean) = update { this[writeLogKey] = value }
+    suspend fun setBinaryLogFormatEnabled(value: Boolean) = update { this[writeBinaryKey] = value }
+    suspend fun setCsvTitleEnabled(value: Boolean) = update { this[csvTitleKey] = value }
+    suspend fun setCsvDelimiter(value: String) = update { this[csvDelimiterKey] = value }
+    suspend fun setKeepScreenAliveActive(value: Boolean) = update { this[keepScreenKey] = value }
+    suspend fun setWakeLockEnabled(value: Boolean) = update { this[wakeLockKey] = value }
+    suspend fun setConnectionNotificationPermissionRequested(value: Boolean) = update { this[notificationPermissionRequestedKey] = value }
+    suspend fun setAppearanceMode(value: AppearanceMode) = update { this[appearanceKey] = value.preferenceValue }
+    suspend fun setBluetoothDevice(address: String?, name: String?) = update {
+        if (address == null) remove(bluetoothAddressKey) else this[bluetoothAddressKey] = address
+        if (name == null) remove(bluetoothNameKey) else this[bluetoothNameKey] = name
+    }
 
-    var isWakeLockEnabled: Boolean
-        get() = mPrefs.getBoolean(ctx.getString(R.string.pref_wakelock_key), false);
-        set(value) = mPrefs.edit { putBoolean(ctx.getString(R.string.pref_wakelock_key), value) }
+    suspend fun clearBluetoothDeviceAddress() = update { remove(bluetoothAddressKey) }
+    suspend fun setConnectionRetries(value: Int) = update { this[connectionRetriesKey] = value.toString() }
 
-    var hasRequestedConnectionNotificationPermission: Boolean
-        get() = mPrefs.getBoolean(ctx.getString(R.string.connection_notifications_permission_requested_key), false)
-        set(value) = mPrefs.edit { putBoolean(ctx.getString(R.string.connection_notifications_permission_requested_key), value) }
+    suspend fun setLogExportDirectoryUri(value: String?) = update {
+        if (value == null) remove(logExportDirectoryKey) else this[logExportDirectoryKey] = value
+    }
 
-    var isDarkTheme: Boolean
-        get() = mPrefs.getBoolean(ctx.getString(R.string.pref_night_mode_key), false);
-        set(value) = mPrefs.edit { putBoolean(ctx.getString(R.string.pref_night_mode_key), value) }
-
-    /** Appearance selection, with a one-way fallback for installations using the legacy boolean. */
-    var appearanceMode: AppearanceMode
-        get() {
-            val key = ctx.getString(R.string.pref_appearance_mode_key)
-            if (mPrefs.contains(key)) return AppearanceMode.fromPreference(mPrefs.getString(key, null))
-            val legacyKey = ctx.getString(R.string.pref_night_mode_key)
-            return if (mPrefs.contains(legacyKey)) {
-                if (mPrefs.getBoolean(legacyKey, false)) AppearanceMode.Dark else AppearanceMode.Light
-            } else AppearanceMode.System
-        }
-        set(value) = mPrefs.edit { putString(ctx.getString(R.string.pref_appearance_mode_key), value.preferenceValue) }
-
-    /** Emits current and externally edited appearance values while collected. */
-    val appearanceModeFlow: Flow<AppearanceMode>
-        get() = preferenceChanges.map { appearanceMode }.distinctUntilChanged()
-
-    var bluetoothDeviceName: String?
-        get() = mPrefs.getString(ctx.getString(R.string.pref_bluetooth_device_key), null);
-        set(value) = mPrefs.edit { putString(ctx.getString(R.string.pref_bluetooth_device_key), value) }
-
-    var bluetoothDeviceAddress: String?
-        get() = mPrefs.getString(ctx.getString(R.string.pref_bluetooth_device_address_key), null)
-        set(value) = mPrefs.edit { putString(ctx.getString(R.string.pref_bluetooth_device_address_key), value) }
-
-    var connectionRetries: Int
-        get() = connectionRetriesText.toInt()
-        set(value) = mPrefs.edit { putString(ctx.getString(R.string.pref_connection_retries_key), value.toString()) }
-
-    /** Raw value for the Settings text field; connection consumers use [connectionRetries]. */
-    val connectionRetriesText: String
-        get() = mPrefs.getString(ctx.getString(R.string.pref_connection_retries_key), ctx.getString(R.string.defaultConnectionRetries))
-            ?: ctx.getString(R.string.defaultConnectionRetries)
+    suspend fun setOldSensorViewEnabled(value: Boolean) = update { this[oldSensorsViewKey] = value }
+    suspend fun setSensorGaugeStyle(value: SensorGaugeStyle) = update { this[sensorGaugeStyleKey] = value.preferenceValue }
+    suspend fun setInjectionTimingMode(value: InjectionTimingMode) = update { this[injectionTimingModeKey] = value.preferenceValue }
 
     fun parsePositiveConnectionRetries(value: String): Int? = value.toIntOrNull()?.takeIf { it > 0 }
 
-    fun saveConnectionRetries(value: String): Boolean {
+    suspend fun saveConnectionRetries(value: String): Boolean {
         val retries = parsePositiveConnectionRetries(value) ?: return false
-        connectionRetries = retries
+        setConnectionRetries(retries)
         return true
     }
 
-    val logExportDestination: LogExportDestination
-        get() {
-            val uri = mPrefs.getString(ctx.getString(R.string.pref_log_export_directory_key), null)
-            return if (uri == null) {
-                LogExportDestination.DefaultDownloads
-            } else {
-                LogExportDestination.CustomTree(uri)
-            }
-        }
+    private suspend fun update(transform: MutablePreferences.() -> Unit) {
+        dataStore.edit { it.transform() }
+    }
 
-    var logExportDirectoryUri: String?
-        get() = (logExportDestination as? LogExportDestination.CustomTree)?.uri
-        set(value) = mPrefs.edit { putString(ctx.getString(R.string.pref_log_export_directory_key), value) }
-
-
-
-
-
-    var oldSensorViewEnabled: Boolean
-        get() = mPrefs.getBoolean("old_sensors_view", false)
-        set(value) = mPrefs.edit { putBoolean("old_sensors_view", value) }
-
-    var sensorGaugeStyle: SensorGaugeStyle
-        get() = SensorGaugeStyle.fromPreference(mPrefs.getString(SENSOR_GAUGE_STYLE_KEY, null))
-        set(value) = mPrefs.edit { putString(SENSOR_GAUGE_STYLE_KEY, value.preferenceValue) }
-
-    var injectionTimingMode: InjectionTimingMode
-        get() = InjectionTimingMode.fromPreference(mPrefs.getString(INJECTION_TIMING_MODE_KEY, null))
-        set(value) = mPrefs.edit { putString(INJECTION_TIMING_MODE_KEY, value.preferenceValue) }
+    data class Settings(
+        val isSensorLoggerEnabled: Boolean,
+        val isBinaryLogFormatEnabled: Boolean,
+        val isCsvTitleEnabled: Boolean,
+        val csvDelimiter: String,
+        val isKeepScreenAliveActive: Boolean,
+        val isWakeLockEnabled: Boolean,
+        val hasRequestedConnectionNotificationPermission: Boolean,
+        val appearanceMode: AppearanceMode,
+        val bluetoothDeviceName: String?,
+        val bluetoothDeviceAddress: String?,
+        val connectionRetriesText: String,
+        val logExportDirectoryUri: String?,
+        val oldSensorViewEnabled: Boolean,
+        val sensorGaugeStyle: SensorGaugeStyle,
+        val injectionTimingMode: InjectionTimingMode,
+    ) {
+        val connectionRetries: Int get() = connectionRetriesText.toIntOrNull()?.takeIf { it > 0 } ?: 5
+        val logExportDestination: LogExportDestination
+            get() = logExportDirectoryUri?.let(LogExportDestination::CustomTree) ?: LogExportDestination.DefaultDownloads
+    }
 
     companion object {
+        const val USER_PREFS_DATASTORE = "userPrefsDataStore"
+        const val OLD_SENSORS_VIEW_KEY = "old_sensors_view"
         const val SENSOR_GAUGE_STYLE_KEY = "sensor_gauge_style"
         const val INJECTION_TIMING_MODE_KEY = "injection_timing_mode"
+
     }
 }
 

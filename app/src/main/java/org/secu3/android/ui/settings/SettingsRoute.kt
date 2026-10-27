@@ -24,6 +24,9 @@ import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.ui.Alignment
+import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.runtime.Composable
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
@@ -33,6 +36,7 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalLifecycleOwner
@@ -45,7 +49,11 @@ import androidx.lifecycle.repeatOnLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavBackStackEntry
 import kotlinx.coroutines.flow.collect
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.CancellationException
+import java.io.IOException
+import org.secu3.android.ui.messages.UiMessageDuration
 import org.secu3.android.connection.ConnectionNotificationPublisher
 import org.secu3.android.R
 import org.secu3.android.ui.MainActivity
@@ -63,6 +71,7 @@ internal fun SettingsRoute(
         extras = entry.defaultViewModelCreationExtras,
     )
     val lifecycle = LocalLifecycleOwner.current.lifecycle
+    val coroutineScope = rememberCoroutineScope()
     var state by remember(viewModel) { mutableStateOf(viewModel.state.value) }
     var dialog by remember(viewModel) { mutableStateOf(viewModel.dialog.value) }
     @Suppress("InlinedApi")
@@ -86,23 +95,33 @@ internal fun SettingsRoute(
     var notificationSettingsDialog by remember { mutableStateOf(false) }
     var openNotificationChannelSettings by remember { mutableStateOf(false) }
     val notificationPermissionLauncher = rememberLauncherForActivityResult(ActivityResultContracts.RequestPermission()) { granted ->
-        activity.userPrefs.hasRequestedConnectionNotificationPermission = true
         notificationAccessGranted = hasConnectionNotificationAccess()
         if (granted && notificationAccessGranted) activity.refreshConnectionNotification()
     }
-    val requestNotificationPermission = {
+    val requestNotificationPermission: () -> Unit = {
         if (Build.VERSION.SDK_INT < Build.VERSION_CODES.TIRAMISU || hasRuntimeNotificationPermission()) {
             notificationAccessGranted = hasConnectionNotificationAccess()
             openNotificationChannelSettings = true
             notificationSettingsDialog = true
-        } else if (activity.shouldShowRequestPermissionRationale(Manifest.permission.POST_NOTIFICATIONS)) {
-            notificationPermissionDialog = true
-        } else if (activity.userPrefs.hasRequestedConnectionNotificationPermission) {
-            openNotificationChannelSettings = false
-            notificationSettingsDialog = true
         } else {
-            activity.userPrefs.hasRequestedConnectionNotificationPermission = true
-            notificationPermissionLauncher.launch(Manifest.permission.POST_NOTIFICATIONS)
+            coroutineScope.launch {
+                try {
+                    val requested = activity.userPrefs.settings.first().hasRequestedConnectionNotificationPermission
+                    if (activity.shouldShowRequestPermissionRationale(Manifest.permission.POST_NOTIFICATIONS)) {
+                        notificationPermissionDialog = true
+                    } else if (requested) {
+                        openNotificationChannelSettings = false
+                        notificationSettingsDialog = true
+                    } else {
+                        activity.userPrefs.setConnectionNotificationPermissionRequested(true)
+                        notificationPermissionLauncher.launch(Manifest.permission.POST_NOTIFICATIONS)
+                    }
+                } catch (cancelled: CancellationException) {
+                    throw cancelled
+                } catch (failure: IOException) {
+                    activity.uiMessageQueue.publish(R.string.preferences_storage_error, UiMessageDuration.LONG)
+                }
+            }
         }
     }
     val directoryPicker = rememberLauncherForActivityResult(ActivityResultContracts.StartActivityForResult()) { result ->
@@ -131,19 +150,34 @@ internal fun SettingsRoute(
         onDispose { lifecycle.removeObserver(observer) }
     }
 
+    val loadedState = state
+    if (loadedState == null) {
+        SecuComposeTheme {
+            Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) { CircularProgressIndicator() }
+        }
+        return
+    }
+
     SecuComposeTheme {
         SettingsContent(
-            state = state,
+            state = loadedState,
             dialog = dialog,
             onNavigateUp = onNavigateUp,
             onToggle = { key, value ->
-                viewModel.setBooleanPreference(key, value)
                 if (key == R.string.pref_wakelock_key) {
-                    activity.onBackgroundWorkPreferenceChanged(value)
-                    if (value && Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU && !hasRuntimeNotificationPermission()) {
-                        requestNotificationPermission()
+                    coroutineScope.launch {
+                        try {
+                            activity.onBackgroundWorkPreferenceChanged(value)
+                            if (value && Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU && !hasRuntimeNotificationPermission()) {
+                                requestNotificationPermission()
+                            }
+                        } catch (cancelled: CancellationException) {
+                            throw cancelled
+                        } catch (failure: IOException) {
+                            activity.uiMessageQueue.publish(R.string.preferences_storage_error, UiMessageDuration.LONG)
+                        }
                     }
-                }
+                } else viewModel.setBooleanPreference(key, value)
             },
             onSelectDelimiter = viewModel::setDelimiter,
             onChooseFolder = {
@@ -182,8 +216,16 @@ internal fun SettingsRoute(
                 confirmButton = {
                     Button(onClick = {
                         notificationPermissionDialog = false
-                        activity.userPrefs.hasRequestedConnectionNotificationPermission = true
-                        notificationPermissionLauncher.launch(Manifest.permission.POST_NOTIFICATIONS)
+                        coroutineScope.launch {
+                            try {
+                                activity.userPrefs.setConnectionNotificationPermissionRequested(true)
+                                notificationPermissionLauncher.launch(Manifest.permission.POST_NOTIFICATIONS)
+                            } catch (cancelled: CancellationException) {
+                                throw cancelled
+                            } catch (failure: IOException) {
+                                activity.uiMessageQueue.publish(R.string.preferences_storage_error, UiMessageDuration.LONG)
+                            }
+                        }
                     }) { Text(activity.getString(R.string.connection_notifications_allow)) }
                 },
                 dismissButton = {

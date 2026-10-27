@@ -74,7 +74,6 @@ class SensorConfigurationObservationTest {
     @Test
     fun repositoryCombinesOfflineConfigurationPacketsAndDisplayMode(): Unit = runBlocking {
         val repository = SensorsRepository(
-            AppPrefs(ApplicationProvider.getApplicationContext<Context>()),
             database,
         )
         val packet = MutableStateFlow<SensorsPacket?>(null)

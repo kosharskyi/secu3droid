@@ -7,6 +7,11 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.platform.LocalLifecycleOwner
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.ui.Alignment
+import androidx.compose.ui.Modifier
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.repeatOnLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
@@ -33,11 +38,18 @@ internal fun SensorsSettingsRoute(
             viewModel.state.collect { state = it }
         }
     }
+    val loadedState = state
+    if (loadedState == null) {
+        SecuComposeTheme {
+            Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) { CircularProgressIndicator() }
+        }
+        return
+    }
     SecuComposeTheme {
         SensorsSettingsScreen(
-            oldView = state.oldView,
-            gaugeStyle = state.gaugeStyle,
-            injectionTimingMode = state.injectionTimingMode,
+            oldView = loadedState.oldView,
+            gaugeStyle = loadedState.gaugeStyle,
+            injectionTimingMode = loadedState.injectionTimingMode,
             onOldViewChange = viewModel::setOldView,
             onGaugeStyleChange = viewModel::setGaugeStyle,
             onInjectionTimingModeChange = viewModel::setInjectionTimingMode,

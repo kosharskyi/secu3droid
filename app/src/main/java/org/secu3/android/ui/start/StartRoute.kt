@@ -21,6 +21,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.setValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.platform.LocalContext
 import androidx.core.content.ContextCompat
 import androidx.core.content.IntentCompat
@@ -33,6 +34,10 @@ import androidx.navigation.NavBackStackEntry
 import org.secu3.android.connection.Connected
 import org.secu3.android.ui.MainActivity
 import org.secu3.android.ui.compose.SecuComposeTheme
+import org.secu3.android.R
+import org.secu3.android.ui.messages.UiMessageDuration
+import kotlinx.coroutines.launch
+import java.io.IOException
 
 
 // Permission constants are strings and this helper returns them only for matching API levels.
@@ -53,6 +58,7 @@ internal fun StartRoute(entry: NavBackStackEntry, activity: MainActivity, onConn
     val vm: StartScreenViewModel = viewModel(viewModelStoreOwner = entry, factory = activity.defaultViewModelProviderFactory, extras = entry.defaultViewModelCreationExtras)
     val context = LocalContext.current
     val lifecycle = LocalLifecycleOwner.current.lifecycle
+    val coroutineScope = rememberCoroutineScope()
     val state by vm.uiState.collectAsStateWithLifecycle()
     val connected by vm.connectionState.collectAsStateWithLifecycle(initialValue = null)
     var isResumed by remember { mutableStateOf(lifecycle.currentState.isAtLeast(Lifecycle.State.RESUMED)) }
@@ -60,19 +66,18 @@ internal fun StartRoute(entry: NavBackStackEntry, activity: MainActivity, onConn
     val btPermissionLauncher = rememberLauncherForActivityResult(ActivityResultContracts.RequestMultiplePermissions()) { grants ->
         val requested = vm.pendingBluetoothPermissions.isNotEmpty()
         vm.pendingBluetoothPermissions = emptyArray()
-        if (requested && grants.isNotEmpty() && grants.values.all { it }) continueBluetooth.value?.invoke()
+        if (requested && grants.isNotEmpty() && grants.values.all { it }) coroutineScope.launch { continueBluetooth.value?.invoke() }
     }
     val btEnableLauncher = rememberLauncherForActivityResult(ActivityResultContracts.StartActivityForResult()) {
-        if (vm.isBtEnabled()) continueBluetooth.value?.invoke()
+        if (vm.isBtEnabled()) coroutineScope.launch { continueBluetooth.value?.invoke() }
     }
-    val checkBluetoothConfiguration = {
+    val checkBluetoothConfiguration: () -> Unit = {
         when {
             !vm.isBtEnabled() -> btEnableLauncher.launch(Intent(android.bluetooth.BluetoothAdapter.ACTION_REQUEST_ENABLE))
             !vm.isLocationEnabled() -> {
                 vm.markLocationSettingsLaunched()
                 context.startActivity(Intent(android.provider.Settings.ACTION_LOCATION_SOURCE_SETTINGS))
             }
-            vm.isBtDeviceAddressNotSelected() -> vm.startBtDiscovery()
             else -> vm.startBluetoothConnection()
         }
     }
@@ -106,7 +111,7 @@ internal fun StartRoute(entry: NavBackStackEntry, activity: MainActivity, onConn
                 activity.applyKeepScreenOnPreference()
                 val manager = context.getSystemService(Context.USB_SERVICE) as UsbManager
                 manager.deviceList.values.firstOrNull()?.let(vm::newUsbDeviceAttached) ?: vm.newUsbDeviceDetached()
-                if (vm.locationSettingsReturned()) continueBluetooth.value?.invoke()
+                if (vm.locationSettingsReturned()) coroutineScope.launch { continueBluetooth.value?.invoke() }
                 val scanPermissions = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
                     arrayOf(Manifest.permission.BLUETOOTH_SCAN, Manifest.permission.BLUETOOTH_CONNECT)
                 } else {

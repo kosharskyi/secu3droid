@@ -21,3 +21,7 @@ The app uses latest-click-wins mark behavior. Each mark has its own bit, but onl
 ## Sensor packets always reach the logger's preference gate
 
 The connection manager forwards each sensor packet even when logging is disabled. `SecuLogger.logPacket` owns the preference check so it can stop and close an active session when the setting is turned off; filtering packets in the connection manager would bypass that cleanup.
+
+## Preference reads remain inside the logger FIFO
+
+Starting a log reads format, delimiter, and header choice as one settings snapshot inside the command queue. Each active packet write reads the enabled flag in that same FIFO before accepting the packet. A preference-read I/O failure stops and closes the active output and publishes the existing pending logger error; do not move these reads to the manager or add a packet queue.

@@ -6,6 +6,9 @@ import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.CancellationException
+import java.io.IOException
 import org.secu3.android.BuildConfig
 import org.secu3.android.connection.ConnectionState
 import org.secu3.android.connection.Connected
@@ -16,6 +19,9 @@ import org.secu3.android.network.models.GitHubRelease
 import org.secu3.android.utils.AppPrefs
 import org.secu3.android.utils.UserPrefs
 import org.threeten.bp.LocalDate
+import org.secu3.android.R
+import org.secu3.android.ui.messages.UiMessageDuration
+import org.secu3.android.ui.messages.UiMessageQueue
 import javax.inject.Inject
 
 @HiltViewModel
@@ -24,6 +30,7 @@ class HomeViewModel @Inject constructor(
     private val repository: HomeRepository,
     private val appPrefs: AppPrefs,
     val prefs: UserPrefs,
+    private val uiMessageQueue: UiMessageQueue,
 ) : ViewModel() {
     private val _uiState = MutableStateFlow(HomeUiState())
     val uiState = _uiState.asStateFlow()
@@ -49,13 +56,19 @@ class HomeViewModel @Inject constructor(
             }
         }
         viewModelScope.launch {
-            val now = LocalDate.now()
-            if (BuildConfig.DEBUG || appPrefs.lastAppVersionCheck.isBefore(now)) {
-                release = repository.getNewRelease()
-                val item = release
-                if (item != null) _uiState.value = _uiState.value.copy(
-                    dialog = HomeDialog.RELEASE, releaseName = item.displayName,
-                )
+            try {
+                val now = LocalDate.now()
+                if (BuildConfig.DEBUG || appPrefs.lastAppVersionCheck.first().isBefore(now)) {
+                    release = repository.getNewRelease()
+                    val item = release
+                    if (item != null) _uiState.value = _uiState.value.copy(
+                        dialog = HomeDialog.RELEASE, releaseName = item.displayName,
+                    )
+                }
+            } catch (cancelled: CancellationException) {
+                throw cancelled
+            } catch (failure: IOException) {
+                uiMessageQueue.publish(R.string.preferences_storage_error, UiMessageDuration.LONG)
             }
         }
         viewModelScope.launch {

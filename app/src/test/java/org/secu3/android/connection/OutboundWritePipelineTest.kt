@@ -20,8 +20,6 @@ import org.junit.Assert.assertTrue
 import org.junit.Test
 import org.secu3.android.models.packets.base.OutputPacket
 import org.secu3.android.models.packets.out.ChangeModePacket
-import org.secu3.android.utils.UserPrefs
-import sun.misc.Unsafe
 import java.util.Collections
 import java.util.concurrent.CopyOnWriteArrayList
 
@@ -310,7 +308,7 @@ class OutboundWritePipelineTest {
 
     private class Endpoint(var open: Boolean = true, var closed: Boolean = false)
 
-    private class TestConnection : Connection<Endpoint>(newUserPrefsWithoutAndroidContext()) {
+    private class TestConnection : Connection<Endpoint>() {
         val writes = CopyOnWriteArrayList<ByteArray>()
         private val disconnectStarted = CompletableDeferred<Unit>()
 
@@ -371,13 +369,7 @@ class OutboundWritePipelineTest {
             endpoint.open = false
         }
 
-        companion object {
-            private fun newUserPrefsWithoutAndroidContext(): UserPrefs {
-                val unsafeField = Unsafe::class.java.getDeclaredField("theUnsafe").apply { isAccessible = true }
-                val unsafe = unsafeField.get(null) as Unsafe
-                return unsafe.allocateInstance(UserPrefs::class.java) as UserPrefs
-            }
-        }
+
     }
 
 }

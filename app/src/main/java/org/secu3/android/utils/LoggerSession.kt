@@ -90,6 +90,9 @@ internal class LoggerSession {
         }
     }
 
+    @Synchronized
+    fun fail() = failCurrentOperation()
+
     private fun failCurrentOperation() {
         val ownedOutput = output
         output = null

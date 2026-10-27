@@ -30,8 +30,21 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.compose.rememberNavController
 import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.setValue
+import androidx.compose.runtime.getValue
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.padding
+import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.material3.Text
+import androidx.compose.ui.Alignment
+import androidx.compose.ui.unit.dp
+import androidx.compose.ui.res.stringResource
+import kotlinx.coroutines.flow.collect
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import org.secu3.android.utils.AppearanceMode
+import org.secu3.android.utils.UserPrefs
+import org.secu3.android.R
 import org.secu3.android.ui.compose.SecuComposeTheme
 import org.secu3.android.ui.errors.ErrorsRoute
 import org.secu3.android.ui.firmware.FirmwareRoute
@@ -61,8 +74,28 @@ internal const val DIAGNOSTICS_ADDITIONAL_ROUTE = "diagnostics-additional"
 
 @Composable
 internal fun RootNavigation(activity: MainActivity) {
-    val appearanceFlow = remember(activity.userPrefs) { activity.userPrefs.appearanceModeFlow }
-    val appearance by appearanceFlow.collectAsStateWithLifecycle(initialValue = activity.userPrefs.appearanceMode)
+    var settings by remember(activity.userPrefs) { mutableStateOf<UserPrefs.Settings?>(null) }
+    var loadFailed by remember(activity.userPrefs) { mutableStateOf(false) }
+    LaunchedEffect(activity.userPrefs) {
+        activity.userPrefs.observeSettings { loadFailed = true }.collect {
+            settings = it
+            loadFailed = false
+        }
+    }
+    if (settings == null) {
+        SecuComposeTheme(darkTheme = isSystemInDarkTheme()) {
+            Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+                if (loadFailed) {
+                    Text(
+                        text = stringResource(R.string.preferences_storage_error),
+                        modifier = Modifier.padding(16.dp),
+                    )
+                } else CircularProgressIndicator()
+            }
+        }
+        return
+    }
+    val appearance = settings!!.appearanceMode
     val systemDark = isSystemInDarkTheme()
     val dark = when (appearance) {
         AppearanceMode.System -> systemDark
@@ -81,6 +114,7 @@ internal fun RootNavigation(activity: MainActivity) {
     }
     SideEffect { activity.applyAppearance(dark) }
     SecuComposeTheme(darkTheme = dark) {
+      Box(Modifier.fillMaxSize()) {
         NavHost(
             navController = navController,
             startDestination = START_ROUTE,
@@ -181,5 +215,12 @@ internal fun RootNavigation(activity: MainActivity) {
                 }
             }
         }
+        if (loadFailed) {
+            Text(
+                text = stringResource(R.string.preferences_storage_error),
+                modifier = Modifier.align(Alignment.BottomCenter).padding(16.dp),
+            )
+        }
+      }
     }
 }

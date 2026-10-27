@@ -11,11 +11,8 @@ import kotlinx.coroutines.flow.SharedFlow
 import android.util.Log
 import org.secu3.android.models.RawPacket
 import org.secu3.android.models.packets.base.OutputPacket
-import org.secu3.android.utils.UserPrefs
 
-abstract class Connection<E : Any> (
-    private val prefs: UserPrefs
-) {
+abstract class Connection<E : Any> {
 
     protected val INPUT_PACKET_SYMBOL = 0x40    // '@'
     protected val OUTPUT_PACKET_SYMBOL = 0x21   // '!'
@@ -27,9 +24,6 @@ abstract class Connection<E : Any> (
 
     // Transport cleanup and writes must survive stop/start.
     protected val backgroundScope = CoroutineScope(Dispatchers.IO + SupervisorJob())
-
-    protected val maxConnectionAttempts: Int
-        get() = prefs.connectionRetries
 
     @Volatile
     var isRunning = false

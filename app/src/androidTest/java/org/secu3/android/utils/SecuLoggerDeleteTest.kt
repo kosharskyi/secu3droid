@@ -24,23 +24,21 @@ class SecuLoggerDeleteTest {
     private lateinit var logger: SecuLogger
     private lateinit var prefs: UserPrefs
     private lateinit var files: FileHelper
-    private lateinit var preferenceStoreName: String
+    private lateinit var prefsFixture: IsolatedUserPrefs
 
     @Before
     fun setUp() {
         val base = InstrumentationRegistry.getInstrumentation().targetContext
         testRoot = File(base.cacheDir, "secu-logger-delete-${UUID.randomUUID()}").also { it.mkdirs() }
-        preferenceStoreName = "secu-logger-delete-${testRoot.name}"
         context = object : ContextWrapper(base) {
             override fun getFilesDir() = File(testRoot, "files").also { it.mkdirs() }
             override fun getCacheDir() = File(testRoot, "cache").also { it.mkdirs() }
-            override fun getSharedPreferences(name: String, mode: Int) =
-                base.getSharedPreferences(preferenceStoreName, mode)
         }
-        prefs = UserPrefs(context)
+        prefsFixture = IsolatedUserPrefs(context, testRoot.name)
+        prefs = prefsFixture.prefs
         files = FileHelper(context)
         logger = SecuLogger(prefs, files)
-        prefs.isSensorLoggerEnabled = true
+        runBlocking { prefs.setSensorLoggerEnabled(true) }
     }
 
     @After
@@ -48,14 +46,14 @@ class SecuLoggerDeleteTest {
         runBlocking {
             logger.stopLogging()
             logger.shutdownForTests()
+            prefsFixture.close()
         }
         testRoot.deleteRecursively()
-        context.deleteSharedPreferences(preferenceStoreName)
     }
 
     @Test
     fun activeCsvLogCannotBeDeletedAndRecordingAndPendingMarkContinue() = runBlocking {
-        prefs.isBinaryLogFormatEnabled = false
+        prefs.setBinaryLogFormatEnabled(false)
         logger.startLogging()
         logger.awaitCommandsForTests()
         val activeFile = files.listOfLogs.single()
@@ -97,7 +95,7 @@ class SecuLoggerDeleteTest {
 
     @Test
     fun activeS3lLogCannotBeDeletedAndRecordingContinues() = runBlocking {
-        prefs.isBinaryLogFormatEnabled = true
+        prefs.setBinaryLogFormatEnabled(true)
         logger.startLogging()
         logger.awaitCommandsForTests()
         val activeFile = files.listOfLogs.single()
@@ -112,7 +110,7 @@ class SecuLoggerDeleteTest {
 
     @Test
     fun openFailureStaysPendingUntilAcknowledgedAndLoggerCanRestart() = runBlocking {
-        prefs.isBinaryLogFormatEnabled = false
+        prefs.setBinaryLogFormatEnabled(false)
         val logsPath = File(context.filesDir, "logs")
         logsPath.deleteRecursively()
         logsPath.writeText("not a directory")
@@ -137,7 +135,7 @@ class SecuLoggerDeleteTest {
 
     @Test
     fun unrelatedLogCanBeDeletedWhileRecordingAndDeleteFailureIsReported() = runBlocking {
-        prefs.isBinaryLogFormatEnabled = false
+        prefs.setBinaryLogFormatEnabled(false)
         logger.startLogging()
         logger.awaitCommandsForTests()
         val activeFile = files.listOfLogs.single()
@@ -158,7 +156,7 @@ class SecuLoggerDeleteTest {
 
     @Test
     fun startEnqueuesWithoutWaitingForDeletionAndRunsAfterIt() = runBlocking {
-        prefs.isBinaryLogFormatEnabled = false
+        prefs.setBinaryLogFormatEnabled(false)
         val fileEnteredDelete = CountDownLatch(1)
         val allowDelete = CountDownLatch(1)
         val fileToDelete = File(files.logsDir, "blocking.csv").apply { writeText("old") }

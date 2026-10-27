@@ -20,6 +20,7 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.platform.LocalLifecycleOwner
 import androidx.core.content.ContextCompat
@@ -32,6 +33,9 @@ import kotlinx.coroutines.launch
 import org.secu3.android.R
 import org.secu3.android.ui.MainActivity
 import org.secu3.android.ui.compose.SecuComposeTheme
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.CancellationException
+import java.io.IOException
 import java.io.File
 
 @Composable
@@ -46,6 +50,7 @@ internal fun SecuLogsRoute(
         extras = entry.defaultViewModelCreationExtras,
     )
     val lifecycle = LocalLifecycleOwner.current.lifecycle
+    val coroutineScope = rememberCoroutineScope()
     val snackbarHostState = remember { SnackbarHostState() }
     var state by remember(viewModel) { mutableStateOf(viewModel.state.value) }
     var pendingDeletePath by remember(viewModel) { mutableStateOf(viewModel.pendingDeletePath.value) }
@@ -79,13 +84,21 @@ internal fun SecuLogsRoute(
             onBackClick = onNavigateUp,
             onShareClick = { file -> activity.startActivity(Intent.createChooser(viewModel.getShareIntent(file), null)) },
             onDownloadClick = { file ->
-                if (viewModel.requiresDefaultDownloadsPermission() &&
-                    ContextCompat.checkSelfPermission(activity, Manifest.permission.WRITE_EXTERNAL_STORAGE) != PackageManager.PERMISSION_GRANTED
-                ) {
-                    viewModel.requestDownloadPermission(file)
-                    permissionRequest.launch(Manifest.permission.WRITE_EXTERNAL_STORAGE)
-                } else {
-                    viewModel.exportFile(file)
+                coroutineScope.launch {
+                    try {
+                        if (viewModel.requiresDefaultDownloadsPermission() &&
+                            ContextCompat.checkSelfPermission(activity, Manifest.permission.WRITE_EXTERNAL_STORAGE) != PackageManager.PERMISSION_GRANTED
+                        ) {
+                            viewModel.requestDownloadPermission(file)
+                            permissionRequest.launch(Manifest.permission.WRITE_EXTERNAL_STORAGE)
+                        } else {
+                            viewModel.exportFile(file)
+                        }
+                    } catch (cancelled: CancellationException) {
+                        throw cancelled
+                    } catch (failure: IOException) {
+                        activity.uiMessageQueue.publish(R.string.preferences_storage_error, org.secu3.android.ui.messages.UiMessageDuration.LONG, scope = "logs")
+                    }
                 }
             },
             pendingDeleteFile = pendingDeleteFile,

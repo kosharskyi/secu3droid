@@ -16,6 +16,13 @@ import kotlinx.coroutines.Job
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.currentCoroutineContext
+import kotlinx.coroutines.isActive
+import kotlinx.coroutines.flow.first
+import java.io.IOException
+import org.secu3.android.R
+import org.secu3.android.ui.messages.UiMessageDuration
+import org.secu3.android.ui.messages.UiMessageQueue
 import org.secu3.android.connection.BluetoothDeviceAddress
 import org.secu3.android.connection.Secu3ConnectionManager
 import org.secu3.android.utils.UserPrefs
@@ -29,6 +36,7 @@ class StartScreenViewModel @Inject constructor(
     private val connectionManager: Secu3ConnectionManager,
     private val packageManager: PackageManager,
     val usbManager: UsbManager,
+    private val uiMessageQueue: UiMessageQueue,
 ) : ViewModel() {
     private val _uiState = MutableStateFlow(StartScreenState())
     val uiState = _uiState.asStateFlow()
@@ -53,23 +61,25 @@ class StartScreenViewModel @Inject constructor(
     fun markLocationSettingsLaunched() { returnFromLocationSettings = true }
     fun consumeLocationSettingsReturn(): Boolean = returnFromLocationSettings.also { returnFromLocationSettings = false }
     fun selectedUsbDevice(): UsbDevice? = usbDevice
-    fun isBtDeviceAddressNotSelected(): Boolean {
-        val address = BluetoothDeviceAddress.normalize(prefs.bluetoothDeviceAddress) ?: return true
+    suspend fun isBtDeviceAddressNotSelected(): Boolean {
+        val address = BluetoothDeviceAddress.normalize(prefs.settings.first().bluetoothDeviceAddress) ?: return true
         val adapter = bluetoothAdapter ?: return true
         val found = try {
             BluetoothDeviceAddress.find(address, adapter.bondedDevices, ::bluetoothAddress)
         } catch (_: SecurityException) {
             return true
         }
-        if (found == null) prefs.bluetoothDeviceAddress = null
+        if (found == null) prefs.clearBluetoothDeviceAddress()
         return found == null
     }
     fun getBluetoothDeviceName(device: BluetoothDevice): String? = try { device.name } catch (_: SecurityException) { null }
     private fun bluetoothAddress(device: BluetoothDevice): String? = try { device.address } catch (_: SecurityException) { null }
     private fun bondState(device: BluetoothDevice) = try { device.bondState } catch (_: SecurityException) { null }
-    private fun saveDevice(device: BluetoothDevice) {
-        prefs.bluetoothDeviceAddress = BluetoothDeviceAddress.normalize(bluetoothAddress(device))
-        prefs.bluetoothDeviceName = getBluetoothDeviceName(device)
+    private suspend fun saveDevice(device: BluetoothDevice) {
+        prefs.setBluetoothDevice(
+            BluetoothDeviceAddress.normalize(bluetoothAddress(device)),
+            getBluetoothDeviceName(device),
+        )
     }
 
     fun startBtDiscovery() = startBtDiscovery(resetDevices = true)
@@ -117,7 +127,7 @@ class StartScreenViewModel @Inject constructor(
         val device = devices.firstOrNull { bluetoothAddress(it) == address } ?: return
         cancelBtDiscovery()
         when (bondState(device)) {
-            BluetoothDevice.BOND_BONDED -> { saveDevice(device); startBluetoothConnection() }
+            BluetoothDevice.BOND_BONDED -> startBluetoothConnection(device)
             else -> {
                 bluetoothBondGate.begin(address)
                 setConnecting(true)
@@ -131,7 +141,7 @@ class StartScreenViewModel @Inject constructor(
         val address = bluetoothAddress(device) ?: return
         if (!bluetoothBondGate.matches(address)) return
         when (bondState(device)) {
-            BluetoothDevice.BOND_BONDED -> { bluetoothBondGate.complete(address); saveDevice(device); startBluetoothConnection() }
+            BluetoothDevice.BOND_BONDED -> { bluetoothBondGate.complete(address); startBluetoothConnection(device) }
             BluetoothDevice.BOND_BONDING -> setConnecting(true)
             else -> { bluetoothBondGate.complete(address); setConnecting(false) }
         }
@@ -146,15 +156,25 @@ class StartScreenViewModel @Inject constructor(
         })
     }
     private fun setConnecting(value: Boolean) { _uiState.value = _uiState.value.copy(connecting = value) }
-    fun startBluetoothConnection() {
+    fun startBluetoothConnection(selectedDevice: BluetoothDevice? = null) {
         if (connectionJob?.isActive == true) return
         if (!connectionManager.isConnected) homeNavigationSent = false
         cancelBtDiscovery()
         connectionJob = viewModelScope.launch {
             setConnecting(true)
-            connectionManager.startBtConnection()
-            while (connectionManager.isConnectionRunning && !connectionManager.isConnected && connectionManager.fwInfo == null) delay(300)
-            setConnecting(false)
+            try {
+                selectedDevice?.let { saveDevice(it) }
+                if (isBtDeviceAddressNotSelected()) {
+                    startBtDiscovery()
+                    return@launch
+                }
+                connectionManager.startBtConnection()
+                while (connectionManager.isConnectionRunning && !connectionManager.isConnected && connectionManager.fwInfo == null) delay(300)
+            } catch (failure: IOException) {
+                uiMessageQueue.publish(R.string.preferences_storage_error, UiMessageDuration.LONG)
+            } finally {
+                if (currentCoroutineContext().isActive) setConnecting(false)
+            }
         }
     }
     fun cancelConnection() {

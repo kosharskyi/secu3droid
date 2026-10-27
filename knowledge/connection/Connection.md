@@ -56,6 +56,8 @@ The manager has at most one selected USB session, so its pre-open readiness is a
 
 The persisted `wakelock` key and default are retained, but the preference applies to both USB and Bluetooth. Toggling it off while connected stops only the foreground service; the live transport and logger continue until the app actually stops or the ECU disconnects. If background work is off, the manager ends either transport and logging on a real Activity stop and publishes that ended session's generation; configuration recreation does not count as leaving. With the preference on, the service stays owned through connection retries. `ConnectionServiceController` owns Android service calls, while a service owner token remains distinct from the connection generation so late destruction from an old service cannot stop a replacement session.
 
+The manager's background policy is unknown until its DataStore observer successfully emits. A visibility transition during that initial read is reconciled against the current visibility when the preference arrives; do not assume false while storage is still loading. That observer is the sole writer of the current-policy state, and a failed later read clears it back to unknown until recovery. Background-setting writes go through the manager's serialized suspending action, which waits for the committed policy to be observed before returning; otherwise an immediate background transition could still use the previous setting.
+
 ## Unexpected destruction of the current connection service follows app visibility
 
 The manager validates the destroyed service owner token and session generation before acting. If the app remains visible, it preserves either transport and restores the service only when background work is enabled. If the app is backgrounded, it stops transport and logging and publishes the ended session's generation so navigation returns to StartScreen. Confirmed USB does not bypass this service lifecycle policy; returning to the unlocked app admits the still-attached device again.
@@ -71,6 +73,8 @@ Only Activity stop or lock handling marks the app backgrounded; a permission dia
 ## Bluetooth retry events belong to one manager generation
 
 `BtConnection` tags every state event with the generation supplied by `Secu3ConnectionManager`. The manager ignores callbacks from replaced Bluetooth attempts, even when the replacement also uses Bluetooth. Transient failures keep the foreground service; only the transport's explicit retry-exhaustion event publishes the ended generation and stops service/logging. The service itself does not infer terminal state from the connection event stream.
+
+Bluetooth's selected address is read before starting its transport job and remains fixed for that job. The manager awaits settings outside its lock, then rechecks the captured selection and generation before changing transport state. Retry limits are reread on each retry iteration, so a changed preference applies without changing the address mid-job.
 
 ## Terminal session results survive Activity recreation until a new attempt
 

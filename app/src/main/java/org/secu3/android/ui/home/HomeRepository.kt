@@ -35,6 +35,7 @@ import org.secu3.android.network.models.GitHubRelease
 import org.secu3.android.utils.AppPrefs
 import org.secu3.android.utils.toResult
 import org.threeten.bp.LocalDate
+import kotlinx.coroutines.CancellationException
 import javax.inject.Inject
 
 class HomeRepository @Inject constructor(
@@ -44,32 +45,24 @@ class HomeRepository @Inject constructor(
 ) {
 
     suspend fun getNewRelease(): GitHubRelease? {
-        try {
-            apiService.getLatestRelease().toResult().onSuccess { release ->
-
-                appPrefs.lastAppVersionCheck = LocalDate.now()
-
-                val remoteVersion = Version.parse(release.tagName)
-
-                val versionName = if (BuildConfig.DEBUG) {
-                    BuildConfig.VERSION_NAME.split("-")[0]
-                } else {
-                    BuildConfig.VERSION_NAME
-                }
-
-                val localVersion = Version.parse("v$versionName")
-
-                if (remoteVersion <= localVersion) {
-                    return null
-                }
-
-                return release
-            }
+        val release = try {
+            apiService.getLatestRelease().toResult().getOrNull()
+        } catch (cancelled: CancellationException) {
+            throw cancelled
         } catch (e: Exception) {
-            return null
-        }
+            null
+        } ?: return null
 
-        return null
+        appPrefs.setLastAppVersionCheck(LocalDate.now())
+
+        return try {
+            val remoteVersion = Version.parse(release.tagName)
+            val versionName = if (BuildConfig.DEBUG) BuildConfig.VERSION_NAME.split("-")[0] else BuildConfig.VERSION_NAME
+            val localVersion = Version.parse("v$versionName")
+            release.takeIf { remoteVersion > localVersion }
+        } catch (e: Exception) {
+            null
+        }
     }
 
     fun downloadReleaseFile(release: GitHubRelease) {

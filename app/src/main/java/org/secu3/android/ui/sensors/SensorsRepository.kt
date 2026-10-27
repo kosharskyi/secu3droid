@@ -41,11 +41,9 @@ import org.secu3.android.ui.sensors.models.GaugeItem
 import org.secu3.android.models.sensors.GaugeType
 import org.secu3.android.ui.sensors.models.IndicatorItem
 import org.secu3.android.models.sensors.IndicatorType
-import org.secu3.android.utils.AppPrefs
 import javax.inject.Inject
 
 class SensorsRepository @Inject constructor(
-    private val mPrefs: AppPrefs,
     private val db: AppDatabase,
 )  {
 

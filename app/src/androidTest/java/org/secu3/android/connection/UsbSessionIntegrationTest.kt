@@ -12,6 +12,10 @@ import android.os.Binder
 import android.os.Parcel
 import androidx.test.filters.SdkSuppress
 import androidx.test.platform.app.InstrumentationRegistry
+import androidx.datastore.core.DataStore
+import androidx.datastore.preferences.core.Preferences
+import androidx.datastore.preferences.core.booleanPreferencesKey
+import androidx.datastore.preferences.core.mutablePreferencesOf
 import com.hoho.android.usbserial.driver.UsbSerialPort
 import java.io.IOException
 import java.lang.reflect.Proxy
@@ -29,6 +33,9 @@ import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.filterIsInstance
 import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.flow.flow
+import kotlinx.coroutines.flow.emitAll
+import java.util.UUID
 import kotlinx.coroutines.flow.take
 import kotlinx.coroutines.flow.toList
 import kotlinx.coroutines.runBlocking
@@ -47,6 +54,7 @@ import org.secu3.android.utils.FileHelper
 import org.secu3.android.utils.SecuLogger
 import org.secu3.android.utils.Task
 import org.secu3.android.utils.UserPrefs
+import org.secu3.android.utils.IsolatedUserPrefs
 
 /** Exercises the production coordinator with an isolated serial port, never a physical ECU. */
 class UsbSessionIntegrationTest {
@@ -299,7 +307,7 @@ class UsbSessionIntegrationTest {
     @Test fun usbDetachStopsOwnedServiceImmediatelyAndPublishesTerminalGeneration() = runBlocking {
         val fixture = Fixture()
         try {
-            fixture.prefs.isWakeLockEnabled = true
+            fixture.setWakeLockPreference(true)
             fixture.attach(80)
             fixture.confirmFirmware()
             fixture.manager.onAppForegrounded()
@@ -315,14 +323,80 @@ class UsbSessionIntegrationTest {
         }
     }
 
+    @Test fun delayedFirstBackgroundPolicyUsesTheRealBackgroundTransition() = runBlocking {
+        for (savedEnabled in listOf(true, false)) {
+            val context = InstrumentationRegistry.getInstrumentation().targetContext
+            val policyKey = booleanPreferencesKey(context.getString(org.secu3.android.R.string.pref_wakelock_key))
+            val store = DelayedPreferencesDataStore(mutablePreferencesOf(policyKey to savedEnabled))
+            val fixture = Fixture(delayedStore = store)
+            try {
+                store.initialReadStarted.await()
+                val generation = fixture.selectBluetoothSessionForTest()
+                fixture.manager.onAppBackgrounded()
+                assertNull("policy must remain unknown until DataStore's first read", fixture.backgroundPolicy())
+                assertNull(fixture.manager.terminalSessionGeneration.value)
+
+                store.releaseInitialRead.complete(Unit)
+                fixture.await { fixture.backgroundPolicy() == savedEnabled }
+                if (savedEnabled) {
+                    assertTrue("saved background permission keeps an active retry session", fixture.manager.isConnectionRunning)
+                    assertNull(fixture.manager.terminalSessionGeneration.value)
+                } else {
+                    fixture.await { fixture.manager.terminalSessionGeneration.value == generation }
+                    assertFalse(fixture.manager.isConnectionRunning)
+                }
+            } finally {
+                fixture.close()
+            }
+        }
+    }
+
+    @Test fun canceledBluetoothPreflightCannotSelectTransportAfterPreferencesLoad() = runBlocking {
+        val context = InstrumentationRegistry.getInstrumentation().targetContext
+        val addressKey = androidx.datastore.preferences.core.stringPreferencesKey(
+            context.getString(org.secu3.android.R.string.pref_bluetooth_device_address_key),
+        )
+        val store = DelayedPreferencesDataStore(mutablePreferencesOf(addressKey to "02:00:00:00:00:01"))
+        val fixture = Fixture(delayedStore = store)
+        try {
+            store.initialReadStarted.await()
+            val preflight = launch(start = CoroutineStart.UNDISPATCHED) { fixture.manager.startBtConnection() }
+            fixture.manager.stopConnection()
+            store.releaseInitialRead.complete(Unit)
+            preflight.join()
+            assertFalse(fixture.manager.isBtRunning)
+            assertEquals(Disconnected, fixture.manager.currentConnectionState)
+            assertEquals("NONE", fixture.selectedTransport())
+        } finally {
+            fixture.close()
+        }
+    }
+
+    @Test fun managerBackgroundPolicyRecoversWhenSameValueReturnsAfterReadFailure() = runBlocking {
+        val context = InstrumentationRegistry.getInstrumentation().targetContext
+        val key = booleanPreferencesKey(context.getString(org.secu3.android.R.string.pref_wakelock_key))
+        val store = DelayedPreferencesDataStore(mutablePreferencesOf(key to true)).apply {
+            failOnceAfterInitialEmission = true
+        }
+        val fixture = Fixture(delayedStore = store)
+        try {
+            store.initialReadStarted.await()
+            store.releaseInitialRead.complete(Unit)
+            fixture.await { fixture.backgroundPolicy() == null }
+            fixture.await(timeoutMillis = 5_000) { fixture.backgroundPolicy() == true }
+        } finally {
+            fixture.close()
+        }
+    }
+
     @Test fun bluetoothRetryExhaustionStopsServiceAndPublishesFinalTimeout() = runBlocking {
         val fixture = Fixture()
-        val originalRetries = fixture.prefs.connectionRetries
-        val originalAddress = fixture.prefs.bluetoothDeviceAddress
+        val originalRetries = fixture.connectionRetriesPreference()
+        val originalAddress = fixture.bluetoothAddressPreference()
         try {
-            fixture.prefs.isWakeLockEnabled = true
-            fixture.prefs.connectionRetries = 2
-            fixture.prefs.bluetoothDeviceAddress = "02:00:00:00:00:01"
+            fixture.setWakeLockPreference(true)
+            fixture.setConnectionRetriesPreference(2)
+            fixture.setBluetoothAddressPreference("02:00:00:00:00:01")
             val generation = fixture.selectBluetoothSessionForTest()
             fixture.serviceController.ensureStarted(generation)
             val states = CopyOnWriteArrayList<ConnectionState>()
@@ -350,23 +424,23 @@ class UsbSessionIntegrationTest {
             assertTrue("terminal stream must retain Disconnected before ConnectionTimeout", disconnectedIndex >= 0 && timeoutIndex > disconnectedIndex)
             collector.cancel()
         } finally {
-            fixture.prefs.connectionRetries = originalRetries
-            fixture.prefs.bluetoothDeviceAddress = originalAddress
+            fixture.setConnectionRetriesPreference(originalRetries)
+            fixture.setBluetoothAddressPreference(originalAddress)
             fixture.close()
         }
     }
 
     @Test fun replacingBluetoothConnectionJobCancelsOldRetryLoop() = runBlocking {
         val fixture = Fixture()
-        val originalRetries = fixture.prefs.connectionRetries
-        val originalAddress = fixture.prefs.bluetoothDeviceAddress
+        val originalRetries = fixture.connectionRetriesPreference()
+        val originalAddress = fixture.bluetoothAddressPreference()
         val events = CopyOnWriteArrayList<BluetoothConnectionEvent>()
         val collector = launch(start = CoroutineStart.UNDISPATCHED) {
             fixture.btEvents.collect(events::add)
         }
         try {
-            fixture.prefs.connectionRetries = 3
-            fixture.prefs.bluetoothDeviceAddress = "02:00:00:00:00:01"
+            fixture.setConnectionRetriesPreference(3)
+            fixture.setBluetoothAddressPreference("02:00:00:00:00:01")
             val oldGeneration = fixture.selectBluetoothSessionForTest()
             fixture.startBluetoothTransport(oldGeneration)
             fixture.await { events.any { it.generation == oldGeneration && it.state is ConnectionFailed } }
@@ -381,8 +455,8 @@ class UsbSessionIntegrationTest {
             assertFalse(events.any { it.generation == oldGeneration && it.retriesExhausted })
         } finally {
             collector.cancel()
-            fixture.prefs.connectionRetries = originalRetries
-            fixture.prefs.bluetoothDeviceAddress = originalAddress
+            fixture.setConnectionRetriesPreference(originalRetries)
+            fixture.setBluetoothAddressPreference(originalAddress)
             fixture.close()
         }
     }
@@ -390,7 +464,7 @@ class UsbSessionIntegrationTest {
     @Test fun bluetoothTransientFailureThenSuccessKeepsServiceAndDoesNotPublishTerminalResult() = runBlocking {
         val fixture = Fixture()
         try {
-            fixture.prefs.isWakeLockEnabled = true
+            fixture.setWakeLockPreference(true)
             val generation = fixture.selectBluetoothSessionForTest()
             val owner = fixture.serviceController.ensureStarted(generation)
             fixture.emitBluetoothEvent(BluetoothConnectionEvent(generation, ConnectionFailed(IOException("temporary"))))
@@ -430,7 +504,7 @@ class UsbSessionIntegrationTest {
     @Test fun staleBluetoothTerminalEventCannotReplaceNewBluetoothGeneration() = runBlocking {
         val fixture = Fixture()
         try {
-            fixture.prefs.isWakeLockEnabled = true
+            fixture.setWakeLockPreference(true)
             val oldGeneration = fixture.selectBluetoothSessionForTest()
             fixture.serviceController.ensureStarted(oldGeneration)
             val newGeneration = fixture.selectBluetoothSessionForTest()
@@ -456,7 +530,7 @@ class UsbSessionIntegrationTest {
     @Test fun bluetoothRetryExhaustionAfterDisconnectPublishesEndedGeneration() = runBlocking {
         val fixture = Fixture()
         try {
-            fixture.prefs.isWakeLockEnabled = true
+            fixture.setWakeLockPreference(true)
             val generation = fixture.selectBluetoothSessionForTest()
             fixture.serviceController.ensureStarted(generation)
             fixture.emitBluetoothEvent(BluetoothConnectionEvent(generation, Connected))
@@ -521,7 +595,7 @@ class UsbSessionIntegrationTest {
     @Test fun lateServiceDestroyCannotStopReplacementUsbSession() = runBlocking {
         val fixture = Fixture()
         try {
-            fixture.prefs.isWakeLockEnabled = true
+            fixture.setWakeLockPreference(true)
             fixture.attach(107)
             fixture.confirmFirmware()
             fixture.manager.onAppForegrounded()
@@ -551,7 +625,7 @@ class UsbSessionIntegrationTest {
     @Test fun currentUsbServiceDestroyRestartsServiceWhileAppIsVisible() = runBlocking {
         val fixture = Fixture()
         try {
-            fixture.prefs.isWakeLockEnabled = true
+            fixture.setWakeLockPreference(true)
             fixture.attach(108)
             fixture.confirmFirmware()
             fixture.manager.onAppForegrounded()
@@ -576,7 +650,7 @@ class UsbSessionIntegrationTest {
     @Test fun currentUsbServiceDestroyEndsSessionWhenAppIsBackgrounded() = runBlocking {
         val fixture = Fixture()
         try {
-            fixture.prefs.isWakeLockEnabled = true
+            fixture.setWakeLockPreference(true)
             fixture.attach(109)
             fixture.confirmFirmware()
             fixture.manager.onAppForegrounded()
@@ -639,15 +713,15 @@ class UsbSessionIntegrationTest {
         try {
             fixture.manager.onAppForegrounded()
             val generation = fixture.selectBluetoothSessionForTest()
-            fixture.manager.onBackgroundWorkPreferenceChanged(false)
+            runBlocking { fixture.manager.onBackgroundWorkPreferenceChanged(false) }
             assertTrue(fixture.serviceContext.startedServices.isEmpty())
             assertTrue(fixture.manager.isConnectionRunning)
 
-            fixture.manager.onBackgroundWorkPreferenceChanged(true)
+            runBlocking { fixture.manager.onBackgroundWorkPreferenceChanged(true) }
             assertNotNull(fixture.serviceController.ownerToken())
             assertEquals(1, fixture.serviceContext.startedServices.size)
 
-            fixture.manager.onBackgroundWorkPreferenceChanged(false)
+            runBlocking { fixture.manager.onBackgroundWorkPreferenceChanged(false) }
 
             assertNull(fixture.serviceController.ownerToken())
             assertTrue(fixture.manager.isConnectionRunning)
@@ -662,7 +736,7 @@ class UsbSessionIntegrationTest {
         try {
             val generation = fixture.selectBluetoothSessionForTest()
             fixture.manager.onAppForegrounded()
-            fixture.manager.onBackgroundWorkPreferenceChanged(false)
+            runBlocking { fixture.manager.onBackgroundWorkPreferenceChanged(false) }
 
             assertTrue(fixture.manager.isConnectionRunning)
             fixture.manager.onAppBackgrounded()
@@ -677,7 +751,7 @@ class UsbSessionIntegrationTest {
     @Test fun enabledBackgroundPreferencePreservesBtSessionAndServiceOnBackground() {
         val fixture = Fixture()
         try {
-            fixture.prefs.isWakeLockEnabled = true
+            fixture.setWakeLockPreference(true)
             val generation = fixture.selectBluetoothSessionForTest()
             fixture.manager.onAppForegrounded()
             val owner = fixture.serviceController.ownerToken()
@@ -697,7 +771,7 @@ class UsbSessionIntegrationTest {
     @Test fun lateDestroyFromPreviousBluetoothSessionCannotStopReplacement() {
         val fixture = Fixture()
         try {
-            fixture.prefs.isWakeLockEnabled = true
+            fixture.setWakeLockPreference(true)
             fixture.selectBluetoothSessionForTest()
             fixture.manager.onAppForegrounded()
             val oldOwner = fixture.serviceController.ownerToken()!!
@@ -719,7 +793,7 @@ class UsbSessionIntegrationTest {
     @Test fun lateDestroyAfterStopAndRestartCannotStopNewBluetoothSession() {
         val fixture = Fixture()
         try {
-            fixture.prefs.isWakeLockEnabled = true
+            fixture.setWakeLockPreference(true)
             fixture.selectBluetoothSessionForTest()
             fixture.manager.onAppForegrounded()
             val stoppedOwner = fixture.serviceController.ownerToken()!!
@@ -742,7 +816,7 @@ class UsbSessionIntegrationTest {
     @Test fun currentBluetoothServiceDestroyStopsItsOwnedSessionInBackground() {
         val fixture = Fixture()
         try {
-            fixture.prefs.isWakeLockEnabled = true
+            fixture.setWakeLockPreference(true)
             val generation = fixture.selectBluetoothSessionForTest()
             fixture.manager.onAppForegrounded()
             val owner = fixture.serviceController.ownerToken()!!
@@ -761,7 +835,7 @@ class UsbSessionIntegrationTest {
     @Test fun currentBluetoothServiceDestroyRestartsServiceWhileAppIsVisible() {
         val fixture = Fixture()
         try {
-            fixture.prefs.isWakeLockEnabled = true
+            fixture.setWakeLockPreference(true)
             val generation = fixture.selectBluetoothSessionForTest()
             fixture.manager.onAppForegrounded()
             val owner = fixture.serviceController.ownerToken()!!
@@ -1038,20 +1112,34 @@ class UsbSessionIntegrationTest {
         }
     }
 
-    private class Fixture {
+    private class Fixture(private val delayedStore: DataStore<Preferences>? = null) {
         private val context = InstrumentationRegistry.getInstrumentation().targetContext
-        val prefs = UserPrefs(context)
-        private val originalWakeLockPreference = prefs.isWakeLockEnabled
-        init {
-            prefs.isWakeLockEnabled = false
-        }
-        val usb = UsbConnection(context.getSystemService(Context.USB_SERVICE) as UsbManager, prefs)
+        private val prefsFixture: IsolatedUserPrefs? = if (delayedStore == null) IsolatedUserPrefs(context, "usb-session-${UUID.randomUUID()}") else null
+        val prefs = delayedStore?.let { UserPrefs(context, it) } ?: requireNotNull(prefsFixture).prefs
+        val usb = UsbConnection(context.getSystemService(Context.USB_SERVICE) as UsbManager)
         private val bluetoothManager = context.getSystemService(Context.BLUETOOTH_SERVICE) as BluetoothManager
         private val bt = BtConnection(prefs, bluetoothManager)
         val logger = SecuLogger(prefs, FileHelper(context))
         val serviceContext = RecordingServiceContext(context)
         val serviceController = ConnectionServiceController(serviceContext, ConnectionNotificationPublisher(serviceContext))
         val manager = Secu3ConnectionManager(usb, bt, prefs, bluetoothManager, logger, serviceController)
+        init {
+            if (delayedStore == null) runBlocking { manager.onBackgroundWorkPreferenceChanged(false) }
+            manager.onAppForegrounded()
+        }
+        fun setWakeLockPreference(value: Boolean) = runBlocking { manager.onBackgroundWorkPreferenceChanged(value) }
+        fun connectionRetriesPreference() = runBlocking { prefs.settings.first().connectionRetries }
+        fun setConnectionRetriesPreference(value: Int) = runBlocking { prefs.setConnectionRetries(value) }
+        fun bluetoothAddressPreference() = runBlocking { prefs.settings.first().bluetoothDeviceAddress }
+        fun setBluetoothAddressPreference(value: String?) = runBlocking {
+            prefs.setBluetoothDevice(value, prefs.settings.first().bluetoothDeviceName)
+        }
+        fun backgroundPolicy() = (managerField("backgroundWorkEnabled").get(manager) as MutableStateFlow<Boolean?>).value
+        fun selectedTransport(): String {
+            val selection = managerField("selectedTransport").get(manager) as MutableStateFlow<*>
+            val transport = selection.value!!::class.java.getDeclaredField("transport").apply { isAccessible = true }.get(selection.value)
+            return (transport as Enum<*>).name
+        }
         val writes = CopyOnWriteArrayList<ByteArray>()
         private var fakeEndpointOpen: AtomicBoolean? = null
         val attemptPackets: MutableSharedFlow<UsbAttemptPacket> = usb.javaClass.getDeclaredField("_attemptPackets").apply { isAccessible = true }.get(usb) as MutableSharedFlow<UsbAttemptPacket>
@@ -1148,11 +1236,11 @@ class UsbSessionIntegrationTest {
         fun close() {
             if (!manager.stopConnection()) manager.activeUsbDeviceIdOrNull?.let(manager::onUsbDeviceDetached)
             serviceController.stop()
-            prefs.isWakeLockEnabled = originalWakeLockPreference
             (managerField("scope").get(manager) as CoroutineScope).cancel()
             usb.cancelScopes()
             bt.cancelScopes()
             (SecuLogger::class.java.getDeclaredField("loggerScope").apply { isAccessible = true }.get(logger) as CoroutineScope).cancel()
+            runBlocking { prefsFixture?.close() }
         }
 
         fun requestPermissionOrStart(device: UsbDevice, hasPermission: Boolean): UsbPermissionRequest? {
@@ -1202,12 +1290,35 @@ class UsbSessionIntegrationTest {
             return generation
         }
 
-        fun startBluetoothTransport(generation: Long) = bt.startConnection(generation)
+        fun startBluetoothTransport(generation: Long) = bt.startConnection(generation, bluetoothAddressPreference() ?: "02:00:00:00:00:01")
 
         suspend fun emitBluetoothEvent(event: BluetoothConnectionEvent) = btEvents.emit(event)
 
         private fun managerField(name: String) = Secu3ConnectionManager::class.java.getDeclaredField(name).apply { isAccessible = true }
         private fun connectionField(name: String) = Connection::class.java.getDeclaredField(name).apply { isAccessible = true }
+    }
+
+    private class DelayedPreferencesDataStore(initial: Preferences) : DataStore<Preferences> {
+        val initialReadStarted = CompletableDeferred<Unit>()
+        val releaseInitialRead = CompletableDeferred<Unit>()
+        var failOnceAfterInitialEmission = false
+        private val values = MutableStateFlow(initial)
+        override val data = flow {
+            initialReadStarted.complete(Unit)
+            releaseInitialRead.await()
+            emit(values.value)
+            if (failOnceAfterInitialEmission) {
+                failOnceAfterInitialEmission = false
+                throw IOException("temporary preference read failure")
+            }
+            emitAll(values)
+        }
+
+        override suspend fun updateData(transform: suspend (t: Preferences) -> Preferences): Preferences {
+            val updated = transform(values.value)
+            values.value = updated
+            return updated
+        }
     }
 
     private class RecordingServiceContext(base: Context) : ContextWrapper(base) {

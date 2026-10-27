@@ -145,6 +145,7 @@ dependencies {
     implementation(libs.androidx.browser)
 
     implementation(libs.room.runtime)
+    implementation(libs.datastore.preferences)
     implementation(libs.androidx.material3.android)
     ksp(libs.room.compiler)
 

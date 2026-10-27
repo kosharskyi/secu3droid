@@ -4,10 +4,15 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import dagger.hilt.android.lifecycle.HiltViewModel
 import javax.inject.Inject
+import java.io.IOException
+import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
+import org.secu3.android.R
+import org.secu3.android.ui.messages.UiMessageDuration
+import org.secu3.android.ui.messages.UiMessageQueue
 import org.secu3.android.models.SensorGaugeStyle
 import org.secu3.android.models.InjectionTimingMode
 import org.secu3.android.utils.UserPrefs
@@ -21,36 +26,46 @@ data class SensorsSettingsUiState(
 @HiltViewModel
 class SensorsSettingsViewModel @Inject constructor(
     private val userPrefs: UserPrefs,
+    private val uiMessageQueue: UiMessageQueue,
 ) : ViewModel() {
-    private val _state = MutableStateFlow(readState())
-    val state: StateFlow<SensorsSettingsUiState> = _state.asStateFlow()
+    private val _state = MutableStateFlow<SensorsSettingsUiState?>(null)
+    val state: StateFlow<SensorsSettingsUiState?> = _state.asStateFlow()
 
     init {
         viewModelScope.launch {
-            userPrefs.preferenceChanges.collect { refreshFromPreferences() }
+            userPrefs.observeSettings { uiMessageQueue.publish(R.string.preferences_storage_error, UiMessageDuration.LONG, scope = "sensor-settings") }
+                .collect { settings -> _state.value = readState(settings) }
         }
     }
 
     fun setOldView(enabled: Boolean) {
-        userPrefs.oldSensorViewEnabled = enabled
+        persist { userPrefs.setOldSensorViewEnabled(enabled) }
     }
 
     fun setGaugeStyle(style: SensorGaugeStyle) {
-        userPrefs.sensorGaugeStyle = style
+        persist { userPrefs.setSensorGaugeStyle(style) }
     }
 
     fun setInjectionTimingMode(mode: InjectionTimingMode) {
-        userPrefs.injectionTimingMode = mode
+        persist { userPrefs.setInjectionTimingMode(mode) }
     }
 
-    private fun refreshFromPreferences() {
-        _state.value = readState()
+    private fun persist(write: suspend () -> Unit) {
+        viewModelScope.launch {
+            try {
+                write()
+            } catch (cancelled: CancellationException) {
+                throw cancelled
+            } catch (failure: IOException) {
+                uiMessageQueue.publish(R.string.preferences_storage_error, UiMessageDuration.LONG, scope = "sensor-settings")
+            }
+        }
     }
 
-    private fun readState() = SensorsSettingsUiState(
-        oldView = userPrefs.oldSensorViewEnabled,
-        gaugeStyle = userPrefs.sensorGaugeStyle,
-        injectionTimingMode = userPrefs.injectionTimingMode,
+    private fun readState(settings: UserPrefs.Settings) = SensorsSettingsUiState(
+        oldView = settings.oldSensorViewEnabled,
+        gaugeStyle = settings.sensorGaugeStyle,
+        injectionTimingMode = settings.injectionTimingMode,
     )
 
 }

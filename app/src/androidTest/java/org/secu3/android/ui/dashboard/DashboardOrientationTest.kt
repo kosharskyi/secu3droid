@@ -20,19 +20,26 @@ import org.junit.Test
 import org.secu3.android.R
 import org.secu3.android.ui.DASHBOARD_ROUTE
 import org.secu3.android.ui.MainActivity
+import org.secu3.android.utils.UserPrefs
+import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.runBlocking
 
 class DashboardOrientationTest {
     @Test
     fun dashboardRestoresLandscapeLockImmersiveBarsAndKeepScreenPolicy() {
-        val context = InstrumentationRegistry.getInstrumentation().targetContext
-        val preferences = context.getSharedPreferences("${context.packageName}_preferences", android.content.Context.MODE_PRIVATE)
-        val preferenceKey = context.getString(R.string.pref_keep_screen_key)
-        val hadPreference = preferences.contains(preferenceKey)
-        val originalPreference = preferences.getBoolean(preferenceKey, false)
+        var originalPreference: Boolean? = null
+        var preferences: UserPrefs? = null
         try {
             listOf(false, true).forEach { keepScreenOn ->
-                preferences.edit().putBoolean(preferenceKey, keepScreenOn).commit()
                 ActivityScenario.launch(MainActivity::class.java).use { scenario ->
+                    awaitNavigationReady(scenario)
+                    lateinit var currentPreferences: UserPrefs
+                    scenario.onActivity { currentPreferences = it.userPrefs }
+                    preferences = currentPreferences
+                    if (originalPreference == null) {
+                        originalPreference = runBlocking { currentPreferences.settings.first().isKeepScreenAliveActive }
+                    }
+                    runBlocking { currentPreferences.setKeepScreenAliveActive(keepScreenOn) }
                     scenario.onActivity { activity ->
                         val host = requireNotNull(activity.rootNavigationController)
                         host.navigate(org.secu3.android.ui.HOME_ROUTE)
@@ -87,9 +94,20 @@ class DashboardOrientationTest {
                 }
             }
         } finally {
-            if (hadPreference) preferences.edit().putBoolean(preferenceKey, originalPreference).commit()
-            else preferences.edit().remove(preferenceKey).commit()
+            originalPreference?.let { value -> runBlocking { preferences?.setKeepScreenAliveActive(value) } }
         }
+    }
+
+    private fun awaitNavigationReady(scenario: ActivityScenario<MainActivity>) {
+        val timeoutAt = SystemClock.elapsedRealtime() + 10_000L
+        do {
+            InstrumentationRegistry.getInstrumentation().waitForIdleSync()
+            var ready = false
+            scenario.onActivity { ready = it.rootNavigationController?.currentDestination != null }
+            if (ready) return
+            SystemClock.sleep(50L)
+        } while (SystemClock.elapsedRealtime() < timeoutAt)
+        throw AssertionError("Navigation did not become ready after preferences loaded")
     }
 
     private fun assertDashboardActive(scenario: ActivityScenario<MainActivity>) {

@@ -17,6 +17,8 @@ import androidx.lifecycle.viewModelScope
 import dagger.hilt.android.lifecycle.HiltViewModel
 import dagger.hilt.android.qualifiers.ApplicationContext
 import javax.inject.Inject
+import java.io.IOException
+import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -24,52 +26,55 @@ import kotlinx.coroutines.flow.asStateFlow
 import org.secu3.android.R
 import org.secu3.android.utils.AppearanceMode
 import org.secu3.android.utils.UserPrefs
+import org.secu3.android.ui.messages.UiMessageDuration
+import org.secu3.android.ui.messages.UiMessageQueue
 
 @HiltViewModel
 class SettingsViewModel @Inject constructor(
     @ApplicationContext private val context: Context,
     private val userPrefs: UserPrefs,
+    private val uiMessageQueue: UiMessageQueue,
 ) : ViewModel() {
-    private val _state = MutableStateFlow(readSettings())
-    val state: StateFlow<SettingsUiState> = _state.asStateFlow()
+    private val _state = MutableStateFlow<SettingsUiState?>(null)
+    val state: StateFlow<SettingsUiState?> = _state.asStateFlow()
     private val _dialog = MutableStateFlow<SettingsDialog?>(null)
     val dialog: StateFlow<SettingsDialog?> = _dialog.asStateFlow()
 
     init {
         viewModelScope.launch {
-            userPrefs.preferenceChanges.collect { _state.value = readSettings() }
+            userPrefs.observeSettings { uiMessageQueue.publish(R.string.preferences_storage_error, UiMessageDuration.LONG) }
+                .collect { settings -> _state.value = readSettings(settings) }
         }
     }
 
     fun setBooleanPreference(keyResource: Int, value: Boolean) {
-        when (keyResource) {
-            R.string.pref_write_log_key -> userPrefs.isSensorLoggerEnabled = value
-            R.string.pref_log_csv_write_title_key -> userPrefs.isCsvTitleEnabled = value
-            R.string.pref_write_binary_log_key -> userPrefs.isBinaryLogFormatEnabled = value
-            R.string.pref_keep_screen_key -> userPrefs.isKeepScreenAliveActive = value
-            R.string.pref_wakelock_key -> userPrefs.isWakeLockEnabled = value
-        }
+        persist(write = {
+            when (keyResource) {
+                R.string.pref_write_log_key -> userPrefs.setSensorLoggerEnabled(value)
+                R.string.pref_log_csv_write_title_key -> userPrefs.setCsvTitleEnabled(value)
+                R.string.pref_write_binary_log_key -> userPrefs.setBinaryLogFormatEnabled(value)
+                R.string.pref_keep_screen_key -> userPrefs.setKeepScreenAliveActive(value)
+            }
+        })
     }
 
     fun setDelimiter(value: String) {
-        userPrefs.CSVDelimeter = value
-        dismissDialog()
+        persist(write = { userPrefs.setCsvDelimiter(value) }, onSuccess = ::dismissDialog)
     }
 
     fun saveRetries(value: String) {
-        if (!userPrefs.saveConnectionRetries(value)) return
-        dismissDialog()
+        if (userPrefs.parsePositiveConnectionRetries(value) == null) return
+        persist(write = { userPrefs.saveConnectionRetries(value) }, onSuccess = ::dismissDialog)
     }
 
     fun isValidRetries(value: String): Boolean = userPrefs.parsePositiveConnectionRetries(value) != null
 
     fun saveExportFolder(uri: String) {
-        userPrefs.logExportDirectoryUri = uri
+        persist(write = { userPrefs.setLogExportDirectoryUri(uri) })
     }
 
     fun setAppearanceMode(mode: AppearanceMode) {
-        userPrefs.appearanceMode = mode
-        dismissDialog()
+        persist(write = { userPrefs.setAppearanceMode(mode) }, onSuccess = ::dismissDialog)
     }
 
     fun showDialog(dialog: SettingsDialog?) {
@@ -80,19 +85,32 @@ class SettingsViewModel @Inject constructor(
         _dialog.value = null
     }
 
-    private fun readSettings(): SettingsUiState {
-        val exportFolder = userPrefs.logExportDirectoryUri
+    private fun readSettings(settings: UserPrefs.Settings): SettingsUiState {
+        val exportFolder = settings.logExportDirectoryUri
         return SettingsUiState(
-            writeLog = userPrefs.isSensorLoggerEnabled,
-            writeCsvHeader = userPrefs.isCsvTitleEnabled,
-            csvDelimiter = userPrefs.CSVDelimeter,
-            writeBinaryLog = userPrefs.isBinaryLogFormatEnabled,
+            writeLog = settings.isSensorLoggerEnabled,
+            writeCsvHeader = settings.isCsvTitleEnabled,
+            csvDelimiter = settings.csvDelimiter,
+            writeBinaryLog = settings.isBinaryLogFormatEnabled,
             exportFolder = exportFolder?.let(::folderSummary) ?: context.getString(R.string.pref_log_export_directory_default),
-            connectionRetries = userPrefs.connectionRetriesText,
-            keepScreenOn = userPrefs.isKeepScreenAliveActive,
-            wakeLock = userPrefs.isWakeLockEnabled,
-            appearanceMode = userPrefs.appearanceMode,
+            connectionRetries = settings.connectionRetriesText,
+            keepScreenOn = settings.isKeepScreenAliveActive,
+            wakeLock = settings.isWakeLockEnabled,
+            appearanceMode = settings.appearanceMode,
         )
+    }
+
+    private fun persist(write: suspend () -> Unit, onSuccess: () -> Unit = {}) {
+        viewModelScope.launch {
+            try {
+                write()
+                onSuccess()
+            } catch (cancelled: CancellationException) {
+                throw cancelled
+            } catch (failure: IOException) {
+                uiMessageQueue.publish(R.string.preferences_storage_error, UiMessageDuration.LONG)
+            }
+        }
     }
 
     private fun folderSummary(uri: String): String = runCatching {

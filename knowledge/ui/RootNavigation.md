@@ -39,3 +39,7 @@ Android calls `onPostResume()` before `ActivityPostResumed` moves AndroidX Lifec
 ## Activity UI messages use destination-scoped queue entries
 
 `UiMessageQueue` is presentation-only and is consumed by `MainActivity` while resumed. A non-null scope is the active Navigation Compose destination route; route changes discard messages for the previous route and reject late producers for inactive routes. A null scope is global and survives navigation. Queue entries survive Activity recreation through the Hilt singleton, but are acknowledged once `Toast.show()` is submitted; Android does not report whether a Toast was actually seen.
+
+## Settings must load before themed navigation starts
+
+RootNavigation waits for the first successful UserPrefs snapshot before choosing the app appearance or creating the navigation host. An initial storage failure shows an error while UserPrefs retries automatically; failures after startup keep the current appearance and routes visible with the same error until a read succeeds. Do not add a manual recovery action or seed the app theme from a duplicate preference default.

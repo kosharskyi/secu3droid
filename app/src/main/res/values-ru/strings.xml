@@ -1,6 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 
 <resources>
+    <string name="preferences_storage_error">Не удалось получить доступ к сохранённым настройкам.</string>
     <string name="numeric_edit_invalid_value">Введите значение в допустимом диапазоне</string>
     <string name="miscel_evap_invalid_range">Текущую пару значений воздушного потока EVAP нельзя безопасно редактировать. Сначала исправьте другое значение воздушного потока.</string>
     <string name="misc_choose_baud">Выбрать скорость передачи</string>

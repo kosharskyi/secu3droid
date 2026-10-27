@@ -39,7 +39,6 @@ import kotlinx.coroutines.flow.asSharedFlow
 import org.secu3.android.models.RawPacket
 import org.secu3.android.models.packets.out.ChangeModePacket
 import org.secu3.android.utils.Task
-import org.secu3.android.utils.UserPrefs
 import java.io.IOException
 import javax.inject.Inject
 import javax.inject.Singleton
@@ -49,8 +48,7 @@ internal data class UsbAttemptPacket(val attemptId: Long, val packet: RawPacket)
 @Singleton
 class UsbConnection @Inject constructor(
     private val usbManager: UsbManager,
-    prefs: UserPrefs,
-) : Connection<UsbSerialPort>(prefs) {
+) : Connection<UsbSerialPort>() {
 
     @Volatile private var attemptGeneration = 0L
     private val _attemptFailures = MutableSharedFlow<Long>(extraBufferCapacity = 16)

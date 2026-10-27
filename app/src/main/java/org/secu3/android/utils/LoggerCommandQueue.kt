@@ -18,7 +18,7 @@ internal class LoggerCommandQueue(
     private val onFailure: (Exception) -> Unit,
 ) {
     private data class Command(
-        val run: () -> Unit,
+        val run: suspend () -> Unit,
         val fail: (Throwable) -> Unit = {},
     )
 
@@ -48,14 +48,14 @@ internal class LoggerCommandQueue(
         }
     }
 
-    fun post(command: () -> Unit) {
+    fun post(command: suspend () -> Unit) {
         val result = commands.trySend(Command(run = command))
         if (result.isFailure) {
             runCatching { onFailure(IllegalStateException("Logger command queue is unavailable", result.exceptionOrNull())) }
         }
     }
 
-    suspend fun <T> await(command: () -> T): T {
+    suspend fun <T> await(command: suspend () -> T): T {
         val result = CompletableDeferred<T>()
         commands.send(
             Command(

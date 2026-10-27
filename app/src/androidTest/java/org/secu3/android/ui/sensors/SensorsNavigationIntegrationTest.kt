@@ -24,6 +24,8 @@ import org.secu3.android.models.SensorGaugeStyle
 import org.secu3.android.ui.MainActivity
 import org.secu3.android.ui.SENSOR_SETTINGS_ROUTE
 import org.secu3.android.ui.SENSORS_ROUTE
+import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.runBlocking
 
 class SensorsNavigationIntegrationTest {
     @get:Rule val compose = createAndroidComposeRule<MainActivity>()
@@ -31,12 +33,10 @@ class SensorsNavigationIntegrationTest {
     private val context = InstrumentationRegistry.getInstrumentation().targetContext
 
     @Test fun rawPageAndSensorsViewModelSurviveSettingsNavigationAndRecreation() {
-        val preferences = context.getSharedPreferences("${context.packageName}_preferences", android.content.Context.MODE_PRIVATE)
-        val oldViewKey = "old_sensors_view"
-        val hadOldView = preferences.contains(oldViewKey)
-        val originalOldView = preferences.getBoolean(oldViewKey, false)
+        val prefs = compose.activity.userPrefs
+        val originalOldView = runBlocking { prefs.settings.first().oldSensorViewEnabled }
         try {
-            preferences.edit().putBoolean(oldViewKey, false).commit()
+            runBlocking { prefs.setOldSensorViewEnabled(false) }
             val host = navigateToHomeAndSensors()
             val sensorsViewModel = currentSensorsViewModel()
             assertOverlayRoute(host, SENSORS_ROUTE)
@@ -50,7 +50,7 @@ class SensorsNavigationIntegrationTest {
             compose.onNodeWithTag("sensors-old-view-checkbox").performClick()
             compose.waitForIdle()
             compose.onNodeWithTag("sensors-old-view-checkbox").assertIsOn()
-            assertEquals(true, preferences.getBoolean(oldViewKey, false))
+            compose.waitUntil(5_000) { runBlocking { prefs.settings.first().oldSensorViewEnabled } }
 
             compose.activityRule.scenario.recreate()
             compose.waitForIdle()
@@ -67,9 +67,7 @@ class SensorsNavigationIntegrationTest {
             compose.onNodeWithTag("old-sensors-list").assertExists()
 
             openSensorsSettings()
-            compose.activityRule.scenario.onActivity {
-                preferences.edit().putBoolean(oldViewKey, false).commit()
-            }
+            runBlocking { prefs.setOldSensorViewEnabled(false) }
             compose.waitForIdle()
             compose.onNodeWithTag("sensors-old-view-checkbox").assertIsOff()
             InstrumentationRegistry.getInstrumentation().sendKeyDownUpSync(KeyEvent.KEYCODE_BACK)
@@ -90,19 +88,15 @@ class SensorsNavigationIntegrationTest {
             compose.waitForIdle()
             assertLegacyHome(nativeHost())
         } finally {
-            preferences.edit().apply {
-                if (hadOldView) putBoolean(oldViewKey, originalOldView) else remove(oldViewKey)
-            }.commit()
+            runBlocking { prefs.setOldSensorViewEnabled(originalOldView) }
         }
     }
 
     @Test fun gaugeStylePersistsAndUpdatesAcrossSettingsAndSensorsRoutes() {
-        val preferences = context.getSharedPreferences("${context.packageName}_preferences", android.content.Context.MODE_PRIVATE)
-        val key = "sensor_gauge_style"
-        val hadStyle = preferences.contains(key)
-        val originalStyle = preferences.getString(key, null)
+        val prefs = compose.activity.userPrefs
+        val originalStyle = runBlocking { prefs.settings.first().sensorGaugeStyle }
         try {
-            preferences.edit().remove(key).commit()
+            runBlocking { prefs.setSensorGaugeStyle(SensorGaugeStyle.PreciseArc) }
             navigateToHomeAndSensors()
             val sensorsViewModel = currentSensorsViewModel()
             assertEquals(SensorGaugeStyle.PreciseArc, sensorsViewModel.state.value.gaugeStyle)
@@ -111,7 +105,7 @@ class SensorsNavigationIntegrationTest {
             compose.onNodeWithTag("sensor-gauge-style-row").performScrollTo().performClick()
             compose.onNodeWithTag("sensor-gauge-style-current").performClick()
             compose.waitForIdle()
-            assertEquals("current", preferences.getString(key, null))
+            compose.waitUntil(5_000) { runBlocking { prefs.settings.first().sensorGaugeStyle == SensorGaugeStyle.Current } }
             assertEquals(SensorGaugeStyle.Current, sensorsViewModel.state.value.gaugeStyle)
             compose.onNodeWithContentDescription(context.getString(R.string.back)).performClick()
             compose.waitForIdle()
@@ -120,7 +114,7 @@ class SensorsNavigationIntegrationTest {
             compose.onNodeWithTag("sensor-gauge-style-row").performScrollTo().performClick()
             compose.onNodeWithTag("sensor-gauge-style-precise_arc").performClick()
             compose.waitForIdle()
-            assertEquals("precise_arc", preferences.getString(key, null))
+            assertEquals("precise_arc", runBlocking { prefs.settings.first().sensorGaugeStyle.preferenceValue })
             assertEquals(SensorGaugeStyle.PreciseArc, sensorsViewModel.state.value.gaugeStyle)
 
             compose.activityRule.scenario.recreate()
@@ -132,22 +126,19 @@ class SensorsNavigationIntegrationTest {
             assertSame(sensorsViewModel, currentSensorsViewModel())
             assertEquals(SensorGaugeStyle.PreciseArc, sensorsViewModel.state.value.gaugeStyle)
 
-            compose.activityRule.scenario.onActivity {
-                preferences.edit().putString(key, "thin_needle").commit()
-            }
+            runBlocking { prefs.setSensorGaugeStyle(SensorGaugeStyle.ThinNeedle) }
             compose.waitForIdle()
             assertEquals(SensorGaugeStyle.ThinNeedle, sensorsViewModel.state.value.gaugeStyle)
             openSensorsSettings()
             compose.onNodeWithTag("sensor-gauge-style-value", useUnmergedTree = true)
                 .assertTextEquals(context.getString(R.string.sensor_gauge_style_thin_needle))
         } finally {
-            preferences.edit().apply {
-                if (hadStyle) putString(key, originalStyle) else remove(key)
-            }.commit()
+            runBlocking { prefs.setSensorGaugeStyle(originalStyle) }
         }
     }
 
     private fun navigateToHomeAndSensors(): NavHostController {
+        awaitRootNavigation()
         lateinit var host: NavHostController
         compose.activityRule.scenario.onActivity { activity ->
             host = requireNotNull(activity.rootNavigationController)
@@ -178,11 +169,20 @@ class SensorsNavigationIntegrationTest {
     }
 
     private fun nativeHost(): NavHostController {
+        awaitRootNavigation()
         lateinit var host: NavHostController
         compose.activityRule.scenario.onActivity { activity ->
             host = requireNotNull(activity.rootNavigationController)
         }
         return host
+    }
+
+    private fun awaitRootNavigation() {
+        compose.waitUntil(5_000) {
+            var ready = false
+            compose.activityRule.scenario.onActivity { ready = it.rootNavigationController?.currentDestination != null }
+            ready
+        }
     }
 
     private fun assertLegacyHome(host: NavHostController) {
