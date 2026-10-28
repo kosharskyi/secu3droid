@@ -44,6 +44,7 @@ import org.junit.Assert.assertEquals
 import org.junit.Rule
 import org.junit.Test
 import org.secu3.android.domain.diagnostics.DiagnosticOutput
+import org.secu3.android.domain.diagnostics.DiagnosticsState
 import org.secu3.android.ui.compose.SecuComposeTheme
 
 class DiagnosticsOutputsScreenTest {
@@ -84,7 +85,7 @@ class DiagnosticsOutputsScreenTest {
         val tach = mutableStateOf(false)
         compose.setContent {
             SecuComposeTheme {
-                DiagnosticsOutputsScreen(false, 0, blDe.value, tach.value, controlsEnabled = true) { _, _ -> }
+                DiagnosticsOutputsScreen(false, DiagnosticsState(enableBlDe = blDe.value, enableTachO = tach.value, controlsEnabled = true)) { _, _ -> }
             }
         }
         compose.onNodeWithTag("output_BL").assertIsNotEnabled()
@@ -106,12 +107,8 @@ class DiagnosticsOutputsScreenTest {
             SecuComposeTheme {
                 DiagnosticsOutputsScreen(
                     isSecu3T = false,
-                    outputBits = 0,
-                    enableBlDe = true,
-                    enableTachO = true,
-                    generatorOutput = generatorOutput.value,
+                    state = DiagnosticsState(enableBlDe = true, enableTachO = true, generatorOutput = generatorOutput.value, controlsEnabled = true),
                     onOutputChanged = { _, _ -> outputCalls++ },
-                    controlsEnabled = true,
                 )
             }
         }
@@ -138,6 +135,28 @@ class DiagnosticsOutputsScreenTest {
     }
 
     @Test
+    fun lostReadinessDisablesOutputRowAndCheckboxWithoutSendingCommand() {
+        val ready = mutableStateOf(true)
+        val changes = mutableListOf<Pair<DiagnosticOutput, Boolean>>()
+        compose.setContent {
+            SecuComposeTheme {
+                DiagnosticsOutputsScreen(false, DiagnosticsState(controlsEnabled = ready.value)) { output, value ->
+                    changes += output to value
+                }
+            }
+        }
+        compose.onNodeWithTag("output_row_IGN_OUT1").assertIsEnabled()
+        compose.onNodeWithTag("output_IGN_OUT1").assertIsEnabled()
+        ready.value = false
+        compose.onNodeWithTag("output_row_IGN_OUT1").assertIsNotEnabled()
+        compose.onNodeWithTag("output_IGN_OUT1").assertIsNotEnabled()
+        assertEquals(emptyList<Pair<DiagnosticOutput, Boolean>>(), changes)
+        ready.value = true
+        compose.onNodeWithTag("output_IGN_OUT1").performClick()
+        assertEquals(listOf(DiagnosticOutput.IGN_OUT1 to true), changes)
+    }
+
+    @Test
     fun generatorOutputStateLocksRowsAndTachFilteringKeepsRowsStable() {
         val firmware = mutableStateOf<Boolean?>(false)
         val generatorOutput = mutableStateOf<DiagnosticOutput?>(DiagnosticOutput.ECF0)
@@ -145,12 +164,8 @@ class DiagnosticsOutputsScreenTest {
             SecuComposeTheme {
                 DiagnosticsOutputsScreen(
                     isSecu3T = firmware.value,
-                    outputBits = 0,
-                    enableBlDe = true,
-                    enableTachO = true,
-                    generatorOutput = generatorOutput.value,
+                    state = DiagnosticsState(enableBlDe = true, enableTachO = true, generatorOutput = generatorOutput.value, controlsEnabled = true),
                     onOutputChanged = { _, _ -> },
-                    controlsEnabled = true,
                 )
             }
         }
@@ -172,7 +187,7 @@ class DiagnosticsOutputsScreenTest {
         val changes = mutableListOf<Pair<DiagnosticOutput, Boolean>>()
         compose.setContent {
             SecuComposeTheme {
-                DiagnosticsOutputsScreen(false, 0, true, true, controlsEnabled = true) { output, enabled ->
+                DiagnosticsOutputsScreen(false, DiagnosticsState(enableBlDe = true, enableTachO = true, controlsEnabled = true)) { output, enabled ->
                     changes += output to enabled
                 }
             }
@@ -194,7 +209,7 @@ class DiagnosticsOutputsScreenTest {
         val restorationTester = StateRestorationTester(compose)
         restorationTester.setContent {
             SecuComposeTheme {
-                DiagnosticsOutputsScreen(false, 0, permission.value, false, controlsEnabled = true) { output, enabled ->
+                DiagnosticsOutputsScreen(false, DiagnosticsState(enableBlDe = permission.value, controlsEnabled = true)) { output, enabled ->
                     changes += output to enabled
                 }
             }
@@ -209,11 +224,7 @@ class DiagnosticsOutputsScreenTest {
     @androidx.compose.runtime.Composable
     private fun OutputsScreen(firmware: Boolean?, bits: Int = 0, generatorOutput: DiagnosticOutput? = null) = DiagnosticsOutputsScreen(
         isSecu3T = firmware,
-        outputBits = bits,
-        enableBlDe = false,
-        enableTachO = false,
-        generatorOutput = generatorOutput,
+        state = DiagnosticsState(outputBits = bits, generatorOutput = generatorOutput, controlsEnabled = true),
         onOutputChanged = { _, _ -> },
-        controlsEnabled = true,
     )
 }

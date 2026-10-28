@@ -14,6 +14,8 @@ Diagnostics inputs receive a nullable packet while firmware data is unavailable.
 
 The output checkboxes represent ECU commands. Preserve firmware and readiness gates, accessibility behavior, and invoke callbacks only from user interaction; do not turn them into passive status indicators.
 
+Both row and checkbox use the domain state's `canSetOutput` rule. The screen also masks readiness when the observed connection or input is unavailable, even if a previous domain snapshot is still visible.
+
 ## Firmware capability labels stay reactive
 
 The route collects the connection manager's nullable firmware state so a reply while diagnostics is open updates input labels and capability presentation. Clearing firmware removes stale capability. Show ADD_IO3 only outside SECU-3T, and treat ADD_IO4 as unavailable unless family and TPIC8101 capability are both known and enabled; a supported value of `0.000 V` is still a real reading.

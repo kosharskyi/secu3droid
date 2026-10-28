@@ -147,6 +147,7 @@ class DiagnosticsScreenTest {
 
     @Test
     fun selectedGeneratorChannelLocksCorrespondingOutputOnTheOutputsTab() {
+        val connection = mutableStateOf<ConnectionState>(Connected)
         val state = mutableStateOf(
             DiagnosticsState(
                 input = DiagInputPacket(),
@@ -160,7 +161,7 @@ class DiagnosticsScreenTest {
             SecuComposeTheme {
                 DiagnosticsScreen(
                     isSecu3T = false,
-                    connectionStatus = Connected,
+                    connectionStatus = connection.value,
                     state = state.value,
                     onNavigateUp = {},
                     onAdditionalSettings = {},
@@ -179,6 +180,9 @@ class DiagnosticsScreenTest {
         compose.onNodeWithTag("output_row_IGN_OUT2").assertIsNotEnabled()
         state.value = state.value.copy(channel = 0, generatorOutput = null)
         compose.onNodeWithTag("output_row_IGN_OUT1").assertIsEnabled()
+        connection.value = Disconnected
+        compose.onNodeWithTag("output_row_IGN_OUT1").assertIsNotEnabled()
+        compose.onNodeWithTag("output_IGN_OUT1").assertIsNotEnabled()
     }
 
     @Test

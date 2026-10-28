@@ -21,3 +21,5 @@ Frequency must be finite and within 10–5000 Hz; duty must be finite and within
 ## BL, DE, and TACH output bits require their direction bits
 
 BL uses state/direction bits 11/12, DE uses 13/14, and TACH_O uses 23/24. Enabling a direction resets that output LOW and queues its packet; disabling clears state and direction to Hi-Z. Manual changes are ignored while direction is disabled and generator-selected outputs are rejected. Applying additional options changes BL/DE first and TACH second, sending one snapshot per changed group; unchanged options preserve driven HIGH state.
+
+The session changes BL and DE direction together, and publishes `enableBlDe` only when both are enabled. Both the command guard and UI use `DiagnosticsState.canSetOutput`, while the command guard also checks the live transport so a stale state cannot send after disconnection.

@@ -92,8 +92,10 @@ class DiagnosticsSessionTest {
         fixture.emit(DiagInputPacket(flags = 0))
         fixture.await { fixture.session.state.value.controlsEnabled }
         fixture.session.selectChannel(1)
+        val generatorSendCount = fixture.outputSnapshots.size
         fixture.session.setOutput(DiagnosticOutput.IGN_OUT1, true)
         assertEquals(0, fixture.session.state.value.outputBits and 1)
+        assertEquals(generatorSendCount, fixture.outputSnapshots.size)
         val disabledDirectionSendCount = fixture.outputSnapshots.size
         fixture.session.setOutput(DiagnosticOutput.BL, true)
         fixture.session.setOutput(DiagnosticOutput.DE, true)
@@ -114,6 +116,10 @@ class DiagnosticsSessionTest {
         val before = fixture.outputSnapshots.size
         fixture.session.applyAdditionalOptions(enableBlDe = false, enableTachO = false)
         assertEquals(listOf(1 shl 23 or (1 shl 24), 0), fixture.outputSnapshots.drop(before).map { it.out })
+        fixture.transportConnected = false
+        val disconnectedCount = fixture.outputSnapshots.size
+        fixture.session.setOutput(DiagnosticOutput.IGN_OUT2, true)
+        assertEquals(disconnectedCount, fixture.outputSnapshots.size)
         fixture.session.close()
     }
 

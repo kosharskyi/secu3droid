@@ -52,7 +52,14 @@ data class DiagnosticsState(
     val enableBlDe: Boolean = false,
     val enableTachO: Boolean = false,
     val controlsEnabled: Boolean = false,
-)
+) {
+    fun canSetOutput(output: DiagnosticOutput): Boolean =
+        controlsEnabled && output != generatorOutput && when (output) {
+            DiagnosticOutput.BL, DiagnosticOutput.DE -> enableBlDe
+            DiagnosticOutput.TACH_O -> enableTachO
+            else -> true
+        }
+}
 
 /** Owns the diagnostic protocol session and its ECU output packet. */
 class DiagnosticsSession internal constructor(
@@ -135,11 +142,11 @@ class DiagnosticsSession internal constructor(
     }
 
     fun setOutput(output: DiagnosticOutput, enabled: Boolean) {
-        if (!canControl() || channelOutput(packet.chan) == output) return
+        if (!canControl() || !_state.value.canSetOutput(output)) return
         when (output) {
-            DiagnosticOutput.BL -> if (!packet.blOutputEnabled) return else packet.bl = enabled
-            DiagnosticOutput.DE -> if (!packet.deOutputEnabled) return else packet.de = enabled
-            DiagnosticOutput.TACH_O -> if (!packet.tachOOutputEnabled) return else packet.tachO = enabled
+            DiagnosticOutput.BL -> packet.bl = enabled
+            DiagnosticOutput.DE -> packet.de = enabled
+            DiagnosticOutput.TACH_O -> packet.tachO = enabled
             else -> packet.out = if (enabled) packet.out or (1 shl output.bit) else packet.out and (1 shl output.bit).inv()
         }
         sendIfInitialized()

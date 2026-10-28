@@ -83,8 +83,6 @@ internal fun DiagnosticsScreen(
     val status = connectionStatus
     val input = state.input.takeIf { state.controlsEnabled && status == Connected }
     val controlsEnabled = state.controlsEnabled && status == Connected && input != null
-    val enableBlDe = state.enableBlDe
-    val enableTachO = state.enableTachO
     var editorTarget by rememberSaveable { mutableStateOf<String?>(null) }
     var editorInitialValue by rememberSaveable { mutableFloatStateOf(0f) }
     var editorSessionId by rememberSaveable { mutableLongStateOf(0L) }
@@ -157,11 +155,7 @@ internal fun DiagnosticsScreen(
                     )
                     else -> DiagnosticsOutputsScreen(
                         isSecu3T = isSecu3T,
-                        outputBits = state.outputBits,
-                        enableBlDe = enableBlDe,
-                        enableTachO = enableTachO,
-                        generatorOutput = state.generatorOutput,
-                        controlsEnabled = controlsEnabled,
+                        state = state.copy(controlsEnabled = controlsEnabled),
                         onOutputChanged = onOutputChanged,
                     )
                 }

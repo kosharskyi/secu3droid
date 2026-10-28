@@ -254,6 +254,7 @@ class DiagnosticsNavigationIntegrationTest {
     }
 
     private fun navigateHome(): NavHostController {
+        compose.waitUntil(10_000) { compose.activity.rootNavigationController != null }
         lateinit var host: NavHostController
         compose.activityRule.scenario.onActivity { activity ->
             host = requireNotNull(activity.rootNavigationController)

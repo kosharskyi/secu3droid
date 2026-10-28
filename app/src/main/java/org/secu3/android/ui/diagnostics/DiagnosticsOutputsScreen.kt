@@ -48,15 +48,12 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.res.stringResource
 import org.secu3.android.R
 import org.secu3.android.domain.diagnostics.DiagnosticOutput
+import org.secu3.android.domain.diagnostics.DiagnosticsState
 
 @Composable
 internal fun DiagnosticsOutputsScreen(
     isSecu3T: Boolean?,
-    outputBits: Int,
-    enableBlDe: Boolean,
-    enableTachO: Boolean,
-    generatorOutput: DiagnosticOutput? = null,
-    controlsEnabled: Boolean = false,
+    state: DiagnosticsState,
     onOutputChanged: (DiagnosticOutput, Boolean) -> Unit,
 ) {
     val familyOutputs = when (isSecu3T) {
@@ -64,7 +61,7 @@ internal fun DiagnosticsOutputsScreen(
         false -> DiagnosticOutput.secu3IChannels
         null -> emptyList()
     }
-    val outputs = familyOutputs.filter { it != DiagnosticOutput.TACH_O || enableTachO }
+    val outputs = familyOutputs.filter { it != DiagnosticOutput.TACH_O || state.enableTachO }
     Column(
         modifier = Modifier.fillMaxWidth().verticalScroll(rememberScrollState()).padding(16.dp),
         verticalArrangement = Arrangement.spacedBy(16.dp),
@@ -74,21 +71,13 @@ internal fun DiagnosticsOutputsScreen(
         OutputGroup(
             title = stringResource(R.string.diag_outputs_ignition_group),
             outputs = outputs.take(ignitionCount),
-            outputBits = outputBits,
-            generatorOutput = generatorOutput,
-            enableBlDe = enableBlDe,
-            enableTachO = enableTachO,
-            controlsEnabled = controlsEnabled,
+            state = state,
             onOutputChanged = onOutputChanged,
         )
         OutputGroup(
             title = stringResource(if (isSecu3T) R.string.diag_outputs_other_group else R.string.diag_outputs_injection_group),
             outputs = outputs.drop(ignitionCount),
-            outputBits = outputBits,
-            generatorOutput = generatorOutput,
-            enableBlDe = enableBlDe,
-            enableTachO = enableTachO,
-            controlsEnabled = controlsEnabled,
+            state = state,
             onOutputChanged = onOutputChanged,
         )
     }
@@ -98,11 +87,7 @@ internal fun DiagnosticsOutputsScreen(
 private fun OutputGroup(
     title: String,
     outputs: List<DiagnosticOutput>,
-    outputBits: Int,
-    generatorOutput: DiagnosticOutput?,
-    enableBlDe: Boolean,
-    enableTachO: Boolean,
-    controlsEnabled: Boolean,
+    state: DiagnosticsState,
     onOutputChanged: (DiagnosticOutput, Boolean) -> Unit,
 ) {
     DiagnosticGroupSurface(Modifier.fillMaxWidth()) {
@@ -118,21 +103,15 @@ private fun OutputGroup(
             outputs.forEachIndexed { index, output ->
                 OutputToggle(
                     output,
-                    outputBits,
-                    controlsEnabled && enabledFor(output, enableBlDe, enableTachO) && output != generatorOutput,
-                    isGeneratorOutput = output == generatorOutput,
+                    state.outputBits,
+                    state.canSetOutput(output),
+                    isGeneratorOutput = output == state.generatorOutput,
                     onOutputChanged = onOutputChanged,
                 )
                 if (index != outputs.lastIndex) HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant)
             }
         }
     }
-}
-
-private fun enabledFor(output: DiagnosticOutput, enableBlDe: Boolean, enableTachO: Boolean) = when (output) {
-    DiagnosticOutput.BL, DiagnosticOutput.DE -> enableBlDe
-    DiagnosticOutput.TACH_O -> enableTachO
-    else -> true
 }
 
 @Composable
