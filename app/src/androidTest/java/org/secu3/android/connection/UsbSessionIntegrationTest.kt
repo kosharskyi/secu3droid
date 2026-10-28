@@ -62,8 +62,8 @@ import org.secu3.android.utils.IsolatedUserPrefs
 import org.secu3.android.utils.AppPrefs
 import org.secu3.android.ui.messages.UiMessageQueue
 import org.secu3.android.ui.start.StartScreenViewModel
-import org.secu3.android.ui.home.HomeRepository
 import org.secu3.android.ui.home.HomeViewModel
+import org.secu3.android.network.releases.ReleaseRepository
 import org.secu3.android.network.ApiService
 import org.secu3.android.network.models.GitHubRelease
 import retrofit2.Response
@@ -130,9 +130,8 @@ class UsbSessionIntegrationTest {
         }
         val viewModel = HomeViewModel(
             fixture.manager,
-            HomeRepository(api, context.getSystemService(Context.DOWNLOAD_SERVICE) as DownloadManager, appPrefs),
-            appPrefs,
-            fixture.prefs,
+            ReleaseRepository(api, context.getSystemService(Context.DOWNLOAD_SERVICE) as DownloadManager, appPrefs,
+                true, "0.19.2-debug", { org.threeten.bp.LocalDate.now() }),
             UiMessageQueue(),
         )
         val viewModelStore = ViewModelStore()

@@ -21,7 +21,3 @@ A confirmed USB session hides the Exit action and consumes system Back while Hom
 ## Home navigates only after the manager accepts the stop
 
 The manager rechecks the USB session lock when Home confirms an exit. If a USB handshake confirms between the UI snapshot and that request, the manager rejects the stop; keep the exit flow pending state clear and do not navigate to StartScreen. The ViewModel publishes its single UI navigation flag only when `stopConnection()` returns true. Accepted exits let the manager stop the transport, logger and foreground service as one operation.
-
-## Release timestamp storage failures must remain distinct from network failure
-
-A failed release request retains the existing no-update behavior, but persisting a successful check's date can now fail asynchronously. Keep that write outside the request's exception handler so its I/O failure reaches the ViewModel's settings error message instead of silently looking like an unavailable release.

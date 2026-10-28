@@ -23,7 +23,7 @@
  *                    email: vetalkosharskiy@gmail.com
  */
 
-package org.secu3.android.ui.home
+package org.secu3.android.network.releases
 
 import android.app.DownloadManager
 import android.os.Environment
@@ -36,29 +36,47 @@ import org.secu3.android.utils.AppPrefs
 import org.secu3.android.utils.toResult
 import org.threeten.bp.LocalDate
 import kotlinx.coroutines.CancellationException
+import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.sync.Mutex
+import kotlinx.coroutines.sync.withLock
 import javax.inject.Inject
+import javax.inject.Singleton
 
-class HomeRepository @Inject constructor(
+@Singleton
+class ReleaseRepository internal constructor(
     private val apiService: ApiService,
     private val downloadManager: DownloadManager,
-    private val appPrefs: AppPrefs
+    private val appPrefs: AppPrefs,
+    private val isDebugBuild: Boolean,
+    private val versionName: String,
+    private val currentDate: () -> LocalDate,
 ) {
+    @Inject
+    constructor(
+        apiService: ApiService,
+        downloadManager: DownloadManager,
+        appPrefs: AppPrefs,
+    ) : this(apiService, downloadManager, appPrefs, BuildConfig.DEBUG, BuildConfig.VERSION_NAME, LocalDate::now)
 
-    suspend fun getNewRelease(): GitHubRelease? {
+    private val checkMutex = Mutex()
+
+    suspend fun getNewRelease(): GitHubRelease? = checkMutex.withLock {
+        if (!isDebugBuild && !appPrefs.lastAppVersionCheck.first().isBefore(currentDate())) return@withLock null
+
         val release = try {
             apiService.getLatestRelease().toResult().getOrNull()
         } catch (cancelled: CancellationException) {
             throw cancelled
         } catch (e: Exception) {
             null
-        } ?: return null
+        } ?: return@withLock null
 
-        appPrefs.setLastAppVersionCheck(LocalDate.now())
+        appPrefs.setLastAppVersionCheck(currentDate())
 
-        return try {
+        try {
             val remoteVersion = Version.parse(release.tagName)
-            val versionName = if (BuildConfig.DEBUG) BuildConfig.VERSION_NAME.split("-")[0] else BuildConfig.VERSION_NAME
-            val localVersion = Version.parse("v$versionName")
+            val checkedVersionName = if (isDebugBuild) versionName.split("-")[0] else versionName
+            val localVersion = Version.parse("v$checkedVersionName")
             release.takeIf { remoteVersion > localVersion }
         } catch (e: Exception) {
             null
@@ -78,11 +96,8 @@ class HomeRepository @Inject constructor(
         downloadManager.enqueue(request)
     }
 
-    companion object {
-        internal fun findReleaseApkAsset(release: GitHubRelease): Asset? {
-            val expectedAssetName = "Secu3Droid-${release.tagName}.apk"
-            return release.assets.firstOrNull { it.name == expectedAssetName }
-        }
+    internal fun findReleaseApkAsset(release: GitHubRelease): Asset? {
+        val expectedAssetName = "Secu3Droid-${release.tagName}.apk"
+        return release.assets.firstOrNull { it.name == expectedAssetName }
     }
-
 }

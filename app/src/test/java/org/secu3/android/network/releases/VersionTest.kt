@@ -1,4 +1,4 @@
-package org.secu3.android.ui.home
+package org.secu3.android.network.releases
 
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertTrue

@@ -43,7 +43,7 @@ import org.secu3.android.models.packets.input.SensorsPacket
 import org.secu3.android.network.ApiService
 import org.secu3.android.network.models.Author
 import org.secu3.android.network.models.GitHubRelease
-import org.secu3.android.ui.home.HomeRepository
+import org.secu3.android.network.releases.ReleaseRepository
 import org.secu3.android.ui.messages.UiMessageQueue
 import org.secu3.android.ui.settings.SettingsDialog
 import org.secu3.android.ui.settings.SettingsViewModel
@@ -174,7 +174,10 @@ class PreferencesFailureTest {
                 return Response.success(release())
             }
         }
-        val repository = HomeRepository(api, context.getSystemService(Context.DOWNLOAD_SERVICE) as DownloadManager, prefs)
+        val repository = ReleaseRepository(
+            api, context.getSystemService(Context.DOWNLOAD_SERVICE) as DownloadManager, prefs,
+            false, "0.19.2", { org.threeten.bp.LocalDate.now() },
+        )
         try {
             val initialDate = prefs.lastAppVersionCheck.first()
             storage.failWrites = true

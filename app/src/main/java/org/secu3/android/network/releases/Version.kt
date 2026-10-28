@@ -23,7 +23,7 @@
  *                    email: vetalkosharskiy@gmail.com
  */
 
-package org.secu3.android.ui.home
+package org.secu3.android.network.releases
 
 data class Version(val major: Int, val minor: Int, val patch: Int = 0) : Comparable<Version> {
     companion object {
