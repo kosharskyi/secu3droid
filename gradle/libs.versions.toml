@@ -5,7 +5,7 @@ core-ktx = "1.19.1"
 
 dagger = "2.60.1"
 
-firebase-bom = "35.0.0"
+firebase-bom = "35.1.0"
 
 annotation = "1.11.0"
 lifecycle = "2.11.0"
@@ -17,9 +17,9 @@ browser = "1.10.0"
 activity-compose = "1.13.0"
 compose-bom = "2026.09.00"
 
-gson = "2.14.0"
+gson = "2.15.0"
 retrofit = "3.0.0"
-okhttp = "5.5.0"
+okhttp = "5.5.1"
 threetenabp = "1.4.9"
 
 usb-serial-for-android = "3.11.0"
