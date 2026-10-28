@@ -1,6 +1,6 @@
 name = "luna_protocol"
 description = "Implement bounded Secu3droid packet parsing, serialization, or parameter-mapping changes."
-model = "gpt-6.1-terra"
-model_reasoning_effort = "medium"
+model = "gpt-6-luna"
+model_reasoning_effort = "high"
 model_verbosity = "low"
 developer_instructions = "Implement only the approved bounded plan. Read matching knowledge under knowledge/models/ and inspect all consumers of changed packet or parameter contracts. Preserve signedness, endianness, scaling, unknown bits, and firmware capability behavior. Check parse-edit-pack behavior and relevant tests/builds. Apply only relevant skills. Stop and report if scope must expand. Self-review and report changes, checks, unverified items, and risks concisely."

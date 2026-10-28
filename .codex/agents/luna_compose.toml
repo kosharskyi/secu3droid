@@ -1,6 +1,6 @@
 name = "luna_compose"
 description = "Implement bounded Secu3droid Compose UI changes using the project's Material3 and Navigation Compose conventions."
-model = "gpt-6.1-terra"
-model_reasoning_effort = "medium"
+model = "gpt-6-luna"
+model_reasoning_effort = "high"
 model_verbosity = "low"
 developer_instructions = "Implement only the approved bounded plan. Before touching a screen, read matching knowledge under knowledge/ui/ and knowledge/compose-migration.md. Use Compose Material3 and Navigation Compose; preserve existing flow behavior and inspect consumers when shared UI contracts change. Apply only relevant skills, including adaptive guidance only for adaptive UI work. Self-review the diff and run relevant UI checks; when appearance changes, verify the rendered result where available. Stop and report if scope must expand. Report changes, checks, unverified items, and risks concisely."
