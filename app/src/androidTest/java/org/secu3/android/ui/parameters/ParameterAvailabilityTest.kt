@@ -8,7 +8,7 @@ import org.junit.Rule
 import org.junit.Test
 import org.secu3.android.models.packets.input.FirmwareInfoPacket
 import org.secu3.android.domain.parameters.ParameterCapabilities
-import org.secu3.android.models.packets.out.params.StarterParamPacket
+import org.secu3.android.domain.parameters.StarterValues
 import org.secu3.android.models.packets.out.params.TemperatureParamPacket
 import org.secu3.android.ui.compose.SecuComposeTheme
 import org.secu3.android.ui.parameters.pages.compose.*
@@ -34,13 +34,13 @@ class ParameterAvailabilityTest {
     }
 
     @Test fun rereadingStarterKeepsTheSamePageScrollPosition() {
-        val data = StarterUiState.Data(StarterValues.from(StarterParamPacket()))
-        val state = mutableStateOf<StarterUiState>(data)
+        val data = StarterValues(0, 0, 0f, 0f, 0, 0, 0f, 0f, 0f, 0f, 0, false, false)
+        val state = mutableStateOf<StarterValues?>(data)
         compose.setContent { SecuComposeTheme { StarterScreen(state.value, {}, { _, _ -> }) } }
         val last = "starter_flag_row_limit_cranking_pw"
         compose.onNodeWithTag(last).performScrollTo().assertIsDisplayed()
         val before = compose.onNodeWithTag(last).fetchSemanticsNode().boundsInRoot.top
-        compose.runOnIdle { state.value = StarterUiState.Loading }
+        compose.runOnIdle { state.value = null }
         compose.onNodeWithTag("starter_loading").assertIsDisplayed()
         compose.runOnIdle { state.value = data }
         compose.onNodeWithTag(last).assertIsDisplayed()

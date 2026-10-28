@@ -39,18 +39,16 @@ import org.secu3.android.ui.MainActivity
 import org.secu3.android.ui.compose.SecuComposeTheme
 import org.secu3.android.ui.parameters.pages.compose.AnglesNumber
 import org.secu3.android.ui.parameters.pages.compose.AnglesUiState
-import org.secu3.android.ui.parameters.pages.compose.StarterUiState
+import org.secu3.android.ui.parameters.pages.compose.StarterNumber
 import org.secu3.android.ui.parameters.dialogs.NumericEditDialog
 
 class ParameterPageEditorRoutingTest {
     @get:Rule val compose = createAndroidComposeRule<MainActivity>()
 
-    @Test fun starterIntegerEditorRequestRoutesAcceptedValueToItsHolder() {
+    @Test fun starterIntegerEditorUsesDesktopBoundsAndRefusedCommandKeepsCommittedValue() {
         val vm = paramsViewModel()
-        val holder = vm.starterStateHolder
-        holder.reset()
-        holder.onPacketReceived(StarterParamPacket(starterOff = 120))
-        vm.isSendAllowed = false
+        vm.starterControl.reset()
+        vm.starterControl.receive(StarterParamPacket(starterOff = 120))
         renderPage(R.string.params_tab_start_title, vm)
 
         compose.onNodeWithTag("starter_starter_off").performClick()
@@ -61,9 +59,10 @@ class ParameterPageEditorRoutingTest {
         assertEquals(0, request.min)
         assertEquals(6000, request.max)
         assertEquals(10, request.step)
+        assertFalse(vm.editStarterInt(StarterNumber.CRANK_TO_RUN_COLD, 2))
+        assertFalse(vm.editStarterFloat(StarterNumber.STARTER_OFF, Float.NaN))
         compose.runOnIdle { vm.acceptParameterEditor(session.id, 140) }
-        assertEquals(140f, (holder.state as StarterUiState.Data).values.value(org.secu3.android.ui.parameters.pages.compose.StarterNumber.STARTER_OFF))
-        assertEquals(false, vm.isSendAllowed)
+        assertEquals(120f, StarterNumber.STARTER_OFF.value(requireNotNull(vm.starterControl.values.value)))
     }
 
     @Test fun anglesFloatEditorRequestRoutesAcceptedValueToItsHolder() {

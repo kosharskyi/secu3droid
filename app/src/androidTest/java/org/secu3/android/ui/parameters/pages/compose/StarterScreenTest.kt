@@ -24,7 +24,6 @@
  */
 package org.secu3.android.ui.parameters.pages.compose
 
-import androidx.compose.runtime.mutableStateOf
 import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.assertTextEquals
 import androidx.compose.ui.test.junit4.v2.createComposeRule
@@ -35,6 +34,7 @@ import androidx.compose.ui.test.performScrollTo
 import org.junit.Assert.assertEquals
 import org.junit.Rule
 import org.junit.Test
+import org.secu3.android.domain.parameters.StarterValues
 import org.secu3.android.ui.compose.SecuComposeTheme
 
 class StarterScreenTest {
@@ -44,21 +44,18 @@ class StarterScreenTest {
     @Test
     fun loadingAndAllNumericValuesRenderAndRecompositionDoesNotSend() {
         var sent = 0
-        val state = mutableStateOf<StarterUiState>(StarterUiState.Loading)
+        val values = androidx.compose.runtime.mutableStateOf<StarterValues?>(null)
         compose.setContent {
             SecuComposeTheme {
-                StarterScreen(state.value, onEdit = {}, onFlagChanged = { _, _ -> sent++ })
+                StarterScreen(values.value, onEdit = {}, onFlagChanged = { _, _ -> sent++ })
             }
         }
         compose.onNodeWithTag("starter_loading").assertIsDisplayed()
-        val values = StarterValues(
-            numbers = StarterNumber.entries.associateWith { it.ordinal + 1f },
-            flags = StarterFlag.entries.associateWith { it == StarterFlag.LIMIT_CRANKING_PW },
-        )
-        compose.runOnIdle { state.value = StarterUiState.Data(values) }
+        val expectedValues = StarterValues(1, 2, 3f, 4f, 5, 6, 7f, 8f, 9f, 10f, 11, false, true)
+        compose.runOnIdle { values.value = expectedValues }
         StarterNumber.entries.forEach {
             compose.onNodeWithTag("starter_${it.name.lowercase()}").performScrollTo().assertIsDisplayed()
-            val expected = String.format(java.util.Locale.getDefault(), "%.${it.precision}f", it.ordinal + 1f) +
+            val expected = String.format(java.util.Locale.getDefault(), "%.${it.precision}f", it.value(expectedValues)) +
                 " " + (it.unit.text ?: context.getString(it.unit.resourceId!!))
             compose.onNodeWithTag("starter_${it.name.lowercase()}-value", useUnmergedTree = true).assertTextEquals(expected)
         }
@@ -68,7 +65,7 @@ class StarterScreenTest {
         StarterFlag.entries.forEach {
             compose.onNodeWithTag("starter_flag_row_${it.name.lowercase()}").performScrollTo().assertIsDisplayed()
         }
-        compose.runOnIdle { state.value = StarterUiState.Data(values.copy(numbers = values.numbers.toMap())) }
+        compose.runOnIdle { values.value = expectedValues.copy() }
         assertEquals(0, sent)
     }
 
@@ -76,18 +73,15 @@ class StarterScreenTest {
     fun tappingValueReportsEditAndSwitchReportsOnlyUserChanges() {
         var edit: StarterNumber? = null
         val changedFlags = mutableListOf<Pair<StarterFlag, Boolean>>()
-        val values = StarterValues(
-            StarterNumber.entries.associateWith { 12f },
-            mapOf(StarterFlag.ALLOW_FLOOD_CLEAR_START to false, StarterFlag.LIMIT_CRANKING_PW to true),
-        )
-        val state = mutableStateOf<StarterUiState>(StarterUiState.Data(values))
+        val initial = StarterValues(12, 12, 12f, 12f, 12, 12, 12f, 12f, 12f, 12f, 12, false, true)
+        val values = androidx.compose.runtime.mutableStateOf<StarterValues?>(initial)
         compose.setContent {
             SecuComposeTheme {
                 StarterScreen(
-                    state.value,
+                    values.value,
                     onEdit = {
                         edit = it
-                        state.value = StarterUiState.Data(values.withValue(it, 42f))
+                        values.value = initial.copy(starterOff = 42)
                     },
                     onFlagChanged = { flag, checked -> changedFlags += flag to checked },
                 )

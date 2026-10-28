@@ -47,7 +47,6 @@ import org.secu3.android.ui.MainActivity
 import org.secu3.android.ui.PARAMETERS_ROUTE
 import org.secu3.android.ui.parameters.pages.compose.AnglesUiState
 import org.secu3.android.ui.parameters.pages.compose.AnglesNumber
-import org.secu3.android.ui.parameters.pages.compose.StarterUiState
 import org.secu3.android.ui.parameters.pages.compose.StarterNumber
 import org.secu3.android.ui.parameters.pages.compose.ChokeNumber
 import java.lang.reflect.Proxy
@@ -82,9 +81,9 @@ class ParameterPageSessionCacheTest {
         try {
             activate(vm, R.string.params_tab_start_title)
             transport.awaitReadRequest('o', 1)
-            assertTrue(vm.starterStateHolder.state is StarterUiState.Loading)
+            assertEquals(null, vm.starterControl.values.value)
             transport.emit(StarterParamPacket(starterOff = 120))
-            await { vm.starterStateHolder.state is StarterUiState.Data }
+            await { vm.starterControl.values.value != null }
             delay(150)
 
             activate(vm, R.string.params_tab_angles_title)
@@ -98,10 +97,10 @@ class ParameterPageSessionCacheTest {
             delay(300)
             assertEquals(1, transport.readRequestCount('o'))
             assertEquals(1, transport.readRequestCount('m'))
-            assertTrue(vm.starterStateHolder.state is StarterUiState.Data)
+            assertTrue(vm.starterControl.values.value != null)
 
             compose.runOnIdle {
-                vm.starterStateHolder.updateValue(StarterNumber.STARTER_OFF, 140f)
+                vm.editStarterInt(StarterNumber.STARTER_OFF, 140)
             }
 
             activate(vm, R.string.params_tab_angles_title)
@@ -132,6 +131,68 @@ class ParameterPageSessionCacheTest {
         }
     }
 
+    @Test fun starterCommandsUseLiveFirmwareAndReportOnlyAdmittedSnapshots() = runBlocking {
+        val vm = paramsViewModel()
+        var transport: FakeUsbTransport? = null
+        val queueField = ParamsViewModel::class.java.getDeclaredField("uiMessageQueue").apply { isAccessible = true }
+        val queue = queueField.get(vm) as org.secu3.android.ui.messages.UiMessageQueue
+        val originalActiveScope = queue.activeScope.value
+        try {
+            val usb = installFakeUsb(vm, firmwareOptions = 1 shl 28).also { transport = it }
+            activate(vm, R.string.params_tab_start_title)
+            usb.awaitReadRequest('o', 1)
+            usb.emit(StarterParamPacket(starterOff = 120, crankToRunTime = 1.2345f))
+            await { vm.starterControl.values.value?.starterOff == 120 }
+
+            compose.activityRule.scenario.moveToState(Lifecycle.State.STARTED)
+            compose.waitForIdle()
+            queue.onActiveScopeChanged(PARAMETERS_ROUTE)
+            queue.pending.value.forEach { queue.acknowledge(it.id) }
+            val baseline = usb.writes.size
+
+            compose.runOnIdle {
+                vm.editStarterInt(StarterNumber.STARTER_OFF, 140)
+                vm.editStarterInt(StarterNumber.AFTERSTART_PETROL, 2)
+            }
+            usb.awaitWriteCount(baseline + 2)
+            assertEquals('o', usb.writes[baseline][1].toInt().toChar())
+            assertEquals(140, usb.writes[baseline][3].toInt() and 0xff)
+            assertEquals(1, usb.writes[baseline + 1][8].toInt() and 0xff)
+            assertEquals(2, vm.starterControl.values.value?.afterstartPetrol)
+            assertEquals(1.23f, vm.starterControl.values.value?.crankToRunCold)
+            assertTrue(queue.pending.value.any { it.textRes == R.string.packet_sent })
+
+            queue.pending.value.forEach { queue.acknowledge(it.id) }
+            usb.emitFirmware(options = 0)
+            await { vm.capabilities.value.known && !vm.capabilities.value.fuelInjection }
+            val beforeUnsupportedEdit = usb.writes.size
+            compose.runOnIdle { vm.editStarterFloat(StarterNumber.PRIME_COLD, 2f) }
+            delay(100)
+            assertEquals(beforeUnsupportedEdit, usb.writes.size)
+            assertFalse(queue.pending.value.any { it.textRes == R.string.packet_sent })
+
+            val committed = vm.starterControl.values.value
+            compose.runOnIdle {
+                vm.pausePageSession()
+                vm.editStarterInt(StarterNumber.STARTER_OFF, 160)
+            }
+            assertEquals(beforeUnsupportedEdit, usb.writes.size)
+            assertEquals(committed, vm.starterControl.values.value)
+            assertFalse(queue.pending.value.any { it.textRes == R.string.packet_sent })
+        } finally {
+            try {
+                transport?.close()
+            } finally {
+                try {
+                    compose.runOnIdle { vm.clearPageState() }
+                } finally {
+                    queue.onActiveScopeChanged(originalActiveScope)
+                    compose.activityRule.scenario.moveToState(Lifecycle.State.RESUMED)
+                }
+            }
+        }
+    }
+
     @Test fun pageWaitingBehindAnotherTabUsesFreshRevisionAfterWrite() = runBlocking {
         val vm = paramsViewModel()
         val transport = installFakeUsb(vm)
@@ -150,9 +211,9 @@ class ParameterPageSessionCacheTest {
 
             activate(vm, R.string.params_tab_start_title)
             transport.awaitReadRequest('o', 2)
-            assertTrue(vm.starterStateHolder.state is StarterUiState.Loading)
+            assertEquals(null, vm.starterControl.values.value)
             transport.emit(StarterParamPacket(starterOff = 120))
-            await { vm.starterStateHolder.state is StarterUiState.Data }
+            await { vm.starterControl.values.value != null }
             delay(150)
 
             val afterPendingRead = transport.readRequestCount('o')
@@ -161,7 +222,7 @@ class ParameterPageSessionCacheTest {
             delay(300)
             assertEquals(afterPendingRead, transport.readRequestCount('o'))
             assertEquals(1, transport.readRequestCount('m'))
-            assertTrue(vm.starterStateHolder.state is StarterUiState.Data)
+            assertTrue(vm.starterControl.values.value != null)
         } finally {
             transport.close()
             compose.runOnIdle { vm.clearPageState() }

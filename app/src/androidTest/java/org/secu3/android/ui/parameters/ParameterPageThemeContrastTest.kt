@@ -26,13 +26,12 @@ import org.junit.Assert.assertTrue
 import org.junit.Rule
 import org.junit.Test
 import org.secu3.android.R
-import org.secu3.android.connection.Disconnected
+import org.secu3.android.connection.Connected
+import org.secu3.android.domain.parameters.StarterValues
 import org.secu3.android.ui.compose.SecuComposeTheme
 import org.secu3.android.ui.parameters.pages.compose.StarterFlag
 import org.secu3.android.ui.parameters.pages.compose.StarterNumber
 import org.secu3.android.ui.parameters.pages.compose.StarterScreen
-import org.secu3.android.ui.parameters.pages.compose.StarterUiState
-import org.secu3.android.ui.parameters.pages.compose.StarterValues
 
 class ParameterPageThemeContrastTest {
     @get:Rule val compose = createComposeRule()
@@ -46,24 +45,7 @@ class ParameterPageThemeContrastTest {
         val ukrainianResources = context.createConfigurationContext(ukrainianConfiguration).resources
         val ukrainianContext = context.createConfigurationContext(ukrainianConfiguration)
         val dark = mutableStateOf(false)
-        val starter = StarterUiState.Data(
-            StarterValues(
-                numbers = mapOf(
-                    StarterNumber.STARTER_OFF to 300f,
-                    StarterNumber.SMAP_ABANDON to 400f,
-                    StarterNumber.CRANK_TO_RUN_COLD to 1.5f,
-                    StarterNumber.CRANK_TO_RUN_HOT to .5f,
-                    StarterNumber.AFTERSTART_PETROL to 40f,
-                    StarterNumber.AFTERSTART_GAS to 20f,
-                    StarterNumber.PRIME_COLD to 3f,
-                    StarterNumber.PRIME_HOT to 1.5f,
-                    StarterNumber.PRIME_DELAY to 2f,
-                    StarterNumber.FLOOD_CLEAR_THRESHOLD to 90f,
-                    StarterNumber.STBL_COUNTDOWN to 10f,
-                ),
-                flags = StarterFlag.entries.associateWith { it == StarterFlag.LIMIT_CRANKING_PW },
-            ),
-        )
+        val starter = StarterValues(300, 400, 1.5f, .5f, 40, 20, 3f, 1.5f, 2f, 90f, 10, false, true)
         compose.setContent {
             CompositionLocalProvider(
                 LocalContext provides ukrainianContext,
@@ -76,7 +58,7 @@ class ParameterPageThemeContrastTest {
                             androidx.compose.ui.res.stringResource(R.string.params_tab_start_title),
                             androidx.compose.ui.res.stringResource(R.string.params_tab_angles_title),
                         ),
-                        connectionState = Disconnected,
+                        connectionState = Connected,
                         onBack = {},
                         onSave = {},
                         onPageSettled = {},

@@ -64,15 +64,15 @@ internal fun ParameterPageContent(
 
     when (titleRes) {
         R.string.params_tab_start_title -> {
-            val h = viewModel.starterStateHolder
-            StarterScreen(h.state, { n ->
-                val v = (h.state as? StarterUiState.Data)?.values ?: return@StarterScreen
-                if (n in setOf(StarterNumber.STARTER_OFF, StarterNumber.SMAP_ABANDON, StarterNumber.AFTERSTART_PETROL, StarterNumber.AFTERSTART_GAS, StarterNumber.STBL_COUNTDOWN)) {
-                    intEdit(n.titleRes, v.value(n).toInt(), n.step.toInt(), n.max.toInt(), n.min.toInt()) { h.updateValue(n, it.toFloat()) }
+            val values by viewModel.starterControl.values.collectAsStateWithLifecycle()
+            StarterScreen(values, { n ->
+                val v = values ?: return@StarterScreen
+                if (n.integer) {
+                    intEdit(n.titleRes, n.value(v).toInt(), n.step.toInt(), n.max.toInt(), n.min.toInt()) { viewModel.editStarterInt(n, it) }
                 } else {
-                    floatEdit(n.titleRes, v.value(n), n.step, n.max, n.min, n.precision) { h.updateValue(n, it) }
+                    floatEdit(n.titleRes, n.value(v), n.step, n.max, n.min, n.precision) { viewModel.editStarterFloat(n, it) }
                 }
-            }, h::updateFlag, capabilities = capabilities)
+            }, viewModel::setStarterFlag, capabilities = capabilities)
         }
         R.string.params_tab_angles_title -> {
             val h = viewModel.anglesStateHolder

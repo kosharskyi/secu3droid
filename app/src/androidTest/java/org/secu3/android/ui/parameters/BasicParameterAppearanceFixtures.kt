@@ -1,18 +1,14 @@
 package org.secu3.android.ui.parameters
 
 import androidx.compose.runtime.Composable
+import org.secu3.android.domain.parameters.StarterValues
 import org.secu3.android.ui.parameters.pages.compose.*
 
 /** Loaded UI samples for rendering every basic parameter page outside ECU navigation. */
 internal fun basicParameterAppearanceFixtures(): List<ParameterAppearanceFixture> = listOf(
     ParameterAppearanceFixture("starter") {
         StarterScreen(
-            StarterUiState.Data(
-                StarterValues(
-                    numbers = StarterNumber.entries.associateWith { it.ordinal + 1f },
-                    flags = StarterFlag.entries.associateWith { it == StarterFlag.LIMIT_CRANKING_PW },
-                ),
-            ),
+            StarterValues(1, 2, 3f, 4f, 5, 6, 7f, 8f, 9f, 10f, 11, false, true),
             onEdit = {},
             onFlagChanged = { _, _ -> },
         )

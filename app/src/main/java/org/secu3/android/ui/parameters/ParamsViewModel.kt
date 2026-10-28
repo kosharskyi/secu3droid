@@ -53,6 +53,7 @@ import org.secu3.android.domain.parameters.ChokeControl
 import org.secu3.android.domain.parameters.CkpsControl
 import org.secu3.android.domain.parameters.MiscellaneousControl
 import org.secu3.android.domain.parameters.SecurityControl
+import org.secu3.android.domain.parameters.StarterControl
 import org.secu3.android.domain.parameters.SecurityCredentialsResult
 import org.secu3.android.models.packets.base.OutputPacket
 import org.secu3.android.models.packets.out.params.AccelerationParamPacket
@@ -81,7 +82,6 @@ import org.secu3.android.ui.parameters.pages.compose.LambdaControlStateHolder
 import org.secu3.android.ui.parameters.pages.compose.LtftStateHolder
 import org.secu3.android.ui.parameters.pages.compose.IdlingStateHolder
 import org.secu3.android.ui.parameters.pages.compose.TemperatureStateHolder
-import org.secu3.android.ui.parameters.pages.compose.StarterStateHolder
 import org.secu3.android.ui.parameters.pages.AccelerationStateHolder
 import org.secu3.android.ui.parameters.pages.MiscField
 import org.secu3.android.ui.parameters.pages.MiscToggle
@@ -93,6 +93,8 @@ import org.secu3.android.ui.parameters.pages.compose.FuelInjectionNumber
 import org.secu3.android.ui.parameters.pages.compose.FuelInjectionFlag
 import org.secu3.android.ui.parameters.pages.compose.CkpsNumber
 import org.secu3.android.ui.parameters.pages.compose.CkpsFlag
+import org.secu3.android.ui.parameters.pages.compose.StarterFlag
+import org.secu3.android.ui.parameters.pages.compose.StarterNumber
 import org.secu3.android.ui.parameters.pages.UniversalOutputsStateHolder
 import javax.inject.Inject
 
@@ -107,6 +109,7 @@ class ParamsViewModel @Inject constructor(
     internal val ckpsControl: CkpsControl,
     internal val miscellaneousControl: MiscellaneousControl,
     internal val securityControl: SecurityControl,
+    internal val starterControl: StarterControl,
     private val uiMessageQueue: UiMessageQueue,
     private val parameterPageCatalog: ParameterPageCatalog,
 ) : ViewModel() {
@@ -130,8 +133,42 @@ class ParamsViewModel @Inject constructor(
     internal fun parameterPages(capabilities: ParameterCapabilities): List<ParameterPageSpec> =
         parameterPageCatalog.pages(capabilities)
 
-    internal val starterStateHolder by lazy {
-        StarterStateHolder(::sendPacket) { isSendAllowed = true }
+    fun editStarterInt(number: StarterNumber, value: Int): Boolean {
+        val admitted = when (number) {
+            StarterNumber.STARTER_OFF -> starterControl.editStarterOff(value)
+            StarterNumber.SMAP_ABANDON -> starterControl.editSmapAbandon(value)
+            StarterNumber.AFTERSTART_PETROL -> starterControl.editAfterstartPetrol(value)
+            StarterNumber.AFTERSTART_GAS -> starterControl.editAfterstartGas(value)
+            StarterNumber.STBL_COUNTDOWN -> starterControl.editStblCountdown(value)
+            else -> false
+        }
+        return reportStarterEdit(admitted)
+    }
+
+    fun editStarterFloat(number: StarterNumber, value: Float): Boolean {
+        val admitted = when (number) {
+            StarterNumber.CRANK_TO_RUN_COLD -> starterControl.editCrankToRunCold(value)
+            StarterNumber.CRANK_TO_RUN_HOT -> starterControl.editCrankToRunHot(value)
+            StarterNumber.PRIME_COLD -> starterControl.editPrimeCold(value)
+            StarterNumber.PRIME_HOT -> starterControl.editPrimeHot(value)
+            StarterNumber.PRIME_DELAY -> starterControl.editPrimeDelay(value)
+            StarterNumber.FLOOD_CLEAR_THRESHOLD -> starterControl.editFloodClearThreshold(value)
+            else -> false
+        }
+        return reportStarterEdit(admitted)
+    }
+
+    fun setStarterFlag(flag: StarterFlag, checked: Boolean): Boolean {
+        val admitted = when (flag) {
+            StarterFlag.ALLOW_FLOOD_CLEAR_START -> starterControl.setAllowFloodClearStart(checked)
+            StarterFlag.LIMIT_CRANKING_PW -> starterControl.setLimitCrankingPw(checked)
+        }
+        return reportStarterEdit(admitted)
+    }
+
+    private fun reportStarterEdit(admitted: Boolean): Boolean {
+        if (admitted) showUiMessage(R.string.packet_sent, UiMessageDuration.SHORT)
+        return admitted
     }
 
     internal val anglesStateHolder by lazy {
@@ -472,7 +509,7 @@ class ParamsViewModel @Inject constructor(
 
     private fun resetStateHolder(page: ParameterPage) {
         when (page) {
-            ParameterPage.STARTER -> starterStateHolder.reset()
+            ParameterPage.STARTER -> starterControl.reset()
             ParameterPage.ANGLES -> anglesStateHolder.reset()
             ParameterPage.IDLING -> idlingStateHolder.reset()
             ParameterPage.TEMPERATURE -> temperatureStateHolder.reset()
@@ -507,7 +544,7 @@ class ParamsViewModel @Inject constructor(
 
     private fun applyPageResult(page: ParameterPage, result: ParameterReadResult) {
         when (page) {
-            ParameterPage.STARTER -> starterStateHolder.onPacketReceived(packet<StarterParamPacket>(result))
+            ParameterPage.STARTER -> starterControl.receive(packet<StarterParamPacket>(result))
             ParameterPage.ANGLES -> anglesStateHolder.onPacketReceived(packet<AnglesParamPacket>(result))
             ParameterPage.IDLING -> idlingStateHolder.onPacketReceived(packet<IdlingParamPacket>(result))
             ParameterPage.TEMPERATURE -> temperatureStateHolder.onPacketReceived(packet<TemperatureParamPacket>(result))

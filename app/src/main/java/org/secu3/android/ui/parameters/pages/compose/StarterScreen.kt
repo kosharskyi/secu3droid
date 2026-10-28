@@ -25,6 +25,8 @@
 package org.secu3.android.ui.parameters.pages.compose
 
 import org.secu3.android.domain.parameters.ParameterCapabilities
+import org.secu3.android.domain.parameters.StarterControl
+import org.secu3.android.domain.parameters.StarterValues
 
 import androidx.compose.foundation.rememberScrollState
 import androidx.annotation.StringRes
@@ -60,7 +62,6 @@ import androidx.compose.ui.unit.sp
 import org.secu3.android.ui.parameters.compose.ParameterLoadingIndicator
 import org.secu3.android.ui.parameters.*
 import org.secu3.android.R
-import org.secu3.android.models.packets.out.params.StarterParamPacket
 import org.secu3.android.ui.parameters.compose.ParameterPage
 
 enum class StarterUnit(@StringRes val resourceId: Int? = null, val text: String? = null) {
@@ -80,17 +81,38 @@ enum class StarterNumber(
     val max: Float,
     val step: Float,
 ) {
-    STARTER_OFF(R.string.starter_off_title, StarterUnit.RPM, 0, 0f, 6000f, 10f),
-    SMAP_ABANDON(R.string.starter_map_abandon_title, StarterUnit.RPM, 0, 0f, 6000f, 10f),
-    CRANK_TO_RUN_COLD(R.string.starter_dat_crank_to_run_time_cold_title, StarterUnit.SECONDS, 2, .1f, 99f, .01f),
-    CRANK_TO_RUN_HOT(R.string.starter_dat_crank_to_run_time_hot_title, StarterUnit.SECONDS, 2, .1f, 99f, .01f),
-    AFTERSTART_PETROL(R.string.starter_dat_afterstart_enrichment_strokes_petrol_title, StarterUnit.NUM_LITERAL, 0, 0f, 1020f, 4f),
-    AFTERSTART_GAS(R.string.starter_dat_afterstart_enrichment_strokes_gas_title, StarterUnit.NUM_LITERAL, 0, 0f, 1020f, 4f),
-    PRIME_COLD(R.string.starter_dat_prime_pulse_cold_title, StarterUnit.MILLISECONDS, 1, 0f, 100f, .1f),
-    PRIME_HOT(R.string.starter_dat_prime_pulse_hot_title, StarterUnit.MILLISECONDS, 1, 0f, 100f, .1f),
-    PRIME_DELAY(R.string.starter_dat_prime_pulse_delay_title, StarterUnit.SECONDS, 1, 0f, 25f, .1f),
-    FLOOD_CLEAR_THRESHOLD(R.string.starter_dat_flod_clear_mode_threshold_title, StarterUnit.PERCENT, 1, 0f, 100f, .5f),
-    STBL_COUNTDOWN(R.string.starter_dat_starters_blocking_timer_title, StarterUnit.STR_LITERAL, 0, 0f, 255f, 1f),
+    STARTER_OFF(R.string.starter_off_title, StarterUnit.RPM, 0, StarterControl.STARTER_OFF_MIN.toFloat(), StarterControl.STARTER_OFF_MAX.toFloat(), 10f),
+    SMAP_ABANDON(R.string.starter_map_abandon_title, StarterUnit.RPM, 0, StarterControl.SMAP_ABANDON_MIN.toFloat(), StarterControl.SMAP_ABANDON_MAX.toFloat(), 10f),
+    CRANK_TO_RUN_COLD(R.string.starter_dat_crank_to_run_time_cold_title, StarterUnit.SECONDS, 2, StarterControl.CRANK_TIME_MIN, StarterControl.CRANK_TIME_MAX, .01f),
+    CRANK_TO_RUN_HOT(R.string.starter_dat_crank_to_run_time_hot_title, StarterUnit.SECONDS, 2, StarterControl.CRANK_TIME_MIN, StarterControl.CRANK_TIME_MAX, .01f),
+    AFTERSTART_PETROL(R.string.starter_dat_afterstart_enrichment_strokes_petrol_title, StarterUnit.NUM_LITERAL, 0, StarterControl.AFTERSTART_MIN.toFloat(), StarterControl.AFTERSTART_MAX.toFloat(), 4f),
+    AFTERSTART_GAS(R.string.starter_dat_afterstart_enrichment_strokes_gas_title, StarterUnit.NUM_LITERAL, 0, StarterControl.AFTERSTART_MIN.toFloat(), StarterControl.AFTERSTART_MAX.toFloat(), 4f),
+    PRIME_COLD(R.string.starter_dat_prime_pulse_cold_title, StarterUnit.MILLISECONDS, 1, StarterControl.PRIME_MIN, StarterControl.PRIME_MAX, .1f),
+    PRIME_HOT(R.string.starter_dat_prime_pulse_hot_title, StarterUnit.MILLISECONDS, 1, StarterControl.PRIME_MIN, StarterControl.PRIME_MAX, .1f),
+    PRIME_DELAY(R.string.starter_dat_prime_pulse_delay_title, StarterUnit.SECONDS, 1, StarterControl.PRIME_DELAY_MIN, StarterControl.PRIME_DELAY_MAX, .1f),
+    FLOOD_CLEAR_THRESHOLD(R.string.starter_dat_flod_clear_mode_threshold_title, StarterUnit.PERCENT, 1, StarterControl.FLOOD_CLEAR_MIN, StarterControl.FLOOD_CLEAR_MAX, .5f),
+    STBL_COUNTDOWN(R.string.starter_dat_starters_blocking_timer_title, StarterUnit.STR_LITERAL, 0, StarterControl.STBL_MIN.toFloat(), StarterControl.STBL_MAX.toFloat(), 1f),
+
+    ;
+
+    val integer: Boolean get() = when (this) {
+        STARTER_OFF, SMAP_ABANDON, AFTERSTART_PETROL, AFTERSTART_GAS, STBL_COUNTDOWN -> true
+        else -> false
+    }
+
+    fun value(values: StarterValues): Float = when (this) {
+        STARTER_OFF -> values.starterOff.toFloat()
+        SMAP_ABANDON -> values.smapAbandon.toFloat()
+        CRANK_TO_RUN_COLD -> values.crankToRunCold
+        CRANK_TO_RUN_HOT -> values.crankToRunHot
+        AFTERSTART_PETROL -> values.afterstartPetrol.toFloat()
+        AFTERSTART_GAS -> values.afterstartGas.toFloat()
+        PRIME_COLD -> values.primeCold
+        PRIME_HOT -> values.primeHot
+        PRIME_DELAY -> values.primeDelay
+        FLOOD_CLEAR_THRESHOLD -> values.floodClearThreshold
+        STBL_COUNTDOWN -> values.stblCountdown.toFloat()
+    }
 }
 
 enum class StarterFlag(@StringRes val titleRes: Int) {
@@ -98,69 +120,18 @@ enum class StarterFlag(@StringRes val titleRes: Int) {
     LIMIT_CRANKING_PW(R.string.starter_dat_limit_max_inj_pw_on_cranking_title),
 }
 
-data class StarterValues(
-    val numbers: Map<StarterNumber, Float>,
-    val flags: Map<StarterFlag, Boolean>,
-) {
-    fun value(number: StarterNumber): Float = numbers.getValue(number)
-    fun withValue(number: StarterNumber, value: Float) = copy(numbers = numbers + (number to value))
-    fun withFlag(flag: StarterFlag, checked: Boolean) = copy(flags = flags + (flag to checked))
-
-    companion object {
-        fun from(packet: StarterParamPacket) = StarterValues(
-            numbers = mapOf(
-                StarterNumber.STARTER_OFF to packet.starterOff.toFloat(),
-                StarterNumber.SMAP_ABANDON to packet.smapAbandon.toFloat(),
-                StarterNumber.CRANK_TO_RUN_COLD to packet.crankToRunTime,
-                StarterNumber.CRANK_TO_RUN_HOT to packet.injCrankToRun_time1,
-                StarterNumber.AFTERSTART_PETROL to packet.injAftstrStroke.toFloat(),
-                StarterNumber.AFTERSTART_GAS to packet.injAftStrokes1.toFloat(),
-                StarterNumber.PRIME_COLD to packet.injPrimeCold,
-                StarterNumber.PRIME_HOT to packet.injPrimeHot,
-                StarterNumber.PRIME_DELAY to packet.injPrimeDelay,
-                StarterNumber.FLOOD_CLEAR_THRESHOLD to packet.injFloodclearTps,
-                StarterNumber.STBL_COUNTDOWN to packet.stblStrCnt.toFloat(),
-            ),
-            flags = mapOf(
-                StarterFlag.ALLOW_FLOOD_CLEAR_START to packet.allowStartOnClearFlood,
-                StarterFlag.LIMIT_CRANKING_PW to packet.limitMaxInjPwOnCranking,
-            ),
-        )
-    }
-}
-
-fun applyStarterValue(packet: StarterParamPacket, number: StarterNumber, value: Float) {
-    when (number) {
-        StarterNumber.STARTER_OFF -> packet.starterOff = value.toInt()
-        StarterNumber.SMAP_ABANDON -> packet.smapAbandon = value.toInt()
-        StarterNumber.CRANK_TO_RUN_COLD -> packet.crankToRunTime = value
-        StarterNumber.CRANK_TO_RUN_HOT -> packet.injCrankToRun_time1 = value
-        StarterNumber.AFTERSTART_PETROL -> packet.injAftstrStroke = value.toInt()
-        StarterNumber.AFTERSTART_GAS -> packet.injAftStrokes1 = value.toInt()
-        StarterNumber.PRIME_COLD -> packet.injPrimeCold = value
-        StarterNumber.PRIME_HOT -> packet.injPrimeHot = value
-        StarterNumber.PRIME_DELAY -> packet.injPrimeDelay = value
-        StarterNumber.FLOOD_CLEAR_THRESHOLD -> packet.injFloodclearTps = value
-        StarterNumber.STBL_COUNTDOWN -> packet.stblStrCnt = value.toInt()
-    }
-}
-
-sealed interface StarterUiState {
-    data object Loading : StarterUiState
-    data class Data(val values: StarterValues) : StarterUiState
-}
-
 @Composable
 fun StarterScreen(
-    state: StarterUiState,
+    values: StarterValues?,
     onEdit: (StarterNumber) -> Unit,
     onFlagChanged: (StarterFlag, Boolean) -> Unit,
     capabilities: ParameterCapabilities = ParameterCapabilities.All,
 ) {
     val pageScrollState = rememberScrollState()
-    when (state) {
-        StarterUiState.Loading -> ParameterLoadingIndicator("starter_loading")
-        is StarterUiState.Data -> ParameterPage(scrollState = pageScrollState) {
+    if (values == null) {
+        ParameterLoadingIndicator("starter_loading")
+    } else {
+        ParameterPage(scrollState = pageScrollState) {
             Surface(
                 modifier = Modifier.fillMaxWidth(),
                 shape = RoundedCornerShape(16.dp),
@@ -177,11 +148,12 @@ fun StarterScreen(
                             StarterNumber.FLOOD_CLEAR_THRESHOLD -> capabilities.floodClearThreshold
                             else -> true
                         }
-                        StarterNumberRow(number, state.values.value(number), enabled) { onEdit(number) }
+                        StarterNumberRow(number, number.value(values), enabled) { onEdit(number) }
                         HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant)
                     }
                     StarterFlag.entries.forEachIndexed { index, flag ->
-                        StarterFlagRow(flag, state.values.flags.getValue(flag), if (flag == StarterFlag.LIMIT_CRANKING_PW) capabilities.fuelInjection else capabilities.floodClearThreshold) {
+                        val checked = if (flag == StarterFlag.ALLOW_FLOOD_CLEAR_START) values.allowFloodClearStart else values.limitCrankingPw
+                        StarterFlagRow(flag, checked, if (flag == StarterFlag.LIMIT_CRANKING_PW) capabilities.fuelInjection else capabilities.floodClearThreshold) {
                             onFlagChanged(flag, it)
                         }
                         if (index < StarterFlag.entries.lastIndex) {
