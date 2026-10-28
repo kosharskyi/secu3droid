@@ -67,10 +67,23 @@ class FirmwareInfoSheetTest {
         composeTestRule.onNodeWithText(context.getString(R.string.firmware_enabled_capabilities)).assertIsDisplayed()
         composeTestRule.onNodeWithText(context.getString(R.string.firmware_disabled_capabilities)).assertIsDisplayed()
 
-        composeTestRule.onNodeWithTag(firmwareCapabilityChipTag("OBD_SUPPORT", enabled = true)).assertIsSelected()
-        composeTestRule.onNodeWithTag(firmwareCapabilityChipTag("FUEL_INJECTION", enabled = true)).assertIsSelected()
-        composeTestRule.onNodeWithTag(firmwareCapabilityChipTag("GAS_DOSE", enabled = false)).assertIsNotSelected()
-        composeTestRule.onNodeWithTag(firmwareCapabilityChipTag("ATMEGA1284", enabled = false)).assertIsNotSelected()
+        composeTestRule.onNodeWithTag("firmware-capability-OBD_SUPPORT-enabled").assertIsSelected()
+        composeTestRule.onNodeWithTag("firmware-capability-FUEL_INJECTION-enabled").assertIsSelected()
+        composeTestRule.onNodeWithTag("firmware-capability-GAS_DOSE-disabled").assertIsNotSelected()
+        composeTestRule.onNodeWithTag("firmware-capability-ATMEGA1284-disabled").assertIsNotSelected()
+    }
+
+    @Test
+    fun highestOptionBitIsDisplayedAsEnabled() {
+        composeTestRule.setContent {
+            FirmwareInfoSheet(
+                firmware = FirmwareInfoPacket(options = 1 shl 31),
+                onDismiss = {},
+            )
+        }
+
+        composeTestRule.onNodeWithTag("firmware-capability-CKPS_NPLUS1-enabled").assertIsSelected()
+        composeTestRule.onNodeWithTag("firmware-capability-CARB_AFR-disabled").assertIsNotSelected()
     }
 
     @Test

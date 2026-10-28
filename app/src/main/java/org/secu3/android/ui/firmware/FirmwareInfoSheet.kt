@@ -95,7 +95,37 @@ internal fun FirmwareInfoSheet(
 
                 Spacer(modifier = Modifier.height(22.dp))
 
-                val capabilities = firmware.capabilities()
+                val capabilities = with(firmware) {
+                    listOf(
+                        FirmwareCapability("OBD_SUPPORT", isObdSupported),
+                        FirmwareCapability("ATMEGA1284", isATMEGA1284),
+                        FirmwareCapability("SPLIT_ANGLE", isSplitAngle),
+                        FirmwareCapability("TPIC8101", isTPIC8101),
+                        FirmwareCapability("CAM_SYNC", isCamSyncSupported),
+                        FirmwareCapability("DWELL_CONTROL", isDwellControlSupported),
+                        FirmwareCapability("COOLINGFAN_PWM", isCoolingFanPwmEnabled),
+                        FirmwareCapability("REALTIME_TABLES", isRealTimeTablesEnabled),
+                        FirmwareCapability("ICCAVR_COMPILER", isIccAvrCompiler),
+                        FirmwareCapability("AVRGCC_COMPILER", isAvrGccCompiler),
+                        FirmwareCapability("DEBUG_VARIABLES", isDebugVariablesEnabled),
+                        FirmwareCapability("PHASE_SENSOR", isPhaseSensorEnabled),
+                        FirmwareCapability("PHASED_IGNITION", isPhasedIgnitionEnabled),
+                        FirmwareCapability("FUEL_PUMP", isFuelPumpEnabled),
+                        FirmwareCapability("THERMISTOR_CS", isThermistorCsEnabled),
+                        FirmwareCapability("SECU3T_COMPAT", isSecu3T),
+                        FirmwareCapability("DIAGNOSTICS", isDiagnosticsEnabled),
+                        FirmwareCapability("HALL_OUTPUT", isHallOutputEnabled),
+                        FirmwareCapability("REV9_BOARD", isRev9Board),
+                        FirmwareCapability("STROBOSCOPE", isStroboscopeEnabled),
+                        FirmwareCapability("SM_CONTROL", isSmControlEnabled),
+                        FirmwareCapability("HALL_SYNC", isHallSyncEnabled),
+                        FirmwareCapability("CKPS_2CHIGN", isCkps2ChignEnabled),
+                        FirmwareCapability("FUEL_INJECTION", isFuelInjectEnabled),
+                        FirmwareCapability("GAS_DOSE", isGdControlEnabled),
+                        FirmwareCapability("CARB_AFR", isCarbAfrEnabled),
+                        FirmwareCapability("CKPS_NPLUS1", isCkpsNplus1Enabled),
+                    )
+                }
                 CapabilitySection(
                     title = stringResource(R.string.firmware_enabled_capabilities),
                     capabilities = capabilities.filter { it.enabled },
@@ -182,7 +212,7 @@ private fun CapabilityChip(
         style = MaterialTheme.typography.labelMedium,
         fontFamily = FontFamily.Monospace,
         modifier = Modifier
-            .testTag(firmwareCapabilityChipTag(label, enabled))
+            .testTag("firmware-capability-$label-${if (enabled) "enabled" else "disabled"}")
             .semantics { selected = enabled }
             .clip(RoundedCornerShape(14.dp))
             .background(background)
@@ -209,40 +239,4 @@ private data class FirmwareCapability(
     val enabled: Boolean,
 )
 
-internal fun firmwareCapabilityChipTag(label: String, enabled: Boolean): String {
-    return "firmware-capability-$label-${if (enabled) "enabled" else "disabled"}"
-}
-
 internal const val FirmwareLoadingTag = "firmware-loading"
-
-private fun FirmwareInfoPacket.capabilities(): List<FirmwareCapability> {
-    return listOf(
-        FirmwareCapability("OBD_SUPPORT", isObdSupported),
-        FirmwareCapability("ATMEGA1284", isATMEGA1284),
-        FirmwareCapability("SPLIT_ANGLE", isSplitAngle),
-        FirmwareCapability("TPIC8101", isTPIC8101),
-        FirmwareCapability("CAM_SYNC", isCamSyncSupported),
-        FirmwareCapability("DWELL_CONTROL", isDwellControlSupported),
-        FirmwareCapability("COOLINGFAN_PWM", isCoolingFanPwmEnabled),
-        FirmwareCapability("REALTIME_TABLES", isRealTimeTablesEnabled),
-        FirmwareCapability("ICCAVR_COMPILER", isIccAvrCompiler),
-        FirmwareCapability("AVRGCC_COMPILER", isAvrGccCompiler),
-        FirmwareCapability("DEBUG_VARIABLES", isDebugVariablesEnabled),
-        FirmwareCapability("PHASE_SENSOR", isPhaseSensorEnabled),
-        FirmwareCapability("PHASED_IGNITION", isPhasedIgnitionEnabled),
-        FirmwareCapability("FUEL_PUMP", isFuelPumpEnabled),
-        FirmwareCapability("THERMISTOR_CS", isThermistorCsEnabled),
-        FirmwareCapability("SECU3T_COMPAT", isSecu3T),
-        FirmwareCapability("DIAGNOSTICS", isDiagnosticsEnabled),
-        FirmwareCapability("HALL_OUTPUT", isHallOutputEnabled),
-        FirmwareCapability("REV9_BOARD", isRev9Board),
-        FirmwareCapability("STROBOSCOPE", isStroboscopeEnabled),
-        FirmwareCapability("SM_CONTROL", isSmControlEnabled),
-        FirmwareCapability("HALL_SYNC", isHallSyncEnabled),
-        FirmwareCapability("CKPS_2CHIGN", isCkps2ChignEnabled),
-        FirmwareCapability("FUEL_INJECTION", isFuelInjectEnabled),
-        FirmwareCapability("GAS_DOSE", isGdControlEnabled),
-        FirmwareCapability("CARB_AFR", isCarbAfrEnabled),
-        FirmwareCapability("CKPS_NPLUS1", isCkpsNplus1Enabled),
-    )
-}
