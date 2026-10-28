@@ -12,6 +12,10 @@ Keep profiles focused on stable role behavior. Record durable, nonprivate projec
 
 Use `secu_android_qa` when a task needs reproduction or a targeted device/emulator check. Coordinate shared emulator and build use with the implementation worker, avoid repeating checks they already ran, and report environment limits such as emulator versus physical device or real ECU coverage.
 
+## Legacy luna profile names are stable routing keys
+
+The `luna_*` profile names are referenced by `AGENTS.md` as routing keys; they do not select the model. Model migrations should update profile model fields while preserving those names and their role descriptions.
+
 ## Agent profiles do not promise isolated sandboxes
 
 Profiles define task guidance, not filesystem isolation or access control. Keep each handoff bounded and follow the workspace and repository permissions actually in force.
