@@ -1,7 +1,5 @@
 package org.secu3.android.ui.start
 
-import android.Manifest
-import android.annotation.SuppressLint
 import android.bluetooth.BluetoothDevice
 import android.content.BroadcastReceiver
 import android.content.Context
@@ -10,7 +8,6 @@ import android.content.IntentFilter
 import android.content.pm.PackageManager
 import android.hardware.usb.UsbDevice
 import android.hardware.usb.UsbManager
-import android.os.Build
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.runtime.Composable
@@ -39,19 +36,6 @@ import org.secu3.android.ui.messages.UiMessageDuration
 import kotlinx.coroutines.launch
 import java.io.IOException
 
-
-// Permission constants are strings and this helper returns them only for matching API levels.
-@SuppressLint("InlinedApi")
-internal fun bluetoothPermissionsFor(apiLevel: Int, xiaomi: Boolean): Array<String> {
-    val base = if (apiLevel >= 31) {
-        arrayOf(Manifest.permission.BLUETOOTH_CONNECT, Manifest.permission.BLUETOOTH_SCAN).let {
-            if (apiLevel == 31 && xiaomi) it + Manifest.permission.BLUETOOTH else it
-        }
-    } else {
-        arrayOf(Manifest.permission.BLUETOOTH, Manifest.permission.ACCESS_FINE_LOCATION, Manifest.permission.ACCESS_COARSE_LOCATION)
-    }
-    return base + if (apiLevel == 29) arrayOf(Manifest.permission.ACCESS_BACKGROUND_LOCATION) else emptyArray()
-}
 
 @Composable
 internal fun StartRoute(entry: NavBackStackEntry, activity: MainActivity, onConnected: () -> Unit) {
@@ -112,11 +96,7 @@ internal fun StartRoute(entry: NavBackStackEntry, activity: MainActivity, onConn
                 val manager = context.getSystemService(Context.USB_SERVICE) as UsbManager
                 manager.deviceList.values.firstOrNull()?.let(vm::newUsbDeviceAttached) ?: vm.newUsbDeviceDetached()
                 if (vm.locationSettingsReturned()) coroutineScope.launch { continueBluetooth.value?.invoke() }
-                val scanPermissions = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
-                    arrayOf(Manifest.permission.BLUETOOTH_SCAN, Manifest.permission.BLUETOOTH_CONNECT)
-                } else {
-                    arrayOf(Manifest.permission.BLUETOOTH, Manifest.permission.BLUETOOTH_ADMIN, Manifest.permission.ACCESS_FINE_LOCATION)
-                }
+                val scanPermissions = vm.bluetoothPermissionPolicy.discoveryPermissions()
                 val hasScanPermissions = scanPermissions.all {
                     ContextCompat.checkSelfPermission(context, it) == PackageManager.PERMISSION_GRANTED
                 }
@@ -151,7 +131,7 @@ internal fun StartRoute(entry: NavBackStackEntry, activity: MainActivity, onConn
                     if (inProgress) vm.cancelConnection()
                     else if (vm.selectedUsbDevice() != null) requestUsbPermissionOrConnect(vm.selectedUsbDevice())
                     else {
-                        val permissions = bluetoothPermissionsFor(Build.VERSION.SDK_INT, vm.isXiaomi)
+                        val permissions = vm.bluetoothPermissionPolicy.connectionPermissions()
                         if (permissions.all { ContextCompat.checkSelfPermission(context, it) == PackageManager.PERMISSION_GRANTED }) {
                             checkBluetoothConfiguration()
                         } else {

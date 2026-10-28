@@ -82,6 +82,7 @@ class UsbSessionIntegrationTest {
             fixture.manager,
             context.packageManager,
             context.getSystemService(Context.USB_SERVICE) as UsbManager,
+            BluetoothPermissionPolicy(),
             UiMessageQueue(),
         )
         val viewModelStore = ViewModelStore()

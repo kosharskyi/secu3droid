@@ -73,6 +73,13 @@ class StartDiscoveryLifecycleTest {
     }
 
     private fun viewModelAndEnabledAdapter(): Pair<StartScreenViewModel, android.bluetooth.BluetoothAdapter> {
+        compose.waitUntil(5_000) {
+            var navigationReady = false
+            compose.activityRule.scenario.onActivity { activity ->
+                navigationReady = activity.rootNavigationController?.currentDestination != null
+            }
+            navigationReady
+        }
         var result: Pair<StartScreenViewModel, android.bluetooth.BluetoothAdapter>? = null
         compose.activityRule.scenario.onActivity { activity ->
             val manager = activity.getSystemService(BluetoothManager::class.java)

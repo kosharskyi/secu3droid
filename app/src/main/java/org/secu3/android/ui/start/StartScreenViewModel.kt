@@ -24,6 +24,7 @@ import org.secu3.android.R
 import org.secu3.android.ui.messages.UiMessageDuration
 import org.secu3.android.ui.messages.UiMessageQueue
 import org.secu3.android.connection.BluetoothDeviceAddress
+import org.secu3.android.connection.BluetoothPermissionPolicy
 import org.secu3.android.connection.ConnectionTimeout
 import org.secu3.android.connection.Connected
 import org.secu3.android.connection.Disconnected
@@ -39,6 +40,7 @@ class StartScreenViewModel @Inject constructor(
     private val connectionManager: Secu3ConnectionManager,
     private val packageManager: PackageManager,
     val usbManager: UsbManager,
+    val bluetoothPermissionPolicy: BluetoothPermissionPolicy,
     private val uiMessageQueue: UiMessageQueue,
 ) : ViewModel() {
     private val _uiState = MutableStateFlow(StartScreenState())
@@ -55,7 +57,6 @@ class StartScreenViewModel @Inject constructor(
     private var returnFromLocationSettings = false
     private var discoveryActive = false
     val isUsbHostSupported get() = packageManager.hasSystemFeature(PackageManager.FEATURE_USB_HOST)
-    val isXiaomi = Build.MANUFACTURER.equals("Xiaomi", true) || Build.BRAND.equals("Xiaomi", true) || Build.BRAND.equals("POCO", true) || Build.MODEL.contains("POCO", true)
 
     init {
         if (isUsbHostSupported) usbManager.deviceList.values.firstOrNull()?.let(::newUsbDeviceAttached)
@@ -94,13 +95,8 @@ class StartScreenViewModel @Inject constructor(
 
     fun resumeBtDiscoveryIfPickerVisible(hasScanPermissions: Boolean) {
         val state = _uiState.value
-        if (!shouldResumeBluetoothDiscovery(
-                pickerVisible = state.showBluetoothDevices,
-                connecting = state.connecting,
-                connectionRunning = connectionManager.isConnectionRunning,
-                connected = connectionManager.isConnected,
-                pairing = bluetoothBondGate.isPending(),
-            ) || discoveryActive || !hasScanPermissions
+        if (!state.showBluetoothDevices || state.connecting || connectionManager.isConnectionRunning ||
+            connectionManager.isConnected || bluetoothBondGate.isPending() || discoveryActive || !hasScanPermissions
         ) return
         startBtDiscovery(resetDevices = false)
     }
