@@ -13,26 +13,28 @@ import org.secu3.android.models.InjectionTimingMode
 import org.secu3.android.models.packets.input.SensorsPacket
 
 class GaugeScaleTest {
+    private val catalog = SensorPresentationCatalog()
+    private val tickFormattingScale = GaugeScale(GaugeType.ADD1, catalog.gauge(GaugeType.ADD1))
     @Test fun everyGaugeUsesItsConfiguredInclusiveTicksAndSharedAngles() {
         GaugeType.entries.forEach { type ->
-            val scale = GaugeScale(type)
-            assertEquals(type.tickCount, scale.ticks.size)
-            assertSame(type.sections, scale.sections)
+            val scale = GaugeScale(type, catalog.gauge(type))
+            assertEquals(catalog.gauge(type).tickCount, scale.ticks.size)
+            assertSame(catalog.gauge(type).sections, scale.sections)
 
             scale.ticks.forEachIndexed { index, tick ->
-                val fraction = if (type.tickCount <= 1) 0f else index.toFloat() / (type.tickCount - 1)
+                val fraction = if (catalog.gauge(type).tickCount <= 1) 0f else index.toFloat() / (catalog.gauge(type).tickCount - 1)
                 assertEquals(index, tick.index)
                 assertEquals(fraction, tick.fraction, EPSILON)
-                assertEquals(type.minValue + (type.maxValue - type.minValue) * fraction, tick.value, EPSILON)
+                assertEquals(catalog.gauge(type).minValue + (catalog.gauge(type).maxValue - catalog.gauge(type).minValue) * fraction, tick.value, EPSILON)
                 assertEquals(GaugeScale.START_ANGLE_DEGREES + GaugeScale.SWEEP_ANGLE_DEGREES * fraction, tick.angleDegrees, EPSILON)
             }
 
-            assertEquals(type.minValue, scale.ticks.first().value, EPSILON)
-            assertEquals(type.maxValue, scale.ticks.last().value, EPSILON)
+            assertEquals(catalog.gauge(type).minValue, scale.ticks.first().value, EPSILON)
+            assertEquals(catalog.gauge(type).maxValue, scale.ticks.last().value, EPSILON)
             assertEquals(GaugeScale.START_ANGLE_DEGREES, scale.ticks.first().angleDegrees, EPSILON)
             assertEquals(GaugeScale.START_ANGLE_DEGREES + GaugeScale.SWEEP_ANGLE_DEGREES, scale.ticks.last().angleDegrees, EPSILON)
-            assertEquals(0f, scale.normalized(type.minValue)!!, EPSILON)
-            assertEquals(1f, scale.normalized(type.maxValue)!!, EPSILON)
+            assertEquals(0f, scale.normalized(catalog.gauge(type).minValue)!!, EPSILON)
+            assertEquals(1f, scale.normalized(catalog.gauge(type).maxValue)!!, EPSILON)
             assertEquals(0f, scale.normalized(Float.NEGATIVE_INFINITY)!!, EPSILON)
             assertEquals(1f, scale.normalized(Float.POSITIVE_INFINITY)!!, EPSILON)
             assertNull(scale.normalized(null))
@@ -41,12 +43,12 @@ class GaugeScaleTest {
     }
 
     @Test fun sharedScaleExposesFractionalPositiveAndNegativeTicks() {
-        val positiveScale = GaugeScale(GaugeType.ADD1)
+        val positiveScale = GaugeScale(GaugeType.ADD1, catalog.gauge(GaugeType.ADD1))
         val positiveQuarterStep = positiveScale.ticks[1]
         assertEquals(.25f, positiveQuarterStep.value, EPSILON)
         assertEquals(.5f, positiveScale.ticks[2].value, EPSILON)
 
-        val negativeRange = GaugeScale(GaugeType.CURRENT_ANGLE)
+        val negativeRange = GaugeScale(GaugeType.CURRENT_ANGLE, catalog.gauge(GaugeType.CURRENT_ANGLE))
         assertEquals(-15f, negativeRange.ticks.first().value, EPSILON)
         assertEquals(65f, negativeRange.ticks.last().value, EPSILON)
         assertEquals(.25f, negativeRange.normalized(5f)!!, EPSILON)
@@ -57,11 +59,11 @@ class GaugeScaleTest {
         try {
             Locale.setDefault(Locale.US)
             assertEquals("0.25", positiveScale.format(positiveScale.ticks[1]))
-            val coolantScale = GaugeScale(GaugeType.EGO_CORR)
+            val coolantScale = GaugeScale(GaugeType.EGO_CORR, catalog.gauge(GaugeType.EGO_CORR))
             assertEquals("6.25", coolantScale.format(coolantScale.ticks[9]))
-            val oilTemperatureScale = GaugeScale(GaugeType.OTS)
+            val oilTemperatureScale = GaugeScale(GaugeType.OTS, catalog.gauge(GaugeType.OTS))
             assertEquals("-38.125", oilTemperatureScale.format(oilTemperatureScale.ticks[1]))
-            assertEquals("-7.5", GaugeScale.formatValue(-7.5f))
+            assertEquals("-7.5", tickFormattingScale.formatValue(-7.5f))
             Locale.setDefault(Locale.GERMANY)
             assertEquals("0,25", positiveScale.format(positiveScale.ticks[1]))
             assertEquals("-38,125", oilTemperatureScale.format(oilTemperatureScale.ticks[1]))
@@ -123,11 +125,11 @@ class GaugeScaleTest {
         assertEquals("frozen desktop fixture covers all desktop-backed modern gauges", 47, expected.size)
         expected.forEach { fixture ->
             val type = fixture.type
-            assertEquals("${type.name} min", fixture.min, type.minValue, EPSILON)
-            assertEquals("${type.name} max", fixture.max, type.maxValue, EPSILON)
-            assertEquals("${type.name} inclusive tick count", fixture.tickCount, type.tickCount)
-            assertEquals("${type.name} zone count", fixture.zones.size, type.sections.size)
-            fixture.zones.zip(type.sections).forEachIndexed { index, (zone, actual) ->
+            assertEquals("${type.name} min", fixture.min, catalog.gauge(type).minValue, EPSILON)
+            assertEquals("${type.name} max", fixture.max, catalog.gauge(type).maxValue, EPSILON)
+            assertEquals("${type.name} inclusive tick count", fixture.tickCount, catalog.gauge(type).tickCount)
+            assertEquals("${type.name} zone count", fixture.zones.size, catalog.gauge(type).sections.size)
+            fixture.zones.zip(catalog.gauge(type).sections).forEachIndexed { index, (zone, actual) ->
                 assertEquals("${type.name} zone $index physical start", zone.start, fixture.min + actual.start * (fixture.max - fixture.min), EPSILON)
                 assertEquals("${type.name} zone $index physical end", zone.end, fixture.min + actual.end * (fixture.max - fixture.min), EPSILON)
                 assertEquals("${type.name} zone $index desktop color resource", zone.color, actual.color)
@@ -148,9 +150,9 @@ class GaugeScaleTest {
         assertEquals(12.3f, GaugeType.DISTANCE.getGaugeItem(packet), EPSILON)
         assertEquals(2.5f, GaugeType.FUEL_CONSUMPTION_HOURLY.getGaugeItem(packet), EPSILON)
         assertEquals(20f, GaugeType.CONSUMED_FUEL.getGaugeItem(packet), EPSILON)
-        assertEquals(1, GaugeType.DISTANCE.decimals)
-        assertEquals(2, GaugeType.FUEL_CONSUMPTION_HOURLY.decimals)
-        assertEquals(3, GaugeType.CONSUMED_FUEL.decimals)
+        assertEquals(1, catalog.decimals(GaugeType.DISTANCE))
+        assertEquals(2, catalog.decimals(GaugeType.FUEL_CONSUMPTION_HOURLY))
+        assertEquals(3, catalog.decimals(GaugeType.CONSUMED_FUEL))
     }
 
     @Test fun indicatorMappingsKeepFuelValveIndependentOfGasMode() {
@@ -163,16 +165,16 @@ class GaugeScaleTest {
     }
 
     @Test fun gaugeFormattingUsesPerTypePrecisionAndRejectsNonFiniteReadings() {
-        assertEquals("0.012", GaugeType.ADD1.formatValue(.01234f))
-        assertEquals("12.9", GaugeType.VEHICLE_SPEED.formatValue(12.9f))
-        assertEquals("2.34", GaugeType.INJ_PW.formatValue(2.34f))
-        assertEquals("14.55", GaugeType.WBO_AFR.formatValue(14.55f))
-        assertEquals("—", GaugeType.ADD1.formatValue(Float.NaN))
+        assertEquals("0.012", catalog.formatValue(GaugeType.ADD1, .01234f))
+        assertEquals("12.9", catalog.formatValue(GaugeType.VEHICLE_SPEED, 12.9f))
+        assertEquals("2.34", catalog.formatValue(GaugeType.INJ_PW, 2.34f))
+        assertEquals("14.55", catalog.formatValue(GaugeType.WBO_AFR, 14.55f))
+        assertEquals("—", catalog.formatValue(GaugeType.ADD1, Float.NaN))
     }
 
     @Test fun injectionTimingModeChangesOnlyPhaseGaugeBounds() {
-        val defaultScale = GaugeScale(GaugeType.BEGIN_INJ_PHASE)
-        val centeredScale = GaugeScale(GaugeType.BEGIN_INJ_PHASE, InjectionTimingMode.Btdc360)
+        val defaultScale = GaugeScale(GaugeType.BEGIN_INJ_PHASE, catalog.gauge(GaugeType.BEGIN_INJ_PHASE))
+        val centeredScale = GaugeScale(GaugeType.BEGIN_INJ_PHASE, catalog.gauge(GaugeType.BEGIN_INJ_PHASE), InjectionTimingMode.Btdc360)
         assertEquals(0f, defaultScale.minValue, EPSILON)
         assertEquals(720f, defaultScale.maxValue, EPSILON)
         assertEquals(-360f, centeredScale.minValue, EPSILON)
@@ -182,9 +184,9 @@ class GaugeScaleTest {
         assertEquals(defaultScale.sections, centeredScale.sections)
         assertEquals(0.5f, centeredScale.normalized(0f)!!, EPSILON)
 
-        val unrelatedScale = GaugeScale(GaugeType.TEMPERATURE, InjectionTimingMode.Btdc360)
-        assertEquals(GaugeType.TEMPERATURE.minValue, unrelatedScale.minValue, EPSILON)
-        assertEquals(GaugeType.TEMPERATURE.maxValue, unrelatedScale.maxValue, EPSILON)
+        val unrelatedScale = GaugeScale(GaugeType.TEMPERATURE, catalog.gauge(GaugeType.TEMPERATURE), InjectionTimingMode.Btdc360)
+        assertEquals(catalog.gauge(GaugeType.TEMPERATURE).minValue, unrelatedScale.minValue, EPSILON)
+        assertEquals(catalog.gauge(GaugeType.TEMPERATURE).maxValue, unrelatedScale.maxValue, EPSILON)
     }
 
     private data class Zone(val start: Float, val end: Float, val color: Int)

@@ -25,7 +25,6 @@
 
 package org.secu3.android.ui.sensors
 
-import org.secu3.android.ui.sensors.models.title
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.pager.HorizontalPager
 import androidx.compose.foundation.pager.rememberPagerState
@@ -63,6 +62,7 @@ import org.secu3.android.models.InjectionTimingMode
 import org.secu3.android.ui.compose.SecuTopAppBar
 import org.secu3.android.ui.compose.SecuTabRow
 import org.secu3.android.ui.sensors.SensorsViewModel.ChoiceRequest
+import org.secu3.android.ui.sensors.models.SensorPresentationCatalog
 import org.secu3.android.ui.sensors.models.GaugeItem
 import org.secu3.android.models.sensors.GaugeType
 import org.secu3.android.ui.sensors.models.IndicatorItem
@@ -83,6 +83,7 @@ internal fun SensorsTabsScreen(
     sensors: SensorsPacket?, rawSensors: AdcRawDatPacket?,
     firmwareInfo: FirmwareInfoPacket?,
     injectionTimingMode: InjectionTimingMode,
+    presentationCatalog: SensorPresentationCatalog,
     onPageChanged: (Int) -> Unit,
     onNavigateUp: () -> Unit,
     onSettings: () -> Unit,
@@ -176,7 +177,7 @@ internal fun SensorsTabsScreen(
                 key = { it },
             ) { page ->
                 when (page) {
-                    0 -> if (oldViewEnabled) OldSensorsScreen(sensors.takeIf { dataAvailable }, injectionTimingMode = injectionTimingMode) else SensorsScreen(
+                    0 -> if (oldViewEnabled) OldSensorsScreen(sensors.takeIf { dataAvailable }, injectionTimingMode = injectionTimingMode, presentationCatalog = presentationCatalog) else SensorsScreen(
                         gauges, indicators, gaugeChoices, indicatorChoices,
                         onAddGaugeRequest, onAddIndicatorRequest, onAddGauge, onAddIndicator,
                         onGaugeChoicesConsumed, onIndicatorChoicesConsumed, onDeleteGauge, onDeleteIndicator,
@@ -185,6 +186,7 @@ internal fun SensorsTabsScreen(
                         dataAvailable = dataAvailable,
                         gaugeStyle = gaugeStyle,
                         injectionTimingMode = injectionTimingMode,
+                        presentationCatalog = presentationCatalog,
                     )
                     else -> RawSensorsScreen(rawSensors.takeIf { connectionState == Connected }, capabilities = RawSensorCapabilities.from(firmwareInfo))
                 }

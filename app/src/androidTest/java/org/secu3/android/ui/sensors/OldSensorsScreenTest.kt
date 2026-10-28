@@ -45,8 +45,10 @@ import org.secu3.android.R
 import org.secu3.android.models.packets.input.SensorsPacket
 import org.secu3.android.models.InjectionTimingMode
 import org.secu3.android.ui.compose.SecuComposeTheme
+import org.secu3.android.ui.sensors.models.SensorPresentationCatalog
 
 class OldSensorsScreenTest {
+    private val presentationCatalog = SensorPresentationCatalog()
     @get:Rule val compose = createComposeRule()
     private val context = InstrumentationRegistry.getInstrumentation().targetContext
     private val labels = listOf(
@@ -101,7 +103,7 @@ class OldSensorsScreenTest {
     )
 
     @Test fun rendersAllFiftyRowsInStableOrderWithUnitsAndUsFormatting() {
-        compose.setContent { SecuComposeTheme { OldSensorsScreen(fixture()) } }
+        compose.setContent { SecuComposeTheme { OldSensorsScreen(fixture(), presentationCatalog = presentationCatalog) } }
         assertEquals(50, labels.size)
         assertEquals(labels.size, units.size)
         labels.indices.forEach { index ->
@@ -134,7 +136,7 @@ class OldSensorsScreenTest {
 
     @Test fun startsBlankAndUpdatesValuesAndAllElevenStatusGroups() {
         val packet = mutableStateOf<SensorsPacket?>(null)
-        compose.setContent { SecuComposeTheme { OldSensorsScreen(packet.value) } }
+        compose.setContent { SecuComposeTheme { OldSensorsScreen(packet.value, presentationCatalog = presentationCatalog) } }
         compose.onNodeWithTag("old-sensors-list").assertExists()
         for (index in labels.indices) {
             compose.onNodeWithTag("old-sensor-label-$index").assertTextEquals(context.getString(labels[index]))
@@ -167,7 +169,7 @@ class OldSensorsScreenTest {
     }
 
     @Test fun scrollReachesFinalValueAndStatusGroup() {
-        compose.setContent { SecuComposeTheme { OldSensorsScreen(fixture()) } }
+        compose.setContent { SecuComposeTheme { OldSensorsScreen(fixture(), presentationCatalog = presentationCatalog) } }
         compose.onNodeWithTag("old-sensors-list").performScrollToNode(hasTestTag("old-sensor-row-49"))
         compose.onNodeWithTag("old-sensor-value-49").assertIsDisplayed()
         compose.onNodeWithTag("old-sensors-list").performScrollToNode(hasTestTag("old-status-group-10"))
@@ -177,7 +179,7 @@ class OldSensorsScreenTest {
     @Test fun injectionPhasesUseSelectedDisplayConvention() {
         compose.setContent {
             SecuComposeTheme {
-                OldSensorsScreen(fixture().copy(injTimBegin = 360f), injectionTimingMode = InjectionTimingMode.Btdc360)
+                OldSensorsScreen(fixture().copy(injTimBegin = 360f), injectionTimingMode = InjectionTimingMode.Btdc360, presentationCatalog = presentationCatalog)
             }
         }
         compose.onNodeWithTag("old-sensors-list").performScrollToNode(hasTestTag("old-sensor-row-27"))

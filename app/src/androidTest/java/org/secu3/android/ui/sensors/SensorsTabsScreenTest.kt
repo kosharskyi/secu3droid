@@ -25,7 +25,6 @@
 
 package org.secu3.android.ui.sensors
 
-import org.secu3.android.ui.sensors.models.title
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.remember
@@ -59,12 +58,14 @@ import org.secu3.android.db.models.GaugeState
 import org.secu3.android.db.models.IndicatorState
 import org.secu3.android.ui.compose.SecuComposeTheme
 import org.secu3.android.ui.sensors.models.GaugeItem
+import org.secu3.android.ui.sensors.models.SensorPresentationCatalog
 import org.secu3.android.models.sensors.GaugeType
 import org.secu3.android.ui.sensors.models.IndicatorItem
 import org.secu3.android.models.sensors.IndicatorType
 import androidx.test.platform.app.InstrumentationRegistry
 
 class SensorsTabsScreenTest {
+    private val presentationCatalog = SensorPresentationCatalog()
     @get:Rule val compose = createComposeRule()
     private val context = InstrumentationRegistry.getInstrumentation().targetContext
 
@@ -303,6 +304,7 @@ class SensorsTabsScreenTest {
         connectionState = Disconnected, gauges = gauges, indicators = indicators, gaugeChoices = null,
         indicatorChoices = null, sensors = null, rawSensors = null, firmwareInfo = null,
         injectionTimingMode = org.secu3.android.models.InjectionTimingMode.Default,
+        presentationCatalog = presentationCatalog,
         onPageChanged = pageChanged,
         onNavigateUp = {}, onSettings = settings,
         onAddGaugeRequest = {}, onAddIndicatorRequest = {}, onAddGauge = {}, onAddIndicator = {},

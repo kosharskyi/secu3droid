@@ -46,4 +46,4 @@ Classic and both modern dial renderers share the spring in `ui/compose/GaugeProg
 
 ## Readout strings already carry the sensor's required precision
 
-`GaugeItem.value` is formatted by `GaugeType.formatValue`; parsing it in a card is only for finite-value validation and needle positioning. Display the original valid string instead of formatting it again, or small knock voltages, injector pulse widths, and other two- or three-decimal readings lose information. Tick-label formatting remains independent from readout precision.
+`GaugeItem.value` is formatted by the injected `SensorPresentationCatalog`; parsing it in a card is only for finite-value validation and needle positioning. Display the original valid string instead of formatting it again, or small knock voltages, injector pulse widths, and other two- or three-decimal readings lose information. Tick-label formatting remains independent from readout precision and belongs to the `GaugeScale` instance.

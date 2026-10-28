@@ -1,8 +1,8 @@
 package org.secu3.android.ui.sensors.models
 
 import org.secu3.android.models.sensors.GaugeType
-import java.util.Locale
 import java.text.DecimalFormatSymbols
+import java.util.Locale
 import org.secu3.android.models.InjectionTimingMode
 
 /** A configured position on a sensor gauge's shared scale. */
@@ -19,21 +19,22 @@ internal data class GaugeTick(
  */
 internal class GaugeScale(
     val type: GaugeType,
+    private val presentation: GaugePresentation,
     val injectionTimingMode: InjectionTimingMode = InjectionTimingMode.Default,
 ) {
     val minValue: Float = if (type == GaugeType.BEGIN_INJ_PHASE || type == GaugeType.END_INJ_PHASE) {
         injectionTimingMode.minValue
     } else {
-        type.minValue
+        presentation.minValue
     }
     val maxValue: Float = if (type == GaugeType.BEGIN_INJ_PHASE || type == GaugeType.END_INJ_PHASE) {
         injectionTimingMode.maxValue
     } else {
-        type.maxValue
+        presentation.maxValue
     }
-    val sections: List<GaugeSection> = type.sections
-    val ticks: List<GaugeTick> = (0 until type.tickCount).map { index ->
-        val fraction = if (type.tickCount <= 1) 0f else index.toFloat() / (type.tickCount - 1)
+    val sections: List<GaugeSection> = presentation.sections
+    val ticks: List<GaugeTick> = (0 until presentation.tickCount).map { index ->
+        val fraction = if (presentation.tickCount <= 1) 0f else index.toFloat() / (presentation.tickCount - 1)
         GaugeTick(
             index = index,
             fraction = fraction,
@@ -52,17 +53,17 @@ internal class GaugeScale(
 
     fun format(tick: GaugeTick): String = formatValue(tick.value)
 
+    fun formatValue(value: Float): String {
+        if (!value.isFinite()) return "—"
+        val decimalSeparator = DecimalFormatSymbols.getInstance(Locale.getDefault()).decimalSeparator
+        val formatted = String.format(Locale.getDefault(), "%.3f", value)
+            .trimEnd('0')
+            .trimEnd(decimalSeparator)
+        return if (formatted == "-0") "0" else formatted
+    }
+
     companion object {
         const val START_ANGLE_DEGREES = 135f
         const val SWEEP_ANGLE_DEGREES = 270f
-
-        fun formatValue(value: Float): String {
-            if (!value.isFinite()) return "—"
-            val decimalSeparator = DecimalFormatSymbols.getInstance(Locale.getDefault()).decimalSeparator
-            val formatted = String.format(Locale.getDefault(), "%.3f", value)
-                .trimEnd('0')
-                .trimEnd(decimalSeparator)
-            return if (formatted == "-0") "0" else formatted
-        }
     }
 }

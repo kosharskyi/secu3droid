@@ -64,6 +64,7 @@ internal fun SensorsRoute(
             snackbarHostState = snackbarHostState,
             gaugeStyle = state.gaugeStyle,
             injectionTimingMode = state.injectionTimingMode,
+            presentationCatalog = viewModel.presentationCatalog,
             firmwareInfo = firmware,
             connectionState = connection,
             gauges = gauges,

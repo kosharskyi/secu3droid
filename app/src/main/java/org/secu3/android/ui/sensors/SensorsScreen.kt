@@ -25,8 +25,7 @@
 
 package org.secu3.android.ui.sensors
 
-import org.secu3.android.ui.sensors.models.title
-import org.secu3.android.ui.sensors.models.units
+import org.secu3.android.ui.sensors.models.SensorPresentationCatalog
 import org.secu3.android.ui.compose.DropdownShape
 import org.secu3.android.ui.compose.rememberAnimatedGaugeProgress
 
@@ -105,6 +104,7 @@ internal fun SensorsScreen(
     onReorderingChanged: (Boolean) -> Unit = {},
     dataAvailable: Boolean = true,
     gaugeStyle: SensorGaugeStyle = SensorGaugeStyle.Default,
+    presentationCatalog: SensorPresentationCatalog,
     injectionTimingMode: InjectionTimingMode = InjectionTimingMode.Default,
 ) {
     var localGauges by remember { mutableStateOf(gauges) }
@@ -253,6 +253,7 @@ internal fun SensorsScreen(
                                     if (dataAvailable) item else item.copy(value = "—"),
                                     gaugeStyle,
                                     injectionTimingMode,
+                                    presentationCatalog,
                                     gaugeContentWidth,
                                     Modifier.fillMaxWidth().fillMaxHeight().padding(CARD_CELL_GUTTER)
                                         .onGloballyPositioned { coordinates ->
@@ -350,6 +351,7 @@ internal fun SensorsScreen(
                             key(dragKey) { Box(Modifier.width(gridCellWidth).fillMaxHeight().zIndex(if (isDragged) 2f else 0f)) {
                                 IndicatorCard(
                                     item,
+                                    presentationCatalog,
                                     Modifier.fillMaxWidth().fillMaxHeight().padding(CARD_CELL_GUTTER)
                                         .onGloballyPositioned { coordinates ->
                                             val bounds = coordinates.boundsInRoot()
@@ -426,24 +428,27 @@ internal fun SensorsScreen(
 
     gaugeDialog?.let { choices ->
         AlertDialog(onDismissRequest = { gaugeDialog = null }, title = { Text(stringResource(R.string.select_gauge_to_add)) },
-            text = { Column(Modifier.heightIn(max = 420.dp).verticalScroll(rememberScrollState())) { choices.forEach { type -> TextButton(onClick = { gaugeDialog = null; onAddGauge(type) }) { Text(stringResource(type.title)) } } } },
+            text = { Column(Modifier.heightIn(max = 420.dp).verticalScroll(rememberScrollState())) { choices.forEach { type -> TextButton(onClick = { gaugeDialog = null; onAddGauge(type) }) { Text(stringResource(presentationCatalog.gauge(type).title)) } } } },
             confirmButton = { TextButton(onClick = { gaugeDialog = null }) { Text(stringResource(android.R.string.cancel)) } })
     }
     indicatorDialog?.let { choices ->
         AlertDialog(onDismissRequest = { indicatorDialog = null }, title = { Text(stringResource(R.string.select_indicator_to_add)) },
-            text = { Column(Modifier.heightIn(max = 420.dp).verticalScroll(rememberScrollState())) { choices.forEach { type -> TextButton(onClick = { indicatorDialog = null; onAddIndicator(type) }) { Text(stringResource(type.title)) } } } },
+            text = { Column(Modifier.heightIn(max = 420.dp).verticalScroll(rememberScrollState())) { choices.forEach { type -> TextButton(onClick = { indicatorDialog = null; onAddIndicator(type) }) { Text(stringResource(presentationCatalog.indicatorTitle(type))) } } } },
             confirmButton = { TextButton(onClick = { indicatorDialog = null }) { Text(stringResource(android.R.string.cancel)) } })
     }
 }
 
 @Composable
-private fun GaugeCard(item: GaugeItem, gaugeStyle: SensorGaugeStyle, injectionTimingMode: InjectionTimingMode, cardContentWidth: Dp, modifier: Modifier, onMenu: () -> Unit) {
+private fun GaugeCard(item: GaugeItem, gaugeStyle: SensorGaugeStyle, injectionTimingMode: InjectionTimingMode, presentationCatalog: SensorPresentationCatalog, cardContentWidth: Dp, modifier: Modifier, onMenu: () -> Unit) {
     val type = item.state.gaugeType
     val value = item.value.toFloatOrNull()?.takeIf(Float::isFinite)
-    val scale = remember(type, injectionTimingMode) { GaugeScale(type, injectionTimingMode) }
+    val presentation = presentationCatalog.gauge(type)
+    val scale = remember(type, presentation, injectionTimingMode) {
+        GaugeScale(type, presentation, injectionTimingMode)
+    }
     val progress = rememberGaugeProgress(scale, value, enabled = !item.state.isNumericView)
     val formattedValue = item.value.takeIf { value != null } ?: "—"
-    val dialDescription = "${stringResource(type.title)}: $formattedValue ${stringResource(type.units)}"
+    val dialDescription = "${stringResource(presentation.title)}: $formattedValue ${stringResource(presentation.units)}"
     val colors = MaterialTheme.colorScheme
     Card(
         modifier = modifier.fillMaxWidth().testTag("gauge-${type.name}"),
@@ -455,7 +460,7 @@ private fun GaugeCard(item: GaugeItem, gaugeStyle: SensorGaugeStyle, injectionTi
     ) {
         Column(Modifier.fillMaxWidth().padding(CARD_CONTENT_INSET), horizontalAlignment = Alignment.CenterHorizontally) {
             Text(
-                stringResource(type.title),
+                stringResource(presentation.title),
                 modifier = Modifier.fillMaxWidth(),
                 fontSize = 18.sp,
                 color = colors.onSurface,
@@ -480,7 +485,7 @@ private fun GaugeCard(item: GaugeItem, gaugeStyle: SensorGaugeStyle, injectionTi
                             style = MaterialTheme.typography.titleLarge.copy(fontFeatureSettings = "tnum"),
                         )
                         Text(
-                            stringResource(type.units),
+                            stringResource(presentation.units),
                             modifier = Modifier.fillMaxWidth(),
                             color = colors.onSurfaceVariant,
                             fontSize = 14.sp,
@@ -507,7 +512,7 @@ private fun GaugeCard(item: GaugeItem, gaugeStyle: SensorGaugeStyle, injectionTi
                             scale = scale,
                             progress = progress,
                             formattedValue = formattedValue,
-                            unit = stringResource(type.units),
+                            unit = stringResource(presentation.units),
                             style = gaugeStyle,
                             dialMeasure = requireNotNull(dialMeasure),
                             modifier = Modifier.requiredWidth(cardContentWidth + dialLabelOverflow * 2f).height(bodyHeight)
@@ -534,7 +539,7 @@ private fun GaugeCard(item: GaugeItem, gaugeStyle: SensorGaugeStyle, injectionTi
                         autoSize = TextAutoSize.StepBased(minFontSize = 12.sp, maxFontSize = 24.sp, stepSize = 1.sp),
                     )
                     Text(
-                        stringResource(type.units),
+                        stringResource(presentation.units),
                         modifier = Modifier.fillMaxWidth(),
                         color = colors.onSurfaceVariant,
                         style = MaterialTheme.typography.bodyMedium,
@@ -639,7 +644,7 @@ internal fun selectGaugeTickLabelIndices(tickCount: Int, labelCount: Int): List<
 }
 
 @Composable
-private fun IndicatorCard(item: IndicatorItem, modifier: Modifier, onMenu: () -> Unit, dataAvailable: Boolean) {
+private fun IndicatorCard(item: IndicatorItem, presentationCatalog: SensorPresentationCatalog, modifier: Modifier, onMenu: () -> Unit, dataAvailable: Boolean) {
     val accessibilityState = stringResource(when {
         !dataAvailable -> R.string.sensors_status_accessibility_unavailable
         item.isActive -> R.string.sensors_status_accessibility_on
@@ -663,7 +668,7 @@ private fun IndicatorCard(item: IndicatorItem, modifier: Modifier, onMenu: () ->
     }, colors = CardDefaults.cardColors(containerColor = cardColor), shape = RoundedCornerShape(20.dp), border = BorderStroke(1.dp, colors.outlineVariant),
         elevation = CardDefaults.cardElevation(defaultElevation = 0.dp), onClick = onMenu) {
         Column(Modifier.fillMaxWidth().fillMaxHeight().heightIn(min = 72.dp).padding(CARD_CONTENT_INSET), horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.Center) {
-            Text(stringResource(item.state.indicatorType.title), fontSize = 16.sp, color = labelColor, style = MaterialTheme.typography.titleSmall)
+            Text(stringResource(presentationCatalog.indicatorTitle(item.state.indicatorType)), fontSize = 16.sp, color = labelColor, style = MaterialTheme.typography.titleSmall)
         }
     }
 }

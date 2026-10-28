@@ -37,7 +37,7 @@ import org.secu3.android.ui.sensors.models.GaugeItem
 import org.secu3.android.models.sensors.GaugeType
 import org.secu3.android.ui.sensors.models.IndicatorItem
 import org.secu3.android.models.sensors.IndicatorType
-import org.secu3.android.ui.sensors.models.formatValue
+import org.secu3.android.ui.sensors.models.SensorPresentationCatalog
 import org.secu3.android.utils.SecuLogger
 import org.secu3.android.utils.Task
 import org.secu3.android.utils.UserPrefs
@@ -54,6 +54,7 @@ class SensorsViewModel @Inject constructor(
     private val userPrefs: UserPrefs,
     private val secuLogger: SecuLogger,
     private val repository: SensorConfigurationRepository,
+    val presentationCatalog: SensorPresentationCatalog,
     private val savedStateHandle: SavedStateHandle,
     private val uiMessageQueue: UiMessageQueue,
 ) : ViewModel() {
@@ -83,7 +84,7 @@ class SensorsViewModel @Inject constructor(
                     configuration.gaugeType == GaugeType.BEGIN_INJ_PHASE ||
                     configuration.gaugeType == GaugeType.END_INJ_PHASE
                 ) timingMode.transform(raw) else raw
-                configuration.gaugeType.formatValue(displayed)
+                presentationCatalog.formatValue(configuration.gaugeType, displayed)
             }.orEmpty()
             GaugeItem(configuration, value)
         }

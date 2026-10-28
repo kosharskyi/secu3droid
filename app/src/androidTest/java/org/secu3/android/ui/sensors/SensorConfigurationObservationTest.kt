@@ -207,6 +207,7 @@ class SensorConfigurationObservationTest {
                     prefs,
                     logger,
                     repository,
+                    org.secu3.android.ui.sensors.models.SensorPresentationCatalog(),
                     SavedStateHandle(),
                     UiMessageQueue(),
                 )

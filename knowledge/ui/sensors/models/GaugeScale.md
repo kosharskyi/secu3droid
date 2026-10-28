@@ -1,6 +1,10 @@
+## Tick labels and sensor readouts use different formatting
+
+`GaugeScale` is constructed with the concrete `GaugePresentation` owned by the screen's injected catalog. It must not look up global `GaugeType` extensions. Compact tick-label formatting belongs to the scale instance; sensor readout formatting belongs to `SensorPresentationCatalog`.
+
 ## Gauge tick count includes both range endpoints
 
-`GaugeType.tickCount` is the number of configured value ticks, evenly spaced from `minValue` through `maxValue`, including both endpoints. `GaugeScale` is derived from `GaugeType` and is the shared source for tick fractions/values/angles, section ranges, clamped normalization, and compact tick-label formatting across classic and modern dial styles. Tick labels retain up to three meaningful fractional digits so dense tick scales remain accurate; renderer-specific label visibility and line geometry must not create additional scale positions. Sensor readout precision is separate and comes from `GaugeType.formatValue`.
+`GaugePresentation.tickCount` is the number of configured value ticks, evenly spaced from `minValue` through `maxValue`, including both endpoints. `GaugeScale` receives the catalog's concrete description and is the shared source for tick fractions/values/angles, section ranges, and clamped normalization across classic and modern dial styles. Tick labels retain up to three meaningful fractional digits so dense tick scales remain accurate; renderer-specific label visibility and line geometry must not create additional scale positions. Sensor readout precision is separate and is applied by `SensorPresentationCatalog.formatValue`.
 
 ## Injection phase display mode changes only the phase scale bounds
 

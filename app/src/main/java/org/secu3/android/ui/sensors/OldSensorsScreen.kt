@@ -24,9 +24,7 @@
  */
 package org.secu3.android.ui.sensors
 
-import org.secu3.android.ui.sensors.models.formatValue
-import org.secu3.android.ui.sensors.models.title
-import org.secu3.android.ui.sensors.models.units
+import org.secu3.android.ui.sensors.models.SensorPresentationCatalog
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
@@ -61,8 +59,11 @@ internal fun OldSensorsScreen(
     packet: SensorsPacket?,
     modifier: Modifier = Modifier,
     injectionTimingMode: InjectionTimingMode = InjectionTimingMode.Default,
+    presentationCatalog: SensorPresentationCatalog,
 ) {
     val p = packet ?: SensorsPacket()
+    fun typedRow(label: Int, type: GaugeType, value: Float, includeUnit: Boolean = true) =
+        OldSensorRow(label, presentationCatalog.formatValue(type, value), presentationCatalog.gauge(type).units.takeIf { includeUnit })
     val rows = listOf(
         typedRow(R.string.sensors_frag_rpm_label, GaugeType.RPM, p.rpm.toFloat()),
         typedRow(R.string.sensors_frag_absolute_pressure_label, GaugeType.MAP, p.map),
@@ -148,7 +149,7 @@ internal fun OldSensorsScreen(
         statuses.forEachIndexed { group, entries ->
             Row(Modifier.fillMaxWidth().padding(top = 8.dp).testTag("old-status-group-$group")) {
                 entries.forEachIndexed { cell, entry ->
-                    val label = entry?.let { stringResource(it.title) }.orEmpty()
+                    val label = entry?.let { stringResource(presentationCatalog.indicatorTitle(it)) }.orEmpty()
                     val palette = org.secu3.android.ui.compose.LocalSecuPalette.current
                     val activeState = entry?.isActive(p) == true && packet != null
                     val background = when {
@@ -182,5 +183,3 @@ internal fun OldSensorsScreen(
 }
 
 private data class OldSensorRow(val label: Int, val value: String, val unit: Int?)
-private fun typedRow(label: Int, type: GaugeType, value: Float, includeUnit: Boolean = true) =
-    OldSensorRow(label, type.formatValue(value), type.units.takeIf { includeUnit })
