@@ -55,6 +55,7 @@ class SensorsViewModel @Inject constructor(
     private val secuLogger: SecuLogger,
     private val repository: SensorConfigurationRepository,
     val presentationCatalog: SensorPresentationCatalog,
+    val gaugeDialRenderer: GaugeDialRenderer,
     private val savedStateHandle: SavedStateHandle,
     private val uiMessageQueue: UiMessageQueue,
 ) : ViewModel() {

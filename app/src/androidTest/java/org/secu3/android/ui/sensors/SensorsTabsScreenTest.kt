@@ -304,7 +304,7 @@ class SensorsTabsScreenTest {
         connectionState = Disconnected, gauges = gauges, indicators = indicators, gaugeChoices = null,
         indicatorChoices = null, sensors = null, rawSensors = null, firmwareInfo = null,
         injectionTimingMode = org.secu3.android.models.InjectionTimingMode.Default,
-        presentationCatalog = presentationCatalog,
+        presentationCatalog = presentationCatalog, renderer = GaugeDialRenderer(),
         onPageChanged = pageChanged,
         onNavigateUp = {}, onSettings = settings,
         onAddGaugeRequest = {}, onAddIndicatorRequest = {}, onAddGauge = {}, onAddIndicator = {},

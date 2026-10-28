@@ -84,6 +84,7 @@ internal fun SensorsTabsScreen(
     firmwareInfo: FirmwareInfoPacket?,
     injectionTimingMode: InjectionTimingMode,
     presentationCatalog: SensorPresentationCatalog,
+    renderer: GaugeDialRenderer,
     onPageChanged: (Int) -> Unit,
     onNavigateUp: () -> Unit,
     onSettings: () -> Unit,
@@ -187,6 +188,7 @@ internal fun SensorsTabsScreen(
                         gaugeStyle = gaugeStyle,
                         injectionTimingMode = injectionTimingMode,
                         presentationCatalog = presentationCatalog,
+                        renderer = renderer,
                     )
                     else -> RawSensorsScreen(rawSensors.takeIf { connectionState == Connected }, capabilities = RawSensorCapabilities.from(firmwareInfo))
                 }

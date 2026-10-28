@@ -65,6 +65,7 @@ internal fun SensorsRoute(
             gaugeStyle = state.gaugeStyle,
             injectionTimingMode = state.injectionTimingMode,
             presentationCatalog = viewModel.presentationCatalog,
+            renderer = viewModel.gaugeDialRenderer,
             firmwareInfo = firmware,
             connectionState = connection,
             gauges = gauges,

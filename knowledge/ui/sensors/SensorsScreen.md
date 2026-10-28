@@ -47,3 +47,11 @@ Classic and both modern dial renderers share the spring in `ui/compose/GaugeProg
 ## Readout strings already carry the sensor's required precision
 
 `GaugeItem.value` is formatted by the injected `SensorPresentationCatalog`; parsing it in a card is only for finite-value validation and needle positioning. Display the original valid string instead of formatting it again, or small knock voltages, injector pulse widths, and other two- or three-decimal readings lose information. Tick-label formatting remains independent from readout precision and belongs to the `GaugeScale` instance.
+
+## Reordering uses the slots captured at drag start
+
+Each grid snapshots its measured bounds and base order on drag start. Preview targets are relative to those fixed slots, including partial rows. A pending drop keeps its visual order until storage confirms it, while new readings and membership changes are reconciled against that order; cancellation must not discard an earlier pending order.
+
+## The dial renderer keeps no per-gauge state
+
+The injected renderer receives scale, density, theme colors, and geometry explicitly. Measurement is remembered by the card with width, density, configuration, and timing mode keys, while animated progress is read inside the Canvas draw callback. Sharing the renderer must not share animation or retain stale measurement inputs between cards.

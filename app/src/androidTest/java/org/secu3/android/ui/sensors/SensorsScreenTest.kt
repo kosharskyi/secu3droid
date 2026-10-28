@@ -85,6 +85,7 @@ import org.secu3.android.models.sensors.IndicatorType
 
 class SensorsScreenTest {
     private val presentationCatalog = SensorPresentationCatalog()
+    private val renderer = GaugeDialRenderer()
     private val tickFormattingScale = GaugeScale(GaugeType.ADD1, presentationCatalog.gauge(GaugeType.ADD1))
     @get:Rule val compose = createComposeRule()
     private val context = InstrumentationRegistry.getInstrumentation().targetContext
@@ -102,7 +103,7 @@ class SensorsScreenTest {
         val maxLabelCenterX = with(compose.density) { 112.dp.toPx() / 2f + 14.dp.toPx() - 2.dp.toPx() }
         val labelGap = with(compose.density) { 3.dp.toPx() }
         for (type in types) {
-            val measured = measureNewGaugeDial(GaugeScale(type, presentationCatalog.gauge(type)), 112.dp, compose.density, 14.dp)
+            val measured = renderer.measureNewGaugeDial(GaugeScale(type, presentationCatalog.gauge(type)), 112.dp, compose.density, 14.dp)
             val labels = measured.labels
             val indices = labels.map { it.index }
             assertEquals("${type.name} min endpoint", 0, indices.first())
@@ -144,7 +145,7 @@ class SensorsScreenTest {
                 listOf(IndicatorItem(IndicatorState(2, IndicatorType.CHECK_ENGINE, 0), true), IndicatorItem(IndicatorState(3, IndicatorType.THROTTLE, 1), false)),
                 null, null, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {},
 
-                    presentationCatalog = presentationCatalog,
+                    presentationCatalog = presentationCatalog, renderer = renderer,
                 )
         } }
         compose.onNodeWithTag("gauge-RPM").assertIsDisplayed()
@@ -185,7 +186,7 @@ class SensorsScreenTest {
                     onReorderIndicators = {},
                     gaugeStyle = selectedStyle.value,
 
-                    presentationCatalog = presentationCatalog,
+                    presentationCatalog = presentationCatalog, renderer = renderer,
                 )
             }
         }
@@ -219,7 +220,7 @@ class SensorsScreenTest {
                     null, null, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {},
                     dataAvailable = available.value,
 
-                    presentationCatalog = presentationCatalog,
+                    presentationCatalog = presentationCatalog, renderer = renderer,
                 )
             }
         }
@@ -298,7 +299,7 @@ class SensorsScreenTest {
                             onReorderGauges = {},
                             onReorderIndicators = {},
 
-                    presentationCatalog = presentationCatalog,
+                    presentationCatalog = presentationCatalog, renderer = renderer,
                 )
                     }
                 }
@@ -331,7 +332,7 @@ class SensorsScreenTest {
                             gauges, indicators, null, null, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {},
                             gaugeStyle = SensorGaugeStyle.Current,
 
-                    presentationCatalog = presentationCatalog,
+                    presentationCatalog = presentationCatalog, renderer = renderer,
                 )
                     }
                 }
@@ -396,7 +397,7 @@ class SensorsScreenTest {
                         gauges, indicators, null, null, {}, {}, {}, {}, {}, {}, {}, {}, {},
                         { savedGauges = it }, { savedIndicators = it },
 
-                    presentationCatalog = presentationCatalog,
+                    presentationCatalog = presentationCatalog, renderer = renderer,
                 )
                 }
             }
@@ -465,7 +466,7 @@ class SensorsScreenTest {
                             onReorderIndicators = {},
                             gaugeStyle = selectedStyle.value,
 
-                    presentationCatalog = presentationCatalog,
+                    presentationCatalog = presentationCatalog, renderer = renderer,
                 )
                     }
                 }
@@ -543,7 +544,7 @@ class SensorsScreenTest {
                             listOf(IndicatorItem(IndicatorState(1, IndicatorType.THROTTLE, 0), true)),
                             null, null, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {},
 
-                    presentationCatalog = presentationCatalog,
+                    presentationCatalog = presentationCatalog, renderer = renderer,
                 )
                     }
                 }
@@ -572,7 +573,7 @@ class SensorsScreenTest {
                 null, null, {}, {}, {}, {}, {}, {}, { deleted = it }, {}, { switched = it }, {}, {},
                 gaugeStyle = SensorGaugeStyle.Current,
 
-                    presentationCatalog = presentationCatalog,
+                    presentationCatalog = presentationCatalog, renderer = renderer,
                 )
         } }
         compose.onNodeWithTag("gauge-RPM").performClick()
@@ -603,7 +604,7 @@ class SensorsScreenTest {
                             {}, {},
                             gaugeStyle = SensorGaugeStyle.Current,
 
-                    presentationCatalog = presentationCatalog,
+                    presentationCatalog = presentationCatalog, renderer = renderer,
                 )
                     }
                 }
@@ -674,7 +675,7 @@ class SensorsScreenTest {
                         onGaugeChoicesConsumed = {}, onIndicatorChoicesConsumed = {}, onDeleteGauge = {}, onDeleteIndicator = {},
                         onUpdateGauge = {}, onReorderGauges = {}, onReorderIndicators = {}, gaugeStyle = style.value,
 
-                    presentationCatalog = presentationCatalog,
+                    presentationCatalog = presentationCatalog, renderer = renderer,
                 )
                 }
             }
@@ -683,11 +684,13 @@ class SensorsScreenTest {
         fun dialBounds() = compose.onNodeWithTag("dial-RPM", useUnmergedTree = true).fetchSemanticsNode().boundsInRoot
         val classic = cardBounds()
         val classicDial = dialBounds()
+        captureDesignScreenshot("dial-classic.png")
 
         compose.runOnIdle { style.value = SensorGaugeStyle.PreciseArc }
         compose.waitForIdle()
         val precise = cardBounds()
         val preciseDial = dialBounds()
+        captureDesignScreenshot("dial-precise.png")
         org.junit.Assert.assertTrue("precise arc should omit the classic footer", precise.height < classic.height)
         val labelOverflow = with(compose.density) { 28.dp.toPx() }
         // Explicit cell and card insets round at separate density boundaries on the device.
@@ -699,6 +702,7 @@ class SensorsScreenTest {
         compose.waitForIdle()
         val thin = cardBounds()
         val thinDial = dialBounds()
+        captureDesignScreenshot("dial-thin.png")
         org.junit.Assert.assertTrue("thin needle keeps the full-size circle and visible footer", thin.height > classic.height)
         assertEquals("thin needle preserves the classic face width", classicDial.width, thinDial.width - labelOverflow, 1.5f)
         org.junit.Assert.assertTrue("thin needle label canvas stays inside the card", thinDial.left >= thin.left && thinDial.right <= thin.right)
@@ -723,7 +727,7 @@ class SensorsScreenTest {
                         emptyList(), null, null, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {},
                         gaugeStyle = SensorGaugeStyle.Current,
 
-                    presentationCatalog = presentationCatalog,
+                    presentationCatalog = presentationCatalog, renderer = renderer,
                 )
                 }
             }
@@ -751,7 +755,7 @@ class SensorsScreenTest {
             CompositionLocalProvider(LocalDensity provides Density(density, 1f)) {
                 SecuComposeTheme {
                     Box(Modifier.requiredWidth(width.value.dp).testTag("dial-width-host")) {
-                        SensorsScreen(gauges, emptyList(), null, null, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, gaugeStyle = SensorGaugeStyle.Current, presentationCatalog = presentationCatalog)
+                        SensorsScreen(gauges, emptyList(), null, null, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, gaugeStyle = SensorGaugeStyle.Current, presentationCatalog = presentationCatalog, renderer = renderer)
                     }
                 }
             }
@@ -786,7 +790,7 @@ class SensorsScreenTest {
         )
         compose.setContent { SecuComposeTheme {
             Box(Modifier.width(320.dp)) {
-                SensorsScreen(gauges, emptyList(), null, null, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, gaugeStyle = style.value, presentationCatalog = presentationCatalog)
+                SensorsScreen(gauges, emptyList(), null, null, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, gaugeStyle = style.value, presentationCatalog = presentationCatalog, renderer = renderer)
             }
         } }
 
@@ -811,7 +815,7 @@ class SensorsScreenTest {
         val numeric = mutableStateOf(false)
         compose.setContent { SecuComposeTheme {
             SensorsScreen(listOf(GaugeItem(GaugeState(1, GaugeType.RPM, 0, numeric.value), value.value)), emptyList(), null, null,
-                {}, {}, {}, {}, {}, {}, {}, {}, { numeric.value = !numeric.value }, {}, {}, gaugeStyle = SensorGaugeStyle.Current, presentationCatalog = presentationCatalog)
+                {}, {}, {}, {}, {}, {}, {}, {}, { numeric.value = !numeric.value }, {}, {}, gaugeStyle = SensorGaugeStyle.Current, presentationCatalog = presentationCatalog, renderer = renderer)
         } }
         fun rpmDescription(value: String) = "${context.getString(presentationCatalog.gauge(GaugeType.RPM).title)}: $value ${context.getString(presentationCatalog.gauge(GaugeType.RPM).units)}"
         compose.onNodeWithTag("dial-RPM", useUnmergedTree = true).assert(SemanticsMatcher.expectValue(SemanticsProperties.ContentDescription, listOf(rpmDescription("100"))))
@@ -840,7 +844,7 @@ class SensorsScreenTest {
                     onUpdateGauge = {}, onReorderGauges = {}, onReorderIndicators = {},
                     gaugeStyle = style.value,
 
-                    presentationCatalog = presentationCatalog,
+                    presentationCatalog = presentationCatalog, renderer = renderer,
                 )
             }
         }
@@ -876,7 +880,7 @@ class SensorsScreenTest {
                             onGaugeChoicesConsumed = {}, onIndicatorChoicesConsumed = {}, onDeleteGauge = {}, onDeleteIndicator = {},
                             onUpdateGauge = {}, onReorderGauges = {}, onReorderIndicators = {}, gaugeStyle = style.value,
 
-                    presentationCatalog = presentationCatalog,
+                    presentationCatalog = presentationCatalog, renderer = renderer,
                 )
                     }
                 }
@@ -991,10 +995,10 @@ class SensorsScreenTest {
     }
 
     @Test fun narrowDialTickLabelsUseEvenSubsetIncludingEndpoints() {
-        assertEquals(listOf(0, 5, 10, 14, 19), selectGaugeTickLabelIndices(20, 5))
-        assertEquals((0 until 20).toList(), selectGaugeTickLabelIndices(20, 20))
-        assertEquals(listOf(0, 19), selectGaugeTickLabelIndices(20, 2))
-        assertEquals(emptyList<Int>(), selectGaugeTickLabelIndices(0, 5))
+        assertEquals(listOf(0, 5, 10, 14, 19), renderer.selectGaugeTickLabelIndices(20, 5))
+        assertEquals((0 until 20).toList(), renderer.selectGaugeTickLabelIndices(20, 20))
+        assertEquals(listOf(0, 19), renderer.selectGaugeTickLabelIndices(20, 2))
+        assertEquals(emptyList<Int>(), renderer.selectGaugeTickLabelIndices(0, 5))
     }
 
     @Test fun addDialogsSelectGaugeAndIndicatorAndIndicatorDelete() {
@@ -1010,7 +1014,7 @@ class SensorsScreenTest {
                 gaugeChoices.value, indicatorChoices.value,
                 {}, {}, { addedGauge = it }, { addedIndicator = it }, { gaugeChoices.value = null }, { indicatorChoices.value = null }, {}, { deletedIndicator = it }, {}, {}, {},
 
-                    presentationCatalog = presentationCatalog,
+                    presentationCatalog = presentationCatalog, renderer = renderer,
                 )
         } }
         compose.onNodeWithText(context.getString(presentationCatalog.gauge(GaugeType.VOLTAGE).title)).performClick()
@@ -1032,7 +1036,7 @@ class SensorsScreenTest {
                 listOf(IndicatorItem(IndicatorState(3, IndicatorType.THROTTLE, 0), false), IndicatorItem(IndicatorState(4, IndicatorType.GAS_VALVE, 1), true)),
                 null, null, {}, {}, {}, {}, {}, {}, {}, {}, {}, { savedGauges = it }, { savedIndicators = it },
 
-                    presentationCatalog = presentationCatalog,
+                    presentationCatalog = presentationCatalog, renderer = renderer,
                 )
         } }
         val gaugeSource = compose.onNodeWithTag("gauge-RPM").fetchSemanticsNode().boundsInRoot
@@ -1062,6 +1066,37 @@ class SensorsScreenTest {
         }
     }
 
+    @Test fun draggingEitherGridDefersUpdatesToBothUntilDrop() {
+        val reading = mutableStateOf("100")
+        val active = mutableStateOf(false)
+        compose.setContent {
+            SecuComposeTheme {
+                SensorsScreen(
+                    listOf(GaugeItem(GaugeState(1, GaugeType.RPM, 0, true), reading.value)),
+                    listOf(IndicatorItem(IndicatorState(2, IndicatorType.THROTTLE, 0), active.value)),
+                    null, null, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {},
+                    presentationCatalog = presentationCatalog, renderer = renderer,
+                )
+            }
+        }
+        val indicator = compose.onNodeWithTag("indicator-THROTTLE")
+        compose.onNodeWithTag("gauge-RPM").performTouchInput {
+            down(center); advanceEventTime(600); moveBy(Offset(2f, 0f))
+        }
+        compose.runOnIdle { active.value = true }
+        indicator.assert(SemanticsMatcher.expectValue(SemanticsProperties.StateDescription, context.getString(R.string.sensors_status_accessibility_off)))
+        compose.onNodeWithTag("gauge-RPM").performTouchInput { up() }
+        compose.waitForIdle()
+        indicator.assert(SemanticsMatcher.expectValue(SemanticsProperties.StateDescription, context.getString(R.string.sensors_status_accessibility_on)))
+
+        indicator.performTouchInput { down(center); advanceEventTime(600); moveBy(Offset(2f, 0f)) }
+        compose.runOnIdle { reading.value = "200" }
+        compose.onNodeWithTag("gauge-RPM").assertTextContains("100")
+        indicator.performTouchInput { up() }
+        compose.waitForIdle()
+        compose.onNodeWithTag("gauge-RPM").assertTextContains("200")
+    }
+
     @Test fun activeGaugeFollowsFingerUntilDrop() {
         // Compact numeric cards keep both drag targets in the tablet viewport; dial sizing is tested separately.
         compose.setContent { SecuComposeTheme {
@@ -1073,7 +1108,7 @@ class SensorsScreenTest {
                     ), emptyList(),
                     null, null, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {},
 
-                    presentationCatalog = presentationCatalog,
+                    presentationCatalog = presentationCatalog, renderer = renderer,
                 )
             }
         } }
@@ -1107,7 +1142,7 @@ class SensorsScreenTest {
                         IndicatorItem(IndicatorState(2, IndicatorType.GAS_VALVE, 1), true),
                     ), null, null, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {},
 
-                    presentationCatalog = presentationCatalog,
+                    presentationCatalog = presentationCatalog, renderer = renderer,
                 )
             }
         } }
@@ -1143,7 +1178,7 @@ class SensorsScreenTest {
                 ), emptyList(), null, null,
                 {}, {}, {}, {}, {}, {}, {}, {}, {}, { savedOrder = it }, {},
 
-                    presentationCatalog = presentationCatalog,
+                    presentationCatalog = presentationCatalog, renderer = renderer,
                 )
         } }
         compose.waitForIdle()
@@ -1191,7 +1226,7 @@ class SensorsScreenTest {
                 ), emptyList(), null, null,
                 {}, {}, {}, {}, {}, {}, {}, {}, {}, { savedOrder = it }, {},
 
-                    presentationCatalog = presentationCatalog,
+                    presentationCatalog = presentationCatalog, renderer = renderer,
                 )
         } }
         compose.waitForIdle()
@@ -1231,7 +1266,7 @@ class SensorsScreenTest {
                 ), emptyList(), null, null,
                 {}, {}, {}, {}, {}, {}, {}, {}, {}, { savedOrder = it }, {},
 
-                    presentationCatalog = presentationCatalog,
+                    presentationCatalog = presentationCatalog, renderer = renderer,
                 )
         } }
         val source = compose.onNodeWithTag("gauge-RPM").fetchSemanticsNode().boundsInRoot
@@ -1276,7 +1311,7 @@ class SensorsScreenTest {
                             packetItems.value, emptyList(), null, null,
                             {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {},
 
-                    presentationCatalog = presentationCatalog,
+                    presentationCatalog = presentationCatalog, renderer = renderer,
                 )
                     }
                 }
@@ -1333,7 +1368,7 @@ class SensorsScreenTest {
                         if (active) packetItems.value = packetItems.value.map { it.copy(value = "4321") }
                     },
 
-                    presentationCatalog = presentationCatalog,
+                    presentationCatalog = presentationCatalog, renderer = renderer,
                 )
             }
         } }
