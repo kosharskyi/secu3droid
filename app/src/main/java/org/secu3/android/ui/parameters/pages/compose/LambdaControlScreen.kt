@@ -24,6 +24,7 @@
  */
 package org.secu3.android.ui.parameters.pages.compose
 
+import org.secu3.android.domain.parameters.ParameterCapabilities
 import androidx.annotation.StringRes
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -144,7 +145,7 @@ fun applyLambdaChannel(p: LambdaParamPacket, index: Int, checked: Boolean) {
 }
 
 @Composable
-fun LambdaControlScreen(values: LambdaValues?, sensors: List<String>, fuelInjectionEnabled: Boolean, onEdit: (LambdaNumber) -> Unit,
+fun LambdaControlScreen(values: LambdaValues?, sensors: List<String>, capabilities: ParameterCapabilities, onEdit: (LambdaNumber) -> Unit,
     onFlag: (LambdaFlag, Boolean) -> Unit, onSensorType: (Int) -> Unit, onChannel: (Int, Boolean) -> Unit) {
     val pageScrollState = rememberScrollState()
     if (values == null) { ParameterLoadingIndicator("lambda_loading"); return }
@@ -156,7 +157,7 @@ fun LambdaControlScreen(values: LambdaValues?, sensors: List<String>, fuelInject
             listOf(LambdaNumber.STEP_POS, LambdaNumber.STEP_NEG, LambdaNumber.LIMIT_POS, LambdaNumber.LIMIT_NEG,
                 LambdaNumber.SWITCH, LambdaNumber.CTS, LambdaNumber.RPM, LambdaNumber.DELAY, LambdaNumber.DEADBAND).forEach { NumberRow(it, values, onEdit) }
             listOf(LambdaFlag.HEATING_VOLTAGE, LambdaFlag.IDLING_CORRECTION).forEach { FlagRow(it, values, onFlag) }
-            NumberRow(LambdaNumber.STOICH, values, onEdit, enabled = fuelInjectionEnabled)
+            NumberRow(LambdaNumber.STOICH, values, onEdit, enabled = capabilities.lambdaStoich)
         }
         ParameterSection(stringResource(R.string.lambda_control_sensors_heating_title)) {
             listOf(LambdaNumber.HEAT_COLD, LambdaNumber.HEAT_HOT, LambdaNumber.HEAT_TEMP, LambdaNumber.HEAT_PWM, LambdaNumber.AIR_FLOW).forEach { NumberRow(it, values, onEdit) }
@@ -169,7 +170,12 @@ fun LambdaControlScreen(values: LambdaValues?, sensors: List<String>, fuelInject
                         val i = rowIndex * 4 + indexInRow
                         Row(verticalAlignment = Alignment.CenterVertically) {
                             Text((i + 1).toString())
-                            androidx.compose.material3.Checkbox(checked, { onChannel(i, it) }, modifier = Modifier.testTag("lambda_channel_${i + 1}"))
+                            androidx.compose.material3.Checkbox(
+                                checked,
+                                { onChannel(i, it) },
+                                enabled = capabilities.lambdaChannelSelection,
+                                modifier = Modifier.testTag("lambda_channel_${i + 1}"),
+                            )
                         }
                     }
                 }

@@ -12,7 +12,11 @@ Selectors with numeric protocol values must preserve their `Code …` or localiz
 
 ## Fuel injection availability gates are independent of field styling
 
-The injector-availability state hides the whole editor, while individual controls can remain disabled based on firmware variant or another parameter (for example, timing when map timing is active, squirts when no options exist, and Lambda fields when the injector feature is unavailable). Shared field styling must carry each existing enabled condition through unchanged.
+The injector-availability state hides the whole editor, while individual controls can remain disabled based on firmware variant or another parameter (for example, timing when map timing is active, squirts when no options exist, and Lambda STOICH when neither injection nor gas-dose support exists). Shared field styling must carry each existing enabled condition through unchanged.
+
+## Lambda channels and STOICH use separate firmware capabilities
+
+Pass the collected `ParameterCapabilities` snapshot into `LambdaControlScreen`. Known fuel-injection, gas-dose, or CARB_AFR firmware enables all eight Lambda channel checkboxes; STOICH is enabled only for fuel-injection or gas-dose firmware. Unknown firmware keeps both controls disabled. CARB_AFR-only support is meaningful for channel selection and must not be filtered out.
 
 ## Universal output function code 15 represents the fifth displayed option
 

@@ -1,6 +1,6 @@
 ## Capabilities are immutable snapshots of decoded firmware facts
 
-Construct a new snapshot from the current nullable `FirmwareInfoPacket`; do not retain the mutable packet or rebuild individual rules in UI or ViewModel consumers. Null firmware is intentionally permissive for field availability and editor previews, but optional tabs remain hidden except Choke at its historical base-list position. Lambda channel selection is the exception: it remains false until firmware is known, even though unknown firmware permits both fuel injection and gas dose fields.
+Construct a new snapshot from the current nullable `FirmwareInfoPacket`; do not retain the mutable packet or rebuild individual rules in UI or ViewModel consumers. Null firmware is intentionally permissive for field availability and editor previews, but optional tabs remain hidden except Choke at its historical base-list position. Lambda channel selection remains false until firmware is known; once known, fuel injection, gas dose, or CARB_AFR support enables channel selection. Lambda STOICH has the narrower rule: only fuel injection or gas dose enables it. CARB_AFR-only firmware supports Lambda channels without enabling STOICH.
 
 ## Shared field rules accept only the changing parameter values
 

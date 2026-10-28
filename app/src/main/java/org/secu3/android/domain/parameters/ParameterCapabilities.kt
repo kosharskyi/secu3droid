@@ -40,7 +40,8 @@ class ParameterCapabilities(firmware: FirmwareInfoPacket? = null) {
     val floodClearThreshold get() = fuelInjection || gasDose || choke
     val nonSecu3TFuelInjection get() = fuelInjection && dbw
     val lambdaControl get() = known && (fuelInjection || gasDose || carbAfr)
-    val lambdaChannelSelection get() = known && fuelOrGasDose
+    val lambdaChannelSelection get() = lambdaControl
+    val lambdaStoich get() = known && fuelOrGasDose
 
     fun supports(page: ParameterPage): Boolean = when (page) {
         ParameterPage.CHOKE_CONTROL -> !known || choke

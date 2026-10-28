@@ -33,6 +33,8 @@ import androidx.compose.ui.test.performScrollTo
 import org.junit.Assert.assertEquals
 import org.junit.Rule
 import org.junit.Test
+import org.secu3.android.domain.parameters.ParameterCapabilities
+import org.secu3.android.models.packets.input.FirmwareInfoPacket
 import org.secu3.android.models.packets.out.params.LambdaParamPacket
 import org.secu3.android.ui.compose.SecuComposeTheme
 
@@ -43,7 +45,7 @@ class LambdaControlScreenTest {
     @Test fun loadingAndInitialRenderArePassiveAndUnknownSensorIsSafe() {
         var calls = 0
         val state = mutableStateOf<LambdaValues?>(null)
-        compose.setContent { SecuComposeTheme { LambdaControlScreen(state.value, sensors, false, { calls++ }, { _, _ -> calls++ }, { calls++ }, { _, _ -> calls++ }) } }
+        compose.setContent { SecuComposeTheme { LambdaControlScreen(state.value, sensors, ParameterCapabilities(null), { calls++ }, { _, _ -> calls++ }, { calls++ }, { _, _ -> calls++ }) } }
         compose.onNodeWithTag("lambda_loading").assertExists()
         compose.runOnIdle { assertEquals(0, calls) }
         val values = LambdaValues.from(LambdaParamPacket(senstype = 7, strPerStp = 1))
@@ -61,7 +63,7 @@ class LambdaControlScreenTest {
         val sensorsSelected = mutableListOf<Int>()
         compose.setContent {
             SecuComposeTheme {
-                LambdaControlScreen(LambdaValues.from(LambdaParamPacket(senstype = 0, strPerStp = 0)), sensors, true,
+                LambdaControlScreen(LambdaValues.from(LambdaParamPacket(senstype = 0, strPerStp = 0)), sensors, ParameterCapabilities(FirmwareInfoPacket(options = 1 shl 28)),
                     edits::add, { flag, checked -> flags += flag to checked }, sensorsSelected::add, { index, checked -> channels += index to checked })
             }
         }
@@ -76,5 +78,81 @@ class LambdaControlScreenTest {
         compose.onNodeWithTag("lambda_sensor_type").performScrollTo().performClick()
         compose.onNodeWithTag("lambda_sensor_option_1").performClick()
         assertEquals(listOf(1), sensorsSelected)
+    }
+
+    @Test fun carbAfrChannelsAreEnabledButStoichIsDisabled() {
+        val capabilities = ParameterCapabilities(FirmwareInfoPacket(options = 1 shl 30))
+        var channelCalls = 0
+        var editCalls = 0
+        compose.setContent {
+            SecuComposeTheme {
+                LambdaControlScreen(
+                    LambdaValues.from(LambdaParamPacket()), sensors, capabilities,
+                    { editCalls++ }, { _, _ -> }, {}, { _, _ -> channelCalls++ },
+                )
+            }
+        }
+
+        compose.onNodeWithTag("lambda_channel_1").assertIsEnabled().performScrollTo().performClick()
+        compose.onNodeWithTag("lambda_stoich_disabled").assertExists()
+        compose.runOnIdle {
+            assertEquals(1, channelCalls)
+            assertEquals(0, editCalls)
+        }
+    }
+
+    @Test fun unsupportedAndUnknownFirmwareDisableChannelsAndStoichWithoutCallbacks() {
+        val capabilities = mutableStateOf(ParameterCapabilities(FirmwareInfoPacket(options = 0)))
+        var channelCalls = 0
+        var editCalls = 0
+        compose.setContent {
+            SecuComposeTheme {
+                LambdaControlScreen(
+                    LambdaValues.from(LambdaParamPacket()), sensors, capabilities.value,
+                    { editCalls++ }, { _, _ -> }, {}, { _, _ -> channelCalls++ },
+                )
+            }
+        }
+
+        (1..8).forEach { compose.onNodeWithTag("lambda_channel_$it").assertIsNotEnabled() }
+        compose.onNodeWithTag("lambda_stoich_disabled").assertExists()
+        compose.onNodeWithTag("lambda_channel_1").performScrollTo().performTouchInput { click(center) }
+        compose.runOnIdle { capabilities.value = ParameterCapabilities(null) }
+        (1..8).forEach { compose.onNodeWithTag("lambda_channel_$it").assertIsNotEnabled() }
+        compose.onNodeWithTag("lambda_stoich_disabled").assertExists()
+        compose.runOnIdle {
+            assertEquals(0, channelCalls)
+            assertEquals(0, editCalls)
+        }
+    }
+
+    @Test fun gasDoseEnablesChannelsAndStoichThenFirmwareChangesDisableThem() {
+        val capabilities = mutableStateOf(ParameterCapabilities(FirmwareInfoPacket(options = 1 shl 29)))
+        val channelCalls = mutableListOf<Pair<Int, Boolean>>()
+        val edits = mutableListOf<LambdaNumber>()
+        compose.setContent {
+            SecuComposeTheme {
+                LambdaControlScreen(
+                    LambdaValues.from(LambdaParamPacket()), sensors, capabilities.value,
+                    edits::add, { _, _ -> }, {}, { index, checked -> channelCalls += index to checked },
+                )
+            }
+        }
+
+        (1..8).forEach { compose.onNodeWithTag("lambda_channel_$it").assertIsEnabled() }
+        compose.onNodeWithTag("lambda_stoich").performScrollTo().performClick()
+        compose.onNodeWithTag("lambda_channel_1").performScrollTo().performClick()
+        assertEquals(listOf(LambdaNumber.STOICH), edits)
+        assertEquals(listOf(0 to true), channelCalls)
+
+        compose.runOnIdle { capabilities.value = ParameterCapabilities(FirmwareInfoPacket(options = 0)) }
+        (1..8).forEach { compose.onNodeWithTag("lambda_channel_$it").assertIsNotEnabled() }
+        compose.onNodeWithTag("lambda_stoich_disabled").assertExists()
+        compose.onNodeWithTag("lambda_channel_1").performScrollTo().performTouchInput { click(center) }
+        compose.runOnIdle { capabilities.value = ParameterCapabilities(null) }
+        (1..8).forEach { compose.onNodeWithTag("lambda_channel_$it").assertIsNotEnabled() }
+        compose.onNodeWithTag("lambda_stoich_disabled").assertExists()
+        assertEquals(1, channelCalls.size)
+        assertEquals(1, edits.size)
     }
 }

@@ -6,6 +6,7 @@ import org.secu3.android.models.packets.out.params.FunSetParamPacket
 import org.secu3.android.models.packets.out.params.GasDoseParamPacket
 import org.secu3.android.models.packets.out.params.InjctrParPacket
 import org.secu3.android.models.packets.out.params.LambdaParamPacket
+import org.secu3.android.models.packets.input.FirmwareInfoPacket
 import org.secu3.android.models.packets.out.params.UniOutParamPacket
 import org.secu3.android.domain.parameters.MiscellaneousControl
 import org.secu3.android.domain.parameters.MiscellaneousValues
@@ -144,7 +145,7 @@ internal fun advancedParameterAppearanceFixtures(): List<ParameterAppearanceFixt
             FuelInjectionScreen(fuel, mapOf(0 to "Batch", 1 to "Semi-sequential", 2 to "Sequential"), {}, { _, _ -> }, { _, _ -> }, { _, _ -> }, { _, _ -> })
         },
         ParameterAppearanceFixture("lambda-control") {
-            LambdaControlScreen(lambda, listOf("Narrowband", "Wideband"), true, {}, { _, _ -> }, {}, { _, _ -> })
+            LambdaControlScreen(lambda, listOf("Narrowband", "Wideband"), ParameterCapabilities(FirmwareInfoPacket(options = (1 shl 28) or (1 shl 30))), {}, { _, _ -> }, {}, { _, _ -> })
         },
         ParameterAppearanceFixture("acceleration") {
             AccelerationScreen(AccelerationUiState.Data(acceleration), {}, {}, {}, {})

@@ -11,6 +11,7 @@ package org.secu3.android.ui.parameters
 
 import androidx.compose.ui.test.junit4.v2.createAndroidComposeRule
 import androidx.compose.ui.test.assertTextEquals
+import androidx.compose.ui.test.assertIsEnabled
 import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
@@ -25,7 +26,10 @@ import org.junit.Assert.assertTrue
 import org.junit.Rule
 import org.junit.Test
 import org.secu3.android.R
+import org.secu3.android.domain.parameters.ParameterCapabilities
+import org.secu3.android.models.packets.input.FirmwareInfoPacket
 import org.secu3.android.models.packets.out.params.AnglesParamPacket
+import org.secu3.android.models.packets.out.params.LambdaParamPacket
 import org.secu3.android.models.packets.out.params.MiscellaneousParamPacket
 import org.secu3.android.models.packets.out.params.StarterParamPacket
 import org.secu3.android.ui.MainActivity
@@ -113,6 +117,22 @@ class ParameterPageEditorRoutingTest {
         assertTrue(packet.evapAfslope != previousSlope)
         assertEquals(false, vm.isSendAllowed)
         assertTrue(control.values.value != null)
+    }
+
+    @Test fun lambdaPageContentPassesCarbAfrCapabilityToChannelsAndStoich() {
+        val vm = paramsViewModel()
+        val holder = vm.lambdaControlStateHolder
+        holder.reset()
+        val packet = LambdaParamPacket()
+        holder.onPacketReceived(packet)
+        val capabilities = ParameterCapabilities(FirmwareInfoPacket(options = 1 shl 30))
+        renderPage(R.string.params_tab_lambda_control_title, vm, capabilities)
+
+        compose.onNodeWithTag("lambda_channel_1").assertIsEnabled().performScrollTo().performClick()
+        compose.onNodeWithTag("lambda_stoich_disabled").assertExists()
+
+        assertEquals(1, packet.lambdaSelectedChanel)
+        assertEquals(null, vm.parameterEditSession)
     }
 
     @Test fun parameterEditSessionRejectsStaleAndRepeatedConfirmations() {
@@ -211,11 +231,15 @@ class ParameterPageEditorRoutingTest {
         return viewModel
     }
 
-    private fun renderPage(titleRes: Int, vm: ParamsViewModel) {
+    private fun renderPage(
+        titleRes: Int,
+        vm: ParamsViewModel,
+        capabilities: ParameterCapabilities = vm.capabilities.value,
+    ) {
         compose.activityRule.scenario.onActivity { activity ->
             activity.addContentView(
                 ComposeView(activity).apply {
-                    setContent { SecuComposeTheme { ParameterPageContent(requireNotNull(ParameterPageCatalog().pageForTitle(titleRes)), titleRes, vm, vm.capabilities.value, true, { true }, vm::openParameterEditor) } }
+                    setContent { SecuComposeTheme { ParameterPageContent(requireNotNull(ParameterPageCatalog().pageForTitle(titleRes)), titleRes, vm, capabilities, true, { true }, vm::openParameterEditor) } }
                 },
                 ViewGroup.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.MATCH_PARENT),
             )

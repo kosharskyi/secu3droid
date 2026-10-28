@@ -180,7 +180,7 @@ internal fun ParameterPageContent(
         R.string.params_tab_lambda_control_title -> {
             val h = viewModel.lambdaControlStateHolder
             val sensorTypes = stringArrayResource(R.array.lambda_sensors_types).toList()
-            LambdaControlScreen(h.values, sensorTypes, capabilities.lambdaChannelSelection, { n -> h.values?.let { v -> if (n.integer) intEdit(n.title, v.value(n).toInt(), n.step.toInt(), n.max.toInt(), n.min.toInt()) { h.updateValue(n, it.toFloat()) } else floatEdit(n.title, v.value(n), n.step, n.max, n.min, n.precision) { h.updateValue(n, it.toFloat()) } } }, h::updateFlag, { h.updateSensorType(it, sensorTypes.size) }, { i, checked -> h.updateChannel(i, checked) })
+            LambdaControlScreen(h.values, sensorTypes, capabilities, { n -> h.values?.let { v -> if (n.integer) intEdit(n.title, v.value(n).toInt(), n.step.toInt(), n.max.toInt(), n.min.toInt()) { h.updateValue(n, it.toFloat()) } else floatEdit(n.title, v.value(n), n.step, n.max, n.min, n.precision) { h.updateValue(n, it.toFloat()) } } }, h::updateFlag, { h.updateSensorType(it, sensorTypes.size) }, { i, checked -> h.updateChannel(i, checked) })
         }
         R.string.params_tab_acceleration_title -> {
             val h = viewModel.accelerationStateHolder

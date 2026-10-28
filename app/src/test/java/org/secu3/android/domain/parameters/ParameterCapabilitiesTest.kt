@@ -47,6 +47,8 @@ class ParameterCapabilitiesTest {
         assertTrue(injection.supports(ParameterPage.LTFT))
         assertFalse(injection.supports(ParameterPage.GAS_DOSE))
         assertTrue(injection.supports(ParameterPage.EL_THROTTLE))
+        assertTrue(injection.lambdaChannelSelection)
+        assertTrue(injection.lambdaStoich)
 
         val gasDose = ParameterCapabilities(FirmwareInfoPacket(options = 1 shl 29))
         assertFalse(gasDose.supports(ParameterPage.FUEL_INJECTION))
@@ -56,11 +58,18 @@ class ParameterCapabilitiesTest {
         assertFalse(gasDose.supports(ParameterPage.LTFT))
         assertTrue(gasDose.supports(ParameterPage.EL_THROTTLE))
         assertTrue(gasDose.lambdaChannelSelection)
+        assertTrue(gasDose.lambdaStoich)
 
         val carbAfr = ParameterCapabilities(FirmwareInfoPacket(options = 1 shl 30))
         assertTrue(carbAfr.supports(ParameterPage.LAMBDA_CONTROL))
-        assertFalse(carbAfr.lambdaChannelSelection)
+        assertTrue(carbAfr.lambdaChannelSelection)
+        assertFalse(carbAfr.lambdaStoich)
         assertTrue(carbAfr.supports(ParameterPage.EL_THROTTLE))
+
+        val noLambdaSupport = ParameterCapabilities(FirmwareInfoPacket(options = 0))
+        assertFalse(noLambdaSupport.supports(ParameterPage.LAMBDA_CONTROL))
+        assertFalse(noLambdaSupport.lambdaChannelSelection)
+        assertFalse(noLambdaSupport.lambdaStoich)
 
         val secu3t = ParameterCapabilities(FirmwareInfoPacket(options = (1 shl 28) or (1 shl 17)))
         assertFalse(secu3t.nonSecu3TFuelInjection)
@@ -84,6 +93,7 @@ class ParameterCapabilitiesTest {
         assertFalse(unknown.supports(ParameterPage.LAMBDA_CONTROL))
         assertFalse(unknown.supports(ParameterPage.GAS_DOSE))
         assertFalse(unknown.lambdaChannelSelection)
+        assertFalse(unknown.lambdaStoich)
         assertTrue(unknown.mttfEnabled(0f))
         assertTrue(unknown.camReferenceEnabled(2f))
         assertEquals((1..8).toList(), unknown.ckpsCylinderOptions(mergeOutputs = false))
