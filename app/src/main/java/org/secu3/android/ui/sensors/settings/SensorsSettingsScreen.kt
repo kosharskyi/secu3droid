@@ -15,16 +15,11 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.selection.selectable
-import androidx.compose.foundation.selection.selectableGroup
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
-import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.RadioButton
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.material.icons.Icons
@@ -36,7 +31,6 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
@@ -44,6 +38,7 @@ import org.secu3.android.R
 import org.secu3.android.models.SensorGaugeStyle
 import org.secu3.android.models.InjectionTimingMode
 import org.secu3.android.ui.compose.SettingsActionRow
+import org.secu3.android.ui.compose.ChoiceDialog
 import org.secu3.android.ui.compose.SettingsSection
 import org.secu3.android.ui.compose.SettingsToggleRow
 import org.secu3.android.ui.compose.SecuTopAppBar
@@ -103,55 +98,37 @@ internal fun SensorsSettingsScreen(
         }
     }
     if (gaugeStyleDialog) {
-        AlertDialog(
-            onDismissRequest = { gaugeStyleDialog = false },
+        ChoiceDialog(
             title = { Text(stringResource(R.string.sensor_gauge_style)) },
-            text = {
-                Column(Modifier.selectableGroup()) {
-                    SensorGaugeStyle.entries.forEach { style ->
-                        Row(
-                            Modifier.fillMaxWidth().heightIn(min = 48.dp).selectable(
-                                selected = gaugeStyle == style,
-                                role = Role.RadioButton,
-                            ) {
-                                onGaugeStyleChange(style)
-                                gaugeStyleDialog = false
-                            }.testTag("sensor-gauge-style-${style.preferenceValue}"),
-                            verticalAlignment = Alignment.CenterVertically,
-                        ) {
-                            RadioButton(selected = gaugeStyle == style, onClick = null)
-                            Text(stringResource(style.labelResource()), Modifier.padding(start = 8.dp))
-                        }
-                    }
-                }
+            selected = gaugeStyle,
+            choices = SensorGaugeStyle.entries,
+            label = { style -> stringResource(style.labelResource()) },
+            onSelect = { style ->
+                onGaugeStyleChange(style)
+                gaugeStyleDialog = false
             },
+            onDismiss = { gaugeStyleDialog = false },
             confirmButton = { TextButton(onClick = { gaugeStyleDialog = false }) { Text(stringResource(R.string.close)) } },
+            optionTestTag = { style -> "sensor-gauge-style-${style.preferenceValue}" },
+            optionMinHeight = 48.dp,
+            optionHorizontalPadding = 0.dp,
         )
     }
     if (injectionTimingDialog) {
-        AlertDialog(
-            onDismissRequest = { injectionTimingDialog = false },
+        ChoiceDialog(
             title = { Text(stringResource(R.string.injection_timing_mode)) },
-            text = {
-                Column(Modifier.selectableGroup()) {
-                    InjectionTimingMode.entries.forEach { mode ->
-                        Row(
-                            Modifier.fillMaxWidth().heightIn(min = 48.dp).selectable(
-                                selected = injectionTimingMode == mode,
-                                role = Role.RadioButton,
-                            ) {
-                                onInjectionTimingModeChange(mode)
-                                injectionTimingDialog = false
-                            }.testTag("injection-timing-mode-${mode.preferenceValue}"),
-                            verticalAlignment = Alignment.CenterVertically,
-                        ) {
-                            RadioButton(selected = injectionTimingMode == mode, onClick = null)
-                            Text(stringResource(mode.labelResource()), Modifier.padding(start = 8.dp))
-                        }
-                    }
-                }
+            selected = injectionTimingMode,
+            choices = InjectionTimingMode.entries,
+            label = { mode -> stringResource(mode.labelResource()) },
+            onSelect = { mode ->
+                onInjectionTimingModeChange(mode)
+                injectionTimingDialog = false
             },
+            onDismiss = { injectionTimingDialog = false },
             confirmButton = { TextButton(onClick = { injectionTimingDialog = false }) { Text(stringResource(R.string.close)) } },
+            optionTestTag = { mode -> "injection-timing-mode-${mode.preferenceValue}" },
+            optionMinHeight = 48.dp,
+            optionHorizontalPadding = 0.dp,
         )
     }
 }

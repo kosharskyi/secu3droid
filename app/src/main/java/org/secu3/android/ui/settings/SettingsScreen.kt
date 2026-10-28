@@ -9,13 +9,10 @@
  */
 package org.secu3.android.ui.settings
 
-import androidx.compose.foundation.selection.selectable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -26,25 +23,22 @@ import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.OutlinedTextFieldDefaults
-import androidx.compose.material3.RadioButton
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
-import androidx.compose.ui.semantics.Role
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.Alignment
-import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.stringArrayResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import org.secu3.android.R
 import org.secu3.android.ui.compose.SettingsActionRow
+import org.secu3.android.ui.compose.ChoiceDialog
 import org.secu3.android.ui.compose.SettingsSection
 import org.secu3.android.ui.compose.SettingsToggleRow
 import org.secu3.android.ui.compose.SecuTopAppBar
@@ -177,12 +171,16 @@ internal fun SettingsContent(
     }
 
     when (dialog) {
-        SettingsDialog.Delimiter -> DelimiterDialog(
+        SettingsDialog.Delimiter -> ChoiceDialog(
+            title = { SettingsDialogTitle(stringResource(R.string.pref_log_csv_delimeter_title)) },
             selected = state.csvDelimiter,
-            labels = delimiterLabels.toList(),
-            values = delimiterValues.toList(),
+            choices = delimiterValues.toList(),
+            label = { value -> delimiterLabels[delimiterValues.indexOf(value)] },
             onSelect = onSelectDelimiter,
             onDismiss = onDismissDialog,
+            confirmButton = { Button(onClick = onDismissDialog) { Text(stringResource(android.R.string.ok)) } },
+            shape = RoundedCornerShape(24.dp),
+            containerColor = MaterialTheme.colorScheme.surface,
         )
         SettingsDialog.Retries -> RetryDialog(
             initialValue = state.connectionRetries,
@@ -191,7 +189,18 @@ internal fun SettingsContent(
             onDismiss = onDismissDialog,
         )
         SettingsDialog.About -> Unit
-        SettingsDialog.Appearance -> AppearanceDialog(state.appearanceMode, onSelectAppearance, onDismissDialog)
+        SettingsDialog.Appearance -> ChoiceDialog(
+            title = { SettingsDialogTitle(stringResource(R.string.appearance_title)) },
+            selected = state.appearanceMode,
+            choices = AppearanceMode.entries,
+            label = { mode -> stringResource(appearanceLabel(mode)) },
+            onSelect = onSelectAppearance,
+            onDismiss = onDismissDialog,
+            confirmButton = { Button(onClick = onDismissDialog) { Text(stringResource(android.R.string.ok)) } },
+            optionTestTag = { mode -> "settings-appearance-${mode.name.lowercase()}" },
+            shape = RoundedCornerShape(24.dp),
+            containerColor = MaterialTheme.colorScheme.surface,
+        )
         null -> Unit
     }
 }
@@ -200,70 +209,6 @@ private fun appearanceLabel(mode: AppearanceMode): Int = when (mode) {
     AppearanceMode.System -> R.string.appearance_system
     AppearanceMode.Light -> R.string.appearance_light
     AppearanceMode.Dark -> R.string.appearance_dark
-}
-
-@Composable
-private fun AppearanceDialog(selected: AppearanceMode, onSelect: (AppearanceMode) -> Unit, onDismiss: () -> Unit) {
-    AlertDialog(
-        onDismissRequest = onDismiss,
-        shape = RoundedCornerShape(24.dp),
-        containerColor = MaterialTheme.colorScheme.surface,
-        title = { SettingsDialogTitle(stringResource(R.string.appearance_title)) },
-        text = {
-            Column(Modifier.verticalScroll(rememberScrollState())) {
-                AppearanceMode.entries.forEach { mode ->
-                    Row(
-                        Modifier.fillMaxWidth().selectable(
-                            selected = selected == mode,
-                            role = Role.RadioButton,
-                            onClick = { onSelect(mode) },
-                        ).heightIn(min = 56.dp).padding(horizontal = 8.dp),
-                        horizontalArrangement = Arrangement.Start,
-                        verticalAlignment = Alignment.CenterVertically,
-                    ) {
-                        RadioButton(selected = selected == mode, onClick = null)
-                        Text(stringResource(appearanceLabel(mode)), Modifier.padding(start = 8.dp), style = MaterialTheme.typography.bodyLarge)
-                    }
-                }
-            }
-        },
-        confirmButton = { Button(onClick = onDismiss) { Text(stringResource(android.R.string.ok)) } },
-    )
-}
-
-@Composable
-private fun DelimiterDialog(
-    selected: String,
-    labels: List<String>,
-    values: List<String>,
-    onSelect: (String) -> Unit,
-    onDismiss: () -> Unit,
-) {
-    AlertDialog(
-        onDismissRequest = onDismiss,
-        shape = RoundedCornerShape(24.dp),
-        containerColor = MaterialTheme.colorScheme.surface,
-        title = { SettingsDialogTitle(stringResource(R.string.pref_log_csv_delimeter_title)) },
-        text = {
-            Column(Modifier.verticalScroll(rememberScrollState())) {
-                labels.forEachIndexed { index, label ->
-                    Row(
-                        Modifier.fillMaxWidth().selectable(
-                            selected = selected == values[index],
-                            role = Role.RadioButton,
-                            onClick = { onSelect(values[index]) },
-                        ).heightIn(min = 56.dp).padding(horizontal = 8.dp),
-                        horizontalArrangement = Arrangement.Start,
-                        verticalAlignment = Alignment.CenterVertically,
-                    ) {
-                        RadioButton(selected = selected == values[index], onClick = null)
-                        Text(label, Modifier.padding(start = 8.dp), style = MaterialTheme.typography.bodyLarge)
-                    }
-                }
-            }
-        },
-        confirmButton = { Button(onClick = onDismiss) { Text(stringResource(android.R.string.ok)) } },
-    )
 }
 
 @Composable

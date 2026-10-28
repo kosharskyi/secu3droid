@@ -28,19 +28,24 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.width
+import androidx.compose.material3.Button
+import androidx.compose.material3.Text
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.assertIsOn
 import androidx.compose.ui.test.assertIsOff
 import androidx.compose.ui.test.assertIsNotEnabled
+import androidx.compose.ui.test.assertIsSelected
+import androidx.compose.ui.test.assertCountEquals
 import androidx.compose.ui.test.junit4.v2.createComposeRule
 import androidx.compose.ui.test.onNodeWithText
+import androidx.compose.ui.test.onAllNodesWithTag
+import androidx.compose.ui.test.performScrollTo
 import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.performTextReplacement
 import androidx.compose.ui.test.onNodeWithContentDescription
 import androidx.compose.ui.test.onNodeWithTag
-import androidx.compose.ui.test.performScrollTo
 import androidx.compose.ui.unit.Density
 import androidx.compose.ui.unit.dp
 import androidx.test.platform.app.InstrumentationRegistry
@@ -49,12 +54,78 @@ import org.junit.Assert.assertTrue
 import org.junit.Rule
 import org.junit.Test
 import org.secu3.android.R
+import org.secu3.android.utils.AppearanceMode
+import org.secu3.android.ui.compose.ChoiceDialog
 import org.secu3.android.ui.compose.SecuComposeTheme
 
 class SettingsScreenTest {
     @get:Rule val compose = createComposeRule()
     private val context = InstrumentationRegistry.getInstrumentation().targetContext
     private val initial = SettingsUiState(true, false, ";", false, "EngineLogs", "3", true, false)
+
+    @Test fun appearanceChoiceReportsSelectionAndLeavesDismissalToPreferenceOwner() {
+        val current = mutableStateOf(initial)
+        val dialog = mutableStateOf<SettingsDialog?>(null)
+        var selected: AppearanceMode? = null
+        compose.setContent {
+            SecuComposeTheme {
+                SettingsContent(
+                    state = current.value,
+                    dialog = dialog.value,
+                    onNavigateUp = {},
+                    onToggle = { _, _ -> },
+                    onSelectDelimiter = {},
+                    onChooseFolder = {},
+                    onEditRetries = {},
+                    onValidateRetries = { true },
+                    onSaveRetries = {},
+                    onSelectDialog = { dialog.value = it },
+                    onDismissDialog = { dialog.value = null },
+                    onShowAbout = {},
+                    onSelectAppearance = {
+                        selected = it
+                        current.value = current.value.copy(appearanceMode = it)
+                    },
+                )
+            }
+        }
+
+        compose.onNodeWithText(context.getString(R.string.appearance_title)).performScrollTo().performClick()
+        compose.onNodeWithTag("settings-appearance-dark").assertIsDisplayed().performClick()
+        compose.runOnIdle {
+            assertEquals(AppearanceMode.Dark, selected)
+            assertEquals(AppearanceMode.Dark, current.value.appearanceMode)
+            assertEquals(SettingsDialog.Appearance, dialog.value)
+        }
+        compose.onNodeWithTag("settings-appearance-dark").assertIsSelected()
+
+        compose.onNodeWithText(context.getString(android.R.string.ok)).performClick()
+        compose.onAllNodesWithTag("settings-appearance-dark").assertCountEquals(0)
+    }
+
+    @Test fun sharedChoiceListScrollsLongLabelsAtLargeFontAndKeepsConfirmationAvailable() {
+        val lastChoiceLabel = "Choice 8: ${"long label ".repeat(10)}"
+        compose.setContent {
+            val density = LocalDensity.current
+            CompositionLocalProvider(LocalDensity provides Density(density.density, fontScale = 1.7f)) {
+                SecuComposeTheme {
+                    ChoiceDialog(
+                        title = { Text("Choice title") },
+                        selected = 1,
+                        choices = (1..8).toList(),
+                        label = { choice -> "Choice $choice: ${"long label ".repeat(10)}" },
+                        onSelect = {},
+                        onDismiss = {},
+                        confirmButton = { Button(onClick = {}) { Text(context.getString(android.R.string.ok)) } },
+                    )
+                }
+            }
+        }
+
+        compose.onNodeWithText("Choice 1: ${"long label ".repeat(10)}").assertIsDisplayed()
+        compose.onNodeWithText(lastChoiceLabel).performScrollTo().assertIsDisplayed()
+        compose.onNodeWithText(context.getString(android.R.string.ok)).assertIsDisplayed()
+    }
 
     @Test fun allRowsShowPersistedSummariesAndInvokeCallbacks() {
         val state = mutableStateOf(initial)

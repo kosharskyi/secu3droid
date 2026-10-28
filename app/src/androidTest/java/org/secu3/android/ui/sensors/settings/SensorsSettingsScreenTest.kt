@@ -82,6 +82,7 @@ class SensorsSettingsScreenTest {
         compose.onNodeWithTag("sensor-gauge-style-row").performScrollTo().performClick()
         compose.onNodeWithTag("sensor-gauge-style-precise_arc").assertIsDisplayed().performClick()
         compose.runOnIdle { assertEquals(SensorGaugeStyle.PreciseArc, selected.value) }
+        compose.onAllNodesWithTag("sensor-gauge-style-precise_arc").assertCountEquals(0)
         compose.onNodeWithTag("sensor-gauge-style-value", useUnmergedTree = true)
             .assertTextEquals(context.getString(R.string.sensor_gauge_style_precise_arc))
     }
@@ -102,6 +103,7 @@ class SensorsSettingsScreenTest {
         compose.onNodeWithTag("injection-timing-mode-row").performScrollTo().performClick()
         compose.onNodeWithTag("injection-timing-mode-atdc_360").assertIsDisplayed().performClick()
         compose.runOnIdle { assertEquals(InjectionTimingMode.Atdc360, selected.value) }
+        compose.onAllNodesWithTag("injection-timing-mode-atdc_360").assertCountEquals(0)
         compose.onNodeWithTag("injection-timing-mode-value", useUnmergedTree = true)
             .assertTextEquals(context.getString(R.string.injection_timing_atdc_360))
     }
