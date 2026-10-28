@@ -2,9 +2,9 @@
 
 Choke and gas-dose manual controls use the shared `ManualPositionButton` for repeated ECU step commands and periodic flush callbacks. The screen passes current activity and firmware support as enabled state, and controller cancellation discards pending movement when the page session is invalidated, firmware support disappears, or the screen leaves composition. Choke and Gas Dose packet state and command admission live in their domain controls.
 
-## Security credentials are write-only and may only be applied when valid
+## Security credentials are write-only and keys remain programmable with immobilizer disabled
 
-Bluetooth name and password fields are edit buffers, not values read back from the ECU. Keep password masking, the write-only hint, and the apply gate (`useBt`, nonempty name, password length 4–8) intact. IButton keys remain editable only when the immobilizer is enabled and a complete 12-character invalid key is an error.
+Bluetooth name and password fields are edit buffers, not values read back from the ECU. Keep password masking, the write-only hint, and the apply gate (`useBt`, nonempty name, password length 4–8) intact. Desktop permits programming valid iButton keys while the immobilizer is off, so key fields stay editable whenever Security is loaded; a complete 12-character invalid key is an error and partial text sends nothing.
 
 ## Unknown ECU selector codes remain visible
 

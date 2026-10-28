@@ -11,6 +11,7 @@ package org.secu3.android.ui.parameters
 
 import androidx.compose.ui.test.junit4.v2.createAndroidComposeRule
 import androidx.compose.ui.test.assertTextEquals
+import androidx.compose.ui.test.assertTextContains
 import androidx.compose.ui.test.assertIsEnabled
 import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.onNodeWithText
@@ -22,6 +23,7 @@ import androidx.compose.ui.platform.ComposeView
 import androidx.lifecycle.ViewModelProvider
 import android.view.ViewGroup
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue
 import org.junit.Rule
 import org.junit.Test
@@ -31,6 +33,7 @@ import org.secu3.android.models.packets.input.FirmwareInfoPacket
 import org.secu3.android.models.packets.out.params.AnglesParamPacket
 import org.secu3.android.models.packets.out.params.LambdaParamPacket
 import org.secu3.android.models.packets.out.params.MiscellaneousParamPacket
+import org.secu3.android.models.packets.out.params.SecurityParamPacket
 import org.secu3.android.models.packets.out.params.StarterParamPacket
 import org.secu3.android.ui.MainActivity
 import org.secu3.android.ui.compose.SecuComposeTheme
@@ -133,6 +136,42 @@ class ParameterPageEditorRoutingTest {
 
         assertEquals(1, packet.lambdaSelectedChanel)
         assertEquals(null, vm.parameterEditSession)
+    }
+
+    @Test fun securityPageContentRoutesKeyAndCredentialBuffersWhileSessionRefusesCommands() {
+        val vm = paramsViewModel()
+        val packet = SecurityParamPacket(
+            btFlags = 0xA1,
+            iButton0 = listOf(1, 2, 3, 4, 5, 6),
+            iButton1 = listOf(10, 11, 12, 13, 14, 15),
+        )
+        vm.securityControl.reset()
+        vm.securityControl.receive(packet)
+        renderPage(R.string.params_tab_security_title, vm)
+
+        compose.onNodeWithTag("security-name").performTextInput("ECU")
+        compose.onNodeWithTag("security-password").performTextInput("1234")
+        compose.onNodeWithTag("security-apply").assertIsEnabled().performClick()
+        assertEquals("ECU", vm.securityName)
+        assertEquals("1234", vm.securityPassword)
+        assertEquals("", packet.btName)
+        assertEquals("", packet.btPass)
+
+        compose.onNodeWithTag("security-key1").performTextClearance()
+        compose.onNodeWithTag("security-key1").performTextInput("112233")
+        compose.onNodeWithTag("security-key1").assertTextContains("112233", substring = true)
+        assertEquals("060504030201", vm.securityControl.values.value?.key0)
+        compose.onNodeWithTag("security-key1").performTextClearance()
+        compose.onNodeWithTag("security-key1").performTextInput("GGGGGGGGGGGG")
+        compose.onNodeWithTag("security-key1").assertTextContains("GGGGGGGGGGGG", substring = true)
+        compose.onNodeWithText(compose.activity.getString(R.string.sec_ibutton_key_invalid)).assertExists()
+        assertEquals("060504030201", vm.securityControl.values.value?.key0)
+
+        compose.onNodeWithTag("security-key1").performTextClearance()
+        compose.onNodeWithTag("security-key1").performTextInput("112233445566")
+        compose.onNodeWithTag("security-key1").assertTextContains("112233445566", substring = true)
+        assertEquals("060504030201", vm.securityControl.values.value?.key0)
+        assertFalse(vm.isSendAllowed)
     }
 
     @Test fun parameterEditSessionRejectsStaleAndRepeatedConfirmations() {

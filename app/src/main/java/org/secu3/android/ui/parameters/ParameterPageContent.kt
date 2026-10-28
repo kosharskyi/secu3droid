@@ -156,12 +156,14 @@ internal fun ParameterPageContent(
                 viewModel::toggleChokeTest, isActive = isActive, capabilities = capabilities)
         }
         R.string.params_tab_security_title -> {
-            val h = viewModel.securityStateHolder
+            val values by viewModel.securityControl.values.collectAsStateWithLifecycle()
             var expanded by remember { mutableStateOf(false) }
-            SecurityScreen(h.loaded, h.useBt, h.useImm, h.name, h.password, h.key0, h.key1, h.type,
-                listOf("BC417", "BK3231", "BK3231S (JDY-31)", "BC352 (HC-05)", "BK3432", "BK3431S"), expanded, h.error,
-                h.useReserveParams, h.checkFirmwareCrc, { expanded = it }, h::changeType, h::changeBt, h::changeImm,
-                h::changeName, h::changePass, h::changeKey0, h::changeKey1, h::applyCredentials)
+            SecurityScreen(values, viewModel.securityName, viewModel.securityPassword,
+                viewModel.securityKey0, viewModel.securityKey1,
+                listOf("BC417", "BK3231", "BK3231S (JDY-31)", "BC352 (HC-05)", "BK3432", "BK3431S"), expanded, viewModel.securityError, viewModel::isSecurityKeyValid,
+                { expanded = it }, viewModel::changeSecurityType, viewModel::changeSecurityBluetooth,
+                viewModel::changeSecurityImmobilizer, viewModel::changeSecurityName, viewModel::changeSecurityPassword,
+                { viewModel.changeSecurityKey(0, it) }, { viewModel.changeSecurityKey(1, it) }, viewModel::applySecurityCredentials)
         }
         R.string.params_tab_universal_outputs_title -> {
             val h = viewModel.universalOutputsStateHolder

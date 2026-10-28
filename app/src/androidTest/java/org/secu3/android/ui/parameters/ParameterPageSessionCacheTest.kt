@@ -39,6 +39,7 @@ import org.secu3.android.models.packets.out.params.ChokeControlParPacket
 import org.secu3.android.models.packets.out.params.InjctrParPacket
 import org.secu3.android.models.packets.out.params.CkpsParamPacket
 import org.secu3.android.models.packets.out.params.MiscellaneousParamPacket
+import org.secu3.android.models.packets.out.params.SecurityParamPacket
 import org.secu3.android.models.packets.out.params.StarterParamPacket
 import org.secu3.android.models.packets.out.ChangeModePacket
 import org.secu3.android.utils.UserPrefs
@@ -194,6 +195,98 @@ class ParameterPageSessionCacheTest {
         } finally {
             transport.close()
             compose.runOnIdle { vm.clearPageState() }
+        }
+    }
+
+    @Test fun securityCommandsUseLiveSessionAdmissionAndRetainWriteOnlyBuffersOnRefusal() = runBlocking {
+        val vm = paramsViewModel()
+        val transport = installFakeUsb(vm)
+        val queueField = ParamsViewModel::class.java.getDeclaredField("uiMessageQueue").apply { isAccessible = true }
+        val queue = queueField.get(vm) as org.secu3.android.ui.messages.UiMessageQueue
+        val originalActiveScope = queue.activeScope.value
+        try {
+            activate(vm, R.string.params_tab_security_title)
+            transport.awaitReadRequest('#', 1)
+            transport.emit(SecurityParamPacket(btFlags = 0xA0, iButton0 = listOf(1, 2, 3, 4, 5, 6), iButton1 = listOf(10, 11, 12, 13, 14, 15)))
+            await { vm.securityControl.values.value != null }
+            assertFalse(requireNotNull(vm.securityControl.values.value).useImmobilizer)
+
+            compose.activityRule.scenario.moveToState(Lifecycle.State.STARTED)
+            compose.waitForIdle()
+            queue.onActiveScopeChanged(PARAMETERS_ROUTE)
+            queue.pending.value.forEach { queue.acknowledge(it.id) }
+            val baseline = transport.writes.size
+
+            compose.runOnIdle { vm.changeSecurityKey(0, "112233") }
+            assertEquals(baseline, transport.writes.size)
+            compose.runOnIdle { vm.changeSecurityKey(0, "11223344556G") }
+            assertEquals(baseline, transport.writes.size)
+
+            compose.runOnIdle { vm.changeSecurityKey(0, "112233445566") }
+            transport.awaitWriteCount(baseline + 1)
+            assertEquals('#', transport.writes[baseline][1].toInt().toChar())
+            assertEquals(0xA0, transport.writes[baseline][4].toInt() and 0xff)
+            assertTrue(queue.pending.value.any { it.textRes == R.string.packet_sent })
+            assertEquals("112233445566", vm.securityKey0)
+
+            queue.pending.value.forEach { queue.acknowledge(it.id) }
+            compose.runOnIdle {
+                vm.changeSecurityName("ECU")
+                vm.changeSecurityPassword("12")
+                vm.applySecurityCredentials()
+            }
+            assertEquals(baseline + 1, transport.writes.size)
+            assertEquals("ECU", vm.securityName)
+            assertEquals("12", vm.securityPassword)
+            assertFalse(queue.pending.value.any { it.textRes == R.string.packet_sent })
+
+            compose.runOnIdle {
+                vm.changeSecurityPassword("1234")
+                vm.applySecurityCredentials()
+            }
+            assertEquals(baseline + 1, transport.writes.size) // useBt=false refuses credentials.
+            assertEquals("ECU", vm.securityName)
+            assertEquals("1234", vm.securityPassword)
+            assertFalse(queue.pending.value.any { it.textRes == R.string.packet_sent })
+
+            compose.runOnIdle { vm.changeSecurityBluetooth(true) }
+            transport.awaitWriteCount(baseline + 2)
+            queue.pending.value.forEach { queue.acknowledge(it.id) }
+            compose.runOnIdle { vm.applySecurityCredentials() }
+            transport.awaitWriteCount(baseline + 3)
+            assertEquals('#', transport.writes[baseline + 2][1].toInt().toChar())
+            assertEquals(3, transport.writes[baseline + 2][2].toInt() and 0xff) // OEM name length.
+            assertEquals(4, transport.writes[baseline + 2][3].toInt() and 0xff) // Password length.
+            assertEquals("", vm.securityName)
+            assertEquals("", vm.securityPassword)
+            assertTrue(queue.pending.value.any { it.textRes == R.string.packet_sent })
+
+            queue.pending.value.forEach { queue.acknowledge(it.id) }
+            compose.runOnIdle {
+                vm.pausePageSession()
+                vm.changeSecurityName("held")
+                vm.changeSecurityPassword("5678")
+                vm.applySecurityCredentials()
+            }
+            assertEquals(baseline + 3, transport.writes.size)
+            assertEquals("held", vm.securityName)
+            assertEquals("5678", vm.securityPassword)
+            assertFalse(queue.pending.value.any { it.textRes == R.string.packet_sent })
+            compose.runOnIdle { vm.changeSecurityKey(0, "AABBCCDDEEFF") }
+            assertEquals(baseline + 3, transport.writes.size)
+            assertEquals("112233445566", vm.securityControl.values.value?.key0)
+            assertFalse(queue.pending.value.any { it.textRes == R.string.packet_sent })
+        } finally {
+            try {
+                transport.close()
+            } finally {
+                try {
+                    compose.runOnIdle { vm.clearPageState() }
+                } finally {
+                    queue.onActiveScopeChanged(originalActiveScope)
+                    compose.activityRule.scenario.moveToState(Lifecycle.State.RESUMED)
+                }
+            }
         }
     }
 

@@ -52,6 +52,8 @@ import org.secu3.android.domain.parameters.FuelInjectionControl
 import org.secu3.android.domain.parameters.ChokeControl
 import org.secu3.android.domain.parameters.CkpsControl
 import org.secu3.android.domain.parameters.MiscellaneousControl
+import org.secu3.android.domain.parameters.SecurityControl
+import org.secu3.android.domain.parameters.SecurityCredentialsResult
 import org.secu3.android.models.packets.base.OutputPacket
 import org.secu3.android.models.packets.out.params.AccelerationParamPacket
 import org.secu3.android.models.packets.out.params.AdcCorrectionsParamPacket
@@ -68,7 +70,6 @@ import org.secu3.android.models.packets.out.params.KnockParamPacket
 import org.secu3.android.models.packets.out.params.LambdaParamPacket
 import org.secu3.android.models.packets.out.params.LtftParamPacket
 import org.secu3.android.models.packets.out.params.MiscellaneousParamPacket
-import org.secu3.android.models.packets.out.params.SecurityParamPacket
 import org.secu3.android.models.packets.out.params.StarterParamPacket
 import org.secu3.android.models.packets.out.params.TemperatureParamPacket
 import org.secu3.android.models.packets.out.params.UniOutParamPacket
@@ -84,7 +85,6 @@ import org.secu3.android.ui.parameters.pages.compose.StarterStateHolder
 import org.secu3.android.ui.parameters.pages.AccelerationStateHolder
 import org.secu3.android.ui.parameters.pages.MiscField
 import org.secu3.android.ui.parameters.pages.MiscToggle
-import org.secu3.android.ui.parameters.pages.SecurityStateHolder
 import org.secu3.android.ui.parameters.pages.compose.FunctionsStateHolder
 import org.secu3.android.ui.parameters.pages.compose.ChokeNumber
 import org.secu3.android.ui.parameters.pages.compose.GasDoseNumber
@@ -106,6 +106,7 @@ class ParamsViewModel @Inject constructor(
     internal val fuelInjectionControl: FuelInjectionControl,
     internal val ckpsControl: CkpsControl,
     internal val miscellaneousControl: MiscellaneousControl,
+    internal val securityControl: SecurityControl,
     private val uiMessageQueue: UiMessageQueue,
     private val parameterPageCatalog: ParameterPageCatalog,
 ) : ViewModel() {
@@ -185,9 +186,16 @@ class ParamsViewModel @Inject constructor(
 
     internal val functionsStateHolder by lazy { FunctionsStateHolder(::sendPacket) }
 
-    internal val securityStateHolder by lazy {
-        SecurityStateHolder(::sendPacket, context.getString(R.string.sec_invalid_credentials))
-    }
+    internal var securityName by mutableStateOf("")
+        private set
+    internal var securityPassword by mutableStateOf("")
+        private set
+    internal var securityKey0 by mutableStateOf("")
+        private set
+    internal var securityKey1 by mutableStateOf("")
+        private set
+    internal var securityError by mutableStateOf("")
+        private set
 
     init {
         parameterSession.start(viewModelScope, ::onParameterSessionEvent)
@@ -218,6 +226,47 @@ class ParamsViewModel @Inject constructor(
             else -> false
         }
         showParameterPacketSentMessage(sent)
+    }
+
+    internal fun changeSecurityName(value: String) {
+        if (securityControl.values.value != null && value.length <= 16) securityName = value
+        securityError = ""
+    }
+
+    internal fun changeSecurityPassword(value: String) {
+        if (securityControl.values.value != null && value.length <= 8 && value.all { it in '0'..'9' }) {
+            securityPassword = value
+        }
+        securityError = ""
+    }
+
+    internal fun changeSecurityKey(index: Int, value: String) {
+        if (securityControl.values.value == null || index !in 0..1 || value.length > 12) return
+        val normalized = value.uppercase()
+        if (index == 0) securityKey0 = normalized else securityKey1 = normalized
+        showParameterPacketSentMessage(securityControl.changeKey(index, normalized))
+        securityError = ""
+    }
+
+    internal fun isSecurityKeyValid(value: String): Boolean = securityControl.isValidKey(value)
+
+    internal fun changeSecurityType(value: Int) = showParameterPacketSentMessage(securityControl.changeType(value))
+
+    internal fun changeSecurityBluetooth(value: Boolean) = showParameterPacketSentMessage(securityControl.changeBluetooth(value))
+
+    internal fun changeSecurityImmobilizer(value: Boolean) = showParameterPacketSentMessage(securityControl.changeImmobilizer(value))
+
+    internal fun applySecurityCredentials() {
+        when (securityControl.applyCredentials(securityName, securityPassword)) {
+            SecurityCredentialsResult.ADMITTED -> {
+                securityName = ""
+                securityPassword = ""
+                securityError = ""
+                showUiMessage(R.string.packet_sent, UiMessageDuration.SHORT)
+            }
+            SecurityCredentialsResult.INVALID -> securityError = context.getString(R.string.sec_invalid_credentials)
+            SecurityCredentialsResult.NOT_ADMITTED -> Unit
+        }
     }
 
     internal fun toggleChoke(number: ChokeNumber, enabled: Boolean) {
@@ -436,7 +485,14 @@ class ParamsViewModel @Inject constructor(
             ParameterPage.LTFT -> ltftStateHolder.reset()
             ParameterPage.FUNCTIONS -> functionsStateHolder.reset()
             ParameterPage.MISCELLANEOUS -> miscellaneousControl.reset()
-            ParameterPage.SECURITY -> securityStateHolder.reset()
+            ParameterPage.SECURITY -> {
+                securityControl.reset()
+                securityName = ""
+                securityPassword = ""
+                securityKey0 = ""
+                securityKey1 = ""
+                securityError = ""
+            }
             ParameterPage.CHOKE_CONTROL -> chokeControl.reset()
             ParameterPage.GAS_DOSE -> gasDoseControl.reset()
             ParameterPage.EL_THROTTLE -> dbwStateHolder.reset()
@@ -486,12 +542,13 @@ class ParamsViewModel @Inject constructor(
                 }
             }
             ParameterPage.SECURITY -> {
-                isSendAllowed = false
-                try {
-                    securityStateHolder.load(packet<SecurityParamPacket>(result))
-                } finally {
-                    isSendAllowed = true
-                }
+                securityControl.receive(packet(result))
+                val current = securityControl.values.value ?: return
+                securityName = ""
+                securityPassword = ""
+                securityKey0 = current.key0
+                securityKey1 = current.key1
+                securityError = ""
             }
             ParameterPage.CHOKE_CONTROL -> {
                 chokeControl.receive(packet<ChokeControlParPacket>(result))

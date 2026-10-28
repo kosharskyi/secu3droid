@@ -33,15 +33,17 @@ import org.junit.Test
 import org.secu3.android.R
 import org.secu3.android.ui.compose.SecuComposeTheme
 import org.secu3.android.ui.parameters.pages.SecurityScreen
+import org.secu3.android.domain.parameters.SecurityValues
 
 class SecurityScreenTest {
     @get:Rule val compose = createComposeRule()
     private val types = listOf("BC417", "BK3231", "BK3231S", "BC352", "BK3432", "BK3431S")
     private val targetContext get() = InstrumentationRegistry.getInstrumentation().targetContext
+    private fun isKeyValid(value: String) = value.length == 12 && value.all { it.digitToIntOrNull(16) != null }
 
     @Test fun loadingAndRenderingDoNotEmitChanges() {
         var calls = 0
-        compose.setContent { SecuComposeTheme { SecurityScreen(false,false,false,"","","","",0,types,false,"",false,false,{calls++},{calls++},{calls++},{calls++},{calls++},{calls++},{calls++},{calls++},{calls++}) } }
+        compose.setContent { SecuComposeTheme { SecurityScreen(null,"","","","",types,false,"",::isKeyValid,{calls++},{calls++},{calls++},{calls++},{calls++},{calls++},{calls++},{calls++},{calls++}) } }
         val indicator = compose.onNodeWithTag("security-loading").assertIsDisplayed()
         indicator.assertWidthIsEqualTo(40.dp).assertHeightIsEqualTo(40.dp)
         val viewport = compose.onNodeWithTag("parameter-loading-container").fetchSemanticsNode().boundsInRoot
@@ -55,7 +57,7 @@ class SecurityScreenTest {
     @Test fun explicitTypeTogglesKeysCredentialsAndShowsReadonlyFlagValues() {
         val actions = mutableListOf<String>()
         val name = mutableStateOf(""); val pass = mutableStateOf(""); val expanded = mutableStateOf(false)
-        compose.setContent { SecuComposeTheme { SecurityScreen(true,true,true,name.value,pass.value,"010203040506","AABBCCDDEEFF",0,types,expanded.value,"",true,false,
+        compose.setContent { SecuComposeTheme { SecurityScreen(SecurityValues(true,false,0,true,false,"010203040506","AABBCCDDEEFF"),name.value,pass.value,"010203040506","AABBCCDDEEFF",types,expanded.value,"",::isKeyValid,
             {expanded.value = it},{actions += "type"},{actions += "bt"},{actions += "imm"},{name.value = it; actions += "name"},{pass.value = it; actions += "pass"},{actions += "key1"},{actions += "key2"},{actions += "apply"; name.value = ""; pass.value = ""}) } }
         assertEquals(emptyList<String>(), actions)
         compose.onNodeWithTag("security-credentials-hint").assertTextEquals(targetContext.getString(R.string.sec_credentials_write_only))
@@ -70,6 +72,7 @@ class SecurityScreenTest {
         compose.onNodeWithTag("security-key1").performTextInput("112233445566")
         compose.onNodeWithTag("security-key2").performTextClearance()
         compose.onNodeWithTag("security-key2").performTextInput("AABBCCDDEEFF")
+        compose.onNodeWithTag("security-key1").assertIsEnabled()
         compose.onNodeWithTag("security-bt-switch").performClick()
         compose.onNodeWithTag("security-imm-switch").performClick()
         compose.onNodeWithTag("security-reserve-readonly-value").performScrollTo().assertTextEquals(targetContext.getString(R.string.sec_enabled)).assert(hasNoClickAction())
@@ -81,7 +84,7 @@ class SecurityScreenTest {
 
     @Test fun malformedCompleteKeyShowsLocalizedErrorHint() {
         val key = androidx.compose.runtime.mutableStateOf("")
-        compose.setContent { SecuComposeTheme { SecurityScreen(true,false,true,"","",key.value,"",0,types,false,"",false,false,
+        compose.setContent { SecuComposeTheme { SecurityScreen(SecurityValues(false,false,0,false,false,"",""),"","",key.value,"",types,false,"",::isKeyValid,
             {},{},{},{},{},{},{ key.value = it },{},{}) } }
         compose.onNodeWithTag("security-key1").performTextInput("GGGGGGGGGGGG")
         compose.onNodeWithTag("security-key1").assertTextContains(targetContext.getString(R.string.sec_ibutton_key_invalid), substring = true)

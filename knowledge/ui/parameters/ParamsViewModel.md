@@ -18,6 +18,8 @@ Derive a single `ParameterCapabilities` state from `Secu3ConnectionManager.firmw
 
 `MiscellaneousControl` similarly owns the mutable Miscellaneous packet, numeric validation, current firmware admission, and the immutable packet snapshot sent through `ParameterSession`. Its nullable values state includes the validation flag and raw hop-angle/VSS Floats; the screen rounds only for integer presentation and editors.
 
+`SecurityControl` owns the mutable Security packet, iButton parsing, command validation, immutable snapshots, and `ParameterSession` admission. The ViewModel owns the write-only name/password buffers and partial key text, clearing credentials only after admission. Key programming is allowed while the immobilizer is off, matching desktop behavior; Bluetooth credentials still require `useBt`. Security sends bypass the legacy `isSendAllowed` gate.
+
 ## Fuel Injection command admission belongs to its domain control
 
 `FuelInjectionControl` reads the manager's current firmware and sends through `ParameterSession.sendPacket`, whose Boolean result drives the packet-sent message. It does not use the legacy ViewModel `isSendAllowed` gate. The screen collects its nullable values flow directly; no second Loading/Data wrapper or packet mapping belongs in the ViewModel.

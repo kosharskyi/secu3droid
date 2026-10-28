@@ -47,22 +47,23 @@ import org.secu3.android.ui.parameters.compose.ParameterSelectionRow
 import org.secu3.android.ui.parameters.compose.ParameterSwitchRow
 import org.secu3.android.ui.parameters.dialogs.ParameterChoice
 import org.secu3.android.ui.parameters.dialogs.ParameterChoiceDialog
+import org.secu3.android.domain.parameters.SecurityValues
 
 @Composable
 @OptIn(ExperimentalMaterial3Api::class)
-internal fun SecurityScreen(loaded: Boolean, useBt: Boolean, useImm: Boolean, name: String, pass: String, key0: String, key1: String,
-    type: Int, types: List<String>, expanded: Boolean, error: String, useReserveParams: Boolean, checkFirmwareCrc: Boolean,
+internal fun SecurityScreen(values: SecurityValues?, name: String, pass: String, key0: String, key1: String,
+    types: List<String>, expanded: Boolean, error: String, isKeyValid: (String) -> Boolean,
     expand: (Boolean) -> Unit, selectType: (Int) -> Unit,
     toggleBt: (Boolean) -> Unit, toggleImm: (Boolean) -> Unit, changeName: (String) -> Unit, changePass: (String) -> Unit,
     changeKey0: (String) -> Unit, changeKey1: (String) -> Unit, apply: () -> Unit) {
     val pageScrollState = rememberScrollState()
-    if (!loaded) { ParameterLoadingIndicator("security-loading"); return }
+    if (values == null) { ParameterLoadingIndicator("security-loading"); return }
     ParameterPage(scrollState = pageScrollState) {
         ParameterSection(stringResource(R.string.sec_bluetooth)) {
             Box {
                 ParameterSelectionRow(
                     title = stringResource(R.string.sec_bt_type),
-                    value = types.getOrNull(type) ?: stringResource(R.string.sec_unknown_type, type),
+                    value = types.getOrNull(values.btType) ?: stringResource(R.string.sec_unknown_type, values.btType),
                     testTag = "security-type",
                     onClick = { expand(!expanded) },
                 )
@@ -73,31 +74,31 @@ internal fun SecurityScreen(loaded: Boolean, useBt: Boolean, useImm: Boolean, na
                     onSelect = selectType,
                 )
             }
-            ParameterSwitchRow(stringResource(R.string.secur_par_use_bluetooth_title), useBt, "security-bt", toggleBt)
+            ParameterSwitchRow(stringResource(R.string.secur_par_use_bluetooth_title), values.useBt, "security-bt", toggleBt)
             Column(Modifier.fillMaxWidth().padding(horizontal = 14.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
-                OutlinedTextField(name, changeName, enabled = useBt, label = { Text(stringResource(R.string.name)) }, modifier = Modifier.fillMaxWidth().testTag("security-name"), singleLine = true)
-                OutlinedTextField(pass, changePass, enabled = useBt, label = { Text(stringResource(R.string.password)) }, visualTransformation = PasswordVisualTransformation(), keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.NumberPassword), modifier = Modifier.fillMaxWidth().testTag("security-password"), singleLine = true)
+                OutlinedTextField(name, changeName, enabled = values.useBt, label = { Text(stringResource(R.string.name)) }, modifier = Modifier.fillMaxWidth().testTag("security-name"), singleLine = true)
+                OutlinedTextField(pass, changePass, enabled = values.useBt, label = { Text(stringResource(R.string.password)) }, visualTransformation = PasswordVisualTransformation(), keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.NumberPassword), modifier = Modifier.fillMaxWidth().testTag("security-password"), singleLine = true)
                 Text(stringResource(R.string.sec_credentials_write_only), style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant, modifier = Modifier.testTag("security-credentials-hint"))
-                Button(onClick = apply, enabled = useBt && name.isNotEmpty() && pass.length in 4..8, modifier = Modifier.align(Alignment.End).padding(bottom = 12.dp).testTag("security-apply")) { Text(stringResource(R.string.apply)) }
+                Button(onClick = apply, enabled = values.useBt && name.isNotEmpty() && pass.length in 4..8, modifier = Modifier.align(Alignment.End).padding(bottom = 12.dp).testTag("security-apply")) { Text(stringResource(R.string.apply)) }
             }
         }
         ParameterSection(stringResource(R.string.sec_immobilizer)) {
-            ParameterSwitchRow(stringResource(R.string.secur_par_use_immobilizer_title), useImm, "security-imm", toggleImm)
+            ParameterSwitchRow(stringResource(R.string.secur_par_use_immobilizer_title), values.useImmobilizer, "security-imm", toggleImm)
             Column(Modifier.fillMaxWidth().padding(horizontal = 14.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
-                KeyField(key0, stringResource(R.string.sec_key1), "security-key1", useImm, changeKey0)
-                KeyField(key1, stringResource(R.string.sec_key2), "security-key2", useImm, changeKey1)
+                KeyField(key0, stringResource(R.string.sec_key1), "security-key1", isKeyValid, changeKey0)
+                KeyField(key1, stringResource(R.string.sec_key2), "security-key2", isKeyValid, changeKey1)
             }
         }
         ParameterSection(stringResource(R.string.sec_information)) {
             SecurityFlagStatus(
                 title = stringResource(R.string.secur_par_always_load_params_from_flash_title),
-                enabled = useReserveParams,
+                enabled = values.useReserveParams,
                 description = stringResource(R.string.sec_reserve_params_description),
                 tag = "security-reserve-readonly",
             )
             SecurityFlagStatus(
                 title = stringResource(R.string.secur_par_check_firmware_integrity_title),
-                enabled = checkFirmwareCrc,
+                enabled = values.checkFirmwareCrc,
                 description = stringResource(R.string.sec_firmware_integrity_description),
                 tag = "security-crc-readonly",
             )
@@ -107,10 +108,10 @@ internal fun SecurityScreen(loaded: Boolean, useBt: Boolean, useImm: Boolean, na
 }
 
 @Composable
-private fun KeyField(value: String, label: String, tag: String, enabled: Boolean, onChange: (String) -> Unit) {
-    val valid = parseIButtonKey(value) != null
+private fun KeyField(value: String, label: String, tag: String, isKeyValid: (String) -> Boolean, onChange: (String) -> Unit) {
+    val valid = isKeyValid(value)
     val invalidCompleteValue = value.length == 12 && !valid
-    OutlinedTextField(value, onChange, enabled = enabled, label = { Text(label) }, singleLine = true,
+    OutlinedTextField(value, onChange, label = { Text(label) }, singleLine = true,
         isError = invalidCompleteValue,
         supportingText = { Text(stringResource(if (invalidCompleteValue) R.string.sec_ibutton_key_invalid else R.string.sec_ibutton_key_hint)) },
         modifier = Modifier.fillMaxWidth().testTag(tag))

@@ -10,6 +10,7 @@ import org.secu3.android.models.packets.input.FirmwareInfoPacket
 import org.secu3.android.models.packets.out.params.UniOutParamPacket
 import org.secu3.android.domain.parameters.MiscellaneousControl
 import org.secu3.android.domain.parameters.MiscellaneousValues
+import org.secu3.android.domain.parameters.SecurityValues
 import org.secu3.android.ui.parameters.pages.MiscField
 import org.secu3.android.ui.parameters.pages.MiscellaneousScreen
 import org.secu3.android.ui.parameters.pages.SecurityScreen
@@ -109,19 +110,15 @@ internal fun advancedParameterAppearanceFixtures(): List<ParameterAppearanceFixt
         },
         ParameterAppearanceFixture("security") {
             SecurityScreen(
-                loaded = true,
-                useBt = true,
-                useImm = true,
+                values = SecurityValues(true, true, 0, true, false, "010203040506", "AABBCCDDEEFF"),
                 name = "ECU",
                 pass = "1234",
                 key0 = "010203040506",
                 key1 = "AABBCCDDEEFF",
-                type = 0,
                 types = listOf("Bluetooth module A", "Bluetooth module B"),
                 expanded = false,
                 error = "",
-                useReserveParams = true,
-                checkFirmwareCrc = false,
+                isKeyValid = { value -> value.length == 12 && value.all { it.digitToIntOrNull(16) != null } },
                 expand = {}, selectType = {}, toggleBt = {}, toggleImm = {}, changeName = {}, changePass = {},
                 changeKey0 = {}, changeKey1 = {}, apply = {},
             )
