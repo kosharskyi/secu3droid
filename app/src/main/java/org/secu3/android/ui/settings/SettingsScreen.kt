@@ -74,6 +74,13 @@ internal fun SettingsContent(
     notificationAccessGranted: Boolean = false,
     onConnectionNotifications: () -> Unit = {},
 ) {
+    val appearanceLabel: (AppearanceMode) -> Int = { mode ->
+        when (mode) {
+            AppearanceMode.System -> R.string.appearance_system
+            AppearanceMode.Light -> R.string.appearance_light
+            AppearanceMode.Dark -> R.string.appearance_dark
+        }
+    }
     val delimiterValues = stringArrayResource(R.array.csv_delimeters_values)
     val delimiterLabels = stringArrayResource(R.array.csv_delimeters)
     val delimiterIndex = delimiterValues.indexOf(state.csvDelimiter).takeIf { it >= 0 } ?: 1
@@ -203,12 +210,6 @@ internal fun SettingsContent(
         )
         null -> Unit
     }
-}
-
-private fun appearanceLabel(mode: AppearanceMode): Int = when (mode) {
-    AppearanceMode.System -> R.string.appearance_system
-    AppearanceMode.Light -> R.string.appearance_light
-    AppearanceMode.Dark -> R.string.appearance_dark
 }
 
 @Composable

@@ -10,6 +10,7 @@
 package org.secu3.android.ui.settings
 
 import android.content.Context
+import android.net.Uri
 import android.provider.DocumentsContract
 import androidx.core.net.toUri
 import androidx.lifecycle.ViewModel
@@ -25,6 +26,7 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import org.secu3.android.R
 import org.secu3.android.utils.AppearanceMode
+import org.secu3.android.utils.FileHelper
 import org.secu3.android.utils.UserPrefs
 import org.secu3.android.ui.messages.UiMessageDuration
 import org.secu3.android.ui.messages.UiMessageQueue
@@ -33,6 +35,7 @@ import org.secu3.android.ui.messages.UiMessageQueue
 class SettingsViewModel @Inject constructor(
     @ApplicationContext private val context: Context,
     private val userPrefs: UserPrefs,
+    private val fileHelper: FileHelper,
     private val uiMessageQueue: UiMessageQueue,
 ) : ViewModel() {
     private val _state = MutableStateFlow<SettingsUiState?>(null)
@@ -69,8 +72,10 @@ class SettingsViewModel @Inject constructor(
 
     fun isValidRetries(value: String): Boolean = userPrefs.parsePositiveConnectionRetries(value) != null
 
-    fun saveExportFolder(uri: String) {
-        persist(write = { userPrefs.setLogExportDirectoryUri(uri) })
+    fun saveExportFolder(uri: Uri, resultFlags: Int) {
+        if (fileHelper.retainExportDirectoryPermission(uri, resultFlags)) {
+            persist(write = { userPrefs.setLogExportDirectoryUri(uri.toString()) })
+        }
     }
 
     fun setAppearanceMode(mode: AppearanceMode) {

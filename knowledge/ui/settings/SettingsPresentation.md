@@ -5,3 +5,7 @@ The shared settings rows are presentation-only. Toggle, selection, folder, retry
 ## Pending preference loading and failed writes must not imply stored defaults
 
 The Settings and Sensors Settings routes wait for their first preference snapshot before exposing editable controls. Keep that readiness separate from the preference defaults owned by `UserPrefs`. Main Settings keeps its appearance and delimiter dialogs open until the write succeeds; the shared choice dialog only reports a selection and never decides when to close. Sensors Settings closes its choice dialog immediately after the selection callback, matching its existing behavior.
+
+## The export picker delegates URI grants before saving the selection
+
+The route ignores canceled results and results without a URI. The ViewModel saves the directory only after `FileHelper` accepts the grant, preserving the previously saved destination if Android rejects it.

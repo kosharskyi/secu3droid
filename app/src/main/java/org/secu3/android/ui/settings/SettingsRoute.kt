@@ -125,12 +125,10 @@ internal fun SettingsRoute(
         }
     }
     val directoryPicker = rememberLauncherForActivityResult(ActivityResultContracts.StartActivityForResult()) { result ->
-        consumeFolderPickerResult(
-            resultCode = result.resultCode,
-            data = result.data,
-            takePermission = activity.contentResolver::takePersistableUriPermission,
-            save = viewModel::saveExportFolder,
-        )
+        val data = result.data
+        if (result.resultCode == Activity.RESULT_OK) {
+            data?.data?.let { uri -> viewModel.saveExportFolder(uri, data.flags) }
+        }
     }
     LaunchedEffect(lifecycle, viewModel) {
         lifecycle.repeatOnLifecycle(Lifecycle.State.STARTED) {
@@ -181,7 +179,14 @@ internal fun SettingsRoute(
             },
             onSelectDelimiter = viewModel::setDelimiter,
             onChooseFolder = {
-                directoryPicker.launch(folderPickerIntent())
+                directoryPicker.launch(Intent(Intent.ACTION_OPEN_DOCUMENT_TREE).apply {
+                    addFlags(
+                        Intent.FLAG_GRANT_READ_URI_PERMISSION or
+                            Intent.FLAG_GRANT_WRITE_URI_PERMISSION or
+                            Intent.FLAG_GRANT_PERSISTABLE_URI_PERMISSION or
+                            Intent.FLAG_GRANT_PREFIX_URI_PERMISSION,
+                    )
+                })
             },
             onEditRetries = { viewModel.showDialog(SettingsDialog.Retries) },
             onValidateRetries = viewModel::isValidRetries,
@@ -261,26 +266,4 @@ internal fun SettingsRoute(
             )
         }
     }
-}
-
-internal fun folderPickerIntent(): Intent = Intent(Intent.ACTION_OPEN_DOCUMENT_TREE).apply {
-    addFlags(
-        Intent.FLAG_GRANT_READ_URI_PERMISSION or
-            Intent.FLAG_GRANT_WRITE_URI_PERMISSION or
-            Intent.FLAG_GRANT_PERSISTABLE_URI_PERMISSION or
-            Intent.FLAG_GRANT_PREFIX_URI_PERMISSION,
-    )
-}
-
-internal fun consumeFolderPickerResult(
-    resultCode: Int,
-    data: Intent?,
-    takePermission: (Uri, Int) -> Unit,
-    save: (String) -> Unit,
-) {
-    if (resultCode != Activity.RESULT_OK) return
-    val uri = data?.data ?: return
-    val grantedFlags = data.flags and (Intent.FLAG_GRANT_READ_URI_PERMISSION or Intent.FLAG_GRANT_WRITE_URI_PERMISSION)
-    if (grantedFlags != 0 && runCatching { takePermission(uri, grantedFlags) }.isFailure) return
-    save(uri.toString())
 }

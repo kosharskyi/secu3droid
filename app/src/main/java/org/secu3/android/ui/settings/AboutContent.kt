@@ -106,9 +106,9 @@ private fun LinkedText(
 
     // The source URL is plain text in the localized resources; the old TextView auto-linked it.
     if (resourceId == R.string.about_sources && links.isEmpty()) {
-        sourceUrlRange(styledText.toString())?.let { (start, end) ->
-            links += Triple(start, end, styledText.subSequence(start, end).toString())
-        }
+        val url = "https://github.com/kosharskyi/secu3droid"
+        val start = styledText.toString().indexOf(url)
+        if (start >= 0) links += Triple(start, start + url.length, url)
     }
 
     val annotated = buildAnnotatedString {
@@ -154,10 +154,4 @@ private fun LinkedText(
             }
         },
     )
-}
-
-internal fun sourceUrlRange(text: String): Pair<Int, Int>? {
-    val url = "https://github.com/kosharskyi/secu3droid"
-    val start = text.indexOf(url)
-    return if (start >= 0) start to start + url.length else null
 }

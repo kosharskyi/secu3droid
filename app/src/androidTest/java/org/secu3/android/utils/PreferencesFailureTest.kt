@@ -64,7 +64,7 @@ class PreferencesFailureTest {
         try {
             prefs.setCsvDelimiter(";")
             instrumentation.runOnMainSync {
-                viewModel = SettingsViewModel(context, prefs, messages)
+                viewModel = SettingsViewModel(context, prefs, FileHelper(context), messages)
                 viewModelStore.put("settings", viewModel)
                 viewModel.showDialog(SettingsDialog.Delimiter)
             }

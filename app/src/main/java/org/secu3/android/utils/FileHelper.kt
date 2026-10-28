@@ -27,6 +27,7 @@ package org.secu3.android.utils
 
 import android.content.ContentValues
 import android.content.Context
+import android.content.Intent
 import android.net.Uri
 import android.os.Build
 import android.os.Environment
@@ -86,6 +87,13 @@ class FileHelper @Inject constructor(@ApplicationContext private val context: Co
                 "The selected file can't be shared: $file")
             null
         }
+    }
+
+    fun retainExportDirectoryPermission(uri: Uri, resultFlags: Int): Boolean {
+        val grantedFlags = resultFlags and (Intent.FLAG_GRANT_READ_URI_PERMISSION or Intent.FLAG_GRANT_WRITE_URI_PERMISSION)
+        return grantedFlags == 0 || runCatching {
+            context.contentResolver.takePersistableUriPermission(uri, grantedFlags)
+        }.isSuccess
     }
 
     fun saveLog(file: File, destination: LogExportDestination): String {

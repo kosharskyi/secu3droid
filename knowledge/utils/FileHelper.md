@@ -9,3 +9,7 @@ CSV is `text/csv`; S3L and unknown extensions use `application/octet-stream`. Sh
 ## A failed custom-tree write attempts cleanup of only its newly created document
 
 The document URI returned by `createDocument` is the only URI eligible for cleanup. If opening, copying, or closing the output fails, attempt to delete that URI and preserve the write failure as the primary exception, attaching cleanup failure as suppressed detail.
+
+## Tree permission flags come from the picker result
+
+Persist only the returned read/write flags; persistable and prefix flags are not accepted by `takePersistableUriPermission`. A failed grant leaves the saved export directory unchanged. When the result has no read/write flags, preserve the existing behavior of saving the URI without requesting a grant.
