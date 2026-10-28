@@ -151,9 +151,6 @@ class GaugeScaleTest {
         assertEquals(1, GaugeType.DISTANCE.decimals)
         assertEquals(2, GaugeType.FUEL_CONSUMPTION_HOURLY.decimals)
         assertEquals(3, GaugeType.CONSUMED_FUEL.decimals)
-        assertTrue(GaugeType.DISTANCE.defaultNumericView)
-        assertTrue(GaugeType.CONSUMED_FUEL.defaultNumericView)
-        assertTrue(!GaugeType.FUEL_CONSUMPTION_HOURLY.defaultNumericView)
     }
 
     @Test fun indicatorMappingsKeepFuelValveIndependentOfGasMode() {

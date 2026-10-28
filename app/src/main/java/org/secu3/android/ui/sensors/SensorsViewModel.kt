@@ -19,6 +19,7 @@ import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.map
@@ -27,6 +28,7 @@ import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import org.secu3.android.connection.Secu3ConnectionManager
 import org.secu3.android.ui.common.SensorPacketObserver
+import org.secu3.android.db.SensorConfigurationRepository
 import org.secu3.android.db.models.GaugeState
 import org.secu3.android.db.models.IndicatorState
 import org.secu3.android.models.SensorGaugeStyle
@@ -35,6 +37,7 @@ import org.secu3.android.ui.sensors.models.GaugeItem
 import org.secu3.android.models.sensors.GaugeType
 import org.secu3.android.ui.sensors.models.IndicatorItem
 import org.secu3.android.models.sensors.IndicatorType
+import org.secu3.android.ui.sensors.models.formatValue
 import org.secu3.android.utils.SecuLogger
 import org.secu3.android.utils.Task
 import org.secu3.android.utils.UserPrefs
@@ -50,7 +53,7 @@ class SensorsViewModel @Inject constructor(
     private val sensorPacketObserver: SensorPacketObserver,
     private val userPrefs: UserPrefs,
     private val secuLogger: SecuLogger,
-    private val repository: SensorsRepository,
+    private val repository: SensorConfigurationRepository,
     private val savedStateHandle: SavedStateHandle,
     private val uiMessageQueue: UiMessageQueue,
 ) : ViewModel() {
@@ -68,13 +71,28 @@ class SensorsViewModel @Inject constructor(
     val rawSensors = sensorPacketObserver.observeRawSensors(sensorUpdateIntervalMs)
         .stateIn(viewModelScope, SharingStarted.Eagerly, null)
     val firmwareInfo = secu3ConnectionManager.firmwareInfo
-    val gauges = repository.observeGaugeItems(
+    val gauges = combine(
+        repository.observeGaugeStates(),
         sensors,
         state.map { it.injectionTimingMode }.distinctUntilChanged(),
-    )
-    val indicators = repository.observeIndicatorItems(
-        sensors,
-    )
+    ) { configurations, packet, timingMode ->
+        configurations.map { configuration ->
+            val value = packet?.let { currentPacket ->
+                val raw = configuration.gaugeType.getGaugeItem(currentPacket)
+                val displayed = if (
+                    configuration.gaugeType == GaugeType.BEGIN_INJ_PHASE ||
+                    configuration.gaugeType == GaugeType.END_INJ_PHASE
+                ) timingMode.transform(raw) else raw
+                configuration.gaugeType.formatValue(displayed)
+            }.orEmpty()
+            GaugeItem(configuration, value)
+        }
+    }
+    val indicators = combine(repository.observeIndicatorStates(), sensors) { configurations, packet ->
+        configurations.map { configuration ->
+            IndicatorItem(configuration, packet?.let(configuration.indicatorType::isActive) ?: false)
+        }
+    }
 
     private var nextChoiceRequestId = 0L
     private val showAddGaugeFlow = MutableStateFlow<ChoiceRequest<GaugeType>?>(null)
@@ -174,8 +192,7 @@ class SensorsViewModel @Inject constructor(
 
     fun addGaugeClick() {
         viewModelScope.launch {
-            val stored = repository.getStoredGaugeStates().map { it.gaugeType }
-            showAddGaugeFlow.value = ChoiceRequest(++nextChoiceRequestId, GaugeType.entries.filter { it !in stored })
+            showAddGaugeFlow.value = ChoiceRequest(++nextChoiceRequestId, repository.getAvailableGaugeTypes())
         }
     }
 
@@ -185,8 +202,7 @@ class SensorsViewModel @Inject constructor(
 
     fun addIndicatorClick() {
         viewModelScope.launch {
-            val stored = repository.getStoredIndicatorStates().map { it.indicatorType }
-            showAddIndicatorFlow.value = ChoiceRequest(++nextChoiceRequestId, IndicatorType.entries.filter { it !in stored })
+            showAddIndicatorFlow.value = ChoiceRequest(++nextChoiceRequestId, repository.getAvailableIndicatorTypes())
         }
     }
 

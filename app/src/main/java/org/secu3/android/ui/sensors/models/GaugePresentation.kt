@@ -340,9 +340,6 @@ val GaugeType.decimals: Int
         else -> 1
     }
 
-val GaugeType.defaultNumericView: Boolean
-    get() = this == GaugeType.DISTANCE || this == GaugeType.CONSUMED_FUEL
-
 fun GaugeType.formatValue(value: Float): String {
     if (!value.isFinite()) return "—"
     return String.format(Locale.US, "%.${decimals}f", value)

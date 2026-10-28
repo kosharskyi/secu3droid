@@ -4,4 +4,4 @@
 
 ## Injection phase display mode changes only the phase scale bounds
 
-`BEGIN_INJ_PHASE` and `END_INJ_PHASE` keep the same normalized full-face color zone in every display mode, while their tick values and needle normalization use the selected 0…720 or −360…360 bounds. The repository transforms the wire value into that same mode before formatting the readout, so renderers must not transform it again. Distance and total consumed fuel default to numeric cards because they are cumulative counters without dial ranges; their fallback dial scales are 0…1000 km and 0…1000 L, while instantaneous consumption uses 0…100 L/h.
+`BEGIN_INJ_PHASE` and `END_INJ_PHASE` keep the same normalized full-face color zone in every display mode, while their tick values and needle normalization use the selected 0…720 or −360…360 bounds. The ViewModel transforms the wire value into that same mode before formatting the readout, so renderers must not transform it again. Distance and total consumed fuel default to numeric cards because they are cumulative counters without dial ranges; their fallback dial scales are 0…1000 km and 0…1000 L, while instantaneous consumption uses 0…100 L/h.
