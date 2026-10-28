@@ -184,14 +184,6 @@ class HomeScreenTest {
     }
 
     @Test fun layoutUsesGridForPortraitAndTabletAndScrollingColumnsForLandscape() {
-        val config = Configuration()
-        config.orientation = Configuration.ORIENTATION_PORTRAIT
-        assertEquals(HomeLayout.GRID, homeLayout(config))
-        config.screenWidthDp = 720
-        assertEquals(HomeLayout.GRID, homeLayout(config))
-        config.orientation = Configuration.ORIENTATION_LANDSCAPE
-        assertEquals(HomeLayout.LANDSCAPE_COLUMNS, homeLayout(config))
-
         var layout by mutableStateOf(HomeLayout.GRID)
         compose.setContent { HomeScreen(HomeScreenState(), HomeScreenActions(), layoutOverride = layout) }
         val dashboardGrid = compose.onNodeWithTag("home-card-dashboard").getUnclippedBoundsInRoot()
@@ -207,6 +199,44 @@ class HomeScreenTest {
         assertTrue("Sensor and parameter cards stack vertically", compose.onNodeWithTag("home-card-parameters").getUnclippedBoundsInRoot().top > sensorsRow.top)
         assertTrue("Errors are in the second pair column", compose.onNodeWithTag("home-card-errors").getUnclippedBoundsInRoot().left > sensorsRow.left)
         assertTrue("Logs are in the third pair column", compose.onNodeWithTag("home-card-logs").getUnclippedBoundsInRoot().left > compose.onNodeWithTag("home-card-errors").getUnclippedBoundsInRoot().left)
+    }
+
+    @Test fun configurationOrientationSelectsRenderedMenuLayout() {
+        var configuration by mutableStateOf(Configuration(context.resources.configuration).apply {
+            orientation = Configuration.ORIENTATION_PORTRAIT
+        })
+        compose.setContent {
+            CompositionLocalProvider(LocalConfiguration provides configuration) {
+                HomeScreen(HomeScreenState(), HomeScreenActions())
+            }
+        }
+
+        val dashboardGrid = compose.onNodeWithTag("home-card-dashboard").getUnclippedBoundsInRoot()
+        val sensorsGrid = compose.onNodeWithTag("home-card-sensors").getUnclippedBoundsInRoot()
+        assertTrue("Portrait dashboard is full width above the two-column grid", (dashboardGrid.right - dashboardGrid.left) > (sensorsGrid.right - sensorsGrid.left))
+        assertTrue("Portrait grid cards are below the dashboard", sensorsGrid.top > dashboardGrid.top)
+
+        compose.runOnIdle {
+            configuration = Configuration(configuration).apply {
+                orientation = Configuration.ORIENTATION_LANDSCAPE
+            }
+        }
+        val dashboardColumns = compose.onNodeWithTag("home-card-dashboard").getUnclippedBoundsInRoot()
+        val sensorsColumns = compose.onNodeWithTag("home-card-sensors").getUnclippedBoundsInRoot()
+        assertTrue("Landscape dashboard precedes the sensor column", sensorsColumns.left > dashboardColumns.left)
+        assertTrue("Landscape dashboard is taller than a pair card", (dashboardColumns.bottom - dashboardColumns.top) > (sensorsColumns.bottom - sensorsColumns.top))
+    }
+
+    @Test fun menuCardsUseCallbacksFromTheLatestActions() {
+        val called = mutableListOf<String>()
+        var onSettings by mutableStateOf<() -> Unit>({ called += "old" })
+        compose.setContent {
+            HomeScreen(HomeScreenState(), HomeScreenActions(onSettings = onSettings), layoutOverride = HomeLayout.GRID)
+        }
+
+        compose.runOnIdle { onSettings = { called += "latest" } }
+        compose.onNodeWithTag("home-card-settings").performScrollTo().performClick()
+        assertEquals(listOf("latest"), called)
     }
 
     @Test fun landscapeScrollReachesSettingsAndCardsRemainClickable() {

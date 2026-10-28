@@ -122,17 +122,11 @@ data class HomeScreenActions(
 
 enum class HomeDialog { EXIT, DIAGNOSTICS, RELEASE, RELEASE_PERMISSION_RATIONALE }
 
-private enum class HomeDestination { DASHBOARD, SENSORS, PARAMETERS, ERRORS, DIAGNOSTICS, LOGS, SETTINGS }
-private data class HomeMenuItem(@StringRes val label: Int, @DrawableRes val icon: Int, val destination: HomeDestination)
-
-private val menuItems = listOf(
-    HomeMenuItem(R.string.menu_dashboard, R.drawable.ic_dashboard, HomeDestination.DASHBOARD),
-    HomeMenuItem(R.string.sensors, R.drawable.ic_sensors, HomeDestination.SENSORS),
-    HomeMenuItem(R.string.menu_param, R.drawable.ic_wrench, HomeDestination.PARAMETERS),
-    HomeMenuItem(R.string.title_activity_errors, R.drawable.indicators_check_engine_landscape, HomeDestination.ERRORS),
-    HomeMenuItem(R.string.title_activity_diagnostics, R.drawable.ic_diagnostic, HomeDestination.DIAGNOSTICS),
-    HomeMenuItem(R.string.menu_secu_logs, R.drawable.ic_log_file, HomeDestination.LOGS),
-    HomeMenuItem(R.string.title_activity_settings, R.drawable.ic_settings_24, HomeDestination.SETTINGS),
+private data class HomeMenuItem(
+    @StringRes val label: Int,
+    @DrawableRes val icon: Int,
+    val tag: String,
+    val onClick: () -> Unit,
 )
 
 @Composable
@@ -144,7 +138,21 @@ fun HomeScreen(
     contentInsets: WindowInsets = WindowInsets.safeDrawing,
 ) {
     val dialog = state.dialog
-    val layout = layoutOverride ?: homeLayout(LocalConfiguration.current)
+    val configuration = LocalConfiguration.current
+    val layout = layoutOverride ?: if (configuration.orientation == Configuration.ORIENTATION_LANDSCAPE) {
+        HomeLayout.LANDSCAPE_COLUMNS
+    } else {
+        HomeLayout.GRID
+    }
+    val menuItems = listOf(
+        HomeMenuItem(R.string.menu_dashboard, R.drawable.ic_dashboard, "dashboard", actions.onDashboard),
+        HomeMenuItem(R.string.sensors, R.drawable.ic_sensors, "sensors", actions.onSensors),
+        HomeMenuItem(R.string.menu_param, R.drawable.ic_wrench, "parameters", actions.onParameters),
+        HomeMenuItem(R.string.title_activity_errors, R.drawable.indicators_check_engine_landscape, "errors", actions.onErrors),
+        HomeMenuItem(R.string.title_activity_diagnostics, R.drawable.ic_diagnostic, "diagnostics", actions.onDiagnosticsRequested),
+        HomeMenuItem(R.string.menu_secu_logs, R.drawable.ic_log_file, "logs", actions.onLogs),
+        HomeMenuItem(R.string.title_activity_settings, R.drawable.ic_settings_24, "settings", actions.onSettings),
+    )
     SecuComposeTheme {
         Box(modifier.fillMaxSize().background(MaterialTheme.colorScheme.background).testTag("home-full-root")) {
           Column(Modifier.fillMaxSize().windowInsetsPadding(contentInsets).testTag("home-safe-content")) {
@@ -176,11 +184,11 @@ fun HomeScreen(
             if (layout == HomeLayout.LANDSCAPE_COLUMNS) {
                 Row(Modifier.weight(1f).fillMaxWidth().testTag("home-menu-viewport").horizontalScroll(rememberScrollState()).padding(start = 32.dp, end = 24.dp, bottom = 8.dp),
                     horizontalArrangement = Arrangement.spacedBy(16.dp), verticalAlignment = Alignment.CenterVertically) {
-                    MenuCard(menuItems.first(), Modifier.fillMaxHeight().width(220.dp), adaptIconSize = true) { handleDestination(menuItems.first().destination, actions) { actions.onDiagnosticsRequested() } }
+                    MenuCard(menuItems.first(), Modifier.fillMaxHeight().width(220.dp), adaptIconSize = true)
                     menuItems.drop(1).chunked(2).forEachIndexed { columnIndex, pair ->
                         Column(Modifier.fillMaxHeight().width(160.dp).testTag("home-landscape-pair-$columnIndex"), verticalArrangement = Arrangement.spacedBy(8.dp)) {
                             pair.forEach { item ->
-                                MenuCard(item, Modifier.weight(1f).fillMaxWidth(), adaptIconSize = true) { handleDestination(item.destination, actions) { actions.onDiagnosticsRequested() } }
+                                MenuCard(item, Modifier.weight(1f).fillMaxWidth(), adaptIconSize = true)
                             }
                         }
                     }
@@ -188,11 +196,11 @@ fun HomeScreen(
             } else {
                 Column(Modifier.weight(1f).fillMaxWidth().testTag("home-menu-viewport").verticalScroll(rememberScrollState()).padding(horizontal = 32.dp, vertical = 16.dp),
                     verticalArrangement = Arrangement.spacedBy(16.dp)) {
-                    MenuCard(menuItems.first(), Modifier.fillMaxWidth().height(150.dp)) { handleDestination(menuItems.first().destination, actions) { actions.onDiagnosticsRequested() } }
+                    MenuCard(menuItems.first(), Modifier.fillMaxWidth().height(150.dp))
                     val rest = menuItems.drop(1)
                     rest.chunked(2).forEach { pair ->
                         Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(16.dp)) {
-                            pair.forEach { item -> MenuCard(item, Modifier.weight(1f).height(150.dp)) { handleDestination(item.destination, actions) { actions.onDiagnosticsRequested() } } }
+                            pair.forEach { item -> MenuCard(item, Modifier.weight(1f).height(150.dp)) }
                             if (pair.size == 1) Box(Modifier.weight(1f))
                         }
                     }
@@ -240,14 +248,14 @@ fun HomeScreen(
 }
 
 @Composable
-private fun MenuCard(item: HomeMenuItem, modifier: Modifier, adaptIconSize: Boolean = false, onClick: () -> Unit) {
+private fun MenuCard(item: HomeMenuItem, modifier: Modifier, adaptIconSize: Boolean = false) {
     val colors = MaterialTheme.colorScheme
     val foregroundColor = if (colors.background.luminance() > 0.5f) {
         colors.onSurface
     } else {
         colors.onSurfaceVariant
     }
-    Card(onClick = onClick, modifier = modifier.testTag("home-card-${item.destination.name.lowercase()}"),
+    Card(onClick = item.onClick, modifier = modifier.testTag("home-card-${item.tag}"),
         colors = CardDefaults.cardColors(containerColor = colors.surface, contentColor = foregroundColor),
         border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant), elevation = CardDefaults.cardElevation(defaultElevation = 0.dp)) {
         BoxWithConstraints(Modifier.fillMaxSize().padding(8.dp)) {
@@ -262,27 +270,12 @@ private fun MenuCard(item: HomeMenuItem, modifier: Modifier, adaptIconSize: Bool
                     contentDescription = null,
                     contentScale = ContentScale.Fit,
                     colorFilter = ColorFilter.tint(foregroundColor),
-                    modifier = Modifier.size(iconSize).testTag("home-icon-${item.destination.name.lowercase()}"),
+                    modifier = Modifier.size(iconSize).testTag("home-icon-${item.tag}"),
                 )
             }
             Text(stringResource(item.label), textAlign = TextAlign.Center, style = MaterialTheme.typography.titleMedium,
-                modifier = Modifier.fillMaxWidth().padding(bottom = 4.dp).testTag("home-label-${item.destination.name.lowercase()}"))
+                modifier = Modifier.fillMaxWidth().padding(bottom = 4.dp).testTag("home-label-${item.tag}"))
           }
         }
-    }
-}
-
-fun homeLayout(configuration: Configuration): HomeLayout =
-    if (configuration.orientation == Configuration.ORIENTATION_LANDSCAPE) HomeLayout.LANDSCAPE_COLUMNS else HomeLayout.GRID
-
-private fun handleDestination(destination: HomeDestination, actions: HomeScreenActions, showDiagnostics: () -> Unit) {
-    when (destination) {
-        HomeDestination.DASHBOARD -> actions.onDashboard()
-        HomeDestination.SENSORS -> actions.onSensors()
-        HomeDestination.PARAMETERS -> actions.onParameters()
-        HomeDestination.ERRORS -> actions.onErrors()
-        HomeDestination.DIAGNOSTICS -> showDiagnostics()
-        HomeDestination.LOGS -> actions.onLogs()
-        HomeDestination.SETTINGS -> actions.onSettings()
     }
 }
