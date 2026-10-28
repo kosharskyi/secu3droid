@@ -11,19 +11,22 @@ import android.os.Build
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import dagger.hilt.android.lifecycle.HiltViewModel
-import kotlinx.coroutines.delay
+import kotlinx.coroutines.CoroutineStart
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.currentCoroutineContext
-import kotlinx.coroutines.isActive
+import kotlinx.coroutines.flow.collect
 import kotlinx.coroutines.flow.first
 import java.io.IOException
 import org.secu3.android.R
 import org.secu3.android.ui.messages.UiMessageDuration
 import org.secu3.android.ui.messages.UiMessageQueue
 import org.secu3.android.connection.BluetoothDeviceAddress
+import org.secu3.android.connection.ConnectionTimeout
+import org.secu3.android.connection.Connected
+import org.secu3.android.connection.Disconnected
 import org.secu3.android.connection.Secu3ConnectionManager
 import org.secu3.android.utils.UserPrefs
 import javax.inject.Inject
@@ -54,7 +57,12 @@ class StartScreenViewModel @Inject constructor(
     val isUsbHostSupported get() = packageManager.hasSystemFeature(PackageManager.FEATURE_USB_HOST)
     val isXiaomi = Build.MANUFACTURER.equals("Xiaomi", true) || Build.BRAND.equals("Xiaomi", true) || Build.BRAND.equals("POCO", true) || Build.MODEL.contains("POCO", true)
 
-    init { if (isUsbHostSupported) usbManager.deviceList.values.firstOrNull()?.let(::newUsbDeviceAttached) }
+    init {
+        if (isUsbHostSupported) usbManager.deviceList.values.firstOrNull()?.let(::newUsbDeviceAttached)
+        viewModelScope.launch {
+            connectionState.collect { refreshConnecting() }
+        }
+    }
 
     fun isBtEnabled() = try { bluetoothAdapter?.isEnabled ?: false } catch (_: SecurityException) { false }
     fun isLocationEnabled(): Boolean = Build.VERSION.SDK_INT < Build.VERSION_CODES.P || Build.VERSION.SDK_INT >= Build.VERSION_CODES.R || locationManager.isLocationEnabled
@@ -156,12 +164,23 @@ class StartScreenViewModel @Inject constructor(
         })
     }
     private fun setConnecting(value: Boolean) { _uiState.value = _uiState.value.copy(connecting = value) }
+    private fun refreshConnecting() {
+        val connectionState = connectionManager.currentConnectionState
+        val managerConnectionInProgress = when (connectionState) {
+            Disconnected, Connected, ConnectionTimeout -> false
+            else -> connectionManager.isConnectionRunning && !connectionManager.isConnected
+        }
+        setConnecting(
+            connectionJob?.isActive == true ||
+                bluetoothBondGate.isPending() ||
+                managerConnectionInProgress,
+        )
+    }
     fun startBluetoothConnection(selectedDevice: BluetoothDevice? = null) {
         if (connectionJob?.isActive == true) return
         if (!connectionManager.isConnected) homeNavigationSent = false
         cancelBtDiscovery()
-        connectionJob = viewModelScope.launch {
-            setConnecting(true)
+        val job = viewModelScope.launch(start = CoroutineStart.LAZY) {
             try {
                 selectedDevice?.let { saveDevice(it) }
                 if (isBtDeviceAddressNotSelected()) {
@@ -169,21 +188,26 @@ class StartScreenViewModel @Inject constructor(
                     return@launch
                 }
                 connectionManager.startBtConnection()
-                while (connectionManager.isConnectionRunning && !connectionManager.isConnected && connectionManager.fwInfo == null) delay(300)
             } catch (failure: IOException) {
                 uiMessageQueue.publish(R.string.preferences_storage_error, UiMessageDuration.LONG)
             } finally {
-                if (currentCoroutineContext().isActive) setConnecting(false)
+                if (connectionJob === currentCoroutineContext()[Job]) {
+                    connectionJob = null
+                    refreshConnecting()
+                }
             }
         }
+        connectionJob = job
+        job.start()
+        refreshConnecting()
     }
     fun cancelConnection() {
         connectionJob?.cancel()
         connectionJob = null
         bluetoothBondGate.cancel()
         discoveryActive = false
-        setConnecting(false)
         connectionManager.stopConnection()
+        refreshConnecting()
     }
     fun claimHomeNavigation(): Boolean {
         if (homeNavigationSent || !connectionManager.isConnected) return false

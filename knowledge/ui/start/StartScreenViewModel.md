@@ -6,6 +6,10 @@ The persisted MAC address is authoritative. A legacy stored name cannot validate
 
 Saving a selected bonded device and validating the stored bonded address happen inside the same `connectionJob` that awaits manager preflight. Canceling the UI action must cancel that entire continuation so a late preference read cannot start a new connection after the user presses Cancel.
 
+## Connection progress follows manager events and current preparation
+
+The connecting indicator combines the active preference/preflight job, pending Bluetooth pairing, and the manager's current running-but-not-connected state. Manager state events refresh it; do not poll connection or firmware properties. A canceled preparation job may only clear its own reference, so an older completion cannot erase a replacement job's progress.
+
 ## Resuming an open Bluetooth picker retains its rows
 
 Returning from pause resumes discovery only while the Bluetooth picker remains visible and idle. Resume must retain the current device list and order; only an explicit user-started scan reseeds it from bonded devices. The route can also return from location settings after its callback already started discovery, so the resume path must be idempotent.

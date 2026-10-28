@@ -29,12 +29,9 @@ import androidx.lifecycle.repeatOnLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavBackStackEntry
 import kotlinx.coroutines.awaitCancellation
-import org.secu3.android.R
 import org.secu3.android.ui.MainActivity
 import org.secu3.android.ui.compose.SecuComposeTheme
 import org.secu3.android.utils.Task
-import org.secu3.android.ui.messages.UiMessageDuration
-import org.secu3.android.ui.DASHBOARD_ROUTE
 
 @Composable
 internal fun DashboardRoute(entry: NavBackStackEntry, activity: MainActivity) {
@@ -60,15 +57,6 @@ internal fun DashboardRoute(entry: NavBackStackEntry, activity: MainActivity) {
                 previousWindowState.restore(activity.window)
                 activity.applyKeepScreenOnPreference()
             }
-        }
-    }
-    LaunchedEffect(entry, activity) {
-        try {
-            if (viewModel.isBluetoothDeviceAddressNotSelected()) {
-                activity.uiMessageQueue.publish(R.string.choose_bluetooth_adapter, UiMessageDuration.LONG, scope = DASHBOARD_ROUTE)
-            }
-        } catch (failure: java.io.IOException) {
-            activity.uiMessageQueue.publish(R.string.preferences_storage_error, UiMessageDuration.LONG, scope = DASHBOARD_ROUTE)
         }
     }
     DisposableEffect(activity) {

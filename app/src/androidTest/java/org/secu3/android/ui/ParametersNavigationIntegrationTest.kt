@@ -239,6 +239,30 @@ class ParametersNavigationIntegrationTest {
         assertNotSame(homeViewModel, currentHomeViewModel())
     }
 
+    @Test fun acceptedHomeStopNavigatesToStartOnce() {
+        compose.activityRule.scenario.onActivity { it.openHome() }
+        compose.waitUntil(5_000) {
+            compose.activity.rootNavigationController?.currentDestination?.route == HOME_ROUTE
+        }
+        compose.waitForIdle()
+        val homeViewModel = currentHomeViewModel()
+
+        compose.runOnIdle {
+            homeViewModel.confirmExit()
+            homeViewModel.confirmExit()
+        }
+        compose.waitUntil(5_000) {
+            compose.activity.rootNavigationController?.currentDestination?.route == START_ROUTE
+        }
+        compose.activityRule.scenario.onActivity { activity ->
+            assertEquals(START_ROUTE, activity.rootNavigationController?.currentDestination?.route)
+            try {
+                activity.rootNavigationController?.getBackStackEntry(HOME_ROUTE)
+                throw AssertionError("Accepted Home exit must remove Home from the root back stack")
+            } catch (_: IllegalArgumentException) { }
+        }
+    }
+
     @Test fun firmwareDialogKeepsHomeStartedConsumesSheetTouchesAndBackClosesOnlyDialog() {
         val host = navigateNativeHostToHome()
         compose.activityRule.scenario.onActivity { it.openFirmware() }
@@ -378,6 +402,11 @@ class ParametersNavigationIntegrationTest {
     }
 
     private fun nativeHost(): NavHostController {
+        compose.waitUntil(5_000) {
+            var ready = false
+            compose.activityRule.scenario.onActivity { ready = it.rootNavigationController?.currentDestination != null }
+            ready
+        }
         lateinit var nativeHost: NavHostController
         compose.activityRule.scenario.onActivity { activity ->
             nativeHost = requireNotNull(activity.rootNavigationController)

@@ -34,8 +34,8 @@ class HomeViewModel @Inject constructor(
 ) : ViewModel() {
     private val _uiState = MutableStateFlow(HomeUiState())
     val uiState = _uiState.asStateFlow()
-    private val exitFlow = HomeExitFlow()
-    val returnToStart = exitFlow.navigationPending
+    private val _returnToStart = MutableStateFlow(false)
+    val returnToStart = _returnToStart.asStateFlow()
     private var release: GitHubRelease? = null
     val firmwareInfo = manager.firmwareInfo
     val isConnectionRunning get() = manager.isConnectionRunning
@@ -50,9 +50,6 @@ class HomeViewModel @Inject constructor(
                     usbSessionLocked = manager.isUsbSessionLocked,
                     firmwareAvailable = status == Connected && manager.firmwareInfo.value != null,
                 )
-                if (status == Disconnected) {
-                    exitFlow.onDisconnected()
-                }
             }
         }
         viewModelScope.launch {
@@ -82,19 +79,12 @@ class HomeViewModel @Inject constructor(
     fun requestExit() { if (!isUsbSessionLocked) _uiState.value = _uiState.value.copy(dialog = HomeDialog.EXIT) }
     fun dismissDialog() { _uiState.value = _uiState.value.copy(dialog = null) }
     fun confirmExit() {
-        if (isUsbSessionLocked) return
+        if (isUsbSessionLocked || _returnToStart.value) return
         dismissDialog()
-        when (exitFlow.confirm(manager.isConnectionRunning, usbSessionLocked = isUsbSessionLocked)) {
-            HomeExitAction.STOP_CONNECTION -> if (!manager.stopConnection()) exitFlow.cancelPendingExit()
-            HomeExitAction.NAVIGATE_START -> {
-                if (manager.stopConnection()) exitFlow.onDisconnected()
-                else exitFlow.cancelPendingExit()
-            }
-            HomeExitAction.NONE -> Unit
-        }
+        if (manager.stopConnection()) _returnToStart.value = true
     }
     fun consumeReturnToStart() {
-        exitFlow.consumeNavigation()
+        _returnToStart.value = false
     }
     fun requestDiagnostics() { _uiState.value = _uiState.value.copy(dialog = HomeDialog.DIAGNOSTICS) }
     fun requestReleasePermissionRationale() { _uiState.value = _uiState.value.copy(dialog = HomeDialog.RELEASE_PERMISSION_RATIONALE) }

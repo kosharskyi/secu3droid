@@ -5,6 +5,8 @@ import android.content.ComponentName
 import android.content.Context
 import android.content.ContextWrapper
 import android.content.Intent
+import android.app.DownloadManager
+import android.location.LocationManager
 import android.hardware.usb.UsbConfiguration
 import android.hardware.usb.UsbDevice
 import android.hardware.usb.UsbManager
@@ -12,10 +14,12 @@ import android.os.Binder
 import android.os.Parcel
 import androidx.test.filters.SdkSuppress
 import androidx.test.platform.app.InstrumentationRegistry
+import androidx.lifecycle.ViewModelStore
 import androidx.datastore.core.DataStore
 import androidx.datastore.preferences.core.Preferences
 import androidx.datastore.preferences.core.booleanPreferencesKey
 import androidx.datastore.preferences.core.mutablePreferencesOf
+import androidx.datastore.preferences.core.stringPreferencesKey
 import com.hoho.android.usbserial.driver.UsbSerialPort
 import java.io.IOException
 import java.lang.reflect.Proxy
@@ -55,9 +59,101 @@ import org.secu3.android.utils.SecuLogger
 import org.secu3.android.utils.Task
 import org.secu3.android.utils.UserPrefs
 import org.secu3.android.utils.IsolatedUserPrefs
+import org.secu3.android.utils.AppPrefs
+import org.secu3.android.ui.messages.UiMessageQueue
+import org.secu3.android.ui.start.StartScreenViewModel
+import org.secu3.android.ui.home.HomeRepository
+import org.secu3.android.ui.home.HomeViewModel
+import org.secu3.android.network.ApiService
+import org.secu3.android.network.models.GitHubRelease
+import retrofit2.Response
 
 /** Exercises the production coordinator with an isolated serial port, never a physical ECU. */
 class UsbSessionIntegrationTest {
+    @Test fun startProgressTracksCancellablePreparationAndTerminalManagerEvent() = runBlocking {
+        val context = InstrumentationRegistry.getInstrumentation().targetContext
+        val addressKey = stringPreferencesKey(context.getString(org.secu3.android.R.string.pref_bluetooth_device_address_key))
+        val store = DelayedPreferencesDataStore(mutablePreferencesOf(addressKey to "02:00:00:00:00:01"))
+        val fixture = Fixture(delayedStore = store)
+        val viewModel = StartScreenViewModel(
+            fixture.prefs,
+            context.getSystemService(Context.BLUETOOTH_SERVICE) as BluetoothManager,
+            context.getSystemService(Context.LOCATION_SERVICE) as LocationManager,
+            fixture.manager,
+            context.packageManager,
+            context.getSystemService(Context.USB_SERVICE) as UsbManager,
+            UiMessageQueue(),
+        )
+        val viewModelStore = ViewModelStore()
+        InstrumentationRegistry.getInstrumentation().runOnMainSync { viewModelStore.put("start", viewModel) }
+        try {
+            store.initialReadStarted.await()
+            InstrumentationRegistry.getInstrumentation().runOnMainSync {
+                viewModel.startBluetoothConnection()
+                assertTrue("preference preparation must immediately show Cancel", viewModel.uiState.value.connecting)
+            }
+
+            InstrumentationRegistry.getInstrumentation().runOnMainSync {
+                viewModel.cancelConnection()
+                assertFalse(viewModel.uiState.value.connecting)
+                viewModel.startBluetoothConnection()
+                assertTrue("replacement preparation must remain visible while the same preference read is gated", viewModel.uiState.value.connecting)
+                viewModel.cancelConnection()
+                assertFalse(viewModel.uiState.value.connecting)
+            }
+
+            store.releaseInitialRead.complete(Unit)
+            delay(100)
+            assertEquals("NONE", fixture.selectedTransport())
+            assertFalse(fixture.manager.isBtRunning)
+            fixture.selectBluetoothSessionForTest()
+            fixture.publishConnectionStateForTest(InProgress)
+            fixture.await { viewModel.uiState.value.connecting }
+
+            fixture.publishConnectionStateForTest(ConnectionTimeout)
+            fixture.await { !viewModel.uiState.value.connecting }
+            assertTrue("terminal status clears progress even before transport running state changes", fixture.manager.isConnectionRunning)
+        } finally {
+            InstrumentationRegistry.getInstrumentation().runOnMainSync { viewModelStore.clear() }
+            fixture.close()
+        }
+    }
+
+    @Test fun homeDoesNotPublishNavigationWhenConfirmedUsbStopIsRejected() = runBlocking {
+        val context = InstrumentationRegistry.getInstrumentation().targetContext
+        val fixture = Fixture()
+        val appPrefsFixture = IsolatedUserPrefs(context, "home-usb-exit-${UUID.randomUUID()}")
+        val appPrefs = AppPrefs(appPrefsFixture.dataStore)
+        val api = object : ApiService {
+            override suspend fun getReleases(): Result<List<GitHubRelease>> = Result.success(emptyList())
+            override suspend fun getLatestRelease(): Response<GitHubRelease> = throw IOException("Offline test")
+        }
+        val viewModel = HomeViewModel(
+            fixture.manager,
+            HomeRepository(api, context.getSystemService(Context.DOWNLOAD_SERVICE) as DownloadManager, appPrefs),
+            appPrefs,
+            fixture.prefs,
+            UiMessageQueue(),
+        )
+        val viewModelStore = ViewModelStore()
+        InstrumentationRegistry.getInstrumentation().runOnMainSync { viewModelStore.put("home", viewModel) }
+        try {
+            fixture.attach(96)
+            fixture.confirmFirmware()
+            assertTrue(fixture.manager.isUsbSessionLocked)
+            assertFalse(fixture.manager.stopConnection())
+
+            InstrumentationRegistry.getInstrumentation().runOnMainSync {
+                viewModel.confirmExit()
+                assertFalse("a rejected confirmed-USB stop must not request Start navigation", viewModel.returnToStart.value)
+            }
+        } finally {
+            InstrumentationRegistry.getInstrumentation().runOnMainSync { viewModelStore.clear() }
+            fixture.close()
+            appPrefsFixture.close()
+        }
+    }
+
     @Test fun firmwareStateReplaysCurrentUsbFirmwareAndClearsOnSessionReplacement() = runBlocking {
         val fixture = Fixture()
         try {
