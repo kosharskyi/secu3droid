@@ -52,13 +52,13 @@ import org.secu3.android.domain.parameters.FuelInjectionControl
 import org.secu3.android.domain.parameters.ChokeControl
 import org.secu3.android.domain.parameters.CkpsControl
 import org.secu3.android.domain.parameters.MiscellaneousControl
+import org.secu3.android.domain.parameters.AnglesControl
 import org.secu3.android.domain.parameters.SecurityControl
 import org.secu3.android.domain.parameters.StarterControl
 import org.secu3.android.domain.parameters.SecurityCredentialsResult
 import org.secu3.android.models.packets.base.OutputPacket
 import org.secu3.android.models.packets.out.params.AccelerationParamPacket
 import org.secu3.android.models.packets.out.params.AdcCorrectionsParamPacket
-import org.secu3.android.models.packets.out.params.AnglesParamPacket
 import org.secu3.android.models.packets.out.params.CarburParamPacket
 import org.secu3.android.models.packets.out.params.ChokeControlParPacket
 import org.secu3.android.models.packets.out.params.CkpsParamPacket
@@ -74,7 +74,8 @@ import org.secu3.android.models.packets.out.params.MiscellaneousParamPacket
 import org.secu3.android.models.packets.out.params.StarterParamPacket
 import org.secu3.android.models.packets.out.params.TemperatureParamPacket
 import org.secu3.android.models.packets.out.params.UniOutParamPacket
-import org.secu3.android.ui.parameters.pages.compose.AnglesStateHolder
+import org.secu3.android.ui.parameters.pages.compose.AnglesFlag
+import org.secu3.android.ui.parameters.pages.compose.AnglesNumber
 import org.secu3.android.ui.parameters.pages.compose.CarburStateHolder
 import org.secu3.android.ui.parameters.pages.compose.AdcCorrectionsStateHolder
 import org.secu3.android.ui.parameters.pages.compose.KnockStateHolder
@@ -110,6 +111,7 @@ class ParamsViewModel @Inject constructor(
     internal val miscellaneousControl: MiscellaneousControl,
     internal val securityControl: SecurityControl,
     internal val starterControl: StarterControl,
+    internal val anglesControl: AnglesControl,
     private val uiMessageQueue: UiMessageQueue,
     private val parameterPageCatalog: ParameterPageCatalog,
 ) : ViewModel() {
@@ -171,8 +173,31 @@ class ParamsViewModel @Inject constructor(
         return admitted
     }
 
-    internal val anglesStateHolder by lazy {
-        AnglesStateHolder(::sendPacket, { isSendAllowed = false }, { isSendAllowed = true })
+    fun editAngles(number: AnglesNumber, value: Float): Boolean {
+        val admitted = when (number) {
+            AnglesNumber.MAX -> anglesControl.editMaxAngle(value)
+            AnglesNumber.MIN -> anglesControl.editMinAngle(value)
+            AnglesNumber.DECREASE -> anglesControl.editAngleDecSpeed(value)
+            AnglesNumber.INCREASE -> anglesControl.editAngleIncSpeed(value)
+            AnglesNumber.OCTANE -> anglesControl.editAngleCorrection(value)
+            AnglesNumber.SHIFT -> anglesControl.editShiftIgnitionTiming(value)
+        }
+        return reportAnglesEdit(admitted)
+    }
+
+    fun setAnglesFlag(flag: AnglesFlag, checked: Boolean): Boolean {
+        val admitted = when (flag) {
+            AnglesFlag.ZERO -> anglesControl.setZeroAdvAngle(checked)
+            AnglesFlag.WORKING_MAP -> anglesControl.setAlwaysUseIgnitionMap(checked)
+            AnglesFlag.MANUAL_CORRECTION -> anglesControl.setApplyManualTimingCorrOnIdl(checked)
+            AnglesFlag.ZERO_WITH_OCTANE -> anglesControl.setZeroAdvAngleWithCorr(checked)
+        }
+        return reportAnglesEdit(admitted)
+    }
+
+    private fun reportAnglesEdit(admitted: Boolean): Boolean {
+        if (admitted) showUiMessage(R.string.packet_sent, UiMessageDuration.SHORT)
+        return admitted
     }
 
     internal val idlingStateHolder by lazy {
@@ -510,7 +535,7 @@ class ParamsViewModel @Inject constructor(
     private fun resetStateHolder(page: ParameterPage) {
         when (page) {
             ParameterPage.STARTER -> starterControl.reset()
-            ParameterPage.ANGLES -> anglesStateHolder.reset()
+            ParameterPage.ANGLES -> anglesControl.reset()
             ParameterPage.IDLING -> idlingStateHolder.reset()
             ParameterPage.TEMPERATURE -> temperatureStateHolder.reset()
             ParameterPage.FUEL_CUTOFF -> carburStateHolder.reset()
@@ -545,7 +570,7 @@ class ParamsViewModel @Inject constructor(
     private fun applyPageResult(page: ParameterPage, result: ParameterReadResult) {
         when (page) {
             ParameterPage.STARTER -> starterControl.receive(packet<StarterParamPacket>(result))
-            ParameterPage.ANGLES -> anglesStateHolder.onPacketReceived(packet<AnglesParamPacket>(result))
+            ParameterPage.ANGLES -> anglesControl.receive(packet(result))
             ParameterPage.IDLING -> idlingStateHolder.onPacketReceived(packet<IdlingParamPacket>(result))
             ParameterPage.TEMPERATURE -> temperatureStateHolder.onPacketReceived(packet<TemperatureParamPacket>(result))
             ParameterPage.FUEL_CUTOFF -> carburStateHolder.onPacketReceived(packet<CarburParamPacket>(result))

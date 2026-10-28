@@ -45,7 +45,6 @@ import org.secu3.android.models.packets.out.ChangeModePacket
 import org.secu3.android.utils.UserPrefs
 import org.secu3.android.ui.MainActivity
 import org.secu3.android.ui.PARAMETERS_ROUTE
-import org.secu3.android.ui.parameters.pages.compose.AnglesUiState
 import org.secu3.android.ui.parameters.pages.compose.AnglesNumber
 import org.secu3.android.ui.parameters.pages.compose.StarterNumber
 import org.secu3.android.ui.parameters.pages.compose.ChokeNumber
@@ -88,9 +87,9 @@ class ParameterPageSessionCacheTest {
 
             activate(vm, R.string.params_tab_angles_title)
             transport.awaitReadRequest('m', 1)
-            assertTrue(vm.anglesStateHolder.state is AnglesUiState.Loading)
+            assertTrue(vm.anglesControl.values.value == null)
             transport.emit(AnglesParamPacket(maxAngle = 4f))
-            await { vm.anglesStateHolder.state is AnglesUiState.Data }
+            await { vm.anglesControl.values.value != null }
             delay(150)
 
             activate(vm, R.string.params_tab_start_title)
@@ -105,16 +104,16 @@ class ParameterPageSessionCacheTest {
 
             activate(vm, R.string.params_tab_angles_title)
             transport.awaitReadRequest('m', 2)
-            assertTrue(vm.anglesStateHolder.state is AnglesUiState.Loading)
+            assertTrue(vm.anglesControl.values.value == null)
             transport.emit(AnglesParamPacket(maxAngle = 6f))
-            await { vm.anglesStateHolder.state is AnglesUiState.Data }
+            await { vm.anglesControl.values.value != null }
             delay(150)
 
             compose.runOnIdle { vm.refreshPage(ParameterPage.ANGLES) }
             transport.awaitReadRequest('m', 3)
-            assertTrue(vm.anglesStateHolder.state is AnglesUiState.Loading)
+            assertTrue(vm.anglesControl.values.value == null)
             transport.emit(AnglesParamPacket(maxAngle = 7f))
-            await { vm.anglesStateHolder.state is AnglesUiState.Data }
+            await { vm.anglesControl.values.value != null }
             delay(150)
 
             compose.runOnIdle {
@@ -122,9 +121,9 @@ class ParameterPageSessionCacheTest {
                 vm.activatePage(ParameterPage.ANGLES)
             }
             transport.awaitReadRequest('m', 4)
-            assertTrue(vm.anglesStateHolder.state is AnglesUiState.Loading)
+            assertTrue(vm.anglesControl.values.value == null)
             transport.emit(AnglesParamPacket(maxAngle = 8f))
-            await { vm.anglesStateHolder.state is AnglesUiState.Data }
+            await { vm.anglesControl.values.value != null }
         } finally {
             transport.close()
             compose.runOnIdle { vm.clearPageState() }
@@ -193,6 +192,83 @@ class ParameterPageSessionCacheTest {
         }
     }
 
+    @Test fun anglesCommandsUseLiveSessionSnapshotsAndRejectStaleOrPausedEdits() = runBlocking {
+        val vm = paramsViewModel()
+        var transport: FakeUsbTransport? = null
+        val queueField = ParamsViewModel::class.java.getDeclaredField("uiMessageQueue").apply { isAccessible = true }
+        val queue = queueField.get(vm) as org.secu3.android.ui.messages.UiMessageQueue
+        val originalActiveScope = queue.activeScope.value
+        try {
+            val usb = installFakeUsb(vm).also { transport = it }
+            activate(vm, R.string.params_tab_angles_title)
+            usb.awaitReadRequest('m', 1)
+            usb.emit(AnglesParamPacket(maxAngle = 4f))
+            await { vm.anglesControl.values.value?.maxAngle == 4f }
+
+            compose.activityRule.scenario.moveToState(Lifecycle.State.STARTED)
+            compose.waitForIdle()
+            queue.onActiveScopeChanged(PARAMETERS_ROUTE)
+            queue.pending.value.forEach { queue.acknowledge(it.id) }
+            val baseline = usb.writes.size
+            vm.isSendAllowed = false
+
+            compose.runOnIdle { vm.editAngles(AnglesNumber.MAX, 5.5f) }
+            usb.awaitWriteCount(baseline + 1)
+            assertTrue(queue.pending.value.any { it.textRes == R.string.packet_sent })
+            queue.pending.value.forEach { queue.acknowledge(it.id) }
+            compose.runOnIdle { vm.setAnglesFlag(org.secu3.android.ui.parameters.pages.compose.AnglesFlag.WORKING_MAP, true) }
+            usb.awaitWriteCount(baseline + 2)
+            assertTrue(queue.pending.value.any { it.textRes == R.string.packet_sent })
+            queue.pending.value.forEach { queue.acknowledge(it.id) }
+            compose.runOnIdle { vm.setAnglesFlag(org.secu3.android.ui.parameters.pages.compose.AnglesFlag.ZERO, true) }
+            usb.awaitWriteCount(baseline + 3)
+            assertTrue(queue.pending.value.any { it.textRes == R.string.packet_sent })
+            assertArrayEquals(
+                byteArrayOf(0x21, 'm'.code.toByte(), 0, 0xB0.toByte()) + ByteArray(12) + byteArrayOf(0xAE.toByte(), 0xBE.toByte(), 0x0D),
+                usb.writes[baseline],
+            )
+            assertArrayEquals(
+                byteArrayOf(0x21, 'm'.code.toByte(), 0, 0xB0.toByte()) + ByteArray(8) + byteArrayOf(0, 1, 0, 0, 0xB2.toByte(), 0xBF.toByte(), 0x0D),
+                usb.writes[baseline + 1],
+            )
+            assertArrayEquals(
+                byteArrayOf(0x21, 'm'.code.toByte(), 0, 0xB0.toByte()) + ByteArray(8) + byteArrayOf(1, 1, 0, 0, 0xB7.toByte(), 0xC0.toByte(), 0x0D),
+                usb.writes[baseline + 2],
+            )
+            assertEquals(5.5f, vm.anglesControl.values.value?.maxAngle)
+            assertEquals(true, vm.anglesControl.values.value?.alwaysUseIgnitionMap)
+            assertEquals(1, vm.anglesControl.values.value?.zeroAdvAngle)
+            val afterAcceptedWrites = usb.writes.size
+            val committed = vm.anglesControl.values.value
+            queue.pending.value.forEach { queue.acknowledge(it.id) }
+            compose.runOnIdle { vm.editAngles(AnglesNumber.OCTANE, 4f) }
+            assertEquals(afterAcceptedWrites, usb.writes.size)
+            assertEquals(committed, vm.anglesControl.values.value)
+            assertFalse(queue.pending.value.any { it.textRes == R.string.packet_sent })
+
+            compose.runOnIdle {
+                vm.pausePageSession()
+                vm.editAngles(AnglesNumber.MAX, 6f)
+                vm.setAnglesFlag(org.secu3.android.ui.parameters.pages.compose.AnglesFlag.MANUAL_CORRECTION, true)
+            }
+            delay(100)
+            assertEquals(afterAcceptedWrites, usb.writes.size)
+            assertEquals(committed, vm.anglesControl.values.value)
+            assertFalse(queue.pending.value.any { it.textRes == R.string.packet_sent })
+        } finally {
+            try {
+                transport?.close()
+            } finally {
+                try {
+                    compose.runOnIdle { vm.clearPageState() }
+                } finally {
+                    queue.onActiveScopeChanged(originalActiveScope)
+                    compose.activityRule.scenario.moveToState(Lifecycle.State.RESUMED)
+                }
+            }
+        }
+    }
+
     @Test fun pageWaitingBehindAnotherTabUsesFreshRevisionAfterWrite() = runBlocking {
         val vm = paramsViewModel()
         val transport = installFakeUsb(vm)
@@ -202,11 +278,11 @@ class ParameterPageSessionCacheTest {
             activate(vm, R.string.params_tab_angles_title)
             transport.awaitReadRequest('m', 1)
             transport.emit(AnglesParamPacket(maxAngle = 4f))
-            await { vm.anglesStateHolder.state is AnglesUiState.Data }
+            await { vm.anglesControl.values.value != null }
             delay(150)
 
             compose.runOnIdle {
-                vm.anglesStateHolder.updateValue(AnglesNumber.MAX, 6f)
+                vm.editAngles(AnglesNumber.MAX, 6f)
             }
 
             activate(vm, R.string.params_tab_start_title)

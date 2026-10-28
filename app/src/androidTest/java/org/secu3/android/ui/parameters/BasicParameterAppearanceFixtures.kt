@@ -2,6 +2,7 @@ package org.secu3.android.ui.parameters
 
 import androidx.compose.runtime.Composable
 import org.secu3.android.domain.parameters.StarterValues
+import org.secu3.android.domain.parameters.AnglesValues
 import org.secu3.android.ui.parameters.pages.compose.*
 
 /** Loaded UI samples for rendering every basic parameter page outside ECU navigation. */
@@ -15,12 +16,7 @@ internal fun basicParameterAppearanceFixtures(): List<ParameterAppearanceFixture
     },
     ParameterAppearanceFixture("angles") {
         AnglesScreen(
-            AnglesUiState.Data(
-                AnglesValues(
-                    numbers = AnglesNumber.entries.associateWith { it.ordinal + 1.25f },
-                    flags = AnglesFlag.entries.associateWith { it.ordinal % 2 == 0 },
-                ),
-            ),
+            AnglesValues(1.25f, 2.25f, 3.25f, 4.25f, 5.25f, 0, false, true, false, 6.25f),
             onEdit = {},
             onFlagChanged = { _, _ -> },
         )

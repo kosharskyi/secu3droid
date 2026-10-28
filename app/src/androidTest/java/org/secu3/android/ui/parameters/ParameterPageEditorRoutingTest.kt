@@ -37,8 +37,6 @@ import org.secu3.android.models.packets.out.params.SecurityParamPacket
 import org.secu3.android.models.packets.out.params.StarterParamPacket
 import org.secu3.android.ui.MainActivity
 import org.secu3.android.ui.compose.SecuComposeTheme
-import org.secu3.android.ui.parameters.pages.compose.AnglesNumber
-import org.secu3.android.ui.parameters.pages.compose.AnglesUiState
 import org.secu3.android.ui.parameters.pages.compose.StarterNumber
 import org.secu3.android.ui.parameters.dialogs.NumericEditDialog
 
@@ -65,11 +63,11 @@ class ParameterPageEditorRoutingTest {
         assertEquals(120f, StarterNumber.STARTER_OFF.value(requireNotNull(vm.starterControl.values.value)))
     }
 
-    @Test fun anglesFloatEditorRequestRoutesAcceptedValueToItsHolder() {
+    @Test fun anglesFloatEditorRequestRoutesValueAndKeepsCommittedStateWhenSessionRefuses() {
         val vm = paramsViewModel()
-        val holder = vm.anglesStateHolder
-        holder.reset()
-        holder.onPacketReceived(AnglesParamPacket(maxAngle = 4f))
+        val control = vm.anglesControl
+        control.reset()
+        control.receive(AnglesParamPacket(maxAngle = 4f))
         vm.isSendAllowed = false
         renderPage(R.string.params_tab_angles_title, vm)
 
@@ -83,7 +81,7 @@ class ParameterPageEditorRoutingTest {
         assertEquals(.25f, request.step)
         assertEquals(2, request.precision)
         compose.runOnIdle { vm.acceptParameterEditor(session.id, 5.5f) }
-        assertEquals(5.5f, (holder.state as AnglesUiState.Data).values.value(AnglesNumber.MAX))
+        assertEquals(4f, control.values.value?.maxAngle)
         assertEquals(false, vm.isSendAllowed)
     }
 

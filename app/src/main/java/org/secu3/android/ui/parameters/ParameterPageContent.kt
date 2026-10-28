@@ -75,8 +75,14 @@ internal fun ParameterPageContent(
             }, viewModel::setStarterFlag, capabilities = capabilities)
         }
         R.string.params_tab_angles_title -> {
-            val h = viewModel.anglesStateHolder
-            AnglesScreen(h.state, { n -> (h.state as? AnglesUiState.Data)?.values?.let { floatEdit(n.titleRes, it.value(n), n.step, n.max, n.min, n.precision) { v -> h.updateValue(n, v.toFloat()) } } }, h::updateFlag)
+            val values by viewModel.anglesControl.values.collectAsStateWithLifecycle()
+            AnglesScreen(values, { number ->
+                values?.let { current ->
+                    floatEdit(number.titleRes, number.value(current), number.step, number.max, number.min, number.precision) {
+                        viewModel.editAngles(number, it.toFloat())
+                    }
+                }
+            }, viewModel::setAnglesFlag)
         }
         R.string.params_tab_idling_title -> {
             val h = viewModel.idlingStateHolder

@@ -246,13 +246,14 @@ fun ParameterValueRow(
     title: String, units: String, value: Float, precision: Int, testTag: String,
     enabled: Boolean, onClick: () -> Unit,
 ) {
+    val valueColor = if (enabled) MaterialTheme.colorScheme.onSurface else MaterialTheme.colorScheme.onSurface.copy(alpha = 0.38f)
     val locale = LocalConfiguration.current.locales[0]
     val formattedValue = buildAnnotatedString {
         append(String.format(locale, "%.${precision}f", value))
         if (units.isNotEmpty()) {
             withStyle(
                 SpanStyle(
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    color = if (enabled) MaterialTheme.colorScheme.onSurfaceVariant else valueColor,
                     fontSize = 12.sp,
                     fontWeight = FontWeight.Normal,
                 ),
@@ -273,6 +274,7 @@ fun ParameterValueRow(
                 title,
                 Modifier.weight(0.62f).testTag("$testTag-label"),
                 style = MaterialTheme.typography.bodyMedium,
+                color = valueColor,
                 softWrap = true,
             )
             Text(
@@ -284,6 +286,7 @@ fun ParameterValueRow(
                     fontFeatureSettings = "tnum",
                 ),
                 textAlign = TextAlign.End,
+                color = valueColor,
                 softWrap = true,
             )
         }

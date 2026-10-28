@@ -18,6 +18,10 @@ Each screen remembers its scroll state above its Loading/Data branch and passes 
 
 The button semantics and `testTag` belong to the full labeled field, so tapping either the title or the value opens the same editor or selector and accessibility can read both. The tagged parent includes its bottom divider; spacing assertions should measure from that complete control bound. A null callback on `ParameterTextValueRow` removes the button action entirely; a disabled callback remains represented as a disabled control. Selection rows retain the `${testTag}-dropdown-indicator` tag; callers may override the value child tag for legacy editor-routing contracts without changing the clickable parent tag. Optional content and state descriptions must describe the selected option, not protocol state inferred from its text.
 
+## Disabled numeric rows keep their current value visible
+
+When `ParameterValueRow` is disabled, dim its label, number, and units with the diagnostics disabled color while keeping the row and its measured value visible. This distinguishes locked controls such as Angles OCTANE during ZERO without hiding the ECU-reported setting.
+
 ## Sections leave spacing to their children
 
 `ParameterSection` adds its heading and card outline but no general content inset or inter-row spacing. Shared rows provide their own horizontal inset and divider; bespoke content in a section must provide its own padding and preserve any explicit control gaps.

@@ -46,6 +46,10 @@ Both injection timing banks and both cranking timing banks are signed 16-bit val
 
 The ECU's unsigned fixed-point physical value remains a Float so unrelated edits preserve its incoming word. The state and integer editor show a rounded value; an explicit whole-number edit stores that value as a Float.
 
+## Angles ZERO modes follow desktop mutual exclusion
+
+The regular ZERO switch disables the OCTANE correction row while active. Enabling either ZERO mode clears the other on the domain command path, and the control rejects stale OCTANE editor callbacks after ZERO becomes active.
+
 ## Fuel Injection screen values keep timing and pulses-per-liter raw
 
 The domain values retain signed fractional timing/cranking degrees and fixed-point pulses-per-liter as Floats. The UI enum rounds the displayed integer editor value with `roundToInt`; do not move that rounding into packet state, since negative half-degree wire values use Kotlin's existing display rounding behavior.
