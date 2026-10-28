@@ -94,12 +94,9 @@ class SecuLogsViewModel @Inject constructor(
     }
 
     fun onDownloadPermissionResult(granted: Boolean) {
-        consumePendingExportPath(
-            savedStateHandle = savedStateHandle,
-            granted = granted,
-            onGranted = ::exportFile,
-            onDenied = { effectsChannel.trySend(SecuLogsEffect.PermissionDenied) },
-        )
+        val path = savedStateHandle.get<String>(KEY_PENDING_EXPORT) ?: return
+        savedStateHandle[KEY_PENDING_EXPORT] = null
+        if (granted) exportFile(File(path)) else effectsChannel.trySend(SecuLogsEffect.PermissionDenied)
     }
 
     fun exportFile(file: File) {
@@ -136,17 +133,6 @@ class SecuLogsViewModel @Inject constructor(
         internal const val KEY_PENDING_EXPORT = "pending_log_export_path"
         internal const val KEY_PENDING_DELETE = "pending_log_delete_path"
     }
-}
-
-internal fun consumePendingExportPath(
-    savedStateHandle: SavedStateHandle,
-    granted: Boolean,
-    onGranted: (File) -> Unit,
-    onDenied: () -> Unit,
-) {
-    val path = savedStateHandle.get<String>(SecuLogsViewModel.KEY_PENDING_EXPORT) ?: return
-    savedStateHandle[SecuLogsViewModel.KEY_PENDING_EXPORT] = null
-    if (granted) onGranted(File(path)) else onDenied()
 }
 
 data class SecuLogsUiState(val files: List<File> = emptyList())

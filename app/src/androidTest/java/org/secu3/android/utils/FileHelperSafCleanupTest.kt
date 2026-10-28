@@ -16,12 +16,16 @@ import android.provider.DocumentsContract
 import androidx.test.platform.app.InstrumentationRegistry
 import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.ViewModelStore
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.runBlocking
+import kotlinx.coroutines.withTimeout
+import kotlinx.coroutines.withTimeoutOrNull
 import org.junit.After
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertSame
 import org.junit.Assert.assertNotNull
+import org.junit.Assert.assertNull
 import org.junit.Assert.assertTrue
 import org.junit.Assume.assumeTrue
 import org.junit.Before
@@ -29,6 +33,8 @@ import org.junit.Test
 import java.io.File
 import java.io.FileNotFoundException
 import org.secu3.android.ui.logger.SecuLogsViewModel
+import org.secu3.android.ui.logger.SecuLogsEffect
+import org.secu3.android.ui.messages.UiMessageQueue
 
 class FileHelperSafCleanupTest {
     private lateinit var root: File
@@ -69,6 +75,65 @@ class FileHelperSafCleanupTest {
         assertEquals("engine.CSV", provider.createdDisplayName)
         assertEquals("rpm;map\n1000;42\n", provider.outputFile.readText())
         assertEquals(0, provider.deleteCalls)
+    }
+
+    @Test
+    fun restoredPendingExportIsConsumedOnlyOnceAfterPermissionGrant() = runBlocking {
+        val source = File(root, "restored.csv").apply { writeText("selected log") }
+        val state = SavedStateHandle(mapOf(SecuLogsViewModel.KEY_PENDING_EXPORT to source.absolutePath))
+        withLogsViewModel(state) { viewModel ->
+            InstrumentationRegistry.getInstrumentation().runOnMainSync {
+                viewModel.onDownloadPermissionResult(true)
+                assertNull(state.get<String>(SecuLogsViewModel.KEY_PENDING_EXPORT))
+                viewModel.onDownloadPermissionResult(true)
+            }
+
+            assertEquals(SecuLogsEffect.ExportSucceeded("TestLogs"), withTimeout(5_000) { viewModel.effects.first() })
+            assertEquals(1, provider.createCalls)
+            assertEquals(source.name, provider.createdDisplayName)
+            assertEquals("selected log", provider.outputFile.readText())
+            assertNull(withTimeoutOrNull(300) { viewModel.effects.first() })
+        }
+    }
+
+    @Test
+    fun deniedPendingExportIsConsumedWithoutCreatingADocument() = runBlocking {
+        val source = File(root, "denied.csv").apply { writeText("private log") }
+        val state = SavedStateHandle()
+        withLogsViewModel(state) { viewModel ->
+            InstrumentationRegistry.getInstrumentation().runOnMainSync {
+                viewModel.requestDownloadPermission(source)
+                assertEquals(source.absolutePath, state.get<String>(SecuLogsViewModel.KEY_PENDING_EXPORT))
+                viewModel.onDownloadPermissionResult(false)
+                assertNull(state.get<String>(SecuLogsViewModel.KEY_PENDING_EXPORT))
+                viewModel.onDownloadPermissionResult(true)
+                viewModel.onDownloadPermissionResult(false)
+            }
+
+            assertEquals(SecuLogsEffect.PermissionDenied, withTimeout(5_000) { viewModel.effects.first() })
+            assertEquals(0, provider.createCalls)
+            assertFalse(provider.outputFile.exists())
+            assertNull(withTimeoutOrNull(300) { viewModel.effects.first() })
+        }
+    }
+
+    private suspend fun withLogsViewModel(state: SavedStateHandle, block: suspend (SecuLogsViewModel) -> Unit) {
+        val fixture = IsolatedUserPrefs(context, "pending-export-${System.nanoTime()}")
+        val logger = SecuLogger(fixture.prefs, helper)
+        val store = ViewModelStore()
+        lateinit var viewModel: SecuLogsViewModel
+        try {
+            fixture.prefs.setLogExportDirectoryUri(treeUri.toString())
+            InstrumentationRegistry.getInstrumentation().runOnMainSync {
+                viewModel = SecuLogsViewModel(helper, fixture.prefs, state, logger, UiMessageQueue())
+                store.put("pending-export", viewModel)
+            }
+            block(viewModel)
+        } finally {
+            InstrumentationRegistry.getInstrumentation().runOnMainSync { store.clear() }
+            logger.shutdownForTests()
+            fixture.close()
+        }
     }
 
     @Test
@@ -162,6 +227,7 @@ class FileHelperSafCleanupTest {
         var failOpen = false
         var failDelete = false
         var deleteCalls = 0
+        var createCalls = 0
         var createdMimeType: String? = null
         var createdDisplayName: String? = null
         var createdDocumentUri: Uri? = null
@@ -172,6 +238,7 @@ class FileHelperSafCleanupTest {
 
         override fun call(authority: String, method: String, arg: String?, extras: Bundle?): Bundle? = when (method) {
             METHOD_CREATE_DOCUMENT -> {
+                createCalls++
                 createdMimeType = extras?.getString(DocumentsContract.Document.COLUMN_MIME_TYPE)
                 createdDisplayName = extras?.getString(DocumentsContract.Document.COLUMN_DISPLAY_NAME)
                 createdDocumentUri = Uri.parse("content://$AUTHORITY/document/new")

@@ -9,3 +9,7 @@ Delete confirmation remains pending-state-backed, but the ViewModel must pass th
 ## Share MIME type follows the selected file's export mapping
 
 The share intent uses the same extension-based MIME helper as all export destinations. Keep passing the original selected `File` through the callback so the MIME type and content URI both refer to that row's file.
+
+## Permission results consume a restored export only once
+
+The pending export path survives recreation in `SavedStateHandle`. Clear it before starting export or reporting denial, so a repeated permission callback cannot export the file or report the denial twice.
