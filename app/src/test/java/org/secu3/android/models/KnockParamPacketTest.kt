@@ -26,10 +26,10 @@ package org.secu3.android.models
 
 import org.junit.Assert.*
 import org.junit.Test
+import org.secu3.android.domain.parameters.KnockControl
+import org.secu3.android.domain.parameters.KnockValues
 import org.secu3.android.models.packets.out.params.KnockParamPacket
 import org.secu3.android.ui.parameters.pages.compose.KnockNumber
-import org.secu3.android.ui.parameters.pages.compose.KnockValues
-import org.secu3.android.ui.parameters.pages.compose.applyKnockNumber
 
 class KnockParamPacketTest {
     @Test fun selectionUpdatesSingleBitAndPreservesOtherBits() {
@@ -63,23 +63,53 @@ class KnockParamPacketTest {
 
         KnockNumber.entries.forEachIndexed { index, number ->
             val packet = KnockParamPacket().parse(raw.copyOf()) as KnockParamPacket
-            val originalValues = KnockValues.from(packet, emptyList(), emptyList())
+            val originalValues = KnockValues.from(packet)
             val originalUseKnockChannel = packet.useKnockChannel
             val originalBpfFrequency = packet.bpfFrequency
             val originalIntegration = packet.intTimeCost
             val originalChannels = packet.selectedChanels
             val newValue = number.min + (index + 1) * number.step
 
-            applyKnockNumber(packet, number, newValue)
+            val control = KnockControl { true }
+            control.receive(packet)
+            when (number) {
+                KnockNumber.BEGIN -> control.editWindowBegin(newValue)
+                KnockNumber.END -> control.editWindowEnd(newValue)
+                KnockNumber.RETARD -> control.editRetardStep(newValue)
+                KnockNumber.ADVANCE -> control.editAdvanceStep(newValue)
+                KnockNumber.MAX_RETARD -> control.editMaxRetard(newValue)
+                KnockNumber.THRESHOLD -> control.editVoltageThreshold(newValue)
+                KnockNumber.DELAY -> control.editRecoveryDelay(newValue.toInt())
+                KnockNumber.CONTROL -> control.editCoolantThreshold(newValue)
+            }
 
-            val changedValues = KnockValues.from(packet, emptyList(), emptyList())
+            val changedValues = KnockValues.from(packet)
             KnockNumber.entries.forEach { field ->
                 val expected = if (field == number) {
                     if (number == KnockNumber.DELAY) newValue.toInt().toFloat() else newValue
                 } else {
-                    originalValues.value(field)
+                    when (field) {
+                        KnockNumber.BEGIN -> originalValues.windowBegin
+                        KnockNumber.END -> originalValues.windowEnd
+                        KnockNumber.RETARD -> originalValues.retardStep
+                        KnockNumber.ADVANCE -> originalValues.advanceStep
+                        KnockNumber.MAX_RETARD -> originalValues.maxRetard
+                        KnockNumber.THRESHOLD -> originalValues.voltageThreshold
+                        KnockNumber.DELAY -> originalValues.recoveryDelay.toFloat()
+                        KnockNumber.CONTROL -> originalValues.coolantThreshold
+                    }
                 }
-                assertEquals("$number changed $field", expected, changedValues.value(field), 0.0001f)
+                val actual = when (field) {
+                    KnockNumber.BEGIN -> changedValues.windowBegin
+                    KnockNumber.END -> changedValues.windowEnd
+                    KnockNumber.RETARD -> changedValues.retardStep
+                    KnockNumber.ADVANCE -> changedValues.advanceStep
+                    KnockNumber.MAX_RETARD -> changedValues.maxRetard
+                    KnockNumber.THRESHOLD -> changedValues.voltageThreshold
+                    KnockNumber.DELAY -> changedValues.recoveryDelay.toFloat()
+                    KnockNumber.CONTROL -> changedValues.coolantThreshold
+                }
+                assertEquals("$number changed $field", expected, actual, 0.0001f)
             }
             assertEquals(originalUseKnockChannel, packet.useKnockChannel)
             assertEquals(originalBpfFrequency, packet.bpfFrequency)
@@ -98,27 +128,21 @@ class KnockParamPacketTest {
         assertEquals(9.375f,p.advanceStep,0.001f); assertEquals(18.75f,p.maxRetard,0.001f)
         assertEquals(1.25f,p.threshold,0.001f); assertEquals(7,p.recoveryDelay)
         assertEquals(0xA5,p.selectedChanels); assertEquals(100f,p.knkctlThrd,0.001f)
-        val values = org.secu3.android.ui.parameters.pages.compose.KnockValues.from(
-            p, listOf("a", "b", "c", "high"), listOf("short", "x", "y", "z", "long")
-        )
-        assertEquals("high", values.selector(org.secu3.android.ui.parameters.pages.compose.KnockSelector.BPF))
-        assertEquals("long", values.selector(org.secu3.android.ui.parameters.pages.compose.KnockSelector.INTEGRATION))
+        val values = KnockValues.from(p)
+        assertEquals(3, values.bpfFrequencyCode)
+        assertEquals(4, values.integrationTimeoutCode)
         assertArrayEquals(raw.copyOfRange(1,raw.size),p.pack())
         assertEquals(raw.takeLast(2), p.pack().takeLast(2))
         p.selectKnockChanel(0, false)
-        val changed = org.secu3.android.ui.parameters.pages.compose.KnockValues.from(
-            p, listOf("a", "b", "c", "high"), listOf("short", "x", "y", "z", "long")
-        )
-        assertFalse(changed.channels()[0])
+        val changed = KnockValues.from(p)
+        assertFalse(changed.isChannelSelected(0))
         assertEquals(0xA4, changed.selectedChannels)
-        assertEquals(100f, changed.value(org.secu3.android.ui.parameters.pages.compose.KnockNumber.CONTROL), 0.001f)
+        assertEquals(100f, changed.coolantThreshold, 0.001f)
         assertArrayEquals(intArrayOf(0xCA, 0xFE), p.pack().takeLast(2).toIntArray())
         p.bpfFrequency = 99; p.intTimeCost = -1
-        val unknown = org.secu3.android.ui.parameters.pages.compose.KnockValues.from(
-            p, listOf("a", "b", "c", "high"), listOf("short", "x", "y", "z", "long")
-        )
-        assertEquals("Code 99", unknown.selector(org.secu3.android.ui.parameters.pages.compose.KnockSelector.BPF))
-        assertEquals("Code -1", unknown.selector(org.secu3.android.ui.parameters.pages.compose.KnockSelector.INTEGRATION))
+        val unknown = KnockValues.from(p)
+        assertEquals(99, unknown.bpfFrequencyCode)
+        assertEquals(-1, unknown.integrationTimeoutCode)
     }
 
     @Test fun controlThresholdUsesSignedQuarterDegreeWordAndPreservesWireBytes() {

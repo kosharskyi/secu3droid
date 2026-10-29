@@ -34,3 +34,5 @@ Derive a single `ParameterCapabilities` state from `Secu3ConnectionManager.firmw
 
 
 `IdlingControl` owns the IDLREG packet, named numeric/flag state, value validation, current firmware admission, and immutable snapshots. `ParamsViewModel` maps the existing P0/I0 positive and P1/I1 negative screen tags to named semantic commands; typed integer and Float entry points remain distinct. IDLREG commands bypass the legacy `isSendAllowed` flag.
+
+`KnockControl` owns the Knock packet, named nullable values, numeric and selector-code validation, single-channel bit edits, raw-field rollback, and immutable snapshots. The ViewModel maps screen enums to its named APIs and reports only admitted commands; Knock commands bypass `isSendAllowed`. Localized selector arrays stay in the screen.

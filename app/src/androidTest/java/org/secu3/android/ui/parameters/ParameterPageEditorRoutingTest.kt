@@ -38,12 +38,14 @@ import org.secu3.android.models.packets.out.params.StarterParamPacket
 import org.secu3.android.models.packets.out.params.TemperatureParamPacket
 import org.secu3.android.models.packets.out.params.CarburParamPacket
 import org.secu3.android.models.packets.out.params.IdlingParamPacket
+import org.secu3.android.models.packets.out.params.KnockParamPacket
 import org.secu3.android.ui.MainActivity
 import org.secu3.android.ui.compose.SecuComposeTheme
 import org.secu3.android.ui.parameters.pages.compose.StarterNumber
 import org.secu3.android.ui.parameters.pages.compose.TemperatureNumber
 import org.secu3.android.ui.parameters.pages.compose.CarburNumber
 import org.secu3.android.ui.parameters.pages.compose.IdlingNumber
+import org.secu3.android.ui.parameters.pages.compose.KnockNumber
 import org.secu3.android.ui.parameters.dialogs.NumericEditDialog
 
 class ParameterPageEditorRoutingTest {
@@ -153,6 +155,43 @@ class ParameterPageEditorRoutingTest {
         assertEquals(95f, control.values.value?.fanOn)
         assertEquals(1.27f, control.values.value?.fanTimer)
         assertEquals(false, vm.isSendAllowed)
+    }
+
+    @Test fun knockEditorRoutesDelayAsIntAndAnglesAsFloatWithDomainBounds() {
+        val vm = paramsViewModel()
+        val control = vm.knockControl
+        val packet = KnockParamPacket(kWndBeginAngle = 2.25f, recoveryDelay = 17)
+        compose.runOnIdle {
+            control.reset()
+            control.receive(packet)
+        }
+        vm.isSendAllowed = false
+        renderPage(R.string.params_tab_knock_title, vm)
+
+        compose.onNodeWithTag("knock_delay").performScrollTo().performClick()
+        val delaySession = requireNotNull(vm.parameterEditSession)
+        val delay = delaySession.request as ParameterEditRequest.IntValue
+        assertEquals(compose.activity.getString(KnockNumber.DELAY.title), delay.title)
+        assertEquals(17, delay.value)
+        assertEquals(1, delay.min)
+        assertEquals(99, delay.max)
+        assertEquals(1, delay.step)
+        compose.runOnIdle { vm.acceptParameterEditor(delaySession.id, 18) }
+        assertEquals(17, control.values.value?.recoveryDelay)
+
+        compose.onNodeWithTag("knock_begin").performScrollTo().performClick()
+        val beginSession = requireNotNull(vm.parameterEditSession)
+        val begin = beginSession.request as ParameterEditRequest.FloatValue
+        assertEquals(compose.activity.getString(KnockNumber.BEGIN.title), begin.title)
+        assertEquals(2.25f, begin.value)
+        assertEquals(-12f, begin.min)
+        assertEquals(54f, begin.max)
+        assertEquals(1f, begin.step)
+        assertEquals(2, begin.precision)
+        compose.runOnIdle { vm.acceptParameterEditor(beginSession.id, 3.25f) }
+        assertEquals(2.25f, control.values.value?.windowBegin)
+        assertEquals(17, control.values.value?.recoveryDelay)
+        assertFalse(vm.isSendAllowed)
     }
 
     @Test fun carburEditorRowsRouteAllNamedValuesThroughTheMatchingEditorContract() {

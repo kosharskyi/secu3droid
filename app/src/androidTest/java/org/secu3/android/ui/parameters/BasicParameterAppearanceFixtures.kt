@@ -7,6 +7,8 @@ import androidx.compose.runtime.Composable
 import org.secu3.android.domain.parameters.StarterValues
 import org.secu3.android.domain.parameters.AnglesValues
 import org.secu3.android.domain.parameters.CarburValues
+import org.secu3.android.domain.parameters.KnockValues
+import org.secu3.android.models.packets.out.params.KnockParamPacket
 import org.secu3.android.ui.parameters.pages.compose.*
 
 /** Loaded UI samples for rendering every basic parameter page outside ECU navigation. */
@@ -79,17 +81,13 @@ internal fun basicParameterAppearanceFixtures(): List<ParameterAppearanceFixture
     },
     ParameterAppearanceFixture("knock") {
         KnockScreen(
-            KnockUiState.Data(
-                KnockValues(
-                    numbers = KnockNumber.entries.associateWith { it.ordinal + 1.25f },
-                    selectedChannels = 0xA5,
-                    bpfIndex = 0,
-                    integrationIndex = 0,
-                    bpfOptions = listOf("1 kHz", "2 kHz"),
-                    integrationOptions = listOf("10 ms", "20 ms"),
-                ),
-                enabled = true,
-            ),
+            values = KnockValues.from(KnockParamPacket(
+                useKnockChannel = 1, bpfFrequency = 0, kWndBeginAngle = 1.25f, kWndEndAngle = 2.25f,
+                intTimeCost = 0, retardStep = 3.25f, advanceStep = 4.25f, maxRetard = 5.25f,
+                threshold = 1.5f, recoveryDelay = 8, selectedChanels = 0xA5, knkctlThrd = 9.25f,
+            )),
+            bpfOptions = listOf("1 kHz", "2 kHz"),
+            integrationOptions = listOf("10 ms", "20 ms"),
             onEdit = {},
             onEnable = {},
             onChannel = { _, _ -> },

@@ -29,8 +29,10 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.test.*
 import androidx.compose.ui.test.junit4.v2.createComposeRule
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertTrue
 import org.junit.Rule
 import org.junit.Test
+import org.secu3.android.domain.parameters.KnockValues
 import org.secu3.android.models.packets.out.params.KnockParamPacket
 import org.secu3.android.ui.compose.SecuComposeTheme
 
@@ -43,8 +45,10 @@ class KnockScreenTest {
 
     @Test fun loadingAndDisplayDoesNotInvokeCallbacksOnCompositionOrRecomposition() {
         var calls = 0
-        val state = mutableStateOf<KnockUiState>(KnockUiState.Loading)
-        compose.setContent { SecuComposeTheme { KnockScreen(state.value, {calls++}, {calls++}, {_,_->calls++}, {_,_->calls++}) } }
+        val state = mutableStateOf<KnockValues?>(null)
+        val bpf = listOf("1 kHz", "2 kHz")
+        val integration = listOf("10 ms", "20 ms")
+        compose.setContent { SecuComposeTheme { KnockScreen(state.value, bpf, integration, {calls++}, {calls++}, {_,_->calls++}, {_,_->calls++}) } }
         val indicator = compose.onNodeWithTag("knock_loading").assertIsDisplayed()
         indicator.assertWidthIsEqualTo(40.dp).assertHeightIsEqualTo(40.dp)
         val viewport = compose.onNodeWithTag("parameter-loading-container").fetchSemanticsNode().boundsInRoot
@@ -52,13 +56,13 @@ class KnockScreenTest {
         assertEquals(viewport.center.x, indicatorBounds.center.x, 0.5f)
         assertEquals(viewport.center.y, indicatorBounds.center.y, 0.5f)
         val packet=KnockParamPacket(kWndBeginAngle=12.5f, selectedChanels=0xA5, useKnockChannel=5)
-        val data=KnockValues.from(packet, listOf("1 kHz","2 kHz"), listOf("10 ms","20 ms"))
-        compose.runOnIdle { state.value=KnockUiState.Data(data,true) }
+        val data=KnockValues.from(packet)
+        compose.runOnIdle { state.value=data }
         compose.onNodeWithTag("knock_begin-value", useUnmergedTree=true).assertTextEquals(formattedDegrees(12.5f))
         compose.onNodeWithTag("knock_channel_1").performScrollTo().assertIsDisplayed()
         compose.onNodeWithTag("knock_channel_8").performScrollTo().assertIsDisplayed()
         compose.onNodeWithTag("knock_selector_bpf").performScrollTo().assertIsDisplayed()
-        compose.runOnIdle { state.value=KnockUiState.Data(data,true) }
+        compose.runOnIdle { state.value=data }
         assertEquals(0,calls)
     }
 
@@ -67,25 +71,25 @@ class KnockScreenTest {
         val packet = KnockParamPacket(kWndBeginAngle = 12.5f, selectedChanels = 0xA5)
         val bpfOptions = listOf("1 kHz", "2 kHz")
         val integrationOptions = listOf("10 ms", "20 ms")
-        val state = mutableStateOf<KnockUiState>(KnockUiState.Data(KnockValues.from(packet, bpfOptions, integrationOptions), false))
+        val state = mutableStateOf<KnockValues?>(KnockValues.from(packet))
         compose.setContent {
             SecuComposeTheme {
-                KnockScreen(state.value, { number ->
+                KnockScreen(state.value, bpfOptions, integrationOptions, { number ->
                     actions += "edit:$number"
                     packet.kWndBeginAngle = 22.25f
-                    state.value = KnockUiState.Data(KnockValues.from(packet, bpfOptions, integrationOptions), false)
+                    state.value = KnockValues.from(packet)
                 }, { checked ->
                     actions += "enable:$checked"
                     packet.useKnockChannel = if (checked) 1 else 0
-                    state.value = KnockUiState.Data(KnockValues.from(packet, bpfOptions, integrationOptions), checked)
+                    state.value = KnockValues.from(packet)
                 }, { index, checked ->
                     actions += "channel:$index:$checked"
                     packet.selectKnockChanel(index, checked)
-                    state.value = KnockUiState.Data(KnockValues.from(packet, bpfOptions, integrationOptions), false)
+                    state.value = KnockValues.from(packet)
                 }, { selector, index ->
                     actions += "selector:$selector:$index"
                     if (selector == KnockSelector.BPF) packet.bpfFrequency = index else packet.intTimeCost = index
-                    state.value = KnockUiState.Data(KnockValues.from(packet, bpfOptions, integrationOptions), false)
+                    state.value = KnockValues.from(packet)
                 })
             }
         }
@@ -116,6 +120,30 @@ class KnockScreenTest {
         compose.onNodeWithTag("knock_selector_integration").performScrollTo().performClick()
         compose.onNodeWithTag("knock_selector_option_1").performClick()
         assertEquals("selector:INTEGRATION:1", actions.last())
+    }
+
+    @Test fun resourceOptionCountsMatchProtocolCodeRangesAndUnknownCodesStayVisibleOnCancel() {
+        val bpfOptions = context.resources.getStringArray(org.secu3.android.R.array.knock_filter_frequencies).toList()
+        val integrationOptions = context.resources.getStringArray(org.secu3.android.R.array.knock_integration_timeouts).toList()
+        assertEquals(64, bpfOptions.size)
+        assertEquals(32, integrationOptions.size)
+        assertTrue(bpfOptions.first().isNotBlank())
+        assertTrue(integrationOptions.first().isNotBlank())
+
+        var selections = 0
+        val values = KnockValues.from(KnockParamPacket(bpfFrequency = 64, intTimeCost = 32))
+        compose.setContent {
+            SecuComposeTheme {
+                KnockScreen(values, bpfOptions, integrationOptions, {}, {}, { _, _ -> }, { _, _ -> selections++ })
+            }
+        }
+        compose.onNodeWithTag("knock_selector_bpf").performScrollTo().assertTextContains("Code 64")
+        compose.onNodeWithTag("knock_selector_integration").performScrollTo().assertTextContains("Code 32")
+
+        compose.onNodeWithTag("knock_selector_bpf").performClick()
+        compose.onNodeWithText(context.getString(android.R.string.cancel)).performClick()
+        compose.onNodeWithTag("knock_selector_bpf").assertTextContains("Code 64")
+        assertEquals(0, selections)
     }
 
 }

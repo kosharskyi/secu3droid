@@ -40,7 +40,7 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import org.secu3.android.ui.parameters.compose.ParameterLoadingIndicator
 import org.secu3.android.R
-import org.secu3.android.models.packets.out.params.KnockParamPacket
+import org.secu3.android.domain.parameters.KnockValues
 import org.secu3.android.ui.parameters.compose.ParameterSwitchRow
 import org.secu3.android.ui.parameters.compose.ParameterValueRow
 import org.secu3.android.ui.parameters.compose.ParameterPage
@@ -57,18 +57,17 @@ enum class KnockNumber(@StringRes val title: Int, val units: KnockUnits, val pre
     MAX_RETARD(R.string.knock_par_maximal_angle_displacement_title, KnockUnits.DEGREES, 2, 0f, 25f, .25f),
     THRESHOLD(R.string.knock_par_knock_threshold_title, KnockUnits.VOLTS, 2, .1f, 5f, .01f),
     DELAY(R.string.knock_par_angle_recovery_delay_title, KnockUnits.STR, 0, 1f, 99f, 1f),
-    CONTROL(R.string.knock_par_knock_threshold_control_title, KnockUnits.CELSIUS, 2, -40f, 120f, .25f),
-}
-fun applyKnockNumber(packet: KnockParamPacket, number: KnockNumber, value: Float) {
-    when (number) {
-        KnockNumber.BEGIN -> packet.kWndBeginAngle = value
-        KnockNumber.END -> packet.kWndEndAngle = value
-        KnockNumber.RETARD -> packet.retardStep = value
-        KnockNumber.ADVANCE -> packet.advanceStep = value
-        KnockNumber.MAX_RETARD -> packet.maxRetard = value
-        KnockNumber.THRESHOLD -> packet.threshold = value
-        KnockNumber.DELAY -> packet.recoveryDelay = value.toInt()
-        KnockNumber.CONTROL -> packet.knkctlThrd = value
+    CONTROL(R.string.knock_par_knock_threshold_control_title, KnockUnits.CELSIUS, 2, -40f, 120f, .25f);
+
+    fun value(values: KnockValues): Float = when (this) {
+        BEGIN -> values.windowBegin
+        END -> values.windowEnd
+        RETARD -> values.retardStep
+        ADVANCE -> values.advanceStep
+        MAX_RETARD -> values.maxRetard
+        THRESHOLD -> values.voltageThreshold
+        DELAY -> values.recoveryDelay.toFloat()
+        CONTROL -> values.coolantThreshold
     }
 }
 
@@ -83,79 +82,41 @@ enum class KnockSelector(@StringRes val title: Int) {
     BPF(R.string.knock_par_knock_filter_frequency_title),
     INTEGRATION(R.string.knock_par_integration_timeout_title),
 }
-data class KnockValues(
-    val numbers: Map<KnockNumber, Float>,
-    val selectedChannels: Int,
-    val bpfIndex: Int,
-    val integrationIndex: Int,
-    val bpfOptions: List<String>,
-    val integrationOptions: List<String>,
-) {
-    fun value(number: KnockNumber): Float = numbers.getValue(number)
-    fun channels(): List<Boolean> = (0..7).map { selectedChannels and (1 shl it) != 0 }
-    fun selector(selector: KnockSelector): String {
-        val index = if (selector == KnockSelector.BPF) bpfIndex else integrationIndex
-        val options = if (selector == KnockSelector.BPF) bpfOptions else integrationOptions
-        return options.getOrNull(index) ?: "Code $index"
-    }
-
-    companion object {
-        fun from(packet: KnockParamPacket, bpfOptions: List<String>, integrationOptions: List<String>) = KnockValues(
-            numbers = mapOf(
-                KnockNumber.BEGIN to packet.kWndBeginAngle,
-                KnockNumber.END to packet.kWndEndAngle,
-                KnockNumber.RETARD to packet.retardStep,
-                KnockNumber.ADVANCE to packet.advanceStep,
-                KnockNumber.MAX_RETARD to packet.maxRetard,
-                KnockNumber.THRESHOLD to packet.threshold,
-                KnockNumber.DELAY to packet.recoveryDelay.toFloat(),
-                KnockNumber.CONTROL to packet.knkctlThrd,
-            ),
-            selectedChannels = packet.selectedChanels,
-            bpfIndex = packet.bpfFrequency,
-            integrationIndex = packet.intTimeCost,
-            bpfOptions = bpfOptions.toList(),
-            integrationOptions = integrationOptions.toList(),
-        )
-    }
-}
-
-sealed interface KnockUiState {
-    data object Loading : KnockUiState
-    data class Data(val values: KnockValues, val enabled: Boolean) : KnockUiState
-}
-
 @Composable
 fun KnockScreen(
-    state: KnockUiState,
+    values: KnockValues?,
+    bpfOptions: List<String>,
+    integrationOptions: List<String>,
     onEdit: (KnockNumber) -> Unit,
     onEnable: (Boolean) -> Unit,
     onChannel: (Int, Boolean) -> Unit,
     onSelector: (KnockSelector, Int) -> Unit,
 ) {
     val pageScrollState = rememberScrollState()
-    when (state) {
-        KnockUiState.Loading -> ParameterLoadingIndicator("knock_loading")
-
-        is KnockUiState.Data -> ParameterPage(scrollState = pageScrollState) {
+    if (values == null) {
+        ParameterLoadingIndicator("knock_loading")
+    } else {
+        ParameterPage(scrollState = pageScrollState) {
             ParameterSection {
                 ParameterSwitchRow(
                     title = stringResource(R.string.knock_par_use_knock_sensor_title),
-                    checked = state.enabled,
+                    checked = values.useKnockChannel > 0,
                     testTag = "knock_enable",
                     onCheckedChange = onEnable,
                 )
                 listOf(KnockNumber.BEGIN, KnockNumber.END).forEach { number ->
-                    NumberRow(number, state.values, onEdit)
+                    NumberRow(number, values, onEdit)
                 }
                 KnockSelector.entries.forEach { selector ->
                     val options = if (selector == KnockSelector.BPF) {
-                        state.values.bpfOptions
+                        bpfOptions
                     } else {
-                        state.values.integrationOptions
+                        integrationOptions
                     }
-                    KnockSelectorRow(selector, state.values.selector(selector), options) { index ->
-                        onSelector(selector, index)
+                    val code = if (selector == KnockSelector.BPF) values.bpfFrequencyCode else values.integrationTimeoutCode
+                    val selected = options.getOrNull(code) ?: "Code $code"
+                    KnockSelectorRow(selector, selected, options) { code ->
+                        onSelector(selector, code)
                     }
                 }
                 listOf(
@@ -165,7 +126,7 @@ fun KnockScreen(
                     KnockNumber.THRESHOLD,
                     KnockNumber.DELAY,
                 ).forEach { number ->
-                    NumberRow(number, state.values, onEdit)
+                    NumberRow(number, values, onEdit)
                 }
                 Text(
                     stringResource(R.string.knock_par_select_knock_sensor_title),
@@ -184,7 +145,7 @@ fun KnockScreen(
                                 verticalAlignment = Alignment.CenterVertically,
                             ) {
                                 Checkbox(
-                                    checked = state.values.channels()[channel],
+                                    checked = values.isChannelSelected(channel),
                                     onCheckedChange = { onChannel(channel, it) },
                                     modifier = Modifier.testTag("knock_channel_checkbox_${channel + 1}"),
                                 )
@@ -194,7 +155,7 @@ fun KnockScreen(
                     }
                     if (rowIndex < 1) HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant)
                 }
-                NumberRow(KnockNumber.CONTROL, state.values, onEdit)
+                NumberRow(KnockNumber.CONTROL, values, onEdit)
             }
         }
     }
@@ -209,7 +170,7 @@ private fun NumberRow(
     ParameterValueRow(
         title = stringResource(number.title),
         units = stringResource(number.units.resource),
-        value = values.value(number),
+        value = number.value(values),
         precision = number.precision,
         testTag = "knock_${number.name.lowercase()}",
         onClick = { onEdit(number) },

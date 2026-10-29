@@ -158,8 +158,29 @@ internal fun ParameterPageContent(
             CkpsScreen(values, { n -> values?.let { v -> if (n.integer) intEdit(n.title, n.value(v).toInt(), n.step.toInt(), n.max.toInt(), n.min.toInt()) { viewModel.editCkps(n, it.toFloat()) } else floatEdit(n.title, n.value(v), n.step, n.max, n.min, n.precision) { viewModel.editCkps(n, it.toFloat()) } } }, viewModel::toggleCkps, viewModel::selectCkpsChoice, capabilities = capabilities)
         }
         R.string.params_tab_knock_title -> {
-            val h = viewModel.knockStateHolder
-            KnockScreen(h.state, { n -> (h.state as? KnockUiState.Data)?.values?.let { v -> if (n == KnockNumber.DELAY) intEdit(n.title, v.value(n).toInt(), n.step.toInt(), n.max.toInt(), n.min.toInt()) { h.updateValue(n, it.toFloat()) } else floatEdit(n.title, v.value(n), n.step, n.max, n.min, n.precision) { h.updateValue(n, it.toFloat()) } } }, h::updateEnabled, h::updateChannel, h::updateSelector)
+            val control = viewModel.knockControl
+            val values by control.values.collectAsStateWithLifecycle()
+            KnockScreen(
+                values = values,
+                bpfOptions = stringArrayResource(R.array.knock_filter_frequencies).toList(),
+                integrationOptions = stringArrayResource(R.array.knock_integration_timeouts).toList(),
+                onEdit = { number ->
+                    val current = values ?: return@KnockScreen
+                    if (number == KnockNumber.DELAY) {
+                        intEdit(number.title, current.recoveryDelay, number.step.toInt(), number.max.toInt(), number.min.toInt()) {
+                            viewModel.editKnockDelay(it)
+                        }
+                    } else {
+                        val value = number.value(current)
+                        floatEdit(number.title, value, number.step, number.max, number.min, number.precision) {
+                            viewModel.editKnockFloat(number, it)
+                        }
+                    }
+                },
+                onEnable = viewModel::setKnockEnabled,
+                onChannel = viewModel::selectKnockChannel,
+                onSelector = viewModel::selectKnock,
+            )
         }
         R.string.params_tab_miscellaneous_title -> {
             val control = viewModel.miscellaneousControl

@@ -58,6 +58,7 @@ import org.secu3.android.domain.parameters.StarterControl
 import org.secu3.android.domain.parameters.TemperatureControl
 import org.secu3.android.domain.parameters.CarburControl
 import org.secu3.android.domain.parameters.IdlingControl
+import org.secu3.android.domain.parameters.KnockControl
 import org.secu3.android.domain.parameters.SecurityCredentialsResult
 import org.secu3.android.models.packets.base.OutputPacket
 import org.secu3.android.models.packets.out.params.AccelerationParamPacket
@@ -81,11 +82,12 @@ import org.secu3.android.ui.parameters.pages.compose.AnglesFlag
 import org.secu3.android.ui.parameters.pages.compose.AnglesNumber
 import org.secu3.android.ui.parameters.pages.compose.CarburNumber
 import org.secu3.android.ui.parameters.pages.compose.AdcCorrectionsStateHolder
-import org.secu3.android.ui.parameters.pages.compose.KnockStateHolder
 import org.secu3.android.ui.parameters.pages.compose.LambdaControlStateHolder
 import org.secu3.android.ui.parameters.pages.compose.LtftStateHolder
 import org.secu3.android.ui.parameters.pages.compose.IdlingNumber
 import org.secu3.android.ui.parameters.pages.compose.IdlingFlag
+import org.secu3.android.ui.parameters.pages.compose.KnockNumber
+import org.secu3.android.ui.parameters.pages.compose.KnockSelector
 import org.secu3.android.ui.parameters.pages.compose.TemperatureFlag
 import org.secu3.android.ui.parameters.pages.compose.TemperatureNumber
 import org.secu3.android.ui.parameters.pages.AccelerationStateHolder
@@ -120,6 +122,7 @@ class ParamsViewModel @Inject constructor(
     internal val temperatureControl: TemperatureControl,
     internal val carburControl: CarburControl,
     internal val idlingControl: IdlingControl,
+    internal val knockControl: KnockControl,
     private val uiMessageQueue: UiMessageQueue,
     private val parameterPageCatalog: ParameterPageCatalog,
 ) : ViewModel() {
@@ -335,18 +338,41 @@ class ParamsViewModel @Inject constructor(
         return admitted
     }
 
-    internal val adcCorrectionsStateHolder by lazy {
-        AdcCorrectionsStateHolder(::sendPacket, { isSendAllowed = false }, { isSendAllowed = true })
+    internal fun editKnockFloat(number: KnockNumber, value: Float): Boolean {
+        val admitted = when (number) {
+            KnockNumber.BEGIN -> knockControl.editWindowBegin(value)
+            KnockNumber.END -> knockControl.editWindowEnd(value)
+            KnockNumber.RETARD -> knockControl.editRetardStep(value)
+            KnockNumber.ADVANCE -> knockControl.editAdvanceStep(value)
+            KnockNumber.MAX_RETARD -> knockControl.editMaxRetard(value)
+            KnockNumber.THRESHOLD -> knockControl.editVoltageThreshold(value)
+            KnockNumber.CONTROL -> knockControl.editCoolantThreshold(value)
+            KnockNumber.DELAY -> false
+        }
+        return reportKnockEdit(admitted)
     }
 
-    internal val knockStateHolder by lazy {
-        KnockStateHolder(
-            bpfOptions = context.resources.getStringArray(R.array.knock_filter_frequencies).toList(),
-            integrationOptions = context.resources.getStringArray(R.array.knock_integration_timeouts).toList(),
-            sendPacket = ::sendPacket,
-            onPacketMapping = { isSendAllowed = false },
-            onPacketMapped = { isSendAllowed = true },
-        )
+    internal fun editKnockDelay(value: Int): Boolean = reportKnockEdit(knockControl.editRecoveryDelay(value))
+
+    internal fun setKnockEnabled(enabled: Boolean): Boolean = reportKnockEdit(knockControl.setKnockEnabled(enabled))
+
+    internal fun selectKnockChannel(channel: Int, checked: Boolean): Boolean =
+        reportKnockEdit(knockControl.selectChannel(channel, checked))
+
+    internal fun selectKnock(selector: KnockSelector, code: Int): Boolean = reportKnockEdit(
+        when (selector) {
+            KnockSelector.BPF -> knockControl.selectBpfFrequency(code)
+            KnockSelector.INTEGRATION -> knockControl.selectIntegrationTimeout(code)
+        },
+    )
+
+    private fun reportKnockEdit(admitted: Boolean): Boolean {
+        if (admitted) showUiMessage(R.string.packet_sent, UiMessageDuration.SHORT)
+        return admitted
+    }
+
+    internal val adcCorrectionsStateHolder by lazy {
+        AdcCorrectionsStateHolder(::sendPacket, { isSendAllowed = false }, { isSendAllowed = true })
     }
 
     internal val lambdaControlStateHolder by lazy {
@@ -664,7 +690,7 @@ class ParamsViewModel @Inject constructor(
             ParameterPage.FUEL_CUTOFF -> carburControl.reset()
             ParameterPage.CKPS -> ckpsControl.reset()
             ParameterPage.ADC_ERRORS -> adcCorrectionsStateHolder.reset()
-            ParameterPage.KNOCK -> knockStateHolder.reset()
+            ParameterPage.KNOCK -> knockControl.reset()
             ParameterPage.LAMBDA_CONTROL -> lambdaControlStateHolder.reset()
             ParameterPage.ACCELERATION -> accelerationStateHolder.reset()
             ParameterPage.LTFT -> ltftStateHolder.reset()
@@ -699,7 +725,7 @@ class ParamsViewModel @Inject constructor(
             ParameterPage.FUEL_CUTOFF -> carburControl.receive(packet<CarburParamPacket>(result))
             ParameterPage.CKPS -> ckpsControl.receive(packet<CkpsParamPacket>(result))
             ParameterPage.ADC_ERRORS -> adcCorrectionsStateHolder.onPacketReceived(packet<AdcCorrectionsParamPacket>(result))
-            ParameterPage.KNOCK -> knockStateHolder.onPacketReceived(packet<KnockParamPacket>(result))
+            ParameterPage.KNOCK -> knockControl.receive(packet<KnockParamPacket>(result))
             ParameterPage.LAMBDA_CONTROL -> lambdaControlStateHolder.onPacketReceived(packet<LambdaParamPacket>(result))
             ParameterPage.ACCELERATION -> accelerationStateHolder.onPacketReceived(packet<AccelerationParamPacket>(result))
             ParameterPage.LTFT -> ltftStateHolder.receive(packet<LtftParamPacket>(result))

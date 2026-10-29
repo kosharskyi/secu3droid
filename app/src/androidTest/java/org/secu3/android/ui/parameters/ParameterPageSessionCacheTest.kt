@@ -45,6 +45,7 @@ import org.secu3.android.models.packets.out.params.StarterParamPacket
 import org.secu3.android.models.packets.out.params.TemperatureParamPacket
 import org.secu3.android.models.packets.out.params.CarburParamPacket
 import org.secu3.android.models.packets.out.params.IdlingParamPacket
+import org.secu3.android.models.packets.out.params.KnockParamPacket
 import org.secu3.android.models.packets.out.ChangeModePacket
 import org.secu3.android.utils.UserPrefs
 import org.secu3.android.ui.MainActivity
@@ -53,6 +54,8 @@ import org.secu3.android.ui.parameters.pages.compose.AnglesNumber
 import org.secu3.android.ui.parameters.pages.compose.StarterNumber
 import org.secu3.android.ui.parameters.pages.compose.TemperatureFlag
 import org.secu3.android.ui.parameters.pages.compose.TemperatureNumber
+import org.secu3.android.ui.parameters.pages.compose.KnockNumber
+import org.secu3.android.ui.parameters.pages.compose.KnockSelector
 import org.secu3.android.ui.parameters.pages.compose.ChokeNumber
 import java.lang.reflect.Proxy
 import java.util.concurrent.CountDownLatch
@@ -289,6 +292,67 @@ class ParameterPageSessionCacheTest {
             assertEquals(afterWrites, usb.writes.size)
             assertEquals(committed, vm.idlingControl.values.value)
             assertFalse(queue.pending.value.any { it.textRes == R.string.packet_sent })
+        } finally {
+            try {
+                transport?.close()
+            } finally {
+                try {
+                    compose.runOnIdle { vm.clearPageState() }
+                } finally {
+                    queue.onActiveScopeChanged(originalActiveScope)
+                    compose.activityRule.scenario.moveToState(Lifecycle.State.RESUMED)
+                }
+            }
+        }
+    }
+
+    @Test fun knockCommandsUseSessionAdmissionDespiteLegacyGateAndRejectAfterPause() = runBlocking {
+        val vm = paramsViewModel()
+        var transport: FakeUsbTransport? = null
+        val queueField = ParamsViewModel::class.java.getDeclaredField("uiMessageQueue").apply { isAccessible = true }
+        val queue = queueField.get(vm) as org.secu3.android.ui.messages.UiMessageQueue
+        val originalActiveScope = queue.activeScope.value
+        try {
+            val usb = installFakeUsb(vm).also { transport = it }
+            activate(vm, R.string.params_tab_knock_title)
+            usb.awaitReadRequest('w', 1)
+            usb.emit(KnockParamPacket(
+                useKnockChannel = 2, bpfFrequency = 63, kWndBeginAngle = -3.75f,
+                intTimeCost = 31, recoveryDelay = 12, selectedChanels = 0x05,
+            ))
+            await { vm.knockControl.values.value?.useKnockChannel == 2 }
+
+            compose.activityRule.scenario.moveToState(Lifecycle.State.STARTED)
+            compose.waitForIdle()
+            queue.onActiveScopeChanged(PARAMETERS_ROUTE)
+            queue.pending.value.forEach { queue.acknowledge(it.id) }
+            vm.isSendAllowed = false
+            val baseline = usb.writes.size
+
+            assertTrue(vm.editKnockDelay(18))
+            assertTrue(vm.selectKnock(KnockSelector.BPF, 1))
+            assertTrue(vm.selectKnockChannel(7, true))
+            usb.awaitWriteCount(baseline + 3)
+            assertEquals('w', usb.writes[baseline][1].toInt().toChar())
+            assertEquals('w', usb.writes[baseline + 1][1].toInt().toChar())
+            assertEquals('w', usb.writes[baseline + 2][1].toInt().toChar())
+            assertEquals(18, vm.knockControl.values.value?.recoveryDelay)
+            assertEquals(1, vm.knockControl.values.value?.bpfFrequencyCode)
+            assertTrue(vm.knockControl.values.value!!.isChannelSelected(7))
+            assertEquals(2, vm.knockControl.values.value?.useKnockChannel)
+            assertTrue(queue.pending.value.any { it.textRes == R.string.packet_sent })
+
+            queue.pending.value.forEach { queue.acknowledge(it.id) }
+            val committed = vm.knockControl.values.value
+            val writesBeforePause = usb.writes.size
+            compose.runOnIdle {
+                vm.pausePageSession()
+                assertFalse(vm.editKnockFloat(KnockNumber.BEGIN, 4f))
+            }
+            assertEquals(writesBeforePause, usb.writes.size)
+            assertEquals(committed, vm.knockControl.values.value)
+            assertFalse(queue.pending.value.any { it.textRes == R.string.packet_sent })
+            assertFalse(vm.isSendAllowed)
         } finally {
             try {
                 transport?.close()
