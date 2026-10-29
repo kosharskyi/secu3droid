@@ -66,6 +66,10 @@ The domain values retain signed fractional timing/cranking degrees and fixed-poi
 
 Its integer editor rounds only for display. Preserve the decoded Float through unrelated edits, and store an explicit whole-percent selection as a Float so the packet can retain its fixed-point resolution.
 
+## Acceleration dependent fields follow desktop mode predicates
+
+AE_TIME is shown only for non-pump modes and is enabled only for fuel injection with time mode selected. Xtau rows are shown only when the current wallwet model is nonzero and are enabled only for fuel injection. The domain repeats those live predicates when admitting commands; unknown selector codes remain visible until explicit selection.
+
 
 ## Idling rows keep positive and negative P/I meanings explicit
 

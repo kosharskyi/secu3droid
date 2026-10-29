@@ -46,6 +46,7 @@ import org.secu3.android.models.packets.out.params.TemperatureParamPacket
 import org.secu3.android.models.packets.out.params.CarburParamPacket
 import org.secu3.android.models.packets.out.params.IdlingParamPacket
 import org.secu3.android.models.packets.out.params.KnockParamPacket
+import org.secu3.android.models.packets.out.params.AccelerationParamPacket
 import org.secu3.android.models.packets.out.ChangeModePacket
 import org.secu3.android.utils.UserPrefs
 import org.secu3.android.ui.MainActivity
@@ -56,6 +57,7 @@ import org.secu3.android.ui.parameters.pages.compose.TemperatureFlag
 import org.secu3.android.ui.parameters.pages.compose.TemperatureNumber
 import org.secu3.android.ui.parameters.pages.compose.KnockNumber
 import org.secu3.android.ui.parameters.pages.compose.KnockSelector
+import org.secu3.android.ui.parameters.pages.compose.AccelerationNumber
 import org.secu3.android.ui.parameters.pages.compose.ChokeNumber
 import java.lang.reflect.Proxy
 import java.util.concurrent.CountDownLatch
@@ -187,6 +189,77 @@ class ParameterPageSessionCacheTest {
             assertEquals(beforeUnsupportedEdit, usb.writes.size)
             assertEquals(committed, vm.starterControl.values.value)
             assertFalse(queue.pending.value.any { it.textRes == R.string.packet_sent })
+        } finally {
+            try {
+                transport?.close()
+            } finally {
+                try {
+                    compose.runOnIdle { vm.clearPageState() }
+                } finally {
+                    queue.onActiveScopeChanged(originalActiveScope)
+                    compose.activityRule.scenario.moveToState(Lifecycle.State.RESUMED)
+                }
+            }
+        }
+    }
+
+    @Test fun accelerationVmRoutesTypedEditsWithoutLegacyGateAndHonorsFirmwareAndPause() = runBlocking {
+        val vm = paramsViewModel()
+        var transport: FakeUsbTransport? = null
+        val queueField = ParamsViewModel::class.java.getDeclaredField("uiMessageQueue").apply { isAccessible = true }
+        val queue = queueField.get(vm) as org.secu3.android.ui.messages.UiMessageQueue
+        val originalActiveScope = queue.activeScope.value
+        try {
+            val usb = installFakeUsb(vm, firmwareOptions = 1 shl 28).also { transport = it }
+            activate(vm, R.string.params_tab_acceleration_title)
+            usb.awaitReadRequest('|', 1)
+            usb.emit(AccelerationParamPacket(
+                injAeTpsdotThrd = 42, injAeColdaccMult = 150f, injAeDecayTime = 7,
+                injAeType = 1, injAeTime = 12, injAeBallance = 50f,
+                injAeMapdotThrd = 13, injXtauSThrd = -25f, injXtauFThrd = -8f,
+                wallwetModel = 1,
+            ))
+            await { vm.accelerationControl.values.value?.tpsThreshold == 42 }
+
+            compose.activityRule.scenario.moveToState(Lifecycle.State.STARTED)
+            compose.waitForIdle()
+            queue.onActiveScopeChanged(PARAMETERS_ROUTE)
+            queue.pending.value.forEach { queue.acknowledge(it.id) }
+            val baseline = usb.writes.size
+            vm.isSendAllowed = false
+
+            compose.runOnIdle {
+                assertTrue(vm.editAcceleration(AccelerationNumber.TPS_THRESHOLD, 73))
+                assertTrue(vm.editAcceleration(AccelerationNumber.COLD_MULTIPLIER, 250))
+            }
+            usb.awaitWriteCount(baseline + 2)
+            assertEquals('|', usb.writes[baseline][1].toInt().toChar())
+            assertEquals(73, usb.writes[baseline][2].toInt() and 0xff)
+            assertEquals(73, usb.writes[baseline + 1][2].toInt() and 0xff)
+            assertEquals(0, usb.writes[baseline + 1][3].toInt() and 0xff)
+            assertEquals(0xC0, usb.writes[baseline + 1][4].toInt() and 0xff)
+            assertEquals(250f, vm.accelerationControl.values.value?.coldMultiplier)
+            assertTrue(queue.pending.value.any { it.textRes == R.string.packet_sent })
+
+            queue.pending.value.forEach { queue.acknowledge(it.id) }
+            usb.emitFirmware(options = 0)
+            await { vm.capabilities.value.known && !vm.capabilities.value.fuelInjection }
+            val beforeUnsupportedEdit = usb.writes.size
+            compose.runOnIdle { assertFalse(vm.editAcceleration(AccelerationNumber.TPS_THRESHOLD, 74)) }
+            delay(100)
+            assertEquals(beforeUnsupportedEdit, usb.writes.size)
+            assertFalse(queue.pending.value.any { it.textRes == R.string.packet_sent })
+
+            queue.pending.value.forEach { queue.acknowledge(it.id) }
+            usb.emitFirmware(options = 1 shl 28)
+            await { vm.capabilities.value.fuelInjection }
+            val committed = vm.accelerationControl.values.value
+            compose.runOnIdle {
+                vm.pausePageSession()
+                assertFalse(vm.editAcceleration(AccelerationNumber.TPS_THRESHOLD, 75))
+            }
+            assertEquals(beforeUnsupportedEdit, usb.writes.size)
+            assertEquals(committed, vm.accelerationControl.values.value)
         } finally {
             try {
                 transport?.close()

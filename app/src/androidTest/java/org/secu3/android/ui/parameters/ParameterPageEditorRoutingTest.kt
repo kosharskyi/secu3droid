@@ -39,6 +39,7 @@ import org.secu3.android.models.packets.out.params.TemperatureParamPacket
 import org.secu3.android.models.packets.out.params.CarburParamPacket
 import org.secu3.android.models.packets.out.params.IdlingParamPacket
 import org.secu3.android.models.packets.out.params.KnockParamPacket
+import org.secu3.android.models.packets.out.params.AccelerationParamPacket
 import org.secu3.android.ui.MainActivity
 import org.secu3.android.ui.compose.SecuComposeTheme
 import org.secu3.android.ui.parameters.pages.compose.StarterNumber
@@ -46,6 +47,7 @@ import org.secu3.android.ui.parameters.pages.compose.TemperatureNumber
 import org.secu3.android.ui.parameters.pages.compose.CarburNumber
 import org.secu3.android.ui.parameters.pages.compose.IdlingNumber
 import org.secu3.android.ui.parameters.pages.compose.KnockNumber
+import org.secu3.android.ui.parameters.pages.compose.AccelerationNumber
 import org.secu3.android.ui.parameters.dialogs.NumericEditDialog
 
 class ParameterPageEditorRoutingTest {
@@ -192,6 +194,30 @@ class ParameterPageEditorRoutingTest {
         assertEquals(2.25f, control.values.value?.windowBegin)
         assertEquals(17, control.values.value?.recoveryDelay)
         assertFalse(vm.isSendAllowed)
+    }
+
+    @Test fun accelerationEditorRoundsColdMultiplierOnlyForTheIntegerEditor() {
+        val vm = paramsViewModel()
+        val packet = AccelerationParamPacket(injAeColdaccMult = 100.78125f)
+        compose.runOnIdle {
+            vm.accelerationControl.reset()
+            vm.accelerationControl.receive(packet)
+        }
+        renderPage(R.string.params_tab_acceleration_title, vm)
+
+        compose.onNodeWithTag("acceleration_cold_multiplier").performScrollTo().performClick()
+        val session = requireNotNull(vm.parameterEditSession)
+        val request = session.request as ParameterEditRequest.IntValue
+        assertEquals(101, request.value)
+        assertEquals(100, request.min)
+        assertEquals(600, request.max)
+        assertEquals(1, request.step)
+        assertEquals(100.78125f, vm.accelerationControl.values.value?.coldMultiplier)
+
+        compose.runOnIdle { vm.dismissParameterEditor(session.id) }
+        assertEquals(100.78125f, vm.accelerationControl.values.value?.coldMultiplier)
+        assertFalse(vm.editAcceleration(AccelerationNumber.COLD_MULTIPLIER, 99))
+        assertEquals(100.78125f, vm.accelerationControl.values.value?.coldMultiplier)
     }
 
     @Test fun carburEditorRowsRouteAllNamedValuesThroughTheMatchingEditorContract() {

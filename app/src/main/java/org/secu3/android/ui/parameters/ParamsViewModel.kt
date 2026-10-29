@@ -59,6 +59,7 @@ import org.secu3.android.domain.parameters.TemperatureControl
 import org.secu3.android.domain.parameters.CarburControl
 import org.secu3.android.domain.parameters.IdlingControl
 import org.secu3.android.domain.parameters.KnockControl
+import org.secu3.android.domain.parameters.AccelerationControl
 import org.secu3.android.domain.parameters.SecurityCredentialsResult
 import org.secu3.android.models.packets.base.OutputPacket
 import org.secu3.android.models.packets.out.params.AccelerationParamPacket
@@ -88,9 +89,9 @@ import org.secu3.android.ui.parameters.pages.compose.IdlingNumber
 import org.secu3.android.ui.parameters.pages.compose.IdlingFlag
 import org.secu3.android.ui.parameters.pages.compose.KnockNumber
 import org.secu3.android.ui.parameters.pages.compose.KnockSelector
+import org.secu3.android.ui.parameters.pages.compose.AccelerationNumber
 import org.secu3.android.ui.parameters.pages.compose.TemperatureFlag
 import org.secu3.android.ui.parameters.pages.compose.TemperatureNumber
-import org.secu3.android.ui.parameters.pages.AccelerationStateHolder
 import org.secu3.android.ui.parameters.pages.MiscField
 import org.secu3.android.ui.parameters.pages.MiscToggle
 import org.secu3.android.ui.parameters.pages.compose.FunctionsStateHolder
@@ -123,6 +124,7 @@ class ParamsViewModel @Inject constructor(
     internal val carburControl: CarburControl,
     internal val idlingControl: IdlingControl,
     internal val knockControl: KnockControl,
+    internal val accelerationControl: AccelerationControl,
     private val uiMessageQueue: UiMessageQueue,
     private val parameterPageCatalog: ParameterPageCatalog,
 ) : ViewModel() {
@@ -371,16 +373,34 @@ class ParamsViewModel @Inject constructor(
         return admitted
     }
 
+    internal fun editAcceleration(number: AccelerationNumber, value: Int): Boolean {
+        val admitted = when (number) {
+            AccelerationNumber.TPS_THRESHOLD -> accelerationControl.editTpsThreshold(value)
+            AccelerationNumber.COLD_MULTIPLIER -> accelerationControl.editColdMultiplier(value)
+            AccelerationNumber.DECAY_TIME -> accelerationControl.editDecayTime(value)
+            AccelerationNumber.AE_TIME -> accelerationControl.editAeTime(value)
+            AccelerationNumber.MAPDOT_THRESHOLD -> accelerationControl.editMapdotThreshold(value)
+            AccelerationNumber.XTAU_START -> accelerationControl.editXtauStart(value)
+            AccelerationNumber.XTAU_FINISH -> accelerationControl.editXtauFinish(value)
+        }
+        return reportAccelerationEdit(admitted)
+    }
+
+    internal fun selectAccelerationAeType(code: Int): Boolean = reportAccelerationEdit(accelerationControl.selectAeType(code))
+    internal fun selectAccelerationWallwetModel(code: Int): Boolean = reportAccelerationEdit(accelerationControl.selectWallwetModel(code))
+    internal fun setAccelerationBalance(value: Float): Boolean = reportAccelerationEdit(accelerationControl.setBalance(value))
+
+    private fun reportAccelerationEdit(admitted: Boolean): Boolean {
+        if (admitted) showUiMessage(R.string.packet_sent, UiMessageDuration.SHORT)
+        return admitted
+    }
+
     internal val adcCorrectionsStateHolder by lazy {
         AdcCorrectionsStateHolder(::sendPacket, { isSendAllowed = false }, { isSendAllowed = true })
     }
 
     internal val lambdaControlStateHolder by lazy {
         LambdaControlStateHolder(::sendPacket, { isSendAllowed = false }, { isSendAllowed = true })
-    }
-
-    internal val accelerationStateHolder by lazy {
-        AccelerationStateHolder(::sendPacket) { isSendAllowed = it }
     }
 
     internal val ltftStateHolder by lazy {
@@ -692,7 +712,7 @@ class ParamsViewModel @Inject constructor(
             ParameterPage.ADC_ERRORS -> adcCorrectionsStateHolder.reset()
             ParameterPage.KNOCK -> knockControl.reset()
             ParameterPage.LAMBDA_CONTROL -> lambdaControlStateHolder.reset()
-            ParameterPage.ACCELERATION -> accelerationStateHolder.reset()
+            ParameterPage.ACCELERATION -> accelerationControl.reset()
             ParameterPage.LTFT -> ltftStateHolder.reset()
             ParameterPage.FUNCTIONS -> functionsStateHolder.reset()
             ParameterPage.MISCELLANEOUS -> miscellaneousControl.reset()
@@ -727,7 +747,7 @@ class ParamsViewModel @Inject constructor(
             ParameterPage.ADC_ERRORS -> adcCorrectionsStateHolder.onPacketReceived(packet<AdcCorrectionsParamPacket>(result))
             ParameterPage.KNOCK -> knockControl.receive(packet<KnockParamPacket>(result))
             ParameterPage.LAMBDA_CONTROL -> lambdaControlStateHolder.onPacketReceived(packet<LambdaParamPacket>(result))
-            ParameterPage.ACCELERATION -> accelerationStateHolder.onPacketReceived(packet<AccelerationParamPacket>(result))
+            ParameterPage.ACCELERATION -> accelerationControl.receive(packet<AccelerationParamPacket>(result))
             ParameterPage.LTFT -> ltftStateHolder.receive(packet<LtftParamPacket>(result))
             ParameterPage.FUNCTIONS -> {
                 val functionParameters = (result as ParameterReadResult.Functions).parameters

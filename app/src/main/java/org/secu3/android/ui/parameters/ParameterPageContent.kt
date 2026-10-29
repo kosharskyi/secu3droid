@@ -254,8 +254,15 @@ internal fun ParameterPageContent(
             LambdaControlScreen(h.values, sensorTypes, capabilities, { n -> h.values?.let { v -> if (n.integer) intEdit(n.title, v.value(n).toInt(), n.step.toInt(), n.max.toInt(), n.min.toInt()) { h.updateValue(n, it.toFloat()) } else floatEdit(n.title, v.value(n), n.step, n.max, n.min, n.precision) { h.updateValue(n, it.toFloat()) } } }, h::updateFlag, { h.updateSensorType(it, sensorTypes.size) }, { i, checked -> h.updateChannel(i, checked) })
         }
         R.string.params_tab_acceleration_title -> {
-            val h = viewModel.accelerationStateHolder
-            AccelerationScreen(h.values?.let(AccelerationUiState::Data) ?: AccelerationUiState.Loading, { n -> h.values?.let { v -> intEdit(n.titleRes, if (n == AccelerationNumber.COLD_MULTIPLIER) v.value(n).roundToInt() else v.value(n).toInt(), n.step.toInt(), n.max.toInt(), n.min.toInt()) { h.updateNumber(n, it.toFloat()) } } }, h::selectAeType, h::selectWallwetModel, h::setBalance, capabilities = capabilities)
+            val values by viewModel.accelerationControl.values.collectAsStateWithLifecycle()
+            AccelerationScreen(values, { number ->
+                values?.let { current ->
+                    val initial = if (number == AccelerationNumber.COLD_MULTIPLIER) number.value(current).roundToInt() else number.value(current).toInt()
+                    intEdit(number.titleRes, initial, number.step.toInt(), number.max.toInt(), number.min.toInt()) {
+                        viewModel.editAcceleration(number, it)
+                    }
+                }
+            }, viewModel::selectAccelerationAeType, viewModel::selectAccelerationWallwetModel, viewModel::setAccelerationBalance, capabilities = capabilities)
         }
         R.string.params_tab_gas_dose_title -> {
             val values by viewModel.gasDoseControl.values.collectAsStateWithLifecycle()

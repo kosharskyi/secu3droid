@@ -19,8 +19,7 @@ import org.secu3.android.ui.parameters.pages.UniversalOutputsScreen
 import org.secu3.android.ui.parameters.pages.UniversalOutputsValues
 import org.secu3.android.ui.parameters.pages.compose.AccelerationNumber
 import org.secu3.android.ui.parameters.pages.compose.AccelerationScreen
-import org.secu3.android.ui.parameters.pages.compose.AccelerationUiState
-import org.secu3.android.ui.parameters.pages.compose.AccelerationValues
+import org.secu3.android.domain.parameters.AccelerationValues
 import org.secu3.android.ui.parameters.pages.compose.CkpsScreen
 import org.secu3.android.domain.parameters.CkpsValues
 import org.secu3.android.ui.parameters.pages.compose.ChokeScreen
@@ -71,12 +70,7 @@ internal fun advancedParameterAppearanceFixtures(): List<ParameterAppearanceFixt
     val bank0 = FuelBankValues(240f, 1, 2, 360f, 10f, false, 0, 0.8f, 8f, listOf(0, 1, 2), listOf(1, 2, 3))
     val bank1 = FuelBankValues(240f, 2, 2, 360f, 10f, true, 1, 0.8f, 8f, listOf(0, 1, 2), listOf(1, 2, 3))
     val fuel = FuelInjectionValues(2.0f, listOf(bank0, bank1), 5500f, true, true, false, false, true, 2f, 2f)
-    val acceleration = AccelerationValues(
-        numbers = AccelerationNumber.entries.associateWith { 10f },
-        aeType = 1,
-        balance = 50f,
-        wallwetModel = 1,
-    )
+    val acceleration = AccelerationValues(10, 100f, 10, 1, 10, 50f, 10, -10f, -10f, 1)
     val outputNames = mapOf(0 to "RPM", 1 to "Coolant temperature", 2 to "Throttle position", 3 to "Vehicle speed")
     val outputs = UniversalOutputsValues(
         outputs = List(6) { index ->
@@ -145,7 +139,7 @@ internal fun advancedParameterAppearanceFixtures(): List<ParameterAppearanceFixt
             LambdaControlScreen(lambda, listOf("Narrowband", "Wideband"), ParameterCapabilities(FirmwareInfoPacket(options = (1 shl 28) or (1 shl 30))), {}, { _, _ -> }, {}, { _, _ -> })
         },
         ParameterAppearanceFixture("acceleration") {
-            AccelerationScreen(AccelerationUiState.Data(acceleration), {}, {}, {}, {})
+            AccelerationScreen(acceleration, {}, {}, {}, {})
         },
     )
 }
