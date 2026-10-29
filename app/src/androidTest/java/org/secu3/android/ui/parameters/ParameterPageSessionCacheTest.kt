@@ -34,6 +34,7 @@ import org.secu3.android.connection.PacketReceiver
 import org.secu3.android.models.RawPacket
 import org.secu3.android.domain.parameters.ParameterPage
 import org.secu3.android.domain.parameters.LtftValues
+import org.secu3.android.domain.parameters.DbwValues
 import org.secu3.android.models.packets.base.OutputPacket
 import org.secu3.android.models.packets.out.params.AnglesParamPacket
 import org.secu3.android.models.packets.out.params.GasDoseParamPacket
@@ -49,6 +50,7 @@ import org.secu3.android.models.packets.out.params.IdlingParamPacket
 import org.secu3.android.models.packets.out.params.KnockParamPacket
 import org.secu3.android.models.packets.out.params.AccelerationParamPacket
 import org.secu3.android.models.packets.out.params.LtftParamPacket
+import org.secu3.android.models.packets.out.params.DbwParamPacket
 import org.secu3.android.models.packets.out.ChangeModePacket
 import org.secu3.android.utils.UserPrefs
 import org.secu3.android.ui.MainActivity
@@ -61,6 +63,7 @@ import org.secu3.android.ui.parameters.pages.compose.KnockNumber
 import org.secu3.android.ui.parameters.pages.compose.KnockSelector
 import org.secu3.android.ui.parameters.pages.compose.AccelerationNumber
 import org.secu3.android.ui.parameters.pages.compose.LtftNumber
+import org.secu3.android.ui.parameters.pages.compose.DbwNumber
 import org.secu3.android.ui.parameters.pages.compose.ChokeNumber
 import java.lang.reflect.Proxy
 import java.util.concurrent.CountDownLatch
@@ -69,6 +72,7 @@ import java.util.concurrent.CopyOnWriteArrayList
 import java.util.concurrent.TimeUnit
 import java.util.concurrent.atomic.AtomicInteger
 import java.util.concurrent.atomic.AtomicReference
+import kotlin.math.roundToInt
 
 @RunWith(AndroidJUnit4::class)
 class ParameterPageSessionCacheTest {
@@ -372,6 +376,103 @@ class ParameterPageSessionCacheTest {
             assertEquals(pausedBaseline, usb.writes.size)
             assertEquals(12.5f, vm.ltftControl.values.value?.lowerClt)
             assertFalse(queue.pending.value.any { it.textRes == R.string.packet_sent })
+        } finally {
+            try {
+                transport?.close()
+            } finally {
+                try {
+                    compose.runOnIdle { vm.clearPageState() }
+                } finally {
+                    queue.onActiveScopeChanged(originalActiveScope)
+                    compose.activityRule.scenario.moveToState(Lifecycle.State.RESUMED)
+                }
+            }
+        }
+    }
+
+    @Test fun dbwCommandsWriteTenFieldsWithFamilyGateAndSessionAdmission() = runBlocking {
+        val vm = paramsViewModel()
+        val queueField = ParamsViewModel::class.java.getDeclaredField("uiMessageQueue").apply { isAccessible = true }
+        val queue = queueField.get(vm) as org.secu3.android.ui.messages.UiMessageQueue
+        val originalActiveScope = queue.activeScope.value
+        var transport: FakeUsbTransport? = null
+        var dbwStep = "install fake USB"
+        try {
+            val usb = installFakeUsb(vm, firmwareOptions = 0).also { transport = it }
+            dbwStep = "wait for initial DBW read"
+            activate(vm, R.string.params_tab_el_throttle_title)
+            usb.awaitReadRequest('P', 1)
+            dbwStep = "receive initial DBW response"
+            usb.emitDbw(DbwParamPacket(.1f, .2f, .3f, 40f, 50f, .12f, 6f, 7f, 8f, 9f), 47.5f)
+            await { vm.dbwControl.values.value?.homePosition == 47.5f }
+            delay(150)
+            compose.activityRule.scenario.moveToState(Lifecycle.State.STARTED)
+            compose.waitForIdle()
+            queue.onActiveScopeChanged(PARAMETERS_ROUTE)
+            queue.pending.value.forEach { queue.acknowledge(it.id) }
+            vm.isSendAllowed = false
+            val baseline = usb.writes.size
+
+            dbwStep = "send all ten DBW edits"
+            compose.runOnIdle {
+                assertTrue(vm.editDbw(DbwNumber.ETC_P, .125f))
+                assertTrue(vm.editDbw(DbwNumber.ETC_I, .25f))
+                assertTrue(vm.editDbw(DbwNumber.ETC_D, .5f))
+                assertTrue(vm.editDbw(DbwNumber.NMAX_DUTY, 45.5f))
+                assertTrue(vm.editDbw(DbwNumber.PMAX_DUTY, 55.5f))
+                assertTrue(vm.editDbw(DbwNumber.PID_PERIOD, .15f))
+                assertTrue(vm.editDbw(DbwNumber.FRICTION_TORQUE_OPEN, 6.4f))
+                assertTrue(vm.editDbw(DbwNumber.FRICTION_TORQUE_CLOSE, 7.5f))
+                assertTrue(vm.editDbw(DbwNumber.FRICTION_THRD, 12f))
+                assertTrue(vm.editDbw(DbwNumber.FRICTORQ_IDLE_ADD_MAX, 10.5f))
+                assertFalse(vm.editDbw(DbwNumber.ETC_P, Float.NaN))
+            }
+            dbwStep = "verify the DBW writes"
+            usb.awaitWriteCount(baseline + 10)
+            val writes = usb.writes.drop(baseline)
+            assertEquals(10, writes.size)
+            writes.forEach { assertEquals('P', it[1].toInt().toChar()) }
+            // Each immutable frame carries exactly the 14 writable bytes; Home position stays receive-only.
+            assertArrayEquals(intArrayOf(0x02, 0, 0x04, 0, 0x08, 0, 91, 111, 15, 102, 120, 12, 0x02, 0xA0), writes.last().sliceArray(2..15).map { it.toInt() and 0xff }.toIntArray())
+            assertEquals(DbwValues(.125f, .25f, .5f, 45.5f, 55.5f, .15f, 6.4f, 7.5f, 12f, 10.5f, 47.5f), vm.dbwControl.values.value)
+            assertFalse(vm.isSendAllowed)
+            assertTrue(queue.pending.value.any { it.textRes == R.string.packet_sent })
+            queue.pending.value.forEach { queue.acknowledge(it.id) }
+
+            dbwStep = "refresh DBW values"
+            val writesBeforeRefresh = usb.writes.size
+            val dbwWritesBeforeRefresh = usb.writes.count { it.size > 1 && it[1].toInt().toChar() == 'P' }
+            compose.runOnIdle { vm.refreshPage(ParameterPage.EL_THROTTLE) }
+            usb.awaitReadRequest('P', 2)
+            await { vm.dbwControl.values.value == null }
+            usb.emitDbw(DbwParamPacket(.125f, .25f, .5f, 45.5f, 55.5f, .15f, 6.4f, 7.5f, 12f, 10.5f), 48.5f)
+            await { vm.dbwControl.values.value?.homePosition == 48.5f }
+            assertTrue(usb.writes.size > writesBeforeRefresh) // Refresh sends the request packet.
+            assertEquals(dbwWritesBeforeRefresh, usb.writes.count { it.size > 1 && it[1].toInt().toChar() == 'P' })
+
+            dbwStep = "reject edits after SECU3T firmware update"
+            usb.emitFirmware(options = 1 shl 17)
+            await { vm.capabilities.value.known && vm.capabilities.value.secu3T }
+            val unsupportedBaseline = usb.writes.size
+            compose.runOnIdle { assertFalse(vm.editDbw(DbwNumber.ETC_I, 1f)) }
+            delay(100)
+            assertEquals(unsupportedBaseline, usb.writes.size)
+            assertFalse(queue.pending.value.any { it.textRes == R.string.packet_sent })
+
+            queue.pending.value.forEach { queue.acknowledge(it.id) }
+            dbwStep = "reject edits after page session pause"
+            usb.emitFirmware(options = 0)
+            await { vm.capabilities.value.known && vm.capabilities.value.dbw }
+            compose.runOnIdle { vm.pausePageSession() }
+            val pausedBaseline = usb.writes.size
+            val pausedValues = vm.dbwControl.values.value
+            compose.runOnIdle { assertFalse(vm.editDbw(DbwNumber.ETC_I, 1f)) }
+            delay(100)
+            assertEquals(pausedBaseline, usb.writes.size)
+            assertEquals(pausedValues, vm.dbwControl.values.value)
+            assertFalse(queue.pending.value.any { it.textRes == R.string.packet_sent })
+        } catch (failure: TimeoutCancellationException) {
+            throw AssertionError("DBW fake-USB test timed out while trying to $dbwStep", failure)
         } finally {
             try {
                 transport?.close()
@@ -1456,6 +1557,12 @@ class ParameterPageSessionCacheTest {
 
         suspend fun emit(packet: OutputPacket) {
             val input = intArrayOf('@'.code) + packet.pack() + intArrayOf(0, 0)
+            attemptPackets.emit(UsbAttemptPacket(1L, RawPacket(input)))
+        }
+
+        suspend fun emitDbw(packet: DbwParamPacket, homePosition: Float, tail: IntArray = intArrayOf()) {
+            val homeWord = (homePosition * 64).roundToInt()
+            val input = intArrayOf('@'.code) + packet.pack() + intArrayOf(homeWord shr 8, homeWord and 0xff) + tail + intArrayOf(0, 0)
             attemptPackets.emit(UsbAttemptPacket(1L, RawPacket(input)))
         }
 

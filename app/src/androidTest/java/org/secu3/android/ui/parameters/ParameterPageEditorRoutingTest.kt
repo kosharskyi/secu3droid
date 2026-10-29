@@ -41,6 +41,7 @@ import org.secu3.android.models.packets.out.params.IdlingParamPacket
 import org.secu3.android.models.packets.out.params.KnockParamPacket
 import org.secu3.android.models.packets.out.params.AccelerationParamPacket
 import org.secu3.android.models.packets.out.params.LtftParamPacket
+import org.secu3.android.models.packets.out.params.DbwParamPacket
 import org.secu3.android.ui.MainActivity
 import org.secu3.android.ui.compose.SecuComposeTheme
 import org.secu3.android.ui.parameters.pages.compose.StarterNumber
@@ -50,6 +51,7 @@ import org.secu3.android.ui.parameters.pages.compose.IdlingNumber
 import org.secu3.android.ui.parameters.pages.compose.KnockNumber
 import org.secu3.android.ui.parameters.pages.compose.AccelerationNumber
 import org.secu3.android.ui.parameters.pages.compose.LtftNumber
+import org.secu3.android.ui.parameters.pages.compose.DbwNumber
 import org.secu3.android.ui.parameters.dialogs.NumericEditDialog
 
 class ParameterPageEditorRoutingTest {
@@ -157,6 +159,33 @@ class ParameterPageEditorRoutingTest {
         compose.runOnIdle { vm.dismissParameterEditor(clt.id) }
         assertEquals(12.5f, vm.ltftControl.values.value?.lowerClt)
         assertEquals(false, vm.isSendAllowed)
+    }
+
+    @Test fun dbwEditorsRouteAllTenValuesThroughFloatContractWithDesktopMetadata() {
+        val vm = paramsViewModel()
+        val values = org.secu3.android.domain.parameters.DbwValues(
+            .125f, .25f, .375f, 40f, 50f, .12f, 6f, 7f, 8f, 9f, 43.21f,
+        )
+        vm.dbwControl.reset()
+        vm.dbwControl.receive(DbwParamPacket(.125f, .25f, .375f, 40f, 50f, .12f, 6f, 7f, 8f, 9f, 43.21f))
+        vm.isSendAllowed = false
+        renderPage(R.string.params_tab_el_throttle_title, vm, ParameterCapabilities.All)
+
+        DbwNumber.entries.forEach { number ->
+            compose.onNodeWithTag("dbw_${number.name.lowercase()}").performScrollTo().performClick()
+            val editor = requireNotNull(vm.parameterEditSession)
+            val request = editor.request as ParameterEditRequest.FloatValue
+            assertEquals(number.value(values), request.value)
+            assertEquals(compose.activity.getString(number.titleRes), request.title)
+            assertEquals(number.min, request.min)
+            assertEquals(number.max, request.max)
+            assertEquals(number.step, request.step)
+            assertEquals(number.precision, request.precision)
+            compose.runOnIdle { vm.dismissParameterEditor(editor.id) }
+        }
+        assertFalse(vm.editDbw(DbwNumber.ETC_P, .5f))
+        assertEquals(values, vm.dbwControl.values.value)
+        assertFalse(vm.isSendAllowed)
     }
 
     @Test fun temperatureEditorsPreserveWholeSecondTimerContractAndRejectWithoutSession() {

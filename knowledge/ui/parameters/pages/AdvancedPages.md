@@ -78,3 +78,7 @@ The existing `P0/I0` resource rows are the positive-error coefficients and `P1/I
 ## LTFT controls remain enabled in Off mode when firmware supports fuel injection
 
 Desktop enables the full LTFT field group from the firmware FI option, not the selected Off/Petrol/Gas mode. Keep the four mode labels UI-localized and preserve unknown incoming mode codes until a valid explicit choice.
+
+## DBW Home position is receive-only
+
+Keep Home position visible as a passive value. The firmware and desktop read a 16-byte payload, while the editable `P` command contains 14 bytes and omits Home position; refresh obtains the current value through the ordinary parameter read.

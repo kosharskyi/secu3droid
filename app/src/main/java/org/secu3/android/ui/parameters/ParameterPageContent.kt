@@ -286,8 +286,14 @@ internal fun ParameterPageContent(
             }, viewModel::selectLtftMode)
         }
         R.string.params_tab_el_throttle_title -> {
-            val h = viewModel.dbwStateHolder
-            DbwScreen(h.uiState, { n -> (h.uiState as? DbwUiState.Data)?.values?.let { v -> floatEdit(n.titleRes, v.value(n), n.step, n.max, n.min, n.precision) { h.edit(n, it.toFloat()) } } }, onRefresh = { viewModel.refreshPage(ParameterPage.EL_THROTTLE) })
+            val values by viewModel.dbwControl.values.collectAsStateWithLifecycle()
+            DbwScreen(values, capabilities, { number ->
+                values?.let { current ->
+                    floatEdit(number.titleRes, number.value(current), number.step, number.max, number.min, number.precision) {
+                        viewModel.editDbw(number, it.toFloat())
+                    }
+                }
+            }, onRefresh = { viewModel.refreshPage(ParameterPage.EL_THROTTLE) })
         }
     }
 }

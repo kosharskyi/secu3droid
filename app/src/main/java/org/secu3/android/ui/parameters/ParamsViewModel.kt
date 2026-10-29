@@ -61,6 +61,7 @@ import org.secu3.android.domain.parameters.IdlingControl
 import org.secu3.android.domain.parameters.KnockControl
 import org.secu3.android.domain.parameters.AccelerationControl
 import org.secu3.android.domain.parameters.LtftControl
+import org.secu3.android.domain.parameters.DbwControl
 import org.secu3.android.domain.parameters.SecurityCredentialsResult
 import org.secu3.android.models.packets.base.OutputPacket
 import org.secu3.android.models.packets.out.params.AccelerationParamPacket
@@ -83,6 +84,7 @@ import org.secu3.android.models.packets.out.params.UniOutParamPacket
 import org.secu3.android.ui.parameters.pages.compose.AnglesFlag
 import org.secu3.android.ui.parameters.pages.compose.AnglesNumber
 import org.secu3.android.ui.parameters.pages.compose.CarburNumber
+import org.secu3.android.ui.parameters.pages.compose.DbwNumber
 import org.secu3.android.ui.parameters.pages.compose.AdcCorrectionsStateHolder
 import org.secu3.android.ui.parameters.pages.compose.LambdaControlStateHolder
 import org.secu3.android.ui.parameters.pages.compose.LtftNumber
@@ -98,7 +100,6 @@ import org.secu3.android.ui.parameters.pages.MiscToggle
 import org.secu3.android.ui.parameters.pages.compose.FunctionsStateHolder
 import org.secu3.android.ui.parameters.pages.compose.ChokeNumber
 import org.secu3.android.ui.parameters.pages.compose.GasDoseNumber
-import org.secu3.android.ui.parameters.pages.compose.DbwStateHolder
 import org.secu3.android.ui.parameters.pages.compose.FuelInjectionNumber
 import org.secu3.android.ui.parameters.pages.compose.FuelInjectionFlag
 import org.secu3.android.ui.parameters.pages.compose.CkpsNumber
@@ -127,6 +128,7 @@ class ParamsViewModel @Inject constructor(
     internal val knockControl: KnockControl,
     internal val accelerationControl: AccelerationControl,
     internal val ltftControl: LtftControl,
+    internal val dbwControl: DbwControl,
     private val uiMessageQueue: UiMessageQueue,
     private val parameterPageCatalog: ParameterPageCatalog,
 ) : ViewModel() {
@@ -439,8 +441,21 @@ class ParamsViewModel @Inject constructor(
         return admitted
     }
 
-    internal val dbwStateHolder by lazy {
-        DbwStateHolder(::sendPacket) { isSendAllowed = it }
+    internal fun editDbw(number: DbwNumber, value: Float): Boolean {
+        val admitted = when (number) {
+            DbwNumber.ETC_P -> dbwControl.editEtcP(value)
+            DbwNumber.ETC_I -> dbwControl.editEtcI(value)
+            DbwNumber.ETC_D -> dbwControl.editEtcD(value)
+            DbwNumber.NMAX_DUTY -> dbwControl.editNegativeMaxDuty(value)
+            DbwNumber.PMAX_DUTY -> dbwControl.editPositiveMaxDuty(value)
+            DbwNumber.PID_PERIOD -> dbwControl.editPidPeriod(value)
+            DbwNumber.FRICTION_TORQUE_OPEN -> dbwControl.editFrictionTorqueOpen(value)
+            DbwNumber.FRICTION_TORQUE_CLOSE -> dbwControl.editFrictionTorqueClose(value)
+            DbwNumber.FRICTION_THRD -> dbwControl.editFrictionThreshold(value)
+            DbwNumber.FRICTORQ_IDLE_ADD_MAX -> dbwControl.editFrictionIdleAdditionMax(value)
+        }
+        if (admitted) showUiMessage(R.string.packet_sent, UiMessageDuration.SHORT)
+        return admitted
     }
 
     internal val universalOutputsStateHolder by lazy {
@@ -758,7 +773,7 @@ class ParamsViewModel @Inject constructor(
             }
             ParameterPage.CHOKE_CONTROL -> chokeControl.reset()
             ParameterPage.GAS_DOSE -> gasDoseControl.reset()
-            ParameterPage.EL_THROTTLE -> dbwStateHolder.reset()
+            ParameterPage.EL_THROTTLE -> dbwControl.reset()
             ParameterPage.FUEL_INJECTION -> fuelInjectionControl.reset()
             ParameterPage.UNIVERSAL_OUTPUTS -> universalOutputsStateHolder.reset()
         }
@@ -819,7 +834,7 @@ class ParamsViewModel @Inject constructor(
             ParameterPage.GAS_DOSE -> {
                 gasDoseControl.receive(packet<GasDoseParamPacket>(result))
             }
-            ParameterPage.EL_THROTTLE -> dbwStateHolder.receive(packet<DbwParamPacket>(result))
+            ParameterPage.EL_THROTTLE -> dbwControl.receive(packet<DbwParamPacket>(result))
             ParameterPage.FUEL_INJECTION -> fuelInjectionControl.receive(packet<InjctrParPacket>(result))
             ParameterPage.UNIVERSAL_OUTPUTS -> universalOutputsStateHolder.onPacketReceived(packet<UniOutParamPacket>(result))
         }

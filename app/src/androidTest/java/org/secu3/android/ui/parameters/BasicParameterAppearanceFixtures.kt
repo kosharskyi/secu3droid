@@ -66,9 +66,8 @@ internal fun basicParameterAppearanceFixtures(): List<ParameterAppearanceFixture
     },
     ParameterAppearanceFixture("dbw") {
         DbwScreen(
-            DbwUiState.Data(
-                DbwValues(DbwNumber.entries.associateWith { it.ordinal + 1f }, homePosition = 12.5f),
-            ),
+            org.secu3.android.domain.parameters.DbwValues(1f, 2f, 3f, 45f, 50f, .12f, 6f, 7f, 8f, 9f, 12.5f),
+            org.secu3.android.domain.parameters.ParameterCapabilities.All,
             onEdit = {},
         )
     },

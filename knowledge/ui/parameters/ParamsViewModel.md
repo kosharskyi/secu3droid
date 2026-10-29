@@ -40,3 +40,5 @@ Derive a single `ParameterCapabilities` state from `Secu3ConnectionManager.firmw
 `AccelerationControl` owns the Acceleration packet, raw numeric values, selector validation, live FI/GD and field-specific admission, rollback, and packed snapshots. `ParameterPageContent` rounds only the cold multiplier's initial integer-editor value and routes accepted integers and slider values to typed control commands; it does not hold a second Loading/Data state wrapper.
 
 `LtftControl` owns the LTFT packet, all 14 numeric edits, mode validation, live FI admission, rollback, and immutable packed snapshots. Integer RPM editors and Float fields use distinct ViewModel methods; LTFT commands do not use the legacy `isSendAllowed` gate. The screen maps localized mode labels and named domain values without a second Loading/Data wrapper.
+
+`DbwControl` owns all ten DBW edits and immutable snapshots. The ViewModel maps DBW row enums to named Float commands and reports packet-sent only when the session admits the command; the legacy `isSendAllowed` gate is not part of DBW. Refresh and the 14-byte DBW write / 16-byte read contract stay with `ParameterSession` and the packet codec.

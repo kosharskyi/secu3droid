@@ -33,7 +33,8 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import org.secu3.android.R
-import org.secu3.android.models.packets.out.params.DbwParamPacket
+import org.secu3.android.domain.parameters.DbwValues
+import org.secu3.android.domain.parameters.ParameterCapabilities
 import org.secu3.android.ui.parameters.compose.ParameterLoadingIndicator
 import org.secu3.android.ui.parameters.compose.ParameterReadOnlyValueRow
 import org.secu3.android.ui.parameters.compose.ParameterPage
@@ -57,67 +58,44 @@ enum class DbwNumber(
     FRICTION_TORQUE_OPEN(R.string.el_throttle_friction_torque_open_title, R.string.units_percents, 1, 0f, 15.9f, .1f),
     FRICTION_TORQUE_CLOSE(R.string.el_throttle_friction_torque_close_title, R.string.units_percents, 1, 0f, 15.9f, .1f),
     FRICTION_THRD(R.string.el_throttle_friqtion_torque_thrd_title, R.string.units_percent_per_second, 0, 0f, 25f, 1f),
-    FRICTORQ_IDLE_ADD_MAX(R.string.el_throttle_max_addition_from_idl_reg_title, R.string.units_percents, 2, 0f, 15f, .1f),
-}
+    FRICTORQ_IDLE_ADD_MAX(R.string.el_throttle_max_addition_from_idl_reg_title, R.string.units_percents, 2, 0f, 15f, .1f);
 
-data class DbwValues(val numbers: Map<DbwNumber, Float>, val homePosition: Float) {
-    fun value(number: DbwNumber) = numbers.getValue(number)
-    fun withValue(number: DbwNumber, value: Float) = copy(numbers = numbers + (number to value))
-
-    companion object {
-        fun from(packet: DbwParamPacket) = DbwValues(
-            mapOf(
-                DbwNumber.ETC_P to packet.etc_p,
-                DbwNumber.ETC_I to packet.etc_i,
-                DbwNumber.ETC_D to packet.etc_d,
-                DbwNumber.NMAX_DUTY to packet.etc_nmax_duty,
-                DbwNumber.PMAX_DUTY to packet.etc_pmax_duty,
-                DbwNumber.PID_PERIOD to packet.pid_period,
-                DbwNumber.FRICTION_TORQUE_OPEN to packet.frictorq_open,
-                DbwNumber.FRICTION_TORQUE_CLOSE to packet.frictorq_close,
-                DbwNumber.FRICTION_THRD to packet.frictorq_thrd,
-                DbwNumber.FRICTORQ_IDLE_ADD_MAX to packet.frictorq_idleadd_max,
-            ), packet.homePosition_edited,
-        )
+    fun value(values: DbwValues): Float = when (this) {
+        ETC_P -> values.etcP
+        ETC_I -> values.etcI
+        ETC_D -> values.etcD
+        NMAX_DUTY -> values.negativeMaxDuty
+        PMAX_DUTY -> values.positiveMaxDuty
+        PID_PERIOD -> values.pidPeriod
+        FRICTION_TORQUE_OPEN -> values.frictionTorqueOpen
+        FRICTION_TORQUE_CLOSE -> values.frictionTorqueClose
+        FRICTION_THRD -> values.frictionThreshold
+        FRICTORQ_IDLE_ADD_MAX -> values.frictionIdleAdditionMax
     }
-}
-
-fun applyDbwValue(packet: DbwParamPacket, number: DbwNumber, value: Float) {
-    when (number) {
-        DbwNumber.ETC_P -> packet.etc_p = value
-        DbwNumber.ETC_I -> packet.etc_i = value
-        DbwNumber.ETC_D -> packet.etc_d = value
-        DbwNumber.NMAX_DUTY -> packet.etc_nmax_duty = value
-        DbwNumber.PMAX_DUTY -> packet.etc_pmax_duty = value
-        DbwNumber.PID_PERIOD -> packet.pid_period = value
-        DbwNumber.FRICTION_TORQUE_OPEN -> packet.frictorq_open = value
-        DbwNumber.FRICTION_TORQUE_CLOSE -> packet.frictorq_close = value
-        DbwNumber.FRICTION_THRD -> packet.frictorq_thrd = value
-        DbwNumber.FRICTORQ_IDLE_ADD_MAX -> packet.frictorq_idleadd_max = value
-    }
-}
-
-sealed interface DbwUiState {
-    data object Loading : DbwUiState
-    data class Data(val values: DbwValues) : DbwUiState
 }
 
 @Composable
-fun DbwScreen(state: DbwUiState, onEdit: (DbwNumber) -> Unit, onRefresh: (() -> Unit)? = null) {
+fun DbwScreen(
+    values: DbwValues?,
+    capabilities: ParameterCapabilities,
+    onEdit: (DbwNumber) -> Unit,
+    onRefresh: (() -> Unit)? = null,
+) {
     val pageScrollState = rememberScrollState()
-    when (state) {
-        DbwUiState.Loading -> ParameterLoadingIndicator("dbw_loading")
-        is DbwUiState.Data -> ParameterPage(Modifier.testTag("dbw_content"), scrollState = pageScrollState) {
+    if (values == null) {
+        ParameterLoadingIndicator("dbw_loading")
+    } else {
+        ParameterPage(Modifier.testTag("dbw_content"), scrollState = pageScrollState) {
             ParameterSection {
                 DbwNumber.entries.forEach { number ->
                     ParameterValueRow(
-                        stringResource(number.titleRes), stringResource(number.unitsRes), state.values.value(number), number.precision,
-                        "dbw_${number.name.lowercase()}", { onEdit(number) },
+                        stringResource(number.titleRes), stringResource(number.unitsRes), number.value(values), number.precision,
+                        "dbw_${number.name.lowercase()}", capabilities.dbw, { onEdit(number) },
                     )
                 }
                 ParameterReadOnlyValueRow(
                     stringResource(R.string.el_throttle_home_position_title), stringResource(R.string.units_percents),
-                    state.values.homePosition, 2, "dbw_home_position", stringResource(R.string.sec_read_only),
+                    values.homePosition, 2, "dbw_home_position", stringResource(R.string.sec_read_only),
                 )
                 if (onRefresh != null) TextButton(onClick = onRefresh, modifier = Modifier.testTag("dbw_refresh")) {
                     Text(stringResource(R.string.refresh))
