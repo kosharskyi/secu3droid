@@ -22,14 +22,16 @@
  *                    http://secu-3.org
  *                    email: vetalkosharskiy@gmail.com
  */
-package org.secu3.android.utils
+package org.secu3.android.domain.parameters
 
-internal data class UniOutConditionFormat(
+data class UniOutConditionFormat(
     val min: Float, val max: Float, val step: Float, val precision: Int,
     val onDefault: Float, val offDefault: Float
 )
 
-internal fun uniOutConditionFormat(id: Int): UniOutConditionFormat = when (id) {
+@javax.inject.Singleton
+class UniversalOutputConditions @javax.inject.Inject constructor() {
+    fun get(id: Int): UniOutConditionFormat? = when (id) {
     0, 14, 28, 30 -> UniOutConditionFormat(-40f, 300f, .25f, 2, 55f, 50f)
     1 -> UniOutConditionFormat(50f, 30000f, 10f, 0, 1500f, 1200f)
     2, 29, 35, 41 -> UniOutConditionFormat(.25f, 500f, .25f, 2, 95f, 90f)
@@ -52,5 +54,8 @@ internal fun uniOutConditionFormat(id: Int): UniOutConditionFormat = when (id) {
     37 -> UniOutConditionFormat(0f, 25f, .05f, 3, 4.1f, 4f)
     38 -> UniOutConditionFormat(0f, 2000f, .25f, 1, 1000f, 990f)
     39, 40 -> UniOutConditionFormat(-40f, 250f, .25f, 1, 100f, 98f)
-    else -> UniOutConditionFormat(0f, 1f, 1f, 0, 0f, 1f)
+    else -> null
+    }
+
+    fun availableInSlot(id: Int, slot: Int): Boolean = slot in 1..2 && get(id) != null && (slot != 1 || id !in setOf(7, 23))
 }

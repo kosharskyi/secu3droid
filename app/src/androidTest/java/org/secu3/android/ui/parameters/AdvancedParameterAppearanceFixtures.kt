@@ -8,15 +8,16 @@ import org.secu3.android.models.packets.out.params.InjctrParPacket
 import org.secu3.android.models.packets.out.params.LambdaParamPacket
 import org.secu3.android.models.packets.input.FirmwareInfoPacket
 import org.secu3.android.models.packets.out.params.UniOutParamPacket
+import org.secu3.android.domain.parameters.UniversalOutputValues
+import org.secu3.android.domain.parameters.UniversalOutputsValues
+import org.secu3.android.domain.parameters.UniversalOutputConditions
 import org.secu3.android.domain.parameters.MiscellaneousControl
 import org.secu3.android.domain.parameters.MiscellaneousValues
 import org.secu3.android.domain.parameters.SecurityValues
 import org.secu3.android.ui.parameters.pages.MiscField
 import org.secu3.android.ui.parameters.pages.MiscellaneousScreen
 import org.secu3.android.ui.parameters.pages.SecurityScreen
-import org.secu3.android.ui.parameters.pages.UniversalOutputValues
 import org.secu3.android.ui.parameters.pages.UniversalOutputsScreen
-import org.secu3.android.ui.parameters.pages.UniversalOutputsValues
 import org.secu3.android.ui.parameters.pages.compose.AccelerationNumber
 import org.secu3.android.ui.parameters.pages.compose.AccelerationScreen
 import org.secu3.android.domain.parameters.AccelerationValues
@@ -103,7 +104,7 @@ internal fun advancedParameterAppearanceFixtures(): List<ParameterAppearanceFixt
             )
         },
         ParameterAppearanceFixture("universal-outputs") {
-            UniversalOutputsScreen(outputs, outputNames, listOf("OR", "AND", "XOR", "NOR", "AND"), { _, _ -> }, {})
+            UniversalOutputsScreen(outputs, outputNames, listOf("OR", "AND", "XOR", "NOR", "AND"), UniversalOutputConditions(), { _, _ -> }, { _, _, _ -> }, { _, _, _ -> }, { _, _ -> }, { _, _ -> }, { _, _, _, _, _ -> }, {})
         },
         ParameterAppearanceFixture("functions") {
             FunctionsScreen(functions, {}, {}, { _, _ -> })

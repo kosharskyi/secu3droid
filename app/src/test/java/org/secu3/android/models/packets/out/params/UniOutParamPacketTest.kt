@@ -22,16 +22,17 @@
  *                    http://secu-3.org
  *                    email: vetalkosharskiy@gmail.com
  */
-package org.secu3.android.ui.parameters.pages
+package org.secu3.android.models.packets.out.params
 
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertArrayEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue
 import org.junit.Test
-import org.secu3.android.models.packets.out.params.UniOutParamPacket
-import org.secu3.android.utils.UniOutConditionFormat
-import org.secu3.android.utils.uniOutConditionFormat
+import org.secu3.android.domain.parameters.UniOutConditionFormat
+import org.secu3.android.domain.parameters.UniversalOutputConditions
+import org.secu3.android.domain.parameters.UniversalOutputsControl
+import org.secu3.android.domain.parameters.UniversalOutputsValues
 
 class UniversalOutputsPacketTest {
     @Test
@@ -40,7 +41,7 @@ class UniversalOutputsPacketTest {
         (1..6).forEach { index ->
             setOutput(packet, index, index)
         }
-        val snapshot = UniversalOutputsValues.from(packet)
+        val snapshot = values(packet)
         (1..6).forEach { index ->
             val output = snapshot.outputs[index - 1]
             assertTrue(output.enabled)
@@ -51,9 +52,6 @@ class UniversalOutputsPacketTest {
             assertEquals(index * 10f, output.onThreshold1, .01f)
             assertEquals(index * 20f, output.offThreshold2, .01f)
         }
-        val remapped = UniOutParamPacket()
-        snapshot.outputs.forEachIndexed { index, output -> applyUniversalOutput(remapped, index + 1, UniversalOutputsValues.from(remapped).outputs[index], output) }
-        assertEquals(snapshot.outputs, UniversalOutputsValues.from(remapped).outputs)
         assertFalse(snapshot.outputs[2].inversion)
     }
 
@@ -64,8 +62,8 @@ class UniversalOutputsPacketTest {
             val packet = UniOutParamPacket()
             setOutputConditions(packet, output, condition)
             setOutputThresholds(packet, output, -12f, -5f, -8f, -2f)
-            val reparsed = UniOutParamPacket().parse(intArrayOf(0x40, 0x21) + packet.pack().drop(1).toIntArray()) as UniOutParamPacket
-            val actual = UniversalOutputsValues.from(reparsed).outputs[output - 1]
+            val reparsed = UniOutParamPacket().parse(intArrayOf('@'.code, '&'.code) + packet.pack().drop(1).toIntArray()) as UniOutParamPacket
+            val actual = values(reparsed).outputs[output - 1]
             assertEquals("output $output condition $condition", -12f, actual.onThreshold1, .02f)
             assertEquals(-5f, actual.offThreshold1, .02f)
             assertEquals(-8f, actual.onThreshold2, .02f)
@@ -130,7 +128,7 @@ class UniversalOutputsPacketTest {
         source.output3Cond2Inversion = true
         source.output6LogicFunc = 9
         source.output4Inversion = true
-        val withTail = UniOutParamPacket().parse(intArrayOf(0x40, 0x21) + source.pack().drop(1).toIntArray() + intArrayOf(0xA5, 0x5A)) as UniOutParamPacket
+        val withTail = UniOutParamPacket().parse(intArrayOf('@'.code, '&'.code) + source.pack().drop(1).toIntArray() + intArrayOf(0xA5, 0x5A)) as UniOutParamPacket
         withTail.output4Use = true
         val updated = withTail
         assertTrue(updated.output3Use)
@@ -149,11 +147,10 @@ class UniversalOutputsPacketTest {
         source[5] = 0xFA; source[6] = 0xCE
         source[7] = 0xED; source[8] = 0xCB
         source[9] = 0xAB; source[10] = 0xCD
-        val packet = UniOutParamPacket().parse(intArrayOf(0x40, 0x21) + source) as UniOutParamPacket
-        val beforeValues = UniversalOutputsValues.from(packet)
-        val outputBefore = beforeValues.outputs.first()
-        val outputAfter = outputBefore.copy(enabled = true)
-        applyUniversalOutput(packet, 1, outputBefore, outputAfter)
+        val packet = UniOutParamPacket().parse(intArrayOf('@'.code, '&'.code) + source) as UniOutParamPacket
+        val control = UniversalOutputsControl(UniversalOutputConditions()) { true }
+        control.receive(packet)
+        control.setOutputEnabled(1, true)
 
         assertEquals(250, packet.output1Condition1)
         assertEquals(251, packet.output1Condition2)
@@ -162,43 +159,44 @@ class UniversalOutputsPacketTest {
 
     @Test
     fun desktopConditionFormattingAndDefaultsAreRepresented() {
-        assertEquals(UniOutConditionFormat(-40f, 300f, .25f, 2, 55f, 50f), uniOutConditionFormat(0))
-        assertEquals(UniOutConditionFormat(50f, 30000f, 10f, 0, 1500f, 1200f), uniOutConditionFormat(1))
-        assertEquals(UniOutConditionFormat(-1000f, 1000f, 1f, 0, 55f, 50f), uniOutConditionFormat(34))
-        assertEquals(UniOutConditionFormat(0f, 600f, .01f, 2, 1f, 5f), uniOutConditionFormat(23))
-        assertEquals(UniOutConditionFormat(0f, 600f, .1f, 2, 2.5f, 2.48f), uniOutConditionFormat(16))
-        assertEquals(UniOutConditionFormat(0f, 5f, .01f, 2, 2.5f, 2.45f), uniOutConditionFormat(12))
-        assertEquals(UniOutConditionFormat(-40f, 250f, .25f, 1, 100f, 98f), uniOutConditionFormat(39))
-        assertEquals(uniOutConditionFormat(39), uniOutConditionFormat(40))
+        assertEquals(UniOutConditionFormat(-40f, 300f, .25f, 2, 55f, 50f), UniversalOutputConditions().get(0))
+        assertEquals(UniOutConditionFormat(50f, 30000f, 10f, 0, 1500f, 1200f), UniversalOutputConditions().get(1))
+        assertEquals(UniOutConditionFormat(-1000f, 1000f, 1f, 0, 55f, 50f), UniversalOutputConditions().get(34))
+        assertEquals(UniOutConditionFormat(0f, 600f, .01f, 2, 1f, 5f), UniversalOutputConditions().get(23))
+        assertEquals(UniOutConditionFormat(0f, 600f, .1f, 2, 2.5f, 2.48f), UniversalOutputConditions().get(16))
+        assertEquals(UniOutConditionFormat(0f, 5f, .01f, 2, 2.5f, 2.45f), UniversalOutputConditions().get(12))
+        assertEquals(UniOutConditionFormat(-40f, 250f, .25f, 1, 100f, 98f), UniversalOutputConditions().get(39))
+        assertEquals(UniversalOutputConditions().get(39), UniversalOutputConditions().get(40))
     }
 
     @Test
     fun selectingEitherConditionResetsOnlyThatConditionsThresholdDefaults() {
-        val current = UniversalOutputValues(true, 0, 1, false, false, false, 0, 88f, 77f, 66f, 55f)
-        val firstChanged = current.withCondition(1, 16)
-        assertEquals(2.5f, firstChanged.onThreshold1, 0f)
-        assertEquals(2.48f, firstChanged.offThreshold1, 0f)
-        assertEquals(66f, firstChanged.onThreshold2, 0f)
-        assertEquals(55f, firstChanged.offThreshold2, 0f)
-        val secondChanged = current.withCondition(2, 23)
-        assertEquals(88f, secondChanged.onThreshold1, 0f)
-        assertEquals(77f, secondChanged.offThreshold1, 0f)
-        assertEquals(1f, secondChanged.onThreshold2, 0f)
-        assertEquals(5f, secondChanged.offThreshold2, 0f)
+        val control = UniversalOutputsControl(UniversalOutputConditions()) { true }
+        val packet = UniOutParamPacket().apply { output1Use = true; output1OnThrd1 = 88f; output1OffThrd1 = 77f; output1OnThrd2 = 66f; output1OffThrd2 = 55f }
+        control.receive(packet)
+        assertTrue(control.selectCondition(1, 1, 16))
+        assertEquals(2.5f, control.values.value!!.outputs.first().onThreshold1, 0f)
+        assertEquals(2.48f, control.values.value!!.outputs.first().offThreshold1, 0f)
+        assertEquals(66f, control.values.value!!.outputs.first().onThreshold2, 0f)
+        assertEquals(55f, control.values.value!!.outputs.first().offThreshold2, 0f)
+        assertTrue(control.selectCondition(1, 2, 23))
+        assertEquals(1f, control.values.value!!.outputs.first().onThreshold2, 0f)
+        assertEquals(5f, control.values.value!!.outputs.first().offThreshold2, 0f)
     }
 
     @Test
     fun changingConditionReencodesEqualDisplayedThresholdDefaults() {
         val packet = UniOutParamPacket().also {
+            it.output1Use = true
             it.output1Condition1 = 13 // TPS uses a different wire scale than ATS.
             it.output1OnThrd1 = 55f
             it.output1OffThrd1 = 50f
         }
-        val before = UniversalOutputsValues.from(packet).outputs.first()
-        val after = before.withCondition(1, 14) // ATS defaults to the same displayed ON value, 55.
-        assertEquals(before.onThreshold1, after.onThreshold1, 0f)
-
-        applyUniversalOutput(packet, 1, before, after)
+        val before = values(packet).outputs.first()
+        assertEquals(55f, before.onThreshold1, 0f)
+        val control = UniversalOutputsControl(UniversalOutputConditions()) { true }
+        control.receive(packet)
+        assertTrue(control.selectCondition(1, 1, 14)) // ATS defaults to the same displayed ON value, 55.
 
         val expected = UniOutParamPacket().also {
             it.output1Condition1 = 14
@@ -206,6 +204,12 @@ class UniversalOutputsPacketTest {
             it.output1OffThrd1 = 50f
         }
         assertEquals(expected.pack().slice(4..7), packet.pack().slice(4..7))
+    }
+
+    private fun values(packet: UniOutParamPacket): org.secu3.android.domain.parameters.UniversalOutputsValues {
+        val control = UniversalOutputsControl(UniversalOutputConditions()) { true }
+        control.receive(packet)
+        return control.values.value!!
     }
 
     private fun setOutput(packet: UniOutParamPacket, index: Int, value: Int) = when (index) {

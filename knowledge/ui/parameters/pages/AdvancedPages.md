@@ -90,3 +90,7 @@ Keep Home position visible as a passive value. The firmware and desktop read a 1
 ## ADC channel styling matches the live command gates
 
 MAP through ADD_I2 remain enabled. ADD_I4 uses the independent TPIC8101 option, while ADD_I3 and ADD_I5 through ADD_I8 use the non-SECU3T gate. MAP correction displays four decimal places to match the desktop's 0.0025 V adjustment step.
+
+## Universal Outputs selectors send named field commands
+
+The screen reports one switch, condition, inversion, logic, or threshold intent at a time; it does not submit a full output snapshot. Threshold editors capture their condition ID on open so a stale confirmation cannot be applied after a condition change. The pair selector is enabled only when outputs 1 and 2 are active. Unknown ECU condition and logic codes remain visible until explicit selection.

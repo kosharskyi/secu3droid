@@ -46,3 +46,5 @@ Derive a single `ParameterCapabilities` state from `Secu3ConnectionManager.firmw
 `FunctionsControl` receives the complete `FunctionParameters` result only after `ParameterExchange` has assembled all name fragments and settings. The ViewModel forwards named edits and protocol selector codes, and reports packet-sent only for commands admitted by `ParameterSession`; Functions commands do not use `isSendAllowed`.
 
 `AdcCorrectionsControl` owns the received packet, named ADC state, finite range validation, firmware gates, raw-fallback rollback, and immutable parameter writes. The ViewModel maps `AdcNumber` UI fields to named edit methods and reports packet-sent after session admission; ADC commands bypass the legacy `isSendAllowed` flag.
+
+`UniversalOutputsControl` owns all six outputs, the paired function, condition defaults and range checks, raw rollback, and immutable session writes. The ViewModel maps each UI action to a named control method and shows the sent message only after session admission; these writes bypass the legacy `isSendAllowed` flag.

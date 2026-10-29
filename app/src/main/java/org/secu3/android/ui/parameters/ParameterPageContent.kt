@@ -261,9 +261,13 @@ internal fun ParameterPageContent(
                 { viewModel.changeSecurityKey(0, it) }, { viewModel.changeSecurityKey(1, it) }, viewModel::applySecurityCredentials)
         }
         R.string.params_tab_universal_outputs_title -> {
-            val h = viewModel.universalOutputsStateHolder
-            UniversalOutputsScreen(h.values, UniOutParamPacket.CONDITION.entries.associate { it.id to resources.getString(it.strId) },
-                stringArrayResource(R.array.logical_functions).toList(), h::updateOutput, h::updatePairFunction)
+            val values by viewModel.universalOutputsControl.values.collectAsStateWithLifecycle()
+            UniversalOutputsScreen(values, UniOutParamPacket.CONDITION.entries.associate { it.id to resources.getString(it.strId) },
+                stringArrayResource(R.array.logical_functions).toList(), viewModel.universalOutputConditions,
+                viewModel::setUniversalOutputEnabled, viewModel::selectUniversalOutputCondition,
+                viewModel::setUniversalOutputConditionInverted, viewModel::setUniversalOutputResultInverted,
+                viewModel::selectUniversalOutputLogicFunction, viewModel::editUniversalOutputThreshold,
+                viewModel::selectUniversalOutputsPairFunction)
         }
         R.string.params_tab_fuel_injection_title -> {
             val values by viewModel.fuelInjectionControl.values.collectAsStateWithLifecycle()

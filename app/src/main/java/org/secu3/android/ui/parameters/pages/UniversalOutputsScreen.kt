@@ -37,7 +37,9 @@ import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import org.secu3.android.R
-import org.secu3.android.models.packets.out.params.UniOutParamPacket
+import org.secu3.android.domain.parameters.UniversalOutputConditions
+import org.secu3.android.domain.parameters.UniversalOutputValues
+import org.secu3.android.domain.parameters.UniversalOutputsValues
 import org.secu3.android.ui.compose.DropdownShape
 import org.secu3.android.ui.parameters.compose.ParameterLoadingIndicator
 import org.secu3.android.ui.parameters.compose.ParameterPage
@@ -49,266 +51,86 @@ import org.secu3.android.ui.parameters.dialogs.ParameterCancelButton
 import org.secu3.android.ui.parameters.dialogs.ParameterChoice
 import org.secu3.android.ui.parameters.dialogs.ParameterChoiceDialog
 import org.secu3.android.ui.parameters.dialogs.ParameterConfirmButton
-import org.secu3.android.utils.UniOutConditionFormat
-import org.secu3.android.utils.uniOutConditionFormat
+import org.secu3.android.domain.parameters.UniOutConditionFormat
 import java.util.Locale
-
-internal data class UniversalOutputValues(
-    val enabled: Boolean,
-    val condition1: Int,
-    val condition2: Int,
-    val condition1Inversion: Boolean,
-    val condition2Inversion: Boolean,
-    val inversion: Boolean,
-    val logicFunction: Int,
-    val onThreshold1: Float,
-    val offThreshold1: Float,
-    val onThreshold2: Float,
-    val offThreshold2: Float,
-) {
-    fun withCondition(slot: Int, condition: Int): UniversalOutputValues {
-        val format = uniOutConditionFormat(condition)
-        return if (slot == 1) copy(condition1 = condition, onThreshold1 = format.onDefault, offThreshold1 = format.offDefault)
-        else copy(condition2 = condition, onThreshold2 = format.onDefault, offThreshold2 = format.offDefault)
-    }
-}
-
-internal data class UniversalOutputsValues(val outputs: List<UniversalOutputValues>, val logicFunction12: Int) {
-    companion object {
-        fun from(packet: UniOutParamPacket) = UniversalOutputsValues((1..6).map { outputValues(packet, it) }, packet.logicFunction_1_2)
-    }
-}
-
-private fun outputValues(packet: UniOutParamPacket, index: Int): UniversalOutputValues = when (index) {
-    1 -> UniversalOutputValues(packet.output1Use, packet.output1Condition1, packet.output1Condition2, packet.output1Cond1Inversion, packet.output1Cond2Inversion, packet.output1Inversion, packet.output1LogicFunc, packet.output1OnThrd1, packet.output1OffThrd1, packet.output1OnThrd2, packet.output1OffThrd2)
-    2 -> UniversalOutputValues(packet.output2Use, packet.output2Condition1, packet.output2Condition2, packet.output2Cond1Inversion, packet.output2Cond2Inversion, packet.output2Inversion, packet.output2LogicFunc, packet.output2OnThrd1, packet.output2OffThrd1, packet.output2OnThrd2, packet.output2OffThrd2)
-    3 -> UniversalOutputValues(packet.output3Use, packet.output3Condition1, packet.output3Condition2, packet.output3Cond1Inversion, packet.output3Cond2Inversion, packet.output3Inversion, packet.output3LogicFunc, packet.output3OnThrd1, packet.output3OffThrd1, packet.output3OnThrd2, packet.output3OffThrd2)
-    4 -> UniversalOutputValues(packet.output4Use, packet.output4Condition1, packet.output4Condition2, packet.output4Cond1Inversion, packet.output4Cond2Inversion, packet.output4Inversion, packet.output4LogicFunc, packet.output4OnThrd1, packet.output4OffThrd1, packet.output4OnThrd2, packet.output4OffThrd2)
-    5 -> UniversalOutputValues(packet.output5Use, packet.output5Condition1, packet.output5Condition2, packet.output5Cond1Inversion, packet.output5Cond2Inversion, packet.output5Inversion, packet.output5LogicFunc, packet.output5OnThrd1, packet.output5OffThrd1, packet.output5OnThrd2, packet.output5OffThrd2)
-    6 -> UniversalOutputValues(packet.output6Use, packet.output6Condition1, packet.output6Condition2, packet.output6Cond1Inversion, packet.output6Cond2Inversion, packet.output6Inversion, packet.output6LogicFunc, packet.output6OnThrd1, packet.output6OffThrd1, packet.output6OnThrd2, packet.output6OffThrd2)
-    else -> error("Output index must be between 1 and 6")
-}
-
-private fun applyOutputValues(packet: UniOutParamPacket, index: Int, before: UniversalOutputValues, after: UniversalOutputValues) {
-    when (index) {
-        1 -> {
-            if (before.enabled != after.enabled) packet.output1Use = after.enabled
-            if (before.condition1 != after.condition1) {
-                packet.output1Condition1 = after.condition1
-                packet.output1OnThrd1 = after.onThreshold1
-                packet.output1OffThrd1 = after.offThreshold1
-            } else {
-                if (before.onThreshold1 != after.onThreshold1) packet.output1OnThrd1 = after.onThreshold1
-                if (before.offThreshold1 != after.offThreshold1) packet.output1OffThrd1 = after.offThreshold1
-            }
-            if (before.condition2 != after.condition2) {
-                packet.output1Condition2 = after.condition2
-                packet.output1OnThrd2 = after.onThreshold2
-                packet.output1OffThrd2 = after.offThreshold2
-            } else {
-                if (before.onThreshold2 != after.onThreshold2) packet.output1OnThrd2 = after.onThreshold2
-                if (before.offThreshold2 != after.offThreshold2) packet.output1OffThrd2 = after.offThreshold2
-            }
-            if (before.condition1Inversion != after.condition1Inversion) packet.output1Cond1Inversion = after.condition1Inversion
-            if (before.condition2Inversion != after.condition2Inversion) packet.output1Cond2Inversion = after.condition2Inversion
-            if (before.inversion != after.inversion) packet.output1Inversion = after.inversion
-            if (before.logicFunction != after.logicFunction) packet.output1LogicFunc = after.logicFunction
-        }
-        2 -> {
-            if (before.enabled != after.enabled) packet.output2Use = after.enabled
-            if (before.condition1 != after.condition1) {
-                packet.output2Condition1 = after.condition1
-                packet.output2OnThrd1 = after.onThreshold1
-                packet.output2OffThrd1 = after.offThreshold1
-            } else {
-                if (before.onThreshold1 != after.onThreshold1) packet.output2OnThrd1 = after.onThreshold1
-                if (before.offThreshold1 != after.offThreshold1) packet.output2OffThrd1 = after.offThreshold1
-            }
-            if (before.condition2 != after.condition2) {
-                packet.output2Condition2 = after.condition2
-                packet.output2OnThrd2 = after.onThreshold2
-                packet.output2OffThrd2 = after.offThreshold2
-            } else {
-                if (before.onThreshold2 != after.onThreshold2) packet.output2OnThrd2 = after.onThreshold2
-                if (before.offThreshold2 != after.offThreshold2) packet.output2OffThrd2 = after.offThreshold2
-            }
-            if (before.condition1Inversion != after.condition1Inversion) packet.output2Cond1Inversion = after.condition1Inversion
-            if (before.condition2Inversion != after.condition2Inversion) packet.output2Cond2Inversion = after.condition2Inversion
-            if (before.inversion != after.inversion) packet.output2Inversion = after.inversion
-            if (before.logicFunction != after.logicFunction) packet.output2LogicFunc = after.logicFunction
-        }
-        3 -> {
-            if (before.enabled != after.enabled) packet.output3Use = after.enabled
-            if (before.condition1 != after.condition1) {
-                packet.output3Condition1 = after.condition1
-                packet.output3OnThrd1 = after.onThreshold1
-                packet.output3OffThrd1 = after.offThreshold1
-            } else {
-                if (before.onThreshold1 != after.onThreshold1) packet.output3OnThrd1 = after.onThreshold1
-                if (before.offThreshold1 != after.offThreshold1) packet.output3OffThrd1 = after.offThreshold1
-            }
-            if (before.condition2 != after.condition2) {
-                packet.output3Condition2 = after.condition2
-                packet.output3OnThrd2 = after.onThreshold2
-                packet.output3OffThrd2 = after.offThreshold2
-            } else {
-                if (before.onThreshold2 != after.onThreshold2) packet.output3OnThrd2 = after.onThreshold2
-                if (before.offThreshold2 != after.offThreshold2) packet.output3OffThrd2 = after.offThreshold2
-            }
-            if (before.condition1Inversion != after.condition1Inversion) packet.output3Cond1Inversion = after.condition1Inversion
-            if (before.condition2Inversion != after.condition2Inversion) packet.output3Cond2Inversion = after.condition2Inversion
-            if (before.inversion != after.inversion) packet.output3Inversion = after.inversion
-            if (before.logicFunction != after.logicFunction) packet.output3LogicFunc = after.logicFunction
-        }
-        4 -> {
-            if (before.enabled != after.enabled) packet.output4Use = after.enabled
-            if (before.condition1 != after.condition1) {
-                packet.output4Condition1 = after.condition1
-                packet.output4OnThrd1 = after.onThreshold1
-                packet.output4OffThrd1 = after.offThreshold1
-            } else {
-                if (before.onThreshold1 != after.onThreshold1) packet.output4OnThrd1 = after.onThreshold1
-                if (before.offThreshold1 != after.offThreshold1) packet.output4OffThrd1 = after.offThreshold1
-            }
-            if (before.condition2 != after.condition2) {
-                packet.output4Condition2 = after.condition2
-                packet.output4OnThrd2 = after.onThreshold2
-                packet.output4OffThrd2 = after.offThreshold2
-            } else {
-                if (before.onThreshold2 != after.onThreshold2) packet.output4OnThrd2 = after.onThreshold2
-                if (before.offThreshold2 != after.offThreshold2) packet.output4OffThrd2 = after.offThreshold2
-            }
-            if (before.condition1Inversion != after.condition1Inversion) packet.output4Cond1Inversion = after.condition1Inversion
-            if (before.condition2Inversion != after.condition2Inversion) packet.output4Cond2Inversion = after.condition2Inversion
-            if (before.inversion != after.inversion) packet.output4Inversion = after.inversion
-            if (before.logicFunction != after.logicFunction) packet.output4LogicFunc = after.logicFunction
-        }
-        5 -> {
-            if (before.enabled != after.enabled) packet.output5Use = after.enabled
-            if (before.condition1 != after.condition1) {
-                packet.output5Condition1 = after.condition1
-                packet.output5OnThrd1 = after.onThreshold1
-                packet.output5OffThrd1 = after.offThreshold1
-            } else {
-                if (before.onThreshold1 != after.onThreshold1) packet.output5OnThrd1 = after.onThreshold1
-                if (before.offThreshold1 != after.offThreshold1) packet.output5OffThrd1 = after.offThreshold1
-            }
-            if (before.condition2 != after.condition2) {
-                packet.output5Condition2 = after.condition2
-                packet.output5OnThrd2 = after.onThreshold2
-                packet.output5OffThrd2 = after.offThreshold2
-            } else {
-                if (before.onThreshold2 != after.onThreshold2) packet.output5OnThrd2 = after.onThreshold2
-                if (before.offThreshold2 != after.offThreshold2) packet.output5OffThrd2 = after.offThreshold2
-            }
-            if (before.condition1Inversion != after.condition1Inversion) packet.output5Cond1Inversion = after.condition1Inversion
-            if (before.condition2Inversion != after.condition2Inversion) packet.output5Cond2Inversion = after.condition2Inversion
-            if (before.inversion != after.inversion) packet.output5Inversion = after.inversion
-            if (before.logicFunction != after.logicFunction) packet.output5LogicFunc = after.logicFunction
-        }
-        6 -> {
-            if (before.enabled != after.enabled) packet.output6Use = after.enabled
-            if (before.condition1 != after.condition1) {
-                packet.output6Condition1 = after.condition1
-                packet.output6OnThrd1 = after.onThreshold1
-                packet.output6OffThrd1 = after.offThreshold1
-            } else {
-                if (before.onThreshold1 != after.onThreshold1) packet.output6OnThrd1 = after.onThreshold1
-                if (before.offThreshold1 != after.offThreshold1) packet.output6OffThrd1 = after.offThreshold1
-            }
-            if (before.condition2 != after.condition2) {
-                packet.output6Condition2 = after.condition2
-                packet.output6OnThrd2 = after.onThreshold2
-                packet.output6OffThrd2 = after.offThreshold2
-            } else {
-                if (before.onThreshold2 != after.onThreshold2) packet.output6OnThrd2 = after.onThreshold2
-                if (before.offThreshold2 != after.offThreshold2) packet.output6OffThrd2 = after.offThreshold2
-            }
-            if (before.condition1Inversion != after.condition1Inversion) packet.output6Cond1Inversion = after.condition1Inversion
-            if (before.condition2Inversion != after.condition2Inversion) packet.output6Cond2Inversion = after.condition2Inversion
-            if (before.inversion != after.inversion) packet.output6Inversion = after.inversion
-            if (before.logicFunction != after.logicFunction) packet.output6LogicFunc = after.logicFunction
-        }
-        else -> error("Output index must be between 1 and 6")
-    }
-}
-internal fun applyUniversalOutput(packet: UniOutParamPacket, output: Int, before: UniversalOutputValues, after: UniversalOutputValues) = applyOutputValues(packet, output, before, after)
 
 @Composable
 internal fun UniversalOutputsScreen(
     values: UniversalOutputsValues?, conditionNames: Map<Int, String>, logicalFunctions: List<String>,
-    onOutputChange: (output: Int, values: UniversalOutputValues) -> Unit,
-    onPairChange: (Int) -> Unit
+    conditions: UniversalOutputConditions,
+    onEnabled: (Int, Boolean) -> Unit,
+    onCondition: (Int, Int, Int) -> Unit,
+    onConditionInversion: (Int, Int, Boolean) -> Unit,
+    onResultInversion: (Int, Boolean) -> Unit,
+    onLogicFunction: (Int, Int) -> Unit,
+    onThreshold: (Int, Int, Boolean, Int, Float) -> Unit,
+    onPairFunction: (Int) -> Unit,
 ) {
     val pageScrollState = rememberScrollState()
-    if (values == null) {
-        ParameterLoadingIndicator("uniout-loading")
-        return
-    }
+    if (values == null) { ParameterLoadingIndicator("uniout-loading"); return }
     ParameterPage(scrollState = pageScrollState) {
         values.outputs.forEachIndexed { index, output ->
-            OutputCard(index + 1, output, conditionNames, logicalFunctions, onOutputChange)
+            OutputCard(index + 1, output, conditionNames, logicalFunctions, conditions, onEnabled, onCondition,
+                onConditionInversion, onResultInversion, onLogicFunction, onThreshold)
             if (index == 0) {
                 ParameterSection {
-                    FunctionPicker(R.string.uniout_outputs_link_function, values.logicFunction12, logicalFunctions, tag = "outputs-link-function") {
-                        onPairChange(if (it == 4) 15 else it)
-                    }
+                    FunctionPicker(R.string.uniout_outputs_link_function, values.logicFunction12, logicalFunctions,
+                        enabled = values.pairFunctionAvailable, tag = "outputs-link-function", onSelect = { onPairFunction(if (it == 4) 15 else it) })
                 }
             }
         }
     }
 }
 
-@Composable private fun OutputCard(index: Int, values: UniversalOutputValues, names: Map<Int, String>, functions: List<String>, onChange: (Int, UniversalOutputValues) -> Unit) {
+@Composable private fun OutputCard(
+    index: Int, values: UniversalOutputValues, names: Map<Int, String>, functions: List<String>, conditions: UniversalOutputConditions,
+    onEnabled: (Int, Boolean) -> Unit, onCondition: (Int, Int, Int) -> Unit,
+    onConditionInversion: (Int, Int, Boolean) -> Unit, onResultInversion: (Int, Boolean) -> Unit,
+    onLogicFunction: (Int, Int) -> Unit, onThreshold: (Int, Int, Boolean, Int, Float) -> Unit,
+) {
     ParameterSection(modifier = Modifier.testTag("output-$index-card"), contentSpacing = 0.dp) {
         Row(Modifier.fillMaxWidth().heightIn(min = 66.dp).padding(horizontal = 14.dp, vertical = 11.dp), verticalAlignment = Alignment.CenterVertically) {
-            Text(stringResource(outputTitles[index - 1]), Modifier.weight(1f), style = MaterialTheme.typography.bodyMedium)
-            Switch(values.enabled, { onChange(index, values.copy(enabled = it)) }, modifier = Modifier.testTag("output-$index-use"))
+            Text(stringResource(UniversalOutputLabels.entries[index - 1].title), Modifier.weight(1f), style = MaterialTheme.typography.bodyMedium)
+            Switch(values.enabled, { onEnabled(index, it) }, modifier = Modifier.testTag("output-$index-use"))
         }
         HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant)
         if (values.enabled) {
             ConditionGroup("output-$index-condition-1-group") {
-                ConditionPicker(index, 1, outputConditionTitles[index - 1][0], values.condition1, names) { onChange(index, values.withCondition(1, it)) }
-                ToggleLine(R.string.unioutput1_condition_1_inverse_title, values.condition1Inversion) { onChange(index, values.copy(condition1Inversion = it)) }
-                Threshold(R.string.unioutput1_condition1_on_value_title, values.onThreshold1, names[values.condition1]?.let { uniOutConditionFormat(values.condition1) }, "output-$index-threshold-on-1") { onChange(index, values.copy(onThreshold1 = it)) }
-                Threshold(R.string.unioutput1_condition1_off_value_title, values.offThreshold1, names[values.condition1]?.let { uniOutConditionFormat(values.condition1) }, "output-$index-threshold-off-1") { onChange(index, values.copy(offThreshold1 = it)) }
+                ConditionPicker(index, 1, UniversalOutputLabels.entries[index - 1].condition1, values.condition1, names, conditions) { onCondition(index, 1, it) }
+                ToggleLine(R.string.unioutput1_condition_1_inverse_title, values.condition1Inversion) { onConditionInversion(index, 1, it) }
+                Threshold(R.string.unioutput1_condition1_on_value_title, values.onThreshold1, conditions.get(values.condition1), values.condition1, "output-$index-threshold-on-1") { condition, value -> onThreshold(index, 1, true, condition, value) }
+                Threshold(R.string.unioutput1_condition1_off_value_title, values.offThreshold1, conditions.get(values.condition1), values.condition1, "output-$index-threshold-off-1") { condition, value -> onThreshold(index, 1, false, condition, value) }
             }
             Spacer(Modifier.height(16.dp))
-            FunctionPicker(R.string.unioutput1_logical_functions_title, values.logicFunction, functions, tag = "output-$index-logical-function") { onChange(index, values.copy(logicFunction = if (it == 4) 15 else it)) }
+            FunctionPicker(R.string.unioutput1_logical_functions_title, values.logicFunction, functions, tag = "output-$index-logical-function") { onLogicFunction(index, if (it == 4) 15 else it) }
             if (values.logicFunction != 15) {
                 Spacer(Modifier.height(8.dp))
                 ConditionGroup("output-$index-condition-2-group") {
-                    ConditionPicker(index, 2, outputConditionTitles[index - 1][1], values.condition2, names) { onChange(index, values.withCondition(2, it)) }
-                    ToggleLine(R.string.unioutput1_condition_1_inverse_title, values.condition2Inversion) { onChange(index, values.copy(condition2Inversion = it)) }
-                    Threshold(R.string.unioutput1_condition1_on_value_title, values.onThreshold2, names[values.condition2]?.let { uniOutConditionFormat(values.condition2) }, "output-$index-threshold-on-2") { onChange(index, values.copy(onThreshold2 = it)) }
-                    Threshold(R.string.unioutput1_condition1_off_value_title, values.offThreshold2, names[values.condition2]?.let { uniOutConditionFormat(values.condition2) }, "output-$index-threshold-off-2") { onChange(index, values.copy(offThreshold2 = it)) }
+                    ConditionPicker(index, 2, UniversalOutputLabels.entries[index - 1].condition2, values.condition2, names, conditions) { onCondition(index, 2, it) }
+                    ToggleLine(R.string.unioutput1_condition_1_inverse_title, values.condition2Inversion) { onConditionInversion(index, 2, it) }
+                    Threshold(R.string.unioutput1_condition1_on_value_title, values.onThreshold2, conditions.get(values.condition2), values.condition2, "output-$index-threshold-on-2") { condition, value -> onThreshold(index, 2, true, condition, value) }
+                    Threshold(R.string.unioutput1_condition1_off_value_title, values.offThreshold2, conditions.get(values.condition2), values.condition2, "output-$index-threshold-off-2") { condition, value -> onThreshold(index, 2, false, condition, value) }
                 }
             }
             Spacer(Modifier.height(16.dp))
-            ToggleLine(R.string.unioutput_inverse_result_title, values.inversion, tag = "output-$index-result-inversion") { onChange(index, values.copy(inversion = it)) }
+            ToggleLine(R.string.unioutput_inverse_result_title, values.inversion, tag = "output-$index-result-inversion") { onResultInversion(index, it) }
         } else Text(stringResource(R.string.uniout_disabled), style = MaterialTheme.typography.bodyMedium, modifier = Modifier.fillMaxWidth().padding(horizontal = 14.dp, vertical = 11.dp).testTag("output-$index-collapsed"))
     }
 }
 
 @Composable private fun ConditionGroup(tag: String, content: @Composable ColumnScope.() -> Unit) {
-    Column(
-        Modifier.fillMaxWidth().padding(top = 8.dp)
-            .background(MaterialTheme.colorScheme.surfaceContainerLow, DropdownShape)
-            .testTag(tag),
-        verticalArrangement = Arrangement.spacedBy(12.dp),
-        content = content,
-    )
+    Column(Modifier.fillMaxWidth().padding(top = 8.dp).background(MaterialTheme.colorScheme.surfaceContainerLow, DropdownShape).testTag(tag),
+        verticalArrangement = Arrangement.spacedBy(12.dp), content = content)
 }
 
-private val outputTitles = listOf(R.string.unioutput1_use_title, R.string.unioutput2_use_title, R.string.unioutput3_use_title, R.string.unioutput4_use_title, R.string.unioutput5_use_title, R.string.unioutput6_use_title)
-private val outputConditionTitles = listOf(
-    listOf(R.string.unioutput1_condition_1_title, R.string.unioutput1_condition_2_title),
-    listOf(R.string.unioutput2_condition_1_title, R.string.unioutput2_condition_2_title),
-    listOf(R.string.unioutput3_condition_1_title, R.string.unioutput3_condition_2_title),
-    listOf(R.string.unioutput4_condition_1_title, R.string.unioutput4_condition_2_title),
-    listOf(R.string.unioutput5_condition_1_title, R.string.unioutput5_condition_2_title),
-    listOf(R.string.unioutput6_condition_1_title, R.string.unioutput6_condition_2_title),
-)
+private enum class UniversalOutputLabels(val title: Int, val condition1: Int, val condition2: Int) {
+    FIRST(R.string.unioutput1_use_title, R.string.unioutput1_condition_1_title, R.string.unioutput1_condition_2_title),
+    SECOND(R.string.unioutput2_use_title, R.string.unioutput2_condition_1_title, R.string.unioutput2_condition_2_title),
+    THIRD(R.string.unioutput3_use_title, R.string.unioutput3_condition_1_title, R.string.unioutput3_condition_2_title),
+    FOURTH(R.string.unioutput4_use_title, R.string.unioutput4_condition_1_title, R.string.unioutput4_condition_2_title),
+    FIFTH(R.string.unioutput5_use_title, R.string.unioutput5_condition_1_title, R.string.unioutput5_condition_2_title),
+    SIXTH(R.string.unioutput6_use_title, R.string.unioutput6_condition_1_title, R.string.unioutput6_condition_2_title),
+}
 
 @Composable private fun ToggleLine(labelId: Int, value: Boolean, tag: String? = null, onValue: (Boolean) -> Unit) {
     val modifier = Modifier.fillMaxWidth().heightIn(min = 66.dp).clickable { onValue(!value) }.padding(horizontal = 14.dp, vertical = 11.dp)
@@ -318,7 +140,7 @@ private val outputConditionTitles = listOf(
     HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant)
 }
 
-@Composable private fun ConditionPicker(output: Int, slot: Int, labelId: Int, selected: Int, names: Map<Int, String>, onSelect: (Int) -> Unit) {
+@Composable private fun ConditionPicker(output: Int, slot: Int, labelId: Int, selected: Int, names: Map<Int, String>, conditions: UniversalOutputConditions, onSelect: (Int) -> Unit) {
     var expanded by remember { mutableStateOf(false) }
     val label = stringResource(labelId)
     val conditionName = names[selected] ?: stringResource(R.string.uniout_unknown_code, selected)
@@ -326,7 +148,7 @@ private val outputConditionTitles = listOf(
         ParameterSelectionRow(label, conditionName, "output-$output-condition-$slot-picker") { expanded = true }
         if (expanded) ParameterChoiceDialog(
             title = label,
-            choices = names.toSortedMap().filter { (id, _) -> slot != 1 || id !in setOf(7, 23) }
+            choices = names.toSortedMap().filter { (id, _) -> conditions.availableInSlot(id, slot) }
                 .map { (id, name) -> ParameterChoice(id, name, "output-$output-condition-$slot-option-$id") },
             onDismiss = { expanded = false },
             onSelect = onSelect,
@@ -349,8 +171,9 @@ private val outputConditionTitles = listOf(
     }
 }
 
-@Composable private fun Threshold(labelId: Int, value: Float, format: UniOutConditionFormat?, tag: String, onValue: (Float) -> Unit) {
+@Composable private fun Threshold(labelId: Int, value: Float, format: UniOutConditionFormat?, condition: Int, tag: String, onValue: (Int, Float) -> Unit) {
     var editing by remember { mutableStateOf(false) }
+    var editingCondition by remember { mutableIntStateOf(condition) }
     val label = stringResource(labelId)
     if (format == null) {
         Text(stringResource(R.string.uniout_threshold_unavailable, label), Modifier.fillMaxWidth().padding(horizontal = 14.dp, vertical = 8.dp))
@@ -360,13 +183,13 @@ private val outputConditionTitles = listOf(
             value = String.format(Locale.US, "% .${format.precision}f", value).trim(),
             testTag = tag,
             numberText = String.format(Locale.US, "% .${format.precision}f", value).trim(),
-            onClick = { editing = true },
+            onClick = { editingCondition = condition; editing = true },
         )
         if (editing) {
             var text by remember(value) { mutableStateOf(value.toString()) }
             ParameterAlertDialog(onDismissRequest = { editing = false }, title = { Text(stringResource(R.string.uniout_threshold_edit_title, label)) },
-                text = { OutlinedTextField(text, { text = it }, label = { Text(stringResource(R.string.uniout_threshold_value_label)) }, shape = DropdownShape) },
-                confirmButton = { ParameterConfirmButton(stringResource(android.R.string.ok)) { text.toFloatOrNull()?.coerceIn(format.min, format.max)?.let(onValue); editing = false } },
+                text = { OutlinedTextField(text, { text = it }, label = { Text(stringResource(R.string.uniout_threshold_value_label)) }, shape = DropdownShape, modifier = Modifier.testTag("$tag-editor")) },
+                confirmButton = { ParameterConfirmButton(stringResource(android.R.string.ok)) { text.toFloatOrNull()?.takeIf { it.isFinite() }?.coerceIn(format.min, format.max)?.let { onValue(editingCondition, it) }; editing = false } },
                 dismissButton = { ParameterCancelButton { editing = false } })
         }
     }

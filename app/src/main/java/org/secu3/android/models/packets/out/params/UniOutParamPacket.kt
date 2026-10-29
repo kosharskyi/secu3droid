@@ -698,6 +698,101 @@ data class UniOutParamPacket(
         return this
     }
 
+    /** Captures raw wire words so failed edits can be rolled back without decoding lossy values. */
+    internal fun checkpointRawFields(): IntArray = intArrayOf(
+        rawOutput1Flags,
+        output1Condition1,
+        output1Condition2,
+        rawOutput1OnThrd1,
+        rawOutput1OffThrd1,
+        rawOutput1OnThrd2,
+        rawOutput1OffThrd2,
+        rawOutput2Flags,
+        output2Condition1,
+        output2Condition2,
+        rawOutput2OnThrd1,
+        rawOutput2OffThrd1,
+        rawOutput2OnThrd2,
+        rawOutput2OffThrd2,
+        rawOutput3Flags,
+        output3Condition1,
+        output3Condition2,
+        rawOutput3OnThrd1,
+        rawOutput3OffThrd1,
+        rawOutput3OnThrd2,
+        rawOutput3OffThrd2,
+        rawOutput4Flags,
+        output4Condition1,
+        output4Condition2,
+        rawOutput4OnThrd1,
+        rawOutput4OffThrd1,
+        rawOutput4OnThrd2,
+        rawOutput4OffThrd2,
+        rawOutput5Flags,
+        output5Condition1,
+        output5Condition2,
+        rawOutput5OnThrd1,
+        rawOutput5OffThrd1,
+        rawOutput5OnThrd2,
+        rawOutput5OffThrd2,
+        rawOutput6Flags,
+        output6Condition1,
+        output6Condition2,
+        rawOutput6OnThrd1,
+        rawOutput6OffThrd1,
+        rawOutput6OnThrd2,
+        rawOutput6OffThrd2,
+        logicFunction_1_2
+    )
+
+    /** Restores a checkpoint in place, preserving this packet object and its unhandled tail. */
+    internal fun restoreRawFields(checkpoint: IntArray) {
+        require(checkpoint.size == 43)
+        rawOutput1Flags = checkpoint[0]
+        output1Condition1 = checkpoint[1]
+        output1Condition2 = checkpoint[2]
+        rawOutput1OnThrd1 = checkpoint[3]
+        rawOutput1OffThrd1 = checkpoint[4]
+        rawOutput1OnThrd2 = checkpoint[5]
+        rawOutput1OffThrd2 = checkpoint[6]
+        rawOutput2Flags = checkpoint[7]
+        output2Condition1 = checkpoint[8]
+        output2Condition2 = checkpoint[9]
+        rawOutput2OnThrd1 = checkpoint[10]
+        rawOutput2OffThrd1 = checkpoint[11]
+        rawOutput2OnThrd2 = checkpoint[12]
+        rawOutput2OffThrd2 = checkpoint[13]
+        rawOutput3Flags = checkpoint[14]
+        output3Condition1 = checkpoint[15]
+        output3Condition2 = checkpoint[16]
+        rawOutput3OnThrd1 = checkpoint[17]
+        rawOutput3OffThrd1 = checkpoint[18]
+        rawOutput3OnThrd2 = checkpoint[19]
+        rawOutput3OffThrd2 = checkpoint[20]
+        rawOutput4Flags = checkpoint[21]
+        output4Condition1 = checkpoint[22]
+        output4Condition2 = checkpoint[23]
+        rawOutput4OnThrd1 = checkpoint[24]
+        rawOutput4OffThrd1 = checkpoint[25]
+        rawOutput4OnThrd2 = checkpoint[26]
+        rawOutput4OffThrd2 = checkpoint[27]
+        rawOutput5Flags = checkpoint[28]
+        output5Condition1 = checkpoint[29]
+        output5Condition2 = checkpoint[30]
+        rawOutput5OnThrd1 = checkpoint[31]
+        rawOutput5OffThrd1 = checkpoint[32]
+        rawOutput5OnThrd2 = checkpoint[33]
+        rawOutput5OffThrd2 = checkpoint[34]
+        rawOutput6Flags = checkpoint[35]
+        output6Condition1 = checkpoint[36]
+        output6Condition2 = checkpoint[37]
+        rawOutput6OnThrd1 = checkpoint[38]
+        rawOutput6OffThrd1 = checkpoint[39]
+        rawOutput6OnThrd2 = checkpoint[40]
+        rawOutput6OffThrd2 = checkpoint[41]
+        logicFunction_1_2 = checkpoint[42]
+    }
+
     companion object {
 
         private val SIGNED_CONDITIONS = setOf(0, 11, 14, 28, 30, 34, 39, 40)

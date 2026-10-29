@@ -60,6 +60,7 @@ import org.secu3.android.models.packets.out.params.LtftParamPacket
 import org.secu3.android.models.packets.out.params.DbwParamPacket
 import org.secu3.android.models.packets.out.params.FunSetParamPacket
 import org.secu3.android.models.packets.out.params.AdcCorrectionsParamPacket
+import org.secu3.android.models.packets.out.params.UniOutParamPacket
 import org.secu3.android.ui.parameters.pages.compose.AdcNumber
 import org.secu3.android.models.packets.out.ChangeModePacket
 import org.secu3.android.utils.UserPrefs
@@ -157,6 +158,93 @@ class ParameterPageSessionCacheTest {
             await { vm.anglesControl.values.value != null }
         } finally {
             transport.close()
+            compose.runOnIdle { vm.clearPageState() }
+        }
+    }
+
+    @Test fun universalOutputsViewModelMapsAllSixOutputsAndPreservesSessionAndProtocolContracts() = runBlocking {
+        val vm = paramsViewModel()
+        val usb = installFakeUsb(vm)
+        val queueField = ParamsViewModel::class.java.getDeclaredField("uiMessageQueue").apply { isAccessible = true }
+        val queue = queueField.get(vm) as org.secu3.android.ui.messages.UiMessageQueue
+        try {
+            activate(vm, R.string.params_tab_universal_outputs_title)
+            usb.awaitReadRequest('&', 1)
+            val inboundPayload = UniOutParamPacket().pack().drop(1).toIntArray() + intArrayOf(0xCA, 0xFE)
+            val inbound = UniOutParamPacket().parse(intArrayOf('@'.code, '&'.code) + inboundPayload) as UniOutParamPacket
+            usb.emit(inbound)
+            await { vm.universalOutputsControl.values.value != null }
+            compose.activityRule.scenario.moveToState(Lifecycle.State.STARTED)
+            compose.waitForIdle()
+            queue.onActiveScopeChanged(PARAMETERS_ROUTE)
+            queue.pending.value.forEach { queue.acknowledge(it.id) }
+            usb.suppressAttachmentRescan()
+            vm.isSendAllowed = false
+
+            val expected = IntArray(67)
+            val expectedTail = intArrayOf(0xCA, 0xFE)
+            var writes = usb.writes.size
+            suspend fun assertPacketSent() {
+                usb.awaitWriteCount(++writes)
+                val frame = usb.writes[writes - 1]
+                assertEquals('!', frame[0].toInt().toChar())
+                assertEquals('&', frame[1].toInt().toChar())
+                val decoded = unescapeUniversalOutputWrite(frame)
+                assertArrayEquals(expected + expectedTail, decoded.sliceArray(0 until 69))
+                assertTrue(queue.pending.value.any { it.textRes == R.string.packet_sent })
+                queue.pending.value.forEach { queue.acknowledge(it.id) }
+            }
+            suspend fun command(action: () -> Boolean, updateExpected: () -> Unit) {
+                compose.runOnIdle { assertTrue(action()) }
+                updateExpected()
+                assertPacketSent()
+            }
+
+            for (output in 1..6) {
+                command({ vm.setUniversalOutputEnabled(output, true) }, { setUniOutFlag(expected, output, bit = 2, value = true) })
+                command({ vm.selectUniversalOutputCondition(output, 1, 0) }, { setUniOutCondition(expected, output, 1, 0); setUniOutThreshold(expected, output, 1, true, 55f, 4f); setUniOutThreshold(expected, output, 1, false, 50f, 4f) })
+                command({ vm.setUniversalOutputConditionInverted(output, 1, true) }, { setUniOutFlag(expected, output, bit = 0, value = true) })
+                command({ vm.setUniversalOutputConditionInverted(output, 2, true) }, { setUniOutFlag(expected, output, bit = 1, value = true) })
+                command({ vm.selectUniversalOutputCondition(output, 2, 1) }, { setUniOutCondition(expected, output, 2, 1); setUniOutThreshold(expected, output, 2, true, 1500f, 1f); setUniOutThreshold(expected, output, 2, false, 1200f, 1f) })
+                command({ vm.editUniversalOutputThreshold(output, 1, true, 0, 60f + output) }, { setUniOutThreshold(expected, output, 1, true, 60f + output, 4f) })
+                command({ vm.editUniversalOutputThreshold(output, 1, false, 0, 45f + output) }, { setUniOutThreshold(expected, output, 1, false, 45f + output, 4f) })
+                command({ vm.editUniversalOutputThreshold(output, 2, true, 1, 2000f + output) }, { setUniOutThreshold(expected, output, 2, true, 2000f + output, 1f) })
+                command({ vm.editUniversalOutputThreshold(output, 2, false, 1, 1800f + output) }, { setUniOutThreshold(expected, output, 2, false, 1800f + output, 1f) })
+                command({ vm.setUniversalOutputResultInverted(output, true) }, { setUniOutFlag(expected, output, bit = 3, value = true) })
+                val logic = listOf(0, 1, 2, 3, 15, 0)[output - 1]
+                command({ vm.selectUniversalOutputLogicFunction(output, logic) }, { setUniOutLogic(expected, output, logic) })
+            }
+            for (code in listOf(0, 1, 2, 3, 15)) {
+                command({ vm.selectUniversalOutputsPairFunction(code) }, { expected[66] = code })
+            }
+
+            command({ vm.selectUniversalOutputCondition(1, 1, 14) }, { setUniOutCondition(expected, 1, 1, 14); setUniOutThreshold(expected, 1, 1, true, 55f, 4f); setUniOutThreshold(expected, 1, 1, false, 50f, 4f) })
+            val stableState = vm.universalOutputsControl.values.value
+            val noWriteCount = usb.writes.size
+            queue.pending.value.forEach { queue.acknowledge(it.id) }
+            compose.runOnIdle { assertFalse(vm.editUniversalOutputThreshold(1, 1, true, 0, 80f)) }
+            assertEquals(noWriteCount, usb.writes.size)
+            assertEquals(stableState, vm.universalOutputsControl.values.value)
+            assertFalse(queue.pending.value.any { it.textRes == R.string.packet_sent })
+
+            command({ vm.setUniversalOutputEnabled(2, false) }, { setUniOutFlag(expected, 2, bit = 2, value = false) })
+            val pairRefusedCount = usb.writes.size
+            queue.pending.value.forEach { queue.acknowledge(it.id) }
+            compose.runOnIdle { assertFalse(vm.selectUniversalOutputsPairFunction(2)) }
+            assertEquals(pairRefusedCount, usb.writes.size)
+            assertFalse(queue.pending.value.any { it.textRes == R.string.packet_sent })
+
+            compose.runOnIdle { vm.pausePageSession() }
+            val pausedState = vm.universalOutputsControl.values.value
+            val pausedWrites = usb.writes.size
+            queue.pending.value.forEach { queue.acknowledge(it.id) }
+            compose.runOnIdle { assertFalse(vm.setUniversalOutputEnabled(6, false)) }
+            assertEquals(pausedWrites, usb.writes.size)
+            assertEquals(pausedState, vm.universalOutputsControl.values.value)
+            assertFalse(queue.pending.value.any { it.textRes == R.string.packet_sent })
+            assertFalse(vm.isSendAllowed)
+        } finally {
+            usb.close()
             compose.runOnIdle { vm.clearPageState() }
         }
     }
@@ -1759,6 +1847,37 @@ class ParameterPageSessionCacheTest {
                 }
             }
         }
+    }
+
+    private fun setUniOutFlag(bytes: IntArray, output: Int, bit: Int, value: Boolean) {
+        val index = (output - 1) * 11
+        val mask = 1 shl bit
+        bytes[index] = if (value) bytes[index] or mask else bytes[index] and mask.inv()
+    }
+    private fun setUniOutCondition(bytes: IntArray, output: Int, slot: Int, code: Int) {
+        bytes[(output - 1) * 11 + slot] = code
+    }
+    private fun setUniOutThreshold(bytes: IntArray, output: Int, slot: Int, on: Boolean, value: Float, scale: Float) {
+        val word = (value * scale).roundToInt() and 0xFFFF
+        val index = (output - 1) * 11 + if (slot == 1) if (on) 3 else 5 else if (on) 7 else 9
+        bytes[index] = word ushr 8
+        bytes[index + 1] = word and 0xFF
+    }
+    private fun setUniOutLogic(bytes: IntArray, output: Int, code: Int) {
+        val index = (output - 1) * 11
+        bytes[index] = bytes[index] and 0x0F or (code shl 4)
+    }
+    private fun unescapeUniversalOutputWrite(frame: ByteArray): IntArray {
+        val decoded = ArrayList<Int>(frame.size)
+        var index = 2
+        while (index < frame.lastIndex) {
+            val byte = frame[index++].toInt() and 0xFF
+            if (byte == 0x0A && index < frame.lastIndex) {
+                val escape = frame[index++].toInt() and 0xFF
+                decoded += when (escape) { 0x83 -> 0x0D; 0x84 -> 0x0A; else -> escape }
+            } else decoded += byte
+        }
+        return decoded.toIntArray()
     }
 
     private fun paramsViewModel(): ParamsViewModel {

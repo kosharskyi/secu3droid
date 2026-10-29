@@ -64,6 +64,8 @@ import org.secu3.android.domain.parameters.LtftControl
 import org.secu3.android.domain.parameters.DbwControl
 import org.secu3.android.domain.parameters.FunctionsControl
 import org.secu3.android.domain.parameters.AdcCorrectionsControl
+import org.secu3.android.domain.parameters.UniversalOutputsControl
+import org.secu3.android.domain.parameters.UniversalOutputConditions
 import org.secu3.android.domain.parameters.SecurityCredentialsResult
 import org.secu3.android.models.packets.base.OutputPacket
 import org.secu3.android.models.packets.out.params.AccelerationParamPacket
@@ -108,7 +110,6 @@ import org.secu3.android.ui.parameters.pages.compose.CkpsNumber
 import org.secu3.android.ui.parameters.pages.compose.CkpsFlag
 import org.secu3.android.ui.parameters.pages.compose.StarterFlag
 import org.secu3.android.ui.parameters.pages.compose.StarterNumber
-import org.secu3.android.ui.parameters.pages.UniversalOutputsStateHolder
 import javax.inject.Inject
 
 @HiltViewModel
@@ -133,6 +134,8 @@ class ParamsViewModel @Inject constructor(
     internal val dbwControl: DbwControl,
     internal val functionsControl: FunctionsControl,
     internal val adcCorrectionsControl: AdcCorrectionsControl,
+    internal val universalOutputsControl: UniversalOutputsControl,
+    internal val universalOutputConditions: UniversalOutputConditions,
     private val uiMessageQueue: UiMessageQueue,
     private val parameterPageCatalog: ParameterPageCatalog,
 ) : ViewModel() {
@@ -495,9 +498,19 @@ class ParamsViewModel @Inject constructor(
         return admitted
     }
 
-    internal val universalOutputsStateHolder by lazy {
-        UniversalOutputsStateHolder(::sendPacket) { isSendAllowed = it }
+    private fun reportUniversalOutputsEdit(admitted: Boolean): Boolean {
+        if (admitted) showUiMessage(R.string.packet_sent, UiMessageDuration.SHORT)
+        return admitted
     }
+    internal fun setUniversalOutputEnabled(output: Int, enabled: Boolean) = reportUniversalOutputsEdit(universalOutputsControl.setOutputEnabled(output, enabled))
+    internal fun selectUniversalOutputCondition(output: Int, slot: Int, code: Int) = reportUniversalOutputsEdit(universalOutputsControl.selectCondition(output, slot, code))
+    internal fun setUniversalOutputConditionInverted(output: Int, slot: Int, inverted: Boolean) = reportUniversalOutputsEdit(universalOutputsControl.setConditionInverted(output, slot, inverted))
+    internal fun setUniversalOutputResultInverted(output: Int, inverted: Boolean) = reportUniversalOutputsEdit(universalOutputsControl.setResultInverted(output, inverted))
+    internal fun selectUniversalOutputLogicFunction(output: Int, code: Int) = reportUniversalOutputsEdit(universalOutputsControl.selectLogicFunction(output, code))
+    internal fun editUniversalOutputThreshold(output: Int, slot: Int, on: Boolean, expectedCondition: Int, value: Float) = reportUniversalOutputsEdit(
+        if (on) universalOutputsControl.editOnThreshold(output, slot, expectedCondition, value) else universalOutputsControl.editOffThreshold(output, slot, expectedCondition, value),
+    )
+    internal fun selectUniversalOutputsPairFunction(code: Int) = reportUniversalOutputsEdit(universalOutputsControl.selectPairFunction(code))
 
     internal fun editFunctions(number: FunctionsNumber, value: Float): Boolean {
         val admitted = when (number) {
@@ -854,7 +867,7 @@ class ParamsViewModel @Inject constructor(
             ParameterPage.GAS_DOSE -> gasDoseControl.reset()
             ParameterPage.EL_THROTTLE -> dbwControl.reset()
             ParameterPage.FUEL_INJECTION -> fuelInjectionControl.reset()
-            ParameterPage.UNIVERSAL_OUTPUTS -> universalOutputsStateHolder.reset()
+            ParameterPage.UNIVERSAL_OUTPUTS -> universalOutputsControl.reset()
         }
     }
 
@@ -904,7 +917,7 @@ class ParamsViewModel @Inject constructor(
             }
             ParameterPage.EL_THROTTLE -> dbwControl.receive(packet<DbwParamPacket>(result))
             ParameterPage.FUEL_INJECTION -> fuelInjectionControl.receive(packet<InjctrParPacket>(result))
-            ParameterPage.UNIVERSAL_OUTPUTS -> universalOutputsStateHolder.onPacketReceived(packet<UniOutParamPacket>(result))
+            ParameterPage.UNIVERSAL_OUTPUTS -> universalOutputsControl.receive(packet<UniOutParamPacket>(result))
         }
     }
 
