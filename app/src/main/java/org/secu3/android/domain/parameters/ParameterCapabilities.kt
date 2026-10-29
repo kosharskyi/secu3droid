@@ -47,6 +47,13 @@ class ParameterCapabilities(firmware: FirmwareInfoPacket? = null) {
 
     fun functionsUpperLoadEnabled(useLoadGrid: Boolean, loadSource: Int): Boolean = !useLoadGrid && loadSource != 1
 
+    fun adcChannelEnabled(channel: Int): Boolean = when (channel) {
+        in 0..5 -> true
+        7 -> extraAnalogInputs
+        in 6..11 -> dbw
+        else -> false
+    }
+
     fun supports(page: ParameterPage): Boolean = when (page) {
         ParameterPage.CHOKE_CONTROL -> !known || choke
         ParameterPage.FUEL_INJECTION -> known && fuelInjection

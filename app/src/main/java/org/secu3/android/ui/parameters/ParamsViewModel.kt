@@ -63,6 +63,7 @@ import org.secu3.android.domain.parameters.AccelerationControl
 import org.secu3.android.domain.parameters.LtftControl
 import org.secu3.android.domain.parameters.DbwControl
 import org.secu3.android.domain.parameters.FunctionsControl
+import org.secu3.android.domain.parameters.AdcCorrectionsControl
 import org.secu3.android.domain.parameters.SecurityCredentialsResult
 import org.secu3.android.models.packets.base.OutputPacket
 import org.secu3.android.models.packets.out.params.AccelerationParamPacket
@@ -85,7 +86,7 @@ import org.secu3.android.ui.parameters.pages.compose.AnglesFlag
 import org.secu3.android.ui.parameters.pages.compose.AnglesNumber
 import org.secu3.android.ui.parameters.pages.compose.CarburNumber
 import org.secu3.android.ui.parameters.pages.compose.DbwNumber
-import org.secu3.android.ui.parameters.pages.compose.AdcCorrectionsStateHolder
+import org.secu3.android.ui.parameters.pages.compose.AdcNumber
 import org.secu3.android.ui.parameters.pages.compose.LambdaControlStateHolder
 import org.secu3.android.ui.parameters.pages.compose.LtftNumber
 import org.secu3.android.ui.parameters.pages.compose.IdlingNumber
@@ -131,6 +132,7 @@ class ParamsViewModel @Inject constructor(
     internal val ltftControl: LtftControl,
     internal val dbwControl: DbwControl,
     internal val functionsControl: FunctionsControl,
+    internal val adcCorrectionsControl: AdcCorrectionsControl,
     private val uiMessageQueue: UiMessageQueue,
     private val parameterPageCatalog: ParameterPageCatalog,
 ) : ViewModel() {
@@ -401,8 +403,41 @@ class ParamsViewModel @Inject constructor(
         return admitted
     }
 
-    internal val adcCorrectionsStateHolder by lazy {
-        AdcCorrectionsStateHolder(::sendPacket, { isSendAllowed = false }, { isSendAllowed = true })
+    internal fun editAdc(number: AdcNumber, value: Float): Boolean {
+        val admitted = when (number) {
+            AdcNumber.MAP_FACTOR -> adcCorrectionsControl.editMapFactor(value)
+            AdcNumber.MAP_CORRECTION -> adcCorrectionsControl.editMapCorrection(value)
+            AdcNumber.VOLTAGE_FACTOR -> adcCorrectionsControl.editVoltageFactor(value)
+            AdcNumber.VOLTAGE_CORRECTION -> adcCorrectionsControl.editVoltageCorrection(value)
+            AdcNumber.CTS_FACTOR -> adcCorrectionsControl.editCtsFactor(value)
+            AdcNumber.CTS_CORRECTION -> adcCorrectionsControl.editCtsCorrection(value)
+            AdcNumber.TPS_FACTOR -> adcCorrectionsControl.editTpsFactor(value)
+            AdcNumber.TPS_CORRECTION -> adcCorrectionsControl.editTpsCorrection(value)
+            AdcNumber.ADD_I1_FACTOR -> adcCorrectionsControl.editAddI1Factor(value)
+            AdcNumber.ADD_I1_CORRECTION -> adcCorrectionsControl.editAddI1Correction(value)
+            AdcNumber.ADD_I2_FACTOR -> adcCorrectionsControl.editAddI2Factor(value)
+            AdcNumber.ADD_I2_CORRECTION -> adcCorrectionsControl.editAddI2Correction(value)
+            AdcNumber.ADD_I3_FACTOR -> adcCorrectionsControl.editAddI3Factor(value)
+            AdcNumber.ADD_I3_CORRECTION -> adcCorrectionsControl.editAddI3Correction(value)
+            AdcNumber.ADD_I4_FACTOR -> adcCorrectionsControl.editAddI4Factor(value)
+            AdcNumber.ADD_I4_CORRECTION -> adcCorrectionsControl.editAddI4Correction(value)
+            AdcNumber.ADD_I5_FACTOR -> adcCorrectionsControl.editAddI5Factor(value)
+            AdcNumber.ADD_I5_CORRECTION -> adcCorrectionsControl.editAddI5Correction(value)
+            AdcNumber.ADD_I6_FACTOR -> adcCorrectionsControl.editAddI6Factor(value)
+            AdcNumber.ADD_I6_CORRECTION -> adcCorrectionsControl.editAddI6Correction(value)
+            AdcNumber.ADD_I7_FACTOR -> adcCorrectionsControl.editAddI7Factor(value)
+            AdcNumber.ADD_I7_CORRECTION -> adcCorrectionsControl.editAddI7Correction(value)
+            AdcNumber.ADD_I8_FACTOR -> adcCorrectionsControl.editAddI8Factor(value)
+            AdcNumber.ADD_I8_CORRECTION -> adcCorrectionsControl.editAddI8Correction(value)
+        }
+        if (admitted) showUiMessage(R.string.packet_sent, UiMessageDuration.SHORT)
+        return admitted
+    }
+
+    internal fun setAdcCompensationMode(enabled: Boolean): Boolean {
+        val admitted = adcCorrectionsControl.setCompensationMode(enabled)
+        if (admitted) showUiMessage(R.string.packet_sent, UiMessageDuration.SHORT)
+        return admitted
     }
 
     internal val lambdaControlStateHolder by lazy {
@@ -800,7 +835,7 @@ class ParamsViewModel @Inject constructor(
             ParameterPage.TEMPERATURE -> temperatureControl.reset()
             ParameterPage.FUEL_CUTOFF -> carburControl.reset()
             ParameterPage.CKPS -> ckpsControl.reset()
-            ParameterPage.ADC_ERRORS -> adcCorrectionsStateHolder.reset()
+            ParameterPage.ADC_ERRORS -> adcCorrectionsControl.reset()
             ParameterPage.KNOCK -> knockControl.reset()
             ParameterPage.LAMBDA_CONTROL -> lambdaControlStateHolder.reset()
             ParameterPage.ACCELERATION -> accelerationControl.reset()
@@ -835,7 +870,7 @@ class ParamsViewModel @Inject constructor(
             ParameterPage.TEMPERATURE -> temperatureControl.receive(packet<TemperatureParamPacket>(result))
             ParameterPage.FUEL_CUTOFF -> carburControl.receive(packet<CarburParamPacket>(result))
             ParameterPage.CKPS -> ckpsControl.receive(packet<CkpsParamPacket>(result))
-            ParameterPage.ADC_ERRORS -> adcCorrectionsStateHolder.onPacketReceived(packet<AdcCorrectionsParamPacket>(result))
+            ParameterPage.ADC_ERRORS -> adcCorrectionsControl.receive(packet<AdcCorrectionsParamPacket>(result))
             ParameterPage.KNOCK -> knockControl.receive(packet<KnockParamPacket>(result))
             ParameterPage.LAMBDA_CONTROL -> lambdaControlStateHolder.onPacketReceived(packet<LambdaParamPacket>(result))
             ParameterPage.ACCELERATION -> accelerationControl.receive(packet<AccelerationParamPacket>(result))

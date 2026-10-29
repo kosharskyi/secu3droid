@@ -33,6 +33,7 @@ import org.secu3.android.domain.parameters.FunctionParameters
 import org.secu3.android.models.packets.input.FirmwareInfoPacket
 import org.secu3.android.models.packets.out.params.AnglesParamPacket
 import org.secu3.android.models.packets.out.params.LambdaParamPacket
+import org.secu3.android.models.packets.out.params.AdcCorrectionsParamPacket
 import org.secu3.android.models.packets.out.params.MiscellaneousParamPacket
 import org.secu3.android.models.packets.out.params.SecurityParamPacket
 import org.secu3.android.models.packets.out.params.StarterParamPacket
@@ -56,6 +57,7 @@ import org.secu3.android.ui.parameters.pages.compose.AccelerationNumber
 import org.secu3.android.ui.parameters.pages.compose.LtftNumber
 import org.secu3.android.ui.parameters.pages.compose.DbwNumber
 import org.secu3.android.ui.parameters.pages.compose.FunctionsNumber
+import org.secu3.android.ui.parameters.pages.compose.AdcNumber
 import org.secu3.android.ui.parameters.dialogs.NumericEditDialog
 
 class ParameterPageEditorRoutingTest {
@@ -220,6 +222,45 @@ class ParameterPageEditorRoutingTest {
             assertEquals(number.precision, request.precision)
             compose.runOnIdle { vm.dismissParameterEditor(session.id) }
         }
+    }
+
+    @Test fun adcEditorsRouteAllTwentyFourNamedFieldsWithDesktopMetadata() {
+        val vm = paramsViewModel()
+        val packet = AdcCorrectionsParamPacket(
+            mapAdcFactor = 1f, mapAdcCorrection = .125f,
+            ubatAdcFactor = 1.1f, ubatAdcCorrection = .25f,
+            tempAdcFactor = 1.2f, tempAdcCorrection = .375f,
+            tpsAdcFactor = 1.3f, tpsAdcCorrection = .5f,
+            ai1AdcFactor = 1.4f, ai1AdcCorrection = .625f,
+            ai2AdcFactor = 1.5f, ai2AdcCorrection = .75f,
+            ai3AdcFactor = 1.6f, ai3AdcCorrection = .875f,
+            ai4AdcFactor = 1.7f, ai4AdcCorrection = 1f,
+            ai5AdcFactor = 1.8f, ai5AdcCorrection = 1.125f,
+            ai6AdcFactor = 1.9f, ai6AdcCorrection = 1.25f,
+            ai7AdcFactor = 2f, ai7AdcCorrection = 1.375f,
+            ai8AdcFactor = 2.1f, ai8AdcCorrection = 1.5f,
+        )
+        vm.adcCorrectionsControl.reset()
+        vm.adcCorrectionsControl.receive(packet)
+        vm.isSendAllowed = false
+        renderPage(R.string.params_tab_adc_errors_corr_title, vm)
+
+        val values = requireNotNull(vm.adcCorrectionsControl.values.value)
+        AdcNumber.entries.forEach { number ->
+            compose.onNodeWithTag("adc_${number.name.lowercase()}").performScrollTo().performClick()
+            val editor = requireNotNull(vm.parameterEditSession)
+            val request = editor.request as ParameterEditRequest.FloatValue
+            assertEquals(number.value(values), request.value)
+            assertEquals(number.title, request.title)
+            assertEquals(number.min, request.min)
+            assertEquals(number.max, request.max)
+            assertEquals(number.step, request.step)
+            assertEquals(if (number == AdcNumber.MAP_CORRECTION) 4 else number.precision, request.precision)
+            compose.runOnIdle { vm.dismissParameterEditor(editor.id) }
+        }
+        assertFalse(vm.editAdc(AdcNumber.MAP_FACTOR, 1.5f))
+        assertEquals(values, vm.adcCorrectionsControl.values.value)
+        assertFalse(vm.isSendAllowed)
     }
 
     @Test fun temperatureEditorsPreserveWholeSecondTimerContractAndRejectWithoutSession() {

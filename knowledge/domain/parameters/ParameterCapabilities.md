@@ -14,3 +14,7 @@ The firmware's option bit 2 is shared with the desktop controller's ODDFIRE_ALGO
 ## Functions load thresholds share the UI and command predicates
 
 Lower load is editable only when load-grid mode is off. Upper load also stays disabled for protocol source `1` (MAP barometric correction). The same `ParameterCapabilities` predicates drive the screen styling and `FunctionsControl` stale-command guard; firmware unknown remains permissive for the other Functions field gates.
+
+## ADC channel availability keeps ADD_I4 independent
+
+ADC channels 0–5 are always available, channel 7 (ADD_I4) follows TPIC8101, and channels 6 plus 8–11 follow non-SECU3T DBW capability. This preserves the desktop case where a SECU3T with TPIC8101 can edit ADD_I4 while the other additional inputs remain disabled.

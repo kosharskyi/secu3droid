@@ -59,6 +59,8 @@ import org.secu3.android.models.packets.out.params.AccelerationParamPacket
 import org.secu3.android.models.packets.out.params.LtftParamPacket
 import org.secu3.android.models.packets.out.params.DbwParamPacket
 import org.secu3.android.models.packets.out.params.FunSetParamPacket
+import org.secu3.android.models.packets.out.params.AdcCorrectionsParamPacket
+import org.secu3.android.ui.parameters.pages.compose.AdcNumber
 import org.secu3.android.models.packets.out.ChangeModePacket
 import org.secu3.android.utils.UserPrefs
 import org.secu3.android.ui.MainActivity
@@ -156,6 +158,156 @@ class ParameterPageSessionCacheTest {
         } finally {
             transport.close()
             compose.runOnIdle { vm.clearPageState() }
+        }
+    }
+
+    @Test fun adcPageAdmissionWritesCapturedPacketEvenWhenLegacySendFlagIsClosed() = runBlocking {
+        val vm = paramsViewModel()
+        val usb = installFakeUsb(vm)
+        try {
+            activate(vm, R.string.params_tab_adc_errors_corr_title)
+            usb.awaitReadRequest('r', 1)
+            assertEquals(null, vm.adcCorrectionsControl.values.value)
+
+            val frame = intArrayOf(64, 'r'.code, 0xA1) + (0 until 12).flatMap { channel ->
+                listOf(0, 0) + listOf(0x12, 0x34, 0x56, 0x70 + channel)
+            }.toIntArray() + intArrayOf(0xCA, 0xFE)
+            val packet = AdcCorrectionsParamPacket().parse(frame) as AdcCorrectionsParamPacket
+            usb.emit(packet)
+            await { vm.adcCorrectionsControl.values.value != null }
+            delay(150)
+            assertTrue(vm.adcCorrectionsControl.values.value!!.adcCompMode)
+            assertEquals(0f, vm.adcCorrectionsControl.values.value!!.mapCorrection)
+
+            val baseline = usb.writes.size
+            usb.suppressAttachmentRescan()
+            vm.isSendAllowed = false
+            assertTrue(vm.editAdc(org.secu3.android.ui.parameters.pages.compose.AdcNumber.MAP_CORRECTION, 0f))
+            assertTrue(vm.setAdcCompensationMode(false))
+            usb.awaitWriteCount(baseline + 2)
+            val mapEdit = usb.writes[baseline]
+            assertEquals('r', mapEdit[1].toInt().toChar())
+            assertEquals(0xA1, mapEdit[2].toInt() and 0xFF)
+            assertArrayEquals(byteArrayOf(0, 0, 0x20, 0), mapEdit.sliceArray(5..8))
+            for (channel in 1 until 12) {
+                val offset = 5 + channel * 6
+                assertArrayEquals(byteArrayOf(0x12, 0x34, 0x56, (0x70 + channel).toByte()), mapEdit.sliceArray(offset..offset + 3))
+            }
+            assertArrayEquals(byteArrayOf(0xCA.toByte(), 0xFE.toByte()), mapEdit.sliceArray(mapEdit.size - 5..mapEdit.size - 4))
+            assertEquals('r', usb.writes[baseline + 1][1].toInt().toChar())
+            assertEquals(0xA0, usb.writes[baseline + 1][2].toInt() and 0xFF)
+            assertFalse(vm.isSendAllowed)
+            assertEquals(false, vm.adcCorrectionsControl.values.value!!.adcCompMode)
+        } finally {
+            usb.close()
+            compose.runOnIdle { vm.clearPageState() }
+        }
+    }
+
+    @Test fun adcViewModelRoutesAllTwentyFourCommandsWithGoldenWordsAndLiveSessionGates() = runBlocking {
+        val vm = paramsViewModel()
+        val queueField = ParamsViewModel::class.java.getDeclaredField("uiMessageQueue").apply { isAccessible = true }
+        val queue = queueField.get(vm) as org.secu3.android.ui.messages.UiMessageQueue
+        val originalActiveScope = queue.activeScope.value
+        var transport: FakeUsbTransport? = null
+        try {
+            val usb = installFakeUsb(vm, firmwareOptions = 1 shl 5).also { transport = it }
+            activate(vm, R.string.params_tab_adc_errors_corr_title)
+            usb.awaitReadRequest('r', 1)
+            usb.emit(AdcCorrectionsParamPacket())
+            await { vm.adcCorrectionsControl.values.value != null }
+            delay(150)
+
+            compose.activityRule.scenario.moveToState(Lifecycle.State.STARTED)
+            compose.waitForIdle()
+            queue.onActiveScopeChanged(PARAMETERS_ROUTE)
+            queue.pending.value.forEach { queue.acknowledge(it.id) }
+            usb.suppressAttachmentRescan()
+            vm.isSendAllowed = false
+
+            val expectedValues = MutableList(24) { 0f }
+            val factorWords = IntArray(12)
+            val correctionWords = IntArray(12) { 0x2000 }
+            val baseline = usb.writes.size
+            AdcNumber.entries.forEachIndexed { index, number ->
+                val channel = index / 2
+                val value = if (index % 2 == 0) 1f + (channel + 1) / 8f else (channel + 1) * .125f
+                expectedValues[index] = value
+                if (index % 2 == 0) factorWords[channel] = 0x4000 + (channel + 1) * 0x800
+                else correctionWords[channel] = 0x2000 + (channel + 1) * 0xC8000
+                compose.runOnIdle { assertTrue("${number.name}", vm.editAdc(number, value)) }
+                usb.awaitWriteCount(baseline + index + 1)
+                val write = usb.writes[baseline + index]
+                assertEquals('r', write[1].toInt().toChar())
+                assertEquals(0, write[2].toInt() and 1)
+                for (wireChannel in 0 until 12) {
+                    val offset = 3 + wireChannel * 6
+                    assertEquals(factorWords[wireChannel] ushr 8 and 0xFF, write[offset].toInt() and 0xFF)
+                    assertEquals(factorWords[wireChannel] and 0xFF, write[offset + 1].toInt() and 0xFF)
+                    val correction = correctionWords[wireChannel]
+                    assertEquals(correction ushr 24 and 0xFF, write[offset + 2].toInt() and 0xFF)
+                    assertEquals(correction ushr 16 and 0xFF, write[offset + 3].toInt() and 0xFF)
+                    assertEquals(correction ushr 8 and 0xFF, write[offset + 4].toInt() and 0xFF)
+                    assertEquals(correction and 0xFF, write[offset + 5].toInt() and 0xFF)
+                }
+                assertEquals(expectedValues, AdcNumber.entries.map { it.value(requireNotNull(vm.adcCorrectionsControl.values.value)) })
+            }
+            compose.runOnIdle { assertTrue(vm.setAdcCompensationMode(true)) }
+            usb.awaitWriteCount(baseline + 25)
+            assertEquals(1, usb.writes[baseline + 24][2].toInt() and 1)
+            assertEquals(0x00, usb.writes[baseline + 24][5].toInt() and 0xFF)
+            assertEquals(0x0E, usb.writes[baseline + 24][6].toInt() and 0xFF)
+            assertEquals(0x30, usb.writes[baseline + 24][7].toInt() and 0xFF)
+            assertEquals(0x00, usb.writes[baseline + 24][8].toInt() and 0xFF)
+            assertTrue(queue.pending.value.any { it.textRes == R.string.packet_sent })
+            assertEquals(false, vm.isSendAllowed)
+            assertEquals(true, vm.adcCorrectionsControl.values.value?.adcCompMode)
+
+            queue.pending.value.forEach { queue.acknowledge(it.id) }
+            usb.emitFirmware(options = 1 shl 17) // SECU3T without TPIC8101: ADD_I3 and ADD_I4 unavailable.
+            await { vm.capabilities.value.known && vm.capabilities.value.secu3T && !vm.capabilities.value.extraAnalogInputs }
+            val unsupportedValues = vm.adcCorrectionsControl.values.value
+            val unsupportedBaseline = usb.writes.size
+            compose.runOnIdle {
+                assertFalse(vm.editAdc(AdcNumber.ADD_I3_FACTOR, 2f))
+                assertFalse(vm.editAdc(AdcNumber.ADD_I4_FACTOR, 2f))
+            }
+            delay(100)
+            assertEquals(unsupportedBaseline, usb.writes.size)
+            assertEquals(unsupportedValues, vm.adcCorrectionsControl.values.value)
+            assertFalse(queue.pending.value.any { it.textRes == R.string.packet_sent })
+
+            usb.emitFirmware(options = 1 shl 5)
+            await { vm.capabilities.value.extraAnalogInputs && !vm.capabilities.value.secu3T }
+            compose.runOnIdle { vm.pausePageSession() }
+            val pausedValues = vm.adcCorrectionsControl.values.value
+            val pausedBaseline = usb.writes.size
+            compose.runOnIdle { assertFalse(vm.editAdc(AdcNumber.MAP_FACTOR, 2.25f)) }
+            delay(100)
+            assertEquals(pausedBaseline, usb.writes.size)
+            assertEquals(pausedValues, vm.adcCorrectionsControl.values.value)
+            assertFalse(queue.pending.value.any { it.textRes == R.string.packet_sent })
+
+            val rawWords = IntArray(12) { 0x12345670 + it }
+            val rawFrame = intArrayOf(64, 'r'.code, 0xA1) + (0 until 12).flatMap { channel ->
+                listOf(0, 0, rawWords[channel] ushr 24 and 0xFF, rawWords[channel] ushr 16 and 0xFF,
+                    rawWords[channel] ushr 8 and 0xFF, rawWords[channel] and 0xFF)
+            }.toIntArray() + intArrayOf(0xCA, 0xFE)
+            val rawPacket = AdcCorrectionsParamPacket().parse(rawFrame) as AdcCorrectionsParamPacket
+            vm.adcCorrectionsControl.receive(rawPacket)
+            assertFalse(vm.editAdc(AdcNumber.MAP_CORRECTION, 0f))
+            assertArrayEquals(rawFrame.drop(1).toIntArray(), rawPacket.pack())
+        } finally {
+            try {
+                transport?.close()
+            } finally {
+                try {
+                    compose.runOnIdle { vm.clearPageState() }
+                } finally {
+                    queue.onActiveScopeChanged(originalActiveScope)
+                    compose.activityRule.scenario.moveToState(Lifecycle.State.RESUMED)
+                }
+            }
         }
     }
 

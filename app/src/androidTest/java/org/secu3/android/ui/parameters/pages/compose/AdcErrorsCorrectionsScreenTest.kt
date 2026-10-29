@@ -26,6 +26,8 @@ package org.secu3.android.ui.parameters.pages.compose
 
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.ui.test.assertIsDisplayed
+import androidx.compose.ui.test.assertIsEnabled
+import androidx.compose.ui.test.assertIsNotEnabled
 import androidx.compose.ui.test.junit4.v2.createComposeRule
 import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.performClick
@@ -34,6 +36,9 @@ import org.junit.Assert.assertEquals
 import org.junit.Rule
 import org.junit.Test
 import org.secu3.android.ui.compose.SecuComposeTheme
+import org.secu3.android.domain.parameters.AdcCorrectionsValues
+import org.secu3.android.domain.parameters.ParameterCapabilities
+import org.secu3.android.models.packets.input.FirmwareInfoPacket
 
 class AdcErrorsCorrectionsScreenTest {
     @get:Rule val compose = createComposeRule()
@@ -42,18 +47,18 @@ class AdcErrorsCorrectionsScreenTest {
     fun loadsScrollsAndDoesNotInvokeCallbacksOnInitialCompositionOrRecomposition() {
         var edits = 0
         var switches = 0
-        val state = mutableStateOf<AdcCorrectionsUiState>(AdcCorrectionsUiState.Loading)
+        val state = mutableStateOf<AdcCorrectionsValues?>(null)
         compose.setContent {
             SecuComposeTheme { AdcErrorsCorrectionsScreen(state.value, { edits++ }, { switches++ }) }
         }
         compose.onNodeWithTag("adc_loading").assertIsDisplayed()
-        val values = AdcCorrectionsValues(AdcNumber.entries.associateWith { it.ordinal.toFloat() }, false)
-        compose.runOnIdle { state.value = AdcCorrectionsUiState.Data(values) }
+        val values = AdcCorrectionsValues(0f, 1f, 2f, 3f, 4f, 5f, 6f, 7f, 8f, 9f, 10f, 11f, 12f, 13f, 14f, 15f, 16f, 17f, 18f, 19f, 20f, 21f, 22f, 23f, false)
+        compose.runOnIdle { state.value = values }
         AdcNumber.entries.forEach { number ->
             compose.onNodeWithTag("adc_${number.name.lowercase()}").performScrollTo().assertIsDisplayed()
         }
         compose.onNodeWithTag("adc_group_11").performScrollTo().assertIsDisplayed()
-        compose.runOnIdle { state.value = AdcCorrectionsUiState.Data(values.copy(numbers = values.numbers.toMap())) }
+        compose.runOnIdle { state.value = values.copy() }
         assertEquals(0, edits)
         assertEquals(0, switches)
     }
@@ -62,9 +67,9 @@ class AdcErrorsCorrectionsScreenTest {
     fun callsOnlyForExplicitFieldAndSwitchActions() {
         val edits = mutableListOf<AdcNumber>()
         val switches = mutableListOf<Boolean>()
-        val values = AdcCorrectionsValues(AdcNumber.entries.associateWith { 0f }, false)
+        val values = AdcCorrectionsValues(0f, 0f, 0f, 0f, 0f, 0f, 0f, 0f, 0f, 0f, 0f, 0f, 0f, 0f, 0f, 0f, 0f, 0f, 0f, 0f, 0f, 0f, 0f, 0f, false)
         compose.setContent {
-            SecuComposeTheme { AdcErrorsCorrectionsScreen(AdcCorrectionsUiState.Data(values), { edits += it }, { switches += it }) }
+            SecuComposeTheme { AdcErrorsCorrectionsScreen(values, { edits += it }, { switches += it }) }
         }
         AdcNumber.entries.forEach { number ->
             compose.onNodeWithTag("adc_${number.name.lowercase()}").performScrollTo().performClick()
@@ -72,5 +77,18 @@ class AdcErrorsCorrectionsScreenTest {
         }
         compose.onNodeWithTag("adc_comp_mode-switch").performScrollTo().performClick()
         assertEquals(listOf(true), switches)
+    }
+
+    @Test
+    fun disabledRowsUseSharedFirmwareMatrixAndKeepAddI4Independent() {
+        val tpicT = ParameterCapabilities(FirmwareInfoPacket(options = (1 shl 17) or (1 shl 5)))
+        val values = AdcCorrectionsValues(0f, 0f, 0f, 0f, 0f, 0f, 0f, 0f, 0f, 0f, 0f, 0f, 0f, 0f, 0f, 0f, 0f, 0f, 0f, 0f, 0f, 0f, 0f, 0f, false)
+        compose.setContent {
+            SecuComposeTheme { AdcErrorsCorrectionsScreen(values, {}, {}, capabilities = tpicT) }
+        }
+        compose.onNodeWithTag("adc_map_factor").assertIsEnabled()
+        compose.onNodeWithTag("adc_add_i3_factor").performScrollTo().assertIsNotEnabled()
+        compose.onNodeWithTag("adc_add_i4_factor").performScrollTo().assertIsEnabled()
+        compose.onNodeWithTag("adc_add_i5_factor").performScrollTo().assertIsNotEnabled()
     }
 }

@@ -8,6 +8,7 @@ import org.secu3.android.domain.parameters.StarterValues
 import org.secu3.android.domain.parameters.AnglesValues
 import org.secu3.android.domain.parameters.CarburValues
 import org.secu3.android.domain.parameters.KnockValues
+import org.secu3.android.domain.parameters.AdcCorrectionsValues
 import org.secu3.android.models.packets.out.params.KnockParamPacket
 import org.secu3.android.ui.parameters.pages.compose.*
 
@@ -54,11 +55,10 @@ internal fun basicParameterAppearanceFixtures(): List<ParameterAppearanceFixture
     },
     ParameterAppearanceFixture("adc-errors-corrections") {
         AdcErrorsCorrectionsScreen(
-            AdcCorrectionsUiState.Data(
-                AdcCorrectionsValues(
-                    numbers = AdcNumber.entries.associateWith { 1f + it.ordinal * 0.125f },
-                    adcCompMode = true,
-                ),
+            AdcCorrectionsValues(
+                1f, .125f, 1.1f, .25f, 1.2f, .375f, 1.3f, .5f,
+                1.4f, .625f, 1.5f, .75f, 1.6f, .875f, 1.7f, 1f,
+                1.8f, 1.125f, 1.9f, 1.25f, 2f, 1.375f, 2.1f, 1.5f, true,
             ),
             onEdit = {},
             onCompModeChanged = {},

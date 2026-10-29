@@ -67,6 +67,56 @@ data class AdcCorrectionsParamPacket(
     private var parsedCorrectionWords: IntArray? = null
     private val editedChannels = BooleanArray(12)
 
+    /** A transactional edit snapshot that also preserves zero-factor raw-word behavior. */
+    internal fun checkpoint(): EditCheckpoint = EditCheckpoint(
+        adcFlags, mapAdcFactor, mapAdcCorrection, ubatAdcFactor, ubatAdcCorrection,
+        tempAdcFactor, tempAdcCorrection, tpsAdcFactor, tpsAdcCorrection,
+        ai1AdcFactor, ai1AdcCorrection, ai2AdcFactor, ai2AdcCorrection,
+        ai3AdcFactor, ai3AdcCorrection, ai4AdcFactor, ai4AdcCorrection,
+        ai5AdcFactor, ai5AdcCorrection, ai6AdcFactor, ai6AdcCorrection,
+        ai7AdcFactor, ai7AdcCorrection, ai8AdcFactor, ai8AdcCorrection,
+        parsedCompMode, parsedFactorWords?.copyOf(), parsedCorrectionWords?.copyOf(), editedChannels.copyOf(),
+    )
+
+    internal fun restore(checkpoint: EditCheckpoint) {
+        adcFlags = checkpoint.adcFlags
+        mapAdcFactor = checkpoint.mapAdcFactor; mapAdcCorrection = checkpoint.mapAdcCorrection
+        ubatAdcFactor = checkpoint.ubatAdcFactor; ubatAdcCorrection = checkpoint.ubatAdcCorrection
+        tempAdcFactor = checkpoint.tempAdcFactor; tempAdcCorrection = checkpoint.tempAdcCorrection
+        tpsAdcFactor = checkpoint.tpsAdcFactor; tpsAdcCorrection = checkpoint.tpsAdcCorrection
+        ai1AdcFactor = checkpoint.ai1AdcFactor; ai1AdcCorrection = checkpoint.ai1AdcCorrection
+        ai2AdcFactor = checkpoint.ai2AdcFactor; ai2AdcCorrection = checkpoint.ai2AdcCorrection
+        ai3AdcFactor = checkpoint.ai3AdcFactor; ai3AdcCorrection = checkpoint.ai3AdcCorrection
+        ai4AdcFactor = checkpoint.ai4AdcFactor; ai4AdcCorrection = checkpoint.ai4AdcCorrection
+        ai5AdcFactor = checkpoint.ai5AdcFactor; ai5AdcCorrection = checkpoint.ai5AdcCorrection
+        ai6AdcFactor = checkpoint.ai6AdcFactor; ai6AdcCorrection = checkpoint.ai6AdcCorrection
+        ai7AdcFactor = checkpoint.ai7AdcFactor; ai7AdcCorrection = checkpoint.ai7AdcCorrection
+        ai8AdcFactor = checkpoint.ai8AdcFactor; ai8AdcCorrection = checkpoint.ai8AdcCorrection
+        parsedCompMode = checkpoint.parsedCompMode
+        parsedFactorWords = checkpoint.parsedFactorWords?.copyOf()
+        parsedCorrectionWords = checkpoint.parsedCorrectionWords?.copyOf()
+        checkpoint.editedChannels.copyInto(editedChannels)
+    }
+
+    internal class EditCheckpoint internal constructor(
+        internal val adcFlags: Int,
+        internal val mapAdcFactor: Float, internal val mapAdcCorrection: Float,
+        internal val ubatAdcFactor: Float, internal val ubatAdcCorrection: Float,
+        internal val tempAdcFactor: Float, internal val tempAdcCorrection: Float,
+        internal val tpsAdcFactor: Float, internal val tpsAdcCorrection: Float,
+        internal val ai1AdcFactor: Float, internal val ai1AdcCorrection: Float,
+        internal val ai2AdcFactor: Float, internal val ai2AdcCorrection: Float,
+        internal val ai3AdcFactor: Float, internal val ai3AdcCorrection: Float,
+        internal val ai4AdcFactor: Float, internal val ai4AdcCorrection: Float,
+        internal val ai5AdcFactor: Float, internal val ai5AdcCorrection: Float,
+        internal val ai6AdcFactor: Float, internal val ai6AdcCorrection: Float,
+        internal val ai7AdcFactor: Float, internal val ai7AdcCorrection: Float,
+        internal val ai8AdcFactor: Float, internal val ai8AdcCorrection: Float,
+        internal val parsedCompMode: Boolean?,
+        internal val parsedFactorWords: IntArray?, internal val parsedCorrectionWords: IntArray?,
+        internal val editedChannels: BooleanArray,
+    )
+
     /** The correction has no inverse when compensation is enabled and its factor is zero. */
     fun markChannelEdited(channelIndex: Int) {
         if (channelIndex in editedChannels.indices) editedChannels[channelIndex] = true

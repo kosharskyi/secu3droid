@@ -86,3 +86,7 @@ Desktop enables the full LTFT field group from the firmware FI option, not the s
 ## DBW Home position is receive-only
 
 Keep Home position visible as a passive value. The firmware and desktop read a 16-byte payload, while the editable `P` command contains 14 bytes and omits Home position; refresh obtains the current value through the ordinary parameter read.
+
+## ADC channel styling matches the live command gates
+
+MAP through ADD_I2 remain enabled. ADD_I4 uses the independent TPIC8101 option, while ADD_I3 and ADD_I5 through ADD_I8 use the non-SECU3T gate. MAP correction displays four decimal places to match the desktop's 0.0025 V adjustment step.

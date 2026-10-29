@@ -37,3 +37,7 @@ Remaining enum and choice selectors use `ParameterChoiceDialog`; Functions, CKPS
 ## Manual hold buttons share timing and cancellation behavior
 
 Choke and Gas Dose use `ManualPositionButton`, which emits one step immediately, waits 400 ms before 80 ms repeats, and invokes periodic flush callbacks every 250 ms. It reads callbacks through `rememberUpdatedState` so recomposition does not restart an active pointer gesture. A normal release calls release once; pointer cancellation or gesture coroutine cancellation calls cancel once and discards pending movement. Page deactivation also cancels the owning controller's pending delta.
+
+## ADC field enums map named domain values only for presentation
+
+`AdcNumber` retains editor labels, precision, bounds, steps, and display-value mapping. Packet mutation and the shared capability gate live outside Compose; the nullable domain values flow selects the loading view until a parameter response arrives.

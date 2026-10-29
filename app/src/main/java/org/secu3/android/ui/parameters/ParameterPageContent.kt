@@ -169,8 +169,15 @@ internal fun ParameterPageContent(
             )
         }
         R.string.params_tab_adc_errors_corr_title -> {
-            val h = viewModel.adcCorrectionsStateHolder
-            AdcErrorsCorrectionsScreen(h.state, { n -> (h.state as? AdcCorrectionsUiState.Data)?.values?.let { onEdit(ParameterEditRequest.FloatValue(n.title, it.value(n), n.min, n.max, n.step, n.precision) { h.updateValue(n, it.toFloat()) }) } }, h::updateCompMode, capabilities = capabilities)
+            val control = viewModel.adcCorrectionsControl
+            val values by control.values.collectAsStateWithLifecycle()
+            AdcErrorsCorrectionsScreen(values, { number ->
+                values?.let { current ->
+                    onEdit(ParameterEditRequest.FloatValue(number.title, number.value(current), number.min, number.max, number.step, number.precision) {
+                        viewModel.editAdc(number, it.toFloat())
+                    })
+                }
+            }, viewModel::setAdcCompensationMode, capabilities = capabilities)
         }
         R.string.params_tab_ckps_title -> {
             val values by viewModel.ckpsControl.values.collectAsStateWithLifecycle()
