@@ -1,6 +1,7 @@
 package org.secu3.android.ui.parameters
 
 import org.secu3.android.domain.parameters.TemperatureValues
+import org.secu3.android.domain.parameters.IdlingValues
 
 import androidx.compose.runtime.Composable
 import org.secu3.android.domain.parameters.StarterValues
@@ -26,11 +27,17 @@ internal fun basicParameterAppearanceFixtures(): List<ParameterAppearanceFixture
     },
     ParameterAppearanceFixture("idling") {
         IdlingScreen(
-            IdlingUiState.Data(
-                IdlingValues(
-                    numbers = IdlingNumber.entries.associateWith { it.ordinal + 1.5f },
-                    flags = IdlingFlag.entries.associateWith { it.ordinal % 2 == 0 },
-                ),
+            IdlingValues(
+                iFac1 = 1.5f, iFac2 = 2.5f, maxAngle = 3.5f, minAngle = 4.5f, targetRpm = 5,
+                deadBandRpm = 6, turnOnTemperature = 7.5f, iacAddAfterExit = 8.5f, rpmAddOnRun = 9,
+                proportionalNegative = 1.1f, integralNegative = 1.2f, proportionalPositive = 1.3f,
+                integralPositive = 1.4f, transientThreshold1 = 1.5f, transientThreshold2 = 1.6f,
+                integratorRpmLimit = 12, mapThreshold = 13.5f, iacMinimumPosition = 14.5f,
+                iacMaximumPosition = 15.5f, iacDeadBandRpm = 16, differential = 1.7f,
+                rigidityLoad = 1.8f, rigidityRpm = 1.9f, loadThreshold = 20.5f,
+                regulatorEnabled = true, regulatorOnGas = false, proportionalMode = true,
+                closedLoop = false, throttleAssistMap = true, closedLoopOnGas = false,
+                worksWithIacRegulator = true,
             ),
             onEdit = {},
             onFlagChanged = { _, _ -> },

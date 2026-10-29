@@ -25,6 +25,7 @@
 package org.secu3.android.ui.parameters.pages.compose
 
 import org.secu3.android.domain.parameters.ParameterCapabilities
+import org.secu3.android.domain.parameters.IdlingValues
 
 import androidx.compose.foundation.rememberScrollState
 import androidx.annotation.StringRes
@@ -33,7 +34,6 @@ import androidx.compose.ui.res.stringResource
 import org.secu3.android.ui.parameters.compose.ParameterLoadingIndicator
 import org.secu3.android.ui.parameters.*
 import org.secu3.android.R
-import org.secu3.android.models.packets.out.params.IdlingParamPacket
 import org.secu3.android.ui.parameters.compose.ParameterSwitchRow
 import org.secu3.android.ui.parameters.compose.ParameterValueRow
 import org.secu3.android.ui.parameters.compose.ParameterPage
@@ -72,9 +72,36 @@ enum class IdlingNumber(
     D(R.string.idlreg_differential_title, R.string.units_coef, 3, 0f, 5f, .005f),
     IRR_LOAD(R.string.idlreg_rigidity_load_coef_title, R.string.units_coef, 2, 0f, 48f, .05f),
     IRR_RPM(R.string.idlreg_rigidity_rpm_coef_title, R.string.units_coef, 2, 0f, 48f, .05f),
-    LOAD(R.string.idlreg_load_thrd_title, R.string.units_percents, 1, 0f, 500f, .1f),
-}
+    LOAD(R.string.idlreg_load_thrd_title, R.string.units_percents, 1, 0f, 500f, .1f);
 
+    internal fun value(values: IdlingValues): Float = when (this) {
+        IFAC1 -> values.iFac1
+        IFAC2 -> values.iFac2
+        MAX_ANGLE -> values.maxAngle
+        MIN_ANGLE -> values.minAngle
+        RPM -> values.targetRpm.toFloat()
+        DEAD_BAND -> values.deadBandRpm.toFloat()
+        ON_TEMP -> values.turnOnTemperature
+        IAC_ADD -> values.iacAddAfterExit
+        RPM_ADD -> values.rpmAddOnRun.toFloat()
+        // Legacy UI tags keep their existing titles: P0/I0 are positive, P1/I1 negative.
+        P0 -> values.proportionalPositive
+        I0 -> values.integralPositive
+        P1 -> values.proportionalNegative
+        I1 -> values.integralNegative
+        THRD1 -> values.transientThreshold1
+        THRD2 -> values.transientThreshold2
+        INTEGRATOR_RPM -> values.integratorRpmLimit.toFloat()
+        MAP -> values.mapThreshold
+        IAC_MIN -> values.iacMinimumPosition
+        IAC_MAX -> values.iacMaximumPosition
+        IAC_DB -> values.iacDeadBandRpm.toFloat()
+        D -> values.differential
+        IRR_LOAD -> values.rigidityLoad
+        IRR_RPM -> values.rigidityRpm
+        LOAD -> values.loadThreshold
+    }
+}
 enum class IdlingFlag(@StringRes val titleRes: Int) {
     REGULATOR(R.string.idlreg_use_idle_regulator_title),
     ON_GAS(R.string.idlreg_use_idle_regulator_on_gas_title),
@@ -82,127 +109,44 @@ enum class IdlingFlag(@StringRes val titleRes: Int) {
     CLOSED_LOOP(R.string.idlreg_use_closed_loop_title),
     THRASSMAP(R.string.idlreg_use_table_title),
     CLOSED_LOOP_GAS(R.string.idlreg_use_closed_loop_on_gas_title),
-    WORKS_IAC(R.string.idlreg_works_together_with_iac_reg_title),
-}
+    WORKS_IAC(R.string.idlreg_works_together_with_iac_reg_title);
 
-data class IdlingValues(
-    val numbers: Map<IdlingNumber, Float>,
-    val flags: Map<IdlingFlag, Boolean>,
-) {
-    fun value(number: IdlingNumber) = numbers.getValue(number)
-    fun withValue(number: IdlingNumber, value: Float) = copy(numbers = numbers + (number to value))
-    fun withFlag(flag: IdlingFlag, checked: Boolean) = copy(flags = flags + (flag to checked))
-
-    companion object {
-        fun from(packet: IdlingParamPacket) = IdlingValues(
-            numbers = mapOf(
-                IdlingNumber.IFAC1 to packet.iFac1,
-                IdlingNumber.IFAC2 to packet.iFac2,
-                IdlingNumber.MAX_ANGLE to packet.idlregMaxAngle,
-                IdlingNumber.MIN_ANGLE to packet.idlregMinAngle,
-                IdlingNumber.RPM to packet.idlingRpm.toFloat(),
-                IdlingNumber.DEAD_BAND to packet.minefr.toFloat(),
-                IdlingNumber.ON_TEMP to packet.idlregTurnOnTemp,
-                IdlingNumber.IAC_ADD to packet.idlToRunAdd,
-                IdlingNumber.RPM_ADD to packet.rpmOnRunAdd.toFloat(),
-                IdlingNumber.P0 to packet.idlRegP0,
-                IdlingNumber.I0 to packet.idlRegI0,
-                IdlingNumber.P1 to packet.idlRegP1,
-                IdlingNumber.I1 to packet.idlRegI1,
-                IdlingNumber.THRD1 to packet.coefThrd1,
-                IdlingNumber.THRD2 to packet.coefThrd2,
-                IdlingNumber.INTEGRATOR_RPM to packet.integratorRpmLim.toFloat(),
-                IdlingNumber.MAP to packet.mapValue,
-                IdlingNumber.IAC_MIN to packet.iacMinPos,
-                IdlingNumber.IAC_MAX to packet.iacMaxPos,
-                IdlingNumber.IAC_DB to packet.iacRegDb.toFloat(),
-                IdlingNumber.D to packet.idlRegD,
-                IdlingNumber.IRR_LOAD to packet.irrKLoad,
-                IdlingNumber.IRR_RPM to packet.irrKRpm,
-                IdlingNumber.LOAD to packet.loadIdlThrd,
-            ),
-            flags = mapOf(
-                IdlingFlag.REGULATOR to packet.useRegulator,
-                IdlingFlag.ON_GAS to packet.useRegulatorOnGas,
-                IdlingFlag.PROPORTIONAL to packet.pRegMode,
-                IdlingFlag.CLOSED_LOOP to packet.useClosedLoop,
-                IdlingFlag.THRASSMAP to packet.useThrassmap,
-                IdlingFlag.CLOSED_LOOP_GAS to packet.useClosedLoopOnGas,
-                IdlingFlag.WORKS_IAC to packet.idlRegWorksWithIAC,
-            ),
-        )
+    internal fun value(values: IdlingValues): Boolean = when (this) {
+        REGULATOR -> values.regulatorEnabled
+        ON_GAS -> values.regulatorOnGas
+        PROPORTIONAL -> values.proportionalMode
+        CLOSED_LOOP -> values.closedLoop
+        THRASSMAP -> values.throttleAssistMap
+        CLOSED_LOOP_GAS -> values.closedLoopOnGas
+        WORKS_IAC -> values.worksWithIacRegulator
     }
-}
-
-fun applyIdlingValue(packet: IdlingParamPacket, number: IdlingNumber, value: Float) {
-    when (number) {
-        IdlingNumber.IFAC1 -> packet.iFac1 = value
-        IdlingNumber.IFAC2 -> packet.iFac2 = value
-        IdlingNumber.MAX_ANGLE -> packet.idlregMaxAngle = value
-        IdlingNumber.MIN_ANGLE -> packet.idlregMinAngle = value
-        IdlingNumber.RPM -> packet.idlingRpm = value.toInt()
-        IdlingNumber.DEAD_BAND -> packet.minefr = value.toInt()
-        IdlingNumber.ON_TEMP -> packet.idlregTurnOnTemp = value
-        IdlingNumber.IAC_ADD -> packet.idlToRunAdd = value
-        IdlingNumber.RPM_ADD -> packet.rpmOnRunAdd = value.toInt()
-        IdlingNumber.P0 -> packet.idlRegP0 = value
-        IdlingNumber.I0 -> packet.idlRegI0 = value
-        IdlingNumber.P1 -> packet.idlRegP1 = value
-        IdlingNumber.I1 -> packet.idlRegI1 = value
-        IdlingNumber.THRD1 -> packet.coefThrd1 = value
-        IdlingNumber.THRD2 -> packet.coefThrd2 = value
-        IdlingNumber.INTEGRATOR_RPM -> packet.integratorRpmLim = value.toInt()
-        IdlingNumber.MAP -> packet.mapValue = value
-        IdlingNumber.IAC_MIN -> packet.iacMinPos = value
-        IdlingNumber.IAC_MAX -> packet.iacMaxPos = value
-        IdlingNumber.IAC_DB -> packet.iacRegDb = value.toInt()
-        IdlingNumber.D -> packet.idlRegD = value
-        IdlingNumber.IRR_LOAD -> packet.irrKLoad = value
-        IdlingNumber.IRR_RPM -> packet.irrKRpm = value
-        IdlingNumber.LOAD -> packet.loadIdlThrd = value
-    }
-}
-
-fun applyIdlingFlag(packet: IdlingParamPacket, flag: IdlingFlag, checked: Boolean) {
-    when (flag) {
-        IdlingFlag.REGULATOR -> packet.useRegulator = checked
-        IdlingFlag.ON_GAS -> packet.useRegulatorOnGas = checked
-        IdlingFlag.PROPORTIONAL -> packet.pRegMode = checked
-        IdlingFlag.CLOSED_LOOP -> packet.useClosedLoop = checked
-        IdlingFlag.THRASSMAP -> packet.useThrassmap = checked
-        IdlingFlag.CLOSED_LOOP_GAS -> packet.useClosedLoopOnGas = checked
-        IdlingFlag.WORKS_IAC -> packet.idlRegWorksWithIAC = checked
-    }
-}
-
-sealed interface IdlingUiState {
-    data object Loading : IdlingUiState
-    data class Data(val values: IdlingValues) : IdlingUiState
 }
 
 @Composable
 fun IdlingScreen(
-    state: IdlingUiState,
+    values: IdlingValues?,
     onEdit: (IdlingNumber) -> Unit,
     onFlagChanged: (IdlingFlag, Boolean) -> Unit,
     capabilities: ParameterCapabilities = ParameterCapabilities.All,
 ) {
     val pageScrollState = rememberScrollState()
-    when (state) {
-        IdlingUiState.Loading -> ParameterLoadingIndicator("idling_loading")
-        is IdlingUiState.Data -> ParameterPage(scrollState = pageScrollState) {
+    if (values == null) {
+        ParameterLoadingIndicator("idling_loading")
+        return
+    }
+    ParameterPage(scrollState = pageScrollState) {
             @Composable
             fun number(number: IdlingNumber) {
                 ParameterValueRow(
                     title = stringResource(number.titleRes),
                     units = if (number.unitRes == 0) "" else stringResource(number.unitRes),
-                    value = state.values.value(number),
+                    value = number.value(values),
                     precision = number.precision,
                     testTag = "idling_${number.name.lowercase()}",
                     enabled = when (number) {
                         IdlingNumber.IFAC1, IdlingNumber.IFAC2, IdlingNumber.MAX_ANGLE, IdlingNumber.MIN_ANGLE,
                         IdlingNumber.RPM, IdlingNumber.DEAD_BAND, IdlingNumber.ON_TEMP -> true
-                        IdlingNumber.IAC_ADD -> capabilities.iacAdditionEnabled(state.values.flags.getValue(IdlingFlag.THRASSMAP))
+                        IdlingNumber.IAC_ADD -> capabilities.iacAdditionEnabled(values.throttleAssistMap)
                         else -> capabilities.fuelInjection
                     },
                     onClick = { onEdit(number) },
@@ -213,7 +157,7 @@ fun IdlingScreen(
             fun flag(flag: IdlingFlag) {
                 ParameterSwitchRow(
                     title = stringResource(flag.titleRes),
-                    checked = state.values.flags.getValue(flag),
+                    checked = flag.value(values),
                     testTag = "idling_flag_${flag.name.lowercase()}",
                     enabled = flag in setOf(IdlingFlag.REGULATOR, IdlingFlag.ON_GAS, IdlingFlag.PROPORTIONAL) || capabilities.fuelInjection,
                     onCheckedChange = { onFlagChanged(flag, it) },
@@ -253,6 +197,5 @@ fun IdlingScreen(
                 number(IdlingNumber.IRR_RPM)
                 number(IdlingNumber.LOAD)
             }
-            }
-            }
-            }
+    }
+}

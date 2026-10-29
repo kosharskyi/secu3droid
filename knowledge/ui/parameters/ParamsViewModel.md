@@ -31,3 +31,6 @@ Derive a single `ParameterCapabilities` state from `Secu3ConnectionManager.firmw
 ## Fuel Injection command admission belongs to its domain control
 
 `FuelInjectionControl` reads the manager's current firmware and sends through `ParameterSession.sendPacket`, whose Boolean result drives the packet-sent message. It does not use the legacy ViewModel `isSendAllowed` gate. The screen collects its nullable values flow directly; no second Loading/Data wrapper or packet mapping belongs in the ViewModel.
+
+
+`IdlingControl` owns the IDLREG packet, named numeric/flag state, value validation, current firmware admission, and immutable snapshots. `ParamsViewModel` maps the existing P0/I0 positive and P1/I1 negative screen tags to named semantic commands; typed integer and Float entry points remain distinct. IDLREG commands bypass the legacy `isSendAllowed` flag.

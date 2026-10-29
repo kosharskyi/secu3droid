@@ -85,8 +85,20 @@ internal fun ParameterPageContent(
             }, viewModel::setAnglesFlag)
         }
         R.string.params_tab_idling_title -> {
-            val h = viewModel.idlingStateHolder
-            IdlingScreen(h.state, { n -> (h.state as? IdlingUiState.Data)?.values?.let { values -> if (n.integer) intEdit(n.titleRes, values.value(n).toInt(), n.step.toInt(), n.max.toInt(), n.min.toInt()) { h.updateValue(n, it.toFloat()) } else floatEdit(n.titleRes, values.value(n), n.step, n.max, n.min, n.precision) { h.updateValue(n, it.toFloat()) } } }, h::updateFlag, capabilities = capabilities)
+            val values by viewModel.idlingControl.values.collectAsStateWithLifecycle()
+            IdlingScreen(values, { number ->
+                values?.let { current ->
+                    if (number.integer) {
+                        intEdit(number.titleRes, number.value(current).toInt(), number.step.toInt(), number.max.toInt(), number.min.toInt()) {
+                            viewModel.editIdlingInt(number, it)
+                        }
+                    } else {
+                        floatEdit(number.titleRes, number.value(current), number.step, number.max, number.min, number.precision) {
+                            viewModel.editIdlingFloat(number, it)
+                        }
+                    }
+                }
+            }, viewModel::setIdlingFlag, capabilities = capabilities)
         }
         R.string.params_tab_functions_title -> {
             val h = viewModel.functionsStateHolder

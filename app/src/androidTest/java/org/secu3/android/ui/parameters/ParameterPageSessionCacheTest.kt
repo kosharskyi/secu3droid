@@ -44,6 +44,7 @@ import org.secu3.android.models.packets.out.params.SecurityParamPacket
 import org.secu3.android.models.packets.out.params.StarterParamPacket
 import org.secu3.android.models.packets.out.params.TemperatureParamPacket
 import org.secu3.android.models.packets.out.params.CarburParamPacket
+import org.secu3.android.models.packets.out.params.IdlingParamPacket
 import org.secu3.android.models.packets.out.ChangeModePacket
 import org.secu3.android.utils.UserPrefs
 import org.secu3.android.ui.MainActivity
@@ -182,6 +183,111 @@ class ParameterPageSessionCacheTest {
             }
             assertEquals(beforeUnsupportedEdit, usb.writes.size)
             assertEquals(committed, vm.starterControl.values.value)
+            assertFalse(queue.pending.value.any { it.textRes == R.string.packet_sent })
+        } finally {
+            try {
+                transport?.close()
+            } finally {
+                try {
+                    compose.runOnIdle { vm.clearPageState() }
+                } finally {
+                    queue.onActiveScopeChanged(originalActiveScope)
+                    compose.activityRule.scenario.moveToState(Lifecycle.State.RESUMED)
+                }
+            }
+        }
+    }
+
+    @Test fun idlingCommandsPreservePositiveAndNegativeWireSlotsAndHonorPause() = runBlocking {
+        val vm = paramsViewModel()
+        var transport: FakeUsbTransport? = null
+        val queueField = ParamsViewModel::class.java.getDeclaredField("uiMessageQueue").apply { isAccessible = true }
+        val queue = queueField.get(vm) as org.secu3.android.ui.messages.UiMessageQueue
+        val originalActiveScope = queue.activeScope.value
+        try {
+            val usb = installFakeUsb(vm, firmwareOptions = 1 shl 28).also { transport = it }
+            activate(vm, R.string.params_tab_idling_title)
+            usb.awaitReadRequest('l', 1)
+            usb.emit(IdlingParamPacket(
+                idlFlags = 0x80,
+                idlRegP0 = .125f,
+                idlRegP1 = .25f,
+                idlRegI0 = .375f,
+                idlRegI1 = .5f,
+                coefThrd1 = 1f,
+                coefThrd2 = 1f,
+            ))
+            await { vm.idlingControl.values.value != null }
+            assertEquals(.125f, vm.idlingControl.values.value?.proportionalNegative)
+            assertEquals(.25f, vm.idlingControl.values.value?.proportionalPositive)
+            assertEquals(.375f, vm.idlingControl.values.value?.integralNegative)
+            assertEquals(.5f, vm.idlingControl.values.value?.integralPositive)
+
+            compose.activityRule.scenario.moveToState(Lifecycle.State.STARTED)
+            compose.waitForIdle()
+            queue.onActiveScopeChanged(PARAMETERS_ROUTE)
+            queue.pending.value.forEach { queue.acknowledge(it.id) }
+            val baseline = usb.writes.size
+            vm.isSendAllowed = false
+
+            assertTrue(vm.editIdlingFloat(org.secu3.android.ui.parameters.pages.compose.IdlingNumber.P0, 1.25f))
+            assertTrue(vm.editIdlingFloat(org.secu3.android.ui.parameters.pages.compose.IdlingNumber.P1, .75f))
+            assertTrue(vm.editIdlingFloat(org.secu3.android.ui.parameters.pages.compose.IdlingNumber.I0, 1.5f))
+            assertTrue(vm.editIdlingFloat(org.secu3.android.ui.parameters.pages.compose.IdlingNumber.I1, 2f))
+            usb.awaitWriteCount(baseline + 4)
+            assertEquals(1, usb.writes[baseline][21].toInt() and 0xff) // P(+) -> IDLREG P1.
+            assertEquals(64, usb.writes[baseline][22].toInt() and 0xff)
+            assertEquals(0, usb.writes[baseline + 1][19].toInt() and 0xff) // P(-) -> IDLREG P0.
+            assertEquals(192, usb.writes[baseline + 1][20].toInt() and 0xff)
+            assertEquals(1, usb.writes[baseline + 2][25].toInt() and 0xff) // I(+) -> IDLREG I1.
+            assertEquals(128, usb.writes[baseline + 2][26].toInt() and 0xff)
+            assertEquals(2, usb.writes[baseline + 3][23].toInt() and 0xff) // I(-) -> IDLREG I0.
+            assertEquals(0, usb.writes[baseline + 3][24].toInt() and 0xff)
+            assertEquals(1.25f, vm.idlingControl.values.value?.proportionalPositive)
+            assertEquals(.75f, vm.idlingControl.values.value?.proportionalNegative)
+
+            val numbers = org.secu3.android.ui.parameters.pages.compose.IdlingNumber.entries
+            val expectedNumbers = listOf(
+                2.5f, 3.5f, 12f, -4f, 1500f, 150f, 90.25f, 40f, 150f, 1.25f, 1.5f, .75f,
+                2f, 1.5f, 1.75f, 550f, 50f, 10f, 90f, 45f, 2.25f, 2.5f, 3.5f, 55f,
+            )
+            val numericStart = usb.writes.size
+            numbers.zip(expectedNumbers).forEach { (number, value) ->
+                compose.runOnIdle {
+                    if (number.integer) vm.editIdlingInt(number, value.toInt())
+                    else vm.editIdlingFloat(number, value)
+                }
+            }
+            usb.awaitWriteCount(numericStart + numbers.size)
+            assertEquals(expectedNumbers, numbers.map { it.value(requireNotNull(vm.idlingControl.values.value)) })
+
+            val flags = org.secu3.android.ui.parameters.pages.compose.IdlingFlag.entries
+            val flagStart = usb.writes.size
+            flags.forEach { flag -> compose.runOnIdle { vm.setIdlingFlag(flag, true) } }
+            usb.awaitWriteCount(flagStart + flags.size)
+            assertEquals(List(flags.size) { true }, flags.map { it.value(requireNotNull(vm.idlingControl.values.value)) })
+            assertEquals(0x80, usb.writes.last()[2].toInt() and 0x80)
+
+            val beforeStaleIacAdd = usb.writes.size
+            assertFalse(vm.editIdlingFloat(org.secu3.android.ui.parameters.pages.compose.IdlingNumber.IAC_ADD, 35f))
+            assertEquals(beforeStaleIacAdd, usb.writes.size)
+            assertTrue(vm.setIdlingFlag(org.secu3.android.ui.parameters.pages.compose.IdlingFlag.THRASSMAP, false))
+            usb.awaitWriteCount(beforeStaleIacAdd + 1)
+            assertTrue(vm.editIdlingFloat(org.secu3.android.ui.parameters.pages.compose.IdlingNumber.IAC_ADD, 35f))
+            usb.awaitWriteCount(beforeStaleIacAdd + 2)
+            assertEquals(35f, vm.idlingControl.values.value?.iacAddAfterExit)
+            assertTrue(queue.pending.value.any { it.textRes == R.string.packet_sent })
+
+            queue.pending.value.forEach { queue.acknowledge(it.id) }
+            val afterWrites = usb.writes.size
+            val committed = vm.idlingControl.values.value
+            compose.runOnIdle {
+                vm.pausePageSession()
+                vm.editIdlingFloat(org.secu3.android.ui.parameters.pages.compose.IdlingNumber.P0, 1.75f)
+            }
+            delay(100)
+            assertEquals(afterWrites, usb.writes.size)
+            assertEquals(committed, vm.idlingControl.values.value)
             assertFalse(queue.pending.value.any { it.textRes == R.string.packet_sent })
         } finally {
             try {

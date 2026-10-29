@@ -65,3 +65,8 @@ The domain values retain signed fractional timing/cranking degrees and fixed-poi
 ## Cold acceleration multiplier retains fractional percentage points
 
 Its integer editor rounds only for display. Preserve the decoded Float through unrelated edits, and store an explicit whole-percent selection as a Float so the packet can retain its fixed-point resolution.
+
+
+## Idling rows keep positive and negative P/I meanings explicit
+
+The existing `P0/I0` resource rows are the positive-error coefficients and `P1/I1` are negative-error coefficients. Firmware and desktop wire index 0 is negative, index 1 positive; preserve this explicit semantic mapping in the route rather than changing the packet codec. IAC_ADD also becomes unavailable when the throttle-assist table is selected, and the domain rechecks that live flag for stale editor callbacks. See [IdlingControl](../../../domain/parameters/IdlingControl.md).

@@ -37,11 +37,13 @@ import org.secu3.android.models.packets.out.params.SecurityParamPacket
 import org.secu3.android.models.packets.out.params.StarterParamPacket
 import org.secu3.android.models.packets.out.params.TemperatureParamPacket
 import org.secu3.android.models.packets.out.params.CarburParamPacket
+import org.secu3.android.models.packets.out.params.IdlingParamPacket
 import org.secu3.android.ui.MainActivity
 import org.secu3.android.ui.compose.SecuComposeTheme
 import org.secu3.android.ui.parameters.pages.compose.StarterNumber
 import org.secu3.android.ui.parameters.pages.compose.TemperatureNumber
 import org.secu3.android.ui.parameters.pages.compose.CarburNumber
+import org.secu3.android.ui.parameters.pages.compose.IdlingNumber
 import org.secu3.android.ui.parameters.dialogs.NumericEditDialog
 
 class ParameterPageEditorRoutingTest {
@@ -86,6 +88,38 @@ class ParameterPageEditorRoutingTest {
         assertEquals(2, request.precision)
         compose.runOnIdle { vm.acceptParameterEditor(session.id, 5.5f) }
         assertEquals(4f, control.values.value?.maxAngle)
+        assertEquals(false, vm.isSendAllowed)
+    }
+
+    @Test fun idlingPAndIEditorTitlesRouteToNamedSemanticValues() {
+        val vm = paramsViewModel()
+        vm.idlingControl.reset()
+        val packet = IdlingParamPacket(
+            idlRegP0 = .125f, idlRegP1 = .25f,
+            idlRegI0 = .375f, idlRegI1 = .5f,
+            coefThrd1 = 1f, coefThrd2 = 1f,
+        )
+        vm.idlingControl.receive(packet)
+        vm.isSendAllowed = false
+        renderPage(R.string.params_tab_idling_title, vm, ParameterCapabilities.All)
+        compose.runOnIdle { vm.idlingControl.receive(packet) }
+
+        compose.onNodeWithTag("idling_p0").performScrollTo().assertIsEnabled().performClick()
+        val pPositive = requireNotNull(vm.parameterEditSession)
+        assertEquals(.25f, (pPositive.request as ParameterEditRequest.FloatValue).value)
+        assertEquals(compose.activity.getString(R.string.idlreg_proportional_positive_title), pPositive.request.title)
+        compose.runOnIdle { vm.dismissParameterEditor(pPositive.id) }
+
+        compose.onNodeWithTag("idling_p1").performScrollTo().assertIsEnabled().performClick()
+        val pNegative = requireNotNull(vm.parameterEditSession)
+        assertEquals(.125f, (pNegative.request as ParameterEditRequest.FloatValue).value)
+        assertEquals(compose.activity.getString(R.string.idlreg_proportional_negative_title), pNegative.request.title)
+        compose.runOnIdle { vm.dismissParameterEditor(pNegative.id) }
+
+        assertFalse(vm.editIdlingInt(IdlingNumber.P0, 1))
+        assertFalse(vm.editIdlingFloat(IdlingNumber.RPM, 1f))
+        assertEquals(.25f, vm.idlingControl.values.value?.proportionalPositive)
+        assertEquals(.125f, vm.idlingControl.values.value?.proportionalNegative)
         assertEquals(false, vm.isSendAllowed)
     }
 

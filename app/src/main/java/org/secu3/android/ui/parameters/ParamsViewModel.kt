@@ -57,6 +57,7 @@ import org.secu3.android.domain.parameters.SecurityControl
 import org.secu3.android.domain.parameters.StarterControl
 import org.secu3.android.domain.parameters.TemperatureControl
 import org.secu3.android.domain.parameters.CarburControl
+import org.secu3.android.domain.parameters.IdlingControl
 import org.secu3.android.domain.parameters.SecurityCredentialsResult
 import org.secu3.android.models.packets.base.OutputPacket
 import org.secu3.android.models.packets.out.params.AccelerationParamPacket
@@ -83,7 +84,8 @@ import org.secu3.android.ui.parameters.pages.compose.AdcCorrectionsStateHolder
 import org.secu3.android.ui.parameters.pages.compose.KnockStateHolder
 import org.secu3.android.ui.parameters.pages.compose.LambdaControlStateHolder
 import org.secu3.android.ui.parameters.pages.compose.LtftStateHolder
-import org.secu3.android.ui.parameters.pages.compose.IdlingStateHolder
+import org.secu3.android.ui.parameters.pages.compose.IdlingNumber
+import org.secu3.android.ui.parameters.pages.compose.IdlingFlag
 import org.secu3.android.ui.parameters.pages.compose.TemperatureFlag
 import org.secu3.android.ui.parameters.pages.compose.TemperatureNumber
 import org.secu3.android.ui.parameters.pages.AccelerationStateHolder
@@ -117,6 +119,7 @@ class ParamsViewModel @Inject constructor(
     internal val anglesControl: AnglesControl,
     internal val temperatureControl: TemperatureControl,
     internal val carburControl: CarburControl,
+    internal val idlingControl: IdlingControl,
     private val uiMessageQueue: UiMessageQueue,
     private val parameterPageCatalog: ParameterPageCatalog,
 ) : ViewModel() {
@@ -276,8 +279,60 @@ class ParamsViewModel @Inject constructor(
         return admitted
     }
 
-    internal val idlingStateHolder by lazy {
-        IdlingStateHolder(::sendPacket, { isSendAllowed = false }, { isSendAllowed = true })
+    internal fun editIdlingInt(number: IdlingNumber, value: Int): Boolean {
+        val admitted = when (number) {
+            IdlingNumber.RPM -> idlingControl.editTargetRpm(value)
+            IdlingNumber.DEAD_BAND -> idlingControl.editDeadBand(value)
+            IdlingNumber.RPM_ADD -> idlingControl.editRpmAddOnRun(value)
+            IdlingNumber.INTEGRATOR_RPM -> idlingControl.editIntegratorRpmLimit(value)
+            IdlingNumber.IAC_DB -> idlingControl.editIacDeadBand(value)
+            else -> false
+        }
+        return reportIdlingEdit(admitted)
+    }
+
+    internal fun editIdlingFloat(number: IdlingNumber, value: Float): Boolean {
+        val admitted = when (number) {
+            IdlingNumber.IFAC1 -> idlingControl.editIFac1(value)
+            IdlingNumber.IFAC2 -> idlingControl.editIFac2(value)
+            IdlingNumber.MAX_ANGLE -> idlingControl.editMaxAngle(value)
+            IdlingNumber.MIN_ANGLE -> idlingControl.editMinAngle(value)
+            IdlingNumber.ON_TEMP -> idlingControl.editTurnOnTemperature(value)
+            IdlingNumber.IAC_ADD -> idlingControl.editIacAddAfterExit(value)
+            IdlingNumber.P0 -> idlingControl.editProportionalPositive(value)
+            IdlingNumber.I0 -> idlingControl.editIntegralPositive(value)
+            IdlingNumber.P1 -> idlingControl.editProportionalNegative(value)
+            IdlingNumber.I1 -> idlingControl.editIntegralNegative(value)
+            IdlingNumber.THRD1 -> idlingControl.editTransientThreshold1(value)
+            IdlingNumber.THRD2 -> idlingControl.editTransientThreshold2(value)
+            IdlingNumber.MAP -> idlingControl.editMapThreshold(value)
+            IdlingNumber.IAC_MIN -> idlingControl.editIacMinimumPosition(value)
+            IdlingNumber.IAC_MAX -> idlingControl.editIacMaximumPosition(value)
+            IdlingNumber.D -> idlingControl.editDifferential(value)
+            IdlingNumber.IRR_LOAD -> idlingControl.editRigidityLoad(value)
+            IdlingNumber.IRR_RPM -> idlingControl.editRigidityRpm(value)
+            IdlingNumber.LOAD -> idlingControl.editLoadThreshold(value)
+            else -> false
+        }
+        return reportIdlingEdit(admitted)
+    }
+
+    internal fun setIdlingFlag(flag: IdlingFlag, enabled: Boolean): Boolean {
+        val admitted = when (flag) {
+            IdlingFlag.REGULATOR -> idlingControl.setRegulatorEnabled(enabled)
+            IdlingFlag.ON_GAS -> idlingControl.setRegulatorOnGas(enabled)
+            IdlingFlag.PROPORTIONAL -> idlingControl.setProportionalMode(enabled)
+            IdlingFlag.CLOSED_LOOP -> idlingControl.setClosedLoop(enabled)
+            IdlingFlag.THRASSMAP -> idlingControl.setThrottleAssistMap(enabled)
+            IdlingFlag.CLOSED_LOOP_GAS -> idlingControl.setClosedLoopOnGas(enabled)
+            IdlingFlag.WORKS_IAC -> idlingControl.setWorksWithIacRegulator(enabled)
+        }
+        return reportIdlingEdit(admitted)
+    }
+
+    private fun reportIdlingEdit(admitted: Boolean): Boolean {
+        if (admitted) showUiMessage(R.string.packet_sent, UiMessageDuration.SHORT)
+        return admitted
     }
 
     internal val adcCorrectionsStateHolder by lazy {
@@ -604,7 +659,7 @@ class ParamsViewModel @Inject constructor(
         when (page) {
             ParameterPage.STARTER -> starterControl.reset()
             ParameterPage.ANGLES -> anglesControl.reset()
-            ParameterPage.IDLING -> idlingStateHolder.reset()
+            ParameterPage.IDLING -> idlingControl.reset()
             ParameterPage.TEMPERATURE -> temperatureControl.reset()
             ParameterPage.FUEL_CUTOFF -> carburControl.reset()
             ParameterPage.CKPS -> ckpsControl.reset()
@@ -639,7 +694,7 @@ class ParamsViewModel @Inject constructor(
         when (page) {
             ParameterPage.STARTER -> starterControl.receive(packet<StarterParamPacket>(result))
             ParameterPage.ANGLES -> anglesControl.receive(packet(result))
-            ParameterPage.IDLING -> idlingStateHolder.onPacketReceived(packet<IdlingParamPacket>(result))
+            ParameterPage.IDLING -> idlingControl.receive(packet<IdlingParamPacket>(result))
             ParameterPage.TEMPERATURE -> temperatureControl.receive(packet<TemperatureParamPacket>(result))
             ParameterPage.FUEL_CUTOFF -> carburControl.receive(packet<CarburParamPacket>(result))
             ParameterPage.CKPS -> ckpsControl.receive(packet<CkpsParamPacket>(result))

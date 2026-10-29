@@ -25,6 +25,7 @@
 package org.secu3.android.ui.parameters.pages.compose
 
 import androidx.compose.runtime.mutableStateOf
+import org.secu3.android.domain.parameters.IdlingValues
 import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.assertIsEnabled
 import androidx.compose.ui.test.assertIsNotEnabled
@@ -47,32 +48,42 @@ class IdlingScreenTest {
     private val context
         get() = androidx.test.platform.app.InstrumentationRegistry.getInstrumentation().targetContext
 
+    private fun values(throttleAssistMap: Boolean = false) = IdlingValues(
+        iFac1 = 1f, iFac2 = 1f, maxAngle = 1f, minAngle = 1f, targetRpm = 1,
+        deadBandRpm = 1, turnOnTemperature = 1f, iacAddAfterExit = 1f, rpmAddOnRun = 1,
+        proportionalNegative = 1.25f, integralNegative = 3.25f, proportionalPositive = 2.25f,
+        integralPositive = 4.25f, transientThreshold1 = 1.2f, transientThreshold2 = 1.3f,
+        integratorRpmLimit = 1, mapThreshold = 1f, iacMinimumPosition = 1f,
+        iacMaximumPosition = 1f, iacDeadBandRpm = 1, differential = 1f,
+        rigidityLoad = 1f, rigidityRpm = 1f, loadThreshold = 1f,
+        regulatorEnabled = false, regulatorOnGas = false, proportionalMode = false,
+        closedLoop = false, throttleAssistMap = throttleAssistMap, closedLoopOnGas = false,
+        worksWithIacRegulator = false,
+    )
+
     @Test
     fun firmwareAndCurrentThrottleModeGateOnlyTheirDependentFields() {
-        val values = IdlingValues(
-            numbers = IdlingNumber.entries.associateWith { 1f },
-            flags = IdlingFlag.entries.associateWith { false },
-        )
         compose.setContent {
             SecuComposeTheme {
                 IdlingScreen(
-                    IdlingUiState.Data(values),
+                    values(throttleAssistMap = true),
                     {},
                     { _, _ -> },
-                    capabilities = ParameterCapabilities(FirmwareInfoPacket(options = 0)),
+                    capabilities = ParameterCapabilities(FirmwareInfoPacket(options = 1 shl 28)),
                 )
             }
         }
 
         compose.onNodeWithTag("idling_iac_add").assertIsNotEnabled()
         compose.onNodeWithTag("idling_ifac1").assertIsEnabled()
+        compose.onNodeWithTag("idling_p0").assertIsEnabled()
     }
 
     @Test
     fun loadingDataScrollAndRecompositionHaveNoCallbacks() {
         var editCount = 0
         var flagChangeCount = 0
-        val state = mutableStateOf<IdlingUiState>(IdlingUiState.Loading)
+        val state = mutableStateOf<IdlingValues?>(null)
 
         compose.setContent {
             SecuComposeTheme {
@@ -81,11 +92,8 @@ class IdlingScreenTest {
         }
         compose.onNodeWithTag("idling_loading").assertIsDisplayed()
 
-        val values = IdlingValues(
-            numbers = IdlingNumber.entries.associateWith { it.ordinal + 1f },
-            flags = IdlingFlag.entries.associateWith { it.ordinal % 2 == 0 },
-        )
-        compose.runOnIdle { state.value = IdlingUiState.Data(values) }
+        val current = values()
+        compose.runOnIdle { state.value = current }
 
         IdlingNumber.entries.forEach { number ->
             compose.onNodeWithTag("idling_${number.name.lowercase()}")
@@ -95,7 +103,7 @@ class IdlingScreenTest {
             val expected = String.format(
                 java.util.Locale.getDefault(),
                 "%.${number.precision}f",
-                number.ordinal + 1f,
+                number.value(current),
             ) + units
             compose.onNodeWithTag("idling_${number.name.lowercase()}-value", useUnmergedTree = true)
                 .assertTextEquals(expected)
@@ -107,7 +115,7 @@ class IdlingScreenTest {
         }
 
         compose.runOnIdle {
-            state.value = IdlingUiState.Data(values.copy(numbers = values.numbers.toMap()))
+            state.value = current.copy(iFac1 = current.iFac1)
         }
         assertEquals(0, editCount)
         assertEquals(0, flagChangeCount)
@@ -117,14 +125,11 @@ class IdlingScreenTest {
     fun everyValueAndFlagInvokesItsUserActionCallback() {
         val edits = mutableListOf<IdlingNumber>()
         val flagChanges = mutableListOf<Pair<IdlingFlag, Boolean>>()
-        val values = IdlingValues(
-            numbers = IdlingNumber.entries.associateWith { 1f },
-            flags = IdlingFlag.entries.associateWith { false },
-        )
+        val current = values()
         compose.setContent {
             SecuComposeTheme {
                 IdlingScreen(
-                    IdlingUiState.Data(values),
+                    current,
                     { edits += it },
                     { flag, checked -> flagChanges += flag to checked },
                 )
