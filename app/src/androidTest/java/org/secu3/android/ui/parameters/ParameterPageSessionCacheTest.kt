@@ -4,6 +4,12 @@ import android.Manifest
 import android.os.Build
 import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.Lifecycle
+import androidx.compose.ui.test.onNodeWithTag
+import androidx.compose.ui.test.performClick
+import androidx.compose.ui.test.performScrollTo
+import androidx.compose.ui.platform.ComposeView
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import androidx.compose.runtime.getValue
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.platform.app.InstrumentationRegistry
 import com.hoho.android.usbserial.driver.UsbSerialPort
@@ -33,6 +39,7 @@ import org.secu3.android.connection.UsbSessionFence
 import org.secu3.android.connection.PacketReceiver
 import org.secu3.android.models.RawPacket
 import org.secu3.android.domain.parameters.ParameterPage
+import org.secu3.android.domain.parameters.ParameterCapabilities
 import org.secu3.android.domain.parameters.LtftValues
 import org.secu3.android.domain.parameters.DbwValues
 import org.secu3.android.models.packets.base.OutputPacket
@@ -51,9 +58,11 @@ import org.secu3.android.models.packets.out.params.KnockParamPacket
 import org.secu3.android.models.packets.out.params.AccelerationParamPacket
 import org.secu3.android.models.packets.out.params.LtftParamPacket
 import org.secu3.android.models.packets.out.params.DbwParamPacket
+import org.secu3.android.models.packets.out.params.FunSetParamPacket
 import org.secu3.android.models.packets.out.ChangeModePacket
 import org.secu3.android.utils.UserPrefs
 import org.secu3.android.ui.MainActivity
+import org.secu3.android.ui.compose.SecuComposeTheme
 import org.secu3.android.ui.PARAMETERS_ROUTE
 import org.secu3.android.ui.parameters.pages.compose.AnglesNumber
 import org.secu3.android.ui.parameters.pages.compose.StarterNumber
@@ -64,6 +73,8 @@ import org.secu3.android.ui.parameters.pages.compose.KnockSelector
 import org.secu3.android.ui.parameters.pages.compose.AccelerationNumber
 import org.secu3.android.ui.parameters.pages.compose.LtftNumber
 import org.secu3.android.ui.parameters.pages.compose.DbwNumber
+import org.secu3.android.ui.parameters.pages.compose.FunctionsNumber
+import org.secu3.android.ui.parameters.pages.compose.FunctionsChoices
 import org.secu3.android.ui.parameters.pages.compose.ChokeNumber
 import java.lang.reflect.Proxy
 import java.util.concurrent.CountDownLatch
@@ -144,6 +155,193 @@ class ParameterPageSessionCacheTest {
             await { vm.anglesControl.values.value != null }
         } finally {
             transport.close()
+            compose.runOnIdle { vm.clearPageState() }
+        }
+    }
+
+    @Test fun functionsReceiveAllNameFragmentsBeforeSettingsAndOfferMafEditor() = runBlocking {
+        val vm = paramsViewModel()
+        mountFunctionsPage(R.string.params_tab_functions_title, vm)
+        val usb = installFakeUsb(vm)
+        try {
+            activate(vm, R.string.params_tab_functions_title)
+            usb.awaitReadRequest('p', 1)
+            assertEquals(null, vm.functionsControl.values.value)
+            usb.emitFunctionName(1, "Alpha-N")
+            delay(50)
+            assertEquals(null, vm.functionsControl.values.value)
+            usb.emitFunctionName(0, "Speed density")
+            usb.awaitReadRequest('n', 1)
+            val received = FunSetParamPacket(loadSrcCfg = 0, ckpsEngineCyl = 4, injCylDisp = .5f)
+            usb.emitFunctions(received)
+            await { vm.functionsControl.values.value?.functionNames == listOf("Speed density", "Alpha-N") }
+            delay(150)
+
+            vm.isSendAllowed = false // Functions writes follow actual session admission.
+            val baseline = usb.writes.size
+            usb.suppressAttachmentRescan()
+            compose.onNodeWithTag("functions_load_source").performScrollTo().performClick()
+            compose.onNodeWithTag("functions_option_4").performClick() // MAF is protocol code 4.
+            val cancel = requireNotNull(vm.parameterEditSession)
+            val request = cancel.request as ParameterEditRequest.FloatValue
+            assertEquals(2f, request.value)
+            assertEquals(.01f, request.min)
+            assertEquals(8f, request.max)
+            assertEquals(.0001f, request.step)
+            assertEquals(4, request.precision)
+            assertEquals(4, vm.functionsControl.values.value?.loadSource)
+            compose.runOnIdle { vm.dismissParameterEditor(cancel.id) }
+            usb.awaitWriteCount(baseline + 1)
+            assertEquals("MAF source selection was sent", 4, usb.writes[baseline][20].toInt() and 0xFF)
+            assertFalse(vm.isSendAllowed)
+        } finally {
+            usb.close()
+            compose.runOnIdle { vm.clearPageState() }
+        }
+    }
+
+    @Test fun functionsMafEditorConfirmationWritesTheDerivedPairThroughThePageRoute() = runBlocking {
+        val vm = paramsViewModel()
+        mountFunctionsPage(R.string.params_tab_functions_title, vm)
+        val usb = installFakeUsb(vm)
+        try {
+            activate(vm, R.string.params_tab_functions_title)
+            usb.awaitReadRequest('p', 1)
+            usb.emitFunctionName(1, "Alpha-N")
+            usb.emitFunctionName(0, "Speed density")
+            usb.awaitReadRequest('n', 1)
+            usb.emitFunctions(FunSetParamPacket(loadSrcCfg = 0, ckpsEngineCyl = 4, injCylDisp = .5f))
+            await { vm.functionsControl.values.value != null }
+            delay(150)
+
+            val baseline = usb.writes.size
+            usb.suppressAttachmentRescan()
+            compose.onNodeWithTag("functions_load_source").performScrollTo().performClick()
+            compose.onNodeWithTag("functions_option_4").performClick()
+            val editor = requireNotNull(vm.parameterEditSession)
+            assertEquals(4, vm.functionsControl.values.value?.loadSource)
+            compose.runOnIdle { vm.acceptParameterEditor(editor.id, 3f) }
+            delay(200)
+            assertEquals(
+                "writes after confirm; source=${vm.functionsControl.values.value?.loadSource}, " +
+                    "session=${vm.connectionSession}, editor=${vm.parameterEditSession}, " +
+                    "usbConnected=${usb.isConnected}",
+                baseline + 2,
+                usb.writes.size,
+            )
+            val command = usb.writes.last().map { it.toInt() and 0xFF }.toIntArray()
+            val expected = FunSetParamPacket(
+                loadSrcCfg = 4, ckpsEngineCyl = 4, injCylDisp = .75f, mafload_const = 430954.25f,
+            ).pack()
+            assertArrayEquals(expected, command.copyOfRange(1, 1 + expected.size))
+        } finally {
+            usb.close()
+            compose.runOnIdle { vm.clearPageState() }
+        }
+    }
+
+    @Test fun functionsNamedCommandsUseSessionAdmissionAndLiveCapabilityGates() = runBlocking {
+        val vm = paramsViewModel()
+        val usb = installFakeUsb(vm, firmwareOptions = 1 shl 28)
+        try {
+            activate(vm, R.string.params_tab_functions_title)
+            usb.awaitReadRequest('p', 1)
+            usb.emitFunctionName(0, "Alpha")
+            usb.emitFunctionName(1, "Beta")
+            usb.awaitReadRequest('n', 1)
+            usb.emitFunctions(FunSetParamPacket(loadSrcCfg = 0, fnGas = 1, ckpsEngineCyl = 4, injCylDisp = .5f))
+            await { vm.functionsControl.values.value != null }
+            val queueField = ParamsViewModel::class.java.getDeclaredField("uiMessageQueue").apply { isAccessible = true }
+            val queue = queueField.get(vm) as org.secu3.android.ui.messages.UiMessageQueue
+            queue.onActiveScopeChanged(PARAMETERS_ROUTE)
+            queue.pending.value.forEach { queue.acknowledge(it.id) }
+            vm.isSendAllowed = false
+
+            var expectedWrites = usb.writes.size
+            FunctionsNumber.entries.forEach { number ->
+                val value = when (number) {
+                    FunctionsNumber.LOWER -> 20f
+                    FunctionsNumber.UPPER -> 120f
+                    else -> number.min
+                }
+                compose.runOnIdle { assertTrue(vm.editFunctions(number, value)) }
+                usb.awaitWriteCount(++expectedWrites)
+                assertEquals('n'.code, usb.writes.last()[1].toInt() and 0xFF)
+                assertEquals(value, number.value(requireNotNull(vm.functionsControl.values.value)), 0f)
+            }
+
+            val selectors = listOf(
+                FunctionsChoices.Selector.GASOLINE_MAP to 1,
+                FunctionsChoices.Selector.GAS_MAP to 0,
+                FunctionsChoices.Selector.LOAD_SOURCE to 2,
+                FunctionsChoices.Selector.MAPSEL_PETROL to 3,
+                FunctionsChoices.Selector.MAPSEL_GAS to 4,
+                FunctionsChoices.Selector.BAROCORR to 3,
+                FunctionsChoices.Selector.VE2 to 2,
+                FunctionsChoices.Selector.GAS_V_UNI to 5,
+            )
+            selectors.forEach { (selector, code) ->
+                compose.runOnIdle { assertTrue(vm.selectFunctionsChoice(selector, code)) }
+                usb.awaitWriteCount(++expectedWrites)
+                assertEquals('n'.code, usb.writes.last()[1].toInt() and 0xFF)
+            }
+            assertEquals(3, usb.writes[expectedWrites - 4][21].toInt() and 0x0F)
+            assertEquals(0x43, usb.writes[expectedWrites - 3][21].toInt() and 0xFF)
+            assertEquals(5, usb.writes.last()[25].toInt() and 0xFF)
+            val selected = requireNotNull(vm.functionsControl.values.value)
+            assertEquals(1, selected.fnGasoline)
+            assertEquals(0, selected.fnGas)
+            assertEquals(2, selected.loadSource)
+            assertEquals(3, selected.mapselPetrol)
+            assertEquals(4, selected.mapselGas)
+            assertEquals(3, selected.barocorrType)
+            assertEquals(2, selected.ve2MapFunc)
+            assertEquals(5, selected.gasVUni)
+            usb.emitFirmware(options = 0)
+            await { vm.capabilities.value.known && !vm.capabilities.value.fuelInjection }
+            compose.runOnIdle {
+                assertTrue(vm.selectFunctionsChoice(FunctionsChoices.Selector.LOAD_SOURCE, 4))
+            }
+            usb.awaitWriteCount(++expectedWrites)
+            assertTrue(vm.updateFunctionsMafEngineDisplacement(3f))
+            usb.awaitWriteCount(++expectedWrites)
+            val expectedMaf = FunSetParamPacket(loadSrcCfg = 4, fnGasoline = 1, fnGas = 0, ckpsEngineCyl = 4,
+                injCylDisp = .75f, mafload_const = 430954.25f, loadLower = 20f, loadUpper = 120f,
+                mapCurveOffset = -5f, mapCurveGradient = -150f, tpsCurveOffset = -5f,
+                tpsCurveGradient = -100f, map2CurveOffset = -5f, map2CurveGradient = -150f,
+                gpsCurveOffset = -5f, gpsCurveGradient = -150f, fpsCurveOffset = -5f,
+                fpsCurveGradient = -500f, apps1CurveOffset = -5f, apps1CurveGradient = -500f,
+                mapselUni = 0x43, barocorrType = 3, ve2MapFunc = 2, gasVUni = 5).pack()
+            val mafCommand = usb.writes.last().map { it.toInt() and 0xFF }.toIntArray()
+            assertArrayEquals(expectedMaf, mafCommand.copyOfRange(1, 1 + expectedMaf.size))
+            assertTrue(queue.pending.value.any { it.textRes == R.string.packet_sent })
+            queue.pending.value.forEach { queue.acknowledge(it.id) }
+
+            val committed = requireNotNull(vm.functionsControl.values.value)
+            usb.emitFirmware(options = (1 shl 28) or (1 shl 17))
+            await { vm.capabilities.value.secu3T }
+            val beforeUnsupported = usb.writes.size
+            FunctionsNumber.entries.filter { it in setOf(
+                FunctionsNumber.GPS_OFFSET, FunctionsNumber.GPS_GRADIENT,
+                FunctionsNumber.FPS_OFFSET, FunctionsNumber.FPS_GRADIENT,
+                FunctionsNumber.APPS_OFFSET, FunctionsNumber.APPS_GRADIENT,
+            ) }.forEach { number -> compose.runOnIdle { assertFalse(vm.editFunctions(number, number.min)) } }
+            delay(100)
+            assertEquals(beforeUnsupported, usb.writes.size)
+            assertEquals(committed, vm.functionsControl.values.value)
+            assertFalse(queue.pending.value.any { it.textRes == R.string.packet_sent })
+
+            compose.runOnIdle { vm.pausePageSession() }
+            compose.runOnIdle {
+                assertFalse(vm.editFunctions(FunctionsNumber.MAP_OFFSET, 1f))
+                assertFalse(vm.selectFunctionsChoice(FunctionsChoices.Selector.MAPSEL_PETROL, 2))
+            }
+            assertEquals(beforeUnsupported, usb.writes.size)
+            assertEquals(committed, vm.functionsControl.values.value)
+            assertFalse(queue.pending.value.any { it.textRes == R.string.packet_sent })
+            assertFalse(vm.isSendAllowed)
+        } finally {
+            usb.close()
             compose.runOnIdle { vm.clearPageState() }
         }
     }
@@ -1423,6 +1621,24 @@ class ParameterPageSessionCacheTest {
         compose.runOnIdle { vm.activatePage(requireNotNull(ParameterPageCatalog().pageForTitle(titleRes))) }
     }
 
+    private fun mountFunctionsPage(titleRes: Int, vm: ParamsViewModel) {
+        // Replace NavHost so the test owns one page root; the fake USB helper suppresses physical-device rescan.
+        compose.activityRule.scenario.onActivity { activity ->
+            activity.setContentView(ComposeView(activity).apply {
+                setContent {
+                    val capabilities by vm.capabilities.collectAsStateWithLifecycle()
+                    SecuComposeTheme {
+                        ParameterPageContent(
+                            requireNotNull(ParameterPageCatalog().pageForTitle(titleRes)),
+                            titleRes, vm, capabilities, true, { true }, vm::openParameterEditor,
+                        )
+                    }
+                        }
+            })
+        }
+        compose.waitForIdle()
+    }
+
     private suspend fun await(predicate: () -> Boolean) {
         withTimeout(3_000) {
             while (!predicate()) delay(10)
@@ -1537,6 +1753,13 @@ class ParameterPageSessionCacheTest {
         private val nextWriteBarrier: AtomicReference<WriteBarrier?>,
         private val originalWakeLockPreference: Boolean,
     ) {
+        val isConnected get() = manager.isUsbConnected
+
+        fun suppressAttachmentRescan() {
+            Secu3ConnectionManager::class.java.getDeclaredField("activeUsbAttachment")
+                .apply { isAccessible = true }.set(manager, null)
+        }
+
         fun send(packet: OutputPacket) = connection.sendData(packet)
 
         fun blockNextWrite(): WriteBarrier = WriteBarrier().also { nextWriteBarrier.set(it) }
@@ -1557,6 +1780,24 @@ class ParameterPageSessionCacheTest {
 
         suspend fun emit(packet: OutputPacket) {
             val input = intArrayOf('@'.code) + packet.pack() + intArrayOf(0, 0)
+            attemptPackets.emit(UsbAttemptPacket(1L, RawPacket(input)))
+        }
+
+        suspend fun emitFunctionName(index: Int, name: String) {
+            val encoded = name.toByteArray(java.nio.charset.Charset.forName("IBM866"))
+                .map { it.toInt() and 0xFF }.toIntArray()
+            require(encoded.size <= 16)
+            val input = intArrayOf('@'.code, 'p'.code, 2, index) + encoded +
+                IntArray(16 - encoded.size) + intArrayOf(0, 0)
+            attemptPackets.emit(UsbAttemptPacket(1L, RawPacket(input)))
+        }
+
+        suspend fun emitFunctions(packet: FunSetParamPacket) {
+            val writePayload = packet.pack()
+            val input = (intArrayOf('@'.code) + writePayload.copyOfRange(0, 32) + intArrayOf(0x01, 0x90) +
+                writePayload.copyOfRange(32, writePayload.size) + intArrayOf(0x01, 0x90) + intArrayOf(0, 0)).also {
+                it[26] = packet.ckpsEngineCyl
+            }
             attemptPackets.emit(UsbAttemptPacket(1L, RawPacket(input)))
         }
 

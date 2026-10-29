@@ -43,6 +43,10 @@ class ParameterCapabilities(firmware: FirmwareInfoPacket? = null) {
     val lambdaChannelSelection get() = lambdaControl
     val lambdaStoich get() = known && fuelOrGasDose
 
+    fun functionsLowerLoadEnabled(useLoadGrid: Boolean): Boolean = !useLoadGrid
+
+    fun functionsUpperLoadEnabled(useLoadGrid: Boolean, loadSource: Int): Boolean = !useLoadGrid && loadSource != 1
+
     fun supports(page: ParameterPage): Boolean = when (page) {
         ParameterPage.CHOKE_CONTROL -> !known || choke
         ParameterPage.FUEL_INJECTION -> known && fuelInjection

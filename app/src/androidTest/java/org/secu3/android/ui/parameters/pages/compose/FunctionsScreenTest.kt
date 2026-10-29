@@ -38,6 +38,7 @@ import androidx.compose.ui.semantics.SemanticsProperties
 import androidx.compose.ui.text.TextLayoutResult
 import androidx.compose.ui.unit.Density
 import androidx.compose.ui.unit.dp
+import org.secu3.android.domain.parameters.FunctionsValues
 import androidx.compose.ui.test.assertContentDescriptionEquals
 import androidx.compose.ui.test.assertHasClickAction
 import androidx.compose.ui.test.assertIsDisplayed
@@ -50,6 +51,7 @@ import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.performScrollTo
 import androidx.compose.ui.test.performSemanticsAction
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertNull
 import org.junit.Assert.assertTrue
 import org.junit.Rule
 import org.junit.Test
@@ -64,7 +66,7 @@ class FunctionsScreenTest {
         var editCount = 0
         var flagChangeCount = 0
         var choiceCount = 0
-        val state = mutableStateOf<FunctionsUiState>(FunctionsUiState.Loading)
+        val state = mutableStateOf<FunctionsValues?>(null)
 
         compose.setContent {
             SecuComposeTheme {
@@ -124,7 +126,7 @@ class FunctionsScreenTest {
                     createDataState(),
                     onEdit = { edits += it },
                     onFlag = { flagChangeCount++ },
-                    onChoice = { selector, index -> choices += selector to index },
+                    onChoice = { selector, code -> choices += selector to code },
                 )
             }
         }
@@ -149,12 +151,30 @@ class FunctionsScreenTest {
     }
 
     @Test
+    fun outputSelectorLabelsUseWireCodesAndUnknownIncomingCodesStayBlank() {
+        val values = createDataState().copy(
+            mapselPetrol = 6,
+            mapselGas = 15,
+            gasVUni = 6,
+        )
+        val choices = FunctionsChoices.from(values, listOf("MAP", "TPS", "MAF", "RPM", "Blend"),
+            listOf("None", "Atmospheric", "Barometric", "Combined"), listOf("VE 1", "VE 2", "Blend"))
+        for (selector in listOf(
+            FunctionsChoices.Selector.MAPSEL_PETROL,
+            FunctionsChoices.Selector.MAPSEL_GAS,
+            FunctionsChoices.Selector.GAS_V_UNI,
+        )) {
+            assertEquals((0..5).map { FunctionsChoices.Option(it, (it + 1).toString()) } + FunctionsChoices.Option(15, "no"), choices.options.getValue(selector))
+        }
+        assertNull(choices.selected[FunctionsChoices.Selector.MAPSEL_PETROL])
+        assertEquals("no", choices.selected[FunctionsChoices.Selector.MAPSEL_GAS])
+        assertNull(choices.selected[FunctionsChoices.Selector.GAS_V_UNI])
+    }
+
+    @Test
     fun dropdownFieldsLookClickableAndExposeTheirLabelAndSelectionAccessibly() {
         val longMapName = "Map calibration with a deliberately long localized name"
-        val state = createDataState()
-        val selected = state.choices.selected +
-            (FunctionsChoices.Selector.GASOLINE_MAP to longMapName)
-        val populatedState = state.copy(choices = state.choices.copy(selected = selected))
+        val populatedState = createDataState().copy(functionNames = listOf(longMapName))
 
         compose.setContent {
             SecuComposeTheme {
@@ -184,11 +204,7 @@ class FunctionsScreenTest {
         val localizedContext = context.createConfigurationContext(configuration)
         val longName = "Калібрування паливної системи для тривалого прогрівання двигуна"
         val label = localizedContext.getString(org.secu3.android.R.string.funset_maps_set_for_gasoline)
-        val state = createDataState().let {
-            it.copy(choices = it.choices.copy(
-                selected = it.choices.selected + (FunctionsChoices.Selector.GASOLINE_MAP to longName),
-            ))
-        }
+        val state = createDataState().copy(functionNames = listOf(longName))
         val dark = mutableStateOf(false)
         var selected = 0
         val baseDensity = compose.density.density
@@ -216,7 +232,7 @@ class FunctionsScreenTest {
             assertTextDoesNotOverflow("functions_gasoline-label")
             assertTextDoesNotOverflow("functions_gasoline-value")
             compose.onNodeWithTag("functions_gasoline").performClick()
-            compose.onNodeWithTag("functions_option_1").performClick()
+            compose.onNodeWithTag("functions_option_0").performClick()
         }
         compose.runOnIdle { assertEquals(2, selected) }
     }
@@ -233,15 +249,19 @@ class FunctionsScreenTest {
         assertTrue("$tag fits without clipping", !requireNotNull(result).hasVisualOverflow)
     }
 
-    private fun createDataState() = FunctionsUiState.Data(
-        values = FunctionsValues(
-            numbers = FunctionsNumber.entries.associateWith { it.ordinal.toFloat() },
-            useLoadGrid = false,
-        ),
-        choices = FunctionsChoices(
-            selected = FunctionsChoices.Selector.entries.associateWith { "selected" },
-            options = FunctionsChoices.Selector.entries.associateWith { listOf("one", "two") },
-        ),
+    private fun createDataState() = FunctionsValues(
+        fnGasoline = 0, fnGas = 0,
+        loadLower = 10f, loadUpper = 50f,
+        mapCurveOffset = 0f, mapCurveGradient = 0f,
+        tpsCurveOffset = 0f, tpsCurveGradient = 0f,
+        map2CurveOffset = 0f, map2CurveGradient = 0f,
+        gpsCurveOffset = 0f, gpsCurveGradient = 0f,
+        fpsCurveOffset = 0f, fpsCurveGradient = 0f,
+        apps1CurveOffset = 0f, apps1CurveGradient = 0f,
+        loadSource = 0, mapselPetrol = 0, mapselGas = 0, barocorrType = 0,
+        useLoadGrid = false, ve2MapFunc = 0, gasVUni = 0,
+        functionNames = listOf("Selected function", "Second function"),
+        engineCylinderCount = 4, engineDisplacementPerCylinder = .5f, mafLoadConstant = 0f,
     )
 
     private val selectorTags = listOf(

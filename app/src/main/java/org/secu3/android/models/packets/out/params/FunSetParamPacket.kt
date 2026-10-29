@@ -27,7 +27,6 @@ package org.secu3.android.models.packets.out.params
 import org.secu3.android.models.packets.base.Secu3Packet
 import org.secu3.android.models.packets.base.InputPacket
 import org.secu3.android.models.packets.base.OutputPacket
-import org.secu3.android.models.packets.out.params.UniOutParamPacket.Companion.UNI_OUTPUT_NUM
 import org.secu3.android.utils.getBitValue
 import org.secu3.android.utils.setBitValue
 import org.secu3.android.models.packets.base.protocolRoundToInt
@@ -96,11 +95,7 @@ data class FunSetParamPacket(
 
         data += ve2MapFunc
 
-        if (gasVUni == UNI_OUTPUT_NUM) {
-            data += 0xF
-        } else {
-            data += gasVUni
-        }
+        data += gasVUni
 
         data += 0 // stub for cyl_num
 

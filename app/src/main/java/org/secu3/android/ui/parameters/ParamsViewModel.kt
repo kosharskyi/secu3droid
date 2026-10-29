@@ -62,6 +62,7 @@ import org.secu3.android.domain.parameters.KnockControl
 import org.secu3.android.domain.parameters.AccelerationControl
 import org.secu3.android.domain.parameters.LtftControl
 import org.secu3.android.domain.parameters.DbwControl
+import org.secu3.android.domain.parameters.FunctionsControl
 import org.secu3.android.domain.parameters.SecurityCredentialsResult
 import org.secu3.android.models.packets.base.OutputPacket
 import org.secu3.android.models.packets.out.params.AccelerationParamPacket
@@ -70,7 +71,6 @@ import org.secu3.android.models.packets.out.params.CarburParamPacket
 import org.secu3.android.models.packets.out.params.ChokeControlParPacket
 import org.secu3.android.models.packets.out.params.CkpsParamPacket
 import org.secu3.android.models.packets.out.params.DbwParamPacket
-import org.secu3.android.models.packets.out.params.FunSetParamPacket
 import org.secu3.android.models.packets.out.params.GasDoseParamPacket
 import org.secu3.android.models.packets.out.params.IdlingParamPacket
 import org.secu3.android.models.packets.out.params.InjctrParPacket
@@ -97,7 +97,8 @@ import org.secu3.android.ui.parameters.pages.compose.TemperatureFlag
 import org.secu3.android.ui.parameters.pages.compose.TemperatureNumber
 import org.secu3.android.ui.parameters.pages.MiscField
 import org.secu3.android.ui.parameters.pages.MiscToggle
-import org.secu3.android.ui.parameters.pages.compose.FunctionsStateHolder
+import org.secu3.android.ui.parameters.pages.compose.FunctionsChoices
+import org.secu3.android.ui.parameters.pages.compose.FunctionsNumber
 import org.secu3.android.ui.parameters.pages.compose.ChokeNumber
 import org.secu3.android.ui.parameters.pages.compose.GasDoseNumber
 import org.secu3.android.ui.parameters.pages.compose.FuelInjectionNumber
@@ -129,6 +130,7 @@ class ParamsViewModel @Inject constructor(
     internal val accelerationControl: AccelerationControl,
     internal val ltftControl: LtftControl,
     internal val dbwControl: DbwControl,
+    internal val functionsControl: FunctionsControl,
     private val uiMessageQueue: UiMessageQueue,
     private val parameterPageCatalog: ParameterPageCatalog,
 ) : ViewModel() {
@@ -462,7 +464,49 @@ class ParamsViewModel @Inject constructor(
         UniversalOutputsStateHolder(::sendPacket) { isSendAllowed = it }
     }
 
-    internal val functionsStateHolder by lazy { FunctionsStateHolder(::sendPacket) }
+    internal fun editFunctions(number: FunctionsNumber, value: Float): Boolean {
+        val admitted = when (number) {
+            FunctionsNumber.LOWER -> functionsControl.editLoadLower(value)
+            FunctionsNumber.UPPER -> functionsControl.editLoadUpper(value)
+            FunctionsNumber.MAP_OFFSET -> functionsControl.editMapCurveOffset(value)
+            FunctionsNumber.MAP_GRADIENT -> functionsControl.editMapCurveGradient(value)
+            FunctionsNumber.TPS_OFFSET -> functionsControl.editTpsCurveOffset(value)
+            FunctionsNumber.TPS_GRADIENT -> functionsControl.editTpsCurveGradient(value)
+            FunctionsNumber.MAP2_OFFSET -> functionsControl.editMap2CurveOffset(value)
+            FunctionsNumber.MAP2_GRADIENT -> functionsControl.editMap2CurveGradient(value)
+            FunctionsNumber.GPS_OFFSET -> functionsControl.editGpsCurveOffset(value)
+            FunctionsNumber.GPS_GRADIENT -> functionsControl.editGpsCurveGradient(value)
+            FunctionsNumber.FPS_OFFSET -> functionsControl.editFpsCurveOffset(value)
+            FunctionsNumber.FPS_GRADIENT -> functionsControl.editFpsCurveGradient(value)
+            FunctionsNumber.APPS_OFFSET -> functionsControl.editApps1CurveOffset(value)
+            FunctionsNumber.APPS_GRADIENT -> functionsControl.editApps1CurveGradient(value)
+        }
+        return reportFunctionsEdit(admitted)
+    }
+
+    internal fun setFunctionsLoadGrid(checked: Boolean): Boolean = reportFunctionsEdit(functionsControl.setUseLoadGrid(checked))
+
+    internal fun selectFunctionsChoice(selector: FunctionsChoices.Selector, code: Int): Boolean {
+        val admitted = when (selector) {
+            FunctionsChoices.Selector.GASOLINE_MAP -> functionsControl.selectGasolineMap(code)
+            FunctionsChoices.Selector.GAS_MAP -> functionsControl.selectGasMap(code)
+            FunctionsChoices.Selector.LOAD_SOURCE -> functionsControl.selectLoadSource(code)
+            FunctionsChoices.Selector.MAPSEL_PETROL -> functionsControl.selectMapsForPetrol(code)
+            FunctionsChoices.Selector.MAPSEL_GAS -> functionsControl.selectMapsForGas(code)
+            FunctionsChoices.Selector.BAROCORR -> functionsControl.selectBarometricCorrection(code)
+            FunctionsChoices.Selector.VE2 -> functionsControl.selectVe2Function(code)
+            FunctionsChoices.Selector.GAS_V_UNI -> functionsControl.selectGasVoltageInput(code)
+        }
+        return reportFunctionsEdit(admitted)
+    }
+
+    internal fun updateFunctionsMafEngineDisplacement(value: Float): Boolean =
+        reportFunctionsEdit(functionsControl.updateMafEngineDisplacement(value))
+
+    private fun reportFunctionsEdit(admitted: Boolean): Boolean {
+        if (admitted) showUiMessage(R.string.packet_sent, UiMessageDuration.SHORT)
+        return admitted
+    }
 
     internal var securityName by mutableStateOf("")
         private set
@@ -761,7 +805,7 @@ class ParamsViewModel @Inject constructor(
             ParameterPage.LAMBDA_CONTROL -> lambdaControlStateHolder.reset()
             ParameterPage.ACCELERATION -> accelerationControl.reset()
             ParameterPage.LTFT -> ltftControl.reset()
-            ParameterPage.FUNCTIONS -> functionsStateHolder.reset()
+            ParameterPage.FUNCTIONS -> functionsControl.reset()
             ParameterPage.MISCELLANEOUS -> miscellaneousControl.reset()
             ParameterPage.SECURITY -> {
                 securityControl.reset()
@@ -798,18 +842,7 @@ class ParamsViewModel @Inject constructor(
             ParameterPage.LTFT -> ltftControl.receive(packet<LtftParamPacket>(result))
             ParameterPage.FUNCTIONS -> {
                 val functionParameters = (result as ParameterReadResult.Functions).parameters
-                isSendAllowed = false
-                try {
-                    functionsStateHolder.onNamesReceived(functionParameters.names)
-                    functionsStateHolder.onPacketReceived(
-                        received = functionParameters.settings,
-                        loads = context.resources.getStringArray(R.array.load_measurement_items).toList(),
-                        bars = context.resources.getStringArray(R.array.barocorr_items).toList(),
-                        ve2 = context.resources.getStringArray(R.array.ve2_map_func_items).toList(),
-                    )
-                } finally {
-                    isSendAllowed = true
-                }
+                functionsControl.receive(functionParameters)
             }
             ParameterPage.MISCELLANEOUS -> {
                 isSendAllowed = false

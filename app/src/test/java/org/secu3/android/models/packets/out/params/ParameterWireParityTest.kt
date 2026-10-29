@@ -115,6 +115,11 @@ class ParameterWireParityTest {
         assertEquals(46, packet.pack().size) // descriptor plus the preserved two-byte extension
     }
 
+    @Test fun gasVoltageUnknownRawSixIsNotNormalizedToDisabledCodeFifteen() {
+        assertEquals(6, FunSetParamPacket(gasVUni = 6).pack()[24])
+        assertEquals(15, FunSetParamPacket(gasVUni = 15).pack()[24])
+    }
+
     @Test fun minimumPulseUses1284DiscreteAndPreservesOtherBank() {
         val packet = InjctrParPacket()
         packet.minPw0 = 1f; packet.minPw1 = 2f

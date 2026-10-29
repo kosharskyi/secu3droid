@@ -4,7 +4,7 @@ The user also approved Functions. Selectors use ordinary proportional text rathe
 
 ## Selector display text is not a protocol index
 
-An unknown or missing selection stays empty rather than defaulting to the first option. The displayed `no` option maps to protocol code `15` through `mapselCodes`; layout changes must not infer packet values from displayed text or reorder options.
+An unknown or missing selection stays empty rather than defaulting to the first option. The three universal-output selectors display `1` through `6` for wire codes `0` through `5`, and display `no` for wire code `15`; incoming code `6` remains unknown. Layout changes must not infer packet values from displayed text or reorder options.
 
 ## Group styling must preserve the interleaved control order
 

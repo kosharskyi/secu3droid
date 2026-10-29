@@ -70,6 +70,10 @@ Its integer editor rounds only for display. Preserve the decoded Float through u
 
 AE_TIME is shown only for non-pump modes and is enabled only for fuel injection with time mode selected. Xtau rows are shown only when the current wallwet model is nonzero and are enabled only for fuel injection. The domain repeats those live predicates when admitting commands; unknown selector codes remain visible until explicit selection.
 
+## MAF source confirmation updates both derived packet fields
+
+Selecting MAF first sends the load-source code, then opens the existing engine-displacement editor only when live firmware has no fuel injection and a positive cylinder count is available. Confirming computes injector displacement per cylinder and the Float MAF constant together; cancel keeps the selected source. The domain rechecks the source and firmware when confirming so a stale editor cannot write the derived pair.
+
 
 ## Idling rows keep positive and negative P/I meanings explicit
 

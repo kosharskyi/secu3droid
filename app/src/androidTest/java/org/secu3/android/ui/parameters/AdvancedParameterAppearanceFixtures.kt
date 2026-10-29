@@ -27,11 +27,8 @@ import org.secu3.android.domain.parameters.ChokeValues
 import org.secu3.android.domain.parameters.FuelBankValues
 import org.secu3.android.ui.parameters.pages.compose.FuelInjectionScreen
 import org.secu3.android.domain.parameters.FuelInjectionValues
-import org.secu3.android.ui.parameters.pages.compose.FunctionsChoices
-import org.secu3.android.ui.parameters.pages.compose.FunctionsNumber
+import org.secu3.android.domain.parameters.FunctionsValues
 import org.secu3.android.ui.parameters.pages.compose.FunctionsScreen
-import org.secu3.android.ui.parameters.pages.compose.FunctionsUiState
-import org.secu3.android.ui.parameters.pages.compose.FunctionsValues
 import org.secu3.android.ui.parameters.pages.compose.GasDoseScreen
 import org.secu3.android.domain.parameters.GasDoseValues
 import org.secu3.android.domain.parameters.ParameterCapabilities
@@ -43,23 +40,11 @@ import org.secu3.android.ui.parameters.pages.compose.LambdaValues
 internal fun advancedParameterAppearanceFixtures(): List<ParameterAppearanceFixture> {
     val functionsPacket = FunSetParamPacket()
     val functionNames = listOf("Speed density", "Alpha-N", "Blend")
-    val functionChoices = FunctionsChoices.from(
-        functionsPacket,
-        names = functionNames,
-        loads = listOf("MAP", "TPS", "MAF", "RPM", "Blend"),
-        bars = listOf("None", "Atmospheric", "Barometric", "Combined"),
-        ve2 = listOf("VE table 1", "VE table 2", "Blend"),
-    )
-    val functions = FunctionsValues(
-        FunctionsNumber.entries.associateWith { number ->
-            when (number) {
-                FunctionsNumber.LOWER -> 20f
-                FunctionsNumber.UPPER -> 100f
-                else -> 1.25f
-            }
-        },
-        useLoadGrid = true,
-    )
+    functionsPacket.loadLower = 20f
+    functionsPacket.loadUpper = 100f
+    functionsPacket.mapCurveOffset = 1.25f
+    functionsPacket.useLoadGrid = true
+    val functions = FunctionsValues.from(functionsPacket, functionNames)
     val ckps = CkpsValues(60, 2, 5, 12f, 40f, 2.5f, false, true, true, false, false, 24, 4, (11..55).toList())
     val lambda = LambdaValues(
         numbers = LambdaNumber.entries.associateWith { number -> if (number.integer) 4f else 1.25f },
@@ -121,7 +106,7 @@ internal fun advancedParameterAppearanceFixtures(): List<ParameterAppearanceFixt
             UniversalOutputsScreen(outputs, outputNames, listOf("OR", "AND", "XOR", "NOR", "AND"), { _, _ -> }, {})
         },
         ParameterAppearanceFixture("functions") {
-            FunctionsScreen(FunctionsUiState.Data(functions, functionChoices), {}, {}, { _, _ -> })
+            FunctionsScreen(functions, {}, {}, { _, _ -> })
         },
         ParameterAppearanceFixture("ckps") {
             CkpsScreen(ckps, {}, { _, _ -> }, { _, _ -> })

@@ -11,3 +11,6 @@ The firmware's option bit 2 is shared with the desktop controller's ODDFIRE_ALGO
 ## Page labels and order stay in the UI while support stays here
 
 `ParameterPageSpec` owns localized titles and the stable page order; this class decides whether a `ParameterPage` is supported. The ViewModel derives one snapshot from the manager's current firmware flow, and the route passes that same snapshot to page rendering and page-list filtering so an ECU change updates both consistently.
+## Functions load thresholds share the UI and command predicates
+
+Lower load is editable only when load-grid mode is off. Upper load also stays disabled for protocol source `1` (MAP barometric correction). The same `ParameterCapabilities` predicates drive the screen styling and `FunctionsControl` stale-command guard; firmware unknown remains permissive for the other Functions field gates.

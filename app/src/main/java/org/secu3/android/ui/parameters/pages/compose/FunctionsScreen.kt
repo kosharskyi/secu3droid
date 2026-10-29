@@ -56,6 +56,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.res.stringArrayResource
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
@@ -75,7 +76,7 @@ import org.secu3.android.ui.parameters.dialogs.ParameterChoiceList
 import org.secu3.android.ui.parameters.dialogs.ParameterChoiceOption
 import org.secu3.android.ui.parameters.*
 import org.secu3.android.R
-import org.secu3.android.models.packets.out.params.FunSetParamPacket
+import org.secu3.android.domain.parameters.FunctionsValues
 
 enum class FunctionsNumber(
     @StringRes val titleRes: Int,
@@ -98,72 +99,36 @@ enum class FunctionsNumber(
     FPS_OFFSET(R.string.funset_fuel_pressure_sensor_offset_title, R.string.units_volts, 4, -5f, 5f, .0025f),
     FPS_GRADIENT(R.string.funset_fuel_pressure_sensor_gradient_title, R.string.units_kpa_per_volt, 3, -500f, 500f, .01f),
     APPS_OFFSET(R.string.funset_apps_offset_title, R.string.units_volts, 4, -5f, 5f, .0025f),
-    APPS_GRADIENT(R.string.funset_apps_gradient_title, R.string.units_percent_per_volts, 3, -500f, 500f, .01f),
-}
+    APPS_GRADIENT(R.string.funset_apps_gradient_title, R.string.units_percent_per_volts, 3, -500f, 500f, .01f);
 
-data class FunctionsValues(val numbers: Map<FunctionsNumber, Float>, val useLoadGrid: Boolean, val loadSource: Int = 0) {
-    fun value(number: FunctionsNumber): Float = numbers.getValue(number)
+    fun value(values: FunctionsValues): Float = when (this) {
+        LOWER -> values.loadLower
+        UPPER -> values.loadUpper
+        MAP_OFFSET -> values.mapCurveOffset
+        MAP_GRADIENT -> values.mapCurveGradient
+        TPS_OFFSET -> values.tpsCurveOffset
+        TPS_GRADIENT -> values.tpsCurveGradient
+        MAP2_OFFSET -> values.map2CurveOffset
+        MAP2_GRADIENT -> values.map2CurveGradient
+        GPS_OFFSET -> values.gpsCurveOffset
+        GPS_GRADIENT -> values.gpsCurveGradient
+        FPS_OFFSET -> values.fpsCurveOffset
+        FPS_GRADIENT -> values.fpsCurveGradient
+        APPS_OFFSET -> values.apps1CurveOffset
+        APPS_GRADIENT -> values.apps1CurveGradient
+    }
 
-    fun withValue(number: FunctionsNumber, value: Float): FunctionsValues =
-        copy(numbers = numbers + (number to value))
-
-    companion object {
-        fun from(packet: FunSetParamPacket) = FunctionsValues(
-            numbers = mapOf(
-                FunctionsNumber.LOWER to packet.loadLower,
-                FunctionsNumber.UPPER to packet.loadUpper,
-                FunctionsNumber.MAP_OFFSET to packet.mapCurveOffset,
-                FunctionsNumber.MAP_GRADIENT to packet.mapCurveGradient,
-                FunctionsNumber.TPS_OFFSET to packet.tpsCurveOffset,
-                FunctionsNumber.TPS_GRADIENT to packet.tpsCurveGradient,
-                FunctionsNumber.MAP2_OFFSET to packet.map2CurveOffset,
-                FunctionsNumber.MAP2_GRADIENT to packet.map2CurveGradient,
-                FunctionsNumber.GPS_OFFSET to packet.gpsCurveOffset,
-                FunctionsNumber.GPS_GRADIENT to packet.gpsCurveGradient,
-                FunctionsNumber.FPS_OFFSET to packet.fpsCurveOffset,
-                FunctionsNumber.FPS_GRADIENT to packet.fpsCurveGradient,
-                FunctionsNumber.APPS_OFFSET to packet.apps1CurveOffset,
-                FunctionsNumber.APPS_GRADIENT to packet.apps1CurveGradient,
-            ),
-            useLoadGrid = packet.useLoadGrid,
-            loadSource = packet.loadSrcCfg,
-        )
+    fun enabled(values: FunctionsValues, capabilities: ParameterCapabilities): Boolean = when (this) {
+        LOWER -> capabilities.functionsLowerLoadEnabled(values.useLoadGrid)
+        UPPER -> capabilities.functionsUpperLoadEnabled(values.useLoadGrid, values.loadSource)
+        GPS_OFFSET, GPS_GRADIENT, FPS_OFFSET, FPS_GRADIENT, APPS_OFFSET, APPS_GRADIENT -> capabilities.dbw
+        else -> true
     }
 }
 
-internal fun functionsLoadAxisUnitRes(loadSource: Int): Int =
-    if (loadSource < 2) R.string.units_pressure_kpa else R.string.units_percents
+data class FunctionsChoices(val selected: Map<Selector, String?>, val options: Map<Selector, List<Option>>) {
+    data class Option(val code: Int, val label: String)
 
-internal fun functionsNumberEnabled(number: FunctionsNumber, values: FunctionsValues): Boolean = when (number) {
-    FunctionsNumber.LOWER -> !values.useLoadGrid
-    FunctionsNumber.UPPER -> !values.useLoadGrid && values.loadSource != 1
-    else -> true
-}
-
-fun applyFunctionsValue(packet: FunSetParamPacket, number: FunctionsNumber, value: Float) {
-    when (number) {
-        FunctionsNumber.LOWER -> packet.loadLower = value
-        FunctionsNumber.UPPER -> packet.loadUpper = value
-        FunctionsNumber.MAP_OFFSET -> packet.mapCurveOffset = value
-        FunctionsNumber.MAP_GRADIENT -> packet.mapCurveGradient = value
-        FunctionsNumber.TPS_OFFSET -> packet.tpsCurveOffset = value
-        FunctionsNumber.TPS_GRADIENT -> packet.tpsCurveGradient = value
-        FunctionsNumber.MAP2_OFFSET -> packet.map2CurveOffset = value
-        FunctionsNumber.MAP2_GRADIENT -> packet.map2CurveGradient = value
-        FunctionsNumber.GPS_OFFSET -> packet.gpsCurveOffset = value
-        FunctionsNumber.GPS_GRADIENT -> packet.gpsCurveGradient = value
-        FunctionsNumber.FPS_OFFSET -> packet.fpsCurveOffset = value
-        FunctionsNumber.FPS_GRADIENT -> packet.fpsCurveGradient = value
-        FunctionsNumber.APPS_OFFSET -> packet.apps1CurveOffset = value
-        FunctionsNumber.APPS_GRADIENT -> packet.apps1CurveGradient = value
-    }
-}
-
-fun applyFunctionsFlag(packet: FunSetParamPacket, checked: Boolean) {
-    packet.useLoadGrid = checked
-}
-
-data class FunctionsChoices(val selected: Map<Selector, String?>, val options: Map<Selector, List<String>>) {
     enum class Selector {
         GASOLINE_MAP,
         GAS_MAP,
@@ -175,43 +140,37 @@ data class FunctionsChoices(val selected: Map<Selector, String?>, val options: M
         GAS_V_UNI,
     }
 
-    fun withSelection(selector: Selector, index: Int) =
-        copy(selected = selected + (selector to options[selector]?.getOrNull(index)))
-
     companion object {
-        val mapselCodes = listOf(1, 2, 3, 4, 5, 6, 15)
-
         fun from(
-            packet: FunSetParamPacket,
-            names: List<String>,
+            values: FunctionsValues,
             loads: List<String>,
             bars: List<String>,
             ve2: List<String>,
         ): FunctionsChoices {
-            val mapOptions = mapselCodes.map { code -> if (code == 15) "no" else code.toString() }
+            val mapOptions = (0..5).map { code -> Option(code, (code + 1).toString()) } + Option(15, "no")
             val optionMap = Selector.entries.associateWith { selector ->
                 when (selector) {
-                    Selector.GASOLINE_MAP, Selector.GAS_MAP -> names
-                    Selector.LOAD_SOURCE -> loads
+                    Selector.GASOLINE_MAP, Selector.GAS_MAP -> values.functionNames.mapIndexed { index, name -> Option(index, name) }
+                    Selector.LOAD_SOURCE -> loads.mapIndexed { index, label -> Option(index, label) }
                     Selector.MAPSEL_PETROL, Selector.MAPSEL_GAS, Selector.GAS_V_UNI -> mapOptions
-                    Selector.BAROCORR -> bars
-                    Selector.VE2 -> ve2
+                    Selector.BAROCORR -> bars.mapIndexed { index, label -> Option(index, label) }
+                    Selector.VE2 -> ve2.mapIndexed { index, label -> Option(index, label) }
                 }
             }
 
-            fun mapOption(code: Int): String? =
-                mapselCodes.indexOf(code).takeIf { it >= 0 }?.let(mapOptions::getOrNull)
+            fun selected(selector: Selector, code: Int): String? =
+                optionMap[selector]?.firstOrNull { it.code == code }?.label
 
             return FunctionsChoices(
                 selected = mapOf(
-                    Selector.GASOLINE_MAP to names.getOrNull(packet.fnGasoline),
-                    Selector.GAS_MAP to names.getOrNull(packet.fnGas),
-                    Selector.LOAD_SOURCE to loads.getOrNull(packet.loadSrcCfg),
-                    Selector.MAPSEL_PETROL to mapOption(packet.mapselUniPetrol),
-                    Selector.MAPSEL_GAS to mapOption(packet.mapselUniGas),
-                    Selector.BAROCORR to bars.getOrNull(packet.barocorrType),
-                    Selector.VE2 to ve2.getOrNull(packet.ve2MapFunc),
-                    Selector.GAS_V_UNI to mapOption(packet.gasVUni),
+                    Selector.GASOLINE_MAP to selected(Selector.GASOLINE_MAP, values.fnGasoline),
+                    Selector.GAS_MAP to selected(Selector.GAS_MAP, values.fnGas),
+                    Selector.LOAD_SOURCE to selected(Selector.LOAD_SOURCE, values.loadSource),
+                    Selector.MAPSEL_PETROL to selected(Selector.MAPSEL_PETROL, values.mapselPetrol),
+                    Selector.MAPSEL_GAS to selected(Selector.MAPSEL_GAS, values.mapselGas),
+                    Selector.BAROCORR to selected(Selector.BAROCORR, values.barocorrType),
+                    Selector.VE2 to selected(Selector.VE2, values.ve2MapFunc),
+                    Selector.GAS_V_UNI to selected(Selector.GAS_V_UNI, values.gasVUni),
                 ),
                 options = optionMap,
             )
@@ -219,42 +178,24 @@ data class FunctionsChoices(val selected: Map<Selector, String?>, val options: M
     }
 }
 
-fun applyFunctionsChoice(
-    packet: FunSetParamPacket,
-    selector: FunctionsChoices.Selector,
-    index: Int,
-    names: List<String>,
-): Boolean {
-    when (selector) {
-        FunctionsChoices.Selector.GASOLINE_MAP -> if (index in names.indices) packet.fnGasoline = index else return false
-        FunctionsChoices.Selector.GAS_MAP -> if (index in names.indices) packet.fnGas = index else return false
-        FunctionsChoices.Selector.LOAD_SOURCE -> if (index in 0..4) packet.loadSrcCfg = index else return false
-        FunctionsChoices.Selector.MAPSEL_PETROL -> if (index in FunctionsChoices.mapselCodes.indices) packet.mapselUniPetrol = FunctionsChoices.mapselCodes[index] else return false
-        FunctionsChoices.Selector.MAPSEL_GAS -> if (index in FunctionsChoices.mapselCodes.indices) packet.mapselUniGas = FunctionsChoices.mapselCodes[index] else return false
-        FunctionsChoices.Selector.BAROCORR -> if (index in 0..3) packet.barocorrType = index else return false
-        FunctionsChoices.Selector.VE2 -> if (index in 0..2) packet.ve2MapFunc = index else return false
-        FunctionsChoices.Selector.GAS_V_UNI -> if (index in FunctionsChoices.mapselCodes.indices) packet.gasVUni = FunctionsChoices.mapselCodes[index] else return false
-    }
-    return true
-}
-
-sealed interface FunctionsUiState {
-    data object Loading : FunctionsUiState
-    data class Data(val values: FunctionsValues, val choices: FunctionsChoices) : FunctionsUiState
-}
-
 @Composable
 fun FunctionsScreen(
-    state: FunctionsUiState,
+    values: FunctionsValues?,
     onEdit: (FunctionsNumber) -> Unit,
     onFlag: (Boolean) -> Unit,
     onChoice: (FunctionsChoices.Selector, Int) -> Unit,
     capabilities: ParameterCapabilities = ParameterCapabilities.All,
 ) {
     val pageScrollState = rememberScrollState()
-    when (state) {
-        FunctionsUiState.Loading -> ParameterLoadingIndicator("functions_loading")
-        is FunctionsUiState.Data -> {
+    if (values == null) {
+        ParameterLoadingIndicator("functions_loading")
+    } else {
+            val choices = FunctionsChoices.from(
+                values,
+                stringArrayResource(R.array.load_measurement_items).toList(),
+                stringArrayResource(R.array.barocorr_items).toList(),
+                stringArrayResource(R.array.ve2_map_func_items).toList(),
+            )
             var open by remember { mutableStateOf<FunctionsChoices.Selector?>(null) }
             ParameterPage(scrollState = pageScrollState) {
                 Surface(
@@ -272,7 +213,7 @@ fun FunctionsScreen(
                             if (n == FunctionsNumber.MAP_OFFSET) {
                                 FunctionsSwitchRow(
                                     stringResource(R.string.idlreg_use_load_grid_title),
-                                    state.values.useLoadGrid,
+                                    values.useLoadGrid,
                                     "functions_load_grid",
                                     onFlag,
                                 )
@@ -286,16 +227,13 @@ fun FunctionsScreen(
                             }
                             FunctionsNumberRow(
                                 title = stringResource(n.titleRes),
-                                units = stringResource(if (n == FunctionsNumber.LOWER || n == FunctionsNumber.UPPER) functionsLoadAxisUnitRes(state.values.loadSource) else n.unitRes),
-                                value = state.values.value(n),
+                                units = stringResource(if (n == FunctionsNumber.LOWER || n == FunctionsNumber.UPPER) {
+                                    if (values.loadSource < 2) R.string.units_pressure_kpa else R.string.units_percents
+                                } else n.unitRes),
+                                value = n.value(values),
                                 precision = n.precision,
                                 testTag = "functions_${n.name.lowercase()}",
-                                enabled = functionsNumberEnabled(n, state.values) && when (n) {
-                                    FunctionsNumber.GPS_OFFSET, FunctionsNumber.GPS_GRADIENT,
-                                    FunctionsNumber.FPS_OFFSET, FunctionsNumber.FPS_GRADIENT -> capabilities.dbw
-                                    FunctionsNumber.APPS_OFFSET, FunctionsNumber.APPS_GRADIENT -> capabilities.dbw
-                                    else -> true
-                                },
+                                enabled = n.enabled(values, capabilities),
                             ) { onEdit(n) }
                             if (n != FunctionsNumber.entries.last()) {
                                 HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant)
@@ -304,12 +242,12 @@ fun FunctionsScreen(
                                 SectionTitle(stringResource(R.string.functions_section_tables))
                                 ChoiceRow(
                                     stringResource(R.string.funset_maps_set_for_gasoline),
-                                    state.choices.selected[FunctionsChoices.Selector.GASOLINE_MAP],
+                                    choices.selected[FunctionsChoices.Selector.GASOLINE_MAP],
                                     "functions_gasoline",
                                 ) { open = FunctionsChoices.Selector.GASOLINE_MAP }
                                 ChoiceRow(
                                     stringResource(R.string.funset_maps_set_for_gas),
-                                    state.choices.selected[FunctionsChoices.Selector.GAS_MAP],
+                                    choices.selected[FunctionsChoices.Selector.GAS_MAP],
                                     "functions_gas",
                                 ) { open = FunctionsChoices.Selector.GAS_MAP }
                             }
@@ -317,34 +255,34 @@ fun FunctionsScreen(
                                 SectionTitle(stringResource(R.string.functions_section_sources))
                                 ChoiceRow(
                                     stringResource(R.string.funset_load_measurement),
-                                    state.choices.selected[FunctionsChoices.Selector.LOAD_SOURCE],
+                                    choices.selected[FunctionsChoices.Selector.LOAD_SOURCE],
                                     "functions_load_source",
                                 ) { open = FunctionsChoices.Selector.LOAD_SOURCE }
                                 ChoiceRow(
                                     stringResource(R.string.funset_mapsel0_condition_for_petrol),
-                                    state.choices.selected[FunctionsChoices.Selector.MAPSEL_PETROL],
+                                    choices.selected[FunctionsChoices.Selector.MAPSEL_PETROL],
                                     "functions_mapsel_petrol",
                                 ) { open = FunctionsChoices.Selector.MAPSEL_PETROL }
                                 ChoiceRow(
                                     stringResource(R.string.funset_mapsel0_condition_for_gas),
-                                    state.choices.selected[FunctionsChoices.Selector.MAPSEL_GAS],
+                                    choices.selected[FunctionsChoices.Selector.MAPSEL_GAS],
                                     "functions_mapsel_gas",
                                 ) { open = FunctionsChoices.Selector.MAPSEL_GAS }
                                 ChoiceRow(
                                     stringResource(R.string.funset_barometric_correction),
-                                    state.choices.selected[FunctionsChoices.Selector.BAROCORR],
+                                    choices.selected[FunctionsChoices.Selector.BAROCORR],
                                     "functions_barocorr",
                                 ) { open = FunctionsChoices.Selector.BAROCORR }
                             }
                             if (n == FunctionsNumber.MAP2_GRADIENT) {
                                 ChoiceRow(
                                     stringResource(R.string.funset_ve2_map_func_title),
-                                    state.choices.selected[FunctionsChoices.Selector.VE2],
+                                    choices.selected[FunctionsChoices.Selector.VE2],
                                     "functions_ve2", enabled = capabilities.fuelInjection,
                                 ) { open = FunctionsChoices.Selector.VE2 }
                                 ChoiceRow(
                                     stringResource(R.string.funset_gas_v_uni_title),
-                                    state.choices.selected[FunctionsChoices.Selector.GAS_V_UNI],
+                                    choices.selected[FunctionsChoices.Selector.GAS_V_UNI],
                                     "functions_gas_v_uni",
                                 ) { open = FunctionsChoices.Selector.GAS_V_UNI }
                             }
@@ -352,16 +290,16 @@ fun FunctionsScreen(
                     }
                 }
                 open?.let { selector ->
-                    val options = state.choices.options[selector].orEmpty()
+                    val options = choices.options[selector].orEmpty()
                     ParameterAlertDialog(
                         onDismissRequest = { open = null },
                         title = { ChoiceTitle(selector) },
                         text = {
                             ParameterChoiceList {
-                                options.forEachIndexed { i, option ->
-                                    ParameterChoiceOption(option, "functions_option_$i") {
-                                            onChoice(selector, i)
-                                            open = null
+                                options.forEachIndexed { index, option ->
+                                    ParameterChoiceOption(option.label, "functions_option_$index") {
+                                        onChoice(selector, option.code)
+                                        open = null
                                     }
                                 }
                             }
@@ -373,7 +311,6 @@ fun FunctionsScreen(
                 }
             }
         }
-    }
 }
 
 @Composable

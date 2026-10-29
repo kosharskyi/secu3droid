@@ -27,6 +27,8 @@ import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue
 import org.junit.Test
 import org.secu3.android.domain.parameters.ParameterExchange
+import org.secu3.android.domain.parameters.FunctionParameters
+import org.secu3.android.domain.parameters.FunctionsControl
 import org.secu3.android.domain.parameters.ParameterPage
 import org.secu3.android.domain.parameters.ParameterPageReadGate
 import org.secu3.android.models.packets.base.InputPacket
@@ -68,8 +70,7 @@ class ParameterPageReadGateTest {
     fun completedPageCanReadChangedSharedFieldsOnReactivation() = runBlocking {
         val gate = ParameterPageReadGate()
         val sent = mutableListOf<IntArray>()
-        val holder = org.secu3.android.ui.parameters.pages.compose.FunctionsStateHolder { sent += it.pack() }
-        holder.onNamesReceived(org.secu3.android.models.packets.input.FnNameDatPacket())
+        val holder = FunctionsControl({ null }) { sent += it.pack(); true }
         var volumePerCylinder = .5f
         var requests = 0
         suspend fun reload() {
@@ -77,7 +78,7 @@ class ParameterPageReadGateTest {
                 requests++
                 org.secu3.android.models.packets.out.params.FunSetParamPacket(ckpsEngineCyl = 4, injCylDisp = volumePerCylinder)
             }.first()
-            holder.onPacketReceived(packet, emptyList(), emptyList(), emptyList())
+            holder.receive(FunctionParameters(org.secu3.android.models.packets.input.FnNameDatPacket(), packet))
         }
         gate.activate(ParameterPage.FUNCTIONS)
         reload()
@@ -85,7 +86,7 @@ class ParameterPageReadGateTest {
         volumePerCylinder = .75f
         gate.activate(ParameterPage.FUNCTIONS)
         reload()
-        holder.updateFlag(true)
+        holder.setUseLoadGrid(true)
         assertEquals(2, requests)
         assertEquals(listOf(0x30, 0x00), sent.single().slice(26..27))
     }

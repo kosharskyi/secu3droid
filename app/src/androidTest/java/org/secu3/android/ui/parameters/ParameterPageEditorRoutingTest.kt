@@ -29,6 +29,7 @@ import org.junit.Rule
 import org.junit.Test
 import org.secu3.android.R
 import org.secu3.android.domain.parameters.ParameterCapabilities
+import org.secu3.android.domain.parameters.FunctionParameters
 import org.secu3.android.models.packets.input.FirmwareInfoPacket
 import org.secu3.android.models.packets.out.params.AnglesParamPacket
 import org.secu3.android.models.packets.out.params.LambdaParamPacket
@@ -42,6 +43,8 @@ import org.secu3.android.models.packets.out.params.KnockParamPacket
 import org.secu3.android.models.packets.out.params.AccelerationParamPacket
 import org.secu3.android.models.packets.out.params.LtftParamPacket
 import org.secu3.android.models.packets.out.params.DbwParamPacket
+import org.secu3.android.models.packets.out.params.FunSetParamPacket
+import org.secu3.android.models.packets.input.FnNameDatPacket
 import org.secu3.android.ui.MainActivity
 import org.secu3.android.ui.compose.SecuComposeTheme
 import org.secu3.android.ui.parameters.pages.compose.StarterNumber
@@ -52,6 +55,7 @@ import org.secu3.android.ui.parameters.pages.compose.KnockNumber
 import org.secu3.android.ui.parameters.pages.compose.AccelerationNumber
 import org.secu3.android.ui.parameters.pages.compose.LtftNumber
 import org.secu3.android.ui.parameters.pages.compose.DbwNumber
+import org.secu3.android.ui.parameters.pages.compose.FunctionsNumber
 import org.secu3.android.ui.parameters.dialogs.NumericEditDialog
 
 class ParameterPageEditorRoutingTest {
@@ -186,6 +190,36 @@ class ParameterPageEditorRoutingTest {
         assertFalse(vm.editDbw(DbwNumber.ETC_P, .5f))
         assertEquals(values, vm.dbwControl.values.value)
         assertFalse(vm.isSendAllowed)
+    }
+
+    @Test fun functionsEditorsRouteAllFourteenNamedValuesWithTheirMetadata() {
+        val vm = paramsViewModel()
+        val packet = FunSetParamPacket(
+            loadLower = 10f, loadUpper = 20f,
+            mapCurveOffset = 1f, mapCurveGradient = 2f,
+            tpsCurveOffset = 3f, tpsCurveGradient = 4f,
+            map2CurveOffset = 5f, map2CurveGradient = 6f,
+            gpsCurveOffset = 1f, gpsCurveGradient = 2f,
+            fpsCurveOffset = 3f, fpsCurveGradient = 4f,
+            apps1CurveOffset = 1f, apps1CurveGradient = 2f,
+        )
+        vm.functionsControl.reset()
+        vm.functionsControl.receive(FunctionParameters(FnNameDatPacket(), packet))
+        renderPage(R.string.params_tab_functions_title, vm)
+
+        FunctionsNumber.entries.forEach { number ->
+            compose.onNodeWithTag("functions_${number.name.lowercase()}")
+                .performScrollTo().performClick()
+            val session = requireNotNull(vm.parameterEditSession)
+            val request = session.request as ParameterEditRequest.FloatValue
+            assertEquals(number.value(requireNotNull(vm.functionsControl.values.value)), request.value)
+            assertEquals(compose.activity.getString(number.titleRes), request.title)
+            assertEquals(number.min, request.min)
+            assertEquals(number.max, request.max)
+            assertEquals(number.step, request.step)
+            assertEquals(number.precision, request.precision)
+            compose.runOnIdle { vm.dismissParameterEditor(session.id) }
+        }
     }
 
     @Test fun temperatureEditorsPreserveWholeSecondTimerContractAndRejectWithoutSession() {

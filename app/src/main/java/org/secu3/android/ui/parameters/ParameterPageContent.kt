@@ -101,15 +101,34 @@ internal fun ParameterPageContent(
             }, viewModel::setIdlingFlag, capabilities = capabilities)
         }
         R.string.params_tab_functions_title -> {
-            val h = viewModel.functionsStateHolder
-            FunctionsScreen(h.state, { n -> (h.state as? FunctionsUiState.Data)?.values?.let { floatEdit(n.titleRes, it.value(n), n.step, n.max, n.min, n.precision) { h.updateValue(n, it.toFloat()) } } }, h::updateFlag, { selector, index ->
-                h.updateChoice(selector, index)
-                if (selector == FunctionsChoices.Selector.LOAD_SOURCE && index == 4 && !capabilities.fuelInjection) {
-                    h.engineDisplacement?.let { value ->
-                        floatEdit(R.string.injctr_par_enjine_displacement_title, value, .0001f, 8f, .01f, 4, h::updateEngineDisplacement)
+            val values by viewModel.functionsControl.values.collectAsStateWithLifecycle()
+            FunctionsScreen(
+                values = values,
+                onEdit = { number ->
+                    values?.let { current ->
+                        floatEdit(number.titleRes, number.value(current), number.step, number.max, number.min, number.precision) {
+                            viewModel.editFunctions(number, it.toFloat())
+                        }
                     }
-                }
-            }, capabilities = capabilities)
+                },
+                onFlag = viewModel::setFunctionsLoadGrid,
+                onChoice = { selector, code ->
+                    if (viewModel.selectFunctionsChoice(selector, code) && selector == FunctionsChoices.Selector.LOAD_SOURCE) {
+                        viewModel.functionsControl.engineDisplacementForMafEditor()?.let { value ->
+                            floatEdit(
+                                R.string.injctr_par_enjine_displacement_title,
+                                value,
+                                .0001f,
+                                8f,
+                                .01f,
+                                4,
+                                viewModel::updateFunctionsMafEngineDisplacement,
+                            )
+                        }
+                    }
+                },
+                capabilities = capabilities,
+            )
         }
         R.string.params_tab_temperature_title -> {
             val values by viewModel.temperatureControl.values.collectAsStateWithLifecycle()

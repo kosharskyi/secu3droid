@@ -13,3 +13,7 @@ FUNSET includes an unsigned 16-bit APPS1 ADC voltage after the APPS1 gradient. I
 ## TPS raw is signed while APPS1 raw is unsigned
 
 The TPS ADC learning word after the MAF constant is a signed 16-bit voltage count; APPS1 raw at the end is an unsigned 16-bit count. Preserve this difference when decoding high-bit samples.
+
+## GAS_V_UNI raw code 6 remains distinct from disabled
+
+The receive contract preserves raw selector codes, including unknown value `6`; only a deliberate UI choice maps the displayed `no` option to wire code `15`. Do not normalize raw `6` in `pack()`, because editing another field must preserve it.

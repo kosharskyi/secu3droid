@@ -42,3 +42,5 @@ Derive a single `ParameterCapabilities` state from `Secu3ConnectionManager.firmw
 `LtftControl` owns the LTFT packet, all 14 numeric edits, mode validation, live FI admission, rollback, and immutable packed snapshots. Integer RPM editors and Float fields use distinct ViewModel methods; LTFT commands do not use the legacy `isSendAllowed` gate. The screen maps localized mode labels and named domain values without a second Loading/Data wrapper.
 
 `DbwControl` owns all ten DBW edits and immutable snapshots. The ViewModel maps DBW row enums to named Float commands and reports packet-sent only when the session admits the command; the legacy `isSendAllowed` gate is not part of DBW. Refresh and the 14-byte DBW write / 16-byte read contract stay with `ParameterSession` and the packet codec.
+
+`FunctionsControl` receives the complete `FunctionParameters` result only after `ParameterExchange` has assembled all name fragments and settings. The ViewModel forwards named edits and protocol selector codes, and reports packet-sent only for commands admitted by `ParameterSession`; Functions commands do not use `isSendAllowed`.
