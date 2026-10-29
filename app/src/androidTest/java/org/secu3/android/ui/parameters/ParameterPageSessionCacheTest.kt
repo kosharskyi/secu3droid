@@ -43,6 +43,7 @@ import org.secu3.android.models.packets.out.params.MiscellaneousParamPacket
 import org.secu3.android.models.packets.out.params.SecurityParamPacket
 import org.secu3.android.models.packets.out.params.StarterParamPacket
 import org.secu3.android.models.packets.out.params.TemperatureParamPacket
+import org.secu3.android.models.packets.out.params.CarburParamPacket
 import org.secu3.android.models.packets.out.ChangeModePacket
 import org.secu3.android.utils.UserPrefs
 import org.secu3.android.ui.MainActivity
@@ -258,6 +259,105 @@ class ParameterPageSessionCacheTest {
             delay(100)
             assertEquals(afterAcceptedWrites, usb.writes.size)
             assertEquals(committed, vm.anglesControl.values.value)
+            assertFalse(queue.pending.value.any { it.textRes == R.string.packet_sent })
+        } finally {
+            try {
+                transport?.close()
+            } finally {
+                try {
+                    compose.runOnIdle { vm.clearPageState() }
+                } finally {
+                    queue.onActiveScopeChanged(originalActiveScope)
+                    compose.activityRule.scenario.moveToState(Lifecycle.State.RESUMED)
+                }
+            }
+        }
+    }
+
+    @Test fun carburSelectorCommandsWriteExactFuelAndIgnitionWireCodes() = runBlocking {
+        val vm = paramsViewModel()
+        var transport: FakeUsbTransport? = null
+        val queueField = ParamsViewModel::class.java.getDeclaredField("uiMessageQueue").apply { isAccessible = true }
+        val queue = queueField.get(vm) as org.secu3.android.ui.messages.UiMessageQueue
+        val originalActiveScope = queue.activeScope.value
+        try {
+            val usb = installFakeUsb(vm, firmwareOptions = 1 shl 28).also { transport = it }
+            activate(vm, R.string.params_tab_fuel_cutoff_title)
+            usb.awaitReadRequest('k', 1)
+            usb.emit(CarburParamPacket(fuelcut_uni = 6, igncut_uni = 41, carbInvers = 2))
+            await { vm.carburControl.values.value?.fuelCutOutput == 6 }
+
+            compose.activityRule.scenario.moveToState(Lifecycle.State.STARTED)
+            compose.waitForIdle()
+            queue.onActiveScopeChanged(PARAMETERS_ROUTE)
+            queue.pending.value.forEach { queue.acknowledge(it.id) }
+            val baseline = usb.writes.size
+            vm.isSendAllowed = false
+
+            val cases = listOf(
+                Triple(false, 0, 0),
+                Triple(false, 5, 5),
+                Triple(false, 6, 15),
+                Triple(true, 0, 0),
+                Triple(true, 5, 5),
+                Triple(true, 6, 15),
+            )
+            cases.forEachIndexed { index, (ignition, selection, expected) ->
+                compose.runOnIdle { vm.selectCarburOutput(ignition, selection) }
+                usb.awaitWriteCount(baseline + index + 1)
+                val frame = usb.writes[baseline + index]
+                assertEquals('k', frame[1].toInt().toChar())
+                assertEquals(expected, frame[if (ignition) 25 else 24].toInt() and 0xff)
+            }
+            assertEquals(15, vm.carburControl.values.value?.fuelCutOutput)
+            assertEquals(15, vm.carburControl.values.value?.ignitionCutOutput)
+            assertTrue(queue.pending.value.any { it.textRes == R.string.packet_sent })
+
+            val numericEdits = listOf(
+                Triple(org.secu3.android.ui.parameters.pages.compose.CarburNumber.IDLE_LOW, 1001, intArrayOf(0x03, 0xE9)),
+                Triple(org.secu3.android.ui.parameters.pages.compose.CarburNumber.IDLE_HIGH, 1002, intArrayOf(0x03, 0xEA)),
+                Triple(org.secu3.android.ui.parameters.pages.compose.CarburNumber.IDLE_LOW_GAS, 1003, intArrayOf(0x03, 0xEB)),
+                Triple(org.secu3.android.ui.parameters.pages.compose.CarburNumber.IDLE_HIGH_GAS, 1004, intArrayOf(0x03, 0xEC)),
+                Triple(org.secu3.android.ui.parameters.pages.compose.CarburNumber.REV_LOW, 1005, intArrayOf(0x03, 0xED)),
+                Triple(org.secu3.android.ui.parameters.pages.compose.CarburNumber.REV_HIGH, 1006, intArrayOf(0x03, 0xEE)),
+            )
+            val numericStart = usb.writes.size
+            numericEdits.forEach { (number, value, _) -> compose.runOnIdle { vm.editCarburInt(number, value) } }
+            usb.awaitWriteCount(numericStart + numericEdits.size)
+            val integerOffsets = intArrayOf(1, 3, 8, 10, 19, 21)
+            numericEdits.forEachIndexed { index, (_, _, expected) ->
+                val frame = usb.writes[numericStart + index]
+                assertEquals('k', frame[1].toInt().toChar())
+                assertEquals(expected[0], frame[integerOffsets[index] + 1].toInt() and 0xff)
+                assertEquals(expected[1], frame[integerOffsets[index] + 2].toInt() and 0xff)
+            }
+            val floatEdits = listOf(
+                Triple(org.secu3.android.ui.parameters.pages.compose.CarburNumber.CUTOFF_DELAY, .75f, 12 to intArrayOf(75)),
+                Triple(org.secu3.android.ui.parameters.pages.compose.CarburNumber.VALVE_PRESSURE, 6.25f, 6 to intArrayOf(1, 144)),
+                Triple(org.secu3.android.ui.parameters.pages.compose.CarburNumber.TPS, 31.5f, 13 to intArrayOf(7, 224)),
+                Triple(org.secu3.android.ui.parameters.pages.compose.CarburNumber.MAP, 88.5f, 15 to intArrayOf(22, 32)),
+                Triple(org.secu3.android.ui.parameters.pages.compose.CarburNumber.CTS, -10.5f, 17 to intArrayOf(255, 214)),
+            )
+            val floatStart = usb.writes.size
+            floatEdits.forEach { (number, value, _) -> compose.runOnIdle { vm.editCarburFloat(number, value) } }
+            usb.awaitWriteCount(floatStart + floatEdits.size)
+            floatEdits.forEachIndexed { index, (_, _, expected) ->
+                val frame = usb.writes[floatStart + index]
+                assertEquals('k', frame[1].toInt().toChar())
+                expected.second.forEachIndexed { byte, value ->
+                    assertEquals(value, frame[expected.first + byte + 1].toInt() and 0xff)
+                }
+            }
+
+            queue.pending.value.forEach { queue.acknowledge(it.id) }
+            val beforePause = usb.writes.size
+            val committedIdle = vm.carburControl.values.value?.idleLowRpm
+            compose.runOnIdle {
+                vm.pausePageSession()
+                vm.editCarburInt(org.secu3.android.ui.parameters.pages.compose.CarburNumber.IDLE_LOW, 2000)
+            }
+            assertEquals(beforePause, usb.writes.size)
+            assertEquals(committedIdle, vm.carburControl.values.value?.idleLowRpm)
             assertFalse(queue.pending.value.any { it.textRes == R.string.packet_sent })
         } finally {
             try {

@@ -49,7 +49,7 @@ import androidx.compose.ui.unit.dp
 import org.secu3.android.ui.parameters.compose.ParameterLoadingIndicator
 import org.secu3.android.ui.parameters.*
 import org.secu3.android.R
-import org.secu3.android.models.packets.out.params.CarburParamPacket
+import org.secu3.android.domain.parameters.CarburValues
 import org.secu3.android.ui.parameters.compose.ParameterPage
 import org.secu3.android.ui.parameters.compose.ParameterSection
 import org.secu3.android.ui.parameters.compose.ParameterSelectionRow
@@ -71,75 +71,54 @@ enum class CarburNumber(@StringRes val title: Int, @StringRes val units: Int, va
     MAP(R.string.carbur_fuelcut_map_threshold_title, R.string.units_pressure_kpa, 1, 0f, 250f, .5f),
     CTS(R.string.carbur_fuelcut_temp_threshold_title, R.string.units_degrees_celcius, 1, -40f, 300f, .25f),
     REV_LOW(R.string.carbur_rev_limitting_lower_threshold_title, R.string.units_rpm, 0, 500f, 30000f, 50f, true),
-    REV_HIGH(R.string.carbur_rev_limitting_upper_threshold_title, R.string.units_rpm, 0, 500f, 30000f, 50f, true),
-}
+    REV_HIGH(R.string.carbur_rev_limitting_upper_threshold_title, R.string.units_rpm, 0, 500f, 30000f, 50f, true);
 
-data class CarburValues(val numbers: Map<CarburNumber, Float>, val invers: Boolean, val fuelCutUni: Int, val ignitionCutUni: Int) {
-    fun withValue(number: CarburNumber, value: Float) = copy(numbers = numbers + (number to value))
-    companion object {
-        val selectorCodes = listOf(1, 2, 3, 4, 5, 6, 15)
-        fun from(packet: CarburParamPacket) = CarburValues(
-            mapOf(CarburNumber.IDLE_LOW to packet.ieLot.toFloat(), CarburNumber.IDLE_HIGH to packet.ieHit.toFloat(),
-                CarburNumber.IDLE_LOW_GAS to packet.ieLotG.toFloat(), CarburNumber.IDLE_HIGH_GAS to packet.ieHitG.toFloat(),
-                CarburNumber.CUTOFF_DELAY to packet.shutoffDelay, CarburNumber.VALVE_PRESSURE to packet.feOnThresholds,
-                CarburNumber.TPS to packet.tpsThreshold, CarburNumber.MAP to packet.fuelcutMapThrd,
-                CarburNumber.CTS to packet.fuelcutCtsThrd, CarburNumber.REV_LOW to packet.revlimLot.toFloat(),
-                CarburNumber.REV_HIGH to packet.revlimHit.toFloat()), packet.carbInvers > 0, packet.fuelcut_uni, packet.igncut_uni)
+    fun value(values: CarburValues): Float = when (this) {
+        IDLE_LOW -> values.idleLowRpm.toFloat()
+        IDLE_HIGH -> values.idleHighRpm.toFloat()
+        IDLE_LOW_GAS -> values.idleLowGasRpm.toFloat()
+        IDLE_HIGH_GAS -> values.idleHighGasRpm.toFloat()
+        CUTOFF_DELAY -> values.cutoffDelay
+        VALVE_PRESSURE -> values.valvePressure
+        TPS -> values.tpsThreshold
+        MAP -> values.mapThreshold
+        CTS -> values.coolantThreshold
+        REV_LOW -> values.revLimitLowRpm.toFloat()
+        REV_HIGH -> values.revLimitHighRpm.toFloat()
     }
-}
-
-fun applyCarburValue(packet: CarburParamPacket, number: CarburNumber, value: Float) {
-    when (number) {
-        CarburNumber.IDLE_LOW -> packet.ieLot = value.toInt()
-        CarburNumber.IDLE_HIGH -> packet.ieHit = value.toInt()
-        CarburNumber.IDLE_LOW_GAS -> packet.ieLotG = value.toInt()
-        CarburNumber.IDLE_HIGH_GAS -> packet.ieHitG = value.toInt()
-        CarburNumber.CUTOFF_DELAY -> packet.shutoffDelay = value
-        CarburNumber.VALVE_PRESSURE -> packet.feOnThresholds = value
-        CarburNumber.TPS -> packet.tpsThreshold = value
-        CarburNumber.MAP -> packet.fuelcutMapThrd = value
-        CarburNumber.CTS -> packet.fuelcutCtsThrd = value
-        CarburNumber.REV_LOW -> packet.revlimLot = value.toInt()
-        CarburNumber.REV_HIGH -> packet.revlimHit = value.toInt()
-    }
-}
-
-fun applyCarburSelector(packet: CarburParamPacket, ignition: Boolean, index: Int): Boolean {
-    val code = CarburValues.selectorCodes.getOrNull(index) ?: return false
-    if (ignition) packet.igncut_uni = code else packet.fuelcut_uni = code
-    return true
-}
-
-sealed interface CarburUiState {
-    data object Loading : CarburUiState
-    data class Data(val values: CarburValues) : CarburUiState
 }
 
 @Composable
-fun CarburScreen(state: CarburUiState, options: List<String>, onEdit: (CarburNumber) -> Unit, onInvers: (Boolean) -> Unit, onSelector: (Boolean, Int) -> Unit, capabilities: ParameterCapabilities = ParameterCapabilities.All,
+fun CarburScreen(
+    values: CarburValues?,
+    options: List<String>,
+    selectorCodes: List<Int>,
+    onEdit: (CarburNumber) -> Unit,
+    onInvers: (Boolean) -> Unit,
+    onSelector: (Boolean, Int) -> Unit,
+    capabilities: ParameterCapabilities = ParameterCapabilities.All,
 ) {
     val pageScrollState = rememberScrollState()
-    if (state is CarburUiState.Loading) {
+    if (values == null) {
         ParameterLoadingIndicator("carbur_loading")
         return
     }
-    val data = (state as CarburUiState.Data).values
     var open by remember { mutableStateOf<Boolean?>(null) }
     ParameterPage(scrollState = pageScrollState) {
         ParameterSection {
             CarburNumber.entries.filter { it != CarburNumber.REV_LOW && it != CarburNumber.REV_HIGH }.forEach { n ->
-                ParameterValueRow(stringResource(n.title), if (n == CarburNumber.VALVE_PRESSURE) "dis.kPa" else stringResource(n.units), data.numbers.getValue(n), n.precision, "carbur_${n.name.lowercase()}", enabled = n !in setOf(CarburNumber.MAP, CarburNumber.CTS) || capabilities.fuelInjection) { onEdit(n) }
+                ParameterValueRow(stringResource(n.title), if (n == CarburNumber.VALVE_PRESSURE) "dis.kPa" else stringResource(n.units), n.value(values), n.precision, "carbur_${n.name.lowercase()}", enabled = n !in setOf(CarburNumber.MAP, CarburNumber.CTS) || capabilities.fuelInjection) { onEdit(n) }
                 if (n == CarburNumber.TPS) {
-                    ParameterSwitchRow(stringResource(R.string.carbur_sensor_inverse_title), data.invers, "carbur_invers", onInvers)
+                    ParameterSwitchRow(stringResource(R.string.carbur_sensor_inverse_title), values.inverted, "carbur_invers", onInvers)
                 }
             }
             listOf(
                 stringResource(R.string.carbur_use_uniout_condition_title) to false,
                 stringResource(R.string.carbur_use_uniout_condition_for_ign_cutoff_title) to true,
             ).forEach { (title, ignition) ->
-                val code = if (ignition) data.ignitionCutUni else data.fuelCutUni
+                val code = if (ignition) values.ignitionCutOutput else values.fuelCutOutput
                 val tag = if (ignition) "carbur_igncut_uni" else "carbur_fuelcut_uni"
-                val selected = selectorValue(code, options)
+                val selected = selectorCodes.indexOf(code).takeIf { it >= 0 }?.let(options::getOrNull) ?: "Code $code"
                 ParameterSelectionRow(
                     title = title,
                     value = selected,
@@ -159,7 +138,7 @@ fun CarburScreen(state: CarburUiState, options: List<String>, onEdit: (CarburNum
                 ParameterValueRow(
                     title = stringResource(number.title),
                     units = stringResource(number.units),
-                    value = data.numbers.getValue(number),
+                    value = number.value(values),
                     precision = number.precision,
                     testTag = "carbur_${number.name.lowercase()}",
                     enabled = capabilities.fuelOrGasDose,
@@ -176,5 +155,3 @@ fun CarburScreen(state: CarburUiState, options: List<String>, onEdit: (CarburNum
             confirmButton = { ParameterCancelButton { open = null } })
     }
 }
-
-private fun selectorValue(code: Int, options: List<String>): String = CarburValues.selectorCodes.indexOf(code).takeIf { it >= 0 }?.let(options::getOrNull) ?: "Code $code"

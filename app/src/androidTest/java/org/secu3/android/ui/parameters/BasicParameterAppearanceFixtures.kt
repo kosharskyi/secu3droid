@@ -5,6 +5,7 @@ import org.secu3.android.domain.parameters.TemperatureValues
 import androidx.compose.runtime.Composable
 import org.secu3.android.domain.parameters.StarterValues
 import org.secu3.android.domain.parameters.AnglesValues
+import org.secu3.android.domain.parameters.CarburValues
 import org.secu3.android.ui.parameters.pages.compose.*
 
 /** Loaded UI samples for rendering every basic parameter page outside ECU navigation. */
@@ -90,15 +91,9 @@ internal fun basicParameterAppearanceFixtures(): List<ParameterAppearanceFixture
     },
     ParameterAppearanceFixture("carbur") {
         CarburScreen(
-            CarburUiState.Data(
-                CarburValues(
-                    numbers = CarburNumber.entries.associateWith { it.ordinal + 1f },
-                    invers = false,
-                    fuelCutUni = 1,
-                    ignitionCutUni = 15,
-                ),
-            ),
+            CarburValues(800, 1200, 850, 1250, .25f, 6.25f, 5f, 20f, 15f, 8000, 8100, false, 0, 15),
             options = listOf("1", "2", "3", "4", "5", "6", "no"),
+            selectorCodes = listOf(0, 1, 2, 3, 4, 5, 15),
             onEdit = {},
             onInvers = {},
             onSelector = { _, _ -> },

@@ -10,6 +10,10 @@ Bluetooth name and password fields are edit buffers, not values read back from t
 
 Selectors with numeric protocol values must preserve their `Code …` or localized unknown-value fallback when the ECU reports a code outside the current option list. Do not substitute the first valid option or make the unsupported value appear selected in the option dialog.
 
+## Carbur output selectors use zero-based wire codes
+
+Carbur's six numbered universal outputs are wire codes `0` through `5`; the disabled choice is the sentinel `15`. Display them as `1` through `6` and `no`, respectively. Keep unknown incoming codes visible and unchanged until the user explicitly chooses an option. Fuel cutoff is gated by fuel-injection capability; ignition cutoff remains available independently.
+
 ## Fuel injection availability gates are independent of field styling
 
 The injector-availability state hides the whole editor, while individual controls can remain disabled based on firmware variant or another parameter (for example, timing when map timing is active, squirts when no options exist, and Lambda STOICH when neither injection nor gas-dose support exists). Shared field styling must carry each existing enabled condition through unchanged.

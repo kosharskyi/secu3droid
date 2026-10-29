@@ -36,10 +36,12 @@ import org.secu3.android.models.packets.out.params.MiscellaneousParamPacket
 import org.secu3.android.models.packets.out.params.SecurityParamPacket
 import org.secu3.android.models.packets.out.params.StarterParamPacket
 import org.secu3.android.models.packets.out.params.TemperatureParamPacket
+import org.secu3.android.models.packets.out.params.CarburParamPacket
 import org.secu3.android.ui.MainActivity
 import org.secu3.android.ui.compose.SecuComposeTheme
 import org.secu3.android.ui.parameters.pages.compose.StarterNumber
 import org.secu3.android.ui.parameters.pages.compose.TemperatureNumber
+import org.secu3.android.ui.parameters.pages.compose.CarburNumber
 import org.secu3.android.ui.parameters.dialogs.NumericEditDialog
 
 class ParameterPageEditorRoutingTest {
@@ -116,6 +118,45 @@ class ParameterPageEditorRoutingTest {
         compose.runOnIdle { vm.acceptParameterEditor(fanSession.id, 100f) }
         assertEquals(95f, control.values.value?.fanOn)
         assertEquals(1.27f, control.values.value?.fanTimer)
+        assertEquals(false, vm.isSendAllowed)
+    }
+
+    @Test fun carburEditorRowsRouteAllNamedValuesThroughTheMatchingEditorContract() {
+        val vm = paramsViewModel()
+        val control = vm.carburControl
+        control.reset()
+        control.receive(CarburParamPacket(
+            ieLot = 800, ieHit = 1200, ieLotG = 850, ieHitG = 1250,
+            shutoffDelay = .25f, feOnThresholds = 6.25f, tpsThreshold = 5f,
+            fuelcutMapThrd = 20f, fuelcutCtsThrd = 15f, revlimLot = 8000, revlimHit = 8100,
+        ))
+        vm.isSendAllowed = false
+        renderPage(R.string.params_tab_fuel_cutoff_title, vm)
+
+        val initial = requireNotNull(control.values.value)
+        CarburNumber.entries.forEach { number ->
+            compose.onNodeWithTag("carbur_${number.name.lowercase()}").performScrollTo().performClick()
+            val session = requireNotNull(vm.parameterEditSession)
+            if (number.integer) {
+                val request = session.request as ParameterEditRequest.IntValue
+                assertEquals(compose.activity.getString(number.title), request.title)
+                assertEquals(number.value(initial).toInt(), request.value)
+                assertEquals(number.min.toInt(), request.min)
+                assertEquals(number.max.toInt(), request.max)
+                assertEquals(number.step.toInt(), request.step)
+                compose.runOnIdle { vm.acceptParameterEditor(session.id, request.value + 1) }
+            } else {
+                val request = session.request as ParameterEditRequest.FloatValue
+                assertEquals(compose.activity.getString(number.title), request.title)
+                assertEquals(number.value(initial), request.value)
+                assertEquals(number.min, request.min)
+                assertEquals(number.max, request.max)
+                assertEquals(number.step, request.step)
+                assertEquals(number.precision, request.precision)
+                compose.runOnIdle { vm.acceptParameterEditor(session.id, request.value + .1f) }
+            }
+            assertEquals(initial, control.values.value)
+        }
         assertEquals(false, vm.isSendAllowed)
     }
 

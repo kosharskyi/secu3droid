@@ -26,6 +26,8 @@ Derive a single `ParameterCapabilities` state from `Secu3ConnectionManager.firmw
 
 `TemperatureControl` owns the packet, live firmware gates, fan hysteresis, and session admission. Integer editor fields use typed integer commands; packet timer values remain fractional until an explicit whole-second edit.
 
+`CarburControl` owns Fuel Cutoff values, command validation, live firmware gates, and session admission. The ViewModel routes each editor and selector action to a named control command, and reports a sent message only after admission; these commands bypass `isSendAllowed`.
+
 ## Fuel Injection command admission belongs to its domain control
 
 `FuelInjectionControl` reads the manager's current firmware and sends through `ParameterSession.sendPacket`, whose Boolean result drives the packet-sent message. It does not use the legacy ViewModel `isSendAllowed` gate. The screen collects its nullable values flow directly; no second Loading/Data wrapper or packet mapping belongs in the ViewModel.

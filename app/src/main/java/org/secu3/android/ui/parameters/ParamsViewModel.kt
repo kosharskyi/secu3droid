@@ -56,6 +56,7 @@ import org.secu3.android.domain.parameters.AnglesControl
 import org.secu3.android.domain.parameters.SecurityControl
 import org.secu3.android.domain.parameters.StarterControl
 import org.secu3.android.domain.parameters.TemperatureControl
+import org.secu3.android.domain.parameters.CarburControl
 import org.secu3.android.domain.parameters.SecurityCredentialsResult
 import org.secu3.android.models.packets.base.OutputPacket
 import org.secu3.android.models.packets.out.params.AccelerationParamPacket
@@ -77,7 +78,7 @@ import org.secu3.android.models.packets.out.params.TemperatureParamPacket
 import org.secu3.android.models.packets.out.params.UniOutParamPacket
 import org.secu3.android.ui.parameters.pages.compose.AnglesFlag
 import org.secu3.android.ui.parameters.pages.compose.AnglesNumber
-import org.secu3.android.ui.parameters.pages.compose.CarburStateHolder
+import org.secu3.android.ui.parameters.pages.compose.CarburNumber
 import org.secu3.android.ui.parameters.pages.compose.AdcCorrectionsStateHolder
 import org.secu3.android.ui.parameters.pages.compose.KnockStateHolder
 import org.secu3.android.ui.parameters.pages.compose.LambdaControlStateHolder
@@ -115,6 +116,7 @@ class ParamsViewModel @Inject constructor(
     internal val starterControl: StarterControl,
     internal val anglesControl: AnglesControl,
     internal val temperatureControl: TemperatureControl,
+    internal val carburControl: CarburControl,
     private val uiMessageQueue: UiMessageQueue,
     private val parameterPageCatalog: ParameterPageCatalog,
 ) : ViewModel() {
@@ -238,12 +240,44 @@ class ParamsViewModel @Inject constructor(
         return admitted
     }
 
-    internal val idlingStateHolder by lazy {
-        IdlingStateHolder(::sendPacket, { isSendAllowed = false }, { isSendAllowed = true })
+    fun editCarburInt(number: CarburNumber, value: Int): Boolean {
+        val admitted = when (number) {
+            CarburNumber.IDLE_LOW -> carburControl.editIdleLowRpm(value)
+            CarburNumber.IDLE_HIGH -> carburControl.editIdleHighRpm(value)
+            CarburNumber.IDLE_LOW_GAS -> carburControl.editIdleLowGasRpm(value)
+            CarburNumber.IDLE_HIGH_GAS -> carburControl.editIdleHighGasRpm(value)
+            CarburNumber.REV_LOW -> carburControl.editRevLimitLowRpm(value)
+            CarburNumber.REV_HIGH -> carburControl.editRevLimitHighRpm(value)
+            else -> false
+        }
+        return reportCarburEdit(admitted)
     }
 
-    internal val carburStateHolder by lazy {
-        CarburStateHolder(::sendPacket, { isSendAllowed = false }, { isSendAllowed = true })
+    fun editCarburFloat(number: CarburNumber, value: Float): Boolean {
+        val admitted = when (number) {
+            CarburNumber.CUTOFF_DELAY -> carburControl.editCutoffDelay(value)
+            CarburNumber.VALVE_PRESSURE -> carburControl.editValvePressure(value)
+            CarburNumber.TPS -> carburControl.editTpsThreshold(value)
+            CarburNumber.MAP -> carburControl.editMapThreshold(value)
+            CarburNumber.CTS -> carburControl.editCoolantThreshold(value)
+            else -> false
+        }
+        return reportCarburEdit(admitted)
+    }
+
+    fun setCarburInverted(checked: Boolean): Boolean = reportCarburEdit(carburControl.setInverted(checked))
+
+    fun selectCarburOutput(ignition: Boolean, index: Int): Boolean = reportCarburEdit(
+        if (ignition) carburControl.selectIgnitionCutOutput(index) else carburControl.selectFuelCutOutput(index),
+    )
+
+    private fun reportCarburEdit(admitted: Boolean): Boolean {
+        if (admitted) showUiMessage(R.string.packet_sent, UiMessageDuration.SHORT)
+        return admitted
+    }
+
+    internal val idlingStateHolder by lazy {
+        IdlingStateHolder(::sendPacket, { isSendAllowed = false }, { isSendAllowed = true })
     }
 
     internal val adcCorrectionsStateHolder by lazy {
@@ -572,7 +606,7 @@ class ParamsViewModel @Inject constructor(
             ParameterPage.ANGLES -> anglesControl.reset()
             ParameterPage.IDLING -> idlingStateHolder.reset()
             ParameterPage.TEMPERATURE -> temperatureControl.reset()
-            ParameterPage.FUEL_CUTOFF -> carburStateHolder.reset()
+            ParameterPage.FUEL_CUTOFF -> carburControl.reset()
             ParameterPage.CKPS -> ckpsControl.reset()
             ParameterPage.ADC_ERRORS -> adcCorrectionsStateHolder.reset()
             ParameterPage.KNOCK -> knockStateHolder.reset()
@@ -607,7 +641,7 @@ class ParamsViewModel @Inject constructor(
             ParameterPage.ANGLES -> anglesControl.receive(packet(result))
             ParameterPage.IDLING -> idlingStateHolder.onPacketReceived(packet<IdlingParamPacket>(result))
             ParameterPage.TEMPERATURE -> temperatureControl.receive(packet<TemperatureParamPacket>(result))
-            ParameterPage.FUEL_CUTOFF -> carburStateHolder.onPacketReceived(packet<CarburParamPacket>(result))
+            ParameterPage.FUEL_CUTOFF -> carburControl.receive(packet<CarburParamPacket>(result))
             ParameterPage.CKPS -> ckpsControl.receive(packet<CkpsParamPacket>(result))
             ParameterPage.ADC_ERRORS -> adcCorrectionsStateHolder.onPacketReceived(packet<AdcCorrectionsParamPacket>(result))
             ParameterPage.KNOCK -> knockStateHolder.onPacketReceived(packet<KnockParamPacket>(result))

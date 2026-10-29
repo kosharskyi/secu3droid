@@ -116,8 +116,26 @@ internal fun ParameterPageContent(
             }, viewModel::setTemperatureFlag, capabilities = capabilities)
         }
         R.string.params_tab_fuel_cutoff_title -> {
-            val h = viewModel.carburStateHolder
-            CarburScreen(h.state, (1..6).map(Int::toString) + "no", { n -> (h.state as? CarburUiState.Data)?.values?.let { v -> if (n.integer) intEdit(n.title, v.numbers.getValue(n).toInt(), n.step.toInt(), n.max.toInt(), n.min.toInt()) { h.updateValue(n, it.toFloat()) } else floatEdit(n.title, v.numbers.getValue(n), n.step, n.max, n.min, n.precision) { h.updateValue(n, it.toFloat()) } } }, h::updateInvers, h::updateSelector, capabilities = capabilities)
+            val values by viewModel.carburControl.values.collectAsStateWithLifecycle()
+            CarburScreen(
+                values = values,
+                options = (1..6).map(Int::toString) + "no",
+                selectorCodes = viewModel.carburControl.selectorCodes,
+                onEdit = { number ->
+                    if (number.integer) {
+                        intEdit(number.title, number.value(requireNotNull(values)).toInt(), number.step.toInt(), number.max.toInt(), number.min.toInt()) {
+                            viewModel.editCarburInt(number, it)
+                        }
+                    } else {
+                        floatEdit(number.title, number.value(requireNotNull(values)), number.step, number.max, number.min, number.precision) {
+                            viewModel.editCarburFloat(number, it.toFloat())
+                        }
+                    }
+                },
+                onInvers = viewModel::setCarburInverted,
+                onSelector = viewModel::selectCarburOutput,
+                capabilities = capabilities,
+            )
         }
         R.string.params_tab_adc_errors_corr_title -> {
             val h = viewModel.adcCorrectionsStateHolder
