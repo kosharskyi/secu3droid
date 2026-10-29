@@ -33,7 +33,7 @@ import androidx.compose.ui.res.stringResource
 import org.secu3.android.ui.parameters.compose.ParameterLoadingIndicator
 import org.secu3.android.ui.parameters.*
 import org.secu3.android.R
-import org.secu3.android.models.packets.out.params.TemperatureParamPacket
+import org.secu3.android.domain.parameters.TemperatureValues
 import org.secu3.android.ui.parameters.compose.ParameterSwitchRow
 import org.secu3.android.ui.parameters.compose.ParameterValueRow
 import org.secu3.android.ui.parameters.compose.ParameterPage
@@ -57,120 +57,84 @@ enum class TemperatureNumber(
     AC_ON(R.string.temper_cond_turn_on_threshold_title, R.string.units_volts, 4, 0f, 5f, .01f),
     AC_OFF(R.string.temper_cond_turn_off_threshold_title, R.string.units_volts, 4, 0f, 5f, .01f),
     AC_MIN_RPM(R.string.temper_cond_turn_on_min_rpm_threshold_title, R.string.units_rpm, 0, 500f, 3000f, 10f, true),
-    FAN_TIMER(R.string.temper_fans_timer_title, R.string.units_sec, 0, 0f, 600f, 1f, true),
+    FAN_TIMER(R.string.temper_fans_timer_title, R.string.units_sec, 0, 0f, 600f, 1f, true);
+
+    fun value(values: TemperatureValues): Float = when (this) {
+        FAN_ON -> values.fanOn
+        FAN_OFF -> values.fanOff
+        PWM_FREQUENCY -> values.pwmFrequency.toFloat()
+        AC_ON -> values.conditionerOn
+        AC_OFF -> values.conditionerOff
+        AC_MIN_RPM -> values.conditionerMinRpm.toFloat()
+        FAN_TIMER -> values.fanTimer
+    }
 }
 
 enum class TemperatureFlag(@StringRes val titleRes: Int) {
     COOLANT_SENSOR(R.string.temper_use_temp_sensor_title),
     PWM_CONTROL(R.string.temper_use_pwm_title),
-    SENSOR_CURVE_TABLE(R.string.temper_use_table_title),
-}
+    SENSOR_CURVE_TABLE(R.string.temper_use_table_title);
 
-data class TemperatureValues(
-    val numbers: Map<TemperatureNumber, Float>,
-    val flags: Map<TemperatureFlag, Boolean>,
-) {
-    fun value(number: TemperatureNumber) = numbers.getValue(number)
-    fun withValue(number: TemperatureNumber, value: Float) = copy(numbers = numbers + (number to value))
-    fun withFlag(flag: TemperatureFlag, checked: Boolean) = copy(flags = flags + (flag to checked))
-
-    companion object {
-        fun from(packet: TemperatureParamPacket) = TemperatureValues(
-            numbers = mapOf(
-                TemperatureNumber.FAN_ON to packet.ventOn,
-                TemperatureNumber.FAN_OFF to packet.ventOff,
-                TemperatureNumber.PWM_FREQUENCY to packet.ventPwmFrq.toFloat(),
-                TemperatureNumber.AC_ON to packet.condPvtOn,
-                TemperatureNumber.AC_OFF to packet.condPvtOff,
-                TemperatureNumber.AC_MIN_RPM to packet.condMinRpm.toFloat(),
-                TemperatureNumber.FAN_TIMER to packet.ventTmr,
-            ),
-            flags = mapOf(
-                TemperatureFlag.COOLANT_SENSOR to packet.coolantUse,
-                TemperatureFlag.PWM_CONTROL to packet.ventPwm,
-                TemperatureFlag.SENSOR_CURVE_TABLE to packet.coolantMap,
-            ),
-        )
+    fun checked(values: TemperatureValues): Boolean = when (this) {
+        COOLANT_SENSOR -> values.coolantSensor
+        PWM_CONTROL -> values.pwmControl
+        SENSOR_CURVE_TABLE -> values.sensorCurveTable
     }
-}
-
-fun applyTemperatureValue(packet: TemperatureParamPacket, number: TemperatureNumber, value: Float) {
-    when (number) {
-        TemperatureNumber.FAN_ON -> packet.ventOn = value
-        TemperatureNumber.FAN_OFF -> packet.ventOff = value
-        TemperatureNumber.PWM_FREQUENCY -> packet.ventPwmFrq = value.toInt()
-        TemperatureNumber.AC_ON -> packet.condPvtOn = value
-        TemperatureNumber.AC_OFF -> packet.condPvtOff = value
-        TemperatureNumber.AC_MIN_RPM -> packet.condMinRpm = value.toInt()
-        TemperatureNumber.FAN_TIMER -> packet.ventTmr = value
-    }
-}
-
-fun applyTemperatureFlag(packet: TemperatureParamPacket, flag: TemperatureFlag, checked: Boolean) {
-    when (flag) {
-        TemperatureFlag.COOLANT_SENSOR -> packet.coolantUse = checked
-        TemperatureFlag.PWM_CONTROL -> packet.ventPwm = checked
-        TemperatureFlag.SENSOR_CURVE_TABLE -> packet.coolantMap = checked
-    }
-}
-
-sealed interface TemperatureUiState {
-    data object Loading : TemperatureUiState
-    data class Data(val values: TemperatureValues) : TemperatureUiState
 }
 
 @Composable
 fun TemperatureScreen(
-    state: TemperatureUiState,
+    values: TemperatureValues?,
     onEdit: (TemperatureNumber) -> Unit,
     onFlagChanged: (TemperatureFlag, Boolean) -> Unit,
     capabilities: ParameterCapabilities = ParameterCapabilities.All,
 ) {
     val pageScrollState = rememberScrollState()
-    when (state) {
-        TemperatureUiState.Loading -> ParameterLoadingIndicator("temperature_loading")
-        is TemperatureUiState.Data -> ParameterPage(scrollState = pageScrollState) {
-            ParameterSection {
-                @Composable
-                fun number(number: TemperatureNumber) = ParameterValueRow(
-                    title = stringResource(number.titleRes),
-                    units = stringResource(number.unitRes),
-                    value = state.values.value(number),
-                    precision = number.precision,
-                    testTag = "temperature_${number.name.lowercase()}",
-                    enabled = when (number) {
-                        TemperatureNumber.PWM_FREQUENCY -> capabilities.fanPwm
-                        TemperatureNumber.AC_ON, TemperatureNumber.AC_OFF -> capabilities.nonSecu3TFuelInjection
-                        TemperatureNumber.AC_MIN_RPM -> capabilities.fuelInjection
-                        else -> true
-                    },
-                    onClick = { onEdit(number) },
-                )
-                @Composable
-                fun flag(flag: TemperatureFlag) = ParameterSwitchRow(
-                    title = stringResource(flag.titleRes),
-                    checked = state.values.flags.getValue(flag),
-                    testTag = "temperature_flag_${flag.name.lowercase()}",
-                    enabled = when (flag) {
-                        TemperatureFlag.PWM_CONTROL -> capabilities.fanPwm
-                        TemperatureFlag.SENSOR_CURVE_TABLE -> capabilities.tempCurve
-                        else -> true
-                    },
-                    onCheckedChange = { onFlagChanged(flag, it) },
-                )
+    if (values == null) {
+        ParameterLoadingIndicator("temperature_loading")
+        return
+    }
+    ParameterPage(scrollState = pageScrollState) {
+        ParameterSection {
+            @Composable
+            fun number(number: TemperatureNumber) = ParameterValueRow(
+                title = stringResource(number.titleRes),
+                units = stringResource(number.unitRes),
+                value = number.value(values),
+                precision = number.precision,
+                testTag = "temperature_${number.name.lowercase()}",
+                enabled = when (number) {
+                    TemperatureNumber.PWM_FREQUENCY -> capabilities.fanPwm
+                    TemperatureNumber.AC_ON, TemperatureNumber.AC_OFF -> capabilities.nonSecu3TFuelInjection
+                    TemperatureNumber.AC_MIN_RPM -> capabilities.fuelInjection
+                    else -> true
+                },
+                onClick = { onEdit(number) },
+            )
+            @Composable
+            fun flag(flag: TemperatureFlag) = ParameterSwitchRow(
+                title = stringResource(flag.titleRes),
+                checked = flag.checked(values),
+                testTag = "temperature_flag_${flag.name.lowercase()}",
+                enabled = when (flag) {
+                    TemperatureFlag.PWM_CONTROL -> capabilities.fanPwm
+                    TemperatureFlag.SENSOR_CURVE_TABLE -> capabilities.tempCurve
+                    else -> true
+                },
+                onCheckedChange = { onFlagChanged(flag, it) },
+            )
 
-                // Preserve the XML order, including the switches between fan thresholds and PWM frequency.
-                number(TemperatureNumber.FAN_ON)
-                number(TemperatureNumber.FAN_OFF)
-                flag(TemperatureFlag.COOLANT_SENSOR)
-                flag(TemperatureFlag.PWM_CONTROL)
-                flag(TemperatureFlag.SENSOR_CURVE_TABLE)
-                number(TemperatureNumber.PWM_FREQUENCY)
-                number(TemperatureNumber.AC_ON)
-                number(TemperatureNumber.AC_OFF)
-                number(TemperatureNumber.AC_MIN_RPM)
-                number(TemperatureNumber.FAN_TIMER)
-            }
-            }
-            }
-            }
+            // Preserve the XML order, including the switches between fan thresholds and PWM frequency.
+            number(TemperatureNumber.FAN_ON)
+            number(TemperatureNumber.FAN_OFF)
+            flag(TemperatureFlag.COOLANT_SENSOR)
+            flag(TemperatureFlag.PWM_CONTROL)
+            flag(TemperatureFlag.SENSOR_CURVE_TABLE)
+            number(TemperatureNumber.PWM_FREQUENCY)
+            number(TemperatureNumber.AC_ON)
+            number(TemperatureNumber.AC_OFF)
+            number(TemperatureNumber.AC_MIN_RPM)
+            number(TemperatureNumber.FAN_TIMER)
+        }
+    }
+}

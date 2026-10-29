@@ -50,6 +50,10 @@ The ECU's unsigned fixed-point physical value remains a Float so unrelated edits
 
 The regular ZERO switch disables the OCTANE correction row while active. Enabling either ZERO mode clears the other on the domain command path, and the control rejects stale OCTANE editor callbacks after ZERO becomes active.
 
+## Temperature fan thresholds are coupled by desktop hysteresis
+
+FAN ON corrects FAN OFF to a 0.25 °C gap only while PWM is off. FAN OFF can correct FAN ON in either mode, and enabling or disabling PWM can correct FAN OFF. An automatic correction outside editor bounds rejects the complete command; receiving a legacy pair or editing an unrelated field does not normalize it. Keep FAN OFF editable while PWM is on, matching the desktop.
+
 ## Fuel Injection screen values keep timing and pulses-per-liter raw
 
 The domain values retain signed fractional timing/cranking degrees and fixed-point pulses-per-liter as Floats. The UI enum rounds the displayed integer editor value with `roundToInt`; do not move that rounding into packet state, since negative half-degree wire values use Kotlin's existing display rounding behavior.

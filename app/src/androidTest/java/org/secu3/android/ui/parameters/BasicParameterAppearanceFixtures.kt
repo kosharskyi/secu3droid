@@ -1,5 +1,7 @@
 package org.secu3.android.ui.parameters
 
+import org.secu3.android.domain.parameters.TemperatureValues
+
 import androidx.compose.runtime.Composable
 import org.secu3.android.domain.parameters.StarterValues
 import org.secu3.android.domain.parameters.AnglesValues
@@ -35,12 +37,7 @@ internal fun basicParameterAppearanceFixtures(): List<ParameterAppearanceFixture
     },
     ParameterAppearanceFixture("temperature") {
         TemperatureScreen(
-            TemperatureUiState.Data(
-                TemperatureValues(
-                    numbers = TemperatureNumber.entries.associateWith { it.ordinal * 10f + 20f },
-                    flags = TemperatureFlag.entries.associateWith { it.ordinal == 0 },
-                ),
-            ),
+            TemperatureValues(20f, 25f, 100, 2f, 3f, 900, 60f, true, false, true),
             onEdit = {},
             onFlagChanged = { _, _ -> },
         )

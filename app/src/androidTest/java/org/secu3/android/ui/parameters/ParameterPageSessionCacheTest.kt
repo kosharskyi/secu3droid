@@ -30,6 +30,7 @@ import org.secu3.android.connection.UsbConnection
 import org.secu3.android.connection.UsbAttemptPacket
 import org.secu3.android.connection.UsbAttachmentIdentity
 import org.secu3.android.connection.UsbSessionFence
+import org.secu3.android.connection.PacketReceiver
 import org.secu3.android.models.RawPacket
 import org.secu3.android.domain.parameters.ParameterPage
 import org.secu3.android.models.packets.base.OutputPacket
@@ -41,12 +42,15 @@ import org.secu3.android.models.packets.out.params.CkpsParamPacket
 import org.secu3.android.models.packets.out.params.MiscellaneousParamPacket
 import org.secu3.android.models.packets.out.params.SecurityParamPacket
 import org.secu3.android.models.packets.out.params.StarterParamPacket
+import org.secu3.android.models.packets.out.params.TemperatureParamPacket
 import org.secu3.android.models.packets.out.ChangeModePacket
 import org.secu3.android.utils.UserPrefs
 import org.secu3.android.ui.MainActivity
 import org.secu3.android.ui.PARAMETERS_ROUTE
 import org.secu3.android.ui.parameters.pages.compose.AnglesNumber
 import org.secu3.android.ui.parameters.pages.compose.StarterNumber
+import org.secu3.android.ui.parameters.pages.compose.TemperatureFlag
+import org.secu3.android.ui.parameters.pages.compose.TemperatureNumber
 import org.secu3.android.ui.parameters.pages.compose.ChokeNumber
 import java.lang.reflect.Proxy
 import java.util.concurrent.CountDownLatch
@@ -267,6 +271,89 @@ class ParameterPageSessionCacheTest {
                 }
             }
         }
+    }
+
+    @Test fun temperatureCommandsUseCurrentSessionAndPreserveRawFieldsAcrossWrites() = runBlocking {
+        val vm = paramsViewModel()
+        var transport: FakeUsbTransport? = null
+        val queueField = ParamsViewModel::class.java.getDeclaredField("uiMessageQueue").apply { isAccessible = true }
+        val queue = queueField.get(vm) as org.secu3.android.ui.messages.UiMessageQueue
+        val originalActiveScope = queue.activeScope.value
+        try {
+            val usb = installFakeUsb(vm, firmwareOptions = (1 shl 28) or (1 shl 8) or (1 shl 16)).also { transport = it }
+            activate(vm, R.string.params_tab_temperature_title)
+            usb.awaitReadRequest('j', 1)
+            usb.emit(TemperatureParamPacket(tmpFlags = 0x80, ventOn = 95f, ventOff = 90f, ventPwmFrq = 100, ventTmr = 1.27f))
+            await { vm.temperatureControl.values.value?.fanOn == 95f }
+
+            compose.activityRule.scenario.moveToState(Lifecycle.State.STARTED)
+            compose.waitForIdle()
+            queue.onActiveScopeChanged(PARAMETERS_ROUTE)
+            queue.pending.value.forEach { queue.acknowledge(it.id) }
+            val baseline = usb.writes.size
+            vm.isSendAllowed = false
+
+            assertTrue(vm.editTemperatureFloat(TemperatureNumber.FAN_ON, 100f))
+            usb.awaitWriteCount(baseline + 1)
+            assertTrue(queue.pending.value.any { it.textRes == R.string.packet_sent })
+            assertArrayEquals(
+                temperatureFrame(intArrayOf('j'.code, 0x80, 0x01, 0x90, 0x01, 0x68, 0x14, 0x7B, 0, 0, 0, 0, 0, 0, 0, 0x7F)),
+                usb.writes[baseline],
+            )
+
+            queue.pending.value.forEach { queue.acknowledge(it.id) }
+            assertTrue(vm.setTemperatureFlag(TemperatureFlag.COOLANT_SENSOR, true))
+            usb.awaitWriteCount(baseline + 2)
+            assertTrue(queue.pending.value.any { it.textRes == R.string.packet_sent })
+            assertArrayEquals(
+                temperatureFrame(intArrayOf('j'.code, 0x81, 0x01, 0x90, 0x01, 0x68, 0x14, 0x7B, 0, 0, 0, 0, 0, 0, 0, 0x7F)),
+                usb.writes[baseline + 1],
+            )
+
+            queue.pending.value.forEach { queue.acknowledge(it.id) }
+            assertTrue(vm.editTemperatureInt(TemperatureNumber.FAN_TIMER, 30))
+            usb.awaitWriteCount(baseline + 3)
+            assertTrue(queue.pending.value.any { it.textRes == R.string.packet_sent })
+            assertArrayEquals(
+                temperatureFrame(intArrayOf('j'.code, 0x81, 0x01, 0x90, 0x01, 0x68, 0x14, 0x7B, 0, 0, 0, 0, 0, 0, 0x0B, 0xB8)),
+                usb.writes[baseline + 2],
+            )
+            assertEquals(100f, vm.temperatureControl.values.value?.fanOn)
+            assertEquals(90f, vm.temperatureControl.values.value?.fanOff)
+            assertEquals(30f, vm.temperatureControl.values.value?.fanTimer)
+            assertEquals(false, vm.isSendAllowed)
+
+            queue.pending.value.forEach { queue.acknowledge(it.id) }
+            val committed = vm.temperatureControl.values.value
+            compose.runOnIdle {
+                vm.pausePageSession()
+                assertFalse(vm.editTemperatureFloat(TemperatureNumber.FAN_ON, 105f))
+                assertFalse(vm.setTemperatureFlag(TemperatureFlag.COOLANT_SENSOR, false))
+            }
+            delay(100)
+            assertEquals(baseline + 3, usb.writes.size)
+            assertEquals(committed, vm.temperatureControl.values.value)
+            assertFalse(queue.pending.value.any { it.textRes == R.string.packet_sent })
+        } finally {
+            try {
+                transport?.close()
+            } finally {
+                try {
+                    compose.runOnIdle { vm.clearPageState() }
+                } finally {
+                    queue.onActiveScopeChanged(originalActiveScope)
+                    compose.activityRule.scenario.moveToState(Lifecycle.State.RESUMED)
+                }
+            }
+        }
+    }
+
+    private fun temperatureFrame(packet: IntArray): ByteArray {
+        val frame = intArrayOf(0x21) + packet
+        val checksum = PacketReceiver.calculateChecksum(frame.copyOfRange(2, frame.size))
+        return (PacketReceiver.escapeTx(frame + checksum[1] + checksum[0]) + 0x0D)
+            .map(Int::toByte)
+            .toByteArray()
     }
 
     @Test fun pageWaitingBehindAnotherTabUsesFreshRevisionAfterWrite() = runBlocking {

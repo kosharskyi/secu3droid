@@ -34,6 +34,7 @@ import androidx.compose.ui.test.performScrollTo
 import org.junit.Assert.assertEquals
 import org.junit.Rule
 import org.junit.Test
+import org.secu3.android.domain.parameters.TemperatureValues
 import org.secu3.android.ui.compose.SecuComposeTheme
 
 class TemperatureScreenTest {
@@ -44,25 +45,22 @@ class TemperatureScreenTest {
     fun loadingRendersAndDataScrollsWithoutInitializationCallbacks() {
         var edits = 0
         var flags = 0
-        val state = mutableStateOf<TemperatureUiState>(TemperatureUiState.Loading)
+        val state = mutableStateOf<TemperatureValues?>(null)
         compose.setContent {
             SecuComposeTheme { TemperatureScreen(state.value, { edits++ }, { _, _ -> flags++ }) }
         }
         compose.onNodeWithTag("temperature_loading").assertIsDisplayed()
-        val values = TemperatureValues(
-            TemperatureNumber.entries.associateWith { it.ordinal + 1f },
-            TemperatureFlag.entries.associateWith { it.ordinal % 2 == 0 },
-        )
-        compose.runOnIdle { state.value = TemperatureUiState.Data(values) }
+        val values = TemperatureValues(1f, 2f, 3, 4f, 5f, 6, 7f, true, false, true)
+        compose.runOnIdle { state.value = values }
         TemperatureNumber.entries.forEach { number ->
             compose.onNodeWithTag("temperature_${number.name.lowercase()}").performScrollTo().assertIsDisplayed()
-            val expected = String.format(java.util.Locale.getDefault(), "%.${number.precision}f", number.ordinal + 1f) + " " + context.getString(number.unitRes)
+            val expected = String.format(java.util.Locale.getDefault(), "%.${number.precision}f", number.value(values)) + " " + context.getString(number.unitRes)
             compose.onNodeWithTag("temperature_${number.name.lowercase()}-value", useUnmergedTree = true).assertTextEquals(expected)
         }
         TemperatureFlag.entries.forEach { flag ->
             compose.onNodeWithTag("temperature_flag_${flag.name.lowercase()}").performScrollTo().assertIsDisplayed()
         }
-        compose.runOnIdle { state.value = TemperatureUiState.Data(values.copy(numbers = values.numbers.toMap())) }
+        compose.runOnIdle { state.value = values.copy(fanOn = 8f) }
         assertEquals(0, edits)
         assertEquals(0, flags)
     }
@@ -71,12 +69,9 @@ class TemperatureScreenTest {
     fun callbacksRunOnlyForExplicitRowAndSwitchActions() {
         val edits = mutableListOf<TemperatureNumber>()
         val changes = mutableListOf<Pair<TemperatureFlag, Boolean>>()
-        val values = TemperatureValues(
-            TemperatureNumber.entries.associateWith { 1f },
-            TemperatureFlag.entries.associateWith { false },
-        )
+        val values = TemperatureValues(1f, 1f, 1, 1f, 1f, 1000, 1f, false, false, false)
         compose.setContent {
-            SecuComposeTheme { TemperatureScreen(TemperatureUiState.Data(values), { edits += it }, { flag, value -> changes += flag to value }) }
+            SecuComposeTheme { TemperatureScreen(values, { edits += it }, { flag, value -> changes += flag to value }) }
         }
         TemperatureNumber.entries.forEach { number ->
             compose.onNodeWithTag("temperature_${number.name.lowercase()}").performScrollTo().performClick()

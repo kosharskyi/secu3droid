@@ -35,9 +35,11 @@ import org.secu3.android.models.packets.out.params.LambdaParamPacket
 import org.secu3.android.models.packets.out.params.MiscellaneousParamPacket
 import org.secu3.android.models.packets.out.params.SecurityParamPacket
 import org.secu3.android.models.packets.out.params.StarterParamPacket
+import org.secu3.android.models.packets.out.params.TemperatureParamPacket
 import org.secu3.android.ui.MainActivity
 import org.secu3.android.ui.compose.SecuComposeTheme
 import org.secu3.android.ui.parameters.pages.compose.StarterNumber
+import org.secu3.android.ui.parameters.pages.compose.TemperatureNumber
 import org.secu3.android.ui.parameters.dialogs.NumericEditDialog
 
 class ParameterPageEditorRoutingTest {
@@ -82,6 +84,38 @@ class ParameterPageEditorRoutingTest {
         assertEquals(2, request.precision)
         compose.runOnIdle { vm.acceptParameterEditor(session.id, 5.5f) }
         assertEquals(4f, control.values.value?.maxAngle)
+        assertEquals(false, vm.isSendAllowed)
+    }
+
+    @Test fun temperatureEditorsPreserveWholeSecondTimerContractAndRejectWithoutSession() {
+        val vm = paramsViewModel()
+        val control = vm.temperatureControl
+        control.reset()
+        control.receive(TemperatureParamPacket(ventOn = 95f, ventOff = 90f, ventTmr = 1.27f))
+        vm.isSendAllowed = false
+        renderPage(R.string.params_tab_temperature_title, vm)
+
+        compose.onNodeWithTag("temperature_fan_timer").performClick()
+        val timerSession = requireNotNull(vm.parameterEditSession)
+        val timerRequest = timerSession.request as ParameterEditRequest.IntValue
+        assertEquals(1, timerRequest.value)
+        assertEquals(compose.activity.getString(R.string.temper_fans_timer_title), timerRequest.title)
+        assertEquals(0, timerRequest.min)
+        assertEquals(600, timerRequest.max)
+        assertEquals(1, timerRequest.step)
+        compose.runOnIdle { vm.acceptParameterEditor(timerSession.id, 30) }
+        assertEquals(1.27f, control.values.value?.fanTimer)
+
+        compose.onNodeWithTag("temperature_fan_on").performClick()
+        val fanSession = requireNotNull(vm.parameterEditSession)
+        val fanRequest = fanSession.request as ParameterEditRequest.FloatValue
+        assertEquals(95f, fanRequest.value)
+        assertEquals(-10f, fanRequest.min)
+        assertEquals(125f, fanRequest.max)
+        assertEquals(.2f, fanRequest.step)
+        compose.runOnIdle { vm.acceptParameterEditor(fanSession.id, 100f) }
+        assertEquals(95f, control.values.value?.fanOn)
+        assertEquals(1.27f, control.values.value?.fanTimer)
         assertEquals(false, vm.isSendAllowed)
     }
 

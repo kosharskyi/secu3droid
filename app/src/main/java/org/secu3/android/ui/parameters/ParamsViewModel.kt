@@ -55,6 +55,7 @@ import org.secu3.android.domain.parameters.MiscellaneousControl
 import org.secu3.android.domain.parameters.AnglesControl
 import org.secu3.android.domain.parameters.SecurityControl
 import org.secu3.android.domain.parameters.StarterControl
+import org.secu3.android.domain.parameters.TemperatureControl
 import org.secu3.android.domain.parameters.SecurityCredentialsResult
 import org.secu3.android.models.packets.base.OutputPacket
 import org.secu3.android.models.packets.out.params.AccelerationParamPacket
@@ -82,7 +83,8 @@ import org.secu3.android.ui.parameters.pages.compose.KnockStateHolder
 import org.secu3.android.ui.parameters.pages.compose.LambdaControlStateHolder
 import org.secu3.android.ui.parameters.pages.compose.LtftStateHolder
 import org.secu3.android.ui.parameters.pages.compose.IdlingStateHolder
-import org.secu3.android.ui.parameters.pages.compose.TemperatureStateHolder
+import org.secu3.android.ui.parameters.pages.compose.TemperatureFlag
+import org.secu3.android.ui.parameters.pages.compose.TemperatureNumber
 import org.secu3.android.ui.parameters.pages.AccelerationStateHolder
 import org.secu3.android.ui.parameters.pages.MiscField
 import org.secu3.android.ui.parameters.pages.MiscToggle
@@ -112,6 +114,7 @@ class ParamsViewModel @Inject constructor(
     internal val securityControl: SecurityControl,
     internal val starterControl: StarterControl,
     internal val anglesControl: AnglesControl,
+    internal val temperatureControl: TemperatureControl,
     private val uiMessageQueue: UiMessageQueue,
     private val parameterPageCatalog: ParameterPageCatalog,
 ) : ViewModel() {
@@ -200,12 +203,43 @@ class ParamsViewModel @Inject constructor(
         return admitted
     }
 
-    internal val idlingStateHolder by lazy {
-        IdlingStateHolder(::sendPacket, { isSendAllowed = false }, { isSendAllowed = true })
+    fun editTemperatureFloat(number: TemperatureNumber, value: Float): Boolean {
+        val admitted = when (number) {
+            TemperatureNumber.FAN_ON -> temperatureControl.editFanOn(value)
+            TemperatureNumber.FAN_OFF -> temperatureControl.editFanOff(value)
+            TemperatureNumber.AC_ON -> temperatureControl.editConditionerOn(value)
+            TemperatureNumber.AC_OFF -> temperatureControl.editConditionerOff(value)
+            else -> false
+        }
+        return reportTemperatureEdit(admitted)
     }
 
-    internal val temperatureStateHolder by lazy {
-        TemperatureStateHolder(::sendPacket, { isSendAllowed = false }, { isSendAllowed = true })
+    fun editTemperatureInt(number: TemperatureNumber, value: Int): Boolean {
+        val admitted = when (number) {
+            TemperatureNumber.PWM_FREQUENCY -> temperatureControl.editPwmFrequency(value)
+            TemperatureNumber.AC_MIN_RPM -> temperatureControl.editConditionerMinRpm(value)
+            TemperatureNumber.FAN_TIMER -> temperatureControl.editFanTimer(value)
+            else -> false
+        }
+        return reportTemperatureEdit(admitted)
+    }
+
+    fun setTemperatureFlag(flag: TemperatureFlag, checked: Boolean): Boolean {
+        val admitted = when (flag) {
+            TemperatureFlag.COOLANT_SENSOR -> temperatureControl.setCoolantSensor(checked)
+            TemperatureFlag.PWM_CONTROL -> temperatureControl.setPwmControl(checked)
+            TemperatureFlag.SENSOR_CURVE_TABLE -> temperatureControl.setSensorCurveTable(checked)
+        }
+        return reportTemperatureEdit(admitted)
+    }
+
+    private fun reportTemperatureEdit(admitted: Boolean): Boolean {
+        if (admitted) showUiMessage(R.string.packet_sent, UiMessageDuration.SHORT)
+        return admitted
+    }
+
+    internal val idlingStateHolder by lazy {
+        IdlingStateHolder(::sendPacket, { isSendAllowed = false }, { isSendAllowed = true })
     }
 
     internal val carburStateHolder by lazy {
@@ -537,7 +571,7 @@ class ParamsViewModel @Inject constructor(
             ParameterPage.STARTER -> starterControl.reset()
             ParameterPage.ANGLES -> anglesControl.reset()
             ParameterPage.IDLING -> idlingStateHolder.reset()
-            ParameterPage.TEMPERATURE -> temperatureStateHolder.reset()
+            ParameterPage.TEMPERATURE -> temperatureControl.reset()
             ParameterPage.FUEL_CUTOFF -> carburStateHolder.reset()
             ParameterPage.CKPS -> ckpsControl.reset()
             ParameterPage.ADC_ERRORS -> adcCorrectionsStateHolder.reset()
@@ -572,7 +606,7 @@ class ParamsViewModel @Inject constructor(
             ParameterPage.STARTER -> starterControl.receive(packet<StarterParamPacket>(result))
             ParameterPage.ANGLES -> anglesControl.receive(packet(result))
             ParameterPage.IDLING -> idlingStateHolder.onPacketReceived(packet<IdlingParamPacket>(result))
-            ParameterPage.TEMPERATURE -> temperatureStateHolder.onPacketReceived(packet<TemperatureParamPacket>(result))
+            ParameterPage.TEMPERATURE -> temperatureControl.receive(packet<TemperatureParamPacket>(result))
             ParameterPage.FUEL_CUTOFF -> carburStateHolder.onPacketReceived(packet<CarburParamPacket>(result))
             ParameterPage.CKPS -> ckpsControl.receive(packet<CkpsParamPacket>(result))
             ParameterPage.ADC_ERRORS -> adcCorrectionsStateHolder.onPacketReceived(packet<AdcCorrectionsParamPacket>(result))

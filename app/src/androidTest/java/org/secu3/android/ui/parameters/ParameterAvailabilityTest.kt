@@ -9,7 +9,7 @@ import org.junit.Test
 import org.secu3.android.models.packets.input.FirmwareInfoPacket
 import org.secu3.android.domain.parameters.ParameterCapabilities
 import org.secu3.android.domain.parameters.StarterValues
-import org.secu3.android.models.packets.out.params.TemperatureParamPacket
+import org.secu3.android.domain.parameters.TemperatureValues
 import org.secu3.android.ui.compose.SecuComposeTheme
 import org.secu3.android.ui.parameters.pages.compose.*
 
@@ -21,7 +21,7 @@ class ParameterAvailabilityTest {
         var edits = 0
         compose.setContent {
             SecuComposeTheme {
-                TemperatureScreen(TemperatureUiState.Data(TemperatureValues.from(TemperatureParamPacket())),
+                TemperatureScreen(TemperatureValues(95f, 90f, 100, 1.6f, 2.5f, 1200, 60f, false, false, false),
                     { edits++ }, { _, _ -> }, capabilities = ParameterCapabilities(FirmwareInfoPacket(options = options.value)))
             }
         }

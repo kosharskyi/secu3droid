@@ -24,6 +24,8 @@ Derive a single `ParameterCapabilities` state from `Secu3ConnectionManager.firmw
 
 `AnglesControl` owns all packet edits and its session admission; the ViewModel only maps the six numeric rows and four switches to named commands. ZERO and ZERO_WITH_OCTANE are mutually exclusive on enable, and an OCTANE callback is rejected if raw ZERO became active after the editor opened.
 
+`TemperatureControl` owns the packet, live firmware gates, fan hysteresis, and session admission. Integer editor fields use typed integer commands; packet timer values remain fractional until an explicit whole-second edit.
+
 ## Fuel Injection command admission belongs to its domain control
 
 `FuelInjectionControl` reads the manager's current firmware and sends through `ParameterSession.sendPacket`, whose Boolean result drives the packet-sent message. It does not use the legacy ViewModel `isSendAllowed` gate. The screen collects its nullable values flow directly; no second Loading/Data wrapper or packet mapping belongs in the ViewModel.

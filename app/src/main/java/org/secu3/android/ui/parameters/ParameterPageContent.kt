@@ -100,8 +100,20 @@ internal fun ParameterPageContent(
             }, capabilities = capabilities)
         }
         R.string.params_tab_temperature_title -> {
-            val h = viewModel.temperatureStateHolder
-            TemperatureScreen(h.state, { n -> (h.state as? TemperatureUiState.Data)?.values?.let { v -> if (n.integer) intEdit(n.titleRes, v.value(n).roundToInt(), n.step.toInt(), n.max.toInt(), n.min.toInt()) { h.updateValue(n, it.toFloat()) } else floatEdit(n.titleRes, v.value(n), n.step, n.max, n.min, n.precision) { h.updateValue(n, it.toFloat()) } } }, h::updateFlag, capabilities = capabilities)
+            val values by viewModel.temperatureControl.values.collectAsStateWithLifecycle()
+            TemperatureScreen(values, { number ->
+                values?.let { current ->
+                    if (number.integer) {
+                        intEdit(number.titleRes, number.value(current).roundToInt(), number.step.toInt(), number.max.toInt(), number.min.toInt()) {
+                            viewModel.editTemperatureInt(number, it)
+                        }
+                    } else {
+                        floatEdit(number.titleRes, number.value(current), number.step, number.max, number.min, number.precision) {
+                            viewModel.editTemperatureFloat(number, it.toFloat())
+                        }
+                    }
+                }
+            }, viewModel::setTemperatureFlag, capabilities = capabilities)
         }
         R.string.params_tab_fuel_cutoff_title -> {
             val h = viewModel.carburStateHolder
