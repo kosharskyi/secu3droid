@@ -39,7 +39,7 @@ import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.stringArrayResource
 import androidx.compose.ui.res.stringResource
 import org.secu3.android.R
-import org.secu3.android.models.packets.out.params.LtftParamPacket
+import org.secu3.android.domain.parameters.LtftValues
 import org.secu3.android.ui.parameters.compose.ParameterLoadingIndicator
 import org.secu3.android.ui.parameters.compose.ParameterValueRow
 import org.secu3.android.ui.parameters.compose.ParameterPage
@@ -70,80 +70,45 @@ enum class LtftNumber(
     LOWER_LOAD(R.string.ltft_par_lower_load_threshold_title, R.string.units_pressure_kpa, 2, 0f, 500f, 1f),
     UPPER_LOAD(R.string.ltft_par_upper_load_threshold_title, R.string.units_pressure_kpa, 2, 0f, 500f, 1f),
     NEGATIVE_INSENSITIVITY(R.string.ltft_par_negative_insensitivity_threshold_title, R.string.units_percents, 1, 0f, 10f, .1f),
-    POSITIVE_INSENSITIVITY(R.string.ltft_par_positive_insensitivity_threshold_title, R.string.units_percents, 1, 0f, 10f, .1f),
-}
+    POSITIVE_INSENSITIVITY(R.string.ltft_par_positive_insensitivity_threshold_title, R.string.units_percents, 1, 0f, 10f, .1f);
 
-data class LtftValues(val numbers: Map<LtftNumber, Float>, val mode: Int) {
-    fun value(number: LtftNumber) = numbers.getValue(number)
-    fun withValue(number: LtftNumber, value: Float) = copy(numbers = numbers + (number to value))
-
-    companion object {
-        fun from(packet: LtftParamPacket) = LtftValues(
-            numbers = mapOf(
-                LtftNumber.LOWER_CLT to packet.learnClt,
-                LtftNumber.UPPER_CLT to packet.learnCltUp,
-                LtftNumber.UPPER_IAT to packet.learnIatUp,
-                LtftNumber.LEARNING_GRADIENT to packet.learnGrad,
-                LtftNumber.ABS_GAS_PRESSURE to packet.learnGpa,
-                LtftNumber.DIFF_GAS_PRESSURE to packet.learnGpd,
-                LtftNumber.BOTTOM_LIMIT to packet.min,
-                LtftNumber.TOP_LIMIT to packet.max,
-                LtftNumber.LOWER_RPM to packet.learnRpm0.toFloat(),
-                LtftNumber.UPPER_RPM to packet.learnRpm1.toFloat(),
-                LtftNumber.LOWER_LOAD to packet.learnLoad0,
-                LtftNumber.UPPER_LOAD to packet.learnLoad1,
-                LtftNumber.NEGATIVE_INSENSITIVITY to packet.deadBand0,
-                LtftNumber.POSITIVE_INSENSITIVITY to packet.deadBand1,
-            ),
-            mode = packet.mode,
-        )
+    fun value(values: LtftValues): Float = when (this) {
+        LOWER_CLT -> values.lowerClt
+        UPPER_CLT -> values.upperClt
+        UPPER_IAT -> values.upperIat
+        LEARNING_GRADIENT -> values.learningGradient
+        ABS_GAS_PRESSURE -> values.absoluteGasPressure
+        DIFF_GAS_PRESSURE -> values.differentialGasPressure
+        BOTTOM_LIMIT -> values.bottomLimit
+        TOP_LIMIT -> values.topLimit
+        LOWER_RPM -> values.lowerRpm.toFloat()
+        UPPER_RPM -> values.upperRpm.toFloat()
+        LOWER_LOAD -> values.lowerLoad
+        UPPER_LOAD -> values.upperLoad
+        NEGATIVE_INSENSITIVITY -> values.negativeInsensitivity
+        POSITIVE_INSENSITIVITY -> values.positiveInsensitivity
     }
-}
-
-fun applyLtftValue(packet: LtftParamPacket, number: LtftNumber, value: Float) {
-    when (number) {
-        LtftNumber.LOWER_CLT -> packet.learnClt = value
-        LtftNumber.UPPER_CLT -> packet.learnCltUp = value
-        LtftNumber.UPPER_IAT -> packet.learnIatUp = value
-        LtftNumber.LEARNING_GRADIENT -> packet.learnGrad = value
-        LtftNumber.ABS_GAS_PRESSURE -> packet.learnGpa = value
-        LtftNumber.DIFF_GAS_PRESSURE -> packet.learnGpd = value
-        LtftNumber.BOTTOM_LIMIT -> packet.min = value
-        LtftNumber.TOP_LIMIT -> packet.max = value
-        LtftNumber.LOWER_RPM -> packet.learnRpm0 = value.toInt()
-        LtftNumber.UPPER_RPM -> packet.learnRpm1 = value.toInt()
-        LtftNumber.LOWER_LOAD -> packet.learnLoad0 = value
-        LtftNumber.UPPER_LOAD -> packet.learnLoad1 = value
-        LtftNumber.NEGATIVE_INSENSITIVITY -> packet.deadBand0 = value
-        LtftNumber.POSITIVE_INSENSITIVITY -> packet.deadBand1 = value
-    }
-}
-
-sealed interface LtftUiState {
-    data object Loading : LtftUiState
-    data class Data(val values: LtftValues) : LtftUiState
 }
 
 @Composable
-fun LtftScreen(state: LtftUiState, onEdit: (LtftNumber) -> Unit, onMode: (Int) -> Unit) {
+fun LtftScreen(values: LtftValues?, onEdit: (LtftNumber) -> Unit, onMode: (Int) -> Unit) {
     val pageScrollState = rememberScrollState()
-    when (state) {
-        LtftUiState.Loading -> ParameterLoadingIndicator("ltft_loading")
-        is LtftUiState.Data -> {
-            val modes = stringArrayResource(R.array.ltft_mode_items)
-            ParameterPage(scrollState = pageScrollState) {
-                ParameterSection {
-                    LtftModeSelector(modes, state.values.mode, onMode)
-                    LtftNumber.entries.forEach { number ->
-                        ParameterValueRow(
-                            title = stringResource(number.titleRes),
-                            units = stringResource(number.unitRes),
-                            value = state.values.value(number),
-                            precision = number.precision,
-                            testTag = "ltft_${number.name.lowercase()}",
-                            onClick = { onEdit(number) },
-                        )
-                    }
+    if (values == null) {
+        ParameterLoadingIndicator("ltft_loading")
+    } else {
+        val modes = stringArrayResource(R.array.ltft_mode_items)
+        ParameterPage(scrollState = pageScrollState) {
+            ParameterSection {
+                LtftModeSelector(modes, values.mode, onMode)
+                LtftNumber.entries.forEach { number ->
+                    ParameterValueRow(
+                        title = stringResource(number.titleRes),
+                        units = stringResource(number.unitRes),
+                        value = number.value(values),
+                        precision = number.precision,
+                        testTag = "ltft_${number.name.lowercase()}",
+                        onClick = { onEdit(number) },
+                    )
                 }
             }
         }

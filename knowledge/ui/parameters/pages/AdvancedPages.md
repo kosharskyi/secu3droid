@@ -74,3 +74,7 @@ AE_TIME is shown only for non-pump modes and is enabled only for fuel injection 
 ## Idling rows keep positive and negative P/I meanings explicit
 
 The existing `P0/I0` resource rows are the positive-error coefficients and `P1/I1` are negative-error coefficients. Firmware and desktop wire index 0 is negative, index 1 positive; preserve this explicit semantic mapping in the route rather than changing the packet codec. IAC_ADD also becomes unavailable when the throttle-assist table is selected, and the domain rechecks that live flag for stale editor callbacks. See [IdlingControl](../../../domain/parameters/IdlingControl.md).
+
+## LTFT controls remain enabled in Off mode when firmware supports fuel injection
+
+Desktop enables the full LTFT field group from the firmware FI option, not the selected Off/Petrol/Gas mode. Keep the four mode labels UI-localized and preserve unknown incoming mode codes until a valid explicit choice.

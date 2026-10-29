@@ -33,6 +33,7 @@ import org.secu3.android.connection.UsbSessionFence
 import org.secu3.android.connection.PacketReceiver
 import org.secu3.android.models.RawPacket
 import org.secu3.android.domain.parameters.ParameterPage
+import org.secu3.android.domain.parameters.LtftValues
 import org.secu3.android.models.packets.base.OutputPacket
 import org.secu3.android.models.packets.out.params.AnglesParamPacket
 import org.secu3.android.models.packets.out.params.GasDoseParamPacket
@@ -47,6 +48,7 @@ import org.secu3.android.models.packets.out.params.CarburParamPacket
 import org.secu3.android.models.packets.out.params.IdlingParamPacket
 import org.secu3.android.models.packets.out.params.KnockParamPacket
 import org.secu3.android.models.packets.out.params.AccelerationParamPacket
+import org.secu3.android.models.packets.out.params.LtftParamPacket
 import org.secu3.android.models.packets.out.ChangeModePacket
 import org.secu3.android.utils.UserPrefs
 import org.secu3.android.ui.MainActivity
@@ -58,6 +60,7 @@ import org.secu3.android.ui.parameters.pages.compose.TemperatureNumber
 import org.secu3.android.ui.parameters.pages.compose.KnockNumber
 import org.secu3.android.ui.parameters.pages.compose.KnockSelector
 import org.secu3.android.ui.parameters.pages.compose.AccelerationNumber
+import org.secu3.android.ui.parameters.pages.compose.LtftNumber
 import org.secu3.android.ui.parameters.pages.compose.ChokeNumber
 import java.lang.reflect.Proxy
 import java.util.concurrent.CountDownLatch
@@ -260,6 +263,115 @@ class ParameterPageSessionCacheTest {
             }
             assertEquals(beforeUnsupportedEdit, usb.writes.size)
             assertEquals(committed, vm.accelerationControl.values.value)
+        } finally {
+            try {
+                transport?.close()
+            } finally {
+                try {
+                    compose.runOnIdle { vm.clearPageState() }
+                } finally {
+                    queue.onActiveScopeChanged(originalActiveScope)
+                    compose.activityRule.scenario.moveToState(Lifecycle.State.RESUMED)
+                }
+            }
+        }
+    }
+
+    @Test fun ltftCommandsRouteEveryFieldWithFiGateAndSessionAdmission() = runBlocking {
+        val vm = paramsViewModel()
+        val queueField = ParamsViewModel::class.java.getDeclaredField("uiMessageQueue").apply { isAccessible = true }
+        val queue = queueField.get(vm) as org.secu3.android.ui.messages.UiMessageQueue
+        val originalActiveScope = queue.activeScope.value
+        var transport: FakeUsbTransport? = null
+        try {
+            val usb = installFakeUsb(vm, firmwareOptions = 1 shl 28).also { transport = it }
+            activate(vm, R.string.params_tab_ltft_title)
+            usb.awaitReadRequest('O', 1)
+            usb.emit(LtftParamPacket(mode = 0, learnClt = 12.5f, learnRpm0 = 800))
+            await { vm.ltftControl.values.value != null }
+            delay(150)
+            compose.activityRule.scenario.moveToState(Lifecycle.State.STARTED)
+            compose.waitForIdle()
+            queue.onActiveScopeChanged(PARAMETERS_ROUTE)
+            queue.pending.value.forEach { queue.acknowledge(it.id) }
+            vm.isSendAllowed = false
+            val baseline = usb.writes.size
+            compose.runOnIdle {
+                assertTrue(vm.selectLtftMode(1))
+                assertTrue(vm.editLtftFloat(LtftNumber.LOWER_CLT, 12.5f))
+                assertTrue(vm.editLtftFloat(LtftNumber.UPPER_CLT, 80.25f))
+                assertTrue(vm.editLtftFloat(LtftNumber.UPPER_IAT, 100.25f))
+                assertTrue(vm.editLtftFloat(LtftNumber.LEARNING_GRADIENT, .25f))
+                assertTrue(vm.editLtftFloat(LtftNumber.ABS_GAS_PRESSURE, 100f))
+                assertTrue(vm.editLtftFloat(LtftNumber.DIFF_GAS_PRESSURE, 12f))
+                assertTrue(vm.editLtftFloat(LtftNumber.BOTTOM_LIMIT, -10f))
+                assertTrue(vm.editLtftFloat(LtftNumber.TOP_LIMIT, 15f))
+                assertTrue(vm.editLtftInt(LtftNumber.LOWER_RPM, 1234))
+                assertTrue(vm.editLtftInt(LtftNumber.UPPER_RPM, 5432))
+                assertTrue(vm.editLtftFloat(LtftNumber.LOWER_LOAD, 20f))
+                assertTrue(vm.editLtftFloat(LtftNumber.UPPER_LOAD, 300f))
+                assertTrue(vm.editLtftFloat(LtftNumber.NEGATIVE_INSENSITIVITY, 1.2f))
+                assertTrue(vm.editLtftFloat(LtftNumber.POSITIVE_INSENSITIVITY, 3.4f))
+                assertFalse(vm.editLtftInt(LtftNumber.LOWER_CLT, 5))
+                assertFalse(vm.editLtftFloat(LtftNumber.LOWER_RPM, 5f))
+                assertFalse(vm.selectLtftMode(4))
+            }
+            usb.awaitWriteCount(baseline + 15)
+            val writes = usb.writes.drop(baseline)
+            assertEquals(15, writes.size)
+            // The legacy descriptor, packet offsets, signedness and fixed-point scaling stay intact.
+            assertEquals('O', writes[0][1].toInt().toChar())
+            assertEquals(1, writes[0][2].toInt() and 0xff)
+            assertEquals(0, writes[1][3].toInt() and 0xff) // CLT 12.5 C -> 0x0032 quarter-degrees.
+            assertEquals(50, writes[1][4].toInt() and 0xff)
+            assertEquals(1, writes[2][5].toInt() and 0xff) // Upper CLT 80.25 C -> 0x0141.
+            assertEquals(0x41, writes[2][6].toInt() and 0xff)
+            assertEquals(0x01, writes[3][7].toInt() and 0xff) // Upper IAT 100.25 C -> 0x0191.
+            assertEquals(0x91, writes[3][8].toInt() and 0xff)
+            assertEquals(64, writes[4][9].toInt() and 0xff) // Learning gradient .25 -> 64/256.
+            assertEquals(0x19, writes[5][10].toInt() and 0xff) // Absolute pressure 100 -> 0x1900 / 64.
+            assertEquals(0, writes[5][11].toInt() and 0xff)
+            assertEquals(0x03, writes[6][12].toInt() and 0xff) // Differential pressure 12 -> 0x0300 / 64.
+            assertEquals(0, writes[6][13].toInt() and 0xff)
+            assertEquals(0xCD, writes[7][14].toInt() and 0xff) // Signed bottom limit -10%.
+            assertEquals(0x4D, writes[8][15].toInt() and 0xff) // Top limit 15%.
+            assertEquals(0x04, writes[9][16].toInt() and 0xff) // Lower RPM 1234 -> 0x04D2.
+            assertEquals(0xD2, writes[9][17].toInt() and 0xff)
+            assertEquals(0x15, writes[10][18].toInt() and 0xff) // Upper RPM 5432 -> 0x1538.
+            assertEquals(0x38, writes[10][19].toInt() and 0xff)
+            assertEquals(0x05, writes[11][20].toInt() and 0xff) // Lower load 20 -> 1280/64.
+            assertEquals(0, writes[11][21].toInt() and 0xff)
+            assertEquals(0x4B, writes[12][22].toInt() and 0xff) // Upper load 300 -> 19200/64.
+            assertEquals(0, writes[12][23].toInt() and 0xff)
+            assertEquals(6, writes[13][24].toInt() and 0xff) // Negative deadband 1.2% -> 6/512.
+            assertEquals(17, writes[14][25].toInt() and 0xff) // Positive deadband 3.4% -> 17/512.
+            assertEquals(1, vm.ltftControl.values.value?.mode)
+            assertEquals(LtftValues(1, 12.5f, 80.25f, 100.25f, .25f, 100f, 12f,
+                -10f, 15f, 1234, 5432, 20f, 300f, 1.2f, 3.4f), vm.ltftControl.values.value)
+            assertEquals(false, vm.isSendAllowed)
+            assertTrue(queue.pending.value.any { it.textRes == R.string.packet_sent })
+            queue.pending.value.forEach { queue.acknowledge(it.id) }
+
+            usb.emitFirmware(options = 0)
+            await { vm.capabilities.value.known && !vm.capabilities.value.fuelInjection }
+            val unsupportedBaseline = usb.writes.size
+            compose.runOnIdle {
+                assertFalse(vm.selectLtftMode(0))
+                assertFalse(vm.editLtftFloat(LtftNumber.LOWER_CLT, 20f))
+            }
+            delay(100)
+            assertEquals(unsupportedBaseline, usb.writes.size)
+            assertFalse(queue.pending.value.any { it.textRes == R.string.packet_sent })
+
+            usb.emitFirmware(options = 1 shl 28)
+            await { vm.capabilities.value.fuelInjection }
+            compose.runOnIdle { vm.pausePageSession() }
+            val pausedBaseline = usb.writes.size
+            compose.runOnIdle { assertFalse(vm.editLtftFloat(LtftNumber.LOWER_CLT, 20f)) }
+            delay(100)
+            assertEquals(pausedBaseline, usb.writes.size)
+            assertEquals(12.5f, vm.ltftControl.values.value?.lowerClt)
+            assertFalse(queue.pending.value.any { it.textRes == R.string.packet_sent })
         } finally {
             try {
                 transport?.close()

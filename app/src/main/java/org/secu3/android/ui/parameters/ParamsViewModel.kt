@@ -60,6 +60,7 @@ import org.secu3.android.domain.parameters.CarburControl
 import org.secu3.android.domain.parameters.IdlingControl
 import org.secu3.android.domain.parameters.KnockControl
 import org.secu3.android.domain.parameters.AccelerationControl
+import org.secu3.android.domain.parameters.LtftControl
 import org.secu3.android.domain.parameters.SecurityCredentialsResult
 import org.secu3.android.models.packets.base.OutputPacket
 import org.secu3.android.models.packets.out.params.AccelerationParamPacket
@@ -84,7 +85,7 @@ import org.secu3.android.ui.parameters.pages.compose.AnglesNumber
 import org.secu3.android.ui.parameters.pages.compose.CarburNumber
 import org.secu3.android.ui.parameters.pages.compose.AdcCorrectionsStateHolder
 import org.secu3.android.ui.parameters.pages.compose.LambdaControlStateHolder
-import org.secu3.android.ui.parameters.pages.compose.LtftStateHolder
+import org.secu3.android.ui.parameters.pages.compose.LtftNumber
 import org.secu3.android.ui.parameters.pages.compose.IdlingNumber
 import org.secu3.android.ui.parameters.pages.compose.IdlingFlag
 import org.secu3.android.ui.parameters.pages.compose.KnockNumber
@@ -125,6 +126,7 @@ class ParamsViewModel @Inject constructor(
     internal val idlingControl: IdlingControl,
     internal val knockControl: KnockControl,
     internal val accelerationControl: AccelerationControl,
+    internal val ltftControl: LtftControl,
     private val uiMessageQueue: UiMessageQueue,
     private val parameterPageCatalog: ParameterPageCatalog,
 ) : ViewModel() {
@@ -403,8 +405,38 @@ class ParamsViewModel @Inject constructor(
         LambdaControlStateHolder(::sendPacket, { isSendAllowed = false }, { isSendAllowed = true })
     }
 
-    internal val ltftStateHolder by lazy {
-        LtftStateHolder(::sendPacket, { isSendAllowed = false }, { isSendAllowed = true })
+
+    internal fun editLtftInt(number: LtftNumber, value: Int): Boolean = reportLtftEdit(
+        when (number) {
+            LtftNumber.LOWER_RPM -> ltftControl.editLowerRpm(value)
+            LtftNumber.UPPER_RPM -> ltftControl.editUpperRpm(value)
+            else -> false
+        },
+    )
+
+    internal fun editLtftFloat(number: LtftNumber, value: Float): Boolean = reportLtftEdit(
+        when (number) {
+            LtftNumber.LOWER_CLT -> ltftControl.editLowerClt(value)
+            LtftNumber.UPPER_CLT -> ltftControl.editUpperClt(value)
+            LtftNumber.UPPER_IAT -> ltftControl.editUpperIat(value)
+            LtftNumber.LEARNING_GRADIENT -> ltftControl.editLearningGradient(value)
+            LtftNumber.ABS_GAS_PRESSURE -> ltftControl.editAbsoluteGasPressure(value)
+            LtftNumber.DIFF_GAS_PRESSURE -> ltftControl.editDifferentialGasPressure(value)
+            LtftNumber.BOTTOM_LIMIT -> ltftControl.editBottomLimit(value)
+            LtftNumber.TOP_LIMIT -> ltftControl.editTopLimit(value)
+            LtftNumber.LOWER_LOAD -> ltftControl.editLowerLoad(value)
+            LtftNumber.UPPER_LOAD -> ltftControl.editUpperLoad(value)
+            LtftNumber.NEGATIVE_INSENSITIVITY -> ltftControl.editNegativeInsensitivity(value)
+            LtftNumber.POSITIVE_INSENSITIVITY -> ltftControl.editPositiveInsensitivity(value)
+            else -> false
+        },
+    )
+
+    internal fun selectLtftMode(code: Int): Boolean = reportLtftEdit(ltftControl.selectMode(code))
+
+    private fun reportLtftEdit(admitted: Boolean): Boolean {
+        if (admitted) showUiMessage(R.string.packet_sent, UiMessageDuration.SHORT)
+        return admitted
     }
 
     internal val dbwStateHolder by lazy {
@@ -713,7 +745,7 @@ class ParamsViewModel @Inject constructor(
             ParameterPage.KNOCK -> knockControl.reset()
             ParameterPage.LAMBDA_CONTROL -> lambdaControlStateHolder.reset()
             ParameterPage.ACCELERATION -> accelerationControl.reset()
-            ParameterPage.LTFT -> ltftStateHolder.reset()
+            ParameterPage.LTFT -> ltftControl.reset()
             ParameterPage.FUNCTIONS -> functionsStateHolder.reset()
             ParameterPage.MISCELLANEOUS -> miscellaneousControl.reset()
             ParameterPage.SECURITY -> {
@@ -748,7 +780,7 @@ class ParamsViewModel @Inject constructor(
             ParameterPage.KNOCK -> knockControl.receive(packet<KnockParamPacket>(result))
             ParameterPage.LAMBDA_CONTROL -> lambdaControlStateHolder.onPacketReceived(packet<LambdaParamPacket>(result))
             ParameterPage.ACCELERATION -> accelerationControl.receive(packet<AccelerationParamPacket>(result))
-            ParameterPage.LTFT -> ltftStateHolder.receive(packet<LtftParamPacket>(result))
+            ParameterPage.LTFT -> ltftControl.receive(packet<LtftParamPacket>(result))
             ParameterPage.FUNCTIONS -> {
                 val functionParameters = (result as ParameterReadResult.Functions).parameters
                 isSendAllowed = false

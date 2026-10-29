@@ -40,6 +40,7 @@ import org.secu3.android.models.packets.out.params.CarburParamPacket
 import org.secu3.android.models.packets.out.params.IdlingParamPacket
 import org.secu3.android.models.packets.out.params.KnockParamPacket
 import org.secu3.android.models.packets.out.params.AccelerationParamPacket
+import org.secu3.android.models.packets.out.params.LtftParamPacket
 import org.secu3.android.ui.MainActivity
 import org.secu3.android.ui.compose.SecuComposeTheme
 import org.secu3.android.ui.parameters.pages.compose.StarterNumber
@@ -48,6 +49,7 @@ import org.secu3.android.ui.parameters.pages.compose.CarburNumber
 import org.secu3.android.ui.parameters.pages.compose.IdlingNumber
 import org.secu3.android.ui.parameters.pages.compose.KnockNumber
 import org.secu3.android.ui.parameters.pages.compose.AccelerationNumber
+import org.secu3.android.ui.parameters.pages.compose.LtftNumber
 import org.secu3.android.ui.parameters.dialogs.NumericEditDialog
 
 class ParameterPageEditorRoutingTest {
@@ -124,6 +126,36 @@ class ParameterPageEditorRoutingTest {
         assertFalse(vm.editIdlingFloat(IdlingNumber.RPM, 1f))
         assertEquals(.25f, vm.idlingControl.values.value?.proportionalPositive)
         assertEquals(.125f, vm.idlingControl.values.value?.proportionalNegative)
+        assertEquals(false, vm.isSendAllowed)
+    }
+
+    @Test fun ltftEditorsKeepIntAndFloatContractsAndDoNotUseLegacySendGate() {
+        val vm = paramsViewModel()
+        vm.ltftControl.reset()
+        vm.ltftControl.receive(LtftParamPacket(learnClt = 12.5f, learnRpm0 = 1234))
+        vm.isSendAllowed = false
+        renderPage(R.string.params_tab_ltft_title, vm)
+
+        compose.onNodeWithTag("ltft_lower_rpm").performScrollTo().performClick()
+        val rpm = requireNotNull(vm.parameterEditSession)
+        val intRequest = rpm.request as ParameterEditRequest.IntValue
+        assertEquals(1234, intRequest.value)
+        assertEquals(0, intRequest.min)
+        assertEquals(25000, intRequest.max)
+        assertEquals(10, intRequest.step)
+        assertFalse(vm.editLtftFloat(LtftNumber.LOWER_RPM, 900f))
+        compose.runOnIdle { vm.dismissParameterEditor(rpm.id) }
+
+        compose.onNodeWithTag("ltft_lower_clt").performScrollTo().performClick()
+        val clt = requireNotNull(vm.parameterEditSession)
+        val floatRequest = clt.request as ParameterEditRequest.FloatValue
+        assertEquals(12.5f, floatRequest.value)
+        assertEquals(0f, floatRequest.min)
+        assertEquals(270f, floatRequest.max)
+        assertEquals(.25f, floatRequest.step)
+        assertFalse(vm.editLtftInt(LtftNumber.LOWER_CLT, 20))
+        compose.runOnIdle { vm.dismissParameterEditor(clt.id) }
+        assertEquals(12.5f, vm.ltftControl.values.value?.lowerClt)
         assertEquals(false, vm.isSendAllowed)
     }
 

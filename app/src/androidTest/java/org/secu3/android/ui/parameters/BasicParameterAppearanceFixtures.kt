@@ -74,7 +74,8 @@ internal fun basicParameterAppearanceFixtures(): List<ParameterAppearanceFixture
     },
     ParameterAppearanceFixture("ltft") {
         LtftScreen(
-            LtftUiState.Data(LtftValues(LtftNumber.entries.associateWith { it.ordinal + 1f }, mode = 0)),
+            org.secu3.android.domain.parameters.LtftValues(0, 1f, 2f, 3f, .25f, 100f, 12f, -10f, 15f,
+                800, 5000, 20f, 300f, 1.2f, 3.4f),
             onEdit = {},
             onMode = {},
         )

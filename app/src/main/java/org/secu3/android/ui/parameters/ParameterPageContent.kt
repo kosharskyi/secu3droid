@@ -274,8 +274,16 @@ internal fun ParameterPageContent(
                 viewModel::toggleGasDoseTest, { if (isActiveNow()) viewModel.flushGasDoseManual() }, isActive = isActive)
         }
         R.string.params_tab_ltft_title -> {
-            val h = viewModel.ltftStateHolder
-            LtftScreen(h.uiState, { n -> (h.uiState as? LtftUiState.Data)?.values?.let { v -> if (n.integer) intEdit(n.titleRes, v.value(n).toInt(), n.step.toInt(), n.max.toInt(), n.min.toInt()) { h.edit(n, it.toFloat()) } else floatEdit(n.titleRes, v.value(n), n.step, n.max, n.min, n.precision) { h.edit(n, it.toFloat()) } } }, h::selectMode)
+            val values by viewModel.ltftControl.values.collectAsStateWithLifecycle()
+            LtftScreen(values, { number ->
+                values?.let { current ->
+                    if (number.integer) intEdit(number.titleRes, number.value(current).toInt(), number.step.toInt(), number.max.toInt(), number.min.toInt()) {
+                        viewModel.editLtftInt(number, it)
+                    } else floatEdit(number.titleRes, number.value(current), number.step, number.max, number.min, number.precision) {
+                        viewModel.editLtftFloat(number, it)
+                    }
+                }
+            }, viewModel::selectLtftMode)
         }
         R.string.params_tab_el_throttle_title -> {
             val h = viewModel.dbwStateHolder
