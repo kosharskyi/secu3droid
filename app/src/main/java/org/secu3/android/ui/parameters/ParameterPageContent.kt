@@ -279,9 +279,15 @@ internal fun ParameterPageContent(
             }, viewModel::changeFuelInjectionConfig, viewModel::changeFuelInjectionPulses, viewModel::changeFuelInjectionAngleSpec, viewModel::changeFuelInjectionFlag, capabilities)
         }
         R.string.params_tab_lambda_control_title -> {
-            val h = viewModel.lambdaControlStateHolder
+            val values by viewModel.lambdaControl.values.collectAsStateWithLifecycle()
             val sensorTypes = stringArrayResource(R.array.lambda_sensors_types).toList()
-            LambdaControlScreen(h.values, sensorTypes, capabilities, { n -> h.values?.let { v -> if (n.integer) intEdit(n.title, v.value(n).toInt(), n.step.toInt(), n.max.toInt(), n.min.toInt()) { h.updateValue(n, it.toFloat()) } else floatEdit(n.title, v.value(n), n.step, n.max, n.min, n.precision) { h.updateValue(n, it.toFloat()) } } }, h::updateFlag, { h.updateSensorType(it, sensorTypes.size) }, { i, checked -> h.updateChannel(i, checked) })
+            LambdaControlScreen(values, sensorTypes, capabilities, { number -> values?.let { current ->
+                if (number.integer) intEdit(number.title, number.value(current).toInt(), number.step.toInt(), number.max.toInt(), number.min.toInt()) {
+                    viewModel.editLambdaInt(number, it)
+                } else floatEdit(number.title, number.value(current), number.step, number.max, number.min, number.precision) {
+                    viewModel.editLambdaFloat(number, it)
+                }
+            } }, viewModel::setLambdaFlag, viewModel::selectLambdaSensorType, viewModel::setLambdaChannel)
         }
         R.string.params_tab_acceleration_title -> {
             val values by viewModel.accelerationControl.values.collectAsStateWithLifecycle()

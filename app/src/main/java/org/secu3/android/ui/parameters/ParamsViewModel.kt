@@ -66,6 +66,7 @@ import org.secu3.android.domain.parameters.FunctionsControl
 import org.secu3.android.domain.parameters.AdcCorrectionsControl
 import org.secu3.android.domain.parameters.UniversalOutputsControl
 import org.secu3.android.domain.parameters.UniversalOutputConditions
+import org.secu3.android.domain.parameters.LambdaControl
 import org.secu3.android.domain.parameters.SecurityCredentialsResult
 import org.secu3.android.models.packets.base.OutputPacket
 import org.secu3.android.models.packets.out.params.AccelerationParamPacket
@@ -89,7 +90,8 @@ import org.secu3.android.ui.parameters.pages.compose.AnglesNumber
 import org.secu3.android.ui.parameters.pages.compose.CarburNumber
 import org.secu3.android.ui.parameters.pages.compose.DbwNumber
 import org.secu3.android.ui.parameters.pages.compose.AdcNumber
-import org.secu3.android.ui.parameters.pages.compose.LambdaControlStateHolder
+import org.secu3.android.ui.parameters.pages.compose.LambdaFlag
+import org.secu3.android.ui.parameters.pages.compose.LambdaNumber
 import org.secu3.android.ui.parameters.pages.compose.LtftNumber
 import org.secu3.android.ui.parameters.pages.compose.IdlingNumber
 import org.secu3.android.ui.parameters.pages.compose.IdlingFlag
@@ -135,6 +137,7 @@ class ParamsViewModel @Inject constructor(
     internal val functionsControl: FunctionsControl,
     internal val adcCorrectionsControl: AdcCorrectionsControl,
     internal val universalOutputsControl: UniversalOutputsControl,
+    internal val lambdaControl: LambdaControl,
     internal val universalOutputConditions: UniversalOutputConditions,
     private val uiMessageQueue: UiMessageQueue,
     private val parameterPageCatalog: ParameterPageCatalog,
@@ -443,8 +446,44 @@ class ParamsViewModel @Inject constructor(
         return admitted
     }
 
-    internal val lambdaControlStateHolder by lazy {
-        LambdaControlStateHolder(::sendPacket, { isSendAllowed = false }, { isSendAllowed = true })
+    internal fun editLambdaInt(number: LambdaNumber, value: Int): Boolean = reportLambdaEdit(when (number) {
+        LambdaNumber.STROKES -> lambdaControl.editStrokesPerStep(value)
+        LambdaNumber.MS -> lambdaControl.editMsPerStep(value)
+        LambdaNumber.RPM -> lambdaControl.editRpmThreshold(value)
+        LambdaNumber.DELAY -> lambdaControl.editActivationDelay(value)
+        LambdaNumber.HEAT_COLD -> lambdaControl.editColdHeatingTime(value)
+        LambdaNumber.HEAT_HOT -> lambdaControl.editHotHeatingTime(value)
+        LambdaNumber.HEAT_TEMP -> lambdaControl.editHeatingTemperature(value)
+        LambdaNumber.AIR_FLOW -> lambdaControl.editAirFlowThreshold(value)
+        else -> false
+    })
+
+    internal fun editLambdaFloat(number: LambdaNumber, value: Float): Boolean = reportLambdaEdit(when (number) {
+        LambdaNumber.STEP_POS -> lambdaControl.editPositiveStep(value)
+        LambdaNumber.STEP_NEG -> lambdaControl.editNegativeStep(value)
+        LambdaNumber.LIMIT_POS -> lambdaControl.editPositiveLimit(value)
+        LambdaNumber.LIMIT_NEG -> lambdaControl.editNegativeLimit(value)
+        LambdaNumber.SWITCH -> lambdaControl.editSwitchPoint(value)
+        LambdaNumber.CTS -> lambdaControl.editCoolantThreshold(value)
+        LambdaNumber.DEADBAND -> lambdaControl.editDeadband(value)
+        LambdaNumber.STOICH -> lambdaControl.editStoichiometricRatio(value)
+        LambdaNumber.HEAT_PWM -> lambdaControl.editHeatingPwmTime(value)
+        else -> false
+    })
+
+    internal fun setLambdaFlag(flag: LambdaFlag, checked: Boolean): Boolean = reportLambdaEdit(when (flag) {
+        LambdaFlag.HEATING_VOLTAGE -> lambdaControl.setHeatingVoltage(checked)
+        LambdaFlag.IDLING_CORRECTION -> lambdaControl.setIdlingCorrection(checked)
+        LambdaFlag.BEFORE_CRANKING -> lambdaControl.setBeforeCranking(checked)
+        LambdaFlag.MIX_SENSORS -> lambdaControl.setMixSensors(checked)
+    })
+
+    internal fun selectLambdaSensorType(code: Int): Boolean = reportLambdaEdit(lambdaControl.selectSensorType(code))
+    internal fun setLambdaChannel(index: Int, selected: Boolean): Boolean = reportLambdaEdit(lambdaControl.setChannelSelected(index, selected))
+
+    private fun reportLambdaEdit(admitted: Boolean): Boolean {
+        if (admitted) showUiMessage(R.string.packet_sent, UiMessageDuration.SHORT)
+        return admitted
     }
 
 
@@ -850,7 +889,7 @@ class ParamsViewModel @Inject constructor(
             ParameterPage.CKPS -> ckpsControl.reset()
             ParameterPage.ADC_ERRORS -> adcCorrectionsControl.reset()
             ParameterPage.KNOCK -> knockControl.reset()
-            ParameterPage.LAMBDA_CONTROL -> lambdaControlStateHolder.reset()
+            ParameterPage.LAMBDA_CONTROL -> lambdaControl.reset()
             ParameterPage.ACCELERATION -> accelerationControl.reset()
             ParameterPage.LTFT -> ltftControl.reset()
             ParameterPage.FUNCTIONS -> functionsControl.reset()
@@ -885,7 +924,7 @@ class ParamsViewModel @Inject constructor(
             ParameterPage.CKPS -> ckpsControl.receive(packet<CkpsParamPacket>(result))
             ParameterPage.ADC_ERRORS -> adcCorrectionsControl.receive(packet<AdcCorrectionsParamPacket>(result))
             ParameterPage.KNOCK -> knockControl.receive(packet<KnockParamPacket>(result))
-            ParameterPage.LAMBDA_CONTROL -> lambdaControlStateHolder.onPacketReceived(packet<LambdaParamPacket>(result))
+            ParameterPage.LAMBDA_CONTROL -> lambdaControl.receive(packet<LambdaParamPacket>(result))
             ParameterPage.ACCELERATION -> accelerationControl.receive(packet<AccelerationParamPacket>(result))
             ParameterPage.LTFT -> ltftControl.receive(packet<LtftParamPacket>(result))
             ParameterPage.FUNCTIONS -> {

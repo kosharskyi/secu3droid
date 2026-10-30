@@ -33,10 +33,10 @@ import org.secu3.android.ui.parameters.pages.compose.FunctionsScreen
 import org.secu3.android.ui.parameters.pages.compose.GasDoseScreen
 import org.secu3.android.domain.parameters.GasDoseValues
 import org.secu3.android.domain.parameters.ParameterCapabilities
+import org.secu3.android.domain.parameters.LambdaValues
 import org.secu3.android.ui.parameters.pages.compose.LambdaControlScreen
 import org.secu3.android.ui.parameters.pages.compose.LambdaFlag
 import org.secu3.android.ui.parameters.pages.compose.LambdaNumber
-import org.secu3.android.ui.parameters.pages.compose.LambdaValues
 
 internal fun advancedParameterAppearanceFixtures(): List<ParameterAppearanceFixture> {
     val functionsPacket = FunSetParamPacket()
@@ -48,10 +48,13 @@ internal fun advancedParameterAppearanceFixtures(): List<ParameterAppearanceFixt
     val functions = FunctionsValues.from(functionsPacket, functionNames)
     val ckps = CkpsValues(60, 2, 5, 12f, 40f, 2.5f, false, true, true, false, false, 24, 4, (11..55).toList())
     val lambda = LambdaValues(
-        numbers = LambdaNumber.entries.associateWith { number -> if (number.integer) 4f else 1.25f },
-        flags = LambdaFlag.entries.associateWith { it == LambdaFlag.HEATING_VOLTAGE },
-        sensorType = 0,
-        channels = listOf(true, true, false, false, true, false, false, false),
+        strokesPerStep = 4, msPerStep = 40, positiveStep = 1.25f, negativeStep = 1.25f,
+        positiveLimit = 1.25f, negativeLimit = 1.25f, switchPoint = 1.25f, coolantThreshold = 1.25f,
+        rpmThreshold = 4, activationDelay = 4, deadband = 1.25f, sensorTypeCode = 0,
+        stoichiometricRatio = 1.25f, coldHeatingTime = 4, hotHeatingTime = 4,
+        heatingTemperature = 4, heatingPwmTime = 1.25f, airFlowThreshold = 4f,
+        heatingVoltage = true, idlingCorrection = false, beforeCranking = false, mixSensors = false,
+        selectedChannels = listOf(true, true, false, false, true, false, false, false),
     )
     val bank0 = FuelBankValues(240f, 1, 2, 360f, 10f, false, 0, 0.8f, 8f, listOf(0, 1, 2), listOf(1, 2, 3))
     val bank1 = FuelBankValues(240f, 2, 2, 360f, 10f, true, 1, 0.8f, 8f, listOf(0, 1, 2), listOf(1, 2, 3))

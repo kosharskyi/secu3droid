@@ -61,6 +61,7 @@ import org.secu3.android.models.packets.out.params.DbwParamPacket
 import org.secu3.android.models.packets.out.params.FunSetParamPacket
 import org.secu3.android.models.packets.out.params.AdcCorrectionsParamPacket
 import org.secu3.android.models.packets.out.params.UniOutParamPacket
+import org.secu3.android.models.packets.out.params.LambdaParamPacket
 import org.secu3.android.ui.parameters.pages.compose.AdcNumber
 import org.secu3.android.models.packets.out.ChangeModePacket
 import org.secu3.android.utils.UserPrefs
@@ -78,6 +79,8 @@ import org.secu3.android.ui.parameters.pages.compose.LtftNumber
 import org.secu3.android.ui.parameters.pages.compose.DbwNumber
 import org.secu3.android.ui.parameters.pages.compose.FunctionsNumber
 import org.secu3.android.ui.parameters.pages.compose.FunctionsChoices
+import org.secu3.android.ui.parameters.pages.compose.LambdaFlag
+import org.secu3.android.ui.parameters.pages.compose.LambdaNumber
 import org.secu3.android.ui.parameters.pages.compose.ChokeNumber
 import java.lang.reflect.Proxy
 import java.util.concurrent.CountDownLatch
@@ -1350,6 +1353,23 @@ class ParameterPageSessionCacheTest {
             .toByteArray()
     }
 
+    private fun assertDecodedLambdaWrite(frame: ByteArray, expectedPayload: IntArray) {
+        assertEquals('!'.code, frame.first().toInt() and 0xff)
+        assertEquals('-'.code, frame[1].toInt() and 0xff)
+        assertEquals(0x0D, frame.last().toInt() and 0xff)
+        val decoded = ArrayList<Int>(frame.size)
+        var index = 2
+        while (index < frame.lastIndex) {
+            val value = frame[index++].toInt() and 0xff
+            if (value == 0x0A && index < frame.lastIndex) {
+                val escaped = frame[index++].toInt() and 0xff
+                decoded += when (escaped) { 0x81 -> 0x21; 0x83 -> 0x0D; 0x84 -> 0x0A; else -> escaped }
+            } else decoded += value
+        }
+        val checksum = PacketReceiver.calculateChecksum(expectedPayload)
+        assertArrayEquals(expectedPayload + checksum[1] + checksum[0], decoded.toIntArray())
+    }
+
     @Test fun pageWaitingBehindAnotherTabUsesFreshRevisionAfterWrite() = runBlocking {
         val vm = paramsViewModel()
         val transport = installFakeUsb(vm)
@@ -1501,6 +1521,117 @@ class ParameterPageSessionCacheTest {
                 try {
                     compose.runOnIdle { vm.clearPageState() }
                 } finally {
+                    queue.onActiveScopeChanged(originalActiveScope)
+                    compose.activityRule.scenario.moveToState(Lifecycle.State.RESUMED)
+                }
+            }
+        }
+    }
+
+    @Test fun lambdaCommandsUseFrozenWirePayloadAndLiveSessionAdmission() = runBlocking {
+        val vm = paramsViewModel()
+        val queueField = ParamsViewModel::class.java.getDeclaredField("uiMessageQueue").apply { isAccessible = true }
+        val queue = queueField.get(vm) as org.secu3.android.ui.messages.UiMessageQueue
+        val originalActiveScope = queue.activeScope.value
+        var transport: FakeUsbTransport? = null
+        try {
+            val usb = installFakeUsb(vm, firmwareOptions = 1 shl 28).also { transport = it }
+            activate(vm, R.string.params_tab_lambda_control_title)
+            usb.awaitReadRequest('-', 1)
+            val incoming = LambdaParamPacket(strPerStp = 0, stepSizeP = 6.25f, stepSizeM = 12.5f,
+                corrLimitP = 25f, corrLimitM = 50f, swtPoint = .5f, tempThrd = -12.5f, rpmThrd = 1500,
+                activDelay = 42, deadBand = .125f, senstype = 1, msPerStp = 120, flags = 0xA0,
+                gdStoichval = 16f, heatingTime0 = 12, heatingTime1 = 34, temperThrd = 75,
+                heatingAct = .25f, aflowThrd = 320000f, lambdaSelectedChanel = 0xA5)
+            usb.emit(incoming, intArrayOf(0x71, 0x72))
+            await { vm.lambdaControl.values.value != null }
+            compose.activityRule.scenario.moveToState(Lifecycle.State.STARTED)
+            compose.waitForIdle()
+            queue.onActiveScopeChanged(PARAMETERS_ROUTE)
+            queue.pending.value.forEach { queue.acknowledge(it.id) }
+            usb.suppressAttachmentRescan()
+            vm.isSendAllowed = false
+
+            val expected = intArrayOf(0,32,64,0,128,1,0,0,200,255,206,5,220,42,0,50,1,12,0xA0,8,0,12,34,75,25,39,16,0xA5)
+            var baseline = usb.writes.size
+            suspend fun verify(expectedSize: Int = baseline + 1) {
+                usb.awaitWriteCount(expectedSize)
+                assertDecodedLambdaWrite(usb.writes[expectedSize - 1], expected + intArrayOf(0x71, 0x72))
+                assertEquals(expectedSize, usb.writes.size)
+                assertTrue(queue.pending.value.any { it.textRes == R.string.packet_sent })
+                queue.pending.value.forEach { queue.acknowledge(it.id) }
+                baseline = expectedSize
+            }
+            suspend fun command(run: () -> Boolean, update: () -> Unit) {
+                assertTrue(compose.runOnIdle { run() })
+                update()
+                verify()
+            }
+
+            command({ vm.editLambdaInt(LambdaNumber.MS, 130) }, { expected[17] = 13 })
+            command({ vm.editLambdaInt(LambdaNumber.STROKES, 5) }, { expected[0] = 5 })
+            val afterStrokes = vm.lambdaControl.values.value
+            assertFalse(compose.runOnIdle { vm.editLambdaInt(LambdaNumber.MS, 140) })
+            assertEquals(afterStrokes, vm.lambdaControl.values.value)
+            assertEquals(baseline, usb.writes.size)
+            assertFalse(queue.pending.value.any { it.textRes == R.string.packet_sent })
+            command({ vm.editLambdaFloat(LambdaNumber.STEP_POS, 6.5f) }, { expected[1] = 33 })
+            command({ vm.editLambdaFloat(LambdaNumber.STEP_NEG, 13f) }, { expected[2] = 67 })
+            command({ vm.editLambdaFloat(LambdaNumber.LIMIT_POS, 26f) }, { expected[3] = 0; expected[4] = 133 })
+            command({ vm.editLambdaFloat(LambdaNumber.LIMIT_NEG, 51f) }, { expected[5] = 1; expected[6] = 5 })
+            command({ vm.editLambdaFloat(LambdaNumber.SWITCH, .75f) }, { expected[7] = 1; expected[8] = 44 })
+            command({ vm.editLambdaFloat(LambdaNumber.CTS, -18.25f) }, { expected[9] = 255; expected[10] = 183 })
+            command({ vm.editLambdaInt(LambdaNumber.RPM, 2500) }, { expected[11] = 9; expected[12] = 196 })
+            command({ vm.editLambdaInt(LambdaNumber.DELAY, 43) }, { expected[13] = 43 })
+            command({ vm.editLambdaFloat(LambdaNumber.DEADBAND, .25f) }, { expected[14] = 0; expected[15] = 100 })
+            command({ vm.editLambdaFloat(LambdaNumber.STOICH, 17.2f) }, { expected[19] = 8; expected[20] = 154 })
+            command({ vm.editLambdaInt(LambdaNumber.HEAT_COLD, 13) }, { expected[21] = 13 })
+            command({ vm.editLambdaInt(LambdaNumber.HEAT_HOT, 35) }, { expected[22] = 35 })
+            command({ vm.editLambdaInt(LambdaNumber.HEAT_TEMP, 76) }, { expected[23] = 76 })
+            command({ vm.editLambdaFloat(LambdaNumber.HEAT_PWM, .26f) }, { expected[24] = 26 })
+            command({ vm.editLambdaInt(LambdaNumber.AIR_FLOW, 330000) }, { expected[25] = 40; expected[26] = 73 })
+
+            command({ vm.setLambdaFlag(LambdaFlag.HEATING_VOLTAGE, true) }, { expected[18] = expected[18] or 1 })
+            command({ vm.setLambdaFlag(LambdaFlag.IDLING_CORRECTION, true) }, { expected[18] = expected[18] or 2 })
+            command({ vm.setLambdaFlag(LambdaFlag.BEFORE_CRANKING, true) }, { expected[18] = expected[18] or 4 })
+            command({ vm.setLambdaFlag(LambdaFlag.MIX_SENSORS, true) }, { expected[18] = expected[18] or 8 })
+            command({ vm.selectLambdaSensorType(0) }, { expected[16] = 0 })
+            command({ vm.selectLambdaSensorType(1) }, { expected[16] = 1 })
+            for (index in 0..7) {
+                val before = expected[27]
+                val selected = before and (1 shl index) == 0
+                command({ vm.setLambdaChannel(index, selected) }, {
+                    expected[27] = if (selected) expected[27] or (1 shl index) else expected[27] and (1 shl index).inv()
+                })
+            }
+            assertEquals(330000f, vm.lambdaControl.values.value?.airFlowThreshold)
+            assertTrue(queue.pending.value.none { it.textRes == R.string.packet_sent })
+
+            val stable = vm.lambdaControl.values.value
+            usb.emitFirmware(options = 0)
+            await { vm.capabilities.value.known && !vm.capabilities.value.lambdaBaseEditing }
+            assertFalse(compose.runOnIdle { vm.setLambdaFlag(LambdaFlag.MIX_SENSORS, false) })
+            assertFalse(compose.runOnIdle { vm.editLambdaFloat(LambdaNumber.STEP_POS, 10f) })
+            assertFalse(compose.runOnIdle { vm.setLambdaChannel(0, false) })
+            assertEquals(baseline, usb.writes.size)
+            assertEquals(stable, vm.lambdaControl.values.value)
+            assertFalse(queue.pending.value.any { it.textRes == R.string.packet_sent })
+
+            usb.emitFirmware(options = 1 shl 28)
+            await { vm.capabilities.value.known && vm.capabilities.value.lambdaBaseEditing }
+            compose.runOnIdle { vm.pausePageSession() }
+            val pausedState = vm.lambdaControl.values.value
+            val pausedWrites = usb.writes.size
+            assertFalse(compose.runOnIdle { vm.setLambdaFlag(LambdaFlag.HEATING_VOLTAGE, false) })
+            assertEquals(pausedWrites, usb.writes.size)
+            assertEquals(pausedState, vm.lambdaControl.values.value)
+            assertFalse(queue.pending.value.any { it.textRes == R.string.packet_sent })
+            assertFalse(vm.isSendAllowed)
+        } finally {
+            try {
+                transport?.close()
+            } finally {
+                try { compose.runOnIdle { vm.clearPageState() } } finally {
                     queue.onActiveScopeChanged(originalActiveScope)
                     compose.activityRule.scenario.moveToState(Lifecycle.State.RESUMED)
                 }
@@ -2049,8 +2180,8 @@ class ParameterPageSessionCacheTest {
             }
         }
 
-        suspend fun emit(packet: OutputPacket) {
-            val input = intArrayOf('@'.code) + packet.pack() + intArrayOf(0, 0)
+        suspend fun emit(packet: OutputPacket, tail: IntArray = intArrayOf()) {
+            val input = intArrayOf('@'.code) + packet.pack() + tail + intArrayOf(0, 0)
             attemptPackets.emit(UsbAttemptPacket(1L, RawPacket(input)))
         }
 

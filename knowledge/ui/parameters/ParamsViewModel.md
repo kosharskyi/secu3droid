@@ -48,3 +48,5 @@ Derive a single `ParameterCapabilities` state from `Secu3ConnectionManager.firmw
 `AdcCorrectionsControl` owns the received packet, named ADC state, finite range validation, firmware gates, raw-fallback rollback, and immutable parameter writes. The ViewModel maps `AdcNumber` UI fields to named edit methods and reports packet-sent after session admission; ADC commands bypass the legacy `isSendAllowed` flag.
 
 `UniversalOutputsControl` owns all six outputs, the paired function, condition defaults and range checks, raw rollback, and immutable session writes. The ViewModel maps each UI action to a named control method and shows the sent message only after session admission; these writes bypass the legacy `isSendAllowed` flag.
+
+`LambdaControl` owns the received Lambda packet, typed numeric edits, raw flag/channel preservation, sensor protocol codes, and live firmware/session admission. The ViewModel maps the screen's numeric and flag enums to named control methods; sent feedback follows successful `ParameterSession` admission. The Lambda path bypasses the legacy `isSendAllowed` gate.

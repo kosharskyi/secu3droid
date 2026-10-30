@@ -18,3 +18,7 @@ Lower load is editable only when load-grid mode is off. Upper load also stays di
 ## ADC channel availability keeps ADD_I4 independent
 
 ADC channels 0–5 are always available, channel 7 (ADD_I4) follows TPIC8101, and channels 6 plus 8–11 follow non-SECU3T DBW capability. This preserves the desktop case where a SECU3T with TPIC8101 can edit ADD_I4 while the other additional inputs remain disabled.
+
+## Lambda base controls allow unknown firmware but gate known unsupported ECUs
+
+Base Lambda numerics, flags, and sensor selection are previewable while firmware discovery is incomplete; a known ECU without Lambda support disables them. Lambda channel selection remains restricted to known FI, GD, or CARB_AFR, and STOICH remains restricted to known FI/GD. MS additionally requires the current strokes-per-step value to be zero, and command admission rechecks that value and current firmware.

@@ -40,8 +40,12 @@ class ParameterCapabilities(firmware: FirmwareInfoPacket? = null) {
     val floodClearThreshold get() = fuelInjection || gasDose || choke
     val nonSecu3TFuelInjection get() = fuelInjection && dbw
     val lambdaControl get() = known && (fuelInjection || gasDose || carbAfr)
+    /** Base Lambda fields remain editable during firmware discovery, but are gated on known unsupported ECUs. */
+    val lambdaBaseEditing get() = !known || lambdaControl
     val lambdaChannelSelection get() = lambdaControl
     val lambdaStoich get() = known && fuelOrGasDose
+
+    fun lambdaMsEditing(strokesPerStep: Int): Boolean = lambdaBaseEditing && strokesPerStep == 0
 
     fun functionsLowerLoadEnabled(useLoadGrid: Boolean): Boolean = !useLoadGrid
 

@@ -58,6 +58,7 @@ import org.secu3.android.ui.parameters.pages.compose.LtftNumber
 import org.secu3.android.ui.parameters.pages.compose.DbwNumber
 import org.secu3.android.ui.parameters.pages.compose.FunctionsNumber
 import org.secu3.android.ui.parameters.pages.compose.AdcNumber
+import org.secu3.android.ui.parameters.pages.compose.LambdaNumber
 import org.secu3.android.ui.parameters.dialogs.NumericEditDialog
 
 class ParameterPageEditorRoutingTest {
@@ -431,18 +432,58 @@ class ParameterPageEditorRoutingTest {
 
     @Test fun lambdaPageContentPassesCarbAfrCapabilityToChannelsAndStoich() {
         val vm = paramsViewModel()
-        val holder = vm.lambdaControlStateHolder
-        holder.reset()
+        val control = vm.lambdaControl
+        control.reset()
         val packet = LambdaParamPacket()
-        holder.onPacketReceived(packet)
+        control.receive(packet)
         val capabilities = ParameterCapabilities(FirmwareInfoPacket(options = 1 shl 30))
         renderPage(R.string.params_tab_lambda_control_title, vm, capabilities)
 
         compose.onNodeWithTag("lambda_channel_1").assertIsEnabled().performScrollTo().performClick()
         compose.onNodeWithTag("lambda_stoich_disabled").assertExists()
 
-        assertEquals(1, packet.lambdaSelectedChanel)
+        assertEquals(0, packet.lambdaSelectedChanel)
+        assertFalse(vm.setLambdaChannel(0, true))
         assertEquals(null, vm.parameterEditSession)
+    }
+
+    @Test fun lambdaEditorsKeepTheirTypesLabelsBoundsPrecisionAndCancelWithoutWriting() {
+        val vm = paramsViewModel()
+        val packet = LambdaParamPacket(strPerStp = 0, msPerStp = 120, stepSizeP = 1.25f,
+            stepSizeM = 2.5f, corrLimitP = 25f, corrLimitM = 30f, swtPoint = .5f,
+            tempThrd = -12.5f, rpmThrd = 1200, activDelay = 42, deadBand = .125f,
+            gdStoichval = 14.7f, heatingTime0 = 12, heatingTime1 = 34, temperThrd = 75,
+            heatingAct = .25f, aflowThrd = 320000f)
+        vm.lambdaControl.reset()
+        vm.lambdaControl.receive(packet)
+        renderPage(R.string.params_tab_lambda_control_title, vm, ParameterCapabilities(FirmwareInfoPacket(options = 1 shl 28)))
+
+        LambdaNumber.entries.forEach { number ->
+            compose.onNodeWithTag("lambda_${number.name.lowercase()}").performScrollTo().performClick()
+            val session = requireNotNull(vm.parameterEditSession)
+            val request = session.request
+            assertEquals(compose.activity.getString(number.title), request.title)
+            if (number.integer) {
+                val intRequest = request as ParameterEditRequest.IntValue
+                assertEquals(number.value(requireNotNull(vm.lambdaControl.values.value)).toInt(), intRequest.value)
+                assertEquals(number.min.toInt(), intRequest.min)
+                assertEquals(number.max.toInt(), intRequest.max)
+                assertEquals(number.step.toInt(), intRequest.step)
+            } else {
+                val floatRequest = request as ParameterEditRequest.FloatValue
+                assertEquals(number.value(requireNotNull(vm.lambdaControl.values.value)), floatRequest.value)
+                assertEquals(number.min, floatRequest.min)
+                assertEquals(number.max, floatRequest.max)
+                assertEquals(number.step, floatRequest.step)
+                assertEquals(number.precision, floatRequest.precision)
+            }
+            compose.runOnIdle { vm.dismissParameterEditor(session.id) }
+            assertEquals(null, vm.parameterEditSession)
+        }
+        assertFalse(vm.editLambdaFloat(LambdaNumber.STROKES, 12f))
+        assertFalse(vm.editLambdaInt(LambdaNumber.CTS, 12))
+        assertEquals(0, packet.strPerStp)
+        assertEquals(1.25f, packet.stepSizeP)
     }
 
     @Test fun securityPageContentRoutesKeyAndCredentialBuffersWhileSessionRefusesCommands() {

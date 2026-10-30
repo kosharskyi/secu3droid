@@ -26,6 +26,10 @@ Pass the collected `ParameterCapabilities` snapshot into `LambdaControlScreen`. 
 
 The packet's `15` logic-function code maps to index 4 in the displayed option list. The paired-output setter and each output setter translate the fifth choice back to `15`; other selections retain their displayed index. Unknown codes stay visible as unknown values.
 
+## Lambda base fields allow unknown firmware previews while optional controls stay strict
+
+The screen uses `lambdaBaseEditing` for base numeric fields, flags, and sensor selection, `lambdaMsEditing(strokesPerStep)` for MS, and the strict channel/STOICH predicates for those optional controls. The unknown sensor code remains visible as `Code …`; only the two protocol codes can be selected. See [ParameterCapabilities](../../../domain/parameters/ParameterCapabilities.md).
+
 ## Reserve-parameter and firmware-CRC flags are read-only during live ECU editing
 
 Keep both flags read-only in the live Security screen. Editing them belongs to offline firmware/EEPROM workflows; the live ECU parameter editor must not expose writes for these flags.

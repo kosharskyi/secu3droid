@@ -34,8 +34,8 @@ import org.junit.Assert.assertEquals
 import org.junit.Rule
 import org.junit.Test
 import org.secu3.android.domain.parameters.ParameterCapabilities
+import org.secu3.android.domain.parameters.LambdaValues
 import org.secu3.android.models.packets.input.FirmwareInfoPacket
-import org.secu3.android.models.packets.out.params.LambdaParamPacket
 import org.secu3.android.ui.compose.SecuComposeTheme
 
 class LambdaControlScreenTest {
@@ -48,9 +48,11 @@ class LambdaControlScreenTest {
         compose.setContent { SecuComposeTheme { LambdaControlScreen(state.value, sensors, ParameterCapabilities(null), { calls++ }, { _, _ -> calls++ }, { calls++ }, { _, _ -> calls++ }) } }
         compose.onNodeWithTag("lambda_loading").assertExists()
         compose.runOnIdle { assertEquals(0, calls) }
-        val values = LambdaValues.from(LambdaParamPacket(senstype = 7, strPerStp = 1))
+        val values = lambdaValues(sensor = 7, strokes = 1)
         compose.runOnIdle { state.value = values }
         compose.onNodeWithTag("lambda_sensor_type").assertTextContains("Code 7")
+        compose.onNodeWithTag("lambda_strokes").assertIsEnabled()
+        compose.onNodeWithTag("lambda_step_pos").assertIsEnabled()
         compose.onNodeWithTag("lambda_ms_disabled").assertExists()
         compose.onNodeWithTag("lambda_stoich_disabled").assertExists()
         compose.runOnIdle { assertEquals(0, calls) }
@@ -63,7 +65,7 @@ class LambdaControlScreenTest {
         val sensorsSelected = mutableListOf<Int>()
         compose.setContent {
             SecuComposeTheme {
-                LambdaControlScreen(LambdaValues.from(LambdaParamPacket(senstype = 0, strPerStp = 0)), sensors, ParameterCapabilities(FirmwareInfoPacket(options = 1 shl 28)),
+                LambdaControlScreen(lambdaValues(sensor = 0, strokes = 0), sensors, ParameterCapabilities(FirmwareInfoPacket(options = 1 shl 28)),
                     edits::add, { flag, checked -> flags += flag to checked }, sensorsSelected::add, { index, checked -> channels += index to checked })
             }
         }
@@ -87,7 +89,7 @@ class LambdaControlScreenTest {
         compose.setContent {
             SecuComposeTheme {
                 LambdaControlScreen(
-                    LambdaValues.from(LambdaParamPacket()), sensors, capabilities,
+                    lambdaValues(), sensors, capabilities,
                     { editCalls++ }, { _, _ -> }, {}, { _, _ -> channelCalls++ },
                 )
             }
@@ -108,7 +110,7 @@ class LambdaControlScreenTest {
         compose.setContent {
             SecuComposeTheme {
                 LambdaControlScreen(
-                    LambdaValues.from(LambdaParamPacket()), sensors, capabilities.value,
+                    lambdaValues(), sensors, capabilities.value,
                     { editCalls++ }, { _, _ -> }, {}, { _, _ -> channelCalls++ },
                 )
             }
@@ -126,6 +128,21 @@ class LambdaControlScreenTest {
         }
     }
 
+    @Test fun knownUnsupportedFirmwareDimsBaseControlsWhileUnknownFirmwareKeepsPreviewsEnabled() {
+        var calls = 0
+        val values = lambdaValues()
+        compose.setContent {
+            SecuComposeTheme {
+                LambdaControlScreen(values, sensors, ParameterCapabilities(FirmwareInfoPacket(options = 0)),
+                    { calls++ }, { _, _ -> calls++ }, { calls++ }, { _, _ -> calls++ })
+            }
+        }
+        compose.onNodeWithTag("lambda_strokes_disabled").assertExists()
+        compose.onNodeWithTag("lambda_step_pos_disabled").assertExists()
+        compose.onNodeWithTag("lambda_sensor_type").assertIsNotEnabled()
+        compose.runOnIdle { assertEquals(0, calls) }
+    }
+
     @Test fun gasDoseEnablesChannelsAndStoichThenFirmwareChangesDisableThem() {
         val capabilities = mutableStateOf(ParameterCapabilities(FirmwareInfoPacket(options = 1 shl 29)))
         val channelCalls = mutableListOf<Pair<Int, Boolean>>()
@@ -133,7 +150,7 @@ class LambdaControlScreenTest {
         compose.setContent {
             SecuComposeTheme {
                 LambdaControlScreen(
-                    LambdaValues.from(LambdaParamPacket()), sensors, capabilities.value,
+                    lambdaValues(), sensors, capabilities.value,
                     edits::add, { _, _ -> }, {}, { index, checked -> channelCalls += index to checked },
                 )
             }
@@ -155,4 +172,9 @@ class LambdaControlScreenTest {
         assertEquals(1, channelCalls.size)
         assertEquals(1, edits.size)
     }
+    private fun lambdaValues(sensor: Int = 0, strokes: Int = 0) = LambdaValues(
+        strokes, 120, 1f, 2f, 25f, 30f, .5f, -12.5f, 1200, 42, .125f, sensor, 14.7f,
+        12, 34, 75, .25f, 320000f, true, false, false, false,
+        List(8) { false },
+    )
 }
