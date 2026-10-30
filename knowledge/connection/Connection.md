@@ -34,6 +34,10 @@ Opening a USB serial port is not proof that an ECU is present. The manager allow
 
 `confirmedUsbAttemptId` is the only stored firmware confirmation; the fence tracks device/session identity only. Clear confirmation before starting a replacement or publishing retry progress, and set it before publishing `Connected`. The computed USB lock remains set if the endpoint closes before retry cleanup; only the connected/send gate additionally requires an open endpoint.
 
+## Sensor parsing uses the current persisted fuel-flow calibration on every stream
+
+The manager forwards the latest valid pulses-per-litre setting from its existing DataStore observer into `RawPacket.parse`. Keep that parse call common to the shared logger/display stream and request-scoped stream so both produce the same `SensorsPacket` values. Until the first settings snapshot arrives, sensor packets are skipped rather than converted with a possibly wrong default; firmware packets continue through the same collector so USB handshake is not held up. On a later storage read failure, retain the last successfully loaded calibration. The preference affects only app-side consumption conversion, not ECU writes or firmware handshake packets.
+
 ## Connection loss events must not be conflated
 
 Parameter, sensor and diagnostics consumers invalidate their local data on each non-connected event. Keep the manager's replaying event stream rather than a `StateFlow`: a fast detach/reconnect can otherwise hide the loss and leave old ECU data active. Firmware confirmation and detach also share one coordinator lock so a parsed reply cannot reopen a session after its detach has completed.

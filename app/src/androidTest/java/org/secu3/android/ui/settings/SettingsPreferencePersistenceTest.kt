@@ -30,6 +30,8 @@ import android.content.ContextWrapper
 import android.content.Intent
 import android.net.Uri
 import android.os.Bundle
+import androidx.datastore.core.DataStore
+import androidx.datastore.preferences.core.Preferences
 import androidx.compose.ui.test.assertIsOn
 import androidx.compose.ui.test.assertIsOff
 import androidx.compose.ui.test.assertIsDisplayed
@@ -37,6 +39,8 @@ import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.onNodeWithContentDescription
 import androidx.compose.ui.test.performClick
+import androidx.compose.ui.test.performTextClearance
+import androidx.compose.ui.test.performTextInput
 import androidx.compose.ui.test.performScrollTo
 import androidx.compose.ui.test.junit4.v2.createAndroidComposeRule
 import androidx.test.platform.app.InstrumentationRegistry
@@ -49,11 +53,16 @@ import org.secu3.android.R
 import org.secu3.android.ui.MainActivity
 import org.secu3.android.ui.SETTINGS_ROUTE
 import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.withTimeout
+import kotlinx.coroutines.withContext
 import org.secu3.android.ui.messages.UiMessageQueue
 import org.secu3.android.utils.FileHelper
 import org.secu3.android.utils.IsolatedUserPrefs
+import org.secu3.android.utils.UserPrefs
+import java.io.IOException
+import java.util.UUID
 
 class SettingsPreferencePersistenceTest {
     @get:Rule val compose = createAndroidComposeRule<MainActivity>()
@@ -105,6 +114,56 @@ class SettingsPreferencePersistenceTest {
         InstrumentationRegistry.getInstrumentation().sendKeyDownUpSync(android.view.KeyEvent.KEYCODE_BACK)
         compose.waitForIdle()
         compose.onNodeWithTag("settings-about-dialog").assertDoesNotExist()
+    }
+
+    @Test fun fuelFlowCalibrationSavesThroughSettingsAndSurvivesActivityRecreation() {
+        val initial = runBlocking { compose.activity.userPrefs.settings.first().fuelFlowPulsesPerLitre }
+        val saved = if (initial == 8_000) 16_000 else 8_000
+        try {
+            compose.onNodeWithContentDescription("Settings icon").performClick()
+            compose.waitForIdle()
+            compose.onNodeWithTag("settings-fuel-flow-pulses-per-litre-row").performScrollTo().performClick()
+            compose.onNodeWithTag("settings-fuel-flow-pulses-per-litre-input").performTextClearance()
+            compose.onNodeWithTag("settings-fuel-flow-pulses-per-litre-input").performTextInput(saved.toString())
+            compose.onNodeWithText(compose.activity.getString(android.R.string.ok)).performClick()
+            compose.waitUntil(5_000) {
+                runBlocking { compose.activity.userPrefs.settings.first().fuelFlowPulsesPerLitre == saved }
+            }
+            compose.activityRule.scenario.recreate()
+            compose.waitForIdle()
+            compose.onNodeWithTag("settings-fuel-flow-pulses-per-litre-row").assertIsDisplayed()
+            compose.onNodeWithText(saved.toString(), substring = true).assertIsDisplayed()
+        } finally {
+            runBlocking { compose.activity.userPrefs.setFuelFlowPulsesPerLitre(initial) }
+        }
+    }
+
+    @Test fun fuelFlowSaveFailureKeepsEditorOpenAndReportsStorageError() = runBlocking {
+        val base = InstrumentationRegistry.getInstrumentation().targetContext
+        val fixture = IsolatedUserPrefs(base, "fuel-flow-failure-${UUID.randomUUID()}")
+        val failingStore = object : DataStore<Preferences> {
+            override val data = fixture.dataStore.data
+            override suspend fun updateData(transform: suspend (t: Preferences) -> Preferences): Preferences =
+                throw IOException("write failed")
+        }
+        val messages = UiMessageQueue()
+        val store = ViewModelStore()
+        lateinit var viewModel: SettingsViewModel
+        try {
+            withContext(Dispatchers.Main) {
+                viewModel = SettingsViewModel(base, UserPrefs(base, failingStore), FileHelper(base), messages)
+                store.put("fuel-flow-failure", viewModel)
+                viewModel.showDialog(SettingsDialog.FuelFlowPulsesPerLitre)
+            }
+            withTimeout(5_000) { viewModel.state.first { it != null } }
+            withContext(Dispatchers.Main) { viewModel.saveFuelFlowPulsesPerLitre("8000") }
+            withTimeout(5_000) { messages.pending.first { list -> list.any { it.textRes == R.string.preferences_storage_error } } }
+            assertEquals(SettingsDialog.FuelFlowPulsesPerLitre, viewModel.dialog.value)
+            assertEquals(16_000, fixture.prefs.settings.first().fuelFlowPulsesPerLitre)
+        } finally {
+            withContext(Dispatchers.Main) { store.clear() }
+            fixture.close()
+        }
     }
 
     @Test fun cancelingFolderPickerKeepsSavedDirectory() {

@@ -70,6 +70,7 @@ class UserPrefs @Inject constructor(
     private val oldSensorsViewKey = booleanPreferencesKey(OLD_SENSORS_VIEW_KEY)
     private val sensorGaugeStyleKey = stringPreferencesKey(SENSOR_GAUGE_STYLE_KEY)
     private val injectionTimingModeKey = stringPreferencesKey(INJECTION_TIMING_MODE_KEY)
+    private val fuelFlowPulsesPerLitreKey = stringPreferencesKey(FUEL_FLOW_PULSES_PER_LITRE_KEY)
 
     val settings: Flow<Settings> = dataStore.data
         .map(::readSettings)
@@ -106,6 +107,10 @@ class UserPrefs @Inject constructor(
         oldSensorViewEnabled = preferences[oldSensorsViewKey] ?: false,
         sensorGaugeStyle = SensorGaugeStyle.fromPreference(preferences[sensorGaugeStyleKey]),
         injectionTimingMode = InjectionTimingMode.fromPreference(preferences[injectionTimingModeKey]),
+        fuelFlowPulsesPerLitre = preferences[fuelFlowPulsesPerLitreKey]
+            ?.toIntOrNull()
+            ?.takeIf { it in FUEL_FLOW_PULSES_PER_LITRE_MIN..FUEL_FLOW_PULSES_PER_LITRE_MAX }
+            ?: DEFAULT_FUEL_FLOW_PULSES_PER_LITRE,
     )
 
     private fun readAppearanceMode(preferences: Preferences): AppearanceMode {
@@ -140,8 +145,21 @@ class UserPrefs @Inject constructor(
     suspend fun setOldSensorViewEnabled(value: Boolean) = update { this[oldSensorsViewKey] = value }
     suspend fun setSensorGaugeStyle(value: SensorGaugeStyle) = update { this[sensorGaugeStyleKey] = value.preferenceValue }
     suspend fun setInjectionTimingMode(value: InjectionTimingMode) = update { this[injectionTimingModeKey] = value.preferenceValue }
+    suspend fun setFuelFlowPulsesPerLitre(value: Int) {
+        require(value in FUEL_FLOW_PULSES_PER_LITRE_MIN..FUEL_FLOW_PULSES_PER_LITRE_MAX)
+        update { this[fuelFlowPulsesPerLitreKey] = value.toString() }
+    }
 
     fun parsePositiveConnectionRetries(value: String): Int? = value.toIntOrNull()?.takeIf { it > 0 }
+
+    fun parseFuelFlowPulsesPerLitre(value: String): Int? = value.toIntOrNull()
+        ?.takeIf { it in FUEL_FLOW_PULSES_PER_LITRE_MIN..FUEL_FLOW_PULSES_PER_LITRE_MAX }
+
+    suspend fun saveFuelFlowPulsesPerLitre(value: String): Boolean {
+        val pulsesPerLitre = parseFuelFlowPulsesPerLitre(value) ?: return false
+        setFuelFlowPulsesPerLitre(pulsesPerLitre)
+        return true
+    }
 
     suspend fun saveConnectionRetries(value: String): Boolean {
         val retries = parsePositiveConnectionRetries(value) ?: return false
@@ -169,6 +187,7 @@ class UserPrefs @Inject constructor(
         val oldSensorViewEnabled: Boolean,
         val sensorGaugeStyle: SensorGaugeStyle,
         val injectionTimingMode: InjectionTimingMode,
+        val fuelFlowPulsesPerLitre: Int,
     ) {
         val connectionRetries: Int get() = connectionRetriesText.toIntOrNull()?.takeIf { it > 0 } ?: 5
         val logExportDestination: LogExportDestination
@@ -180,6 +199,10 @@ class UserPrefs @Inject constructor(
         const val OLD_SENSORS_VIEW_KEY = "old_sensors_view"
         const val SENSOR_GAUGE_STYLE_KEY = "sensor_gauge_style"
         const val INJECTION_TIMING_MODE_KEY = "injection_timing_mode"
+        const val FUEL_FLOW_PULSES_PER_LITRE_KEY = "fuel_flow_pulses_per_litre"
+        const val DEFAULT_FUEL_FLOW_PULSES_PER_LITRE = 16_000
+        const val FUEL_FLOW_PULSES_PER_LITRE_MIN = 1_000
+        const val FUEL_FLOW_PULSES_PER_LITRE_MAX = 32_000
 
     }
 }

@@ -29,11 +29,34 @@ class UserPrefsTest {
             assertEquals(";", initial.csvDelimiter)
             assertEquals(SensorGaugeStyle.PreciseArc, initial.sensorGaugeStyle)
             assertEquals(InjectionTimingMode.Default, initial.injectionTimingMode)
+            assertEquals(UserPrefs.DEFAULT_FUEL_FLOW_PULSES_PER_LITRE, initial.fuelFlowPulsesPerLitre)
             prefs.setSensorLoggerEnabled(true)
             prefs.setCsvDelimiter("|")
             val updated = prefs.settings.first()
             assertTrue(updated.isSensorLoggerEnabled)
             assertEquals("|", updated.csvDelimiter)
+        } finally {
+            fixture.close()
+        }
+    }
+
+    @Test
+    fun fuelFlowCalibrationDefaultsValidatesBoundsAndPersistsInSettingsSnapshot() = runBlocking {
+        val fixture = IsolatedUserPrefs(context, UUID.randomUUID().toString())
+        try {
+            val prefs = fixture.prefs
+            val initial = prefs.settings.first()
+            assertEquals(16_000, initial.fuelFlowPulsesPerLitre)
+            listOf("", "0", "999", "32001", "2147483648", "not a number").forEach { value ->
+                assertFalse("$value must be rejected", prefs.saveFuelFlowPulsesPerLitre(value))
+                assertEquals(16_000, prefs.settings.first().fuelFlowPulsesPerLitre)
+            }
+            assertTrue(prefs.saveFuelFlowPulsesPerLitre("1000"))
+            assertEquals(1_000, prefs.settings.first().fuelFlowPulsesPerLitre)
+            assertTrue(prefs.saveFuelFlowPulsesPerLitre("32000"))
+            assertEquals(32_000, prefs.settings.first().fuelFlowPulsesPerLitre)
+            prefs.setFuelFlowPulsesPerLitre(8_000)
+            assertEquals(8_000, prefs.settings.first().fuelFlowPulsesPerLitre)
         } finally {
             fixture.close()
         }

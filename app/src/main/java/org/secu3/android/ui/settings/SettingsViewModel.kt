@@ -72,6 +72,17 @@ class SettingsViewModel @Inject constructor(
 
     fun isValidRetries(value: String): Boolean = userPrefs.parsePositiveConnectionRetries(value) != null
 
+    fun saveFuelFlowPulsesPerLitre(value: String) {
+        if (userPrefs.parseFuelFlowPulsesPerLitre(value) == null) return
+        persist(
+            write = { userPrefs.saveFuelFlowPulsesPerLitre(value) },
+            onSuccess = ::dismissDialog,
+        )
+    }
+
+    fun isValidFuelFlowPulsesPerLitre(value: String): Boolean =
+        userPrefs.parseFuelFlowPulsesPerLitre(value) != null
+
     fun saveExportFolder(uri: Uri, resultFlags: Int) {
         if (fileHelper.retainExportDirectoryPermission(uri, resultFlags)) {
             persist(write = { userPrefs.setLogExportDirectoryUri(uri.toString()) })
@@ -102,6 +113,7 @@ class SettingsViewModel @Inject constructor(
             keepScreenOn = settings.isKeepScreenAliveActive,
             wakeLock = settings.isWakeLockEnabled,
             appearanceMode = settings.appearanceMode,
+            fuelFlowPulsesPerLitre = settings.fuelFlowPulsesPerLitre.toString(),
         )
     }
 

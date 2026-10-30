@@ -95,13 +95,13 @@ class SensorsPacketTest {
         assertEquals(0f, disabled.maf, .0001f)
     }
 
-    @Test fun fuelConsumptionUses16000PulsesPerLiterAndKeepsStoppedAndZeroFlowBehavior() {
-        fun parseWithSpeedAndFlow(speedRaw: Int, flowRaw: Int): SensorsPacket {
+    @Test fun fuelConsumptionUsesConfiguredPulsesPerLiterAndKeepsStoppedAndZeroFlowBehavior() {
+        fun parseWithSpeedAndFlow(speedRaw: Int, flowRaw: Int, pulsesPerLitre: Int = 16_000): SensorsPacket {
             val payload = IntArray(116)
             payload[29] = speedRaw ushr 8; payload[30] = speedRaw and 255
             payload[34] = flowRaw ushr 8; payload[35] = flowRaw and 255
             return RawPacket(intArrayOf('@'.code, 'q'.code) + payload + intArrayOf(0, 0))
-                .parse(null) as SensorsPacket
+                .parse(null, pulsesPerLitre) as SensorsPacket
         }
 
         val at100Kmh = parseWithSpeedAndFlow(speedRaw = 3200, flowRaw = 2560)
@@ -121,5 +121,19 @@ class SensorsPacketTest {
         val noFlow = parseWithSpeedAndFlow(speedRaw = 3200, flowRaw = 0)
         assertEquals(0f, noFlow.inj_ffd, .0001f)
         assertEquals(0f, noFlow.inj_ffh, .0001f)
+
+        val minCalibration = parseWithSpeedAndFlow(3200, 2560, 1_000)
+        assertEquals(36f, minCalibration.inj_ffh, .0001f)
+        assertEquals(36f, minCalibration.inj_ffd, .0001f)
+        val ecuCalibration = parseWithSpeedAndFlow(3200, 2560, 8_000)
+        assertEquals(4.5f, ecuCalibration.inj_ffh, .0001f)
+        assertEquals(4.5f, ecuCalibration.inj_ffd, .0001f)
+        val maxCalibration = parseWithSpeedAndFlow(3200, 2560, 32_000)
+        assertEquals(1.125f, maxCalibration.inj_ffh, .0001f)
+        assertEquals(1.125f, maxCalibration.inj_ffd, .0001f)
+
+        val stoppedWithCalibration = parseWithSpeedAndFlow(0, 2560, 8_000)
+        assertEquals(0f, stoppedWithCalibration.inj_ffd, .0001f)
+        assertEquals(4.5f, stoppedWithCalibration.inj_ffh, .0001f)
     }
 }

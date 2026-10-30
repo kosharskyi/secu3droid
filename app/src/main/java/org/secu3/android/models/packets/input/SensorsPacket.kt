@@ -114,6 +114,7 @@ data class SensorsPacket(
     var ots: Float = 0f,                     // Oil temperature sensor
     var estTorque: Float = 0f,               // Calculated torque
     var reqTorque: Float = 0f,               // Requested torque
+    private val fuelFlowPulsesPerLitre: Int = 16_000,
 
 ) : Secu3Packet(), InputPacket{
 
@@ -322,10 +323,10 @@ data class SensorsPacket(
 
         //calculate value of fuel flow in L/100km
         if (speed > .0f) {
-            inj_ffd = fuelFlowFrequency.div(speed).times((3600.0f * 100.0f).div(fffConst)).coerceIn(0f, 999.999f)
+            inj_ffd = fuelFlowFrequency.div(speed).times((3600.0f * 100.0f).div(fuelFlowPulsesPerLitre)).coerceIn(0f, 999.999f)
         }
 
-        inj_ffh = 3600.0f * fuelFlowFrequency / fffConst  //consumption in L/h
+        inj_ffh = 3600.0f * fuelFlowFrequency / fuelFlowPulsesPerLitre  //consumption in L/h
 
 
         data.get2Bytes().takeIf { it != 0x7FFF }?.let {
@@ -464,8 +465,6 @@ data class SensorsPacket(
     }
 
     companion object {
-
-        private const val fffConst = 16000
 
         internal const val DESCRIPTOR = 'q'
 

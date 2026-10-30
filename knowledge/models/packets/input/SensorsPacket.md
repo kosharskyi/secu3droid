@@ -10,6 +10,6 @@ The exhaust gas temperature sample is also a signed 16-bit count scaled at 0.25 
 
 Fuel tank level, oil pressure and MAF use signed 16-bit wire counts; negative raw values represent negative physical readings and must not be decoded as large positive values. Knock retard is signed too, except raw `0x7FFF`, which disables the reading and leaves it unused on a fresh packet.
 
-## App-side fuel consumption uses 16000 pulses per litre
+## App-side fuel consumption uses the persisted application calibration
 
-The instantaneous frequency conversion uses the app's fixed 16000 pulses per litre for L/h and L/100 km. This constant is separate from the ECU injector `fffConst` parameter and is not automatically linked to it.
+The instantaneous flow frequency is converted to L/h and L/100 km with the user preference for pulses per litre (default 16,000; 1,000–32,000). It is separate from the ECU injector `fffConst` parameter and must not be synchronized to that per-vehicle setting automatically. `RawPacket.parse` supplies the current setting to sensor packets for both shared and request-scoped streams, so sensor presentation and logging see the same calculation.

@@ -99,6 +99,7 @@ class Secu3ConnectionManager @Inject constructor(
     private var activeUsbAttachment: UsbAttachmentIdentity? = null
     private var appVisible = false
     private val backgroundWorkEnabled = MutableStateFlow<Boolean?>(null)
+    @Volatile private var currentFuelFlowPulsesPerLitre: Int? = null
     private val backgroundPreferenceMutex = Mutex()
     private val _firmwareInfo = MutableStateFlow<FirmwareInfoPacket?>(null)
     val firmwareInfo: StateFlow<FirmwareInfoPacket?> = _firmwareInfo.asStateFlow()
@@ -139,7 +140,9 @@ class Secu3ConnectionManager @Inject constructor(
         }
         return raw.filter { selectedTransport.value == selection && usbSessionFence.generation() == selection.generation }
             .mapNotNull { (attemptId, item) ->
-                val packet = withContext(Dispatchers.IO) { item.parse(fwInfo) } ?: return@mapNotNull null
+                val packet = withContext(Dispatchers.IO) {
+                    item.parse(fwInfo, currentFuelFlowPulsesPerLitre)
+                } ?: return@mapNotNull null
                 attemptId to packet
             }
             .onEach { (attemptId, packet) ->
@@ -584,12 +587,15 @@ class Secu3ConnectionManager @Inject constructor(
     init {
         scope.launch {
             mPrefs.observeSettings { failure ->
-                synchronized(this@Secu3ConnectionManager) { backgroundWorkEnabled.value = null }
-                Log.e(javaClass.simpleName, "Could not read background connection preference", failure)
-            }.map { it.isWakeLockEnabled }.collect { enabled ->
                 synchronized(this@Secu3ConnectionManager) {
-                    backgroundWorkEnabled.value = enabled
-                    applyBackgroundWorkPolicy(enabled)
+                    backgroundWorkEnabled.value = null
+                }
+                Log.e(javaClass.simpleName, "Could not read background connection preference", failure)
+            }.collect { settings ->
+                synchronized(this@Secu3ConnectionManager) {
+                    currentFuelFlowPulsesPerLitre = settings.fuelFlowPulsesPerLitre
+                    backgroundWorkEnabled.value = settings.isWakeLockEnabled
+                    applyBackgroundWorkPolicy(settings.isWakeLockEnabled)
                 }
             }
         }

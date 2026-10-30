@@ -8,4 +8,7 @@
     <string name="settings_group_logging">Logging</string>
     <string name="settings_group_connection">Connection</string>
     <string name="settings_group_display">Display and power</string>
+    <string name="settings_group_instruments">Instruments</string>
+    <string name="pref_fuel_flow_pulses_per_litre_title">Pulses per litre of fuel</string>
+    <string name="pref_fuel_flow_pulses_per_litre_summary">Fuel consumption calculation: %1$s pulses/L (1,000–32,000)</string>
 </resources>

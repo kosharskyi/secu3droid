@@ -56,7 +56,10 @@ import org.secu3.android.models.packets.out.params.UniOutParamPacket
 
 data class RawPacket(val data: IntArray)  {
 
-    fun parse(firmwarePacket: FirmwareInfoPacket?): InputPacket? {
+    fun parse(
+        firmwarePacket: FirmwareInfoPacket?,
+        fuelFlowPulsesPerLitre: Int? = 16_000,
+    ): InputPacket? {
         return try {
             if (data.size < 4 || data.any { it !in 0..0xFF } || data[0] != '@'.code) {
                 return null
@@ -65,7 +68,10 @@ data class RawPacket(val data: IntArray)  {
             val packetData = data.sliceArray(0 until data.size - 2)
 
             return when (packetData[1].toChar()) {
-                SensorsPacket.DESCRIPTOR -> SensorsPacket()
+                SensorsPacket.DESCRIPTOR -> {
+                    val pulsesPerLitre = fuelFlowPulsesPerLitre ?: return null
+                    SensorsPacket(fuelFlowPulsesPerLitre = pulsesPerLitre)
+                }
                 FirmwareInfoPacket.DESCRIPTOR -> FirmwareInfoPacket()
                 AdcRawDatPacket.DESCRIPTOR -> AdcRawDatPacket()
                 CheckEngineErrorsPacket.DESCRIPTOR -> CheckEngineErrorsPacket()

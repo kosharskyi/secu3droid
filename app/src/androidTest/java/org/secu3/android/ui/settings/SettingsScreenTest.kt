@@ -40,6 +40,7 @@ import androidx.compose.ui.test.assertIsSelected
 import androidx.compose.ui.test.assertCountEquals
 import androidx.compose.ui.test.junit4.v2.createComposeRule
 import androidx.compose.ui.test.onNodeWithText
+import androidx.compose.ui.test.onAllNodesWithText
 import androidx.compose.ui.test.onAllNodesWithTag
 import androidx.compose.ui.test.performScrollTo
 import androidx.compose.ui.test.performClick
@@ -214,6 +215,56 @@ class SettingsScreenTest {
         compose.onNodeWithText(context.getString(android.R.string.ok)).performClick()
         compose.runOnIdle { assertEquals("9", confirmed) }
         compose.onNodeWithText(context.getString(R.string.pref_connection_retries_summary, "9")).performScrollTo().assertIsDisplayed()
+    }
+
+    @Test fun fuelFlowCalibrationShowsPersistedValueValidatesRangeAndReportsSelection() {
+        val current = mutableStateOf(initial.copy(fuelFlowPulsesPerLitre = "16000"))
+        val dialog = mutableStateOf<SettingsDialog?>(null)
+        var saved = ""
+        compose.setContent {
+            SecuComposeTheme {
+                SettingsContent(
+                    state = current.value,
+                    dialog = dialog.value,
+                    onNavigateUp = {},
+                    onToggle = { _, _ -> },
+                    onSelectDelimiter = {},
+                    onChooseFolder = {},
+                    onEditRetries = {},
+                    onValidateRetries = { true },
+                    onSaveRetries = {},
+                    onSelectDialog = { dialog.value = it },
+                    onDismissDialog = { dialog.value = null },
+                    onShowAbout = {},
+                    onEditFuelFlowPulsesPerLitre = { dialog.value = SettingsDialog.FuelFlowPulsesPerLitre },
+                    onValidateFuelFlowPulsesPerLitre = { it.toIntOrNull() in 1_000..32_000 },
+                    onSaveFuelFlowPulsesPerLitre = {
+                        saved = it
+                        current.value = current.value.copy(fuelFlowPulsesPerLitre = it)
+                        dialog.value = null
+                    },
+                )
+            }
+        }
+
+        compose.waitForIdle()
+        compose.onNodeWithTag("settings-fuel-flow-pulses-per-litre-row").performScrollTo().assertIsDisplayed().performClick()
+        compose.onAllNodesWithText(context.getString(R.string.pref_fuel_flow_pulses_per_litre_title))
+            .assertCountEquals(2)
+        compose.onNodeWithText("16000").performTextReplacement("999")
+        compose.onNodeWithText(context.getString(android.R.string.ok)).assertIsNotEnabled()
+        compose.onNodeWithText("999").performTextReplacement("1000.5")
+        compose.onNodeWithText(context.getString(android.R.string.ok)).assertIsNotEnabled()
+        compose.onNodeWithText("1000.5").assertIsDisplayed()
+        compose.onNodeWithText("1000.5").performTextReplacement("32000")
+        compose.onNodeWithText(context.getString(android.R.string.ok)).performClick()
+        compose.runOnIdle {
+            assertEquals("32000", saved)
+            assertEquals("32000", current.value.fuelFlowPulsesPerLitre)
+            assertEquals(null, dialog.value)
+        }
+        compose.onNodeWithText(context.getString(R.string.pref_fuel_flow_pulses_per_litre_summary, "32000"))
+            .performScrollTo().assertIsDisplayed()
     }
 
     @Test fun longExportLocationWrapsAndRowActionWorksAtNarrowWidthAndLargeFontInBothThemes() {

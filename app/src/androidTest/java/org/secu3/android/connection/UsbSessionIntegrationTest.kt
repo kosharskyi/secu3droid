@@ -54,6 +54,7 @@ import org.junit.Assert.assertTrue
 import org.junit.Test
 import org.secu3.android.models.RawPacket
 import org.secu3.android.models.packets.input.FirmwareInfoPacket
+import org.secu3.android.models.packets.input.SensorsPacket
 import org.secu3.android.utils.FileHelper
 import org.secu3.android.utils.SecuLogger
 import org.secu3.android.utils.Task
@@ -232,6 +233,53 @@ class UsbSessionIntegrationTest {
             assertNull(reply)
             assertFalse(requestSent)
         } finally {
+            fixture.close()
+        }
+    }
+
+    @Test fun sensorCalibrationWaitsForSettingsWithoutBlockingFirmwareAndUpdatesBothStreams() = runBlocking {
+        val context = InstrumentationRegistry.getInstrumentation().targetContext
+        val calibrationKey = stringPreferencesKey(UserPrefs.FUEL_FLOW_PULSES_PER_LITRE_KEY)
+        val store = DelayedPreferencesDataStore(mutablePreferencesOf(calibrationKey to "8000"))
+        val fixture = Fixture(delayedStore = store)
+        try {
+            store.initialReadStarted.await()
+            fixture.selectBluetoothSessionForTest()
+            val packets = Channel<org.secu3.android.models.packets.base.InputPacket>(Channel.UNLIMITED)
+            val collector = launch(start = CoroutineStart.UNDISPATCHED) {
+                fixture.manager.receivedPacketFlow.collect(packets::send)
+            }
+            fixture.await { fixture.btPackets.subscriptionCount.value > 0 }
+
+            // A sensor frame before settings is discarded, while firmware still reaches the
+            // consumer and can complete connection setup.
+            fixture.btPackets.emit(sensorFlowFrame())
+            fixture.btPackets.emit(firmwarePacket())
+            assertTrue(withTimeout(3_000) { packets.receive() } is FirmwareInfoPacket)
+            assertTrue(packets.tryReceive().isFailure)
+
+            store.releaseInitialRead.complete(Unit)
+            fixture.await { fixture.currentFuelFlowCalibration() == 8_000 }
+            fixture.btPackets.emit(sensorFlowFrame())
+            val firstSensor = withTimeout(3_000) { packets.receive() } as SensorsPacket
+            assertEquals(4.5f, firstSensor.inj_ffh, .0001f)
+            assertEquals(4.5f, firstSensor.inj_ffd, .0001f)
+
+            fixture.prefs.setFuelFlowPulsesPerLitre(32_000)
+            fixture.await { fixture.currentFuelFlowCalibration() == 32_000 }
+            val subscribed = CompletableDeferred<Unit>()
+            val requestSensor = async(start = CoroutineStart.UNDISPATCHED) {
+                fixture.manager.receivedPacketFlow { subscribed.complete(Unit) }
+                    .filterIsInstance<SensorsPacket>().first()
+            }
+            subscribed.await()
+            fixture.btPackets.emit(sensorFlowFrame())
+            val requestResult = withTimeout(3_000) { requestSensor.await() }
+            assertEquals(1.125f, requestResult.inj_ffh, .0001f)
+            assertEquals(1.125f, requestResult.inj_ffd, .0001f)
+            collector.cancel()
+        } finally {
+            store.releaseInitialRead.complete(Unit)
             fixture.close()
         }
     }
@@ -1231,6 +1279,7 @@ class UsbSessionIntegrationTest {
             prefs.setBluetoothDevice(value, prefs.settings.first().bluetoothDeviceName)
         }
         fun backgroundPolicy() = (managerField("backgroundWorkEnabled").get(manager) as MutableStateFlow<Boolean?>).value
+        fun currentFuelFlowCalibration() = managerField("currentFuelFlowPulsesPerLitre").get(manager) as Int?
         fun selectedTransport(): String {
             val selection = managerField("selectedTransport").get(manager) as MutableStateFlow<*>
             val transport = selection.value!!::class.java.getDeclaredField("transport").apply { isAccessible = true }.get(selection.value)
@@ -1470,5 +1519,12 @@ class UsbSessionIntegrationTest {
             intArrayOf('@'.code, 'y'.code) + "SECU-3 test firmware".padEnd(52).map { it.code }.toIntArray() +
                 intArrayOf(0, 0, 0, 0, 0x10, 0, 0),
         )
+
+    private fun sensorFlowFrame() = RawPacket(
+        intArrayOf('@'.code, SensorsPacket.DESCRIPTOR.code) + IntArray(116).also {
+            it[29] = 0x0C; it[30] = 0x80 // 100 km/h
+            it[34] = 0x0A; it[35] = 0x00 // 10 Hz fuel flow
+        } + intArrayOf(0, 0),
+    )
     }
 }

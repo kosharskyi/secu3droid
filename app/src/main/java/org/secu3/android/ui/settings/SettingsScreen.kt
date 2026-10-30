@@ -32,9 +32,11 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.stringArrayResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import org.secu3.android.R
 import org.secu3.android.ui.compose.SettingsActionRow
@@ -54,6 +56,7 @@ data class SettingsUiState(
     val keepScreenOn: Boolean,
     val wakeLock: Boolean,
     val appearanceMode: AppearanceMode = AppearanceMode.System,
+    val fuelFlowPulsesPerLitre: String = "16000",
 )
 
 @Composable
@@ -73,6 +76,9 @@ internal fun SettingsContent(
     onSelectAppearance: (AppearanceMode) -> Unit = {},
     notificationAccessGranted: Boolean = false,
     onConnectionNotifications: () -> Unit = {},
+    onEditFuelFlowPulsesPerLitre: () -> Unit = {},
+    onValidateFuelFlowPulsesPerLitre: (String) -> Boolean = { false },
+    onSaveFuelFlowPulsesPerLitre: (String) -> Unit = {},
 ) {
     val appearanceLabel: (AppearanceMode) -> Int = { mode ->
         when (mode) {
@@ -160,6 +166,17 @@ internal fun SettingsContent(
                     testTag = "settings-connection-notifications",
                 )
             }
+            SettingsSection(title = stringResource(R.string.settings_group_instruments)) {
+                SettingsActionRow(
+                    title = stringResource(R.string.pref_fuel_flow_pulses_per_litre_title),
+                    summary = stringResource(
+                        R.string.pref_fuel_flow_pulses_per_litre_summary,
+                        state.fuelFlowPulsesPerLitre,
+                    ),
+                    onClick = onEditFuelFlowPulsesPerLitre,
+                    testTag = "settings-fuel-flow-pulses-per-litre",
+                )
+            }
             SettingsSection(title = stringResource(R.string.settings_group_display)) {
                 SettingsToggleRow(
                     title = stringResource(R.string.pref_keep_screen_title),
@@ -195,6 +212,16 @@ internal fun SettingsContent(
             onConfirm = onSaveRetries,
             onDismiss = onDismissDialog,
         )
+        SettingsDialog.FuelFlowPulsesPerLitre -> RetryDialog(
+            initialValue = state.fuelFlowPulsesPerLitre,
+            onValidate = onValidateFuelFlowPulsesPerLitre,
+            onConfirm = onSaveFuelFlowPulsesPerLitre,
+            onDismiss = onDismissDialog,
+            titleResource = R.string.pref_fuel_flow_pulses_per_litre_title,
+            preserveInput = true,
+            numericKeyboard = true,
+            textFieldTestTag = "settings-fuel-flow-pulses-per-litre-input",
+        )
         SettingsDialog.About -> Unit
         SettingsDialog.Appearance -> ChoiceDialog(
             title = { SettingsDialogTitle(stringResource(R.string.appearance_title)) },
@@ -213,19 +240,32 @@ internal fun SettingsContent(
 }
 
 @Composable
-private fun RetryDialog(initialValue: String, onValidate: (String) -> Boolean, onConfirm: (String) -> Unit, onDismiss: () -> Unit) {
+private fun RetryDialog(
+    initialValue: String,
+    onValidate: (String) -> Boolean,
+    onConfirm: (String) -> Unit,
+    onDismiss: () -> Unit,
+    titleResource: Int = R.string.pref_connection_retries_title,
+    preserveInput: Boolean = false,
+    numericKeyboard: Boolean = false,
+    textFieldTestTag: String? = null,
+) {
     var text by androidx.compose.runtime.remember(initialValue) { mutableStateOf(initialValue) }
     val valid = onValidate(text)
     AlertDialog(
         onDismissRequest = onDismiss,
         shape = RoundedCornerShape(24.dp),
         containerColor = MaterialTheme.colorScheme.surface,
-        title = { SettingsDialogTitle(stringResource(R.string.pref_connection_retries_title)) },
+        title = { SettingsDialogTitle(stringResource(titleResource)) },
         text = {
             OutlinedTextField(
+                modifier = textFieldTestTag?.let { Modifier.testTag(it) } ?: Modifier,
                 value = text,
-                onValueChange = { value -> text = value.filter(Char::isDigit) },
+                onValueChange = { value -> text = if (preserveInput) value else value.filter(Char::isDigit) },
                 singleLine = true,
+                keyboardOptions = androidx.compose.foundation.text.KeyboardOptions(
+                    keyboardType = if (numericKeyboard) KeyboardType.Number else KeyboardType.Text,
+                ),
                 isError = !valid,
                 shape = RoundedCornerShape(12.dp),
                 colors = OutlinedTextFieldDefaults.colors(
@@ -254,4 +294,4 @@ private fun SettingsDialogTitle(title: String) {
     )
 }
 
-enum class SettingsDialog { Delimiter, Retries, Appearance, About }
+enum class SettingsDialog { Delimiter, Retries, FuelFlowPulsesPerLitre, Appearance, About }

@@ -205,6 +205,11 @@ internal fun SettingsRoute(
                     requestNotificationPermission()
                 }
             },
+            onEditFuelFlowPulsesPerLitre = {
+                viewModel.showDialog(SettingsDialog.FuelFlowPulsesPerLitre)
+            },
+            onValidateFuelFlowPulsesPerLitre = viewModel::isValidFuelFlowPulsesPerLitre,
+            onSaveFuelFlowPulsesPerLitre = viewModel::saveFuelFlowPulsesPerLitre,
         )
         if (dialog == SettingsDialog.About) {
             Dialog(onDismissRequest = viewModel::dismissDialog) {

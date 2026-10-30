@@ -18,6 +18,10 @@ The stable `sensor_gauge_style` values are `current`, `precise_arc`, and `thin_n
 
 The stable `injection_timing_mode` values are `btdc_720`, `atdc_720`, `btdc_360`, and `atdc_360`; missing or unknown values read as the `btdc_720` default without repairing storage. This preference transforms only the old Sensors readout. ECU timing values and parameter editing remain in their original 0…720 representation.
 
+## Fuel consumption calibration is independent of the ECU injector parameter
+
+`fuel_flow_pulses_per_litre` is an application preference matching Manager's `FFFConst`: missing or invalid stored values resolve in memory to 16,000, and explicit writes accept only 1,000–32,000. It controls local sensor-flow presentation and logging; do not derive it from or write it to the ECU injector packet.
+
 ## Retired sensor column preference is intentionally ignored
 
 Older installs may still contain the `columns_count` SharedPreferences key. No code reads, rewrites, or removes it; the Sensors UI derives columns from its current content width, and leaving the stale key untouched avoids an unnecessary preference migration.

@@ -9,3 +9,7 @@ The Settings and Sensors Settings routes wait for their first preference snapsho
 ## The export picker delegates URI grants before saving the selection
 
 The route ignores canceled results and results without a URI. The ViewModel saves the directory only after `FileHelper` accepts the grant, preserving the previously saved destination if Android rejects it.
+
+## Fuel consumption calibration is a persisted instrument preference
+
+The pulse-per-litre value is stored in the same DataStore `Settings` snapshot as the other application preferences (default 16,000; inclusive range 1,000–32,000, matching Manager's `FFFConst`). Its numeric dialog stays open until the preference write succeeds; range parsing and writes belong to `UserPrefs`, while the route only forwards callbacks.

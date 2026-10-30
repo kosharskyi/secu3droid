@@ -7,4 +7,7 @@
     <string name="settings_group_logging">Журналювання</string>
     <string name="settings_group_connection">З’єднання</string>
     <string name="settings_group_display">Екран і живлення</string>
+    <string name="settings_group_instruments">Прилади</string>
+    <string name="pref_fuel_flow_pulses_per_litre_title">Імпульсів на літр пального</string>
+    <string name="pref_fuel_flow_pulses_per_litre_summary">Розрахунок витрати пального: %1$s імп./л (1 000–32 000)</string>
 </resources>
