@@ -29,13 +29,6 @@ import org.secu3.android.models.packets.input.FirmwareInfoPacket
 class ParamsPageSelectionTest {
     private val catalog = ParameterPageCatalog()
 
-    @Test fun selectionIsClampedWhenSavedIndexIsOutsidePageRange() {
-        assertEquals(0, clampPageIndex(-1, 4))
-        assertEquals(3, clampPageIndex(8, 4))
-        assertEquals(0, clampPageIndex(3, 0))
-        assertEquals(2, clampPageIndex(2, 4))
-    }
-
     @Test fun baseTabsKeepTheirOrderAndFirmwareFeaturesAppendOnlyTheirPages() {
         val base = listOf(
             R.string.params_tab_start_title,

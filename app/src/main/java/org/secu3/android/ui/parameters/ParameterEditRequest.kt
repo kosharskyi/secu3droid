@@ -24,6 +24,9 @@
  */
 package org.secu3.android.ui.parameters
 
+import java.math.BigInteger
+import java.util.Locale
+
 internal sealed interface ParameterEditRequest {
     val title: String
 
@@ -34,7 +37,16 @@ internal sealed interface ParameterEditRequest {
         val max: Int,
         val step: Int,
         val onValue: (Int) -> Unit,
-    ) : ParameterEditRequest
+    ) : ParameterEditRequest {
+        fun parseInput(input: String): Int? =
+            input.toIntOrNull()?.takeIf { it in min..max }
+
+        fun stepValue(input: String, fallback: Int, direction: Int): Int {
+            val base = input.toBigIntegerOrNull() ?: BigInteger.valueOf(fallback.toLong())
+            val delta = BigInteger.valueOf(step.toLong()).multiply(BigInteger.valueOf(direction.toLong()))
+            return base.add(delta).max(BigInteger.valueOf(min.toLong())).min(BigInteger.valueOf(max.toLong())).toInt()
+        }
+    }
 
     data class FloatValue(
         override val title: String,
@@ -44,7 +56,18 @@ internal sealed interface ParameterEditRequest {
         val step: Float,
         val precision: Int,
         val onValue: (Float) -> Unit,
-    ) : ParameterEditRequest
+    ) : ParameterEditRequest {
+        fun parseInput(input: String): Float? =
+            input.toFloatOrNull()?.takeIf { it in min..max }
+
+        fun stepValue(input: String, fallback: Float, direction: Int): Float {
+            val base = input.toFloatOrNull()?.takeUnless { it.isNaN() } ?: fallback
+            return (base + step * direction).coerceIn(min, max)
+        }
+
+        fun formatValue(input: Float = value): String =
+            String.format(Locale.US, "%.${if (precision in 0..4) precision else 4}f", input)
+    }
 }
 
 internal data class ParameterEditSession(val id: Long, val request: ParameterEditRequest)

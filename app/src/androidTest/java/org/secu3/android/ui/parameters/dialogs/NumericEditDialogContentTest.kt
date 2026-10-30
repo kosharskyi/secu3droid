@@ -44,6 +44,7 @@ import androidx.test.platform.app.InstrumentationRegistry
 import org.junit.Assert.assertEquals
 import org.junit.Rule
 import org.junit.Test
+import org.secu3.android.ui.parameters.ParameterEditRequest
 
 class NumericEditDialogContentTest {
     @get:Rule
@@ -126,13 +127,14 @@ class NumericEditDialogContentTest {
     @Test
     fun integerButtonsStepOutOfRangeHugeAndIncompleteTextAsExpected() {
         var current = 4
+        val request = ParameterEditRequest.IntValue("Integer steps", 4, 0, 10, 3) {}
         composeTestRule.setContent {
             MaterialTheme(colorScheme = lightColorScheme()) {
                 NumericEditDialogContent(
                     title = "Integer steps", initialText = "4", allowDecimal = false, allowNegative = true,
-                    validate = { parseIntegerInput(it, 0, 10) != null },
+                    validate = { request.parseInput(it) != null },
                     onStep = { value, direction ->
-                        current = stepIntegerValue(value, current, 3, 0, 10, direction)
+                        current = request.stepValue(value, current, direction)
                         current.toString()
                     }, onConfirm = { _, _ -> }, onCancel = {},
                 )
@@ -159,14 +161,15 @@ class NumericEditDialogContentTest {
     @Test
     fun floatButtonsStepOutOfRangeAndIncompleteTextAsExpected() {
         var current = 1f
+        val request = ParameterEditRequest.FloatValue("Float steps", 1f, -2f, 2f, .5f, 2) {}
         composeTestRule.setContent {
             MaterialTheme(colorScheme = lightColorScheme()) {
                 NumericEditDialogContent(
                     title = "Float steps", initialText = "1.00", allowDecimal = true, allowNegative = true,
-                    validate = { isValidFloatInput(it, -2f, 2f) },
+                    validate = { request.parseInput(it) != null },
                     onStep = { value, direction ->
-                        current = stepFloatValue(value, current, .5f, -2f, 2f, direction)
-                        "%.2f".format(java.util.Locale.US, current)
+                        current = request.stepValue(value, current, direction)
+                        request.formatValue(current)
                     }, onConfirm = { _, _ -> }, onCancel = {},
                 )
             }

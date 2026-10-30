@@ -27,31 +27,33 @@ package org.secu3.android.ui.parameters.dialogs
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNull
 import org.junit.Test
+import org.secu3.android.ui.parameters.ParameterEditRequest
 
 class ParamIntInputValidationTest {
     @Test fun signedInputRejectsPartialAndOverflowButAcceptsNegativeValuesInRange() {
-        assertNull(parseIntegerInput("-", -6, 12))
-        assertNull(parseIntegerInput("2147483648", -6, 12))
-        assertEquals(-6, parseIntegerInput("-6", -6, 12))
-        assertEquals(-2, parseIntegerInput("-2", -6, 12))
-        assertNull(parseIntegerInput("-7", -6, 12))
+        val request = ParameterEditRequest.IntValue("Value", 0, -6, 12, 3) {}
+        assertNull(request.parseInput("-"))
+        assertNull(request.parseInput("2147483648"))
+        assertEquals(-6, request.parseInput("-6"))
+        assertEquals(-2, request.parseInput("-2"))
+        assertNull(request.parseInput("-7"))
     }
 
     @Test fun steppingUsesOutOfRangeIntegersBeforeClampingInEitherDirection() {
-        val step = ::stepIntegerValue
-        assertEquals(9, step("12", 4, 3, 0, 10, -1))
-        assertEquals(10, step("12", 4, 3, 0, 10, 1))
-        assertEquals(1, step("-2", 4, 3, 0, 10, 1))
-        assertEquals(0, step("-2", 4, 3, 0, 10, -1))
+        val request = ParameterEditRequest.IntValue("Value", 4, 0, 10, 3) {}
+        assertEquals(9, request.stepValue("12", 4, -1))
+        assertEquals(10, request.stepValue("12", 4, 1))
+        assertEquals(1, request.stepValue("-2", 4, 1))
+        assertEquals(0, request.stepValue("-2", 4, -1))
     }
 
     @Test fun steppingHandlesHugeIntegersAndFallsBackOnlyForUnparseableText() {
-        val step = ::stepIntegerValue
-        assertEquals(10, step("999999999999999999999999999", 4, 3, 0, 10, 1))
-        assertEquals(10, step("999999999999999999999999999", 4, 3, 0, 10, -1))
-        assertEquals(0, step("-999999999999999999999999999", 4, 3, 0, 10, 1))
-        assertEquals(0, step("-999999999999999999999999999", 4, 3, 0, 10, -1))
-        assertEquals(7, step("-", 4, 3, 0, 10, 1))
-        assertEquals(1, step("-", 4, 3, 0, 10, -1))
+        val request = ParameterEditRequest.IntValue("Value", 4, 0, 10, 3) {}
+        assertEquals(10, request.stepValue("999999999999999999999999999", 4, 1))
+        assertEquals(10, request.stepValue("999999999999999999999999999", 4, -1))
+        assertEquals(0, request.stepValue("-999999999999999999999999999", 4, 1))
+        assertEquals(0, request.stepValue("-999999999999999999999999999", 4, -1))
+        assertEquals(7, request.stepValue("-", 4, 1))
+        assertEquals(1, request.stepValue("-", 4, -1))
     }
 }

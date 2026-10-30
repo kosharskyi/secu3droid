@@ -452,6 +452,40 @@ class ParamsScreenTest {
         compose.runOnIdle { assertTrue(settled.all { it == 1 }) }
     }
 
+    @Test fun shrinkingAndEmptyTabsKeepSelectionValid() {
+        val titles = mutableStateOf(listOf("Starter", "Angles", "Idling"))
+        val settled = mutableListOf<Int>()
+        val invalidContentPages = mutableListOf<Int>()
+        compose.setContent {
+            SecuComposeTheme {
+                ParametersScreen(
+                    titles = titles.value, connectionState = Connected,
+                    onBack = {}, onSave = {}, onPageSettled = settled::add,
+                    pageContent = { index, _, _ ->
+                        if (index !in titles.value.indices) invalidContentPages += index
+                        Box(Modifier.fillMaxSize())
+                    },
+                )
+            }
+        }
+        compose.waitUntil(5_000) { settled.lastOrNull() == 0 }
+        compose.onNodeWithText("Idling").performClick()
+        compose.waitUntil(5_000) { settled.lastOrNull() == 2 }
+
+        compose.runOnIdle { titles.value = listOf("Starter", "Angles") }
+        compose.waitUntil(5_000) { settled.lastOrNull() == 1 }
+        compose.onNodeWithText("Angles").assertIsSelected()
+
+        val settledCountBeforeEmpty = settled.size
+        compose.runOnIdle { titles.value = emptyList() }
+        compose.waitForIdle()
+        compose.onNodeWithTag("params-pager").assertIsDisplayed()
+        compose.runOnIdle {
+            assertTrue(invalidContentPages.isEmpty())
+            assertTrue(settled.drop(settledCountBeforeEmpty).all { it in titles.value.indices })
+        }
+    }
+
     @Test fun longLocalizedParameterTabScrollsIntoViewAndRemainsReadableOnNarrowScreen() {
         val titles = listOf(
             "Запуск", "КВЗ", "Регулятор ХХ", "Функції", "Температура", "Відсічення палива",

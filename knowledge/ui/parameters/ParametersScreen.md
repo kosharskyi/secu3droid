@@ -17,3 +17,7 @@ Keep the active page activation while a horizontal pager gesture is in progress,
 ## Newly offscreen parameter forms wait until pager idle
 
 Keep the currently visible pages and the full `currentPage..targetPage` range composed immediately. Defer only a page that is first entering the beyond-viewport area during motion, then latch it rendered after its connected form content has actually been composed. This moves expensive form construction off the drag path while preserving adjacent-page continuity and immediate rendering during long tab jumps; retain a full-size empty slot so pager geometry does not change.
+
+## Shrinking or empty tab lists clamp pager-derived indices locally
+
+The catalog can change when firmware capabilities change, so the pager's retained current or settled index may temporarily exceed the new list. Clamp both presentation indices at the screen boundary; for an empty list the only valid fallback is zero, and no page content may activate. Keep this policy local to `ParametersScreen` rather than exporting a generic selection helper.

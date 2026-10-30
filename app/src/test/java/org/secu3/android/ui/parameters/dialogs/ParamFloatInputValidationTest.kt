@@ -28,29 +28,46 @@ import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue
 import org.junit.Assert.assertEquals
 import org.junit.Test
+import org.secu3.android.ui.parameters.ParameterEditRequest
 
 class ParamFloatInputValidationTest {
     @Test fun acceptsNegativeValuesWithinBoundsAndRejectsPartialOrOutOfRangeInput() {
-        assertTrue(isValidFloatInput("-14.5", -15f, 60f))
-        assertTrue(isValidFloatInput("-15", -15f, 60f))
-        assertTrue(isValidFloatInput("60", -15f, 60f))
+        val request = ParameterEditRequest.FloatValue("Value", 1f, -15f, 60f, .5f, 2) {}
+        assertTrue(request.parseInput("-14.5") != null)
+        assertTrue(request.parseInput("-15") != null)
+        assertTrue(request.parseInput("60") != null)
         listOf("", "-", "-.", ".", "-15.1", "60.1").forEach {
-            assertFalse("$it must be invalid", isValidFloatInput(it, -15f, 60f))
+            assertFalse("$it must be invalid", request.parseInput(it) != null)
         }
-        assertFalse(isValidFloatInput("-1", 0f, 10f))
+        val nonNegative = ParameterEditRequest.FloatValue("Value", 1f, 0f, 10f, .5f, 2) {}
+        assertFalse(nonNegative.parseInput("-1") != null)
     }
 
     @Test fun steppingUsesOutOfRangeFloatsBeforeClampingInEitherDirection() {
-        val step = ::stepFloatValue
-        assertEquals(2f, step("2.5", 1f, .5f, -2f, 2f, -1), 0f)
-        assertEquals(2f, step("2.5", 1f, .5f, -2f, 2f, 1), 0f)
-        assertEquals(-2f, step("-2.5", 1f, .5f, -2f, 2f, 1), 0f)
-        assertEquals(-2f, step("-2.5", 1f, .5f, -2f, 2f, -1), 0f)
+        val request = ParameterEditRequest.FloatValue("Value", 1f, -2f, 2f, .5f, 2) {}
+        assertEquals(2f, request.stepValue("2.5", 1f, -1), 0f)
+        assertEquals(2f, request.stepValue("2.5", 1f, 1), 0f)
+        assertEquals(-2f, request.stepValue("-2.5", 1f, 1), 0f)
+        assertEquals(-2f, request.stepValue("-2.5", 1f, -1), 0f)
     }
 
     @Test fun steppingIncompleteFloatSyntaxFallsBackToLastValidValue() {
-        val step = ::stepFloatValue
-        assertEquals(1.5f, step("-.", 1f, .5f, -2f, 2f, 1), 0f)
-        assertEquals(.5f, step(".", 1f, .5f, -2f, 2f, -1), 0f)
+        val request = ParameterEditRequest.FloatValue("Value", 1f, -2f, 2f, .5f, 2) {}
+        assertEquals(1.5f, request.stepValue("-.", 1f, 1), 0f)
+        assertEquals(.5f, request.stepValue(".", 1f, -1), 0f)
+        assertEquals(1.5f, request.stepValue("NaN", 1f, 1), 0f)
+    }
+
+    @Test fun formattingUsesUsDecimalSeparatorAndFallbackPrecision() {
+        val request = ParameterEditRequest.FloatValue("Value", 1.25f, -2f, 2f, .5f, 2) {}
+        val original = java.util.Locale.getDefault()
+        try {
+            java.util.Locale.setDefault(java.util.Locale.GERMANY)
+            assertEquals("1.25", request.formatValue())
+            val fallbackPrecision = ParameterEditRequest.FloatValue("Value", 1.23456f, -2f, 2f, .5f, 9) {}
+            assertEquals("1.2346", fallbackPrecision.formatValue())
+        } finally {
+            java.util.Locale.setDefault(original)
+        }
     }
 }

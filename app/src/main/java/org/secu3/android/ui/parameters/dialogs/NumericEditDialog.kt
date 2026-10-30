@@ -44,13 +44,13 @@ internal fun NumericEditDialog(
                     sessionKey = sessionId,
                     allowDecimal = false,
                     allowNegative = request.min < 0,
-                    validate = { parseIntegerInput(it, request.min, request.max) != null },
+                    validate = { request.parseInput(it) != null },
                     onStep = { text, direction ->
-                        fallback = stepIntegerValue(text, fallback, request.step, request.min, request.max, direction)
+                        fallback = request.stepValue(text, fallback, direction)
                         fallback.toString()
                     },
                     onConfirm = { text, changed ->
-                        val accepted = if (changed) parseIntegerInput(text, request.min, request.max) else request.value
+                        val accepted = if (changed) request.parseInput(text) else request.value
                         accepted?.let(onConfirm)
                     },
                     onCancel = onDismiss,
@@ -61,17 +61,17 @@ internal fun NumericEditDialog(
                 var fallback by rememberSaveable(sessionId) { mutableFloatStateOf(request.value) }
                 NumericEditDialogContent(
                     title = request.title,
-                    initialText = formatFloatValue(request.value, request.precision),
+                    initialText = request.formatValue(),
                     sessionKey = sessionId,
                     allowDecimal = true,
                     allowNegative = request.min < 0f,
-                    validate = { isValidFloatInput(it, request.min, request.max) },
+                    validate = { request.parseInput(it) != null },
                     onStep = { text, direction ->
-                        fallback = stepFloatValue(text, fallback, request.step, request.min, request.max, direction)
-                        formatFloatValue(fallback, request.precision)
+                        fallback = request.stepValue(text, fallback, direction)
+                        request.formatValue(fallback)
                     },
                     onConfirm = { text, changed ->
-                        val accepted = if (changed) text.toFloatOrNull()?.takeIf { it in request.min..request.max } else request.value
+                        val accepted = if (changed) request.parseInput(text) else request.value
                         accepted?.let(onConfirm)
                     },
                     onCancel = onDismiss,

@@ -117,6 +117,9 @@ internal fun ParametersScreen(
     onPageUnsettled: () -> Unit = {},
     connectionSession: Int = 0,
 ) {
+    fun clampPageIndex(index: Int, pageCount: Int): Int =
+        if (pageCount <= 0) 0 else index.coerceIn(0, pageCount - 1)
+
     val pagerState = rememberPagerState(initialPage = 0, pageCount = { titles.size })
     val scope = rememberCoroutineScope()
     val lifecycle = LocalLifecycleOwner.current.lifecycle
@@ -236,5 +239,3 @@ private fun ParametersToolbar(connectionState: org.secu3.android.connection.Conn
         },
     )
 }
-
-internal fun clampPageIndex(index: Int, pageCount: Int): Int = if (pageCount <= 0) 0 else index.coerceIn(0, pageCount - 1)
