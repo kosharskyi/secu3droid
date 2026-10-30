@@ -34,7 +34,7 @@ jobs:
           packages: 'platform-tools'
 
       - name: Install compile SDK and build tools
-        run: sdkmanager 'platforms;android-37' 'build-tools;36.1.0'
+        run: sdkmanager 'platforms;android-37.0' 'build-tools;36.1.0'
 
       - name: Set up Gradle
         uses: gradle/actions/setup-gradle@v4
@@ -75,7 +75,7 @@ jobs:
           packages: 'platform-tools'
 
       - name: Install compile SDK and build tools
-        run: sdkmanager 'platforms;android-37' 'build-tools;36.1.0'
+        run: sdkmanager 'platforms;android-37.0' 'build-tools;36.1.0'
 
       - name: Set up Gradle
         uses: gradle/actions/setup-gradle@v4

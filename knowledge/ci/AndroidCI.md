@@ -4,7 +4,7 @@ The release workflow calls `android-ci.yml` before it restores signing material 
 
 ## Android compile SDK and emulator API levels are independent
 
-The project compiles against API 37 with build tools 36.1.0, while connected tests run on an API 36 x86_64 emulator. Keep both SDK packages installed in CI; changing the emulator API does not change the app's compile SDK requirement.
+The project compiles against integer API level 37 with build tools 36.1.0, while connected tests run on an API 36 x86_64 emulator. The SDK package ID for that compile platform is `platforms;android-37.0` even though Gradle's `compileSdk` remains `37`. Keep both SDK packages installed in CI; changing the emulator API does not change the app's compile SDK requirement.
 
 ## Android setup action v3 must explicitly request platform-tools
 
