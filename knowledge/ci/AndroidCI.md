@@ -6,6 +6,10 @@ The release workflow calls `android-ci.yml` before it restores signing material 
 
 The project compiles against API 37 with build tools 36.1.0, while connected tests run on an API 36 x86_64 emulator. Keep both SDK packages installed in CI; changing the emulator API does not change the app's compile SDK requirement.
 
+## Android setup action v3 must explicitly request platform-tools
+
+The `android-actions/setup-android@v3` action defaults to installing `tools platform-tools`, but the obsolete `tools` package can fail SDK package resolution on current runners. Set `packages: 'platform-tools'` on each invocation; the action still provides command-line tools used by the separate compile SDK and build-tools installation step.
+
 ## Gradle selects its daemon JVM independently of the workflow launcher JDK
 
 The workflow's JDK 17 launches the wrapper, but `gradle/gradle-daemon-jvm.properties` selects JetBrains JDK 21 for the daemon. A fresh runner may download that toolchain; changing `setup-java` alone does not override the checked-in daemon criteria.
