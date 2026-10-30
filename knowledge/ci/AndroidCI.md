@@ -1,10 +1,10 @@
 ## Release tags must pass the reusable Android CI workflow
 
-The release workflow calls `android-ci.yml` before it restores signing material or builds a release APK. Keep that reusable workflow free of release secrets: its debug checks use the tracked `app/src/debug/google-services.json`, and the debug manifest removes `FirebaseInitProvider`.
+The release workflow calls `android-ci.yml` before it restores signing material or builds a release APK. Its gate is the reusable workflow's debug build, unit tests, and lint; keep that workflow free of release secrets because debug checks use the tracked `app/src/debug/google-services.json`, and the debug manifest removes `FirebaseInitProvider`.
 
-## Android compile SDK and emulator API levels are independent
+## The compile SDK package ID differs from Gradle's integer API level
 
-The project compiles against integer API level 37 with build tools 36.1.0, while connected tests run on an API 36 x86_64 emulator. The SDK package ID for that compile platform is `platforms;android-37.0` even though Gradle's `compileSdk` remains `37`. Keep both SDK packages installed in CI; changing the emulator API does not change the app's compile SDK requirement.
+The project compiles against integer API level 37 with build tools 36.1.0. The SDK package ID for that compile platform is `platforms;android-37.0` even though Gradle's `compileSdk` remains `37`.
 
 ## Android SDK setup must explicitly request platform-tools
 
@@ -12,18 +12,12 @@ Keep `packages: 'platform-tools'` explicit on each `android-actions/setup-androi
 
 ## Node-based actions require a sufficiently recent runner independently of the JDK
 
-The checkout, Java, Gradle, artifact, Android SDK, and emulator actions use Node 24 even though Gradle is launched with JDK 17. Node 24 requires a self-hosted Actions runner at version 2.327.1 or newer; changing the workflow JDK does not affect action runtime compatibility.
+The checkout, Java, Gradle, artifact, and Android SDK actions use Node 24 even though Gradle is launched with JDK 17. Node 24 requires a self-hosted Actions runner at version 2.327.1 or newer; changing the workflow JDK does not affect action runtime compatibility.
 
 ## Gradle selects its daemon JVM independently of the workflow launcher JDK
 
 The workflow's JDK 17 launches the wrapper, but `gradle/gradle-daemon-jvm.properties` selects JetBrains JDK 21 for the daemon. A fresh runner may download that toolchain; changing `setup-java` alone does not override the checked-in daemon criteria.
 
-## Instrumentation diagnostics must be captured before emulator teardown
+## Local instrumented tests require Bluetooth and relaxed hidden API checks
 
-`android-emulator-runner` tears down the emulator when its script exits, including after a failed Gradle run or emulator preparation. Keep setup and Gradle execution in the same shell, with an exit trap installed before setup, so the always-uploaded artifact retains logcat and system dumps and the original failure status.
-
-The action executes each input line in a separate shell. Keep `script` as a folded YAML scalar (`>-`) so the setup, trap, and Gradle command execute together.
-
-## Instrumented tests require an enabled emulator Bluetooth adapter and relaxed hidden API checks
-
-The connected suite includes discovery lifecycle coverage that assumes Bluetooth is enabled, plus a diagnostics integration test that reflects into `BluetoothSocket` internals. Enable and verify Bluetooth and set `hidden_api_policy` before running the suite; preserve animations because the Compose motion test asserts intermediate states.
+The instrumented suite includes discovery lifecycle coverage that assumes Bluetooth is enabled, plus a diagnostics integration test that reflects into `BluetoothSocket` internals. When running it locally, enable Bluetooth and set `hidden_api_policy`; preserve animations because the Compose motion test asserts intermediate states. Instrumented tests remain available for local runs but are not part of automated CI.
