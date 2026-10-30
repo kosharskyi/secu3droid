@@ -360,7 +360,6 @@ private fun GaugeCard(item: GaugeItem, gaugeStyle: SensorGaugeStyle, injectionTi
                             dialMeasure = requireNotNull(dialMeasure),
                             modifier = Modifier.requiredWidth(cardContentWidth + dialLabelOverflow * 2f).height(bodyHeight)
                                 .testTag("dial-${type.name}").semantics { contentDescription = dialDescription },
-                            labelOverflow = dialLabelOverflow,
                         )
                     }
                 }

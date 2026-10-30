@@ -42,7 +42,7 @@ class GaugeScaleTest {
         }
     }
 
-    @Test fun sharedScaleExposesFractionalPositiveAndNegativeTicks() {
+    @Test fun sharedScaleKeepsFractionalPositionsButRoundsTickLabelsToWholeNumbers() {
         val positiveScale = GaugeScale(GaugeType.ADD1, catalog.gauge(GaugeType.ADD1))
         val positiveQuarterStep = positiveScale.ticks[1]
         assertEquals(.25f, positiveQuarterStep.value, EPSILON)
@@ -58,18 +58,32 @@ class GaugeScaleTest {
         val originalLocale = Locale.getDefault()
         try {
             Locale.setDefault(Locale.US)
-            assertEquals("0.25", positiveScale.format(positiveScale.ticks[1]))
+            assertEquals("0", positiveScale.format(positiveScale.ticks[1]))
             val coolantScale = GaugeScale(GaugeType.EGO_CORR, catalog.gauge(GaugeType.EGO_CORR))
-            assertEquals("6.25", coolantScale.format(coolantScale.ticks[9]))
+            assertEquals("6", coolantScale.format(coolantScale.ticks[9]))
             val oilTemperatureScale = GaugeScale(GaugeType.OTS, catalog.gauge(GaugeType.OTS))
-            assertEquals("-38.125", oilTemperatureScale.format(oilTemperatureScale.ticks[1]))
-            assertEquals("-7.5", tickFormattingScale.formatValue(-7.5f))
+            assertEquals("-38", oilTemperatureScale.format(oilTemperatureScale.ticks[1]))
+            assertEquals("-7", tickFormattingScale.formatValue(-7.5f))
             Locale.setDefault(Locale.GERMANY)
-            assertEquals("0,25", positiveScale.format(positiveScale.ticks[1]))
-            assertEquals("-38,125", oilTemperatureScale.format(oilTemperatureScale.ticks[1]))
+            assertEquals("0", positiveScale.format(positiveScale.ticks[1]))
+            assertEquals("-38", oilTemperatureScale.format(oilTemperatureScale.ticks[1]))
         } finally {
             Locale.setDefault(originalLocale)
         }
+    }
+
+    @Test fun rpmTickLabelsUseHundredsWhileRetainingFullTickValues() {
+        val rpm = GaugeScale(GaugeType.RPM, catalog.gauge(GaugeType.RPM))
+
+        assertEquals((0..80 step 10).map(Int::toString), rpm.majorLabelTicks.map(rpm::format))
+        assertEquals((0..16 step 2).toList(), rpm.majorLabelTicks.map { it.index })
+        assertEquals("×100", rpm.multiplierLabel)
+        assertEquals(1000f, rpm.majorLabelTicks[1].value, EPSILON)
+        assertEquals("10", rpm.format(rpm.majorLabelTicks[1]))
+
+        val nonRpm = GaugeScale(GaugeType.MAP, catalog.gauge(GaugeType.MAP))
+        assertEquals(nonRpm.ticks, nonRpm.majorLabelTicks)
+        assertNull(nonRpm.multiplierLabel)
     }
 
     @Test fun primaryGaugeRangesTicksAndZonesMatchFrozenDesktopDefaults() {

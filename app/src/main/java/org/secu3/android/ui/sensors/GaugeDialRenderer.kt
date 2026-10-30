@@ -20,6 +20,7 @@ import kotlin.math.roundToInt
 import kotlin.math.sin
 import kotlin.math.sqrt
 import org.secu3.android.models.SensorGaugeStyle
+import org.secu3.android.models.sensors.GaugeType
 import org.secu3.android.ui.sensors.models.GaugeScale
 
 internal data class GaugeRange(val start: Float, val end: Float, val color: Color)
@@ -35,123 +36,114 @@ class GaugeDialRenderer @Inject constructor() {
         val labelPaint = NativePaint(NativePaint.ANTI_ALIAS_FLAG).apply {
             textSize = with(density) { 12.sp.toPx() }
         }
-        val metrics = labelPaint.fontMetrics
         val widthPx = with(density) { width.toPx() }
         val overflowPx = with(density) { labelOverflow.toPx() }
-        val radius = widthPx / 2f - with(density) { 5.dp.toPx() }
+        val maxRadius = (widthPx / 2f - with(density) { 5.dp.toPx() }).coerceAtLeast(0f)
+        // The label canvas has a 2dp edge inset; a tenth-dp allowance absorbs subpixel rounding at its width limit.
+        val minRadius = minOf(maxRadius, with(density) { 18.5.dp.toPx() + 32.sp.toPx() / sqrt(2f) - 0.1.dp.toPx() })
         val halfStroke = with(density) { 2.5.dp.toPx() }
         val labelGap = with(density) { 3.dp.toPx() }
         val edgePadding = with(density) { 2.dp.toPx() }
-        val textHeight = metrics.descent - metrics.ascent
-        val labels = placeNewGaugeDialLabels(
+        val placement = placeNewGaugeDialLabels(
             scale = scale,
             labelPaint = labelPaint,
-            metrics = metrics,
-            radius = radius,
+            maxRadius = maxRadius,
+            minRadius = minRadius,
+            radiusStep = with(density) { 1.dp.toPx() },
+            labelTextSizes = (12 downTo 10).map { with(density) { it.sp.toPx() } },
             canvasWidth = widthPx + overflowPx * 2f,
             halfStroke = halfStroke,
             labelGap = labelGap,
             edgePadding = edgePadding,
-            laneStep = with(density) { 4.dp.toPx() },
         )
-        val top = labels.minOfOrNull { it.centerY - it.height / 2f } ?: -radius - halfStroke - labelGap - textHeight
-        val bottom = labels.maxOfOrNull { it.centerY + it.height / 2f } ?: radius / sqrt(2f) + halfStroke + labelGap + textHeight
+        val radius = placement?.first ?: maxRadius
+        val labelTextSize = placement?.second ?: with(density) { 12.sp.toPx() }
+        val labels = placement?.third.orEmpty()
+        val top = minOf(
+            -radius - halfStroke,
+            labels.minOfOrNull { it.centerY - it.height / 2f } ?: 0f,
+        )
+        val bottom = maxOf(
+            radius + halfStroke,
+            labels.maxOfOrNull { it.centerY + it.height / 2f } ?: 0f,
+        )
         val centerY = edgePadding - top
         val height = centerY + bottom + edgePadding
-        return with(density) { NewGaugeDialMeasure(height.toDp(), centerY.toDp(), labels) }
+        return with(density) {
+            NewGaugeDialMeasure(height.toDp(), centerY.toDp(), radius.toDp(), labelTextSize, labels)
+        }
     }
     private fun placeNewGaugeDialLabels(
         scale: GaugeScale,
         labelPaint: NativePaint,
-        metrics: NativePaint.FontMetrics,
-        radius: Float,
+        maxRadius: Float,
+        minRadius: Float,
+        radiusStep: Float,
+        labelTextSizes: List<Float>,
         canvasWidth: Float,
         halfStroke: Float,
         labelGap: Float,
         edgePadding: Float,
-        laneStep: Float,
-    ): List<NewGaugeDialLabel> {
+    ): Triple<Float, Float, List<NewGaugeDialLabel>>? {
         val ticks = scale.ticks
-        if (ticks.isEmpty()) return emptyList()
-        val textHeight = metrics.descent - metrics.ascent
-        val endpointRadius = radius / sqrt(2f)
-        val middleIndex = (ticks.lastIndex / 2f).toInt()
-        val required = listOf(0, middleIndex, ticks.lastIndex).distinct()
+        if (ticks.isEmpty()) return null
+        val availableHalfWidth = canvasWidth / 2f - edgePadding
 
-        fun place(indices: List<Int>): List<NewGaugeDialLabel>? {
-            val placed = mutableListOf<NewGaugeDialLabel>()
-            fun fits(label: NewGaugeDialLabel): Boolean {
-                val halfWidth = label.width / 2f
-                if (abs(label.centerX) + halfWidth > canvasWidth / 2f - edgePadding) return false
-                return placed.none { other ->
-                    val separatedHorizontally = abs(label.centerX - other.centerX) >= (label.width + other.width) / 2f + labelGap
-                    val separatedVertically = abs(label.centerY - other.centerY) >= (label.height + other.height) / 2f + labelGap
-                    !separatedHorizontally && !separatedVertically
-                }
-            }
+        val texts = ticks.map(scale::format)
 
-            // Keep min/max labels in the existing lower endpoint positions, which fit the phone card width.
-            for (index in listOf(0, ticks.lastIndex).distinct().filter { it in indices }) {
+        fun place(indices: List<Int>, radius: Float, labelTextSize: Float): List<NewGaugeDialLabel>? {
+            labelPaint.textSize = labelTextSize
+            val metrics = labelPaint.fontMetrics
+            val textHeight = metrics.descent - metrics.ascent
+            val labelWidths = texts.map(labelPaint::measureText)
+            val labels = indices.map { index ->
                 val tick = ticks[index]
                 val angle = Math.toRadians(tick.angleDegrees.toDouble())
-                val text = scale.format(tick)
-                val label = NewGaugeDialLabel(
+                val radialHalfExtent = abs(cos(angle).toFloat()) * labelWidths[index] / 2f +
+                    abs(sin(angle).toFloat()) * textHeight / 2f
+                val labelRadius = radius + halfStroke + labelGap + radialHalfExtent
+                NewGaugeDialLabel(
                     tick = tick,
-                    text = text,
-                    centerX = cos(angle).toFloat() * endpointRadius,
-                    centerY = endpointRadius + halfStroke + labelGap + textHeight / 2f,
-                    width = labelPaint.measureText(text),
+                    text = texts[index],
+                    centerX = cos(angle).toFloat() * labelRadius,
+                    centerY = sin(angle).toFloat() * labelRadius,
+                    width = labelWidths[index],
                     height = textHeight,
                 )
-                if (!fits(label)) return null
-                placed += label
             }
+            if (labels.map { it.text }.distinct().size != labels.size) return null
+            if (labels.any { abs(it.centerX) + it.width / 2f > availableHalfWidth }) return null
+            for (first in labels.indices) for (second in first + 1 until labels.size) {
+                val one = labels[first]
+                val two = labels[second]
+                val separatedHorizontally = abs(one.centerX - two.centerX) >= (one.width + two.width) / 2f + labelGap
+                val separatedVertically = abs(one.centerY - two.centerY) >= (one.height + two.height) / 2f + labelGap
+                if (!separatedHorizontally && !separatedVertically) return null
+            }
+            return labels
+        }
 
-            // Put the midpoint first, then fit other values in lanes outside the band as needed.
-            val interiorIndices = indices.filter { it !in listOf(0, ticks.lastIndex) }
-                .sortedWith(compareBy<Int> { abs(it - middleIndex) }.thenBy { it })
-            for (index in interiorIndices) {
-                val tick = ticks[index]
-                val angle = Math.toRadians(tick.angleDegrees.toDouble())
-                val text = scale.format(tick)
-                val textWidth = labelPaint.measureText(text)
-                val radialHalfExtent = abs(cos(angle).toFloat()) * textWidth / 2f + abs(sin(angle).toFloat()) * textHeight / 2f
-                val baseRadius = radius + halfStroke + labelGap + radialHalfExtent
-                var candidate: NewGaugeDialLabel? = null
-                for (lane in 0..2) {
-                    val labelRadius = baseRadius + lane * laneStep
-                    val label = NewGaugeDialLabel(
-                        tick = tick,
-                        text = text,
-                        centerX = cos(angle).toFloat() * labelRadius,
-                        centerY = sin(angle).toFloat() * labelRadius,
-                        width = textWidth,
-                        height = textHeight,
-                    )
-                    if (fits(label)) {
-                        candidate = label
-                        break
+        fun evenlySpacedIndices(count: Int): List<Int> = when {
+            scale.type == GaugeType.RPM -> scale.majorLabelTicks.map { it.index }
+            else -> selectGaugeTickLabelIndices(ticks.size, count)
+        }
+
+        val candidateCounts = if (scale.type == GaugeType.RPM) listOf(scale.majorLabelTicks.size) else {
+            (ticks.size downTo 5).filter { it % 2 == 1 } + if (ticks.size in 2..4) listOf(ticks.size) else emptyList()
+        }
+        for (labelTextSize in labelTextSizes) {
+            var radius = maxRadius
+            while (true) {
+                for (count in candidateCounts) {
+                    place(evenlySpacedIndices(count), radius, labelTextSize)?.let {
+                        return Triple(radius, labelTextSize, it)
                     }
                 }
-                if (candidate == null) return null
-                placed += candidate
+                if (radius <= minRadius) break
+                radius = maxOf(minRadius, radius - radiusStep)
             }
-            return placed
         }
-
-        var selected = required
-        var placedLabels = place(selected) ?: return emptyList()
-        while (selected.size < ticks.size) {
-            val candidate = (ticks.indices - selected.toSet()).sortedWith(
-                compareByDescending<Int> { index -> selected.minOf { abs(index - it) } }.thenBy { it },
-            ).firstNotNullOfOrNull { index ->
-                val expanded = (selected + index).sorted()
-                place(expanded)?.let { expanded to it }
-            } ?: break
-            selected = candidate.first
-            placedLabels = candidate.second
-        }
-        return placedLabels.sortedBy { it.index }
+        return null
     }
 
 
@@ -161,14 +153,15 @@ class GaugeDialRenderer @Inject constructor() {
         sections: List<GaugeRange>,
         normalized: Float?,
         style: SensorGaugeStyle,
-        faceWidth: Float,
+        faceRadius: Float,
         arcCenterY: Float,
+        labelTextSize: Float,
         labels: List<NewGaugeDialLabel>,
     ) {
         val outerStrokeWidth = 5.dp.toPx()
         val blueStrokeWidth = 5.dp.toPx()
         val centerX = size.width / 2f
-        val radius = faceWidth / 2f - 5.dp.toPx()
+        val radius = faceRadius
         val arcRect = Rect(centerX - radius, arcCenterY - radius, centerX + radius, arcCenterY + radius)
 
         drawArc(
@@ -208,7 +201,7 @@ class GaugeDialRenderer @Inject constructor() {
                 )
             }
             drawGaugeTicks(scale, colors.onSurfaceVariant, centerX, arcCenterY, radius, preciseArc = true)
-            drawDialLabels(labels, colors.onSurfaceVariant, centerX, arcCenterY)
+            drawDialLabels(labels, colors.onSurfaceVariant, centerX, arcCenterY, labelTextSize)
         } else {
             drawGaugeTicks(scale, colors.onSurfaceVariant, centerX, arcCenterY, radius, preciseArc = false)
             normalized?.let { progress ->
@@ -223,8 +216,9 @@ class GaugeDialRenderer @Inject constructor() {
                 )
                 drawCircle(colors.primary, radius = 5.dp.toPx(), center = Offset(centerX, arcCenterY))
             }
-            drawDialLabels(labels, colors.onSurfaceVariant, centerX, arcCenterY)
+            drawDialLabels(labels, colors.onSurfaceVariant, centerX, arcCenterY, labelTextSize)
         }
+        scale.multiplierLabel?.let { drawScaleMultiplier(it, colors.onSurfaceVariant, centerX, arcCenterY + radius * .84f) }
     }
 
     private fun androidx.compose.ui.graphics.drawscope.DrawScope.drawGaugeTicks(
@@ -271,14 +265,32 @@ class GaugeDialRenderer @Inject constructor() {
         textColor: Color,
         centerX: Float,
         centerY: Float,
+        textSize: Float,
     ) {
-        val labelPaint = NativePaint(NativePaint.ANTI_ALIAS_FLAG).apply { color = textColor.toArgb(); textSize = 12.sp.toPx() }
+        val labelPaint = NativePaint(NativePaint.ANTI_ALIAS_FLAG).apply { color = textColor.toArgb(); this.textSize = textSize }
         drawIntoCanvas { canvas ->
             labelPaint.textAlign = NativePaint.Align.CENTER
             val baselineOffset = (labelPaint.fontMetrics.ascent + labelPaint.fontMetrics.descent) / 2f
             labels.forEach { label ->
                 canvas.nativeCanvas.drawText(label.text, centerX + label.centerX, centerY + label.centerY - baselineOffset, labelPaint)
             }
+        }
+    }
+
+    private fun androidx.compose.ui.graphics.drawscope.DrawScope.drawScaleMultiplier(
+        label: String,
+        textColor: Color,
+        centerX: Float,
+        centerY: Float,
+    ) {
+        val paint = NativePaint(NativePaint.ANTI_ALIAS_FLAG).apply {
+            color = textColor.toArgb()
+            textSize = 11.sp.toPx()
+            textAlign = NativePaint.Align.CENTER
+        }
+        drawIntoCanvas { canvas ->
+            val baselineOffset = (paint.fontMetrics.ascent + paint.fontMetrics.descent) / 2f
+            canvas.nativeCanvas.drawText(label, centerX, centerY - baselineOffset, paint)
         }
     }
 
@@ -324,18 +336,35 @@ class GaugeDialRenderer @Inject constructor() {
             val readableTickSize = 12.sp.toPx()
             val tickPaint = NativePaint(NativePaint.ANTI_ALIAS_FLAG).apply { color = colors.onSurfaceVariant.toArgb(); textAlign = NativePaint.Align.CENTER; textSize = readableTickSize }
             tickPaint.textSize = readableTickSize
-            val largestReadableTickWidth = tickLabels.maxOfOrNull { tickPaint.measureText(it) } ?: 0f
+            val largestReadableTickWidth = scale.majorLabelTicks.maxOfOrNull { tick -> tickPaint.measureText(tickLabels[tick.index]) } ?: 0f
             val tickLabelRadius = radius - stroke / 2f - 11.dp.toPx()
             val labelCapacity = (2..ticks.size).lastOrNull { count ->
                 val halfStepAngle = Math.toRadians((scale.sweepFor(1f) / (2f * (count - 1))).toDouble())
                 tickLabelRadius * 2f * kotlin.math.sin(halfStepAngle).toFloat() >= largestReadableTickWidth + 18.dp.toPx()
             } ?: minOf(2, ticks.size)
-            val selectedTickIndices = selectGaugeTickLabelIndices(ticks.size, labelCapacity)
+            val selectedTickIndices = if (scale.type == GaugeType.RPM) {
+                val majorCount = scale.majorLabelTicks.size
+                val readableMajorCount = minOf(majorCount, maxOf(5, labelCapacity - (labelCapacity + 1) % 2))
+                selectGaugeTickLabelIndices(majorCount, readableMajorCount)
+                    .map { scale.majorLabelTicks[it].index }
+            } else {
+                selectGaugeTickLabelIndices(ticks.size, labelCapacity)
+            }
             tickPaint.textSize = readableTickSize
-            selectedTickIndices.forEach { index ->
+            selectedTickIndices.sortedBy { if (it == 0 || it == ticks.lastIndex) 0 else 1 }
+                .distinctBy { tickLabels[it] }.sorted().forEach { index ->
                 val tick = ticks[index]
                 val angle = Math.toRadians(tick.angleDegrees.toDouble())
                 canvas.nativeCanvas.drawText(tickLabels[index], cx + kotlin.math.cos(angle).toFloat() * tickLabelRadius, cy + kotlin.math.sin(angle).toFloat() * tickLabelRadius + tickPaint.textSize * .35f, tickPaint)
+            }
+            scale.multiplierLabel?.let { label ->
+                val multiplierPaint = NativePaint(NativePaint.ANTI_ALIAS_FLAG).apply {
+                    color = colors.onSurfaceVariant.toArgb()
+                    textAlign = NativePaint.Align.CENTER
+                    textSize = 11.sp.toPx()
+                }
+                val baselineOffset = (multiplierPaint.fontMetrics.ascent + multiplierPaint.fontMetrics.descent) / 2f
+                canvas.nativeCanvas.drawText(label, cx, cy + tickLabelRadius * .84f - baselineOffset, multiplierPaint)
             }
         }
     }
@@ -344,8 +373,14 @@ class GaugeDialRenderer @Inject constructor() {
         if (tickCount <= 0 || labelCount <= 0) return emptyList()
         if (tickCount <= labelCount) return (0 until tickCount).toList()
         if (labelCount == 1) return listOf(0)
+        val lastTick = tickCount - 1
         return (0 until labelCount).map { labelIndex ->
-            (labelIndex * (tickCount - 1).toFloat() / (labelCount - 1)).roundToInt()
+            when {
+                labelIndex > (labelCount - 1) / 2 -> lastTick -
+                    ((labelCount - 1 - labelIndex) * lastTick.toFloat() / (labelCount - 1)).roundToInt()
+                labelCount % 2 == 1 && labelIndex == labelCount / 2 -> lastTick / 2
+                else -> (labelIndex * lastTick.toFloat() / (labelCount - 1)).roundToInt()
+            }
         }.distinct()
     }
 

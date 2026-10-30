@@ -56,6 +56,7 @@ import androidx.compose.ui.test.performTouchInput
 import androidx.compose.ui.test.performScrollTo
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import androidx.compose.ui.semantics.SemanticsProperties
 import androidx.compose.ui.semantics.SemanticsActions
 import androidx.compose.ui.text.TextLayoutResult
@@ -91,48 +92,112 @@ class SensorsScreenTest {
     private val context = InstrumentationRegistry.getInstrumentation().targetContext
 
     @Test fun modernDialLabelsUseReadableActualTickValuesWithoutClippingOrOverlap() {
-        val types = listOf(
-            GaugeType.RPM,
-            GaugeType.MAP,
-            GaugeType.TEMPERATURE,
-            GaugeType.CURRENT_ANGLE,
-        )
-        val faceRadius = with(compose.density) { 112.dp.toPx() / 2f - 5.dp.toPx() }
-        val halfStroke = with(compose.density) { 2.5.dp.toPx() }
-        val bandGap = with(compose.density) { 3.dp.toPx() }
-        val maxLabelCenterX = with(compose.density) { 112.dp.toPx() / 2f + 14.dp.toPx() - 2.dp.toPx() }
-        val labelGap = with(compose.density) { 3.dp.toPx() }
+        val density = Density(compose.density.density, fontScale = 1f)
+        val types = listOf(GaugeType.RPM, GaugeType.TPS_DOT)
         for (type in types) {
-            val measured = renderer.measureNewGaugeDial(GaugeScale(type, presentationCatalog.gauge(type)), 112.dp, compose.density, 14.dp)
+            val measured = renderer.measureNewGaugeDial(GaugeScale(type, presentationCatalog.gauge(type)), 102.dp, density, 14.dp)
             val labels = measured.labels
             val indices = labels.map { it.index }
+            val scale = GaugeScale(type, presentationCatalog.gauge(type))
+            val faceRadius = with(density) { measured.faceRadius.toPx() }
+            val halfStroke = with(density) { 2.5.dp.toPx() }
+            val bandGap = with(density) { 3.dp.toPx() }
+            val maxLabelCenterX = with(density) { 102.dp.toPx() / 2f + 14.dp.toPx() - 2.dp.toPx() }
+            val labelGap = with(density) { 3.dp.toPx() }
+            assertTrue("${type.name} should retain labels", labels.isNotEmpty())
+            assertTrue("${type.name} should retain a readable central value", measured.faceRadius >= (18.5.dp + 32.dp / kotlin.math.sqrt(2f)))
+            assertTrue("${type.name} labels stay at least 10sp", measured.labelTextSizePx >= with(density) { 10.sp.toPx() })
+            if (type == GaugeType.TPS_DOT) {
+                assertTrue("TPS_DOT compact signed labels may use the measured smaller size", measured.labelTextSizePx < with(density) { 12.sp.toPx() })
+            }
             assertEquals("${type.name} min endpoint", 0, indices.first())
             assertEquals("${type.name} max endpoint", presentationCatalog.gauge(type).tickCount - 1, indices.last())
-            assertTrue("${type.name} should include intermediate values", labels.size >= 4)
-            assertTrue("${type.name} should retain its midpoint", indices.contains((presentationCatalog.gauge(type).tickCount - 1) / 2))
+            assertTrue("${type.name} should include intermediate values", labels.size >= 5)
+            assertEquals("${type.name} should not repeat rounded labels", labels.size, labels.map { it.text }.distinct().size)
+            assertTrue("${type.name} tick labels should be integers", labels.all { !it.text.contains('.') && !it.text.contains(',') })
+            if (type == GaugeType.RPM) {
+                assertEquals((0..16 step 2).toList(), indices)
+                assertEquals((0..80 step 10).map { it.toString() }, labels.map { it.text })
+                assertEquals("×100", scale.multiplierLabel)
+                assertTrue("RPM labels should cover both sides of the arc", labels.any { it.centerX < -faceRadius / 2f } && labels.any { it.centerX > faceRadius / 2f })
+            } else {
+                assertTrue("${type.name} should cover both sides", labels.any { it.tick.fraction in 0.1f..0.4f } && labels.any { it.tick.fraction in 0.6f..0.9f })
+                assertTrue("${type.name} should retain its midpoint", indices.contains((presentationCatalog.gauge(type).tickCount - 1) / 2))
+            }
             labels.forEach { label ->
-                val fraction = label.index.toFloat() / (presentationCatalog.gauge(type).tickCount - 1)
-                val expected = presentationCatalog.gauge(type).minValue + (presentationCatalog.gauge(type).maxValue - presentationCatalog.gauge(type).minValue) * fraction
+                val expectedFraction = label.index.toFloat() / (presentationCatalog.gauge(type).tickCount - 1)
+                val expected = presentationCatalog.gauge(type).minValue + (presentationCatalog.gauge(type).maxValue - presentationCatalog.gauge(type).minValue) * expectedFraction
                 assertEquals(expected, label.value, .001f)
-                assertEquals(tickFormattingScale.formatValue(expected), label.text)
+                assertEquals(scale.format(label.tick), label.text)
                 assertTrue("${type.name} label ${label.text} should fit the card overflow", kotlin.math.abs(label.centerX) + label.width / 2f <= maxLabelCenterX)
-                if (label.index == 0 || label.index == presentationCatalog.gauge(type).tickCount - 1) {
-                    val endpointTop = label.centerY - label.height / 2f
-                    assertEquals("${type.name} endpoint label should clear the range band", faceRadius / kotlin.math.sqrt(2f) + halfStroke + bandGap, endpointTop, 1f)
-                } else {
-                    val fraction = label.index.toFloat() / (presentationCatalog.gauge(type).tickCount - 1)
-                    val angle = Math.toRadians(135.0 + 270.0 * fraction)
-                    val projectedHalfExtent = kotlin.math.abs(kotlin.math.cos(angle).toFloat()) * label.width / 2f +
-                        kotlin.math.abs(kotlin.math.sin(angle).toFloat()) * label.height / 2f
-                    val labelRadius = kotlin.math.hypot(label.centerX, label.centerY)
-                    assertTrue("${type.name} label ${label.text} should clear the range band", labelRadius - projectedHalfExtent >= faceRadius + halfStroke + bandGap - 1f)
-                }
+                val angle = Math.toRadians(135.0 + 270.0 * expectedFraction)
+                val projectedHalfExtent = kotlin.math.abs(kotlin.math.cos(angle).toFloat()) * label.width / 2f +
+                    kotlin.math.abs(kotlin.math.sin(angle).toFloat()) * label.height / 2f
+                val labelRadius = kotlin.math.hypot(label.centerX, label.centerY)
+                assertTrue("${type.name} label ${label.text} should clear the range band", labelRadius - projectedHalfExtent >= faceRadius + halfStroke + bandGap - 1f)
             }
             for (first in labels.indices) for (second in first + 1 until labels.size) {
                 val one = labels[first]
                 val two = labels[second]
                 val clearX = kotlin.math.abs(one.centerX - two.centerX) >= (one.width + two.width) / 2f + labelGap
                 val clearY = kotlin.math.abs(one.centerY - two.centerY) >= (one.height + two.height) / 2f + labelGap
+                assertTrue("${type.name} labels ${one.text} and ${two.text} overlap", clearX || clearY)
+            }
+        }
+    }
+
+    @Test fun everyModernScaleFitsAtFontScaledMinimumGridWidth() {
+        val largerFontDensity = Density(compose.density.density, fontScale = 1.3f)
+        val width = 150.dp * 1.3f - 48.dp
+        for (type in GaugeType.entries) {
+            val scale = GaugeScale(type, presentationCatalog.gauge(type))
+            val measured = renderer.measureNewGaugeDial(scale, width, largerFontDensity, 14.dp)
+            assertTrue("${type.name} should retain labels around the arc", measured.labels.size >= 5)
+            assertEquals(0, measured.labels.first().index)
+            assertEquals(scale.ticks.lastIndex, measured.labels.last().index)
+            val maxCenterX = with(largerFontDensity) { width.toPx() / 2f + 14.dp.toPx() - 2.dp.toPx() }
+            val centerY = with(largerFontDensity) { measured.centerY.toPx() }
+            val height = with(largerFontDensity) { measured.height.toPx() }
+            measured.labels.forEach { label ->
+                assertTrue("${type.name} ${label.text} should fit the grid width", kotlin.math.abs(label.centerX) + label.width / 2f <= maxCenterX)
+                val top = centerY + label.centerY - label.height / 2f
+                val bottom = centerY + label.centerY + label.height / 2f
+                assertTrue("${type.name} ${label.text} should stay within measured height", top >= 0f && bottom <= height)
+            }
+            for (first in measured.labels.indices) for (second in first + 1 until measured.labels.size) {
+                val one = measured.labels[first]
+                val two = measured.labels[second]
+                val clearX = kotlin.math.abs(one.centerX - two.centerX) >= (one.width + two.width) / 2f + with(largerFontDensity) { 3.dp.toPx() }
+                val clearY = kotlin.math.abs(one.centerY - two.centerY) >= (one.height + two.height) / 2f + with(largerFontDensity) { 3.dp.toPx() }
+                assertTrue("${type.name} labels ${one.text} and ${two.text} overlap", clearX || clearY)
+            }
+        }
+    }
+
+    @Test fun everyModernScaleFitsAtMinimumGridWidth() {
+        val density = Density(compose.density.density, fontScale = 1f)
+        val width = 150.dp - 48.dp
+        for (type in GaugeType.entries) {
+            val scale = GaugeScale(type, presentationCatalog.gauge(type))
+            val measured = renderer.measureNewGaugeDial(scale, width, density, 14.dp)
+            assertTrue("${type.name} should retain labels at 102dp; selected=${measured.labels.map { it.text }} size=${with(density) { measured.labelTextSizePx.toSp() }}", measured.labels.size >= 5)
+            assertEquals("${type.name} min endpoint", 0, measured.labels.first().index)
+            assertEquals("${type.name} max endpoint", scale.ticks.lastIndex, measured.labels.last().index)
+            assertTrue("${type.name} should keep distinct integer labels", measured.labels.map { it.text }.distinct().size == measured.labels.size && measured.labels.all { it.text.toIntOrNull() != null })
+            val maxCenterX = with(density) { width.toPx() / 2f + 14.dp.toPx() - 2.dp.toPx() }
+            val centerY = with(density) { measured.centerY.toPx() }
+            val height = with(density) { measured.height.toPx() }
+            measured.labels.forEach { label ->
+                assertTrue("${type.name} ${label.text} should fit the grid width", kotlin.math.abs(label.centerX) + label.width / 2f <= maxCenterX)
+                val top = centerY + label.centerY - label.height / 2f
+                val bottom = centerY + label.centerY + label.height / 2f
+                assertTrue("${type.name} ${label.text} should stay within measured height", top >= 0f && bottom <= height)
+            }
+            for (first in measured.labels.indices) for (second in first + 1 until measured.labels.size) {
+                val one = measured.labels[first]
+                val two = measured.labels[second]
+                val clearX = kotlin.math.abs(one.centerX - two.centerX) >= (one.width + two.width) / 2f + with(density) { 3.dp.toPx() }
+                val clearY = kotlin.math.abs(one.centerY - two.centerY) >= (one.height + two.height) / 2f + with(density) { 3.dp.toPx() }
                 assertTrue("${type.name} labels ${one.text} and ${two.text} overlap", clearX || clearY)
             }
         }
@@ -392,7 +457,7 @@ class SensorsScreenTest {
         var savedIndicators: List<IndicatorState>? = null
         compose.setContent {
             SecuComposeTheme {
-                Box(Modifier.requiredWidth(360.dp).testTag("partial-grid-host")) {
+                Box(Modifier.requiredWidth(400.dp).testTag("partial-grid-host")) {
                     SensorsScreen(
                         gauges, indicators, null, null, {}, {}, {}, {}, {}, {}, {}, {}, {},
                         { savedGauges = it }, { savedIndicators = it },
@@ -431,11 +496,11 @@ class SensorsScreenTest {
 
     @Test fun wrappedGaugeAndIndicatorRowsEqualizeNaturallyAndKeepRowGaps() {
         val selectedStyle = mutableStateOf(SensorGaugeStyle.Current)
-        val width = mutableStateOf(400)
+        val width = mutableStateOf(500)
         val fontScale = mutableStateOf(1.3f)
         val gauges = mutableStateOf(listOf(
             GaugeItem(GaugeState(1, GaugeType.RPM, 0, true), "1200"),
-            GaugeItem(GaugeState(2, GaugeType.EXHAUST_GAS_TEMP, 1, false), "640"),
+            GaugeItem(GaugeState(2, GaugeType.MAP_TURBO, 1, false), "640"),
             GaugeItem(GaugeState(3, GaugeType.MAP, 2, true), "42"),
         ))
         val indicators = listOf(
@@ -484,7 +549,7 @@ class SensorsScreenTest {
             return requireNotNull(result).lineCount
         }
 
-        val longGaugeTitle = context.getString(presentationCatalog.gauge(GaugeType.EXHAUST_GAS_TEMP).title)
+        val longGaugeTitle = context.getString(presentationCatalog.gauge(GaugeType.MAP_TURBO).title)
         val longIndicatorTitle = context.getString(presentationCatalog.indicatorTitle(IndicatorType.REV_LIM_FUEL_CUT))
         assertTrue("gauge title should wrap in a narrow cell", textLineCount(longGaugeTitle) > 1)
         assertTrue("indicator title should wrap in a narrow cell", textLineCount(longIndicatorTitle) > 1)
@@ -494,10 +559,10 @@ class SensorsScreenTest {
             compose.runOnIdle { selectedStyle.value = style }
             compose.waitForIdle()
             val firstGauge = compose.onNodeWithTag("gauge-RPM").getUnclippedBoundsInRoot()
-            val wrappedGauge = compose.onNodeWithTag("gauge-EXHAUST_GAS_TEMP").getUnclippedBoundsInRoot()
+            val wrappedGauge = compose.onNodeWithTag("gauge-MAP_TURBO").getUnclippedBoundsInRoot()
             val nextGaugeRow = compose.onNodeWithTag("gauge-MAP").getUnclippedBoundsInRoot()
             assertEquals("mixed $style gauge row equalizes its card heights", (firstGauge.bottom - firstGauge.top).value, (wrappedGauge.bottom - wrappedGauge.top).value, 1f)
-            val gaugeBody = compose.onNodeWithTag("gauge-body-EXHAUST_GAS_TEMP", useUnmergedTree = true).getUnclippedBoundsInRoot()
+            val gaugeBody = compose.onNodeWithTag("gauge-body-MAP_TURBO", useUnmergedTree = true).getUnclippedBoundsInRoot()
             assertTrue("gauge dial body remains natural inside its taller card", gaugeBody.bottom - gaugeBody.top < wrappedGauge.bottom - wrappedGauge.top)
             assertEquals("the gauge row gap stays tied to the outer gutters", 16f, nextGaugeRow.top.value - wrappedGauge.bottom.value, 1f)
             largestMixedRowHeight = maxOf(largestMixedRowHeight, (firstGauge.bottom - firstGauge.top).value)
@@ -515,7 +580,7 @@ class SensorsScreenTest {
         compose.runOnIdle { fontScale.value = 1f; width.value = 420 }
         compose.waitForIdle()
         val resizedGauge = compose.onNodeWithTag("gauge-RPM").getUnclippedBoundsInRoot()
-        val resizedWrappedGauge = compose.onNodeWithTag("gauge-EXHAUST_GAS_TEMP").getUnclippedBoundsInRoot()
+        val resizedWrappedGauge = compose.onNodeWithTag("gauge-MAP_TURBO").getUnclippedBoundsInRoot()
         val resizedIndicator = compose.onNodeWithTag("indicator-THROTTLE").getUnclippedBoundsInRoot()
         val resizedWrappedIndicator = compose.onNodeWithTag("indicator-REV_LIM_FUEL_CUT").getUnclippedBoundsInRoot()
         assertEquals("font-scale/window reflow keeps gauge rows equal", (resizedGauge.bottom - resizedGauge.top).value, (resizedWrappedGauge.bottom - resizedWrappedGauge.top).value, 1f)
@@ -523,12 +588,12 @@ class SensorsScreenTest {
 
         compose.runOnIdle {
             fontScale.value = 1.3f
-            width.value = 400
+            width.value = 500
             gauges.value = gauges.value.map { item -> item.copy(state = item.state.copy(isNumericView = true)) }
         }
         compose.waitForIdle()
         val numericFirst = compose.onNodeWithTag("gauge-RPM").getUnclippedBoundsInRoot()
-        val numericWrapped = compose.onNodeWithTag("gauge-EXHAUST_GAS_TEMP").getUnclippedBoundsInRoot()
+        val numericWrapped = compose.onNodeWithTag("gauge-MAP_TURBO").getUnclippedBoundsInRoot()
         assertEquals("all-numeric gauge cards remain equal", (numericFirst.bottom - numericFirst.top).value, (numericWrapped.bottom - numericWrapped.top).value, 1f)
         assertTrue("row height shrinks when its dials are all switched to numeric", numericFirst.bottom - numericFirst.top < largestMixedRowHeight.dp)
     }
@@ -538,7 +603,7 @@ class SensorsScreenTest {
             val density = LocalDensity.current.density
             CompositionLocalProvider(LocalDensity provides Density(density, 1f)) {
                 SecuComposeTheme {
-                    Box(Modifier.requiredWidth(360.dp).testTag("single-card-host")) {
+                    Box(Modifier.requiredWidth(400.dp).testTag("single-card-host")) {
                         SensorsScreen(
                             listOf(GaugeItem(GaugeState(1, GaugeType.RPM, 0, true), "1200")),
                             listOf(IndicatorItem(IndicatorState(1, IndicatorType.THROTTLE, 0), true)),
@@ -596,7 +661,7 @@ class SensorsScreenTest {
             val fontDensity = LocalDensity.current.density
             SecuComposeTheme {
                 CompositionLocalProvider(LocalDensity provides Density(fontDensity, 1f)) {
-                    Box(Modifier.requiredWidth(520.dp)) {
+                    Box(Modifier.requiredWidth(600.dp)) {
                         SensorsScreen(
                             gauges.value, emptyList(), null, null,
                             {}, {}, {}, {}, {}, {}, {}, {},
@@ -662,7 +727,7 @@ class SensorsScreenTest {
         compose.onNodeWithText("-500").assertIsDisplayed()
     }
 
-    @Test fun gaugeCardResizesAcrossStylesAndKeepsTheDialFaceFullSize() {
+    @Test fun gaugeCardResizesAcrossStylesAndKeepsTheDialInsideItsCard() {
         val style = mutableStateOf(SensorGaugeStyle.Current)
         val numeric = mutableStateOf(false)
         compose.setContent {
@@ -694,7 +759,7 @@ class SensorsScreenTest {
         org.junit.Assert.assertTrue("precise arc should omit the classic footer", precise.height < classic.height)
         val labelOverflow = with(compose.density) { 28.dp.toPx() }
         // Explicit cell and card insets round at separate density boundaries on the device.
-        assertEquals("precise arc preserves the classic face width", classicDial.width, preciseDial.width - labelOverflow, 1.5f)
+        assertEquals("precise arc preserves the available label canvas width", classicDial.width, preciseDial.width - labelOverflow, 1.5f)
         org.junit.Assert.assertTrue("precise arc label canvas stays inside the card", preciseDial.left >= precise.left && preciseDial.right <= precise.right)
         org.junit.Assert.assertTrue("precise arc allocates only the outside-label inset below the full-size circle", preciseDial.height > classicDial.height)
 
@@ -704,7 +769,7 @@ class SensorsScreenTest {
         val thinDial = dialBounds()
         captureDesignScreenshot("dial-thin.png")
         org.junit.Assert.assertTrue("thin needle keeps the full-size circle and visible footer", thin.height > classic.height)
-        assertEquals("thin needle preserves the classic face width", classicDial.width, thinDial.width - labelOverflow, 1.5f)
+        assertEquals("thin needle preserves the available label canvas width", classicDial.width, thinDial.width - labelOverflow, 1.5f)
         org.junit.Assert.assertTrue("thin needle label canvas stays inside the card", thinDial.left >= thin.left && thinDial.right <= thin.right)
         assertEquals("thin needle allocates the same outside-label inset", preciseDial.height, thinDial.height, 1f)
 
@@ -716,6 +781,40 @@ class SensorsScreenTest {
         compose.runOnIdle { numeric.value = false; style.value = SensorGaugeStyle.Current }
         compose.waitForIdle()
         assertEquals("returning to classic restores the original height", classic.height, cardBounds().height, 1f)
+    }
+
+    @Test fun compactRpmAndFractionalScalesKeepTheirFullReadoutsAcrossStyles() {
+        val style = mutableStateOf(SensorGaugeStyle.Current)
+        val gauges = listOf(
+            GaugeItem(GaugeState(1, GaugeType.RPM, 0, false), "3250"),
+            GaugeItem(GaugeState(2, GaugeType.TPS_DOT, 1, false), "-325"),
+        )
+        compose.setContent {
+            val density = LocalDensity.current.density
+            CompositionLocalProvider(LocalDensity provides Density(density, 1f)) {
+                SecuComposeTheme {
+                    Box(Modifier.requiredWidth(300.dp)) {
+                        SensorsScreen(
+                            gauges, emptyList(), null, null,
+                            {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {},
+                            gaugeStyle = style.value, presentationCatalog = presentationCatalog, renderer = renderer,
+                        )
+                    }
+                }
+            }
+        }
+        for (dialStyle in SensorGaugeStyle.entries) {
+            compose.runOnIdle { style.value = dialStyle }
+            compose.waitForIdle()
+            assertDialDescription(GaugeType.RPM, "3250")
+            assertDialDescription(GaugeType.TPS_DOT, "-325")
+            for (type in listOf(GaugeType.RPM, GaugeType.TPS_DOT)) {
+                val card = compose.onNodeWithTag("gauge-${type.name}").getUnclippedBoundsInRoot()
+                val dial = compose.onNodeWithTag("dial-${type.name}", useUnmergedTree = true).getUnclippedBoundsInRoot()
+                assertTrue("$dialStyle ${type.name} stays within its card", dial.left >= card.left && dial.right <= card.right && dial.bottom <= card.bottom)
+            }
+            captureDesignScreenshot("compact-scales-tps-${dialStyle.name}.png", "gauges-grid")
+        }
     }
 
     @Test fun dialFitsInsideAutomaticGridCell() {
@@ -789,7 +888,7 @@ class SensorsScreenTest {
             GaugeItem(GaugeState(3, GaugeType.VOLTAGE, 2, false), "13.8"),
         )
         compose.setContent { SecuComposeTheme {
-            Box(Modifier.width(320.dp)) {
+            Box(Modifier.width(300.dp)) {
                 SensorsScreen(gauges, emptyList(), null, null, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, gaugeStyle = style.value, presentationCatalog = presentationCatalog, renderer = renderer)
             }
         } }
@@ -962,19 +1061,19 @@ class SensorsScreenTest {
         }
     }
 
-    @Test fun tickLabelsUseSharedIntegerAndFractionalFormatting() {
+    @Test fun tickLabelsUseWholeNumbersWhileReadoutsKeepTheirPrecision() {
         val originalLocale = Locale.getDefault()
         try {
             Locale.setDefault(Locale.US)
-            assertEquals("147.6", tickFormattingScale.formatValue(147.6f))
-            assertEquals("-7.4", tickFormattingScale.formatValue(-7.4f))
+            assertEquals("148", tickFormattingScale.formatValue(147.6f))
+            assertEquals("-7", tickFormattingScale.formatValue(-7.4f))
             assertEquals("147", tickFormattingScale.formatValue(147f))
             val add1Scale = GaugeScale(GaugeType.ADD1, presentationCatalog.gauge(GaugeType.ADD1))
-            assertEquals("0.25", add1Scale.format(add1Scale.ticks[1]))
-            assertEquals("0.5", add1Scale.format(add1Scale.ticks[2]))
-            assertEquals("-7.5", tickFormattingScale.formatValue(-7.5f))
+            assertEquals("0", add1Scale.format(add1Scale.ticks[1]))
+            assertEquals("1", add1Scale.format(add1Scale.ticks[2]))
+            assertEquals("-7", tickFormattingScale.formatValue(-7.5f))
             Locale.setDefault(Locale.GERMANY)
-            assertEquals("-7,5", tickFormattingScale.formatValue(-7.5f))
+            assertEquals("-7", tickFormattingScale.formatValue(-7.5f))
         } finally {
             Locale.setDefault(originalLocale)
         }
@@ -986,16 +1085,17 @@ class SensorsScreenTest {
             .assert(SemanticsMatcher.expectValue(SemanticsProperties.ContentDescription, listOf(description)))
     }
 
-    private fun captureDesignScreenshot(fileName: String) {
+    private fun captureDesignScreenshot(fileName: String, nodeTag: String? = null) {
         if (InstrumentationRegistry.getArguments().getString("captureDesignScreenshots") != "true") return
-        val bitmap = compose.onRoot().captureToImage().asAndroidBitmap()
+        val bitmap = (if (nodeTag == null) compose.onRoot() else compose.onNodeWithTag(nodeTag)).captureToImage().asAndroidBitmap()
         File(context.cacheDir, fileName).outputStream().use { output ->
             bitmap.compress(Bitmap.CompressFormat.PNG, 100, output)
         }
     }
 
     @Test fun narrowDialTickLabelsUseEvenSubsetIncludingEndpoints() {
-        assertEquals(listOf(0, 5, 10, 14, 19), renderer.selectGaugeTickLabelIndices(20, 5))
+        assertEquals(listOf(0, 5, 9, 14, 19), renderer.selectGaugeTickLabelIndices(20, 5))
+        assertEquals(listOf(0, 4, 7, 10, 14), renderer.selectGaugeTickLabelIndices(15, 5))
         assertEquals((0 until 20).toList(), renderer.selectGaugeTickLabelIndices(20, 20))
         assertEquals(listOf(0, 19), renderer.selectGaugeTickLabelIndices(20, 2))
         assertEquals(emptyList<Int>(), renderer.selectGaugeTickLabelIndices(0, 5))
@@ -1031,6 +1131,7 @@ class SensorsScreenTest {
         var savedGauges: List<GaugeState>? = null
         var savedIndicators: List<IndicatorState>? = null
         compose.setContent { SecuComposeTheme {
+            Box(Modifier.requiredWidth(400.dp)) {
             SensorsScreen(
                 listOf(GaugeItem(GaugeState(1, GaugeType.RPM, 0), "100"), GaugeItem(GaugeState(2, GaugeType.VOLTAGE, 1), "12.1")),
                 listOf(IndicatorItem(IndicatorState(3, IndicatorType.THROTTLE, 0), false), IndicatorItem(IndicatorState(4, IndicatorType.GAS_VALVE, 1), true)),
@@ -1038,6 +1139,7 @@ class SensorsScreenTest {
 
                     presentationCatalog = presentationCatalog, renderer = renderer,
                 )
+            }
         } }
         val gaugeSource = compose.onNodeWithTag("gauge-RPM").fetchSemanticsNode().boundsInRoot
         val gaugeTarget = compose.onNodeWithTag("gauge-VOLTAGE").fetchSemanticsNode().boundsInRoot
@@ -1171,6 +1273,7 @@ class SensorsScreenTest {
         compose.mainClock.autoAdvance = false
         var savedOrder: List<GaugeState>? = null
         compose.setContent { SecuComposeTheme {
+            Box(Modifier.requiredWidth(400.dp)) {
             SensorsScreen(
                 listOf(
                     GaugeItem(GaugeState(1, GaugeType.RPM, 0, isNumericView = true), "100"),
@@ -1180,11 +1283,14 @@ class SensorsScreenTest {
 
                     presentationCatalog = presentationCatalog, renderer = renderer,
                 )
+            }
         } }
         compose.waitForIdle()
         val sourceBounds = compose.onNodeWithTag("gauge-RPM").fetchSemanticsNode().boundsInRoot
-        val sourceLeft = sourceBounds.left
         val neighborStart = compose.onNodeWithTag("gauge-VOLTAGE").fetchSemanticsNode().boundsInRoot
+        val horizontal = neighborStart.left != sourceBounds.left
+        fun position(bounds: androidx.compose.ui.geometry.Rect) = if (horizontal) bounds.left else bounds.top
+        val sourcePosition = position(sourceBounds)
         assertPlaced("RPM gauge", sourceBounds)
         assertPlaced("Voltage gauge", neighborStart)
         val delta = Offset(neighborStart.center.x - compose.onNodeWithTag("gauge-RPM").fetchSemanticsNode().boundsInRoot.center.x,
@@ -1197,19 +1303,19 @@ class SensorsScreenTest {
         compose.waitForIdle()
         compose.mainClock.advanceTimeBy(100)
         compose.waitForIdle()
-        val midpointLeft = compose.onNodeWithTag("gauge-VOLTAGE").fetchSemanticsNode().boundsInRoot.left
-        org.junit.Assert.assertTrue("neighbor should be between its start and destination mid-animation", midpointLeft < neighborStart.left && midpointLeft > sourceLeft)
+        val midpointPosition = position(compose.onNodeWithTag("gauge-VOLTAGE").fetchSemanticsNode().boundsInRoot)
+        org.junit.Assert.assertTrue("neighbor should be between its start and destination mid-animation", midpointPosition < position(neighborStart) && midpointPosition > sourcePosition)
 
         compose.mainClock.advanceTimeBy(160)
         compose.waitForIdle()
-        val destinationLeft = compose.onNodeWithTag("gauge-VOLTAGE").fetchSemanticsNode().boundsInRoot.left
-        assertEquals(sourceLeft, destinationLeft, 1f)
+        val destinationPosition = position(compose.onNodeWithTag("gauge-VOLTAGE").fetchSemanticsNode().boundsInRoot)
+        assertEquals(sourcePosition, destinationPosition, 1f)
 
         compose.onNodeWithTag("gauge-RPM").performTouchInput { up() }
         compose.mainClock.advanceTimeBy(48)
         compose.waitForIdle()
-        assertEquals("committing after preview settles should not move the neighbor", destinationLeft,
-            compose.onNodeWithTag("gauge-VOLTAGE").fetchSemanticsNode().boundsInRoot.left, 1f)
+        assertEquals("committing after preview settles should not move the neighbor", destinationPosition,
+            position(compose.onNodeWithTag("gauge-VOLTAGE").fetchSemanticsNode().boundsInRoot), 1f)
         assertEquals(listOf(GaugeType.VOLTAGE, GaugeType.RPM), savedOrder?.map { it.gaugeType })
         compose.mainClock.autoAdvance = true
     }
@@ -1306,7 +1412,7 @@ class SensorsScreenTest {
             val density = LocalDensity.current.density
             CompositionLocalProvider(LocalDensity provides Density(density, 1f)) {
                 SecuComposeTheme {
-                    Box(Modifier.requiredWidth(320.dp)) {
+                    Box(Modifier.requiredWidth(400.dp)) {
                         SensorsScreen(
                             packetItems.value, emptyList(), null, null,
                             {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {},

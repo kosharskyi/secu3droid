@@ -1,7 +1,7 @@
 package org.secu3.android.ui.sensors
 
 import androidx.compose.foundation.Canvas
-import androidx.compose.foundation.layout.BoxWithConstraints
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.fillMaxSize
@@ -35,7 +35,13 @@ internal data class NewGaugeDialLabel(val tick: GaugeTick, val text: String, val
     val index: Int get() = tick.index
     val value: Float get() = tick.value
 }
-internal data class NewGaugeDialMeasure(val height: Dp, val centerY: Dp, val labels: List<NewGaugeDialLabel>)
+internal data class NewGaugeDialMeasure(
+    val height: Dp,
+    val centerY: Dp,
+    val faceRadius: Dp,
+    val labelTextSizePx: Float,
+    val labels: List<NewGaugeDialLabel>,
+)
 
 @Composable
 internal fun NewGaugeDial(
@@ -47,7 +53,6 @@ internal fun NewGaugeDial(
     style: SensorGaugeStyle,
     dialMeasure: NewGaugeDialMeasure,
     modifier: Modifier = Modifier,
-    labelOverflow: Dp = 14.dp,
 ) {
     val context = LocalContext.current
     val resources = LocalResources.current
@@ -58,8 +63,7 @@ internal fun NewGaugeDial(
     }
     val colors = MaterialTheme.colorScheme
     val density = LocalDensity.current
-    BoxWithConstraints(modifier) {
-        val faceWidth = maxWidth - labelOverflow * 2f
+    Box(modifier) {
         Canvas(Modifier.fillMaxSize()) {
             with(renderer) { drawGaugeCanvas(
                 scale = scale,
@@ -67,8 +71,9 @@ internal fun NewGaugeDial(
                 sections = sections,
                 normalized = progress(),
                 style = style,
-                faceWidth = size.width - labelOverflow.toPx() * 2f,
+                faceRadius = with(density) { dialMeasure.faceRadius.toPx() },
                 arcCenterY = with(density) { dialMeasure.centerY.toPx() },
+                labelTextSize = dialMeasure.labelTextSizePx,
                 labels = dialMeasure.labels,
             ) }
         }
@@ -77,7 +82,7 @@ internal fun NewGaugeDial(
             val blueStrokeWidth = 5.dp
             val interArcGap = 3.dp
             val textClearance = 8.dp
-            val outerRadius = faceWidth / 2f - 5.dp
+            val outerRadius = dialMeasure.faceRadius
             val blueCenterRadius = outerRadius - outerStrokeWidth / 2f - interArcGap - blueStrokeWidth / 2f
             val blueInnerEdgeRadius = blueCenterRadius - blueStrokeWidth / 2f
             val readoutSize = (blueInnerEdgeRadius - textClearance) * sqrt(2f)

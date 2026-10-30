@@ -1,8 +1,8 @@
 package org.secu3.android.ui.sensors.models
 
 import org.secu3.android.models.sensors.GaugeType
-import java.text.DecimalFormatSymbols
 import java.util.Locale
+import kotlin.math.roundToInt
 import org.secu3.android.models.InjectionTimingMode
 
 /** A configured position on a sensor gauge's shared scale. */
@@ -42,6 +42,11 @@ internal class GaugeScale(
             angleDegrees = START_ANGLE_DEGREES + SWEEP_ANGLE_DEGREES * fraction,
         )
     }
+    val majorLabelTicks: List<GaugeTick> = if (type == GaugeType.RPM) {
+        ticks.filter { it.index % 2 == 0 }
+    } else {
+        ticks
+    }
 
     fun normalized(value: Float?): Float? = value?.let {
         ((it - minValue) / (maxValue - minValue)).coerceIn(0f, 1f)
@@ -51,19 +56,23 @@ internal class GaugeScale(
 
     fun sweepFor(fraction: Float): Float = SWEEP_ANGLE_DEGREES * fraction
 
-    fun format(tick: GaugeTick): String = formatValue(tick.value)
+    fun format(tick: GaugeTick): String = if (type == GaugeType.RPM) {
+        formatValue(tick.value / RPM_TICK_DIVISOR)
+    } else {
+        formatValue(tick.value)
+    }
+
+    val multiplierLabel: String? get() = if (type == GaugeType.RPM) RPM_MULTIPLIER_LABEL else null
 
     fun formatValue(value: Float): String {
         if (!value.isFinite()) return "—"
-        val decimalSeparator = DecimalFormatSymbols.getInstance(Locale.getDefault()).decimalSeparator
-        val formatted = String.format(Locale.getDefault(), "%.3f", value)
-            .trimEnd('0')
-            .trimEnd(decimalSeparator)
-        return if (formatted == "-0") "0" else formatted
+        return String.format(Locale.getDefault(), "%d", value.roundToInt())
     }
 
     companion object {
         const val START_ANGLE_DEGREES = 135f
         const val SWEEP_ANGLE_DEGREES = 270f
+        private const val RPM_TICK_DIVISOR = 100f
+        const val RPM_MULTIPLIER_LABEL = "×100"
     }
 }

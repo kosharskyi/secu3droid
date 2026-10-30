@@ -4,7 +4,11 @@
 
 ## Gauge tick count includes both range endpoints
 
-`GaugePresentation.tickCount` is the number of configured value ticks, evenly spaced from `minValue` through `maxValue`, including both endpoints. `GaugeScale` receives the catalog's concrete description and is the shared source for tick fractions/values/angles, section ranges, and clamped normalization across classic and modern dial styles. Tick labels retain up to three meaningful fractional digits so dense tick scales remain accurate; renderer-specific label visibility and line geometry must not create additional scale positions. Sensor readout precision is separate and is applied by `SensorPresentationCatalog.formatValue`.
+`GaugePresentation.tickCount` is the number of configured value ticks, evenly spaced from `minValue` through `maxValue`, including both endpoints. `GaugeScale` receives the catalog's concrete description and is the shared source for tick fractions/values/angles, section ranges, and clamped normalization across classic and modern dial styles. Tick labels round to the nearest integer, while tick values and angles retain their original fractional precision; renderer-specific label visibility and line geometry must not create additional scale positions. Sensor readout precision is separate and is applied by `SensorPresentationCatalog.formatValue`.
+
+## RPM tick labels are expressed in hundreds
+
+Keep the configured 0…8000 RPM values and sections intact, while the major tick labels use the even configured indices as 0…80 and show `×100` inside the dial. This compact scale formatting applies only to tick labels; the live sensor value and `об/хв` readout retain their full units and precision.
 
 ## Injection phase display mode changes only the phase scale bounds
 
