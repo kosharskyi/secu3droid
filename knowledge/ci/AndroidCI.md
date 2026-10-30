@@ -6,9 +6,13 @@ The release workflow calls `android-ci.yml` before it restores signing material 
 
 The project compiles against integer API level 37 with build tools 36.1.0, while connected tests run on an API 36 x86_64 emulator. The SDK package ID for that compile platform is `platforms;android-37.0` even though Gradle's `compileSdk` remains `37`. Keep both SDK packages installed in CI; changing the emulator API does not change the app's compile SDK requirement.
 
-## Android setup action v3 must explicitly request platform-tools
+## Android SDK setup must explicitly request platform-tools
 
-The `android-actions/setup-android@v3` action defaults to installing `tools platform-tools`, but the obsolete `tools` package can fail SDK package resolution on current runners. Set `packages: 'platform-tools'` on each invocation; the action still provides command-line tools used by the separate compile SDK and build-tools installation step.
+Keep `packages: 'platform-tools'` explicit on each `android-actions/setup-android` invocation so the SDK package request does not depend on the action's default list. The action also provisions the command-line tools used by the separate compile SDK and build-tools installation step.
+
+## Node-based actions require a sufficiently recent runner independently of the JDK
+
+The checkout, Java, Gradle, artifact, Android SDK, and emulator actions use Node 24 even though Gradle is launched with JDK 17. Node 24 requires a self-hosted Actions runner at version 2.327.1 or newer; changing the workflow JDK does not affect action runtime compatibility.
 
 ## Gradle selects its daemon JVM independently of the workflow launcher JDK
 
