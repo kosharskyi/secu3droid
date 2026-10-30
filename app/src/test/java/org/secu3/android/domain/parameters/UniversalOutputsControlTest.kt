@@ -109,6 +109,38 @@ class UniversalOutputsControlTest {
         assertArrayEquals(before, packet.pack())
     }
 
+    @Test fun addI2ThresholdAcceptsFiveVoltsAndRejectsValuesAboveFirmwareRangeForAllOutputsAndSlots() {
+        var sends = 0
+        val control = UniversalOutputsControl(UniversalOutputConditions()) { sends++; true }
+        val packet = UniOutParamPacket().apply {
+            output1Use = true; output1LogicFunc = 0; output1Condition1 = 16; output1Condition2 = 16
+            output2Use = true; output2LogicFunc = 0; output2Condition1 = 16; output2Condition2 = 16
+            output3Use = true; output3LogicFunc = 0; output3Condition1 = 16; output3Condition2 = 16
+            output4Use = true; output4LogicFunc = 0; output4Condition1 = 16; output4Condition2 = 16
+            output5Use = true; output5LogicFunc = 0; output5Condition1 = 16; output5Condition2 = 16
+            output6Use = true; output6LogicFunc = 0; output6Condition1 = 16; output6Condition2 = 16
+        }
+        control.receive(packet)
+
+        for (output in 1..6) for (slot in 1..2) for (on in listOf(true, false)) {
+            val sendsBefore = sends
+            val accepted = if (on) control.editOnThreshold(output, slot, 16, 5f) else control.editOffThreshold(output, slot, 16, 5f)
+            assertTrue("output=$output slot=$slot on=$on accepts 5V", accepted)
+            assertEquals(sendsBefore + 1, sends)
+            val encoded = packet.pack()
+            val thresholdOffset = 1 + (output - 1) * 11 + 3 + (slot - 1) * 4 + if (on) 0 else 2
+            assertEquals(0x07, encoded[thresholdOffset])
+            assertEquals(0xD0, encoded[thresholdOffset + 1])
+            val acceptedState = control.values.value
+            assertFalse("output=$output slot=$slot on=$on rejects 5.01V", if (on) control.editOnThreshold(output, slot, 16, 5.01f) else control.editOffThreshold(output, slot, 16, 5.01f))
+            assertFalse("output=$output slot=$slot on=$on rejects 163.84V", if (on) control.editOnThreshold(output, slot, 16, 163.84f) else control.editOffThreshold(output, slot, 16, 163.84f))
+            assertFalse("output=$output slot=$slot on=$on rejects 600V", if (on) control.editOnThreshold(output, slot, 16, 600f) else control.editOffThreshold(output, slot, 16, 600f))
+            assertEquals(sendsBefore + 1, sends)
+            assertArrayEquals(encoded, packet.pack())
+            assertEquals(acceptedState, control.values.value)
+        }
+    }
+
     @Test fun pairRequiresBothOutputsAndSlotTwoRequiresNonNoneLogic() {
         val control = UniversalOutputsControl(UniversalOutputConditions()) { true }
         val p = UniOutParamPacket().apply { output1Use = true; output1LogicFunc = 15; output2Use = true }

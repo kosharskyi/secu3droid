@@ -24,7 +24,7 @@ class UniversalOutputConditionsTest {
             UniOutConditionFormat(0f,100f,.5f,1,30f,29f),
             UniOutConditionFormat(-40f,300f,.25f,2,55f,50f),
             UniOutConditionFormat(0f,5f,.01f,2,2.5f,2.48f),
-            UniOutConditionFormat(0f,600f,.1f,2,2.5f,2.48f),
+            UniOutConditionFormat(0f,5f,.1f,2,2.5f,2.48f),
             UniOutConditionFormat(0f,1f,1f,0,0f,1f),
             UniOutConditionFormat(.01f,200f,.01f,2,20f,19.9f),
             UniOutConditionFormat(0f,1f,1f,0,0f,1f),

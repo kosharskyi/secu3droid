@@ -44,7 +44,7 @@ class UniversalOutputConditions @javax.inject.Inject constructor() {
     11 -> UniOutConditionFormat(-15f, 65f, .1f, 1, 55f, 53f)
     12 -> UniOutConditionFormat(0f, 5f, .01f, 2, 2.5f, 2.45f)
     15, 21, 22, 24, 25, 26, 27 -> UniOutConditionFormat(0f, 5f, .01f, 2, 2.5f, 2.48f)
-    16 -> UniOutConditionFormat(0f, 600f, .1f, 2, 2.5f, 2.48f)
+    16 -> UniOutConditionFormat(0f, 5f, .1f, 2, 2.5f, 2.48f)
     13 -> UniOutConditionFormat(0f, 100f, .5f, 1, 30f, 29f)
     18 -> UniOutConditionFormat(.01f, 200f, .01f, 2, 20f, 19.9f)
     23 -> UniOutConditionFormat(0f, 600f, .01f, 2, 1f, 5f)

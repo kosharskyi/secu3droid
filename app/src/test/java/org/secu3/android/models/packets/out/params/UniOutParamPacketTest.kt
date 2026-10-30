@@ -158,12 +158,26 @@ class UniversalOutputsPacketTest {
     }
 
     @Test
+    fun unrelatedEditPreservesOutOfRangeAddI2RawThreshold() {
+        val source = UniOutParamPacket().apply { output1Use = true; output1Condition1 = 16; output1OnThrd1 = 5f }.pack().drop(1).toIntArray()
+        source[3] = 0xFF; source[4] = 0xFF // 163.8375 V, outside the editor's allowed range.
+        val packet = UniOutParamPacket().parse(intArrayOf('@'.code, '&'.code) + source) as UniOutParamPacket
+        val originalWord = packet.pack().slice(4..5)
+        val control = UniversalOutputsControl(UniversalOutputConditions()) { true }
+        control.receive(packet)
+
+        assertTrue(control.setOutputEnabled(1, false))
+
+        assertEquals(originalWord, packet.pack().slice(4..5))
+    }
+
+    @Test
     fun desktopConditionFormattingAndDefaultsAreRepresented() {
         assertEquals(UniOutConditionFormat(-40f, 300f, .25f, 2, 55f, 50f), UniversalOutputConditions().get(0))
         assertEquals(UniOutConditionFormat(50f, 30000f, 10f, 0, 1500f, 1200f), UniversalOutputConditions().get(1))
         assertEquals(UniOutConditionFormat(-1000f, 1000f, 1f, 0, 55f, 50f), UniversalOutputConditions().get(34))
         assertEquals(UniOutConditionFormat(0f, 600f, .01f, 2, 1f, 5f), UniversalOutputConditions().get(23))
-        assertEquals(UniOutConditionFormat(0f, 600f, .1f, 2, 2.5f, 2.48f), UniversalOutputConditions().get(16))
+        assertEquals(UniOutConditionFormat(0f, 5f, .1f, 2, 2.5f, 2.48f), UniversalOutputConditions().get(16))
         assertEquals(UniOutConditionFormat(0f, 5f, .01f, 2, 2.5f, 2.45f), UniversalOutputConditions().get(12))
         assertEquals(UniOutConditionFormat(-40f, 250f, .25f, 1, 100f, 98f), UniversalOutputConditions().get(39))
         assertEquals(UniversalOutputConditions().get(39), UniversalOutputConditions().get(40))

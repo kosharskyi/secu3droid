@@ -142,6 +142,25 @@ class UniversalOutputsScreenTest {
     }
 
     @Test
+    fun addI2ThresholdDialogClampsInputToFiveVolts() {
+        val initial = UniOutParamPacket().apply { output1Use = true; output1Condition1 = 16 }
+        val state = androidx.compose.runtime.mutableStateOf(values(initial))
+        val attempts = mutableListOf<Triple<Int, Float, Boolean>>()
+        compose.setContent {
+            UniversalOutputsScreen(state.value, conditions, functions, UniversalOutputConditions(),
+                { _, _ -> }, { _, _, _ -> }, { _, _, _ -> }, { _, _ -> }, { _, _ -> },
+                { output, slot, on, expected, value -> attempts += Triple(expected, value, on) }, {})
+        }
+
+        compose.onNodeWithTag("output-1-threshold-on-1").performScrollTo().performClick()
+        compose.onNodeWithTag("output-1-threshold-on-1-editor").performTextClearance()
+        compose.onNodeWithTag("output-1-threshold-on-1-editor").performTextInput("600")
+        compose.onNodeWithText(targetContext.getString(android.R.string.ok)).performClick()
+
+        compose.runOnIdle { assertEquals(listOf(Triple(16, 5f, true)), attempts) }
+    }
+
+    @Test
     fun activeOutputShowsSelectorsThresholdDialogsAndConditionalSecondCondition() {
         val active = UniOutParamPacket().also { it.output1Use = true; it.output1LogicFunc = 15 }
         val state = androidx.compose.runtime.mutableStateOf(values(active))
