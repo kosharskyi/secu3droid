@@ -15,7 +15,7 @@
 - **On-the-go Configuration**: Change Secu-3 unit settings and maps without needing a laptop.
 - **Data Logging**: Keep track of engine performance and diagnostic data.
 - **Modern UI**: Built with Jetpack Compose, Material 3, and Navigation Compose.
-- **Persistent settings**: Existing preferences remain in the Android default shared-preferences store, including settings created by older app versions.
+- **Persistent settings**: App settings are stored in Preferences DataStore, with automatic migration of supported settings from older SharedPreferences stores.
 
 ## 🛠 Tech Stack
 
@@ -23,6 +23,7 @@
 - **UI Framework**: [Jetpack Compose](https://developer.android.com/jetpack/compose) with Material 3
 - **Dependency Injection**: [Hilt](https://dagger.dev/hilt/)
 - **Database**: [Room](https://developer.android.com/training/data-storage/room)
+- **Preferences**: [Preferences DataStore](https://developer.android.com/topic/libraries/architecture/datastore)
 - **Networking**: [Retrofit](https://square.github.io/retrofit/) & OkHttp
 - **Serialization**: Gson
 - **Navigation**: [Navigation Compose](https://developer.android.com/develop/ui/compose/navigation)
@@ -30,6 +31,8 @@
 - **Dashboard**: Compose-based gauges and indicators backed by the Room database
 
 ## 🤝 Contributing
+
+See the [roadmap](ROADMAP.md) for deferred work, including tablet UI improvements after the first stable release.
 
 Contributions are welcome! Please feel free to submit a Pull Request or open an issue for bugs and feature requests.
 

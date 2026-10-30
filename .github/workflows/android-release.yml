@@ -6,9 +6,15 @@ on:
       - 'v*'
 
 jobs:
+  ci:
+    name: Required Android CI checks
+    uses: ./.github/workflows/android-ci.yml
+
   release-build:
     name: Release build
     runs-on: ubuntu-latest
+    needs: ci
+    timeout-minutes: 45
     permissions:
       contents: write
 
@@ -21,6 +27,12 @@ jobs:
         with:
           distribution: temurin
           java-version: '17'
+
+      - name: Set up Android SDK
+        uses: android-actions/setup-android@v3
+
+      - name: Install compile SDK and build tools
+        run: sdkmanager 'platforms;android-37' 'build-tools;36.1.0'
 
       - name: Set up Gradle
         uses: gradle/actions/setup-gradle@v4
@@ -39,9 +51,6 @@ jobs:
 
       - name: Validate release tag
         run: ./gradlew :app:validateVersionTag
-
-      - name: Run unit tests
-        run: ./gradlew :app:testDebugUnitTest
 
       - name: Run release lint
         env:
