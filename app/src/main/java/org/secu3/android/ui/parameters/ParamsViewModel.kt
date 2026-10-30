@@ -68,7 +68,6 @@ import org.secu3.android.domain.parameters.UniversalOutputsControl
 import org.secu3.android.domain.parameters.UniversalOutputConditions
 import org.secu3.android.domain.parameters.LambdaControl
 import org.secu3.android.domain.parameters.SecurityCredentialsResult
-import org.secu3.android.models.packets.base.OutputPacket
 import org.secu3.android.models.packets.out.params.AccelerationParamPacket
 import org.secu3.android.models.packets.out.params.AdcCorrectionsParamPacket
 import org.secu3.android.models.packets.out.params.CarburParamPacket
@@ -142,8 +141,6 @@ class ParamsViewModel @Inject constructor(
     private val uiMessageQueue: UiMessageQueue,
     private val parameterPageCatalog: ParameterPageCatalog,
 ) : ViewModel() {
-
-    var isSendAllowed: Boolean = false
 
     internal var parameterEditSession: ParameterEditSession? by mutableStateOf(null)
         private set
@@ -858,7 +855,6 @@ class ParamsViewModel @Inject constructor(
     private fun onParameterSessionEvent(event: ParameterSessionEvent) {
         when (event) {
             is ParameterSessionEvent.Invalidated -> {
-                isSendAllowed = false
                 connectionSession = event.sessionId
                 parameterEditSession = null
                 failedPage = null
@@ -931,14 +927,7 @@ class ParamsViewModel @Inject constructor(
                 val functionParameters = (result as ParameterReadResult.Functions).parameters
                 functionsControl.receive(functionParameters)
             }
-            ParameterPage.MISCELLANEOUS -> {
-                isSendAllowed = false
-                try {
-                    miscellaneousControl.receive(packet<MiscellaneousParamPacket>(result))
-                } finally {
-                    isSendAllowed = true
-                }
-            }
+            ParameterPage.MISCELLANEOUS -> miscellaneousControl.receive(packet<MiscellaneousParamPacket>(result))
             ParameterPage.SECURITY -> {
                 securityControl.receive(packet(result))
                 val current = securityControl.values.value ?: return
@@ -962,13 +951,6 @@ class ParamsViewModel @Inject constructor(
 
     private inline fun <reified T : org.secu3.android.models.packets.base.InputPacket> packet(result: ParameterReadResult): T =
         (result as ParameterReadResult.Packet).packet as T
-
-    fun sendPacket(packet: OutputPacket) {
-        if (!isSendAllowed || !parameterSession.sendPacket(packet)) {
-            return
-        }
-        showUiMessage(R.string.packet_sent, UiMessageDuration.SHORT)
-    }
 
     fun savePacket() = parameterSession.save()
 

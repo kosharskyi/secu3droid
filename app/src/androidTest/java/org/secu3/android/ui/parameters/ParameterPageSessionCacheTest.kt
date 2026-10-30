@@ -182,7 +182,6 @@ class ParameterPageSessionCacheTest {
             queue.onActiveScopeChanged(PARAMETERS_ROUTE)
             queue.pending.value.forEach { queue.acknowledge(it.id) }
             usb.suppressAttachmentRescan()
-            vm.isSendAllowed = false
 
             val expected = IntArray(67)
             val expectedTail = intArrayOf(0xCA, 0xFE)
@@ -245,14 +244,13 @@ class ParameterPageSessionCacheTest {
             assertEquals(pausedWrites, usb.writes.size)
             assertEquals(pausedState, vm.universalOutputsControl.values.value)
             assertFalse(queue.pending.value.any { it.textRes == R.string.packet_sent })
-            assertFalse(vm.isSendAllowed)
         } finally {
             usb.close()
             compose.runOnIdle { vm.clearPageState() }
         }
     }
 
-    @Test fun adcPageAdmissionWritesCapturedPacketEvenWhenLegacySendFlagIsClosed() = runBlocking {
+    @Test fun adcPageAdmissionWritesCapturedPacketThroughTheSession() = runBlocking {
         val vm = paramsViewModel()
         val usb = installFakeUsb(vm)
         try {
@@ -272,7 +270,6 @@ class ParameterPageSessionCacheTest {
 
             val baseline = usb.writes.size
             usb.suppressAttachmentRescan()
-            vm.isSendAllowed = false
             assertTrue(vm.editAdc(org.secu3.android.ui.parameters.pages.compose.AdcNumber.MAP_CORRECTION, 0f))
             assertTrue(vm.setAdcCompensationMode(false))
             usb.awaitWriteCount(baseline + 2)
@@ -287,7 +284,6 @@ class ParameterPageSessionCacheTest {
             assertArrayEquals(byteArrayOf(0xCA.toByte(), 0xFE.toByte()), mapEdit.sliceArray(mapEdit.size - 5..mapEdit.size - 4))
             assertEquals('r', usb.writes[baseline + 1][1].toInt().toChar())
             assertEquals(0xA0, usb.writes[baseline + 1][2].toInt() and 0xFF)
-            assertFalse(vm.isSendAllowed)
             assertEquals(false, vm.adcCorrectionsControl.values.value!!.adcCompMode)
         } finally {
             usb.close()
@@ -314,7 +310,6 @@ class ParameterPageSessionCacheTest {
             queue.onActiveScopeChanged(PARAMETERS_ROUTE)
             queue.pending.value.forEach { queue.acknowledge(it.id) }
             usb.suppressAttachmentRescan()
-            vm.isSendAllowed = false
 
             val expectedValues = MutableList(24) { 0f }
             val factorWords = IntArray(12)
@@ -351,7 +346,6 @@ class ParameterPageSessionCacheTest {
             assertEquals(0x30, usb.writes[baseline + 24][7].toInt() and 0xFF)
             assertEquals(0x00, usb.writes[baseline + 24][8].toInt() and 0xFF)
             assertTrue(queue.pending.value.any { it.textRes == R.string.packet_sent })
-            assertEquals(false, vm.isSendAllowed)
             assertEquals(true, vm.adcCorrectionsControl.values.value?.adcCompMode)
 
             queue.pending.value.forEach { queue.acknowledge(it.id) }
@@ -420,7 +414,6 @@ class ParameterPageSessionCacheTest {
             await { vm.functionsControl.values.value?.functionNames == listOf("Speed density", "Alpha-N") }
             delay(150)
 
-            vm.isSendAllowed = false // Functions writes follow actual session admission.
             val baseline = usb.writes.size
             usb.suppressAttachmentRescan()
             compose.onNodeWithTag("functions_load_source").performScrollTo().performClick()
@@ -436,7 +429,6 @@ class ParameterPageSessionCacheTest {
             compose.runOnIdle { vm.dismissParameterEditor(cancel.id) }
             usb.awaitWriteCount(baseline + 1)
             assertEquals("MAF source selection was sent", 4, usb.writes[baseline][20].toInt() and 0xFF)
-            assertFalse(vm.isSendAllowed)
         } finally {
             usb.close()
             compose.runOnIdle { vm.clearPageState() }
@@ -498,7 +490,6 @@ class ParameterPageSessionCacheTest {
             val queue = queueField.get(vm) as org.secu3.android.ui.messages.UiMessageQueue
             queue.onActiveScopeChanged(PARAMETERS_ROUTE)
             queue.pending.value.forEach { queue.acknowledge(it.id) }
-            vm.isSendAllowed = false
 
             var expectedWrites = usb.writes.size
             FunctionsNumber.entries.forEach { number ->
@@ -582,7 +573,6 @@ class ParameterPageSessionCacheTest {
             assertEquals(beforeUnsupported, usb.writes.size)
             assertEquals(committed, vm.functionsControl.values.value)
             assertFalse(queue.pending.value.any { it.textRes == R.string.packet_sent })
-            assertFalse(vm.isSendAllowed)
         } finally {
             usb.close()
             compose.runOnIdle { vm.clearPageState() }
@@ -651,7 +641,7 @@ class ParameterPageSessionCacheTest {
         }
     }
 
-    @Test fun accelerationVmRoutesTypedEditsWithoutLegacyGateAndHonorsFirmwareAndPause() = runBlocking {
+    @Test fun accelerationVmRoutesTypedEditsAndHonorsFirmwareAndPause() = runBlocking {
         val vm = paramsViewModel()
         var transport: FakeUsbTransport? = null
         val queueField = ParamsViewModel::class.java.getDeclaredField("uiMessageQueue").apply { isAccessible = true }
@@ -674,7 +664,6 @@ class ParameterPageSessionCacheTest {
             queue.onActiveScopeChanged(PARAMETERS_ROUTE)
             queue.pending.value.forEach { queue.acknowledge(it.id) }
             val baseline = usb.writes.size
-            vm.isSendAllowed = false
 
             compose.runOnIdle {
                 assertTrue(vm.editAcceleration(AccelerationNumber.TPS_THRESHOLD, 73))
@@ -739,7 +728,6 @@ class ParameterPageSessionCacheTest {
             compose.waitForIdle()
             queue.onActiveScopeChanged(PARAMETERS_ROUTE)
             queue.pending.value.forEach { queue.acknowledge(it.id) }
-            vm.isSendAllowed = false
             val baseline = usb.writes.size
             compose.runOnIdle {
                 assertTrue(vm.selectLtftMode(1))
@@ -793,7 +781,6 @@ class ParameterPageSessionCacheTest {
             assertEquals(1, vm.ltftControl.values.value?.mode)
             assertEquals(LtftValues(1, 12.5f, 80.25f, 100.25f, .25f, 100f, 12f,
                 -10f, 15f, 1234, 5432, 20f, 300f, 1.2f, 3.4f), vm.ltftControl.values.value)
-            assertEquals(false, vm.isSendAllowed)
             assertTrue(queue.pending.value.any { it.textRes == R.string.packet_sent })
             queue.pending.value.forEach { queue.acknowledge(it.id) }
 
@@ -851,7 +838,6 @@ class ParameterPageSessionCacheTest {
             compose.waitForIdle()
             queue.onActiveScopeChanged(PARAMETERS_ROUTE)
             queue.pending.value.forEach { queue.acknowledge(it.id) }
-            vm.isSendAllowed = false
             val baseline = usb.writes.size
 
             dbwStep = "send all ten DBW edits"
@@ -876,7 +862,6 @@ class ParameterPageSessionCacheTest {
             // Each immutable frame carries exactly the 14 writable bytes; Home position stays receive-only.
             assertArrayEquals(intArrayOf(0x02, 0, 0x04, 0, 0x08, 0, 91, 111, 15, 102, 120, 12, 0x02, 0xA0), writes.last().sliceArray(2..15).map { it.toInt() and 0xff }.toIntArray())
             assertEquals(DbwValues(.125f, .25f, .5f, 45.5f, 55.5f, .15f, 6.4f, 7.5f, 12f, 10.5f, 47.5f), vm.dbwControl.values.value)
-            assertFalse(vm.isSendAllowed)
             assertTrue(queue.pending.value.any { it.textRes == R.string.packet_sent })
             queue.pending.value.forEach { queue.acknowledge(it.id) }
 
@@ -958,7 +943,6 @@ class ParameterPageSessionCacheTest {
             queue.onActiveScopeChanged(PARAMETERS_ROUTE)
             queue.pending.value.forEach { queue.acknowledge(it.id) }
             val baseline = usb.writes.size
-            vm.isSendAllowed = false
 
             assertTrue(vm.editIdlingFloat(org.secu3.android.ui.parameters.pages.compose.IdlingNumber.P0, 1.25f))
             assertTrue(vm.editIdlingFloat(org.secu3.android.ui.parameters.pages.compose.IdlingNumber.P1, .75f))
@@ -1033,7 +1017,7 @@ class ParameterPageSessionCacheTest {
         }
     }
 
-    @Test fun knockCommandsUseSessionAdmissionDespiteLegacyGateAndRejectAfterPause() = runBlocking {
+    @Test fun knockCommandsUseSessionAdmissionAndRejectAfterPause() = runBlocking {
         val vm = paramsViewModel()
         var transport: FakeUsbTransport? = null
         val queueField = ParamsViewModel::class.java.getDeclaredField("uiMessageQueue").apply { isAccessible = true }
@@ -1053,7 +1037,6 @@ class ParameterPageSessionCacheTest {
             compose.waitForIdle()
             queue.onActiveScopeChanged(PARAMETERS_ROUTE)
             queue.pending.value.forEach { queue.acknowledge(it.id) }
-            vm.isSendAllowed = false
             val baseline = usb.writes.size
 
             assertTrue(vm.editKnockDelay(18))
@@ -1079,7 +1062,6 @@ class ParameterPageSessionCacheTest {
             assertEquals(writesBeforePause, usb.writes.size)
             assertEquals(committed, vm.knockControl.values.value)
             assertFalse(queue.pending.value.any { it.textRes == R.string.packet_sent })
-            assertFalse(vm.isSendAllowed)
         } finally {
             try {
                 transport?.close()
@@ -1112,7 +1094,6 @@ class ParameterPageSessionCacheTest {
             queue.onActiveScopeChanged(PARAMETERS_ROUTE)
             queue.pending.value.forEach { queue.acknowledge(it.id) }
             val baseline = usb.writes.size
-            vm.isSendAllowed = false
 
             compose.runOnIdle { vm.editAngles(AnglesNumber.MAX, 5.5f) }
             usb.awaitWriteCount(baseline + 1)
@@ -1189,7 +1170,6 @@ class ParameterPageSessionCacheTest {
             queue.onActiveScopeChanged(PARAMETERS_ROUTE)
             queue.pending.value.forEach { queue.acknowledge(it.id) }
             val baseline = usb.writes.size
-            vm.isSendAllowed = false
 
             val cases = listOf(
                 Triple(false, 0, 0),
@@ -1288,7 +1268,6 @@ class ParameterPageSessionCacheTest {
             queue.onActiveScopeChanged(PARAMETERS_ROUTE)
             queue.pending.value.forEach { queue.acknowledge(it.id) }
             val baseline = usb.writes.size
-            vm.isSendAllowed = false
 
             assertTrue(vm.editTemperatureFloat(TemperatureNumber.FAN_ON, 100f))
             usb.awaitWriteCount(baseline + 1)
@@ -1318,7 +1297,6 @@ class ParameterPageSessionCacheTest {
             assertEquals(100f, vm.temperatureControl.values.value?.fanOn)
             assertEquals(90f, vm.temperatureControl.values.value?.fanOff)
             assertEquals(30f, vm.temperatureControl.values.value?.fanTimer)
-            assertEquals(false, vm.isSendAllowed)
 
             queue.pending.value.forEach { queue.acknowledge(it.id) }
             val committed = vm.temperatureControl.values.value
@@ -1550,7 +1528,6 @@ class ParameterPageSessionCacheTest {
             queue.onActiveScopeChanged(PARAMETERS_ROUTE)
             queue.pending.value.forEach { queue.acknowledge(it.id) }
             usb.suppressAttachmentRescan()
-            vm.isSendAllowed = false
 
             val expected = intArrayOf(0,32,64,0,128,1,0,0,200,255,206,5,220,42,0,50,1,12,0xA0,8,0,12,34,75,25,39,16,0xA5)
             var baseline = usb.writes.size
@@ -1626,7 +1603,6 @@ class ParameterPageSessionCacheTest {
             assertEquals(pausedWrites, usb.writes.size)
             assertEquals(pausedState, vm.lambdaControl.values.value)
             assertFalse(queue.pending.value.any { it.textRes == R.string.packet_sent })
-            assertFalse(vm.isSendAllowed)
         } finally {
             try {
                 transport?.close()
@@ -1737,6 +1713,9 @@ class ParameterPageSessionCacheTest {
                 pwmFrq0 = 100, pwmFrq1 = 200, vssPeriodDist = 1000f,
             ))
             await { vm.miscellaneousControl.values.value != null }
+            val receivedParameterWrites = transport.writes.count { it.size > 2 && it[1].toInt().toChar() == 'z' }
+            assertEquals(0, receivedParameterWrites)
+            assertFalse(queue.pending.value.any { it.textRes == R.string.packet_sent })
             compose.activityRule.scenario.moveToState(Lifecycle.State.STARTED)
             compose.waitForIdle()
             queue.onActiveScopeChanged(PARAMETERS_ROUTE)
@@ -1763,6 +1742,13 @@ class ParameterPageSessionCacheTest {
             }
             assertEquals(baseline + 1, transport.writes.size)
             assertFalse(queue.pending.value.any { it.textRes == R.string.packet_sent })
+            compose.runOnIdle { vm.clearPageState() }
+            assertEquals(null, vm.miscellaneousControl.values.value)
+            assertFalse(queue.pending.value.any { it.textRes == R.string.packet_sent })
+            assertEquals(
+                receivedParameterWrites + 1,
+                transport.writes.count { it.size > 2 && it[1].toInt().toChar() == 'z' },
+            )
         } finally {
             try {
                 transport.close()

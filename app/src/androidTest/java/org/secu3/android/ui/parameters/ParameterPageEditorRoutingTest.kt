@@ -89,7 +89,6 @@ class ParameterPageEditorRoutingTest {
         val control = vm.anglesControl
         control.reset()
         control.receive(AnglesParamPacket(maxAngle = 4f))
-        vm.isSendAllowed = false
         renderPage(R.string.params_tab_angles_title, vm)
 
         compose.onNodeWithTag("angles_max").performClick()
@@ -103,7 +102,6 @@ class ParameterPageEditorRoutingTest {
         assertEquals(2, request.precision)
         compose.runOnIdle { vm.acceptParameterEditor(session.id, 5.5f) }
         assertEquals(4f, control.values.value?.maxAngle)
-        assertEquals(false, vm.isSendAllowed)
     }
 
     @Test fun idlingPAndIEditorTitlesRouteToNamedSemanticValues() {
@@ -115,7 +113,6 @@ class ParameterPageEditorRoutingTest {
             coefThrd1 = 1f, coefThrd2 = 1f,
         )
         vm.idlingControl.receive(packet)
-        vm.isSendAllowed = false
         renderPage(R.string.params_tab_idling_title, vm, ParameterCapabilities.All)
         compose.runOnIdle { vm.idlingControl.receive(packet) }
 
@@ -135,14 +132,12 @@ class ParameterPageEditorRoutingTest {
         assertFalse(vm.editIdlingFloat(IdlingNumber.RPM, 1f))
         assertEquals(.25f, vm.idlingControl.values.value?.proportionalPositive)
         assertEquals(.125f, vm.idlingControl.values.value?.proportionalNegative)
-        assertEquals(false, vm.isSendAllowed)
     }
 
-    @Test fun ltftEditorsKeepIntAndFloatContractsAndDoNotUseLegacySendGate() {
+    @Test fun ltftEditorsKeepIntAndFloatContractsAndRejectWithoutSession() {
         val vm = paramsViewModel()
         vm.ltftControl.reset()
         vm.ltftControl.receive(LtftParamPacket(learnClt = 12.5f, learnRpm0 = 1234))
-        vm.isSendAllowed = false
         renderPage(R.string.params_tab_ltft_title, vm)
 
         compose.onNodeWithTag("ltft_lower_rpm").performScrollTo().performClick()
@@ -165,7 +160,6 @@ class ParameterPageEditorRoutingTest {
         assertFalse(vm.editLtftInt(LtftNumber.LOWER_CLT, 20))
         compose.runOnIdle { vm.dismissParameterEditor(clt.id) }
         assertEquals(12.5f, vm.ltftControl.values.value?.lowerClt)
-        assertEquals(false, vm.isSendAllowed)
     }
 
     @Test fun dbwEditorsRouteAllTenValuesThroughFloatContractWithDesktopMetadata() {
@@ -175,7 +169,6 @@ class ParameterPageEditorRoutingTest {
         )
         vm.dbwControl.reset()
         vm.dbwControl.receive(DbwParamPacket(.125f, .25f, .375f, 40f, 50f, .12f, 6f, 7f, 8f, 9f, 43.21f))
-        vm.isSendAllowed = false
         renderPage(R.string.params_tab_el_throttle_title, vm, ParameterCapabilities.All)
 
         DbwNumber.entries.forEach { number ->
@@ -192,7 +185,6 @@ class ParameterPageEditorRoutingTest {
         }
         assertFalse(vm.editDbw(DbwNumber.ETC_P, .5f))
         assertEquals(values, vm.dbwControl.values.value)
-        assertFalse(vm.isSendAllowed)
     }
 
     @Test fun functionsEditorsRouteAllFourteenNamedValuesWithTheirMetadata() {
@@ -243,7 +235,6 @@ class ParameterPageEditorRoutingTest {
         )
         vm.adcCorrectionsControl.reset()
         vm.adcCorrectionsControl.receive(packet)
-        vm.isSendAllowed = false
         renderPage(R.string.params_tab_adc_errors_corr_title, vm)
 
         val values = requireNotNull(vm.adcCorrectionsControl.values.value)
@@ -261,7 +252,6 @@ class ParameterPageEditorRoutingTest {
         }
         assertFalse(vm.editAdc(AdcNumber.MAP_FACTOR, 1.5f))
         assertEquals(values, vm.adcCorrectionsControl.values.value)
-        assertFalse(vm.isSendAllowed)
     }
 
     @Test fun temperatureEditorsPreserveWholeSecondTimerContractAndRejectWithoutSession() {
@@ -269,7 +259,6 @@ class ParameterPageEditorRoutingTest {
         val control = vm.temperatureControl
         control.reset()
         control.receive(TemperatureParamPacket(ventOn = 95f, ventOff = 90f, ventTmr = 1.27f))
-        vm.isSendAllowed = false
         renderPage(R.string.params_tab_temperature_title, vm)
 
         compose.onNodeWithTag("temperature_fan_timer").performClick()
@@ -293,7 +282,6 @@ class ParameterPageEditorRoutingTest {
         compose.runOnIdle { vm.acceptParameterEditor(fanSession.id, 100f) }
         assertEquals(95f, control.values.value?.fanOn)
         assertEquals(1.27f, control.values.value?.fanTimer)
-        assertEquals(false, vm.isSendAllowed)
     }
 
     @Test fun knockEditorRoutesDelayAsIntAndAnglesAsFloatWithDomainBounds() {
@@ -304,7 +292,6 @@ class ParameterPageEditorRoutingTest {
             control.reset()
             control.receive(packet)
         }
-        vm.isSendAllowed = false
         renderPage(R.string.params_tab_knock_title, vm)
 
         compose.onNodeWithTag("knock_delay").performScrollTo().performClick()
@@ -330,7 +317,6 @@ class ParameterPageEditorRoutingTest {
         compose.runOnIdle { vm.acceptParameterEditor(beginSession.id, 3.25f) }
         assertEquals(2.25f, control.values.value?.windowBegin)
         assertEquals(17, control.values.value?.recoveryDelay)
-        assertFalse(vm.isSendAllowed)
     }
 
     @Test fun accelerationEditorRoundsColdMultiplierOnlyForTheIntegerEditor() {
@@ -366,7 +352,6 @@ class ParameterPageEditorRoutingTest {
             shutoffDelay = .25f, feOnThresholds = 6.25f, tpsThreshold = 5f,
             fuelcutMapThrd = 20f, fuelcutCtsThrd = 15f, revlimLot = 8000, revlimHit = 8100,
         ))
-        vm.isSendAllowed = false
         renderPage(R.string.params_tab_fuel_cutoff_title, vm)
 
         val initial = requireNotNull(control.values.value)
@@ -393,7 +378,6 @@ class ParameterPageEditorRoutingTest {
             }
             assertEquals(initial, control.values.value)
         }
-        assertEquals(false, vm.isSendAllowed)
     }
 
     @Test fun miscellaneousEvapEditorsPreserveDependentBounds() {
@@ -402,7 +386,6 @@ class ParameterPageEditorRoutingTest {
         control.reset()
         val packet = MiscellaneousParamPacket(evapAfbegin = 5_000).apply { evapAfEnd = 175_000 }
         control.receive(packet)
-        vm.isSendAllowed = false
         renderPage(R.string.params_tab_miscellaneous_title, vm)
 
         compose.onNodeWithTag("misc-begin").performScrollTo().performClick()
@@ -426,7 +409,6 @@ class ParameterPageEditorRoutingTest {
         val previousSlope = packet.evapAfslope
         compose.runOnIdle { vm.acceptParameterEditor(endSession.id, 180_000) }
         assertTrue(packet.evapAfslope != previousSlope)
-        assertEquals(false, vm.isSendAllowed)
         assertTrue(control.values.value != null)
     }
 
@@ -519,7 +501,6 @@ class ParameterPageEditorRoutingTest {
         compose.onNodeWithTag("security-key1").performTextInput("112233445566")
         compose.onNodeWithTag("security-key1").assertTextContains("112233445566", substring = true)
         assertEquals("060504030201", vm.securityControl.values.value?.key0)
-        assertFalse(vm.isSendAllowed)
     }
 
     @Test fun parameterEditSessionRejectsStaleAndRepeatedConfirmations() {
