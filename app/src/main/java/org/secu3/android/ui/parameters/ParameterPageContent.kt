@@ -45,7 +45,6 @@ import org.secu3.android.ui.messages.UiMessageDuration
 @Composable
 internal fun ParameterPageContent(
     page: ParameterPage,
-    titleRes: Int,
     viewModel: ParamsViewModel,
     capabilities: ParameterCapabilities,
     isActive: Boolean,
@@ -62,8 +61,8 @@ internal fun ParameterPageContent(
     fun floatEdit(title: Int, value: Float, step: Float, max: Float, min: Float, precision: Int, change: (Float) -> Unit) =
         onEdit(ParameterEditRequest.FloatValue(resources.getString(title), value, min, max, step, precision, change))
 
-    when (titleRes) {
-        R.string.params_tab_start_title -> {
+    when (page) {
+        ParameterPage.STARTER -> {
             val values by viewModel.starterControl.values.collectAsStateWithLifecycle()
             StarterScreen(values, { n ->
                 val v = values ?: return@StarterScreen
@@ -74,7 +73,7 @@ internal fun ParameterPageContent(
                 }
             }, viewModel::setStarterFlag, capabilities = capabilities)
         }
-        R.string.params_tab_angles_title -> {
+        ParameterPage.ANGLES -> {
             val values by viewModel.anglesControl.values.collectAsStateWithLifecycle()
             AnglesScreen(values, { number ->
                 values?.let { current ->
@@ -84,7 +83,7 @@ internal fun ParameterPageContent(
                 }
             }, viewModel::setAnglesFlag)
         }
-        R.string.params_tab_idling_title -> {
+        ParameterPage.IDLING -> {
             val values by viewModel.idlingControl.values.collectAsStateWithLifecycle()
             IdlingScreen(values, { number ->
                 values?.let { current ->
@@ -100,7 +99,7 @@ internal fun ParameterPageContent(
                 }
             }, viewModel::setIdlingFlag, capabilities = capabilities)
         }
-        R.string.params_tab_functions_title -> {
+        ParameterPage.FUNCTIONS -> {
             val values by viewModel.functionsControl.values.collectAsStateWithLifecycle()
             FunctionsScreen(
                 values = values,
@@ -130,7 +129,7 @@ internal fun ParameterPageContent(
                 capabilities = capabilities,
             )
         }
-        R.string.params_tab_temperature_title -> {
+        ParameterPage.TEMPERATURE -> {
             val values by viewModel.temperatureControl.values.collectAsStateWithLifecycle()
             TemperatureScreen(values, { number ->
                 values?.let { current ->
@@ -146,7 +145,7 @@ internal fun ParameterPageContent(
                 }
             }, viewModel::setTemperatureFlag, capabilities = capabilities)
         }
-        R.string.params_tab_fuel_cutoff_title -> {
+        ParameterPage.FUEL_CUTOFF -> {
             val values by viewModel.carburControl.values.collectAsStateWithLifecycle()
             CarburScreen(
                 values = values,
@@ -168,7 +167,7 @@ internal fun ParameterPageContent(
                 capabilities = capabilities,
             )
         }
-        R.string.params_tab_adc_errors_corr_title -> {
+        ParameterPage.ADC_ERRORS -> {
             val control = viewModel.adcCorrectionsControl
             val values by control.values.collectAsStateWithLifecycle()
             AdcErrorsCorrectionsScreen(values, { number ->
@@ -179,11 +178,11 @@ internal fun ParameterPageContent(
                 }
             }, viewModel::setAdcCompensationMode, capabilities = capabilities)
         }
-        R.string.params_tab_ckps_title -> {
+        ParameterPage.CKPS -> {
             val values by viewModel.ckpsControl.values.collectAsStateWithLifecycle()
             CkpsScreen(values, { n -> values?.let { v -> if (n.integer) intEdit(n.title, n.value(v).toInt(), n.step.toInt(), n.max.toInt(), n.min.toInt()) { viewModel.editCkps(n, it.toFloat()) } else floatEdit(n.title, n.value(v), n.step, n.max, n.min, n.precision) { viewModel.editCkps(n, it.toFloat()) } } }, viewModel::toggleCkps, viewModel::selectCkpsChoice, capabilities = capabilities)
         }
-        R.string.params_tab_knock_title -> {
+        ParameterPage.KNOCK -> {
             val control = viewModel.knockControl
             val values by control.values.collectAsStateWithLifecycle()
             KnockScreen(
@@ -208,7 +207,7 @@ internal fun ParameterPageContent(
                 onSelector = viewModel::selectKnock,
             )
         }
-        R.string.params_tab_miscellaneous_title -> {
+        ParameterPage.MISCELLANEOUS -> {
             val control = viewModel.miscellaneousControl
             val values by control.values.collectAsStateWithLifecycle()
             val rates = MiscellaneousControl.BAUD_RATES.mapValues { it.value.toString() }
@@ -231,7 +230,7 @@ internal fun ParameterPageContent(
                 else intEdit(parameter.first, parameter.second.coerceIn(bounds.first, bounds.second), if (key == MiscField.PERIOD) 10 else 1, bounds.second, bounds.first) { viewModel.editMiscellaneous(key, it.toInt()) }
             }, { values?.let { current -> floatEdit(R.string.miscel_fuel_pump_working_time_title, current.timeout, MiscellaneousControl.TIMEOUT_MIN, MiscellaneousControl.TIMEOUT_MAX, .1f, 1) { viewModel.editMiscellaneousTimeout(it.toFloat()) } } }, viewModel::selectMiscellaneousBaud, viewModel::toggleMiscellaneous, capabilities = capabilities)
         }
-        R.string.params_tab_choke_control_title -> {
+        ParameterPage.CHOKE_CONTROL -> {
             val values by viewModel.chokeControl.values.collectAsStateWithLifecycle()
             ChokeScreen(values, { number ->
                 values?.let { current ->
@@ -250,7 +249,7 @@ internal fun ParameterPageContent(
                 { if (isActiveNow()) viewModel.finishChokeManual() }, viewModel::cancelChokeManual,
                 viewModel::toggleChokeTest, isActive = isActive, capabilities = capabilities)
         }
-        R.string.params_tab_security_title -> {
+        ParameterPage.SECURITY -> {
             val values by viewModel.securityControl.values.collectAsStateWithLifecycle()
             var expanded by remember { mutableStateOf(false) }
             SecurityScreen(values, viewModel.securityName, viewModel.securityPassword,
@@ -260,7 +259,7 @@ internal fun ParameterPageContent(
                 viewModel::changeSecurityImmobilizer, viewModel::changeSecurityName, viewModel::changeSecurityPassword,
                 { viewModel.changeSecurityKey(0, it) }, { viewModel.changeSecurityKey(1, it) }, viewModel::applySecurityCredentials)
         }
-        R.string.params_tab_universal_outputs_title -> {
+        ParameterPage.UNIVERSAL_OUTPUTS -> {
             val values by viewModel.universalOutputsControl.values.collectAsStateWithLifecycle()
             UniversalOutputsScreen(values, UniOutParamPacket.CONDITION.entries.associate { it.id to resources.getString(it.strId) },
                 stringArrayResource(R.array.logical_functions).toList(), viewModel.universalOutputConditions,
@@ -269,7 +268,7 @@ internal fun ParameterPageContent(
                 viewModel::selectUniversalOutputLogicFunction, viewModel::editUniversalOutputThreshold,
                 viewModel::selectUniversalOutputsPairFunction)
         }
-        R.string.params_tab_fuel_injection_title -> {
+        ParameterPage.FUEL_INJECTION -> {
             val values by viewModel.fuelInjectionControl.values.collectAsStateWithLifecycle()
             FuelInjectionScreen(values, InjctrParPacket.InjConfig.entries.associate { it.id to resources.getString(it.strId) }, { number ->
                 values?.let { current ->
@@ -278,7 +277,7 @@ internal fun ParameterPageContent(
                 }
             }, viewModel::changeFuelInjectionConfig, viewModel::changeFuelInjectionPulses, viewModel::changeFuelInjectionAngleSpec, viewModel::changeFuelInjectionFlag, capabilities)
         }
-        R.string.params_tab_lambda_control_title -> {
+        ParameterPage.LAMBDA_CONTROL -> {
             val values by viewModel.lambdaControl.values.collectAsStateWithLifecycle()
             val sensorTypes = stringArrayResource(R.array.lambda_sensors_types).toList()
             LambdaControlScreen(values, sensorTypes, capabilities, { number -> values?.let { current ->
@@ -289,7 +288,7 @@ internal fun ParameterPageContent(
                 }
             } }, viewModel::setLambdaFlag, viewModel::selectLambdaSensorType, viewModel::setLambdaChannel)
         }
-        R.string.params_tab_acceleration_title -> {
+        ParameterPage.ACCELERATION -> {
             val values by viewModel.accelerationControl.values.collectAsStateWithLifecycle()
             AccelerationScreen(values, { number ->
                 values?.let { current ->
@@ -300,7 +299,7 @@ internal fun ParameterPageContent(
                 }
             }, viewModel::selectAccelerationAeType, viewModel::selectAccelerationWallwetModel, viewModel::setAccelerationBalance, capabilities = capabilities)
         }
-        R.string.params_tab_gas_dose_title -> {
+        ParameterPage.GAS_DOSE -> {
             val values by viewModel.gasDoseControl.values.collectAsStateWithLifecycle()
             GasDoseScreen(values, capabilities, { n -> values?.let { v ->
                 if (n.integer) intEdit(n.title, n.value(v).toInt(), n.step.toInt(), n.max.toInt(), n.min.toInt()) { viewModel.editGasDose(n, it.toFloat()) }
@@ -309,7 +308,7 @@ internal fun ParameterPageContent(
                 { if (isActiveNow()) viewModel.stepGasDose(it) }, viewModel::finishGasDoseManual, viewModel::cancelGasDoseManual,
                 viewModel::toggleGasDoseTest, { if (isActiveNow()) viewModel.flushGasDoseManual() }, isActive = isActive)
         }
-        R.string.params_tab_ltft_title -> {
+        ParameterPage.LTFT -> {
             val values by viewModel.ltftControl.values.collectAsStateWithLifecycle()
             LtftScreen(values, { number ->
                 values?.let { current ->
@@ -321,7 +320,7 @@ internal fun ParameterPageContent(
                 }
             }, viewModel::selectLtftMode)
         }
-        R.string.params_tab_el_throttle_title -> {
+        ParameterPage.EL_THROTTLE -> {
             val values by viewModel.dbwControl.values.collectAsStateWithLifecycle()
             DbwScreen(values, capabilities, { number ->
                 values?.let { current ->

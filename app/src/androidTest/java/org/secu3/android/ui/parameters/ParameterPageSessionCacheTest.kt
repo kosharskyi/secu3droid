@@ -2018,7 +2018,7 @@ class ParameterPageSessionCacheTest {
                     SecuComposeTheme {
                         ParameterPageContent(
                             requireNotNull(ParameterPageCatalog().pageForTitle(titleRes)),
-                            titleRes, vm, capabilities, true, { true }, vm::openParameterEditor,
+                            vm, capabilities, true, { true }, vm::openParameterEditor,
                         )
                     }
                         }

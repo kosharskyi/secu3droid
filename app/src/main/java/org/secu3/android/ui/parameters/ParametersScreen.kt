@@ -96,7 +96,7 @@ internal fun ParametersRoute(
             onPageSettled = { index -> pages.getOrNull(index)?.page?.let(viewModel::activatePage) },
             onPageUnsettled = viewModel::deactivatePage,
             pageContent = { index, active, isActiveNow -> pages.getOrNull(index)?.let { page ->
-                ParameterPageContent(page.page, page.titleRes, viewModel, capabilities, active, isActiveNow, viewModel::openParameterEditor)
+                ParameterPageContent(page.page, viewModel, capabilities, active, isActiveNow, viewModel::openParameterEditor)
             } },
         )
     }

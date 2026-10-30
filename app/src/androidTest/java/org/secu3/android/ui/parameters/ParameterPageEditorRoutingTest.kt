@@ -607,7 +607,7 @@ class ParameterPageEditorRoutingTest {
         compose.activityRule.scenario.onActivity { activity ->
             activity.addContentView(
                 ComposeView(activity).apply {
-                    setContent { SecuComposeTheme { ParameterPageContent(requireNotNull(ParameterPageCatalog().pageForTitle(titleRes)), titleRes, vm, capabilities, true, { true }, vm::openParameterEditor) } }
+                    setContent { SecuComposeTheme { ParameterPageContent(requireNotNull(ParameterPageCatalog().pageForTitle(titleRes)), vm, capabilities, true, { true }, vm::openParameterEditor) } }
                 },
                 ViewGroup.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.MATCH_PARENT),
             )

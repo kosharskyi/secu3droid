@@ -4,7 +4,7 @@ When the connection is not `Connected`, render the connection status instead of 
 
 ## Resource-backed tabs map to stable domain page IDs
 
-`ParameterPageCatalog` owns the ordered resource-title and `ParameterPage` mapping. The route asks the ViewModel to filter that mapping with the exact collected capability snapshot; pass the resolved ID to the session and retain the resource only for rendering, test tags, and pager keys.
+`ParameterPageCatalog` owns the ordered resource-title and `ParameterPage` mapping. The route asks the ViewModel to filter that mapping with the exact collected capability snapshot; pass the resolved ID to the session and retain the resource only for rendering, test tags, and pager keys. `ParameterPageContent` selects its form by the resolved `ParameterPage`, so resource IDs never decide which domain page is rendered.
 
 ## Conditional pages and field capabilities share one derived snapshot
 
