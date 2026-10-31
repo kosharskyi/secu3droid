@@ -16,8 +16,8 @@ val keystorePropertiesFile = rootProject.file("keystore.properties")
 val keystoreProperties = Properties()
 val hasReleaseKeystore = keystorePropertiesFile.exists()
 val isReleaseTask = gradle.startParameter.taskNames.any { it.lowercase().contains("release") }
-val appVersionCode = 58
-val appVersionName = "0.19.2"
+val appVersionCode = 59
+val appVersionName = "1.0.0"
 
 if (hasReleaseKeystore) {
     keystoreProperties.load(FileInputStream(keystorePropertiesFile))
