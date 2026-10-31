@@ -32,8 +32,6 @@
 
 ## 🤝 Contributing
 
-See the [roadmap](ROADMAP.md) for deferred work, including tablet UI improvements after the first stable release.
-
 Contributions are welcome! Please feel free to submit a Pull Request or open an issue for bugs and feature requests.
 
 ## 📄 License

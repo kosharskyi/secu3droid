@@ -42,6 +42,8 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.unit.Density
 import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.onAllNodesWithTag
@@ -63,6 +65,7 @@ import androidx.compose.ui.text.TextLayoutResult
 import androidx.compose.ui.test.SemanticsMatcher
 import androidx.compose.ui.test.performSemanticsAction
 import androidx.test.platform.app.InstrumentationRegistry
+import android.content.res.Configuration
 import java.io.File
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNotEquals
@@ -107,9 +110,7 @@ class SensorsScreenTest {
             assertTrue("${type.name} should retain labels", labels.isNotEmpty())
             assertTrue("${type.name} should retain a readable central value", measured.faceRadius >= (18.5.dp + 32.dp / kotlin.math.sqrt(2f)))
             assertTrue("${type.name} labels stay at least 10sp", measured.labelTextSizePx >= with(density) { 10.sp.toPx() })
-            if (type == GaugeType.TPS_DOT) {
-                assertTrue("TPS_DOT compact signed labels may use the measured smaller size", measured.labelTextSizePx < with(density) { 12.sp.toPx() })
-            }
+            assertTrue("${type.name} labels stay at or below 12sp", measured.labelTextSizePx <= with(density) { 12.sp.toPx() })
             assertEquals("${type.name} min endpoint", 0, indices.first())
             assertEquals("${type.name} max endpoint", presentationCatalog.gauge(type).tickCount - 1, indices.last())
             assertTrue("${type.name} should include intermediate values", labels.size >= 5)
@@ -144,6 +145,14 @@ class SensorsScreenTest {
                 assertTrue("${type.name} labels ${one.text} and ${two.text} overlap", clearX || clearY)
             }
         }
+
+        val spaciousTpsDial = renderer.measureNewGaugeDial(
+            GaugeScale(GaugeType.TPS_DOT, presentationCatalog.gauge(GaugeType.TPS_DOT)),
+            240.dp,
+            density,
+            14.dp,
+        )
+        assertEquals(with(density) { 12.sp.toPx() }, spaciousTpsDial.labelTextSizePx, .01f)
     }
 
     @Test fun everyModernScaleFitsAtFontScaledMinimumGridWidth() {
@@ -495,6 +504,10 @@ class SensorsScreenTest {
     }
 
     @Test fun wrappedGaugeAndIndicatorRowsEqualizeNaturallyAndKeepRowGaps() {
+        val ukrainianConfiguration = Configuration(context.resources.configuration).apply {
+            setLocale(Locale.forLanguageTag("uk"))
+        }
+        val ukrainianContext = context.createConfigurationContext(ukrainianConfiguration)
         val selectedStyle = mutableStateOf(SensorGaugeStyle.Current)
         val width = mutableStateOf(500)
         val fontScale = mutableStateOf(1.3f)
@@ -510,7 +523,11 @@ class SensorsScreenTest {
         )
         compose.setContent {
             val density = LocalDensity.current.density
-            CompositionLocalProvider(LocalDensity provides Density(density, fontScale.value)) {
+            CompositionLocalProvider(
+                LocalContext provides ukrainianContext,
+                LocalConfiguration provides ukrainianConfiguration,
+                LocalDensity provides Density(density, fontScale.value),
+            ) {
                 SecuComposeTheme {
                     Box(Modifier.requiredWidth(width.value.dp)) {
                         SensorsScreen(
@@ -549,8 +566,8 @@ class SensorsScreenTest {
             return requireNotNull(result).lineCount
         }
 
-        val longGaugeTitle = context.getString(presentationCatalog.gauge(GaugeType.MAP_TURBO).title)
-        val longIndicatorTitle = context.getString(presentationCatalog.indicatorTitle(IndicatorType.REV_LIM_FUEL_CUT))
+        val longGaugeTitle = ukrainianContext.getString(presentationCatalog.gauge(GaugeType.MAP_TURBO).title)
+        val longIndicatorTitle = ukrainianContext.getString(presentationCatalog.indicatorTitle(IndicatorType.REV_LIM_FUEL_CUT))
         assertTrue("gauge title should wrap in a narrow cell", textLineCount(longGaugeTitle) > 1)
         assertTrue("indicator title should wrap in a narrow cell", textLineCount(longIndicatorTitle) > 1)
 
@@ -571,7 +588,7 @@ class SensorsScreenTest {
             val wrappedIndicator = compose.onNodeWithTag("indicator-REV_LIM_FUEL_CUT").getUnclippedBoundsInRoot()
             val nextIndicatorRow = compose.onNodeWithTag("indicator-GAS_VALVE").getUnclippedBoundsInRoot()
             assertEquals("wrapped indicator row equalizes its card heights", (firstIndicator.bottom - firstIndicator.top).value, (wrappedIndicator.bottom - wrappedIndicator.top).value, 1f)
-            val shortIndicatorTitle = compose.onNodeWithText(context.getString(presentationCatalog.indicatorTitle(IndicatorType.THROTTLE)), useUnmergedTree = true).getUnclippedBoundsInRoot()
+            val shortIndicatorTitle = compose.onNodeWithText(ukrainianContext.getString(presentationCatalog.indicatorTitle(IndicatorType.THROTTLE)), useUnmergedTree = true).getUnclippedBoundsInRoot()
             assertEquals("short indicator title stays vertically centered in its equalized card", (firstIndicator.top.value + firstIndicator.bottom.value) / 2f, (shortIndicatorTitle.top.value + shortIndicatorTitle.bottom.value) / 2f, 1f)
             assertEquals("the indicator row gap stays tied to the outer gutters", 16f, nextIndicatorRow.top.value - wrappedIndicator.bottom.value, 1f)
             assertEquals("partial indicator row remains in the first column", firstIndicator.left.value, nextIndicatorRow.left.value, 1f)
