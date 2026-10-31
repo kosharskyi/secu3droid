@@ -192,22 +192,14 @@ class ActivityNavigationResumeTest {
     }
 
     private fun setConfirmedUsbSession(manager: org.secu3.android.connection.Secu3ConnectionManager, attemptId: Long) {
-        val transportClass = Class.forName("org.secu3.android.connection.Secu3ConnectionManager\$Transport")
-        val usb = transportClass.enumConstants!!.first { (it as Enum<*>).name == "USB" }
-        val selectionClass = Class.forName("org.secu3.android.connection.Secu3ConnectionManager\$Selection")
-        val fence = manager.javaClass.getDeclaredField("usbSessionFence").apply { isAccessible = true }.get(manager)
-        val generation = fence
-            .javaClass.getDeclaredMethod("begin", Int::class.javaPrimitiveType).apply { isAccessible = true }
-            .invoke(fence, 1) as Long
-        val selection = selectionClass.declaredConstructors.single().apply { isAccessible = true }.newInstance(usb, generation)
-        @Suppress("UNCHECKED_CAST")
-        (manager.javaClass.getDeclaredField("selectedTransport").apply { isAccessible = true }.get(manager) as MutableStateFlow<Any>).value = selection
+        val usb = manager.javaClass.getDeclaredField("usbConnection").apply { isAccessible = true }.get(manager) as org.secu3.android.connection.UsbConnection
+        val driver = org.secu3.android.connection.ConnectionTestDriver(manager, usb)
+        driver.select("USB")
+        driver.setAttempt(attemptId)
         val attachmentClass = Class.forName("org.secu3.android.connection.UsbAttachmentIdentity")
-        val attachment = attachmentClass.declaredConstructors.single().apply { isAccessible = true }
-            .newInstance(1, "test-device", 1, 1)
-        setPrivateField(manager, "activeUsbAttachment", attachment)
-        setPrivateField(manager, "activeUsbAttemptId", attemptId)
-        setPrivateField(manager, "confirmedUsbAttemptId", attemptId)
+        val attachment = attachmentClass.declaredConstructors.single().apply { isAccessible = true }.newInstance(1, "test-device", 1, 1)
+        setPrivateField(usb, "activeAttachment", attachment)
+        driver.publish(org.secu3.android.connection.Connected)
     }
 
     private fun setPrivateField(target: Any, name: String, value: Any?) {

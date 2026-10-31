@@ -50,3 +50,7 @@ Derive a single `ParameterCapabilities` state from `Secu3ConnectionManager.firmw
 `UniversalOutputsControl` owns all six outputs, the paired function, condition defaults and range checks, raw rollback, and immutable session writes. The ViewModel maps each UI action to a named control method and shows the sent message only after session admission.
 
 `LambdaControl` owns the received Lambda packet, typed numeric edits, raw flag/channel preservation, sensor protocol codes, and live firmware/session admission. The ViewModel maps the screen's numeric and flag enums to named control methods; sent feedback follows successful `ParameterSession` admission.
+
+## Paused-Activity command tests do not wait for Compose roots
+
+Parameter command integration tests intentionally pause the host Activity to stop Toast consumption. Use `runOnUiThread` for ViewModel actions there: `runOnIdle` waits for a registered Compose root, which a paused host may no longer provide. Wait on the command's state or recorded writes instead.

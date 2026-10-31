@@ -10,9 +10,9 @@ Saving a selected bonded device and validating the stored bonded address happen 
 
 The connecting indicator combines the active preference/preflight job, pending Bluetooth pairing, and the manager's current running-but-not-connected state. Manager state events refresh it; do not poll connection or firmware properties. A canceled preparation job may only clear its own reference, so an older completion cannot erase a replacement job's progress.
 
-## USB ignition guidance follows the manager's liveness state
+## USB ignition guidance follows the transport's liveness state
 
-The Start route keeps the USB hint generic while permission/open/firmware setup is in progress. After the manager publishes `UsbAwaitingEcu` following a packet or handshake timeout, replace the hint with the localized ignition prompt. Keep it visible through automatic retries while the USB device remains attached; a valid firmware response or detach clears it. Do not infer ECU power from the platform USB attachment or permission result.
+The Start route keeps the USB hint generic while permission/open/firmware setup is in progress. After USB reports `UsbAwaitingEcu` through the manager following a packet or handshake timeout, replace the hint with the localized ignition prompt. Keep it visible through automatic retries while the USB device remains attached; a valid firmware response or detach clears it. Do not infer ECU power from the platform USB attachment or permission result.
 
 ## Resuming an open Bluetooth picker retains its rows
 
@@ -22,4 +22,4 @@ Bluetooth permission requirements are owned by `BluetoothPermissionPolicy`. Conn
 
 ## StartScreen presents USB state but does not own connection admission
 
-USB attachment can happen on any route or while the Activity starts from Android's attach intent, so StartScreen only presents device state and forwards user selection. `Secu3ConnectionManager` admits the device, de-duplicates permission prompts, and retries open/firmware failures indefinitely while the Activity is visible. Permission completion rechecks attachment identity and Android's current grant. USB retries do not use the Bluetooth retry preference, and no manual action or cable replug is needed after a transient failure or return from background.
+USB attachment can happen on any route or while the Activity starts from Android's attach intent, so StartScreen only presents device state and forwards user selection. `UsbConnection` owns device admission, permission de-duplication and unlimited open/firmware retries; the manager forwards actions and applies the shared foreground/background policy. Permission completion rechecks attachment identity and Android's current grant. USB retries do not use the Bluetooth retry preference, and no manual action or cable replug is needed after a transient failure or return from background.

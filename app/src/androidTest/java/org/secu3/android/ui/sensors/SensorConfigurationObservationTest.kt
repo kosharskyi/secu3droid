@@ -29,6 +29,7 @@ import org.secu3.android.db.AppDatabase
 import org.secu3.android.db.SensorConfigurationRepository
 import org.secu3.android.db.models.GaugeState
 import org.secu3.android.db.models.IndicatorState
+import org.secu3.android.connection.ConnectionTestDriver
 import org.secu3.android.connection.BtConnection
 import org.secu3.android.connection.ConnectionNotificationPublisher
 import org.secu3.android.connection.ConnectionServiceController
@@ -185,12 +186,12 @@ class SensorConfigurationObservationTest {
         private val context = InstrumentationRegistry.getInstrumentation().targetContext
         private val prefsFixture = IsolatedUserPrefs(context, "sensor-viewmodel-${UUID.randomUUID()}")
         val prefs: UserPrefs = prefsFixture.prefs
-        private val usb = UsbConnection(context.getSystemService(Context.USB_SERVICE) as UsbManager)
+        private val usb = UsbConnection(context.getSystemService(Context.USB_SERVICE) as UsbManager, prefs)
         private val bluetoothManager = context.getSystemService(Context.BLUETOOTH_SERVICE) as BluetoothManager
         private val bluetooth = BtConnection(prefs, bluetoothManager)
         private val logger = SecuLogger(prefs, FileHelper(context))
         private val serviceController = ConnectionServiceController(context, ConnectionNotificationPublisher(context))
-        private val manager = Secu3ConnectionManager(usb, bluetooth, prefs, bluetoothManager, logger, serviceController)
+        private val manager = Secu3ConnectionManager(usb, bluetooth, prefs, logger, serviceController)
         val connectionStates = MutableStateFlow<org.secu3.android.connection.ConnectionState>(Disconnected)
         val packetFlow = MutableSharedFlow<InputPacket>(extraBufferCapacity = 8)
         val repository = SensorConfigurationRepository(database)
@@ -221,8 +222,8 @@ class SensorConfigurationObservationTest {
             InstrumentationRegistry.getInstrumentation().runOnMainSync { viewModelStore.clear() }
             serviceController.stop()
             (Secu3ConnectionManager::class.java.getDeclaredField("scope").apply { isAccessible = true }.get(manager) as CoroutineScope).cancel()
-            usb.cancelScopes()
-            bluetooth.cancelScopes()
+            ConnectionTestDriver(manager, usb).shutdown()
+            ConnectionTestDriver(manager, bluetooth).shutdown()
             logger.shutdownForTests()
             (SecuLogger::class.java.getDeclaredField("loggerScope").apply { isAccessible = true }.get(logger) as CoroutineScope).cancel()
             prefsFixture.close()

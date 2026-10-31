@@ -33,9 +33,8 @@ import org.secu3.android.R
 import org.secu3.android.connection.Connection
 import org.secu3.android.connection.Secu3ConnectionManager
 import org.secu3.android.connection.UsbConnection
-import org.secu3.android.connection.UsbAttemptPacket
+import org.secu3.android.connection.ConnectionTestDriver
 import org.secu3.android.connection.UsbAttachmentIdentity
-import org.secu3.android.connection.UsbSessionFence
 import org.secu3.android.connection.PacketReceiver
 import org.secu3.android.models.RawPacket
 import org.secu3.android.domain.parameters.ParameterPage
@@ -133,7 +132,7 @@ class ParameterPageSessionCacheTest {
             assertEquals(1, transport.readRequestCount('m'))
             assertTrue(vm.starterControl.values.value != null)
 
-            compose.runOnIdle {
+            compose.runOnUiThread {
                 vm.editStarterInt(StarterNumber.STARTER_OFF, 140)
             }
 
@@ -144,14 +143,14 @@ class ParameterPageSessionCacheTest {
             await { vm.anglesControl.values.value != null }
             delay(150)
 
-            compose.runOnIdle { vm.refreshPage(ParameterPage.ANGLES) }
+            compose.runOnUiThread { vm.refreshPage(ParameterPage.ANGLES) }
             transport.awaitReadRequest('m', 3)
             assertTrue(vm.anglesControl.values.value == null)
             transport.emit(AnglesParamPacket(maxAngle = 7f))
             await { vm.anglesControl.values.value != null }
             delay(150)
 
-            compose.runOnIdle {
+            compose.runOnUiThread {
                 vm.clearPageState()
                 vm.activatePage(ParameterPage.ANGLES)
             }
@@ -161,7 +160,7 @@ class ParameterPageSessionCacheTest {
             await { vm.anglesControl.values.value != null }
         } finally {
             transport.close()
-            compose.runOnIdle { vm.clearPageState() }
+            compose.runOnUiThread { vm.clearPageState() }
         }
     }
 
@@ -178,7 +177,7 @@ class ParameterPageSessionCacheTest {
             usb.emit(inbound)
             await { vm.universalOutputsControl.values.value != null }
             compose.activityRule.scenario.moveToState(Lifecycle.State.STARTED)
-            compose.waitForIdle()
+            InstrumentationRegistry.getInstrumentation().waitForIdleSync()
             queue.onActiveScopeChanged(PARAMETERS_ROUTE)
             queue.pending.value.forEach { queue.acknowledge(it.id) }
             usb.suppressAttachmentRescan()
@@ -197,7 +196,7 @@ class ParameterPageSessionCacheTest {
                 queue.pending.value.forEach { queue.acknowledge(it.id) }
             }
             suspend fun command(action: () -> Boolean, updateExpected: () -> Unit) {
-                compose.runOnIdle { assertTrue(action()) }
+                compose.runOnUiThread { assertTrue(action()) }
                 updateExpected()
                 assertPacketSent()
             }
@@ -224,7 +223,7 @@ class ParameterPageSessionCacheTest {
             val stableState = vm.universalOutputsControl.values.value
             val noWriteCount = usb.writes.size
             queue.pending.value.forEach { queue.acknowledge(it.id) }
-            compose.runOnIdle { assertFalse(vm.editUniversalOutputThreshold(1, 1, true, 0, 80f)) }
+            compose.runOnUiThread { assertFalse(vm.editUniversalOutputThreshold(1, 1, true, 0, 80f)) }
             assertEquals(noWriteCount, usb.writes.size)
             assertEquals(stableState, vm.universalOutputsControl.values.value)
             assertFalse(queue.pending.value.any { it.textRes == R.string.packet_sent })
@@ -232,21 +231,21 @@ class ParameterPageSessionCacheTest {
             command({ vm.setUniversalOutputEnabled(2, false) }, { setUniOutFlag(expected, 2, bit = 2, value = false) })
             val pairRefusedCount = usb.writes.size
             queue.pending.value.forEach { queue.acknowledge(it.id) }
-            compose.runOnIdle { assertFalse(vm.selectUniversalOutputsPairFunction(2)) }
+            compose.runOnUiThread { assertFalse(vm.selectUniversalOutputsPairFunction(2)) }
             assertEquals(pairRefusedCount, usb.writes.size)
             assertFalse(queue.pending.value.any { it.textRes == R.string.packet_sent })
 
-            compose.runOnIdle { vm.pausePageSession() }
+            compose.runOnUiThread { vm.pausePageSession() }
             val pausedState = vm.universalOutputsControl.values.value
             val pausedWrites = usb.writes.size
             queue.pending.value.forEach { queue.acknowledge(it.id) }
-            compose.runOnIdle { assertFalse(vm.setUniversalOutputEnabled(6, false)) }
+            compose.runOnUiThread { assertFalse(vm.setUniversalOutputEnabled(6, false)) }
             assertEquals(pausedWrites, usb.writes.size)
             assertEquals(pausedState, vm.universalOutputsControl.values.value)
             assertFalse(queue.pending.value.any { it.textRes == R.string.packet_sent })
         } finally {
             usb.close()
-            compose.runOnIdle { vm.clearPageState() }
+            compose.runOnUiThread { vm.clearPageState() }
         }
     }
 
@@ -287,7 +286,7 @@ class ParameterPageSessionCacheTest {
             assertEquals(false, vm.adcCorrectionsControl.values.value!!.adcCompMode)
         } finally {
             usb.close()
-            compose.runOnIdle { vm.clearPageState() }
+            compose.runOnUiThread { vm.clearPageState() }
         }
     }
 
@@ -306,7 +305,7 @@ class ParameterPageSessionCacheTest {
             delay(150)
 
             compose.activityRule.scenario.moveToState(Lifecycle.State.STARTED)
-            compose.waitForIdle()
+            InstrumentationRegistry.getInstrumentation().waitForIdleSync()
             queue.onActiveScopeChanged(PARAMETERS_ROUTE)
             queue.pending.value.forEach { queue.acknowledge(it.id) }
             usb.suppressAttachmentRescan()
@@ -321,7 +320,7 @@ class ParameterPageSessionCacheTest {
                 expectedValues[index] = value
                 if (index % 2 == 0) factorWords[channel] = 0x4000 + (channel + 1) * 0x800
                 else correctionWords[channel] = 0x2000 + (channel + 1) * 0xC8000
-                compose.runOnIdle { assertTrue("${number.name}", vm.editAdc(number, value)) }
+                compose.runOnUiThread { assertTrue("${number.name}", vm.editAdc(number, value)) }
                 usb.awaitWriteCount(baseline + index + 1)
                 val write = usb.writes[baseline + index]
                 assertEquals('r', write[1].toInt().toChar())
@@ -338,7 +337,7 @@ class ParameterPageSessionCacheTest {
                 }
                 assertEquals(expectedValues, AdcNumber.entries.map { it.value(requireNotNull(vm.adcCorrectionsControl.values.value)) })
             }
-            compose.runOnIdle { assertTrue(vm.setAdcCompensationMode(true)) }
+            compose.runOnUiThread { assertTrue(vm.setAdcCompensationMode(true)) }
             usb.awaitWriteCount(baseline + 25)
             assertEquals(1, usb.writes[baseline + 24][2].toInt() and 1)
             assertEquals(0x00, usb.writes[baseline + 24][5].toInt() and 0xFF)
@@ -353,7 +352,7 @@ class ParameterPageSessionCacheTest {
             await { vm.capabilities.value.known && vm.capabilities.value.secu3T && !vm.capabilities.value.extraAnalogInputs }
             val unsupportedValues = vm.adcCorrectionsControl.values.value
             val unsupportedBaseline = usb.writes.size
-            compose.runOnIdle {
+            compose.runOnUiThread {
                 assertFalse(vm.editAdc(AdcNumber.ADD_I3_FACTOR, 2f))
                 assertFalse(vm.editAdc(AdcNumber.ADD_I4_FACTOR, 2f))
             }
@@ -364,10 +363,10 @@ class ParameterPageSessionCacheTest {
 
             usb.emitFirmware(options = 1 shl 5)
             await { vm.capabilities.value.extraAnalogInputs && !vm.capabilities.value.secu3T }
-            compose.runOnIdle { vm.pausePageSession() }
+            compose.runOnUiThread { vm.pausePageSession() }
             val pausedValues = vm.adcCorrectionsControl.values.value
             val pausedBaseline = usb.writes.size
-            compose.runOnIdle { assertFalse(vm.editAdc(AdcNumber.MAP_FACTOR, 2.25f)) }
+            compose.runOnUiThread { assertFalse(vm.editAdc(AdcNumber.MAP_FACTOR, 2.25f)) }
             delay(100)
             assertEquals(pausedBaseline, usb.writes.size)
             assertEquals(pausedValues, vm.adcCorrectionsControl.values.value)
@@ -387,7 +386,7 @@ class ParameterPageSessionCacheTest {
                 transport?.close()
             } finally {
                 try {
-                    compose.runOnIdle { vm.clearPageState() }
+                    compose.runOnUiThread { vm.clearPageState() }
                 } finally {
                     queue.onActiveScopeChanged(originalActiveScope)
                     compose.activityRule.scenario.moveToState(Lifecycle.State.RESUMED)
@@ -426,12 +425,12 @@ class ParameterPageSessionCacheTest {
             assertEquals(.0001f, request.step)
             assertEquals(4, request.precision)
             assertEquals(4, vm.functionsControl.values.value?.loadSource)
-            compose.runOnIdle { vm.dismissParameterEditor(cancel.id) }
+            compose.runOnUiThread { vm.dismissParameterEditor(cancel.id) }
             usb.awaitWriteCount(baseline + 1)
             assertEquals("MAF source selection was sent", 4, usb.writes[baseline][20].toInt() and 0xFF)
         } finally {
             usb.close()
-            compose.runOnIdle { vm.clearPageState() }
+            compose.runOnUiThread { vm.clearPageState() }
         }
     }
 
@@ -455,7 +454,7 @@ class ParameterPageSessionCacheTest {
             compose.onNodeWithTag("functions_option_4").performClick()
             val editor = requireNotNull(vm.parameterEditSession)
             assertEquals(4, vm.functionsControl.values.value?.loadSource)
-            compose.runOnIdle { vm.acceptParameterEditor(editor.id, 3f) }
+            compose.runOnUiThread { vm.acceptParameterEditor(editor.id, 3f) }
             delay(200)
             assertEquals(
                 "writes after confirm; source=${vm.functionsControl.values.value?.loadSource}, " +
@@ -471,7 +470,7 @@ class ParameterPageSessionCacheTest {
             assertArrayEquals(expected, command.copyOfRange(1, 1 + expected.size))
         } finally {
             usb.close()
-            compose.runOnIdle { vm.clearPageState() }
+            compose.runOnUiThread { vm.clearPageState() }
         }
     }
 
@@ -498,7 +497,7 @@ class ParameterPageSessionCacheTest {
                     FunctionsNumber.UPPER -> 120f
                     else -> number.min
                 }
-                compose.runOnIdle { assertTrue(vm.editFunctions(number, value)) }
+                compose.runOnUiThread { assertTrue(vm.editFunctions(number, value)) }
                 usb.awaitWriteCount(++expectedWrites)
                 assertEquals('n'.code, usb.writes.last()[1].toInt() and 0xFF)
                 assertEquals(value, number.value(requireNotNull(vm.functionsControl.values.value)), 0f)
@@ -515,7 +514,7 @@ class ParameterPageSessionCacheTest {
                 FunctionsChoices.Selector.GAS_V_UNI to 5,
             )
             selectors.forEach { (selector, code) ->
-                compose.runOnIdle { assertTrue(vm.selectFunctionsChoice(selector, code)) }
+                compose.runOnUiThread { assertTrue(vm.selectFunctionsChoice(selector, code)) }
                 usb.awaitWriteCount(++expectedWrites)
                 assertEquals('n'.code, usb.writes.last()[1].toInt() and 0xFF)
             }
@@ -533,7 +532,7 @@ class ParameterPageSessionCacheTest {
             assertEquals(5, selected.gasVUni)
             usb.emitFirmware(options = 0)
             await { vm.capabilities.value.known && !vm.capabilities.value.fuelInjection }
-            compose.runOnIdle {
+            compose.runOnUiThread {
                 assertTrue(vm.selectFunctionsChoice(FunctionsChoices.Selector.LOAD_SOURCE, 4))
             }
             usb.awaitWriteCount(++expectedWrites)
@@ -559,14 +558,14 @@ class ParameterPageSessionCacheTest {
                 FunctionsNumber.GPS_OFFSET, FunctionsNumber.GPS_GRADIENT,
                 FunctionsNumber.FPS_OFFSET, FunctionsNumber.FPS_GRADIENT,
                 FunctionsNumber.APPS_OFFSET, FunctionsNumber.APPS_GRADIENT,
-            ) }.forEach { number -> compose.runOnIdle { assertFalse(vm.editFunctions(number, number.min)) } }
+            ) }.forEach { number -> compose.runOnUiThread { assertFalse(vm.editFunctions(number, number.min)) } }
             delay(100)
             assertEquals(beforeUnsupported, usb.writes.size)
             assertEquals(committed, vm.functionsControl.values.value)
             assertFalse(queue.pending.value.any { it.textRes == R.string.packet_sent })
 
-            compose.runOnIdle { vm.pausePageSession() }
-            compose.runOnIdle {
+            compose.runOnUiThread { vm.pausePageSession() }
+            compose.runOnUiThread {
                 assertFalse(vm.editFunctions(FunctionsNumber.MAP_OFFSET, 1f))
                 assertFalse(vm.selectFunctionsChoice(FunctionsChoices.Selector.MAPSEL_PETROL, 2))
             }
@@ -575,7 +574,7 @@ class ParameterPageSessionCacheTest {
             assertFalse(queue.pending.value.any { it.textRes == R.string.packet_sent })
         } finally {
             usb.close()
-            compose.runOnIdle { vm.clearPageState() }
+            compose.runOnUiThread { vm.clearPageState() }
         }
     }
 
@@ -593,12 +592,12 @@ class ParameterPageSessionCacheTest {
             await { vm.starterControl.values.value?.starterOff == 120 }
 
             compose.activityRule.scenario.moveToState(Lifecycle.State.STARTED)
-            compose.waitForIdle()
+            InstrumentationRegistry.getInstrumentation().waitForIdleSync()
             queue.onActiveScopeChanged(PARAMETERS_ROUTE)
             queue.pending.value.forEach { queue.acknowledge(it.id) }
             val baseline = usb.writes.size
 
-            compose.runOnIdle {
+            compose.runOnUiThread {
                 vm.editStarterInt(StarterNumber.STARTER_OFF, 140)
                 vm.editStarterInt(StarterNumber.AFTERSTART_PETROL, 2)
             }
@@ -614,13 +613,13 @@ class ParameterPageSessionCacheTest {
             usb.emitFirmware(options = 0)
             await { vm.capabilities.value.known && !vm.capabilities.value.fuelInjection }
             val beforeUnsupportedEdit = usb.writes.size
-            compose.runOnIdle { vm.editStarterFloat(StarterNumber.PRIME_COLD, 2f) }
+            compose.runOnUiThread { vm.editStarterFloat(StarterNumber.PRIME_COLD, 2f) }
             delay(100)
             assertEquals(beforeUnsupportedEdit, usb.writes.size)
             assertFalse(queue.pending.value.any { it.textRes == R.string.packet_sent })
 
             val committed = vm.starterControl.values.value
-            compose.runOnIdle {
+            compose.runOnUiThread {
                 vm.pausePageSession()
                 vm.editStarterInt(StarterNumber.STARTER_OFF, 160)
             }
@@ -632,7 +631,7 @@ class ParameterPageSessionCacheTest {
                 transport?.close()
             } finally {
                 try {
-                    compose.runOnIdle { vm.clearPageState() }
+                    compose.runOnUiThread { vm.clearPageState() }
                 } finally {
                     queue.onActiveScopeChanged(originalActiveScope)
                     compose.activityRule.scenario.moveToState(Lifecycle.State.RESUMED)
@@ -660,12 +659,12 @@ class ParameterPageSessionCacheTest {
             await { vm.accelerationControl.values.value?.tpsThreshold == 42 }
 
             compose.activityRule.scenario.moveToState(Lifecycle.State.STARTED)
-            compose.waitForIdle()
+            InstrumentationRegistry.getInstrumentation().waitForIdleSync()
             queue.onActiveScopeChanged(PARAMETERS_ROUTE)
             queue.pending.value.forEach { queue.acknowledge(it.id) }
             val baseline = usb.writes.size
 
-            compose.runOnIdle {
+            compose.runOnUiThread {
                 assertTrue(vm.editAcceleration(AccelerationNumber.TPS_THRESHOLD, 73))
                 assertTrue(vm.editAcceleration(AccelerationNumber.COLD_MULTIPLIER, 250))
             }
@@ -682,7 +681,7 @@ class ParameterPageSessionCacheTest {
             usb.emitFirmware(options = 0)
             await { vm.capabilities.value.known && !vm.capabilities.value.fuelInjection }
             val beforeUnsupportedEdit = usb.writes.size
-            compose.runOnIdle { assertFalse(vm.editAcceleration(AccelerationNumber.TPS_THRESHOLD, 74)) }
+            compose.runOnUiThread { assertFalse(vm.editAcceleration(AccelerationNumber.TPS_THRESHOLD, 74)) }
             delay(100)
             assertEquals(beforeUnsupportedEdit, usb.writes.size)
             assertFalse(queue.pending.value.any { it.textRes == R.string.packet_sent })
@@ -691,7 +690,7 @@ class ParameterPageSessionCacheTest {
             usb.emitFirmware(options = 1 shl 28)
             await { vm.capabilities.value.fuelInjection }
             val committed = vm.accelerationControl.values.value
-            compose.runOnIdle {
+            compose.runOnUiThread {
                 vm.pausePageSession()
                 assertFalse(vm.editAcceleration(AccelerationNumber.TPS_THRESHOLD, 75))
             }
@@ -702,7 +701,7 @@ class ParameterPageSessionCacheTest {
                 transport?.close()
             } finally {
                 try {
-                    compose.runOnIdle { vm.clearPageState() }
+                    compose.runOnUiThread { vm.clearPageState() }
                 } finally {
                     queue.onActiveScopeChanged(originalActiveScope)
                     compose.activityRule.scenario.moveToState(Lifecycle.State.RESUMED)
@@ -725,11 +724,11 @@ class ParameterPageSessionCacheTest {
             await { vm.ltftControl.values.value != null }
             delay(150)
             compose.activityRule.scenario.moveToState(Lifecycle.State.STARTED)
-            compose.waitForIdle()
+            InstrumentationRegistry.getInstrumentation().waitForIdleSync()
             queue.onActiveScopeChanged(PARAMETERS_ROUTE)
             queue.pending.value.forEach { queue.acknowledge(it.id) }
             val baseline = usb.writes.size
-            compose.runOnIdle {
+            compose.runOnUiThread {
                 assertTrue(vm.selectLtftMode(1))
                 assertTrue(vm.editLtftFloat(LtftNumber.LOWER_CLT, 12.5f))
                 assertTrue(vm.editLtftFloat(LtftNumber.UPPER_CLT, 80.25f))
@@ -787,7 +786,7 @@ class ParameterPageSessionCacheTest {
             usb.emitFirmware(options = 0)
             await { vm.capabilities.value.known && !vm.capabilities.value.fuelInjection }
             val unsupportedBaseline = usb.writes.size
-            compose.runOnIdle {
+            compose.runOnUiThread {
                 assertFalse(vm.selectLtftMode(0))
                 assertFalse(vm.editLtftFloat(LtftNumber.LOWER_CLT, 20f))
             }
@@ -797,9 +796,9 @@ class ParameterPageSessionCacheTest {
 
             usb.emitFirmware(options = 1 shl 28)
             await { vm.capabilities.value.fuelInjection }
-            compose.runOnIdle { vm.pausePageSession() }
+            compose.runOnUiThread { vm.pausePageSession() }
             val pausedBaseline = usb.writes.size
-            compose.runOnIdle { assertFalse(vm.editLtftFloat(LtftNumber.LOWER_CLT, 20f)) }
+            compose.runOnUiThread { assertFalse(vm.editLtftFloat(LtftNumber.LOWER_CLT, 20f)) }
             delay(100)
             assertEquals(pausedBaseline, usb.writes.size)
             assertEquals(12.5f, vm.ltftControl.values.value?.lowerClt)
@@ -809,7 +808,7 @@ class ParameterPageSessionCacheTest {
                 transport?.close()
             } finally {
                 try {
-                    compose.runOnIdle { vm.clearPageState() }
+                    compose.runOnUiThread { vm.clearPageState() }
                 } finally {
                     queue.onActiveScopeChanged(originalActiveScope)
                     compose.activityRule.scenario.moveToState(Lifecycle.State.RESUMED)
@@ -835,13 +834,13 @@ class ParameterPageSessionCacheTest {
             await { vm.dbwControl.values.value?.homePosition == 47.5f }
             delay(150)
             compose.activityRule.scenario.moveToState(Lifecycle.State.STARTED)
-            compose.waitForIdle()
+            InstrumentationRegistry.getInstrumentation().waitForIdleSync()
             queue.onActiveScopeChanged(PARAMETERS_ROUTE)
             queue.pending.value.forEach { queue.acknowledge(it.id) }
             val baseline = usb.writes.size
 
             dbwStep = "send all ten DBW edits"
-            compose.runOnIdle {
+            compose.runOnUiThread {
                 assertTrue(vm.editDbw(DbwNumber.ETC_P, .125f))
                 assertTrue(vm.editDbw(DbwNumber.ETC_I, .25f))
                 assertTrue(vm.editDbw(DbwNumber.ETC_D, .5f))
@@ -868,7 +867,7 @@ class ParameterPageSessionCacheTest {
             dbwStep = "refresh DBW values"
             val writesBeforeRefresh = usb.writes.size
             val dbwWritesBeforeRefresh = usb.writes.count { it.size > 1 && it[1].toInt().toChar() == 'P' }
-            compose.runOnIdle { vm.refreshPage(ParameterPage.EL_THROTTLE) }
+            compose.runOnUiThread { vm.refreshPage(ParameterPage.EL_THROTTLE) }
             usb.awaitReadRequest('P', 2)
             await { vm.dbwControl.values.value == null }
             usb.emitDbw(DbwParamPacket(.125f, .25f, .5f, 45.5f, 55.5f, .15f, 6.4f, 7.5f, 12f, 10.5f), 48.5f)
@@ -880,7 +879,7 @@ class ParameterPageSessionCacheTest {
             usb.emitFirmware(options = 1 shl 17)
             await { vm.capabilities.value.known && vm.capabilities.value.secu3T }
             val unsupportedBaseline = usb.writes.size
-            compose.runOnIdle { assertFalse(vm.editDbw(DbwNumber.ETC_I, 1f)) }
+            compose.runOnUiThread { assertFalse(vm.editDbw(DbwNumber.ETC_I, 1f)) }
             delay(100)
             assertEquals(unsupportedBaseline, usb.writes.size)
             assertFalse(queue.pending.value.any { it.textRes == R.string.packet_sent })
@@ -889,10 +888,10 @@ class ParameterPageSessionCacheTest {
             dbwStep = "reject edits after page session pause"
             usb.emitFirmware(options = 0)
             await { vm.capabilities.value.known && vm.capabilities.value.dbw }
-            compose.runOnIdle { vm.pausePageSession() }
+            compose.runOnUiThread { vm.pausePageSession() }
             val pausedBaseline = usb.writes.size
             val pausedValues = vm.dbwControl.values.value
-            compose.runOnIdle { assertFalse(vm.editDbw(DbwNumber.ETC_I, 1f)) }
+            compose.runOnUiThread { assertFalse(vm.editDbw(DbwNumber.ETC_I, 1f)) }
             delay(100)
             assertEquals(pausedBaseline, usb.writes.size)
             assertEquals(pausedValues, vm.dbwControl.values.value)
@@ -904,7 +903,7 @@ class ParameterPageSessionCacheTest {
                 transport?.close()
             } finally {
                 try {
-                    compose.runOnIdle { vm.clearPageState() }
+                    compose.runOnUiThread { vm.clearPageState() }
                 } finally {
                     queue.onActiveScopeChanged(originalActiveScope)
                     compose.activityRule.scenario.moveToState(Lifecycle.State.RESUMED)
@@ -939,7 +938,7 @@ class ParameterPageSessionCacheTest {
             assertEquals(.5f, vm.idlingControl.values.value?.integralPositive)
 
             compose.activityRule.scenario.moveToState(Lifecycle.State.STARTED)
-            compose.waitForIdle()
+            InstrumentationRegistry.getInstrumentation().waitForIdleSync()
             queue.onActiveScopeChanged(PARAMETERS_ROUTE)
             queue.pending.value.forEach { queue.acknowledge(it.id) }
             val baseline = usb.writes.size
@@ -967,7 +966,7 @@ class ParameterPageSessionCacheTest {
             )
             val numericStart = usb.writes.size
             numbers.zip(expectedNumbers).forEach { (number, value) ->
-                compose.runOnIdle {
+                compose.runOnUiThread {
                     if (number.integer) vm.editIdlingInt(number, value.toInt())
                     else vm.editIdlingFloat(number, value)
                 }
@@ -977,7 +976,7 @@ class ParameterPageSessionCacheTest {
 
             val flags = org.secu3.android.ui.parameters.pages.compose.IdlingFlag.entries
             val flagStart = usb.writes.size
-            flags.forEach { flag -> compose.runOnIdle { vm.setIdlingFlag(flag, true) } }
+            flags.forEach { flag -> compose.runOnUiThread { vm.setIdlingFlag(flag, true) } }
             usb.awaitWriteCount(flagStart + flags.size)
             assertEquals(List(flags.size) { true }, flags.map { it.value(requireNotNull(vm.idlingControl.values.value)) })
             assertEquals(0x80, usb.writes.last()[2].toInt() and 0x80)
@@ -995,7 +994,7 @@ class ParameterPageSessionCacheTest {
             queue.pending.value.forEach { queue.acknowledge(it.id) }
             val afterWrites = usb.writes.size
             val committed = vm.idlingControl.values.value
-            compose.runOnIdle {
+            compose.runOnUiThread {
                 vm.pausePageSession()
                 vm.editIdlingFloat(org.secu3.android.ui.parameters.pages.compose.IdlingNumber.P0, 1.75f)
             }
@@ -1008,7 +1007,7 @@ class ParameterPageSessionCacheTest {
                 transport?.close()
             } finally {
                 try {
-                    compose.runOnIdle { vm.clearPageState() }
+                    compose.runOnUiThread { vm.clearPageState() }
                 } finally {
                     queue.onActiveScopeChanged(originalActiveScope)
                     compose.activityRule.scenario.moveToState(Lifecycle.State.RESUMED)
@@ -1034,7 +1033,7 @@ class ParameterPageSessionCacheTest {
             await { vm.knockControl.values.value?.useKnockChannel == 2 }
 
             compose.activityRule.scenario.moveToState(Lifecycle.State.STARTED)
-            compose.waitForIdle()
+            InstrumentationRegistry.getInstrumentation().waitForIdleSync()
             queue.onActiveScopeChanged(PARAMETERS_ROUTE)
             queue.pending.value.forEach { queue.acknowledge(it.id) }
             val baseline = usb.writes.size
@@ -1055,7 +1054,7 @@ class ParameterPageSessionCacheTest {
             queue.pending.value.forEach { queue.acknowledge(it.id) }
             val committed = vm.knockControl.values.value
             val writesBeforePause = usb.writes.size
-            compose.runOnIdle {
+            compose.runOnUiThread {
                 vm.pausePageSession()
                 assertFalse(vm.editKnockFloat(KnockNumber.BEGIN, 4f))
             }
@@ -1067,7 +1066,7 @@ class ParameterPageSessionCacheTest {
                 transport?.close()
             } finally {
                 try {
-                    compose.runOnIdle { vm.clearPageState() }
+                    compose.runOnUiThread { vm.clearPageState() }
                 } finally {
                     queue.onActiveScopeChanged(originalActiveScope)
                     compose.activityRule.scenario.moveToState(Lifecycle.State.RESUMED)
@@ -1090,20 +1089,20 @@ class ParameterPageSessionCacheTest {
             await { vm.anglesControl.values.value?.maxAngle == 4f }
 
             compose.activityRule.scenario.moveToState(Lifecycle.State.STARTED)
-            compose.waitForIdle()
+            InstrumentationRegistry.getInstrumentation().waitForIdleSync()
             queue.onActiveScopeChanged(PARAMETERS_ROUTE)
             queue.pending.value.forEach { queue.acknowledge(it.id) }
             val baseline = usb.writes.size
 
-            compose.runOnIdle { vm.editAngles(AnglesNumber.MAX, 5.5f) }
+            compose.runOnUiThread { vm.editAngles(AnglesNumber.MAX, 5.5f) }
             usb.awaitWriteCount(baseline + 1)
             assertTrue(queue.pending.value.any { it.textRes == R.string.packet_sent })
             queue.pending.value.forEach { queue.acknowledge(it.id) }
-            compose.runOnIdle { vm.setAnglesFlag(org.secu3.android.ui.parameters.pages.compose.AnglesFlag.WORKING_MAP, true) }
+            compose.runOnUiThread { vm.setAnglesFlag(org.secu3.android.ui.parameters.pages.compose.AnglesFlag.WORKING_MAP, true) }
             usb.awaitWriteCount(baseline + 2)
             assertTrue(queue.pending.value.any { it.textRes == R.string.packet_sent })
             queue.pending.value.forEach { queue.acknowledge(it.id) }
-            compose.runOnIdle { vm.setAnglesFlag(org.secu3.android.ui.parameters.pages.compose.AnglesFlag.ZERO, true) }
+            compose.runOnUiThread { vm.setAnglesFlag(org.secu3.android.ui.parameters.pages.compose.AnglesFlag.ZERO, true) }
             usb.awaitWriteCount(baseline + 3)
             assertTrue(queue.pending.value.any { it.textRes == R.string.packet_sent })
             assertArrayEquals(
@@ -1124,12 +1123,12 @@ class ParameterPageSessionCacheTest {
             val afterAcceptedWrites = usb.writes.size
             val committed = vm.anglesControl.values.value
             queue.pending.value.forEach { queue.acknowledge(it.id) }
-            compose.runOnIdle { vm.editAngles(AnglesNumber.OCTANE, 4f) }
+            compose.runOnUiThread { vm.editAngles(AnglesNumber.OCTANE, 4f) }
             assertEquals(afterAcceptedWrites, usb.writes.size)
             assertEquals(committed, vm.anglesControl.values.value)
             assertFalse(queue.pending.value.any { it.textRes == R.string.packet_sent })
 
-            compose.runOnIdle {
+            compose.runOnUiThread {
                 vm.pausePageSession()
                 vm.editAngles(AnglesNumber.MAX, 6f)
                 vm.setAnglesFlag(org.secu3.android.ui.parameters.pages.compose.AnglesFlag.MANUAL_CORRECTION, true)
@@ -1143,7 +1142,7 @@ class ParameterPageSessionCacheTest {
                 transport?.close()
             } finally {
                 try {
-                    compose.runOnIdle { vm.clearPageState() }
+                    compose.runOnUiThread { vm.clearPageState() }
                 } finally {
                     queue.onActiveScopeChanged(originalActiveScope)
                     compose.activityRule.scenario.moveToState(Lifecycle.State.RESUMED)
@@ -1166,7 +1165,7 @@ class ParameterPageSessionCacheTest {
             await { vm.carburControl.values.value?.fuelCutOutput == 6 }
 
             compose.activityRule.scenario.moveToState(Lifecycle.State.STARTED)
-            compose.waitForIdle()
+            InstrumentationRegistry.getInstrumentation().waitForIdleSync()
             queue.onActiveScopeChanged(PARAMETERS_ROUTE)
             queue.pending.value.forEach { queue.acknowledge(it.id) }
             val baseline = usb.writes.size
@@ -1180,7 +1179,7 @@ class ParameterPageSessionCacheTest {
                 Triple(true, 6, 15),
             )
             cases.forEachIndexed { index, (ignition, selection, expected) ->
-                compose.runOnIdle { vm.selectCarburOutput(ignition, selection) }
+                compose.runOnUiThread { vm.selectCarburOutput(ignition, selection) }
                 usb.awaitWriteCount(baseline + index + 1)
                 val frame = usb.writes[baseline + index]
                 assertEquals('k', frame[1].toInt().toChar())
@@ -1199,7 +1198,7 @@ class ParameterPageSessionCacheTest {
                 Triple(org.secu3.android.ui.parameters.pages.compose.CarburNumber.REV_HIGH, 1006, intArrayOf(0x03, 0xEE)),
             )
             val numericStart = usb.writes.size
-            numericEdits.forEach { (number, value, _) -> compose.runOnIdle { vm.editCarburInt(number, value) } }
+            numericEdits.forEach { (number, value, _) -> compose.runOnUiThread { vm.editCarburInt(number, value) } }
             usb.awaitWriteCount(numericStart + numericEdits.size)
             val integerOffsets = intArrayOf(1, 3, 8, 10, 19, 21)
             numericEdits.forEachIndexed { index, (_, _, expected) ->
@@ -1216,7 +1215,7 @@ class ParameterPageSessionCacheTest {
                 Triple(org.secu3.android.ui.parameters.pages.compose.CarburNumber.CTS, -10.5f, 17 to intArrayOf(255, 214)),
             )
             val floatStart = usb.writes.size
-            floatEdits.forEach { (number, value, _) -> compose.runOnIdle { vm.editCarburFloat(number, value) } }
+            floatEdits.forEach { (number, value, _) -> compose.runOnUiThread { vm.editCarburFloat(number, value) } }
             usb.awaitWriteCount(floatStart + floatEdits.size)
             floatEdits.forEachIndexed { index, (_, _, expected) ->
                 val frame = usb.writes[floatStart + index]
@@ -1229,7 +1228,7 @@ class ParameterPageSessionCacheTest {
             queue.pending.value.forEach { queue.acknowledge(it.id) }
             val beforePause = usb.writes.size
             val committedIdle = vm.carburControl.values.value?.idleLowRpm
-            compose.runOnIdle {
+            compose.runOnUiThread {
                 vm.pausePageSession()
                 vm.editCarburInt(org.secu3.android.ui.parameters.pages.compose.CarburNumber.IDLE_LOW, 2000)
             }
@@ -1241,7 +1240,7 @@ class ParameterPageSessionCacheTest {
                 transport?.close()
             } finally {
                 try {
-                    compose.runOnIdle { vm.clearPageState() }
+                    compose.runOnUiThread { vm.clearPageState() }
                 } finally {
                     queue.onActiveScopeChanged(originalActiveScope)
                     compose.activityRule.scenario.moveToState(Lifecycle.State.RESUMED)
@@ -1264,7 +1263,7 @@ class ParameterPageSessionCacheTest {
             await { vm.temperatureControl.values.value?.fanOn == 95f }
 
             compose.activityRule.scenario.moveToState(Lifecycle.State.STARTED)
-            compose.waitForIdle()
+            InstrumentationRegistry.getInstrumentation().waitForIdleSync()
             queue.onActiveScopeChanged(PARAMETERS_ROUTE)
             queue.pending.value.forEach { queue.acknowledge(it.id) }
             val baseline = usb.writes.size
@@ -1300,7 +1299,7 @@ class ParameterPageSessionCacheTest {
 
             queue.pending.value.forEach { queue.acknowledge(it.id) }
             val committed = vm.temperatureControl.values.value
-            compose.runOnIdle {
+            compose.runOnUiThread {
                 vm.pausePageSession()
                 assertFalse(vm.editTemperatureFloat(TemperatureNumber.FAN_ON, 105f))
                 assertFalse(vm.setTemperatureFlag(TemperatureFlag.COOLANT_SENSOR, false))
@@ -1314,7 +1313,7 @@ class ParameterPageSessionCacheTest {
                 transport?.close()
             } finally {
                 try {
-                    compose.runOnIdle { vm.clearPageState() }
+                    compose.runOnUiThread { vm.clearPageState() }
                 } finally {
                     queue.onActiveScopeChanged(originalActiveScope)
                     compose.activityRule.scenario.moveToState(Lifecycle.State.RESUMED)
@@ -1360,7 +1359,7 @@ class ParameterPageSessionCacheTest {
             await { vm.anglesControl.values.value != null }
             delay(150)
 
-            compose.runOnIdle {
+            compose.runOnUiThread {
                 vm.editAngles(AnglesNumber.MAX, 6f)
             }
 
@@ -1380,7 +1379,7 @@ class ParameterPageSessionCacheTest {
             assertTrue(vm.starterControl.values.value != null)
         } finally {
             transport.close()
-            compose.runOnIdle { vm.clearPageState() }
+            compose.runOnUiThread { vm.clearPageState() }
         }
     }
 
@@ -1410,7 +1409,7 @@ class ParameterPageSessionCacheTest {
             assertArrayEquals(byteArrayOf(0x21, 0x68, 0x73, 0, 0x5B, 0x75, 0x0D), transport.writes[3])
         } finally {
             transport.close()
-            compose.runOnIdle { vm.clearPageState() }
+            compose.runOnUiThread { vm.clearPageState() }
         }
     }
 
@@ -1428,17 +1427,17 @@ class ParameterPageSessionCacheTest {
             assertFalse(requireNotNull(vm.securityControl.values.value).useImmobilizer)
 
             compose.activityRule.scenario.moveToState(Lifecycle.State.STARTED)
-            compose.waitForIdle()
+            InstrumentationRegistry.getInstrumentation().waitForIdleSync()
             queue.onActiveScopeChanged(PARAMETERS_ROUTE)
             queue.pending.value.forEach { queue.acknowledge(it.id) }
             val baseline = transport.writes.size
 
-            compose.runOnIdle { vm.changeSecurityKey(0, "112233") }
+            compose.runOnUiThread { vm.changeSecurityKey(0, "112233") }
             assertEquals(baseline, transport.writes.size)
-            compose.runOnIdle { vm.changeSecurityKey(0, "11223344556G") }
+            compose.runOnUiThread { vm.changeSecurityKey(0, "11223344556G") }
             assertEquals(baseline, transport.writes.size)
 
-            compose.runOnIdle { vm.changeSecurityKey(0, "112233445566") }
+            compose.runOnUiThread { vm.changeSecurityKey(0, "112233445566") }
             transport.awaitWriteCount(baseline + 1)
             assertEquals('#', transport.writes[baseline][1].toInt().toChar())
             assertEquals(0xA0, transport.writes[baseline][4].toInt() and 0xff)
@@ -1446,7 +1445,7 @@ class ParameterPageSessionCacheTest {
             assertEquals("112233445566", vm.securityKey0)
 
             queue.pending.value.forEach { queue.acknowledge(it.id) }
-            compose.runOnIdle {
+            compose.runOnUiThread {
                 vm.changeSecurityName("ECU")
                 vm.changeSecurityPassword("12")
                 vm.applySecurityCredentials()
@@ -1456,7 +1455,7 @@ class ParameterPageSessionCacheTest {
             assertEquals("12", vm.securityPassword)
             assertFalse(queue.pending.value.any { it.textRes == R.string.packet_sent })
 
-            compose.runOnIdle {
+            compose.runOnUiThread {
                 vm.changeSecurityPassword("1234")
                 vm.applySecurityCredentials()
             }
@@ -1465,10 +1464,10 @@ class ParameterPageSessionCacheTest {
             assertEquals("1234", vm.securityPassword)
             assertFalse(queue.pending.value.any { it.textRes == R.string.packet_sent })
 
-            compose.runOnIdle { vm.changeSecurityBluetooth(true) }
+            compose.runOnUiThread { vm.changeSecurityBluetooth(true) }
             transport.awaitWriteCount(baseline + 2)
             queue.pending.value.forEach { queue.acknowledge(it.id) }
-            compose.runOnIdle { vm.applySecurityCredentials() }
+            compose.runOnUiThread { vm.applySecurityCredentials() }
             transport.awaitWriteCount(baseline + 3)
             assertEquals('#', transport.writes[baseline + 2][1].toInt().toChar())
             assertEquals(3, transport.writes[baseline + 2][2].toInt() and 0xff) // OEM name length.
@@ -1478,7 +1477,7 @@ class ParameterPageSessionCacheTest {
             assertTrue(queue.pending.value.any { it.textRes == R.string.packet_sent })
 
             queue.pending.value.forEach { queue.acknowledge(it.id) }
-            compose.runOnIdle {
+            compose.runOnUiThread {
                 vm.pausePageSession()
                 vm.changeSecurityName("held")
                 vm.changeSecurityPassword("5678")
@@ -1488,7 +1487,7 @@ class ParameterPageSessionCacheTest {
             assertEquals("held", vm.securityName)
             assertEquals("5678", vm.securityPassword)
             assertFalse(queue.pending.value.any { it.textRes == R.string.packet_sent })
-            compose.runOnIdle { vm.changeSecurityKey(0, "AABBCCDDEEFF") }
+            compose.runOnUiThread { vm.changeSecurityKey(0, "AABBCCDDEEFF") }
             assertEquals(baseline + 3, transport.writes.size)
             assertEquals("112233445566", vm.securityControl.values.value?.key0)
             assertFalse(queue.pending.value.any { it.textRes == R.string.packet_sent })
@@ -1497,7 +1496,7 @@ class ParameterPageSessionCacheTest {
                 transport.close()
             } finally {
                 try {
-                    compose.runOnIdle { vm.clearPageState() }
+                    compose.runOnUiThread { vm.clearPageState() }
                 } finally {
                     queue.onActiveScopeChanged(originalActiveScope)
                     compose.activityRule.scenario.moveToState(Lifecycle.State.RESUMED)
@@ -1524,7 +1523,7 @@ class ParameterPageSessionCacheTest {
             usb.emit(incoming, intArrayOf(0x71, 0x72))
             await { vm.lambdaControl.values.value != null }
             compose.activityRule.scenario.moveToState(Lifecycle.State.STARTED)
-            compose.waitForIdle()
+            InstrumentationRegistry.getInstrumentation().waitForIdleSync()
             queue.onActiveScopeChanged(PARAMETERS_ROUTE)
             queue.pending.value.forEach { queue.acknowledge(it.id) }
             usb.suppressAttachmentRescan()
@@ -1540,7 +1539,7 @@ class ParameterPageSessionCacheTest {
                 baseline = expectedSize
             }
             suspend fun command(run: () -> Boolean, update: () -> Unit) {
-                assertTrue(compose.runOnIdle { run() })
+                assertTrue(compose.runOnUiThread { run() })
                 update()
                 verify()
             }
@@ -1548,7 +1547,7 @@ class ParameterPageSessionCacheTest {
             command({ vm.editLambdaInt(LambdaNumber.MS, 130) }, { expected[17] = 13 })
             command({ vm.editLambdaInt(LambdaNumber.STROKES, 5) }, { expected[0] = 5 })
             val afterStrokes = vm.lambdaControl.values.value
-            assertFalse(compose.runOnIdle { vm.editLambdaInt(LambdaNumber.MS, 140) })
+            assertFalse(compose.runOnUiThread { vm.editLambdaInt(LambdaNumber.MS, 140) })
             assertEquals(afterStrokes, vm.lambdaControl.values.value)
             assertEquals(baseline, usb.writes.size)
             assertFalse(queue.pending.value.any { it.textRes == R.string.packet_sent })
@@ -1587,19 +1586,19 @@ class ParameterPageSessionCacheTest {
             val stable = vm.lambdaControl.values.value
             usb.emitFirmware(options = 0)
             await { vm.capabilities.value.known && !vm.capabilities.value.lambdaBaseEditing }
-            assertFalse(compose.runOnIdle { vm.setLambdaFlag(LambdaFlag.MIX_SENSORS, false) })
-            assertFalse(compose.runOnIdle { vm.editLambdaFloat(LambdaNumber.STEP_POS, 10f) })
-            assertFalse(compose.runOnIdle { vm.setLambdaChannel(0, false) })
+            assertFalse(compose.runOnUiThread { vm.setLambdaFlag(LambdaFlag.MIX_SENSORS, false) })
+            assertFalse(compose.runOnUiThread { vm.editLambdaFloat(LambdaNumber.STEP_POS, 10f) })
+            assertFalse(compose.runOnUiThread { vm.setLambdaChannel(0, false) })
             assertEquals(baseline, usb.writes.size)
             assertEquals(stable, vm.lambdaControl.values.value)
             assertFalse(queue.pending.value.any { it.textRes == R.string.packet_sent })
 
             usb.emitFirmware(options = 1 shl 28)
             await { vm.capabilities.value.known && vm.capabilities.value.lambdaBaseEditing }
-            compose.runOnIdle { vm.pausePageSession() }
+            compose.runOnUiThread { vm.pausePageSession() }
             val pausedState = vm.lambdaControl.values.value
             val pausedWrites = usb.writes.size
-            assertFalse(compose.runOnIdle { vm.setLambdaFlag(LambdaFlag.HEATING_VOLTAGE, false) })
+            assertFalse(compose.runOnUiThread { vm.setLambdaFlag(LambdaFlag.HEATING_VOLTAGE, false) })
             assertEquals(pausedWrites, usb.writes.size)
             assertEquals(pausedState, vm.lambdaControl.values.value)
             assertFalse(queue.pending.value.any { it.textRes == R.string.packet_sent })
@@ -1607,7 +1606,7 @@ class ParameterPageSessionCacheTest {
             try {
                 transport?.close()
             } finally {
-                try { compose.runOnIdle { vm.clearPageState() } } finally {
+                try { compose.runOnUiThread { vm.clearPageState() } } finally {
                     queue.onActiveScopeChanged(originalActiveScope)
                     compose.activityRule.scenario.moveToState(Lifecycle.State.RESUMED)
                 }
@@ -1633,13 +1632,13 @@ class ParameterPageSessionCacheTest {
 
             stage = "pause Activity at STARTED and isolate toast scope"
             compose.activityRule.scenario.moveToState(Lifecycle.State.STARTED)
-            compose.waitForIdle()
+            InstrumentationRegistry.getInstrumentation().waitForIdleSync()
             queue.onActiveScopeChanged(PARAMETERS_ROUTE)
             val baseline = usb.writes.size
             queue.pending.value.forEach { queue.acknowledge(it.id) }
 
             stage = "ordinary command write"
-            compose.runOnIdle { vm.editGasDose(org.secu3.android.ui.parameters.pages.compose.GasDoseNumber.STEPS, 500f) }
+            compose.runOnUiThread { vm.editGasDose(org.secu3.android.ui.parameters.pages.compose.GasDoseNumber.STEPS, 500f) }
             usb.awaitWriteCount(baseline + 1)
             assertEquals('!', usb.writes[baseline][0].toInt().toChar())
             assertEquals('*', usb.writes[baseline][1].toInt().toChar())
@@ -1647,7 +1646,7 @@ class ParameterPageSessionCacheTest {
 
             assertTrue(queue.pending.value.any { it.textRes == R.string.packet_sent })
 
-            compose.runOnIdle { vm.stepGasDose(1) }
+            compose.runOnUiThread { vm.stepGasDose(1) }
             stage = "firmware support loss"
             usb.emitFirmware(options = 0)
             await { vm.capabilities.value.known && !vm.capabilities.value.gasDose }
@@ -1655,11 +1654,11 @@ class ParameterPageSessionCacheTest {
             stage = "firmware support recovery"
             usb.emitFirmware(options = 1 shl 29)
             await { vm.capabilities.value.gasDose }
-            compose.runOnIdle { vm.finishGasDoseManual() }
+            compose.runOnUiThread { vm.finishGasDoseManual() }
             assertEquals(baseline + 1, usb.writes.size)
 
             stage = "manual command write"
-            compose.runOnIdle {
+            compose.runOnUiThread {
                 vm.stepGasDose(-1)
                 vm.finishGasDoseManual()
             }
@@ -1669,14 +1668,14 @@ class ParameterPageSessionCacheTest {
             queue.pending.value.forEach { queue.acknowledge(it.id) }
             val beforePausedFlush = usb.writes.size
             stage = "paused manual-send admission"
-            compose.runOnIdle {
+            compose.runOnUiThread {
                 vm.pausePageSession()
                 vm.stepGasDose(1)
                 vm.finishGasDoseManual()
             }
             assertEquals(beforePausedFlush, usb.writes.size)
             assertFalse(queue.pending.value.any { it.textRes == R.string.packet_sent })
-            compose.runOnIdle { vm.finishGasDoseManual() }
+            compose.runOnUiThread { vm.finishGasDoseManual() }
             assertEquals(beforePausedFlush, usb.writes.size)
         } catch (failure: Throwable) {
             val capabilities = vm.capabilities.value
@@ -1690,7 +1689,7 @@ class ParameterPageSessionCacheTest {
                 transport?.close()
             } finally {
                 try {
-                    compose.runOnIdle { vm.clearPageState() }
+                    compose.runOnUiThread { vm.clearPageState() }
                 } finally {
                     queue.onActiveScopeChanged(originalActiveScope)
                     compose.activityRule.scenario.moveToState(Lifecycle.State.RESUMED)
@@ -1717,12 +1716,12 @@ class ParameterPageSessionCacheTest {
             assertEquals(0, receivedParameterWrites)
             assertFalse(queue.pending.value.any { it.textRes == R.string.packet_sent })
             compose.activityRule.scenario.moveToState(Lifecycle.State.STARTED)
-            compose.waitForIdle()
+            InstrumentationRegistry.getInstrumentation().waitForIdleSync()
             queue.onActiveScopeChanged(PARAMETERS_ROUTE)
             queue.pending.value.forEach { queue.acknowledge(it.id) }
             val baseline = transport.writes.size
 
-            compose.runOnIdle { vm.editMiscellaneous(org.secu3.android.ui.parameters.pages.MiscField.PERIOD, 120) }
+            compose.runOnUiThread { vm.editMiscellaneous(org.secu3.android.ui.parameters.pages.MiscField.PERIOD, 120) }
             transport.awaitWriteCount(baseline + 1)
             assertEquals('z', transport.writes[baseline][1].toInt().toChar())
             assertTrue(transport.writes[baseline].size > 6)
@@ -1731,18 +1730,18 @@ class ParameterPageSessionCacheTest {
             queue.pending.value.forEach { queue.acknowledge(it.id) }
             transport.emitFirmware(options = 0)
             await { vm.capabilities.value.known && !vm.capabilities.value.fuelInjection }
-            compose.runOnIdle { vm.toggleMiscellaneous(org.secu3.android.ui.parameters.pages.MiscToggle.GAS, true) }
+            compose.runOnUiThread { vm.toggleMiscellaneous(org.secu3.android.ui.parameters.pages.MiscToggle.GAS, true) }
             assertEquals(baseline + 1, transport.writes.size)
             assertFalse(queue.pending.value.any { it.textRes == R.string.packet_sent })
 
             queue.pending.value.forEach { queue.acknowledge(it.id) }
-            compose.runOnIdle {
+            compose.runOnUiThread {
                 vm.pausePageSession()
                 vm.editMiscellaneous(org.secu3.android.ui.parameters.pages.MiscField.PERIOD, 130)
             }
             assertEquals(baseline + 1, transport.writes.size)
             assertFalse(queue.pending.value.any { it.textRes == R.string.packet_sent })
-            compose.runOnIdle { vm.clearPageState() }
+            compose.runOnUiThread { vm.clearPageState() }
             assertEquals(null, vm.miscellaneousControl.values.value)
             assertFalse(queue.pending.value.any { it.textRes == R.string.packet_sent })
             assertEquals(
@@ -1754,7 +1753,7 @@ class ParameterPageSessionCacheTest {
                 transport.close()
             } finally {
                 try {
-                    compose.runOnIdle { vm.clearPageState() }
+                    compose.runOnUiThread { vm.clearPageState() }
                 } finally {
                     queue.onActiveScopeChanged(originalActiveScope)
                     compose.activityRule.scenario.moveToState(Lifecycle.State.RESUMED)
@@ -1778,27 +1777,27 @@ class ParameterPageSessionCacheTest {
             await { vm.chokeControl.values.value?.steps == 120 }
 
             compose.activityRule.scenario.moveToState(Lifecycle.State.STARTED)
-            compose.waitForIdle()
+            InstrumentationRegistry.getInstrumentation().waitForIdleSync()
             queue.onActiveScopeChanged(PARAMETERS_ROUTE)
             val baseline = usb.writes.size
             queue.pending.value.forEach { queue.acknowledge(it.id) }
 
-            compose.runOnIdle { vm.editChoke(ChokeNumber.STEPS, 500f) }
+            compose.runOnUiThread { vm.editChoke(ChokeNumber.STEPS, 500f) }
             usb.awaitWriteCount(baseline + 1)
             assertEquals('%', usb.writes[baseline][1].toInt().toChar())
             assertEquals(0, usb.writes[baseline][5].toInt() and 0xff)
             assertTrue(queue.pending.value.any { it.textRes == R.string.packet_sent })
 
-            compose.runOnIdle { vm.stepChoke(1) }
+            compose.runOnUiThread { vm.stepChoke(1) }
             usb.emitFirmware(options = 0)
             await { vm.capabilities.value.known && !vm.capabilities.value.choke }
             delay(100)
             usb.emitFirmware(options = options)
             await { vm.capabilities.value.choke }
-            compose.runOnIdle { vm.finishChokeManual() }
+            compose.runOnUiThread { vm.finishChokeManual() }
             assertEquals(baseline + 1, usb.writes.size)
 
-            compose.runOnIdle {
+            compose.runOnUiThread {
                 vm.stepChoke(-1)
                 vm.finishChokeManual()
             }
@@ -1807,7 +1806,7 @@ class ParameterPageSessionCacheTest {
 
             queue.pending.value.forEach { queue.acknowledge(it.id) }
             val beforePausedFlush = usb.writes.size
-            compose.runOnIdle {
+            compose.runOnUiThread {
                 vm.pausePageSession()
                 vm.stepChoke(1)
                 vm.finishChokeManual()
@@ -1819,7 +1818,7 @@ class ParameterPageSessionCacheTest {
                 transport?.close()
             } finally {
                 try {
-                    compose.runOnIdle { vm.clearPageState() }
+                    compose.runOnUiThread { vm.clearPageState() }
                 } finally {
                     queue.onActiveScopeChanged(originalActiveScope)
                     compose.activityRule.scenario.moveToState(Lifecycle.State.RESUMED)
@@ -1849,12 +1848,12 @@ class ParameterPageSessionCacheTest {
             await { vm.fuelInjectionControl.values.value?.banks?.getOrNull(0)?.flow == 300f }
 
             compose.activityRule.scenario.moveToState(Lifecycle.State.STARTED)
-            compose.waitForIdle()
+            InstrumentationRegistry.getInstrumentation().waitForIdleSync()
             queue.onActiveScopeChanged(PARAMETERS_ROUTE)
             val baseline = usb.writes.size
             queue.pending.value.forEach { queue.acknowledge(it.id) }
 
-            compose.runOnIdle {
+            compose.runOnUiThread {
                 vm.editFuelInjection(org.secu3.android.ui.parameters.pages.compose.FuelInjectionNumber.FLOW_0, 321f)
             }
             usb.awaitWriteCount(baseline + 1)
@@ -1869,7 +1868,7 @@ class ParameterPageSessionCacheTest {
             usb.emitFirmware(options = 0)
             await { vm.capabilities.value.known && !vm.capabilities.value.fuelInjection }
             val beforeUnsupportedEdit = usb.writes.size
-            compose.runOnIdle {
+            compose.runOnUiThread {
                 vm.editFuelInjection(org.secu3.android.ui.parameters.pages.compose.FuelInjectionNumber.FLOW_0, 500f)
             }
             delay(100)
@@ -1879,13 +1878,13 @@ class ParameterPageSessionCacheTest {
             usb.emitFirmware(options = options)
             await { vm.capabilities.value.fuelInjection }
             val beforeRestrictedFlag = usb.writes.size
-            compose.runOnIdle { vm.changeFuelInjectionFlag(org.secu3.android.ui.parameters.pages.compose.FuelInjectionFlag.SWITCH_ROWS, true) }
+            compose.runOnUiThread { vm.changeFuelInjectionFlag(org.secu3.android.ui.parameters.pages.compose.FuelInjectionFlag.SWITCH_ROWS, true) }
             delay(100)
             assertEquals(beforeRestrictedFlag, usb.writes.size)
 
             queue.pending.value.forEach { queue.acknowledge(it.id) }
             val beforePausedEdit = usb.writes.size
-            compose.runOnIdle {
+            compose.runOnUiThread {
                 vm.pausePageSession()
                 vm.editFuelInjection(org.secu3.android.ui.parameters.pages.compose.FuelInjectionNumber.FLOW_0, 600f)
             }
@@ -1896,7 +1895,7 @@ class ParameterPageSessionCacheTest {
                 transport?.close()
             } finally {
                 try {
-                    compose.runOnIdle { vm.clearPageState() }
+                    compose.runOnUiThread { vm.clearPageState() }
                 } finally {
                     queue.onActiveScopeChanged(originalActiveScope)
                     compose.activityRule.scenario.moveToState(Lifecycle.State.RESUMED)
@@ -1922,12 +1921,12 @@ class ParameterPageSessionCacheTest {
             assertEquals(-45.59375f, vm.ckpsControl.values.value?.hallDegreesBeforeTdc)
 
             compose.activityRule.scenario.moveToState(Lifecycle.State.STARTED)
-            compose.waitForIdle()
+            InstrumentationRegistry.getInstrumentation().waitForIdleSync()
             queue.onActiveScopeChanged(PARAMETERS_ROUTE)
             val baseline = usb.writes.size
             queue.pending.value.forEach { queue.acknowledge(it.id) }
 
-            compose.runOnIdle { vm.editCkps(org.secu3.android.ui.parameters.pages.compose.CkpsNumber.WHEEL, 80f) }
+            compose.runOnUiThread { vm.editCkps(org.secu3.android.ui.parameters.pages.compose.CkpsNumber.WHEEL, 80f) }
             usb.awaitWriteCount(baseline + 1)
             assertEquals('t', usb.writes[baseline][1].toInt().toChar())
             assertEquals(80, usb.writes[baseline][5].toInt() and 0xff)
@@ -1940,13 +1939,13 @@ class ParameterPageSessionCacheTest {
             usb.emitFirmware(options = 1 shl 2)
             await { vm.capabilities.value.known && !vm.capabilities.value.cogsBtdc }
             val beforeRestrictedChoice = usb.writes.size
-            compose.runOnIdle { vm.selectCkpsChoice(true, 21) }
+            compose.runOnUiThread { vm.selectCkpsChoice(true, 21) }
             delay(100)
             assertEquals(beforeRestrictedChoice, usb.writes.size)
             assertFalse(queue.pending.value.any { it.textRes == R.string.packet_sent })
 
             val beforePausedEdit = usb.writes.size
-            compose.runOnIdle {
+            compose.runOnUiThread {
                 vm.pausePageSession()
                 vm.editCkps(org.secu3.android.ui.parameters.pages.compose.CkpsNumber.WHEEL, 90f)
             }
@@ -1957,7 +1956,7 @@ class ParameterPageSessionCacheTest {
                 transport?.close()
             } finally {
                 try {
-                    compose.runOnIdle { vm.clearPageState() }
+                    compose.runOnUiThread { vm.clearPageState() }
                 } finally {
                     queue.onActiveScopeChanged(originalActiveScope)
                     compose.activityRule.scenario.moveToState(Lifecycle.State.RESUMED)
@@ -2006,7 +2005,7 @@ class ParameterPageSessionCacheTest {
     }
 
     private fun activate(vm: ParamsViewModel, titleRes: Int) {
-        compose.runOnIdle { vm.activatePage(requireNotNull(ParameterPageCatalog().pageForTitle(titleRes))) }
+        compose.runOnUiThread { vm.activatePage(requireNotNull(ParameterPageCatalog().pageForTitle(titleRes))) }
     }
 
     private fun mountFunctionsPage(titleRes: Int, vm: ParamsViewModel) {
@@ -2036,7 +2035,7 @@ class ParameterPageSessionCacheTest {
     private suspend fun installFakeUsb(vm: ParamsViewModel, firmwareOptions: Int = 0): FakeUsbTransport {
         compose.waitForIdle()
         try {
-            withTimeout(3_000) { while (!compose.runOnIdle { compose.activity.hasWindowFocus() }) delay(10) }
+            withTimeout(3_000) { while (!compose.runOnUiThread { compose.activity.hasWindowFocus() }) delay(10) }
         } catch (failure: TimeoutCancellationException) {
             throw AssertionError("MainActivity did not regain window focus before fake USB installation", failure)
         }
@@ -2077,50 +2076,22 @@ class ParameterPageSessionCacheTest {
             } as UsbSerialPort
             portField.set(connection, fakePort)
             Connection::class.java.getDeclaredField("isRunning").apply { isAccessible = true }.setBoolean(connection, true)
-            val attemptPacketsField = UsbConnection::class.java.getDeclaredField("_attemptPackets").apply { isAccessible = true }
-            @Suppress("UNCHECKED_CAST")
-            val attemptPackets = attemptPacketsField.get(connection) as MutableSharedFlow<UsbAttemptPacket>
-            val fenceField = Secu3ConnectionManager::class.java.getDeclaredField("usbSessionFence").apply { isAccessible = true }
-            val fence = fenceField.get(manager) as UsbSessionFence
-            val generation = fence.begin(1)
-            Secu3ConnectionManager::class.java.getDeclaredField("activeUsbAttachment").apply { isAccessible = true }
-                .set(manager, UsbAttachmentIdentity(1, "/test/parameter-session/1", 0, 0))
-            val selectionClass = Secu3ConnectionManager::class.java.declaredClasses.first { it.simpleName == "Selection" }
-            val transportClass = Secu3ConnectionManager::class.java.declaredClasses.first { it.simpleName == "Transport" }
-            val usbTransport = transportClass.enumConstants!!.first { (it as Enum<*>).name == "USB" }
-            val selection = selectionClass.declaredConstructors.first().apply { isAccessible = true }.newInstance(usbTransport, generation)
-            val subscribed = CompletableDeferred<Unit>()
-            val readyField = Secu3ConnectionManager::class.java.getDeclaredField("usbSelectionReady").apply { isAccessible = true }
-            synchronized(manager) { readyField.set(manager, subscribed) }
-            @Suppress("UNCHECKED_CAST")
-            val selected = Secu3ConnectionManager::class.java.getDeclaredField("selectedTransport").apply { isAccessible = true }
-                .get(manager) as MutableStateFlow<Any>
-            selected.value = selection
-            Secu3ConnectionManager::class.java.getDeclaredField("activeUsbAttemptId").apply { isAccessible = true }.set(manager, 1L)
+            val driver = ConnectionTestDriver(manager, connection)
+            driver.select("USB")
+            UsbConnection::class.java.getDeclaredField("activeAttachment").apply { isAccessible = true }
+                .set(connection, UsbAttachmentIdentity(1, "/test/parameter-session/1", 0, 0))
+            driver.emit(firmwarePacket(firmwareOptions))
             try {
-                withTimeout(3_000) { subscribed.await() }
+                withTimeout(3_000) { while (!manager.isConnected || !manager.isUsbSessionLocked || manager.currentConnectionState != org.secu3.android.connection.Connected || manager.fwInfo == null) delay(10) }
             } catch (failure: TimeoutCancellationException) {
                 throw AssertionError(
-                    "Fake USB setup timed out waiting for transport subscription; selected=$selection, " +
-                        "subscriptionComplete=${subscribed.isCompleted}, running=${connection.isRunning}, connected=${connection.isConnected}",
-                    failure,
-                )
-            }
-            synchronized(manager) {
-                if (readyField.get(manager) === subscribed) readyField.set(manager, null)
-            }
-            attemptPackets.emit(UsbAttemptPacket(1L, firmwarePacket(firmwareOptions)))
-            try {
-                withTimeout(3_000) { while (!manager.isUsbConnected || !manager.isUsbSessionLocked) delay(10) }
-            } catch (failure: TimeoutCancellationException) {
-                throw AssertionError(
-                    "Fake USB setup timed out waiting for firmware confirmation; usbConnected=${manager.isUsbConnected}, " +
+                    "Fake USB setup timed out waiting for firmware confirmation; usbConnected=${manager.isConnected}, " +
                         "sessionLocked=${manager.isUsbSessionLocked}, connectionState=${manager.currentConnectionState}, " +
-                        "firmware=${manager.fwInfo}, running=${connection.isRunning}, connected=${connection.isConnected}, selected=$selection",
+                        "firmware=${manager.fwInfo}, running=${connection.isRunning}, connected=${connection.isConnected}, selected USB",
                     failure,
                 )
             }
-            return FakeUsbTransport(manager, connection, portField, attemptPackets, requests, writes, nextWriteBarrier, originalWakeLockPreference)
+            return FakeUsbTransport(manager, connection, portField, driver, requests, writes, nextWriteBarrier, originalWakeLockPreference)
         } catch (failure: Throwable) {
             try {
                 manager.onUsbDeviceDetached(1)
@@ -2135,17 +2106,17 @@ class ParameterPageSessionCacheTest {
         private val manager: Secu3ConnectionManager,
         private val connection: UsbConnection,
         private val portField: java.lang.reflect.Field,
-        private val attemptPackets: MutableSharedFlow<UsbAttemptPacket>,
+        private val driver: ConnectionTestDriver,
         private val requests: ConcurrentHashMap<Char, AtomicInteger>,
         val writes: CopyOnWriteArrayList<ByteArray>,
         private val nextWriteBarrier: AtomicReference<WriteBarrier?>,
         private val originalWakeLockPreference: Boolean,
     ) {
-        val isConnected get() = manager.isUsbConnected
+        val isConnected get() = manager.isConnected
 
         fun suppressAttachmentRescan() {
-            Secu3ConnectionManager::class.java.getDeclaredField("activeUsbAttachment")
-                .apply { isAccessible = true }.set(manager, null)
+            UsbConnection::class.java.getDeclaredField("activeAttachment")
+                .apply { isAccessible = true }.set(connection, null)
         }
 
         fun send(packet: OutputPacket) = connection.sendData(packet)
@@ -2168,7 +2139,7 @@ class ParameterPageSessionCacheTest {
 
         suspend fun emit(packet: OutputPacket, tail: IntArray = intArrayOf()) {
             val input = intArrayOf('@'.code) + packet.pack() + tail + intArrayOf(0, 0)
-            attemptPackets.emit(UsbAttemptPacket(1L, RawPacket(input)))
+            driver.emit(RawPacket(input))
         }
 
         suspend fun emitFunctionName(index: Int, name: String) {
@@ -2177,7 +2148,7 @@ class ParameterPageSessionCacheTest {
             require(encoded.size <= 16)
             val input = intArrayOf('@'.code, 'p'.code, 2, index) + encoded +
                 IntArray(16 - encoded.size) + intArrayOf(0, 0)
-            attemptPackets.emit(UsbAttemptPacket(1L, RawPacket(input)))
+            driver.emit(RawPacket(input))
         }
 
         suspend fun emitFunctions(packet: FunSetParamPacket) {
@@ -2186,30 +2157,31 @@ class ParameterPageSessionCacheTest {
                 writePayload.copyOfRange(32, writePayload.size) + intArrayOf(0x01, 0x90) + intArrayOf(0, 0)).also {
                 it[26] = packet.ckpsEngineCyl
             }
-            attemptPackets.emit(UsbAttemptPacket(1L, RawPacket(input)))
+            driver.emit(RawPacket(input))
         }
 
         suspend fun emitDbw(packet: DbwParamPacket, homePosition: Float, tail: IntArray = intArrayOf()) {
             val homeWord = (homePosition * 64).roundToInt()
             val input = intArrayOf('@'.code) + packet.pack() + intArrayOf(homeWord shr 8, homeWord and 0xff) + tail + intArrayOf(0, 0)
-            attemptPackets.emit(UsbAttemptPacket(1L, RawPacket(input)))
+            driver.emit(RawPacket(input))
         }
 
         suspend fun emitFuelInjection(packet: InjctrParPacket) {
             val input = intArrayOf('@'.code) + packet.pack() + intArrayOf(0, 0)
             input[19] = packet.ckpsEngineCyl
-            attemptPackets.emit(UsbAttemptPacket(1L, RawPacket(input)))
+            driver.emit(RawPacket(input))
         }
 
         suspend fun emitFirmware(options: Int) {
             val raw = intArrayOf('@'.code, 'y'.code) + "SECU-3 test firmware".padEnd(52).map(Char::code).toIntArray() +
                 intArrayOf((options shr 24) and 0xff, (options shr 16) and 0xff, (options shr 8) and 0xff, options and 0xff, 0x10, 0, 0)
-            attemptPackets.emit(UsbAttemptPacket(1L, RawPacket(raw)))
+            driver.emit(RawPacket(raw))
         }
 
         fun close() {
             try {
-                manager.onUsbDeviceDetached(1)
+                connection.stopConnection()
+                manager.stopConnection()
             } finally {
                 try {
                     portField.set(connection, null)

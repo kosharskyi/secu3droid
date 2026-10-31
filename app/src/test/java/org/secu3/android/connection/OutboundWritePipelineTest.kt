@@ -202,7 +202,7 @@ class OutboundWritePipelineTest {
     }
 
     @Test
-    fun staleInvalidationCannotCloseReplacementAndStopClosesConnectingEndpoint() = runBlocking {
+    fun staleCleanupCannotCloseReplacementAndStopClosesConnectingEndpoint() = runBlocking {
         val connection = TestConnection()
         val oldEndpoint = Endpoint()
         val replacement = Endpoint()
@@ -211,8 +211,9 @@ class OutboundWritePipelineTest {
         assertTrue(connection.remove(oldEndpoint))
         assertTrue(connection.attach(replacement))
 
-        assertFalse(connection.fail(oldEndpoint))
-        assertFalse(oldEndpoint.closed)
+        connection.discard(oldEndpoint)
+        assertTrue(oldEndpoint.closed)
+        assertFalse(replacement.closed)
         assertTrue(connection.isConnected)
 
         connection.stopConnection()
@@ -272,8 +273,8 @@ class OutboundWritePipelineTest {
         val releaseCollector = CompletableDeferred<Unit>()
         val disconnectedReceived = CompletableDeferred<Unit>()
         val collector = launch {
-            connection.connectionStateFlow.collect { state ->
-                when (state) {
+            connection.sessionEvents.collect { event ->
+                when (event.state) {
                     InProgress -> {
                         collectorEntered.complete(Unit)
                         releaseCollector.await()
@@ -328,15 +329,16 @@ class OutboundWritePipelineTest {
         }
 
         fun shutdown() {
-            cancelScopes()
+            scope.cancel()
+            backgroundScope.cancel()
         }
 
         suspend fun publishState(state: ConnectionState) {
-            mConnectionStateFlow.emit(state)
+            _sessionEvents.emit(ConnectionEvent(0, state))
         }
 
         suspend fun awaitStateSubscriber() {
-            mConnectionStateFlow.subscriptionCount.first { it > 0 }
+            _sessionEvents.subscriptionCount.first { it > 0 }
         }
 
         suspend fun awaitDisconnectStarted() {
@@ -347,14 +349,14 @@ class OutboundWritePipelineTest {
 
         fun remove(endpoint: Endpoint): Boolean = detachEndpoint(endpoint)
 
-        fun fail(endpoint: Endpoint): Boolean = invalidateEndpoint(endpoint)
+        fun discard(endpoint: Endpoint) = discardEndpoint(endpoint)
 
         override fun disconnect() {
             val endpoint = detachCurrentEndpoint()
             backgroundScope.launch {
                 endpoint?.let(::closeEndpoint)
                 disconnectStarted.complete(Unit)
-                mConnectionStateFlow.emit(Disconnected)
+                _sessionEvents.emit(ConnectionEvent(0, Disconnected))
             }
         }
 

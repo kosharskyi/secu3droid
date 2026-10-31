@@ -31,85 +31,164 @@ import android.os.SystemClock
 import android.util.Log
 import com.hoho.android.usbserial.driver.UsbSerialPort
 import com.hoho.android.usbserial.driver.UsbSerialProber
-import kotlinx.coroutines.CancellationException
-import kotlinx.coroutines.currentCoroutineContext
-import kotlinx.coroutines.ensureActive
-import kotlinx.coroutines.launch
-import kotlinx.coroutines.flow.MutableSharedFlow
-import kotlinx.coroutines.flow.asSharedFlow
+import kotlinx.coroutines.*
 import org.secu3.android.models.RawPacket
-import org.secu3.android.models.packets.out.ChangeModePacket
-import org.secu3.android.utils.Task
+import org.secu3.android.utils.UserPrefs
 import java.io.IOException
 import javax.inject.Inject
 import javax.inject.Singleton
 
-internal data class UsbAttemptPacket(val attemptId: Long, val packet: RawPacket)
+data class UsbPermissionRequest(val device: UsbDevice, val token: Long)
+internal data class UsbAttachmentIdentity(val deviceId: Int, val deviceName: String, val vendorId: Int, val productId: Int)
 internal class UsbEcuResponseTimeoutException : IOException("ECU stopped sending valid USB packets")
-internal data class UsbAttemptFailure(
-    val attemptId: Long,
-    val reason: Reason,
-) {
-    enum class Reason { TRANSPORT_FAILURE, ECU_NOT_RESPONDING }
-}
 
 @Singleton
-class UsbConnection @Inject constructor(
+open class UsbConnection @Inject constructor(
     private val usbManager: UsbManager,
+    prefs: UserPrefs,
 ) : Connection<UsbSerialPort>() {
+    private val promptedAttachments = mutableSetOf<UsbAttachmentIdentity>()
+    private var nextPermissionToken = 0L
+    private var pendingPermission: UsbPermissionRequest? = null
+    private var activeAttachment: UsbAttachmentIdentity? = null
+    val activeDeviceId: Int? get() = synchronized(connectionLock) { activeAttachment?.deviceId }
+    val isSessionLocked: Boolean get() = readyAttemptId != null
+    override val allowsManualDisconnect: Boolean get() = !isSessionLocked
 
-    @Volatile private var attemptGeneration = 0L
-    private val _attemptFailures = MutableSharedFlow<UsbAttemptFailure>(extraBufferCapacity = 16)
-    internal val attemptFailures = _attemptFailures.asSharedFlow()
-    private val _attemptPackets = MutableSharedFlow<UsbAttemptPacket>()
-    internal val attemptPackets = _attemptPackets.asSharedFlow()
+    init { observePacketCalibration(prefs) }
 
-    /** Distinguishes an unavailable device list from a successful empty list. */
-    fun attachedDevicesSnapshot(): Result<List<UsbDevice>> = try {
-        Result.success(usbManager.deviceList.values.toList())
-    } catch (failure: Exception) {
-        Result.failure(failure)
+    fun attachedDevicesSnapshot(): Result<List<UsbDevice>> = runCatching { usbManager.deviceList.values.toList() }
+    fun attachedDevice(device: UsbDevice): UsbDevice? = attachedDevicesSnapshot().getOrNull()?.firstOrNull {
+        identity(it) == identity(device)
     }
-
-    /** Resolves an event payload back to the device that is currently attached. */
-    fun attachedDevice(device: UsbDevice): UsbDevice? = runCatching {
-        usbManager.deviceList.values.firstOrNull {
-            it.deviceId == device.deviceId && it.deviceName == device.deviceName &&
-                it.vendorId == device.vendorId && it.productId == device.productId
-        }
-    }.getOrNull()
-
     fun supportsSerialConnection(device: UsbDevice): Boolean = runCatching {
         UsbSerialProber.getDefaultProber().probeDevice(device)?.ports?.isNotEmpty() == true
     }.getOrDefault(false)
-
     fun hasPermission(device: UsbDevice): Boolean = runCatching { usbManager.hasPermission(device) }.getOrDefault(false)
 
-    internal fun startConnection(device: UsbDevice, attemptId: Long) {
+    fun requestConnection(device: UsbDevice, generation: Long): UsbPermissionRequest? = synchronized(connectionLock) {
+        val attached = attachedDevice(device) ?: return null
+        requestAttachedDevice(attached, generation)
+    }
+
+    private fun requestAttachedDevice(device: UsbDevice, generation: Long): UsbPermissionRequest? {
+        val attachment = identity(device)
+        if (activeAttachment == attachment && isRunning) return null
+        if (pendingPermission?.device?.let { it.deviceId == device.deviceId && identity(it) != attachment } == true) pendingPermission = null
+        if (!supportsSerialConnection(device) || activeDeviceId?.let { it != device.deviceId } == true) return null
+        return requestPermissionOrStart(device, attachment, hasPermission(device), generation)
+    }
+
+    private fun requestPermissionOrStart(device: UsbDevice, attachment: UsbAttachmentIdentity, hasPermission: Boolean, generation: Long): UsbPermissionRequest? {
+        if (pendingPermission != null) return null
+        if (hasPermission) { startConnection(device, generation); return null }
+        if (!promptedAttachments.add(attachment)) return null
+        return UsbPermissionRequest(device, ++nextPermissionToken).also { pendingPermission = it }
+    }
+
+    fun completePermissionRequest(device: UsbDevice, token: Long, granted: Boolean, generation: Long): Unit = synchronized(connectionLock) {
+        if (pendingPermission?.let { it.token == token && identity(it.device) == identity(device) } != true) return
+        val attached = attachedDevice(device)
+        completePendingPermission(device, token, granted, attached,
+            attached?.let(::hasPermission) == true, attached?.let(::supportsSerialConnection) == true,
+            attached?.deviceId?.let { activeDeviceId?.let { active -> active != it } } == true, generation)
+    }
+
+    private fun completePendingPermission(device: UsbDevice, token: Long, granted: Boolean, attached: UsbDevice?, hasPermission: Boolean, supported: Boolean, conflicts: Boolean, generation: Long) {
+        if (pendingPermission?.let { it.token == token && identity(it.device) == identity(device) } != true) return
+        pendingPermission = null
+        if (granted && hasPermission && supported && !conflicts && attached != null) startConnection(attached, generation)
+    }
+
+    fun cancelPendingPermission() = synchronized(connectionLock) { pendingPermission = null }
+
+    fun synchronizeAttachments(generation: Long, snapshot: Result<List<UsbDevice>> = attachedDevicesSnapshot()): UsbPermissionRequest? = synchronized(connectionLock) {
+        val devices = snapshot.getOrElse { return null }
+        val identities = devices.map(::identity).toSet()
+        activeAttachment?.takeIf { it !in identities }?.let { onDeviceDetached(it.deviceId) }
+        promptedAttachments.retainAll(identities)
+        if (pendingPermission?.let { identity(it.device) !in identities } == true) pendingPermission = null
+        devices.firstOrNull {
+            supportsSerialConnection(it) && (hasPermission(it) || (identity(it) !in promptedAttachments && pendingPermission == null))
+        }?.let { requestAttachedDevice(it, generation) }
+    }
+
+    fun onDeviceDetached(deviceId: Int): Boolean = synchronized(connectionLock) {
+        promptedAttachments.removeAll { it.deviceId == deviceId }
+        if (pendingPermission?.device?.deviceId == deviceId) pendingPermission = null
+        if (activeDeviceId != deviceId) return false
         stopConnection()
-        val attempt = ++attemptGeneration
-        isRunning = true
-        scope.launch {
-            mConnectionStateFlow.emit(InProgress)
+        true
+    }
+
+    internal fun startConnection(device: UsbDevice, generation: Long) = synchronized(connectionLock) {
+        launchConnection(generation) { job -> runConnection(job, device) }
+        activeAttachment = identity(device)
+    }
+
+    override fun stopConnection() = synchronized(connectionLock) {
+        activeAttachment = null
+        pendingPermission = null
+        super.stopConnection()
+    }
+
+    private suspend fun runConnection(job: Job, device: UsbDevice) {
+        while (isCurrent(job)) {
+            val attempt = beginAttempt(job) ?: return
+            if (currentConnectionState != UsbAwaitingEcu) publishState(job, InProgress)
+            val handshakeTimeout = scope.launch {
+                delay(ECU_PACKET_TIMEOUT_MS)
+                val target = synchronized(connectionLock) {
+                    if (!isCurrent(job) || !isCurrentAttempt(attempt) || readyAttemptId == attempt) return@launch
+                    invalidateAttempt(job, attempt, UsbAwaitingEcu)
+                }
+                target?.let(::closeEndpoint)
+            }
             try {
                 val port = connectToDevice(device)
                 currentCoroutineContext().ensureActive()
-                if (attempt != attemptGeneration) return@launch
-                Log.d(this.javaClass.simpleName, "Connected to USB device")
-                startReadingData(port, attempt, attemptId)
-            } catch (e: Exception) {
+                if (!isCurrent(job)) return
+                if (!isCurrentAttempt(attempt) || !isCurrentEndpoint(port)) throw IOException("USB opening expired")
+                requestFirmware()
+                readPort(job, port, attempt)
+            } catch (failure: Exception) {
                 currentCoroutineContext().ensureActive()
-                if (attempt != attemptGeneration) return@launch
-                isRunning = false
-                mConnectionStateFlow.emit(ConnectionFailed(e))
-                mConnectionStateFlow.emit(Disconnected)
-                _attemptFailures.emit(UsbAttemptFailure(attemptId, UsbAttemptFailure.Reason.TRANSPORT_FAILURE))
-                Log.e(this.javaClass.simpleName, "Connection failed: ${e.message}")
+                if (!isCurrent(job)) return
+                val end = if (readyAttemptId == attempt) ConnectionEvent.End.RETRYING else null
+                val state = if (failure is UsbEcuResponseTimeoutException || currentConnectionState == UsbAwaitingEcu) UsbAwaitingEcu else InProgress
+                finishAttempt(job, state, end)
+                Log.e(javaClass.simpleName, "USB attempt failed: ${failure.message}")
+            } finally {
+                handshakeTimeout.cancel()
             }
+            delay(RETRY_DELAY_MS)
         }
     }
 
-    private fun connectToDevice(usbDevice: UsbDevice): UsbSerialPort {
+    private suspend fun readPort(job: Job, port: UsbSerialPort, attempt: Long) {
+        val receiver = PacketReceiver()
+        var lastPacketAt = SystemClock.elapsedRealtime()
+        while (isCurrent(job) && isCurrentEndpoint(port) && isCurrentAttempt(attempt)) {
+            val buffer = ByteArray(MAX_PACKET_SIZE)
+            val count = port.read(buffer, 1_000)
+            currentCoroutineContext().ensureActive()
+            if (!isCurrent(job) || !isCurrentAttempt(attempt)) return
+            if (!isCurrentEndpoint(port)) throw IOException("USB serial port closed")
+            for (index in 0 until count.coerceAtLeast(0)) {
+                receiver.receive(buffer[index].toInt() and 255)?.let {
+                    receivePacket(attempt, RawPacket(it))
+                    // Downstream/logger suspension must not consume the USB silence deadline.
+                    lastPacketAt = SystemClock.elapsedRealtime()
+                }
+            }
+            if (SystemClock.elapsedRealtime() - lastPacketAt >= ECU_PACKET_TIMEOUT_MS) throw UsbEcuResponseTimeoutException()
+        }
+        if (isCurrent(job) && isCurrentAttempt(attempt)) throw IOException("USB serial port closed")
+    }
+
+    override fun onFirmwarePacket(job: Job, attempt: Long) { markConnected(job, attempt) }
+
+    protected open fun connectToDevice(usbDevice: UsbDevice): UsbSerialPort {
 
         val device = attachedDevice(usbDevice) ?: throw IllegalStateException("No USB devices found")
 
@@ -136,75 +215,6 @@ class UsbConnection @Inject constructor(
         }
     }
 
-    override fun disconnect() {
-        attemptGeneration++
-        val port = detachCurrentEndpoint()
-        backgroundScope.launch {
-            var closeFailure: Exception? = null
-            try {
-                port?.close()
-            } catch (e: Exception) {
-                closeFailure = e
-            }
-            mConnectionStateFlow.emit(Disconnected)
-            closeFailure?.let { failure ->
-                mConnectionStateFlow.emit(ConnectionError(failure))
-                Log.e(this.javaClass.simpleName, "Error while disconnecting: ${failure.message}")
-            }
-        }
-    }
-
-    private fun startReadingData(port: UsbSerialPort, attempt: Long, attemptId: Long) {
-        if (!isCurrentEndpoint(port)) return
-        sendData(ChangeModePacket.getPacket(Task.Secu3ReadFirmwareInfo))
-        scope.launch {
-            if (!isCurrentEndpoint(port)) return@launch
-            try {
-                val receiver = PacketReceiver()
-                var lastResponseAt = SystemClock.elapsedRealtime()
-
-                while (attempt == attemptGeneration && isCurrentEndpoint(port)) {
-                    val buffer = ByteArray(MAX_PACKET_SIZE)
-                    val bytesRead = port.read(buffer, 1000)
-                    currentCoroutineContext().ensureActive()
-                    if (attempt != attemptGeneration || !isCurrentEndpoint(port)) return@launch
-
-                    for (i in 0 until bytesRead.coerceAtLeast(0)) {
-                        receiver.receive(buffer[i].toInt() and 0xFF)?.let { packet ->
-                            if (attempt != attemptGeneration) return@launch
-                            val rawPacket = RawPacket(packet)
-                            _attemptPackets.emit(UsbAttemptPacket(attemptId, rawPacket))
-                            mReceivedPacketFlow.emit(rawPacket)
-                            // Packet consumers can suspend this loop (notably the logger). Start
-                            // measuring ECU silence again only after the packet has been delivered.
-                            lastResponseAt = SystemClock.elapsedRealtime()
-                        }
-                    }
-                    if (SystemClock.elapsedRealtime() - lastResponseAt >= ECU_PACKET_TIMEOUT_MS) {
-                        throw UsbEcuResponseTimeoutException()
-                    }
-                }
-            } catch (e: Exception) {
-                if (e is CancellationException) throw e
-                currentCoroutineContext().ensureActive()
-                if (attempt != attemptGeneration) return@launch
-                Log.e(this.javaClass.simpleName, "Error while reading data: ${e.message}")
-                if (invalidateEndpoint(port)) {
-                    if (attempt != attemptGeneration) return@launch
-                    isRunning = false
-                    mConnectionStateFlow.emit(ConnectionFailed(e))
-                    mConnectionStateFlow.emit(Disconnected)
-                    val reason = if (e is UsbEcuResponseTimeoutException) {
-                        UsbAttemptFailure.Reason.ECU_NOT_RESPONDING
-                    } else {
-                        UsbAttemptFailure.Reason.TRANSPORT_FAILURE
-                    }
-                    _attemptFailures.emit(UsbAttemptFailure(attemptId, reason))
-                }
-            }
-        }
-    }
-
     override fun isEndpointOpen(endpoint: UsbSerialPort): Boolean = endpoint.isOpen
 
     override fun writeEndpoint(endpoint: UsbSerialPort, bytes: ByteArray) {
@@ -219,8 +229,9 @@ class UsbConnection @Inject constructor(
         }
     }
 
+    private fun identity(device: UsbDevice) = UsbAttachmentIdentity(device.deviceId, device.deviceName, device.vendorId, device.productId)
     private companion object {
         const val ECU_PACKET_TIMEOUT_MS = 5_000L
+        const val RETRY_DELAY_MS = 2_000L
     }
-
 }

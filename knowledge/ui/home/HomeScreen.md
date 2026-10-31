@@ -26,7 +26,7 @@ Home shares the fixed toolbar status slot and state colors with feature screens,
 
 ## USB sessions lock the Home exit controls
 
-A confirmed USB session hides the Exit action and consumes system Back while Home is active. Feature navigation remains available, and the Activity returns to StartScreen when the active USB device is physically detached.
+A confirmed USB session hides the Exit action and consumes system Back while Home is active. Feature navigation remains available, and the Activity returns to StartScreen when an established USB session ends, including ECU silence while the adapter remains attached.
 
 ## Home navigates only after the manager accepts the stop
 

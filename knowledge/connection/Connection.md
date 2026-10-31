@@ -1,89 +1,19 @@
 ## Stop cancels transport work but keeps cleanup and the outbound FIFO alive
 
-Retry and read coroutines are children of the reusable connection scope and are cancelled on stop. Transport cleanup notifications and the serial write queue use a background scope that survives stop/start; cancelling it would lose a pending `Disconnected` event and permanently kill writes for a later reconnect. Stop detaches the endpoint immediately, then closes it and publishes its state from the background scope.
+`Connection` owns the connection job and attempt IDs for both transports. Its reusable I/O scope is canceled on stop; preference observation, captured-endpoint cleanup and queued writes use a separate scope that survives stop/start. A stopped endpoint is detached immediately, before asynchronous close, so an old cleanup can never close its replacement.
 
-## Logger packet writes backpressure the connection-manager collector
+## Physical endpoint availability and ECU readiness are different facts
 
-`Secu3ConnectionManager` awaits each `SecuLogger.logPacket` command. Keep this collector independent from UI sampling: logging must receive every sensor packet, and fire-and-forget logging or an additional unlimited channel would remove its existing backpressure.
+`isConnected` checks only the physical endpoint. Production consumers use `isReady`; USB sets readiness after valid firmware information, while Bluetooth sets it after socket establishment. `readyAttemptId` is derived from the active attempt and Connected state. Invalidate the attempt before failed-attempt cleanup so a late firmware reply cannot restore readiness; there is no separate stored readiness flag. Manual-disconnect admission is a transport property; forced background/service cleanup bypasses that user-action guard.
 
-## Resolve a USB driver and port before opening the USB device
+## Packet parsing belongs to the receiving attempt
 
-Probe the selected `UsbDevice` and choose its first serial port before calling `UsbManager.openDevice`. Unsupported devices or drivers with no ports must fail before acquiring a USB connection that would otherwise need to be closed.
+Both readers pass checksum-valid frames through `receivePacket`. It parses with the current fuel-flow calibration and protocol firmware context, then rechecks ownership before publishing. Sensor frames are skipped until settings load; firmware parsing must still proceed. A later preference read failure retains the last calibration. The private protocol firmware context is cleared with the attempt. Only the manager exposes observable firmware state, scoped to the selected transport.
 
-## The manager owns USB attachment admission and retries without a per-attachment open limit
+## Requests subscribe before sending and cannot cross reconnects
 
-`Secu3ConnectionManager.requestUsbConnection` resolves event payloads against the attached device, checks serial support and active-device conflicts, and keeps physical identity (device ID, system name, vendor ID and product ID) to detect replacements. A denied permission dialog is not reopened on every resume; snapshots still check current platform permission so an Android attach chooser grant can start automatically. Once permission is available, the same attached device may be opened repeatedly with cancellable delays until firmware confirms or the device detaches/background policy stops the session. Each open attempt tags both failures and raw packets, so stale work from an earlier retry cannot confirm or fail the current attempt. Home navigation is keyed to the successful attempt, while ECU data ownership is fenced by the logical session generation. A confirmed connection loss ends that generation even when the physical attachment remains present.
+The shared packet flow follows current attempts without replay. The request overload captures its starting attempt, subscribes, then invokes the send callback. It must reject replacement-attempt replies even if the same transport and device remain selected. Firmware bootstrap happens inside each transport before it reports Connected; it does not depend on a manager or screen packet subscriber.
 
-## Attachment synchronization never treats an unavailable USB snapshot as empty
+## Event ownership and ordering must survive asynchronous delivery
 
-`UsbConnection.attachedDevicesSnapshot()` distinguishes an available empty list from failure to query Android's device list. `Secu3ConnectionManager.synchronizeUsbAttachments()` returns `null` without changing active-session or admission state on snapshot failure; on success it processes a missed active detach before reconciling prompted attachment history and returns only the first eligible device's permission request. The manager's `terminalSessionGeneration` stream remains the sole source for detach navigation.
-
-Every selected USB session has a full attachment identity, retained across transient open and handshake failures; null means no active USB attachment. Tests that construct a selected USB session directly must install its complete identity before publishing the selection. A same-device-ID replacement in a later snapshot still terminates the old session before it can be admitted.
-
-## The manager owns one pending USB permission request
-
-The pending permission request blocks all other USB admissions until its matching callback is consumed or the request is canceled by detach, snapshot reconciliation, stop, or backgrounding. A denied callback releases the pending slot but keeps that physical attachment in prompt history until detach or a successful snapshot shows it missing; a new snapshot still checks current platform permission so an Android chooser grant can start the device without another prompt.
-
-## Retain the selected USB attachment identity across transient retry failures
-
-An individual USB open or handshake failure invalidates firmware confirmation but does not end the selected attachment session. Keep its full identity alongside the session fence until matching detach, explicit stop or transport replacement; otherwise a different device reusing the same Android device ID can evade missed-detach detection during synchronization.
-
-## Firmware information confirms each USB retry before Home or protocol access
-
-Opening a USB serial port is not proof that an ECU is present. The manager allows protocol consumers and Home navigation only after a valid firmware-info packet for the current attempt. A bounded handshake timeout or transport error schedules another attempt rather than ending the attachment session. Detach is matched by device identity and invalidates the session generation; stale events, packets and open timeouts from earlier attempts cannot confirm a replacement attempt. The USB attempt failure event carries the attempt ID and distinguishes ordinary transport failures from a valid-packet liveness timeout; the transport exception remains available through `ConnectionFailed`. A handshake timeout reuses the manager's `FAILED` signal without allocating an otherwise unused exception. Bluetooth retains its configured retry behavior.
-
-`confirmedUsbAttemptId` is the only stored firmware confirmation; the fence tracks device/session identity only. Clear confirmation before starting a replacement or publishing retry progress, and set it before publishing `Connected`. The computed USB lock remains set if the endpoint closes before retry cleanup; only the connected/send gate additionally requires an open endpoint.
-
-## USB liveness follows valid ECU packets, not adapter presence
-
-An open serial endpoint does not prove that the ECU is powered. After five seconds without a checksum-valid packet, invalidate the current USB attempt and retry through the existing session loop. The firmware handshake uses the same five-second deadline and publishes `UsbAwaitingEcu`; UI maps this typed state to a prompt while the retry continues. The ECU emits packets in all supported non-silent contexts, and this app does not select the silent context, so packet inactivity is meaningful. Measure the deadline in the USB read loop and reset it after packet delivery completes: logger or consumer backpressure must not be mistaken for ECU silence. Noise, incomplete frames and invalid checksums do not refresh the deadline. A late firmware packet from the timed-out attempt cannot reconfirm it. One failure handler invalidates the active attempt before closing its port and clearing firmware; late replies cannot confirm it. If that attempt was confirmed, stop logging, publish its ended generation and begin a new logical session on the same attachment. A later cable detach then has its own generation and cannot be suppressed as a replay of the earlier ECU timeout. Every new logical selection waits for its packet subscription before opening the next port. The running foreground service retains its owner token and is rebound to the new generation without an Android service restart, including while the app is backgrounded; otherwise its later destruction would be mistaken for an obsolete owner and leave retry running without a service. A successful firmware confirmation clears that pending terminal marker before Connected; initial handshake timeout never publishes a terminal generation.
-
-## Sensor parsing uses the current persisted fuel-flow calibration on every stream
-
-The manager forwards the latest valid pulses-per-litre setting from its existing DataStore observer into `RawPacket.parse`. Keep that parse call common to the shared logger/display stream and request-scoped stream so both produce the same `SensorsPacket` values. Until the first settings snapshot arrives, sensor packets are skipped rather than converted with a possibly wrong default; firmware packets continue through the same collector so USB handshake is not held up. On a later storage read failure, retain the last successfully loaded calibration. The preference affects only app-side consumption conversion, not ECU writes or firmware handshake packets.
-
-## Connection loss events must not be conflated
-
-Parameter, sensor and diagnostics consumers invalidate their local data on each non-connected event. Keep the manager's replaying event stream rather than a `StateFlow`: a fast detach/reconnect can otherwise hide the loss and leave old ECU data active. Firmware confirmation and detach also share one coordinator lock so a parsed reply cannot reopen a session after its detach has completed.
-
-## Firmware state belongs to the selected session and replays only its current value
-
-`firmwareInfo` is the manager's canonical nullable state; `fwInfo` reads that same value. Clear it on replacement, retry, detach and stop, and publish confirmed USB firmware before `Connected`. Bluetooth firmware publication shares the manager lock with session cleanup so a parsed old reply cannot repopulate the state after stop. A late observer receives the current firmware or null, never a separate cache from an earlier session. Connection-loss events remain separate and non-conflated.
-
-For Bluetooth, the manager also clears `firmwareInfo` on each current-generation non-Connected retry event before publishing that state. Sensors consumes this canonical flow directly, so a reconnect cannot keep presenting firmware from the previous link.
-
-## A request subscribes before sending and remains bound to its starting session
-
-The shared packet stream follows transport selection changes; the per-request stream captures the selection when collected and must never accept a replacement session's reply. Both use the same parsing, generation filtering and USB-attempt confirmation path. Invoke the request callback from the raw transport's `onSubscription`, before parsing operators: a command can produce an immediate reply. With no selected transport, wait for cancellation without sending. Bluetooth firmware caching remains owned by the shared stream.
-
-## USB opening waits on only the selected session's packet subscription
-
-The manager has at most one selected USB session, so its pre-open readiness is a single deferred. A subscription callback may complete it only while its captured selection is still current. Cancellation clears the pending signal, while the waiter clears it after completion only if the field still refers to that same deferred. This prevents a late collector or waiter from releasing or erasing a replacement session.
-
-## One background preference controls both transports
-
-The persisted `wakelock` key and default are retained, but the preference applies to both USB and Bluetooth. Toggling it off while connected stops only the foreground service; the live transport and logger continue until the app actually stops or the ECU disconnects. If background work is off, the manager ends either transport and logging on a real Activity stop and publishes that ended session's generation; configuration recreation does not count as leaving. With the preference on, the service stays owned through connection retries. `ConnectionServiceController` owns Android service calls, while a service owner token remains distinct from the connection generation so late destruction from an old service cannot stop a replacement session.
-
-The manager's background policy is unknown until its DataStore observer successfully emits. A visibility transition during that initial read is reconciled against the current visibility when the preference arrives; do not assume false while storage is still loading. That observer is the sole writer of the current-policy state, and a failed later read clears it back to unknown until recovery. Background-setting writes go through the manager's serialized suspending action, which waits for the committed policy to be observed before returning; otherwise an immediate background transition could still use the previous setting.
-
-## Unexpected destruction of the current connection service follows app visibility
-
-The manager validates the destroyed service owner token and session generation before acting. If the app remains visible, it preserves either transport and restores the service only when background work is enabled. If the app is backgrounded, it stops transport and logging and publishes the ended session's generation so navigation returns to StartScreen. Confirmed USB does not bypass this service lifecycle policy; returning to the unlocked app admits the still-attached device again.
-
-## Connection notification permission is requested only from Settings
-
-Android 13+ notification access is requested only after the user enables background work or selects the explicit connection-notifications row. A denied request does not change the background preference or stop a live connection. The permission grant is queried from Android whenever the Settings route resumes; once granted, the current foreground service notification is refreshed in place through `ConnectionNotificationPublisher`, without restarting the ECU transport. The channel ID `Background connection chanel` is stable because Android stores user channel choices against it.
-
-## USB permission dialogs do not mask true background transitions
-
-Only Activity stop or lock handling marks the app backgrounded; a permission dialog's pause alone does not. A true background transition cancels the manager's pending USB permission token, so a late platform result cannot open a connection behind the app and a later foreground snapshot can admit the now-authorized attached device.
-
-## Bluetooth retry events belong to one manager generation
-
-`BtConnection` tags every state event with the generation supplied by `Secu3ConnectionManager`. The manager ignores callbacks from replaced Bluetooth attempts, even when the replacement also uses Bluetooth. Transient failures keep the foreground service; only the transport's explicit retry-exhaustion event publishes the ended generation and stops service/logging. The service itself does not infer terminal state from the connection event stream.
-
-Bluetooth's selected address is read before starting its transport job and remains fixed for that job. The manager awaits settings outside its lock, then rechecks the captured selection and generation before changing transport state. Retry limits are reread on each retry iteration, so a changed preference applies without changing the address mid-job.
-
-## Terminal session results survive Activity recreation until a new attempt
-
-The manager exposes the latest ended session generation as a replaying nullable value. A new USB or Bluetooth attempt, or a manual stop, clears that marker; a manual stop does not publish a terminal generation. Background and service stops publish the ended generation after cleanup. UI queues Start navigation against the generation and cancels only that queued terminal navigation when the manager clears it; the connection-state event stream remains non-conflated for data consumers.
+`ConnectionEvent.generation` identifies the manager request that owns the transport job; `sequence` orders outcomes within that transport. Initial manager admission and synchronous detach may apply an outcome before the event collector catches up, so sequence checks reject already-applied or older outcomes. During an ongoing job, consume the event stream in order: applying a newer Connected snapshot on resume could skip a queued loss outcome. A normal state has no `end`; `RETRYING` ends an established logical session while transport work continues, and `STOPPED` releases that transport.

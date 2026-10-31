@@ -57,12 +57,6 @@ class ConnectionServiceController @Inject constructor(
         return current.connectionGeneration
     }
 
-    @Synchronized
-    internal fun ownerToken(): Long? = owner?.token
-
-    @Synchronized
-    internal fun ownerConnectionGeneration(): Long? = owner?.connectionGeneration
-
     /** The same service continues owning USB retries after a logical ECU session ends. */
     @Synchronized
     internal fun updateConnectionGeneration(connectionGeneration: Long) {

@@ -40,9 +40,13 @@ data class ConnectionError(val e: Exception) : ConnectionState()
 data class ConnectionFailed(val e: Exception) : ConnectionState()
 data class ConnectionLost(val e: Exception) : ConnectionState()
 
-/** Bluetooth events carry their owning attempt so a delayed callback cannot affect a replacement. */
-data class BluetoothConnectionEvent(
+/** Transport outcomes are fenced by the manager's connection request. */
+data class ConnectionEvent(
     val generation: Long,
     val state: ConnectionState,
-    val retriesExhausted: Boolean = false,
-)
+    val firmware: org.secu3.android.models.packets.input.FirmwareInfoPacket? = null,
+    val end: End? = null,
+    val sequence: Long = 0,
+) {
+    enum class End { RETRYING, STOPPED }
+}

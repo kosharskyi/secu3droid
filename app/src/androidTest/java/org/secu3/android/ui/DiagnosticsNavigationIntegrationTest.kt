@@ -22,7 +22,7 @@ import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.withTimeout
-import org.secu3.android.connection.BluetoothConnectionEvent
+import org.secu3.android.connection.ConnectionTestDriver
 import org.secu3.android.connection.BtConnection
 import org.secu3.android.connection.Connection
 import org.secu3.android.connection.Connected
@@ -310,8 +310,7 @@ class DiagnosticsNavigationIntegrationTest {
         val btField = Secu3ConnectionManager::class.java.declaredFields.first { BtConnection::class.java.isAssignableFrom(it.type) }
             .apply { isAccessible = true }
         val connection = btField.get(manager) as BtConnection
-        val rawFlow = Connection::class.java.getDeclaredField("mReceivedPacketFlow").apply { isAccessible = true }
-            .get(connection) as MutableSharedFlow<RawPacket>
+        val driver = ConnectionTestDriver(manager, connection)
         val writes = CopyOnWriteArrayList<ByteArray>()
         val adapter = requireNotNull(BluetoothAdapter.getDefaultAdapter()) { "Bluetooth adapter is unavailable" }
         val socket = adapter.getRemoteDevice("00:11:22:33:44:55").createRfcommSocketToServiceRecord(UUID.randomUUID())
@@ -327,7 +326,7 @@ class DiagnosticsNavigationIntegrationTest {
                 if (acknowledgeEnterImmediately && copy.size > 3 && copy[1] == 'u'.code.toByte() && copy[3] == 6.toByte()) {
                     runBlocking {
                         withTimeout(3_000) {
-                            rawFlow.emit(RawPacket(intArrayOf('@'.code, 'u'.code, 0, 6, 0, 0)))
+                            driver.emit(RawPacket(intArrayOf('@'.code, 'u'.code, 0, 6, 0, 0)))
                         }
                     }
                 }
@@ -342,29 +341,11 @@ class DiagnosticsNavigationIntegrationTest {
                 .invoke(connection, socket) == true,
         )
 
-        val fence = Secu3ConnectionManager::class.java.getDeclaredField("usbSessionFence")
-            .apply { isAccessible = true }.get(manager) as org.secu3.android.connection.UsbSessionFence
-        val generation = fence.advance()
-        val selectionClass = Secu3ConnectionManager::class.java.declaredClasses.first { it.simpleName == "Selection" }
-        val transportClass = Secu3ConnectionManager::class.java.declaredClasses.first { it.simpleName == "Transport" }
-        val bluetoothTransport = transportClass.enumConstants!!.first { (it as Enum<*>).name == "BLUETOOTH" }
-        val selection = selectionClass.declaredConstructors.first().apply { isAccessible = true }
-            .newInstance(bluetoothTransport, generation)
-        @Suppress("UNCHECKED_CAST")
-        val selected = Secu3ConnectionManager::class.java.getDeclaredField("selectedTransport").apply { isAccessible = true }
-            .get(manager) as kotlinx.coroutines.flow.MutableStateFlow<Any>
-        selected.value = selection
-        Secu3ConnectionManager::class.java.getDeclaredField("activeUsbAttachment").apply { isAccessible = true }
-            .set(manager, null)
-
-        val btEvents = BtConnection::class.java.getDeclaredField("_sessionEvents").apply { isAccessible = true }
-            .get(connection) as MutableSharedFlow<BluetoothConnectionEvent>
-        await { rawFlow.subscriptionCount.value > 0 && btEvents.subscriptionCount.value > 0 }
-        rawFlow.emit(firmwarePacket())
-        await { manager.firmwareInfo.value != null }
-        btEvents.emit(BluetoothConnectionEvent(generation, Connected))
-        await { manager.currentConnectionState == Connected }
-        FakeBluetoothTransport(manager, generation, socket, rawFlow, writes).also(fakeTransports::add)
+        val generation = driver.select("BLUETOOTH")
+        await { driver.packets.subscriptionCount.value > 0 }
+        driver.emit(firmwarePacket())
+        await { manager.firmwareInfo.value != null && manager.currentConnectionState == Connected }
+        FakeBluetoothTransport(manager, generation, socket, driver, writes).also(fakeTransports::add)
     }
 
     private suspend fun await(predicate: () -> Boolean) {
@@ -375,7 +356,7 @@ class DiagnosticsNavigationIntegrationTest {
         private val manager: Secu3ConnectionManager,
         private val generation: Long,
         private val socket: BluetoothSocket,
-        private val rawFlow: MutableSharedFlow<RawPacket>,
+        private val driver: ConnectionTestDriver,
         val writes: CopyOnWriteArrayList<ByteArray>,
     ) {
         val enterCount: Int get() = writes.count { it.size > 3 && it[1] == 'u'.code.toByte() && it[3] == 6.toByte() }
@@ -383,7 +364,7 @@ class DiagnosticsNavigationIntegrationTest {
         val outputCount: Int get() = writes.count { it.size > 1 && it[1] == '^'.code.toByte() }
 
         suspend fun emitDiagnosticInput(flags: Int, voltageRaw: Int = 0) {
-            rawFlow.emit(
+            driver.emit(
                 RawPacket(
                     intArrayOf('@'.code, '='.code, flags, voltageRaw shr 8, voltageRaw and 0xFF) +
                         IntArray(28) + intArrayOf(0, 0),
@@ -392,7 +373,7 @@ class DiagnosticsNavigationIntegrationTest {
         }
 
         suspend fun emitOpcode(opCode: Int) {
-            rawFlow.emit(RawPacket(intArrayOf('@'.code, 'u'.code, 0, opCode, 0, 0)))
+            driver.emit(RawPacket(intArrayOf('@'.code, 'u'.code, 0, opCode, 0, 0)))
         }
 
         fun disconnect() = runBlocking {

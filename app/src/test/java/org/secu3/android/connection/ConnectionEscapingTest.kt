@@ -6,13 +6,11 @@ import org.junit.Test
 
 class ConnectionEscapingTest {
 
-    private val connection = TestConnection()
-
     @Test
     fun escTxPacket_escapesReservedPayloadBytes() {
         val packet = intArrayOf(0x21, 'x'.code, 0x21, 0x0D, 0x0A, 0x55)
 
-        val escaped = connection.escapeTxForTest(packet)
+        val escaped = PacketReceiver.escapeTx(packet)
 
         assertArrayEquals(
             intArrayOf(0x21, 'x'.code, 0x0A, 0x81, 0x0A, 0x83, 0x0A, 0x84, 0x55),
@@ -24,7 +22,7 @@ class ConnectionEscapingTest {
     fun escTxPacket_keepsHeaderAndDescriptorUnescaped() {
         val packet = intArrayOf(0x21, 0x0D, 0x55)
 
-        val escaped = connection.escapeTxForTest(packet)
+        val escaped = PacketReceiver.escapeTx(packet)
 
         assertArrayEquals(packet, escaped)
     }
@@ -37,13 +35,13 @@ class ConnectionEscapingTest {
             intArrayOf(0x21, 'x'.code, 9, 19, 10) to intArrayOf(0x21, 'x'.code, 9, 19, 10, 0x84),
             intArrayOf(0x21, 'x'.code, 32, 65, 33) to intArrayOf(0x21, 'x'.code, 32, 65, 10, 0x81),
         )
-        for ((packet, expected) in cases) assertArrayEquals(expected, connection.escapeTxForTest(packet))
+        for ((packet, expected) in cases) assertArrayEquals(expected, PacketReceiver.escapeTx(packet))
     }
 
     @Test
     fun escRxPacket_rejectsIncompleteAndWrongDirectionEscapes() {
         for (tail in listOf(intArrayOf(10), intArrayOf(10, 0x81), intArrayOf(10, 0x99), intArrayOf(10, 10))) {
-            assertNull(connection.escapeRxForTest(intArrayOf(0x40, 'x'.code) + tail))
+            assertNull(PacketReceiver.unescapeRx(intArrayOf(0x40, 'x'.code) + tail))
         }
     }
 
@@ -51,24 +49,9 @@ class ConnectionEscapingTest {
     fun escRxPacket_unescapesIncomingReservedBytes() {
         val packet = intArrayOf(0x40, 'x'.code, 0x0A, 0x82, 0x0A, 0x83, 0x0A, 0x84)
 
-        val unescaped = connection.escapeRxForTest(packet)
+        val unescaped = PacketReceiver.unescapeRx(packet)
 
         assertArrayEquals(intArrayOf(0x40, 'x'.code, 0x40, 0x0D, 0x0A), unescaped)
     }
-
-    private class TestConnection : Connection<Unit>() {
-        fun escapeTxForTest(packet: IntArray): IntArray = escTxPacket(packet)
-
-        fun escapeRxForTest(packet: IntArray): IntArray? = escRxPacket(packet)
-
-        override fun disconnect() = Unit
-
-        override fun isEndpointOpen(endpoint: Unit): Boolean = false
-
-        override fun writeEndpoint(endpoint: Unit, bytes: ByteArray) = Unit
-
-        override fun closeEndpoint(endpoint: Unit) = Unit
-    }
-
 
 }

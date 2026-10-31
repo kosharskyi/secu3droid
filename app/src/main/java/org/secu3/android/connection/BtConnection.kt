@@ -29,112 +29,92 @@ import android.bluetooth.BluetoothAdapter
 import android.bluetooth.BluetoothManager
 import android.bluetooth.BluetoothSocket
 import android.util.Log
-import kotlinx.coroutines.delay
-import kotlinx.coroutines.currentCoroutineContext
-import kotlinx.coroutines.ensureActive
-import kotlinx.coroutines.CoroutineStart
-import kotlinx.coroutines.Job
-import kotlinx.coroutines.launch
-import kotlinx.coroutines.flow.MutableSharedFlow
-import kotlinx.coroutines.flow.asSharedFlow
+import kotlinx.coroutines.*
+import kotlinx.coroutines.flow.first
 import org.secu3.android.models.RawPacket
-import org.secu3.android.models.packets.out.ChangeModePacket
-import org.secu3.android.utils.Task
 import org.secu3.android.utils.UserPrefs
 import java.io.BufferedReader
 import java.io.IOException
 import java.io.InputStreamReader
 import java.nio.charset.StandardCharsets
 import java.util.UUID
-import kotlinx.coroutines.flow.first
 import javax.inject.Inject
 import javax.inject.Singleton
 
 @Singleton
 class BtConnection @Inject constructor(
     private val prefs: UserPrefs,
-    bluetoothManager: BluetoothManager
+    bluetoothManager: BluetoothManager,
 ) : Connection<BluetoothSocket>() {
-
     private val bluetoothAdapter: BluetoothAdapter? = bluetoothManager.adapter
-    private val connectionLock = Any()
-    private var connectionJob: Job? = null
-    private val _sessionEvents = MutableSharedFlow<BluetoothConnectionEvent>(extraBufferCapacity = 32)
-    val sessionEvents = _sessionEvents.asSharedFlow()
+    init { observePacketCalibration(prefs) }
 
-    fun startConnection(generation: Long, deviceAddress: String) {
-        stopConnection()
-        val job = scope.launch(start = CoroutineStart.LAZY) {
-            runConnection(currentCoroutineContext()[Job]!!, generation, deviceAddress)
+    suspend fun startConnection(generation: Long) {
+        val prepared = CompletableDeferred<Unit>()
+        launchConnection(generation) { job ->
+            try {
+                val settings = prefs.settings.first()
+                currentCoroutineContext().ensureActive()
+                if (!isCurrent(job)) return@launchConnection
+                val address = BluetoothDeviceAddress.normalize(settings.bluetoothDeviceAddress)
+                if (address == null || runCatching { bluetoothAdapter?.isEnabled != true }.getOrDefault(true)) {
+                    finishAttempt(job, Disconnected, ConnectionEvent.End.STOPPED)
+                    prepared.complete(Unit)
+                    return@launchConnection
+                }
+                prepared.complete(Unit)
+                runConnection(job, address)
+            } catch (failure: IOException) {
+                currentCoroutineContext().ensureActive()
+                if (isCurrent(job)) finishAttempt(job, ConnectionFailed(failure), ConnectionEvent.End.STOPPED)
+                prepared.completeExceptionally(failure)
+            } finally {
+                if (!prepared.isCompleted) prepared.cancel()
+            }
         }
-        synchronized(connectionLock) {
-            connectionJob = job
-            isRunning = true
+        try { prepared.await() } catch (cancelled: CancellationException) {
+            synchronized(connectionLock) { if (this.generation == generation) stopConnection() }
+            throw cancelled
         }
-        job.start()
     }
 
-    private suspend fun runConnection(job: Job, generation: Long, address: String) {
-        try {
-            var attempts = 0
-            while (isCurrent(job)) {
-                val maxConnectionAttempts = try {
-                    prefs.settings.first().connectionRetries
-                } catch (failure: IOException) {
-                    currentCoroutineContext().ensureActive()
-                    if (!isCurrent(job)) return
-                    publishState(job, generation, ConnectionFailed(failure))
-                    Log.e(javaClass.simpleName, "Could not read Bluetooth retry preference: ${failure.message}")
-                    delay(RETRY_DELAY_MS)
-                    continue
-                }
-                if (attempts >= maxConnectionAttempts) {
-                    synchronized(connectionLock) {
-                        if (connectionJob === job && isRunning) isRunning = false
-                        else return
-                    }
-                    publishState(job, generation, Disconnected)
-                    publishState(job, generation, ConnectionTimeout, retriesExhausted = true)
-                    Log.i(javaClass.simpleName, "Max connection attempts reached. Stopping connection attempts.")
-                    return
-                }
-
-                publishState(job, generation, InProgress)
-                attempts++
-                if (!isCurrent(job)) return
-                Log.d(javaClass.simpleName, "Attempting to connect: $attempts/$maxConnectionAttempts")
-                if (attempts > 1) publishState(job, generation, ConnectionAttempt(attempts))
-
-                val socket = try {
-                    connectToDevice(job, address)
-                } catch (e: IOException) {
-                    currentCoroutineContext().ensureActive()
-                    if (!isCurrent(job)) return
-                    publishState(job, generation, ConnectionFailed(e))
-                    Log.e(javaClass.simpleName, "Connection failed: ${e.message}")
-                    delay(RETRY_DELAY_MS)
-                    continue
-                }
-
+    private suspend fun runConnection(job: Job, address: String) {
+        var attempts = 0
+        while (isCurrent(job)) {
+            val limit = try { prefs.settings.first().connectionRetries } catch (failure: IOException) {
                 currentCoroutineContext().ensureActive()
                 if (!isCurrent(job)) return
-                Log.i(javaClass.simpleName, "Connected to device")
-                sendData(ChangeModePacket.getPacket(Task.Secu3ReadFirmwareInfo))
-                publishState(job, generation, Connected)
-                try {
-                    readSocket(job, socket)
-                    if (!isCurrentEndpoint(socket)) return
-                } catch (e: IOException) {
-                    currentCoroutineContext().ensureActive()
-                    if (!isCurrent(job)) return
-                    Log.e(javaClass.simpleName, "Error while reading data: ${e.message}")
-                    if (!invalidateEndpoint(socket)) return
-                    attempts = 0
-                }
+                publishState(job, ConnectionFailed(failure))
+                delay(RETRY_DELAY_MS)
+                continue
             }
-        } finally {
-            synchronized(connectionLock) {
-                if (connectionJob === job) connectionJob = null
+            if (attempts >= limit) {
+                publishState(job, Disconnected)
+                finishAttempt(job, ConnectionTimeout, ConnectionEvent.End.STOPPED)
+                return
+            }
+            val attempt = beginAttempt(job) ?: return
+            publishState(job, InProgress)
+            attempts++
+            if (attempts > 1) publishState(job, ConnectionAttempt(attempts))
+            val socket = try { connectToDevice(job, address) } catch (failure: IOException) {
+                currentCoroutineContext().ensureActive()
+                if (!isCurrent(job)) return
+                finishAttempt(job, ConnectionFailed(failure))
+                delay(RETRY_DELAY_MS)
+                continue
+            }
+            if (!isCurrent(job)) return
+            requestFirmware()
+            markConnected(job, attempt)
+            try {
+                readSocket(job, socket, attempt)
+                if (isCurrent(job)) throw IOException("Bluetooth socket closed")
+            } catch (failure: IOException) {
+                currentCoroutineContext().ensureActive()
+                if (!isCurrent(job)) return
+                finishAttempt(job, InProgress)
+                attempts = 0
             }
         }
     }
@@ -167,34 +147,15 @@ class BtConnection @Inject constructor(
         }
     }
 
-    override fun disconnect() {
-        val socket = detachCurrentEndpoint()
-        backgroundScope.launch {
-            var closeFailure: IOException? = null
-            try {
-                socket?.close()
-            } catch (e: IOException) {
-                closeFailure = e
-            }
-            mConnectionStateFlow.emit(Disconnected)
-            closeFailure?.let { failure ->
-                mConnectionStateFlow.emit(ConnectionError(failure))
-                Log.e(this.javaClass.simpleName, "Error while disconnecting: ${failure.message}")
-            }
-        }
-    }
-
-    private suspend fun readSocket(job: Job, socket: BluetoothSocket) {
+    private suspend fun readSocket(job: Job, socket: BluetoothSocket, attempt: Long) {
         if (!isCurrentEndpoint(socket) || !isCurrent(job)) return
-
         val receiver = PacketReceiver()
-        val inputStream = socket.inputStream
-        val reader = BufferedReader(InputStreamReader(inputStream, StandardCharsets.ISO_8859_1))
+        val reader = BufferedReader(InputStreamReader(socket.inputStream, StandardCharsets.ISO_8859_1))
         while (isCurrentEndpoint(socket) && isCurrent(job)) {
             val packet = receiver.readNext(reader)
             currentCoroutineContext().ensureActive()
             if (!isCurrentEndpoint(socket) || !isCurrent(job)) return
-            mReceivedPacketFlow.emit(RawPacket(packet))
+            receivePacket(attempt, RawPacket(packet))
         }
     }
 
@@ -216,34 +177,5 @@ class BtConnection @Inject constructor(
         delay(20)
     }
 
-    private suspend fun publishState(
-        job: Job,
-        generation: Long,
-        state: ConnectionState,
-        retriesExhausted: Boolean = false,
-    ) {
-        if (!isOwned(job)) return
-        mConnectionStateFlow.emit(state)
-        if (!isOwned(job)) return
-        _sessionEvents.emit(
-            BluetoothConnectionEvent(
-                generation = generation,
-                state = state,
-                retriesExhausted = retriesExhausted,
-            ),
-        )
-    }
-
-    private fun isCurrent(job: Job): Boolean = synchronized(connectionLock) {
-        connectionJob === job && job.isActive && isRunning
-    }
-
-    private fun isOwned(job: Job): Boolean = synchronized(connectionLock) {
-        connectionJob === job && job.isActive
-    }
-
-    private companion object {
-        const val RETRY_DELAY_MS = 2_000L
-    }
-
+    private companion object { const val RETRY_DELAY_MS = 2_000L }
 }
