@@ -8,7 +8,7 @@
 
 ## Packet parsing belongs to the receiving attempt
 
-Both readers pass checksum-valid frames through `receivePacket`. It parses with the current fuel-flow calibration and protocol firmware context, then rechecks ownership before publishing. Sensor frames are skipped until settings load; firmware parsing must still proceed. A later preference read failure retains the last calibration. The private protocol firmware context is cleared with the attempt. Only the manager exposes observable firmware state, scoped to the selected transport.
+Both readers pass checksum-valid frames through `receivePacket`. It parses with the current fuel-flow calibration and protocol firmware context, then rechecks ownership before publishing. Sensor frames are skipped until settings load; firmware parsing must still proceed. A later preference read failure retains the last calibration. The private protocol firmware context is cleared with the attempt. Only the manager exposes observable firmware state, scoped to the current transport request.
 
 ## Requests subscribe before sending and cannot cross reconnects
 

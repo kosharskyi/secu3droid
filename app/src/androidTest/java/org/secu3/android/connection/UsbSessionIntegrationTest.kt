@@ -112,7 +112,7 @@ class UsbSessionIntegrationTest {
 
             store.releaseInitialRead.complete(Unit)
             delay(100)
-            assertEquals("NONE", fixture.selectedTransport())
+            assertEquals("NONE", fixture.currentTransport())
             assertFalse(fixture.isBluetoothRunning())
             fixture.selectBluetoothSessionForTest()
             fixture.publishConnectionStateForTest(InProgress)
@@ -239,6 +239,28 @@ class UsbSessionIntegrationTest {
             assertNull(reply)
             assertFalse(requestSent)
         } finally {
+            fixture.close()
+        }
+    }
+
+    @Test fun mergedPacketFlowReceivesBluetoothAndUsbPacketsAcrossTransportSelection() = runBlocking {
+        val fixture = Fixture()
+        val packets = Channel<org.secu3.android.models.packets.base.InputPacket>(Channel.UNLIMITED)
+        val collector = launch(start = CoroutineStart.UNDISPATCHED) {
+            fixture.manager.receivedPacketFlow.collect(packets::send)
+        }
+        try {
+            fixture.selectBluetoothSessionForTest()
+            fixture.await { fixture.btDriver.packets.subscriptionCount.value > 0 }
+            fixture.emitBluetoothPacket(firmwarePacket())
+            assertTrue(withTimeout(3_000) { packets.receive() } is FirmwareInfoPacket)
+
+            fixture.attach(74)
+            fixture.await { fixture.usbDriver.packets.subscriptionCount.value > 0 }
+            fixture.emitUsbPacket(1L, firmwarePacket())
+            assertTrue(withTimeout(3_000) { packets.receive() } is FirmwareInfoPacket)
+        } finally {
+            collector.cancel()
             fixture.close()
         }
     }
@@ -709,7 +731,7 @@ class UsbSessionIntegrationTest {
             preflight.join()
             assertFalse(fixture.isBluetoothRunning())
             assertEquals(Disconnected, fixture.manager.currentConnectionState)
-            assertEquals("NONE", fixture.selectedTransport())
+            assertEquals("NONE", fixture.currentTransport())
         } finally {
             fixture.close()
         }
@@ -1507,10 +1529,13 @@ class UsbSessionIntegrationTest {
         }
         fun backgroundPolicy() = (managerField("backgroundWorkEnabled").get(manager) as MutableStateFlow<Boolean?>).value
         fun currentFuelFlowCalibration() = connectionField("currentFuelFlowPulsesPerLitre").get(bt) as Int?
-        fun selectedTransport(): String {
-            val selection = managerField("selectedTransport").get(manager) as MutableStateFlow<*>
-            val transport = selection.value!!::class.java.getDeclaredField("transport").apply { isAccessible = true }.get(selection.value)
-            return (transport as Enum<*>).name
+        fun currentTransport(): String {
+            val current = managerField("currentConnection").get(manager)
+            return when {
+                current === usb -> "USB"
+                current === bt -> "BLUETOOTH"
+                else -> "NONE"
+            }
         }
         val writes = CopyOnWriteArrayList<ByteArray>()
         private var fakeEndpointOpen: AtomicBoolean? = null
@@ -1661,9 +1686,7 @@ class UsbSessionIntegrationTest {
 
         fun isBluetoothRunning() = bt.isRunning
         fun activeUsbSessionGeneration(): Long? {
-            val selection = (managerField("selectedTransport").get(manager) as kotlinx.coroutines.flow.StateFlow<*>).value!!
-            val transport = selection.javaClass.getDeclaredField("transport").apply { isAccessible = true }.get(selection) as Enum<*>
-            return managerField("currentSessionGeneration").getLong(manager).takeIf { transport.name == "USB" }
+            return managerField("currentSessionGeneration").getLong(manager).takeIf { managerField("currentConnection").get(manager) === usb }
         }
         fun serviceOwnerToken() = serviceOwnerField("token")
         fun serviceOwnerGeneration() = serviceOwnerField("connectionGeneration")

@@ -19,6 +19,7 @@ internal class ConnectionTestDriver(
     val generation get() = connection.generation
 
     fun select(transport: String): Long = synchronized(manager) {
+        require(transport == if (connection is UsbConnection) "USB" else "BLUETOOTH")
         val counter = field(Secu3ConnectionManager::class.java, "nextGeneration")
         val generation = counter.getLong(manager) + 1
         counter.setLong(manager, generation)
@@ -30,11 +31,9 @@ internal class ConnectionTestDriver(
         set("nextAttemptId", 1L)
         set("activeAttemptId", 1L)
         set("currentConnectionState", InProgress)
-        val transportClass = Secu3ConnectionManager::class.java.declaredClasses.first { it.simpleName == "Transport" }
-        val value = transportClass.enumConstants!!.first { (it as Enum<*>).name == transport }
-        Secu3ConnectionManager::class.java.getDeclaredMethod("selectConnection", transportClass, Long::class.javaPrimitiveType)
-            .apply { isAccessible = true }.invoke(manager, value, generation)
-        if (transport == "BLUETOOTH") publish(Connected)
+        Secu3ConnectionManager::class.java.getDeclaredMethod("selectConnection", Connection::class.java, Long::class.javaPrimitiveType)
+            .apply { isAccessible = true }.invoke(manager, connection, generation)
+        if (connection is BtConnection) publish(Connected)
         return generation
     }
 
@@ -78,10 +77,8 @@ internal class ConnectionTestDriver(
     }
 
     private fun applyLatest() {
-        val type = Secu3ConnectionManager::class.java.declaredClasses.first { it.simpleName == "Transport" }
-        val transport = type.enumConstants!!.first { (it as Enum<*>).name == if (connection is UsbConnection) "USB" else "BLUETOOTH" }
-        Secu3ConnectionManager::class.java.getDeclaredMethod("handleConnectionEvent", type, ConnectionEvent::class.java)
-            .apply { isAccessible = true }.invoke(manager, transport, connection.latestEvent)
+        Secu3ConnectionManager::class.java.getDeclaredMethod("handleConnectionEvent", Connection::class.java, ConnectionEvent::class.java)
+            .apply { isAccessible = true }.invoke(manager, connection, connection.latestEvent)
     }
     private fun job() = field(Connection::class.java, "connectionJob").get(connection) as Job
     private fun set(name: String, value: Any?) = field(Connection::class.java, name).set(connection, value)

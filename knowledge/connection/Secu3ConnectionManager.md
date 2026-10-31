@@ -1,6 +1,6 @@
-## Transport request identity and logical ECU session identity serve different lifetimes
+## The current transport request remains stable through its retries
 
-A selected transport request remains stable throughout its internal retries. Each explicit RETRYING outcome ends the manager's current logical session and allocates a new one; STOPPED ends that logical session and clears selection. These identities fence transport events and foreground-service ownership; UI consumers receive connection states without session IDs. Stale transport generations or event sequences cannot affect a replacement selection.
+`currentConnection` and its request generation identify the admitted transport from connection start through internal retries. Each explicit RETRYING outcome ends the current logical ECU session and allocates a new session generation while keeping that transport request. STOPPED clears `currentConnection`. These identities fence transport events and foreground-service ownership; UI consumers receive connection states without session IDs. Stale transport generations or event sequences cannot affect a replacement request.
 
 ## Loss side effects are common to both transports
 
@@ -10,9 +10,13 @@ Consume the typed outcome rather than inferring loss from packet silence or reco
 
 Await each `SecuLogger.logPacket` call. UI sampling must not change logger delivery; fire-and-forget logging or another unlimited queue would remove this backpressure. The manager forwards parsed transport packets without caching their latest values for screens.
 
-## Firmware state describes only the selected transport
+## The merged packet stream relies on exclusive transport operation and attempt fencing
 
-The nullable canonical `firmwareInfo` is updated from the owning event before its connection-state notification. Clear it when selection ends or the transport invalidates its protocol context. `fwInfo` reads that same canonical state. Keep loss events non-conflated so rapid recovery cannot hide data invalidation from parameter, diagnostics or sensor consumers.
+`receivedPacketFlow` merges both transport streams without consulting manager selection state. Only one transport request is admitted at a time; each `Connection` rejects packets outside its active attempt. A one-shot request captures the current `Connection` when collection begins and remains bound to that attempt instead of following a later `currentConnection` change.
+
+## Firmware state describes only the current transport request
+
+The nullable canonical `firmwareInfo` is updated from the owning event before its connection-state notification. Clear it when `currentConnection` ends or the transport invalidates its protocol context. `fwInfo` reads that same canonical state. Keep loss events non-conflated so rapid recovery cannot hide data invalidation from parameter, diagnostics or sensor consumers.
 
 ## One observed background preference controls both transports
 

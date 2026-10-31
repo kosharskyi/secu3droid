@@ -352,11 +352,12 @@ class DiagnosticsNavigationIntegrationTest {
         }
 
         fun disconnect() = runBlocking {
-            val selectedField = Secu3ConnectionManager::class.java.getDeclaredField("selectedTransport").apply { isAccessible = true }
-            val selected = selectedField.get(manager) as kotlinx.coroutines.flow.StateFlow<*>
-            val currentGeneration = selected.value?.let { selection ->
-                selection.javaClass.getDeclaredField("generation").apply { isAccessible = true }.get(selection) as Long
-            }
+            val selectedField = Secu3ConnectionManager::class.java.getDeclaredField("currentConnection").apply { isAccessible = true }
+            val current = selectedField.get(manager)
+            val currentGeneration = if (current === driver.connection) {
+                Secu3ConnectionManager::class.java.getDeclaredField("currentConnectionGeneration")
+                    .apply { isAccessible = true }.getLong(manager)
+            } else null
             if (currentGeneration == generation) manager.stopConnection()
             runCatching { socket.close() }
         }

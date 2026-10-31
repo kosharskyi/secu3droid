@@ -48,11 +48,11 @@ class Secu3ConnectionManager @Inject constructor(
     private val secuLogger: SecuLogger,
     private val connectionServiceController: ConnectionServiceController,
 ) {
-    private enum class Transport { NONE, USB, BLUETOOTH }
-    private data class Selection(val transport: Transport, val generation: Long)
     private val scope = CoroutineScope(Dispatchers.Default + SupervisorJob())
-    private val selectedTransport = MutableStateFlow(Selection(Transport.NONE, 0))
     private var nextGeneration = 0L
+    /** Identifies the admitted transport request; it remains fixed while that transport retries. */
+    private var currentConnectionGeneration = 0L
+    @Volatile private var currentConnection: Connection<*>? = null
     @Volatile private var currentSessionGeneration = 0L
     private var lastEventSequence = -1L
     private var appVisible = false
@@ -66,22 +66,19 @@ class Secu3ConnectionManager @Inject constructor(
     val firmwareInfo = _firmwareInfo.asStateFlow()
     val fwInfo: FirmwareInfoPacket? get() = firmwareInfo.value
 
-    val receivedPacketFlow: Flow<InputPacket> = selectedTransport.flatMapLatest { selection ->
-        connection(selection.transport)?.receivedPacketFlow
-            ?.filter { selectedTransport.value == selection } ?: emptyFlow()
-    }.shareIn(scope, SharingStarted.WhileSubscribed(5_000), replay = 0)
+    val receivedPacketFlow: Flow<InputPacket> = merge(
+        usbConnection.receivedPacketFlow,
+        btConnection.receivedPacketFlow,
+    ).shareIn(scope, SharingStarted.WhileSubscribed(5_000), replay = 0)
 
     fun receivedPacketFlow(onSubscribed: () -> Unit): Flow<InputPacket> = flow {
-        val selection = selectedTransport.value
-        val owner = connection(selection.transport) ?: return@flow awaitCancellation()
-        emitAll(owner.receivedPacketFlow {
-            if (selectedTransport.value == selection) onSubscribed()
-        }.filter { selectedTransport.value == selection })
+        val owner = currentConnection ?: return@flow awaitCancellation()
+        emitAll(owner.receivedPacketFlow(onSubscribed))
     }
 
-    val isConnectionRunning get() = connection(selectedTransport.value.transport)?.isRunning == true
-    val isConnected get() = connection(selectedTransport.value.transport)?.isReady == true
-    val isUsbSessionLocked get() = selectedTransport.value.transport == Transport.USB && usbConnection.isSessionLocked
+    val isConnectionRunning get() = currentConnection?.isRunning == true
+    val isConnected get() = currentConnection?.isReady == true
+    val isUsbSessionLocked get() = currentConnection === usbConnection && usbConnection.isSessionLocked
     val activeUsbDeviceIdOrNull get() = usbConnection.activeDeviceId
 
     @Synchronized fun requestUsbConnection(device: UsbDevice): UsbPermissionRequest? {
@@ -107,17 +104,17 @@ class Secu3ConnectionManager @Inject constructor(
 
     @Synchronized fun onUsbDeviceDetached(deviceId: Int): Boolean {
         val detached = usbConnection.onDeviceDetached(deviceId)
-        if (detached) handleConnectionEvent(Transport.USB, usbConnection.latestEvent)
+        if (detached) handleConnectionEvent(usbConnection, usbConnection.latestEvent)
         return detached
     }
 
     private fun synchronizeUsbOutcome() {
-        if (usbConnection.isRunning && (selectedTransport.value.transport != Transport.USB || selectedTransport.value.generation != usbConnection.generation)) {
+        if (usbConnection.isRunning && (currentConnection !== usbConnection || currentConnectionGeneration != usbConnection.generation)) {
             btConnection.stopConnection()
-            selectConnection(Transport.USB, usbConnection.generation)
-            handleConnectionEvent(Transport.USB, usbConnection.latestEvent)
-        } else if (usbConnection.latestEvent.end == ConnectionEvent.End.STOPPED) {
-            handleConnectionEvent(Transport.USB, usbConnection.latestEvent)
+            selectConnection(usbConnection, usbConnection.generation)
+            handleConnectionEvent(usbConnection, usbConnection.latestEvent)
+        } else if (currentConnection === usbConnection && usbConnection.latestEvent.end == ConnectionEvent.End.STOPPED) {
+            handleConnectionEvent(usbConnection, usbConnection.latestEvent)
         }
     }
 
@@ -125,14 +122,15 @@ class Secu3ConnectionManager @Inject constructor(
         val generation = synchronized(this) {
             if (!appVisible || usbConnection.activeDeviceId != null) return
             usbConnection.stopConnection()
-            (++nextGeneration).also { selectConnection(Transport.BLUETOOTH, it) }
+            (++nextGeneration).also { selectConnection(btConnection, it) }
         }
         btConnection.startConnection(generation)
     }
 
-    private fun selectConnection(transport: Transport, generation: Long) {
-        if (selectedTransport.value.transport != Transport.NONE) secuLogger.stopLogging()
-        selectedTransport.value = Selection(transport, generation)
+    private fun selectConnection(connection: Connection<*>, generation: Long) {
+        if (currentConnection != null) secuLogger.stopLogging()
+        currentConnection = connection
+        currentConnectionGeneration = generation
         currentSessionGeneration = generation
         lastEventSequence = -1
         _firmwareInfo.value = null
@@ -141,7 +139,7 @@ class Secu3ConnectionManager @Inject constructor(
     }
 
     @Synchronized fun stopConnection(): Boolean {
-        if (connection(selectedTransport.value.transport)?.allowsManualDisconnect == false) return false
+        if (currentConnection?.allowsManualDisconnect == false) return false
         return stopConnectionInternal(stopService = true)
     }
 
@@ -159,7 +157,7 @@ class Secu3ConnectionManager @Inject constructor(
     @Synchronized fun onAppBackgrounded() {
         appVisible = false
         usbConnection.cancelPendingPermission()
-        if (selectedTransport.value.transport == Transport.NONE) {
+        if (currentConnection == null) {
             nextGeneration++
             return
         }
@@ -178,7 +176,7 @@ class Secu3ConnectionManager @Inject constructor(
 
     /** Re-posts the active notification after the user grants Android's notification permission. */
     @Synchronized fun refreshConnectionNotification() {
-        if (selectedTransport.value.transport != Transport.NONE) connectionServiceController.refreshNotification()
+        if (currentConnection != null) connectionServiceController.refreshNotification()
     }
 
     @Synchronized private fun reconcileConnectionService() {
@@ -187,8 +185,7 @@ class Secu3ConnectionManager @Inject constructor(
             connectionServiceController.stop()
             return
         }
-        val selection = selectedTransport.value
-        if (appVisible && selection.transport != Transport.NONE) {
+        if (appVisible && currentConnection != null) {
             connectionServiceController.ensureStarted(currentSessionGeneration)
         }
     }
@@ -205,7 +202,8 @@ class Secu3ConnectionManager @Inject constructor(
     }
 
     @Synchronized private fun stopConnectionInternal(stopService: Boolean): Boolean {
-        selectedTransport.value = Selection(Transport.NONE, ++nextGeneration)
+        currentConnection = null
+        currentConnectionGeneration = ++nextGeneration
         _firmwareInfo.value = null
         usbConnection.stopConnection()
         btConnection.stopConnection()
@@ -217,24 +215,18 @@ class Secu3ConnectionManager @Inject constructor(
 
     fun sendNewTask(task: Task) = sendOutPacket(task.getPacket())
     fun sendOutPacket(packet: OutputPacket) {
-        connection(selectedTransport.value.transport)?.takeIf { it.isReady }?.sendData(packet)
+        currentConnection?.takeIf { it.isReady }?.sendData(packet)
     }
 
-    private fun connection(transport: Transport): Connection<*>? = when (transport) {
-        Transport.USB -> usbConnection
-        Transport.BLUETOOTH -> btConnection
-        Transport.NONE -> null
-    }
-
-    @Synchronized private fun handleConnectionEvent(transport: Transport, event: ConnectionEvent) {
-        val selection = selectedTransport.value
-        if (selection.transport != transport || selection.generation != event.generation || event.sequence <= lastEventSequence) return
+    @Synchronized private fun handleConnectionEvent(connection: Connection<*>, event: ConnectionEvent) {
+        if (connection !== currentConnection || currentConnectionGeneration != event.generation || event.sequence <= lastEventSequence) return
         lastEventSequence = event.sequence
         _firmwareInfo.value = event.firmware
         if (event.end != null) {
             secuLogger.stopLogging()
             if (event.end == ConnectionEvent.End.STOPPED) {
-                selectedTransport.value = Selection(Transport.NONE, ++nextGeneration)
+                currentConnection = null
+                currentConnectionGeneration = ++nextGeneration
                 connectionServiceController.stop()
             } else {
                 currentSessionGeneration = ++nextGeneration
@@ -264,13 +256,13 @@ class Secu3ConnectionManager @Inject constructor(
                 }
             }
         }
-        scope.launch(start = CoroutineStart.UNDISPATCHED) { usbConnection.sessionEvents.collect { handleConnectionEvent(Transport.USB, it) } }
-        scope.launch(start = CoroutineStart.UNDISPATCHED) { btConnection.sessionEvents.collect { handleConnectionEvent(Transport.BLUETOOTH, it) } }
+        scope.launch(start = CoroutineStart.UNDISPATCHED) { usbConnection.sessionEvents.collect { handleConnectionEvent(usbConnection, it) } }
+        scope.launch(start = CoroutineStart.UNDISPATCHED) { btConnection.sessionEvents.collect { handleConnectionEvent(btConnection, it) } }
         scope.launch { receivedPacketFlow.filterIsInstance<SensorsPacket>().collect { secuLogger.logPacket(it) } }
     }
 
     private fun applyBackgroundWorkPolicy(enabled: Boolean) {
-        if (!enabled && !appVisible && selectedTransport.value.transport != Transport.NONE) {
+        if (!enabled && !appVisible && currentConnection != null) {
             stopConnectionInternal(stopService = true)
         } else {
             reconcileConnectionService()
