@@ -12,9 +12,7 @@ Keep `packages: 'platform-tools'` explicit on each `android-actions/setup-androi
 
 ## Node-based actions require a sufficiently recent runner independently of the JDK
 
-The checkout, Java, Gradle, artifact, and Android SDK actions use Node 24 even though Gradle is launched with JDK 17. Node 24 requires a self-hosted Actions runner at version 2.327.1 or newer; changing the workflow JDK does not affect action runtime compatibility.
-
-`upload-artifact@v5` mentions preliminary Node 24 support in its release notes, but its action manifest still declares `runs.using: node20`. Check the manifest runtime declaration rather than release-note wording; v6 declares Node 24.
+The checkout, Java, Gradle, and Android SDK actions use Node 24 even though Gradle is launched with JDK 17. Node 24 requires a self-hosted Actions runner at version 2.327.1 or newer; changing the workflow JDK does not affect action runtime compatibility.
 
 ## Gradle selects its daemon JVM independently of the workflow launcher JDK
 

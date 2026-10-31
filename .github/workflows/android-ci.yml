@@ -41,15 +41,3 @@ jobs:
 
       - name: Build debug APK, run unit tests, and lint
         run: ./gradlew assembleDebug :app:testDebugUnitTest :app:lintDebug --stacktrace
-
-      - name: Upload debug APK and reports
-        if: always()
-        uses: actions/upload-artifact@v6
-        with:
-          name: android-debug-checks
-          if-no-files-found: warn
-          retention-days: 7
-          path: |
-            app/build/outputs/apk/debug/*.apk
-            app/build/reports/**
-            app/build/test-results/**
