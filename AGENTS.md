@@ -66,6 +66,7 @@ Do not put display-state ownership into a connection manager: no latest-packet c
 - When migrating existing navigation, update or remove affected entries in `app/src/main/res/navigation/main_nav_graph.xml` and Safe Args call sites together.
 - When changing Bluetooth, USB, foreground-service, or notification behavior, check the relevant permissions in `app/src/main/AndroidManifest.xml`.
 - When changing release/download/network behavior, check ProGuard/R8 rules if Retrofit/Gson model reflection or Firebase behavior could be affected.
+- Name release version-bump commits `Build #<versionCode>`, using the new Android `versionCode` from `app/build.gradle.kts` (for example, `Build #60` when the new code is `60`).
 - Do not add a formatter unless explicitly requested.
 
 ## Agent Collaboration Workflow
