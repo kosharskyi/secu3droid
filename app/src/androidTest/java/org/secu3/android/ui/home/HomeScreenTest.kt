@@ -27,6 +27,7 @@ package org.secu3.android.ui.home
 
 import android.content.res.Configuration
 import android.graphics.Bitmap
+import android.os.SystemClock
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalContext
@@ -161,26 +162,113 @@ class HomeScreenTest {
         assertEquals(listOf("download", "notes"), choices)
     }
 
+    @Test fun releaseDialogUsesScrollableBodyAndStandardFooterActions() {
+        compose.setContent {
+            HomeScreen(
+                HomeScreenState(dialog = HomeDialog.RELEASE, releaseMessage = "Release v1"),
+                HomeScreenActions(),
+            )
+        }
+
+        val message = compose.onNodeWithText("Release v1").fetchSemanticsNode().boundsInRoot
+        val notes = compose.onNodeWithTag("release-notes-button").fetchSemanticsNode().boundsInRoot
+        val notesLabel = compose.onNodeWithTag("release-notes-label", useUnmergedTree = true)
+            .fetchSemanticsNode().boundsInRoot
+        val remind = compose.onNodeWithTag("release-remind-button").fetchSemanticsNode().boundsInRoot
+        val download = compose.onNodeWithTag("release-download-button").fetchSemanticsNode().boundsInRoot
+        val dialog = compose.onNodeWithContentDescription("release_dialog").fetchSemanticsNode().boundsInRoot
+        assertTrue("What's new follows the release message in the body", notes.top >= message.bottom)
+        assertEquals("What's new label aligns with the message", message.left, notesLabel.left, 0.5f)
+        assertTrue("What's new keeps a 48dp touch target", notes.height >= with(compose.density) { 48.dp.toPx() })
+        assertTrue("Footer actions follow the body", remind.top > notes.top)
+        assertEquals(
+            "Footer actions share one row",
+            (remind.top + remind.bottom) / 2f,
+            (download.top + download.bottom) / 2f,
+            0.5f,
+        )
+        assertTrue("Remind me later precedes Download in the footer", remind.left < download.left)
+        assertTrue("Download stays compact in the footer", download.width < dialog.width)
+        compose.onNodeWithContentDescription("release_dialog").assertIsDisplayed()
+    }
+
+    @Test fun releaseDialogCapturesUkrainianLightAndDarkAppearances() {
+        val ukrainianConfiguration = Configuration(context.resources.configuration).apply {
+            setLocale(Locale.forLanguageTag("uk"))
+        }
+        val ukrainianContext = context.createConfigurationContext(ukrainianConfiguration)
+        var darkTheme by mutableStateOf(false)
+        compose.setContent {
+            CompositionLocalProvider(
+                LocalConfiguration provides ukrainianConfiguration,
+                LocalContext provides ukrainianContext,
+            ) {
+                SecuComposeTheme(darkTheme = darkTheme) {
+                    HomeScreen(
+                        HomeScreenState(
+                            dialog = HomeDialog.RELEASE,
+                            releaseMessage = ukrainianContext.getString(
+                                R.string.the_version_is_available_do_you_want_to_download,
+                                "1.2.3",
+                            ),
+                        ),
+                        HomeScreenActions(),
+                    )
+                }
+            }
+        }
+        compose.onNodeWithTag("release-download-button")
+            .assertIsDisplayed()
+        compose.onNodeWithText(ukrainianContext.getString(R.string.download))
+            .assertIsDisplayed()
+        captureReleaseDialog("compact-release-dialog-light-uk.png")
+        compose.runOnIdle { darkTheme = true }
+        compose.waitForIdle()
+        captureReleaseDialog("compact-release-dialog-dark-uk.png")
+    }
+
     @Test fun longReleaseMessageCanScrollToRemindAction() {
         val configuration = Configuration(context.resources.configuration).apply { fontScale = 1.6f }
         val largeFontDensity = Density(compose.density.density, fontScale = 1.6f)
         val releaseMessage = ("Long release notes describe compatibility, fixes, and installation details.\n\n").repeat(40)
-        var dismissed = 0
+        val calls = mutableListOf<String>()
         val screen = HomeScreenState(dialog = HomeDialog.RELEASE, releaseMessage = releaseMessage)
         compose.setContent {
             CompositionLocalProvider(
                 LocalConfiguration provides configuration,
                 LocalDensity provides largeFontDensity,
             ) {
-                HomeScreen(screen, HomeScreenActions(onDialogDismissed = { dismissed++ }))
+                HomeScreen(screen, HomeScreenActions(
+                    onDialogDismissed = { calls += "dismiss" },
+                    onDownloadRelease = { calls += "download" },
+                    onReleaseNotes = { calls += "notes" },
+                ))
             }
         }
 
-        compose.onNodeWithText(context.getString(R.string.remind_me_later))
+        compose.onNodeWithTag("release-remind-button").assertIsDisplayed()
+        compose.onNodeWithTag("release-download-button").assertIsDisplayed()
+        val remindBoundsBeforeScroll = compose.onNodeWithTag("release-remind-button").fetchSemanticsNode().boundsInRoot
+        val downloadBoundsBeforeScroll = compose.onNodeWithTag("release-download-button").fetchSemanticsNode().boundsInRoot
+        compose.onNodeWithTag("release-notes-button")
             .performScrollTo()
             .assertIsDisplayed()
-            .performClick()
-        assertEquals(1, dismissed)
+        compose.onNodeWithTag("release-remind-button").assertIsDisplayed()
+        compose.onNodeWithTag("release-download-button").assertIsDisplayed()
+        assertEquals(
+            "Remind stays in the footer when the message scrolls",
+            remindBoundsBeforeScroll.top,
+            compose.onNodeWithTag("release-remind-button").fetchSemanticsNode().boundsInRoot.top,
+            0.5f,
+        )
+        assertEquals(
+            "Download stays in the footer when the message scrolls",
+            downloadBoundsBeforeScroll.top,
+            compose.onNodeWithTag("release-download-button").fetchSemanticsNode().boundsInRoot.top,
+            0.5f,
+        )
+        compose.onNodeWithTag("release-notes-button").performClick()
+        assertEquals(listOf("dismiss", "notes"), calls)
     }
 
     @Test fun layoutUsesGridForPortraitAndTabletAndScrollingColumnsForLandscape() {
@@ -378,6 +466,17 @@ class HomeScreenTest {
     private fun captureDesignScreenshot(fileName: String) {
         if (InstrumentationRegistry.getArguments().getString("captureDesignScreenshots") != "true") return
         val bitmap = compose.onRoot().captureToImage().asAndroidBitmap()
+        val outputDirectory = context.getExternalFilesDir(null) ?: context.cacheDir
+        File(outputDirectory, fileName).outputStream().use { output ->
+            bitmap.compress(Bitmap.CompressFormat.PNG, 100, output)
+        }
+    }
+
+    private fun captureReleaseDialog(fileName: String) {
+        if (InstrumentationRegistry.getArguments().getString("captureDesignScreenshots") != "true") return
+        compose.waitForIdle()
+        SystemClock.sleep(600)
+        val bitmap = InstrumentationRegistry.getInstrumentation().uiAutomation.takeScreenshot()
         val outputDirectory = context.getExternalFilesDir(null) ?: context.cacheDir
         File(outputDirectory, fileName).outputStream().use { output ->
             bitmap.compress(Bitmap.CompressFormat.PNG, 100, output)

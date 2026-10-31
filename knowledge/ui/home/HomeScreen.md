@@ -6,9 +6,13 @@ The original Home card sizes and placements are an explicit design constraint. T
 
 The menu's monochrome XML and raster assets include both black and white source pixels, so tint them from the card foreground. Use `onSurface` in light appearance and the softer `onSurfaceVariant` in dark appearance for both icons and labels; keep the card fill on `surface` in both modes.
 
-## Release reminders stay inside the scrollable release body
+## Release notes stay in the body while release choices use the standard footer
 
-The release dialog's server-provided message can be long. Keep “Remind me later” in the same bounded scroll region as that message so it remains reachable on short windows and at enlarged font scales; the download and release-notes actions remain in the dialog action area.
+The release dialog's server-provided message can be long. Keep the message and “What's new” action together in the independently scrollable body; keep “Remind me later” and “Download” in AlertDialog's standard footer so the two decisions remain adjacent, with the primary action last. Material 3's standard AlertDialog adapts the footer when its labels do not fit on one row.
+
+## The release-notes label aligns without shrinking its touch target
+
+The “What's new” TextButton stays intrinsic width and at least 48 dp tall. Zero horizontal content padding lets its label start at the release message's leading edge without expanding the action across the body or reducing its touch target.
 
 ## The ECU toolbar icon keeps its firmware action description
 

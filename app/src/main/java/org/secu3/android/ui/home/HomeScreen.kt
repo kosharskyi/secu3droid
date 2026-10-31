@@ -37,6 +37,7 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.fillMaxSize
@@ -53,6 +54,7 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.AlertDialog
+import androidx.compose.material3.Button
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.Icon
@@ -144,6 +146,10 @@ fun HomeScreen(
     } else {
         HomeLayout.GRID
     }
+    val releaseTitle = stringResource(R.string.new_version_available)
+    val downloadReleaseLabel = stringResource(R.string.download)
+    val releaseNotesLabel = stringResource(R.string.what_s_new)
+    val remindReleaseLabel = stringResource(R.string.remind_me_later)
     val menuItems = listOf(
         HomeMenuItem(R.string.menu_dashboard, R.drawable.ic_dashboard, "dashboard", actions.onDashboard),
         HomeMenuItem(R.string.sensors, R.drawable.ic_sensors, "sensors", actions.onSensors),
@@ -222,19 +228,57 @@ fun HomeScreen(
             onDismiss = actions.onDialogDismissed,
         )
         HomeDialog.RELEASE -> AlertDialog(onDismissRequest = actions.onDialogDismissed,
-            modifier = Modifier
-                .border(BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant), RoundedCornerShape(24.dp))
-                .semantics { contentDescription = "release_dialog" },
-            shape = RoundedCornerShape(24.dp),
-            containerColor = MaterialTheme.colorScheme.surface,
-            tonalElevation = 0.dp,
-            title = { Text(stringResource(R.string.new_version_available), modifier = Modifier.fillMaxWidth(), textAlign = TextAlign.Center) },
-            text = { Column(Modifier.heightIn(max = 300.dp).verticalScroll(rememberScrollState())) {
-                Text(state.releaseMessage.orEmpty())
-                TextButton(onClick = actions.onDialogDismissed) { Text(stringResource(R.string.remind_me_later)) }
-            } },
-            confirmButton = { TextButton(onClick = { actions.onDialogDismissed(); actions.onDownloadRelease() }) { Text(stringResource(R.string.download)) } },
-            dismissButton = { TextButton(onClick = { actions.onDialogDismissed(); actions.onReleaseNotes() }) { Text(stringResource(R.string.what_s_new)) } })
+            modifier = Modifier.semantics { contentDescription = "release_dialog" },
+            title = {
+                Text(
+                    releaseTitle,
+                    modifier = Modifier.fillMaxWidth(),
+                    textAlign = TextAlign.Start,
+                )
+            },
+            text = {
+                Column(
+                    Modifier
+                        .fillMaxWidth()
+                        .heightIn(max = 300.dp)
+                        .verticalScroll(rememberScrollState()),
+                    verticalArrangement = Arrangement.spacedBy(4.dp),
+                ) {
+                    Text(
+                        state.releaseMessage.orEmpty(),
+                        modifier = Modifier.fillMaxWidth(),
+                    )
+                    TextButton(
+                        onClick = { actions.onDialogDismissed(); actions.onReleaseNotes() },
+                        modifier = Modifier.heightIn(min = 48.dp).testTag("release-notes-button"),
+                        contentPadding = PaddingValues(horizontal = 0.dp, vertical = 8.dp),
+                    ) {
+                        Text(
+                            releaseNotesLabel,
+                            modifier = Modifier.testTag("release-notes-label"),
+                            textAlign = TextAlign.Start,
+                        )
+                    }
+                }
+            },
+            confirmButton = {
+                Button(
+                    onClick = { actions.onDialogDismissed(); actions.onDownloadRelease() },
+                    modifier = Modifier.testTag("release-download-button"),
+                    contentPadding = PaddingValues(horizontal = 16.dp, vertical = 8.dp),
+                ) {
+                    Text(downloadReleaseLabel)
+                }
+            },
+            dismissButton = {
+                TextButton(
+                    onClick = actions.onDialogDismissed,
+                    modifier = Modifier.testTag("release-remind-button"),
+                ) {
+                    Text(remindReleaseLabel)
+                }
+            },
+        )
         HomeDialog.RELEASE_PERMISSION_RATIONALE -> ConfirmationDialog(
             title = R.string.download_manager_permission_rationale_title,
             message = R.string.download_manager_permission_rationale_message,
