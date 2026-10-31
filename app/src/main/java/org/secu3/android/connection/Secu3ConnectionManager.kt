@@ -62,8 +62,6 @@ class Secu3ConnectionManager @Inject constructor(
     @Volatile var currentConnectionState: ConnectionState = Disconnected
         private set
     val connectionStateFlow = _connectionState.asSharedFlow()
-    private val _terminalSessionGeneration = MutableStateFlow<Long?>(null)
-    val terminalSessionGeneration = _terminalSessionGeneration.asStateFlow()
     private val _firmwareInfo = MutableStateFlow<FirmwareInfoPacket?>(null)
     val firmwareInfo = _firmwareInfo.asStateFlow()
     val fwInfo: FirmwareInfoPacket? get() = firmwareInfo.value
@@ -85,7 +83,6 @@ class Secu3ConnectionManager @Inject constructor(
     val isConnected get() = connection(selectedTransport.value.transport)?.isReady == true
     val isUsbSessionLocked get() = selectedTransport.value.transport == Transport.USB && usbConnection.isSessionLocked
     val activeUsbDeviceIdOrNull get() = usbConnection.activeDeviceId
-    val activeUsbHomeGeneration: Long? get() = usbConnection.readyAttemptId.takeIf { isUsbSessionLocked }
 
     @Synchronized fun requestUsbConnection(device: UsbDevice): UsbPermissionRequest? {
         if (!appVisible) return null
@@ -138,7 +135,6 @@ class Secu3ConnectionManager @Inject constructor(
         selectedTransport.value = Selection(transport, generation)
         currentSessionGeneration = generation
         lastEventSequence = -1
-        _terminalSessionGeneration.value = null
         _firmwareInfo.value = null
         publishConnectionState(InProgress)
         reconcileConnectionService()
@@ -168,10 +164,7 @@ class Secu3ConnectionManager @Inject constructor(
             return
         }
         if (backgroundWorkEnabled.value != false) return
-        stopConnectionInternal(
-            stopService = true,
-            publishTerminal = true,
-        )
+        stopConnectionInternal(stopService = true)
     }
 
     /** Preference changes apply immediately to service ownership without ending a live session. */
@@ -207,25 +200,18 @@ class Secu3ConnectionManager @Inject constructor(
         if (appVisible) {
             reconcileConnectionService()
         } else {
-            stopConnectionInternal(
-                stopService = false,
-                publishTerminal = true,
-            )
+            stopConnectionInternal(stopService = false)
         }
     }
 
-    @Synchronized private fun stopConnectionInternal(stopService: Boolean, publishTerminal: Boolean = false): Boolean {
-        val endedGeneration = currentSessionGeneration
-        val wasSelected = selectedTransport.value.transport != Transport.NONE
+    @Synchronized private fun stopConnectionInternal(stopService: Boolean): Boolean {
         selectedTransport.value = Selection(Transport.NONE, ++nextGeneration)
-        _terminalSessionGeneration.value = null
         _firmwareInfo.value = null
         usbConnection.stopConnection()
         btConnection.stopConnection()
         secuLogger.stopLogging()
         publishConnectionState(Disconnected)
         if (stopService) connectionServiceController.stop()
-        if (publishTerminal && wasSelected) _terminalSessionGeneration.value = endedGeneration
         return true
     }
 
@@ -245,9 +231,7 @@ class Secu3ConnectionManager @Inject constructor(
         if (selection.transport != transport || selection.generation != event.generation || event.sequence <= lastEventSequence) return
         lastEventSequence = event.sequence
         _firmwareInfo.value = event.firmware
-        if (event.state == Connected) _terminalSessionGeneration.value = null
         if (event.end != null) {
-            val endedGeneration = currentSessionGeneration
             secuLogger.stopLogging()
             if (event.end == ConnectionEvent.End.STOPPED) {
                 selectedTransport.value = Selection(Transport.NONE, ++nextGeneration)
@@ -256,7 +240,7 @@ class Secu3ConnectionManager @Inject constructor(
                 currentSessionGeneration = ++nextGeneration
                 connectionServiceController.updateConnectionGeneration(currentSessionGeneration)
             }
-            _terminalSessionGeneration.value = endedGeneration
+            publishConnectionState(Disconnected)
         }
         publishConnectionState(event.state)
         reconcileConnectionService()
@@ -287,10 +271,7 @@ class Secu3ConnectionManager @Inject constructor(
 
     private fun applyBackgroundWorkPolicy(enabled: Boolean) {
         if (!enabled && !appVisible && selectedTransport.value.transport != Transport.NONE) {
-            stopConnectionInternal(
-                stopService = true,
-                publishTerminal = true,
-            )
+            stopConnectionInternal(stopService = true)
         } else {
             reconcileConnectionService()
         }

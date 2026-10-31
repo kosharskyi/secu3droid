@@ -55,12 +55,12 @@ class DiagnosticsNavigationIntegrationTest {
     @Test
     fun diagnosticsGraphSharesViewModelAcrossDialogAndRecreationThenClosesSessionOnExit() = runBlocking {
         val nativeHost = navigateHome()
+        val transport = connectFakeBluetooth(connectionManager())
         compose.activityRule.scenario.onActivity { it.openDiagnostics() }
         compose.waitForIdle()
         assertDiagnosticsHost(nativeHost)
 
         val firstVm = diagnosticsViewModel()
-        val transport = connectFakeBluetooth(connectionManager())
         await { transport.enterCount == 1 }
         assertFalse(firstVm.state.value.controlsEnabled)
         transport.emitDiagnosticInput(flags = 0)
@@ -112,11 +112,11 @@ class DiagnosticsNavigationIntegrationTest {
 
     @Test
     fun confirmingAdditionalOptionsCommitsInViewModelAndDoesNotCreateAnotherGraphEntry() = runBlocking {
-        val host = navigateHome()
+        navigateHome()
+        val transport = connectFakeBluetooth(connectionManager())
         compose.activityRule.scenario.onActivity { it.openDiagnostics() }
         compose.waitForIdle()
         val vm = diagnosticsViewModel()
-        val transport = connectFakeBluetooth(connectionManager())
         await { transport.enterCount == 1 }
         assertFalse(vm.state.value.controlsEnabled)
         transport.emitDiagnosticInput(flags = 0)
@@ -152,13 +152,12 @@ class DiagnosticsNavigationIntegrationTest {
     }
 
     @Test
-    fun linkLossClearsReadingsAndBlocksCommandsUntilFreshDiagnosticInput() = runBlocking {
+    fun linkLossLeavesDiagnosticsAndRecoveryRequiresFreshDiagnosticInput(): Unit = runBlocking {
         navigateHome()
+        val transport = connectFakeBluetooth(connectionManager(), secu3T = true)
         compose.activityRule.scenario.onActivity { it.openDiagnostics() }
         compose.waitForIdle()
         val vm = diagnosticsViewModel()
-        assertFalse(vm.state.value.controlsEnabled)
-        val transport = connectFakeBluetooth(connectionManager())
         await { transport.enterCount == 1 }
         assertFalse(vm.state.value.controlsEnabled)
         transport.emitDiagnosticInput(flags = 1, voltageRaw = 500)
@@ -170,72 +169,45 @@ class DiagnosticsNavigationIntegrationTest {
             vm.editFrequency(321f)
             vm.editDuty(37.5f)
             vm.setOutput(DiagnosticOutput.IGN_OUT4, true)
-            vm.applyAdditionalOptions(enableBlDe = true, enableTachO = true)
-            vm.setOutput(DiagnosticOutput.BL, true)
-            vm.setOutput(DiagnosticOutput.DE, true)
-            vm.setOutput(DiagnosticOutput.TACH_O, true)
         }
-        val activeFrequency = vm.state.value.frequency
-        val activeDuty = vm.state.value.duty
-        compose.waitForIdle()
         compose.onNodeWithTag("diagnostics-settings-icon").performClick()
         compose.waitForIdle()
         assertEquals(DIAGNOSTICS_ADDITIONAL_ROUTE, compose.activity.rootNavigationController?.currentDestination?.route)
 
         transport.disconnect()
-        await { !vm.state.value.controlsEnabled && vm.state.value.input == null }
         compose.waitForIdle()
-        assertEquals(DIAGNOSTICS_ROUTE, compose.activity.rootNavigationController?.currentDestination?.route)
-        compose.onNodeWithTag("analog_Voltage-value").assertTextEquals("— V")
-        assertEquals(0, vm.state.value.channel)
-        assertEquals(0b11, vm.state.value.outputBits)
-        assertEquals(activeFrequency, vm.state.value.frequency)
-        assertEquals(activeDuty, vm.state.value.duty)
-
-        val bitsAfterLoss = vm.state.value.outputBits
+        assertEquals(START_ROUTE, compose.activity.rootNavigationController?.currentDestination?.route)
+        assertFalse(vm.state.value.controlsEnabled)
         val writesAfterLoss = transport.writes.size
         compose.activityRule.scenario.onActivity {
             vm.selectChannel(5)
             vm.editFrequency(999f)
-            vm.editDuty(99f)
             vm.setOutput(DiagnosticOutput.IGN_OUT1, false)
-            vm.applyAdditionalOptions(enableBlDe = true, enableTachO = true)
         }
-        assertEquals(0, vm.state.value.channel)
-        assertEquals(activeFrequency, vm.state.value.frequency)
-        assertEquals(activeDuty, vm.state.value.duty)
-        assertEquals(bitsAfterLoss, vm.state.value.outputBits)
         assertEquals(writesAfterLoss, transport.writes.size)
 
         val reconnected = connectFakeBluetooth(connectionManager())
-        await { transport.enterCount == 1 }
+        assertEquals(HOME_ROUTE, compose.activity.rootNavigationController?.currentDestination?.route)
+        compose.activityRule.scenario.onActivity { it.openDiagnostics() }
+        compose.waitForIdle()
+        val reopenedVm = diagnosticsViewModel()
+        assertNotSame(vm, reopenedVm)
         await { reconnected.enterCount == 1 }
-        assertFalse(vm.state.value.controlsEnabled)
-        val writesBeforeFreshInput = reconnected.writes.size
-        compose.activityRule.scenario.onActivity {
-            vm.selectChannel(2)
-            vm.editFrequency(999f)
-            vm.editDuty(99f)
-        }
-        assertEquals(0, vm.state.value.channel)
-        assertEquals(activeFrequency, vm.state.value.frequency)
-        assertEquals(activeDuty, vm.state.value.duty)
-        assertEquals(writesBeforeFreshInput, reconnected.writes.size)
-        reconnected.emitDiagnosticInput(flags = 0)
-        await { vm.state.value.controlsEnabled }
-        assertEquals(0, vm.state.value.outputBits)
-        assertEquals(0, vm.state.value.channel)
-        assertEquals(activeFrequency, vm.state.value.frequency)
-        assertEquals(activeDuty, vm.state.value.duty)
+        assertFalse(reopenedVm.state.value.controlsEnabled)
+        assertEquals(null, reopenedVm.state.value.input)
+        compose.onNodeWithTag("analog_Voltage-value").assertTextEquals("— V")
+        reconnected.emitDiagnosticInput(flags = 0, voltageRaw = 600)
+        await { reopenedVm.state.value.controlsEnabled }
+        compose.onNodeWithTag("analog_Voltage-value").assertTextEquals("1.500 V")
     }
 
     @Test
     fun enterSubscriptionIsReadyForImmediateAckAndInitialInputIsSentOnce() = runBlocking {
         navigateHome()
+        val transport = connectFakeBluetooth(connectionManager(), acknowledgeEnterImmediately = true, secu3T = true)
         compose.activityRule.scenario.onActivity { it.openDiagnostics() }
         compose.waitForIdle()
         val vm = diagnosticsViewModel()
-        val transport = connectFakeBluetooth(connectionManager(), acknowledgeEnterImmediately = true)
 
         await { transport.enterCount == 1 }
         await { transport.enterCount == 1 && transport.diagInputRequestCount == 1 }
@@ -306,6 +278,7 @@ class DiagnosticsNavigationIntegrationTest {
     private fun connectFakeBluetooth(
         manager: Secu3ConnectionManager,
         acknowledgeEnterImmediately: Boolean = false,
+        secu3T: Boolean = false,
     ): FakeBluetoothTransport = runBlocking {
         val btField = Secu3ConnectionManager::class.java.declaredFields.first { BtConnection::class.java.isAssignableFrom(it.type) }
             .apply { isAccessible = true }
@@ -343,8 +316,10 @@ class DiagnosticsNavigationIntegrationTest {
 
         val generation = driver.select("BLUETOOTH")
         await { driver.packets.subscriptionCount.value > 0 }
-        driver.emit(firmwarePacket())
+        driver.emit(firmwarePacket(secu3T))
         await { manager.firmwareInfo.value != null && manager.currentConnectionState == Connected }
+        compose.waitForIdle()
+        compose.waitUntil(4_000) { compose.activity.rootNavigationController?.currentDestination?.route == HOME_ROUTE }
         FakeBluetoothTransport(manager, generation, socket, driver, writes).also(fakeTransports::add)
     }
 
@@ -387,9 +362,9 @@ class DiagnosticsNavigationIntegrationTest {
         }
     }
 
-    private fun firmwarePacket() = RawPacket(
+    private fun firmwarePacket(secu3T: Boolean) = RawPacket(
         intArrayOf('@'.code, 'y'.code) + "SECU-3 navigation test firmware".padEnd(52).map { it.code }.toIntArray() +
-            intArrayOf(0, 0, 0, 0, 0x10, 0, 0),
+            intArrayOf(0, if (secu3T) 2 else 0, 0, 0, 0x10, 0, 0),
     )
 
 }

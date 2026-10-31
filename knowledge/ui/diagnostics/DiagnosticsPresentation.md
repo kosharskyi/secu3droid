@@ -23,3 +23,7 @@ The route collects the connection manager's nullable firmware state so a reply w
 ## Keep additional options inside the native dialog's measured bounds
 
 Cap the options surface at 560dp and the outer content, including its 16dp margins, at 592dp. The native Compose Dialog uses the measured content bounds for outside-tap dismissal, so a full-width wrapper would consume taps in the side gutters. Keep the options and actions in the existing vertically scrollable, 640dp-capped column for short windows.
+
+## Connection transitions replace the diagnostics graph
+
+The Activity's common status navigation returns to Start on Disconnected and Home on recovery. Reopening diagnostics creates a fresh graph/session and requires fresh input before enabling controls. Integration fixtures must establish the transport and let Home navigation finish before entering diagnostics; connecting after opening the graph intentionally replaces it.

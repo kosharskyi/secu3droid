@@ -113,7 +113,7 @@ class BtConnection @Inject constructor(
             } catch (failure: IOException) {
                 currentCoroutineContext().ensureActive()
                 if (!isCurrent(job)) return
-                finishAttempt(job, InProgress)
+                finishAttempt(job, InProgress, ConnectionEvent.End.RETRYING)
                 attempts = 0
             }
         }

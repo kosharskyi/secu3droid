@@ -20,7 +20,6 @@ import android.widget.Toast
 import android.os.SystemClock
 import android.view.accessibility.AccessibilityManager
 import javax.inject.Inject
-import org.secu3.android.connection.Connected
 import org.secu3.android.connection.ConnectionFailed
 import org.secu3.android.connection.ConnectionLost
 import android.hardware.usb.UsbManager
@@ -48,8 +47,6 @@ class MainActivity : ComponentActivity() {
     internal val userPrefs get() = viewModel.prefs
     private var rootNavController: NavHostController? = null
     internal val rootNavigationController: NavHostController? get() = rootNavController
-    private var pendingNavigation: String? = null
-    private var pendingUsbHomeGeneration: Long? = null
     private var pendingUsbIntentDevice: UsbDevice? = null
     private var startUsbIntentHandler: ((UsbDevice?) -> Unit)? = null
     private var activeComposeRoute: String? = null
@@ -62,7 +59,6 @@ class MainActivity : ComponentActivity() {
         registerUsbLifecycle()
         lifecycle.addObserver(LifecycleEventObserver { _, event ->
             if (event == Lifecycle.Event.ON_RESUME) {
-                restorePendingTerminalStart()
                 processPendingNavigation()
                 deliverPendingUsbIntent()
             }
@@ -106,16 +102,14 @@ class MainActivity : ComponentActivity() {
                 if (lifecycle.currentState.isAtLeast(Lifecycle.State.RESUMED) && isDeviceUnlocked()) {
                     viewModel.connectionManager.onConnectionStateObservedInForeground(state)
                 }
-                if (state == Connected && viewModel.connectionManager.isUsbSessionLocked) {
-                    openUsbHome()
-                } else if ((state is ConnectionFailed || state is ConnectionLost) && viewModel.connectionManager.activeUsbDeviceIdOrNull != null) {
+                if ((state is ConnectionFailed || state is ConnectionLost) && viewModel.connectionManager.activeUsbDeviceIdOrNull != null) {
                     val failureMessage = if (state is ConnectionLost) R.string.usb_connection_lost else R.string.usb_connection_failed
                     uiMessageQueue.publish(failureMessage, org.secu3.android.ui.messages.UiMessageDuration.LONG)
                 }
             }
         }
         lifecycleScope.launch {
-            viewModel.connectionManager.terminalSessionGeneration.collect(::onTerminalSessionChanged)
+            viewModel.pendingNavigation.collect { processPendingNavigation() }
         }
     }
 
@@ -139,32 +133,13 @@ class MainActivity : ComponentActivity() {
     }
 
     fun openStart(): Boolean {
-        val controller = rootNavController ?: run { pendingNavigation = START_ROUTE; return false }
-        if (controller.currentDestination == null || !lifecycle.currentState.isAtLeast(Lifecycle.State.RESUMED) || !isDeviceUnlocked()) {
-            pendingNavigation = START_ROUTE
-            return false
-        }
-        pendingNavigation = null
-        pendingUsbHomeGeneration = null
-        viewModel.pendingTerminalStart()?.let(viewModel::completeTerminalStart)
-        if (controller.currentDestination?.route == START_ROUTE) return true
-        if (!controller.popBackStack(START_ROUTE, inclusive = false)) {
-            controller.navigate(START_ROUTE) { popUpTo(controller.graph.id) { inclusive = true }; launchSingleTop = true }
-        }
-        return true
+        navigateTo(START_ROUTE)
+        return viewModel.pendingNavigation.value != START_ROUTE
     }
 
     private fun navigateTo(route: String) {
-        val controller = rootNavController
-        if (controller == null || controller.currentDestination == null ||
-            !lifecycle.currentState.isAtLeast(Lifecycle.State.RESUMED) || !isDeviceUnlocked()
-        ) {
-            pendingNavigation = route
-            return
-        }
-        if (controller.currentDestination?.route == route) return
-        if (route == DIAGNOSTICS_GRAPH_ROUTE && isInsideDiagnosticsGraph(controller.currentDestination)) return
-        controller.navigate(route) { launchSingleTop = true }
+        viewModel.requestNavigation(route)
+        processPendingNavigation()
     }
 
     internal fun attachRootNavController(controller: NavHostController) {
@@ -190,26 +165,22 @@ class MainActivity : ComponentActivity() {
 
     private fun processPendingNavigation() {
         if (!lifecycle.currentState.isAtLeast(Lifecycle.State.RESUMED) || !isDeviceUnlocked()) return
-        val route = pendingNavigation ?: return
-        val terminalGeneration = viewModel.pendingTerminalStart()
-        if (route == START_ROUTE && terminalGeneration != null && viewModel.connectionManager.terminalSessionGeneration.value != terminalGeneration) {
-            viewModel.completeTerminalStart(terminalGeneration)
-            if (route == START_ROUTE) pendingNavigation = null
-            return
-        }
         val controller = rootNavController ?: return
-        if (controller.currentDestination == null) return
-        pendingNavigation = null
-        if (route == START_ROUTE) {
-            openStart()
-        } else if (route == HOME_ROUTE && pendingUsbHomeGeneration != null) {
-            val generation = pendingUsbHomeGeneration
-            pendingUsbHomeGeneration = null
-            if (viewModel.connectionManager.activeUsbHomeGeneration == generation) openUsbHome()
-        } else if (controller.currentDestination?.route != route &&
-            !(route == DIAGNOSTICS_GRAPH_ROUTE && isInsideDiagnosticsGraph(controller.currentDestination))
-        ) {
-            controller.navigate(route) { launchSingleTop = true }
+        val destination = controller.currentDestination ?: return
+        val route = viewModel.pendingNavigation.value ?: return
+        viewModel.completeNavigation(route)
+        if (destination.route == route) return
+        when (route) {
+            START_ROUTE -> if (!controller.popBackStack(START_ROUTE, inclusive = false)) {
+                controller.navigate(START_ROUTE) { popUpTo(controller.graph.id) { inclusive = true }; launchSingleTop = true }
+            }
+            HOME_ROUTE -> controller.navigate(HOME_ROUTE) {
+                popUpTo(controller.graph.id) { inclusive = true }
+                launchSingleTop = true
+            }
+            else -> if (route != DIAGNOSTICS_GRAPH_ROUTE || !isInsideDiagnosticsGraph(destination)) {
+                controller.navigate(route) { launchSingleTop = true }
+            }
         }
     }
 
@@ -284,23 +255,6 @@ class MainActivity : ComponentActivity() {
         usbManager.requestPermission(device, PendingIntent.getBroadcast(this, token.toInt(), permissionIntent, flags))
     }
 
-    private fun openUsbHome() {
-        val generation = viewModel.connectionManager.activeUsbHomeGeneration ?: return
-        val controller = rootNavController ?: run { pendingNavigation = HOME_ROUTE; pendingUsbHomeGeneration = generation; return }
-        if (!lifecycle.currentState.isAtLeast(Lifecycle.State.RESUMED) || !isDeviceUnlocked() || controller.currentDestination == null) {
-            pendingNavigation = HOME_ROUTE
-            pendingUsbHomeGeneration = generation
-            return
-        }
-        if (!viewModel.claimUsbHomeNavigation(generation)) return
-        pendingUsbHomeGeneration = null
-        if (pendingNavigation == START_ROUTE) pendingNavigation = null
-        controller.navigate(HOME_ROUTE) {
-            popUpTo(controller.graph.id) { inclusive = true }
-            launchSingleTop = true
-        }
-    }
-
     override fun onDestroy() {
         runCatching { unregisterReceiver(usbReceiver) }
         runCatching { unregisterReceiver(usbPermissionReceiver) }
@@ -368,29 +322,6 @@ class MainActivity : ComponentActivity() {
         val accessibility = getSystemService(ACCESSIBILITY_SERVICE) as? AccessibilityManager
             ?: return nominalMillis
         accessibility.getRecommendedTimeoutMillis(nominalMillis.toInt(), AccessibilityManager.FLAG_CONTENT_TEXT).toLong()
-    }
-
-    private fun onTerminalSessionChanged(generation: Long?) {
-        if (generation == null) {
-            val pendingGeneration = viewModel.cancelPendingTerminalStart()
-            val wasQueued = pendingGeneration != null
-            if (wasQueued && pendingNavigation == START_ROUTE) pendingNavigation = null
-            return
-        }
-        if (viewModel.connectionManager.terminalSessionGeneration.value != generation) return
-        if (!viewModel.queueTerminalStart(generation)) return
-        pendingNavigation = START_ROUTE
-        if (lifecycle.currentState.isAtLeast(Lifecycle.State.RESUMED) && isDeviceUnlocked()) openStart()
-    }
-
-    private fun restorePendingTerminalStart() {
-        val generation = viewModel.pendingTerminalStart() ?: return
-        if (viewModel.connectionManager.terminalSessionGeneration.value == generation) {
-            pendingNavigation = START_ROUTE
-        } else {
-            viewModel.cancelPendingTerminalStart()
-            if (pendingNavigation == START_ROUTE) pendingNavigation = null
-        }
     }
 
     internal fun applyKeepScreenOnPreference() {

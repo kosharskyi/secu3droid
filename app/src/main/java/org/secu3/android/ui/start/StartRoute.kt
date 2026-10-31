@@ -12,10 +12,8 @@ import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
-import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.SideEffect
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.setValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
@@ -28,7 +26,6 @@ import androidx.lifecycle.compose.LocalLifecycleOwner
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavBackStackEntry
-import org.secu3.android.connection.Connected
 import org.secu3.android.ui.MainActivity
 import org.secu3.android.ui.compose.SecuComposeTheme
 import org.secu3.android.R
@@ -38,14 +35,12 @@ import java.io.IOException
 
 
 @Composable
-internal fun StartRoute(entry: NavBackStackEntry, activity: MainActivity, onConnected: () -> Unit) {
+internal fun StartRoute(entry: NavBackStackEntry, activity: MainActivity) {
     val vm: StartScreenViewModel = viewModel(viewModelStoreOwner = entry, factory = activity.defaultViewModelProviderFactory, extras = entry.defaultViewModelCreationExtras)
     val context = LocalContext.current
     val lifecycle = LocalLifecycleOwner.current.lifecycle
     val coroutineScope = rememberCoroutineScope()
     val state by vm.uiState.collectAsStateWithLifecycle()
-    val connected by vm.connectionState.collectAsStateWithLifecycle(initialValue = null)
-    var isResumed by remember { mutableStateOf(lifecycle.currentState.isAtLeast(Lifecycle.State.RESUMED)) }
     val continueBluetooth = remember { mutableStateOf<(() -> Unit)?>(null) }
     val btPermissionLauncher = rememberLauncherForActivityResult(ActivityResultContracts.RequestMultiplePermissions()) { grants ->
         val requested = vm.pendingBluetoothPermissions.isNotEmpty()
@@ -90,7 +85,6 @@ internal fun StartRoute(entry: NavBackStackEntry, activity: MainActivity, onConn
             }
         }
         val observer = LifecycleEventObserver { _, event ->
-            isResumed = lifecycle.currentState.isAtLeast(Lifecycle.State.RESUMED)
             if (event == Lifecycle.Event.ON_RESUME) {
                 activity.applyKeepScreenOnPreference()
                 val manager = context.getSystemService(Context.USB_SERVICE) as UsbManager
@@ -118,11 +112,6 @@ internal fun StartRoute(entry: NavBackStackEntry, activity: MainActivity, onConn
             runCatching { context.unregisterReceiver(usbReceiver) }; runCatching { context.unregisterReceiver(btReceiver) }
         }
     }
-    LaunchedEffect(connected, isResumed) {
-        if (connected == Connected && isResumed && !vm.isUsbSessionLocked && vm.claimHomeNavigation()) onConnected()
-        if (connected != Connected) vm.resetHomeNavigation()
-    }
-
     SecuComposeTheme {
         StartScreenContent(
             state,

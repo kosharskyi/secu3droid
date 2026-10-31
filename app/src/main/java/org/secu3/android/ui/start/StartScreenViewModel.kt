@@ -46,12 +46,10 @@ class StartScreenViewModel @Inject constructor(
 ) : ViewModel() {
     private val _uiState = MutableStateFlow(StartScreenState())
     val uiState = _uiState.asStateFlow()
-    val connectionState = connectionManager.connectionStateFlow
-    val isUsbSessionLocked get() = connectionManager.isUsbSessionLocked
+    private val connectionState = connectionManager.connectionStateFlow
     private val bluetoothAdapter: BluetoothAdapter? get() = runCatching { bluetoothManager.adapter }.getOrNull()
     private var usbDevice: UsbDevice? = null
     private val devices = mutableListOf<BluetoothDevice>()
-    private var homeNavigationSent = false
     var pendingBluetoothPermissions: Array<String> = emptyArray()
     private val bluetoothBondGate = BluetoothBondRequestGate()
     private var connectionJob: Job? = null
@@ -178,7 +176,6 @@ class StartScreenViewModel @Inject constructor(
     }
     fun startBluetoothConnection(selectedDevice: BluetoothDevice? = null) {
         if (connectionJob?.isActive == true) return
-        if (!connectionManager.isConnected) homeNavigationSent = false
         cancelBtDiscovery()
         val job = viewModelScope.launch(start = CoroutineStart.LAZY) {
             try {
@@ -209,12 +206,6 @@ class StartScreenViewModel @Inject constructor(
         connectionManager.stopConnection()
         refreshConnecting()
     }
-    fun claimHomeNavigation(): Boolean {
-        if (homeNavigationSent || !connectionManager.isConnected) return false
-        homeNavigationSent = true
-        return true
-    }
-    fun resetHomeNavigation() { if (!connectionManager.isConnected) homeNavigationSent = false }
     fun newUsbDeviceAttached(device: UsbDevice) {
         usbDevice = device
         _uiState.value = _uiState.value.copy(usbDeviceDetected = true)

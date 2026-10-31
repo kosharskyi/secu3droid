@@ -125,7 +125,7 @@ internal fun RootNavigation(activity: MainActivity) {
             popExitTransition = { ExitTransition.None },
         ) {
             composable(START_ROUTE) { entry ->
-                StartRoute(entry, activity, onConnected = { activity.openHome() })
+                StartRoute(entry, activity)
             }
             composable(HOME_ROUTE) { entry ->
                 HomeRoute(

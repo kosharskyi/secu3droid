@@ -1,208 +1,183 @@
 package org.secu3.android.ui
 
-import androidx.test.core.app.ActivityScenario
+import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.ViewModelProvider
+import androidx.test.core.app.ActivityScenario
 import androidx.test.platform.app.InstrumentationRegistry
-import kotlinx.coroutines.flow.MutableStateFlow
-import org.junit.Assert.assertTrue
 import org.junit.Assert.assertEquals
 import org.junit.Test
+import org.secu3.android.connection.Connected
+import org.secu3.android.connection.ConnectionState
+import org.secu3.android.connection.Disconnected
+import org.secu3.android.connection.InProgress
+import org.secu3.android.connection.UsbAwaitingEcu
 
 class ActivityNavigationResumeTest {
-    @Test fun queuedNavigationDrainsWhenActivityReturnsToResumed() {
-        ActivityScenario.launch(MainActivity::class.java).use { scenario ->
-            scenario.moveToState(androidx.lifecycle.Lifecycle.State.STARTED)
-            scenario.onActivity { activity ->
-                activity.openSettings()
-                assertEquals(START_ROUTE, activity.rootNavigationController?.currentDestination?.route)
-            }
+    @Test fun queuedNavigationDrainsWhenActivityReturnsToResumed() = withActivity { scenario ->
+        scenario.moveToState(Lifecycle.State.STARTED)
+        scenario.onActivity { activity ->
+            activity.openSettings()
+            assertRoute(activity, START_ROUTE)
+        }
+        scenario.moveToState(Lifecycle.State.RESUMED)
+        scenario.onActivity { assertRoute(it, SETTINGS_ROUTE) }
+    }
 
-            scenario.moveToState(androidx.lifecycle.Lifecycle.State.RESUMED)
+    @Test fun disconnectedReturnsFromFeatureRouteToStartAfterResume() = withActivity { scenario ->
+        scenario.onActivity { it.openSettings() }
+        scenario.moveToState(Lifecycle.State.STARTED)
+        scenario.onActivity { disconnect(it) }
+        idle()
+        scenario.onActivity { assertRoute(it, SETTINGS_ROUTE) }
 
-            scenario.onActivity { activity ->
-                assertEquals(SETTINGS_ROUTE, activity.rootNavigationController?.currentDestination?.route)
-            }
+        scenario.moveToState(Lifecycle.State.RESUMED)
+        scenario.onActivity { assertRoute(it, START_ROUTE) }
+    }
+
+    @Test fun connectedSupersedesQueuedStartBeforeResume() = withActivity { scenario ->
+        scenario.onActivity { it.openSettings() }
+        scenario.moveToState(Lifecycle.State.STARTED)
+        scenario.onActivity { disconnect(it) }
+        idle()
+        scenario.onActivity { publish(it, Connected) }
+        idle()
+
+        scenario.moveToState(Lifecycle.State.RESUMED)
+        scenario.onActivity { assertRoute(it, HOME_ROUTE) }
+    }
+
+    @Test fun handledDisconnectedDoesNotPullUserBackAfterRecreation() = withActivity { scenario ->
+        scenario.onActivity { it.openSettings(); disconnect(it) }
+        idle()
+        scenario.onActivity { assertRoute(it, START_ROUTE); it.openSettings() }
+
+        scenario.recreate()
+        idle()
+        scenario.onActivity { assertRoute(it, SETTINGS_ROUTE) }
+    }
+
+    @Test fun anotherLossReturnsToStartAfterHomeRecovery() = withActivity { scenario ->
+        scenario.onActivity { publish(it, Connected) }
+        idle()
+        scenario.onActivity { assertRoute(it, HOME_ROUTE); publish(it, Disconnected) }
+        idle()
+        scenario.onActivity { assertRoute(it, START_ROUTE); publish(it, Connected) }
+        idle()
+        scenario.onActivity { assertRoute(it, HOME_ROUTE) }
+
+        scenario.moveToState(Lifecycle.State.STARTED)
+        scenario.onActivity { publish(it, Disconnected) }
+        idle()
+        scenario.moveToState(Lifecycle.State.RESUMED)
+        scenario.onActivity { assertRoute(it, START_ROUTE) }
+    }
+
+    @Test fun cableRemovalAfterHandledEcuTimeoutReturnsFromLogsToStart() = withActivity { scenario ->
+        scenario.onActivity { disconnect(it); publish(it, UsbAwaitingEcu) }
+        idle()
+        scenario.onActivity { assertRoute(it, START_ROUTE); it.openLogs() }
+        idle()
+        scenario.onActivity { assertRoute(it, LOGS_ROUTE); publish(it, Disconnected) }
+        idle()
+        scenario.onActivity { assertRoute(it, START_ROUTE) }
+    }
+
+    @Test fun rapidLossAndRecoveryKeepsOnlyTheLatestPendingDestination() = withActivity { scenario ->
+        scenario.onActivity { it.openSettings() }
+        scenario.moveToState(Lifecycle.State.STARTED)
+        scenario.onActivity { activity ->
+            publish(activity, Connected)
+            publish(activity, Disconnected)
+            publish(activity, UsbAwaitingEcu)
+            publish(activity, Connected)
+        }
+        idle()
+        scenario.moveToState(Lifecycle.State.RESUMED)
+        idle()
+        scenario.onActivity { assertRoute(it, HOME_ROUTE) }
+    }
+
+    @Test fun queuedDisconnectedNavigationSurvivesActivityRecreation() = withActivity { scenario ->
+        scenario.onActivity { it.openSettings() }
+        scenario.moveToState(Lifecycle.State.STARTED)
+        scenario.onActivity { disconnect(it) }
+        idle()
+        scenario.onActivity { activity ->
+            assertRoute(activity, SETTINGS_ROUTE)
+            assertEquals(START_ROUTE, viewModel(activity).pendingNavigation.value)
+        }
+
+        scenario.recreate()
+        scenario.moveToState(Lifecycle.State.RESUMED)
+        idle()
+        scenario.onActivity { activity ->
+            assertRoute(activity, START_ROUTE)
+            assertEquals(null, viewModel(activity).pendingNavigation.value)
         }
     }
 
-    @Test fun finalConnectionLossReturnsFromFeatureRouteToStart() {
-        ActivityScenario.launch(MainActivity::class.java).use { scenario ->
-            scenario.onActivity { activity ->
-                activity.openSettings()
-            }
-            scenario.moveToState(androidx.lifecycle.Lifecycle.State.STARTED)
-            scenario.onActivity { activity ->
-                terminalFlow(activity).value = 700L
-            }
-            InstrumentationRegistry.getInstrumentation().waitForIdleSync()
-            scenario.onActivity { activity ->
-                assertEquals(SETTINGS_ROUTE, activity.rootNavigationController?.currentDestination?.route)
-            }
-
-            scenario.moveToState(androidx.lifecycle.Lifecycle.State.RESUMED)
-
-            scenario.onActivity { activity ->
-                assertEquals(START_ROUTE, activity.rootNavigationController?.currentDestination?.route)
-            }
-        }
+    @Test fun lossBeforeResumeCancelsQueuedHome() = withActivity { scenario ->
+        scenario.onActivity { it.openSettings() }
+        scenario.moveToState(Lifecycle.State.STARTED)
+        scenario.onActivity { publish(it, Connected) }
+        idle()
+        scenario.onActivity { publish(it, Disconnected); publish(it, UsbAwaitingEcu) }
+        idle()
+        scenario.moveToState(Lifecycle.State.RESUMED)
+        scenario.onActivity { assertRoute(it, START_ROUTE) }
     }
 
-    @Test fun replacementAttemptClearsQueuedTerminalStartBeforeResume() {
-        ActivityScenario.launch(MainActivity::class.java).use { scenario ->
-            scenario.onActivity { activity ->
-                activity.openSettings()
-            }
-            scenario.moveToState(androidx.lifecycle.Lifecycle.State.STARTED)
-            scenario.onActivity { activity ->
-                terminalFlow(activity).value = 701L
-            }
-            InstrumentationRegistry.getInstrumentation().waitForIdleSync()
-            scenario.onActivity { activity ->
-                terminalFlow(activity).value = null
-            }
-            InstrumentationRegistry.getInstrumentation().waitForIdleSync()
-
-            scenario.moveToState(androidx.lifecycle.Lifecycle.State.RESUMED)
-
-            scenario.onActivity { activity ->
-                assertEquals(SETTINGS_ROUTE, activity.rootNavigationController?.currentDestination?.route)
-            }
-        }
+    @Test fun initialUsbHandshakeTimeoutDoesNotNavigateAwayFromSettings() = withActivity { scenario ->
+        scenario.onActivity { it.openSettings(); publish(it, InProgress); publish(it, UsbAwaitingEcu) }
+        idle()
+        scenario.onActivity { assertRoute(it, SETTINGS_ROUTE) }
     }
 
-    @Test fun replayedHandledTerminalResultDoesNotPullUserBackToStart() {
-        ActivityScenario.launch(MainActivity::class.java).use { scenario ->
-            scenario.onActivity { activity ->
-                activity.openSettings()
-                terminalFlow(activity).value = 702L
-            }
-            InstrumentationRegistry.getInstrumentation().waitForIdleSync()
-            scenario.onActivity { activity ->
-                assertEquals(START_ROUTE, activity.rootNavigationController?.currentDestination?.route)
-                activity.openSettings()
-            }
-
-            scenario.recreate()
-            InstrumentationRegistry.getInstrumentation().waitForIdleSync()
-
-            scenario.onActivity { activity ->
-                assertEquals(SETTINGS_ROUTE, activity.rootNavigationController?.currentDestination?.route)
-            }
-        }
+    @Test fun connectedReplayDoesNotInterruptFeatureRouteAfterRecreation() = withActivity { scenario ->
+        scenario.onActivity { publish(it, Connected) }
+        idle()
+        scenario.onActivity { assertRoute(it, HOME_ROUTE); it.openSettings() }
+        scenario.recreate()
+        idle()
+        scenario.onActivity { assertRoute(it, SETTINGS_ROUTE) }
     }
 
-    @Test fun newUsbSessionCanReturnToStartAfterHomeRecovery() {
-        ActivityScenario.launch(MainActivity::class.java).use { scenario ->
-            scenario.onActivity { activity ->
-                terminalFlow(activity).value = 704L
-            }
-            InstrumentationRegistry.getInstrumentation().waitForIdleSync()
-            scenario.onActivity { activity ->
-                assertEquals(START_ROUTE, activity.rootNavigationController?.currentDestination?.route)
-                activity.openHome()
-                val viewModel = ViewModelProvider(activity)[MainActivityViewModel::class.java]
-                assertTrue(viewModel.claimUsbHomeNavigation(10L))
-                assertEquals(HOME_ROUTE, activity.rootNavigationController?.currentDestination?.route)
-            }
-
-            scenario.moveToState(androidx.lifecycle.Lifecycle.State.STARTED)
-            scenario.onActivity { activity -> terminalFlow(activity).value = null }
-            InstrumentationRegistry.getInstrumentation().waitForIdleSync()
-            scenario.onActivity { activity -> terminalFlow(activity).value = 706L }
-            InstrumentationRegistry.getInstrumentation().waitForIdleSync()
-            scenario.moveToState(androidx.lifecycle.Lifecycle.State.RESUMED)
-
-            scenario.onActivity { activity ->
-                assertEquals(START_ROUTE, activity.rootNavigationController?.currentDestination?.route)
-            }
-        }
+    @Test fun pendingHomeIsDiscardedWhenConnectionPreparationRestarts() = withActivity { scenario ->
+        scenario.onActivity { it.openSettings() }
+        scenario.moveToState(Lifecycle.State.STARTED)
+        scenario.onActivity { publish(it, Connected) }
+        idle()
+        scenario.onActivity { publish(it, InProgress) }
+        idle()
+        scenario.moveToState(Lifecycle.State.RESUMED)
+        scenario.onActivity { assertRoute(it, SETTINGS_ROUTE) }
     }
 
-    @Test fun cableRemovalAfterHandledEcuTimeoutReturnsFromLogsToStart() {
-        ActivityScenario.launch(MainActivity::class.java).use { scenario ->
-            scenario.onActivity { activity -> terminalFlow(activity).value = 707L }
-            InstrumentationRegistry.getInstrumentation().waitForIdleSync()
-            scenario.onActivity { activity ->
-                assertEquals(START_ROUTE, activity.rootNavigationController?.currentDestination?.route)
-                activity.openLogs()
-            }
-            InstrumentationRegistry.getInstrumentation().waitForIdleSync()
-            scenario.onActivity { activity ->
-                assertEquals(LOGS_ROUTE, activity.rootNavigationController?.currentDestination?.route)
-                terminalFlow(activity).value = 708L
-            }
-            InstrumentationRegistry.getInstrumentation().waitForIdleSync()
-            scenario.onActivity { activity ->
-                assertEquals(START_ROUTE, activity.rootNavigationController?.currentDestination?.route)
-            }
-        }
-    }
-
-    @Test fun confirmedHomeClaimCancelsAnAlreadyQueuedStart() {
+    private fun withActivity(block: (ActivityScenario<MainActivity>) -> Unit) {
         ActivityScenario.launch(MainActivity::class.java).use { scenario ->
             try {
-                scenario.onActivity { activity ->
-                    activity.openSettings()
-                    val viewModel = ViewModelProvider(activity)[MainActivityViewModel::class.java]
-                    assertTrue(viewModel.queueTerminalStart(705L))
-                    setPrivateField(activity, "pendingNavigation", START_ROUTE)
-                    setConfirmedUsbSession(viewModel.connectionManager, attemptId = 3L)
-                    activity.javaClass.getDeclaredMethod("openUsbHome").apply { isAccessible = true }.invoke(activity)
-                    assertEquals(HOME_ROUTE, activity.rootNavigationController?.currentDestination?.route)
-                }
-                InstrumentationRegistry.getInstrumentation().waitForIdleSync()
-                scenario.onActivity { activity ->
-                    assertEquals("recovery must supersede the queued Start", HOME_ROUTE, activity.rootNavigationController?.currentDestination?.route)
-                }
+                scenario.onActivity { disconnect(it) }
+                idle()
+                block(scenario)
             } finally {
-                scenario.onActivity { activity ->
-                    ViewModelProvider(activity)[MainActivityViewModel::class.java].connectionManager.onUsbDeviceDetached(1)
-                    terminalFlow(activity).value = null
-                }
+                scenario.onActivity { disconnect(it) }
+                idle()
             }
         }
     }
 
-    @Test fun queuedTerminalNavigationSurvivesActivityRecreation() {
-        ActivityScenario.launch(MainActivity::class.java).use { scenario ->
-            scenario.onActivity { it.openSettings() }
-            scenario.moveToState(androidx.lifecycle.Lifecycle.State.STARTED)
-            scenario.onActivity { terminalFlow(it).value = 703L }
-            InstrumentationRegistry.getInstrumentation().waitForIdleSync()
-
-            scenario.onActivity { activity ->
-                assertEquals(SETTINGS_ROUTE, activity.rootNavigationController?.currentDestination?.route)
-                assertEquals(703L, ViewModelProvider(activity)[MainActivityViewModel::class.java].pendingTerminalStart())
-            }
-            scenario.recreate()
-            scenario.moveToState(androidx.lifecycle.Lifecycle.State.RESUMED)
-
-            scenario.onActivity { activity ->
-                assertEquals(START_ROUTE, activity.rootNavigationController?.currentDestination?.route)
-                assertEquals(null, ViewModelProvider(activity)[MainActivityViewModel::class.java].pendingTerminalStart())
-            }
-        }
+    private fun disconnect(activity: MainActivity) {
+        publish(activity, InProgress)
+        publish(activity, Disconnected)
     }
 
-    @Suppress("UNCHECKED_CAST")
-    private fun terminalFlow(activity: MainActivity): MutableStateFlow<Long?> {
-        val manager = ViewModelProvider(activity)[MainActivityViewModel::class.java].connectionManager
-        return manager.javaClass.getDeclaredField("_terminalSessionGeneration").apply { isAccessible = true }
-            .get(manager) as MutableStateFlow<Long?>
+    private fun publish(activity: MainActivity, state: ConnectionState) {
+        val manager = viewModel(activity).connectionManager
+        manager.javaClass.getDeclaredMethod("publishConnectionState", ConnectionState::class.java)
+            .apply { isAccessible = true }.invoke(manager, state)
     }
 
-    private fun setConfirmedUsbSession(manager: org.secu3.android.connection.Secu3ConnectionManager, attemptId: Long) {
-        val usb = manager.javaClass.getDeclaredField("usbConnection").apply { isAccessible = true }.get(manager) as org.secu3.android.connection.UsbConnection
-        val driver = org.secu3.android.connection.ConnectionTestDriver(manager, usb)
-        driver.select("USB")
-        driver.setAttempt(attemptId)
-        val attachmentClass = Class.forName("org.secu3.android.connection.UsbAttachmentIdentity")
-        val attachment = attachmentClass.declaredConstructors.single().apply { isAccessible = true }.newInstance(1, "test-device", 1, 1)
-        setPrivateField(usb, "activeAttachment", attachment)
-        driver.publish(org.secu3.android.connection.Connected)
-    }
-
-    private fun setPrivateField(target: Any, name: String, value: Any?) {
-        target.javaClass.getDeclaredField(name).apply { isAccessible = true }.set(target, value)
-    }
+    private fun viewModel(activity: MainActivity) = ViewModelProvider(activity)[MainActivityViewModel::class.java]
+    private fun assertRoute(activity: MainActivity, expected: String) = assertEquals(expected, activity.rootNavigationController?.currentDestination?.route)
+    private fun idle() = InstrumentationRegistry.getInstrumentation().waitForIdleSync()
 }

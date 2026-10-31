@@ -26,9 +26,16 @@
 package org.secu3.android.ui
 
 import androidx.lifecycle.ViewModel
+import androidx.lifecycle.viewModelScope
 import dagger.hilt.android.lifecycle.HiltViewModel
-import org.secu3.android.utils.UserPrefs
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.launch
+import org.secu3.android.connection.Connected
+import org.secu3.android.connection.ConnectionTimeout
+import org.secu3.android.connection.Disconnected
 import org.secu3.android.connection.Secu3ConnectionManager
+import org.secu3.android.utils.UserPrefs
 import javax.inject.Inject
 
 @HiltViewModel
@@ -36,33 +43,22 @@ class MainActivityViewModel @Inject constructor(
     val prefs: UserPrefs,
     val connectionManager: Secu3ConnectionManager,
 ) : ViewModel() {
-    private var handledUsbGeneration: Long? = null
-    private var handledTerminalGeneration: Long? = null
-    private var pendingTerminalGeneration: Long? = null
+    private val _pendingNavigation = MutableStateFlow<String?>(null)
+    val pendingNavigation = _pendingNavigation.asStateFlow()
 
-    @Synchronized fun claimUsbHomeNavigation(generation: Long): Boolean {
-        if (handledUsbGeneration == generation) return false
-        handledUsbGeneration = generation
-        pendingTerminalGeneration = null
-        return true
-    }
-
-    @Synchronized fun queueTerminalStart(generation: Long): Boolean {
-        if (handledTerminalGeneration == generation) return false
-        pendingTerminalGeneration = generation
-        return true
-    }
-
-    @Synchronized fun pendingTerminalStart(): Long? = pendingTerminalGeneration
-
-    @Synchronized fun completeTerminalStart(generation: Long) {
-        if (pendingTerminalGeneration == generation) {
-            handledTerminalGeneration = generation
-            pendingTerminalGeneration = null
+    init {
+        viewModelScope.launch {
+            connectionManager.connectionStateFlow.collect { state ->
+                when (state) {
+                    Connected -> requestNavigation(HOME_ROUTE)
+                    Disconnected, ConnectionTimeout -> requestNavigation(START_ROUTE)
+                    else -> _pendingNavigation.compareAndSet(HOME_ROUTE, null)
+                }
+            }
         }
     }
 
-    @Synchronized fun cancelPendingTerminalStart(): Long? = pendingTerminalGeneration.also {
-        pendingTerminalGeneration = null
-    }
+    fun requestNavigation(route: String) { _pendingNavigation.value = route }
+
+    fun completeNavigation(route: String) { _pendingNavigation.compareAndSet(route, null) }
 }
