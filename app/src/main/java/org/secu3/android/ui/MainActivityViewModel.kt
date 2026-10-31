@@ -43,6 +43,7 @@ class MainActivityViewModel @Inject constructor(
     @Synchronized fun claimUsbHomeNavigation(generation: Long): Boolean {
         if (handledUsbGeneration == generation) return false
         handledUsbGeneration = generation
+        pendingTerminalGeneration = null
         return true
     }
 

@@ -29,6 +29,8 @@ sealed class ConnectionState()
 
 data object Connected : ConnectionState()
 data object InProgress : ConnectionState()
+/** USB liveness timed out; automatic attempts are waiting for a valid ECU response. */
+data object UsbAwaitingEcu : ConnectionState()
 data object Disconnected : ConnectionState()
 data class ConnectionAttempt(val currentAttempt: Int) : ConnectionState()
 

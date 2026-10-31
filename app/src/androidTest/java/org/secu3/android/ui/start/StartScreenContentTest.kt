@@ -78,6 +78,30 @@ class StartScreenContentTest {
         assertEquals(listOf(false, true), states)
     }
 
+    @Test fun usbIgnitionHintAppearsOnlyAfterEcuHandshakeTimeout() {
+        val ukrainianConfiguration = Configuration(context.resources.configuration).apply {
+            setLocale(Locale.forLanguageTag("uk"))
+        }
+        val ukrainianContext = context.createConfigurationContext(ukrainianConfiguration)
+        var state by mutableStateOf(StartScreenState(usbDeviceDetected = true))
+        compose.setContent {
+            CompositionLocalProvider(
+                LocalConfiguration provides ukrainianConfiguration,
+                LocalContext provides ukrainianContext,
+            ) {
+                SecuComposeTheme {
+                    StartScreenContent(state, StartScreenActions())
+                }
+            }
+        }
+        compose.onNodeWithText(ukrainianContext.getString(R.string.usb_device_detected)).assertIsDisplayed()
+        compose.runOnIdle { state = state.copy(usbAwaitingEcu = true) }
+        compose.onNodeWithText(ukrainianContext.getString(R.string.usb_ignition_required)).assertIsDisplayed()
+        compose.onNodeWithText(ukrainianContext.getString(R.string.usb_device_detected)).assertDoesNotExist()
+        compose.runOnIdle { state = StartScreenState() }
+        compose.onNodeWithText(ukrainianContext.getString(R.string.usb_ignition_required)).assertDoesNotExist()
+    }
+
     @Test fun connectingButtonShowsUkrainianLabelAndContrastingAnimatedRingInBothThemes() {
         val ukrainianConfiguration = Configuration(context.resources.configuration).apply {
             setLocale(Locale.forLanguageTag("uk"))

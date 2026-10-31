@@ -63,5 +63,11 @@ class ConnectionServiceController @Inject constructor(
     @Synchronized
     internal fun ownerConnectionGeneration(): Long? = owner?.connectionGeneration
 
+    /** The same service continues owning USB retries after a logical ECU session ends. */
+    @Synchronized
+    internal fun updateConnectionGeneration(connectionGeneration: Long) {
+        owner = owner?.copy(connectionGeneration = connectionGeneration)
+    }
+
     private fun serviceIntent() = Intent(context, SecuConnectionService::class.java)
 }

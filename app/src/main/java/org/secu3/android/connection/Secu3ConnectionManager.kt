@@ -294,62 +294,49 @@ class Secu3ConnectionManager @Inject constructor(
         publishConnectionState(InProgress)
         btConnection.stopConnection()
         usbConnection.stopConnection()
-        val selection = Selection(Transport.USB, attemptGeneration)
-        val ready = CompletableDeferred<Unit>()
-        usbSelectionReady = ready
+        var selection = Selection(Transport.USB, attemptGeneration)
+        usbSelectionReady = CompletableDeferred()
         selectedTransport.value = selection
         reconcileConnectionService()
         usbRetryJob = scope.launch {
-            ready.await()
-            synchronized(this@Secu3ConnectionManager) {
-                if (usbSelectionReady === ready) usbSelectionReady = null
-            }
             while (isCurrentUsbSelection(device.deviceId, selection)) {
+                val ready = synchronized(this@Secu3ConnectionManager) { usbSelectionReady }
+                ready?.await()
                 val attemptId: Long
                 val signals: Channel<UsbAttemptSignal>
                 synchronized(this@Secu3ConnectionManager) {
                     if (!isCurrentUsbSelection(device.deviceId, selection)) return@launch
+                    if (usbSelectionReady === ready) usbSelectionReady = null
                     attemptId = ++nextUsbAttemptId
                     signals = Channel(Channel.UNLIMITED)
                     activeUsbAttemptId = attemptId
                     usbAttemptSignals = signals
-                    confirmedUsbAttemptId = null
                 }
                 usbConnection.startConnection(device, attemptId)
 
-                var firmwareConfirmed = false
-                var retry = false
-                while (isCurrentUsbAttempt(device.deviceId, selection, attemptId)) {
-                    val signal = if (firmwareConfirmed) {
+                while (true) {
+                    val signal = if (confirmedUsbAttemptId == attemptId) {
                         signals.receive()
                     } else {
                         withTimeoutOrNull(USB_FIRMWARE_HANDSHAKE_TIMEOUT_MS) { signals.receive() }
-                            ?: UsbAttemptSignal.FAILED
+                            ?: run {
+                                handleUsbAttemptFailure(UsbAttemptFailure(attemptId, UsbAttemptFailure.Reason.ECU_NOT_RESPONDING))
+                                signals.receive()
+                            }
                     }
-                    when (signal) {
-                        UsbAttemptSignal.FIRMWARE_CONFIRMED -> firmwareConfirmed = true
-                        UsbAttemptSignal.FAILED -> {
-                            retry = true
-                            break
-                        }
-                    }
+                    if (signal == UsbAttemptSignal.FAILED) break
                 }
 
                 synchronized(this@Secu3ConnectionManager) {
-                    if (!isCurrentUsbSelection(device.deviceId, selection)) return@launch
-                    if (retry) {
-                        confirmedUsbAttemptId = null
-                        _firmwareInfo.value = null
-                        publishConnectionState(InProgress)
-                        usbConnection.stopConnection()
-                    }
+                    // A confirmed loss starts a new logical session on the same attachment.
+                    // Cancellation must be checked before adopting its new selection.
+                    coroutineContext.ensureActive()
+                    selection = selectedTransport.value
                     if (usbAttemptSignals === signals) {
                         usbAttemptSignals = null
-                        activeUsbAttemptId = null
                     }
                 }
                 signals.close()
-                if (!retry) return@launch
                 delay(USB_RETRY_DELAY_MS)
             }
             synchronized(this@Secu3ConnectionManager) {
@@ -479,9 +466,6 @@ class Secu3ConnectionManager @Inject constructor(
     @Synchronized private fun isCurrentUsbSelection(deviceId: Int, selection: Selection): Boolean =
         selectedTransport.value == selection && usbSessionFence.isCurrent(deviceId, selection.generation)
 
-    @Synchronized private fun isCurrentUsbAttempt(deviceId: Int, selection: Selection, attemptId: Long): Boolean =
-        isCurrentUsbSelection(deviceId, selection) && activeUsbAttemptId == attemptId
-
     /** A delayed destroy from an older service instance must not stop a replacement connection. */
     @Synchronized fun onConnectionServiceDestroyed(ownerToken: Long) {
         val serviceConnectionGeneration = connectionServiceController.completeDestruction(ownerToken) ?: return
@@ -555,13 +539,35 @@ class Secu3ConnectionManager @Inject constructor(
         if (!usbSessionFence.isCurrent(deviceId, selection.generation)) return
         _firmwareInfo.value = packet
         confirmedUsbAttemptId = attemptId
+        _terminalSessionGeneration.value = null
         usbAttemptSignals?.trySend(UsbAttemptSignal.FIRMWARE_CONFIRMED)
         publishConnectionState(Connected)
         reconcileConnectionService()
     }
 
-    @Synchronized private fun handleUsbAttemptFailure(attemptId: Long) {
-        if (selectedTransport.value.transport != Transport.USB || activeUsbAttemptId != attemptId) return
+    @Synchronized private fun handleUsbAttemptFailure(failure: UsbAttemptFailure) {
+        if (selectedTransport.value.transport != Transport.USB || activeUsbAttemptId != failure.attemptId) return
+        val selection = selectedTransport.value
+        val establishedLoss = confirmedUsbAttemptId == failure.attemptId
+        activeUsbAttemptId = null
+        confirmedUsbAttemptId = null
+        _firmwareInfo.value = null
+        usbConnection.stopConnection()
+        publishConnectionState(
+            if (failure.reason == UsbAttemptFailure.Reason.ECU_NOT_RESPONDING || currentConnectionState == UsbAwaitingEcu) {
+                UsbAwaitingEcu
+            } else {
+                InProgress
+            },
+        )
+        if (establishedLoss) {
+            secuLogger.stopLogging()
+            val deviceId = activeUsbDeviceIdOrNull ?: return
+            usbSelectionReady = CompletableDeferred()
+            selectedTransport.value = Selection(Transport.USB, usbSessionFence.begin(deviceId))
+            connectionServiceController.updateConnectionGeneration(selectedTransport.value.generation)
+            _terminalSessionGeneration.value = selection.generation
+        }
         usbAttemptSignals?.trySend(UsbAttemptSignal.FAILED)
     }
 

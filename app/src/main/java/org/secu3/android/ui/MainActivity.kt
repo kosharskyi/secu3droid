@@ -294,6 +294,7 @@ class MainActivity : ComponentActivity() {
         }
         if (!viewModel.claimUsbHomeNavigation(generation)) return
         pendingUsbHomeGeneration = null
+        if (pendingNavigation == START_ROUTE) pendingNavigation = null
         controller.navigate(HOME_ROUTE) {
             popUpTo(controller.graph.id) { inclusive = true }
             launchSingleTop = true

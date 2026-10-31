@@ -31,6 +31,22 @@ class UsbNavigationLifecycleTest {
         assertTrue(viewModel.queueTerminalStart(5))
     }
 
+    @Test fun successfulUsbHomeRecoveryPreservesHandledLossAndAllowsNewSessionLoss() {
+        val viewModel = navigationViewModel()
+        assertTrue(viewModel.claimUsbHomeNavigation(10))
+        assertTrue(viewModel.queueTerminalStart(7))
+        assertTrue(viewModel.pendingTerminalStart() == 7L)
+        viewModel.completeTerminalStart(7)
+        assertTrue(viewModel.pendingTerminalStart() == null)
+
+        assertTrue(viewModel.claimUsbHomeNavigation(11))
+        assertTrue(viewModel.pendingTerminalStart() == null)
+
+        assertFalse(viewModel.queueTerminalStart(7))
+        assertTrue(viewModel.queueTerminalStart(8))
+        assertTrue(viewModel.pendingTerminalStart() == 8L)
+    }
+
     // Navigation bookkeeping does not call platform or transport APIs. Uninitialized dependencies
     // keep this regression test independent of Android's USB service, as in transport unit fixtures.
     private fun navigationViewModel(): MainActivityViewModel {

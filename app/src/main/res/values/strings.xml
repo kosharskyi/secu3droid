@@ -600,6 +600,7 @@
     <string name="what_s_new">What\'s new</string>
     <string name="connect">Connect</string>
     <string name="usb_device_detected">USB device detected</string>
+    <string name="usb_ignition_required">Turn on the ignition to connect</string>
     <string name="usb_connection_failed">Could not connect via USB. Check the cable and device power.</string>
     <string name="usb_connection_lost">USB connection lost</string>
     <string name="unknown_device">Unknown Device</string>

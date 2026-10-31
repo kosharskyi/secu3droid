@@ -24,6 +24,7 @@ import org.secu3.android.connection.Connected
 import org.secu3.android.connection.ConnectionState
 import org.secu3.android.connection.Disconnected
 import org.secu3.android.connection.InProgress
+import org.secu3.android.connection.UsbAwaitingEcu
 
 class ConnectionStatusIndicatorTest {
     @get:Rule val compose = createComposeRule()
@@ -40,6 +41,8 @@ class ConnectionStatusIndicatorTest {
 
         compose.onNodeWithContentDescription(context.getString(R.string.home_connection_connected)).assertExists()
         compose.runOnIdle { state.value = InProgress }
+        compose.onNodeWithContentDescription(context.getString(R.string.home_connection_connecting)).assertExists()
+        compose.runOnIdle { state.value = UsbAwaitingEcu }
         compose.onNodeWithContentDescription(context.getString(R.string.home_connection_connecting)).assertExists()
         compose.runOnIdle { state.value = Disconnected }
         compose.onNodeWithContentDescription(context.getString(R.string.home_connection_disconnected)).assertExists()

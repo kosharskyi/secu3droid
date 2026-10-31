@@ -442,6 +442,7 @@
     <string name="what_s_new">Что нового</string>
     <string name="connect">Подключиться</string>
     <string name="usb_device_detected">Обнаружено USB устройство</string>
+    <string name="usb_ignition_required">Включите зажигание для подключения</string>
     <string name="usb_connection_failed">Не удалось подключиться через USB. Проверьте кабель и питание устройства</string>
     <string name="usb_connection_lost">USB-соединение потеряно</string>
     <string name="unknown_device">Неизвестное устройство</string>

@@ -12,6 +12,7 @@ import org.secu3.android.connection.ConnectionState
 import org.secu3.android.connection.Connected
 import org.secu3.android.connection.Disconnected
 import org.secu3.android.connection.InProgress
+import org.secu3.android.connection.UsbAwaitingEcu
 import org.secu3.android.connection.Secu3ConnectionManager
 import org.secu3.android.network.models.GitHubRelease
 import org.secu3.android.R
@@ -38,7 +39,10 @@ class HomeViewModel @Inject constructor(
     init {
         viewModelScope.launch {
             manager.connectionStateFlow.collect { status ->
-                val mapped = status.takeIf { it == Connected || it == InProgress } ?: Disconnected
+                val mapped = when (status) {
+                    UsbAwaitingEcu -> InProgress
+                    else -> status.takeIf { it == Connected || it == InProgress } ?: Disconnected
+                }
                 _uiState.value = _uiState.value.copy(
                     connectionStatus = mapped,
                     usbSessionLocked = manager.isUsbSessionLocked,

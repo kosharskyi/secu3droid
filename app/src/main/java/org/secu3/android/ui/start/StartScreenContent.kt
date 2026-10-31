@@ -67,6 +67,7 @@ data class StartBluetoothDevice(val id: String, val name: String)
 data class StartScreenState(
     val connecting: Boolean = false,
     val usbDeviceDetected: Boolean = false,
+    val usbAwaitingEcu: Boolean = false,
     val showBluetoothDevices: Boolean = false,
     val bluetoothDevices: List<StartBluetoothDevice> = emptyList(),
     val showBluetoothRationale: Boolean = false,
@@ -135,7 +136,10 @@ fun StartScreenContent(
                             contentAlignment = Alignment.Center,
                         ) {
                             Text(
-                                stringResource(R.string.usb_device_detected),
+                                stringResource(
+                                    if (state.usbAwaitingEcu) R.string.usb_ignition_required
+                                    else R.string.usb_device_detected,
+                                ),
                                 modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 12.dp),
                                 textAlign = TextAlign.Center,
                             )

@@ -10,6 +10,10 @@ Saving a selected bonded device and validating the stored bonded address happen 
 
 The connecting indicator combines the active preference/preflight job, pending Bluetooth pairing, and the manager's current running-but-not-connected state. Manager state events refresh it; do not poll connection or firmware properties. A canceled preparation job may only clear its own reference, so an older completion cannot erase a replacement job's progress.
 
+## USB ignition guidance follows the manager's liveness state
+
+The Start route keeps the USB hint generic while permission/open/firmware setup is in progress. After the manager publishes `UsbAwaitingEcu` following a packet or handshake timeout, replace the hint with the localized ignition prompt. Keep it visible through automatic retries while the USB device remains attached; a valid firmware response or detach clears it. Do not infer ECU power from the platform USB attachment or permission result.
+
 ## Resuming an open Bluetooth picker retains its rows
 
 Returning from pause resumes discovery only while the Bluetooth picker remains visible and idle. Resume must retain the current device list and order; only an explicit user-started scan reseeds it from bonded devices. The route can also return from location settings after its callback already started discovery, so the resume path must be idempotent.

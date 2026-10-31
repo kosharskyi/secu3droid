@@ -27,6 +27,7 @@ package org.secu3.android.connection
 
 import android.hardware.usb.UsbDevice
 import android.hardware.usb.UsbManager
+import android.os.SystemClock
 import android.util.Log
 import com.hoho.android.usbserial.driver.UsbSerialPort
 import com.hoho.android.usbserial.driver.UsbSerialProber
@@ -44,6 +45,13 @@ import javax.inject.Inject
 import javax.inject.Singleton
 
 internal data class UsbAttemptPacket(val attemptId: Long, val packet: RawPacket)
+internal class UsbEcuResponseTimeoutException : IOException("ECU stopped sending valid USB packets")
+internal data class UsbAttemptFailure(
+    val attemptId: Long,
+    val reason: Reason,
+) {
+    enum class Reason { TRANSPORT_FAILURE, ECU_NOT_RESPONDING }
+}
 
 @Singleton
 class UsbConnection @Inject constructor(
@@ -51,7 +59,7 @@ class UsbConnection @Inject constructor(
 ) : Connection<UsbSerialPort>() {
 
     @Volatile private var attemptGeneration = 0L
-    private val _attemptFailures = MutableSharedFlow<Long>(extraBufferCapacity = 16)
+    private val _attemptFailures = MutableSharedFlow<UsbAttemptFailure>(extraBufferCapacity = 16)
     internal val attemptFailures = _attemptFailures.asSharedFlow()
     private val _attemptPackets = MutableSharedFlow<UsbAttemptPacket>()
     internal val attemptPackets = _attemptPackets.asSharedFlow()
@@ -95,7 +103,7 @@ class UsbConnection @Inject constructor(
                 isRunning = false
                 mConnectionStateFlow.emit(ConnectionFailed(e))
                 mConnectionStateFlow.emit(Disconnected)
-                _attemptFailures.emit(attemptId)
+                _attemptFailures.emit(UsbAttemptFailure(attemptId, UsbAttemptFailure.Reason.TRANSPORT_FAILURE))
                 Log.e(this.javaClass.simpleName, "Connection failed: ${e.message}")
             }
         }
@@ -153,6 +161,7 @@ class UsbConnection @Inject constructor(
             if (!isCurrentEndpoint(port)) return@launch
             try {
                 val receiver = PacketReceiver()
+                var lastResponseAt = SystemClock.elapsedRealtime()
 
                 while (attempt == attemptGeneration && isCurrentEndpoint(port)) {
                     val buffer = ByteArray(MAX_PACKET_SIZE)
@@ -160,15 +169,19 @@ class UsbConnection @Inject constructor(
                     currentCoroutineContext().ensureActive()
                     if (attempt != attemptGeneration || !isCurrentEndpoint(port)) return@launch
 
-                    if (bytesRead <= 0) continue
-
-                    for (i in 0 until bytesRead) {
+                    for (i in 0 until bytesRead.coerceAtLeast(0)) {
                         receiver.receive(buffer[i].toInt() and 0xFF)?.let { packet ->
                             if (attempt != attemptGeneration) return@launch
                             val rawPacket = RawPacket(packet)
                             _attemptPackets.emit(UsbAttemptPacket(attemptId, rawPacket))
                             mReceivedPacketFlow.emit(rawPacket)
+                            // Packet consumers can suspend this loop (notably the logger). Start
+                            // measuring ECU silence again only after the packet has been delivered.
+                            lastResponseAt = SystemClock.elapsedRealtime()
                         }
+                    }
+                    if (SystemClock.elapsedRealtime() - lastResponseAt >= ECU_PACKET_TIMEOUT_MS) {
+                        throw UsbEcuResponseTimeoutException()
                     }
                 }
             } catch (e: Exception) {
@@ -181,7 +194,12 @@ class UsbConnection @Inject constructor(
                     isRunning = false
                     mConnectionStateFlow.emit(ConnectionFailed(e))
                     mConnectionStateFlow.emit(Disconnected)
-                    _attemptFailures.emit(attemptId)
+                    val reason = if (e is UsbEcuResponseTimeoutException) {
+                        UsbAttemptFailure.Reason.ECU_NOT_RESPONDING
+                    } else {
+                        UsbAttemptFailure.Reason.TRANSPORT_FAILURE
+                    }
+                    _attemptFailures.emit(UsbAttemptFailure(attemptId, reason))
                 }
             }
         }
@@ -199,6 +217,10 @@ class UsbConnection @Inject constructor(
         } catch (failure: Exception) {
             Log.e(javaClass.simpleName, "Error while closing failed USB port: ${failure.message}")
         }
+    }
+
+    private companion object {
+        const val ECU_PACKET_TIMEOUT_MS = 5_000L
     }
 
 }

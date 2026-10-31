@@ -26,6 +26,7 @@ import org.secu3.android.ui.messages.UiMessageQueue
 import org.secu3.android.connection.BluetoothDeviceAddress
 import org.secu3.android.connection.BluetoothPermissionPolicy
 import org.secu3.android.connection.ConnectionTimeout
+import org.secu3.android.connection.UsbAwaitingEcu
 import org.secu3.android.connection.Connected
 import org.secu3.android.connection.Disconnected
 import org.secu3.android.connection.Secu3ConnectionManager
@@ -164,13 +165,16 @@ class StartScreenViewModel @Inject constructor(
         val connectionState = connectionManager.currentConnectionState
         val managerConnectionInProgress = when (connectionState) {
             Disconnected, Connected, ConnectionTimeout -> false
+            UsbAwaitingEcu -> true
             else -> connectionManager.isConnectionRunning && !connectionManager.isConnected
         }
+        val usbAwaitingEcu = usbDevice != null && connectionState == UsbAwaitingEcu
         setConnecting(
             connectionJob?.isActive == true ||
                 bluetoothBondGate.isPending() ||
                 managerConnectionInProgress,
         )
+        _uiState.value = _uiState.value.copy(usbAwaitingEcu = usbAwaitingEcu)
     }
     fun startBluetoothConnection(selectedDevice: BluetoothDevice? = null) {
         if (connectionJob?.isActive == true) return
@@ -211,8 +215,15 @@ class StartScreenViewModel @Inject constructor(
         return true
     }
     fun resetHomeNavigation() { if (!connectionManager.isConnected) homeNavigationSent = false }
-    fun newUsbDeviceAttached(device: UsbDevice) { usbDevice = device; _uiState.value = _uiState.value.copy(usbDeviceDetected = true) }
-    fun newUsbDeviceDetached() { usbDevice = null; _uiState.value = _uiState.value.copy(usbDeviceDetected = false) }
+    fun newUsbDeviceAttached(device: UsbDevice) {
+        usbDevice = device
+        _uiState.value = _uiState.value.copy(usbDeviceDetected = true)
+        refreshConnecting()
+    }
+    fun newUsbDeviceDetached() {
+        usbDevice = null
+        _uiState.value = _uiState.value.copy(usbDeviceDetected = false, usbAwaitingEcu = false)
+    }
     fun locationSettingsReturned(): Boolean {
         if (!consumeLocationSettingsReturn()) return false
         return isLocationEnabled()
