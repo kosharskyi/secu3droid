@@ -39,12 +39,14 @@ import androidx.compose.ui.test.assertIsNotEnabled
 import androidx.compose.ui.test.assertIsSelected
 import androidx.compose.ui.test.assertCountEquals
 import androidx.compose.ui.test.junit4.v2.createComposeRule
+import androidx.compose.ui.test.junit4.StateRestorationTester
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.onAllNodesWithText
 import androidx.compose.ui.test.onAllNodesWithTag
 import androidx.compose.ui.test.performScrollTo
 import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.performTextReplacement
+import androidx.compose.ui.test.assertTextEquals
 import androidx.compose.ui.test.onNodeWithContentDescription
 import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.unit.Density
@@ -217,6 +219,48 @@ class SettingsScreenTest {
         compose.onNodeWithText(context.getString(R.string.pref_connection_retries_summary, "9")).performScrollTo().assertIsDisplayed()
     }
 
+    @Test fun connectionRetryDraftSurvivesRestorationAndCancelResetsIt() {
+        val dialog = mutableStateOf<SettingsDialog?>(null)
+        var confirmed: String? = null
+        val restoration = StateRestorationTester(compose)
+        restoration.setContent {
+            SecuComposeTheme {
+                SettingsContent(
+                    state = initial,
+                    dialog = dialog.value,
+                    onNavigateUp = {},
+                    onToggle = { _, _ -> },
+                    onSelectDelimiter = {},
+                    onChooseFolder = {},
+                    onEditRetries = { dialog.value = SettingsDialog.Retries },
+                    onValidateRetries = { it.toIntOrNull() in 1..10 },
+                    onSaveRetries = { confirmed = it; dialog.value = null },
+                    onSelectDialog = { dialog.value = it },
+                    onDismissDialog = { dialog.value = null },
+                    onShowAbout = {},
+                )
+            }
+        }
+
+        compose.onNodeWithText(context.getString(R.string.pref_connection_retries_title))
+            .performScrollTo().performClick()
+        compose.onNodeWithTag("settings-connection-retries-input").performTextReplacement("0")
+        restoration.emulateSavedInstanceStateRestore()
+        compose.onNodeWithTag("settings-connection-retries-input").assertTextEquals("0")
+        compose.onNodeWithText(context.getString(android.R.string.ok)).assertIsNotEnabled()
+        compose.runOnIdle { assertEquals(null, confirmed) }
+
+        compose.onNodeWithText(context.getString(android.R.string.cancel)).performClick()
+        compose.onNodeWithText(context.getString(R.string.pref_connection_retries_title))
+            .performScrollTo().performClick()
+        compose.onNodeWithTag("settings-connection-retries-input").assertTextEquals("3")
+        compose.onNodeWithTag("settings-connection-retries-input").performTextReplacement("9")
+        restoration.emulateSavedInstanceStateRestore()
+        compose.onNodeWithTag("settings-connection-retries-input").assertTextEquals("9")
+        compose.onNodeWithText(context.getString(android.R.string.ok)).performClick()
+        compose.runOnIdle { assertEquals("9", confirmed) }
+    }
+
     @Test fun fuelFlowCalibrationShowsPersistedValueValidatesRangeAndReportsSelection() {
         val current = mutableStateOf(initial.copy(fuelFlowPulsesPerLitre = "16000"))
         val dialog = mutableStateOf<SettingsDialog?>(null)
@@ -265,6 +309,55 @@ class SettingsScreenTest {
         }
         compose.onNodeWithText(context.getString(R.string.pref_fuel_flow_pulses_per_litre_summary, "32000"))
             .performScrollTo().assertIsDisplayed()
+    }
+
+    @Test fun fuelFlowDraftSurvivesRestorationWithoutSavingAndCancelResetsIt() {
+        val dialog = mutableStateOf<SettingsDialog?>(null)
+        var saved: String? = null
+        val restoration = StateRestorationTester(compose)
+        restoration.setContent {
+            SecuComposeTheme {
+                SettingsContent(
+                    state = initial,
+                    dialog = dialog.value,
+                    onNavigateUp = {},
+                    onToggle = { _, _ -> },
+                    onSelectDelimiter = {},
+                    onChooseFolder = {},
+                    onEditRetries = {},
+                    onValidateRetries = { true },
+                    onSaveRetries = {},
+                    onSelectDialog = { dialog.value = it },
+                    onDismissDialog = { dialog.value = null },
+                    onShowAbout = {},
+                    onEditFuelFlowPulsesPerLitre = {
+                        dialog.value = SettingsDialog.FuelFlowPulsesPerLitre
+                    },
+                    onValidateFuelFlowPulsesPerLitre = { it.toIntOrNull() in 1_000..32_000 },
+                    onSaveFuelFlowPulsesPerLitre = { saved = it; dialog.value = null },
+                )
+            }
+        }
+
+        compose.onNodeWithTag("settings-fuel-flow-pulses-per-litre-row")
+            .performScrollTo().performClick()
+        compose.onNodeWithTag("settings-fuel-flow-pulses-per-litre-input")
+            .performTextReplacement("1000.5")
+        restoration.emulateSavedInstanceStateRestore()
+        compose.onNodeWithTag("settings-fuel-flow-pulses-per-litre-input").assertTextEquals("1000.5")
+        compose.onNodeWithText(context.getString(android.R.string.ok)).assertIsNotEnabled()
+        compose.runOnIdle { assertEquals(null, saved) }
+
+        compose.onNodeWithText(context.getString(android.R.string.cancel)).performClick()
+        compose.onNodeWithTag("settings-fuel-flow-pulses-per-litre-row")
+            .performScrollTo().performClick()
+        compose.onNodeWithTag("settings-fuel-flow-pulses-per-litre-input").assertTextEquals("16000")
+        compose.onNodeWithTag("settings-fuel-flow-pulses-per-litre-input")
+            .performTextReplacement("17000")
+        restoration.emulateSavedInstanceStateRestore()
+        compose.onNodeWithTag("settings-fuel-flow-pulses-per-litre-input").assertTextEquals("17000")
+        compose.onNodeWithText(context.getString(android.R.string.ok)).performClick()
+        compose.runOnIdle { assertEquals("17000", saved) }
     }
 
     @Test fun longExportLocationWrapsAndRowActionWorksAtNarrowWidthAndLargeFontInBothThemes() {

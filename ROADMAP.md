@@ -2,24 +2,28 @@
 
 ## Tablet UI improvements are deferred until after the first stable release
 
-Recorded on 2026-10-31 following a static tablet UI audit. The current priority is
-polishing and shipping the first stable release. The work below is a post-release
-backlog, not a release gate or a commitment to a specific version or date.
+The first polished stable release has shipped. The work below is a post-release
+backlog, not a release gate or a commitment to a specific version or date. The
+audit was recorded on 2026-10-31.
 
-The audit found gaps against Android's Adaptive ready (Tier 3) and Adaptive
-optimized (Tier 2) guidance. Findings were assigned P2 during the audit; that
-priority does not make this backlog mandatory for the first release. Tablet
-runtime behavior and overall compliance have not been verified: no tablet device
-or emulator was used, and tests were not run as part of the audit.
+The original audit found gaps against Android's Adaptive ready (Tier 3) and
+Adaptive optimized (Tier 2) guidance. Findings were assigned P2 during the audit;
+that priority does not make this backlog mandatory for the first release. The
+audit itself was static and did not use a tablet or emulator. Since then, the
+settings draft-restoration change has been checked on the Pixel Tablet AVD running
+Android 15: all eight `SettingsScreenTest` cases and the retry Activity recreation
+integration test passed. The connected test task also packaged the debug APK.
+These focused checks validate that settings change only; the full tablet
+compliance matrix below remains pending.
 
 ## Preserve unfinished settings edits across configuration changes
 
-- [ ] Preserve draft text in `RetryDialog` when the Activity is recreated, including
-  rotation and window resizing. It currently uses `remember(initialValue)` and
-  resets to the stored value after recreation.
-- [ ] Cover both connection retry count and fuel-flow pulse calibration. Verify
-  that an unfinished edit survives recreation without being saved automatically,
-  and that confirmation and cancellation retain their existing behavior.
+- [x] Preserve retry and fuel-flow draft text through Activity recreation while
+  their editors stay open. Invalid input is restored and is not saved
+  automatically.
+- [x] Cover both editors with saveable-state tests for restoration, confirmation,
+  and cancellation. Cover real Activity recreation for retries and verify the
+  preference remains unchanged until confirmation.
 
 Affected component: [SettingsScreen.kt](app/src/main/java/org/secu3/android/ui/settings/SettingsScreen.kt).
 This finding affects phones as well as tablets.

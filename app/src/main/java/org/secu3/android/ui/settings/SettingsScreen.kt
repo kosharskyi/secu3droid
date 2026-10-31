@@ -30,6 +30,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.testTag
@@ -211,6 +212,7 @@ internal fun SettingsContent(
             onValidate = onValidateRetries,
             onConfirm = onSaveRetries,
             onDismiss = onDismissDialog,
+            textFieldTestTag = "settings-connection-retries-input",
         )
         SettingsDialog.FuelFlowPulsesPerLitre -> RetryDialog(
             initialValue = state.fuelFlowPulsesPerLitre,
@@ -250,7 +252,7 @@ private fun RetryDialog(
     numericKeyboard: Boolean = false,
     textFieldTestTag: String? = null,
 ) {
-    var text by androidx.compose.runtime.remember(initialValue) { mutableStateOf(initialValue) }
+    var text by rememberSaveable(initialValue) { mutableStateOf(initialValue) }
     val valid = onValidate(text)
     AlertDialog(
         onDismissRequest = onDismiss,

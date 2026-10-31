@@ -35,12 +35,14 @@ import androidx.datastore.preferences.core.Preferences
 import androidx.compose.ui.test.assertIsOn
 import androidx.compose.ui.test.assertIsOff
 import androidx.compose.ui.test.assertIsDisplayed
+import androidx.compose.ui.test.assertTextEquals
 import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.onNodeWithContentDescription
 import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.performTextClearance
 import androidx.compose.ui.test.performTextInput
+import androidx.compose.ui.test.performTextReplacement
 import androidx.compose.ui.test.performScrollTo
 import androidx.compose.ui.test.junit4.v2.createAndroidComposeRule
 import androidx.test.platform.app.InstrumentationRegistry
@@ -104,6 +106,33 @@ class SettingsPreferencePersistenceTest {
             runBlocking { compose.activity.userPrefs.setSensorLoggerEnabled(originalValue) }
             compose.waitForIdle()
         }
+    }
+
+    @Test fun connectionRetryDraftSurvivesActivityRecreationWithoutSaving() {
+        val persisted = runBlocking {
+            compose.activity.userPrefs.settings.first().connectionRetriesText
+        }
+        val draft = ((persisted.toIntOrNull() ?: 3) + 1).toString()
+        compose.onNodeWithContentDescription("Settings icon").performClick()
+        compose.waitForIdle()
+        assertEquals(SETTINGS_ROUTE, compose.activity.rootNavigationController?.currentDestination?.route)
+        compose.onNodeWithText(compose.activity.getString(R.string.pref_connection_retries_title))
+            .performScrollTo().performClick()
+        compose.onNodeWithTag("settings-connection-retries-input").performTextReplacement(draft)
+
+        compose.activityRule.scenario.recreate()
+        compose.waitForIdle()
+        compose.onNodeWithTag("settings-connection-retries-input").assertTextEquals(draft)
+        assertEquals(
+            "An unfinished retry edit must not update the preference",
+            persisted,
+            runBlocking { compose.activity.userPrefs.settings.first().connectionRetriesText },
+        )
+
+        compose.onNodeWithText(compose.activity.getString(android.R.string.cancel)).performClick()
+        compose.onNodeWithText(compose.activity.getString(R.string.pref_connection_retries_title))
+            .performScrollTo().performClick()
+        compose.onNodeWithTag("settings-connection-retries-input").assertTextEquals(persisted)
     }
 
     @Test fun aboutDialogOpensAndDismissesWithBack() {
