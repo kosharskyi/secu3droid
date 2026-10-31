@@ -42,28 +42,30 @@ Affected components: [FirmwareRoute.kt](app/src/main/java/org/secu3/android/ui/f
 [FirmwareInfoSheet.kt](app/src/main/java/org/secu3/android/ui/firmware/FirmwareInfoSheet.kt),
 and [DiagnosticAdditionalDialogContent.kt](app/src/main/java/org/secu3/android/ui/diagnostics/DiagnosticAdditionalDialogContent.kt).
 
-## Make Dashboard usable without relying on a landscape lock
+## Keep Dashboard's landscape lock by product decision
 
-- [ ] Revisit the unconditional `SCREEN_ORIENTATION_SENSOR_LANDSCAPE` request and
-  support the available tablet window in both orientations.
-- [ ] Account for Android 16 ignoring orientation restrictions on large displays
-  for this app's current target SDK 36. Verify both platforms that honor the
-  request and platforms that ignore it.
-- [ ] Update orientation tests alongside the agreed behavior. Preserve system-bar
-  restoration, keep-screen-on policy, and connection behavior across recreation.
+Skipped by the maintainer on 2026-10-31. Dashboard is the car's instrument cluster
+and is intentionally the only screen that requests a locked landscape
+orientation. Removing `SCREEN_ORIENTATION_SENSOR_LANDSCAPE` or introducing a
+portrait Dashboard is not part of this roadmap.
 
-Affected components: [DashboardRoute.kt](app/src/main/java/org/secu3/android/ui/dashboard/DashboardRoute.kt),
-[DashboardContent.kt](app/src/main/java/org/secu3/android/ui/dashboard/DashboardContent.kt),
-and [DashboardOrientationTest.kt](app/src/androidTest/java/org/secu3/android/ui/dashboard/DashboardOrientationTest.kt).
+Android can ignore the orientation request on large displays. Record that as a
+platform compatibility consideration during validation; it does not change the
+product decision to retain the request. Preserve the existing Dashboard layout,
+orientation tests, system-bar restoration, and keep-screen-on behavior.
+
+See [Dashboard constraints](knowledge/ui/dashboard/DashboardContent.md).
 
 ## Adapt Home to available window dimensions
 
-- [ ] Replace orientation-only layout selection with a design based on available
-  window width and height. The current portrait layout has two columns; the
-  landscape layout uses fixed 220dp and 160dp columns.
-- [ ] Agree tablet grid density and card proportions before implementation, keeping
-  every destination reachable in narrow and short windows.
-- [ ] Preserve the accepted phone geometry unless a separate redesign is approved.
+- [x] Select the layout using the measured Home viewport after safe drawing
+  insets: retain the phone grid/compact columns, use three tablet columns from
+  600dp, and four from 840dp.
+- [x] Keep Dashboard across two cells and use the existing compact scrollable
+  columns below 480dp viewport height; keep tablet cards tall enough for full
+  localized labels as font scale grows.
+- [x] Preserve phone card dimensions and menu order, callbacks, dialogs, and
+  connection/exit behavior.
 
 Affected components: [HomeScreen.kt](app/src/main/java/org/secu3/android/ui/home/HomeScreen.kt)
 and [HomeScreenTest.kt](app/src/androidTest/java/org/secu3/android/ui/home/HomeScreenTest.kt).
@@ -82,7 +84,8 @@ and [SensorsScreen.kt](app/src/main/java/org/secu3/android/ui/sensors/SensorsScr
 ## Validate tablet support before claiming compliance
 
 - [ ] Run UI checks at 1024x640dp and 1280x800dp, plus their portrait counterparts,
-  and resize through narrow and short split-screen windows.
+  and resize through narrow and short split-screen windows. Dashboard retains its
+  intentional landscape request; check its platform behavior separately.
 - [ ] Exercise rotation and resizing while a numeric edit or modal is open and
   after scrolling. Verify draft text, selection, navigation, and scroll continuity.
 - [ ] Check default and enlarged font sizes, Ukrainian labels, light and dark

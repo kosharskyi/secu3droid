@@ -49,6 +49,10 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
 import androidx.compose.foundation.layout.WindowInsets
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.width
+import androidx.compose.ui.Modifier
 import androidx.compose.ui.test.onRoot
 import androidx.test.platform.app.InstrumentationRegistry
 import org.junit.Assert.assertEquals
@@ -289,12 +293,10 @@ class HomeScreenTest {
         assertTrue("Logs are in the third pair column", compose.onNodeWithTag("home-card-logs").getUnclippedBoundsInRoot().left > compose.onNodeWithTag("home-card-errors").getUnclippedBoundsInRoot().left)
     }
 
-    @Test fun configurationOrientationSelectsRenderedMenuLayout() {
-        var configuration by mutableStateOf(Configuration(context.resources.configuration).apply {
-            orientation = Configuration.ORIENTATION_PORTRAIT
-        })
+    @Test fun measuredWindowDimensionsSelectPhoneGridAndCompactColumns() {
+        var windowSize by mutableStateOf(590 to 700)
         compose.setContent {
-            CompositionLocalProvider(LocalConfiguration provides configuration) {
+            Box(Modifier.width(windowSize.first.dp).height(windowSize.second.dp)) {
                 HomeScreen(HomeScreenState(), HomeScreenActions())
             }
         }
@@ -304,11 +306,7 @@ class HomeScreenTest {
         assertTrue("Portrait dashboard is full width above the two-column grid", (dashboardGrid.right - dashboardGrid.left) > (sensorsGrid.right - sensorsGrid.left))
         assertTrue("Portrait grid cards are below the dashboard", sensorsGrid.top > dashboardGrid.top)
 
-        compose.runOnIdle {
-            configuration = Configuration(configuration).apply {
-                orientation = Configuration.ORIENTATION_LANDSCAPE
-            }
-        }
+        compose.runOnIdle { windowSize = 590 to 570 }
         val dashboardColumns = compose.onNodeWithTag("home-card-dashboard").getUnclippedBoundsInRoot()
         val sensorsColumns = compose.onNodeWithTag("home-card-sensors").getUnclippedBoundsInRoot()
         assertTrue("Landscape dashboard precedes the sensor column", sensorsColumns.left > dashboardColumns.left)
@@ -334,6 +332,88 @@ class HomeScreenTest {
         }
         compose.onNodeWithTag("home-card-settings").performScrollTo().assertIsDisplayed().performClick()
         assertEquals(listOf("settings"), called)
+    }
+
+    @Test fun measuredWindowWidthSelectsTabletColumnsAndDashboardSpan() {
+        var windowWidth by mutableStateOf(599)
+        val ukrainianConfiguration = Configuration(context.resources.configuration).apply {
+            setLocale(Locale.forLanguageTag("uk"))
+            orientation = Configuration.ORIENTATION_PORTRAIT
+        }
+        val ukrainianContext = context.createConfigurationContext(ukrainianConfiguration)
+        var darkTheme by mutableStateOf(false)
+        compose.setContent {
+            Box(Modifier.width(windowWidth.dp).height(700.dp)) {
+                CompositionLocalProvider(
+                    LocalConfiguration provides ukrainianConfiguration,
+                    LocalContext provides ukrainianContext,
+                ) {
+                    SecuComposeTheme(darkTheme = darkTheme) {
+                        HomeScreen(HomeScreenState(), HomeScreenActions())
+                    }
+                }
+            }
+        }
+
+        fun cardBounds(tag: String) = compose.onNodeWithTag("home-card-$tag").getUnclippedBoundsInRoot()
+        assertTrue("599dp keeps the phone grid", cardBounds("sensors").top > cardBounds("dashboard").top)
+
+        compose.runOnIdle { windowWidth = 600 }
+        val dashboard3 = cardBounds("dashboard")
+        val sensors3 = cardBounds("sensors")
+        val parameters3 = cardBounds("parameters")
+        assertEquals("Dashboard spans two cells plus their shared gap",
+            (sensors3.right - sensors3.left).value * 2f + 16f, (dashboard3.right - dashboard3.left).value, 1f)
+        assertEquals("Sensors fills the first row's final column", dashboard3.top.value, sensors3.top.value, 1f)
+        assertEquals("Sensors starts after the two-column Dashboard span plus one gap",
+            dashboard3.right.value + 16f, sensors3.left.value, 1f)
+        assertTrue("Parameters starts the next row", parameters3.top > sensors3.top)
+        assertEquals("A lower-row card uses the same cell width", (sensors3.right - sensors3.left).value,
+            (parameters3.right - parameters3.left).value, 1f)
+        assertEquals("Lower rows align to the same grid start", dashboard3.left.value, parameters3.left.value, 1f)
+        compose.runOnIdle { windowWidth = 800 }
+        compose.waitForIdle()
+        captureDesignScreenshot("home-auto-3-columns-light-uk.png")
+        compose.runOnIdle { darkTheme = true }
+        compose.waitForIdle()
+        captureDesignScreenshot("home-auto-3-columns-dark-uk.png")
+        compose.runOnIdle { darkTheme = false }
+
+        compose.runOnIdle { windowWidth = 839 }
+        assertTrue("839dp remains a three-column grid", cardBounds("parameters").top > cardBounds("sensors").top)
+        compose.runOnIdle { windowWidth = 840 }
+        val dashboard4 = cardBounds("dashboard")
+        val sensors4 = cardBounds("sensors")
+        val parameters4 = cardBounds("parameters")
+        assertEquals("Dashboard spans two cells plus their shared gap",
+            (sensors4.right - sensors4.left).value * 2f + 16f, (dashboard4.right - dashboard4.left).value, 1f)
+        assertEquals("Sensors and parameters share the first row", sensors4.top.value, parameters4.top.value, 1f)
+        assertEquals("All four-column tiles have aligned widths", (sensors4.right - sensors4.left).value,
+            (parameters4.right - parameters4.left).value, 1f)
+        compose.runOnIdle { windowWidth = 1024 }
+        compose.waitForIdle()
+        captureDesignScreenshot("home-auto-4-columns-light-uk.png")
+        compose.runOnIdle { darkTheme = true }
+        compose.waitForIdle()
+        captureDesignScreenshot("home-auto-4-columns-dark-uk.png")
+    }
+
+    @Test fun shortWindowUsesReachableCompactLayoutAndCanResizeBackToTabletGrid() {
+        var windowSize by mutableStateOf(840 to 440)
+        compose.setContent {
+            Box(Modifier.width(windowSize.first.dp).height(windowSize.second.dp)) {
+                HomeScreen(HomeScreenState(), HomeScreenActions())
+            }
+        }
+        val dashboard = compose.onNodeWithTag("home-card-dashboard").getUnclippedBoundsInRoot()
+        val sensors = compose.onNodeWithTag("home-card-sensors").getUnclippedBoundsInRoot()
+        assertTrue("Short windows retain the horizontally arranged compact layout", sensors.left > dashboard.left)
+        compose.onNodeWithTag("home-card-settings").performScrollTo().assertIsDisplayed()
+
+        compose.runOnIdle { windowSize = 840 to 700 }
+        val resizedDashboard = compose.onNodeWithTag("home-card-dashboard").getUnclippedBoundsInRoot()
+        val resizedSensors = compose.onNodeWithTag("home-card-sensors").getUnclippedBoundsInRoot()
+        assertEquals("Expanded window returns to four-column grid", resizedDashboard.top.value, resizedSensors.top.value, 1f)
     }
 
     @Test fun safeDrawingInsetsKeepControlsAndMenuViewportInsideTheUsableArea() {
@@ -397,6 +477,7 @@ class HomeScreenTest {
         val ukrainianContext = context.createConfigurationContext(ukrainianConfiguration)
         var darkTheme by mutableStateOf(false)
         var layout by mutableStateOf(HomeLayout.GRID)
+        var fontScale by mutableStateOf(1f)
         val destinations = listOf(
             "dashboard" to R.string.menu_dashboard,
             "sensors" to R.string.sensors,
@@ -410,6 +491,7 @@ class HomeScreenTest {
             CompositionLocalProvider(
                 LocalConfiguration provides ukrainianConfiguration,
                 LocalContext provides ukrainianContext,
+                LocalDensity provides Density(compose.density.density, fontScale),
             ) {
                 SecuComposeTheme(darkTheme = darkTheme) {
                     HomeScreen(HomeScreenState(), HomeScreenActions(), layoutOverride = layout)
@@ -460,6 +542,17 @@ class HomeScreenTest {
         compose.runOnIdle { darkTheme = false; layout = HomeLayout.LANDSCAPE_COLUMNS }
         compose.waitForIdle()
         captureDesignScreenshot("regression-home-light-columns-preview.png")
+        assertLabelsFitCards()
+        compose.runOnIdle { layout = HomeLayout.TABLET_GRID }
+        compose.waitForIdle()
+        captureDesignScreenshot("regression-home-tablet-light-uk.png")
+        assertLabelsFitCards()
+        compose.runOnIdle { darkTheme = true }
+        compose.waitForIdle()
+        captureDesignScreenshot("regression-home-tablet-dark-uk.png")
+        assertLabelsFitCards()
+        compose.runOnIdle { darkTheme = false; fontScale = 1.6f }
+        compose.waitForIdle()
         assertLabelsFitCards()
     }
 

@@ -1,3 +1,11 @@
+## Dashboard intentionally requests landscape as the car's instrument cluster
+
+Dashboard is the only screen intended to lock orientation. Keep its
+`SCREEN_ORIENTATION_SENSOR_LANDSCAPE` request; the maintainer explicitly excluded
+removing that lock and adding portrait support from the tablet roadmap. Platforms
+can ignore the request on large displays, but that compatibility behavior is not
+authorization to remove the product's landscape requirement.
+
 ## Keep primary gauges transparent over the dashboard surface
 
 Theme changes must not wrap the central gauges in their own cards. The arc and value remain directly on the dashboard background in both light and dark modes; theme colors only affect the arc, ticks, and text.

@@ -73,7 +73,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.ColorFilter
 import androidx.compose.ui.graphics.luminance
 import androidx.compose.ui.layout.ContentScale
-import androidx.compose.ui.platform.LocalConfiguration
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.platform.testTag
@@ -90,7 +90,7 @@ import org.secu3.android.connection.Connected
 import org.secu3.android.connection.InProgress
 import org.secu3.android.connection.Disconnected
 
-enum class HomeLayout { GRID, LANDSCAPE_COLUMNS }
+enum class HomeLayout { GRID, LANDSCAPE_COLUMNS, TABLET_GRID }
 
 data class HomeScreenState(
     val connectionStatus: ConnectionState = Disconnected,
@@ -140,12 +140,6 @@ fun HomeScreen(
     contentInsets: WindowInsets = WindowInsets.safeDrawing,
 ) {
     val dialog = state.dialog
-    val configuration = LocalConfiguration.current
-    val layout = layoutOverride ?: if (configuration.orientation == Configuration.ORIENTATION_LANDSCAPE) {
-        HomeLayout.LANDSCAPE_COLUMNS
-    } else {
-        HomeLayout.GRID
-    }
     val releaseTitle = stringResource(R.string.new_version_available)
     val downloadReleaseLabel = stringResource(R.string.download)
     val releaseNotesLabel = stringResource(R.string.what_s_new)
@@ -187,8 +181,15 @@ fun HomeScreen(
                     testTag = "home-ecu-status",
                 )
             }
-            if (layout == HomeLayout.LANDSCAPE_COLUMNS) {
-                Row(Modifier.weight(1f).fillMaxWidth().testTag("home-menu-viewport").horizontalScroll(rememberScrollState()).padding(start = 32.dp, end = 24.dp, bottom = 8.dp),
+            BoxWithConstraints(Modifier.weight(1f).fillMaxWidth().testTag("home-menu-viewport")) {
+                val resolvedLayout = layoutOverride ?: when {
+                    maxHeight < 480.dp -> HomeLayout.LANDSCAPE_COLUMNS
+                    maxWidth >= 600.dp -> HomeLayout.TABLET_GRID
+                    maxWidth > maxHeight + 64.dp -> HomeLayout.LANDSCAPE_COLUMNS
+                    else -> HomeLayout.GRID
+                }
+                if (resolvedLayout == HomeLayout.LANDSCAPE_COLUMNS) {
+                Row(Modifier.fillMaxSize().horizontalScroll(rememberScrollState()).padding(start = 32.dp, end = 24.dp, bottom = 8.dp),
                     horizontalArrangement = Arrangement.spacedBy(16.dp), verticalAlignment = Alignment.CenterVertically) {
                     MenuCard(menuItems.first(), Modifier.fillMaxHeight().width(220.dp), adaptIconSize = true)
                     menuItems.drop(1).chunked(2).forEachIndexed { columnIndex, pair ->
@@ -199,8 +200,33 @@ fun HomeScreen(
                         }
                     }
                 }
-            } else {
-                Column(Modifier.weight(1f).fillMaxWidth().testTag("home-menu-viewport").verticalScroll(rememberScrollState()).padding(horizontal = 32.dp, vertical = 16.dp),
+                } else if (resolvedLayout == HomeLayout.TABLET_GRID) {
+                    val columns = if (maxWidth >= 840.dp) 4 else 3
+                    val fontScale = LocalDensity.current.fontScale
+                    val tabletCardHeight = maxOf(150.dp, 116.dp + 56.dp * fontScale)
+                    val cardWidth = (maxWidth - 64.dp - 16.dp * (columns - 1)) / columns
+                    Column(
+                        Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(horizontal = 32.dp, vertical = 16.dp),
+                        verticalArrangement = Arrangement.spacedBy(16.dp),
+                    ) {
+                        Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(16.dp)) {
+                            MenuCard(menuItems.first(), Modifier.width(cardWidth * 2 + 16.dp).height(tabletCardHeight))
+                            repeat(columns - 2) { index ->
+                                val item = menuItems.getOrNull(index + 1)
+                                if (item != null) MenuCard(item, Modifier.width(cardWidth).height(tabletCardHeight))
+                                else Box(Modifier.width(cardWidth).height(tabletCardHeight))
+                            }
+                        }
+                        val remainingItems = menuItems.drop(columns - 1)
+                        remainingItems.chunked(columns).forEach { rowItems ->
+                            Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(16.dp)) {
+                                rowItems.forEach { item -> MenuCard(item, Modifier.width(cardWidth).height(tabletCardHeight)) }
+                                repeat(columns - rowItems.size) { Box(Modifier.width(cardWidth).height(tabletCardHeight)) }
+                            }
+                        }
+                    }
+                } else {
+                Column(Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(horizontal = 32.dp, vertical = 16.dp),
                     verticalArrangement = Arrangement.spacedBy(16.dp)) {
                     MenuCard(menuItems.first(), Modifier.fillMaxWidth().height(150.dp))
                     val rest = menuItems.drop(1)
@@ -211,6 +237,7 @@ fun HomeScreen(
                         }
                     }
                 }
+            }
             }
           }
           when (dialog) {
