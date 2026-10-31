@@ -19,3 +19,7 @@ Both row and checkbox use the domain state's `canSetOutput` rule. The screen als
 ## Firmware capability labels stay reactive
 
 The route collects the connection manager's nullable firmware state so a reply while diagnostics is open updates input labels and capability presentation. Clearing firmware removes stale capability. Show ADD_IO3 only outside SECU-3T, and treat ADD_IO4 as unavailable unless family and TPIC8101 capability are both known and enabled; a supported value of `0.000 V` is still a real reading.
+
+## Keep additional options inside the native dialog's measured bounds
+
+Cap the options surface at 560dp and the outer content, including its 16dp margins, at 592dp. The native Compose Dialog uses the measured content bounds for outside-tap dismissal, so a full-width wrapper would consume taps in the side gutters. Keep the options and actions in the existing vertically scrollable, 640dp-capped column for short windows.

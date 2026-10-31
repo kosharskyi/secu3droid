@@ -6,9 +6,12 @@ import androidx.compose.foundation.layout.ExperimentalLayoutApi
 import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.wrapContentHeight
+import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -44,33 +47,46 @@ internal fun DiagnosticAdditionalDialogContent(
 ) {
     var enableBlDe by rememberSaveable { mutableStateOf(initialEnableBlDe) }
     var enableTachO by rememberSaveable { mutableStateOf(initialEnableTachO) }
-    Surface(
-        modifier = Modifier.fillMaxWidth().padding(16.dp),
-        shape = RoundedCornerShape(24.dp),
-        color = MaterialTheme.colorScheme.surface,
-        border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant),
+    Box(
+        Modifier
+            .widthIn(max = 592.dp)
+            .fillMaxWidth()
+            .wrapContentHeight()
+            .padding(16.dp)
+            .testTag("diagnostic-additional-backdrop"),
+        contentAlignment = Alignment.Center,
     ) {
-        Column(
-            Modifier.fillMaxWidth().heightIn(max = 640.dp).verticalScroll(rememberScrollState()).padding(20.dp),
-            verticalArrangement = Arrangement.spacedBy(8.dp),
+        Surface(
+            modifier = Modifier
+                .widthIn(max = 560.dp)
+                .fillMaxWidth()
+                .testTag("diagnostic-additional-dialog"),
+            shape = RoundedCornerShape(24.dp),
+            color = MaterialTheme.colorScheme.surface,
+            border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant),
         ) {
-            Text(
-                stringResource(R.string.diag_bl_de_warning),
-                Modifier.fillMaxWidth().padding(bottom = 12.dp),
-                style = MaterialTheme.typography.bodyLarge,
-                fontWeight = FontWeight.Medium,
-                textAlign = TextAlign.Center,
-                color = MaterialTheme.colorScheme.onSurface,
-            )
-            DiagnosticOption(stringResource(R.string.diag_enable_bl_de), enableBlDe, "enable_bl_de", { enableBlDe = it })
-            if (showTachO) DiagnosticOption(stringResource(R.string.diag_enable_tach_o), enableTachO, "enable_tach_o", { enableTachO = it })
-            FlowRow(
-                Modifier.fillMaxWidth().padding(top = 12.dp),
-                horizontalArrangement = Arrangement.End,
+            Column(
+                Modifier.fillMaxWidth().heightIn(max = 640.dp).verticalScroll(rememberScrollState()).padding(20.dp),
                 verticalArrangement = Arrangement.spacedBy(8.dp),
             ) {
-                TextButton(onClick = onCancel) { Text(stringResource(android.R.string.cancel)) }
-                Button(modifier = Modifier.testTag("diagnostic_ok"), onClick = { onOk(enableBlDe, enableTachO) }) { Text(stringResource(android.R.string.ok)) }
+                Text(
+                    stringResource(R.string.diag_bl_de_warning),
+                    Modifier.fillMaxWidth().padding(bottom = 12.dp),
+                    style = MaterialTheme.typography.bodyLarge,
+                    fontWeight = FontWeight.Medium,
+                    textAlign = TextAlign.Center,
+                    color = MaterialTheme.colorScheme.onSurface,
+                )
+                DiagnosticOption(stringResource(R.string.diag_enable_bl_de), enableBlDe, "enable_bl_de", { enableBlDe = it })
+                if (showTachO) DiagnosticOption(stringResource(R.string.diag_enable_tach_o), enableTachO, "enable_tach_o", { enableTachO = it })
+                FlowRow(
+                    Modifier.fillMaxWidth().padding(top = 12.dp),
+                    horizontalArrangement = Arrangement.End,
+                    verticalArrangement = Arrangement.spacedBy(8.dp),
+                ) {
+                    TextButton(onClick = onCancel) { Text(stringResource(android.R.string.cancel)) }
+                    Button(modifier = Modifier.testTag("diagnostic_ok"), onClick = { onOk(enableBlDe, enableTachO) }) { Text(stringResource(android.R.string.ok)) }
+                }
             }
         }
     }

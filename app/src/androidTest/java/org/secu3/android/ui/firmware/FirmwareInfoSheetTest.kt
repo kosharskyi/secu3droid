@@ -2,11 +2,14 @@ package org.secu3.android.ui.firmware
 
 import android.content.res.Configuration
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.width
+import androidx.compose.ui.test.getUnclippedBoundsInRoot
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.semantics.SemanticsActions
 import androidx.compose.ui.text.TextLayoutResult
 import androidx.compose.ui.unit.Density
@@ -116,6 +119,21 @@ class FirmwareInfoSheetTest {
         )
         assertTrue("Firmware tag has no clipped text", !layout.hasVisualOverflow)
         assertEquals(48, tag.length)
+    }
+
+    @Test
+    fun firmwarePanelIsCenteredAtBottomAndCappedOnWideWindow() {
+        composeTestRule.setContent {
+            Box(Modifier.fillMaxSize().testTag("firmware-test-window"), contentAlignment = androidx.compose.ui.Alignment.BottomCenter) {
+                FirmwareInfoSheet(firmware = FirmwareInfoPacket(tag = "firmware"), onDismiss = {})
+            }
+        }
+
+        val window = composeTestRule.onNodeWithTag("firmware-test-window").getUnclippedBoundsInRoot()
+        val panel = composeTestRule.onNodeWithTag("firmware-sheet").getUnclippedBoundsInRoot()
+        assertTrue("Firmware panel is no wider than 640dp", (panel.right - panel.left).value <= 640f)
+        assertEquals("Firmware panel is centered", (window.left.value + window.right.value) / 2f, (panel.left.value + panel.right.value) / 2f, 1f)
+        assertTrue("Firmware panel meets the bottom edge", window.bottom.value - panel.bottom.value <= 1f)
     }
 
     @Test

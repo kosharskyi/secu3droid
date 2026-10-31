@@ -24,6 +24,7 @@ import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
@@ -68,8 +69,10 @@ internal fun FirmwareInfoSheet(
             color = MaterialTheme.colorScheme.surface,
             shape = RoundedCornerShape(topStart = 16.dp, topEnd = 16.dp),
             modifier = Modifier
+                .widthIn(max = 640.dp)
                 .fillMaxWidth()
-                .heightIn(max = maxSheetHeight),
+                .heightIn(max = maxSheetHeight)
+                .testTag("firmware-sheet"),
         ) {
             Column(
                 modifier = Modifier

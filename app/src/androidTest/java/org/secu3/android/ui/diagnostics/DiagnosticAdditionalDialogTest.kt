@@ -36,14 +36,23 @@ import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.performScrollTo
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.width
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.platform.testTag
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.ui.unit.Density
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.window.Dialog
+import androidx.compose.ui.window.DialogProperties
 import androidx.test.platform.app.InstrumentationRegistry
+import androidx.compose.ui.test.getUnclippedBoundsInRoot
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertTrue
 import org.junit.Rule
 import org.junit.Test
 import org.secu3.android.R
@@ -138,6 +147,83 @@ class DiagnosticAdditionalDialogTest {
         darkTheme.value = true
         compose.onNodeWithTag("enable_bl_de").performScrollTo().assertIsDisplayed()
         compose.onNodeWithTag("diagnostic_ok").performScrollTo().assertIsDisplayed()
+    }
+
+    @Test
+    fun dialogIsCenteredAndCappedWhileActionsRemainScrollableInShortWindow() {
+        val density = Density(compose.density.density, fontScale = 1.7f)
+        compose.setContent {
+            CompositionLocalProvider(LocalDensity provides density) {
+                SecuComposeTheme {
+                    Box(Modifier.fillMaxWidth(), contentAlignment = androidx.compose.ui.Alignment.Center) {
+                        Box(
+                            Modifier.fillMaxWidth().height(280.dp).testTag("diagnostic-test-window"),
+                            contentAlignment = androidx.compose.ui.Alignment.Center,
+                        ) {
+                            DiagnosticAdditionalDialogContent(
+                                initialEnableBlDe = false,
+                                initialEnableTachO = false,
+                                showTachO = true,
+                                onOk = { _, _ -> },
+                                onCancel = {},
+                            )
+                        }
+                    }
+                }
+            }
+        }
+
+        val window = compose.onNodeWithTag("diagnostic-test-window").getUnclippedBoundsInRoot()
+        val dialog = compose.onNodeWithTag("diagnostic-additional-dialog").getUnclippedBoundsInRoot()
+        assertTrue("Dialog is no wider than 560dp", (dialog.right - dialog.left).value <= 560f)
+        assertEquals("Dialog is centered", (window.left.value + window.right.value) / 2f, (dialog.left.value + dialog.right.value) / 2f, 1f)
+        assertTrue("Dialog remains inside the short window", dialog.top.value >= window.top.value && dialog.bottom.value <= window.bottom.value)
+        compose.onNodeWithTag("enable_bl_de").performScrollTo().assertIsDisplayed()
+        compose.onNodeWithTag("enable_tach_o").performScrollTo().assertIsDisplayed()
+        compose.onNodeWithText(context.getString(android.R.string.cancel)).performScrollTo().assertIsDisplayed()
+        compose.onNodeWithTag("diagnostic_ok").performScrollTo().assertIsDisplayed()
+    }
+
+    @Test
+    fun tapOutsideSurfaceDismissesActualWideDialog() {
+        var cancelled = false
+        compose.setContent {
+            SecuComposeTheme {
+                Box(Modifier.fillMaxSize().testTag("diagnostic-test-host"))
+                Dialog(
+                    onDismissRequest = { cancelled = true },
+                    properties = DialogProperties(usePlatformDefaultWidth = false),
+                ) {
+                    DiagnosticAdditionalDialogContent(
+                        initialEnableBlDe = false,
+                        initialEnableTachO = false,
+                        showTachO = true,
+                        onOk = { _, _ -> },
+                        onCancel = { cancelled = true },
+                    )
+                }
+            }
+        }
+
+        val host = compose.onNodeWithTag("diagnostic-test-host").getUnclippedBoundsInRoot()
+        val dialog = compose.onNodeWithTag("diagnostic-additional-dialog").getUnclippedBoundsInRoot()
+        assertTrue("Native dialog host is wider than the 560dp panel cap", host.right - host.left > 560.dp)
+        assertTrue("Capped panel leaves a side gutter", dialog.right < host.right)
+        val density = compose.density.density
+        val displayMetrics = context.resources.displayMetrics
+        val instrumentation = InstrumentationRegistry.getInstrumentation()
+        val eventTime = android.os.SystemClock.uptimeMillis()
+        val outsideX = displayMetrics.widthPixels - 8f * density
+        val outsideY = displayMetrics.heightPixels / 2f
+        instrumentation.uiAutomation.injectInputEvent(
+            android.view.MotionEvent.obtain(eventTime, eventTime, android.view.MotionEvent.ACTION_DOWN, outsideX, outsideY, 0),
+            true,
+        )
+        instrumentation.uiAutomation.injectInputEvent(
+            android.view.MotionEvent.obtain(eventTime, eventTime + 100, android.view.MotionEvent.ACTION_UP, outsideX, outsideY, 0),
+            true,
+        )
+        compose.runOnIdle { assertTrue("A side gutter tap requests cancellation", cancelled) }
     }
 
     @Test

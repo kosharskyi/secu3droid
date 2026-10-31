@@ -10,6 +10,7 @@
 package org.secu3.android.ui
 
 import android.view.KeyEvent
+import android.content.pm.ActivityInfo
 import androidx.compose.ui.test.assertIsSelected
 import androidx.compose.ui.test.assertIsNotEnabled
 import androidx.compose.ui.test.assertCountEquals
@@ -25,6 +26,7 @@ import androidx.compose.ui.test.performScrollTo
 import androidx.compose.ui.test.performTextClearance
 import androidx.compose.ui.test.performTextInput
 import androidx.compose.ui.test.onRoot
+import androidx.compose.ui.test.getUnclippedBoundsInRoot
 import androidx.compose.ui.test.performTouchInput
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.test.click
@@ -38,6 +40,7 @@ import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNotSame
 import org.junit.Assert.assertNull
 import org.junit.Assert.assertSame
+import org.junit.Assert.assertTrue
 import org.junit.Rule
 import org.junit.Test
 import org.secu3.android.R
@@ -392,6 +395,41 @@ class ParametersNavigationIntegrationTest {
             reopenedViewModel = ViewModelProvider(entry.viewModelStore, activity.defaultViewModelProviderFactory, entry.defaultViewModelCreationExtras)[org.secu3.android.ui.firmware.FirmwareViewModel::class.java]
         }
         assertNotSame(restoredViewModel, reopenedViewModel)
+    }
+
+    @Test fun firmwarePanelSideGutterDismissesOnlyDialogInLandscapeWindow() {
+        var previousOrientation = ActivityInfo.SCREEN_ORIENTATION_UNSPECIFIED
+        compose.activityRule.scenario.onActivity { activity ->
+            previousOrientation = activity.requestedOrientation
+            activity.requestedOrientation = ActivityInfo.SCREEN_ORIENTATION_LANDSCAPE
+        }
+        try {
+            compose.waitUntil(5_000) {
+                compose.activity.resources.configuration.orientation == android.content.res.Configuration.ORIENTATION_LANDSCAPE
+            }
+            val host = navigateNativeHostToHome()
+            val windowWidth = compose.activity.resources.configuration.screenWidthDp
+            assertTrue("Landscape tablet window is wider than the sheet cap", windowWidth > 640)
+            compose.activityRule.scenario.onActivity { it.openFirmware() }
+            compose.waitForIdle()
+
+            val overlayBounds = compose.onNodeWithTag("firmware-overlay").getUnclippedBoundsInRoot()
+            val panelBounds = compose.onNodeWithTag("firmware-sheet", useUnmergedTree = true).getUnclippedBoundsInRoot()
+            assertTrue("Firmware sheet leaves a side gutter on the tablet", panelBounds.right < overlayBounds.right)
+            compose.onNodeWithTag("firmware-overlay").performTouchInput {
+                click(
+                    Offset(
+                        x = (panelBounds.right.value + 8f - overlayBounds.left.value) * density,
+                        y = ((panelBounds.top.value + panelBounds.bottom.value) / 2f - overlayBounds.top.value) * density,
+                    ),
+                )
+            }
+            compose.waitForIdle()
+            assertNativeHostRestored(host, HOME_ROUTE)
+            compose.onAllNodesWithText(compose.activity.getString(R.string.firmware_information_title)).assertCountEquals(0)
+        } finally {
+            compose.activityRule.scenario.onActivity { it.requestedOrientation = previousOrientation }
+        }
     }
 
     private fun navigateNativeHostToHome(): NavHostController {

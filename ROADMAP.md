@@ -13,8 +13,11 @@ audit itself was static and did not use a tablet or emulator. Since then, the
 settings draft-restoration change has been checked on the Pixel Tablet AVD running
 Android 15: all eight `SettingsScreenTest` cases and the retry Activity recreation
 integration test passed. The connected test task also packaged the debug APK.
-These focused checks validate that settings change only; the full tablet
-compliance matrix below remains pending.
+The modal width work has also passed its firmware, diagnostics, and firmware-route
+UI checks on that AVD at its effective 1280x800dp display size, including a
+landscape side-gutter dismissal check. These focused checks cover the implemented
+settings and modal changes; the full tablet compliance matrix below remains
+pending.
 
 ## Preserve unfinished settings edits across configuration changes
 
@@ -30,14 +33,12 @@ This finding affects phones as well as tablets.
 
 ## Bound modal content width on large windows
 
-- [ ] Add an appropriate maximum content width for firmware information and the
-  additional diagnostics options. Their dialog destinations disable platform
-  default width, while their content fills the available width.
-- [ ] Verify placement, scrolling, underlying-screen context, and dismiss actions
-  on wide tablets and short split-screen windows.
+- [x] Cap firmware information at 640dp and additional diagnostics options at
+  560dp, with available-width behavior on narrow windows.
+- [x] Verify modal placement, scrolling, side-gutter dismissal, and short-window
+  action reachability on a 1280x800dp Pixel Tablet AVD.
 
-Affected components: [RootNavigation.kt](app/src/main/java/org/secu3/android/ui/RootNavigation.kt),
-[FirmwareRoute.kt](app/src/main/java/org/secu3/android/ui/firmware/FirmwareRoute.kt),
+Affected components: [FirmwareRoute.kt](app/src/main/java/org/secu3/android/ui/firmware/FirmwareRoute.kt),
 [FirmwareInfoSheet.kt](app/src/main/java/org/secu3/android/ui/firmware/FirmwareInfoSheet.kt),
 and [DiagnosticAdditionalDialogContent.kt](app/src/main/java/org/secu3/android/ui/diagnostics/DiagnosticAdditionalDialogContent.kt).
 
