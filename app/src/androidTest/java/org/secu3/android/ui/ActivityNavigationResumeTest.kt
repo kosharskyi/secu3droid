@@ -12,6 +12,7 @@ import org.secu3.android.connection.Disconnected
 import org.secu3.android.connection.Connecting
 import org.secu3.android.connection.Reconnecting
 import org.secu3.android.connection.UsbAwaitingEcu
+import org.secu3.android.ui.start.StartScreenViewModel
 
 class ActivityNavigationResumeTest {
     @Test fun queuedNavigationDrainsWhenActivityReturnsToResumed() = withActivity { scenario ->
@@ -53,27 +54,42 @@ class ActivityNavigationResumeTest {
         scenario.onActivity { assertRoute(it, HOME_ROUTE) }
     }
 
-    @Test fun connectionAdmissionFollowsTheLiveStartDestination() = withActivity { scenario ->
+    @Test fun startViewModelIgnoresBluetoothStartAfterLeavingStart() = withActivity { scenario ->
         scenario.onActivity { activity ->
-            assertEquals(true, connectionInitiationAllowed(activity))
+            val startViewModel = startViewModel(activity)
+            assertEquals(true, startViewModel.isStartRouteActive)
             activity.openSettings()
             assertRoute(activity, SETTINGS_ROUTE)
-            assertEquals(false, connectionInitiationAllowed(activity))
-            activity.openStart()
-            assertRoute(activity, START_ROUTE)
-            assertEquals(true, connectionInitiationAllowed(activity))
+            assertEquals(false, startViewModel.isStartRouteActive)
+            startViewModel.startBluetoothConnection()
+            assertEquals(false, viewModel(activity).connectionManager.isConnectionRunning)
         }
     }
 
-    @Test fun lateBluetoothPermissionCompletionCannotStartOutsideStart() = withActivity { scenario ->
+    @Test fun startViewModelDoesNotForwardUsbScanAfterLeavingStart() = withActivity { scenario ->
         scenario.onActivity { activity ->
+            val startViewModel = startViewModel(activity)
             activity.openSettings()
-            assertRoute(activity, SETTINGS_ROUTE)
-            assertEquals(false, connectionInitiationAllowed(activity))
+            val manager = viewModel(activity).connectionManager
+            val generationField = manager.javaClass.getDeclaredField("nextGeneration").apply { isAccessible = true }
+            val generationBefore = generationField.getLong(manager)
+
+            assertEquals(null, startViewModel.synchronizeUsbAttachments())
+            assertEquals(generationBefore, generationField.getLong(manager))
         }
+    }
+
+    @Test fun temporaryActivityBackgroundPreservesStartPermissionContinuations() = withActivity { scenario ->
         scenario.onActivity { activity ->
-            kotlinx.coroutines.runBlocking { viewModel(activity).connectionManager.startBtConnection() }
-            assertEquals(false, viewModel(activity).connectionManager.isConnectionRunning)
+            val startViewModel = startViewModel(activity)
+            startViewModel.pendingBluetoothPermissions = arrayOf("android.permission.BLUETOOTH_CONNECT")
+            startViewModel.markLocationSettingsLaunched()
+
+            startViewModel.onStartActivityForegrounded(false)
+
+            assertEquals(listOf("android.permission.BLUETOOTH_CONNECT"), startViewModel.pendingBluetoothPermissions.toList())
+            assertEquals(true, startViewModel.consumeLocationSettingsReturn())
+            startViewModel.onStartActivityForegrounded(true)
         }
     }
 
@@ -217,9 +233,9 @@ class ActivityNavigationResumeTest {
     }
 
     private fun viewModel(activity: MainActivity) = ViewModelProvider(activity)[MainActivityViewModel::class.java]
-    private fun connectionInitiationAllowed(activity: MainActivity): Boolean {
-        val manager = viewModel(activity).connectionManager
-        return manager.javaClass.getDeclaredField("connectionInitiationAllowed").apply { isAccessible = true }.getBoolean(manager)
+    private fun startViewModel(activity: MainActivity): StartScreenViewModel {
+        val entry = requireNotNull(activity.rootNavigationController).getBackStackEntry(START_ROUTE)
+        return ViewModelProvider(entry.viewModelStore, activity.defaultViewModelProviderFactory, entry.defaultViewModelCreationExtras)[StartScreenViewModel::class.java]
     }
     private fun assertRoute(activity: MainActivity, expected: String) = assertEquals(expected, activity.rootNavigationController?.currentDestination?.route)
     private fun idle() = InstrumentationRegistry.getInstrumentation().waitForIdleSync()

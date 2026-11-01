@@ -23,7 +23,6 @@ import javax.inject.Inject
 import org.secu3.android.connection.ConnectionFailed
 import org.secu3.android.connection.ConnectionLost
 import android.hardware.usb.UsbManager
-import android.app.PendingIntent
 import android.app.KeyguardManager
 import android.os.Build
 import org.secu3.android.R
@@ -49,9 +48,10 @@ class MainActivity : ComponentActivity() {
     internal val rootNavigationController: NavHostController? get() = rootNavController
     private var pendingUsbIntentDevice: UsbDevice? = null
     private var startUsbIntentHandler: ((UsbDevice?) -> Unit)? = null
+    private var startRouteActivityHandler: ((Boolean) -> Unit)? = null
+    private var startRouteForegroundHandler: ((Boolean) -> Unit)? = null
     private var activeComposeRoute: String? = null
     private lateinit var usbReceiver: BroadcastReceiver
-    private lateinit var usbPermissionReceiver: BroadcastReceiver
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -156,10 +156,11 @@ class MainActivity : ComponentActivity() {
             viewModel.connectionManager.onAppBackgrounded()
         }
         val foregroundAndUnlocked = lifecycle.currentState.isAtLeast(Lifecycle.State.RESUMED) && isDeviceUnlocked()
+        startRouteActivityHandler?.invoke(rootNavController?.currentDestination?.route == START_ROUTE)
+        startRouteForegroundHandler?.invoke(foregroundAndUnlocked)
         viewModel.setConnectionNavigationActive(foregroundAndUnlocked)
-        refreshConnectionInitiationAdmission()
         if (foregroundAndUnlocked) {
-            synchronizeUsbAttachments()
+            reconcileUsbAttachments()
         }
         processPendingNavigation()
         deliverPendingUsbIntent()
@@ -190,12 +191,23 @@ class MainActivity : ComponentActivity() {
                 controller.navigate(route) { launchSingleTop = true }
             }
         }
-        refreshConnectionInitiationAdmission()
+        startRouteActivityHandler?.invoke(controller.currentDestination?.route == START_ROUTE)
+        startRouteForegroundHandler?.invoke(lifecycle.currentState.isAtLeast(Lifecycle.State.RESUMED) && isDeviceUnlocked())
     }
 
     internal fun setStartUsbIntentHandler(handler: ((UsbDevice?) -> Unit)?) {
         startUsbIntentHandler = handler
         deliverPendingUsbIntent()
+    }
+
+    internal fun setStartRouteActivityHandler(handler: ((Boolean) -> Unit)?) {
+        startRouteActivityHandler = handler
+        handler?.invoke(rootNavController?.currentDestination?.route == START_ROUTE)
+    }
+
+    internal fun setStartRouteForegroundHandler(handler: ((Boolean) -> Unit)?) {
+        startRouteForegroundHandler = handler
+        handler?.invoke(lifecycle.currentState.isAtLeast(Lifecycle.State.RESUMED) && isDeviceUnlocked())
     }
 
     private fun deliverPendingUsbIntent() {
@@ -217,12 +229,11 @@ class MainActivity : ComponentActivity() {
     private fun handleUsbIntent(intent: Intent) {
         if (intent.action == ACTION_USB_DEVICE_ATTACHED) {
             val device = IntentCompat.getParcelableExtra(intent, android.hardware.usb.UsbManager.EXTRA_DEVICE, UsbDevice::class.java)
-            if (device != null && !refreshConnectionInitiationAdmission()) {
-                pendingUsbIntentDevice = device
-            } else {
-                pendingUsbIntentDevice = null
-                device?.let(::requestUsbDeviceConnection)
-            }
+            if (device != null && (rootNavController == null || rootNavController?.currentDestination?.route == START_ROUTE)) {
+                if (startUsbIntentHandler != null && lifecycle.currentState.isAtLeast(Lifecycle.State.RESUMED) && isDeviceUnlocked()) {
+                    startUsbIntentHandler?.invoke(device)
+                } else pendingUsbIntentDevice = device
+            } else pendingUsbIntentDevice = null
         }
     }
 
@@ -230,98 +241,52 @@ class MainActivity : ComponentActivity() {
         usbReceiver = object : BroadcastReceiver() {
             override fun onReceive(context: Context, intent: Intent) {
                 val device = IntentCompat.getParcelableExtra(intent, UsbManager.EXTRA_DEVICE, UsbDevice::class.java) ?: return
-                when (intent.action) {
-                    UsbManager.ACTION_USB_DEVICE_ATTACHED -> requestUsbDeviceConnection(device)
-                    UsbManager.ACTION_USB_DEVICE_DETACHED -> viewModel.connectionManager.onUsbDeviceDetached(device.deviceId)
-                }
+                if (intent.action == UsbManager.ACTION_USB_DEVICE_DETACHED) viewModel.connectionManager.onUsbDeviceDetached(device.deviceId)
             }
         }
-        usbPermissionReceiver = object : BroadcastReceiver() {
-            override fun onReceive(context: Context, intent: Intent) {
-                if (intent.action != USB_PERMISSION_ACTION) return
-                val device = IntentCompat.getParcelableExtra(intent, UsbManager.EXTRA_DEVICE, UsbDevice::class.java)
-                val token = intent.getLongExtra(EXTRA_USB_ATTEMPT_TOKEN, -1L)
-                val resultDevice = device ?: return
-                refreshConnectionInitiationAdmission()
-                viewModel.connectionManager.completeUsbPermissionRequest(
-                    device = resultDevice,
-                    token = token,
-                    permissionGranted = intent.getBooleanExtra(UsbManager.EXTRA_PERMISSION_GRANTED, false),
-                )
-            }
-        }
-        ContextCompat.registerReceiver(this, usbReceiver, IntentFilter().apply {
-            addAction(UsbManager.ACTION_USB_DEVICE_ATTACHED); addAction(UsbManager.ACTION_USB_DEVICE_DETACHED)
-        }, ContextCompat.RECEIVER_EXPORTED)
-        ContextCompat.registerReceiver(this, usbPermissionReceiver, IntentFilter(USB_PERMISSION_ACTION), ContextCompat.RECEIVER_NOT_EXPORTED)
+        ContextCompat.registerReceiver(this, usbReceiver, IntentFilter(UsbManager.ACTION_USB_DEVICE_DETACHED), ContextCompat.RECEIVER_EXPORTED)
     }
 
-    internal fun requestUsbDeviceConnection(device: UsbDevice) {
-        if (!refreshConnectionInitiationAdmission()) {
-            pendingUsbIntentDevice = device
-            return
-        }
-        viewModel.connectionManager.requestUsbConnection(device)?.let {
-            requestUsbPermission(it.device, it.token)
-        }
-    }
-
-    internal fun refreshConnectionInitiationAdmission(): Boolean {
-        val allowed = rootNavController?.currentDestination?.route == START_ROUTE && isDeviceUnlocked()
-        viewModel.connectionManager.setConnectionInitiationAllowed(allowed)
-        return allowed
-    }
-
-    private fun synchronizeUsbAttachments() {
-        viewModel.connectionManager.synchronizeUsbAttachments()?.let {
-            requestUsbPermission(it.device, it.token)
-        }
-    }
-
-    private fun requestUsbPermission(device: UsbDevice, token: Long) {
-        val usbManager = getSystemService(USB_SERVICE) as UsbManager
-        val flags = PendingIntent.FLAG_UPDATE_CURRENT or if (Build.VERSION.SDK_INT >= 31) PendingIntent.FLAG_MUTABLE else 0
-        val permissionIntent = Intent(USB_PERMISSION_ACTION).setPackage(packageName).putExtra(EXTRA_USB_ATTEMPT_TOKEN, token)
-        usbManager.requestPermission(device, PendingIntent.getBroadcast(this, token.toInt(), permissionIntent, flags))
-    }
+    private fun reconcileUsbAttachments() = viewModel.connectionManager.reconcileUsbAttachments()
 
     override fun onDestroy() {
         runCatching { unregisterReceiver(usbReceiver) }
-        runCatching { unregisterReceiver(usbPermissionReceiver) }
         super.onDestroy()
     }
 
     private companion object {
         const val ACTION_USB_DEVICE_ATTACHED = "android.hardware.usb.action.USB_DEVICE_ATTACHED"
-        const val USB_PERMISSION_ACTION = "org.secu3.android.USB_PERMISSION"
-        const val EXTRA_USB_ATTEMPT_TOKEN = "usb_attempt_token"
     }
     override fun onResume() {
         super.onResume()
         if (activeComposeRoute == DASHBOARD_ROUTE) window.addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON)
         else applyKeepScreenOnPreference()
         if (!isDeviceUnlocked()) {
+            startRouteForegroundHandler?.invoke(false)
             viewModel.onConnectionNavigationPaused()
             viewModel.connectionManager.onAppBackgrounded()
             return
         }
         viewModel.connectionManager.onAppForegrounded()
         viewModel.setConnectionNavigationActive(true)
-        refreshConnectionInitiationAdmission()
-        synchronizeUsbAttachments()
+        startRouteActivityHandler?.invoke(rootNavController?.currentDestination?.route == START_ROUTE)
+        startRouteForegroundHandler?.invoke(true)
+        reconcileUsbAttachments()
         processPendingNavigation()
     }
 
     override fun onWindowFocusChanged(hasFocus: Boolean) {
         super.onWindowFocusChanged(hasFocus)
         if (!isDeviceUnlocked()) {
+            startRouteForegroundHandler?.invoke(false)
             viewModel.onConnectionNavigationPaused()
             viewModel.connectionManager.onAppBackgrounded()
         } else if (hasFocus && lifecycle.currentState.isAtLeast(Lifecycle.State.RESUMED)) {
             viewModel.connectionManager.onAppForegrounded()
             viewModel.setConnectionNavigationActive(true)
-            refreshConnectionInitiationAdmission()
-            synchronizeUsbAttachments()
+            startRouteActivityHandler?.invoke(rootNavController?.currentDestination?.route == START_ROUTE)
+            startRouteForegroundHandler?.invoke(true)
+            reconcileUsbAttachments()
             processPendingNavigation()
             deliverPendingUsbIntent()
         }
@@ -336,6 +301,7 @@ class MainActivity : ComponentActivity() {
     }
 
     override fun onStop() {
+        if (!isChangingConfigurations) startRouteForegroundHandler?.invoke(false)
         viewModel.onConnectionNavigationPaused()
         if (!isChangingConfigurations) {
             viewModel.connectionManager.onAppBackgrounded()

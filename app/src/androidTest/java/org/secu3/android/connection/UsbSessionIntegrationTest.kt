@@ -97,6 +97,8 @@ class UsbSessionIntegrationTest {
         try {
             store.initialReadStarted.await()
             InstrumentationRegistry.getInstrumentation().runOnMainSync {
+                viewModel.onStartRouteActive(true)
+                viewModel.onStartActivityForegrounded(true)
                 viewModel.startBluetoothConnection()
                 assertTrue("preference preparation must immediately show Cancel", viewModel.uiState.value.connecting)
             }
@@ -892,27 +894,25 @@ class UsbSessionIntegrationTest {
         } finally { fixture.close() }
     }
 
-    @Test fun disabledAdmissionRejectsNewUsbAndBluetoothButKeepsStartedBluetoothRetrying() = runBlocking {
+    @Test fun explicitManagerCommandsDoNotDependOnAppVisibility() = runBlocking {
         val fixture = Fixture()
         val device = usbDevice("/dev/bus/usb/001/068", 0x0403, 0x6001)
         try {
-            val generation = fixture.selectBluetoothSessionForTest()
-            fixture.manager.setConnectionInitiationAllowed(false)
-            assertNull(fixture.manager.requestUsbConnection(device))
-            val permission = fixture.requestPermissionOrStart(device, hasPermission = false)!!
-            fixture.manager.setConnectionInitiationAllowed(false)
-            fixture.manager.completeUsbPermissionRequest(device, permission.token, permissionGranted = true)
+            fixture.manager.onAppBackgrounded()
+            val generationBeforeUsbCommand = fixture.manager.javaClass.getDeclaredField("nextGeneration")
+                .apply { isAccessible = true }.getLong(fixture.manager)
+            val permission = fixture.manager.synchronizeUsbAttachments(Result.success(listOf(device)))
+            assertNull(permission)
+            assertTrue(fixture.manager.javaClass.getDeclaredField("nextGeneration")
+                .apply { isAccessible = true }.getLong(fixture.manager) > generationBeforeUsbCommand)
             assertNull(fixture.pendingPermission())
-            assertNull(fixture.activeUsbSessionGeneration())
-
-            fixture.btDriver.fail(Reconnecting, ConnectionEvent.End.RETRYING)
-            assertEquals("BLUETOOTH", fixture.currentTransport())
-            assertEquals(Reconnecting, fixture.manager.currentConnectionState)
-            assertEquals(generation, fixture.currentConnectionGenerationForTest())
-
-            assertTrue(fixture.manager.stopConnection())
+            val generationBeforeBluetoothCommand = fixture.manager.javaClass.getDeclaredField("nextGeneration")
+                .apply { isAccessible = true }.getLong(fixture.manager)
             fixture.manager.startBtConnection()
-            assertFalse(fixture.isBluetoothRunning())
+            val generationAfterBluetoothCommand = fixture.manager.javaClass.getDeclaredField("nextGeneration")
+                .apply { isAccessible = true }.getLong(fixture.manager)
+            assertTrue(generationAfterBluetoothCommand > generationBeforeBluetoothCommand)
+            assertTrue(fixture.states.contains(Connecting))
         } finally {
             fixture.close()
         }
@@ -1025,18 +1025,14 @@ class UsbSessionIntegrationTest {
     }
 
     @SdkSuppress(minSdkVersion = 35)
-    @Test fun disabledAdmissionStillCleansUpDetachedUsbSessionWithoutStartingReplacement() = runBlocking {
+    @Test fun reconciliationCleansDetachedUsbSessionWithoutStartingReplacement() = runBlocking {
         val fixture = Fixture()
         val original = usbDevice("/dev/bus/usb/001/057", 0x1234, 0x5678)
         val replacement = usbDevice("/dev/bus/usb/001/057", 0x4321, 0x8765)
         try {
             fixture.attach(original.deviceId, original.toIdentity())
             fixture.confirmFirmware()
-            fixture.manager.setConnectionInitiationAllowed(false)
-
-            val result = fixture.manager.synchronizeUsbAttachments(Result.success(listOf(replacement)))
-
-            assertNull(result)
+            fixture.manager.reconcileUsbAttachments(Result.success(listOf(replacement)))
             assertEquals(1, fixture.disconnectionCount())
             assertEquals(Disconnected, fixture.manager.currentConnectionState)
             assertFalse(fixture.manager.isConnectionRunning)
@@ -1415,6 +1411,23 @@ class UsbSessionIntegrationTest {
         }
     }
 
+    @Test fun cancellingOldUsbPermissionTokenPreservesNewerPendingRequest() {
+        val fixture = Fixture()
+        val oldDevice = usbDevice("/dev/bus/usb/001/071", 0x0403, 0x6001)
+        val newDevice = usbDevice("/dev/bus/usb/001/072", 0x0403, 0x6001)
+        try {
+            val oldRequest = fixture.requestPermissionOrStart(oldDevice, hasPermission = false)!!
+            fixture.manager.cancelUsbPermissionRequest(oldRequest.token)
+            val newRequest = fixture.requestPermissionOrStart(newDevice, hasPermission = false)!!
+
+            fixture.manager.cancelUsbPermissionRequest(oldRequest.token)
+
+            assertSame(newRequest, fixture.pendingPermission())
+        } finally {
+            fixture.close()
+        }
+    }
+
     @Test fun staleUsbPermissionCompletionCannotClearNewerRequest() {
         val fixture = Fixture()
         val original = usbDevice("/dev/bus/usb/001/062", 0x0403, 0x6001)
@@ -1586,7 +1599,6 @@ class UsbSessionIntegrationTest {
         }
         fun foregroundOnStart() {
             manager.onAppForegrounded()
-            manager.setConnectionInitiationAllowed(true)
         }
         fun setWakeLockPreference(value: Boolean) = runBlocking { manager.onBackgroundWorkPreferenceChanged(value) }
         fun isBluetoothRunning() = bt.isRunning

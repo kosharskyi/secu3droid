@@ -30,6 +30,7 @@ import org.secu3.android.connection.UsbAwaitingEcu
 import org.secu3.android.connection.Connected
 import org.secu3.android.connection.Disconnected
 import org.secu3.android.connection.Secu3ConnectionManager
+import org.secu3.android.connection.UsbPermissionRequest
 import org.secu3.android.utils.UserPrefs
 import javax.inject.Inject
 
@@ -52,10 +53,16 @@ class StartScreenViewModel @Inject constructor(
     private val devices = mutableListOf<BluetoothDevice>()
     var pendingBluetoothPermissions: Array<String> = emptyArray()
     private val bluetoothBondGate = BluetoothBondRequestGate()
+    private var pendingBluetoothBondDevice: BluetoothDevice? = null
     private var connectionJob: Job? = null
     private var returnFromLocationSettings = false
     private var discoveryActive = false
+    private var startRouteCurrent = false
+    private var startActivityForeground = false
+    private var pendingUsbPermissionToken: Long? = null
+    private var waitingForBluetoothEnableResult = false
     val isUsbHostSupported get() = packageManager.hasSystemFeature(PackageManager.FEATURE_USB_HOST)
+    val isStartRouteActive get() = startRouteCurrent && startActivityForeground
 
     init {
         if (isUsbHostSupported) usbManager.deviceList.values.firstOrNull()?.let(::newUsbDeviceAttached)
@@ -92,7 +99,60 @@ class StartScreenViewModel @Inject constructor(
 
     fun startBtDiscovery() = startBtDiscovery(resetDevices = true)
 
+    fun markBluetoothEnableRequested() { waitingForBluetoothEnableResult = isStartRouteActive }
+
+    fun consumeBluetoothEnableRequest(): Boolean = waitingForBluetoothEnableResult.also {
+        waitingForBluetoothEnableResult = false
+    }
+
+    fun onStartRouteActive(active: Boolean) {
+        if (startRouteCurrent == active) return
+        startRouteCurrent = active
+        if (!active) {
+            cancelStartPreparation(clearPendingBond = true)
+            pendingBluetoothPermissions = emptyArray()
+            waitingForBluetoothEnableResult = false
+            returnFromLocationSettings = false
+            pendingUsbPermissionToken?.let(connectionManager::cancelUsbPermissionRequest)
+            pendingUsbPermissionToken = null
+        }
+    }
+
+    fun onStartActivityForegrounded(foreground: Boolean) {
+        if (startActivityForeground == foreground) return
+        startActivityForeground = foreground
+        if (!foreground) {
+            cancelStartPreparation(clearPendingBond = false)
+            pendingUsbPermissionToken?.let(connectionManager::cancelUsbPermissionRequest)
+            pendingUsbPermissionToken = null
+        } else refreshConnecting()
+    }
+
+    private fun cancelStartPreparation(clearPendingBond: Boolean) {
+        connectionJob?.cancel()
+        connectionJob = null
+        if (clearPendingBond) {
+            bluetoothBondGate.cancel()
+            pendingBluetoothBondDevice = null
+        }
+        cancelBtDiscovery()
+        refreshConnecting()
+    }
+
+    fun requestUsbConnection(device: UsbDevice): UsbPermissionRequest? =
+        if (isStartRouteActive) connectionManager.requestUsbConnection(device)?.also { pendingUsbPermissionToken = it.token } else null
+
+    fun synchronizeUsbAttachments(): UsbPermissionRequest? =
+        if (isStartRouteActive) connectionManager.synchronizeUsbAttachments()?.also { pendingUsbPermissionToken = it.token } else null
+
+    fun completeUsbPermissionRequest(device: UsbDevice, token: Long, permissionGranted: Boolean) {
+        if (pendingUsbPermissionToken != token) return
+        pendingUsbPermissionToken = null
+        if (isStartRouteActive) connectionManager.completeUsbPermissionRequest(device, token, permissionGranted)
+    }
+
     fun resumeBtDiscoveryIfPickerVisible(hasScanPermissions: Boolean) {
+        if (!isStartRouteActive) return
         val state = _uiState.value
         if (!state.showBluetoothDevices || state.connecting || connectionManager.isConnectionRunning ||
             connectionManager.isConnected || bluetoothBondGate.isPending() || discoveryActive || !hasScanPermissions
@@ -101,6 +161,7 @@ class StartScreenViewModel @Inject constructor(
     }
 
     private fun startBtDiscovery(resetDevices: Boolean) {
+        if (!isStartRouteActive) return
         try {
             val adapter = bluetoothAdapter ?: return
             if (!adapter.isEnabled) return
@@ -127,27 +188,35 @@ class StartScreenViewModel @Inject constructor(
         publishDevices(show = true)
     }
     fun selectBluetoothDevice(address: String) {
+        if (!isStartRouteActive) return
         val device = devices.firstOrNull { bluetoothAddress(it) == address } ?: return
         cancelBtDiscovery()
         when (bondState(device)) {
             BluetoothDevice.BOND_BONDED -> startBluetoothConnection(device)
             else -> {
                 bluetoothBondGate.begin(address)
+                pendingBluetoothBondDevice = device
                 setConnecting(true)
                 val started = try { device.createBond() } catch (_: SecurityException) { false }
-                if (!started) { bluetoothBondGate.cancel(); setConnecting(false) }
+                if (!started) { bluetoothBondGate.cancel(); pendingBluetoothBondDevice = null; setConnecting(false) }
             }
         }
         _uiState.value = _uiState.value.copy(showBluetoothDevices = false)
     }
     fun onBondStateChanged(device: BluetoothDevice) {
+        if (!isStartRouteActive) return
         val address = bluetoothAddress(device) ?: return
         if (!bluetoothBondGate.matches(address)) return
         when (bondState(device)) {
-            BluetoothDevice.BOND_BONDED -> { bluetoothBondGate.complete(address); startBluetoothConnection(device) }
+            BluetoothDevice.BOND_BONDED -> { bluetoothBondGate.complete(address); pendingBluetoothBondDevice = null; startBluetoothConnection(device) }
             BluetoothDevice.BOND_BONDING -> setConnecting(true)
-            else -> { bluetoothBondGate.complete(address); setConnecting(false) }
+            else -> { bluetoothBondGate.complete(address); pendingBluetoothBondDevice = null; setConnecting(false) }
         }
+    }
+    fun resumePendingBluetoothBond() {
+        if (!isStartRouteActive) return
+        val device = pendingBluetoothBondDevice ?: return
+        if (bondState(device) != null) onBondStateChanged(device)
     }
     fun showBluetoothRationale() { _uiState.value = _uiState.value.copy(showBluetoothRationale = true) }
     fun dismissBluetoothRationale() { _uiState.value = _uiState.value.copy(showBluetoothRationale = false) }
@@ -175,15 +244,18 @@ class StartScreenViewModel @Inject constructor(
         _uiState.value = _uiState.value.copy(usbAwaitingEcu = usbAwaitingEcu)
     }
     fun startBluetoothConnection(selectedDevice: BluetoothDevice? = null) {
+        if (!isStartRouteActive) return
         if (connectionJob?.isActive == true) return
         cancelBtDiscovery()
         val job = viewModelScope.launch(start = CoroutineStart.LAZY) {
             try {
                 selectedDevice?.let { saveDevice(it) }
                 if (isBtDeviceAddressNotSelected()) {
+                    if (!isStartRouteActive) return@launch
                     startBtDiscovery()
                     return@launch
                 }
+                if (!isStartRouteActive) return@launch
                 connectionManager.startBtConnection()
             } catch (failure: IOException) {
                 uiMessageQueue.publish(R.string.preferences_storage_error, UiMessageDuration.LONG)
@@ -202,16 +274,19 @@ class StartScreenViewModel @Inject constructor(
         connectionJob?.cancel()
         connectionJob = null
         bluetoothBondGate.cancel()
+        pendingBluetoothBondDevice = null
         discoveryActive = false
         connectionManager.stopConnection()
         refreshConnecting()
     }
     fun newUsbDeviceAttached(device: UsbDevice) {
+        if (!isStartRouteActive) return
         usbDevice = device
         _uiState.value = _uiState.value.copy(usbDeviceDetected = true)
         refreshConnecting()
     }
     fun newUsbDeviceDetached() {
+        if (!isStartRouteActive) return
         usbDevice = null
         _uiState.value = _uiState.value.copy(usbDeviceDetected = false, usbAwaitingEcu = false)
     }

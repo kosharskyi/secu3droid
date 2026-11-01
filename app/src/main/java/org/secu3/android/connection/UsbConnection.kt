@@ -100,22 +100,31 @@ open class UsbConnection @Inject constructor(
         if (granted && hasPermission && supported && !conflicts && attached != null) startConnection(attached, generation)
     }
 
-    fun cancelPendingPermission() = synchronized(connectionLock) { pendingPermission = null }
+    fun cancelPendingPermission(token: Long? = null) = synchronized(connectionLock) {
+        if (token == null || pendingPermission?.token == token) pendingPermission = null
+    }
 
     fun synchronizeAttachments(
         generation: Long,
         snapshot: Result<List<UsbDevice>> = attachedDevicesSnapshot(),
-        allowNewConnection: Boolean = true,
     ): UsbPermissionRequest? = synchronized(connectionLock) {
-        val devices = snapshot.getOrElse { return null }
+        val devices = reconcileAttachmentsLocked(snapshot) ?: return null
+        devices.firstOrNull {
+            supportsSerialConnection(it) && (hasPermission(it) || (identity(it) !in promptedAttachments && pendingPermission == null))
+        }?.let { requestAttachedDevice(it, generation) }
+    }
+
+    fun reconcileAttachments(snapshot: Result<List<UsbDevice>>) = synchronized(connectionLock) {
+        reconcileAttachmentsLocked(snapshot)
+    }
+
+    private fun reconcileAttachmentsLocked(snapshot: Result<List<UsbDevice>>): List<UsbDevice>? {
+        val devices = snapshot.getOrNull() ?: return null
         val identities = devices.map(::identity).toSet()
         activeAttachment?.takeIf { it !in identities }?.let { onDeviceDetached(it.deviceId) }
         promptedAttachments.retainAll(identities)
         if (pendingPermission?.let { identity(it.device) !in identities } == true) pendingPermission = null
-        if (!allowNewConnection) return null
-        devices.firstOrNull {
-            supportsSerialConnection(it) && (hasPermission(it) || (identity(it) !in promptedAttachments && pendingPermission == null))
-        }?.let { requestAttachedDevice(it, generation) }
+        return devices
     }
 
     fun onDeviceDetached(deviceId: Int): Boolean = synchronized(connectionLock) {

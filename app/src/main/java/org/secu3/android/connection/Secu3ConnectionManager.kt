@@ -53,7 +53,6 @@ class Secu3ConnectionManager @Inject constructor(
     /** Identifies the admitted transport request; it remains fixed while that transport retries. */
     @Volatile private var currentConnectionGeneration = 0L
     @Volatile private var currentConnection: Connection<*>? = null
-    @Volatile private var connectionInitiationAllowed = false
     @Volatile private var currentSessionGeneration = 0L
     private var lastEventSequence = -1L
     private var appVisible = false
@@ -66,12 +65,6 @@ class Secu3ConnectionManager @Inject constructor(
     private val _firmwareInfo = MutableStateFlow<FirmwareInfoPacket?>(null)
     val firmwareInfo = _firmwareInfo.asStateFlow()
     val fwInfo: FirmwareInfoPacket? get() = firmwareInfo.value
-
-    /** The UI owns route and visibility decisions; the manager applies this admission to either transport. */
-    @Synchronized fun setConnectionInitiationAllowed(allowed: Boolean) {
-        connectionInitiationAllowed = allowed && appVisible
-        if (!connectionInitiationAllowed) usbConnection.cancelPendingPermission()
-    }
 
     val receivedPacketFlow: Flow<InputPacket> = merge(
         usbConnection.receivedPacketFlow,
@@ -91,25 +84,31 @@ class Secu3ConnectionManager @Inject constructor(
     val activeUsbDeviceIdOrNull get() = usbConnection.activeDeviceId
 
     @Synchronized fun requestUsbConnection(device: UsbDevice): UsbPermissionRequest? {
-        if (!appVisible || !connectionInitiationAllowed) return null
         val request = usbConnection.requestConnection(device, ++nextGeneration)
         synchronizeUsbOutcome()
         return request
     }
 
     @Synchronized fun completeUsbPermissionRequest(device: UsbDevice, token: Long, permissionGranted: Boolean) {
-        if (!appVisible || !connectionInitiationAllowed) { usbConnection.cancelPendingPermission(); return }
         usbConnection.completePermissionRequest(device, token, permissionGranted, ++nextGeneration)
         synchronizeUsbOutcome()
     }
 
+    @Synchronized fun cancelUsbPermissionRequest(token: Long) = usbConnection.cancelPendingPermission(token)
+
     @Synchronized fun synchronizeUsbAttachments(): UsbPermissionRequest? = synchronizeUsbAttachments(usbConnection.attachedDevicesSnapshot())
     @Synchronized internal fun synchronizeUsbAttachments(snapshot: Result<List<UsbDevice>>): UsbPermissionRequest? {
-        if (!appVisible || snapshot.isFailure) return null
-        if (!connectionInitiationAllowed) usbConnection.cancelPendingPermission()
-        val request = usbConnection.synchronizeAttachments(++nextGeneration, snapshot, connectionInitiationAllowed)
+        if (snapshot.isFailure) return null
+        val request = usbConnection.synchronizeAttachments(++nextGeneration, snapshot)
         synchronizeUsbOutcome()
         return request
+    }
+
+    /** Reconcile physical attachment changes without starting a newly discovered device. */
+    @Synchronized fun reconcileUsbAttachments() = reconcileUsbAttachments(usbConnection.attachedDevicesSnapshot())
+    @Synchronized internal fun reconcileUsbAttachments(snapshot: Result<List<UsbDevice>>) {
+        usbConnection.reconcileAttachments(snapshot)
+        synchronizeUsbOutcome()
     }
 
     @Synchronized fun onUsbDeviceDetached(deviceId: Int): Boolean {
@@ -130,7 +129,7 @@ class Secu3ConnectionManager @Inject constructor(
 
     suspend fun startBtConnection() {
         val generation = synchronized(this) {
-            if (!appVisible || !connectionInitiationAllowed || usbConnection.activeDeviceId != null) return
+            if (usbConnection.activeDeviceId != null) return
             usbConnection.stopConnection()
             (++nextGeneration).also { selectConnection(btConnection, it) }
         }
@@ -166,7 +165,6 @@ class Secu3ConnectionManager @Inject constructor(
     /** Stop active work only when the app truly leaves the foreground and background work is disabled. */
     @Synchronized fun onAppBackgrounded() {
         appVisible = false
-        connectionInitiationAllowed = false
         usbConnection.cancelPendingPermission()
         if (currentConnection == null) {
             nextGeneration++

@@ -6,9 +6,9 @@
 
 Consume the typed outcome rather than inferring loss from packet silence or reconstructing retry history. Ended sessions stop logging and a continuing USB session emits `Disconnected` before retry progress. Bluetooth established-session retries publish `Reconnecting` without `Disconnected`, so feature routes remain in place. A continuing session rebinds the existing foreground-service owner to the new logical generation; a stopped transport releases that service. Initial USB handshake failures do not emit `Disconnected` because no ECU session has ended.
 
-## New transport requests require foreground Start admission
+## Connection initiation is an explicit command; attachment cleanup is separate
 
-The Activity supplies a route-neutral admission capability that the manager clamps to foreground visibility. It gates USB and Bluetooth initiation and invalidates pending USB permission when disabled, while already-admitted retries continue. USB attachment synchronization still reconciles detach and identity replacement with admission disabled. `isUsbSessionRetrying` is an owner-derived snapshot of the current USB request/session generations and published state; UI uses it with the current state to distinguish established USB recovery from an initial `UsbAwaitingEcu` handshake. Use the manager's published state here, since transport readiness can recover before its queued events are applied.
+The manager has no route or screen admission state: callers that issue `requestUsbConnection`, `synchronizeUsbAttachments`, or `startBtConnection` are responsible for deciding when a new connection is appropriate. Activity-wide detach and resume reconciliation call `reconcileUsbAttachments`, which cleans up missing/replaced devices without starting a newly discovered one. Start owns USB permission requests and only issues start commands while its route is active. Existing transport retries remain owned by their connection job. `isUsbSessionRetrying` is an owner-derived snapshot of the current USB request/session generations and published state; UI uses it with the current state to distinguish established USB recovery from an initial `UsbAwaitingEcu` handshake. Use the manager's published state here, since transport readiness can recover before its queued events are applied.
 
 ## Logger packet writes backpressure the common collector
 
