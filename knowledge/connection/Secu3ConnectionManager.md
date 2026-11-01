@@ -14,6 +14,8 @@ Consume the typed outcome rather than inferring loss from packet silence or reco
 
 Before a USB command, reconcile missing/replaced attachments and drain the old terminal outcome. Android can reuse a device ID, and both physical devices use the same `UsbConnection` instance. A failed attachment snapshot must remain non-destructive. Start cancels its pending permission request when Bluetooth starts, so a delayed grant cannot start USB later.
 
+`isUsbReady` means the selected transport is USB and its current attempt has confirmed firmware. It deliberately remains true while the physical endpoint is closed but the confirmed attempt has not yet been invalidated; UI exit/cancel rules must use this fact rather than physical endpoint availability.
+
 ## Logger packet writes backpressure the common collector
 
 Await each `SecuLogger.logPacket` call. UI sampling must not change logger delivery; fire-and-forget logging or another unlimited queue would remove this backpressure. The manager forwards parsed transport packets without caching their latest values for screens.

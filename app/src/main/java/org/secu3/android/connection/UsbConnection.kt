@@ -38,7 +38,6 @@ import java.io.IOException
 import javax.inject.Inject
 import javax.inject.Singleton
 
-internal data class UsbAttachmentIdentity(val deviceId: Int, val deviceName: String, val vendorId: Int, val productId: Int)
 internal class UsbEcuResponseTimeoutException : IOException("ECU stopped sending valid USB packets")
 
 @Singleton
@@ -46,31 +45,27 @@ open class UsbConnection @Inject constructor(
     private val usbManager: UsbManager,
     prefs: UserPrefs,
 ) : Connection<UsbSerialPort>() {
-    private var activeAttachment: UsbAttachmentIdentity? = null
-    val activeDeviceId: Int? get() = synchronized(connectionLock) { activeAttachment?.deviceId }
-    val isSessionLocked: Boolean get() = readyAttemptId != null
+    private var activeDevice: UsbDevice? = null
 
     init { observePacketCalibration(prefs) }
 
     fun attachedDevicesSnapshot(): Result<List<UsbDevice>> = runCatching { usbManager.deviceList.values.toList() }
     open fun attachedDevice(device: UsbDevice): UsbDevice? = attachedDevicesSnapshot().getOrNull()?.firstOrNull {
-        identity(it) == identity(device)
+        samePhysicalDevice(it, device)
     }
     open fun supportsSerialConnection(device: UsbDevice): Boolean = runCatching {
         UsbSerialProber.getDefaultProber().probeDevice(device)?.ports?.isNotEmpty() == true
     }.getOrDefault(false)
 
-    fun reconcileAttachments(snapshot: Result<List<UsbDevice>>) = synchronized(connectionLock) {
-        reconcileAttachmentsLocked(snapshot)
-    }
-
-    private fun reconcileAttachmentsLocked(snapshot: Result<List<UsbDevice>>) {
-        val devices = snapshot.getOrNull() ?: return
-        activeAttachment?.takeIf { active -> devices.none { identity(it) == active } }?.let { onDeviceDetached(it.deviceId) }
+    fun reconcileAttachments(snapshot: Result<List<UsbDevice>>) {
+        synchronized(connectionLock) {
+            val devices = snapshot.getOrNull() ?: return@synchronized
+            activeDevice?.takeIf { active -> devices.none { samePhysicalDevice(it, active) } }?.let { onDeviceDetached(it.deviceId) }
+        }
     }
 
     fun onDeviceDetached(deviceId: Int): Boolean = synchronized(connectionLock) {
-        if (activeDeviceId != deviceId) return false
+        if (activeDevice?.deviceId != deviceId) return false
         stopConnection()
         true
     }
@@ -80,7 +75,7 @@ open class UsbConnection @Inject constructor(
         if (!supportsSerialConnection(attached) || !hasUsbPermission(attached)) return false
         if (isRunning) return false
         launchConnection { job -> runConnection(job, attached) }
-        activeAttachment = identity(attached)
+        activeDevice = attached
         true
     }
 
@@ -88,7 +83,7 @@ open class UsbConnection @Inject constructor(
         try { usbManager.hasPermission(device) } catch (_: SecurityException) { false }
 
     override fun stopConnection() = synchronized(connectionLock) {
-        activeAttachment = null
+        activeDevice = null
         super.stopConnection()
     }
 
@@ -218,7 +213,9 @@ open class UsbConnection @Inject constructor(
         }
     }
 
-    private fun identity(device: UsbDevice) = UsbAttachmentIdentity(device.deviceId, device.deviceName, device.vendorId, device.productId)
+    private fun samePhysicalDevice(first: UsbDevice, second: UsbDevice): Boolean =
+        first.deviceId == second.deviceId && first.deviceName == second.deviceName &&
+            first.vendorId == second.vendorId && first.productId == second.productId
     private companion object {
         const val ECU_PACKET_TIMEOUT_MS = 5_000L
         const val RETRY_DELAY_MS = 2_000L

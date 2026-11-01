@@ -38,7 +38,7 @@ class HomeViewModel @Inject constructor(
     private var release: GitHubRelease? = null
     val firmwareInfo = manager.firmwareInfo
     val isConnectionRunning get() = manager.isConnectionRunning
-    val isUsbSessionLocked get() = manager.isUsbSessionLocked
+    val isUsbSessionLocked get() = manager.isUsbReady
 
     init {
         viewModelScope.launch {
@@ -50,7 +50,7 @@ class HomeViewModel @Inject constructor(
                 }
                 _uiState.value = _uiState.value.copy(
                     connectionStatus = mapped,
-                    usbSessionLocked = manager.isUsbSessionLocked,
+                    usbSessionLocked = manager.isUsbReady,
                     firmwareAvailable = status == Connected && manager.firmwareInfo.value != null,
                 )
             }

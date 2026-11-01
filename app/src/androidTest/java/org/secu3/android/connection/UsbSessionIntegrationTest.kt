@@ -150,7 +150,7 @@ class UsbSessionIntegrationTest {
             InstrumentationRegistry.getInstrumentation().runOnMainSync { viewModel.requestExit() }
             fixture.attach(96)
             fixture.confirmFirmware()
-            assertTrue(fixture.manager.isUsbSessionLocked)
+            assertTrue(fixture.manager.isUsbReady)
 
             InstrumentationRegistry.getInstrumentation().runOnMainSync {
                 viewModel.confirmExit()
@@ -184,14 +184,33 @@ class UsbSessionIntegrationTest {
             fixture.confirmFirmware()
 
             InstrumentationRegistry.getInstrumentation().runOnMainSync { viewModel.cancelConnection() }
-            assertTrue(fixture.manager.isUsbSessionLocked)
+            assertTrue(fixture.manager.isUsbReady)
             assertTrue(fixture.manager.isConnectionRunning)
 
             assertTrue(fixture.manager.stopConnection())
-            assertFalse(fixture.manager.isUsbSessionLocked)
+            assertFalse(fixture.manager.isUsbReady)
             assertFalse(fixture.manager.isConnectionRunning)
         } finally {
             InstrumentationRegistry.getInstrumentation().runOnMainSync { viewModelStore.clear() }
+            fixture.close()
+        }
+    }
+
+    @Test fun confirmedUsbReadinessSurvivesPhysicalEndpointClosureUntilStopped() = runBlocking {
+        val fixture = Fixture()
+        try {
+            fixture.attach(98)
+            fixture.confirmFirmware()
+            assertTrue(fixture.manager.isConnected)
+            assertTrue(fixture.manager.isUsbReady)
+
+            fixture.closeUsbEndpoint()
+
+            assertFalse(fixture.manager.isConnected)
+            assertTrue("readiness stays latched until attempt invalidation", fixture.manager.isUsbReady)
+            fixture.manager.stopConnection()
+            assertFalse(fixture.manager.isUsbReady)
+        } finally {
             fixture.close()
         }
     }
@@ -370,7 +389,6 @@ class UsbSessionIntegrationTest {
             assertEquals("NONE", fixture.currentTransport())
             assertEquals(Disconnected, fixture.manager.currentConnectionState)
             assertFalse(fixture.manager.isConnectionRunning)
-            assertNull(fixture.manager.activeUsbDeviceIdOrNull)
             assertEquals(0, fixture.usb.openCount)
         } finally {
             fixture.close()
@@ -388,7 +406,6 @@ class UsbSessionIntegrationTest {
             fixture.await { fixture.currentTransport() == "NONE" && !fixture.manager.isConnectionRunning }
 
             assertEquals(1, fixture.usb.openCount)
-            assertNull(fixture.manager.activeUsbDeviceIdOrNull)
             delay(2_100)
             assertEquals(1, fixture.usb.openCount)
         } finally {
@@ -541,14 +558,14 @@ class UsbSessionIntegrationTest {
             fixture.attach(108)
             fixture.confirmFirmware()
             val transportJob = fixture.activeUsbRunJob()
-            assertTrue(fixture.manager.isUsbSessionLocked)
+            assertTrue(fixture.manager.isUsbReady)
             fixture.failUsbAttempt(0L, true)
-            assertTrue("an earlier attempt cannot invalidate the confirmed retry", fixture.manager.isUsbSessionLocked)
+            assertTrue("an earlier attempt cannot invalidate the confirmed retry", fixture.manager.isUsbReady)
 
             fixture.failUsbAttempt(1L, true)
             assertEquals(UsbReconnectingAwaitingEcu, fixture.manager.currentConnectionState)
             assertNull(fixture.manager.firmwareInfo.value)
-            assertFalse(fixture.manager.isUsbSessionLocked)
+            assertFalse(fixture.manager.isUsbReady)
             assertEquals("an established ECU loss publishes Disconnected", 1, fixture.disconnectionCount())
             assertEquals("retry stays within the selected transport run", transportJob, fixture.activeUsbRunJob())
             fixture.emitUsbPacket(1L, firmwarePacket())
@@ -567,7 +584,7 @@ class UsbSessionIntegrationTest {
             fixture.failUsbAttempt(2L, false)
             assertEquals("ordinary transport failures end the recovered session", 2, fixture.disconnectionCount())
             assertNull(fixture.manager.firmwareInfo.value)
-            assertFalse(fixture.manager.isUsbSessionLocked)
+            assertFalse(fixture.manager.isUsbReady)
 
             fixture.beginUsbRetry(3L)
             fixture.confirmFirmware(3L)
@@ -667,11 +684,11 @@ class UsbSessionIntegrationTest {
 
             assertFalse(fixture.manager.onUsbDeviceDetached(72))
             assertTrue(fixture.manager.isConnected)
-            assertTrue(fixture.manager.isUsbSessionLocked)
+            assertTrue(fixture.manager.isUsbReady)
 
             assertTrue(fixture.manager.onUsbDeviceDetached(71))
             assertFalse(fixture.manager.isConnected)
-            assertFalse(fixture.manager.isUsbSessionLocked)
+            assertFalse(fixture.manager.isUsbReady)
             assertNull(fixture.manager.fwInfo)
             assertEquals(Disconnected, fixture.manager.currentConnectionState)
             fixture.manager.sendNewTask(Task.Secu3ReadSensors)
@@ -692,7 +709,7 @@ class UsbSessionIntegrationTest {
             delay(100)
 
             assertEquals(Connected, fixture.manager.currentConnectionState)
-            assertTrue(fixture.manager.isUsbSessionLocked)
+            assertTrue(fixture.manager.isUsbReady)
             assertTrue(fixture.manager.isConnected)
         } finally {
             fixture.close()
@@ -706,7 +723,7 @@ class UsbSessionIntegrationTest {
             fixture.confirmFirmware()
 
             assertTrue(fixture.manager.stopConnection())
-            assertFalse(fixture.manager.isUsbSessionLocked)
+            assertFalse(fixture.manager.isUsbReady)
             assertFalse(fixture.manager.isConnectionRunning)
             assertEquals(Disconnected, fixture.manager.currentConnectionState)
         } finally {
@@ -723,7 +740,7 @@ class UsbSessionIntegrationTest {
             fixture.manager.reconcileUsbAttachments(Result.success(emptyList()))
             assertEquals(1, fixture.disconnectionCount())
             assertEquals(Disconnected, fixture.manager.currentConnectionState)
-            assertFalse(fixture.manager.isUsbSessionLocked)
+            assertFalse(fixture.manager.isUsbReady)
 
             fixture.manager.reconcileUsbAttachments(Result.success(emptyList()))
             assertEquals("repeated synchronization does not repeat the loss", 1, fixture.disconnectionCount())
@@ -1002,13 +1019,13 @@ class UsbSessionIntegrationTest {
         val fixture = Fixture()
         val device = usbDevice("/dev/bus/usb/001/055", 0x1234, 0x5678)
         try {
-            fixture.attach(device.deviceId, device.toIdentity())
+            fixture.attach(device)
             fixture.confirmFirmware()
 
             fixture.manager.reconcileUsbAttachments(Result.success(listOf(device)))
             assertEquals(0, fixture.disconnectionCount())
             assertEquals(Connected, fixture.manager.currentConnectionState)
-            assertTrue(fixture.manager.isUsbSessionLocked)
+            assertTrue(fixture.manager.isUsbReady)
         } finally {
             fixture.close()
         }
@@ -1021,14 +1038,14 @@ class UsbSessionIntegrationTest {
         val replacement = usbDevice("/dev/bus/usb/001/056", 0x4321, 0x8765)
         try {
             assertEquals(original.deviceId, replacement.deviceId)
-            fixture.attach(original.deviceId, original.toIdentity())
+            fixture.attach(original)
             fixture.confirmFirmware()
             val oldRunJob = fixture.activeUsbRunJob()
 
             fixture.manager.reconcileUsbAttachments(Result.success(listOf(replacement)))
             assertEquals(1, fixture.disconnectionCount())
             assertEquals(Disconnected, fixture.manager.currentConnectionState)
-            assertFalse(fixture.manager.isUsbSessionLocked)
+            assertFalse(fixture.manager.isUsbReady)
             assertNull(fixture.activeUsbRunJob())
         } finally {
             fixture.close()
@@ -1041,13 +1058,13 @@ class UsbSessionIntegrationTest {
         val original = usbDevice("/dev/bus/usb/001/057", 0x1234, 0x5678)
         val replacement = usbDevice("/dev/bus/usb/001/057", 0x4321, 0x8765)
         try {
-            fixture.attach(original.deviceId, original.toIdentity())
+            fixture.attach(original)
             fixture.confirmFirmware()
             fixture.manager.reconcileUsbAttachments(Result.success(listOf(replacement)))
             assertEquals(1, fixture.disconnectionCount())
             assertEquals(Disconnected, fixture.manager.currentConnectionState)
             assertFalse(fixture.manager.isConnectionRunning)
-            assertFalse(fixture.manager.isUsbSessionLocked)
+            assertFalse(fixture.manager.isUsbReady)
         } finally {
             fixture.close()
         }
@@ -1185,7 +1202,7 @@ class UsbSessionIntegrationTest {
             fixture.manager.onAppBackgrounded()
 
             assertFalse(fixture.manager.isConnectionRunning)
-            assertFalse(fixture.manager.isUsbSessionLocked)
+            assertFalse(fixture.manager.isUsbReady)
             assertEquals(Disconnected, fixture.states.last())
         } finally {
             fixture.close()
@@ -1440,18 +1457,12 @@ class UsbSessionIntegrationTest {
 
         // The endpoint injection matches existing transport integration fixtures. It bypasses only
         // Android's physical USB opening; packet parsing, session identity and send gates are real.
-        suspend fun attach(
-            deviceId: Int,
-            activeIdentity: UsbAttachmentIdentity = UsbAttachmentIdentity(
-                deviceId = deviceId,
-                deviceName = "/test/usb/$deviceId",
-                vendorId = 0,
-                productId = 0,
-            ),
-        ) {
+        suspend fun attach(deviceId: Int) = attach(usbDevice(UsbDevice.getDeviceName(deviceId), 0, 0))
+
+        suspend fun attach(device: UsbDevice) {
             usb.nextPort = ::createPort
             usbDriver.select("USB")
-            usb.javaClass.superclass.getDeclaredField("activeAttachment").apply { isAccessible = true }.set(usb, activeIdentity)
+            usb.javaClass.superclass.getDeclaredField("activeDevice").apply { isAccessible = true }.set(usb, device)
             usbDriver.installEndpoint(createPort())
         }
 
@@ -1545,12 +1556,12 @@ class UsbSessionIntegrationTest {
                 else -> Connecting
             }
             usbDriver.fail(state, end)
-            await { manager.currentConnectionState == state && !manager.isUsbSessionLocked }
+            await { manager.currentConnectionState == state && !manager.isUsbReady }
         }
 
         fun close() {
             InstrumentationRegistry.getInstrumentation().runOnMainSync { viewModels.clear() }
-            if (!manager.stopConnection()) manager.activeUsbDeviceIdOrNull?.let(manager::onUsbDeviceDetached)
+            manager.stopConnection()
             serviceManager.stopService(SecuConnectionService::class.java)
             stateObserver.cancel()
             (managerField("scope").get(manager) as CoroutineScope).cancel()
@@ -1679,8 +1690,6 @@ class UsbSessionIntegrationTest {
             return true
         }
     }
-
-    private fun UsbDevice.toIdentity() = UsbAttachmentIdentity(deviceId, deviceName, vendorId, productId)
 
     /** Parcel layout verified against AOSP API 35 and the local API 36 source; callers require API 35+. */
     private fun usbDevice(name: String, vendorId: Int, productId: Int): UsbDevice {

@@ -149,7 +149,11 @@ internal open class StartScreenViewModel @Inject constructor(
         val devices = attachedUsbDevicesSnapshot().getOrNull() ?: return null
         reconcileUsbAttachments(devices)
         val attached = devices.firstOrNull { sameUsbAttachment(it, device) } ?: return null
-        if (!connectionManager.supportsUsbDevice(attached) || connectionManager.isConnectionRunning) return null
+        return requestUsbConnectionForAttached(attached)
+    }
+
+    private fun requestUsbConnectionForAttached(attached: UsbDevice): UsbPermissionRequest? {
+        if (!isStartRouteActive || !connectionManager.supportsUsbDevice(attached) || connectionManager.isConnectionRunning) return null
         if (pendingUsbPermission != null) return null
         if (promptedUsbAttachment?.let { !sameUsbAttachment(it, attached) } == true) promptedUsbAttachment = null
         if (hasUsbPermission(attached)) {
@@ -174,7 +178,7 @@ internal open class StartScreenViewModel @Inject constructor(
         val connectable = devices.firstOrNull(connectionManager::supportsUsbDevice)
         val selected = connectable ?: devices.first()
         newUsbDeviceAttached(selected)
-        return connectable?.let(::requestUsbConnection)
+        return connectable?.let(::requestUsbConnectionForAttached)
     }
 
     fun completeUsbPermissionRequest(device: UsbDevice, token: String, permissionGranted: Boolean) {
@@ -337,7 +341,7 @@ internal open class StartScreenViewModel @Inject constructor(
         refreshConnecting()
     }
     fun cancelConnection() {
-        if (connectionManager.isUsbSessionLocked) return
+        if (connectionManager.isUsbReady) return
         cancelPendingUsbPermission()
         connectionJob?.cancel()
         connectionJob = null

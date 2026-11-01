@@ -20,8 +20,6 @@ import android.widget.Toast
 import android.os.SystemClock
 import android.view.accessibility.AccessibilityManager
 import javax.inject.Inject
-import org.secu3.android.connection.ConnectionFailed
-import org.secu3.android.connection.ConnectionLost
 import android.hardware.usb.UsbManager
 import android.app.KeyguardManager
 import android.os.Build
@@ -97,14 +95,6 @@ class MainActivity : ComponentActivity() {
         }
         if (savedInstanceState == null) handleUsbIntent(intent)
         setContent { RootNavigation(this) }
-        lifecycleScope.launch {
-            viewModel.connectionManager.connectionStateFlow.collect { state ->
-                if ((state is ConnectionFailed || state is ConnectionLost) && viewModel.connectionManager.activeUsbDeviceIdOrNull != null) {
-                    val failureMessage = if (state is ConnectionLost) R.string.usb_connection_lost else R.string.usb_connection_failed
-                    uiMessageQueue.publish(failureMessage, org.secu3.android.ui.messages.UiMessageDuration.LONG)
-                }
-            }
-        }
         lifecycleScope.launch {
             viewModel.pendingNavigation.collect { processPendingNavigation() }
         }

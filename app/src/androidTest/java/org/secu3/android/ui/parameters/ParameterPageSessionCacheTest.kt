@@ -34,7 +34,6 @@ import org.secu3.android.connection.Connection
 import org.secu3.android.connection.Secu3ConnectionManager
 import org.secu3.android.connection.UsbConnection
 import org.secu3.android.connection.ConnectionTestDriver
-import org.secu3.android.connection.UsbAttachmentIdentity
 import org.secu3.android.connection.PacketReceiver
 import org.secu3.android.models.RawPacket
 import org.secu3.android.domain.parameters.ParameterPage
@@ -180,7 +179,6 @@ class ParameterPageSessionCacheTest {
             InstrumentationRegistry.getInstrumentation().waitForIdleSync()
             queue.onActiveScopeChanged(PARAMETERS_ROUTE)
             queue.pending.value.forEach { queue.acknowledge(it.id) }
-            usb.suppressAttachmentRescan()
 
             val expected = IntArray(67)
             val expectedTail = intArrayOf(0xCA, 0xFE)
@@ -268,7 +266,6 @@ class ParameterPageSessionCacheTest {
             assertEquals(0f, vm.adcCorrectionsControl.values.value!!.mapCorrection)
 
             val baseline = usb.writes.size
-            usb.suppressAttachmentRescan()
             assertTrue(vm.editAdc(org.secu3.android.ui.parameters.pages.compose.AdcNumber.MAP_CORRECTION, 0f))
             assertTrue(vm.setAdcCompensationMode(false))
             usb.awaitWriteCount(baseline + 2)
@@ -308,7 +305,6 @@ class ParameterPageSessionCacheTest {
             InstrumentationRegistry.getInstrumentation().waitForIdleSync()
             queue.onActiveScopeChanged(PARAMETERS_ROUTE)
             queue.pending.value.forEach { queue.acknowledge(it.id) }
-            usb.suppressAttachmentRescan()
 
             val expectedValues = MutableList(24) { 0f }
             val factorWords = IntArray(12)
@@ -414,7 +410,6 @@ class ParameterPageSessionCacheTest {
             delay(150)
 
             val baseline = usb.writes.size
-            usb.suppressAttachmentRescan()
             compose.onNodeWithTag("functions_load_source").performScrollTo().performClick()
             compose.onNodeWithTag("functions_option_4").performClick() // MAF is protocol code 4.
             val cancel = requireNotNull(vm.parameterEditSession)
@@ -449,7 +444,6 @@ class ParameterPageSessionCacheTest {
             delay(150)
 
             val baseline = usb.writes.size
-            usb.suppressAttachmentRescan()
             compose.onNodeWithTag("functions_load_source").performScrollTo().performClick()
             compose.onNodeWithTag("functions_option_4").performClick()
             val editor = requireNotNull(vm.parameterEditSession)
@@ -1526,7 +1520,6 @@ class ParameterPageSessionCacheTest {
             InstrumentationRegistry.getInstrumentation().waitForIdleSync()
             queue.onActiveScopeChanged(PARAMETERS_ROUTE)
             queue.pending.value.forEach { queue.acknowledge(it.id) }
-            usb.suppressAttachmentRescan()
 
             val expected = intArrayOf(0,32,64,0,128,1,0,0,200,255,206,5,220,42,0,50,1,12,0xA0,8,0,12,34,75,25,39,16,0xA5)
             var baseline = usb.writes.size
@@ -2078,15 +2071,13 @@ class ParameterPageSessionCacheTest {
             Connection::class.java.getDeclaredField("isRunning").apply { isAccessible = true }.setBoolean(connection, true)
             val driver = ConnectionTestDriver(manager, connection)
             driver.select("USB")
-            UsbConnection::class.java.getDeclaredField("activeAttachment").apply { isAccessible = true }
-                .set(connection, UsbAttachmentIdentity(1, "/test/parameter-session/1", 0, 0))
             driver.emit(firmwarePacket(firmwareOptions))
             try {
-                withTimeout(3_000) { while (!manager.isConnected || !manager.isUsbSessionLocked || manager.currentConnectionState != org.secu3.android.connection.Connected || manager.fwInfo == null) delay(10) }
+                withTimeout(3_000) { while (!manager.isConnected || !manager.isUsbReady || manager.currentConnectionState != org.secu3.android.connection.Connected || manager.fwInfo == null) delay(10) }
             } catch (failure: TimeoutCancellationException) {
                 throw AssertionError(
                     "Fake USB setup timed out waiting for firmware confirmation; usbConnected=${manager.isConnected}, " +
-                        "sessionLocked=${manager.isUsbSessionLocked}, connectionState=${manager.currentConnectionState}, " +
+                        "sessionLocked=${manager.isUsbReady}, connectionState=${manager.currentConnectionState}, " +
                         "firmware=${manager.fwInfo}, running=${connection.isRunning}, connected=${connection.isConnected}, selected USB",
                     failure,
                 )
@@ -2094,7 +2085,7 @@ class ParameterPageSessionCacheTest {
             return FakeUsbTransport(manager, connection, portField, driver, requests, writes, nextWriteBarrier, originalWakeLockPreference)
         } catch (failure: Throwable) {
             try {
-                manager.onUsbDeviceDetached(1)
+                manager.stopConnection()
             } finally {
                 manager.onBackgroundWorkPreferenceChanged(originalWakeLockPreference)
             }
@@ -2113,11 +2104,6 @@ class ParameterPageSessionCacheTest {
         private val originalWakeLockPreference: Boolean,
     ) {
         val isConnected get() = manager.isConnected
-
-        fun suppressAttachmentRescan() {
-            UsbConnection::class.java.getDeclaredField("activeAttachment")
-                .apply { isAccessible = true }.set(connection, null)
-        }
 
         fun send(packet: OutputPacket) = connection.sendData(packet)
 
@@ -2202,4 +2188,5 @@ class ParameterPageSessionCacheTest {
         intArrayOf('@'.code, 'y'.code) + "SECU-3 test firmware".padEnd(52).map(Char::code).toIntArray() +
             intArrayOf((options shr 24) and 0xff, (options shr 16) and 0xff, (options shr 8) and 0xff, options and 0xff, 0x10, 0, 0),
     )
+
 }

@@ -74,13 +74,12 @@ class Secu3ConnectionManager @Inject constructor(
 
     val isConnectionRunning get() = currentConnection?.isRunning == true
     val isConnected get() = currentConnection?.isReady == true
-    val isUsbSessionLocked get() = currentConnection === usbConnection && usbConnection.isSessionLocked
-    val activeUsbDeviceIdOrNull get() = usbConnection.activeDeviceId
+    val isUsbReady get() = currentConnection === usbConnection && usbConnection.readyAttemptId != null
 
     fun supportsUsbDevice(device: UsbDevice): Boolean = usbConnection.supportsSerialConnection(device)
 
     @Synchronized fun startUsbConnection(device: UsbDevice) {
-        reconcileUsbBeforeAdmission()
+        reconcileUsbAttachments(usbConnection.attachedDevicesSnapshot())
         drainCurrentConnectionOutcome()
         if (currentConnection != null) return
         if (!usbConnection.startConnection(device)) return
@@ -88,29 +87,20 @@ class Secu3ConnectionManager @Inject constructor(
         drainPendingEvents(usbConnection)
     }
 
-    private fun reconcileUsbBeforeAdmission() {
-        usbConnection.reconcileAttachments(usbConnection.attachedDevicesSnapshot())
-        synchronizeUsbOutcome()
-    }
-
     /** Reconcile physical attachment changes without starting a newly discovered device. */
     @Synchronized fun reconcileUsbAttachments() = reconcileUsbAttachments(usbConnection.attachedDevicesSnapshot())
     @Synchronized internal fun reconcileUsbAttachments(snapshot: Result<List<UsbDevice>>) {
         usbConnection.reconcileAttachments(snapshot)
-        synchronizeUsbOutcome()
+        if (usbConnection.isRunning && currentConnection !== usbConnection) {
+            selectConnection(usbConnection)
+        }
+        drainPendingEvents(usbConnection)
     }
 
     @Synchronized fun onUsbDeviceDetached(deviceId: Int): Boolean {
         val detached = usbConnection.onDeviceDetached(deviceId)
         if (detached) drainPendingEvents(usbConnection)
         return detached
-    }
-
-    private fun synchronizeUsbOutcome() {
-        if (usbConnection.isRunning && currentConnection !== usbConnection) {
-            selectConnection(usbConnection)
-        }
-        drainPendingEvents(usbConnection)
     }
 
     private fun drainCurrentConnectionOutcome() {

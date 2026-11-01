@@ -34,7 +34,7 @@ Configuration recreation retains the ViewModel, but a fresh Start entry does not
 
 ## Start Cancel respects the confirmed USB session lock
 
-`cancelConnection()` is a user action and must return before canceling preparation or calling the manager while `isUsbSessionLocked` is true. The manager's shared disconnect command is unconditional, so this UI check is required even when the Start route has a stale connecting snapshot.
+`cancelConnection()` is a user action and must return before canceling preparation or calling the manager while the manager's USB readiness fact is true. The manager's shared disconnect command is unconditional, so this UI check is required even when the Start route has a stale connecting snapshot. Readiness follows firmware-confirmed attempt state and remains latched until invalidation, even if the physical endpoint has just closed.
 
 ## Connected navigation belongs to the Activity ViewModel
 
