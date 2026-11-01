@@ -24,6 +24,10 @@ Bluetooth permission requirements are owned by `BluetoothPermissionPolicy`. Conn
 
 Only an active Start route in a foreground, unlocked Activity initiates new USB or Bluetooth work. Leaving Start cancels its unfinished pairing, permission and Bluetooth-preparation callbacks, without stopping a connection already established by the manager; callbacks recheck route activity after suspending preference/address validation. Temporary backgrounding cancels active preparation but preserves pending pairing, permission and location-settings continuations while Start remains current, deferring external results until foreground resume and reconciling the pending bond state. Start scans the USB device list on entry/resume, so it does not need to retain attach broadcasts received on feature routes. The Activity still handles detach globally and reconciles missed detach/replacement without starting a device. `UsbConnection` owns device identity, permission de-duplication, result validation and unlimited open/firmware retries; route cleanup cancels only the permission token issued by that Start ViewModel. USB retries do not use the Bluetooth retry preference, and no manual action or cable replug is needed after a transient failure or return from background.
 
+## Start Cancel respects the confirmed USB session lock
+
+`cancelConnection()` is a user action and must return before canceling preparation or calling the manager while `isUsbSessionLocked` is true. The manager's shared disconnect command is unconditional, so this UI check is required even when the Start route has a stale connecting snapshot.
+
 ## Connected navigation belongs to the Activity ViewModel
 
 The shared status collector handles both Bluetooth and USB Home transitions. StartRoute must not react to a replayed Connected independently, because two navigation owners can consume the same recovery while a permission dialog pauses the Activity.

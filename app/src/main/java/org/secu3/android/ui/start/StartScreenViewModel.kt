@@ -274,6 +274,7 @@ class StartScreenViewModel @Inject constructor(
         refreshConnecting()
     }
     fun cancelConnection() {
+        if (connectionManager.isUsbSessionLocked) return
         connectionJob?.cancel()
         connectionJob = null
         bluetoothBondGate.cancel()

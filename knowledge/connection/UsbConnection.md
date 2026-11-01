@@ -6,13 +6,9 @@ Only a valid firmware-info packet confirms each USB attempt. Opening plus initia
 
 `UsbConnection` owns opening, handshake, reading, timeout and retry. Keep full attachment identity across failures so a device reusing the Android device ID cannot evade detach reconciliation. Initial open failure reports `Connecting`; initial firmware timeout reports `UsbAwaitingEcu`. Failure after firmware confirmation emits RETRYING; generic recovery reports `UsbReconnecting`, while ECU silence or a retry handshake timeout reports `UsbReconnectingAwaitingEcu`. Preserve an ECU-awaiting status across attempts while ignition guidance applies; repeated generic I/O failures alone must not enable that guidance. Physical detach emits STOPPED, even while retrying after an ECU timeout.
 
-## The admission hook runs only when USB is ready to start
-
-Invoke `beforeStart` after attachment, support and permission checks succeed, immediately before launching USB work. It lets the manager disconnect an existing transport without repeating USB admission rules. The hook is synchronous inside the start-capable manager command, which already holds the manager lock before the USB lock; transport workers must never invoke it. Pending permissions and rejected requests do not call it.
-
 ## USB permission history belongs to a physical attachment
 
-Keep at most one pending request. A denied result frees its slot but retains prompt history until detach or a successful device-list snapshot proves removal. Resume must recheck Android permission because the system attach chooser may grant access independently. Revalidate identity, support and platform permission when completing a request. Start owns the permission continuation and cancels its specific token when leaving the route; the manager does not know route state. A real background transition may clear pending permission, while a dialog pause alone does not stop transport work.
+Keep at most one pending request. A denied result frees its slot but retains prompt history until detach or a successful device-list snapshot proves removal. Resume must recheck Android permission because the system attach chooser may grant access independently. Revalidate identity, support and platform permission when completing a request. Start owns the permission continuation and cancels its specific token when leaving the route; the manager does not know route state. Starting Bluetooth or disconnecting clears any pending USB permission, so a delayed result cannot start USB after another lifecycle action. A real background transition may clear pending permission, while a dialog pause alone does not stop transport work.
 
 ## An unavailable USB snapshot is not an empty attachment list
 

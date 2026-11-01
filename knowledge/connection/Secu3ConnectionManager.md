@@ -6,13 +6,11 @@
 
 Consume the typed outcome rather than inferring loss from packet silence or reconstructing retry history. Established losses stop logging and continuing USB work emits `Disconnected` before retry progress. Bluetooth established retries publish `Reconnecting` without `Disconnected`, so feature routes remain in place. Initial USB handshake failures do not emit `Disconnected`.
 
-## Connection initiation is an explicit command; attachment cleanup is separate
+## New transport commands are admitted only after the selected transport ends
 
-The manager has no route or screen admission state: callers that issue `requestUsbConnection`, `synchronizeUsbAttachments`, or `startBtConnection` are responsible for deciding when a new connection is appropriate. Activity-wide detach and resume reconciliation call `reconcileUsbAttachments`, which cleans up missing/replaced devices without starting a newly discovered one. Start owns USB permission requests and only issues start commands while its route is active. Existing transport retries remain owned by their connection job. USB recovery is expressed by `UsbReconnecting` or `UsbReconnectingAwaitingEcu`; consumers must not reconstruct it from an initial handshake status or a transport-history flag.
+`requestUsbConnection`, `synchronizeUsbAttachments` and `startBtConnection` do not replace an active or retrying `currentConnection`. Before rejecting a command, drain that connection's queued terminal outcomes so a pending `STOPPED` can release the slot. USB attachment reconciliation remains separate and may end a detached or physically replaced session before the same synchronization command admits a replacement. Activity-wide reconciliation only cleans up; it never starts a device. Start owns USB permission requests and only issues start commands while its route is active. Existing transport retries remain owned by their connection job. USB recovery is expressed by `UsbReconnecting` or `UsbReconnectingAwaitingEcu`; consumers must not reconstruct it from an initial handshake status or a transport-history flag.
 
-Before a start-capable USB command, reconcile missing/replaced attachments and drain the old terminal outcome before admitting its replacement. Android can reuse a device ID, and both physical devices use the same `UsbConnection` instance. Starting the replacement first would clear the old queue before its logger and service were stopped. A failed attachment snapshot must remain non-destructive.
-
-USB calls its synchronous `beforeStart` hook only after authoritative attachment, support and permission checks admit a start. The manager uses that hook to stop the previous transport and consume its disconnect before USB launches. Permission prompts and rejected USB requests must not interrupt an existing Bluetooth connection. Explicit Bluetooth restart likewise passes through an actual disconnect.
+Before a start-capable USB command, reconcile missing/replaced attachments and drain the old terminal outcome. Android can reuse a device ID, and both physical devices use the same `UsbConnection` instance. A failed attachment snapshot must remain non-destructive. Pending USB permission is canceled when Bluetooth starts, so a delayed grant cannot start USB later.
 
 ## Logger packet writes backpressure the common collector
 
@@ -32,7 +30,7 @@ Unknown policy stays unknown until DataStore succeeds; a later storage failure r
 
 ## The foreground service follows statuses and never controls the transport
 
-Request the service only when background work is enabled and the published status is `Connected`, `Reconnecting`, `UsbReconnecting` or `UsbReconnectingAwaitingEcu`. Initial `Connecting` and `UsbAwaitingEcu` do not request it. Every `Disconnected` stops it; a following USB retry status can start it again. Transport replacement first disconnects and stops the service, then a new confirmed connection starts it when enabled.
+Request the service only when background work is enabled and the published status is `Connected`, `Reconnecting`, `UsbReconnecting` or `UsbReconnectingAwaitingEcu`. Initial `Connecting` and `UsbAwaitingEcu` do not request it. Every `Disconnected` stops it; a following USB retry status can start it again. A later confirmed connection starts it when enabled.
 
 The injected `ServiceManager` only issues Android service commands. It has no connection policy, owner tokens or ECU identity. Service destruction performs local foreground cleanup without calling the connection manager. A service-start failure must leave transport/status intact and allow a later reconciliation to retry; it must not terminate the outcome collector. Unknown preference policy preserves the current request only while the status remains eligible, never after a disconnect.
 

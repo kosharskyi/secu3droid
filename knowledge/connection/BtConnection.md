@@ -1,6 +1,6 @@
 ## Bluetooth preparation is owned by the cancellable transport job
 
-Read the selected bonded MAC address before retrying, and retain it throughout that job. The suspending start method waits for preparation, propagates storage failure, and cancels only the job it started when its caller is canceled. A canceled older caller must not stop a replacement job. A USB replacement stops this job, including a preference read that has not completed yet. UI device selection and preference persistence remain in their existing owners.
+Read the selected bonded MAC address before retrying, and retain it throughout that job. The suspending start method waits for preparation, propagates storage failure, and cancels only the job it started when its caller is canceled. A canceled older caller must not stop another job. New USB commands do not replace this selected connection; UI device selection and preference persistence remain in their existing owners.
 
 ## Bluetooth retries preserve their existing policy
 

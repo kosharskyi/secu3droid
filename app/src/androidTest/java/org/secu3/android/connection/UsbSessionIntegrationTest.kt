@@ -129,7 +129,7 @@ class UsbSessionIntegrationTest {
         }
     }
 
-    @Test fun homeDoesNotPublishNavigationWhenConfirmedUsbStopIsRejected() = runBlocking {
+    @Test fun homeExitKeepsConfirmedUsbSessionLocked() = runBlocking {
         val context = InstrumentationRegistry.getInstrumentation().targetContext
         val fixture = Fixture()
         val appPrefsFixture = IsolatedUserPrefs(context, "home-usb-exit-${UUID.randomUUID()}")
@@ -147,19 +147,52 @@ class UsbSessionIntegrationTest {
         val viewModelStore = ViewModelStore()
         InstrumentationRegistry.getInstrumentation().runOnMainSync { viewModelStore.put("home", viewModel) }
         try {
+            InstrumentationRegistry.getInstrumentation().runOnMainSync { viewModel.requestExit() }
             fixture.attach(96)
             fixture.confirmFirmware()
             assertTrue(fixture.manager.isUsbSessionLocked)
-            assertFalse(fixture.manager.stopConnection())
 
             InstrumentationRegistry.getInstrumentation().runOnMainSync {
                 viewModel.confirmExit()
-                assertFalse("a rejected confirmed-USB stop must not request Start navigation", viewModel.returnToStart.value)
+                assertFalse("Home must keep the confirmed USB session locked", viewModel.returnToStart.value)
             }
+            assertTrue(fixture.manager.isConnectionRunning)
         } finally {
             InstrumentationRegistry.getInstrumentation().runOnMainSync { viewModelStore.clear() }
             fixture.close()
             appPrefsFixture.close()
+        }
+    }
+
+    @Test fun startCancelHonorsUsbSessionLockButManagerDisconnectAlwaysStops() = runBlocking {
+        val context = InstrumentationRegistry.getInstrumentation().targetContext
+        val fixture = Fixture()
+        val viewModel = StartScreenViewModel(
+            fixture.prefs,
+            context.getSystemService(Context.BLUETOOTH_SERVICE) as BluetoothManager,
+            context.getSystemService(Context.LOCATION_SERVICE) as LocationManager,
+            fixture.manager,
+            context.packageManager,
+            context.getSystemService(Context.USB_SERVICE) as UsbManager,
+            BluetoothPermissionPolicy(),
+            UiMessageQueue(),
+        )
+        val viewModelStore = ViewModelStore()
+        InstrumentationRegistry.getInstrumentation().runOnMainSync { viewModelStore.put("start", viewModel) }
+        try {
+            fixture.attach(97)
+            fixture.confirmFirmware()
+
+            InstrumentationRegistry.getInstrumentation().runOnMainSync { viewModel.cancelConnection() }
+            assertTrue(fixture.manager.isUsbSessionLocked)
+            assertTrue(fixture.manager.isConnectionRunning)
+
+            assertTrue(fixture.manager.stopConnection())
+            assertFalse(fixture.manager.isUsbSessionLocked)
+            assertFalse(fixture.manager.isConnectionRunning)
+        } finally {
+            InstrumentationRegistry.getInstrumentation().runOnMainSync { viewModelStore.clear() }
+            fixture.close()
         }
     }
 
@@ -590,7 +623,6 @@ class UsbSessionIntegrationTest {
 
             fixture.confirmFirmware()
             assertNotNull(fixture.manager.fwInfo)
-            assertFalse(fixture.manager.stopConnection())
             fixture.manager.sendNewTask(Task.Secu3ReadSensors)
             fixture.await { fixture.writes.size == 1 }
 
@@ -628,18 +660,16 @@ class UsbSessionIntegrationTest {
         }
     }
 
-    @Test fun confirmedUsbRemainsLockedUntilRetryCleanupWhenEndpointCloses() = runBlocking {
+    @Test fun managerDisconnectStopsConfirmedUsbSession() = runBlocking {
         val fixture = Fixture()
         try {
             fixture.attach(82)
             fixture.confirmFirmware()
 
-            synchronized(fixture.manager) {
-                fixture.closeUsbEndpoint()
-                assertTrue(fixture.manager.isUsbSessionLocked)
-                assertFalse(fixture.manager.isConnected)
-                assertFalse(fixture.manager.stopConnection())
-            }
+            assertTrue(fixture.manager.stopConnection())
+            assertFalse(fixture.manager.isUsbSessionLocked)
+            assertFalse(fixture.manager.isConnectionRunning)
+            assertEquals(Disconnected, fixture.manager.currentConnectionState)
         } finally {
             fixture.close()
         }
@@ -844,6 +874,52 @@ class UsbSessionIntegrationTest {
             assertNull(fixture.pendingPermission())
             fixture.manager.startBtConnection()
             assertTrue(fixture.states.contains(Connecting))
+        } finally {
+            fixture.close()
+        }
+    }
+
+    @Test fun pendingUsbPermissionIsCancelledWhenBluetoothStarts() = runBlocking {
+        val context = InstrumentationRegistry.getInstrumentation().targetContext
+        val addressKey = stringPreferencesKey(context.getString(org.secu3.android.R.string.pref_bluetooth_device_address_key))
+        val store = DelayedPreferencesDataStore(mutablePreferencesOf(addressKey to "02:00:00:00:00:01"))
+        val fixture = Fixture(delayedStore = store)
+        val device = usbDevice("/dev/bus/usb/001/068", 0x0403, 0x6001)
+        try {
+            val request = fixture.requestPermissionOrStart(device, hasPermission = false)
+            assertNotNull(request)
+            assertSame(request, fixture.pendingPermission())
+
+            val btStart = launch(start = CoroutineStart.UNDISPATCHED) { fixture.manager.startBtConnection() }
+            store.initialReadStarted.await()
+
+            assertNull(fixture.pendingPermission())
+            assertEquals("BLUETOOTH", fixture.currentTransport())
+            fixture.manager.completeUsbPermissionRequest(device, request!!.token, permissionGranted = true)
+            assertNull(fixture.activeUsbRunJob())
+
+            store.releaseInitialRead.complete(Unit)
+            btStart.join()
+            assertNull(fixture.activeUsbRunJob())
+        } finally {
+            fixture.close()
+        }
+    }
+
+    @Test fun usbAdmissionDoesNotReplaceAnActiveBluetoothConnection() = runBlocking {
+        val fixture = Fixture()
+        val device = usbDevice("/dev/bus/usb/001/069", 0x0403, 0x6001)
+        try {
+            fixture.selectBluetoothSessionForTest()
+            fixture.btDriver.publish(Connected)
+            val stateBeforeRequest = fixture.manager.currentConnectionState
+
+            assertNull(fixture.manager.synchronizeUsbAttachments(Result.success(listOf(device))))
+
+            assertNull(fixture.pendingPermission())
+            assertEquals(stateBeforeRequest, fixture.manager.currentConnectionState)
+            assertTrue(fixture.manager.isConnectionRunning)
+            assertNull(fixture.activeUsbRunJob())
         } finally {
             fixture.close()
         }
@@ -1070,12 +1146,11 @@ class UsbSessionIntegrationTest {
         }
     }
 
-    @Test fun backgroundPolicyStopBypassesUsbManualStopGuardAndPublishesDisconnected() = runBlocking {
+    @Test fun backgroundPolicyStopsConfirmedUsbAndPublishesDisconnected() = runBlocking {
         val fixture = Fixture()
         try {
             fixture.attach(95)
             fixture.confirmFirmware()
-            assertFalse(fixture.manager.stopConnection())
 
             fixture.manager.onAppBackgrounded()
 
@@ -1099,7 +1174,7 @@ class UsbSessionIntegrationTest {
 
             fixture.confirmFirmware()
             assertTrue(fixture.manager.isConnected)
-            assertFalse(fixture.manager.stopConnection())
+            assertTrue(fixture.manager.stopConnection())
         } finally {
             fixture.close()
         }
@@ -1451,10 +1526,10 @@ class UsbSessionIntegrationTest {
 
         fun requestPermissionOrStart(device: UsbDevice, hasPermission: Boolean): UsbPermissionRequest? = synchronized(manager) {
             val method = UsbConnection::class.java.getDeclaredMethod(
-                "requestPermissionOrStart", UsbDevice::class.java, UsbAttachmentIdentity::class.java, Boolean::class.javaPrimitiveType, Function0::class.java,
+                "requestPermissionOrStart", UsbDevice::class.java, UsbAttachmentIdentity::class.java, Boolean::class.javaPrimitiveType,
             ).apply { isAccessible = true }
             val identity = UsbAttachmentIdentity(device.deviceId, device.deviceName, device.vendorId, device.productId)
-            val result = method.invoke(usb, device, identity, hasPermission, {}) as UsbPermissionRequest?
+            val result = method.invoke(usb, device, identity, hasPermission) as UsbPermissionRequest?
             Secu3ConnectionManager::class.java.getDeclaredMethod("synchronizeUsbOutcome").apply { isAccessible = true }.invoke(manager)
             return result
         }
@@ -1471,9 +1546,9 @@ class UsbSessionIntegrationTest {
             val method = UsbConnection::class.java.getDeclaredMethod(
                 "completePendingPermission", UsbDevice::class.java, Long::class.javaPrimitiveType,
                 Boolean::class.javaPrimitiveType, UsbDevice::class.java, Boolean::class.javaPrimitiveType,
-                Boolean::class.javaPrimitiveType, Boolean::class.javaPrimitiveType, Function0::class.java,
+                Boolean::class.javaPrimitiveType, Boolean::class.javaPrimitiveType,
             ).apply { isAccessible = true }
-            method.invoke(usb, device, token, permissionGranted, attachedDevice, hasPermission, supported, conflictsWithActiveDevice, {})
+            method.invoke(usb, device, token, permissionGranted, attachedDevice, hasPermission, supported, conflictsWithActiveDevice)
             Secu3ConnectionManager::class.java.getDeclaredMethod("synchronizeUsbOutcome").apply { isAccessible = true }.invoke(manager)
         }
 

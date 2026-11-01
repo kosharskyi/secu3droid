@@ -17,8 +17,7 @@ internal class ConnectionTestDriver(
 
     fun select(transport: String): Job = synchronized(manager) {
         require(transport == if (connection is UsbConnection) "USB" else "BLUETOOTH")
-        Secu3ConnectionManager::class.java.getDeclaredMethod("disconnectForTransportChange")
-            .apply { isAccessible = true }.invoke(manager)
+        manager.stopConnection()
         (field(Connection::class.java, "connectionJob").get(connection) as? Job)?.cancel()
         clearFirmware()
         val runJob = Job()

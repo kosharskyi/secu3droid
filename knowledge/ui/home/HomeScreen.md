@@ -28,6 +28,6 @@ Home shares the fixed toolbar status slot and state colors with feature screens,
 
 A confirmed USB session hides the Exit action and consumes system Back while Home is active. Feature navigation remains available, and the Activity returns to StartScreen when an established USB session ends, including ECU silence while the adapter remains attached.
 
-## Home navigates only after the manager accepts the stop
+## Home checks the confirmed USB session lock before requesting disconnect
 
-The manager rechecks the USB session lock when Home confirms an exit. If a USB handshake confirms between the UI snapshot and that request, the manager rejects the stop; keep the exit flow pending state clear and do not navigate to StartScreen. The ViewModel publishes its single UI navigation flag only when `stopConnection()` returns true. Accepted exits let the manager stop the transport, logger and foreground service as one operation.
+The Home ViewModel gates both exit requests and their confirmation on `isUsbSessionLocked`, because the manager's shared disconnect command always stops the selected transport. If a USB handshake confirms after an exit dialog was opened, confirmation leaves the session running and does not navigate. An accepted exit asks the manager to stop the transport, logger and foreground service as one operation.

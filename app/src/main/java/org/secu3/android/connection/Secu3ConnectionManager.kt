@@ -79,14 +79,21 @@ class Secu3ConnectionManager @Inject constructor(
 
     @Synchronized fun requestUsbConnection(device: UsbDevice): UsbPermissionRequest? {
         reconcileUsbBeforeAdmission()
-        val request = usbConnection.requestConnection(device, ::disconnectForTransportChange)
+        drainCurrentConnectionOutcome()
+        if (currentConnection != null) return null
+        val request = usbConnection.requestConnection(device)
         synchronizeUsbOutcome()
         return request
     }
 
     @Synchronized fun completeUsbPermissionRequest(device: UsbDevice, token: Long, permissionGranted: Boolean) {
         reconcileUsbBeforeAdmission()
-        usbConnection.completePermissionRequest(device, token, permissionGranted, ::disconnectForTransportChange)
+        drainCurrentConnectionOutcome()
+        if (currentConnection != null) {
+            usbConnection.cancelPendingPermission(token)
+            return
+        }
+        usbConnection.completePermissionRequest(device, token, permissionGranted)
         synchronizeUsbOutcome()
     }
 
@@ -98,7 +105,9 @@ class Secu3ConnectionManager @Inject constructor(
         // Apply detach cleanup before this same call admits a replacement USB run.
         usbConnection.reconcileAttachments(snapshot)
         synchronizeUsbOutcome()
-        val request = usbConnection.synchronizeAttachments(snapshot, ::disconnectForTransportChange)
+        drainCurrentConnectionOutcome()
+        if (currentConnection != null) return null
+        val request = usbConnection.synchronizeAttachments(snapshot)
         synchronizeUsbOutcome()
         return request
     }
@@ -128,10 +137,15 @@ class Secu3ConnectionManager @Inject constructor(
         drainPendingEvents(usbConnection)
     }
 
+    private fun drainCurrentConnectionOutcome() {
+        currentConnection?.let(::drainPendingEvents)
+    }
+
     suspend fun startBtConnection() = coroutineScope {
         val start = synchronized(this@Secu3ConnectionManager) {
-            if (usbConnection.activeDeviceId != null) return@coroutineScope
-            disconnectForTransportChange()
+            drainCurrentConnectionOutcome()
+            if (currentConnection != null) return@coroutineScope
+            usbConnection.cancelPendingPermission()
             launch(start = CoroutineStart.UNDISPATCHED) { btConnection.startConnection() }
                 .also { selectConnection(btConnection); drainPendingEvents(btConnection) }
         }
@@ -139,8 +153,6 @@ class Secu3ConnectionManager @Inject constructor(
     }
 
     private fun selectConnection(connection: Connection<*>) {
-        val replacingConnection = currentConnection != null
-        if (replacingConnection) secuLogger.stopLogging()
         currentConnection = connection
         _firmwareInfo.value = null
         publishConnectionState(Connecting)
@@ -148,23 +160,16 @@ class Secu3ConnectionManager @Inject constructor(
         drainPendingEvents(connection)
     }
 
-    /** A transport change is a real disconnect before the new transport is admitted. */
-    private fun disconnectForTransportChange() {
-        val previous = currentConnection ?: return
-        previous.stopConnection()
-        drainPendingEvents(previous)
-        if (currentConnection === previous) {
-            currentConnection = null
-            _firmwareInfo.value = null
-            secuLogger.stopLogging()
-            publishConnectionState(Disconnected)
-            reconcileConnectionService()
-        }
-    }
-
     @Synchronized fun stopConnection(): Boolean {
-        if (currentConnection?.allowsManualDisconnect == false) return false
-        return stopConnectionInternal()
+        usbConnection.cancelPendingPermission()
+        currentConnection?.let { active ->
+            active.stopConnection()
+            drainPendingEvents(active)
+        }
+        if (currentConnection != null || currentConnectionState != Disconnected || _firmwareInfo.value != null) {
+            finishConnection()
+        }
+        return true
     }
 
     /** UI reports visibility; the manager applies the shared USB/Bluetooth background policy. */
@@ -179,7 +184,7 @@ class Secu3ConnectionManager @Inject constructor(
         usbConnection.cancelPendingPermission()
         if (currentConnection == null) return
         if (backgroundWorkEnabled.value != false) return
-        stopConnectionInternal()
+        stopConnection()
     }
 
     /** Preference changes update service use immediately without ending a live connection. */
@@ -215,23 +220,6 @@ class Secu3ConnectionManager @Inject constructor(
         }
     }
 
-    @Synchronized private fun stopConnectionInternal(): Boolean {
-        currentConnection?.let { active ->
-            active.stopConnection()
-            drainPendingEvents(active)
-        }
-        currentConnection = null
-        _firmwareInfo.value = null
-        usbConnection.stopConnection()
-        btConnection.stopConnection()
-        drainPendingEvents(usbConnection)
-        drainPendingEvents(btConnection)
-        secuLogger.stopLogging()
-        publishConnectionState(Disconnected)
-        stopConnectionService()
-        return true
-    }
-
     fun sendNewTask(task: Task) = sendOutPacket(task.getPacket())
     fun sendOutPacket(packet: OutputPacket) {
         currentConnection?.takeIf { it.isReady }?.sendData(packet)
@@ -241,10 +229,10 @@ class Secu3ConnectionManager @Inject constructor(
         if (connection !== currentConnection) return
         _firmwareInfo.value = event.firmware
         if (event.end != null) {
-            secuLogger.stopLogging()
             if (event.end == ConnectionEvent.End.STOPPED) {
-                currentConnection = null
-                stopConnectionService()
+                finishConnection()
+            } else {
+                secuLogger.stopLogging()
             }
             if (connection !== btConnection || event.end == ConnectionEvent.End.STOPPED) {
                 publishConnectionState(Disconnected)
@@ -259,6 +247,14 @@ class Secu3ConnectionManager @Inject constructor(
         if (currentConnectionState == state) return
         currentConnectionState = state
         _connectionState.tryEmit(state)
+    }
+
+    private fun finishConnection() {
+        currentConnection = null
+        _firmwareInfo.value = null
+        secuLogger.stopLogging()
+        publishConnectionState(Disconnected)
+        reconcileConnectionService()
     }
 
     init {
@@ -283,7 +279,7 @@ class Secu3ConnectionManager @Inject constructor(
 
     private fun applyBackgroundWorkPolicy(enabled: Boolean) {
         if (!enabled && !appVisible && currentConnection != null) {
-            stopConnectionInternal()
+            stopConnection()
         } else {
             reconcileConnectionService()
         }

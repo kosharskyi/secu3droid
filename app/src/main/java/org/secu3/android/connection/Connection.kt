@@ -53,8 +53,6 @@ abstract class Connection<E : Any> {
     val isConnected: Boolean
         get() = synchronized(endpointLock) { endpoint?.let(::isEndpointOpen) == true }
     val isReady: Boolean get() = synchronized(connectionLock) { readyAttemptId != null && isConnected }
-    open val allowsManualDisconnect: Boolean get() = true
-
     /** A one-shot response cannot cross a reconnect, even on the same transport. */
     fun receivedPacketFlow(onSubscribed: () -> Unit): Flow<InputPacket> = flow {
         val attempt = activeAttemptId ?: return@flow awaitCancellation()
