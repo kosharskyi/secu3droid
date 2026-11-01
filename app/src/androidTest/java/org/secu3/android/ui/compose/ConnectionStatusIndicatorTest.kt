@@ -23,7 +23,8 @@ import org.secu3.android.R
 import org.secu3.android.connection.Connected
 import org.secu3.android.connection.ConnectionState
 import org.secu3.android.connection.Disconnected
-import org.secu3.android.connection.InProgress
+import org.secu3.android.connection.Connecting
+import org.secu3.android.connection.Reconnecting
 import org.secu3.android.connection.UsbAwaitingEcu
 
 class ConnectionStatusIndicatorTest {
@@ -40,7 +41,9 @@ class ConnectionStatusIndicatorTest {
         }
 
         compose.onNodeWithContentDescription(context.getString(R.string.home_connection_connected)).assertExists()
-        compose.runOnIdle { state.value = InProgress }
+        compose.runOnIdle { state.value = Connecting }
+        compose.onNodeWithContentDescription(context.getString(R.string.home_connection_connecting)).assertExists()
+        compose.runOnIdle { state.value = Reconnecting }
         compose.onNodeWithContentDescription(context.getString(R.string.home_connection_connecting)).assertExists()
         compose.runOnIdle { state.value = UsbAwaitingEcu }
         compose.onNodeWithContentDescription(context.getString(R.string.home_connection_connecting)).assertExists()

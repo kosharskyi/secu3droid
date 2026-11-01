@@ -9,7 +9,8 @@ import org.junit.Test
 import org.secu3.android.connection.Connected
 import org.secu3.android.connection.ConnectionState
 import org.secu3.android.connection.Disconnected
-import org.secu3.android.connection.InProgress
+import org.secu3.android.connection.Connecting
+import org.secu3.android.connection.Reconnecting
 import org.secu3.android.connection.UsbAwaitingEcu
 
 class ActivityNavigationResumeTest {
@@ -34,7 +35,7 @@ class ActivityNavigationResumeTest {
         scenario.onActivity { assertRoute(it, START_ROUTE) }
     }
 
-    @Test fun connectedSupersedesQueuedStartBeforeResume() = withActivity { scenario ->
+    @Test fun latestConnectedOnlyNavigatesHomeFromStart() = withActivity { scenario ->
         scenario.onActivity { it.openSettings() }
         scenario.moveToState(Lifecycle.State.STARTED)
         scenario.onActivity { disconnect(it) }
@@ -43,7 +44,45 @@ class ActivityNavigationResumeTest {
         idle()
 
         scenario.moveToState(Lifecycle.State.RESUMED)
+        scenario.onActivity { assertRoute(it, SETTINGS_ROUTE) }
+    }
+
+    @Test fun explicitHomeNavigationWorksFromFeatureRoute() = withActivity { scenario ->
+        scenario.onActivity { it.openSettings(); it.openHome() }
+        idle()
         scenario.onActivity { assertRoute(it, HOME_ROUTE) }
+    }
+
+    @Test fun connectionAdmissionFollowsTheLiveStartDestination() = withActivity { scenario ->
+        scenario.onActivity { activity ->
+            assertEquals(true, connectionInitiationAllowed(activity))
+            activity.openSettings()
+            assertRoute(activity, SETTINGS_ROUTE)
+            assertEquals(false, connectionInitiationAllowed(activity))
+            activity.openStart()
+            assertRoute(activity, START_ROUTE)
+            assertEquals(true, connectionInitiationAllowed(activity))
+        }
+    }
+
+    @Test fun lateBluetoothPermissionCompletionCannotStartOutsideStart() = withActivity { scenario ->
+        scenario.onActivity { activity ->
+            activity.openSettings()
+            assertRoute(activity, SETTINGS_ROUTE)
+            assertEquals(false, connectionInitiationAllowed(activity))
+        }
+        scenario.onActivity { activity ->
+            kotlinx.coroutines.runBlocking { viewModel(activity).connectionManager.startBtConnection() }
+            assertEquals(false, viewModel(activity).connectionManager.isConnectionRunning)
+        }
+    }
+
+    @Test fun bluetoothReconnectingKeepsFeatureRoute() = withActivity { scenario ->
+        scenario.onActivity { publish(it, Connected) }
+        idle()
+        scenario.onActivity { it.openSettings(); publish(it, Reconnecting) }
+        idle()
+        scenario.onActivity { assertRoute(it, SETTINGS_ROUTE) }
     }
 
     @Test fun handledDisconnectedDoesNotPullUserBackAfterRecreation() = withActivity { scenario ->
@@ -82,7 +121,7 @@ class ActivityNavigationResumeTest {
         scenario.onActivity { assertRoute(it, START_ROUTE) }
     }
 
-    @Test fun rapidLossAndRecoveryKeepsOnlyTheLatestPendingDestination() = withActivity { scenario ->
+    @Test fun rapidLossAndRecoveryUsesOnlyLatestStateAfterResume() = withActivity { scenario ->
         scenario.onActivity { it.openSettings() }
         scenario.moveToState(Lifecycle.State.STARTED)
         scenario.onActivity { activity ->
@@ -94,7 +133,7 @@ class ActivityNavigationResumeTest {
         idle()
         scenario.moveToState(Lifecycle.State.RESUMED)
         idle()
-        scenario.onActivity { assertRoute(it, HOME_ROUTE) }
+        scenario.onActivity { assertRoute(it, SETTINGS_ROUTE) }
     }
 
     @Test fun queuedDisconnectedNavigationSurvivesActivityRecreation() = withActivity { scenario ->
@@ -104,7 +143,7 @@ class ActivityNavigationResumeTest {
         idle()
         scenario.onActivity { activity ->
             assertRoute(activity, SETTINGS_ROUTE)
-            assertEquals(START_ROUTE, viewModel(activity).pendingNavigation.value)
+            assertEquals(null, viewModel(activity).pendingNavigation.value)
         }
 
         scenario.recreate()
@@ -116,7 +155,7 @@ class ActivityNavigationResumeTest {
         }
     }
 
-    @Test fun lossBeforeResumeCancelsQueuedHome() = withActivity { scenario ->
+    @Test fun usbHandshakeStatusAfterResumeDoesNotInferAnEstablishedLoss() = withActivity { scenario ->
         scenario.onActivity { it.openSettings() }
         scenario.moveToState(Lifecycle.State.STARTED)
         scenario.onActivity { publish(it, Connected) }
@@ -124,11 +163,11 @@ class ActivityNavigationResumeTest {
         scenario.onActivity { publish(it, Disconnected); publish(it, UsbAwaitingEcu) }
         idle()
         scenario.moveToState(Lifecycle.State.RESUMED)
-        scenario.onActivity { assertRoute(it, START_ROUTE) }
+        scenario.onActivity { assertRoute(it, SETTINGS_ROUTE) }
     }
 
     @Test fun initialUsbHandshakeTimeoutDoesNotNavigateAwayFromSettings() = withActivity { scenario ->
-        scenario.onActivity { it.openSettings(); publish(it, InProgress); publish(it, UsbAwaitingEcu) }
+        scenario.onActivity { it.openSettings(); publish(it, Connecting); publish(it, UsbAwaitingEcu) }
         idle()
         scenario.onActivity { assertRoute(it, SETTINGS_ROUTE) }
     }
@@ -147,7 +186,7 @@ class ActivityNavigationResumeTest {
         scenario.moveToState(Lifecycle.State.STARTED)
         scenario.onActivity { publish(it, Connected) }
         idle()
-        scenario.onActivity { publish(it, InProgress) }
+        scenario.onActivity { publish(it, Connecting) }
         idle()
         scenario.moveToState(Lifecycle.State.RESUMED)
         scenario.onActivity { assertRoute(it, SETTINGS_ROUTE) }
@@ -167,7 +206,7 @@ class ActivityNavigationResumeTest {
     }
 
     private fun disconnect(activity: MainActivity) {
-        publish(activity, InProgress)
+        publish(activity, Connecting)
         publish(activity, Disconnected)
     }
 
@@ -178,6 +217,10 @@ class ActivityNavigationResumeTest {
     }
 
     private fun viewModel(activity: MainActivity) = ViewModelProvider(activity)[MainActivityViewModel::class.java]
+    private fun connectionInitiationAllowed(activity: MainActivity): Boolean {
+        val manager = viewModel(activity).connectionManager
+        return manager.javaClass.getDeclaredField("connectionInitiationAllowed").apply { isAccessible = true }.getBoolean(manager)
+    }
     private fun assertRoute(activity: MainActivity, expected: String) = assertEquals(expected, activity.rootNavigationController?.currentDestination?.route)
     private fun idle() = InstrumentationRegistry.getInstrumentation().waitForIdleSync()
 }

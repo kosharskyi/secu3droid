@@ -62,7 +62,7 @@ import org.junit.Test
 import org.secu3.android.R
 import org.secu3.android.connection.Connected
 import org.secu3.android.connection.ConnectionState
-import org.secu3.android.connection.InProgress
+import org.secu3.android.connection.Connecting
 import org.secu3.android.ui.compose.SecuComposeTheme
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.Density
@@ -109,7 +109,7 @@ class HomeScreenTest {
         compose.runOnIdle { firmwareAvailable = true }
         compose.onNodeWithContentDescription(context.getString(R.string.home_connection_connected_firmware)).performClick()
         assertEquals(1, opened)
-        compose.runOnIdle { status = InProgress }
+        compose.runOnIdle { status = Connecting }
         compose.onNodeWithContentDescription(context.getString(R.string.home_connection_connecting)).assertIsDisplayed()
     }
 

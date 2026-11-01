@@ -80,6 +80,7 @@ class BtConnection @Inject constructor(
 
     private suspend fun runConnection(job: Job, address: String) {
         var attempts = 0
+        var established = false
         while (isCurrent(job)) {
             val limit = try { prefs.settings.first().connectionRetries } catch (failure: IOException) {
                 currentCoroutineContext().ensureActive()
@@ -94,9 +95,9 @@ class BtConnection @Inject constructor(
                 return
             }
             val attempt = beginAttempt(job) ?: return
-            publishState(job, InProgress)
+            publishState(job, if (established) Reconnecting else Connecting)
             attempts++
-            if (attempts > 1) publishState(job, ConnectionAttempt(attempts))
+            if (attempts > 1 && !established) publishState(job, ConnectionAttempt(attempts))
             val socket = try { connectToDevice(job, address) } catch (failure: IOException) {
                 currentCoroutineContext().ensureActive()
                 if (!isCurrent(job)) return
@@ -107,13 +108,14 @@ class BtConnection @Inject constructor(
             if (!isCurrent(job)) return
             requestFirmware()
             markConnected(job, attempt)
+            established = true
             try {
                 readSocket(job, socket, attempt)
                 if (isCurrent(job)) throw IOException("Bluetooth socket closed")
             } catch (failure: IOException) {
                 currentCoroutineContext().ensureActive()
                 if (!isCurrent(job)) return
-                finishAttempt(job, InProgress, ConnectionEvent.End.RETRYING)
+                finishAttempt(job, Reconnecting, ConnectionEvent.End.RETRYING)
                 attempts = 0
             }
         }

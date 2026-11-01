@@ -4,7 +4,7 @@ Only a valid firmware-info packet confirms each USB attempt. Opening plus initia
 
 ## The attachment remains admitted while unlimited USB attempts run
 
-`UsbConnection` owns opening, handshake, reading, timeout and retry. Keep full attachment identity across failures so a device reusing the Android device ID cannot evade detach reconciliation. An initial open or handshake failure has no ended logical session. Failure after firmware confirmation emits RETRYING; the manager handles the common ended-session consequences. Physical detach emits STOPPED, even while retrying after an ECU timeout.
+`UsbConnection` owns opening, handshake, reading, timeout and retry. Keep full attachment identity across failures so a device reusing the Android device ID cannot evade detach reconciliation. An initial open or handshake failure has no ended logical session and reports `Connecting`. Failure after firmware confirmation emits RETRYING; the manager handles the common ended-session consequences, and generic retry progress reports `Reconnecting`. Preserve `UsbAwaitingEcu` across retries while ignition guidance applies; it is distinct from both connection phases. Physical detach emits STOPPED, even while retrying after an ECU timeout.
 
 ## USB permission history belongs to a physical attachment
 
@@ -12,4 +12,4 @@ Keep at most one pending request. A denied result frees its slot but retains pro
 
 ## An unavailable USB snapshot is not an empty attachment list
 
-Device-list query failure preserves admission and pending permission. A successful snapshot handles a missed detach before admitting an eligible replacement. Probe driver support and choose a serial port before opening the Android USB connection, avoiding a resource that cannot be owned by any port.
+Device-list query failure preserves admission and pending permission. A successful snapshot handles a missed detach before admitting an eligible replacement. Route admission can disable new connection starts without disabling snapshot cleanup, so detached or replaced devices still release their transport resources on feature routes. Probe driver support and choose a serial port before opening the Android USB connection, avoiding a resource that cannot be owned by any port.

@@ -33,7 +33,8 @@ import androidx.compose.ui.unit.dp
 import org.secu3.android.R
 import org.secu3.android.connection.Connected
 import org.secu3.android.connection.ConnectionState
-import org.secu3.android.connection.InProgress
+import org.secu3.android.connection.Connecting
+import org.secu3.android.connection.Reconnecting
 import org.secu3.android.connection.Disconnected
 import org.secu3.android.connection.UsbAwaitingEcu
 
@@ -49,7 +50,7 @@ fun ConnectionStatusIndicator(
 ) {
     @StringRes val labelId = when (connectionState) {
         Connected -> R.string.home_connection_connected
-        InProgress -> R.string.home_connection_connecting
+        Connecting, Reconnecting -> R.string.home_connection_connecting
         UsbAwaitingEcu -> R.string.home_connection_connecting
         Disconnected -> R.string.home_connection_disconnected
         else -> R.string.connection_status_unknown
@@ -57,7 +58,7 @@ fun ConnectionStatusIndicator(
     val palette = LocalSecuPalette.current
     val indicatorColor = when (connectionState) {
         Connected -> palette.success
-        InProgress -> palette.warning
+        Connecting, Reconnecting -> palette.warning
         UsbAwaitingEcu -> palette.warning
         Disconnected -> MaterialTheme.colorScheme.error
         else -> MaterialTheme.colorScheme.secondary

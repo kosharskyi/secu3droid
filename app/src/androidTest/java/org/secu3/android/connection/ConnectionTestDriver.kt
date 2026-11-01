@@ -30,7 +30,7 @@ internal class ConnectionTestDriver(
         set("isRunning", true)
         set("nextAttemptId", 1L)
         set("activeAttemptId", 1L)
-        set("currentConnectionState", InProgress)
+        set("currentConnectionState", Connecting)
         Secu3ConnectionManager::class.java.getDeclaredMethod("selectConnection", Connection::class.java, Long::class.javaPrimitiveType)
             .apply { isAccessible = true }.invoke(manager, connection, generation)
         if (connection is BtConnection) publish(Connected)
@@ -42,7 +42,7 @@ internal class ConnectionTestDriver(
         set("activeAttemptId", attempt)
         set("nextAttemptId", attempt)
         clearFirmware()
-        if (connection.currentConnectionState != UsbAwaitingEcu) set("currentConnectionState", InProgress)
+        if (connection.currentConnectionState != UsbAwaitingEcu) set("currentConnectionState", Connecting)
     }
     suspend fun emit(raw: RawPacket, attempt: Long = connection.activeAttemptId ?: 1L) = connection.receivePacket(attempt, raw)
 

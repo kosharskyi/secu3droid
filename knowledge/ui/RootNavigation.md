@@ -28,11 +28,15 @@ The Settings route asks for notification permission only after the user enables 
 
 The system may ask to open an already visible app independently of its `requestPermission` dialog. A denied permission result releases the one pending prompt slot but retains that attachment's prompt history. Recheck platform permission on a new attach intent and on resume; once access is granted, the manager retries open and firmware handshake without an attachment-level attempt limit. The permission request token and payload are owned together by `UsbConnection`, while detach or resume reconciliation invalidates missing attachments.
 
-## Connection navigation is retained across pause and Activity recreation
+## Connection admission follows the live Start destination
 
-`MainActivityViewModel` observes the connection-state stream once for its lifetime and owns the single pending navigation route. `Connected` queues Home for either transport; `Disconnected` or final `ConnectionTimeout` queues Start. Retaining the collector and acknowledged queue across Activity recreation prevents replayed statuses from interrupting a feature route. StartRoute must not independently navigate on Connected.
+The Activity refreshes a route-neutral manager capability from the actual NavController destination before handling USB attach/permission callbacks or starting Bluetooth. New USB and Bluetooth initiation is allowed only while Start is the active foreground, unlocked route. Attach events arriving elsewhere are deferred until Start; route entry and resume reconcile the attached-device snapshot. Snapshot reconciliation still runs on feature routes so missed detach and identity replacement clean up active USB resources even when starting a replacement is disallowed. Manager admission defaults closed until the Activity confirms Start, covering attach intents that arrive before the NavHost exists.
 
-Only execute queued routes while the Activity is resumed, unlocked and its NavHost is ready. Recovery replaces an older queued Start with Home; a subsequent non-connected state discards a queued Home. Retry progress preserves a pending Start until it is handled or a real Connected supersedes it. Activity navigation never reads session generations or attempt IDs.
+Refresh admission synchronously after navigation as well: Compose's destination effect runs later, so waiting for it can leave Start admission enabled briefly after opening Settings. Always read the controller's live destination rather than a captured destination from an earlier effect.
+
+## Connection navigation uses current state and route-aware automatic requests
+
+`MainActivityViewModel` observes status changes for its lifetime but only evaluates navigation while the Activity is resumed and unlocked. After pause it reacts to the manager's latest state, so an intermediate background disconnect followed by recovery does not replay stale routes. Automatic Connected-to-Home navigation is accepted only on Start, while explicit user navigation remains unrestricted. BT Reconnecting leaves the current destination intact; USB established retry returns to Start through the manager's current owner/session snapshot. StartRoute must not independently navigate on Connected.
 
 ## Drain Activity navigation queues on the Lifecycle ON_RESUME event
 

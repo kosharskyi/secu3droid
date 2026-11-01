@@ -26,6 +26,8 @@ import org.secu3.android.connection.ConnectionTestDriver
 import org.secu3.android.connection.BtConnection
 import org.secu3.android.connection.Connection
 import org.secu3.android.connection.Connected
+import org.secu3.android.connection.ConnectionEvent
+import org.secu3.android.connection.Reconnecting
 import org.secu3.android.connection.Secu3ConnectionManager
 import org.secu3.android.models.RawPacket
 import org.junit.Assert.assertEquals
@@ -202,6 +204,39 @@ class DiagnosticsNavigationIntegrationTest {
     }
 
     @Test
+    fun bluetoothRetryPreservesDiagnosticsGraphAndRequiresFreshInput(): Unit = runBlocking {
+        navigateHome()
+        val transport = connectFakeBluetooth(connectionManager(), acknowledgeEnterImmediately = true, secu3T = true)
+        compose.activityRule.scenario.onActivity { it.openDiagnostics() }
+        compose.waitForIdle()
+        val vm = diagnosticsViewModel()
+        await { transport.enterCount == 1 }
+        transport.emitDiagnosticInput(flags = 1, voltageRaw = 500)
+        await { vm.state.value.controlsEnabled }
+
+        transport.beginReconnect()
+        await { !vm.state.value.controlsEnabled && vm.state.value.input == null }
+        compose.waitForIdle()
+        assertEquals(DIAGNOSTICS_ROUTE, compose.activity.rootNavigationController?.currentDestination?.route)
+        assertSame(vm, diagnosticsViewModel())
+
+        val writesAfterLoss = transport.writes.size
+        compose.activityRule.scenario.onActivity { vm.setOutput(DiagnosticOutput.IGN_OUT1, false) }
+        assertEquals(writesAfterLoss, transport.writes.size)
+
+        transport.restoreConnection()
+        await { transport.enterCount == 2 && transport.diagInputRequestCount == 2 }
+        assertFalse(vm.state.value.controlsEnabled)
+        assertEquals(null, vm.state.value.input)
+        compose.waitForIdle()
+        assertEquals(DIAGNOSTICS_ROUTE, compose.activity.rootNavigationController?.currentDestination?.route)
+        assertSame(vm, diagnosticsViewModel())
+
+        transport.emitDiagnosticInput(flags = 1, voltageRaw = 600)
+        await { vm.state.value.controlsEnabled && vm.state.value.input?.voltage == 1.5f }
+    }
+
+    @Test
     fun enterSubscriptionIsReadyForImmediateAckAndInitialInputIsSentOnce() = runBlocking {
         navigateHome()
         val transport = connectFakeBluetooth(connectionManager(), acknowledgeEnterImmediately = true, secu3T = true)
@@ -330,10 +365,11 @@ class DiagnosticsNavigationIntegrationTest {
     private class FakeBluetoothTransport(
         private val manager: Secu3ConnectionManager,
         private val generation: Long,
-        private val socket: BluetoothSocket,
+        private var socket: BluetoothSocket,
         private val driver: ConnectionTestDriver,
         val writes: CopyOnWriteArrayList<ByteArray>,
     ) {
+        private val output = socket.outputStream
         val enterCount: Int get() = writes.count { it.size > 3 && it[1] == 'u'.code.toByte() && it[3] == 6.toByte() }
         val diagInputRequestCount: Int get() = writes.count { it.size > 2 && it[1] == 'h'.code.toByte() && it[2] == '='.code.toByte() }
         val outputCount: Int get() = writes.count { it.size > 1 && it[1] == '^'.code.toByte() }
@@ -349,6 +385,22 @@ class DiagnosticsNavigationIntegrationTest {
 
         suspend fun emitOpcode(opCode: Int) {
             driver.emit(RawPacket(intArrayOf('@'.code, 'u'.code, 0, opCode, 0, 0)))
+        }
+
+        fun beginReconnect() = driver.fail(Reconnecting, ConnectionEvent.End.RETRYING)
+
+        fun restoreConnection() {
+            val adapter = requireNotNull(BluetoothAdapter.getDefaultAdapter())
+            val replacement = adapter.getRemoteDevice("00:11:22:33:44:55")
+                .createRfcommSocketToServiceRecord(UUID.randomUUID())
+            val state = BluetoothSocket::class.java.getDeclaredField("mSocketState").apply { isAccessible = true }
+            state.set(replacement, state.type.enumConstants!!.first { (it as Enum<*>).name == "CONNECTED" })
+            BluetoothSocket::class.java.getDeclaredField("mSocketOS").apply { isAccessible = true }
+                .set(replacement, output)
+            driver.setAttempt(2L)
+            socket = replacement
+            driver.installEndpoint(replacement)
+            driver.publish(Connected)
         }
 
         fun disconnect() = runBlocking {

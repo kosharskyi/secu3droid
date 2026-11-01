@@ -102,12 +102,17 @@ open class UsbConnection @Inject constructor(
 
     fun cancelPendingPermission() = synchronized(connectionLock) { pendingPermission = null }
 
-    fun synchronizeAttachments(generation: Long, snapshot: Result<List<UsbDevice>> = attachedDevicesSnapshot()): UsbPermissionRequest? = synchronized(connectionLock) {
+    fun synchronizeAttachments(
+        generation: Long,
+        snapshot: Result<List<UsbDevice>> = attachedDevicesSnapshot(),
+        allowNewConnection: Boolean = true,
+    ): UsbPermissionRequest? = synchronized(connectionLock) {
         val devices = snapshot.getOrElse { return null }
         val identities = devices.map(::identity).toSet()
         activeAttachment?.takeIf { it !in identities }?.let { onDeviceDetached(it.deviceId) }
         promptedAttachments.retainAll(identities)
         if (pendingPermission?.let { identity(it.device) !in identities } == true) pendingPermission = null
+        if (!allowNewConnection) return null
         devices.firstOrNull {
             supportsSerialConnection(it) && (hasPermission(it) || (identity(it) !in promptedAttachments && pendingPermission == null))
         }?.let { requestAttachedDevice(it, generation) }
@@ -133,9 +138,12 @@ open class UsbConnection @Inject constructor(
     }
 
     private suspend fun runConnection(job: Job, device: UsbDevice) {
+        var established = false
         while (isCurrent(job)) {
             val attempt = beginAttempt(job) ?: return
-            if (currentConnectionState != UsbAwaitingEcu) publishState(job, InProgress)
+            if (currentConnectionState != UsbAwaitingEcu) {
+                publishState(job, if (established) Reconnecting else Connecting)
+            }
             val handshakeTimeout = scope.launch {
                 delay(ECU_PACKET_TIMEOUT_MS)
                 val target = synchronized(connectionLock) {
@@ -155,7 +163,12 @@ open class UsbConnection @Inject constructor(
                 currentCoroutineContext().ensureActive()
                 if (!isCurrent(job)) return
                 val end = if (readyAttemptId == attempt) ConnectionEvent.End.RETRYING else null
-                val state = if (failure is UsbEcuResponseTimeoutException || currentConnectionState == UsbAwaitingEcu) UsbAwaitingEcu else InProgress
+                if (end == ConnectionEvent.End.RETRYING) established = true
+                val state = when {
+                    failure is UsbEcuResponseTimeoutException || currentConnectionState == UsbAwaitingEcu -> UsbAwaitingEcu
+                    established -> Reconnecting
+                    else -> Connecting
+                }
                 finishAttempt(job, state, end)
                 Log.e(javaClass.simpleName, "USB attempt failed: ${failure.message}")
             } finally {

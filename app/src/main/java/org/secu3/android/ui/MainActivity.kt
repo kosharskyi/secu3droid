@@ -134,7 +134,7 @@ class MainActivity : ComponentActivity() {
 
     fun openStart(): Boolean {
         navigateTo(START_ROUTE)
-        return viewModel.pendingNavigation.value != START_ROUTE
+        return viewModel.pendingNavigation.value?.route != START_ROUTE
     }
 
     private fun navigateTo(route: String) {
@@ -155,6 +155,12 @@ class MainActivity : ComponentActivity() {
         } else if (!isDeviceUnlocked()) {
             viewModel.connectionManager.onAppBackgrounded()
         }
+        val foregroundAndUnlocked = lifecycle.currentState.isAtLeast(Lifecycle.State.RESUMED) && isDeviceUnlocked()
+        viewModel.setConnectionNavigationActive(foregroundAndUnlocked)
+        refreshConnectionInitiationAdmission()
+        if (foregroundAndUnlocked) {
+            synchronizeUsbAttachments()
+        }
         processPendingNavigation()
         deliverPendingUsbIntent()
     }
@@ -167,8 +173,10 @@ class MainActivity : ComponentActivity() {
         if (!lifecycle.currentState.isAtLeast(Lifecycle.State.RESUMED) || !isDeviceUnlocked()) return
         val controller = rootNavController ?: return
         val destination = controller.currentDestination ?: return
-        val route = viewModel.pendingNavigation.value ?: return
-        viewModel.completeNavigation(route)
+        val request = viewModel.pendingNavigation.value ?: return
+        viewModel.completeNavigation(request)
+        if (request.automaticHomeOnlyFromStart && destination.route != START_ROUTE) return
+        val route = request.route
         if (destination.route == route) return
         when (route) {
             START_ROUTE -> if (!controller.popBackStack(START_ROUTE, inclusive = false)) {
@@ -182,6 +190,7 @@ class MainActivity : ComponentActivity() {
                 controller.navigate(route) { launchSingleTop = true }
             }
         }
+        refreshConnectionInitiationAdmission()
     }
 
     internal fun setStartUsbIntentHandler(handler: ((UsbDevice?) -> Unit)?) {
@@ -208,8 +217,12 @@ class MainActivity : ComponentActivity() {
     private fun handleUsbIntent(intent: Intent) {
         if (intent.action == ACTION_USB_DEVICE_ATTACHED) {
             val device = IntentCompat.getParcelableExtra(intent, android.hardware.usb.UsbManager.EXTRA_DEVICE, UsbDevice::class.java)
-            pendingUsbIntentDevice = null
-            device?.let(::requestUsbDeviceConnection)
+            if (device != null && !refreshConnectionInitiationAdmission()) {
+                pendingUsbIntentDevice = device
+            } else {
+                pendingUsbIntentDevice = null
+                device?.let(::requestUsbDeviceConnection)
+            }
         }
     }
 
@@ -229,6 +242,7 @@ class MainActivity : ComponentActivity() {
                 val device = IntentCompat.getParcelableExtra(intent, UsbManager.EXTRA_DEVICE, UsbDevice::class.java)
                 val token = intent.getLongExtra(EXTRA_USB_ATTEMPT_TOKEN, -1L)
                 val resultDevice = device ?: return
+                refreshConnectionInitiationAdmission()
                 viewModel.connectionManager.completeUsbPermissionRequest(
                     device = resultDevice,
                     token = token,
@@ -243,7 +257,23 @@ class MainActivity : ComponentActivity() {
     }
 
     internal fun requestUsbDeviceConnection(device: UsbDevice) {
+        if (!refreshConnectionInitiationAdmission()) {
+            pendingUsbIntentDevice = device
+            return
+        }
         viewModel.connectionManager.requestUsbConnection(device)?.let {
+            requestUsbPermission(it.device, it.token)
+        }
+    }
+
+    internal fun refreshConnectionInitiationAdmission(): Boolean {
+        val allowed = rootNavController?.currentDestination?.route == START_ROUTE && isDeviceUnlocked()
+        viewModel.connectionManager.setConnectionInitiationAllowed(allowed)
+        return allowed
+    }
+
+    private fun synchronizeUsbAttachments() {
+        viewModel.connectionManager.synchronizeUsbAttachments()?.let {
             requestUsbPermission(it.device, it.token)
         }
     }
@@ -271,24 +301,27 @@ class MainActivity : ComponentActivity() {
         if (activeComposeRoute == DASHBOARD_ROUTE) window.addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON)
         else applyKeepScreenOnPreference()
         if (!isDeviceUnlocked()) {
+            viewModel.onConnectionNavigationPaused()
             viewModel.connectionManager.onAppBackgrounded()
             return
         }
         viewModel.connectionManager.onAppForegrounded()
-        viewModel.connectionManager.synchronizeUsbAttachments()?.let {
-            requestUsbPermission(it.device, it.token)
-        }
+        viewModel.setConnectionNavigationActive(true)
+        refreshConnectionInitiationAdmission()
+        synchronizeUsbAttachments()
+        processPendingNavigation()
     }
 
     override fun onWindowFocusChanged(hasFocus: Boolean) {
         super.onWindowFocusChanged(hasFocus)
         if (!isDeviceUnlocked()) {
+            viewModel.onConnectionNavigationPaused()
             viewModel.connectionManager.onAppBackgrounded()
         } else if (hasFocus && lifecycle.currentState.isAtLeast(Lifecycle.State.RESUMED)) {
             viewModel.connectionManager.onAppForegrounded()
-            viewModel.connectionManager.synchronizeUsbAttachments()?.let {
-                requestUsbPermission(it.device, it.token)
-            }
+            viewModel.setConnectionNavigationActive(true)
+            refreshConnectionInitiationAdmission()
+            synchronizeUsbAttachments()
             processPendingNavigation()
             deliverPendingUsbIntent()
         }
@@ -297,7 +330,13 @@ class MainActivity : ComponentActivity() {
     private fun isDeviceUnlocked(): Boolean =
         getSystemService(KeyguardManager::class.java)?.isKeyguardLocked != true
 
+    override fun onPause() {
+        viewModel.onConnectionNavigationPaused()
+        super.onPause()
+    }
+
     override fun onStop() {
+        viewModel.onConnectionNavigationPaused()
         if (!isChangingConfigurations) {
             viewModel.connectionManager.onAppBackgrounded()
         }

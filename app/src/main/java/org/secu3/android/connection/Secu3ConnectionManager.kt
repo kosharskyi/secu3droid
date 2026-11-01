@@ -51,8 +51,9 @@ class Secu3ConnectionManager @Inject constructor(
     private val scope = CoroutineScope(Dispatchers.Default + SupervisorJob())
     private var nextGeneration = 0L
     /** Identifies the admitted transport request; it remains fixed while that transport retries. */
-    private var currentConnectionGeneration = 0L
+    @Volatile private var currentConnectionGeneration = 0L
     @Volatile private var currentConnection: Connection<*>? = null
+    @Volatile private var connectionInitiationAllowed = false
     @Volatile private var currentSessionGeneration = 0L
     private var lastEventSequence = -1L
     private var appVisible = false
@@ -65,6 +66,12 @@ class Secu3ConnectionManager @Inject constructor(
     private val _firmwareInfo = MutableStateFlow<FirmwareInfoPacket?>(null)
     val firmwareInfo = _firmwareInfo.asStateFlow()
     val fwInfo: FirmwareInfoPacket? get() = firmwareInfo.value
+
+    /** The UI owns route and visibility decisions; the manager applies this admission to either transport. */
+    @Synchronized fun setConnectionInitiationAllowed(allowed: Boolean) {
+        connectionInitiationAllowed = allowed && appVisible
+        if (!connectionInitiationAllowed) usbConnection.cancelPendingPermission()
+    }
 
     val receivedPacketFlow: Flow<InputPacket> = merge(
         usbConnection.receivedPacketFlow,
@@ -79,17 +86,19 @@ class Secu3ConnectionManager @Inject constructor(
     val isConnectionRunning get() = currentConnection?.isRunning == true
     val isConnected get() = currentConnection?.isReady == true
     val isUsbSessionLocked get() = currentConnection === usbConnection && usbConnection.isSessionLocked
+    @get:Synchronized val isUsbSessionRetrying get() = currentConnection === usbConnection &&
+        currentSessionGeneration != currentConnectionGeneration && currentConnectionState != Connected
     val activeUsbDeviceIdOrNull get() = usbConnection.activeDeviceId
 
     @Synchronized fun requestUsbConnection(device: UsbDevice): UsbPermissionRequest? {
-        if (!appVisible) return null
+        if (!appVisible || !connectionInitiationAllowed) return null
         val request = usbConnection.requestConnection(device, ++nextGeneration)
         synchronizeUsbOutcome()
         return request
     }
 
     @Synchronized fun completeUsbPermissionRequest(device: UsbDevice, token: Long, permissionGranted: Boolean) {
-        if (!appVisible) { usbConnection.cancelPendingPermission(); return }
+        if (!appVisible || !connectionInitiationAllowed) { usbConnection.cancelPendingPermission(); return }
         usbConnection.completePermissionRequest(device, token, permissionGranted, ++nextGeneration)
         synchronizeUsbOutcome()
     }
@@ -97,7 +106,8 @@ class Secu3ConnectionManager @Inject constructor(
     @Synchronized fun synchronizeUsbAttachments(): UsbPermissionRequest? = synchronizeUsbAttachments(usbConnection.attachedDevicesSnapshot())
     @Synchronized internal fun synchronizeUsbAttachments(snapshot: Result<List<UsbDevice>>): UsbPermissionRequest? {
         if (!appVisible || snapshot.isFailure) return null
-        val request = usbConnection.synchronizeAttachments(++nextGeneration, snapshot)
+        if (!connectionInitiationAllowed) usbConnection.cancelPendingPermission()
+        val request = usbConnection.synchronizeAttachments(++nextGeneration, snapshot, connectionInitiationAllowed)
         synchronizeUsbOutcome()
         return request
     }
@@ -120,7 +130,7 @@ class Secu3ConnectionManager @Inject constructor(
 
     suspend fun startBtConnection() {
         val generation = synchronized(this) {
-            if (!appVisible || usbConnection.activeDeviceId != null) return
+            if (!appVisible || !connectionInitiationAllowed || usbConnection.activeDeviceId != null) return
             usbConnection.stopConnection()
             (++nextGeneration).also { selectConnection(btConnection, it) }
         }
@@ -134,7 +144,7 @@ class Secu3ConnectionManager @Inject constructor(
         currentSessionGeneration = generation
         lastEventSequence = -1
         _firmwareInfo.value = null
-        publishConnectionState(InProgress)
+        publishConnectionState(Connecting)
         reconcileConnectionService()
     }
 
@@ -156,6 +166,7 @@ class Secu3ConnectionManager @Inject constructor(
     /** Stop active work only when the app truly leaves the foreground and background work is disabled. */
     @Synchronized fun onAppBackgrounded() {
         appVisible = false
+        connectionInitiationAllowed = false
         usbConnection.cancelPendingPermission()
         if (currentConnection == null) {
             nextGeneration++
@@ -232,7 +243,9 @@ class Secu3ConnectionManager @Inject constructor(
                 currentSessionGeneration = ++nextGeneration
                 connectionServiceController.updateConnectionGeneration(currentSessionGeneration)
             }
-            publishConnectionState(Disconnected)
+            if (connection !== btConnection || event.end == ConnectionEvent.End.STOPPED) {
+                publishConnectionState(Disconnected)
+            }
         }
         publishConnectionState(event.state)
         reconcileConnectionService()

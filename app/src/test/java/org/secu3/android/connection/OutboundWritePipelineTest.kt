@@ -275,7 +275,7 @@ class OutboundWritePipelineTest {
         val collector = launch {
             connection.sessionEvents.collect { event ->
                 when (event.state) {
-                    InProgress -> {
+                    Connecting -> {
                         collectorEntered.complete(Unit)
                         releaseCollector.await()
                     }
@@ -286,7 +286,7 @@ class OutboundWritePipelineTest {
         }
         try {
             withTimeout(2_000) { connection.awaitStateSubscriber() }
-            val initialState = async { connection.publishState(InProgress) }
+            val initialState = async { connection.publishState(Connecting) }
             withTimeout(2_000) { collectorEntered.await() }
 
             connection.start()

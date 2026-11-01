@@ -41,7 +41,8 @@ import kotlinx.coroutines.launch
 import org.secu3.android.R
 import org.secu3.android.connection.Connected
 import org.secu3.android.connection.Disconnected
-import org.secu3.android.connection.InProgress
+import org.secu3.android.connection.Connecting
+import org.secu3.android.connection.Reconnecting
 import org.secu3.android.ui.MainActivity
 import org.secu3.android.ui.compose.SecuComposeTheme
 import org.secu3.android.ui.compose.SecuTopAppBar
@@ -210,7 +211,7 @@ internal fun ParametersScreen(
                 Box(Modifier.fillMaxSize())
             } else {
                 Box(Modifier.fillMaxSize().testTag("parameters-unavailable"), contentAlignment = Alignment.Center) {
-                    Text(stringResource(if (updatedConnectionState == InProgress) R.string.home_connection_connecting else R.string.home_connection_disconnected))
+                    Text(stringResource(if (updatedConnectionState == Connecting || updatedConnectionState == Reconnecting) R.string.home_connection_connecting else R.string.home_connection_disconnected))
                 }
             }
         }

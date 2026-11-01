@@ -28,7 +28,9 @@ package org.secu3.android.connection
 sealed class ConnectionState()
 
 data object Connected : ConnectionState()
-data object InProgress : ConnectionState()
+data object Connecting : ConnectionState()
+/** A transport request is restoring a connection that was already established once. */
+data object Reconnecting : ConnectionState()
 /** USB liveness timed out; automatic attempts are waiting for a valid ECU response. */
 data object UsbAwaitingEcu : ConnectionState()
 /** The ECU session ended; the transport may continue retrying afterwards. */

@@ -57,7 +57,7 @@ import org.secu3.android.R
 import org.secu3.android.connection.Connected
 import org.secu3.android.connection.ConnectionState
 import org.secu3.android.connection.Disconnected
-import org.secu3.android.connection.InProgress
+import org.secu3.android.connection.Connecting
 
 class DashboardContentTest {
     @get:Rule
@@ -127,7 +127,7 @@ class DashboardContentTest {
     fun rendersEachConnectionState() {
         listOf<Pair<ConnectionState, Int>>(
             Connected to R.string.dashboard_status_online,
-            InProgress to R.string.dashboard_status_connecting,
+            Connecting to R.string.dashboard_status_connecting,
             Disconnected to R.string.dashboard_status_offline,
         ).forEach { (state, label) ->
             showDashboard(data = sampleData(), state = state)

@@ -11,7 +11,9 @@ import java.io.IOException
 import org.secu3.android.connection.ConnectionState
 import org.secu3.android.connection.Connected
 import org.secu3.android.connection.Disconnected
-import org.secu3.android.connection.InProgress
+import org.secu3.android.connection.Connecting
+import org.secu3.android.connection.Reconnecting
+import org.secu3.android.connection.ConnectionAttempt
 import org.secu3.android.connection.UsbAwaitingEcu
 import org.secu3.android.connection.Secu3ConnectionManager
 import org.secu3.android.network.models.GitHubRelease
@@ -40,8 +42,9 @@ class HomeViewModel @Inject constructor(
         viewModelScope.launch {
             manager.connectionStateFlow.collect { status ->
                 val mapped = when (status) {
-                    UsbAwaitingEcu -> InProgress
-                    else -> status.takeIf { it == Connected || it == InProgress } ?: Disconnected
+                    UsbAwaitingEcu -> Connecting
+                    is ConnectionAttempt -> Connecting
+                    else -> status.takeIf { it == Connected || it == Connecting || it == Reconnecting } ?: Disconnected
                 }
                 _uiState.value = _uiState.value.copy(
                     connectionStatus = mapped,

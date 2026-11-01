@@ -77,7 +77,7 @@ abstract class Connection<E : Any> {
         stopConnection()
         val job = scope.launch(start = CoroutineStart.LAZY) {
             val owner = currentCoroutineContext()[Job]!!
-            publishState(owner, InProgress)
+            publishState(owner, Connecting)
             try { run(owner) } finally {
                 synchronized(connectionLock) { if (connectionJob === owner) connectionJob = null }
             }

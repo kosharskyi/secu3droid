@@ -22,7 +22,7 @@ Bluetooth permission requirements are owned by `BluetoothPermissionPolicy`. Conn
 
 ## StartScreen presents USB state but does not own connection admission
 
-USB attachment can happen on any route or while the Activity starts from Android's attach intent, so StartScreen only presents device state and forwards user selection. `UsbConnection` owns device admission, permission de-duplication and unlimited open/firmware retries; the manager forwards actions and applies the shared foreground/background policy. Permission completion rechecks attachment identity and Android's current grant. USB retries do not use the Bluetooth retry preference, and no manual action or cable replug is needed after a transient failure or return from background.
+USB attachment can happen on any route or while the Activity starts from Android's attach intent, so StartScreen only presents device state and forwards user selection. The Activity supplies the live Start-route admission capability before either USB or Bluetooth initiation; the manager enforces it for synchronous and delayed callbacks. `UsbConnection` owns device admission, permission de-duplication and unlimited open/firmware retries; snapshot reconciliation still cleans up missed detach/replacement on other routes. Permission completion rechecks attachment identity and Android's current grant. USB retries do not use the Bluetooth retry preference, and no manual action or cable replug is needed after a transient failure or return from background.
 
 ## Connected navigation belongs to the Activity ViewModel
 

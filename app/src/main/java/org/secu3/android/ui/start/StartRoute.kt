@@ -57,7 +57,7 @@ internal fun StartRoute(entry: NavBackStackEntry, activity: MainActivity) {
                 vm.markLocationSettingsLaunched()
                 context.startActivity(Intent(android.provider.Settings.ACTION_LOCATION_SOURCE_SETTINGS))
             }
-            else -> vm.startBluetoothConnection()
+            else -> if (activity.refreshConnectionInitiationAdmission()) vm.startBluetoothConnection()
         }
     }
     SideEffect { continueBluetooth.value = checkBluetoothConfiguration }
@@ -80,7 +80,9 @@ internal fun StartRoute(entry: NavBackStackEntry, activity: MainActivity) {
                 val device = IntentCompat.getParcelableExtra(intent, BluetoothDevice.EXTRA_DEVICE, BluetoothDevice::class.java) ?: return
                 when (intent.action) {
                     BluetoothDevice.ACTION_FOUND -> vm.addDiscoveredDevice(device)
-                    BluetoothDevice.ACTION_BOND_STATE_CHANGED -> vm.onBondStateChanged(device)
+                    BluetoothDevice.ACTION_BOND_STATE_CHANGED -> if (activity.refreshConnectionInitiationAdmission()) {
+                        vm.onBondStateChanged(device)
+                    }
                 }
             }
         }

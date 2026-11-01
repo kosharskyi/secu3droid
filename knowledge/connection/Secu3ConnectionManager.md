@@ -2,9 +2,13 @@
 
 `currentConnection` and its request generation identify the admitted transport from connection start through internal retries. Each explicit RETRYING outcome ends the current logical ECU session and allocates a new session generation while keeping that transport request. STOPPED clears `currentConnection`. These identities fence transport events and foreground-service ownership; UI consumers receive connection states without session IDs. Stale transport generations or event sequences cannot affect a replacement request.
 
-## Loss side effects are common to both transports
+## Loss side effects are common, but visible retry states remain transport specific
 
-Consume the typed outcome rather than inferring loss from packet silence or reconstructing retry history. Ended sessions stop logging and emit `Disconnected` through the common connection-state stream. A continuing session rebinds the existing foreground-service owner to the new logical generation; a stopped transport releases that service. A continuing USB retry may then publish `UsbAwaitingEcu` or `InProgress`; the preceding `Disconnected` must remain observable. Initial USB handshake failures do not emit it because no ECU session has ended.
+Consume the typed outcome rather than inferring loss from packet silence or reconstructing retry history. Ended sessions stop logging and a continuing USB session emits `Disconnected` before retry progress. Bluetooth established-session retries publish `Reconnecting` without `Disconnected`, so feature routes remain in place. A continuing session rebinds the existing foreground-service owner to the new logical generation; a stopped transport releases that service. Initial USB handshake failures do not emit `Disconnected` because no ECU session has ended.
+
+## New transport requests require foreground Start admission
+
+The Activity supplies a route-neutral admission capability that the manager clamps to foreground visibility. It gates USB and Bluetooth initiation and invalidates pending USB permission when disabled, while already-admitted retries continue. USB attachment synchronization still reconciles detach and identity replacement with admission disabled. `isUsbSessionRetrying` is an owner-derived snapshot of the current USB request/session generations and published state; UI uses it with the current state to distinguish established USB recovery from an initial `UsbAwaitingEcu` handshake. Use the manager's published state here, since transport readiness can recover before its queued events are applied.
 
 ## Logger packet writes backpressure the common collector
 
@@ -28,4 +32,4 @@ A late destroy from an older owner cannot stop a replacement. Destruction of the
 
 ## Session endings and retry progress must remain distinct state emissions
 
-Emit `Disconnected` after loss cleanup and before publishing the transport's retry/terminal status. `UsbAwaitingEcu` by itself can describe an initial handshake timeout, so it cannot identify an established-session loss. A later physical detach emits another `Disconnected` after retry progress, even when firmware never recovered. Preserve stream ordering rather than exposing a parallel terminal-generation channel to UI consumers.
+For USB, emit `Disconnected` after loss cleanup and before retry progress; `Reconnecting` identifies retries after a confirmed session, while `UsbAwaitingEcu` remains the ignition/handshake timeout state. `UsbAwaitingEcu` by itself can describe an initial handshake timeout, so it cannot identify established-session loss. A later physical detach emits another `Disconnected` after retry progress, even when firmware never recovered. Bluetooth established retries skip `Disconnected` and end in `Disconnected` only when stopped or exhausted. Preserve stream ordering rather than exposing a parallel terminal-generation channel to UI consumers.

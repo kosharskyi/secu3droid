@@ -87,7 +87,8 @@ import org.secu3.android.ui.compose.ConfirmationDialog
 import org.secu3.android.ui.compose.ConnectionStatusIndicator
 import org.secu3.android.connection.ConnectionState
 import org.secu3.android.connection.Connected
-import org.secu3.android.connection.InProgress
+import org.secu3.android.connection.Connecting
+import org.secu3.android.connection.Reconnecting
 import org.secu3.android.connection.Disconnected
 
 enum class HomeLayout { GRID, LANDSCAPE_COLUMNS, TABLET_GRID }
@@ -171,7 +172,7 @@ fun HomeScreen(
                     Connected -> stringResource(
                         if (state.firmwareAvailable) R.string.home_connection_connected_firmware else R.string.home_connection_connected,
                     )
-                    InProgress -> stringResource(R.string.home_connection_connecting)
+                    Connecting, Reconnecting -> stringResource(R.string.home_connection_connecting)
                     else -> stringResource(R.string.home_connection_disconnected)
                 }
                 ConnectionStatusIndicator(

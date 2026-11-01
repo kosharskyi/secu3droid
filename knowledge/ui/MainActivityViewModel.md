@@ -1,7 +1,7 @@
-## Keep the status collector alive while navigation is paused
+## Background navigation reacts to the latest manager state on resume
 
-The ViewModel maps the manager's ordered status stream to one pending route. Its collector must survive Activity pause and configuration recreation: a brief `Disconnected` followed by USB retry progress still requires Start, while a later `Connected` replaces it with Home. Re-subscribing from the Activity would replay the last Connected/Disconnected and could interrupt a feature route after that transition was already handled.
+The ViewModel collector stays alive to observe state changes and avoid replaying an already handled state after Activity recreation, but it does not decide routes while navigation is paused. On resume it evaluates the manager's current state, not a queued sequence of background transitions. USB established-session retries are identified by the manager's current USB owner/session snapshot because `UsbAwaitingEcu` can also describe an initial handshake. This keeps a background loss followed by recovery from replaying a stale Start route.
 
-## A pending route is acknowledged only after navigation becomes possible
+## Automatic Home is valid only from Start; manual Home is unrestricted
 
-Wait for a resumed, unlocked Activity and a ready NavHost before consuming the route. Connection transitions and ordinary user navigation share this queue, so a stale Activity-local route cannot override recovery. Intermediate retry states discard pending Home but preserve pending Start; they are not evidence that a new usable ECU session exists.
+Tag navigation requests by whether a user explicitly requested them. Automatic `Connected` navigation is consumed only when the current destination is Start; a manual Home request from a feature route remains valid. `Disconnected` or terminal `ConnectionTimeout` returns to Start. Bluetooth `Reconnecting` does not enqueue a route, preserving the feature destination through recovery. Clear unhandled automatic requests on pause and re-evaluate the latest manager state when navigation resumes.

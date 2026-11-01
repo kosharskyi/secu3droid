@@ -32,9 +32,14 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
 import org.secu3.android.connection.Connected
+import org.secu3.android.connection.ConnectionAttempt
+import org.secu3.android.connection.ConnectionState
 import org.secu3.android.connection.ConnectionTimeout
+import org.secu3.android.connection.Connecting
 import org.secu3.android.connection.Disconnected
+import org.secu3.android.connection.Reconnecting
 import org.secu3.android.connection.Secu3ConnectionManager
+import org.secu3.android.connection.UsbAwaitingEcu
 import org.secu3.android.utils.UserPrefs
 import javax.inject.Inject
 
@@ -43,22 +48,65 @@ class MainActivityViewModel @Inject constructor(
     val prefs: UserPrefs,
     val connectionManager: Secu3ConnectionManager,
 ) : ViewModel() {
-    private val _pendingNavigation = MutableStateFlow<String?>(null)
+    data class PendingNavigation(val route: String, val userInitiated: Boolean) {
+        val automaticHomeOnlyFromStart: Boolean get() = !userInitiated && route == HOME_ROUTE
+    }
+
+    private val _pendingNavigation = MutableStateFlow<PendingNavigation?>(null)
     val pendingNavigation = _pendingNavigation.asStateFlow()
+    private var navigationActive = false
+    private var latestStateVersion = 0L
+    private var handledStateVersion = 0L
 
     init {
         viewModelScope.launch {
             connectionManager.connectionStateFlow.collect { state ->
-                when (state) {
-                    Connected -> requestNavigation(HOME_ROUTE)
-                    Disconnected, ConnectionTimeout -> requestNavigation(START_ROUTE)
-                    else -> _pendingNavigation.compareAndSet(HOME_ROUTE, null)
-                }
+                latestStateVersion++
+                if (navigationActive) applyConnectionNavigation(state)
             }
         }
     }
 
-    fun requestNavigation(route: String) { _pendingNavigation.value = route }
+    fun setConnectionNavigationActive(active: Boolean) {
+        navigationActive = active
+        if (active) applyConnectionNavigation(connectionManager.currentConnectionState)
+    }
 
-    fun completeNavigation(route: String) { _pendingNavigation.compareAndSet(route, null) }
+    fun onConnectionNavigationPaused() {
+        navigationActive = false
+        if (_pendingNavigation.value?.userInitiated == false) {
+            _pendingNavigation.value = null
+            if (latestStateVersion > 0) handledStateVersion = latestStateVersion - 1
+        }
+    }
+
+    fun requestNavigation(route: String) {
+        _pendingNavigation.value = PendingNavigation(route, userInitiated = true)
+    }
+
+    fun completeNavigation(request: PendingNavigation) {
+        if (_pendingNavigation.value == request) _pendingNavigation.value = null
+    }
+
+    private fun requestAutomaticNavigation(route: String) {
+        val request = PendingNavigation(route, userInitiated = false)
+        _pendingNavigation.value = request
+    }
+
+    private fun discardPendingAutomaticHome() {
+        if (_pendingNavigation.value?.automaticHomeOnlyFromStart == true) _pendingNavigation.value = null
+    }
+
+    private fun applyConnectionNavigation(state: ConnectionState) {
+        if (handledStateVersion == latestStateVersion) return
+        handledStateVersion = latestStateVersion
+        when {
+            state == Connected -> requestAutomaticNavigation(HOME_ROUTE)
+            state == Disconnected || state == ConnectionTimeout -> requestAutomaticNavigation(START_ROUTE)
+            connectionManager.isUsbSessionRetrying && (
+                state == Connecting || state == Reconnecting || state == UsbAwaitingEcu || state is ConnectionAttempt
+            ) -> requestAutomaticNavigation(START_ROUTE)
+            else -> discardPendingAutomaticHome()
+        }
+    }
 }
