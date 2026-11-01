@@ -9,6 +9,7 @@ import android.content.pm.PackageManager
 import android.hardware.usb.UsbDevice
 import android.hardware.usb.UsbManager
 import android.app.PendingIntent
+import android.net.Uri
 import android.os.Build
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
@@ -79,24 +80,28 @@ internal fun StartRoute(entry: NavBackStackEntry, activity: MainActivity) {
         }
     }
     SideEffect { continueBluetooth.value = checkBluetoothConfiguration }
-    val requestUsbPermission: (UsbDevice, Long) -> Unit = { device, token ->
+    val requestUsbPermission: (UsbPermissionRequest) -> Unit = { request ->
         val usbManager = context.getSystemService(Context.USB_SERVICE) as UsbManager
         val flags = PendingIntent.FLAG_UPDATE_CURRENT or if (Build.VERSION.SDK_INT >= 31) PendingIntent.FLAG_MUTABLE else 0
-        val permissionIntent = Intent("org.secu3.android.USB_PERMISSION").setPackage(context.packageName).putExtra("usb_attempt_token", token)
-        usbManager.requestPermission(device, PendingIntent.getBroadcast(context, token.toInt(), permissionIntent, flags))
+        val permissionIntent = Intent("org.secu3.android.USB_PERMISSION")
+            .setPackage(context.packageName)
+            .setData(Uri.parse("secu3droid://usb-permission/${request.token}"))
+            .putExtra("usb_permission_token", request.token)
+        try {
+            usbManager.requestPermission(request.device, PendingIntent.getBroadcast(context, request.token.hashCode(), permissionIntent, flags))
+        } catch (_: SecurityException) {
+            vm.cancelUsbPermissionRequest(request.token)
+        }
     }
     val requestUsbPermissionOrConnect: (UsbDevice?) -> Unit = { device ->
-        if (device != null) vm.requestUsbConnection(device)?.let { requestUsbPermission(it.device, it.token) }
+        if (device != null) vm.requestUsbConnection(device)?.let(requestUsbPermission)
     }
     val resumeStartRoute: () -> Unit = {
         activity.applyKeepScreenOnPreference()
         val visibleStart = startRouteIsCurrent()
         vm.onStartRouteActive(visibleStart)
         if (visibleStart) {
-            val manager = context.getSystemService(Context.USB_SERVICE) as UsbManager
-            val attached = manager.deviceList.values.firstOrNull()
-            attached?.let(vm::newUsbDeviceAttached) ?: vm.newUsbDeviceDetached()
-            vm.synchronizeUsbAttachments()?.let { requestUsbPermission(it.device, it.token) }
+            vm.synchronizeUsbAttachments()?.let(requestUsbPermission)
         }
         if (visibleStart && vm.isStartRouteActive && pendingBluetoothContinuation.value) {
             pendingBluetoothContinuation.value = false
@@ -120,7 +125,7 @@ internal fun StartRoute(entry: NavBackStackEntry, activity: MainActivity) {
                         vm.newUsbDeviceAttached(it)
                         requestUsbPermissionOrConnect(it)
                     }
-                    UsbManager.ACTION_USB_DEVICE_DETACHED -> vm.newUsbDeviceDetached()
+                    UsbManager.ACTION_USB_DEVICE_DETACHED -> vm.newUsbDeviceDetached(device)
                 }
             }
         }
@@ -139,7 +144,7 @@ internal fun StartRoute(entry: NavBackStackEntry, activity: MainActivity) {
                 val device = IntentCompat.getParcelableExtra(intent, UsbManager.EXTRA_DEVICE, UsbDevice::class.java) ?: return
                 vm.completeUsbPermissionRequest(
                     device,
-                    intent.getLongExtra("usb_attempt_token", -1L),
+                    intent.getStringExtra("usb_permission_token") ?: return,
                     intent.getBooleanExtra(UsbManager.EXTRA_PERMISSION_GRANTED, false),
                 )
             }

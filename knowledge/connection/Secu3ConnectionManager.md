@@ -2,15 +2,17 @@
 
 `currentConnection` remains selected through automatic retries and is cleared on STOPPED. Outcomes remain in the transport's queue until the manager drains them under its connection-selection lock; the manager has no generation counters or event-owner checks. Select a newly started transport before releasing that lock and consume every queued outcome rather than substituting a latest-state snapshot.
 
+USB start returns whether a run was admitted, not whether it is still running. An admitted run can queue `STOPPED` before the manager selects it; checking `isRunning` instead would discard that run's terminal outcome. Select the admitted run and then drain its events.
+
 ## Loss side effects are common, but visible retry states remain transport specific
 
 Consume the typed outcome rather than inferring loss from packet silence or reconstructing retry history. Established losses stop logging and continuing USB work emits `Disconnected` before retry progress. Bluetooth established retries publish `Reconnecting` without `Disconnected`, so feature routes remain in place. Initial USB handshake failures do not emit `Disconnected`.
 
 ## New transport commands are admitted only after the selected transport ends
 
-`requestUsbConnection`, `synchronizeUsbAttachments` and `startBtConnection` do not replace an active or retrying `currentConnection`. Before rejecting a command, drain that connection's queued terminal outcomes so a pending `STOPPED` can release the slot. USB attachment reconciliation remains separate and may end a detached or physically replaced session before the same synchronization command admits a replacement. Activity-wide reconciliation only cleans up; it never starts a device. Start owns USB permission requests and only issues start commands while its route is active. Existing transport retries remain owned by their connection job. USB recovery is expressed by `UsbReconnecting` or `UsbReconnectingAwaitingEcu`; consumers must not reconstruct it from an initial handshake status or a transport-history flag.
+`startUsbConnection` and `startBtConnection` do not replace an active or retrying `currentConnection`. Before rejecting a command, drain that connection's queued terminal outcomes so a pending `STOPPED` can release the slot. USB attachment reconciliation remains cleanup-only and may end a detached or physically replaced session before a subsequent Start command admits a replacement. The manager never requests USB permission; Start checks the current grant and the transport checks again before opening. Existing transport retries remain owned by their connection job. USB recovery is expressed by `UsbReconnecting` or `UsbReconnectingAwaitingEcu`; consumers must not reconstruct it from an initial handshake status or a transport-history flag.
 
-Before a start-capable USB command, reconcile missing/replaced attachments and drain the old terminal outcome. Android can reuse a device ID, and both physical devices use the same `UsbConnection` instance. A failed attachment snapshot must remain non-destructive. Pending USB permission is canceled when Bluetooth starts, so a delayed grant cannot start USB later.
+Before a USB command, reconcile missing/replaced attachments and drain the old terminal outcome. Android can reuse a device ID, and both physical devices use the same `UsbConnection` instance. A failed attachment snapshot must remain non-destructive. Start cancels its pending permission request when Bluetooth starts, so a delayed grant cannot start USB later.
 
 ## Logger packet writes backpressure the common collector
 

@@ -77,39 +77,15 @@ class Secu3ConnectionManager @Inject constructor(
     val isUsbSessionLocked get() = currentConnection === usbConnection && usbConnection.isSessionLocked
     val activeUsbDeviceIdOrNull get() = usbConnection.activeDeviceId
 
-    @Synchronized fun requestUsbConnection(device: UsbDevice): UsbPermissionRequest? {
+    fun supportsUsbDevice(device: UsbDevice): Boolean = usbConnection.supportsSerialConnection(device)
+
+    @Synchronized fun startUsbConnection(device: UsbDevice) {
         reconcileUsbBeforeAdmission()
         drainCurrentConnectionOutcome()
-        if (currentConnection != null) return null
-        val request = usbConnection.requestConnection(device)
-        synchronizeUsbOutcome()
-        return request
-    }
-
-    @Synchronized fun completeUsbPermissionRequest(device: UsbDevice, token: Long, permissionGranted: Boolean) {
-        reconcileUsbBeforeAdmission()
-        drainCurrentConnectionOutcome()
-        if (currentConnection != null) {
-            usbConnection.cancelPendingPermission(token)
-            return
-        }
-        usbConnection.completePermissionRequest(device, token, permissionGranted)
-        synchronizeUsbOutcome()
-    }
-
-    @Synchronized fun cancelUsbPermissionRequest(token: Long) = usbConnection.cancelPendingPermission(token)
-
-    @Synchronized fun synchronizeUsbAttachments(): UsbPermissionRequest? = synchronizeUsbAttachments(usbConnection.attachedDevicesSnapshot())
-    @Synchronized internal fun synchronizeUsbAttachments(snapshot: Result<List<UsbDevice>>): UsbPermissionRequest? {
-        if (snapshot.isFailure) return null
-        // Apply detach cleanup before this same call admits a replacement USB run.
-        usbConnection.reconcileAttachments(snapshot)
-        synchronizeUsbOutcome()
-        drainCurrentConnectionOutcome()
-        if (currentConnection != null) return null
-        val request = usbConnection.synchronizeAttachments(snapshot)
-        synchronizeUsbOutcome()
-        return request
+        if (currentConnection != null) return
+        if (!usbConnection.startConnection(device)) return
+        selectConnection(usbConnection)
+        drainPendingEvents(usbConnection)
     }
 
     private fun reconcileUsbBeforeAdmission() {
@@ -145,7 +121,6 @@ class Secu3ConnectionManager @Inject constructor(
         val start = synchronized(this@Secu3ConnectionManager) {
             drainCurrentConnectionOutcome()
             if (currentConnection != null) return@coroutineScope
-            usbConnection.cancelPendingPermission()
             launch(start = CoroutineStart.UNDISPATCHED) { btConnection.startConnection() }
                 .also { selectConnection(btConnection); drainPendingEvents(btConnection) }
         }
@@ -161,7 +136,6 @@ class Secu3ConnectionManager @Inject constructor(
     }
 
     @Synchronized fun stopConnection(): Boolean {
-        usbConnection.cancelPendingPermission()
         currentConnection?.let { active ->
             active.stopConnection()
             drainPendingEvents(active)
@@ -181,7 +155,6 @@ class Secu3ConnectionManager @Inject constructor(
     /** Stop active work only when the app truly leaves the foreground and background work is disabled. */
     @Synchronized fun onAppBackgrounded() {
         appVisible = false
-        usbConnection.cancelPendingPermission()
         if (currentConnection == null) return
         if (backgroundWorkEnabled.value != false) return
         stopConnection()

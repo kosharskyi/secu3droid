@@ -20,6 +20,7 @@ import kotlinx.coroutines.currentCoroutineContext
 import kotlinx.coroutines.flow.collect
 import kotlinx.coroutines.flow.first
 import java.io.IOException
+import java.util.UUID
 import org.secu3.android.R
 import org.secu3.android.ui.messages.UiMessageDuration
 import org.secu3.android.ui.messages.UiMessageQueue
@@ -32,12 +33,13 @@ import org.secu3.android.connection.UsbReconnectingAwaitingEcu
 import org.secu3.android.connection.Connected
 import org.secu3.android.connection.Disconnected
 import org.secu3.android.connection.Secu3ConnectionManager
-import org.secu3.android.connection.UsbPermissionRequest
 import org.secu3.android.utils.UserPrefs
 import javax.inject.Inject
 
+internal data class UsbPermissionRequest(val device: UsbDevice, val token: String)
+
 @HiltViewModel
-class StartScreenViewModel @Inject constructor(
+internal open class StartScreenViewModel @Inject constructor(
     private val prefs: UserPrefs,
     private val bluetoothManager: BluetoothManager,
     private val locationManager: LocationManager,
@@ -61,13 +63,16 @@ class StartScreenViewModel @Inject constructor(
     private var discoveryActive = false
     private var startRouteCurrent = false
     private var startActivityForeground = false
-    private var pendingUsbPermissionToken: Long? = null
+    private var pendingUsbPermission: UsbPermissionRequest? = null
+    private var promptedUsbAttachment: UsbDevice? = null
     private var waitingForBluetoothEnableResult = false
     val isUsbHostSupported get() = packageManager.hasSystemFeature(PackageManager.FEATURE_USB_HOST)
     val isStartRouteActive get() = startRouteCurrent && startActivityForeground
 
     init {
-        if (isUsbHostSupported) usbManager.deviceList.values.firstOrNull()?.let(::newUsbDeviceAttached)
+        if (isUsbHostSupported) {
+            runCatching { usbManager.deviceList.values.firstOrNull() }.getOrNull()?.let(::newUsbDeviceAttached)
+        }
         viewModelScope.launch {
             connectionState.collect { refreshConnecting() }
         }
@@ -115,8 +120,7 @@ class StartScreenViewModel @Inject constructor(
             pendingBluetoothPermissions = emptyArray()
             waitingForBluetoothEnableResult = false
             returnFromLocationSettings = false
-            pendingUsbPermissionToken?.let(connectionManager::cancelUsbPermissionRequest)
-            pendingUsbPermissionToken = null
+            pendingUsbPermission = null
         }
     }
 
@@ -125,8 +129,7 @@ class StartScreenViewModel @Inject constructor(
         startActivityForeground = foreground
         if (!foreground) {
             cancelStartPreparation(clearPendingBond = false)
-            pendingUsbPermissionToken?.let(connectionManager::cancelUsbPermissionRequest)
-            pendingUsbPermissionToken = null
+            pendingUsbPermission = null
         } else refreshConnecting()
     }
 
@@ -141,16 +144,75 @@ class StartScreenViewModel @Inject constructor(
         refreshConnecting()
     }
 
-    fun requestUsbConnection(device: UsbDevice): UsbPermissionRequest? =
-        if (isStartRouteActive) connectionManager.requestUsbConnection(device)?.also { pendingUsbPermissionToken = it.token } else null
+    fun requestUsbConnection(device: UsbDevice): UsbPermissionRequest? {
+        if (!isStartRouteActive) return null
+        val devices = attachedUsbDevicesSnapshot().getOrNull() ?: return null
+        reconcileUsbAttachments(devices)
+        val attached = devices.firstOrNull { sameUsbAttachment(it, device) } ?: return null
+        if (!connectionManager.supportsUsbDevice(attached) || connectionManager.isConnectionRunning) return null
+        if (pendingUsbPermission != null) return null
+        if (promptedUsbAttachment?.let { !sameUsbAttachment(it, attached) } == true) promptedUsbAttachment = null
+        if (hasUsbPermission(attached)) {
+            connectionManager.startUsbConnection(attached)
+            return null
+        }
+        if (promptedUsbAttachment?.let { sameUsbAttachment(it, attached) } == true) return null
+        return UsbPermissionRequest(attached, UUID.randomUUID().toString()).also {
+            promptedUsbAttachment = attached
+            pendingUsbPermission = it
+        }
+    }
 
-    fun synchronizeUsbAttachments(): UsbPermissionRequest? =
-        if (isStartRouteActive) connectionManager.synchronizeUsbAttachments()?.also { pendingUsbPermissionToken = it.token } else null
+    fun synchronizeUsbAttachments(): UsbPermissionRequest? {
+        if (!isStartRouteActive) return null
+        val devices = attachedUsbDevicesSnapshot().getOrNull() ?: return null
+        reconcileUsbAttachments(devices)
+        if (devices.isEmpty()) {
+            newUsbDeviceDetached()
+            return null
+        }
+        val connectable = devices.firstOrNull(connectionManager::supportsUsbDevice)
+        val selected = connectable ?: devices.first()
+        newUsbDeviceAttached(selected)
+        return connectable?.let(::requestUsbConnection)
+    }
 
-    fun completeUsbPermissionRequest(device: UsbDevice, token: Long, permissionGranted: Boolean) {
-        if (pendingUsbPermissionToken != token) return
-        pendingUsbPermissionToken = null
-        if (isStartRouteActive) connectionManager.completeUsbPermissionRequest(device, token, permissionGranted)
+    fun completeUsbPermissionRequest(device: UsbDevice, token: String, permissionGranted: Boolean) {
+        val request = pendingUsbPermission?.takeIf { it.token == token } ?: return
+        if (!isStartRouteActive || !sameUsbAttachment(request.device, device)) return
+        pendingUsbPermission = null
+        if (!permissionGranted) return
+        val devices = attachedUsbDevicesSnapshot().getOrNull() ?: return
+        reconcileUsbAttachments(devices)
+        val attached = devices.firstOrNull { sameUsbAttachment(it, request.device) } ?: return
+        if (!hasUsbPermission(attached) || connectionManager.isConnectionRunning) return
+        connectionManager.startUsbConnection(attached)
+    }
+
+    fun cancelUsbPermissionRequest(token: String) {
+        if (pendingUsbPermission?.token == token) pendingUsbPermission = null
+    }
+
+    internal open fun attachedUsbDevicesSnapshot(): Result<List<UsbDevice>> = runCatching { usbManager.deviceList.values.toList() }
+    internal open fun hasUsbPermission(device: UsbDevice): Boolean =
+        try { usbManager.hasPermission(device) } catch (_: SecurityException) { false }
+
+    private fun reconcileUsbAttachments(devices: List<UsbDevice>) {
+        connectionManager.reconcileUsbAttachments(Result.success(devices))
+        promptedUsbAttachment?.takeIf { prompted -> devices.none { sameUsbAttachment(it, prompted) } }?.let {
+            promptedUsbAttachment = null
+        }
+        pendingUsbPermission?.takeIf { request -> devices.none { sameUsbAttachment(it, request.device) } }?.let {
+            pendingUsbPermission = null
+        }
+    }
+
+    private fun sameUsbAttachment(first: UsbDevice, second: UsbDevice): Boolean =
+        first.deviceId == second.deviceId && first.deviceName == second.deviceName &&
+            first.vendorId == second.vendorId && first.productId == second.productId
+
+    private fun cancelPendingUsbPermission() {
+        pendingUsbPermission = null
     }
 
     fun resumeBtDiscoveryIfPickerVisible(hasScanPermissions: Boolean) {
@@ -249,6 +311,7 @@ class StartScreenViewModel @Inject constructor(
     fun startBluetoothConnection(selectedDevice: BluetoothDevice? = null) {
         if (!isStartRouteActive) return
         if (connectionJob?.isActive == true) return
+        cancelPendingUsbPermission()
         cancelBtDiscovery()
         val job = viewModelScope.launch(start = CoroutineStart.LAZY) {
             try {
@@ -275,6 +338,7 @@ class StartScreenViewModel @Inject constructor(
     }
     fun cancelConnection() {
         if (connectionManager.isUsbSessionLocked) return
+        cancelPendingUsbPermission()
         connectionJob?.cancel()
         connectionJob = null
         bluetoothBondGate.cancel()
@@ -289,10 +353,21 @@ class StartScreenViewModel @Inject constructor(
         _uiState.value = _uiState.value.copy(usbDeviceDetected = true)
         refreshConnecting()
     }
-    fun newUsbDeviceDetached() {
+    fun newUsbDeviceDetached(device: UsbDevice? = usbDevice) {
         if (!isStartRouteActive) return
-        usbDevice = null
-        _uiState.value = _uiState.value.copy(usbDeviceDetected = false, usbAwaitingEcu = false)
+        if (device == null) {
+            usbDevice = null
+            promptedUsbAttachment = null
+            pendingUsbPermission = null
+            _uiState.value = _uiState.value.copy(usbDeviceDetected = false, usbAwaitingEcu = false)
+            return
+        }
+        if (promptedUsbAttachment?.let { sameUsbAttachment(it, device) } == true) promptedUsbAttachment = null
+        if (pendingUsbPermission?.device?.let { sameUsbAttachment(it, device) } == true) pendingUsbPermission = null
+        if (usbDevice?.let { sameUsbAttachment(it, device) } == true) {
+            usbDevice = null
+            _uiState.value = _uiState.value.copy(usbDeviceDetected = false, usbAwaitingEcu = false)
+        }
     }
     fun locationSettingsReturned(): Boolean {
         if (!consumeLocationSettingsReturn()) return false
