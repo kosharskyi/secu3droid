@@ -47,7 +47,7 @@ open class UsbConnection @Inject constructor(
     private val usbManager: UsbManager,
     prefs: UserPrefs,
 ) : Connection<UsbSerialPort>() {
-    private val promptedAttachments = mutableSetOf<UsbAttachmentIdentity>()
+    private var promptedAttachment: UsbAttachmentIdentity? = null
     private var nextPermissionToken = 0L
     private var pendingPermission: UsbPermissionRequest? = null
     private var activeAttachment: UsbAttachmentIdentity? = null
@@ -81,7 +81,8 @@ open class UsbConnection @Inject constructor(
     private fun requestPermissionOrStart(device: UsbDevice, attachment: UsbAttachmentIdentity, hasPermission: Boolean): UsbPermissionRequest? {
         if (pendingPermission != null) return null
         if (hasPermission) { startConnection(device); return null }
-        if (!promptedAttachments.add(attachment)) return null
+        if (promptedAttachment == attachment) return null
+        promptedAttachment = attachment
         return UsbPermissionRequest(device, ++nextPermissionToken).also { pendingPermission = it }
     }
 
@@ -108,7 +109,7 @@ open class UsbConnection @Inject constructor(
     fun synchronizeAttachments(snapshot: Result<List<UsbDevice>> = attachedDevicesSnapshot()): UsbPermissionRequest? = synchronized(connectionLock) {
         val devices = reconcileAttachmentsLocked(snapshot) ?: return null
         devices.firstOrNull {
-            supportsSerialConnection(it) && (hasPermission(it) || (identity(it) !in promptedAttachments && pendingPermission == null))
+            supportsSerialConnection(it) && (hasPermission(it) || (identity(it) != promptedAttachment && pendingPermission == null))
         }?.let(::requestAttachedDevice)
     }
 
@@ -118,15 +119,16 @@ open class UsbConnection @Inject constructor(
 
     private fun reconcileAttachmentsLocked(snapshot: Result<List<UsbDevice>>): List<UsbDevice>? {
         val devices = snapshot.getOrNull() ?: return null
-        val identities = devices.map(::identity).toSet()
-        activeAttachment?.takeIf { it !in identities }?.let { onDeviceDetached(it.deviceId) }
-        promptedAttachments.retainAll(identities)
-        if (pendingPermission?.let { identity(it.device) !in identities } == true) pendingPermission = null
+        activeAttachment?.takeIf { active -> devices.none { identity(it) == active } }?.let { onDeviceDetached(it.deviceId) }
+        promptedAttachment?.takeIf { prompted -> devices.none { identity(it) == prompted } }?.let { promptedAttachment = null }
+        if (pendingPermission?.let { request -> devices.none { identity(it) == identity(request.device) } } == true) {
+            pendingPermission = null
+        }
         return devices
     }
 
     fun onDeviceDetached(deviceId: Int): Boolean = synchronized(connectionLock) {
-        promptedAttachments.removeAll { it.deviceId == deviceId }
+        if (promptedAttachment?.deviceId == deviceId) promptedAttachment = null
         if (pendingPermission?.device?.deviceId == deviceId) pendingPermission = null
         if (activeDeviceId != deviceId) return false
         stopConnection()

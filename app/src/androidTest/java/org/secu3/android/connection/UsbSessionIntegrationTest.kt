@@ -1216,10 +1216,12 @@ class UsbSessionIntegrationTest {
     @Test fun cancellingOldUsbPermissionTokenPreservesNewerPendingRequest() {
         val fixture = Fixture()
         val oldDevice = usbDevice("/dev/bus/usb/001/071", 0x0403, 0x6001)
-        val newDevice = usbDevice("/dev/bus/usb/001/072", 0x0403, 0x6001)
+        val newDevice = usbDevice("/dev/bus/usb/001/071", 0x1a86, 0x7523)
         try {
+            assertEquals(oldDevice.deviceId, newDevice.deviceId)
             val oldRequest = fixture.requestPermissionOrStart(oldDevice, hasPermission = false)!!
             fixture.manager.cancelUsbPermissionRequest(oldRequest.token)
+            fixture.manager.onUsbDeviceDetached(oldDevice.deviceId)
             val newRequest = fixture.requestPermissionOrStart(newDevice, hasPermission = false)!!
 
             fixture.manager.cancelUsbPermissionRequest(oldRequest.token)
@@ -1278,6 +1280,7 @@ class UsbSessionIntegrationTest {
                     conflictsWithActiveDevice = false,
                 )
                 assertNull(fixture.pendingPermission())
+                fixture.manager.onUsbDeviceDetached(device.deviceId)
             }
             val conflictedDevice = usbDevice("/dev/bus/usb/001/067", 0x0403, 0x6001)
             val conflictedRequest = fixture.requestPermissionOrStart(conflictedDevice, hasPermission = false)!!
@@ -1291,6 +1294,7 @@ class UsbSessionIntegrationTest {
                 conflictsWithActiveDevice = true,
             )
             assertNull(fixture.pendingPermission())
+            fixture.manager.onUsbDeviceDetached(conflictedDevice.deviceId)
 
             val detachedDevice = usbDevice("/dev/bus/usb/001/068", 0x0403, 0x6001)
             val detachedRequest = fixture.requestPermissionOrStart(detachedDevice, hasPermission = false)!!
@@ -1374,6 +1378,25 @@ class UsbSessionIntegrationTest {
             val retried = fixture.requestPermissionOrStart(device, hasPermission = false)
             assertNotNull(retried)
             assertTrue(retried!!.token > request.token)
+        } finally {
+            fixture.close()
+        }
+    }
+
+    @Test fun successfulSnapshotForSameIdReplacementClearsPromptHistory() {
+        val fixture = Fixture()
+        val original = usbDevice("/dev/bus/usb/001/073", 0x0403, 0x6001)
+        val replacement = usbDevice("/dev/bus/usb/001/073", 0x1a86, 0x7523)
+        try {
+            assertEquals(original.deviceId, replacement.deviceId)
+            val request = fixture.requestPermissionOrStart(original, hasPermission = false)!!
+            fixture.manager.cancelUsbPermissionRequest(request.token)
+
+            fixture.manager.reconcileUsbAttachments(Result.success(listOf(replacement)))
+
+            val replacementRequest = fixture.requestPermissionOrStart(replacement, hasPermission = false)
+            assertNotNull(replacementRequest)
+            assertTrue(replacementRequest!!.token > request.token)
         } finally {
             fixture.close()
         }
