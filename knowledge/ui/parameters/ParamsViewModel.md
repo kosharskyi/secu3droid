@@ -1,6 +1,6 @@
 ## The parameter session owns request lifecycle; the ViewModel maps results to editors
 
-`ParameterSession` owns connection-event invalidation, page-read jobs, cache validity, and pending EEPROM-save cancellation. The ViewModel translates typed session events into editor updates and UI messages. Controls perform edits through the session, whose admission checks the active connection and pause state.
+`ParameterSession` owns connection-event invalidation, page-read jobs, cache validity, and pending EEPROM-save cancellation. The ViewModel translates typed events into editor updates and UI messages; `Invalidated` clears presentation state without exposing a connection/session number to Compose. Controls perform edits through the session, whose admission checks the active connection and pause state.
 
 ## UI page resources map to domain page IDs at the screen boundary
 

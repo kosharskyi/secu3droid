@@ -49,9 +49,9 @@ class BtConnection @Inject constructor(
     private val bluetoothAdapter: BluetoothAdapter? = bluetoothManager.adapter
     init { observePacketCalibration(prefs) }
 
-    suspend fun startConnection(generation: Long) {
+    suspend fun startConnection() {
         val prepared = CompletableDeferred<Unit>()
-        launchConnection(generation) { job ->
+        val owner = launchConnection { job ->
             try {
                 val settings = prefs.settings.first()
                 currentCoroutineContext().ensureActive()
@@ -73,7 +73,7 @@ class BtConnection @Inject constructor(
             }
         }
         try { prepared.await() } catch (cancelled: CancellationException) {
-            synchronized(connectionLock) { if (this.generation == generation) stopConnection() }
+            synchronized(connectionLock) { if (connectionJob === owner) stopConnection() }
             throw cancelled
         }
     }

@@ -53,7 +53,7 @@ sealed interface ParameterReadResult {
 }
 
 sealed interface ParameterSessionEvent {
-    data class Invalidated(val sessionId: Int) : ParameterSessionEvent
+    data object Invalidated : ParameterSessionEvent
     data class PageLoading(val page: ParameterPage) : ParameterSessionEvent
     data class PageLoaded(val page: ParameterPage, val result: ParameterReadResult) : ParameterSessionEvent
     data class PageFailed(val page: ParameterPage) : ParameterSessionEvent
@@ -165,21 +165,25 @@ class ParameterSession internal constructor(
         loadedPages.clear()
         writeRevision++
         cancelPendingWork()
-        eventHandler?.invoke(ParameterSessionEvent.Invalidated(sessionId))
+        eventHandler?.invoke(ParameterSessionEvent.Invalidated)
     }
 
     private fun onConnectionState(state: ConnectionState) {
         if (state == Connected) {
+            val restored = !connected
             connected = true
+            if (restored) activePage?.let { page ->
+                readGate.activate(page)
+                loadPage(page)
+            }
         } else {
             sessionId++
             connected = false
-            activePage = null
             readGate.deactivate()
             loadedPages.clear()
             writeRevision++
             cancelPendingWork()
-            eventHandler?.invoke(ParameterSessionEvent.Invalidated(sessionId))
+            eventHandler?.invoke(ParameterSessionEvent.Invalidated)
         }
     }
 

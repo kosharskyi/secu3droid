@@ -117,10 +117,6 @@ class ParameterSessionTest {
         harness.connectionStates.emit(Disconnected)
         harness.transportConnected = true
         harness.connectionStates.emit(Connected)
-        yield()
-        val commandsAfterLoss = harness.requests.size
-        assertEquals(commandCount, commandsAfterLoss)
-        harness.session.activatePage(ParameterPage.STARTER)
         harness.awaitLoaded(ParameterPage.STARTER, expectedCount = 2)
         assertEquals(2, harness.count(Task.Secu3ReadStarterParam))
     }

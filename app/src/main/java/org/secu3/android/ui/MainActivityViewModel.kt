@@ -32,14 +32,12 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
 import org.secu3.android.connection.Connected
-import org.secu3.android.connection.ConnectionAttempt
 import org.secu3.android.connection.ConnectionState
 import org.secu3.android.connection.ConnectionTimeout
-import org.secu3.android.connection.Connecting
 import org.secu3.android.connection.Disconnected
-import org.secu3.android.connection.Reconnecting
 import org.secu3.android.connection.Secu3ConnectionManager
-import org.secu3.android.connection.UsbAwaitingEcu
+import org.secu3.android.connection.UsbReconnecting
+import org.secu3.android.connection.UsbReconnectingAwaitingEcu
 import org.secu3.android.utils.UserPrefs
 import javax.inject.Inject
 
@@ -103,9 +101,7 @@ class MainActivityViewModel @Inject constructor(
         when {
             state == Connected -> requestAutomaticNavigation(HOME_ROUTE)
             state == Disconnected || state == ConnectionTimeout -> requestAutomaticNavigation(START_ROUTE)
-            connectionManager.isUsbSessionRetrying && (
-                state == Connecting || state == Reconnecting || state == UsbAwaitingEcu || state is ConnectionAttempt
-            ) -> requestAutomaticNavigation(START_ROUTE)
+            state == UsbReconnecting || state == UsbReconnectingAwaitingEcu -> requestAutomaticNavigation(START_ROUTE)
             else -> discardPendingAutomaticHome()
         }
     }

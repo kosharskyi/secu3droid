@@ -66,38 +66,41 @@ open class UsbConnection @Inject constructor(
     }.getOrDefault(false)
     fun hasPermission(device: UsbDevice): Boolean = runCatching { usbManager.hasPermission(device) }.getOrDefault(false)
 
-    fun requestConnection(device: UsbDevice, generation: Long): UsbPermissionRequest? = synchronized(connectionLock) {
+    fun requestConnection(device: UsbDevice, beforeStart: () -> Unit = {}): UsbPermissionRequest? = synchronized(connectionLock) {
         val attached = attachedDevice(device) ?: return null
-        requestAttachedDevice(attached, generation)
+        requestAttachedDevice(attached, beforeStart)
     }
 
-    private fun requestAttachedDevice(device: UsbDevice, generation: Long): UsbPermissionRequest? {
+    private fun requestAttachedDevice(device: UsbDevice, beforeStart: () -> Unit): UsbPermissionRequest? {
         val attachment = identity(device)
         if (activeAttachment == attachment && isRunning) return null
         if (pendingPermission?.device?.let { it.deviceId == device.deviceId && identity(it) != attachment } == true) pendingPermission = null
         if (!supportsSerialConnection(device) || activeDeviceId?.let { it != device.deviceId } == true) return null
-        return requestPermissionOrStart(device, attachment, hasPermission(device), generation)
+        return requestPermissionOrStart(device, attachment, hasPermission(device), beforeStart)
     }
 
-    private fun requestPermissionOrStart(device: UsbDevice, attachment: UsbAttachmentIdentity, hasPermission: Boolean, generation: Long): UsbPermissionRequest? {
+    private fun requestPermissionOrStart(device: UsbDevice, attachment: UsbAttachmentIdentity, hasPermission: Boolean, beforeStart: () -> Unit): UsbPermissionRequest? {
         if (pendingPermission != null) return null
-        if (hasPermission) { startConnection(device, generation); return null }
+        if (hasPermission) { beforeStart(); startConnection(device); return null }
         if (!promptedAttachments.add(attachment)) return null
         return UsbPermissionRequest(device, ++nextPermissionToken).also { pendingPermission = it }
     }
 
-    fun completePermissionRequest(device: UsbDevice, token: Long, granted: Boolean, generation: Long): Unit = synchronized(connectionLock) {
+    fun completePermissionRequest(device: UsbDevice, token: Long, granted: Boolean, beforeStart: () -> Unit = {}): Unit = synchronized(connectionLock) {
         if (pendingPermission?.let { it.token == token && identity(it.device) == identity(device) } != true) return
         val attached = attachedDevice(device)
         completePendingPermission(device, token, granted, attached,
             attached?.let(::hasPermission) == true, attached?.let(::supportsSerialConnection) == true,
-            attached?.deviceId?.let { activeDeviceId?.let { active -> active != it } } == true, generation)
+            attached?.deviceId?.let { activeDeviceId?.let { active -> active != it } } == true, beforeStart)
     }
 
-    private fun completePendingPermission(device: UsbDevice, token: Long, granted: Boolean, attached: UsbDevice?, hasPermission: Boolean, supported: Boolean, conflicts: Boolean, generation: Long) {
+    private fun completePendingPermission(device: UsbDevice, token: Long, granted: Boolean, attached: UsbDevice?, hasPermission: Boolean, supported: Boolean, conflicts: Boolean, beforeStart: () -> Unit) {
         if (pendingPermission?.let { it.token == token && identity(it.device) == identity(device) } != true) return
         pendingPermission = null
-        if (granted && hasPermission && supported && !conflicts && attached != null) startConnection(attached, generation)
+        if (granted && hasPermission && supported && !conflicts && attached != null) {
+            beforeStart()
+            startConnection(attached)
+        }
     }
 
     fun cancelPendingPermission(token: Long? = null) = synchronized(connectionLock) {
@@ -105,13 +108,13 @@ open class UsbConnection @Inject constructor(
     }
 
     fun synchronizeAttachments(
-        generation: Long,
         snapshot: Result<List<UsbDevice>> = attachedDevicesSnapshot(),
+        beforeStart: () -> Unit = {},
     ): UsbPermissionRequest? = synchronized(connectionLock) {
         val devices = reconcileAttachmentsLocked(snapshot) ?: return null
         devices.firstOrNull {
             supportsSerialConnection(it) && (hasPermission(it) || (identity(it) !in promptedAttachments && pendingPermission == null))
-        }?.let { requestAttachedDevice(it, generation) }
+        }?.let { requestAttachedDevice(it, beforeStart) }
     }
 
     fun reconcileAttachments(snapshot: Result<List<UsbDevice>>) = synchronized(connectionLock) {
@@ -135,8 +138,8 @@ open class UsbConnection @Inject constructor(
         true
     }
 
-    internal fun startConnection(device: UsbDevice, generation: Long) = synchronized(connectionLock) {
-        launchConnection(generation) { job -> runConnection(job, device) }
+    internal fun startConnection(device: UsbDevice) = synchronized(connectionLock) {
+        launchConnection { job -> runConnection(job, device) }
         activeAttachment = identity(device)
     }
 
@@ -150,14 +153,16 @@ open class UsbConnection @Inject constructor(
         var established = false
         while (isCurrent(job)) {
             val attempt = beginAttempt(job) ?: return
-            if (currentConnectionState != UsbAwaitingEcu) {
-                publishState(job, if (established) Reconnecting else Connecting)
+            if (currentConnectionState != UsbAwaitingEcu && currentConnectionState != UsbReconnecting &&
+                currentConnectionState != UsbReconnectingAwaitingEcu
+            ) {
+                publishState(job, if (established) UsbReconnecting else Connecting)
             }
             val handshakeTimeout = scope.launch {
                 delay(ECU_PACKET_TIMEOUT_MS)
                 val target = synchronized(connectionLock) {
                     if (!isCurrent(job) || !isCurrentAttempt(attempt) || readyAttemptId == attempt) return@launch
-                    invalidateAttempt(job, attempt, UsbAwaitingEcu)
+                    invalidateAttempt(job, attempt, if (established) UsbReconnectingAwaitingEcu else UsbAwaitingEcu)
                 }
                 target?.let(::closeEndpoint)
             }
@@ -174,8 +179,10 @@ open class UsbConnection @Inject constructor(
                 val end = if (readyAttemptId == attempt) ConnectionEvent.End.RETRYING else null
                 if (end == ConnectionEvent.End.RETRYING) established = true
                 val state = when {
-                    failure is UsbEcuResponseTimeoutException || currentConnectionState == UsbAwaitingEcu -> UsbAwaitingEcu
-                    established -> Reconnecting
+                    failure is UsbEcuResponseTimeoutException || currentConnectionState == UsbAwaitingEcu ||
+                        currentConnectionState == UsbReconnectingAwaitingEcu ->
+                        if (established) UsbReconnectingAwaitingEcu else UsbAwaitingEcu
+                    established -> UsbReconnecting
                     else -> Connecting
                 }
                 finishAttempt(job, state, end)

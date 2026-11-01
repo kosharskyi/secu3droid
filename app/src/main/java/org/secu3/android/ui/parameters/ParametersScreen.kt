@@ -43,6 +43,8 @@ import org.secu3.android.connection.Connected
 import org.secu3.android.connection.Disconnected
 import org.secu3.android.connection.Connecting
 import org.secu3.android.connection.Reconnecting
+import org.secu3.android.connection.UsbReconnecting
+import org.secu3.android.connection.UsbReconnectingAwaitingEcu
 import org.secu3.android.ui.MainActivity
 import org.secu3.android.ui.compose.SecuComposeTheme
 import org.secu3.android.ui.compose.SecuTopAppBar
@@ -88,7 +90,6 @@ internal fun ParametersRoute(
             titles = pages.map { stringResource(it.titleRes) },
             pageKeys = pages.map { it.titleRes },
             connectionState = connectionState,
-            connectionSession = viewModel.connectionSession,
             editorSession = viewModel.parameterEditSession,
             onEditConfirm = viewModel::acceptParameterEditor,
             onEditDismiss = viewModel::dismissParameterEditor,
@@ -116,7 +117,6 @@ internal fun ParametersScreen(
     onEditConfirm: (Long, Number) -> Unit = { _, _ -> },
     onEditDismiss: (Long) -> Unit = {},
     onPageUnsettled: () -> Unit = {},
-    connectionSession: Int = 0,
 ) {
     fun clampPageIndex(index: Int, pageCount: Int): Int =
         if (pageCount <= 0) 0 else index.coerceIn(0, pageCount - 1)
@@ -137,7 +137,7 @@ internal fun ParametersScreen(
     val updatedSettled by rememberUpdatedState(onPageSettled)
     val updatedUnsettled by rememberUpdatedState(onPageUnsettled)
     val updatedConnectionState by rememberUpdatedState(connectionState)
-    LaunchedEffect(lifecycle, pagerState, titles.size, connectionSession) {
+    LaunchedEffect(lifecycle, pagerState, titles.size) {
         lifecycle.repeatOnLifecycle(Lifecycle.State.RESUMED) {
             var activeIndex: Int? = null
             try {
@@ -211,7 +211,7 @@ internal fun ParametersScreen(
                 Box(Modifier.fillMaxSize())
             } else {
                 Box(Modifier.fillMaxSize().testTag("parameters-unavailable"), contentAlignment = Alignment.Center) {
-                    Text(stringResource(if (updatedConnectionState == Connecting || updatedConnectionState == Reconnecting) R.string.home_connection_connecting else R.string.home_connection_disconnected))
+                    Text(stringResource(if (updatedConnectionState == Connecting || updatedConnectionState == Reconnecting || updatedConnectionState == UsbReconnecting || updatedConnectionState == UsbReconnectingAwaitingEcu) R.string.home_connection_connecting else R.string.home_connection_disconnected))
                 }
             }
         }

@@ -25,7 +25,6 @@
 
 package org.secu3.android.connection
 
-import android.content.Intent
 import android.content.pm.ServiceInfo
 import android.os.Build
 import androidx.core.app.ServiceCompat
@@ -37,16 +36,9 @@ import javax.inject.Inject
 class SecuConnectionService : LifecycleService() {
 
     @Inject
-    internal lateinit var secu3ConnectionManager: Secu3ConnectionManager
-
-    @Inject
     internal lateinit var notificationPublisher: ConnectionNotificationPublisher
 
-    private var ownerToken = INVALID_OWNER_TOKEN
-
-    override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
-        ownerToken = intent?.getLongExtra(EXTRA_OWNER_TOKEN, INVALID_OWNER_TOKEN) ?: INVALID_OWNER_TOKEN
-
+    override fun onStartCommand(intent: android.content.Intent?, flags: Int, startId: Int): Int {
         var foregroundServiceType = 0
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
             foregroundServiceType = ServiceInfo.FOREGROUND_SERVICE_TYPE_CONNECTED_DEVICE
@@ -58,13 +50,8 @@ class SecuConnectionService : LifecycleService() {
     }
 
     override fun onDestroy() {
-        if (ownerToken != INVALID_OWNER_TOKEN) secu3ConnectionManager.onConnectionServiceDestroyed(ownerToken)
         ServiceCompat.stopForeground(this@SecuConnectionService, ServiceCompat.STOP_FOREGROUND_REMOVE)
         super.onDestroy()
     }
 
-    companion object {
-        internal const val EXTRA_OWNER_TOKEN = "connection_service_owner_token"
-        private const val INVALID_OWNER_TOKEN = -1L
-    }
 }

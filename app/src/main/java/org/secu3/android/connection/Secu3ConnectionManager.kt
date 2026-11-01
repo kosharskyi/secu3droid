@@ -46,15 +46,11 @@ class Secu3ConnectionManager @Inject constructor(
     private val btConnection: BtConnection,
     private val mPrefs: UserPrefs,
     private val secuLogger: SecuLogger,
-    private val connectionServiceController: ConnectionServiceController,
+    private val serviceManager: ServiceManager,
+    private val notificationPublisher: ConnectionNotificationPublisher,
 ) {
     private val scope = CoroutineScope(Dispatchers.Default + SupervisorJob())
-    private var nextGeneration = 0L
-    /** Identifies the admitted transport request; it remains fixed while that transport retries. */
-    @Volatile private var currentConnectionGeneration = 0L
     @Volatile private var currentConnection: Connection<*>? = null
-    @Volatile private var currentSessionGeneration = 0L
-    private var lastEventSequence = -1L
     private var appVisible = false
     private val backgroundWorkEnabled = MutableStateFlow<Boolean?>(null)
     private val backgroundPreferenceMutex = Mutex()
@@ -72,25 +68,25 @@ class Secu3ConnectionManager @Inject constructor(
     ).shareIn(scope, SharingStarted.WhileSubscribed(5_000), replay = 0)
 
     fun receivedPacketFlow(onSubscribed: () -> Unit): Flow<InputPacket> = flow {
-        val owner = currentConnection ?: return@flow awaitCancellation()
-        emitAll(owner.receivedPacketFlow(onSubscribed))
+        val connection = currentConnection ?: return@flow awaitCancellation()
+        emitAll(connection.receivedPacketFlow(onSubscribed))
     }
 
     val isConnectionRunning get() = currentConnection?.isRunning == true
     val isConnected get() = currentConnection?.isReady == true
     val isUsbSessionLocked get() = currentConnection === usbConnection && usbConnection.isSessionLocked
-    @get:Synchronized val isUsbSessionRetrying get() = currentConnection === usbConnection &&
-        currentSessionGeneration != currentConnectionGeneration && currentConnectionState != Connected
     val activeUsbDeviceIdOrNull get() = usbConnection.activeDeviceId
 
     @Synchronized fun requestUsbConnection(device: UsbDevice): UsbPermissionRequest? {
-        val request = usbConnection.requestConnection(device, ++nextGeneration)
+        reconcileUsbBeforeAdmission()
+        val request = usbConnection.requestConnection(device, ::disconnectForTransportChange)
         synchronizeUsbOutcome()
         return request
     }
 
     @Synchronized fun completeUsbPermissionRequest(device: UsbDevice, token: Long, permissionGranted: Boolean) {
-        usbConnection.completePermissionRequest(device, token, permissionGranted, ++nextGeneration)
+        reconcileUsbBeforeAdmission()
+        usbConnection.completePermissionRequest(device, token, permissionGranted, ::disconnectForTransportChange)
         synchronizeUsbOutcome()
     }
 
@@ -99,9 +95,17 @@ class Secu3ConnectionManager @Inject constructor(
     @Synchronized fun synchronizeUsbAttachments(): UsbPermissionRequest? = synchronizeUsbAttachments(usbConnection.attachedDevicesSnapshot())
     @Synchronized internal fun synchronizeUsbAttachments(snapshot: Result<List<UsbDevice>>): UsbPermissionRequest? {
         if (snapshot.isFailure) return null
-        val request = usbConnection.synchronizeAttachments(++nextGeneration, snapshot)
+        // Apply detach cleanup before this same call admits a replacement USB run.
+        usbConnection.reconcileAttachments(snapshot)
+        synchronizeUsbOutcome()
+        val request = usbConnection.synchronizeAttachments(snapshot, ::disconnectForTransportChange)
         synchronizeUsbOutcome()
         return request
+    }
+
+    private fun reconcileUsbBeforeAdmission() {
+        usbConnection.reconcileAttachments(usbConnection.attachedDevicesSnapshot())
+        synchronizeUsbOutcome()
     }
 
     /** Reconcile physical attachment changes without starting a newly discovered device. */
@@ -113,43 +117,54 @@ class Secu3ConnectionManager @Inject constructor(
 
     @Synchronized fun onUsbDeviceDetached(deviceId: Int): Boolean {
         val detached = usbConnection.onDeviceDetached(deviceId)
-        if (detached) handleConnectionEvent(usbConnection, usbConnection.latestEvent)
+        if (detached) drainPendingEvents(usbConnection)
         return detached
     }
 
     private fun synchronizeUsbOutcome() {
-        if (usbConnection.isRunning && (currentConnection !== usbConnection || currentConnectionGeneration != usbConnection.generation)) {
-            btConnection.stopConnection()
-            selectConnection(usbConnection, usbConnection.generation)
-            handleConnectionEvent(usbConnection, usbConnection.latestEvent)
-        } else if (currentConnection === usbConnection && usbConnection.latestEvent.end == ConnectionEvent.End.STOPPED) {
-            handleConnectionEvent(usbConnection, usbConnection.latestEvent)
+        if (usbConnection.isRunning && currentConnection !== usbConnection) {
+            selectConnection(usbConnection)
         }
+        drainPendingEvents(usbConnection)
     }
 
-    suspend fun startBtConnection() {
-        val generation = synchronized(this) {
-            if (usbConnection.activeDeviceId != null) return
-            usbConnection.stopConnection()
-            (++nextGeneration).also { selectConnection(btConnection, it) }
+    suspend fun startBtConnection() = coroutineScope {
+        val start = synchronized(this@Secu3ConnectionManager) {
+            if (usbConnection.activeDeviceId != null) return@coroutineScope
+            disconnectForTransportChange()
+            launch(start = CoroutineStart.UNDISPATCHED) { btConnection.startConnection() }
+                .also { selectConnection(btConnection); drainPendingEvents(btConnection) }
         }
-        btConnection.startConnection(generation)
+        start.join()
     }
 
-    private fun selectConnection(connection: Connection<*>, generation: Long) {
-        if (currentConnection != null) secuLogger.stopLogging()
+    private fun selectConnection(connection: Connection<*>) {
+        val replacingConnection = currentConnection != null
+        if (replacingConnection) secuLogger.stopLogging()
         currentConnection = connection
-        currentConnectionGeneration = generation
-        currentSessionGeneration = generation
-        lastEventSequence = -1
         _firmwareInfo.value = null
         publishConnectionState(Connecting)
         reconcileConnectionService()
+        drainPendingEvents(connection)
+    }
+
+    /** A transport change is a real disconnect before the new transport is admitted. */
+    private fun disconnectForTransportChange() {
+        val previous = currentConnection ?: return
+        previous.stopConnection()
+        drainPendingEvents(previous)
+        if (currentConnection === previous) {
+            currentConnection = null
+            _firmwareInfo.value = null
+            secuLogger.stopLogging()
+            publishConnectionState(Disconnected)
+            reconcileConnectionService()
+        }
     }
 
     @Synchronized fun stopConnection(): Boolean {
         if (currentConnection?.allowsManualDisconnect == false) return false
-        return stopConnectionInternal(stopService = true)
+        return stopConnectionInternal()
     }
 
     /** UI reports visibility; the manager applies the shared USB/Bluetooth background policy. */
@@ -158,23 +173,16 @@ class Secu3ConnectionManager @Inject constructor(
         reconcileConnectionService()
     }
 
-    @Synchronized fun onConnectionStateObservedInForeground(state: ConnectionState) {
-        if (state == Connected) reconcileConnectionService()
-    }
-
     /** Stop active work only when the app truly leaves the foreground and background work is disabled. */
     @Synchronized fun onAppBackgrounded() {
         appVisible = false
         usbConnection.cancelPendingPermission()
-        if (currentConnection == null) {
-            nextGeneration++
-            return
-        }
+        if (currentConnection == null) return
         if (backgroundWorkEnabled.value != false) return
-        stopConnectionInternal(stopService = true)
+        stopConnectionInternal()
     }
 
-    /** Preference changes apply immediately to service ownership without ending a live session. */
+    /** Preference changes update service use immediately without ending a live connection. */
     suspend fun onBackgroundWorkPreferenceChanged(enabled: Boolean) {
         backgroundPreferenceMutex.withLock {
             mPrefs.setWakeLockEnabled(enabled)
@@ -185,40 +193,42 @@ class Secu3ConnectionManager @Inject constructor(
 
     /** Re-posts the active notification after the user grants Android's notification permission. */
     @Synchronized fun refreshConnectionNotification() {
-        if (currentConnection != null) connectionServiceController.refreshNotification()
+        val state = currentConnectionState
+        if (backgroundWorkEnabled.value == true && isServiceEligibleState(state)) {
+            notificationPublisher.refreshPostedNotification()
+        }
     }
 
     @Synchronized private fun reconcileConnectionService() {
-        val policy = backgroundWorkEnabled.value ?: return
-        if (!policy) {
-            connectionServiceController.stop()
+        if (!isServiceEligibleState(currentConnectionState)) {
+            stopConnectionService()
             return
         }
-        if (appVisible && currentConnection != null) {
-            connectionServiceController.ensureStarted(currentSessionGeneration)
+        when (backgroundWorkEnabled.value) {
+            true -> try {
+                serviceManager.startForegroundService(SecuConnectionService::class.java)
+            } catch (failure: Exception) {
+                Log.e(javaClass.simpleName, "Could not start connection service", failure)
+            }
+            false -> stopConnectionService()
+            null -> Unit
         }
     }
 
-    /** A delayed destroy from an older service instance must not stop a replacement connection. */
-    @Synchronized fun onConnectionServiceDestroyed(ownerToken: Long) {
-        val serviceConnectionGeneration = connectionServiceController.completeDestruction(ownerToken) ?: return
-        if (currentSessionGeneration != serviceConnectionGeneration) return
-        if (appVisible) {
-            reconcileConnectionService()
-        } else {
-            stopConnectionInternal(stopService = false)
+    @Synchronized private fun stopConnectionInternal(): Boolean {
+        currentConnection?.let { active ->
+            active.stopConnection()
+            drainPendingEvents(active)
         }
-    }
-
-    @Synchronized private fun stopConnectionInternal(stopService: Boolean): Boolean {
         currentConnection = null
-        currentConnectionGeneration = ++nextGeneration
         _firmwareInfo.value = null
         usbConnection.stopConnection()
         btConnection.stopConnection()
+        drainPendingEvents(usbConnection)
+        drainPendingEvents(btConnection)
         secuLogger.stopLogging()
         publishConnectionState(Disconnected)
-        if (stopService) connectionServiceController.stop()
+        stopConnectionService()
         return true
     }
 
@@ -228,21 +238,17 @@ class Secu3ConnectionManager @Inject constructor(
     }
 
     @Synchronized private fun handleConnectionEvent(connection: Connection<*>, event: ConnectionEvent) {
-        if (connection !== currentConnection || currentConnectionGeneration != event.generation || event.sequence <= lastEventSequence) return
-        lastEventSequence = event.sequence
+        if (connection !== currentConnection) return
         _firmwareInfo.value = event.firmware
         if (event.end != null) {
             secuLogger.stopLogging()
             if (event.end == ConnectionEvent.End.STOPPED) {
                 currentConnection = null
-                currentConnectionGeneration = ++nextGeneration
-                connectionServiceController.stop()
-            } else {
-                currentSessionGeneration = ++nextGeneration
-                connectionServiceController.updateConnectionGeneration(currentSessionGeneration)
+                stopConnectionService()
             }
             if (connection !== btConnection || event.end == ConnectionEvent.End.STOPPED) {
                 publishConnectionState(Disconnected)
+                reconcileConnectionService()
             }
         }
         publishConnectionState(event.state)
@@ -258,7 +264,10 @@ class Secu3ConnectionManager @Inject constructor(
     init {
         scope.launch {
             mPrefs.observeSettings { failure ->
-                synchronized(this@Secu3ConnectionManager) { backgroundWorkEnabled.value = null }
+                synchronized(this@Secu3ConnectionManager) {
+                    backgroundWorkEnabled.value = null
+                    reconcileConnectionService()
+                }
                 Log.e(javaClass.simpleName, "Could not read background connection preference", failure)
             }.collect { settings ->
                 synchronized(this@Secu3ConnectionManager) {
@@ -267,16 +276,31 @@ class Secu3ConnectionManager @Inject constructor(
                 }
             }
         }
-        scope.launch(start = CoroutineStart.UNDISPATCHED) { usbConnection.sessionEvents.collect { handleConnectionEvent(usbConnection, it) } }
-        scope.launch(start = CoroutineStart.UNDISPATCHED) { btConnection.sessionEvents.collect { handleConnectionEvent(btConnection, it) } }
+        scope.launch(start = CoroutineStart.UNDISPATCHED) { usbConnection.eventAvailable.collect { drainPendingEvents(usbConnection) } }
+        scope.launch(start = CoroutineStart.UNDISPATCHED) { btConnection.eventAvailable.collect { drainPendingEvents(btConnection) } }
         scope.launch { receivedPacketFlow.filterIsInstance<SensorsPacket>().collect { secuLogger.logPacket(it) } }
     }
 
     private fun applyBackgroundWorkPolicy(enabled: Boolean) {
         if (!enabled && !appVisible && currentConnection != null) {
-            stopConnectionInternal(stopService = true)
+            stopConnectionInternal()
         } else {
             reconcileConnectionService()
         }
     }
+
+    @Synchronized private fun drainPendingEvents(connection: Connection<*>) {
+        connection.consumePendingEvents { handleConnectionEvent(connection, it) }
+    }
+
+    private fun stopConnectionService() {
+        try {
+            serviceManager.stopService(SecuConnectionService::class.java)
+        } catch (failure: Exception) {
+            Log.e(javaClass.simpleName, "Could not stop connection service", failure)
+        }
+    }
+
+    private fun isServiceEligibleState(state: ConnectionState) = state == Connected || state == Reconnecting ||
+        state == UsbReconnecting || state == UsbReconnectingAwaitingEcu
 }

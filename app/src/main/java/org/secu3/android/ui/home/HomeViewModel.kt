@@ -15,6 +15,8 @@ import org.secu3.android.connection.Connecting
 import org.secu3.android.connection.Reconnecting
 import org.secu3.android.connection.ConnectionAttempt
 import org.secu3.android.connection.UsbAwaitingEcu
+import org.secu3.android.connection.UsbReconnecting
+import org.secu3.android.connection.UsbReconnectingAwaitingEcu
 import org.secu3.android.connection.Secu3ConnectionManager
 import org.secu3.android.network.models.GitHubRelease
 import org.secu3.android.R
@@ -42,7 +44,7 @@ class HomeViewModel @Inject constructor(
         viewModelScope.launch {
             manager.connectionStateFlow.collect { status ->
                 val mapped = when (status) {
-                    UsbAwaitingEcu -> Connecting
+                    UsbAwaitingEcu, UsbReconnecting, UsbReconnectingAwaitingEcu -> Connecting
                     is ConnectionAttempt -> Connecting
                     else -> status.takeIf { it == Connected || it == Connecting || it == Reconnecting } ?: Disconnected
                 }

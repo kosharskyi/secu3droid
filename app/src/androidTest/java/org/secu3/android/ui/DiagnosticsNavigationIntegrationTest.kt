@@ -349,13 +349,13 @@ class DiagnosticsNavigationIntegrationTest {
                 .invoke(connection, socket) == true,
         )
 
-        val generation = driver.select("BLUETOOTH")
+        driver.select("BLUETOOTH")
         await { driver.packets.subscriptionCount.value > 0 }
         driver.emit(firmwarePacket(secu3T))
         await { manager.firmwareInfo.value != null && manager.currentConnectionState == Connected }
         compose.waitForIdle()
         compose.waitUntil(4_000) { compose.activity.rootNavigationController?.currentDestination?.route == HOME_ROUTE }
-        FakeBluetoothTransport(manager, generation, socket, driver, writes).also(fakeTransports::add)
+        FakeBluetoothTransport(manager, socket, driver, writes).also(fakeTransports::add)
     }
 
     private suspend fun await(predicate: () -> Boolean) {
@@ -364,7 +364,6 @@ class DiagnosticsNavigationIntegrationTest {
 
     private class FakeBluetoothTransport(
         private val manager: Secu3ConnectionManager,
-        private val generation: Long,
         private var socket: BluetoothSocket,
         private val driver: ConnectionTestDriver,
         val writes: CopyOnWriteArrayList<ByteArray>,
@@ -406,11 +405,7 @@ class DiagnosticsNavigationIntegrationTest {
         fun disconnect() = runBlocking {
             val selectedField = Secu3ConnectionManager::class.java.getDeclaredField("currentConnection").apply { isAccessible = true }
             val current = selectedField.get(manager)
-            val currentGeneration = if (current === driver.connection) {
-                Secu3ConnectionManager::class.java.getDeclaredField("currentConnectionGeneration")
-                    .apply { isAccessible = true }.getLong(manager)
-            } else null
-            if (currentGeneration == generation) manager.stopConnection()
+            if (current === driver.connection) manager.stopConnection()
             runCatching { socket.close() }
         }
     }

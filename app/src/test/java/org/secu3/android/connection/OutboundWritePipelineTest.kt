@@ -269,37 +269,17 @@ class OutboundWritePipelineTest {
     @Test
     fun secondStopDoesNotCancelPendingDisconnectedNotification() = runBlocking {
         val connection = TestConnection()
-        val collectorEntered = CompletableDeferred<Unit>()
-        val releaseCollector = CompletableDeferred<Unit>()
-        val disconnectedReceived = CompletableDeferred<Unit>()
-        val collector = launch {
-            connection.sessionEvents.collect { event ->
-                when (event.state) {
-                    Connecting -> {
-                        collectorEntered.complete(Unit)
-                        releaseCollector.await()
-                    }
-                    Disconnected -> disconnectedReceived.complete(Unit)
-                    else -> Unit
-                }
-            }
-        }
         try {
-            withTimeout(2_000) { connection.awaitStateSubscriber() }
-            val initialState = async { connection.publishState(Connecting) }
-            withTimeout(2_000) { collectorEntered.await() }
-
             connection.start()
             connection.stopConnection()
             withTimeout(2_000) { connection.awaitDisconnectStarted() }
             connection.stopConnection()
 
-            releaseCollector.complete(Unit)
-            withTimeout(2_000) { disconnectedReceived.await() }
-            initialState.cancelAndJoin()
+            val events = mutableListOf<ConnectionEvent>()
+            connection.consumePendingEvents(events::add)
+            assertEquals(1, events.count { it.end == ConnectionEvent.End.STOPPED })
+            assertEquals(Disconnected, events.last { it.end == ConnectionEvent.End.STOPPED }.state)
         } finally {
-            releaseCollector.complete(Unit)
-            collector.cancelAndJoin()
             connection.stopConnection()
             connection.shutdown()
         }
@@ -312,10 +292,6 @@ class OutboundWritePipelineTest {
     private class TestConnection : Connection<Endpoint>() {
         val writes = CopyOnWriteArrayList<ByteArray>()
         private val disconnectStarted = CompletableDeferred<Unit>()
-
-        fun start() {
-            isRunning = true
-        }
 
         fun startCancelableWork(started: CompletableDeferred<Unit>, cancelled: CompletableDeferred<Unit>) {
             scope.launch {
@@ -333,13 +309,7 @@ class OutboundWritePipelineTest {
             backgroundScope.cancel()
         }
 
-        suspend fun publishState(state: ConnectionState) {
-            _sessionEvents.emit(ConnectionEvent(0, state))
-        }
-
-        suspend fun awaitStateSubscriber() {
-            _sessionEvents.subscriptionCount.first { it > 0 }
-        }
+        fun start() { launchConnection { awaitCancellation() } }
 
         suspend fun awaitDisconnectStarted() {
             disconnectStarted.await()
@@ -356,7 +326,6 @@ class OutboundWritePipelineTest {
             backgroundScope.launch {
                 endpoint?.let(::closeEndpoint)
                 disconnectStarted.complete(Unit)
-                _sessionEvents.emit(ConnectionEvent(0, Disconnected))
             }
         }
 

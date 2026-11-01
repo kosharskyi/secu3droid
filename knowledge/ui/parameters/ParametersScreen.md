@@ -12,7 +12,7 @@ The ViewModel derives one immutable domain capability snapshot from the manager'
 
 ## Pager motion does not end the settled page's read session
 
-Keep the active page activation while a horizontal pager gesture is in progress, including boundary overscroll or a canceled swipe. A vertical child scroll, overscroll, or nested fling can also toggle pager `isScrollInProgress` without changing its settled page, so scrolling is not an activation boundary on either axis. Manual-command predicates still become false during movement. Once the pager settles, activate only if its settled index changed; connection loss, lifecycle pause, and connection-session replacement still invalidate the session immediately.
+Keep the active page activation while a horizontal pager gesture is in progress, including boundary overscroll or a canceled swipe. A vertical child scroll, overscroll, or nested fling can also toggle pager `isScrollInProgress` without changing its settled page, so scrolling is not an activation boundary on either axis. Manual-command predicates still become false during movement. Once the pager settles, activate only if its settled index changed. Status and lifecycle changes stop UI activity; the domain component independently consumes every connection transition and restarts its selected page after recovery, even when Compose does not render an intermediate loss. Do not add a connection/session number as an effect key.
 
 ## Newly offscreen parameter forms wait until pager idle
 

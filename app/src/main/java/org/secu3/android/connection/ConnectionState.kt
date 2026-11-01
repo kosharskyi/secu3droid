@@ -29,10 +29,14 @@ sealed class ConnectionState()
 
 data object Connected : ConnectionState()
 data object Connecting : ConnectionState()
-/** A transport request is restoring a connection that was already established once. */
+/** Bluetooth has lost an established socket and is retrying it. */
 data object Reconnecting : ConnectionState()
-/** USB liveness timed out; automatic attempts are waiting for a valid ECU response. */
+/** The initial USB handshake is waiting for a valid ECU response. */
 data object UsbAwaitingEcu : ConnectionState()
+/** An established USB connection is recovering after a transport or ECU loss. */
+data object UsbReconnecting : ConnectionState()
+/** An established USB connection is waiting for a valid ECU response during recovery. */
+data object UsbReconnectingAwaitingEcu : ConnectionState()
 /** The ECU session ended; the transport may continue retrying afterwards. */
 data object Disconnected : ConnectionState()
 data class ConnectionAttempt(val currentAttempt: Int) : ConnectionState()
@@ -43,13 +47,11 @@ data class ConnectionError(val e: Exception) : ConnectionState()
 data class ConnectionFailed(val e: Exception) : ConnectionState()
 data class ConnectionLost(val e: Exception) : ConnectionState()
 
-/** Transport outcomes are fenced by the manager's connection request. */
+/** A transport status plus the lifecycle outcome that accompanies it. */
 data class ConnectionEvent(
-    val generation: Long,
     val state: ConnectionState,
     val firmware: org.secu3.android.models.packets.input.FirmwareInfoPacket? = null,
     val end: End? = null,
-    val sequence: Long = 0,
 ) {
     enum class End { RETRYING, STOPPED }
 }

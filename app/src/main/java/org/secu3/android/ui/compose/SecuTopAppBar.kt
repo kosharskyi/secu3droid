@@ -37,6 +37,8 @@ import org.secu3.android.connection.Connecting
 import org.secu3.android.connection.Reconnecting
 import org.secu3.android.connection.Disconnected
 import org.secu3.android.connection.UsbAwaitingEcu
+import org.secu3.android.connection.UsbReconnecting
+import org.secu3.android.connection.UsbReconnectingAwaitingEcu
 
 /** Compact, fixed-width toolbar status with the full state label exposed to accessibility services. */
 @OptIn(ExperimentalMaterial3Api::class)
@@ -51,7 +53,7 @@ fun ConnectionStatusIndicator(
     @StringRes val labelId = when (connectionState) {
         Connected -> R.string.home_connection_connected
         Connecting, Reconnecting -> R.string.home_connection_connecting
-        UsbAwaitingEcu -> R.string.home_connection_connecting
+        UsbAwaitingEcu, UsbReconnecting, UsbReconnectingAwaitingEcu -> R.string.home_connection_connecting
         Disconnected -> R.string.home_connection_disconnected
         else -> R.string.connection_status_unknown
     }
@@ -59,7 +61,7 @@ fun ConnectionStatusIndicator(
     val indicatorColor = when (connectionState) {
         Connected -> palette.success
         Connecting, Reconnecting -> palette.warning
-        UsbAwaitingEcu -> palette.warning
+        UsbAwaitingEcu, UsbReconnecting, UsbReconnectingAwaitingEcu -> palette.warning
         Disconnected -> MaterialTheme.colorScheme.error
         else -> MaterialTheme.colorScheme.secondary
     }

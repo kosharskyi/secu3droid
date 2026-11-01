@@ -12,6 +12,8 @@ import org.secu3.android.connection.Disconnected
 import org.secu3.android.connection.Connecting
 import org.secu3.android.connection.Reconnecting
 import org.secu3.android.connection.UsbAwaitingEcu
+import org.secu3.android.connection.UsbReconnecting
+import org.secu3.android.connection.UsbReconnectingAwaitingEcu
 import org.secu3.android.ui.start.StartScreenViewModel
 
 class ActivityNavigationResumeTest {
@@ -71,11 +73,8 @@ class ActivityNavigationResumeTest {
             val startViewModel = startViewModel(activity)
             activity.openSettings()
             val manager = viewModel(activity).connectionManager
-            val generationField = manager.javaClass.getDeclaredField("nextGeneration").apply { isAccessible = true }
-            val generationBefore = generationField.getLong(manager)
-
             assertEquals(null, startViewModel.synchronizeUsbAttachments())
-            assertEquals(generationBefore, generationField.getLong(manager))
+            assertEquals(false, manager.isConnectionRunning)
         }
     }
 
@@ -128,7 +127,7 @@ class ActivityNavigationResumeTest {
     }
 
     @Test fun cableRemovalAfterHandledEcuTimeoutReturnsFromLogsToStart() = withActivity { scenario ->
-        scenario.onActivity { disconnect(it); publish(it, UsbAwaitingEcu) }
+        scenario.onActivity { disconnect(it); publish(it, UsbReconnectingAwaitingEcu) }
         idle()
         scenario.onActivity { assertRoute(it, START_ROUTE); it.openLogs() }
         idle()
@@ -186,6 +185,12 @@ class ActivityNavigationResumeTest {
         scenario.onActivity { it.openSettings(); publish(it, Connecting); publish(it, UsbAwaitingEcu) }
         idle()
         scenario.onActivity { assertRoute(it, SETTINGS_ROUTE) }
+    }
+
+    @Test fun establishedUsbRetryStatusReturnsToStartWithoutSessionSnapshot() = withActivity { scenario ->
+        scenario.onActivity { it.openSettings(); publish(it, UsbReconnecting) }
+        idle()
+        scenario.onActivity { assertRoute(it, START_ROUTE) }
     }
 
     @Test fun connectedReplayDoesNotInterruptFeatureRouteAfterRecreation() = withActivity { scenario ->

@@ -6,6 +6,10 @@ A page job may wait behind cancellation cleanup from another page. Capture the w
 
 Use emitted connection events to end the current page session and reject late results. Check the manager's live connected state again before admitting a send or starting a request, since its event collector can lag a physical disconnect. Do not use that later state lookup to replace event ordering across a fast reconnect.
 
+## Reconnect restarts the selected page without a UI session key
+
+Keep the selected page across connection loss, cancel its work and clear its cache, then reload it on the next `Connected` event. Compose can conflate a rapid loss/recovery pair into one displayed `Connected`, so restarting must not depend on recomposition or an exported session counter. Pause and route closure clear the selection so recovery cannot restart work for an inactive route. `Invalidated` carries no session identity; cancellation tokens remain private to the domain component.
+
 ## Pause cancels work without clearing editable UI state
 
 Pause advances the session token, cancels reads and pending save confirmation, and clears successful-page cache markers. A later completion from the old work must not publish into the resumed route; the visible page will request fresh data when reactivated.

@@ -27,6 +27,8 @@ import org.secu3.android.connection.BluetoothDeviceAddress
 import org.secu3.android.connection.BluetoothPermissionPolicy
 import org.secu3.android.connection.ConnectionTimeout
 import org.secu3.android.connection.UsbAwaitingEcu
+import org.secu3.android.connection.UsbReconnecting
+import org.secu3.android.connection.UsbReconnectingAwaitingEcu
 import org.secu3.android.connection.Connected
 import org.secu3.android.connection.Disconnected
 import org.secu3.android.connection.Secu3ConnectionManager
@@ -232,10 +234,11 @@ class StartScreenViewModel @Inject constructor(
         val connectionState = connectionManager.currentConnectionState
         val managerConnectionInProgress = when (connectionState) {
             Disconnected, Connected, ConnectionTimeout -> false
-            UsbAwaitingEcu -> true
+            UsbAwaitingEcu, UsbReconnecting, UsbReconnectingAwaitingEcu -> true
             else -> connectionManager.isConnectionRunning && !connectionManager.isConnected
         }
-        val usbAwaitingEcu = usbDevice != null && connectionState == UsbAwaitingEcu
+        val usbAwaitingEcu = usbDevice != null &&
+            (connectionState == UsbAwaitingEcu || connectionState == UsbReconnectingAwaitingEcu)
         setConnecting(
             connectionJob?.isActive == true ||
                 bluetoothBondGate.isPending() ||

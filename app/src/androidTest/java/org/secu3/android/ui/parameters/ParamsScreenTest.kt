@@ -109,15 +109,17 @@ class ParamsScreenTest {
         compose.runOnIdle { assertEquals(1, retries) }
     }
 
-    @Test fun newConnectionSessionReloadsTheSelectedPageEvenWhenStatusRemainsConnected() {
-        val session = mutableStateOf(0)
+    @Test fun reconnectStatusReactivatesTheSelectedPage() {
+        val connectionState = mutableStateOf<org.secu3.android.connection.ConnectionState?>(Connected)
         val settled = mutableListOf<Int>()
+        var unsettled = 0
+        var unsettledBeforeDisconnect = 0
         compose.setContent {
             SecuComposeTheme {
                 ParametersScreen(
-                    titles = listOf("Starter", "Angles"), connectionState = Connected,
-                    connectionSession = session.value,
+                    titles = listOf("Starter", "Angles"), connectionState = connectionState.value,
                     onBack = {}, onSave = {}, onPageSettled = settled::add,
+                    onPageUnsettled = { unsettled++ },
                     pageContent = { _, _, _ -> Box(Modifier.fillMaxSize()) },
                 )
             }
@@ -125,7 +127,12 @@ class ParamsScreenTest {
         compose.waitUntil(5_000) { settled == listOf(0) }
         compose.onNodeWithText("Angles").performClick()
         compose.waitUntil(5_000) { settled == listOf(0, 1) }
-        compose.runOnIdle { session.value++ }
+        compose.runOnIdle {
+            unsettledBeforeDisconnect = unsettled
+            connectionState.value = org.secu3.android.connection.Disconnected
+        }
+        compose.waitUntil(5_000) { unsettled == unsettledBeforeDisconnect + 1 }
+        compose.runOnIdle { connectionState.value = Connected }
         compose.waitUntil(5_000) { settled == listOf(0, 1, 1) }
         compose.onNodeWithText("Angles").assertIsSelected()
     }

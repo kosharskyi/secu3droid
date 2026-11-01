@@ -7,11 +7,36 @@ import org.junit.Test
 import org.secu3.android.models.RawPacket
 
 class ConnectionLifecycleTest {
+    @Test fun pendingStateQueueRetainsFastTransitionsWithinOneRun() = runBlocking {
+        val connection = TestConnection()
+        try {
+            connection.publishStates(Connected, Reconnecting, Connected)
+            val events = mutableListOf<ConnectionEvent>()
+            connection.consumePendingEvents(events::add)
+
+            assertEquals(listOf(Connecting, Connected, Reconnecting, Connected), events.map { it.state })
+            assertTrue(events.all { it.end == null })
+        } finally { connection.stopConnection(); connection.shutdown() }
+    }
+
+    @Test fun replacementDiscardsUndeliveredStatusesFromThePreviousRun() = runBlocking {
+        val connection = TestConnection()
+        try {
+            connection.publishStates(Connected, Reconnecting)
+            connection.start()
+            val events = mutableListOf<ConnectionEvent>()
+            connection.consumePendingEvents(events::add)
+
+            assertEquals(listOf(Connecting), events.map { it.state })
+            assertTrue(events.all { it.end == null })
+        } finally { connection.stopConnection(); connection.shutdown() }
+    }
+
     @Test fun replacedAttemptCannotConfirmItsSuccessor() = runBlocking {
         val connection = TestConnection()
         try {
-            val first = connection.start(1)
-            val second = connection.start(2)
+            val first = connection.start()
+            val second = connection.start()
             assertTrue(first != second)
             assertTrue(connection.isConnected)
             assertFalse(connection.isReady)
@@ -22,7 +47,7 @@ class ConnectionLifecycleTest {
             assertEquals(second, connection.readyAttemptId)
             connection.stopConnection()
             assertFalse(connection.isReady)
-            assertNull(connection.latestEvent.firmware)
+            assertEquals(Disconnected, connection.currentConnectionState)
         } finally { connection.shutdown() }
     }
 
@@ -30,21 +55,30 @@ class ConnectionLifecycleTest {
         val connection = TestConnection()
         val subscribed = CompletableDeferred<Unit>()
         try {
-            connection.start(1)
+            connection.start()
             val reply = async(start = CoroutineStart.UNDISPATCHED) {
                 withTimeoutOrNull(200) { connection.receivedPacketFlow { subscribed.complete(Unit) }.first() }
             }
             subscribed.await()
-            val replacement = connection.start(2)
+            val replacement = connection.start()
             connection.receivePacket(replacement, firmware())
             assertNull(reply.await())
         } finally { connection.stopConnection(); connection.shutdown() }
     }
 
     private class TestConnection : Connection<Unit>() {
-        suspend fun start(generation: Long): Long {
+        suspend fun publishStates(vararg states: ConnectionState) {
+            val published = CompletableDeferred<Unit>()
+            launchConnection { job ->
+                states.forEach { publishState(job, it) }
+                published.complete(Unit)
+                awaitCancellation()
+            }
+            withTimeout(2_000) { published.await() }
+        }
+        suspend fun start(): Long {
             val started = CompletableDeferred<Long>()
-            launchConnection(generation) { job ->
+            launchConnection { job ->
                 val attempt = beginAttempt(job)!!
                 check(installEndpoint(Unit))
                 started.complete(attempt)

@@ -12,7 +12,7 @@ The connecting indicator combines the active preference/preflight job, pending B
 
 ## USB ignition guidance follows the transport's liveness state
 
-The Start route keeps the USB hint generic while permission/open/firmware setup is in progress. After USB reports `UsbAwaitingEcu` through the manager following a packet or handshake timeout, replace the hint with the localized ignition prompt. Keep it visible through automatic retries while the USB device remains attached; a valid firmware response or detach clears it. Do not infer ECU power from the platform USB attachment or permission result.
+The Start route keeps the USB hint generic while permission/open/firmware setup is in progress. `UsbAwaitingEcu` and `UsbReconnectingAwaitingEcu` select the localized ignition prompt after a handshake or packet timeout; generic `UsbReconnecting` does not. Keep the prompt visible through automatic retries while the USB device remains attached; a valid firmware response or detach clears it. Do not infer ECU power from the platform USB attachment, permission result or a session counter.
 
 ## Resuming an open Bluetooth picker retains its rows
 

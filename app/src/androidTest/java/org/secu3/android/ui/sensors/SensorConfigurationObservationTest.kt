@@ -32,7 +32,7 @@ import org.secu3.android.db.models.IndicatorState
 import org.secu3.android.connection.ConnectionTestDriver
 import org.secu3.android.connection.BtConnection
 import org.secu3.android.connection.ConnectionNotificationPublisher
-import org.secu3.android.connection.ConnectionServiceController
+import org.secu3.android.connection.ServiceManager
 import org.secu3.android.connection.Connected
 import org.secu3.android.connection.Disconnected
 import org.secu3.android.connection.Secu3ConnectionManager
@@ -190,8 +190,9 @@ class SensorConfigurationObservationTest {
         private val bluetoothManager = context.getSystemService(Context.BLUETOOTH_SERVICE) as BluetoothManager
         private val bluetooth = BtConnection(prefs, bluetoothManager)
         private val logger = SecuLogger(prefs, FileHelper(context))
-        private val serviceController = ConnectionServiceController(context, ConnectionNotificationPublisher(context))
-        private val manager = Secu3ConnectionManager(usb, bluetooth, prefs, logger, serviceController)
+        private val notificationPublisher = ConnectionNotificationPublisher(context)
+        private val serviceManager = ServiceManager(context)
+        private val manager = Secu3ConnectionManager(usb, bluetooth, prefs, logger, serviceManager, notificationPublisher)
         val connectionStates = MutableStateFlow<org.secu3.android.connection.ConnectionState>(Disconnected)
         val packetFlow = MutableSharedFlow<InputPacket>(extraBufferCapacity = 8)
         val repository = SensorConfigurationRepository(database)
@@ -220,7 +221,7 @@ class SensorConfigurationObservationTest {
 
         suspend fun close() {
             InstrumentationRegistry.getInstrumentation().runOnMainSync { viewModelStore.clear() }
-            serviceController.stop()
+            serviceManager.stopService(org.secu3.android.connection.SecuConnectionService::class.java)
             (Secu3ConnectionManager::class.java.getDeclaredField("scope").apply { isAccessible = true }.get(manager) as CoroutineScope).cancel()
             ConnectionTestDriver(manager, usb).shutdown()
             ConnectionTestDriver(manager, bluetooth).shutdown()

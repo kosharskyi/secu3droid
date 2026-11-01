@@ -68,6 +68,8 @@ import org.secu3.android.connection.Disconnected
 import org.secu3.android.connection.Connecting
 import org.secu3.android.connection.Reconnecting
 import org.secu3.android.connection.UsbAwaitingEcu
+import org.secu3.android.connection.UsbReconnecting
+import org.secu3.android.connection.UsbReconnectingAwaitingEcu
 import kotlin.math.PI
 import kotlin.math.cos
 import kotlin.math.min
@@ -228,14 +230,14 @@ private fun DashboardStatusBar(
 ) {
     val statusText = when (connectionState) {
         Connected -> stringResource(if (data == null) R.string.dashboard_status_no_data else R.string.dashboard_status_online)
-        Connecting, Reconnecting, UsbAwaitingEcu -> stringResource(R.string.dashboard_status_connecting)
+        Connecting, Reconnecting, UsbAwaitingEcu, UsbReconnecting, UsbReconnectingAwaitingEcu -> stringResource(R.string.dashboard_status_connecting)
         Disconnected -> stringResource(R.string.dashboard_status_offline)
         else -> stringResource(R.string.dashboard_status_no_data)
     }
     val palette = LocalSecuPalette.current
     val statusColor = when (connectionState) {
         Connected -> if (data == null) MaterialTheme.colorScheme.onSurfaceVariant else palette.success
-        Connecting, Reconnecting, UsbAwaitingEcu -> palette.warning
+        Connecting, Reconnecting, UsbAwaitingEcu, UsbReconnecting, UsbReconnectingAwaitingEcu -> palette.warning
         Disconnected -> MaterialTheme.colorScheme.error
         else -> MaterialTheme.colorScheme.onSurfaceVariant
     }

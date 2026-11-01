@@ -14,6 +14,10 @@ Both readers pass checksum-valid frames through `receivePacket`. It parses with 
 
 The shared packet flow follows current attempts without replay. The request overload captures its starting attempt, subscribes, then invokes the send callback. It must reject replacement-attempt replies even if the same transport and device remain selected. Firmware bootstrap happens inside each transport before it reports Connected; it does not depend on a manager or screen packet subscriber.
 
-## Event ownership and ordering must survive asynchronous delivery
+## Pending statuses stay inside the transport until serialized consumption
 
-`ConnectionEvent.generation` identifies the manager request that owns the transport job; `sequence` orders outcomes within that transport. Initial manager admission and synchronous detach may apply an outcome before the event collector catches up, so sequence checks reject already-applied or older outcomes. During an ongoing job, consume the event stream in order: applying a newer Connected snapshot on resume could skip a queued loss outcome. A normal state has no `end`; `RETRYING` ends an established logical session while transport work continues, and `STOPPED` releases that transport.
+The transport queues full outcomes under `connectionLock` and only signals that work is available. The manager is the single queue consumer and drains it while holding its connection-selection lock. Wake signals may conflate; the actual outcomes must not, because even an immediate loss/recovery pair invalidates in-flight consumer work. No job identity or generation is attached to an outcome.
+
+Starting a replacement clears undelivered old outcomes before installing its job. The manager must consume the old disconnect before admitting that replacement; a queued wake from the old run then finds only the current queue. Source coroutines still check `connectionJob` before enqueueing, and asynchronous endpoint closing never publishes another status.
+
+The drain callback runs with the connection lock held, so its caller must already hold the manager lock. Worker publication only queues and signals; it must not call the manager directly and invert that lock order. A normal outcome has no `end`; `RETRYING` marks established loss while transport work continues, and `STOPPED` releases that transport.

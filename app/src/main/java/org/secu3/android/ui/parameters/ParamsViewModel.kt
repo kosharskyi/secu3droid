@@ -29,7 +29,6 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.setValue
 import dagger.hilt.android.lifecycle.HiltViewModel
 import dagger.hilt.android.qualifiers.ApplicationContext
@@ -146,8 +145,6 @@ class ParamsViewModel @Inject constructor(
         private set
     private var nextParameterEditSessionId = 0L
 
-    internal var connectionSession by mutableIntStateOf(0)
-        private set
     internal var failedPage: ParameterPage? by mutableStateOf(null)
         private set
 
@@ -854,8 +851,7 @@ class ParamsViewModel @Inject constructor(
 
     private fun onParameterSessionEvent(event: ParameterSessionEvent) {
         when (event) {
-            is ParameterSessionEvent.Invalidated -> {
-                connectionSession = event.sessionId
+            ParameterSessionEvent.Invalidated -> {
                 parameterEditSession = null
                 failedPage = null
                 resetAllStateHolders()

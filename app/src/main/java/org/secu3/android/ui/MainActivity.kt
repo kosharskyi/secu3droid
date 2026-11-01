@@ -99,9 +99,6 @@ class MainActivity : ComponentActivity() {
         setContent { RootNavigation(this) }
         lifecycleScope.launch {
             viewModel.connectionManager.connectionStateFlow.collect { state ->
-                if (lifecycle.currentState.isAtLeast(Lifecycle.State.RESUMED) && isDeviceUnlocked()) {
-                    viewModel.connectionManager.onConnectionStateObservedInForeground(state)
-                }
                 if ((state is ConnectionFailed || state is ConnectionLost) && viewModel.connectionManager.activeUsbDeviceIdOrNull != null) {
                     val failureMessage = if (state is ConnectionLost) R.string.usb_connection_lost else R.string.usb_connection_failed
                     uiMessageQueue.publish(failureMessage, org.secu3.android.ui.messages.UiMessageDuration.LONG)

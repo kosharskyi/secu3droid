@@ -458,7 +458,7 @@ class ParameterPageSessionCacheTest {
             delay(200)
             assertEquals(
                 "writes after confirm; source=${vm.functionsControl.values.value?.loadSource}, " +
-                    "session=${vm.connectionSession}, editor=${vm.parameterEditSession}, " +
+                    "editor=${vm.parameterEditSession}, " +
                     "usbConnected=${usb.isConnected}",
                 baseline + 2,
                 usb.writes.size,

@@ -2,6 +2,7 @@ package org.secu3.android.connection
 
 import android.util.Log
 import kotlinx.coroutines.*
+import kotlinx.coroutines.channels.BufferOverflow
 import kotlinx.coroutines.flow.*
 import org.secu3.android.models.RawPacket
 import org.secu3.android.models.packets.base.InputPacket
@@ -23,12 +24,10 @@ abstract class Connection<E : Any> {
     @Volatile protected var connectionJob: Job? = null
     @Volatile var isRunning = false
         protected set
-    @Volatile var generation = 0L
-        protected set
     private var nextAttemptId = 0L
-    private var nextEventSequence = 0L
-    @Volatile internal var latestEvent = ConnectionEvent(0, Disconnected)
-        private set
+    private val pendingEvents = ArrayDeque<ConnectionEvent>()
+    private val _eventAvailable = MutableSharedFlow<Unit>(extraBufferCapacity = 1, onBufferOverflow = BufferOverflow.DROP_OLDEST)
+    internal val eventAvailable: Flow<Unit> = _eventAvailable.asSharedFlow()
     @Volatile internal var activeAttemptId: Long? = null
         private set
     internal val readyAttemptId: Long? get() = activeAttemptId.takeIf { currentConnectionState == Connected }
@@ -36,8 +35,6 @@ abstract class Connection<E : Any> {
         protected set
     @Volatile private var currentFuelFlowPulsesPerLitre: Int? = null
     @Volatile private var firmware: FirmwareInfoPacket? = null
-    protected val _sessionEvents = MutableSharedFlow<ConnectionEvent>(extraBufferCapacity = 64)
-    val sessionEvents = _sessionEvents.asSharedFlow()
     private val _packets = MutableSharedFlow<ConnectionPacket>()
     val receivedPacketFlow: Flow<InputPacket> = _packets
         .filter { it.attemptId == activeAttemptId }.map { it.packet }
@@ -73,7 +70,7 @@ abstract class Connection<E : Any> {
         }
     }
 
-    protected fun launchConnection(generation: Long, run: suspend (Job) -> Unit) {
+    protected fun launchConnection(run: suspend (Job) -> Unit): Job {
         stopConnection()
         val job = scope.launch(start = CoroutineStart.LAZY) {
             val owner = currentCoroutineContext()[Job]!!
@@ -83,11 +80,12 @@ abstract class Connection<E : Any> {
             }
         }
         synchronized(connectionLock) {
-            this.generation = generation
+            pendingEvents.clear()
             connectionJob = job
             isRunning = true
         }
         job.start()
+        return job
     }
 
     protected fun isCurrent(job: Job): Boolean = synchronized(connectionLock) {
@@ -108,8 +106,7 @@ abstract class Connection<E : Any> {
         synchronized(connectionLock) {
             if (connectionJob !== job || !job.isActive) return
             currentConnectionState = state
-            latestEvent = ConnectionEvent(generation, state, firmware, end, ++nextEventSequence)
-            _sessionEvents.tryEmit(latestEvent)
+            enqueueEventLocked(ConnectionEvent(state, firmware, end))
         }
     }
 
@@ -167,6 +164,7 @@ abstract class Connection<E : Any> {
             activeAttemptId = null
             firmware = null
             currentConnectionState = Disconnected
+            if (wasRunning) enqueueEventLocked(ConnectionEvent(Disconnected, end = ConnectionEvent.End.STOPPED))
         }
         job?.cancel()
         scope.coroutineContext.cancelChildren()
@@ -175,14 +173,17 @@ abstract class Connection<E : Any> {
 
     protected open fun disconnect() {
         val target = detachCurrentEndpoint()
-        val event = synchronized(connectionLock) {
-            ConnectionEvent(generation, Disconnected, end = ConnectionEvent.End.STOPPED, sequence = ++nextEventSequence)
-                .also { latestEvent = it }
-        }
-        backgroundScope.launch {
-            target?.let(::closeEndpoint)
-            _sessionEvents.emit(event)
-        }
+        backgroundScope.launch { target?.let(::closeEndpoint) }
+    }
+
+    /** The manager drains ordered transport outcomes while holding its own state lock. */
+    internal fun consumePendingEvents(consume: (ConnectionEvent) -> Unit) = synchronized(connectionLock) {
+        while (pendingEvents.isNotEmpty()) consume(pendingEvents.removeFirst())
+    }
+
+    private fun enqueueEventLocked(event: ConnectionEvent) {
+        pendingEvents.addLast(event)
+        _eventAvailable.tryEmit(Unit)
     }
 
     final fun sendData(packet: OutputPacket) {
