@@ -64,6 +64,7 @@ import org.secu3.android.models.packets.input.FirmwareInfoPacket
 import org.secu3.android.models.packets.input.SensorsPacket
 import org.secu3.android.utils.FileHelper
 import org.secu3.android.utils.SecuLogger
+import org.secu3.android.utils.SensorLogEncoder
 import org.secu3.android.utils.Task
 import org.secu3.android.utils.prefs.UserPrefs
 import org.secu3.android.utils.prefs.IsolatedUserPrefs
@@ -1559,7 +1560,7 @@ class UsbSessionIntegrationTest {
         val usb = FakeUsbConnection(context.getSystemService(Context.USB_SERVICE) as UsbManager, prefs)
         private val bluetoothManager = context.getSystemService(Context.BLUETOOTH_SERVICE) as BluetoothManager
         private val bt = BtConnection(btPrefs ?: prefs, bluetoothManager)
-        val logger = SecuLogger(prefs, FileHelper(context), UiMessageQueue())
+        val logger = SecuLogger(prefs, FileHelper(context), UiMessageQueue(), SensorLogEncoder())
         val serviceContext = RecordingServiceContext(context)
         private val notificationPublisher = ConnectionNotificationPublisher(serviceContext)
         val serviceManager = ServiceManager(serviceContext)

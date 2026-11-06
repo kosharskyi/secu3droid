@@ -43,7 +43,7 @@ class SecuLoggerDeleteTest {
         prefs = prefsFixture.prefs
         files = FileHelper(context)
         messages = UiMessageQueue()
-        logger = SecuLogger(prefs, files, messages)
+        logger = SecuLogger(prefs, files, messages, SensorLogEncoder())
     }
 
     @After
@@ -109,6 +109,7 @@ class SecuLoggerDeleteTest {
         assertEquals(LogDeletionResult.Active, logger.deleteLogFile(activeFile))
         logger.logPacket(SensorsPacket())
         logger.stopLogging()
+        logger.awaitCommandsForTests()
 
         assertEquals(252L, activeFile.length())
         assertEquals(LogDeletionResult.Deleted, logger.deleteLogFile(activeFile))
@@ -161,6 +162,36 @@ class SecuLoggerDeleteTest {
         logger.startLogging()
         logger.awaitCommandsForTests()
         assertTrue(logger.isLoggerStarted)
+        logger.stopLogging()
+        logger.awaitCommandsForTests()
+    }
+
+    @Test
+    fun writeFailureClosesActiveFilePublishesOneErrorAndAllowsRestart() = runBlocking {
+        prefs.setBinaryLogFormatEnabled(false)
+        logger.startLogging()
+        logger.awaitCommandsForTests()
+        val activeLogField = SecuLogger::class.java.getDeclaredField("activeLog").apply { isAccessible = true }
+        val activeLog = activeLogField.get(logger)
+        val writerField = activeLog!!::class.java.getDeclaredField("csvWriter").apply { isAccessible = true }
+        (writerField.get(activeLog) as java.io.FileWriter).close()
+
+        logger.logPacket(SensorsPacket(rpm = 1_500))
+        logger.awaitCommandsForTests()
+
+        assertFalse(logger.isLoggerStarted)
+        assertEquals(
+            1,
+            messages.pending.value.count { it.textRes == org.secu3.android.R.string.sensor_logger_io_error },
+        )
+
+        logger.startLogging()
+        logger.awaitCommandsForTests()
+        assertTrue(logger.isLoggerStarted)
+        assertEquals(
+            1,
+            messages.pending.value.count { it.textRes == org.secu3.android.R.string.sensor_logger_io_error },
+        )
         logger.stopLogging()
         logger.awaitCommandsForTests()
     }

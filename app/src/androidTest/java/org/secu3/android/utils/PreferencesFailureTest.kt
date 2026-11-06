@@ -131,7 +131,7 @@ class PreferencesFailureTest {
         }
         val files = FileHelper(fileContext)
         val messages = UiMessageQueue()
-        val logger = SecuLogger(prefs, files, messages)
+        val logger = SecuLogger(prefs, files, messages, SensorLogEncoder())
         try {
             storage.failReads = true
             logger.startLogging()

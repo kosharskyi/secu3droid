@@ -4,7 +4,7 @@ The 252-byte little-endian S3L record stores airflow at byte 32, one padding byt
 
 ## Logger failures publish the global error message at the source
 
-Binary and CSV sinks are serialized with start and stop. On failure, LoggerSession clears the active session before synchronously asking SecuLogger to publish the existing localized global error through UiMessageQueue. Do not add a parallel pending-ID acknowledgment path in the ViewModel; MainActivity already owns resumed Toast delivery.
+The active file and its format-specific writer are owned by SecuLogger and all operations run on its command FIFO. On failure, it clears active state, closes the writer, and publishes the existing localized global error through UiMessageQueue. Do not add a parallel pending-ID acknowledgment path in the ViewModel; MainActivity already owns resumed Toast delivery.
 
 ## Logger controls, packet writes, and deletion share one background FIFO
 

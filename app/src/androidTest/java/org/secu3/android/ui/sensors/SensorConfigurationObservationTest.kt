@@ -46,6 +46,7 @@ import org.secu3.android.ui.messages.UiMessageQueue
 import org.secu3.android.utils.FileHelper
 import org.secu3.android.utils.prefs.IsolatedUserPrefs
 import org.secu3.android.utils.SecuLogger
+import org.secu3.android.utils.SensorLogEncoder
 import org.secu3.android.utils.prefs.UserPrefs
 import org.secu3.android.ui.common.SensorPacketObserver
 import java.util.UUID
@@ -189,7 +190,7 @@ class SensorConfigurationObservationTest {
         private val usb = UsbConnection(context.getSystemService(Context.USB_SERVICE) as UsbManager, prefs)
         private val bluetoothManager = context.getSystemService(Context.BLUETOOTH_SERVICE) as BluetoothManager
         private val bluetooth = BtConnection(prefs, bluetoothManager)
-        private val logger = SecuLogger(prefs, FileHelper(context), UiMessageQueue())
+        private val logger = SecuLogger(prefs, FileHelper(context), UiMessageQueue(), SensorLogEncoder())
         private val notificationPublisher = ConnectionNotificationPublisher(context)
         private val serviceManager = ServiceManager(context)
         private val manager = Secu3ConnectionManager(usb, bluetooth, prefs, logger, serviceManager, notificationPublisher)
