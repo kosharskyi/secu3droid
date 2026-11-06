@@ -186,34 +186,32 @@ class SensorsTabsScreenTest {
         compose.onNodeWithTag("log-start").assertExists()
     }
 
-    @Test fun asynchronousLoggerFailureRestoresStartControlAndShowsOneSnackbar() {
+    @Test fun loggerControlsFollowOnlyTheShowControlsPreference() {
+        val showControls = mutableStateOf(false)
         val started = mutableStateOf(false)
-        val errorId = mutableStateOf(0L)
-        val consumedErrors = mutableListOf<Long>()
         compose.setContent {
             SecuComposeTheme {
-                SensorsScreen(
-                    loggerStarted = started.value,
-                    loggerErrorId = errorId.value,
-                    start = { started.value = true },
-                    onLoggerErrorConsumed = { consumedErrors += it; errorId.value = 0L },
-                )
+                SensorsScreen(showLoggerControls = showControls.value, loggerStarted = started.value)
             }
         }
-        compose.onNodeWithTag("log-start").performClick()
-        compose.onNodeWithTag("log-stop").assertExists()
+        compose.onNodeWithTag("log-start").assertDoesNotExist()
+        compose.onNodeWithTag("log-stop").assertDoesNotExist()
+        compose.onNodeWithTag("log-mark-1").assertDoesNotExist()
 
-        compose.runOnIdle {
-            started.value = false
-            errorId.value = 1
-        }
+        compose.runOnIdle { showControls.value = true }
         compose.onNodeWithTag("log-start").assertExists()
-        compose.onNodeWithText(context.getString(R.string.sensor_logger_io_error)).assertExists()
-        compose.waitUntil(6_000) { consumedErrors == listOf(1L) }
-        compose.runOnIdle { started.value = false }
-        compose.waitForIdle()
-        compose.onNodeWithText(context.getString(R.string.sensor_logger_io_error)).assertDoesNotExist()
-        assertEquals(listOf(1L), consumedErrors)
+        compose.onNodeWithTag("log-stop").assertDoesNotExist()
+        compose.onNodeWithTag("log-mark-1").assertDoesNotExist()
+
+        compose.runOnIdle { started.value = true }
+        compose.onNodeWithTag("log-start").assertDoesNotExist()
+        compose.onNodeWithTag("log-stop").assertExists()
+        compose.onNodeWithTag("log-mark-1").assertExists()
+
+        compose.runOnIdle { showControls.value = false }
+        compose.onNodeWithTag("log-start").assertDoesNotExist()
+        compose.onNodeWithTag("log-stop").assertDoesNotExist()
+        compose.onNodeWithTag("log-mark-1").assertDoesNotExist()
     }
 
     @Test fun settingsAndConnectionStatusArePresent() {
@@ -291,16 +289,16 @@ class SensorsTabsScreenTest {
         reorderGauges: (List<GaugeState>) -> Unit = {},
         reorderIndicators: (List<IndicatorState>) -> Unit = {},
         reorderingChanged: (Boolean) -> Unit = {},
+        showLoggerControls: Boolean = true,
         loggerStarted: Boolean = false,
-        loggerErrorId: Long = 0,
-        onLoggerErrorConsumed: (Long) -> Unit = {},
         start: () -> Unit = {}, stop: () -> Unit = {}, mark: (Int) -> Unit = {},
         settings: () -> Unit = {},
         safeDrawingInsets: WindowInsets = WindowInsets.safeDrawing,
         systemBarsInsets: WindowInsets = WindowInsets.systemBars,
     ) = SensorsTabsScreen(
-        initialPage = page, oldViewEnabled = oldView, loggerEnabled = true, loggerStarted = loggerStarted,
-        loggerErrorId = loggerErrorId, snackbarHostState = remember { SnackbarHostState() },
+        initialPage = page, oldViewEnabled = oldView, showLoggerControls = showLoggerControls,
+        loggerStarted = loggerStarted,
+        snackbarHostState = remember { SnackbarHostState() },
         connectionState = Disconnected, gauges = gauges, indicators = indicators, gaugeChoices = null,
         indicatorChoices = null, sensors = null, rawSensors = null, firmwareInfo = null,
         injectionTimingMode = org.secu3.android.models.InjectionTimingMode.Default,
@@ -312,7 +310,6 @@ class SensorsTabsScreenTest {
         onUpdateGauge = {}, onReorderGauges = reorderGauges, onReorderIndicators = reorderIndicators, onStartLog = start,
         onReorderingChanged = reorderingChanged,
         onStopLog = stop, onMark = mark,
-        onLoggerErrorConsumed = onLoggerErrorConsumed,
         gaugeStyle = org.secu3.android.models.SensorGaugeStyle.Current,
         safeDrawingInsets = safeDrawingInsets,
         systemBarsInsets = systemBarsInsets,

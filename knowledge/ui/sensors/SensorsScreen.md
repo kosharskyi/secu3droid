@@ -32,7 +32,7 @@ Modern and legacy status indicators communicate active, inactive, and unavailabl
 
 ## Logger state follows the singleton session, including background I/O failures
 
-The logger may stop while packet writes run outside the Sensors route. The ViewModel must observe the logger's state flow instead of relying only on start/stop button snapshots. A pending error ID remains until the resumed route displays and acknowledges that exact ID, so navigation away does not discard the error or replay an already acknowledged message.
+The logger may stop while packet writes run outside the Sensors route. The ViewModel must observe the logger's state flow instead of relying only on start/stop button snapshots. SecuLogger publishes logger errors to the global message queue directly, so errors do not depend on visiting Sensors; MainActivity displays queued messages while resumed.
 
 ## Global dial style applies only to modern dial cards
 

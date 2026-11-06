@@ -10,6 +10,8 @@ Only a valid firmware-info packet confirms each USB attempt. Opening plus initia
 
 The Start flow owns prompting and stale-result rejection. The transport does not request permission or retry a denied request: it checks the current platform grant before admission and before each open. A missing grant or `SecurityException` from the actual open is terminal, closes the active attempt and releases its attachment identity; ordinary I/O failures retain the attachment and continue retrying.
 
+USB admission validates attachment identity, serial support, permission, and idle state under `connectionLock`, then launches its worker and returns whether it was admitted. The manager queues automatic logger start under its own selection lock after this return and before selecting/draining the run. Do not put manager/logger callbacks in `UsbConnection`; the manager packet collector's selection-lock barrier preserves admission-before-first-packet ordering even if the worker emits immediately.
+
 ## USB failures do not use Bluetooth terminal error states
 
 USB open and ECU failures remain in the USB retry states; the transport does not emit `ConnectionFailed` or `ConnectionLost`. Do not infer a USB error notification from selected-device metadata in the Activity.

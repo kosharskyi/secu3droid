@@ -33,6 +33,7 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.CoroutineStart
 import kotlinx.coroutines.async
 import kotlinx.coroutines.cancel
+import kotlinx.coroutines.cancelAndJoin
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.channels.Channel
@@ -380,16 +381,23 @@ class UsbSessionIntegrationTest {
     @Test fun usbStartWithoutGrantDoesNotSelectOrRetryTransport() = runBlocking {
         val fixture = Fixture()
         val device = usbDevice("/dev/bus/usb/099/002", 0x1234, 0x5678)
+        val fileHelper = FileHelper(InstrumentationRegistry.getInstrumentation().targetContext)
+        val existingLogs = fileHelper.listOfLogs.toSet()
         try {
+            fixture.prefs.setAlwaysWriteLogEnabled(true)
+            fixture.await { fixture.automaticLoggingPolicy() == true }
             fixture.usb.testDevice = device
             fixture.usb.permissionGranted = false
             fixture.manager.startUsbConnection(device)
             delay(100)
+            fixture.logger.awaitCommandsForTests()
 
             assertEquals("NONE", fixture.currentTransport())
             assertEquals(Disconnected, fixture.manager.currentConnectionState)
             assertFalse(fixture.manager.isConnectionRunning)
             assertEquals(0, fixture.usb.openCount)
+            assertFalse(fixture.logger.isLoggerStarted)
+            assertEquals(existingLogs, fileHelper.listOfLogs.toSet())
         } finally {
             fixture.close()
         }
@@ -795,12 +803,16 @@ class UsbSessionIntegrationTest {
         }
     }
 
-    @Test fun canceledBluetoothPreflightCannotSelectTransportAfterPreferencesLoad() = runBlocking {
+    @Test fun stoppedBluetoothPreflightClosesItsAdmittedLoggerSession() = runBlocking {
         val context = InstrumentationRegistry.getInstrumentation().targetContext
         val addressKey = androidx.datastore.preferences.core.stringPreferencesKey(
             context.getString(org.secu3.android.R.string.pref_bluetooth_device_address_key),
         )
-        val store = DelayedPreferencesDataStore(mutablePreferencesOf(addressKey to "02:00:00:00:00:01"))
+        val sensorLogKey = booleanPreferencesKey(context.getString(org.secu3.android.R.string.pref_write_log_key))
+        val autoLogKey = booleanPreferencesKey(context.getString(org.secu3.android.R.string.pref_always_write_log_key))
+        val store = DelayedPreferencesDataStore(
+            mutablePreferencesOf(addressKey to "02:00:00:00:00:01", sensorLogKey to true, autoLogKey to true),
+        )
         val fixture = Fixture(delayedStore = store)
         try {
             store.initialReadStarted.await()
@@ -811,6 +823,8 @@ class UsbSessionIntegrationTest {
             assertFalse(fixture.isBluetoothRunning())
             assertEquals(Disconnected, fixture.manager.currentConnectionState)
             assertEquals("NONE", fixture.currentTransport())
+            fixture.logger.awaitCommandsForTests()
+            assertFalse("STOPPED must disarm automatic logging after cancellation", fixture.logger.isLoggerStarted)
         } finally {
             fixture.close()
         }
@@ -901,6 +915,8 @@ class UsbSessionIntegrationTest {
         val fixture = Fixture()
         try {
             fixture.setWakeLockPreference(true)
+            fixture.prefs.setAlwaysWriteLogEnabled(false)
+            fixture.await { fixture.automaticLoggingPolicy() == false }
             fixture.selectBluetoothSessionForTest()
             fixture.logger.startLogging()
             fixture.await { fixture.logger.isLoggerStarted }
@@ -918,6 +934,139 @@ class UsbSessionIntegrationTest {
             fixture.btDriver.publish(Connected)
             assertEquals(Connected, fixture.states.last())
         } finally { fixture.close() }
+    }
+
+    @Test fun bluetoothManagerWaitsForInitialAutoPolicyThenKeepsFileAcrossRetry() = runBlocking<Unit> {
+        val context = InstrumentationRegistry.getInstrumentation().targetContext
+        val addressKey = stringPreferencesKey(context.getString(org.secu3.android.R.string.pref_bluetooth_device_address_key))
+        val transportStore = DelayedPreferencesDataStore(mutablePreferencesOf(addressKey to "02:00:00:00:00:01"))
+        val transportPrefs = UserPrefs(context, transportStore)
+        val fixture = Fixture(btPrefs = transportPrefs)
+        val fileHelper = FileHelper(InstrumentationRegistry.getInstrumentation().targetContext)
+        val existingLogs = fileHelper.listOfLogs.toSet()
+        try {
+            fixture.prefs.setShowLogControls(false)
+            fixture.prefs.setAlwaysWriteLogEnabled(true)
+            fixture.await { fixture.automaticLoggingPolicy() == true }
+            val start = launch(start = CoroutineStart.UNDISPATCHED) { fixture.manager.startBtConnection() }
+            transportStore.initialReadStarted.await()
+            fixture.await { fixture.logger.isLoggerStarted }
+            assertEquals("BLUETOOTH", fixture.currentTransport())
+            val automaticFile = fileHelper.listOfLogs.single { it !in existingLogs }
+            fixture.manager.startBtConnection() // duplicate command while selected must not start a second log
+            fixture.logger.awaitCommandsForTests()
+            assertEquals(automaticFile, fileHelper.listOfLogs.single { it !in existingLogs })
+
+            fixture.btDriver.setAttempt(1L)
+            fixture.btDriver.publish(Connected)
+            fixture.btDriver.fail(Reconnecting, ConnectionEvent.End.RETRYING)
+            fixture.await { fixture.manager.currentConnectionState == Reconnecting }
+            fixture.logger.awaitCommandsForTests()
+            assertTrue(fixture.logger.isLoggerStarted)
+            assertEquals(automaticFile, fileHelper.listOfLogs.single { it !in existingLogs })
+
+            fixture.logger.stopLogging()
+            fixture.logger.awaitCommandsForTests()
+            fixture.btDriver.setAttempt(2L)
+            fixture.btDriver.fail(Reconnecting, ConnectionEvent.End.RETRYING)
+            fixture.await { fixture.manager.currentConnectionState == Reconnecting }
+            fixture.logger.awaitCommandsForTests()
+            assertFalse("manual stop remains stopped across retry while auto policy is enabled", fixture.logger.isLoggerStarted)
+            assertEquals(automaticFile, fileHelper.listOfLogs.single { it !in existingLogs })
+
+            fixture.manager.stopConnection()
+            fixture.logger.awaitCommandsForTests()
+            assertFalse(fixture.logger.isLoggerStarted)
+            transportStore.releaseInitialRead.complete(Unit)
+            start.cancelAndJoin()
+        } finally {
+            transportStore.releaseInitialRead.complete(Unit)
+            fixture.close()
+        }
+    }
+
+    @Test fun automaticLoggingSettingTogglesLiveAndManualStopRemainsStoppedOnRetry() = runBlocking {
+        val fixture = Fixture()
+        val files = FileHelper(InstrumentationRegistry.getInstrumentation().targetContext)
+        val existingFiles = files.listOfLogs.toSet()
+        try {
+            fixture.prefs.setShowLogControls(true)
+            fixture.prefs.setAlwaysWriteLogEnabled(false)
+            fixture.await { fixture.automaticLoggingPolicy() == false }
+            fixture.selectBluetoothSessionForTest()
+
+            fixture.prefs.setAlwaysWriteLogEnabled(true)
+            fixture.await { fixture.automaticLoggingPolicy() == true && fixture.logger.isLoggerStarted }
+            val firstFile = files.listOfLogs.single { it !in existingFiles }
+
+            fixture.prefs.setAlwaysWriteLogEnabled(false)
+            fixture.await { fixture.automaticLoggingPolicy() == false && !fixture.logger.isLoggerStarted }
+            fixture.prefs.setAlwaysWriteLogEnabled(true)
+            fixture.await { fixture.automaticLoggingPolicy() == true && fixture.logger.isLoggerStarted }
+            val secondFile = files.listOfLogs.single { it !in existingFiles && it != firstFile }
+
+            fixture.logger.stopLogging()
+            fixture.logger.awaitCommandsForTests()
+            fixture.btDriver.fail(Reconnecting, ConnectionEvent.End.RETRYING)
+            fixture.await { fixture.manager.currentConnectionState == Reconnecting }
+            fixture.logger.awaitCommandsForTests()
+            assertFalse("manual stop is not undone by RETRYING or packets", fixture.logger.isLoggerStarted)
+            assertTrue(firstFile.exists())
+            assertTrue(secondFile.exists())
+
+            fixture.prefs.setCsvDelimiter("|")
+            fixture.emitBluetoothPacket(sensorFlowFrame())
+            fixture.logger.awaitCommandsForTests()
+            assertFalse(fixture.logger.isLoggerStarted)
+        } finally {
+            fixture.close()
+        }
+    }
+
+    @Test fun usbManagerAdmissionStartsAutoLogBeforeFirstPacketAndKeepsSameFileAcrossRetry() = runBlocking {
+        val context = InstrumentationRegistry.getInstrumentation().targetContext
+        val controlsKey = booleanPreferencesKey(context.getString(org.secu3.android.R.string.pref_write_log_key))
+        val automaticKey = booleanPreferencesKey(context.getString(org.secu3.android.R.string.pref_always_write_log_key))
+        val binaryKey = booleanPreferencesKey(context.getString(org.secu3.android.R.string.pref_write_binary_log_key))
+        val store = DelayedPreferencesDataStore(
+            mutablePreferencesOf(controlsKey to false, automaticKey to true, binaryKey to true),
+        )
+        val fixture = Fixture(delayedStore = store)
+        val fileHelper = FileHelper(InstrumentationRegistry.getInstrumentation().targetContext)
+        val existingLogs = fileHelper.listOfLogs.toSet()
+        try {
+            val device = usbDevice("/test/usb/automatic-log", 0x1234, 0x5678)
+            fixture.allowUsbPortOpen()
+            fixture.queueUsbInput(sensorFlowWireFrame())
+            fixture.startUsbConnection(device)
+            assertFalse("automatic logging waits for the initial preference snapshot", fixture.logger.isLoggerStarted)
+            store.releaseInitialRead.complete(Unit)
+            fixture.await { fixture.logger.isLoggerStarted }
+            assertEquals("USB", fixture.currentTransport())
+            val automaticFile = fileHelper.listOfLogs.single { it !in existingLogs }
+            fixture.await { automaticFile.length() == 252L }
+            assertTrue("the first packet is logged after the manager admits the session", automaticFile.exists())
+
+            fixture.confirmFirmware()
+            val attemptId = requireNotNull(fixture.activeUsbAttemptId())
+            val emptySessionBytes = automaticFile.length()
+            fixture.emitUsbPacket(attemptId, sensorFlowFrame())
+            fixture.await { automaticFile.length() > emptySessionBytes }
+            fixture.failUsbAttempt(attemptId, noResponse = true)
+            fixture.logger.awaitCommandsForTests()
+
+            assertTrue(fixture.logger.isLoggerStarted)
+            assertEquals(UsbReconnectingAwaitingEcu, fixture.manager.currentConnectionState)
+            assertTrue(automaticFile.exists())
+
+            fixture.manager.stopConnection()
+            fixture.logger.awaitCommandsForTests()
+            assertFalse("terminal STOPPED closes automatic logging", fixture.logger.isLoggerStarted)
+            assertEquals(automaticFile, fileHelper.listOfLogs.single { it !in existingLogs })
+        } finally {
+            store.releaseInitialRead.complete(Unit)
+            fixture.close()
+        }
     }
 
     @Test fun explicitManagerCommandsDoNotDependOnAppVisibility() = runBlocking {
@@ -1400,14 +1549,17 @@ class UsbSessionIntegrationTest {
         }
     }
 
-    private inner class Fixture(private val delayedStore: DataStore<Preferences>? = null) {
+    private inner class Fixture(
+        private val delayedStore: DataStore<Preferences>? = null,
+        btPrefs: UserPrefs? = null,
+    ) {
         private val context = InstrumentationRegistry.getInstrumentation().targetContext
         private val prefsFixture: IsolatedUserPrefs? = if (delayedStore == null) IsolatedUserPrefs(context, "usb-session-${UUID.randomUUID()}") else null
         val prefs = delayedStore?.let { UserPrefs(context, it) } ?: requireNotNull(prefsFixture).prefs
         val usb = FakeUsbConnection(context.getSystemService(Context.USB_SERVICE) as UsbManager, prefs)
         private val bluetoothManager = context.getSystemService(Context.BLUETOOTH_SERVICE) as BluetoothManager
-        private val bt = BtConnection(prefs, bluetoothManager)
-        val logger = SecuLogger(prefs, FileHelper(context))
+        private val bt = BtConnection(btPrefs ?: prefs, bluetoothManager)
+        val logger = SecuLogger(prefs, FileHelper(context), UiMessageQueue())
         val serviceContext = RecordingServiceContext(context)
         private val notificationPublisher = ConnectionNotificationPublisher(serviceContext)
         val serviceManager = ServiceManager(serviceContext)
@@ -1435,6 +1587,7 @@ class UsbSessionIntegrationTest {
             prefs.setBluetoothDevice(value, prefs.settings.first().bluetoothDeviceName)
         }
         fun backgroundPolicy() = (managerField("backgroundWorkEnabled").get(manager) as MutableStateFlow<Boolean?>).value
+        fun automaticLoggingPolicy() = managerField("automaticLoggingEnabled").get(manager) as Boolean?
         fun currentFuelFlowCalibration() = connectionField("currentFuelFlowPulsesPerLitre").get(bt) as Int?
         fun currentTransport(): String {
             val current = managerField("currentConnection").get(manager)
@@ -1567,8 +1720,12 @@ class UsbSessionIntegrationTest {
             (managerField("scope").get(manager) as CoroutineScope).cancel()
             usbDriver.shutdown()
             btDriver.shutdown()
-            (SecuLogger::class.java.getDeclaredField("loggerScope").apply { isAccessible = true }.get(logger) as CoroutineScope).cancel()
-            runBlocking { prefsFixture?.close() }
+            runBlocking {
+                logger.stopLogging()
+                logger.awaitCommandsForTests()
+                logger.shutdownForTests()
+                prefsFixture?.close()
+            }
         }
 
         fun pendingPermission(vm: StartScreenViewModel) = StartScreenViewModel::class.java
@@ -1727,11 +1884,17 @@ class UsbSessionIntegrationTest {
             return (base + intArrayOf(checksum[1], checksum[0], 0x0d)).map(Int::toByte).toByteArray()
         }
 
-    private fun sensorFlowFrame() = RawPacket(
-        intArrayOf('@'.code, SensorsPacket.DESCRIPTOR.code) + IntArray(116).also {
-            it[29] = 0x0C; it[30] = 0x80 // 100 km/h
-            it[34] = 0x0A; it[35] = 0x00 // 10 Hz fuel flow
-        } + intArrayOf(0, 0),
-    )
+        private fun sensorFlowFrame() = RawPacket(
+            intArrayOf('@'.code, SensorsPacket.DESCRIPTOR.code) + IntArray(116).also {
+                it[29] = 0x0C; it[30] = 0x80 // 100 km/h
+                it[34] = 0x0A; it[35] = 0x00 // 10 Hz fuel flow
+            } + intArrayOf(0, 0),
+        )
+
+        private fun sensorFlowWireFrame(): ByteArray {
+            val base = intArrayOf('@'.code, SensorsPacket.DESCRIPTOR.code) + IntArray(116)
+            val checksum = PacketReceiver.calculateChecksum(base.copyOfRange(2, base.size))
+            return (base + intArrayOf(checksum[1], checksum[0], 0x0d)).map(Int::toByte).toByteArray()
+        }
     }
 }

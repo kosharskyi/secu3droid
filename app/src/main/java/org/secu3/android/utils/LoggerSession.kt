@@ -19,15 +19,9 @@ internal interface LoggerOutput {
     fun close()
 }
 
-internal data class LoggerSessionState(
-    val started: Boolean = false,
-    val nextErrorId: Long = 0,
-    val pendingErrorId: Long? = null,
-)
-
-internal class LoggerSession {
-    private val mutableState = MutableStateFlow(LoggerSessionState())
-    val state: StateFlow<LoggerSessionState> = mutableState.asStateFlow()
+internal class LoggerSession(private val onError: () -> Unit) {
+    private val mutableStarted = MutableStateFlow(false)
+    val started: StateFlow<Boolean> = mutableStarted.asStateFlow()
 
     private var output: LoggerOutput? = null
     private var binary = false
@@ -43,7 +37,7 @@ internal class LoggerSession {
                 output?.appendCsv(csvHeader)
                 output?.flushCsv()
             }
-            mutableState.value = mutableState.value.copy(started = true)
+            mutableStarted.value = true
         } catch (_: IOException) {
             failCurrentOperation()
         }
@@ -51,7 +45,7 @@ internal class LoggerSession {
 
     @Synchronized
     fun writeBinary(bytes: ByteArray) {
-        if (!mutableState.value.started || !binary) return
+        if (!mutableStarted.value || !binary) return
         try {
             output?.writeBinary(bytes)
         } catch (_: IOException) {
@@ -61,7 +55,7 @@ internal class LoggerSession {
 
     @Synchronized
     fun writeCsv(text: String) {
-        if (!mutableState.value.started || binary) return
+        if (!mutableStarted.value || binary) return
         try {
             output?.appendCsv(text)
             output?.flushCsv()
@@ -75,18 +69,11 @@ internal class LoggerSession {
         if (output == null) return
         val ownedOutput = output
         output = null
-        mutableState.value = mutableState.value.copy(started = false)
+        mutableStarted.value = false
         try {
             ownedOutput?.close()
         } catch (_: IOException) {
-            publishError()
-        }
-    }
-
-    @Synchronized
-    fun acknowledgeError(errorId: Long) {
-        if (mutableState.value.pendingErrorId == errorId) {
-            mutableState.value = mutableState.value.copy(pendingErrorId = null)
+            onError()
         }
     }
 
@@ -101,16 +88,7 @@ internal class LoggerSession {
         } catch (_: IOException) {
             // Preserve one error event for the failed operation.
         }
-        mutableState.value = mutableState.value.copy(started = false)
-        publishError()
-    }
-
-    private fun publishError() {
-        val nextErrorId = mutableState.value.nextErrorId + 1
-        mutableState.value = mutableState.value.copy(
-            started = false,
-            nextErrorId = nextErrorId,
-            pendingErrorId = nextErrorId,
-        )
+        mutableStarted.value = false
+        onError()
     }
 }

@@ -217,7 +217,10 @@ internal fun orderLogFiles(files: List<File>, dateTimeFormatter: DateTimeFormatt
         .map { file ->
             LogFileOrder(
                 file = file,
-                timestamp = runCatching { LocalDateTime.parse(file.nameWithoutExtension, dateTimeFormatter) }.getOrNull(),
+                timestamp = runCatching {
+                    val baseName = file.nameWithoutExtension.replace(Regex("_\\d+$"), "")
+                    LocalDateTime.parse(baseName, dateTimeFormatter)
+                }.getOrNull(),
                 lastModified = file.lastModified(),
             )
         }

@@ -2,116 +2,117 @@ package org.secu3.android.utils
 
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
-import org.junit.Assert.assertNull
 import org.junit.Assert.assertTrue
 import org.junit.Test
 import java.io.IOException
 import java.util.concurrent.CountDownLatch
 import java.util.concurrent.TimeUnit
+import java.util.concurrent.atomic.AtomicInteger
 import kotlin.concurrent.thread
 
 class LoggerSessionTest {
     @Test
     fun binaryOpenFailureIsReportedAndNextStartCanRecover() {
-        val session = LoggerSession()
+        val errors = AtomicInteger()
+        val session = LoggerSession { errors.incrementAndGet() }
         val recovered = RecordingOutput()
 
         session.start(openOutput = { throw IOException("open") }, binary = true)
-        assertFalse(session.state.value.started)
-        assertEquals(1L, session.state.value.pendingErrorId)
+        assertFalse(session.started.value)
+        assertEquals(1, errors.get())
 
         session.start(openOutput = { recovered }, binary = true)
-        assertTrue(session.state.value.started)
+        assertTrue(session.started.value)
         session.writeBinary(byteArrayOf(1, 2))
         assertEquals(1, recovered.binaryWrites)
     }
 
     @Test
     fun csvOpenFailureIsReportedAndNextStartCanRecover() {
-        val session = LoggerSession()
+        val errors = AtomicInteger()
+        val session = LoggerSession { errors.incrementAndGet() }
         val recovered = RecordingOutput()
 
         session.start(openOutput = { throw IOException("open") }, binary = false, csvHeader = "header\n")
-        assertFalse(session.state.value.started)
-        assertEquals(1L, session.state.value.pendingErrorId)
+        assertFalse(session.started.value)
+        assertEquals(1, errors.get())
 
         session.start(openOutput = { recovered }, binary = false)
         session.writeCsv("row\n")
-        assertTrue(session.state.value.started)
+        assertTrue(session.started.value)
         assertEquals("row\n", recovered.csvText)
     }
 
     @Test
     fun binaryWriteFailureClosesOutputStopsAndAllowsRestart() {
-        val session = LoggerSession()
+        val errors = AtomicInteger()
+        val session = LoggerSession { errors.incrementAndGet() }
         val broken = RecordingOutput(writeFailure = true, closeFailure = true)
         val recovered = RecordingOutput()
         session.start({ broken }, binary = true)
 
         session.writeBinary(byteArrayOf(1))
 
-        assertFalse(session.state.value.started)
+        assertFalse(session.started.value)
         assertEquals(1, broken.closeCalls)
-        assertEquals(1L, session.state.value.pendingErrorId)
-        assertEquals(1L, session.state.value.nextErrorId)
+        assertEquals(1, errors.get())
         session.start({ recovered }, binary = true)
-        assertTrue(session.state.value.started)
+        assertTrue(session.started.value)
     }
 
     @Test
     fun csvHeaderFlushFailureClosesAndLeavesSessionStopped() {
-        val session = LoggerSession()
+        val errors = AtomicInteger()
+        val session = LoggerSession { errors.incrementAndGet() }
         val output = RecordingOutput(flushFailure = true)
 
         session.start({ output }, binary = false, csvHeader = "header\n")
 
-        assertFalse(session.state.value.started)
+        assertFalse(session.started.value)
         assertEquals("header\n", output.csvText)
         assertEquals(1, output.flushCalls)
         assertEquals(1, output.closeCalls)
-        assertEquals(1L, session.state.value.pendingErrorId)
+        assertEquals(1, errors.get())
     }
 
     @Test
     fun csvAppendFailureClosesAndLeavesSessionStopped() {
-        val session = LoggerSession()
+        val errors = AtomicInteger()
+        val session = LoggerSession { errors.incrementAndGet() }
         val output = RecordingOutput(appendFailure = true)
         session.start({ output }, binary = false)
 
         session.writeCsv("row\n")
 
-        assertFalse(session.state.value.started)
+        assertFalse(session.started.value)
         assertEquals(1, output.closeCalls)
         assertEquals(0, output.flushCalls)
-        assertEquals(1L, session.state.value.pendingErrorId)
+        assertEquals(1, errors.get())
     }
 
     @Test
     fun csvWriteAndNormalCloseFailuresAreReportedOnceAndCanRecover() {
-        val session = LoggerSession()
+        val errors = AtomicInteger()
+        val session = LoggerSession { errors.incrementAndGet() }
         val output = RecordingOutput(flushFailure = true)
         session.start({ output }, binary = false)
         session.writeCsv("row\n")
 
-        assertFalse(session.state.value.started)
+        assertFalse(session.started.value)
         assertEquals(1, output.closeCalls)
-        assertEquals(1L, session.state.value.nextErrorId)
-        session.acknowledgeError(0)
-        assertEquals(1L, session.state.value.pendingErrorId)
-        session.acknowledgeError(1)
-        assertNull(session.state.value.pendingErrorId)
+        assertEquals("write failure and cleanup close failure are one operation", 1, errors.get())
 
         val closeFailure = RecordingOutput(closeFailure = true)
         session.start({ closeFailure }, binary = false)
         session.stop()
-        assertFalse(session.state.value.started)
+        assertFalse(session.started.value)
         assertEquals(1, closeFailure.closeCalls)
-        assertEquals(2L, session.state.value.pendingErrorId)
+        assertEquals("a later close failure is a new operation", 2, errors.get())
     }
 
     @Test
     fun stopWaitsForInFlightWriteBeforeClosingOutput() {
-        val session = LoggerSession()
+        val session = LoggerSession {}
         val output = BlockingOutput()
         session.start({ output }, binary = true)
         val writeThread = thread { session.writeBinary(byteArrayOf(1)) }
@@ -132,7 +133,7 @@ class LoggerSessionTest {
             writeThread.join(1_000)
             stopThread.join(1_000)
         }
-        assertFalse(session.state.value.started)
+        assertFalse(session.started.value)
         assertTrue(output.closedAfterWrite)
         assertEquals(1, output.closeCalls)
     }

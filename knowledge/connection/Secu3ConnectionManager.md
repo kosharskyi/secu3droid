@@ -4,9 +4,15 @@
 
 USB start returns whether a run was admitted, not whether it is still running. An admitted run can queue `STOPPED` before the manager selects it; checking `isRunning` instead would discard that run's terminal outcome. Select the admitted run and then drain its events.
 
+## Automatic starts are queued before sensor packets reach the logger
+
+Use the last observed automatic recording preference under the selection lock to enqueue the same `startLogging()` command as the Sensors screen. Queue it before launching Bluetooth, or after USB admission succeeds and before selecting and draining the run. USB can deliver immediately, so the logger's packet collector briefly takes the same lock before forwarding. It releases the lock before the suspending write and waits for the first settings result before forwarding its first packet. A first read failure lets delivery proceed without assuming automatic logging is enabled. Rejected or reconciliation-only USB commands do not start logging.
+
+Apply changes to the automatic preference during a selected run through the same start and stop commands. A repeated snapshot or a read recovery with the same value does not restart a stopped or failed file. Read failures retain the last known automatic policy independently of the background connection policy.
+
 ## Loss side effects are common, but visible retry states remain transport specific
 
-Consume the typed outcome rather than inferring loss from packet silence or reconstructing retry history. Established losses stop logging and continuing USB work emits `Disconnected` before retry progress. Bluetooth established retries publish `Reconnecting` without `Disconnected`, so feature routes remain in place. Initial USB handshake failures do not emit `Disconnected`.
+Consume the typed outcome rather than inferring loss from packet silence or reconstructing retry history. On RETRYING, stop logging when the automatic policy is off. When it is on, the file can continue and a manually stopped or failed file stays closed. STOPPED always stops logging. Continuing USB work emits `Disconnected` before retry progress. Bluetooth established retries publish `Reconnecting` without `Disconnected`, so feature routes remain in place. Initial USB handshake failures do not emit `Disconnected`.
 
 ## New transport commands are admitted only after the selected transport ends
 

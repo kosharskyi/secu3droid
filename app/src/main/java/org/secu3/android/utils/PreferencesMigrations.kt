@@ -41,6 +41,7 @@ class PreferencesMigrations @Inject constructor(
         val legacyName = "${context.packageName}_preferences"
         val migratedKeys = setOf(
             context.getString(R.string.pref_write_log_key),
+            context.getString(R.string.pref_always_write_log_key),
             context.getString(R.string.pref_write_binary_log_key),
             context.getString(R.string.pref_log_csv_write_title_key),
             context.getString(R.string.pref_log_csv_delimeter_key),

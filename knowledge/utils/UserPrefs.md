@@ -10,6 +10,10 @@ The active values from `${packageName}_preferences` and `app_shared_prefs` migra
 
 Settings consumers use the single `Settings` snapshot so multi-key observations stay coherent, and writes are suspending. Long-lived observers use `observeSettings` to report an I/O failure and retry centrally; one-shot reads and writes still propagate failures to their caller. Do not add synchronous accessors or treat failed reads as defaults.
 
+## The legacy `writeLog` key now controls button visibility
+
+Keep the persisted keys `writeLog` and `alwaysWriteLog` and their false defaults. `showLogControls` reads the existing `writeLog` value for the Sensors controls. The manager uses `isAlwaysWriteLogEnabled` independently, even if the controls are hidden.
+
 ## Sensor gauge style defaults to the precise arc without repairing storage
 
 The stable `sensor_gauge_style` values are `current`, `precise_arc`, and `thin_needle`. Missing or unknown values resolve to `precise_arc` in memory without writing a replacement. Explicitly stored `current` and `thin_needle` values remain selected; the older-sensor and per-gauge numeric preferences remain independent.

@@ -39,8 +39,10 @@
     <string name="pref_bluetooth_device_summary">"Current device: %s"</string>
     <string name="pref_connection_retries_title">Bluetooth connection retries</string>
     <string name="pref_connection_retries_summary">Bluetooth attempts before returning to Start: %s</string>
-    <string name="pref_write_log_title">Sensors log writing</string>
-    <string name="pref_write_log_summary">Writing information from sensors into a log</string>
+    <string name="pref_write_log_title">Show log controls</string>
+    <string name="pref_write_log_summary">Show start, stop and mark buttons on the Sensors screen</string>
+    <string name="pref_always_write_log_title">Automatically record when connecting to the ECU</string>
+    <string name="pref_always_write_log_summary">Start logging when a connection request is admitted, keep the same file through retries, and close it when the session stops</string>
     <string name="pref_write_binary_log_title">Write log in binary format (s3l)</string>
     <string name="pref_log_csv_write_title">Title in csv log file</string>
     <string name="pref_log_csv_delimeter_title">Log delimeter character</string>

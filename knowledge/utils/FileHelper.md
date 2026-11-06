@@ -1,6 +1,6 @@
 ## Malformed log names stay visible after dated logs
 
-The log list is shared by screen refresh and deletion flows, so date parsing must be best-effort. Standard timestamp-named files sort newest first; files without that timestamp remain visible after them, ordered by modification time and then name, while directories are excluded.
+The log list is shared by screen refresh and deletion flows, so date parsing must be best-effort. Standard timestamp-named files sort newest first; files without that timestamp remain visible after them, ordered by modification time and then name, while directories are excluded. Numeric collision suffixes such as `_1` are parsed as part of the same dated timestamp group so rapid relaunches remain beside dated logs.
 
 ## Share and export MIME types share one extension mapping
 

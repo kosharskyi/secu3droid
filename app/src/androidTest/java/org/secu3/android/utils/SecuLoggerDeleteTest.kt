@@ -4,14 +4,16 @@ import android.content.Context
 import android.content.ContextWrapper
 import androidx.test.platform.app.InstrumentationRegistry
 import kotlinx.coroutines.runBlocking
+import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.withTimeout
 import org.junit.After
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
-import org.junit.Assert.assertNull
 import org.junit.Assert.assertTrue
 import org.junit.Before
 import org.junit.Test
 import org.secu3.android.models.packets.input.SensorsPacket
+import org.secu3.android.ui.messages.UiMessageQueue
 import java.io.File
 import java.util.UUID
 import java.util.concurrent.CountDownLatch
@@ -25,6 +27,7 @@ class SecuLoggerDeleteTest {
     private lateinit var prefs: UserPrefs
     private lateinit var files: FileHelper
     private lateinit var prefsFixture: IsolatedUserPrefs
+    private lateinit var messages: UiMessageQueue
 
     @Before
     fun setUp() {
@@ -37,14 +40,15 @@ class SecuLoggerDeleteTest {
         prefsFixture = IsolatedUserPrefs(context, testRoot.name)
         prefs = prefsFixture.prefs
         files = FileHelper(context)
-        logger = SecuLogger(prefs, files)
-        runBlocking { prefs.setSensorLoggerEnabled(true) }
+        messages = UiMessageQueue()
+        logger = SecuLogger(prefs, files, messages)
     }
 
     @After
     fun tearDown() {
         runBlocking {
             logger.stopLogging()
+            logger.awaitCommandsForTests()
             logger.shutdownForTests()
             prefsFixture.close()
         }
@@ -109,7 +113,35 @@ class SecuLoggerDeleteTest {
     }
 
     @Test
-    fun openFailureStaysPendingUntilAcknowledgedAndLoggerCanRestart() = runBlocking {
+    fun loggerHasNoAutomaticPolicyAndDoesNotUseControlVisibilityAsPermission() = runBlocking {
+        assertFalse(prefs.settings.first().showLogControls)
+        assertFalse(prefs.settings.first().isAlwaysWriteLogEnabled)
+        logger.logPacket(SensorsPacket(rpm = 500))
+        logger.awaitCommandsForTests()
+        assertFalse(logger.isLoggerStarted)
+        assertTrue(files.listOfLogs.isEmpty())
+
+        prefs.setShowLogControls(true)
+        prefs.setAlwaysWriteLogEnabled(true)
+        logger.logPacket(SensorsPacket(rpm = 1_000))
+        logger.awaitCommandsForTests()
+        assertFalse("logger has no automatic-start policy", logger.isLoggerStarted)
+
+        logger.startLogging()
+        withTimeout(5_000) { logger.state.first { it } }
+        val activeFile = files.listOfLogs.single()
+        prefs.setShowLogControls(false)
+        prefs.setAlwaysWriteLogEnabled(false)
+        logger.logPacket(SensorsPacket(rpm = 2_000))
+        assertTrue("settings policy is owned by manager, not logger", logger.isLoggerStarted)
+        assertTrue(activeFile.readText().contains("2000"))
+        logger.stopLogging()
+        logger.awaitCommandsForTests()
+        assertFalse(logger.isLoggerStarted)
+    }
+
+    @Test
+    fun openFailurePublishesErrorAndLoggerCanRestart() = runBlocking {
         prefs.setBinaryLogFormatEnabled(false)
         val logsPath = File(context.filesDir, "logs")
         logsPath.deleteRecursively()
@@ -118,12 +150,10 @@ class SecuLoggerDeleteTest {
         logger.startLogging()
         logger.awaitCommandsForTests()
         assertFalse(logger.isLoggerStarted)
-        val errorId = logger.state.value.pendingErrorId
-        assertTrue(errorId != null)
+        val error = messages.pending.value.single { it.textRes == org.secu3.android.R.string.sensor_logger_io_error }
 
-        logger.acknowledgeLoggerError(errorId!!)
-        logger.awaitCommandsForTests()
-        assertNull(logger.state.value.pendingErrorId)
+        messages.acknowledge(error.id)
+        assertTrue(messages.pending.value.none { it.textRes == org.secu3.android.R.string.sensor_logger_io_error })
 
         assertTrue(logsPath.delete())
         logger.startLogging()

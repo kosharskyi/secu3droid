@@ -31,7 +31,6 @@ import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.withTimeout
-import org.junit.Assert.assertArrayEquals
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertNotNull
@@ -119,7 +118,7 @@ class PreferencesFailureTest {
     }
 
     @Test
-    fun loggerReportsPreferenceReadFailuresOnStartAndDuringRecordingAndCanRecover() = runBlocking {
+    fun loggerReportsStartPreferenceReadFailuresAndUsesTheOpenedFormatForWrites() = runBlocking {
         val fixture = IsolatedUserPrefs(context, "failed-logger-${UUID.randomUUID()}")
         val storage = FailingDataStore(fixture.dataStore)
         val prefs = UserPrefs(context, storage)
@@ -128,31 +127,35 @@ class PreferencesFailureTest {
             override fun getFilesDir(): File = root
         }
         val files = FileHelper(fileContext)
-        val logger = SecuLogger(prefs, files)
+        val messages = UiMessageQueue()
+        val logger = SecuLogger(prefs, files, messages)
         try {
-            prefs.setSensorLoggerEnabled(true)
             storage.failReads = true
             logger.startLogging()
             withTimeout(5_000) { logger.awaitCommandsForTests() }
             assertFalse(logger.isLoggerStarted)
-            val startError = logger.state.value.pendingErrorId
-            assertNotNull(startError)
+            val startError = withTimeout(5_000) {
+                messages.pending.first { pending -> pending.any { it.textRes == R.string.sensor_logger_io_error } }
+                    .single { it.textRes == R.string.sensor_logger_io_error }
+            }
             assertTrue(files.listOfLogs.isEmpty())
 
             storage.failReads = false
-            logger.acknowledgeLoggerError(requireNotNull(startError))
+            prefs.setBinaryLogFormatEnabled(true)
+            messages.acknowledge(startError.id)
             logger.startLogging()
             withTimeout(5_000) { logger.awaitCommandsForTests() }
             assertTrue(logger.isLoggerStarted)
             withTimeout(5_000) { logger.logPacket(SensorsPacket()) }
             val activeFile = files.listOfLogs.single()
-            val acceptedBytes = activeFile.readBytes()
+            assertEquals(252L, activeFile.length())
 
+            // Packet writes use the format selected at open; they do not reread unrelated settings.
             storage.failReads = true
             withTimeout(5_000) { logger.logPacket(SensorsPacket(rpm = 2_000)) }
-            assertFalse(logger.isLoggerStarted)
-            assertTrue(requireNotNull(logger.state.value.pendingErrorId) > startError)
-            assertArrayEquals(acceptedBytes, activeFile.readBytes())
+            assertTrue(logger.isLoggerStarted)
+            assertEquals(504L, activeFile.length())
+            assertEquals("Only the failed start publishes a logger I/O error", 0, messages.pending.value.count { it.textRes == R.string.sensor_logger_io_error })
         } finally {
             logger.stopLogging()
             withTimeout(5_000) { logger.shutdownForTests() }

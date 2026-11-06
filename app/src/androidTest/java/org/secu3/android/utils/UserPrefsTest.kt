@@ -25,16 +25,30 @@ class UserPrefsTest {
         try {
             val prefs = fixture.prefs
             val initial = prefs.settings.first()
+            assertFalse(initial.showLogControls)
+            assertFalse(initial.isAlwaysWriteLogEnabled)
             assertEquals(LogExportDestination.DefaultDownloads, initial.logExportDestination)
             assertEquals(";", initial.csvDelimiter)
             assertEquals(SensorGaugeStyle.PreciseArc, initial.sensorGaugeStyle)
             assertEquals(InjectionTimingMode.Default, initial.injectionTimingMode)
             assertEquals(UserPrefs.DEFAULT_FUEL_FLOW_PULSES_PER_LITRE, initial.fuelFlowPulsesPerLitre)
-            prefs.setSensorLoggerEnabled(true)
+            prefs.setShowLogControls(true)
+            prefs.setAlwaysWriteLogEnabled(true)
             prefs.setCsvDelimiter("|")
             val updated = prefs.settings.first()
-            assertTrue(updated.isSensorLoggerEnabled)
+            assertTrue(updated.showLogControls)
+            assertTrue(updated.isAlwaysWriteLogEnabled)
             assertEquals("|", updated.csvDelimiter)
+
+            for (showControls in listOf(false, true)) {
+                for (automaticLogging in listOf(false, true)) {
+                    prefs.setShowLogControls(showControls)
+                    prefs.setAlwaysWriteLogEnabled(automaticLogging)
+                    val combination = prefs.settings.first()
+                    assertEquals(showControls, combination.showLogControls)
+                    assertEquals(automaticLogging, combination.isAlwaysWriteLogEnabled)
+                }
+            }
         } finally {
             fixture.close()
         }

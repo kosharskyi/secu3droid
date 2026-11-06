@@ -43,10 +43,7 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.platform.testTag
-import androidx.lifecycle.compose.LocalLifecycleOwner
 import androidx.compose.ui.unit.dp
-import androidx.lifecycle.Lifecycle
-import androidx.lifecycle.repeatOnLifecycle
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.flow.drop
 import org.secu3.android.R
@@ -73,9 +70,8 @@ import org.secu3.android.models.sensors.IndicatorType
 internal fun SensorsTabsScreen(
     initialPage: Int,
     oldViewEnabled: Boolean,
-    loggerEnabled: Boolean,
+    showLoggerControls: Boolean,
     loggerStarted: Boolean,
-    loggerErrorId: Long,
     snackbarHostState: SnackbarHostState,
     connectionState: ConnectionState?,
     gauges: List<GaugeItem>, indicators: List<IndicatorItem>,
@@ -95,7 +91,6 @@ internal fun SensorsTabsScreen(
     onUpdateGauge: (GaugeState) -> Unit,
     onReorderGauges: (List<GaugeState>) -> Unit, onReorderIndicators: (List<IndicatorState>) -> Unit,
     onStartLog: () -> Unit, onStopLog: () -> Unit, onMark: (Int) -> Unit,
-    onLoggerErrorConsumed: (Long) -> Unit,
     onReorderingChanged: (Boolean) -> Unit = {},
     gaugeStyle: SensorGaugeStyle = SensorGaugeStyle.Default,
     safeDrawingInsets: WindowInsets = WindowInsets.safeDrawing,
@@ -117,17 +112,7 @@ internal fun SensorsTabsScreen(
     val mark2Description = stringResource(R.string.mark_2)
     val mark3Description = stringResource(R.string.mark_3)
     val dataAvailable = connectionState == Connected && sensors != null
-    val lifecycle = LocalLifecycleOwner.current.lifecycle
-    val loggerErrorMessage = stringResource(R.string.sensor_logger_io_error)
     LaunchedEffect(pagerState) { snapshotFlow { pagerState.settledPage }.drop(1).collect(onPageChanged) }
-    LaunchedEffect(loggerErrorId, lifecycle, snackbarHostState) {
-        if (loggerErrorId > 0) {
-            lifecycle.repeatOnLifecycle(Lifecycle.State.RESUMED) {
-                snackbarHostState.showSnackbar(loggerErrorMessage)
-                onLoggerErrorConsumed(loggerErrorId)
-            }
-        }
-    }
     Scaffold(
         snackbarHost = { SnackbarHost(snackbarHostState) },
         contentWindowInsets = scaffoldWindowInsets,
@@ -144,7 +129,7 @@ internal fun SensorsTabsScreen(
         },
         floatingActionButtonPosition = FabPosition.Start,
         floatingActionButton = {
-            if (loggerEnabled) Box(Modifier.windowInsetsPadding(additionalFabInsets)) {
+            if (showLoggerControls) Box(Modifier.windowInsetsPadding(additionalFabInsets)) {
                 if (loggerStarted) {
                     Row(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalAlignment = Alignment.CenterVertically) {
                         FilledTonalIconButton(onClick = { onMark(1) }, modifier = Modifier.semantics { contentDescription = mark1Description }.testTag("log-mark-1")) { Icon(Icons.Default.LooksOne, null) }

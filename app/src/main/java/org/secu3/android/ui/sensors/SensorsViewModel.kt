@@ -111,8 +111,7 @@ class SensorsViewModel @Inject constructor(
             secuLogger.state.collect { loggerState ->
                 _state.update {
                     it.copy(
-                        loggerStarted = loggerState.started,
-                        loggerErrorId = loggerState.pendingErrorId ?: 0,
+                        loggerStarted = loggerState,
                     )
                 }
             }
@@ -122,14 +121,12 @@ class SensorsViewModel @Inject constructor(
     private fun readUiState() = SensorsUiState(
         selectedPage = (savedStateHandle.get<Int>(KEY_SELECTED_PAGE) ?: 0).coerceIn(0, 1),
         loggerStarted = secuLogger.isLoggerStarted,
-        loggerErrorId = secuLogger.state.value.pendingErrorId ?: 0,
     )
 
     fun onRouteResumed() {
         _state.update {
             it.copy(
                 loggerStarted = secuLogger.isLoggerStarted,
-                loggerErrorId = secuLogger.state.value.pendingErrorId ?: 0,
             )
         }
         taskGate.setResumed(true)
@@ -165,7 +162,7 @@ class SensorsViewModel @Inject constructor(
                 oldViewEnabled = settings.oldSensorViewEnabled,
                 gaugeStyle = settings.sensorGaugeStyle,
                 injectionTimingMode = settings.injectionTimingMode,
-                loggerEnabled = settings.isSensorLoggerEnabled,
+                showLoggerControls = settings.showLogControls,
             )
         }
     }
@@ -189,8 +186,6 @@ class SensorsViewModel @Inject constructor(
     fun stopWriteLog() {
         secuLogger.stopLogging()
     }
-
-    fun consumeLoggerError(errorId: Long) = secuLogger.acknowledgeLoggerError(errorId)
 
     fun addGaugeClick() {
         viewModelScope.launch {
@@ -223,9 +218,8 @@ data class SensorsUiState(
     val oldViewEnabled: Boolean = false,
     val gaugeStyle: SensorGaugeStyle = SensorGaugeStyle.Default,
     val injectionTimingMode: InjectionTimingMode = InjectionTimingMode.Default,
-    val loggerEnabled: Boolean = false,
+    val showLoggerControls: Boolean = false,
     val loggerStarted: Boolean = false,
-    val loggerErrorId: Long = 0,
 )
 
 internal class SensorTaskGate(

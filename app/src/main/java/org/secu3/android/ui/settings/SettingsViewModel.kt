@@ -53,7 +53,8 @@ class SettingsViewModel @Inject constructor(
     fun setBooleanPreference(keyResource: Int, value: Boolean) {
         persist(write = {
             when (keyResource) {
-                R.string.pref_write_log_key -> userPrefs.setSensorLoggerEnabled(value)
+                R.string.pref_write_log_key -> userPrefs.setShowLogControls(value)
+                R.string.pref_always_write_log_key -> userPrefs.setAlwaysWriteLogEnabled(value)
                 R.string.pref_log_csv_write_title_key -> userPrefs.setCsvTitleEnabled(value)
                 R.string.pref_write_binary_log_key -> userPrefs.setBinaryLogFormatEnabled(value)
                 R.string.pref_keep_screen_key -> userPrefs.setKeepScreenAliveActive(value)
@@ -104,7 +105,8 @@ class SettingsViewModel @Inject constructor(
     private fun readSettings(settings: UserPrefs.Settings): SettingsUiState {
         val exportFolder = settings.logExportDirectoryUri
         return SettingsUiState(
-            writeLog = settings.isSensorLoggerEnabled,
+            showLogControls = settings.showLogControls,
+            alwaysWriteLog = settings.isAlwaysWriteLogEnabled,
             writeCsvHeader = settings.isCsvTitleEnabled,
             csvDelimiter = settings.csvDelimiter,
             writeBinaryLog = settings.isBinaryLogFormatEnabled,

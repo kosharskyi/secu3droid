@@ -69,8 +69,40 @@ import java.util.UUID
 class SettingsPreferencePersistenceTest {
     @get:Rule val compose = createAndroidComposeRule<MainActivity>()
 
+    @Test fun automaticLoggingPreferencePersistsWithoutStartingUntilConnectionAdmission() {
+        val initial = runBlocking { compose.activity.userPrefs.settings.first() }
+        val files = FileHelper(compose.activity)
+        val existingLogs = files.listOfLogs.toSet()
+        try {
+            runBlocking {
+                compose.activity.userPrefs.setShowLogControls(true)
+                compose.activity.userPrefs.setAlwaysWriteLogEnabled(false)
+            }
+            compose.onNodeWithContentDescription("Settings icon").performClick()
+            compose.waitForIdle()
+            val tag = "settings-toggle-${R.string.pref_always_write_log_key}"
+            compose.onNodeWithTag(tag).performScrollTo().assertIsOff().performClick()
+            compose.waitUntil(5_000) {
+                runBlocking { compose.activity.userPrefs.settings.first().isAlwaysWriteLogEnabled }
+            }
+            compose.activityRule.scenario.recreate()
+            compose.waitForIdle()
+            compose.onNodeWithTag(tag).performScrollTo().assertIsOn()
+            assertEquals("Settings alone do not admit a logger session", existingLogs, files.listOfLogs.toSet())
+            compose.activityRule.scenario.recreate()
+            compose.waitForIdle()
+            assertEquals("Activity recreation does not admit a logger session", existingLogs, files.listOfLogs.toSet())
+        } finally {
+            runBlocking {
+                compose.activity.userPrefs.setAlwaysWriteLogEnabled(initial.isAlwaysWriteLogEnabled)
+                compose.activity.userPrefs.setShowLogControls(initial.showLogControls)
+            }
+            compose.waitForIdle()
+        }
+    }
+
     @Test fun settingsPersistsAcrossRecreationAndReentryAndTracksExternalChanges() {
-        val originalValue = runBlocking { compose.activity.userPrefs.settings.first().isSensorLoggerEnabled }
+        val originalValue = runBlocking { compose.activity.userPrefs.settings.first().showLogControls }
         try {
             compose.onNodeWithContentDescription("Settings icon").performClick()
             compose.waitForIdle()
@@ -82,16 +114,16 @@ class SettingsPreferencePersistenceTest {
             val changedValue = !originalValue
             if (changedValue) toggle.assertIsOn() else toggle.assertIsOff()
             compose.waitUntil(5_000) {
-                runBlocking { compose.activity.userPrefs.settings.first().isSensorLoggerEnabled == changedValue }
+                runBlocking { compose.activity.userPrefs.settings.first().showLogControls == changedValue }
             }
-            assertEquals(changedValue, runBlocking { compose.activity.userPrefs.settings.first().isSensorLoggerEnabled })
+            assertEquals(changedValue, runBlocking { compose.activity.userPrefs.settings.first().showLogControls })
 
             compose.activityRule.scenario.recreate()
             compose.waitForIdle()
             if (changedValue) compose.onNodeWithTag("settings-toggle-${R.string.pref_write_log_key}").assertIsOn()
             else compose.onNodeWithTag("settings-toggle-${R.string.pref_write_log_key}").assertIsOff()
 
-            runBlocking { compose.activity.userPrefs.setSensorLoggerEnabled(originalValue) }
+            runBlocking { compose.activity.userPrefs.setShowLogControls(originalValue) }
             compose.waitForIdle()
             if (originalValue) compose.onNodeWithTag("settings-toggle-${R.string.pref_write_log_key}").assertIsOn()
             else compose.onNodeWithTag("settings-toggle-${R.string.pref_write_log_key}").assertIsOff()
@@ -103,7 +135,7 @@ class SettingsPreferencePersistenceTest {
             if (originalValue) compose.onNodeWithTag("settings-toggle-${R.string.pref_write_log_key}").assertIsOn()
             else compose.onNodeWithTag("settings-toggle-${R.string.pref_write_log_key}").assertIsOff()
         } finally {
-            runBlocking { compose.activity.userPrefs.setSensorLoggerEnabled(originalValue) }
+            runBlocking { compose.activity.userPrefs.setShowLogControls(originalValue) }
             compose.waitForIdle()
         }
     }

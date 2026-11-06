@@ -48,7 +48,7 @@ import org.secu3.android.ui.compose.SecuTopAppBar
 import org.secu3.android.utils.AppearanceMode
 
 data class SettingsUiState(
-    val writeLog: Boolean,
+    val showLogControls: Boolean,
     val writeCsvHeader: Boolean,
     val csvDelimiter: String,
     val writeBinaryLog: Boolean,
@@ -56,6 +56,7 @@ data class SettingsUiState(
     val connectionRetries: String,
     val keepScreenOn: Boolean,
     val wakeLock: Boolean,
+    val alwaysWriteLog: Boolean = false,
     val appearanceMode: AppearanceMode = AppearanceMode.System,
     val fuelFlowPulsesPerLitre: String = "16000",
 )
@@ -114,9 +115,16 @@ internal fun SettingsContent(
                 SettingsToggleRow(
                     title = stringResource(R.string.pref_write_log_title),
                     summary = stringResource(R.string.pref_write_log_summary),
-                    checked = state.writeLog,
+                    checked = state.showLogControls,
                     testTag = "settings-toggle-${R.string.pref_write_log_key}",
                 ) { onToggle(R.string.pref_write_log_key, it) }
+                HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant)
+                SettingsToggleRow(
+                    title = stringResource(R.string.pref_always_write_log_title),
+                    summary = stringResource(R.string.pref_always_write_log_summary),
+                    checked = state.alwaysWriteLog,
+                    testTag = "settings-toggle-${R.string.pref_always_write_log_key}",
+                ) { onToggle(R.string.pref_always_write_log_key, it) }
                 HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant)
                 SettingsToggleRow(
                     title = stringResource(R.string.pref_log_csv_write_title),

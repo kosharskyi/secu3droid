@@ -58,9 +58,8 @@ internal fun SensorsRoute(
         SensorsTabsScreen(
             initialPage = state.selectedPage,
             oldViewEnabled = state.oldViewEnabled,
-            loggerEnabled = state.loggerEnabled,
+            showLoggerControls = state.showLoggerControls,
             loggerStarted = state.loggerStarted,
-            loggerErrorId = state.loggerErrorId,
             snackbarHostState = snackbarHostState,
             gaugeStyle = state.gaugeStyle,
             injectionTimingMode = state.injectionTimingMode,
@@ -93,7 +92,6 @@ internal fun SensorsRoute(
             onReorderIndicators = viewModel::indicatorsSwiped,
             onStartLog = viewModel::startWriteLog,
             onStopLog = viewModel::stopWriteLog,
-            onLoggerErrorConsumed = viewModel::consumeLoggerError,
             onMark = { mark -> when (mark) { 1 -> viewModel.logMark1(); 2 -> viewModel.logMark2(); else -> viewModel.logMark3() } },
         )
     }

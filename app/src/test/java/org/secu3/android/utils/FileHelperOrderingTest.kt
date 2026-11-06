@@ -38,4 +38,20 @@ class FileHelperOrderingTest {
         assertEquals("application/octet-stream", logFileMimeType(File("trip.S3L")))
         assertEquals("application/octet-stream", logFileMimeType(File("unknown.bin")))
     }
+
+    @Test
+    fun timestampSuffixesUsedForSameSecondSessionsKeepDateOrdering() {
+        val root = Files.createTempDirectory("file-helper-suffixed-order").toFile()
+        try {
+            val base = File(root, "2026-10-22 10:00:00.csv").apply { writeText("base"); setLastModified(1_000) }
+            val firstSession = File(root, "2026-10-22 10:00:00_1.csv").apply { writeText("first"); setLastModified(2_000) }
+            val older = File(root, "2026-10-20 10:00:00.csv").apply { writeText("older"); setLastModified(9_000) }
+            assertEquals(
+                listOf(base, firstSession, older),
+                orderLogFiles(listOf(base, older, firstSession), DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss")),
+            )
+        } finally {
+            root.deleteRecursively()
+        }
+    }
 }

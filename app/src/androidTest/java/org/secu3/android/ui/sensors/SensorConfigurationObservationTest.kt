@@ -189,7 +189,7 @@ class SensorConfigurationObservationTest {
         private val usb = UsbConnection(context.getSystemService(Context.USB_SERVICE) as UsbManager, prefs)
         private val bluetoothManager = context.getSystemService(Context.BLUETOOTH_SERVICE) as BluetoothManager
         private val bluetooth = BtConnection(prefs, bluetoothManager)
-        private val logger = SecuLogger(prefs, FileHelper(context))
+        private val logger = SecuLogger(prefs, FileHelper(context), UiMessageQueue())
         private val notificationPublisher = ConnectionNotificationPublisher(context)
         private val serviceManager = ServiceManager(context)
         private val manager = Secu3ConnectionManager(usb, bluetooth, prefs, logger, serviceManager, notificationPublisher)

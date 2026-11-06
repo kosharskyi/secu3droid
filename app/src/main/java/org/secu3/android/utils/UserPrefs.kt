@@ -55,6 +55,7 @@ class UserPrefs @Inject constructor(
     @Named(USER_PREFS_DATASTORE) private val dataStore: DataStore<Preferences>,
 ) {
     private val writeLogKey = booleanPreferencesKey(context.getString(R.string.pref_write_log_key))
+    private val alwaysWriteLogKey = booleanPreferencesKey(context.getString(R.string.pref_always_write_log_key))
     private val writeBinaryKey = booleanPreferencesKey(context.getString(R.string.pref_write_binary_log_key))
     private val csvTitleKey = booleanPreferencesKey(context.getString(R.string.pref_log_csv_write_title_key))
     private val csvDelimiterKey = stringPreferencesKey(context.getString(R.string.pref_log_csv_delimeter_key))
@@ -92,7 +93,8 @@ class UserPrefs @Inject constructor(
     }
 
     private fun readSettings(preferences: Preferences) = Settings(
-        isSensorLoggerEnabled = preferences[writeLogKey] ?: false,
+        showLogControls = preferences[writeLogKey] ?: false,
+        isAlwaysWriteLogEnabled = preferences[alwaysWriteLogKey] ?: false,
         isBinaryLogFormatEnabled = preferences[writeBinaryKey] ?: false,
         isCsvTitleEnabled = preferences[csvTitleKey] ?: false,
         csvDelimiter = preferences[csvDelimiterKey] ?: ";",
@@ -122,7 +124,8 @@ class UserPrefs @Inject constructor(
         }
     }
 
-    suspend fun setSensorLoggerEnabled(value: Boolean) = update { this[writeLogKey] = value }
+    suspend fun setShowLogControls(value: Boolean) = update { this[writeLogKey] = value }
+    suspend fun setAlwaysWriteLogEnabled(value: Boolean) = update { this[alwaysWriteLogKey] = value }
     suspend fun setBinaryLogFormatEnabled(value: Boolean) = update { this[writeBinaryKey] = value }
     suspend fun setCsvTitleEnabled(value: Boolean) = update { this[csvTitleKey] = value }
     suspend fun setCsvDelimiter(value: String) = update { this[csvDelimiterKey] = value }
@@ -172,7 +175,8 @@ class UserPrefs @Inject constructor(
     }
 
     data class Settings(
-        val isSensorLoggerEnabled: Boolean,
+        val showLogControls: Boolean,
+        val isAlwaysWriteLogEnabled: Boolean,
         val isBinaryLogFormatEnabled: Boolean,
         val isCsvTitleEnabled: Boolean,
         val csvDelimiter: String,

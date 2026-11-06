@@ -30,8 +30,13 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.Job
+import kotlinx.coroutines.cancelAndJoin
 import kotlinx.coroutines.CancellationException
+import org.secu3.android.R
 import org.secu3.android.models.packets.input.SensorsPacket
+import org.secu3.android.ui.messages.UiMessageDuration
+import org.secu3.android.ui.messages.UiMessageQueue
 import org.threeten.bp.LocalTime
 import org.threeten.bp.format.DateTimeFormatter
 import java.io.File
@@ -213,9 +218,15 @@ internal fun encodeBinaryLogRecord(packet: SensorsPacket, mark: Int, now: LocalT
     return buf.array()
 }
 @Singleton
-class SecuLogger @Inject constructor(private val prefs: UserPrefs, private val fileHelper: FileHelper) {
+class SecuLogger @Inject constructor(
+    private val prefs: UserPrefs,
+    private val fileHelper: FileHelper,
+    private val uiMessageQueue: UiMessageQueue,
+) {
 
-    private val loggerSession = LoggerSession()
+    private val loggerSession = LoggerSession {
+        uiMessageQueue.publish(R.string.sensor_logger_io_error, UiMessageDuration.LONG)
+    }
     private val loggerScope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
     private val commands = LoggerCommandQueue(loggerScope) { failure ->
         Log.e("SecuLogger", "Logger command failed", failure)
@@ -227,12 +238,8 @@ class SecuLogger @Inject constructor(private val prefs: UserPrefs, private val f
     private val mCsvFormatter = DateTimeFormatter.ofPattern("HH:mm:ss.SS")
 
     val isLoggerStarted: Boolean
-        get() = loggerSession.state.value.started
-    internal val state = loggerSession.state
-
-    internal fun acknowledgeLoggerError(errorId: Long) = commands.post {
-        loggerSession.acknowledgeError(errorId)
-    }
+        get() = loggerSession.started.value
+    internal val state = loggerSession.started
 
     /** Delete shares the command FIFO with writes so a file cannot become active between checking and deleting it. */
     suspend fun deleteLogFile(file: File): LogDeletionResult = commands.await {
@@ -264,38 +271,35 @@ class SecuLogger @Inject constructor(private val prefs: UserPrefs, private val f
                 loggerSession.fail()
                 return@post
             }
-            val logFile = if (settings.isBinaryLogFormatEnabled) fileHelper.generateS3lFile else fileHelper.generateCsvFile
-            mLogFile = logFile
-            val binary = logFile.extension == "s3l"
-            if (!binary) mCsvDelimeter = settings.csvDelimiter
-            val csvHeader = if (!binary && settings.isCsvTitleEnabled) {
-                generateCsvTitle(delimeter = mCsvDelimeter)
-            } else {
-                null
-            }
             try {
+                val logFile = createLogFile(settings.isBinaryLogFormatEnabled)
+                mLogFile = logFile
+                val binary = logFile.extension == "s3l"
+                if (!binary) mCsvDelimeter = settings.csvDelimiter
+                val csvHeader = if (!binary && settings.isCsvTitleEnabled) {
+                    generateCsvTitle(delimeter = mCsvDelimeter)
+                } else null
                 loggerSession.start(
                     openOutput = { if (binary) openBinaryOutput(logFile) else FileWriterOutput(FileWriter(logFile, true)) },
                     binary = binary,
                     csvHeader = csvHeader,
                 )
             } catch (failure: Exception) {
-                loggerSession.stop()
                 mLogFile = null
-                throw failure
+                loggerSession.fail()
+                Log.e("SecuLogger", "Could not start sensor log", failure)
+                return@post
             }
             if (!isLoggerStarted) mLogFile = null
         }
     }
 
     fun stopLogging() {
-        commands.post { stopLoggingNow() }
-    }
-
-    private fun stopLoggingNow() {
-        mMark = 0
-        loggerSession.stop()
-        mLogFile = null
+        commands.post {
+            mMark = 0
+            loggerSession.stop()
+            mLogFile = null
+        }
     }
 
     fun setMark1() {
@@ -312,20 +316,6 @@ class SecuLogger @Inject constructor(private val prefs: UserPrefs, private val f
 
     suspend fun logPacket(sensorsPacket: SensorsPacket) = commands.await {
         if (!isLoggerStarted) return@await
-        val loggingEnabled = try {
-            prefs.settings.first().isSensorLoggerEnabled
-        } catch (cancelled: CancellationException) {
-            throw cancelled
-        } catch (failure: IOException) {
-            mMark = 0
-            mLogFile = null
-            loggerSession.fail()
-            return@await
-        }
-        if (!loggingEnabled) {
-            stopLoggingNow()
-            return@await
-        }
 
         val logFile = mLogFile ?: return@await
         if (logFile.extension == "s3l") {
@@ -338,8 +328,22 @@ class SecuLogger @Inject constructor(private val prefs: UserPrefs, private val f
         if (!isLoggerStarted) mLogFile = null
     }
 
+    private fun createLogFile(binary: Boolean): File {
+        val base = if (binary) fileHelper.generateS3lFile else fileHelper.generateCsvFile
+        if (!base.exists()) return base
+        var suffix = 1
+        while (true) {
+            val candidate = File(base.parentFile, "${base.nameWithoutExtension}_$suffix.${base.extension}")
+            if (!candidate.exists()) return candidate
+            suffix++
+        }
+    }
+
     /** Flush accepted commands and stop the worker in tests before removing its files. */
-    internal suspend fun shutdownForTests() = commands.closeAndJoin()
+    internal suspend fun shutdownForTests() {
+        commands.closeAndJoin()
+        loggerScope.coroutineContext[Job]?.cancelAndJoin()
+    }
 
     internal suspend fun awaitCommandsForTests() {
         commands.await { Unit }

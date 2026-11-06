@@ -141,7 +141,8 @@ class SettingsScreenTest {
                 SettingsContent(state.value, null, { back = true }, { key, value ->
                     toggled += key to value
                     state.value = when (key) {
-                        R.string.pref_write_log_key -> state.value.copy(writeLog = value)
+                        R.string.pref_write_log_key -> state.value.copy(showLogControls = value)
+                        R.string.pref_always_write_log_key -> state.value.copy(alwaysWriteLog = value)
                         R.string.pref_log_csv_write_title_key -> state.value.copy(writeCsvHeader = value)
                         R.string.pref_write_binary_log_key -> state.value.copy(writeBinaryLog = value)
                         R.string.pref_keep_screen_key -> state.value.copy(keepScreenOn = value)
@@ -152,14 +153,15 @@ class SettingsScreenTest {
                     { folder = true }, {}, { true }, {}, {}, {}, { about = true })
             }
         }
-        listOf(R.string.pref_write_log_title, R.string.pref_log_csv_write_title, R.string.pref_log_csv_delimeter_title,
+        listOf(R.string.pref_write_log_title, R.string.pref_always_write_log_title, R.string.pref_log_csv_write_title, R.string.pref_log_csv_delimeter_title,
             R.string.pref_write_binary_log_title, R.string.pref_log_export_directory_title, R.string.pref_connection_retries_title,
             R.string.pref_keep_screen_title, R.string.pref_wakelock_title, R.string.pref_about_title)
             .forEach { compose.onNodeWithText(context.getString(it)).performScrollTo().assertIsDisplayed() }
         compose.onNodeWithText("EngineLogs").performScrollTo().assertIsDisplayed()
         compose.onNodeWithText(context.getString(R.string.pref_connection_retries_summary, "3")).performScrollTo().assertIsDisplayed()
         val toggles = listOf(
-            R.string.pref_write_log_key to initial.writeLog,
+            R.string.pref_write_log_key to initial.showLogControls,
+            R.string.pref_always_write_log_key to initial.alwaysWriteLog,
             R.string.pref_log_csv_write_title_key to initial.writeCsvHeader,
             R.string.pref_write_binary_log_key to initial.writeBinaryLog,
             R.string.pref_keep_screen_key to initial.keepScreenOn,
@@ -170,6 +172,7 @@ class SettingsScreenTest {
             if (initiallyChecked) toggle.assertIsOn() else toggle.assertIsOff()
             val titleResource = when (key) {
                 R.string.pref_write_log_key -> R.string.pref_write_log_title
+                R.string.pref_always_write_log_key -> R.string.pref_always_write_log_title
                 R.string.pref_log_csv_write_title_key -> R.string.pref_log_csv_write_title
                 R.string.pref_write_binary_log_key -> R.string.pref_write_binary_log_title
                 R.string.pref_keep_screen_key -> R.string.pref_keep_screen_title
@@ -179,7 +182,7 @@ class SettingsScreenTest {
             val updated = compose.onNodeWithTag("settings-toggle-$key").performScrollTo()
             if (initiallyChecked) updated.assertIsOff() else updated.assertIsOn()
         }
-        compose.runOnIdle { assertEquals(5, toggled.size) }
+        compose.runOnIdle { assertEquals(6, toggled.size) }
         compose.onNodeWithText(context.getString(R.string.pref_log_export_directory_title)).performScrollTo().performClick()
         compose.onNodeWithText(context.getString(R.string.pref_about_title)).performScrollTo().performClick()
         compose.onNodeWithContentDescription(context.getString(R.string.back)).performClick()

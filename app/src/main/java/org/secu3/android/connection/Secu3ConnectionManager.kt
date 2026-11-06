@@ -53,6 +53,8 @@ class Secu3ConnectionManager @Inject constructor(
     @Volatile private var currentConnection: Connection<*>? = null
     private var appVisible = false
     private val backgroundWorkEnabled = MutableStateFlow<Boolean?>(null)
+    private var automaticLoggingEnabled: Boolean? = null
+    private val initialSettingsHandled = CompletableDeferred<Unit>()
     private val backgroundPreferenceMutex = Mutex()
     private val _connectionState = MutableSharedFlow<ConnectionState>(replay = 1, extraBufferCapacity = 32).also { it.tryEmit(Disconnected) }
     @Volatile var currentConnectionState: ConnectionState = Disconnected
@@ -83,6 +85,7 @@ class Secu3ConnectionManager @Inject constructor(
         drainCurrentConnectionOutcome()
         if (currentConnection != null) return
         if (!usbConnection.startConnection(device)) return
+        if (automaticLoggingEnabled == true) secuLogger.startLogging()
         selectConnection(usbConnection)
         drainPendingEvents(usbConnection)
     }
@@ -108,9 +111,12 @@ class Secu3ConnectionManager @Inject constructor(
     }
 
     suspend fun startBtConnection() = coroutineScope {
+        val callerContext = currentCoroutineContext()
         val start = synchronized(this@Secu3ConnectionManager) {
             drainCurrentConnectionOutcome()
             if (currentConnection != null) return@coroutineScope
+            callerContext.ensureActive()
+            if (automaticLoggingEnabled == true) secuLogger.startLogging()
             launch(start = CoroutineStart.UNDISPATCHED) { btConnection.startConnection() }
                 .also { selectConnection(btConnection); drainPendingEvents(btConnection) }
         }
@@ -194,9 +200,7 @@ class Secu3ConnectionManager @Inject constructor(
         if (event.end != null) {
             if (event.end == ConnectionEvent.End.STOPPED) {
                 finishConnection()
-            } else {
-                secuLogger.stopLogging()
-            }
+            } else if (automaticLoggingEnabled != true) secuLogger.stopLogging()
             if (connection !== btConnection || event.end == ConnectionEvent.End.STOPPED) {
                 publishConnectionState(Disconnected)
                 reconcileConnectionService()
@@ -225,19 +229,35 @@ class Secu3ConnectionManager @Inject constructor(
             mPrefs.observeSettings { failure ->
                 synchronized(this@Secu3ConnectionManager) {
                     backgroundWorkEnabled.value = null
+                    initialSettingsHandled.complete(Unit)
                     reconcileConnectionService()
                 }
                 Log.e(javaClass.simpleName, "Could not read background connection preference", failure)
             }.collect { settings ->
                 synchronized(this@Secu3ConnectionManager) {
+                    val previousAutomaticLogging = automaticLoggingEnabled
+                    val currentAutomaticLogging = settings.isAlwaysWriteLogEnabled
                     backgroundWorkEnabled.value = settings.isWakeLockEnabled
+                    automaticLoggingEnabled = currentAutomaticLogging
+                    if (currentConnection != null && previousAutomaticLogging != currentAutomaticLogging) {
+                        if (currentAutomaticLogging) secuLogger.startLogging()
+                        else if (previousAutomaticLogging == true) secuLogger.stopLogging()
+                    }
+                    initialSettingsHandled.complete(Unit)
                     applyBackgroundWorkPolicy(settings.isWakeLockEnabled)
                 }
             }
         }
         scope.launch(start = CoroutineStart.UNDISPATCHED) { usbConnection.eventAvailable.collect { drainPendingEvents(usbConnection) } }
         scope.launch(start = CoroutineStart.UNDISPATCHED) { btConnection.eventAvailable.collect { drainPendingEvents(btConnection) } }
-        scope.launch { receivedPacketFlow.filterIsInstance<SensorsPacket>().collect { secuLogger.logPacket(it) } }
+        scope.launch {
+            receivedPacketFlow.filterIsInstance<SensorsPacket>().collect {
+                initialSettingsHandled.await()
+                // Admission and selection happen under this lock; release it before the suspending write.
+                val selected = synchronized(this@Secu3ConnectionManager) { currentConnection != null }
+                if (selected) secuLogger.logPacket(it)
+            }
+        }
     }
 
     private fun applyBackgroundWorkPolicy(enabled: Boolean) {

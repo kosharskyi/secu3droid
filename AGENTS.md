@@ -20,6 +20,8 @@ UI code may map domain state to presentation (including localized messages and s
 
 Connection managers own connection establishment, reconnection, cancellation, transport-resource cleanup, connection status, and the common incoming packet stream. They must not know about screens, routes, ViewModels, or how packets are delivered to or displayed by particular UI consumers.
 
+Transport classes (`Connection`, `BtConnection`, and `UsbConnection`) expose their own states, outcomes, and packets. Coordinate logging and other consumer side effects in the connection manager using those existing contracts. Do not add transport methods, callbacks, or events solely to trigger a consumer action. Extend the shared transport contract only when it lacks a fact about the transport itself.
+
 Do not put display-state ownership into a connection manager: no latest-packet caches, per-packet-type state streams, replay, sampling, filtering, or reset policies introduced for screen consumption. Packet-derived consumer state and its presentation lifecycle belong outside the connection manager. Shared consumer behavior must follow the class/helper ownership rules below rather than expanding the manager's responsibilities.
 
 ## Class and Helper Organization
