@@ -1,4 +1,6 @@
-package org.secu3.android.utils
+package org.secu3.android.utils.logger
+
+import org.secu3.android.utils.FileHelper
 
 import android.content.Context
 import android.content.ContextWrapper

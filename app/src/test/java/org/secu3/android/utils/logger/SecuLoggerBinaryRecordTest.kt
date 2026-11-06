@@ -1,4 +1,4 @@
-package org.secu3.android.utils
+package org.secu3.android.utils.logger
 
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse

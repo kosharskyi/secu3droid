@@ -23,7 +23,9 @@
  *                    email: vetalkosharskiy@gmail.com
  */
 
-package org.secu3.android.utils
+package org.secu3.android.utils.logger
+
+import org.secu3.android.utils.setBitValue
 
 import org.secu3.android.models.packets.input.SensorsPacket
 import org.threeten.bp.LocalTime

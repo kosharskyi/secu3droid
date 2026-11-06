@@ -18,7 +18,9 @@
  *    You should have received a copy of the GNU General Public License
  *    along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
-package org.secu3.android.utils
+package org.secu3.android.utils.logger
+
+import org.secu3.android.utils.FileHelper
 
 import android.util.Log
 import kotlinx.coroutines.CancellationException

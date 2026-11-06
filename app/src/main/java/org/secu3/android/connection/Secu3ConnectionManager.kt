@@ -34,7 +34,7 @@ import org.secu3.android.models.packets.base.InputPacket
 import org.secu3.android.models.packets.base.OutputPacket
 import org.secu3.android.models.packets.input.FirmwareInfoPacket
 import org.secu3.android.models.packets.input.SensorsPacket
-import org.secu3.android.utils.SecuLogger
+import org.secu3.android.utils.logger.SecuLogger
 import org.secu3.android.utils.Task
 import org.secu3.android.utils.prefs.UserPrefs
 import javax.inject.Inject

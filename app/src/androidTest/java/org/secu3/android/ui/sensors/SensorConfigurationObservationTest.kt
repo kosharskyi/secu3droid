@@ -45,8 +45,8 @@ import org.secu3.android.models.sensors.IndicatorType
 import org.secu3.android.ui.messages.UiMessageQueue
 import org.secu3.android.utils.FileHelper
 import org.secu3.android.utils.prefs.IsolatedUserPrefs
-import org.secu3.android.utils.SecuLogger
-import org.secu3.android.utils.SensorLogEncoder
+import org.secu3.android.utils.logger.SecuLogger
+import org.secu3.android.utils.logger.SensorLogEncoder
 import org.secu3.android.utils.prefs.UserPrefs
 import org.secu3.android.ui.common.SensorPacketObserver
 import java.util.UUID

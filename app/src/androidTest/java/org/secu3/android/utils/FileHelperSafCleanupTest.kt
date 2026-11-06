@@ -36,6 +36,8 @@ import org.secu3.android.ui.logger.SecuLogsViewModel
 import org.secu3.android.utils.prefs.LogExportDestination
 import org.secu3.android.ui.logger.SecuLogsEffect
 import org.secu3.android.ui.messages.UiMessageQueue
+import org.secu3.android.utils.logger.SecuLogger
+import org.secu3.android.utils.logger.SensorLogEncoder
 import org.secu3.android.utils.prefs.IsolatedUserPrefs
 
 class FileHelperSafCleanupTest {

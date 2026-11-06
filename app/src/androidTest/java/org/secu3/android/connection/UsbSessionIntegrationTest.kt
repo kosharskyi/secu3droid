@@ -63,8 +63,8 @@ import org.secu3.android.models.RawPacket
 import org.secu3.android.models.packets.input.FirmwareInfoPacket
 import org.secu3.android.models.packets.input.SensorsPacket
 import org.secu3.android.utils.FileHelper
-import org.secu3.android.utils.SecuLogger
-import org.secu3.android.utils.SensorLogEncoder
+import org.secu3.android.utils.logger.SecuLogger
+import org.secu3.android.utils.logger.SensorLogEncoder
 import org.secu3.android.utils.Task
 import org.secu3.android.utils.prefs.UserPrefs
 import org.secu3.android.utils.prefs.IsolatedUserPrefs

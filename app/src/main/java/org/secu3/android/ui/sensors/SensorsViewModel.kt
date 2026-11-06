@@ -38,7 +38,7 @@ import org.secu3.android.models.sensors.GaugeType
 import org.secu3.android.ui.sensors.models.IndicatorItem
 import org.secu3.android.models.sensors.IndicatorType
 import org.secu3.android.ui.sensors.models.SensorPresentationCatalog
-import org.secu3.android.utils.SecuLogger
+import org.secu3.android.utils.logger.SecuLogger
 import org.secu3.android.utils.Task
 import org.secu3.android.utils.prefs.UserPrefs
 import org.secu3.android.ui.messages.UiMessageDuration

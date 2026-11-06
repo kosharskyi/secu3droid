@@ -48,6 +48,8 @@ import org.secu3.android.ui.settings.SettingsDialog
 import org.secu3.android.ui.settings.SettingsViewModel
 import org.secu3.android.utils.prefs.AppPrefs
 import org.secu3.android.utils.prefs.IsolatedUserPrefs
+import org.secu3.android.utils.logger.SecuLogger
+import org.secu3.android.utils.logger.SensorLogEncoder
 import org.secu3.android.utils.prefs.UserPrefs
 import retrofit2.Response
 

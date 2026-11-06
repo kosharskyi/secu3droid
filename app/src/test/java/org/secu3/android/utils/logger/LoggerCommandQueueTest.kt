@@ -1,4 +1,4 @@
-package org.secu3.android.utils
+package org.secu3.android.utils.logger
 
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.CoroutineStart
