@@ -32,7 +32,7 @@ import android.util.Log
 import kotlinx.coroutines.*
 import kotlinx.coroutines.flow.first
 import org.secu3.android.models.RawPacket
-import org.secu3.android.utils.UserPrefs
+import org.secu3.android.utils.prefs.UserPrefs
 import java.io.BufferedReader
 import java.io.IOException
 import java.io.InputStreamReader

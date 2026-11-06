@@ -32,7 +32,7 @@ import org.secu3.android.BuildConfig
 import org.secu3.android.network.ApiService
 import org.secu3.android.network.models.Asset
 import org.secu3.android.network.models.GitHubRelease
-import org.secu3.android.utils.AppPrefs
+import org.secu3.android.utils.prefs.AppPrefs
 import org.secu3.android.utils.toResult
 import org.threeten.bp.LocalDate
 import kotlinx.coroutines.CancellationException

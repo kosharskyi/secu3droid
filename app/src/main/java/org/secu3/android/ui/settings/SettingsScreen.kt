@@ -45,7 +45,7 @@ import org.secu3.android.ui.compose.ChoiceDialog
 import org.secu3.android.ui.compose.SettingsSection
 import org.secu3.android.ui.compose.SettingsToggleRow
 import org.secu3.android.ui.compose.SecuTopAppBar
-import org.secu3.android.utils.AppearanceMode
+import org.secu3.android.utils.prefs.AppearanceMode
 
 data class SettingsUiState(
     val showLogControls: Boolean,

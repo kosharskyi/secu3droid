@@ -1,4 +1,4 @@
-package org.secu3.android.utils
+package org.secu3.android.utils.prefs
 
 import android.content.Context
 import android.content.ContextWrapper

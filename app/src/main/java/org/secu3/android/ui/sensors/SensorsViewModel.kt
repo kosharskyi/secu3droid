@@ -40,7 +40,7 @@ import org.secu3.android.models.sensors.IndicatorType
 import org.secu3.android.ui.sensors.models.SensorPresentationCatalog
 import org.secu3.android.utils.SecuLogger
 import org.secu3.android.utils.Task
-import org.secu3.android.utils.UserPrefs
+import org.secu3.android.utils.prefs.UserPrefs
 import org.secu3.android.ui.messages.UiMessageDuration
 import org.secu3.android.ui.messages.UiMessageQueue
 import java.io.IOException

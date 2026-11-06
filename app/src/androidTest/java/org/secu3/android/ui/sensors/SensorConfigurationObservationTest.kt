@@ -44,9 +44,9 @@ import org.secu3.android.models.sensors.GaugeType
 import org.secu3.android.models.sensors.IndicatorType
 import org.secu3.android.ui.messages.UiMessageQueue
 import org.secu3.android.utils.FileHelper
-import org.secu3.android.utils.IsolatedUserPrefs
+import org.secu3.android.utils.prefs.IsolatedUserPrefs
 import org.secu3.android.utils.SecuLogger
-import org.secu3.android.utils.UserPrefs
+import org.secu3.android.utils.prefs.UserPrefs
 import org.secu3.android.ui.common.SensorPacketObserver
 import java.util.UUID
 

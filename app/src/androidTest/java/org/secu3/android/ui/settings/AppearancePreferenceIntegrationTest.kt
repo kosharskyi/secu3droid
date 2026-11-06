@@ -11,7 +11,7 @@ import org.junit.Rule
 import org.junit.Test
 import org.secu3.android.R
 import org.secu3.android.ui.MainActivity
-import org.secu3.android.utils.AppearanceMode
+import org.secu3.android.utils.prefs.AppearanceMode
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.runBlocking
 

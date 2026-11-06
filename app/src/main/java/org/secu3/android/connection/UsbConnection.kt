@@ -33,7 +33,7 @@ import com.hoho.android.usbserial.driver.UsbSerialPort
 import com.hoho.android.usbserial.driver.UsbSerialProber
 import kotlinx.coroutines.*
 import org.secu3.android.models.RawPacket
-import org.secu3.android.utils.UserPrefs
+import org.secu3.android.utils.prefs.UserPrefs
 import java.io.IOException
 import javax.inject.Inject
 import javax.inject.Singleton

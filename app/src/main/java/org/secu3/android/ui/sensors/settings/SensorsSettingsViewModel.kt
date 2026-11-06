@@ -15,7 +15,7 @@ import org.secu3.android.ui.messages.UiMessageDuration
 import org.secu3.android.ui.messages.UiMessageQueue
 import org.secu3.android.models.SensorGaugeStyle
 import org.secu3.android.models.InjectionTimingMode
-import org.secu3.android.utils.UserPrefs
+import org.secu3.android.utils.prefs.UserPrefs
 
 data class SensorsSettingsUiState(
     val oldView: Boolean = false,

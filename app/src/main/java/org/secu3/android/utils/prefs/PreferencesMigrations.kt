@@ -22,7 +22,7 @@
  *                    http://secu-3.org
  *                    email: vetalkosharskiy@gmail.com
  */
-package org.secu3.android.utils
+package org.secu3.android.utils.prefs
 
 import android.content.Context
 import androidx.datastore.core.DataMigration

@@ -22,8 +22,8 @@ import org.secu3.android.network.ApiService
 import org.secu3.android.network.models.Asset
 import org.secu3.android.network.models.Author
 import org.secu3.android.network.models.GitHubRelease
-import org.secu3.android.utils.AppPrefs
-import org.secu3.android.utils.IsolatedUserPrefs
+import org.secu3.android.utils.prefs.AppPrefs
+import org.secu3.android.utils.prefs.IsolatedUserPrefs
 import org.threeten.bp.LocalDate
 import retrofit2.Response
 

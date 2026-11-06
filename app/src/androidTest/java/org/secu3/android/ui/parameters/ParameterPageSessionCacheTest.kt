@@ -62,7 +62,7 @@ import org.secu3.android.models.packets.out.params.UniOutParamPacket
 import org.secu3.android.models.packets.out.params.LambdaParamPacket
 import org.secu3.android.ui.parameters.pages.compose.AdcNumber
 import org.secu3.android.models.packets.out.ChangeModePacket
-import org.secu3.android.utils.UserPrefs
+import org.secu3.android.utils.prefs.UserPrefs
 import org.secu3.android.ui.MainActivity
 import org.secu3.android.ui.compose.SecuComposeTheme
 import org.secu3.android.ui.PARAMETERS_ROUTE

@@ -25,6 +25,7 @@
 
 package org.secu3.android.utils
 
+import org.secu3.android.utils.prefs.LogExportDestination
 import android.content.ContentValues
 import android.content.Context
 import android.content.Intent

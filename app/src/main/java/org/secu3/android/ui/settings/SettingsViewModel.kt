@@ -25,9 +25,9 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import org.secu3.android.R
-import org.secu3.android.utils.AppearanceMode
+import org.secu3.android.utils.prefs.AppearanceMode
 import org.secu3.android.utils.FileHelper
-import org.secu3.android.utils.UserPrefs
+import org.secu3.android.utils.prefs.UserPrefs
 import org.secu3.android.ui.messages.UiMessageDuration
 import org.secu3.android.ui.messages.UiMessageQueue
 

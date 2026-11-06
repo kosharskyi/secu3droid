@@ -12,4 +12,4 @@ These notes record cross-screen constraints and platform quirks that are easy to
 - [Home screen](ui/home/HomeScreen.md): accepted dashboard geometry and monochrome menu assets.
 - [Start button](ui/start/CircularButton.md): visible progress stroke and translated-label fit.
 - [Sensors](ui/sensors/SensorsScreen.md): disconnected reading semantics and ECU range colors.
-- [Appearance preferences](utils/UserPrefs.md): new-key and legacy-key migration precedence.
+- [Appearance preferences](utils/prefs/UserPrefs.md): new-key and legacy-key migration precedence.

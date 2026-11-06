@@ -10,7 +10,7 @@ import org.secu3.android.models.packets.base.OutputPacket
 import org.secu3.android.models.packets.input.FirmwareInfoPacket
 import org.secu3.android.models.packets.out.ChangeModePacket
 import org.secu3.android.utils.Task
-import org.secu3.android.utils.UserPrefs
+import org.secu3.android.utils.prefs.UserPrefs
 
 internal data class ConnectionPacket(val attemptId: Long, val packet: InputPacket)
 

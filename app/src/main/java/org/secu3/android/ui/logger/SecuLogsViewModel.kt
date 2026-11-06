@@ -27,10 +27,10 @@ import kotlinx.coroutines.withContext
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.CancellationException
 import org.secu3.android.utils.FileHelper
-import org.secu3.android.utils.LogExportDestination
+import org.secu3.android.utils.prefs.LogExportDestination
 import org.secu3.android.utils.LogDeletionResult
 import org.secu3.android.utils.SecuLogger
-import org.secu3.android.utils.UserPrefs
+import org.secu3.android.utils.prefs.UserPrefs
 import org.secu3.android.utils.logFileMimeType
 import java.io.File
 import java.io.IOException

@@ -7,7 +7,7 @@
  *    the Free Software Foundation, either version 3 of the License, or
  *    (at your option) any later version.
  */
-package org.secu3.android.utils
+package org.secu3.android.utils.prefs
 
 import android.content.Context
 import androidx.datastore.core.DataStore

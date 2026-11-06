@@ -38,7 +38,7 @@ import org.secu3.android.connection.Disconnected
 import org.secu3.android.connection.Secu3ConnectionManager
 import org.secu3.android.connection.UsbReconnecting
 import org.secu3.android.connection.UsbReconnectingAwaitingEcu
-import org.secu3.android.utils.UserPrefs
+import org.secu3.android.utils.prefs.UserPrefs
 import javax.inject.Inject
 
 @HiltViewModel

@@ -33,8 +33,10 @@ import org.junit.Test
 import java.io.File
 import java.io.FileNotFoundException
 import org.secu3.android.ui.logger.SecuLogsViewModel
+import org.secu3.android.utils.prefs.LogExportDestination
 import org.secu3.android.ui.logger.SecuLogsEffect
 import org.secu3.android.ui.messages.UiMessageQueue
+import org.secu3.android.utils.prefs.IsolatedUserPrefs
 
 class FileHelperSafCleanupTest {
     private lateinit var root: File

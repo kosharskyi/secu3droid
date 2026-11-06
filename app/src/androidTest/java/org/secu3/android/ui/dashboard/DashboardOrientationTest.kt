@@ -22,7 +22,7 @@ import org.secu3.android.R
 import org.secu3.android.ui.DASHBOARD_ROUTE
 import org.secu3.android.ui.HOME_ROUTE
 import org.secu3.android.ui.MainActivity
-import org.secu3.android.utils.UserPrefs
+import org.secu3.android.utils.prefs.UserPrefs
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.runBlocking
 

@@ -42,8 +42,8 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.res.stringResource
 import kotlinx.coroutines.flow.collect
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
-import org.secu3.android.utils.AppearanceMode
-import org.secu3.android.utils.UserPrefs
+import org.secu3.android.utils.prefs.AppearanceMode
+import org.secu3.android.utils.prefs.UserPrefs
 import org.secu3.android.R
 import org.secu3.android.ui.compose.SecuComposeTheme
 import org.secu3.android.ui.errors.ErrorsRoute

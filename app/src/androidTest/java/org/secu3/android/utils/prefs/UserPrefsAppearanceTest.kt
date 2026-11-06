@@ -1,4 +1,4 @@
-package org.secu3.android.utils
+package org.secu3.android.utils.prefs
 
 import androidx.datastore.preferences.core.edit
 import androidx.datastore.preferences.core.stringPreferencesKey

@@ -61,8 +61,8 @@ import kotlinx.coroutines.withTimeout
 import kotlinx.coroutines.withContext
 import org.secu3.android.ui.messages.UiMessageQueue
 import org.secu3.android.utils.FileHelper
-import org.secu3.android.utils.IsolatedUserPrefs
-import org.secu3.android.utils.UserPrefs
+import org.secu3.android.utils.prefs.IsolatedUserPrefs
+import org.secu3.android.utils.prefs.UserPrefs
 import java.io.IOException
 import java.util.UUID
 

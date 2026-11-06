@@ -14,6 +14,8 @@ import org.junit.Before
 import org.junit.Test
 import org.secu3.android.models.packets.input.SensorsPacket
 import org.secu3.android.ui.messages.UiMessageQueue
+import org.secu3.android.utils.prefs.IsolatedUserPrefs
+import org.secu3.android.utils.prefs.UserPrefs
 import java.io.File
 import java.util.UUID
 import java.util.concurrent.CountDownLatch

@@ -65,9 +65,9 @@ import org.secu3.android.models.packets.input.SensorsPacket
 import org.secu3.android.utils.FileHelper
 import org.secu3.android.utils.SecuLogger
 import org.secu3.android.utils.Task
-import org.secu3.android.utils.UserPrefs
-import org.secu3.android.utils.IsolatedUserPrefs
-import org.secu3.android.utils.AppPrefs
+import org.secu3.android.utils.prefs.UserPrefs
+import org.secu3.android.utils.prefs.IsolatedUserPrefs
+import org.secu3.android.utils.prefs.AppPrefs
 import org.secu3.android.ui.messages.UiMessageQueue
 import org.secu3.android.ui.start.StartScreenViewModel
 import org.secu3.android.ui.home.HomeViewModel

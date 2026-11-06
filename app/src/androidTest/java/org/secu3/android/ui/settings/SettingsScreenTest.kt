@@ -57,7 +57,7 @@ import org.junit.Assert.assertTrue
 import org.junit.Rule
 import org.junit.Test
 import org.secu3.android.R
-import org.secu3.android.utils.AppearanceMode
+import org.secu3.android.utils.prefs.AppearanceMode
 import org.secu3.android.ui.compose.ChoiceDialog
 import org.secu3.android.ui.compose.SecuComposeTheme
 

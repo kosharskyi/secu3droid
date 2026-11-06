@@ -1,4 +1,4 @@
-package org.secu3.android.utils
+package org.secu3.android.utils.prefs
 
 /** User-selected appearance. System follows the Android system setting. */
 enum class AppearanceMode(val preferenceValue: String) {

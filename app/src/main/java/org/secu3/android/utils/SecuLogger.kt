@@ -37,6 +37,7 @@ import org.secu3.android.R
 import org.secu3.android.models.packets.input.SensorsPacket
 import org.secu3.android.ui.messages.UiMessageDuration
 import org.secu3.android.ui.messages.UiMessageQueue
+import org.secu3.android.utils.prefs.UserPrefs
 import org.threeten.bp.LocalTime
 import org.threeten.bp.format.DateTimeFormatter
 import java.io.File

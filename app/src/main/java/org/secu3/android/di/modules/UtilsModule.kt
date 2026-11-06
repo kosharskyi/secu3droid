@@ -45,9 +45,9 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
 import javax.inject.Named
-import org.secu3.android.utils.AppPrefs
-import org.secu3.android.utils.PreferencesMigrations
-import org.secu3.android.utils.UserPrefs
+import org.secu3.android.utils.prefs.AppPrefs
+import org.secu3.android.utils.prefs.PreferencesMigrations
+import org.secu3.android.utils.prefs.UserPrefs
 import org.secu3.android.db.AppDatabase
 import org.secu3.android.network.ApiManager
 import org.secu3.android.network.ApiService
