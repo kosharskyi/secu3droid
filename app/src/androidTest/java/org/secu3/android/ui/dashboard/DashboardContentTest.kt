@@ -28,21 +28,30 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.ui.test.assertCountEquals
 import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.assertTextEquals
+import androidx.compose.ui.test.junit4.StateRestorationTester
 import androidx.compose.ui.test.junit4.v2.createAndroidComposeRule
 import androidx.compose.ui.test.onAllNodesWithText
 import androidx.compose.ui.test.onAllNodesWithTag
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.onRoot
 import androidx.compose.ui.test.onNodeWithTag
+import androidx.compose.ui.test.onNodeWithContentDescription
+import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.captureToImage
 import androidx.compose.ui.graphics.asAndroidBitmap
 import androidx.test.platform.app.InstrumentationRegistry
 import androidx.compose.runtime.CompositionLocalProvider
+import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxHeight
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.Alignment
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.ui.test.getUnclippedBoundsInRoot
 import androidx.compose.ui.unit.Density
 import androidx.compose.ui.unit.dp
@@ -293,6 +302,67 @@ class DashboardContentTest {
     }
 
     @Test
+    fun dashboardThemeToggleChangesOnlyDashboardAndSwitchesBack() {
+        composeRule.setContent {
+            org.secu3.android.ui.compose.SecuComposeTheme(darkTheme = false) {
+                Box(Modifier.fillMaxSize()) {
+                    DashboardContent(data = sampleData(), connectionState = Connected)
+                    Box(
+                        Modifier.align(Alignment.BottomEnd)
+                            .size(12.dp)
+                            .background(MaterialTheme.colorScheme.background)
+                            .testTag("outer-theme-swatch")
+                    )
+                }
+            }
+        }
+
+        val lightDashboard = dashboardCornerColor()
+        val outerTheme = outerSwatchColor()
+        assertEquals(lightDashboard, outerTheme)
+        composeRule.onNodeWithContentDescription(context.getString(R.string.dashboard_theme_switch_to_dark)).performClick()
+        val darkDashboard = dashboardCornerColor()
+        assertTrue("Dashboard background switches to dark", darkDashboard != lightDashboard)
+        assertEquals("the app theme outside Dashboard stays light", outerTheme, outerSwatchColor())
+        composeRule.onNodeWithContentDescription(context.getString(R.string.dashboard_theme_switch_to_light)).assertIsDisplayed()
+
+        composeRule.onNodeWithContentDescription(context.getString(R.string.dashboard_theme_switch_to_light)).performClick()
+        assertEquals("second tap restores the inherited light theme", lightDashboard, dashboardCornerColor())
+        assertEquals("the app theme outside Dashboard stays light", outerTheme, outerSwatchColor())
+    }
+
+    @Test
+    fun dashboardThemeToggleSurvivesStateRestoration() {
+        val restorationTester = StateRestorationTester(composeRule)
+        restorationTester.setContent {
+            org.secu3.android.ui.compose.SecuComposeTheme(darkTheme = false) {
+                DashboardContent(data = sampleData(), connectionState = Connected)
+            }
+        }
+
+        composeRule.onNodeWithContentDescription(context.getString(R.string.dashboard_theme_switch_to_dark)).performClick()
+        val darkDashboard = dashboardCornerColor()
+        restorationTester.emulateSavedInstanceStateRestore()
+
+        composeRule.onNodeWithContentDescription(context.getString(R.string.dashboard_theme_switch_to_light)).assertIsDisplayed()
+        assertEquals("restored Dashboard retains its local dark theme", darkDashboard, dashboardCornerColor())
+    }
+
+    @Test
+    fun themeButtonHasReservedSpaceBesideScrollableWarnings() {
+        showDashboard(
+            data = sampleData(temperature = 106f, voltage = 11f, oilTemperature = 140f),
+            state = Connected,
+        )
+
+        assertThemeControlBounds()
+
+        composeRule.runOnIdle { narrowLayoutState.value = true }
+        composeRule.waitForIdle()
+        assertThemeControlBounds()
+    }
+
+    @Test
     fun statusGaugesAndReadoutsKeepGapsInLandscapeAndNarrowLayouts() {
         showDashboard(data = sampleData(), state = Connected)
         assertVerticalGap("dashboard-status-bar", "dashboard-primary-region")
@@ -319,6 +389,14 @@ class DashboardContentTest {
         }
     }
 
+    private fun assertThemeControlBounds() {
+        val statusBounds = composeRule.onNodeWithTag("dashboard-status-bar").getUnclippedBoundsInRoot()
+        val toggleBounds = composeRule.onNodeWithTag("dashboard-theme-toggle").getUnclippedBoundsInRoot()
+        assertTrue("scrollable warnings stop before the fixed theme button", statusBounds.right <= toggleBounds.left)
+        assertTrue("theme button keeps a 48dp touch target", toggleBounds.right - toggleBounds.left >= 48.dp)
+        composeRule.onNodeWithTag("dashboard-theme-toggle").assertIsDisplayed()
+    }
+
     private fun assertVerticalGap(upperTag: String, lowerTag: String) {
         val upper = composeRule.onNodeWithTag(upperTag).getUnclippedBoundsInRoot()
         val lower = composeRule.onNodeWithTag(lowerTag).getUnclippedBoundsInRoot()
@@ -338,6 +416,19 @@ class DashboardContentTest {
         val y = with(composeRule.density) { ((gauge.top + gauge.bottom) / 2).roundToPx() }
         val background = image.getPixel(5, 5)
         assertEquals("gauge gutter should remain on the dashboard background", background, image.getPixel(x, y))
+    }
+
+    private fun dashboardCornerColor(): Int = composeRule.onRoot()
+        .captureToImage()
+        .asAndroidBitmap()
+        .getPixel(5, 5)
+
+    private fun outerSwatchColor(): Int {
+        val image = composeRule.onRoot().captureToImage().asAndroidBitmap()
+        val bounds = composeRule.onNodeWithTag("outer-theme-swatch").getUnclippedBoundsInRoot()
+        val x = with(composeRule.density) { ((bounds.left + bounds.right) / 2).roundToPx() }
+        val y = with(composeRule.density) { ((bounds.top + bounds.bottom) / 2).roundToPx() }
+        return image.getPixel(x, y)
     }
 
     private fun captureGauge(tag: String) = composeRule.onNodeWithTag(tag).captureToImage().asAndroidBitmap()

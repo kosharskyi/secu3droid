@@ -3,6 +3,8 @@
     <string name="appearance_system">Системне</string>
     <string name="appearance_light">Світле</string>
     <string name="appearance_dark">Темне</string>
+    <string name="dashboard_theme_switch_to_dark">Увімкнути темну тему</string>
+    <string name="dashboard_theme_switch_to_light">Увімкнути світлу тему</string>
     <string name="appearance_system_summary">Використовувати оформлення пристрою</string>
     <string name="settings_group_logging">Журналювання</string>
     <string name="settings_group_connection">З’єднання</string>

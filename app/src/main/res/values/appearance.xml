@@ -4,6 +4,8 @@
     <string name="appearance_system">System default</string>
     <string name="appearance_light">Light</string>
     <string name="appearance_dark">Dark</string>
+    <string name="dashboard_theme_switch_to_dark">Switch to dark theme</string>
+    <string name="dashboard_theme_switch_to_light">Switch to light theme</string>
     <string name="appearance_system_summary">Follow the device appearance</string>
     <string name="settings_group_logging">Logging</string>
     <string name="settings_group_connection">Connection</string>

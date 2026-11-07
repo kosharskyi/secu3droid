@@ -37,10 +37,19 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.saveable.rememberSaveable
+import androidx.compose.runtime.setValue
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.DarkMode
+import androidx.compose.material.icons.filled.LightMode
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -80,8 +89,10 @@ fun DashboardContent(
     data: DashboardViewData?,
     connectionState: ConnectionState?,
 ) {
-    SecuComposeTheme {
+    var dashboardDarkTheme by rememberSaveable { mutableStateOf<Boolean?>(null) }
+    SecuComposeTheme(darkTheme = dashboardDarkTheme) {
         val colors = MaterialTheme.colorScheme
+        val isDarkTheme = colors.background.luminance() < 0.5f
         val liveData = data.takeIf { connectionState == Connected }
         Surface(color = colors.background) {
             BoxWithConstraints(
@@ -96,11 +107,32 @@ fun DashboardContent(
                     modifier = Modifier.fillMaxSize(),
                     verticalArrangement = Arrangement.spacedBy(12.dp)
                 ) {
-                    DashboardStatusBar(
-                        data = liveData,
-                        connectionState = connectionState,
-                        compact = compact,
-                    )
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        verticalAlignment = Alignment.CenterVertically,
+                    ) {
+                        DashboardStatusBar(
+                            data = liveData,
+                            connectionState = connectionState,
+                            compact = compact,
+                            modifier = Modifier.weight(1f),
+                        )
+                        val toggleDescription = stringResource(
+                            if (isDarkTheme) R.string.dashboard_theme_switch_to_light
+                            else R.string.dashboard_theme_switch_to_dark
+                        )
+                        IconButton(
+                            onClick = { dashboardDarkTheme = !isDarkTheme },
+                            modifier = Modifier.testTag("dashboard-theme-toggle"),
+                        ) {
+                            Icon(
+                                imageVector = if (isDarkTheme) Icons.Filled.LightMode else Icons.Filled.DarkMode,
+                                contentDescription = toggleDescription,
+                                tint = MaterialTheme.colorScheme.onSurface,
+                                modifier = Modifier.testTag("dashboard-theme-toggle-icon"),
+                            )
+                        }
+                    }
 
                     if (availableWidth < 600.dp) {
                         Column(
@@ -227,6 +259,7 @@ private fun DashboardStatusBar(
     data: DashboardViewData?,
     connectionState: ConnectionState?,
     compact: Boolean,
+    modifier: Modifier = Modifier,
 ) {
     val statusText = when (connectionState) {
         Connected -> stringResource(if (data == null) R.string.dashboard_status_no_data else R.string.dashboard_status_online)
@@ -243,7 +276,9 @@ private fun DashboardStatusBar(
     }
 
     Row(
-        modifier = Modifier.horizontalScroll(rememberScrollState()).testTag("dashboard-status-bar"),
+        modifier = modifier.fillMaxWidth()
+            .horizontalScroll(rememberScrollState())
+            .testTag("dashboard-status-bar"),
         horizontalArrangement = Arrangement.spacedBy(10.dp),
         verticalAlignment = Alignment.CenterVertically
     ) {

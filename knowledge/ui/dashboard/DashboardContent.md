@@ -41,3 +41,7 @@ Bluetooth device selection belongs to Start. Dashboard renders the common sensor
 ## System bars must restore without awaiting preferences
 
 Dashboard's lifecycle cleanup runs in a canceled coroutine. Restore the captured system bars synchronously; awaiting DataStore there would throw cancellation before restoration. Forward the keep-screen preference to the Activity's existing scope, which applies it against the current route and handles storage failures independently.
+
+## The Dashboard theme choice is temporary and route-local
+
+Keep the optional light/dark override in saveable Compose state inside Dashboard content. A null override inherits the already-resolved application theme; saving state preserves a user's Dashboard choice through recreation, while a fresh route starts by inheriting the application theme again. Reserve fixed space for the toggle beside the horizontally scrollable status and warning chips.
