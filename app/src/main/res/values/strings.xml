@@ -548,6 +548,14 @@
     <string name="raw_sensors_frag_add_io7_input_label">Input ADD_I7</string>
     <string name="raw_sensors_frag_add_io8_input_label">Input ADD_I8</string>
 
+    <string name="dashboard_gauges_title">Dashboard gauges</string>
+    <string name="dashboard_gauges_configure">Configure dashboard gauges</string>
+    <string name="dashboard_gauges_left">Left gauge</string>
+    <string name="dashboard_gauges_right">Right gauge</string>
+    <string name="dashboard_gauges_search">Search sensors</string>
+    <string name="dashboard_gauges_reset">Reset to defaults</string>
+    <string name="dashboard_gauges_no_results">No matching sensors</string>
+    <string name="dashboard_gauges_storage_error">Could not save or load dashboard gauges. Try again.</string>
     <string name="dashboard_status_online">Online</string>
     <string name="dashboard_status_connecting">Connecting</string>
     <string name="dashboard_status_offline">Offline</string>

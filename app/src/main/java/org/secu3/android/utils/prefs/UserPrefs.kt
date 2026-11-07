@@ -48,6 +48,7 @@ import java.io.IOException
 import org.secu3.android.R
 import org.secu3.android.models.InjectionTimingMode
 import org.secu3.android.models.SensorGaugeStyle
+import org.secu3.android.models.sensors.GaugeType
 
 @Singleton
 class UserPrefs @Inject constructor(
@@ -72,6 +73,8 @@ class UserPrefs @Inject constructor(
     private val sensorGaugeStyleKey = stringPreferencesKey(SENSOR_GAUGE_STYLE_KEY)
     private val injectionTimingModeKey = stringPreferencesKey(INJECTION_TIMING_MODE_KEY)
     private val fuelFlowPulsesPerLitreKey = stringPreferencesKey(FUEL_FLOW_PULSES_PER_LITRE_KEY)
+    private val dashboardLeftGaugeKey = stringPreferencesKey(DASHBOARD_LEFT_GAUGE_KEY)
+    private val dashboardRightGaugeKey = stringPreferencesKey(DASHBOARD_RIGHT_GAUGE_KEY)
 
     val settings: Flow<Settings> = dataStore.data
         .map(::readSettings)
@@ -113,6 +116,10 @@ class UserPrefs @Inject constructor(
             ?.toIntOrNull()
             ?.takeIf { it in FUEL_FLOW_PULSES_PER_LITRE_MIN..FUEL_FLOW_PULSES_PER_LITRE_MAX }
             ?: DEFAULT_FUEL_FLOW_PULSES_PER_LITRE,
+        dashboardLeftGauge = GaugeType.entries.firstOrNull { it.name == preferences[dashboardLeftGaugeKey] }
+            ?: DEFAULT_DASHBOARD_LEFT_GAUGE,
+        dashboardRightGauge = GaugeType.entries.firstOrNull { it.name == preferences[dashboardRightGaugeKey] }
+            ?: DEFAULT_DASHBOARD_RIGHT_GAUGE,
     )
 
     private fun readAppearanceMode(preferences: Preferences): AppearanceMode {
@@ -151,6 +158,11 @@ class UserPrefs @Inject constructor(
     suspend fun setFuelFlowPulsesPerLitre(value: Int) {
         require(value in FUEL_FLOW_PULSES_PER_LITRE_MIN..FUEL_FLOW_PULSES_PER_LITRE_MAX)
         update { this[fuelFlowPulsesPerLitreKey] = value.toString() }
+    }
+
+    suspend fun setDashboardGauges(left: GaugeType, right: GaugeType) = update {
+        this[dashboardLeftGaugeKey] = left.name
+        this[dashboardRightGaugeKey] = right.name
     }
 
     fun parsePositiveConnectionRetries(value: String): Int? = value.toIntOrNull()?.takeIf { it > 0 }
@@ -192,6 +204,8 @@ class UserPrefs @Inject constructor(
         val sensorGaugeStyle: SensorGaugeStyle,
         val injectionTimingMode: InjectionTimingMode,
         val fuelFlowPulsesPerLitre: Int,
+        val dashboardLeftGauge: GaugeType,
+        val dashboardRightGauge: GaugeType,
     ) {
         val connectionRetries: Int get() = connectionRetriesText.toIntOrNull()?.takeIf { it > 0 } ?: 5
         val logExportDestination: LogExportDestination
@@ -207,6 +221,10 @@ class UserPrefs @Inject constructor(
         const val DEFAULT_FUEL_FLOW_PULSES_PER_LITRE = 16_000
         const val FUEL_FLOW_PULSES_PER_LITRE_MIN = 1_000
         const val FUEL_FLOW_PULSES_PER_LITRE_MAX = 32_000
+        const val DASHBOARD_LEFT_GAUGE_KEY = "dashboard_left_gauge"
+        const val DASHBOARD_RIGHT_GAUGE_KEY = "dashboard_right_gauge"
+        val DEFAULT_DASHBOARD_LEFT_GAUGE = GaugeType.RPM
+        val DEFAULT_DASHBOARD_RIGHT_GAUGE = GaugeType.VEHICLE_SPEED
 
     }
 }

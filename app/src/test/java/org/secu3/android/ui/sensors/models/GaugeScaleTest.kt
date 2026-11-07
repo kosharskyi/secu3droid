@@ -42,6 +42,26 @@ class GaugeScaleTest {
         }
     }
 
+    @Test fun dashboardSectionLookupUsesCatalogBoundariesAndKeepsUncoveredGaps() {
+        val rpm = GaugeScale(GaugeType.RPM, catalog.gauge(GaugeType.RPM))
+        assertEquals(R.color.gauge_desktop_64ff64, rpm.sectionFor(3999f)?.color)
+        assertEquals(R.color.gauge_desktop_ffff64, rpm.sectionFor(4000f)?.color)
+        assertEquals(R.color.gauge_desktop_ff6464, rpm.sectionFor(6000f)?.color)
+        assertEquals(R.color.gauge_desktop_ff6464, rpm.sectionFor(8000f)?.color)
+        assertNull(rpm.sectionFor(Float.NaN))
+
+        val oilTemperature = GaugeScale(GaugeType.OTS, catalog.gauge(GaugeType.OTS))
+        assertNull(oilTemperature.sectionFor(-45f))
+        assertEquals(R.color.gauge_desktop_8282b4, oilTemperature.sectionFor(-40f)?.color)
+
+        val afrDifference = GaugeScale(GaugeType.AFR_DIFF, catalog.gauge(GaugeType.AFR_DIFF))
+        assertNull(afrDifference.sectionFor(-10f))
+        assertEquals(R.color.gauge_desktop_8282ff, afrDifference.sectionFor(-9f)?.color)
+        assertEquals(R.color.gauge_desktop_ff8282, afrDifference.sectionFor(8f)?.color)
+        assertNull(afrDifference.sectionFor(9f))
+        assertNull(afrDifference.sectionFor(10f))
+    }
+
     @Test fun sharedScaleKeepsFractionalPositionsButRoundsTickLabelsToWholeNumbers() {
         val positiveScale = GaugeScale(GaugeType.ADD1, catalog.gauge(GaugeType.ADD1))
         val positiveQuarterStep = positiveScale.ticks[1]

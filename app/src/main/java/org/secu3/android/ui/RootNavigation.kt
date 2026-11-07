@@ -52,6 +52,7 @@ import org.secu3.android.ui.logger.SecuLogsRoute
 import org.secu3.android.ui.parameters.ParametersRoute
 import org.secu3.android.ui.settings.SettingsRoute
 import org.secu3.android.ui.dashboard.DashboardRoute
+import org.secu3.android.ui.dashboard.DashboardGaugeSettingsRoute
 import org.secu3.android.ui.sensors.SensorsRoute
 import org.secu3.android.ui.sensors.settings.SensorsSettingsRoute
 import org.secu3.android.ui.diagnostics.DiagnosticsRoute
@@ -66,6 +67,7 @@ internal const val ERRORS_ROUTE = "errors"
 internal const val LOGS_ROUTE = "logs"
 internal const val FIRMWARE_ROUTE = "firmware"
 internal const val DASHBOARD_ROUTE = "dashboard"
+internal const val DASHBOARD_GAUGE_SETTINGS_ROUTE = "dashboard-gauge-settings"
 internal const val SENSORS_ROUTE = "sensors"
 internal const val SENSOR_SETTINGS_ROUTE = "sensor-settings"
 internal const val DIAGNOSTICS_GRAPH_ROUTE = "diagnostics-graph"
@@ -105,7 +107,10 @@ internal fun RootNavigation(activity: MainActivity) {
     val navController = rememberNavController()
     val currentEntry by navController.currentBackStackEntryAsState()
     SideEffect { activity.updateActiveComposeRoute(currentEntry?.destination?.route) }
-    LaunchedEffect(currentEntry) { activity.onRootDestinationChanged(currentEntry?.destination) }
+    LaunchedEffect(currentEntry) {
+        activity.onRootDestinationChanged(currentEntry?.destination)
+        activity.applyKeepScreenOnPreference()
+    }
     DisposableEffect(navController, activity) {
         activity.attachRootNavController(navController)
         onDispose {
@@ -157,7 +162,19 @@ internal fun RootNavigation(activity: MainActivity) {
                 FirmwareRoute(entry, activity, onDismiss = { navController.popBackStack() })
             }
             composable(DASHBOARD_ROUTE) { entry ->
-                DashboardRoute(entry, activity)
+                DashboardRoute(
+                    entry = entry,
+                    activity = activity,
+                    activeRoute = currentEntry?.destination?.route,
+                    onOpenGaugeSettings = { navController.navigate(DASHBOARD_GAUGE_SETTINGS_ROUTE) },
+                )
+            }
+            composable(DASHBOARD_GAUGE_SETTINGS_ROUTE) { entry ->
+                DashboardGaugeSettingsRoute(
+                    entry = entry,
+                    activity = activity,
+                    onNavigateUp = { navController.popBackStack() },
+                )
             }
             composable(SENSORS_ROUTE) { entry ->
                 SensorsRoute(

@@ -30,11 +30,17 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavBackStackEntry
 import kotlinx.coroutines.awaitCancellation
 import org.secu3.android.ui.MainActivity
+import org.secu3.android.ui.DASHBOARD_ROUTE
 import org.secu3.android.ui.compose.SecuComposeTheme
 import org.secu3.android.utils.Task
 
 @Composable
-internal fun DashboardRoute(entry: NavBackStackEntry, activity: MainActivity) {
+internal fun DashboardRoute(
+    entry: NavBackStackEntry,
+    activity: MainActivity,
+    activeRoute: String?,
+    onOpenGaugeSettings: () -> Unit,
+) {
     val viewModel: DashboardViewModel = viewModel(
         viewModelStoreOwner = entry,
         factory = activity.defaultViewModelProviderFactory,
@@ -42,6 +48,7 @@ internal fun DashboardRoute(entry: NavBackStackEntry, activity: MainActivity) {
     )
     val packet by viewModel.packetFlow.collectAsStateWithLifecycle(initialValue = null)
     val connection by viewModel.connectionState.collectAsStateWithLifecycle(initialValue = null)
+    val dashboardSettings by viewModel.uiState.collectAsStateWithLifecycle()
     val lifecycle = LocalLifecycleOwner.current.lifecycle
     val previousWindowState = rememberSaveable(entry.id, saver = DashboardWindowState.Saver) {
         DashboardWindowState.capture(activity.window)
@@ -59,8 +66,12 @@ internal fun DashboardRoute(entry: NavBackStackEntry, activity: MainActivity) {
             }
         }
     }
-    DisposableEffect(activity) {
-        activity.requestedOrientation = ActivityInfo.SCREEN_ORIENTATION_SENSOR_LANDSCAPE
+    DisposableEffect(activity, activeRoute) {
+        activity.requestedOrientation = if (activeRoute == DASHBOARD_ROUTE) {
+            ActivityInfo.SCREEN_ORIENTATION_SENSOR_LANDSCAPE
+        } else {
+            ActivityInfo.SCREEN_ORIENTATION_UNSPECIFIED
+        }
         onDispose {
             if (!activity.isChangingConfigurations) {
                 activity.requestedOrientation = ActivityInfo.SCREEN_ORIENTATION_UNSPECIFIED
@@ -69,7 +80,13 @@ internal fun DashboardRoute(entry: NavBackStackEntry, activity: MainActivity) {
     }
 
     SecuComposeTheme {
-        DashboardContent(data = packet, connectionState = connection)
+        DashboardContent(
+            data = packet,
+            connectionState = connection,
+            dashboardSettings = dashboardSettings,
+            presentationCatalog = viewModel.presentationCatalog,
+            onOpenGaugeSettings = onOpenGaugeSettings,
+        )
     }
 }
 

@@ -20,6 +20,7 @@ import org.junit.Assert.assertTrue
 import org.junit.Test
 import org.secu3.android.R
 import org.secu3.android.ui.DASHBOARD_ROUTE
+import org.secu3.android.ui.DASHBOARD_GAUGE_SETTINGS_ROUTE
 import org.secu3.android.ui.HOME_ROUTE
 import org.secu3.android.ui.MainActivity
 import org.secu3.android.utils.prefs.UserPrefs
@@ -27,6 +28,72 @@ import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.runBlocking
 
 class DashboardOrientationTest {
+    @Test
+    fun settingsRouteTemporarilyReleasesDashboardWindowStateAndBackRestoresIt() {
+        ActivityScenario.launch(MainActivity::class.java).use { scenario ->
+            awaitNavigationReady(scenario)
+            var keepScreenOnPreference = false
+            scenario.onActivity { activity ->
+                val prefs = activity.userPrefs
+                keepScreenOnPreference = runBlocking { prefs.settings.first().isKeepScreenAliveActive }
+                requireNotNull(activity.rootNavigationController).navigate(HOME_ROUTE)
+                activity.requestedOrientation = ActivityInfo.SCREEN_ORIENTATION_PORTRAIT
+            }
+            awaitConfigurationOrientation(scenario, Configuration.ORIENTATION_PORTRAIT)
+            scenario.onActivity { it.requestedOrientation = ActivityInfo.SCREEN_ORIENTATION_UNSPECIFIED }
+            val homeTimeoutAt = SystemClock.elapsedRealtime() + 10_000L
+            var homeSystemBarsMask: Int? = null
+            var observedHomeState = "not observed"
+            do {
+                InstrumentationRegistry.getInstrumentation().waitForIdleSync()
+                scenario.onActivity { activity ->
+                    val route = activity.rootNavigationController?.currentDestination?.route
+                    val bars = systemBarsVisibilityMask(activity)
+                    val keepFlag = activity.window.attributes.flags and WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON != 0
+                    observedHomeState = "route=$route orientation=${activity.requestedOrientation} bars=$bars keepScreenOn=$keepFlag expectedKeep=$keepScreenOnPreference"
+                    if (route == HOME_ROUTE && activity.requestedOrientation == ActivityInfo.SCREEN_ORIENTATION_UNSPECIFIED &&
+                        (bars and primarySystemBarsMask) == primarySystemBarsMask && keepFlag == keepScreenOnPreference
+                    ) {
+                        homeSystemBarsMask = bars
+                    }
+                }
+                if (homeSystemBarsMask == null) SystemClock.sleep(50L)
+            } while (homeSystemBarsMask == null && SystemClock.elapsedRealtime() < homeTimeoutAt)
+            assertTrue("Home must settle to normal bars before Dashboard entry ($observedHomeState)", homeSystemBarsMask != null)
+            awaitHomeWindowState(scenario, keepScreenOnPreference, requireNotNull(homeSystemBarsMask))
+            scenario.onActivity { it.openDashboard() }
+            awaitDashboardUiState(scenario)
+            assertDashboardActive(scenario)
+
+            scenario.onActivity {
+                requireNotNull(it.rootNavigationController).navigate(DASHBOARD_GAUGE_SETTINGS_ROUTE)
+            }
+            val timeoutAt = SystemClock.elapsedRealtime() + 10_000L
+            var settingsWindowRestored = false
+            var observedSettingsState = "not observed"
+            do {
+                InstrumentationRegistry.getInstrumentation().waitForIdleSync()
+                scenario.onActivity { activity ->
+                    val route = activity.rootNavigationController?.currentDestination?.route
+                    val bars = systemBarsVisibilityMask(activity)
+                    val keepFlag = activity.window.attributes.flags and WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON != 0
+                    observedSettingsState = "route=$route orientation=${activity.requestedOrientation} bars=$bars keepScreenOn=$keepFlag expectedKeep=$keepScreenOnPreference"
+                    settingsWindowRestored = route == DASHBOARD_GAUGE_SETTINGS_ROUTE &&
+                        activity.requestedOrientation == ActivityInfo.SCREEN_ORIENTATION_UNSPECIFIED &&
+                        bars == requireNotNull(homeSystemBarsMask) &&
+                        keepFlag == keepScreenOnPreference
+                }
+                if (!settingsWindowRestored) SystemClock.sleep(50L)
+            } while (!settingsWindowRestored && SystemClock.elapsedRealtime() < timeoutAt)
+            assertTrue("settings route restores normal window mode ($observedSettingsState)", settingsWindowRestored)
+
+            scenario.onActivity { requireNotNull(it.rootNavigationController).popBackStack() }
+            awaitDashboardUiState(scenario)
+            assertDashboardActive(scenario)
+            scenario.onActivity { requireNotNull(it.rootNavigationController).popBackStack() }
+        }
+    }
+
     @Test
     fun dashboardRestoresLandscapeLockImmersiveBarsAndKeepScreenPolicy() {
         var originalPreference: Boolean? = null

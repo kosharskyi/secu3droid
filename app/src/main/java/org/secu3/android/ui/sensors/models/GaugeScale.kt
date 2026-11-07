@@ -14,8 +14,9 @@ internal data class GaugeTick(
 )
 
 /**
- * Shared scale semantics derived only from [GaugeType]. Renderers may change tick geometry and label
- * placement, but they must use these same configured tick values, angles, sections, and normalization.
+ * Shared scale semantics derived only from [GaugeType]. Sensors renderers use these configured tick
+ * values, angles, sections, and normalization. Dashboard intentionally retains eleven unlabeled
+ * decorative marks from its original design while sharing this scale's range and section semantics.
  */
 internal class GaugeScale(
     val type: GaugeType,
@@ -50,6 +51,13 @@ internal class GaugeScale(
 
     fun normalized(value: Float?): Float? = value?.let {
         ((it - minValue) / (maxValue - minValue)).coerceIn(0f, 1f)
+    }
+
+    fun sectionFor(value: Float?): GaugeSection? {
+        val fraction = value?.takeIf(Float::isFinite)?.let(::normalized) ?: return null
+        return sections.firstOrNull { section ->
+            fraction >= section.start && (fraction < section.end || (section.end == 1f && fraction == 1f))
+        }
     }
 
     fun angleAt(fraction: Float): Float = START_ANGLE_DEGREES + SWEEP_ANGLE_DEGREES * fraction

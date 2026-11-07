@@ -20,7 +20,11 @@ The stable `sensor_gauge_style` values are `current`, `precise_arc`, and `thin_n
 
 ## Injection timing display stores only a presentation convention
 
-The stable `injection_timing_mode` values are `btdc_720`, `atdc_720`, `btdc_360`, and `atdc_360`; missing or unknown values read as the `btdc_720` default without repairing storage. This preference transforms only the old Sensors readout. ECU timing values and parameter editing remain in their original 0…720 representation.
+The stable `injection_timing_mode` values are `btdc_720`, `atdc_720`, `btdc_360`, and `atdc_360`; missing or unknown values read as the `btdc_720` default without repairing storage. Sensors and Dashboard transform selected injection phase readouts for presentation using this preference. ECU timing values and parameter editing remain in their original 0…720 representation.
+
+## Dashboard gauge choices use stable names and one pair write
+
+`dashboard_left_gauge` and `dashboard_right_gauge` store `GaugeType.name`; missing or unknown names resolve in memory to RPM and vehicle speed respectively without repairing storage. Save both positions in one DataStore edit so observers see a coherent pair. These choices are independent of the Sensors Room configuration.
 
 ## Fuel consumption calibration is independent of the ECU injector parameter
 

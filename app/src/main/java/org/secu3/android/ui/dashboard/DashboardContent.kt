@@ -34,6 +34,7 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -45,11 +46,14 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
+import androidx.compose.runtime.key
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.DarkMode
 import androidx.compose.material.icons.filled.LightMode
+import androidx.compose.material.icons.filled.Settings
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -63,6 +67,7 @@ import androidx.compose.ui.graphics.luminance
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
@@ -79,21 +84,36 @@ import org.secu3.android.connection.Reconnecting
 import org.secu3.android.connection.UsbAwaitingEcu
 import org.secu3.android.connection.UsbReconnecting
 import org.secu3.android.connection.UsbReconnectingAwaitingEcu
+import org.secu3.android.models.InjectionTimingMode
+import org.secu3.android.models.sensors.GaugeType
+import org.secu3.android.ui.sensors.models.GaugePresentation
+import org.secu3.android.ui.sensors.models.GaugeScale
+import org.secu3.android.ui.sensors.models.SensorPresentationCatalog
 import kotlin.math.PI
 import kotlin.math.cos
 import kotlin.math.min
 import kotlin.math.sin
 
+internal const val DASHBOARD_DECORATIVE_TICK_COUNT = 11
+
 @Composable
 fun DashboardContent(
     data: DashboardViewData?,
     connectionState: ConnectionState?,
+    dashboardSettings: DashboardUiState,
+    presentationCatalog: SensorPresentationCatalog,
+    onOpenGaugeSettings: () -> Unit,
 ) {
     var dashboardDarkTheme by rememberSaveable { mutableStateOf<Boolean?>(null) }
     SecuComposeTheme(darkTheme = dashboardDarkTheme) {
         val colors = MaterialTheme.colorScheme
         val isDarkTheme = colors.background.luminance() < 0.5f
         val liveData = data.takeIf { connectionState == Connected }
+        val primaryGaugeData = liveData?.takeIf {
+            it.primaryLeft.type == dashboardSettings.leftGauge &&
+                it.primaryRight.type == dashboardSettings.rightGauge &&
+                it.injectionTimingMode == dashboardSettings.injectionTimingMode
+        }
         Surface(color = colors.background) {
             BoxWithConstraints(
                 modifier = Modifier
@@ -117,19 +137,26 @@ fun DashboardContent(
                             compact = compact,
                             modifier = Modifier.weight(1f),
                         )
-                        val toggleDescription = stringResource(
-                            if (isDarkTheme) R.string.dashboard_theme_switch_to_light
-                            else R.string.dashboard_theme_switch_to_dark
-                        )
                         IconButton(
                             onClick = { dashboardDarkTheme = !isDarkTheme },
-                            modifier = Modifier.testTag("dashboard-theme-toggle"),
+                            modifier = Modifier.size(48.dp).testTag("dashboard-theme-toggle"),
                         ) {
                             Icon(
                                 imageVector = if (isDarkTheme) Icons.Filled.LightMode else Icons.Filled.DarkMode,
-                                contentDescription = toggleDescription,
+                                contentDescription = stringResource(
+                                    if (isDarkTheme) R.string.dashboard_theme_switch_to_light
+                                    else R.string.dashboard_theme_switch_to_dark
+                                ),
                                 tint = MaterialTheme.colorScheme.onSurface,
-                                modifier = Modifier.testTag("dashboard-theme-toggle-icon"),
+                            )
+                        }
+                        IconButton(
+                            onClick = onOpenGaugeSettings,
+                            modifier = Modifier.size(48.dp).testTag("dashboard-gauge-settings"),
+                        ) {
+                            Icon(
+                                imageVector = Icons.Filled.Settings,
+                                contentDescription = stringResource(R.string.dashboard_gauges_configure),
                             )
                         }
                     }
@@ -140,8 +167,30 @@ fun DashboardContent(
                             horizontalAlignment = Alignment.CenterHorizontally,
                             verticalArrangement = Arrangement.spacedBy(12.dp),
                         ) {
-                            ArcGauge(liveData?.rpm, 0f, 8000f, stringResource(R.string.units_rpm), Modifier.weight(1f).fillMaxWidth().testTag("dashboard-rpm-gauge"), compact, .72f, .88f, "dashboard-rpm-progress")
-                            ArcGauge(liveData?.speed, 0f, 220f, stringResource(R.string.units_km_h), Modifier.weight(1f).fillMaxWidth().testTag("dashboard-speed-gauge"), compact, .65f, .85f, "dashboard-speed-progress")
+                            key(dashboardSettings.leftGauge) {
+                                DashboardPrimaryGauge(
+                                    value = primaryGaugeData?.primaryLeft?.value,
+                                    type = dashboardSettings.leftGauge,
+                                    presentationCatalog = presentationCatalog,
+                                    injectionTimingMode = dashboardSettings.injectionTimingMode,
+                                    modifier = Modifier.weight(1f).fillMaxWidth().testTag("dashboard-rpm-gauge"),
+                                    compact = compact,
+                                    progressTag = "dashboard-rpm-progress",
+                                    gaugeSlot = "left",
+                                )
+                            }
+                            key(dashboardSettings.rightGauge) {
+                                DashboardPrimaryGauge(
+                                    value = primaryGaugeData?.primaryRight?.value,
+                                    type = dashboardSettings.rightGauge,
+                                    presentationCatalog = presentationCatalog,
+                                    injectionTimingMode = dashboardSettings.injectionTimingMode,
+                                    modifier = Modifier.weight(1f).fillMaxWidth().testTag("dashboard-speed-gauge"),
+                                    compact = compact,
+                                    progressTag = "dashboard-speed-progress",
+                                    gaugeSlot = "right",
+                                )
+                            }
                         }
                     } else {
                         Row(
@@ -149,8 +198,30 @@ fun DashboardContent(
                             horizontalArrangement = Arrangement.spacedBy(28.dp),
                             verticalAlignment = Alignment.CenterVertically,
                         ) {
-                            ArcGauge(liveData?.rpm, 0f, 8000f, stringResource(R.string.units_rpm), Modifier.weight(1f).fillMaxHeight().testTag("dashboard-rpm-gauge"), compact, .72f, .88f, "dashboard-rpm-progress")
-                            ArcGauge(liveData?.speed, 0f, 220f, stringResource(R.string.units_km_h), Modifier.weight(1f).fillMaxHeight().testTag("dashboard-speed-gauge"), compact, .65f, .85f, "dashboard-speed-progress")
+                            key(dashboardSettings.leftGauge) {
+                                DashboardPrimaryGauge(
+                                    value = primaryGaugeData?.primaryLeft?.value,
+                                    type = dashboardSettings.leftGauge,
+                                    presentationCatalog = presentationCatalog,
+                                    injectionTimingMode = dashboardSettings.injectionTimingMode,
+                                    modifier = Modifier.weight(1f).fillMaxHeight().testTag("dashboard-rpm-gauge"),
+                                    compact = compact,
+                                    progressTag = "dashboard-rpm-progress",
+                                    gaugeSlot = "left",
+                                )
+                            }
+                            key(dashboardSettings.rightGauge) {
+                                DashboardPrimaryGauge(
+                                    value = primaryGaugeData?.primaryRight?.value,
+                                    type = dashboardSettings.rightGauge,
+                                    presentationCatalog = presentationCatalog,
+                                    injectionTimingMode = dashboardSettings.injectionTimingMode,
+                                    modifier = Modifier.weight(1f).fillMaxHeight().testTag("dashboard-speed-gauge"),
+                                    compact = compact,
+                                    progressTag = "dashboard-speed-progress",
+                                    gaugeSlot = "right",
+                                )
+                            }
                         }
                     }
 
@@ -178,10 +249,7 @@ fun DashboardContent(
 )
 @Composable
 private fun DashboardLandscapePreview() {
-    DashboardContent(
-        data = previewDashboardData(),
-        connectionState = Connected,
-    )
+    DashboardPreviewContent(previewDashboardData())
 }
 
 @Preview(
@@ -193,14 +261,13 @@ private fun DashboardLandscapePreview() {
 )
 @Composable
 private fun DashboardCompactPreview() {
-    DashboardContent(
-        data = previewDashboardData(
+    DashboardPreviewContent(
+        previewDashboardData(
             rpm = 7050f,
             speed = 148f,
             ledCheckEngine = true,
             ledFan = true,
         ),
-        connectionState = Connected,
     )
 }
 
@@ -213,13 +280,23 @@ private fun DashboardCompactPreview() {
 )
 @Composable
 private fun DashboardWithoutAfrPreview() {
-    DashboardContent(
-        data = previewDashboardData(
+    DashboardPreviewContent(
+        previewDashboardData(
             oilTemperature = 0f,
             afr = 14.7f,
             fuelLevel = 36f,
         ),
+    )
+}
+
+@Composable
+private fun DashboardPreviewContent(data: DashboardViewData) {
+    DashboardContent(
+        data = data,
         connectionState = Connected,
+        dashboardSettings = DashboardUiState(settingsLoaded = true),
+        presentationCatalog = SensorPresentationCatalog(),
+        onOpenGaugeSettings = {},
     )
 }
 
@@ -232,8 +309,6 @@ private fun previewDashboardData(
     ledCheckEngine: Boolean = false,
     ledFan: Boolean = false,
 ) = DashboardViewData(
-    rpm = rpm,
-    speed = speed,
     load = 42f,
     map = 62f,
     tps = 18f,
@@ -252,6 +327,8 @@ private fun previewDashboardData(
     ledChoke = false,
     ledFan = ledFan,
     ledRevLimit = rpm > 6900f,
+    primaryLeft = DashboardGaugeReading(GaugeType.RPM, rpm),
+    primaryRight = DashboardGaugeReading(GaugeType.VEHICLE_SPEED, speed),
 )
 
 @Composable
@@ -341,39 +418,64 @@ private fun StatusChip(text: String, color: Color, compact: Boolean) {
 }
 
 @Composable
+private fun DashboardPrimaryGauge(
+    value: Float?,
+    type: GaugeType,
+    presentationCatalog: SensorPresentationCatalog,
+    injectionTimingMode: InjectionTimingMode,
+    modifier: Modifier,
+    compact: Boolean,
+    progressTag: String,
+    gaugeSlot: String,
+) {
+    val presentation = presentationCatalog.gauge(type)
+    val scale = remember(type, presentation, injectionTimingMode) {
+        GaugeScale(type, presentation, injectionTimingMode)
+    }
+    ArcGauge(
+        value = value,
+        title = stringResource(presentation.title),
+        unit = stringResource(presentation.units),
+        catalog = presentationCatalog,
+        scale = scale,
+        modifier = modifier,
+        compact = compact,
+        progressTag = progressTag,
+        gaugeSlot = gaugeSlot,
+    )
+}
+
+@Composable
 private fun ArcGauge(
     value: Float?,
-    minValue: Float,
-    maxValue: Float,
+    title: String,
     unit: String,
+    catalog: SensorPresentationCatalog,
+    scale: GaugeScale,
     modifier: Modifier = Modifier,
     compact: Boolean,
-    cautionAt: Float,
-    criticalAt: Float,
     progressTag: String,
+    gaugeSlot: String,
 ) {
-    val normalized = value?.takeIf(Float::isFinite)
-        ?.let { ((it - minValue) / (maxValue - minValue)).takeIf(Float::isFinite)?.coerceIn(0f, 1f) }
-    val targetProgress = normalized ?: 0f
-    val animatedProgress = rememberAnimatedGaugeProgress(targetProgress)
-    val palette = LocalSecuPalette.current
+    val validValue = value?.takeIf(Float::isFinite)
+    val normalized = scale.normalized(validValue)?.takeIf(Float::isFinite)
+    val animatedProgress = rememberAnimatedGaugeProgress(normalized ?: 0f)
     val colors = MaterialTheme.colorScheme
+    val context = androidx.compose.ui.platform.LocalContext.current
+    val resources = androidx.compose.ui.platform.LocalResources.current
+    val activeColor = when {
+        validValue == null -> colors.onSurfaceVariant
+        else -> scale.sectionFor(validValue)?.let { Color(resources.getColor(it.color, context.theme)) }
+            ?: colors.primary
+    }
     val trackColor = if (colors.background.luminance() > 0.5f) {
         lerp(colors.outline, colors.background, 0.18f)
     } else {
         colors.surfaceVariant
     }
-    val valueColor = when {
-        value == null -> colors.onSurfaceVariant
-        targetProgress >= criticalAt -> colors.error
-        targetProgress >= cautionAt -> palette.warning
-        else -> palette.success
-    }
+    val formattedValue = validValue?.let { catalog.formatValue(scale.type, it) } ?: "—"
 
-    Box(
-        modifier = modifier,
-        contentAlignment = Alignment.Center
-    ) {
+    Box(modifier = modifier, contentAlignment = Alignment.Center) {
         Canvas(
             modifier = Modifier
                 .fillMaxHeight()
@@ -383,81 +485,82 @@ private fun ArcGauge(
             val drawnProgress = animatedProgress()
             val diameter = min(size.width, size.height) * 0.88f
             val strokeWidth = diameter * 0.055f
-            val topLeft = Offset(
-                x = (size.width - diameter) / 2f,
-                y = (size.height - diameter) / 2f
-            )
+            val topLeft = Offset((size.width - diameter) / 2f, (size.height - diameter) / 2f)
             val arcSize = Size(diameter, diameter)
-            val startAngle = 135f
-            val sweepAngle = 270f
-
             drawArc(
                 color = trackColor,
-                startAngle = startAngle,
-                sweepAngle = sweepAngle,
+                startAngle = GaugeScale.START_ANGLE_DEGREES,
+                sweepAngle = GaugeScale.SWEEP_ANGLE_DEGREES,
                 useCenter = false,
                 topLeft = topLeft,
                 size = arcSize,
-                style = Stroke(width = strokeWidth, cap = StrokeCap.Round)
+                style = Stroke(width = strokeWidth, cap = StrokeCap.Round),
             )
-
             drawArc(
-                color = valueColor,
-                startAngle = startAngle,
-                sweepAngle = sweepAngle * drawnProgress,
+                color = activeColor,
+                startAngle = GaugeScale.START_ANGLE_DEGREES,
+                sweepAngle = GaugeScale.SWEEP_ANGLE_DEGREES * drawnProgress,
                 useCenter = false,
                 topLeft = topLeft,
                 size = arcSize,
-                style = Stroke(width = strokeWidth, cap = StrokeCap.Round)
+                style = Stroke(width = strokeWidth, cap = StrokeCap.Round),
             )
 
             val center = Offset(size.width / 2f, size.height / 2f)
             val outerRadius = diameter / 2f
             val innerRadius = outerRadius - strokeWidth * 1.9f
-            val tickCount = 11
-
-            repeat(tickCount) { index ->
-                val fraction = index.toFloat() / (tickCount - 1)
-                val angleRad = (startAngle + sweepAngle * fraction) * PI.toFloat() / 180f
-                val tickColor = if (fraction <= drawnProgress) valueColor else colors.onSurfaceVariant.copy(alpha = 0.38f)
-                val tickStart = Offset(
-                    x = center.x + cos(angleRad) * innerRadius,
-                    y = center.y + sin(angleRad) * innerRadius
-                )
-                val tickEnd = Offset(
-                    x = center.x + cos(angleRad) * outerRadius,
-                    y = center.y + sin(angleRad) * outerRadius
-                )
+            repeat(DASHBOARD_DECORATIVE_TICK_COUNT) { index ->
+                val fraction = index.toFloat() / (DASHBOARD_DECORATIVE_TICK_COUNT - 1).toFloat()
+                val angleRad = (GaugeScale.START_ANGLE_DEGREES + GaugeScale.SWEEP_ANGLE_DEGREES * fraction) *
+                    PI.toFloat() / 180f
+                val tickColor = if (fraction <= drawnProgress) activeColor else colors.onSurfaceVariant.copy(alpha = 0.38f)
                 drawLine(
                     color = tickColor,
-                    start = tickStart,
-                    end = tickEnd,
+                    start = Offset(center.x + cos(angleRad) * innerRadius, center.y + sin(angleRad) * innerRadius),
+                    end = Offset(center.x + cos(angleRad) * outerRadius, center.y + sin(angleRad) * outerRadius),
                     strokeWidth = strokeWidth * 0.16f,
-                    cap = StrokeCap.Round
+                    cap = StrokeCap.Round,
                 )
             }
         }
 
         Column(
             horizontalAlignment = Alignment.CenterHorizontally,
-            verticalArrangement = Arrangement.Center
+            verticalArrangement = Arrangement.Center,
         ) {
             Text(
-                text = value?.toInt()?.toString() ?: "—",
+                text = formattedValue,
                 color = colors.onSurface,
                 fontSize = if (compact) 48.sp else 68.sp,
                 fontWeight = FontWeight.Bold,
-                textAlign = TextAlign.Center
+                textAlign = TextAlign.Center,
+                modifier = Modifier.testTag("dashboard-gauge-value-$gaugeSlot"),
             )
             Text(
                 text = unit,
                 color = colors.onSurfaceVariant,
                 fontSize = if (compact) 15.sp else 18.sp,
-                fontWeight = FontWeight.SemiBold
+                fontWeight = FontWeight.SemiBold,
+                modifier = Modifier.testTag("dashboard-gauge-unit-$gaugeSlot"),
             )
         }
+        Text(
+            text = title,
+            color = colors.onSurfaceVariant,
+            fontSize = if (compact) 11.sp else 12.sp,
+            fontWeight = FontWeight.SemiBold,
+            textAlign = TextAlign.Center,
+            maxLines = 1,
+            overflow = TextOverflow.Ellipsis,
+            modifier = Modifier
+                .align(Alignment.BottomCenter)
+                .padding(horizontal = 32.dp, vertical = 4.dp)
+                .testTag("dashboard-gauge-title-$gaugeSlot"),
+        )
     }
 }
+
+
 
 @OptIn(ExperimentalLayoutApi::class)
 @Composable

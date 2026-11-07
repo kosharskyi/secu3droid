@@ -390,6 +390,14 @@
     <string name="raw_sensors_frag_add_io7_input_label">Вход ADD_I7</string>
     <string name="raw_sensors_frag_add_io8_input_label">Вход ADD_I8</string>
 
+    <string name="dashboard_gauges_title">Приборы панели</string>
+    <string name="dashboard_gauges_configure">Настроить приборы панели</string>
+    <string name="dashboard_gauges_left">Левый прибор</string>
+    <string name="dashboard_gauges_right">Правый прибор</string>
+    <string name="dashboard_gauges_search">Поиск датчиков</string>
+    <string name="dashboard_gauges_reset">Восстановить стандартные</string>
+    <string name="dashboard_gauges_no_results">Датчики не найдены</string>
+    <string name="dashboard_gauges_storage_error">Не удалось сохранить или загрузить приборы панели. Попробуйте ещё раз.</string>
     <string name="dashboard_status_online">На связи</string>
     <string name="dashboard_status_connecting">Подключение</string>
     <string name="dashboard_status_offline">Нет связи</string>

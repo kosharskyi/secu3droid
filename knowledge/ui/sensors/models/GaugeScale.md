@@ -1,10 +1,10 @@
-## Tick labels and sensor readouts use different formatting
+## Tick labels, section lookup, and sensor readouts use different formatting
 
-`GaugeScale` is constructed with the concrete `GaugePresentation` owned by the screen's injected catalog. It must not look up global `GaugeType` extensions. Compact tick-label formatting belongs to the scale instance; sensor readout formatting belongs to `SensorPresentationCatalog`.
+`GaugeScale` is constructed with the concrete `GaugePresentation` owned by the screen's injected catalog. It must not look up global `GaugeType` extensions. Compact tick-label formatting belongs to the scale instance; sensor readout formatting belongs to `SensorPresentationCatalog`. Shared section lookup normalizes a finite value, treats each section start as inclusive and its end as exclusive, and includes a normalized endpoint of 1 only for the final section. Intentional gaps return no section so consumers can render them neutrally.
 
 ## Gauge tick count includes both range endpoints
 
-`GaugePresentation.tickCount` is the number of configured value ticks, evenly spaced from `minValue` through `maxValue`, including both endpoints. `GaugeScale` receives the catalog's concrete description and is the shared source for tick fractions/values/angles, section ranges, and clamped normalization across classic and modern dial styles. Tick labels round to the nearest integer, while tick values and angles retain their original fractional precision; renderer-specific label visibility and line geometry must not create additional scale positions. Sensor readout precision is separate and is applied by `SensorPresentationCatalog.formatValue`.
+`GaugePresentation.tickCount` is the number of configured value ticks, evenly spaced from `minValue` through `maxValue`, including both endpoints. `GaugeScale` supplies tick fractions/values/angles to the Sensors renderers, which retain their configured positions across dial styles. Dashboard preserves its original eleven unlabeled decorative marks independently of `tickCount`, while using the same scale range, normalization, and section lookup. Tick labels round to the nearest integer, while tick values and angles retain their original fractional precision. Sensor readout precision is separate and is applied by `SensorPresentationCatalog.formatValue`.
 
 ## RPM tick labels are expressed in hundreds
 

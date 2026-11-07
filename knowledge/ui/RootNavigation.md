@@ -47,3 +47,7 @@ Android calls `onPostResume()` before `ActivityPostResumed` moves AndroidX Lifec
 ## Settings must load before themed navigation starts
 
 RootNavigation waits for the first successful UserPrefs snapshot before choosing the app appearance or creating the navigation host. An initial storage failure shows an error while UserPrefs retries automatically; failures after startup keep the current appearance and routes visible with the same error until a read succeeds. Do not add a manual recovery action or seed the app theme from a duplicate preference default.
+
+## Dashboard gauge settings temporarily releases Dashboard window policy
+
+The picker is an ordinary Navigation Compose destination above the retained Dashboard entry. Dashboard orientation and immersive/keep-screen behavior apply only while Dashboard is active; returning resumes them. Route changes reapply the Activity's existing keep-screen preference after updating its active route, because Dashboard's lifecycle cleanup can request that preference before the new route is published. Keep the Dashboard's saveable local theme state with the retained back-stack entry so opening and canceling settings does not reset it.

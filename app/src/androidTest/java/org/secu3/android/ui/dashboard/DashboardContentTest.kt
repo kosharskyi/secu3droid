@@ -33,10 +33,16 @@ import androidx.compose.ui.test.junit4.v2.createAndroidComposeRule
 import androidx.compose.ui.test.onAllNodesWithText
 import androidx.compose.ui.test.onAllNodesWithTag
 import androidx.compose.ui.test.onNodeWithText
+import androidx.compose.ui.test.hasAnyAncestor
+import androidx.compose.ui.test.hasTestTag
+import androidx.compose.ui.test.hasText
+import androidx.compose.ui.test.performScrollToNode
 import androidx.compose.ui.test.onRoot
 import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.onNodeWithContentDescription
 import androidx.compose.ui.test.performClick
+import androidx.compose.ui.test.performTextClearance
+import androidx.compose.ui.test.performTextInput
 import androidx.compose.ui.test.captureToImage
 import androidx.compose.ui.graphics.asAndroidBitmap
 import androidx.test.platform.app.InstrumentationRegistry
@@ -62,9 +68,13 @@ import org.junit.Before
 import org.junit.Rule
 import org.junit.Test
 import java.io.File
+import kotlin.math.abs
 import org.secu3.android.R
 import org.secu3.android.connection.Connected
 import org.secu3.android.connection.ConnectionState
+import org.secu3.android.models.sensors.GaugeType
+import org.secu3.android.ui.sensors.models.SensorPresentationCatalog
+import org.secu3.android.utils.prefs.UserPrefs
 import org.secu3.android.connection.Disconnected
 import org.secu3.android.connection.Connecting
 
@@ -77,6 +87,7 @@ class DashboardContentTest {
     private lateinit var dataState: MutableState<DashboardViewData?>
     private lateinit var connectionState: MutableState<ConnectionState?>
     private lateinit var narrowLayoutState: MutableState<Boolean>
+    private val presentationCatalog = SensorPresentationCatalog()
 
     @Before
     fun enterLandscapeHost() {
@@ -171,9 +182,12 @@ class DashboardContentTest {
 
     @Test
     fun validZeroPrimaryValuesRemainVisible() {
-        showDashboard(data = sampleData().copy(rpm = 0f, speed = 0f), state = Connected)
+        showDashboard(data = sampleData().copy(primaryLeft = DashboardGaugeReading(GaugeType.RPM, 0f), primaryRight = DashboardGaugeReading(GaugeType.VEHICLE_SPEED, 0f)), state = Connected)
 
-        composeRule.onAllNodesWithText("0", useUnmergedTree = true).assertCountEquals(2)
+        composeRule.onNodeWithTag("dashboard-gauge-value-left")
+            .assertTextEquals(presentationCatalog.formatValue(GaugeType.RPM, 0f))
+        composeRule.onNodeWithTag("dashboard-gauge-value-right")
+            .assertTextEquals(presentationCatalog.formatValue(GaugeType.VEHICLE_SPEED, 0f))
         composeRule.onAllNodesWithText("—", useUnmergedTree = true).assertCountEquals(0)
     }
 
@@ -195,7 +209,7 @@ class DashboardContentTest {
             val zeroReference = gaugeRing("dashboard-rpm-progress")
 
             composeRule.runOnIdle {
-                dataState.value = sampleData().copy(rpm = 5600f, speed = 150f)
+                dataState.value = sampleData().copy(primaryLeft = DashboardGaugeReading(GaugeType.RPM, 5600f), primaryRight = DashboardGaugeReading(GaugeType.VEHICLE_SPEED, 150f))
                 connectionState.value = Connected
                 contentKey.value++
             }
@@ -204,7 +218,7 @@ class DashboardContentTest {
             val restoredEndpoint = gaugeRing("dashboard-rpm-progress")
 
             composeRule.runOnIdle {
-                dataState.value = sampleData().copy(rpm = 2400f, speed = 66f)
+                dataState.value = sampleData().copy(primaryLeft = DashboardGaugeReading(GaugeType.RPM, 2400f), primaryRight = DashboardGaugeReading(GaugeType.VEHICLE_SPEED, 66f))
                 contentKey.value++
             }
             composeRule.mainClock.advanceTimeBy(700)
@@ -215,7 +229,7 @@ class DashboardContentTest {
             assertTrue("initial RPM arc has visible active progress", !initial.contentEquals(zeroReference))
             assertTrue("initial speed arc has visible active progress", !initialSpeed.contentEquals(zeroReference))
 
-            composeRule.runOnIdle { dataState.value = sampleData().copy(rpm = 4000f, speed = 110f) }
+            composeRule.runOnIdle { dataState.value = sampleData().copy(primaryLeft = DashboardGaugeReading(GaugeType.RPM, 4000f), primaryRight = DashboardGaugeReading(GaugeType.VEHICLE_SPEED, 110f)) }
             composeRule.mainClock.advanceTimeByFrame()
             composeRule.waitForIdle()
             composeRule.onNodeWithText("4000").assertIsDisplayed()
@@ -226,7 +240,7 @@ class DashboardContentTest {
             assertTrue("RPM arc animates upward", !beforeRising.contentEquals(rising))
             assertTrue("speed arc animates alongside RPM", !initialSpeed.contentEquals(gaugeRing("dashboard-speed-progress")))
 
-            composeRule.runOnIdle { dataState.value = sampleData().copy(rpm = 1600f, speed = 30f) }
+            composeRule.runOnIdle { dataState.value = sampleData().copy(primaryLeft = DashboardGaugeReading(GaugeType.RPM, 1600f), primaryRight = DashboardGaugeReading(GaugeType.VEHICLE_SPEED, 30f)) }
             composeRule.mainClock.advanceTimeByFrame()
             composeRule.waitForIdle()
             val beforeFalling = gaugeRing("dashboard-rpm-progress")
@@ -246,7 +260,7 @@ class DashboardContentTest {
             assertTrue("connection loss animates the arc toward zero", !retracting.contentEquals(returningToZero))
 
             composeRule.runOnIdle {
-                dataState.value = sampleData().copy(rpm = 5600f, speed = 150f)
+                dataState.value = sampleData().copy(primaryLeft = DashboardGaugeReading(GaugeType.RPM, 5600f), primaryRight = DashboardGaugeReading(GaugeType.VEHICLE_SPEED, 150f))
                 connectionState.value = Connected
             }
             composeRule.mainClock.advanceTimeByFrame()
@@ -285,7 +299,7 @@ class DashboardContentTest {
             val density = LocalDensity.current.density
             CompositionLocalProvider(LocalDensity provides Density(density, 2f)) {
                 org.secu3.android.ui.compose.SecuComposeTheme(darkTheme = true) {
-                    DashboardContent(data = sampleData(), connectionState = Connected)
+                    dashboardTestContent(sampleData(), Connected)
                 }
             }
         }
@@ -306,7 +320,7 @@ class DashboardContentTest {
         composeRule.setContent {
             org.secu3.android.ui.compose.SecuComposeTheme(darkTheme = false) {
                 Box(Modifier.fillMaxSize()) {
-                    DashboardContent(data = sampleData(), connectionState = Connected)
+                    dashboardTestContent(sampleData(), Connected)
                     Box(
                         Modifier.align(Alignment.BottomEnd)
                             .size(12.dp)
@@ -336,7 +350,7 @@ class DashboardContentTest {
         val restorationTester = StateRestorationTester(composeRule)
         restorationTester.setContent {
             org.secu3.android.ui.compose.SecuComposeTheme(darkTheme = false) {
-                DashboardContent(data = sampleData(), connectionState = Connected)
+                dashboardTestContent(sampleData(), Connected)
             }
         }
 
@@ -346,6 +360,79 @@ class DashboardContentTest {
 
         composeRule.onNodeWithContentDescription(context.getString(R.string.dashboard_theme_switch_to_light)).assertIsDisplayed()
         assertEquals("restored Dashboard retains its local dark theme", darkDashboard, dashboardCornerColor())
+    }
+
+    @Test
+    fun gaugeSettingsButtonOpensDedicatedRoute() {
+        var openedSettings = false
+        composeRule.setContent {
+            org.secu3.android.ui.compose.SecuComposeTheme(darkTheme = false) {
+                DashboardContent(
+                    data = sampleData(),
+                    connectionState = Connected,
+                    dashboardSettings = DashboardUiState(settingsLoaded = true),
+                    presentationCatalog = presentationCatalog,
+                    onOpenGaugeSettings = { openedSettings = true },
+                )
+            }
+        }
+
+        composeRule.onNodeWithTag("dashboard-gauge-settings").performClick()
+        assertTrue("gear requests the dedicated settings destination", openedSettings)
+    }
+
+    @Test
+    fun dashboardPrimaryGaugesUseCatalogTitlesUnitsPrecisionAndSectionColors() {
+        val customData = sampleData().copy(
+            primaryLeft = DashboardGaugeReading(GaugeType.ADD1, 1.234f),
+            primaryRight = DashboardGaugeReading(GaugeType.VOLTAGE, 12.34f),
+        )
+        composeRule.setContent {
+            org.secu3.android.ui.compose.SecuComposeTheme(darkTheme = false) {
+                DashboardContent(
+                    data = customData,
+                    connectionState = Connected,
+                    dashboardSettings = DashboardUiState(
+                        leftGauge = GaugeType.ADD1,
+                        rightGauge = GaugeType.VOLTAGE,
+                        settingsLoaded = true,
+                    ),
+                    presentationCatalog = presentationCatalog,
+                    onOpenGaugeSettings = {},
+                )
+            }
+        }
+
+        composeRule.onNodeWithTag("dashboard-gauge-title-left")
+            .assertTextEquals(context.getString(presentationCatalog.gauge(GaugeType.ADD1).title))
+        composeRule.onNodeWithText("1.234").assertIsDisplayed()
+        composeRule.onNode(
+            hasText(context.getString(presentationCatalog.gauge(GaugeType.ADD1).units)) and
+                hasAnyAncestor(hasTestTag("dashboard-rpm-gauge")),
+        ).assertIsDisplayed()
+        composeRule.onNodeWithTag("dashboard-gauge-title-right")
+            .assertTextEquals(context.getString(presentationCatalog.gauge(GaugeType.VOLTAGE).title))
+        composeRule.onNodeWithText("12.34").assertIsDisplayed()
+        composeRule.onNode(
+            hasText(context.getString(presentationCatalog.gauge(GaugeType.VOLTAGE).units)) and
+                hasAnyAncestor(hasTestTag("dashboard-speed-gauge")),
+        ).assertIsDisplayed()
+
+        val gaugeBounds = composeRule.onNodeWithTag("dashboard-rpm-gauge").getUnclippedBoundsInRoot()
+        val valueBounds = composeRule.onNodeWithTag("dashboard-gauge-value-left").getUnclippedBoundsInRoot()
+        val unitBounds = composeRule.onNodeWithTag("dashboard-gauge-unit-left").getUnclippedBoundsInRoot()
+        val titleBounds = composeRule.onNodeWithTag("dashboard-gauge-title-left").getUnclippedBoundsInRoot()
+        val gaugeCenterY = (gaugeBounds.top + gaugeBounds.bottom) / 2
+        val valueAndUnitCenterY = (valueBounds.top + unitBounds.bottom) / 2
+        assertTrue("value and unit remain centered independently of the sensor caption", abs((gaugeCenterY - valueAndUnitCenterY).value) < 20f)
+        assertTrue("sensor caption stays outside the centered value/unit block", titleBounds.top >= unitBounds.bottom)
+        assertEquals(11, DASHBOARD_DECORATIVE_TICK_COUNT)
+
+        val bitmap = captureGauge("dashboard-rpm-progress")
+        val renderedPixels = IntArray(bitmap.width * bitmap.height)
+        bitmap.getPixels(renderedPixels, 0, bitmap.width, 0, 0, bitmap.width, bitmap.height)
+        val catalogColor = context.getColor(presentationCatalog.gauge(GaugeType.ADD1).sections.first().color)
+        assertTrue("Dashboard arc uses the shared catalog section color", renderedPixels.any { it == catalogColor })
     }
 
     @Test
@@ -377,14 +464,25 @@ class DashboardContentTest {
     }
 
     @Composable
+    private fun dashboardTestContent(data: DashboardViewData?, state: ConnectionState?) {
+        DashboardContent(
+            data = data,
+            connectionState = state,
+            dashboardSettings = DashboardUiState(settingsLoaded = true),
+            presentationCatalog = presentationCatalog,
+            onOpenGaugeSettings = {}
+        )
+    }
+
+    @Composable
     private fun dashboardLayout(data: DashboardViewData?, state: ConnectionState?, narrow: Boolean) {
         org.secu3.android.ui.compose.SecuComposeTheme(darkTheme = false) {
             if (narrow) {
                 Box(Modifier.width(360.dp).fillMaxHeight()) {
-                    DashboardContent(data = data, connectionState = state)
+                    dashboardTestContent(data, state)
                 }
             } else {
-                DashboardContent(data = data, connectionState = state)
+                dashboardTestContent(data, state)
             }
         }
     }
@@ -473,8 +571,6 @@ class DashboardContentTest {
         afr: Float = 14.7f,
         fuelLevel: Float = 36f,
     ) = DashboardViewData(
-        rpm = 2250f,
-        speed = 84f,
         load = load,
         map = map,
         tps = tps,
@@ -493,6 +589,8 @@ class DashboardContentTest {
         ledChoke = false,
         ledFan = false,
         ledRevLimit = false,
+        primaryLeft = DashboardGaugeReading(GaugeType.RPM, 2250f),
+        primaryRight = DashboardGaugeReading(GaugeType.VEHICLE_SPEED, 84f),
     )
 
     private fun captureDesignScreenshot(fileName: String) {

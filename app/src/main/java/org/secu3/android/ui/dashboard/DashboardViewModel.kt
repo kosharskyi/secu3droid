@@ -26,24 +26,73 @@
 package org.secu3.android.ui.dashboard
 
 import androidx.lifecycle.ViewModel
+import androidx.lifecycle.viewModelScope
 import dagger.hilt.android.lifecycle.HiltViewModel
-import kotlinx.coroutines.flow.map
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.combine
+import kotlinx.coroutines.flow.update
+import kotlinx.coroutines.launch
 import org.secu3.android.connection.Secu3ConnectionManager
+import org.secu3.android.models.InjectionTimingMode
+import org.secu3.android.models.sensors.GaugeType
 import org.secu3.android.ui.common.SensorPacketObserver
+import org.secu3.android.ui.sensors.models.SensorPresentationCatalog
 import org.secu3.android.utils.Task
+import org.secu3.android.utils.prefs.UserPrefs
 import javax.inject.Inject
 
 @HiltViewModel
-class DashboardViewModel @Inject constructor(private val secu3ConnectionManager: Secu3ConnectionManager,
-                                             sensorPacketObserver: SensorPacketObserver) : ViewModel() {
+class DashboardViewModel @Inject constructor(
+    private val secu3ConnectionManager: Secu3ConnectionManager,
+    sensorPacketObserver: SensorPacketObserver,
+    private val userPrefs: UserPrefs,
+    val presentationCatalog: SensorPresentationCatalog,
+) : ViewModel() {
+    private val _uiState = MutableStateFlow(DashboardUiState())
+    val uiState: StateFlow<DashboardUiState> = _uiState.asStateFlow()
 
-    val packetFlow = sensorPacketObserver.observeSensors(updateIntervalMs = 100L)
-        .map { it?.let(DashboardViewData::inflate) }
+    val packetFlow = combine(
+        sensorPacketObserver.observeSensors(updateIntervalMs = 100L),
+        uiState,
+    ) { packet, settings ->
+        packet?.takeIf { settings.settingsLoaded }?.let {
+            DashboardViewData.inflate(
+                packet = it,
+                leftGauge = settings.leftGauge,
+                rightGauge = settings.rightGauge,
+                injectionTimingMode = settings.injectionTimingMode,
+            )
+        }
+    }
 
     val connectionState = secu3ConnectionManager.connectionStateFlow
+
+    init {
+        viewModelScope.launch {
+            userPrefs.observeSettings { }
+                .collect { settings ->
+                    _uiState.update {
+                        it.copy(
+                            leftGauge = settings.dashboardLeftGauge,
+                            rightGauge = settings.dashboardRightGauge,
+                            injectionTimingMode = settings.injectionTimingMode,
+                            settingsLoaded = true,
+                        )
+                    }
+                }
+        }
+    }
 
     fun setTask(task: Task) {
         secu3ConnectionManager.sendNewTask(task)
     }
-
 }
+
+data class DashboardUiState(
+    val leftGauge: GaugeType = UserPrefs.DEFAULT_DASHBOARD_LEFT_GAUGE,
+    val rightGauge: GaugeType = UserPrefs.DEFAULT_DASHBOARD_RIGHT_GAUGE,
+    val injectionTimingMode: InjectionTimingMode = InjectionTimingMode.Default,
+    val settingsLoaded: Boolean = false,
+)

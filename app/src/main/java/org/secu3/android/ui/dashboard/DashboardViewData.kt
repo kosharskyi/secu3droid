@@ -25,11 +25,12 @@
 
 package org.secu3.android.ui.dashboard
 
+import org.secu3.android.models.InjectionTimingMode
 import org.secu3.android.models.packets.input.SensorsPacket
+import org.secu3.android.models.sensors.GaugeType
+import org.secu3.android.utils.prefs.UserPrefs
 
 data class DashboardViewData(
-    var rpm: Float,
-    var speed: Float,
     var load: Float,
     var map: Float,
     var tps: Float,
@@ -49,36 +50,58 @@ data class DashboardViewData(
     var ledChoke: Boolean,
     var ledFan: Boolean,
     var ledRevLimit: Boolean,
+    val primaryLeft: DashboardGaugeReading = DashboardGaugeReading(UserPrefs.DEFAULT_DASHBOARD_LEFT_GAUGE, 0f),
+    val primaryRight: DashboardGaugeReading = DashboardGaugeReading(UserPrefs.DEFAULT_DASHBOARD_RIGHT_GAUGE, 0f),
+    val injectionTimingMode: InjectionTimingMode = InjectionTimingMode.Default,
 ) {
 
     companion object {
 
-        fun inflate(packet: SensorsPacket): DashboardViewData {
+        fun inflate(
+            packet: SensorsPacket,
+            leftGauge: GaugeType = UserPrefs.DEFAULT_DASHBOARD_LEFT_GAUGE,
+            rightGauge: GaugeType = UserPrefs.DEFAULT_DASHBOARD_RIGHT_GAUGE,
+            injectionTimingMode: InjectionTimingMode = InjectionTimingMode.Default,
+        ): DashboardViewData {
             return DashboardViewData(
-                packet.rpm.toFloat(),
-                packet.speed,
-                packet.load,
-                packet.map,
-                packet.tps,
-                packet.temperature,
-                packet.voltage,
-                packet.currentAngle,
-                packet.afr,
-                packet.ots,
-                packet.ftls,
-                packet.airtempSensor,
-                packet.knockRetard,
-                packet.checkEngineBit > 0,
-                packet.gasBit > 0,
-                packet.ephhValveBit > 0,
-                packet.epmValveBit > 0,
-                packet.carbBit > 0,
-                packet.coolFanBit > 0,
-                packet.fc_revlim > 0,
-
-                )
+                load = packet.load,
+                map = packet.map,
+                tps = packet.tps,
+                temperature = packet.temperature,
+                voltage = packet.voltage,
+                currentAngle = packet.currentAngle,
+                afr = packet.afr,
+                oilTemperature = packet.ots,
+                fuelLevel = packet.ftls,
+                intakeAirTemperature = packet.airtempSensor,
+                knockRetard = packet.knockRetard,
+                ledCheckEngine = packet.checkEngineBit > 0,
+                ledGasoline = packet.gasBit > 0,
+                ledEco = packet.ephhValveBit > 0,
+                ledPower = packet.epmValveBit > 0,
+                ledChoke = packet.carbBit > 0,
+                ledFan = packet.coolFanBit > 0,
+                ledRevLimit = packet.fc_revlim > 0,
+                primaryLeft = DashboardGaugeReading(leftGauge, displayValue(leftGauge, packet, injectionTimingMode)),
+                primaryRight = DashboardGaugeReading(rightGauge, displayValue(rightGauge, packet, injectionTimingMode)),
+                injectionTimingMode = injectionTimingMode,
+            )
         }
 
+        private fun displayValue(
+            gauge: GaugeType,
+            packet: SensorsPacket,
+            injectionTimingMode: InjectionTimingMode,
+        ): Float {
+            val rawValue = gauge.getGaugeItem(packet)
+            return if (gauge == GaugeType.BEGIN_INJ_PHASE || gauge == GaugeType.END_INJ_PHASE) {
+                injectionTimingMode.transform(rawValue)
+            } else {
+                rawValue
+            }
+        }
     }
 
 }
+
+data class DashboardGaugeReading(val type: GaugeType, val value: Float)
