@@ -40,10 +40,12 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
+import androidx.compose.material3.LocalContentColor
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -105,7 +107,7 @@ fun DashboardContent(
     onOpenGaugeSettings: () -> Unit,
 ) {
     var dashboardDarkTheme by rememberSaveable { mutableStateOf<Boolean?>(null) }
-    SecuComposeTheme(darkTheme = dashboardDarkTheme) {
+    DashboardTheme(darkTheme = dashboardDarkTheme) {
         val colors = MaterialTheme.colorScheme
         val isDarkTheme = colors.background.luminance() < 0.5f
         val liveData = data.takeIf { connectionState == Connected }
@@ -236,6 +238,38 @@ fun DashboardContent(
                     )
                 }
             }
+        }
+    }
+}
+
+@Composable
+private fun DashboardTheme(darkTheme: Boolean?, content: @Composable () -> Unit) {
+    SecuComposeTheme(darkTheme = darkTheme) {
+        val inheritedColors = MaterialTheme.colorScheme
+        val warmLightColors = inheritedColors.copy(
+            background = Color(0xFFD9C7AC),
+            onBackground = Color(0xFF2E241B),
+            surface = Color(0xFFE9DCC8),
+            onSurface = Color(0xFF2E241B),
+            surfaceDim = Color(0xFFD0BFA5),
+            surfaceBright = Color(0xFFF2E7D6),
+            surfaceContainerLowest = Color(0xFFF4EADB),
+            surfaceContainerLow = Color(0xFFEFE3D1),
+            surfaceContainer = Color(0xFFE9DCC8),
+            surfaceContainerHigh = Color(0xFFE3D4BD),
+            surfaceContainerHighest = Color(0xFFDDCDB4),
+            surfaceVariant = Color(0xFFE3D4BD),
+            onSurfaceVariant = Color(0xFF493A2C),
+            outline = Color(0xFF786550),
+            outlineVariant = Color(0xFFC2AF93),
+        )
+        val colors = if (inheritedColors.background.luminance() >= 0.5f) {
+            warmLightColors
+        } else {
+            inheritedColors
+        }
+        MaterialTheme(colorScheme = colors) {
+            CompositionLocalProvider(LocalContentColor provides colors.onBackground, content = content)
         }
     }
 }

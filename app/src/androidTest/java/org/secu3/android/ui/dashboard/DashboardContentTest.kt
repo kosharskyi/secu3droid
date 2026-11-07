@@ -113,6 +113,7 @@ class DashboardContentTest {
     @Test
     fun displaysPrimaryValuesUnitsAndSecondaryReadoutsInLandscape() {
         showDashboard(data = sampleData(), state = Connected)
+        composeRule.waitForIdle()
         captureDesignScreenshot("design-dashboard-light.png")
         assertGaugeGutterMatchesDashboardBackground()
 
@@ -333,7 +334,8 @@ class DashboardContentTest {
 
         val lightDashboard = dashboardCornerColor()
         val outerTheme = outerSwatchColor()
-        assertEquals(lightDashboard, outerTheme)
+        assertEquals("Dashboard uses the warm light background", 0xFFD9C7AC.toInt(), lightDashboard)
+        assertEquals("warm Dashboard palette does not change the app theme", 0xFFF3F6FA.toInt(), outerTheme)
         composeRule.onNodeWithContentDescription(context.getString(R.string.dashboard_theme_switch_to_dark)).performClick()
         val darkDashboard = dashboardCornerColor()
         assertTrue("Dashboard background switches to dark", darkDashboard != lightDashboard)
@@ -341,7 +343,7 @@ class DashboardContentTest {
         composeRule.onNodeWithContentDescription(context.getString(R.string.dashboard_theme_switch_to_light)).assertIsDisplayed()
 
         composeRule.onNodeWithContentDescription(context.getString(R.string.dashboard_theme_switch_to_light)).performClick()
-        assertEquals("second tap restores the inherited light theme", lightDashboard, dashboardCornerColor())
+        assertEquals("second tap restores the warm Dashboard palette", lightDashboard, dashboardCornerColor())
         assertEquals("the app theme outside Dashboard stays light", outerTheme, outerSwatchColor())
     }
 

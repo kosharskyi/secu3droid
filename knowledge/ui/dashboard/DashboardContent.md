@@ -53,3 +53,5 @@ Dashboard's lifecycle cleanup runs in a canceled coroutine. Restore the captured
 ## The Dashboard theme choice is temporary and route-local
 
 Keep the optional light/dark override in saveable Compose state inside Dashboard content. A null override inherits the already-resolved application theme; saving state preserves a user's Dashboard choice through recreation, while a fresh route starts by inheriting the application theme again. Reserve fixed space for the toggle beside the horizontally scrollable status and warning chips.
+
+When that inherited or selected mode resolves to light, Dashboard layers its warm beige scheme over the shared theme locally. Keep the app's root colors and semantic `LocalSecuPalette` unchanged; gauge range and warning colors continue to come from their existing shared sources.
