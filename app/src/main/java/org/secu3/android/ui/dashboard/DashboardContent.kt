@@ -69,6 +69,8 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -531,7 +533,10 @@ private fun ArcGauge(
     val density = LocalDensity.current
     val readoutBelow = style == DashboardGaugeStyle.Classic || style == DashboardGaugeStyle.ThinNeedle
 
-    Column(modifier = modifier, horizontalAlignment = Alignment.CenterHorizontally) {
+    Column(
+        modifier = modifier.semantics { contentDescription = title },
+        horizontalAlignment = Alignment.CenterHorizontally,
+    ) {
         BoxWithConstraints(
             modifier = Modifier.weight(1f).fillMaxWidth(),
             contentAlignment = Alignment.Center,
@@ -585,17 +590,6 @@ private fun ArcGauge(
             }
         }
         if (readoutBelow) DashboardGaugeReadout(formattedValue, unit, gaugeSlot, compact, Modifier)
-        Text(
-            text = title,
-            color = colors.onSurfaceVariant,
-            fontSize = if (compact) 11.sp else 12.sp,
-            fontWeight = FontWeight.SemiBold,
-            textAlign = TextAlign.Center,
-            maxLines = 1,
-            overflow = TextOverflow.Ellipsis,
-            modifier = Modifier.padding(horizontal = 32.dp, vertical = 4.dp)
-                .testTag("dashboard-gauge-title-$gaugeSlot"),
-        )
     }
 }
 

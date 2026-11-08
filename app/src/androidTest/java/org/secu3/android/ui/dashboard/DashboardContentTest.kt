@@ -26,6 +26,7 @@ import androidx.compose.runtime.MutableState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.ui.test.assertCountEquals
+import androidx.compose.ui.test.assertContentDescriptionEquals
 import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.assertTextEquals
 import androidx.compose.ui.test.junit4.StateRestorationTester
@@ -418,15 +419,17 @@ class DashboardContentTest {
             }
         }
 
-        composeRule.onNodeWithTag("dashboard-gauge-title-left")
-            .assertTextEquals(context.getString(presentationCatalog.gauge(GaugeType.ADD1).title))
+        val add1Title = context.getString(presentationCatalog.gauge(GaugeType.ADD1).title)
+        composeRule.onNodeWithTag("dashboard-rpm-gauge").assertContentDescriptionEquals(add1Title)
+        composeRule.onAllNodesWithText(add1Title).assertCountEquals(0)
         composeRule.onNodeWithText("1.234").assertIsDisplayed()
         composeRule.onNode(
             hasText(context.getString(presentationCatalog.gauge(GaugeType.ADD1).units)) and
                 hasAnyAncestor(hasTestTag("dashboard-rpm-gauge")),
         ).assertIsDisplayed()
-        composeRule.onNodeWithTag("dashboard-gauge-title-right")
-            .assertTextEquals(context.getString(presentationCatalog.gauge(GaugeType.VOLTAGE).title))
+        val voltageTitle = context.getString(presentationCatalog.gauge(GaugeType.VOLTAGE).title)
+        composeRule.onNodeWithTag("dashboard-speed-gauge").assertContentDescriptionEquals(voltageTitle)
+        composeRule.onAllNodesWithText(voltageTitle).assertCountEquals(0)
         composeRule.onNodeWithText("12.34").assertIsDisplayed()
         composeRule.onNode(
             hasText(context.getString(presentationCatalog.gauge(GaugeType.VOLTAGE).units)) and
@@ -436,11 +439,9 @@ class DashboardContentTest {
         val gaugeBounds = composeRule.onNodeWithTag("dashboard-rpm-gauge").getUnclippedBoundsInRoot()
         val valueBounds = composeRule.onNodeWithTag("dashboard-gauge-value-left").getUnclippedBoundsInRoot()
         val unitBounds = composeRule.onNodeWithTag("dashboard-gauge-unit-left").getUnclippedBoundsInRoot()
-        val titleBounds = composeRule.onNodeWithTag("dashboard-gauge-title-left").getUnclippedBoundsInRoot()
         val gaugeCenterY = (gaugeBounds.top + gaugeBounds.bottom) / 2
         val valueAndUnitCenterY = (valueBounds.top + unitBounds.bottom) / 2
-        assertTrue("value and unit remain centered independently of the sensor caption", abs((gaugeCenterY - valueAndUnitCenterY).value) < 20f)
-        assertTrue("sensor caption stays outside the centered value/unit block", titleBounds.top >= unitBounds.bottom)
+        assertTrue("value and unit remain centered in the expanded gauge region", abs((gaugeCenterY - valueAndUnitCenterY).value) < 20f)
         assertEquals(11, DASHBOARD_DECORATIVE_TICK_COUNT)
 
         val bitmap = captureGauge("dashboard-rpm-progress")
@@ -464,6 +465,12 @@ class DashboardContentTest {
             composeRule.waitForIdle()
             composeRule.onNodeWithTag("dashboard-gauge-value-left").assertIsDisplayed()
             composeRule.onNodeWithTag("dashboard-gauge-value-left").assertTextEquals("2250")
+            val rpmTitle = context.getString(presentationCatalog.gauge(GaugeType.RPM).title)
+            val speedTitle = context.getString(presentationCatalog.gauge(GaugeType.VEHICLE_SPEED).title)
+            composeRule.onNodeWithTag("dashboard-rpm-gauge").assertContentDescriptionEquals(rpmTitle)
+            composeRule.onNodeWithTag("dashboard-speed-gauge").assertContentDescriptionEquals(speedTitle)
+            composeRule.onAllNodesWithText(rpmTitle).assertCountEquals(0)
+            composeRule.onAllNodesWithText(speedTitle).assertCountEquals(0)
             if (style == DashboardGaugeStyle.PreciseArc) {
                 val dialBounds = composeRule.onNodeWithTag("dashboard-rpm-progress").getUnclippedBoundsInRoot()
                 val valueBounds = composeRule.onNodeWithTag("dashboard-gauge-value-left").getUnclippedBoundsInRoot()

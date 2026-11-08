@@ -28,7 +28,7 @@ The gear opens a Navigation Compose destination styled with the shared `Settings
 
 ## Dashboard gauge marks keep their original visual density
 
-Filled Arc and Triangular Needle keep eleven unlabeled decorative marks regardless of a selected sensor's configured `tickCount`. Classic, Precise Arc, and Thin Needle use configured scale ticks and labels through the existing dial renderer. Every style still uses the selected sensor's title, unit, precision, range normalization, and section colors. Classic and Thin Needle place the value/unit below the dial to keep their center-reaching pointers clear of the readout; the other three keep the centered value/unit block.
+Filled Arc and Triangular Needle keep eleven unlabeled decorative marks regardless of a selected sensor's configured `tickCount`. Classic, Precise Arc, and Thin Needle use configured scale ticks and labels through the existing dial renderer. Every style uses the selected sensor's title as the gauge container's TalkBack description and keeps its unit, precision, range normalization, and section colors; do not render the title as a caption beneath the dial, since that space belongs to the gauge. Classic and Thin Needle place the value/unit below the dial to keep their center-reaching pointers clear of the readout; the other three keep the centered value/unit block.
 
 ## Layout changes preserve sensor value and availability semantics
 
