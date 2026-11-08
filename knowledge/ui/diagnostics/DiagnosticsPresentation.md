@@ -1,6 +1,6 @@
-## Channel labels are presentation aliases over the domain's indexed catalog
+## Diagnostic labels follow family resources without changing catalog indices
 
-The channel selector prepends `NONE` at index zero to the domain family catalog. It displays SECU-3i `ECF0` as `ECF` and `O2SH_O` as `O2SH_0`; output rows keep the enum names. These aliases must not change the selected protocol index.
+The output rows and test-signal selector use family-specific label arrays paired by position with the domain's indexed output catalog. SECU-3i labels use `IGN_O1` through `IGN_O5`, and display `ECF0` as `ECF`; the selector displays `O2SH_O` with the letter O. The selector prepends `NONE` at index zero. Keep resource order aligned with each family catalog so these display names never alter protocol channel IDs. Output test tags continue to use enum names.
 
 ## Hidden output rows must not filter the selector catalog
 

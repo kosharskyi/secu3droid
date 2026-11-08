@@ -43,6 +43,7 @@ import androidx.compose.material3.Text
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.testTag
+import androidx.compose.ui.res.stringArrayResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.res.stringResource
@@ -61,6 +62,11 @@ internal fun DiagnosticsOutputsScreen(
         false -> DiagnosticOutput.secu3IChannels
         null -> emptyList()
     }
+    val outputLabels = stringArrayResource(
+        if (isSecu3T == true) R.array.diagnostics_secu3t_output_labels
+        else R.array.diagnostics_secu3i_output_labels,
+    )
+    val labelsByOutput = familyOutputs.zip(outputLabels).toMap()
     val outputs = familyOutputs.filter { it != DiagnosticOutput.TACH_O || state.enableTachO }
     Column(
         modifier = Modifier.fillMaxWidth().verticalScroll(rememberScrollState()).padding(16.dp),
@@ -71,12 +77,14 @@ internal fun DiagnosticsOutputsScreen(
         OutputGroup(
             title = stringResource(R.string.diag_outputs_ignition_group),
             outputs = outputs.take(ignitionCount),
+            labelsByOutput = labelsByOutput,
             state = state,
             onOutputChanged = onOutputChanged,
         )
         OutputGroup(
             title = stringResource(if (isSecu3T) R.string.diag_outputs_other_group else R.string.diag_outputs_injection_group),
             outputs = outputs.drop(ignitionCount),
+            labelsByOutput = labelsByOutput,
             state = state,
             onOutputChanged = onOutputChanged,
         )
@@ -87,6 +95,7 @@ internal fun DiagnosticsOutputsScreen(
 private fun OutputGroup(
     title: String,
     outputs: List<DiagnosticOutput>,
+    labelsByOutput: Map<DiagnosticOutput, String>,
     state: DiagnosticsState,
     onOutputChanged: (DiagnosticOutput, Boolean) -> Unit,
 ) {
@@ -103,6 +112,7 @@ private fun OutputGroup(
             outputs.forEachIndexed { index, output ->
                 OutputToggle(
                     output,
+                    labelsByOutput.getValue(output),
                     state.outputBits,
                     state.canSetOutput(output),
                     isGeneratorOutput = output == state.generatorOutput,
@@ -117,6 +127,7 @@ private fun OutputGroup(
 @Composable
 private fun OutputToggle(
     output: DiagnosticOutput,
+    label: String,
     bits: Int,
     enabled: Boolean,
     isGeneratorOutput: Boolean,
@@ -132,7 +143,7 @@ private fun OutputToggle(
         horizontalArrangement = Arrangement.SpaceBetween,
     ) {
         Column(Modifier.weight(1f)) {
-            Text(output.name, color = if (enabled) MaterialTheme.colorScheme.onSurface else MaterialTheme.colorScheme.onSurface.copy(alpha = 0.38f))
+            Text(label, color = if (enabled) MaterialTheme.colorScheme.onSurface else MaterialTheme.colorScheme.onSurface.copy(alpha = 0.38f))
             if (isGeneratorOutput) {
                 Text(
                     text = stringResource(R.string.diag_output_controlled_by_generator),

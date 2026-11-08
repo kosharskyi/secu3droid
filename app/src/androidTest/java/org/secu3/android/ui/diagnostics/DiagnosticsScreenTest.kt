@@ -138,7 +138,9 @@ class DiagnosticsScreenTest {
             }
         }
         compose.onNodeWithTag("output_channel").performScrollTo().performClick()
-        compose.onNodeWithText("IGN_OUT1").performClick()
+        compose.onNodeWithText("O2SH_O").assertExists()
+        compose.onNodeWithText("ECF").assertExists()
+        compose.onNodeWithText("IGN_O1").performClick()
         compose.onNodeWithTag("duty_edit").performScrollTo()
         compose.onNodeWithText("50.0 %").assertIsDisplayed()
         assertEquals(1, state.value.channel)

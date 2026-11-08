@@ -58,7 +58,7 @@ class DiagnosticsOutputsScreenTest {
         compose.onNodeWithText("FE").performScrollTo().assertIsDisplayed()
         compose.onAllNodesWithText("IGN_OUT5").assertCountEquals(0)
         firmware.value = false
-        compose.onNodeWithText("IGN_OUT5").assertIsDisplayed()
+        compose.onNodeWithText("IGN_O5").assertIsDisplayed()
         compose.onAllNodesWithText("IE").assertCountEquals(0)
         firmware.value = null
         compose.onAllNodesWithText("IGN_OUT1").assertCountEquals(0)
@@ -72,10 +72,11 @@ class DiagnosticsOutputsScreenTest {
         secu3TLabels.forEach { compose.onAllNodesWithText(it).assertCountEquals(1) }
         assertEquals(13, secu3TLabels.size)
         firmware.value = false
-        val secu3ILabels = listOf("IGN_OUT1", "IGN_OUT2", "IGN_OUT3", "IGN_OUT4", "IGN_OUT5", "ECF0", "INJ_O1", "INJ_O2", "INJ_O3", "INJ_O4", "INJ_O5", "BL", "DE", "STBL_O", "CEL_O", "FPMP_O", "PWRR_O", "EVAP_O", "O2SH_O", "COND_O", "ADD_O2", "GPA6_O")
+        val secu3ILabels = listOf("IGN_O1", "IGN_O2", "IGN_O3", "IGN_O4", "IGN_O5", "ECF", "INJ_O1", "INJ_O2", "INJ_O3", "INJ_O4", "INJ_O5", "BL", "DE", "STBL_O", "CEL_O", "FPMP_O", "PWRR_O", "EVAP_O", "O2SH_O", "COND_O", "ADD_O2", "GPA6_O")
         secu3ILabels.forEach { compose.onAllNodesWithText(it).assertCountEquals(1) }
         assertEquals(23, secu3ILabels.size + 1) // TACH_O appears after its permission is granted.
-        compose.onAllNodesWithText("ECF").assertCountEquals(0)
+        compose.onAllNodesWithText("IGN_OUT1").assertCountEquals(0)
+        compose.onAllNodesWithText("ECF0").assertCountEquals(0)
         compose.onAllNodesWithTag("output_TACH_O").assertCountEquals(0)
     }
 

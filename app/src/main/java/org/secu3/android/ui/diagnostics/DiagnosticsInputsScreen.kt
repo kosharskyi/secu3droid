@@ -56,6 +56,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.platform.testTag
+import androidx.compose.ui.res.stringArrayResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.semantics
@@ -94,14 +95,11 @@ fun DiagnosticsInputsScreen(
 ) {
     val enabled = controlsEnabled && isSecu3T != null
     val channelOutputs = if (isSecu3T == true) DiagnosticOutput.secu3TChannels else DiagnosticOutput.secu3IChannels
-    val channels = listOf("NONE") + channelOutputs.map { output ->
-        when (output) {
-            DiagnosticOutput.ECF -> "ECF"
-            DiagnosticOutput.ECF0 -> "ECF"
-            DiagnosticOutput.O2SH_O -> "O2SH_0"
-            else -> output.name
-        }
-    }
+    val channelLabels = stringArrayResource(
+        if (isSecu3T == true) R.array.diagnostics_secu3t_output_labels
+        else R.array.diagnostics_secu3i_output_labels,
+    )
+    val channels = listOf("NONE") + channelOutputs.indices.map { channelLabels[it] }
     val chosen = selectedChannel.takeIf { it in channels.indices } ?: 0
     Column(Modifier.fillMaxSize().background(MaterialTheme.colorScheme.background).verticalScroll(rememberScrollState()).padding(16.dp), verticalArrangement = Arrangement.spacedBy(16.dp)) {
         DiagnosticGroupSurface(Modifier.fillMaxWidth()) {

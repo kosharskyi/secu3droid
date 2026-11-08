@@ -1,0 +1,43 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string-array name="diagnostics_secu3t_output_labels">
+        <item>IGN_OUT1</item>
+        <item>IGN_OUT2</item>
+        <item>IGN_OUT3</item>
+        <item>IGN_OUT4</item>
+        <item>IE</item>
+        <item>FE</item>
+        <item>ECF</item>
+        <item>CE</item>
+        <item>ST_BLOCK</item>
+        <item>ADD_IO1</item>
+        <item>ADD_IO2</item>
+        <item>BL</item>
+        <item>DE</item>
+    </string-array>
+    <string-array name="diagnostics_secu3i_output_labels">
+        <item>IGN_O1</item>
+        <item>IGN_O2</item>
+        <item>IGN_O3</item>
+        <item>IGN_O4</item>
+        <item>IGN_O5</item>
+        <item>ECF</item>
+        <item>INJ_O1</item>
+        <item>INJ_O2</item>
+        <item>INJ_O3</item>
+        <item>INJ_O4</item>
+        <item>INJ_O5</item>
+        <item>BL</item>
+        <item>DE</item>
+        <item>STBL_O</item>
+        <item>CEL_O</item>
+        <item>FPMP_O</item>
+        <item>PWRR_O</item>
+        <item>EVAP_O</item>
+        <item>O2SH_O</item>
+        <item>COND_O</item>
+        <item>ADD_O2</item>
+        <item>TACH_O</item>
+        <item>GPA6_O</item>
+    </string-array>
+</resources>
