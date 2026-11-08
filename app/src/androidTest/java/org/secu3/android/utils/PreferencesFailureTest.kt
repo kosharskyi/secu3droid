@@ -68,7 +68,7 @@ class PreferencesFailureTest {
         try {
             prefs.setCsvDelimiter(";")
             instrumentation.runOnMainSync {
-                viewModel = SettingsViewModel(context, prefs, FileHelper(context), messages)
+                viewModel = SettingsViewModel(context, prefs, FileHelper(context), messages, org.secu3.android.utils.analytics.UsageAnalytics(context, prefs))
                 viewModelStore.put("settings", viewModel)
                 viewModel.showDialog(SettingsDialog.Delimiter)
             }
@@ -133,7 +133,7 @@ class PreferencesFailureTest {
         }
         val files = FileHelper(fileContext)
         val messages = UiMessageQueue()
-        val logger = SecuLogger(prefs, files, messages, SensorLogEncoder())
+        val logger = SecuLogger(prefs, files, messages, SensorLogEncoder(), org.secu3.android.utils.analytics.UsageAnalytics(context, prefs))
         try {
             storage.failReads = true
             logger.startLogging()

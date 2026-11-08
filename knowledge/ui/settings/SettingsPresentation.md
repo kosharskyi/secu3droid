@@ -21,3 +21,7 @@ The pulse-per-litre value is stored in the same DataStore `Settings` snapshot as
 ## Numeric settings drafts survive recreation but end with the editor
 
 Connection retry and fuel-flow inputs use saveable Compose state so text, including invalid partial input, survives Activity recreation while that dialog remains open. The draft is not a preference and is written only through a valid confirmation. Dismissing the dialog drops it; reopening initializes from the current settings value. A failed preference write keeps the editor and its draft open.
+
+## Analytics consent changes are applied by the collection owner
+
+The Settings ViewModel forwards consent to `UsageAnalytics`, which closes the SDK before persisting revocation and prevents unrelated stale settings emissions from reopening collection during that write. The Settings row only presents the stored snapshot and forwards the toggle.

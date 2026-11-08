@@ -1,5 +1,6 @@
 package org.secu3.android.connection
 
+import android.os.Bundle
 import android.bluetooth.BluetoothManager
 import android.content.ComponentName
 import android.content.Context
@@ -436,6 +437,40 @@ class UsbSessionIntegrationTest {
             fixture.await { fixture.manager.currentConnectionState == UsbReconnecting }
             assertEquals(1, fixture.disconnectionCount())
         } finally { fixture.close() }
+    }
+
+    @Test fun analyticsCountsOneAdmittedRequestAndDoesNotCountRecoveryAsAnotherRequestSuccess() = runBlocking {
+        val fixture = Fixture()
+        var step = "consent"
+        try {
+            fixture.analytics.setUserConsent(true)
+            fixture.analytics.start()
+            fixture.allowUsbPortOpen()
+            step = "start usb"
+            fixture.startUsbReader()
+            step = "first firmware"
+            fixture.confirmFirmware()
+            step = "request result"
+            fixture.await { fixture.analyticsEvents.any { it.first == "connection_result" } }
+
+            step = "fail first attempt"
+            fixture.failUsbAttempt(1L, noResponse = true)
+            step = "begin retry"
+            fixture.beginUsbRetry(2L)
+            step = "second firmware"
+            fixture.confirmFirmware(2L)
+
+            val attempts = fixture.analyticsEvents.filter { it.first == "connection_attempt" }
+            val results = fixture.analyticsEvents.filter { it.first == "connection_result" }
+            assertEquals(1, attempts.size)
+            assertEquals("usb", attempts.single().second.getString("transport"))
+            assertEquals(1, results.count { it.second.getString("result") == "success" })
+            assertEquals(1, results.count { it.second.getString("category") == "ecu_timeout" })
+        } catch (error: Throwable) {
+            throw AssertionError("Analytics connection test failed during $step", error)
+        } finally {
+            fixture.close()
+        }
     }
 
     @Test fun usbFirmwareHandshakeTimeoutRetriesWithoutEndingAttachmentSession() = runBlocking {
@@ -1560,11 +1595,19 @@ class UsbSessionIntegrationTest {
         val usb = FakeUsbConnection(context.getSystemService(Context.USB_SERVICE) as UsbManager, prefs)
         private val bluetoothManager = context.getSystemService(Context.BLUETOOTH_SERVICE) as BluetoothManager
         private val bt = BtConnection(btPrefs ?: prefs, bluetoothManager)
-        val logger = SecuLogger(prefs, FileHelper(context), UiMessageQueue(), SensorLogEncoder())
+        val analyticsEvents = CopyOnWriteArrayList<Pair<String, Bundle>>()
+        val analytics = org.secu3.android.utils.analytics.UsageAnalytics(
+            context,
+            prefs,
+            debugBuild = false,
+            updateSdkCollection = {},
+            sendEvent = { name, params -> analyticsEvents += name to Bundle(params) },
+        )
+        val logger = SecuLogger(prefs, FileHelper(context), UiMessageQueue(), SensorLogEncoder(), analytics)
         val serviceContext = RecordingServiceContext(context)
         private val notificationPublisher = ConnectionNotificationPublisher(serviceContext)
         val serviceManager = ServiceManager(serviceContext)
-        val manager = Secu3ConnectionManager(usb, bt, prefs, logger, serviceManager, notificationPublisher)
+        val manager = Secu3ConnectionManager(usb, bt, prefs, logger, serviceManager, notificationPublisher, analytics)
         private val viewModels = ViewModelStore()
         private var nextViewModelId = 0
         val states = CopyOnWriteArrayList<ConnectionState>()
@@ -1721,6 +1764,7 @@ class UsbSessionIntegrationTest {
             (managerField("scope").get(manager) as CoroutineScope).cancel()
             usbDriver.shutdown()
             btDriver.shutdown()
+            analytics.stopForTests()
             runBlocking {
                 logger.stopLogging()
                 logger.awaitCommandsForTests()

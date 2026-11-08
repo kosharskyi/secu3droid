@@ -36,10 +36,12 @@ import androidx.navigation.NavHostController
 import dagger.hilt.android.AndroidEntryPoint
 import org.secu3.android.ui.messages.UiMessageQueue
 import org.secu3.android.ui.messages.UiMessageDuration
+import org.secu3.android.utils.analytics.UsageAnalytics
 
 @AndroidEntryPoint
 class MainActivity : ComponentActivity() {
     @Inject lateinit var uiMessageQueue: UiMessageQueue
+    @Inject lateinit var usageAnalytics: UsageAnalytics
     private val viewModel: MainActivityViewModel by viewModels()
     internal val userPrefs get() = viewModel.prefs
     private var rootNavController: NavHostController? = null

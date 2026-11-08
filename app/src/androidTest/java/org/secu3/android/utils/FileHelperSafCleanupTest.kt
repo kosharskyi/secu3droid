@@ -123,7 +123,7 @@ class FileHelperSafCleanupTest {
 
     private suspend fun withLogsViewModel(state: SavedStateHandle, block: suspend (SecuLogsViewModel) -> Unit) {
         val fixture = IsolatedUserPrefs(context, "pending-export-${System.nanoTime()}")
-        val logger = SecuLogger(fixture.prefs, helper, UiMessageQueue(), SensorLogEncoder())
+        val logger = SecuLogger(fixture.prefs, helper, UiMessageQueue(), SensorLogEncoder(), org.secu3.android.utils.analytics.UsageAnalytics(context, fixture.prefs))
         val store = ViewModelStore()
         lateinit var viewModel: SecuLogsViewModel
         try {
@@ -153,7 +153,7 @@ class FileHelperSafCleanupTest {
                 val fixture = IsolatedUserPrefs(base, "share-mime-${System.nanoTime()}")
                 prefsFixture = fixture
                 val prefs = fixture.prefs
-                val testLogger = SecuLogger(prefs, realHelper, UiMessageQueue(), SensorLogEncoder())
+                val testLogger = SecuLogger(prefs, realHelper, UiMessageQueue(), SensorLogEncoder(), org.secu3.android.utils.analytics.UsageAnalytics(base, prefs))
                 logger = testLogger
                 val viewModel = SecuLogsViewModel(realHelper, prefs, SavedStateHandle(), testLogger, org.secu3.android.ui.messages.UiMessageQueue())
                 val viewModelStore = ViewModelStore().apply { put("logs-share-test", viewModel) }

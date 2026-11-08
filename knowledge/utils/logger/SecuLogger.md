@@ -25,3 +25,7 @@ Read the format, delimiter, and CSV header choice from one settings snapshot in 
 ## All callers use the same start and stop commands
 
 The logger does not store the origin of a start or the automatic recording preference. The connection manager decides when to call these commands for a connection, and Sensors calls them for manual controls. After a stop or failure, packets alone cannot reopen a file.
+
+## Recording analytics follows successful file creation
+
+Emit `log_recording_started` only after the new writer is installed as the active file, using the opened file's CSV or S3L format. Keep it inside the serialized start command so rejected duplicate starts and failed opens emit no event.

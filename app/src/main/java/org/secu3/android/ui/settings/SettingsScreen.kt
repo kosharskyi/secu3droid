@@ -59,6 +59,7 @@ data class SettingsUiState(
     val alwaysWriteLog: Boolean = false,
     val appearanceMode: AppearanceMode = AppearanceMode.System,
     val fuelFlowPulsesPerLitre: String = "16000",
+    val usageAnalyticsEnabled: Boolean = false,
 )
 
 @Composable
@@ -174,6 +175,14 @@ internal fun SettingsContent(
                     onClick = onConnectionNotifications,
                     testTag = "settings-connection-notifications",
                 )
+            }
+            SettingsSection(title = stringResource(R.string.settings_group_privacy)) {
+                SettingsToggleRow(
+                    title = stringResource(R.string.pref_usage_analytics_title),
+                    summary = stringResource(R.string.pref_usage_analytics_summary),
+                    checked = state.usageAnalyticsEnabled,
+                    testTag = "settings-toggle-${R.string.pref_usage_analytics_key}",
+                ) { onToggle(R.string.pref_usage_analytics_key, it) }
             }
             SettingsSection(title = stringResource(R.string.settings_group_instruments)) {
                 SettingsActionRow(

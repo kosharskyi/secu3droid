@@ -49,3 +49,7 @@ The manager does not cache whether Android currently runs the service. Reissue s
 ## Session endings and retry progress must remain distinct state emissions
 
 For USB, emit `Disconnected` after loss cleanup and before retry progress. `UsbReconnecting` and `UsbReconnectingAwaitingEcu` describe recovery after confirmed connectivity, while `UsbAwaitingEcu` describes the initial handshake timeout. A later physical detach emits another `Disconnected` after retry progress, even when firmware never recovered. Bluetooth established retries skip `Disconnected` and end in `Disconnected` only when stopped or exhausted. Preserve stream ordering rather than exposing a parallel terminal-generation channel to UI consumers.
+
+## Analytics describes only typed connection outcomes
+
+`connection_attempt` is logged only after the manager admits a new Bluetooth or USB request. Result events use existing state outcomes and coarse fixed categories. Initial USB open failures and voluntary stops do not expose reliable failure facts and must not be inferred as failures. Repeated identical status emissions do not create duplicate result events.

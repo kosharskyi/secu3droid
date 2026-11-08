@@ -29,6 +29,7 @@ class UserPrefsTest {
             val initial = prefs.settings.first()
             assertFalse(initial.showLogControls)
             assertFalse(initial.isAlwaysWriteLogEnabled)
+            assertFalse(initial.isUsageAnalyticsEnabled)
             assertEquals(LogExportDestination.DefaultDownloads, initial.logExportDestination)
             assertEquals(";", initial.csvDelimiter)
             assertEquals(SensorGaugeStyle.PreciseArc, initial.sensorGaugeStyle)
@@ -39,10 +40,14 @@ class UserPrefsTest {
             assertEquals(DashboardGaugeStyle.FilledArc, initial.dashboardGaugeStyle)
             prefs.setShowLogControls(true)
             prefs.setAlwaysWriteLogEnabled(true)
+            prefs.setUsageAnalyticsEnabled(true)
             prefs.setCsvDelimiter("|")
             val updated = prefs.settings.first()
             assertTrue(updated.showLogControls)
             assertTrue(updated.isAlwaysWriteLogEnabled)
+            assertTrue(updated.isUsageAnalyticsEnabled)
+            prefs.setUsageAnalyticsEnabled(false)
+            assertFalse(prefs.settings.first().isUsageAnalyticsEnabled)
             assertEquals("|", updated.csvDelimiter)
 
             for (showControls in listOf(false, true)) {

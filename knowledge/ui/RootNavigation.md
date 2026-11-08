@@ -51,3 +51,7 @@ RootNavigation waits for the first successful UserPrefs snapshot before choosing
 ## Dashboard gauge settings temporarily releases Dashboard window policy
 
 The picker is an ordinary Navigation Compose destination above the retained Dashboard entry. Dashboard orientation and immersive/keep-screen behavior apply only while Dashboard is active; returning resumes them. Route changes reapply the Activity's existing keep-screen preference after updating its active route, because Dashboard's lifecycle cleanup can request that preference before the new route is published. Keep the Dashboard's saveable local theme state with the retained back-stack entry so opening and canceling settings does not reset it.
+
+## Screen analytics follows restored navigation entries
+
+Log only fixed route names when a Navigation Compose back-stack entry becomes current. Save the last tracked entry ID so Activity recreation does not duplicate the screen event. An event can be dropped if the app reaches its first route before Analytics observes the saved consent; it must never bypass the consent gate to compensate.

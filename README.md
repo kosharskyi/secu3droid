@@ -30,6 +30,8 @@
 - **Hardware Interaction**: Bluetooth API & `usb-serial-for-android`
 - **Dashboard**: Compose-based gauges and indicators backed by the Room database
 
+Optional usage analytics is disabled by default. See [what data it collects](docs/usage-analytics.md) before enabling it in Settings.
+
 ## 🤝 Contributing
 
 Contributions are welcome! Please feel free to submit a Pull Request or open an issue for bugs and feature requests.

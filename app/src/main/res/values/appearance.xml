@@ -11,6 +11,9 @@
     <string name="settings_group_connection">Connection</string>
     <string name="settings_group_display">Display and power</string>
     <string name="settings_group_instruments">Instruments</string>
+    <string name="settings_group_privacy">Privacy</string>
+    <string name="pref_usage_analytics_title">Share usage statistics</string>
+    <string name="pref_usage_analytics_summary">Sends app usage statistics, including screens viewed, to the developer. This helps the developer improve the app and make it easier to use. Sensor data and ECU settings are not sent. You can turn this off at any time.</string>
     <string name="pref_fuel_flow_pulses_per_litre_title">Pulses per litre of fuel</string>
     <string name="pref_fuel_flow_pulses_per_litre_summary">Fuel consumption calculation: %1$s pulses/L (1,000–32,000)</string>
 </resources>

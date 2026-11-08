@@ -42,5 +42,6 @@ class Secu3Application : Application(){
         super.onCreate()
 
         AndroidThreeTen.init(this)
+        component.usageAnalytics().start()
     }
 }

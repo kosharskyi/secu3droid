@@ -37,6 +37,7 @@ import org.secu3.android.models.packets.input.SensorsPacket
 import org.secu3.android.utils.logger.SecuLogger
 import org.secu3.android.utils.Task
 import org.secu3.android.utils.prefs.UserPrefs
+import org.secu3.android.utils.analytics.UsageAnalytics
 import javax.inject.Inject
 import javax.inject.Singleton
 
@@ -48,12 +49,14 @@ class Secu3ConnectionManager @Inject constructor(
     private val secuLogger: SecuLogger,
     private val serviceManager: ServiceManager,
     private val notificationPublisher: ConnectionNotificationPublisher,
+    private val usageAnalytics: UsageAnalytics,
 ) {
     private val scope = CoroutineScope(Dispatchers.Default + SupervisorJob())
     @Volatile private var currentConnection: Connection<*>? = null
     private var appVisible = false
     private val backgroundWorkEnabled = MutableStateFlow<Boolean?>(null)
     private var automaticLoggingEnabled: Boolean? = null
+    private var connectionSuccessReported = false
     private val initialSettingsHandled = CompletableDeferred<Unit>()
     private val backgroundPreferenceMutex = Mutex()
     private val _connectionState = MutableSharedFlow<ConnectionState>(replay = 1, extraBufferCapacity = 32).also { it.tryEmit(Disconnected) }
@@ -85,6 +88,8 @@ class Secu3ConnectionManager @Inject constructor(
         drainCurrentConnectionOutcome()
         if (currentConnection != null) return
         if (!usbConnection.startConnection(device)) return
+        usageAnalytics.logConnectionAttempt("usb")
+        connectionSuccessReported = false
         if (automaticLoggingEnabled == true) secuLogger.startLogging()
         selectConnection(usbConnection)
         drainPendingEvents(usbConnection)
@@ -116,6 +121,8 @@ class Secu3ConnectionManager @Inject constructor(
             drainCurrentConnectionOutcome()
             if (currentConnection != null) return@coroutineScope
             callerContext.ensureActive()
+            usageAnalytics.logConnectionAttempt("bluetooth")
+            connectionSuccessReported = false
             if (automaticLoggingEnabled == true) secuLogger.startLogging()
             launch(start = CoroutineStart.UNDISPATCHED) { btConnection.startConnection() }
                 .also { selectConnection(btConnection); drainPendingEvents(btConnection) }
@@ -197,6 +204,28 @@ class Secu3ConnectionManager @Inject constructor(
     @Synchronized private fun handleConnectionEvent(connection: Connection<*>, event: ConnectionEvent) {
         if (connection !== currentConnection) return
         _firmwareInfo.value = event.firmware
+        val transport = if (connection === usbConnection) "usb" else "bluetooth"
+        val stateChanged = event.state != currentConnectionState
+        when {
+            stateChanged && event.state == Connected && !connectionSuccessReported -> {
+                usageAnalytics.logConnectionResult(transport, "success", "connected", "request")
+                connectionSuccessReported = true
+            }
+            stateChanged && event.state is ConnectionFailed -> usageAnalytics.logConnectionResult(
+                transport, "failure", "connection_error", "attempt",
+            )
+            stateChanged && event.state == ConnectionTimeout -> usageAnalytics.logConnectionResult(
+                transport,
+                "failure",
+                "retries_exhausted",
+                if (connectionSuccessReported) "recovery" else "request",
+            )
+            stateChanged && (event.state == UsbAwaitingEcu || event.state == UsbReconnectingAwaitingEcu) ->
+                usageAnalytics.logConnectionResult(transport, "failure", "ecu_timeout", "attempt")
+            stateChanged && (event.state == Reconnecting || event.state == UsbReconnecting ||
+                event.state == UsbReconnectingAwaitingEcu) && event.end == ConnectionEvent.End.RETRYING ->
+                usageAnalytics.logConnectionResult(transport, "failure", "connection_lost", "attempt")
+        }
         if (event.end != null) {
             if (event.end == ConnectionEvent.End.STOPPED) {
                 finishConnection()

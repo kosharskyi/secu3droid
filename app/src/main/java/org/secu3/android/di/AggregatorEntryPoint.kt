@@ -27,10 +27,13 @@ package org.secu3.android.di
 import dagger.hilt.EntryPoint
 import dagger.hilt.InstallIn
 import dagger.hilt.components.SingletonComponent
+import org.secu3.android.utils.analytics.UsageAnalytics
 
 @InstallIn(SingletonComponent::class)
 @EntryPoint
 interface AggregatorEntryPoint {
+
+    fun usageAnalytics(): UsageAnalytics
 
 //    fun inject(measurementSyncWorker: MeasurementSyncWorker)
 

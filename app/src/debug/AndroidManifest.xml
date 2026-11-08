@@ -31,6 +31,8 @@
         tools:replace="android:allowBackup"
         >
 
+        <meta-data android:name="firebase_analytics_collection_deactivated" android:value="true" />
+
         <provider
             android:name="com.google.firebase.provider.FirebaseInitProvider"
             android:authorities="${applicationId}.firebaseinitprovider"

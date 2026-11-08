@@ -63,6 +63,7 @@ class UserPrefs @Inject constructor(
     private val csvDelimiterKey = stringPreferencesKey(context.getString(R.string.pref_log_csv_delimeter_key))
     private val keepScreenKey = booleanPreferencesKey(context.getString(R.string.pref_keep_screen_key))
     private val wakeLockKey = booleanPreferencesKey(context.getString(R.string.pref_wakelock_key))
+    private val usageAnalyticsEnabledKey = booleanPreferencesKey(USAGE_ANALYTICS_ENABLED_KEY)
     private val notificationPermissionRequestedKey = booleanPreferencesKey(context.getString(R.string.connection_notifications_permission_requested_key))
     private val legacyAppearanceKey = booleanPreferencesKey(context.getString(R.string.pref_night_mode_key))
     private val appearanceKey = stringPreferencesKey(context.getString(R.string.pref_appearance_mode_key))
@@ -105,6 +106,7 @@ class UserPrefs @Inject constructor(
         csvDelimiter = preferences[csvDelimiterKey] ?: ";",
         isKeepScreenAliveActive = preferences[keepScreenKey] ?: false,
         isWakeLockEnabled = preferences[wakeLockKey] ?: false,
+        isUsageAnalyticsEnabled = preferences[usageAnalyticsEnabledKey] ?: false,
         hasRequestedConnectionNotificationPermission = preferences[notificationPermissionRequestedKey] ?: false,
         appearanceMode = readAppearanceMode(preferences),
         bluetoothDeviceName = preferences[bluetoothNameKey],
@@ -141,6 +143,7 @@ class UserPrefs @Inject constructor(
     suspend fun setCsvDelimiter(value: String) = update { this[csvDelimiterKey] = value }
     suspend fun setKeepScreenAliveActive(value: Boolean) = update { this[keepScreenKey] = value }
     suspend fun setWakeLockEnabled(value: Boolean) = update { this[wakeLockKey] = value }
+    suspend fun setUsageAnalyticsEnabled(value: Boolean) = update { this[usageAnalyticsEnabledKey] = value }
     suspend fun setConnectionNotificationPermissionRequested(value: Boolean) = update { this[notificationPermissionRequestedKey] = value }
     suspend fun setAppearanceMode(value: AppearanceMode) = update { this[appearanceKey] = value.preferenceValue }
     suspend fun setBluetoothDevice(address: String?, name: String?) = update {
@@ -198,6 +201,7 @@ class UserPrefs @Inject constructor(
         val csvDelimiter: String,
         val isKeepScreenAliveActive: Boolean,
         val isWakeLockEnabled: Boolean,
+        val isUsageAnalyticsEnabled: Boolean,
         val hasRequestedConnectionNotificationPermission: Boolean,
         val appearanceMode: AppearanceMode,
         val bluetoothDeviceName: String?,
@@ -223,6 +227,7 @@ class UserPrefs @Inject constructor(
         const val SENSOR_GAUGE_STYLE_KEY = "sensor_gauge_style"
         const val INJECTION_TIMING_MODE_KEY = "injection_timing_mode"
         const val FUEL_FLOW_PULSES_PER_LITRE_KEY = "fuel_flow_pulses_per_litre"
+        const val USAGE_ANALYTICS_ENABLED_KEY = "usage_analytics_enabled"
         const val DEFAULT_FUEL_FLOW_PULSES_PER_LITRE = 16_000
         const val FUEL_FLOW_PULSES_PER_LITRE_MIN = 1_000
         const val FUEL_FLOW_PULSES_PER_LITRE_MAX = 32_000

@@ -10,6 +10,9 @@
     <string name="settings_group_connection">Подключение</string>
     <string name="settings_group_display">Экран и питание</string>
     <string name="settings_group_instruments">Приборы</string>
+    <string name="settings_group_privacy">Конфиденциальность</string>
+    <string name="pref_usage_analytics_title">Делиться статистикой использования</string>
+    <string name="pref_usage_analytics_summary">Отправляет разработчику статистику использования приложения и открытия экранов. Это помогает разработчику улучшать приложение и делать его удобнее. Данные датчиков и настройки ECU не передаются. Можно отключить в любое время.</string>
     <string name="pref_fuel_flow_pulses_per_litre_title">Импульсов на литр топлива</string>
     <string name="pref_fuel_flow_pulses_per_litre_summary">Расчёт расхода топлива: %1$s имп./л (1 000–32 000)</string>
 </resources>

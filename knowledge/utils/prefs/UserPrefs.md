@@ -41,3 +41,7 @@ Older installs may still contain the `columns_count` SharedPreferences key. No c
 ## The `wakelock` setting is the shared USB and Bluetooth background policy
 
 Keep the persisted key `wakelock` and its false default. It now controls both transports: changing it while connected does not disconnect the ECU; when disabled, a true app background transition ends the session, and when enabled the foreground connection service keeps it alive. The connection-notification permission request-history flag records only whether Android's runtime prompt was already shown; permission grant state itself is always queried from Android.
+
+## Usage analytics consent defaults to disabled
+
+`usage_analytics_enabled` is a DataStore setting with a false in-memory default. The Analytics API is initialized only after a successful enabled snapshot; read failures close any collection already initialized in the current process.

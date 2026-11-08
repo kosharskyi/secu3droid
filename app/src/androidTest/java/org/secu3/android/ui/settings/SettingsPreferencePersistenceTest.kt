@@ -69,6 +69,30 @@ import java.util.UUID
 class SettingsPreferencePersistenceTest {
     @get:Rule val compose = createAndroidComposeRule<MainActivity>()
 
+    @Test fun usageAnalyticsConsentPersistsAcrossActivityRecreation() {
+        val original = runBlocking { compose.activity.userPrefs.settings.first().isUsageAnalyticsEnabled }
+        val tag = "settings-toggle-${R.string.pref_usage_analytics_key}"
+        try {
+            compose.onNodeWithContentDescription("Settings icon").performClick()
+            compose.waitForIdle()
+            val toggle = compose.onNodeWithTag(tag).performScrollTo()
+            if (original) toggle.assertIsOn() else toggle.assertIsOff()
+            toggle.performClick()
+            val changed = !original
+            compose.waitUntil(5_000) {
+                runBlocking { compose.activity.userPrefs.settings.first().isUsageAnalyticsEnabled == changed }
+            }
+
+            compose.activityRule.scenario.recreate()
+            compose.waitForIdle()
+            val restored = compose.onNodeWithTag(tag).performScrollTo()
+            if (changed) restored.assertIsOn() else restored.assertIsOff()
+        } finally {
+            runBlocking { compose.activity.userPrefs.setUsageAnalyticsEnabled(original) }
+            compose.waitForIdle()
+        }
+    }
+
     @Test fun automaticLoggingPreferencePersistsWithoutStartingUntilConnectionAdmission() {
         val initial = runBlocking { compose.activity.userPrefs.settings.first() }
         val files = FileHelper(compose.activity)
@@ -212,7 +236,8 @@ class SettingsPreferencePersistenceTest {
         lateinit var viewModel: SettingsViewModel
         try {
             withContext(Dispatchers.Main) {
-                viewModel = SettingsViewModel(base, UserPrefs(base, failingStore), FileHelper(base), messages)
+                val prefs = UserPrefs(base, failingStore)
+                viewModel = SettingsViewModel(base, prefs, FileHelper(base), messages, org.secu3.android.utils.analytics.UsageAnalytics(base, prefs))
                 store.put("fuel-flow-failure", viewModel)
                 viewModel.showDialog(SettingsDialog.FuelFlowPulsesPerLitre)
             }
@@ -284,7 +309,7 @@ class SettingsPreferencePersistenceTest {
         lateinit var viewModel: SettingsViewModel
         try {
             InstrumentationRegistry.getInstrumentation().runOnMainSync {
-                viewModel = SettingsViewModel(context, fixture.prefs, FileHelper(context), UiMessageQueue())
+                viewModel = SettingsViewModel(context, fixture.prefs, FileHelper(context), UiMessageQueue(), org.secu3.android.utils.analytics.UsageAnalytics(context, fixture.prefs))
                 store.put("settings-folder", viewModel)
             }
             val read = Intent.FLAG_GRANT_READ_URI_PERMISSION

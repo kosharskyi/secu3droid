@@ -32,6 +32,7 @@ import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.getValue
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.padding
@@ -106,10 +107,31 @@ internal fun RootNavigation(activity: MainActivity) {
     }
     val navController = rememberNavController()
     val currentEntry by navController.currentBackStackEntryAsState()
+    var trackedEntryId by rememberSaveable { mutableStateOf<String?>(null) }
     SideEffect { activity.updateActiveComposeRoute(currentEntry?.destination?.route) }
     LaunchedEffect(currentEntry) {
         activity.onRootDestinationChanged(currentEntry?.destination)
         activity.applyKeepScreenOnPreference()
+        val entryId = currentEntry?.id
+        val screen = when (currentEntry?.destination?.route) {
+            START_ROUTE -> "start"
+            HOME_ROUTE -> "home"
+            PARAMETERS_ROUTE -> "parameters"
+            SETTINGS_ROUTE -> "settings"
+            ERRORS_ROUTE -> "errors"
+            LOGS_ROUTE -> "logs"
+            FIRMWARE_ROUTE -> "firmware"
+            DASHBOARD_ROUTE -> "dashboard"
+            DASHBOARD_GAUGE_SETTINGS_ROUTE -> "dashboard_gauge_settings"
+            SENSORS_ROUTE -> "sensors"
+            SENSOR_SETTINGS_ROUTE -> "sensor_settings"
+            DIAGNOSTICS_ROUTE -> "diagnostics"
+            else -> null
+        }
+        if (entryId != null && entryId != trackedEntryId) {
+            trackedEntryId = entryId
+            screen?.let(activity.usageAnalytics::logScreenOpened)
+        }
     }
     DisposableEffect(navController, activity) {
         activity.attachRootNavController(navController)

@@ -4,6 +4,7 @@ import org.secu3.android.utils.FileHelper
 
 import android.content.Context
 import android.content.ContextWrapper
+import android.os.Bundle
 import androidx.test.platform.app.InstrumentationRegistry
 import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.flow.first
@@ -21,7 +22,9 @@ import org.secu3.android.utils.prefs.UserPrefs
 import java.io.File
 import java.util.UUID
 import java.util.concurrent.CountDownLatch
+import java.util.concurrent.CopyOnWriteArrayList
 import java.util.concurrent.TimeUnit
+import org.secu3.android.utils.analytics.UsageAnalytics
 import kotlin.concurrent.thread
 
 class SecuLoggerDeleteTest {
@@ -45,7 +48,7 @@ class SecuLoggerDeleteTest {
         prefs = prefsFixture.prefs
         files = FileHelper(context)
         messages = UiMessageQueue()
-        logger = SecuLogger(prefs, files, messages, SensorLogEncoder())
+        logger = SecuLogger(prefs, files, messages, SensorLogEncoder(), org.secu3.android.utils.analytics.UsageAnalytics(context, prefs))
     }
 
     @After
@@ -57,6 +60,36 @@ class SecuLoggerDeleteTest {
             prefsFixture.close()
         }
         testRoot.deleteRecursively()
+    }
+
+    @Test
+    fun recordingStartedAnalyticsFollowsOneSuccessfulNewFileOpen() = runBlocking {
+        val events = CopyOnWriteArrayList<Pair<String, Bundle>>()
+        val analytics = UsageAnalytics(
+            context,
+            prefs,
+            debugBuild = false,
+            updateSdkCollection = {},
+            sendEvent = { name, params -> events += name to Bundle(params) },
+        )
+        val recordingLogger = SecuLogger(prefs, files, messages, SensorLogEncoder(), analytics)
+        try {
+            analytics.setUserConsent(true)
+            analytics.start()
+            recordingLogger.startLogging()
+            withTimeout(5_000) { recordingLogger.awaitCommandsForTests() }
+            recordingLogger.startLogging()
+            withTimeout(5_000) { recordingLogger.awaitCommandsForTests() }
+
+            assertTrue(recordingLogger.isLoggerStarted)
+            assertEquals(1, events.count { it.first == "log_recording_started" })
+            assertEquals("csv", events.single().second.getString("format"))
+        } finally {
+            recordingLogger.stopLogging()
+            withTimeout(5_000) { recordingLogger.awaitCommandsForTests() }
+            recordingLogger.shutdownForTests()
+            analytics.stopForTests()
+        }
     }
 
     @Test

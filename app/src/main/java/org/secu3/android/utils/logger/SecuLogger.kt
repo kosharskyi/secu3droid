@@ -38,6 +38,7 @@ import org.secu3.android.models.packets.input.SensorsPacket
 import org.secu3.android.ui.messages.UiMessageDuration
 import org.secu3.android.ui.messages.UiMessageQueue
 import org.secu3.android.utils.prefs.UserPrefs
+import org.secu3.android.utils.analytics.UsageAnalytics
 import org.threeten.bp.LocalTime
 import java.io.File
 import java.io.FileOutputStream
@@ -52,6 +53,7 @@ class SecuLogger @Inject constructor(
     private val fileHelper: FileHelper,
     private val uiMessageQueue: UiMessageQueue,
     private val encoder: SensorLogEncoder,
+    private val usageAnalytics: UsageAnalytics,
 ) {
     private data class ActiveLog(
         val file: File,
@@ -122,6 +124,7 @@ class SecuLogger @Inject constructor(
                 }
                 activeLog = openedLog
                 mutableState.value = true
+                usageAnalytics.logRecordingStarted(if (openedLog.isBinary) "s3l" else "csv")
             } catch (cancelled: CancellationException) {
                 throw cancelled
             } catch (failure: Exception) {

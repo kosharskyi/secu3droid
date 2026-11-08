@@ -30,6 +30,7 @@ import org.secu3.android.utils.FileHelper
 import org.secu3.android.utils.prefs.UserPrefs
 import org.secu3.android.ui.messages.UiMessageDuration
 import org.secu3.android.ui.messages.UiMessageQueue
+import org.secu3.android.utils.analytics.UsageAnalytics
 
 @HiltViewModel
 class SettingsViewModel @Inject constructor(
@@ -37,6 +38,7 @@ class SettingsViewModel @Inject constructor(
     private val userPrefs: UserPrefs,
     private val fileHelper: FileHelper,
     private val uiMessageQueue: UiMessageQueue,
+    private val usageAnalytics: UsageAnalytics,
 ) : ViewModel() {
     private val _state = MutableStateFlow<SettingsUiState?>(null)
     val state: StateFlow<SettingsUiState?> = _state.asStateFlow()
@@ -58,6 +60,7 @@ class SettingsViewModel @Inject constructor(
                 R.string.pref_log_csv_write_title_key -> userPrefs.setCsvTitleEnabled(value)
                 R.string.pref_write_binary_log_key -> userPrefs.setBinaryLogFormatEnabled(value)
                 R.string.pref_keep_screen_key -> userPrefs.setKeepScreenAliveActive(value)
+                R.string.pref_usage_analytics_key -> usageAnalytics.setUserConsent(value)
             }
         })
     }
@@ -116,6 +119,7 @@ class SettingsViewModel @Inject constructor(
             wakeLock = settings.isWakeLockEnabled,
             appearanceMode = settings.appearanceMode,
             fuelFlowPulsesPerLitre = settings.fuelFlowPulsesPerLitre.toString(),
+            usageAnalyticsEnabled = settings.isUsageAnalyticsEnabled,
         )
     }
 
