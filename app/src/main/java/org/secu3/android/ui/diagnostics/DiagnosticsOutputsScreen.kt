@@ -37,6 +37,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.Checkbox
+import androidx.compose.material3.Button
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
@@ -50,11 +51,14 @@ import androidx.compose.ui.res.stringResource
 import org.secu3.android.R
 import org.secu3.android.domain.diagnostics.DiagnosticOutput
 import org.secu3.android.domain.diagnostics.DiagnosticsState
+import org.secu3.android.domain.diagnostics.DiagnosticsSession
 
 @Composable
 internal fun DiagnosticsOutputsScreen(
     isSecu3T: Boolean?,
     state: DiagnosticsState,
+    onStartAutoTest: () -> Unit = {},
+    onStopAutoTest: () -> Unit = {},
     onOutputChanged: (DiagnosticOutput, Boolean) -> Unit,
 ) {
     val familyOutputs = when (isSecu3T) {
@@ -73,6 +77,23 @@ internal fun DiagnosticsOutputsScreen(
         verticalArrangement = Arrangement.spacedBy(16.dp),
     ) {
         if (isSecu3T == null) return@Column
+        Column(Modifier.fillMaxWidth(), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+            Button(
+                modifier = Modifier.testTag("diagnostics_auto_test_toggle"),
+                enabled = state.canStartOutputAutoTest || (state.controlsEnabled && state.isAutoTestingOutputs),
+                onClick = if (state.isAutoTestingOutputs) onStopAutoTest else onStartAutoTest,
+            ) {
+                Text(stringResource(if (state.isAutoTestingOutputs) R.string.diag_auto_test_stop else R.string.diag_auto_test_start))
+            }
+            if (state.isAutoTestingOutputs) {
+                Text(
+                    stringResource(R.string.diag_auto_test_running, DiagnosticsSession.AUTO_TEST_TICK_MILLIS),
+                    Modifier.testTag("diagnostics_auto_test_status"),
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = MaterialTheme.colorScheme.primary,
+                )
+            }
+        }
         val ignitionCount = if (isSecu3T) 4 else 5
         OutputGroup(
             title = stringResource(R.string.diag_outputs_ignition_group),

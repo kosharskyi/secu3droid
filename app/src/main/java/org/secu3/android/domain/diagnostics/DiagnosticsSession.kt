@@ -12,6 +12,9 @@ package org.secu3.android.domain.diagnostics
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.CoroutineStart
 import kotlinx.coroutines.Job
+import kotlinx.coroutines.cancel
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.isActive
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -55,9 +58,13 @@ data class DiagnosticsState(
     val enableBlDe: Boolean = false,
     val enableTachO: Boolean = false,
     val controlsEnabled: Boolean = false,
+    val isAutoTestingOutputs: Boolean = false,
 ) {
+    val canStartOutputAutoTest: Boolean
+        get() = controlsEnabled && !isAutoTestingOutputs && channel == 0
+
     fun canSetOutput(output: DiagnosticOutput): Boolean =
-        controlsEnabled && output != generatorOutput && when (output) {
+        controlsEnabled && !isAutoTestingOutputs && output != generatorOutput && when (output) {
             DiagnosticOutput.BL, DiagnosticOutput.DE -> enableBlDe
             DiagnosticOutput.TACH_O -> enableTachO
             else -> true
@@ -79,6 +86,7 @@ class DiagnosticsSession internal constructor(
     private val sendTask: (Task) -> Unit,
     private val sendPacket: (DiagOutputPacket) -> Unit,
     private val monotonicNowNanos: () -> Long = System::nanoTime,
+    private val waitForAutoTestTick: suspend () -> Unit = { delay(AUTO_TEST_TICK_MILLIS) },
 ) {
     @Inject
     constructor(connectionManager: Secu3ConnectionManager) : this(
@@ -104,6 +112,12 @@ class DiagnosticsSession internal constructor(
     private var familyIsSecu3T: Boolean? = null
     private var initialized = false
     private var initialStateSent = false
+    private var autoTestJob: Job? = null
+    private var autoTestRunning = false
+    private var autoTestPhase = AutoTestPhase.SEQUENTIAL
+    private var autoTestOutputIndex = 0
+    private var autoTestGroupStep = 0
+    private var autoTestGeneration = 0L
 
     fun start(scope: CoroutineScope) {
         if (connectionJob != null || closed) return
@@ -130,7 +144,7 @@ class DiagnosticsSession internal constructor(
     }
 
     fun selectChannel(index: Int) {
-        if (!canControl()) return
+        if (!canControl() || autoTestRunning) return
         val channels = channels() ?: return
         if (index !in 0..channels.size) return
         packet.chan = index
@@ -139,14 +153,14 @@ class DiagnosticsSession internal constructor(
     }
 
     fun editFrequency(value: Float) {
-        if (!canControl() || !value.isFinite() || value !in MIN_FREQUENCY..MAX_FREQUENCY) return
+        if (!canControl() || autoTestRunning || !value.isFinite() || value !in MIN_FREQUENCY..MAX_FREQUENCY) return
         packet.frq = value
         if (packet.chan > 0) sendIfInitialized()
         publishOutputState()
     }
 
     fun editDuty(value: Float) {
-        if (!canControl() || !value.isFinite() || value !in MIN_DUTY..MAX_DUTY) return
+        if (!canControl() || autoTestRunning || !value.isFinite() || value !in MIN_DUTY..MAX_DUTY) return
         packet.duty = value
         if (packet.chan > 0) sendIfInitialized()
         publishOutputState()
@@ -165,7 +179,7 @@ class DiagnosticsSession internal constructor(
     }
 
     fun enableBlDe(enabled: Boolean) {
-        if (!canControl()) return
+        if (!canControl() || autoTestRunning) return
         if (packet.blOutputEnabled == enabled && packet.deOutputEnabled == enabled) return
         packet.bl = false
         packet.de = false
@@ -176,7 +190,7 @@ class DiagnosticsSession internal constructor(
     }
 
     fun enableTachO(enabled: Boolean) {
-        if (!canControl() || packet.tachOOutputEnabled == enabled) return
+        if (!canControl() || autoTestRunning || packet.tachOOutputEnabled == enabled) return
         packet.tachO = false
         packet.tachOOutputEnabled = enabled
         sendIfInitialized()
@@ -184,14 +198,39 @@ class DiagnosticsSession internal constructor(
     }
 
     fun applyAdditionalOptions(enableBlDe: Boolean, enableTachO: Boolean) {
-        if (!canControl()) return
+        if (!canControl() || autoTestRunning) return
         // Each changed option enqueues its reset packet before the next option is applied.
         enableBlDe(enableBlDe)
         enableTachO(enableTachO)
     }
 
+    fun startOutputAutoTest(scope: CoroutineScope) {
+        if (!scope.isActive || !canControl() || !_state.value.canStartOutputAutoTest) return
+        autoTestRunning = true
+        val generation = ++autoTestGeneration
+        autoTestPhase = AutoTestPhase.SEQUENTIAL
+        autoTestOutputIndex = 0
+        autoTestGroupStep = 0
+        setAllAutoTestOutputs(false)
+        sendIfInitialized()
+        publishOutputState()
+        val job = scope.launch(start = CoroutineStart.LAZY) { runOutputAutoTest() }
+        job.invokeOnCompletion {
+            if (autoTestGeneration == generation && autoTestRunning) {
+                finishOutputAutoTest(resetOutputs = canControl(), cancelJob = false)
+            }
+        }
+        autoTestJob = job
+        if (!job.start()) finishOutputAutoTest(resetOutputs = false, cancelJob = false)
+    }
+
+    fun stopOutputAutoTest() {
+        finishOutputAutoTest(resetOutputs = canControl(), cancelJob = true)
+    }
+
     fun close() {
         if (closed) return
+        finishOutputAutoTest(resetOutputs = canControl(), cancelJob = true)
         val shouldLeave = connectionAvailable && entered && isTransportConnected()
         closed = true
         connectionAvailable = false
@@ -219,6 +258,7 @@ class DiagnosticsSession internal constructor(
                     sendTask(Task.Secu3DiagInput)
                 }
                 7 -> {
+                    finishOutputAutoTest(resetOutputs = false, cancelJob = true)
                     active = false
                     diagnosticSamples.clear()
                     publishOutputState()
@@ -246,6 +286,7 @@ class DiagnosticsSession internal constructor(
 
     private fun onConnectionLost() {
         if (closed) return
+        finishOutputAutoTest(resetOutputs = false, cancelJob = true)
         connectionAvailable = false
         entered = false
         inputRequested = false
@@ -285,7 +326,101 @@ class DiagnosticsSession internal constructor(
             enableBlDe = packet.blOutputEnabled && packet.deOutputEnabled,
             enableTachO = packet.tachOOutputEnabled,
             controlsEnabled = connectionAvailable && isTransportConnected() && active && input != null,
+            isAutoTestingOutputs = autoTestRunning,
         )
+    }
+
+    private suspend fun runOutputAutoTest() {
+        while (autoTestRunning) {
+            waitForAutoTestTick()
+            if (!autoTestRunning) return
+            if (!canControl()) {
+                finishOutputAutoTest(resetOutputs = false, cancelJob = false)
+                return
+            }
+            when (autoTestPhase) {
+                AutoTestPhase.SEQUENTIAL -> {
+                    val outputs = outputAutoTestOrder()
+                    if (autoTestOutputIndex == outputs.size) {
+                        setAllAutoTestOutputs(false)
+                        autoTestPhase = AutoTestPhase.GROUP
+                        autoTestGroupStep = 0
+                    } else {
+                        val previous = outputs.getOrNull(autoTestOutputIndex - 1) ?: outputs.last()
+                        setAutoTestOutput(previous, false)
+                        setAutoTestOutput(outputs[autoTestOutputIndex], true)
+                        autoTestOutputIndex++
+                    }
+                    sendIfInitialized()
+                }
+                AutoTestPhase.GROUP -> {
+                    if (autoTestGroupStep == AUTO_TEST_GROUP_STEPS) {
+                        setAllAutoTestOutputs(false)
+                        autoTestPhase = AutoTestPhase.SEQUENTIAL
+                        autoTestOutputIndex = 0
+                    } else {
+                        setAllAutoTestOutputs(autoTestGroupStep % 2 == 0)
+                        autoTestGroupStep++
+                    }
+                    sendIfInitialized()
+                }
+            }
+            publishOutputState()
+        }
+    }
+
+    private fun finishOutputAutoTest(resetOutputs: Boolean, cancelJob: Boolean) {
+        if (!autoTestRunning) return
+        autoTestRunning = false
+        autoTestGeneration++
+        val runningJob = autoTestJob
+        autoTestJob = null
+        if (cancelJob) runningJob?.cancel()
+        if (resetOutputs && canControl()) {
+            setAllAutoTestOutputs(false)
+            sendIfInitialized()
+        }
+        publishOutputState()
+    }
+
+    private fun outputAutoTestOrder(): List<DiagnosticOutput> = when (familyIsSecu3T) {
+        true -> listOf(
+            DiagnosticOutput.FE, DiagnosticOutput.IE, DiagnosticOutput.ST_BLOCK,
+            DiagnosticOutput.IGN_OUT1, DiagnosticOutput.IGN_OUT2,
+            DiagnosticOutput.IGN_OUT3, DiagnosticOutput.IGN_OUT4,
+            DiagnosticOutput.CE, DiagnosticOutput.ECF, DiagnosticOutput.ADD_IO1,
+            DiagnosticOutput.ADD_IO2, DiagnosticOutput.BL, DiagnosticOutput.DE,
+        )
+        false -> listOf(
+            DiagnosticOutput.IGN_OUT1, DiagnosticOutput.IGN_OUT2,
+            DiagnosticOutput.IGN_OUT3, DiagnosticOutput.IGN_OUT4,
+            DiagnosticOutput.IGN_OUT5, DiagnosticOutput.INJ_O1,
+            DiagnosticOutput.INJ_O2, DiagnosticOutput.INJ_O3,
+            DiagnosticOutput.INJ_O4, DiagnosticOutput.INJ_O5,
+            DiagnosticOutput.ECF0, DiagnosticOutput.ADD_O2,
+            DiagnosticOutput.EVAP_O, DiagnosticOutput.O2SH_O,
+            DiagnosticOutput.COND_O, DiagnosticOutput.STBL_O,
+            DiagnosticOutput.CEL_O, DiagnosticOutput.FPMP_O,
+            DiagnosticOutput.PWRR_O, DiagnosticOutput.BL, DiagnosticOutput.DE,
+            DiagnosticOutput.TACH_O, DiagnosticOutput.GPA6_O,
+        )
+        null -> emptyList()
+    }
+
+    private fun setAllAutoTestOutputs(enabled: Boolean) {
+        outputAutoTestOrder().forEach { output -> setAutoTestOutput(output, enabled) }
+    }
+
+    private fun setAutoTestOutput(output: DiagnosticOutput, enabled: Boolean) {
+        when (output) {
+            DiagnosticOutput.BL -> if (packet.blOutputEnabled) packet.bl = enabled
+            DiagnosticOutput.DE -> if (packet.deOutputEnabled) packet.de = enabled
+            DiagnosticOutput.TACH_O -> if (packet.tachOOutputEnabled) packet.tachO = enabled
+            else -> {
+                val mask = 1 shl output.bit
+                packet.out = if (enabled) packet.out or mask else packet.out and mask.inv()
+            }
+        }
     }
 
     private fun recordDiagnosticSample(input: DiagInputPacket) {
@@ -321,6 +456,10 @@ class DiagnosticsSession internal constructor(
         const val MAX_DUTY = 100f
         const val DIAGNOSTIC_SAMPLE_WINDOW_NANOS = 10_000_000_000L
         const val MAX_DIAGNOSTIC_SAMPLES = 512
+        const val AUTO_TEST_TICK_MILLIS = 400L
+        private const val AUTO_TEST_GROUP_STEPS = 5
         private const val IGNITION_OUTPUT_MASK = 0b11
     }
+
+    private enum class AutoTestPhase { SEQUENTIAL, GROUP }
 }

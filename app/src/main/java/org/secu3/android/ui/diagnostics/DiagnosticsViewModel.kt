@@ -36,6 +36,8 @@ class DiagnosticsViewModel @Inject constructor(
     fun editDuty(value: Float) = session.editDuty(value)
     fun applyAdditionalOptions(enableBlDe: Boolean, enableTachO: Boolean) =
         session.applyAdditionalOptions(enableBlDe, enableTachO)
+    fun startOutputAutoTest() = session.startOutputAutoTest(viewModelScope)
+    fun stopOutputAutoTest() = session.stopOutputAutoTest()
 
     override fun onCleared() = session.close()
 }

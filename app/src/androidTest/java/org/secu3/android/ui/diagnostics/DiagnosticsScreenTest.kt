@@ -188,6 +188,41 @@ class DiagnosticsScreenTest {
     }
 
     @Test
+    fun runningAutoTestDisablesAdditionalSettingsAndGeneratorControls() {
+        var settingsRequests = 0
+        val state = mutableStateOf(
+            DiagnosticsState(
+                input = DiagInputPacket(),
+                controlsEnabled = true,
+                isAutoTestingOutputs = true,
+            ),
+        )
+        compose.setContent {
+            SecuComposeTheme {
+                DiagnosticsScreen(
+                    isSecu3T = false,
+                    connectionStatus = Connected,
+                    state = state.value,
+                    onNavigateUp = {},
+                    onAdditionalSettings = { settingsRequests++ },
+                    onOutputChanged = { _, _ -> },
+                    onChannelSelected = {},
+                    onFrequencyEdit = {},
+                    onDutyEdit = {},
+                )
+            }
+        }
+        compose.onNodeWithTag("diagnostics-settings-icon").assertIsNotEnabled()
+        compose.onNodeWithTag("output_channel").performScrollTo().assertIsNotEnabled()
+        compose.onNodeWithTag("frequency_edit").performScrollTo().assertIsNotEnabled()
+        compose.onNodeWithTag("duty_edit").performScrollTo().assertIsNotEnabled()
+        assertEquals(0, settingsRequests)
+        state.value = state.value.copy(isAutoTestingOutputs = false)
+        compose.onNodeWithTag("diagnostics-settings-icon").assertIsEnabled()
+        compose.onNodeWithTag("output_channel").performScrollTo().assertIsEnabled()
+    }
+
+    @Test
     fun firmwareFamilyAndTpicFlagsUpdateInputRowsWhileScreenIsOpen() {
         val firmware = mutableStateOf<Boolean?>(null)
         val hasTpic8101 = mutableStateOf<Boolean?>(null)

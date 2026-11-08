@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="diag_auto_test_start">Запустити тест виходів</string>
+    <string name="diag_auto_test_stop">Зупинити тест виходів</string>
+    <string name="diag_auto_test_running">Тест виходів виконується · %1$d мс на крок</string>
+</resources>

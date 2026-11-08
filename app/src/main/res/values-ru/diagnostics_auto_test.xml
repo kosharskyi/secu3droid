@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="diag_auto_test_start">Запустить тест выходов</string>
+    <string name="diag_auto_test_stop">Остановить тест выходов</string>
+    <string name="diag_auto_test_running">Выполняется тест выходов · %1$d мс на шаг</string>
+</resources>

@@ -14,6 +14,10 @@ Diagnostics inputs receive a nullable packet while firmware data is unavailable.
 
 The KS_1 and KS_2 charts share paired, timestamped samples owned by `DiagnosticsSession`, so switching tabs or opening additional options does not interrupt history. The visible X range is ten seconds ending at the newest sample; values outside 0–5 V are clipped only while drawing, leaving numeric readings unchanged. Hide the trace whenever the observed connection or fresh input is unavailable, even if a prior state snapshot still contains samples.
 
+## Output auto-test disables overlapping controls on every diagnostics tab
+
+Only show Start as enabled for a ready session with generator channel `NONE`; show Stop while the session reports an active test. During a run, mask generator editors and the additional-options action on the inputs tab, and rely on the shared output readiness rule for output switches. Keep the timer state in the graph-scoped session so pager changes and dialog navigation do not reset its lifecycle.
+
 ## Output switches remain user-command controls
 
 The output checkboxes represent ECU commands. Preserve firmware and readiness gates, accessibility behavior, and invoke callbacks only from user interaction; do not turn them into passive status indicators.

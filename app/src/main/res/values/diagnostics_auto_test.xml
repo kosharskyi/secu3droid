@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="diag_auto_test_start">Start output test</string>
+    <string name="diag_auto_test_stop">Stop output test</string>
+    <string name="diag_auto_test_running">Output test running · %1$d ms per step</string>
+</resources>

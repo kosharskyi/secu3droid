@@ -22,6 +22,10 @@ Frequency must be finite and within 10–5000 Hz; duty must be finite and within
 
 Capture paired KS_1/KS_2 values and a monotonic timestamp for every received `DiagInputPacket`, including repeated equal readings. Copy the primitive values instead of retaining the mutable packet object. Keep at most 512 pairs and prune samples older than ten seconds; expose a fresh unmodifiable list snapshot in state. Clear the series on connection loss, diagnostic leave acknowledgement, and close so reconnect starts a new trace.
 
+## Output auto-test timer belongs to the graph-scoped diagnostics session
+
+The output auto-test is independent of the selected pager tab and is cancelled on loss, leave acknowledgement, or close. It never resumes after reconnect. Starting requires ready input and channel `NONE`; domain controls reject manual output, generator, and BL/DE/TACH option changes while it runs. Its 400 ms ticks follow desktop family order and phase transitions. Direction-enabled special outputs are driven LOW/HIGH; disabled ones remain Hi-Z. On live close, send the final all-LOW output snapshot before LEAVE. Cancellation cleanup is generation-checked so a late finalizer from an old timer cannot stop or reset a later run.
+
 ## BL, DE, and TACH output bits require their direction bits
 
 BL uses state/direction bits 11/12, DE uses 13/14, and TACH_O uses 23/24. Enabling a direction resets that output LOW and queues its packet; disabling clears state and direction to Hi-Z. Manual changes are ignored while direction is disabled and generator-selected outputs are rejected. Applying additional options changes BL/DE first and TACH second, sending one snapshot per changed group; unchanged options preserve driven HIGH state.

@@ -79,15 +79,18 @@ internal fun DiagnosticsScreen(
     onDutyEdit: (Float) -> Unit,
     initialPage: Int = 0,
     hasTpic8101: Boolean? = null,
+    onStartOutputAutoTest: () -> Unit = {},
+    onStopOutputAutoTest: () -> Unit = {},
 ) {
     val status = connectionStatus
     val input = state.input.takeIf { state.controlsEnabled && status == Connected }
     val controlsEnabled = state.controlsEnabled && status == Connected && input != null
+    val generatorControlsEnabled = controlsEnabled && !state.isAutoTestingOutputs
     var editorTarget by rememberSaveable { mutableStateOf<String?>(null) }
     var editorInitialValue by rememberSaveable { mutableFloatStateOf(0f) }
     var editorSessionId by rememberSaveable { mutableLongStateOf(0L) }
-    LaunchedEffect(controlsEnabled) {
-        if (!controlsEnabled) {
+    LaunchedEffect(generatorControlsEnabled) {
+        if (!generatorControlsEnabled) {
             editorTarget = null
             editorSessionId++
         }
@@ -107,7 +110,7 @@ internal fun DiagnosticsScreen(
                 showStatus = true,
                 navigationIconModifier = Modifier.testTag("diagnostics-back-icon"),
                 actions = {
-                    IconButton(onClick = onAdditionalSettings, enabled = controlsEnabled, modifier = Modifier.testTag("diagnostics-settings-icon")) {
+                    IconButton(onClick = onAdditionalSettings, enabled = controlsEnabled && !state.isAutoTestingOutputs, modifier = Modifier.testTag("diagnostics-settings-icon")) {
                         Icon(Icons.Default.Settings, contentDescription = stringResource(R.string.title_activity_settings))
                     }
                 },
@@ -140,7 +143,7 @@ internal fun DiagnosticsScreen(
                         frequencyLabel = stringResource(R.string.test_signal_frequency_label),
                         dutyLabel = stringResource(R.string.test_signal_duty_label),
                         hasTpic8101 = hasTpic8101,
-                        controlsEnabled = controlsEnabled,
+                        controlsEnabled = generatorControlsEnabled,
                         diagnosticSamples = state.diagnosticSamples.takeIf { controlsEnabled }.orEmpty(),
                         onChannelSelected = onChannelSelected,
                         onFrequencyEdit = {
@@ -158,6 +161,8 @@ internal fun DiagnosticsScreen(
                         isSecu3T = isSecu3T,
                         state = state.copy(controlsEnabled = controlsEnabled),
                         onOutputChanged = onOutputChanged,
+                        onStartAutoTest = onStartOutputAutoTest,
+                        onStopAutoTest = onStopOutputAutoTest,
                     )
                 }
             }
@@ -191,7 +196,7 @@ internal fun DiagnosticsScreen(
             request = request,
             sessionId = currentSessionId,
             onConfirm = { value ->
-                if (controlsEnabled && editorTarget == target && editorSessionId == currentSessionId) {
+                if (generatorControlsEnabled && editorTarget == target && editorSessionId == currentSessionId) {
                     editorTarget = null
                     when (target) {
                         "frequency" -> onFrequencyEdit(value.toFloat())

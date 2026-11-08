@@ -23,6 +23,8 @@ internal fun DiagnosticsRoute(
             onNavigateUp = onNavigateUp,
             onAdditionalSettings = onAdditionalSettings,
             onOutputChanged = viewModel::setOutput,
+            onStartOutputAutoTest = viewModel::startOutputAutoTest,
+            onStopOutputAutoTest = viewModel::stopOutputAutoTest,
             onChannelSelected = viewModel::selectChannel,
             onFrequencyEdit = viewModel::editFrequency,
             onDutyEdit = viewModel::editDuty,

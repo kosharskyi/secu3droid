@@ -46,6 +46,8 @@ import org.junit.Test
 import org.secu3.android.domain.diagnostics.DiagnosticOutput
 import org.secu3.android.domain.diagnostics.DiagnosticsState
 import org.secu3.android.ui.compose.SecuComposeTheme
+import org.secu3.android.R
+import androidx.test.platform.app.InstrumentationRegistry
 
 class DiagnosticsOutputsScreenTest {
     @get:Rule val compose = createComposeRule()
@@ -98,6 +100,37 @@ class DiagnosticsOutputsScreenTest {
         compose.onAllNodesWithTag("output_BL").assertCountEquals(1)
         compose.onNodeWithTag("output_BL").assertIsOff()
         compose.onAllNodesWithTag("output_TACH_O").assertCountEquals(1)
+    }
+
+    @Test
+    fun autoTestRequiresNoneChannelShowsRunningStateAndLocksManualOutputs() {
+        val state = mutableStateOf(DiagnosticsState(controlsEnabled = true, channel = 1))
+        var starts = 0
+        var stops = 0
+        compose.setContent {
+            SecuComposeTheme {
+                DiagnosticsOutputsScreen(
+                    isSecu3T = true,
+                    state = state.value,
+                    onOutputChanged = { _, _ -> },
+                    onStartAutoTest = { starts++ },
+                    onStopAutoTest = { stops++ },
+                )
+            }
+        }
+        compose.onNodeWithTag("diagnostics_auto_test_toggle").assertIsNotEnabled()
+        state.value = state.value.copy(channel = 0)
+        compose.onNodeWithTag("diagnostics_auto_test_toggle").assertIsEnabled().performClick()
+        assertEquals(1, starts)
+        state.value = state.value.copy(isAutoTestingOutputs = true)
+        compose.onNodeWithTag("diagnostics_auto_test_toggle").assertIsEnabled()
+        compose.onNodeWithText(
+            InstrumentationRegistry.getInstrumentation().targetContext.getString(R.string.diag_auto_test_running, 400L),
+        ).assertIsDisplayed()
+        compose.onNodeWithText("IGN_OUT1").performScrollTo()
+        compose.onNodeWithTag("output_IGN_OUT1").assertIsNotEnabled()
+        compose.onNodeWithTag("diagnostics_auto_test_toggle").performClick()
+        assertEquals(1, stops)
     }
 
     @Test

@@ -4,6 +4,8 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.cancel
+import kotlinx.coroutines.channels.Channel
+import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.onSubscription
@@ -22,8 +24,273 @@ import org.secu3.android.models.packets.input.DiagInputPacket
 import org.secu3.android.models.packets.out.DiagOutputPacket
 import org.secu3.android.models.packets.out.OpCompNc
 import org.secu3.android.utils.Task
+import kotlin.coroutines.CoroutineContext
 
 class DiagnosticsSessionTest {
+    @Test
+    fun autoTestUsesDesktopOrderAndRepeatsGroupPatternForEachFamily() = runBlocking {
+        assertAutoTestOrder(isSecu3T = true)
+        assertAutoTestOrder(isSecu3T = false)
+    }
+
+    @Test
+    fun autoTestRequiresNoneChannelBlocksManualCommandsAndStopsWithoutFurtherTicks() = runBlocking {
+        val fixture = Fixture(initiallyConnected = true)
+        fixture.session.start(fixture.scope)
+        fixture.await { fixture.commands.contains(Task.Secu3OpComEnterDiagnostics) }
+        fixture.emit(DiagInputPacket(flags = 0))
+        fixture.await { fixture.session.state.value.controlsEnabled }
+
+        fixture.session.selectChannel(1)
+        val beforeRejectedStart = fixture.outputSnapshots.size
+        fixture.session.startOutputAutoTest(fixture.scope)
+        assertFalse(fixture.session.state.value.isAutoTestingOutputs)
+        assertEquals(beforeRejectedStart, fixture.outputSnapshots.size)
+
+        fixture.session.selectChannel(0)
+        val beforeCancelledStart = fixture.outputSnapshots.size
+        val cancelledScope = CoroutineScope(SupervisorJob() + Dispatchers.Unconfined).also { it.cancel() }
+        fixture.session.startOutputAutoTest(cancelledScope)
+        assertFalse(fixture.session.state.value.isAutoTestingOutputs)
+        assertEquals(beforeCancelledStart, fixture.outputSnapshots.size)
+        fixture.session.startOutputAutoTest(fixture.scope)
+        assertEquals(true, fixture.session.state.value.isAutoTestingOutputs)
+        val initialSnapshotCount = fixture.outputSnapshots.size
+        fixture.session.startOutputAutoTest(fixture.scope)
+        assertEquals(initialSnapshotCount, fixture.outputSnapshots.size)
+        fixture.session.selectChannel(1)
+        fixture.session.editFrequency(123f)
+        fixture.session.editDuty(42f)
+        fixture.session.setOutput(DiagnosticOutput.IGN_OUT1, true)
+        fixture.session.applyAdditionalOptions(enableBlDe = true, enableTachO = true)
+        assertEquals(initialSnapshotCount, fixture.outputSnapshots.size)
+        assertEquals(0, fixture.session.state.value.channel)
+        assertEquals(10f, fixture.session.state.value.frequency)
+        assertEquals(50f, fixture.session.state.value.duty)
+
+        fixture.session.stopOutputAutoTest()
+        val afterStop = fixture.outputSnapshots.size
+        assertFalse(fixture.session.state.value.isAutoTestingOutputs)
+        fixture.tickAutoTest()
+        assertEquals(afterStop, fixture.outputSnapshots.size)
+        fixture.session.stopOutputAutoTest()
+        assertEquals(afterStop, fixture.outputSnapshots.size)
+        fixture.close()
+    }
+
+    @Test
+    fun autoTestStopsOnLossAndLeaveAndRestoresBeforeCloseLeave() = runBlocking {
+        val fixture = Fixture(initiallyConnected = true)
+        fixture.session.start(fixture.scope)
+        fixture.await { fixture.commands.contains(Task.Secu3OpComEnterDiagnostics) }
+        fixture.emit(DiagInputPacket(flags = 0))
+        fixture.await { fixture.session.state.value.controlsEnabled }
+        assertFalse(fixture.session.state.value.isAutoTestingOutputs)
+        fixture.session.startOutputAutoTest(fixture.scope)
+        assertEquals(true, fixture.session.state.value.isAutoTestingOutputs)
+        fixture.transportConnected = false
+        fixture.connection.emit(Disconnected)
+        fixture.await { fixture.session.state.value.input == null }
+        assertFalse(fixture.session.state.value.isAutoTestingOutputs)
+        val afterLoss = fixture.outputSnapshots.size
+        fixture.tickAutoTest()
+        assertEquals(afterLoss, fixture.outputSnapshots.size)
+
+        fixture.transportConnected = true
+        fixture.connection.emit(Connected)
+        fixture.await { fixture.commands.count { it == Task.Secu3OpComEnterDiagnostics } == 2 }
+        fixture.emit(OpCompNc(opCode = 6))
+        fixture.await { fixture.commands.count { it == Task.Secu3DiagInput } == 1 }
+        fixture.emit(DiagInputPacket(flags = 0))
+        fixture.await { fixture.session.state.value.controlsEnabled }
+        fixture.session.startOutputAutoTest(fixture.scope)
+        fixture.emit(OpCompNc(opCode = 7))
+        assertFalse(fixture.session.state.value.isAutoTestingOutputs)
+        val afterLeave = fixture.outputSnapshots.size
+        fixture.tickAutoTest()
+        assertEquals(afterLeave, fixture.outputSnapshots.size)
+
+        fixture.emit(DiagInputPacket(flags = 0))
+        fixture.await { fixture.session.state.value.controlsEnabled }
+        assertFalse(fixture.session.state.value.isAutoTestingOutputs)
+        fixture.session.startOutputAutoTest(fixture.scope)
+        fixture.events.clear()
+        fixture.session.close()
+        assertEquals(listOf("output", "task:${Task.Secu3OpComLeaveDiagnostics}", "task:${Task.Secu3ReadSensors}"), fixture.events)
+        assertFalse(fixture.session.state.value.isAutoTestingOutputs)
+        fixture.finish()
+    }
+
+    @Test
+    fun parentScopeCancellationResetsRunningStateAndAllowsSafeRestart() = runBlocking {
+        val fixture = Fixture(initiallyConnected = true)
+        fixture.session.start(fixture.scope)
+        fixture.await { fixture.commands.contains(Task.Secu3OpComEnterDiagnostics) }
+        fixture.emit(DiagInputPacket(flags = 0))
+        fixture.await { fixture.session.state.value.controlsEnabled }
+
+        val firstRun = CoroutineScope(SupervisorJob() + Dispatchers.Unconfined)
+        fixture.session.startOutputAutoTest(firstRun)
+        firstRun.cancel()
+        assertFalse(fixture.session.state.value.isAutoTestingOutputs)
+
+        fixture.session.startOutputAutoTest(fixture.scope)
+        assertEquals(true, fixture.session.state.value.isAutoTestingOutputs)
+        fixture.session.stopOutputAutoTest()
+        fixture.close()
+    }
+
+    @Test
+    fun cancelledOldGenerationFinalizerCannotResetANewerRun() = runBlocking {
+        val fixture = Fixture(initiallyConnected = true)
+        fixture.session.start(fixture.scope)
+        fixture.await { fixture.commands.contains(Task.Secu3OpComEnterDiagnostics) }
+        fixture.emit(DiagInputPacket(flags = 0))
+        fixture.await { fixture.session.state.value.controlsEnabled }
+
+        val dispatcher = QueuedDispatcher()
+        val oldScope = CoroutineScope(SupervisorJob() + dispatcher)
+        fixture.session.startOutputAutoTest(oldScope)
+        dispatcher.runFirst()
+        fixture.tickAutoTest()
+        dispatcher.runFirst()
+        assertEquals(true, fixture.session.state.value.isAutoTestingOutputs)
+
+        fixture.session.stopOutputAutoTest()
+        val afterOldStop = fixture.outputSnapshots.size
+        val newScope = CoroutineScope(SupervisorJob() + dispatcher)
+        fixture.session.startOutputAutoTest(newScope)
+        val afterNewStart = fixture.outputSnapshots.size
+        dispatcher.runLast()
+        dispatcher.runFirst()
+        assertEquals(true, fixture.session.state.value.isAutoTestingOutputs)
+        assertEquals(afterNewStart, fixture.outputSnapshots.size)
+        assertEquals(afterOldStop + 1, afterNewStart)
+
+        fixture.session.stopOutputAutoTest()
+        oldScope.cancel()
+        newScope.cancel()
+        dispatcher.runAll()
+        assertFalse(fixture.session.state.value.isAutoTestingOutputs)
+        fixture.close()
+    }
+
+    @Test
+    fun cancellationBeforeLazyTimerStartsDoesNotLeaveAutoTestActive() = runBlocking {
+        val fixture = Fixture(initiallyConnected = true)
+        fixture.session.start(fixture.scope)
+        fixture.await { fixture.commands.contains(Task.Secu3OpComEnterDiagnostics) }
+        fixture.emit(DiagInputPacket(flags = 0))
+        fixture.await { fixture.session.state.value.controlsEnabled }
+
+        val dispatcher = QueuedDispatcher()
+        val scope = CoroutineScope(SupervisorJob() + dispatcher)
+        fixture.session.startOutputAutoTest(scope)
+        assertEquals(true, fixture.session.state.value.isAutoTestingOutputs)
+        scope.cancel()
+        dispatcher.runAll()
+        assertFalse(fixture.session.state.value.isAutoTestingOutputs)
+        fixture.close()
+    }
+
+    private class QueuedDispatcher : CoroutineDispatcher() {
+        private val pending = ArrayDeque<Runnable>()
+
+        override fun dispatch(context: CoroutineContext, block: Runnable) {
+            pending.addLast(block)
+        }
+
+        fun runFirst() = pending.removeFirst().run()
+        fun runLast() = pending.removeLast().run()
+
+        fun runAll() {
+            while (pending.isNotEmpty()) runFirst()
+        }
+    }
+
+    private suspend fun assertAutoTestOrder(isSecu3T: Boolean) {
+        val fixture = Fixture(initiallyConnected = true)
+        fixture.session.start(fixture.scope)
+        fixture.await { fixture.commands.contains(Task.Secu3OpComEnterDiagnostics) }
+        fixture.emit(DiagInputPacket(flags = if (isSecu3T) 1 else 0))
+        fixture.await { fixture.session.state.value.controlsEnabled }
+        fixture.session.applyAdditionalOptions(enableBlDe = true, enableTachO = !isSecu3T)
+        val enabledDirections = (1 shl 12) or (1 shl 14) or if (isSecu3T) 0 else (1 shl 24)
+        val historyCount = fixture.session.state.value.diagnosticSamples.size
+        val order = if (isSecu3T) {
+            listOf(DiagnosticOutput.FE, DiagnosticOutput.IE, DiagnosticOutput.ST_BLOCK,
+                DiagnosticOutput.IGN_OUT1, DiagnosticOutput.IGN_OUT2, DiagnosticOutput.IGN_OUT3,
+                DiagnosticOutput.IGN_OUT4, DiagnosticOutput.CE, DiagnosticOutput.ECF,
+                DiagnosticOutput.ADD_IO1, DiagnosticOutput.ADD_IO2, DiagnosticOutput.BL, DiagnosticOutput.DE)
+        } else {
+            listOf(DiagnosticOutput.IGN_OUT1, DiagnosticOutput.IGN_OUT2, DiagnosticOutput.IGN_OUT3,
+                DiagnosticOutput.IGN_OUT4, DiagnosticOutput.IGN_OUT5, DiagnosticOutput.INJ_O1,
+                DiagnosticOutput.INJ_O2, DiagnosticOutput.INJ_O3, DiagnosticOutput.INJ_O4,
+                DiagnosticOutput.INJ_O5, DiagnosticOutput.ECF0, DiagnosticOutput.ADD_O2,
+                DiagnosticOutput.EVAP_O, DiagnosticOutput.O2SH_O, DiagnosticOutput.COND_O,
+                DiagnosticOutput.STBL_O, DiagnosticOutput.CEL_O, DiagnosticOutput.FPMP_O,
+                DiagnosticOutput.PWRR_O, DiagnosticOutput.BL, DiagnosticOutput.DE,
+                DiagnosticOutput.TACH_O, DiagnosticOutput.GPA6_O)
+        }
+        fixture.session.startOutputAutoTest(fixture.scope)
+        assertEquals(enabledDirections, fixture.outputSnapshots.last().out)
+        assertEquals(true, fixture.session.state.value.isAutoTestingOutputs)
+        assertEquals(DiagnosticsSession.AUTO_TEST_TICK_MILLIS, 400L)
+
+        order.forEachIndexed { index, output ->
+            val priorCount = fixture.outputSnapshots.size
+            fixture.tickAutoTest()
+            assertEquals(priorCount + 1, fixture.outputSnapshots.size)
+            assertEquals("${output.name} family=$isSecu3T step=$index",
+                enabledDirections or drivenMask(output), fixture.outputSnapshots.last().out)
+        }
+        fixture.tickAutoTest()
+        assertEquals(enabledDirections, fixture.outputSnapshots.last().out)
+        val highMask = order.fold(0) { bits, output -> bits or drivenMask(output) }
+        fixture.tickAutoTest()
+        assertEquals(enabledDirections or highMask, fixture.outputSnapshots.last().out)
+        fixture.tickAutoTest()
+        assertEquals(enabledDirections, fixture.outputSnapshots.last().out)
+        fixture.tickAutoTest()
+        assertEquals(enabledDirections or highMask, fixture.outputSnapshots.last().out)
+        fixture.tickAutoTest()
+        assertEquals(enabledDirections, fixture.outputSnapshots.last().out)
+        fixture.tickAutoTest()
+        assertEquals(enabledDirections or highMask, fixture.outputSnapshots.last().out)
+        fixture.tickAutoTest()
+        assertEquals(enabledDirections, fixture.outputSnapshots.last().out)
+        fixture.tickAutoTest()
+        assertEquals(enabledDirections or drivenMask(order.first()), fixture.outputSnapshots.last().out)
+        assertEquals(historyCount, fixture.session.state.value.diagnosticSamples.size)
+        fixture.session.stopOutputAutoTest()
+        fixture.close()
+    }
+
+    @Test
+    fun disabledSpecialOutputsRemainHiZThroughoutSequentialAndGroupPhases() = runBlocking {
+        val fixture = Fixture(initiallyConnected = true)
+        fixture.session.start(fixture.scope)
+        fixture.await { fixture.commands.contains(Task.Secu3OpComEnterDiagnostics) }
+        fixture.emit(DiagInputPacket(flags = 0))
+        fixture.await { fixture.session.state.value.controlsEnabled }
+        fixture.session.startOutputAutoTest(fixture.scope)
+        val directionAndStateMask = (1 shl 11) or (1 shl 12) or (1 shl 13) or (1 shl 14) or
+            (1 shl 23) or (1 shl 24)
+        repeat(23 + 1 + 5 + 1) {
+            fixture.tickAutoTest()
+            assertEquals(0, fixture.outputSnapshots.last().out and directionAndStateMask)
+        }
+        fixture.session.stopOutputAutoTest()
+        fixture.close()
+    }
+
+    private fun drivenMask(output: DiagnosticOutput): Int = when (output) {
+        DiagnosticOutput.BL -> (1 shl 11) or (1 shl 12)
+        DiagnosticOutput.DE -> (1 shl 13) or (1 shl 14)
+        DiagnosticOutput.TACH_O -> (1 shl 23) or (1 shl 24)
+        else -> 1 shl output.bit
+    }
+
     @Test
     fun startSubscribesBeforeEnterAndRequestsInputOnceForRepeatedAck() = runBlocking {
         val fixture = Fixture(initiallyConnected = true, acknowledgeEnterImmediately = true)
@@ -356,6 +623,8 @@ class DiagnosticsSessionTest {
         val packets = MutableSharedFlow<InputPacket>(extraBufferCapacity = 8)
         val commands = mutableListOf<Task>()
         val outputSnapshots = mutableListOf<OutputSnapshot>()
+        val events = mutableListOf<String>()
+        private val autoTestTicks = Channel<Unit>(Channel.UNLIMITED)
         var clockNanos = 0L
         var transportConnected = initiallyConnected
         val scope = CoroutineScope(SupervisorJob() + Dispatchers.Unconfined)
@@ -366,12 +635,17 @@ class DiagnosticsSessionTest {
             initialFirmwareFamily = { initialFirmwareFamily },
             sendTask = { task ->
                 commands += task
+                events += "task:$task"
                 if (acknowledgeEnterImmediately && task == Task.Secu3OpComEnterDiagnostics) {
                     packets.tryEmit(OpCompNc(opCode = 6))
                 }
             },
-            sendPacket = { packet -> outputSnapshots += OutputSnapshot(packet.out, packet.chan, packet.frq, packet.duty) },
+            sendPacket = { packet ->
+                outputSnapshots += OutputSnapshot(packet.out, packet.chan, packet.frq, packet.duty)
+                events += "output"
+            },
             monotonicNowNanos = { clockNanos },
+            waitForAutoTestTick = { autoTestTicks.receive() },
         )
 
         suspend fun emit(packet: InputPacket) {
@@ -381,6 +655,10 @@ class DiagnosticsSessionTest {
 
         suspend fun await(condition: () -> Boolean) = withTimeout(2_000) {
             while (!condition()) delay(1)
+        }
+
+        fun tickAutoTest() {
+            check(autoTestTicks.trySend(Unit).isSuccess)
         }
 
         fun close() {
