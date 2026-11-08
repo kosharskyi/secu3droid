@@ -46,9 +46,10 @@ class SecuLoggerDeleteTest {
         }
         prefsFixture = IsolatedUserPrefs(context, testRoot.name)
         prefs = prefsFixture.prefs
-        files = FileHelper(context)
+        val analytics = org.secu3.android.utils.analytics.UsageAnalytics(context, prefs)
+        files = FileHelper(context, analytics)
         messages = UiMessageQueue()
-        logger = SecuLogger(prefs, files, messages, SensorLogEncoder(), org.secu3.android.utils.analytics.UsageAnalytics(context, prefs))
+        logger = SecuLogger(prefs, files, messages, SensorLogEncoder(), analytics)
     }
 
     @After

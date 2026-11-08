@@ -17,6 +17,7 @@ import androidx.test.platform.app.InstrumentationRegistry
 import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.ViewModelStore
 import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.withTimeout
 import kotlinx.coroutines.withTimeoutOrNull
@@ -39,6 +40,8 @@ import org.secu3.android.ui.messages.UiMessageQueue
 import org.secu3.android.utils.logger.SecuLogger
 import org.secu3.android.utils.logger.SensorLogEncoder
 import org.secu3.android.utils.prefs.IsolatedUserPrefs
+import org.secu3.android.utils.analytics.UsageAnalytics
+import java.util.concurrent.CopyOnWriteArrayList
 
 class FileHelperSafCleanupTest {
     private lateinit var root: File
@@ -46,11 +49,23 @@ class FileHelperSafCleanupTest {
     private lateinit var helper: FileHelper
     private lateinit var provider: FakeDocumentsProvider
     private lateinit var treeUri: Uri
+    private lateinit var analyticsPrefs: IsolatedUserPrefs
+    private lateinit var analytics: UsageAnalytics
+    private val analyticsEvents = CopyOnWriteArrayList<Pair<String, Bundle>>()
 
     @Before
     fun setUp() {
         assumeTrue(Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q)
         val base = InstrumentationRegistry.getInstrumentation().targetContext
+        analyticsPrefs = IsolatedUserPrefs(base, "saf-analytics-${System.nanoTime()}")
+        analytics = UsageAnalytics(
+            base,
+            analyticsPrefs.prefs,
+            debugBuild = false,
+            updateSdkCollection = {},
+            sendEvent = { name, params -> analyticsEvents += name to Bundle(params) },
+        )
+        runBlocking { analytics.setUserConsent(true) }
         root = File(base.cacheDir, "saf-cleanup-${System.nanoTime()}").apply { mkdirs() }
         provider = FakeDocumentsProvider(File(root, "provider-output"))
         val resolver = ContentResolver.wrap(provider)
@@ -59,17 +74,19 @@ class FileHelperSafCleanupTest {
             override fun getCacheDir() = File(root, "cache").also { it.mkdirs() }
             override fun getContentResolver() = resolver
         }
-        helper = FileHelper(context)
+        helper = FileHelper(context, analytics)
         treeUri = DocumentsContract.buildTreeDocumentUri(AUTHORITY, "primary:TestLogs")
     }
 
     @After
     fun tearDown() {
         if (::root.isInitialized) root.deleteRecursively()
+        if (::analyticsPrefs.isInitialized) runBlocking { analyticsPrefs.close() }
     }
 
     @Test
     fun customTreeExportKeepsSuccessfullyWrittenDocumentAndUsesCsvMime() {
+        analyticsEvents.clear()
         val source = File(root, "engine.CSV").apply { writeText("rpm;map\n1000;42\n") }
 
         val destination = helper.saveLog(source, LogExportDestination.CustomTree(treeUri.toString()))
@@ -79,6 +96,22 @@ class FileHelperSafCleanupTest {
         assertEquals("engine.CSV", provider.createdDisplayName)
         assertEquals("rpm;map\n1000;42\n", provider.outputFile.readText())
         assertEquals(0, provider.deleteCalls)
+        assertExportResult("success")
+    }
+
+    @Test
+    fun defaultDownloadsMediaStoreExportReportsOnlyAfterPendingWriteIsPublished() {
+        analyticsEvents.clear()
+        val source = File(root, "downloads-${System.nanoTime()}.csv").apply { writeText("rpm;map") }
+
+        val destination = helper.saveLog(source, LogExportDestination.DefaultDownloads)
+
+        assertEquals(helper.defaultLogExportDirectoryLabel, destination)
+        assertEquals("rpm;map", provider.outputFile.readText())
+        assertEquals(1, provider.insertCalls)
+        assertEquals(1, provider.updateCalls)
+        assertEquals(0, provider.publishedPendingValue)
+        assertExportResult("success")
     }
 
     @Test
@@ -143,7 +176,7 @@ class FileHelperSafCleanupTest {
     @Test
     fun shareIntentUsesExportMimeForSelectedFile() {
         val base = InstrumentationRegistry.getInstrumentation().targetContext
-        val realHelper = FileHelper(base)
+        val realHelper = FileHelper(base, analytics)
         val csv = File.createTempFile("share-mime-", ".CSV", realHelper.logsDir).apply { writeText("csv-data") }
         val s3l = File.createTempFile("share-mime-", ".S3L", realHelper.logsDir).apply { writeBytes(byteArrayOf(1, 2, 3)) }
         var logger: SecuLogger? = null
@@ -188,6 +221,7 @@ class FileHelperSafCleanupTest {
 
     @Test
     fun outputOpenFailureDeletesCreatedDocument() {
+        analyticsEvents.clear()
         val source = File(root, "engine.s3l").apply { writeBytes(byteArrayOf(1, 2, 3)) }
         provider.failOpen = true
 
@@ -198,10 +232,12 @@ class FileHelperSafCleanupTest {
         assertEquals(1, provider.deleteCalls)
         assertEquals(provider.createdDocumentUri, provider.deletedDocumentUri)
         assertFalse(provider.outputFile.exists())
+        assertExportResult("failure")
     }
 
     @Test
     fun sourceReadFailureDeletesCreatedDocument() {
+        analyticsEvents.clear()
         val source = File(root, "missing.csv")
 
         val error = runCatching { helper.saveLog(source, LogExportDestination.CustomTree(treeUri.toString())) }.exceptionOrNull()
@@ -211,10 +247,12 @@ class FileHelperSafCleanupTest {
         assertEquals(1, provider.deleteCalls)
         assertEquals(provider.createdDocumentUri, provider.deletedDocumentUri)
         assertFalse(provider.outputFile.exists())
+        assertExportResult("failure")
     }
 
     @Test
     fun cleanupFailureIsSuppressedWithoutReplacingOriginalWriteFailure() {
+        analyticsEvents.clear()
         val source = File(root, "engine.csv").apply { writeText("data") }
         provider.failOpen = true
         provider.failDelete = true
@@ -225,13 +263,36 @@ class FileHelperSafCleanupTest {
         assertEquals(provider.createdDocumentUri, provider.deletedDocumentUri)
         assertEquals(1, error?.suppressed?.size)
         assertEquals("cleanup failed", error?.suppressed?.single()?.message)
+        assertExportResult("failure")
+    }
+
+    @Test
+    fun cancelledExportCleansCreatedDocumentWithoutRecordingFailure() {
+        val source = File(root, "cancelled.csv").apply { writeText("data") }
+        provider.cancelOpen = true
+
+        val error = runCatching { helper.saveLog(source, LogExportDestination.CustomTree(treeUri.toString())) }.exceptionOrNull()
+
+        assertTrue(error is CancellationException)
+        assertEquals(1, provider.deleteCalls)
+        assertTrue(analyticsEvents.none { it.first == "log_export_result" })
+    }
+
+    private fun assertExportResult(result: String) {
+        val event = analyticsEvents.single { it.first == "log_export_result" }
+        assertEquals(result, event.second.getString("result"))
+        assertEquals(1, analyticsEvents.count { it.first == "log_export_result" })
     }
 
     private class FakeDocumentsProvider(val outputFile: File) : ContentProvider() {
         var failOpen = false
+        var cancelOpen = false
         var failDelete = false
         var deleteCalls = 0
         var createCalls = 0
+        var insertCalls = 0
+        var updateCalls = 0
+        var publishedPendingValue = -1
         var createdMimeType: String? = null
         var createdDisplayName: String? = null
         var createdDocumentUri: Uri? = null
@@ -259,6 +320,7 @@ class FileHelperSafCleanupTest {
         }
 
         override fun openFile(uri: Uri, mode: String): ParcelFileDescriptor {
+            if (cancelOpen) throw CancellationException("test cancellation")
             if (failOpen) throw openFailure
             outputFile.parentFile?.mkdirs()
             return ParcelFileDescriptor.open(
@@ -271,9 +333,18 @@ class FileHelperSafCleanupTest {
             MatrixCursor(projection ?: emptyArray())
 
         override fun getType(uri: Uri): String? = null
-        override fun insert(uri: Uri, values: ContentValues?): Uri? = null
+        override fun insert(uri: Uri, values: ContentValues?): Uri? {
+            insertCalls++
+            createdMimeType = values?.getAsString("mime_type")
+            createdDisplayName = values?.getAsString("_display_name")
+            return Uri.parse("content://$AUTHORITY/document/media")
+        }
         override fun delete(uri: Uri, selection: String?, selectionArgs: Array<out String>?): Int = 0
-        override fun update(uri: Uri, values: ContentValues?, selection: String?, selectionArgs: Array<out String>?): Int = 0
+        override fun update(uri: Uri, values: ContentValues?, selection: String?, selectionArgs: Array<out String>?): Int {
+            updateCalls++
+            publishedPendingValue = values?.getAsInteger("is_pending") ?: -1
+            return 1
+        }
     }
 
     private companion object {

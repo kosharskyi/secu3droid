@@ -383,7 +383,7 @@ class UsbSessionIntegrationTest {
     @Test fun usbStartWithoutGrantDoesNotSelectOrRetryTransport() = runBlocking {
         val fixture = Fixture()
         val device = usbDevice("/dev/bus/usb/099/002", 0x1234, 0x5678)
-        val fileHelper = FileHelper(InstrumentationRegistry.getInstrumentation().targetContext)
+        val fileHelper = FileHelper(InstrumentationRegistry.getInstrumentation().targetContext, fixture.analytics)
         val existingLogs = fileHelper.listOfLogs.toSet()
         try {
             fixture.prefs.setAlwaysWriteLogEnabled(true)
@@ -452,20 +452,29 @@ class UsbSessionIntegrationTest {
             fixture.confirmFirmware()
             step = "request result"
             fixture.await { fixture.analyticsEvents.any { it.first == "connection_result" } }
+            fixture.elapsedRealtime = 1_250L
 
             step = "fail first attempt"
             fixture.failUsbAttempt(1L, noResponse = true)
+            fixture.elapsedRealtime = 46_250L
             step = "begin retry"
             fixture.beginUsbRetry(2L)
             step = "second firmware"
             fixture.confirmFirmware(2L)
+            fixture.elapsedRealtime += 2_750L
+            fixture.manager.stopConnection()
+            fixture.manager.stopConnection()
 
             val attempts = fixture.analyticsEvents.filter { it.first == "connection_attempt" }
             val results = fixture.analyticsEvents.filter { it.first == "connection_result" }
+            val ended = fixture.analyticsEvents.filter { it.first == "connection_ended" }
             assertEquals(1, attempts.size)
             assertEquals("usb", attempts.single().second.getString("transport"))
             assertEquals(1, results.count { it.second.getString("result") == "success" })
             assertEquals(1, results.count { it.second.getString("category") == "ecu_timeout" })
+            assertEquals(1, ended.size)
+            assertEquals("usb", ended.single().second.getString("transport"))
+            assertEquals(4L, ended.single().second.getLong("duration_seconds"))
         } catch (error: Throwable) {
             throw AssertionError("Analytics connection test failed during $step", error)
         } finally {
@@ -978,7 +987,7 @@ class UsbSessionIntegrationTest {
         val transportStore = DelayedPreferencesDataStore(mutablePreferencesOf(addressKey to "02:00:00:00:00:01"))
         val transportPrefs = UserPrefs(context, transportStore)
         val fixture = Fixture(btPrefs = transportPrefs)
-        val fileHelper = FileHelper(InstrumentationRegistry.getInstrumentation().targetContext)
+        val fileHelper = FileHelper(InstrumentationRegistry.getInstrumentation().targetContext, fixture.analytics)
         val existingLogs = fileHelper.listOfLogs.toSet()
         try {
             fixture.prefs.setShowLogControls(false)
@@ -1023,7 +1032,7 @@ class UsbSessionIntegrationTest {
 
     @Test fun automaticLoggingSettingTogglesLiveAndManualStopRemainsStoppedOnRetry() = runBlocking {
         val fixture = Fixture()
-        val files = FileHelper(InstrumentationRegistry.getInstrumentation().targetContext)
+        val files = FileHelper(InstrumentationRegistry.getInstrumentation().targetContext, fixture.analytics)
         val existingFiles = files.listOfLogs.toSet()
         try {
             fixture.prefs.setShowLogControls(true)
@@ -1068,7 +1077,7 @@ class UsbSessionIntegrationTest {
             mutablePreferencesOf(controlsKey to false, automaticKey to true, binaryKey to true),
         )
         val fixture = Fixture(delayedStore = store)
-        val fileHelper = FileHelper(InstrumentationRegistry.getInstrumentation().targetContext)
+        val fileHelper = FileHelper(InstrumentationRegistry.getInstrumentation().targetContext, fixture.analytics)
         val existingLogs = fileHelper.listOfLogs.toSet()
         try {
             val device = usbDevice("/test/usb/automatic-log", 0x1234, 0x5678)
@@ -1596,14 +1605,16 @@ class UsbSessionIntegrationTest {
         private val bluetoothManager = context.getSystemService(Context.BLUETOOTH_SERVICE) as BluetoothManager
         private val bt = BtConnection(btPrefs ?: prefs, bluetoothManager)
         val analyticsEvents = CopyOnWriteArrayList<Pair<String, Bundle>>()
+        var elapsedRealtime = 0L
         val analytics = org.secu3.android.utils.analytics.UsageAnalytics(
             context,
             prefs,
             debugBuild = false,
             updateSdkCollection = {},
             sendEvent = { name, params -> analyticsEvents += name to Bundle(params) },
+            elapsedRealtime = { elapsedRealtime },
         )
-        val logger = SecuLogger(prefs, FileHelper(context), UiMessageQueue(), SensorLogEncoder(), analytics)
+        val logger = SecuLogger(prefs, FileHelper(context, analytics), UiMessageQueue(), SensorLogEncoder(), analytics)
         val serviceContext = RecordingServiceContext(context)
         private val notificationPublisher = ConnectionNotificationPublisher(serviceContext)
         val serviceManager = ServiceManager(serviceContext)

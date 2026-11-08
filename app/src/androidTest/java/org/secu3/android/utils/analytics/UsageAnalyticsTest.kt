@@ -133,6 +133,10 @@ class UsageAnalyticsTest {
             fixture.prefs.setUsageAnalyticsEnabled(true)
             analytics.start()
             analytics.logConnectionAttempt("usb")
+            analytics.connectionRunStarted("usb")
+            analytics.connectionBecameConnected()
+            analytics.logExportResult("success")
+            analytics.connectionRunEnded()
             assertTrue(collectionChanges.isEmpty())
             assertTrue(events.isEmpty())
         } finally {
@@ -196,6 +200,163 @@ class UsageAnalyticsTest {
             eventFailure.setUserConsent(true)
             eventFailure.logScreenOpened("settings")
             eventFailure.stopForTests()
+        } finally {
+            analytics.stopForTests()
+            fixture.close()
+        }
+    }
+
+    @Test
+    fun connectionDurationSumsEnabledConnectedSegmentsAndOnlyEmitsOnce() = runBlocking {
+        val fixture = IsolatedUserPrefs(context, UUID.randomUUID().toString())
+        val events = CopyOnWriteArrayList<Pair<String, Bundle>>()
+        var now = 0L
+        val analytics = UsageAnalytics(
+            context,
+            fixture.prefs,
+            debugBuild = false,
+            updateSdkCollection = {},
+            sendEvent = { name, params -> events += name to Bundle(params) },
+            elapsedRealtime = { now },
+        )
+        try {
+            analytics.setUserConsent(true)
+            analytics.connectionRunStarted("usb")
+            analytics.connectionBecameConnected()
+            now = 1_500L
+            analytics.connectionRetrying()
+            now += 45_000L
+            analytics.connectionBecameConnected()
+            now += 2_500L
+
+            analytics.connectionRunEnded()
+            analytics.connectionRunEnded()
+
+            val ended = events.single { it.first == "connection_ended" }.second
+            assertEquals("usb", ended.getString("transport"))
+            assertEquals(4L, ended.getLong("duration_seconds"))
+            assertEquals(1, events.count { it.first == "connection_ended" })
+        } finally {
+            analytics.stopForTests()
+            fixture.close()
+        }
+    }
+
+    @Test
+    fun revokingConsentDropsPriorDurationAndReenablingWhileConnectedStartsFreshSegment() = runBlocking {
+        val fixture = IsolatedUserPrefs(context, UUID.randomUUID().toString())
+        val events = CopyOnWriteArrayList<Pair<String, Bundle>>()
+        var now = 0L
+        val analytics = UsageAnalytics(
+            context,
+            fixture.prefs,
+            debugBuild = false,
+            updateSdkCollection = {},
+            sendEvent = { name, params -> events += name to Bundle(params) },
+            elapsedRealtime = { now },
+        )
+        try {
+            analytics.setUserConsent(true)
+            analytics.connectionRunStarted("bluetooth")
+            analytics.connectionBecameConnected()
+            now = 10_000L
+            analytics.setUserConsent(false)
+            now += 20_000L
+            analytics.setUserConsent(true)
+            now += 2_500L
+            analytics.connectionRunEnded()
+
+            val ended = events.single { it.first == "connection_ended" }.second
+            assertEquals("bluetooth", ended.getString("transport"))
+            assertEquals(2L, ended.getLong("duration_seconds"))
+        } finally {
+            analytics.stopForTests()
+            fixture.close()
+        }
+    }
+
+    @Test
+    fun waitingWithoutConfirmedConnectionDoesNotCreateDurationEvent() = runBlocking {
+        val fixture = IsolatedUserPrefs(context, UUID.randomUUID().toString())
+        val events = CopyOnWriteArrayList<String>()
+        var now = 0L
+        val analytics = UsageAnalytics(
+            context,
+            fixture.prefs,
+            debugBuild = false,
+            updateSdkCollection = {},
+            sendEvent = { name, _ -> events += name },
+            elapsedRealtime = { now },
+        )
+        try {
+            analytics.setUserConsent(true)
+            analytics.connectionRunStarted("usb")
+            now = 15_000L
+            analytics.connectionRetrying()
+            analytics.connectionRunEnded()
+            assertTrue(events.none { it == "connection_ended" })
+        } finally {
+            analytics.stopForTests()
+            fixture.close()
+        }
+    }
+
+    @Test
+    fun confirmedSubsecondConnectionReportsZeroSeconds() = runBlocking {
+        val fixture = IsolatedUserPrefs(context, UUID.randomUUID().toString())
+        val events = CopyOnWriteArrayList<Pair<String, Bundle>>()
+        var now = 0L
+        val analytics = UsageAnalytics(
+            context,
+            fixture.prefs,
+            debugBuild = false,
+            updateSdkCollection = {},
+            sendEvent = { name, params -> events += name to Bundle(params) },
+            elapsedRealtime = { now },
+        )
+        try {
+            analytics.setUserConsent(true)
+            analytics.connectionRunStarted("usb")
+            analytics.connectionBecameConnected()
+            now = 250L
+            analytics.connectionRunEnded()
+
+            assertEquals(0L, events.single { it.first == "connection_ended" }.second.getLong("duration_seconds"))
+        } finally {
+            analytics.stopForTests()
+            fixture.close()
+        }
+    }
+
+    @Test
+    fun readFailureDropsElapsedDurationBeforeConsentCanBeEnabledAgain() = runBlocking {
+        val fixture = IsolatedUserPrefs(context, UUID.randomUUID().toString())
+        val store = ToggleReadDataStore(fixture.dataStore)
+        val prefs = UserPrefs(context, store)
+        val events = CopyOnWriteArrayList<Pair<String, Bundle>>()
+        var now = 0L
+        val analytics = UsageAnalytics(
+            context,
+            prefs,
+            debugBuild = false,
+            updateSdkCollection = {},
+            sendEvent = { name, params -> events += name to Bundle(params) },
+            elapsedRealtime = { now },
+        )
+        try {
+            analytics.setUserConsent(true)
+            analytics.connectionRunStarted("usb")
+            analytics.connectionBecameConnected()
+            now = 10_000L
+            store.failReads = true
+            runCatching { analytics.setUserConsent(false) }
+            store.failReads = false
+            now += 20_000L
+            analytics.setUserConsent(true)
+            now += 2_500L
+            analytics.connectionRunEnded()
+
+            assertEquals(2L, events.single { it.first == "connection_ended" }.second.getLong("duration_seconds"))
         } finally {
             analytics.stopForTests()
             fixture.close()

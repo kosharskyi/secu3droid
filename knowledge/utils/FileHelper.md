@@ -13,3 +13,7 @@ The document URI returned by `createDocument` is the only URI eligible for clean
 ## Tree permission flags come from the picker result
 
 Persist only the returned read/write flags; persistable and prefix flags are not accepted by `takePersistableUriPermission`. A failed grant leaves the saved export directory unchanged. When the result has no read/write flags, preserve the existing behavior of saving the URI without requesting a grant.
+
+## Export analytics wraps the shared save boundary after I/O and cleanup
+
+`saveLog` records one fixed success/failure result after the selected Downloads or custom-tree implementation returns or throws. Picker cancellation/permission denial occurs before this method and is not an export failure. A `CancellationException` is rethrown without logging; other original save exceptions and custom-tree cleanup suppression remain unchanged. Never include a file name, path, URI, or exception in the event.

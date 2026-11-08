@@ -68,7 +68,8 @@ class PreferencesFailureTest {
         try {
             prefs.setCsvDelimiter(";")
             instrumentation.runOnMainSync {
-                viewModel = SettingsViewModel(context, prefs, FileHelper(context), messages, org.secu3.android.utils.analytics.UsageAnalytics(context, prefs))
+                val analytics = org.secu3.android.utils.analytics.UsageAnalytics(context, prefs)
+                viewModel = SettingsViewModel(context, prefs, FileHelper(context, analytics), messages, analytics)
                 viewModelStore.put("settings", viewModel)
                 viewModel.showDialog(SettingsDialog.Delimiter)
             }
@@ -131,7 +132,7 @@ class PreferencesFailureTest {
         val fileContext = object : ContextWrapper(context) {
             override fun getFilesDir(): File = root
         }
-        val files = FileHelper(fileContext)
+        val files = FileHelper(fileContext, org.secu3.android.utils.analytics.UsageAnalytics(context, prefs))
         val messages = UiMessageQueue()
         val logger = SecuLogger(prefs, files, messages, SensorLogEncoder(), org.secu3.android.utils.analytics.UsageAnalytics(context, prefs))
         try {

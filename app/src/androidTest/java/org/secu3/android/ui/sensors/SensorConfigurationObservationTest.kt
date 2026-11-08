@@ -191,7 +191,7 @@ class SensorConfigurationObservationTest {
         private val bluetoothManager = context.getSystemService(Context.BLUETOOTH_SERVICE) as BluetoothManager
         private val bluetooth = BtConnection(prefs, bluetoothManager)
         private val analytics = org.secu3.android.utils.analytics.UsageAnalytics(context, prefs)
-        private val logger = SecuLogger(prefs, FileHelper(context), UiMessageQueue(), SensorLogEncoder(), analytics)
+        private val logger = SecuLogger(prefs, FileHelper(context, analytics), UiMessageQueue(), SensorLogEncoder(), analytics)
         private val notificationPublisher = ConnectionNotificationPublisher(context)
         private val serviceManager = ServiceManager(context)
         private val manager = Secu3ConnectionManager(usb, bluetooth, prefs, logger, serviceManager, notificationPublisher, analytics)

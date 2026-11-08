@@ -53,3 +53,7 @@ For USB, emit `Disconnected` after loss cleanup and before retry progress. `UsbR
 ## Analytics describes only typed connection outcomes
 
 `connection_attempt` is logged only after the manager admits a new Bluetooth or USB request. Result events use existing state outcomes and coarse fixed categories. Initial USB open failures and voluntary stops do not expose reliable failure facts and must not be inferred as failures. Repeated identical status emissions do not create duplicate result events.
+
+## Connection-duration analytics follows confirmed intervals, not the transport's running lifetime
+
+Forward an admitted request, each confirmed `Connected` transition, `ConnectionEvent.End.RETRYING`, and final `finishConnection()` to the analytics owner. It uses monotonic timestamps to sum enabled-consent Connected intervals; it must not count initial handshake waits, retries, or reconnect delays. Finalization is safe to call more than once because the owner clears the active run after emitting at most one duration event. Do not add a timer or transport contract fields for this measurement.

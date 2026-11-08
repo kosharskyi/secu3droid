@@ -45,11 +45,16 @@ import java.io.File
 import java.io.FileInputStream
 import java.io.IOException
 import java.util.Locale
+import kotlinx.coroutines.CancellationException
+import org.secu3.android.utils.analytics.UsageAnalytics
 import javax.inject.Inject
 import javax.inject.Singleton
 
 @Singleton
-class FileHelper @Inject constructor(@ApplicationContext private val context: Context) {
+class FileHelper @Inject constructor(
+    @ApplicationContext private val context: Context,
+    private val usageAnalytics: UsageAnalytics,
+) {
 
     private val dateTimeFormatter = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss");
 
@@ -98,9 +103,18 @@ class FileHelper @Inject constructor(@ApplicationContext private val context: Co
     }
 
     fun saveLog(file: File, destination: LogExportDestination): String {
-        return when (destination) {
-            LogExportDestination.DefaultDownloads -> saveLogToDefaultDownloads(file)
-            is LogExportDestination.CustomTree -> saveLogToDirectoryUri(file, destination.uri)
+        return try {
+            val result = when (destination) {
+                LogExportDestination.DefaultDownloads -> saveLogToDefaultDownloads(file)
+                is LogExportDestination.CustomTree -> saveLogToDirectoryUri(file, destination.uri)
+            }
+            usageAnalytics.logExportResult("success")
+            result
+        } catch (cancelled: CancellationException) {
+            throw cancelled
+        } catch (failure: Exception) {
+            usageAnalytics.logExportResult("failure")
+            throw failure
         }
     }
 

@@ -8,4 +8,8 @@ The debug merged manifest sets `firebase_analytics_collection_deactivated=true`,
 
 ## Event payloads contain only fixed categories
 
-Only fixed screen/transport names, result categories, and the CSV/S3L format are allowed. Do not add ECU data, identifiers, raw exceptions, or filenames. Firebase's standard automatic events and app/device data are separately disclosed in `docs/usage-analytics.md`.
+Only fixed screen/transport names, result categories, CSV/S3L format, whole-second duration, and export outcome are allowed. Do not add ECU data, identifiers, paths, URIs, raw exceptions, or filenames. Firebase's standard automatic events and app/device data are separately disclosed in `docs/usage-analytics.md`.
+
+## Connection duration is accumulated from observed transitions without a timer
+
+The connection manager supplies admitted-run, confirmed-Connected, RETRYING, and final-stop facts. The owner uses monotonic timestamps to sum only confirmed Connected intervals. Initial waits and retry gaps are excluded. Consent revocation or a settings read failure clears accumulated time while preserving whether the current run is connected; if consent is later enabled mid-connection, a fresh interval starts then. Only a run with a measured interval emits `connection_ended`, and duplicate finalization is ignored. Durations are summed in milliseconds and converted to whole seconds once, so a confirmed sub-second session reports zero.

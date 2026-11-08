@@ -95,7 +95,7 @@ class SettingsPreferencePersistenceTest {
 
     @Test fun automaticLoggingPreferencePersistsWithoutStartingUntilConnectionAdmission() {
         val initial = runBlocking { compose.activity.userPrefs.settings.first() }
-        val files = FileHelper(compose.activity)
+        val files = FileHelper(compose.activity, org.secu3.android.utils.analytics.UsageAnalytics(compose.activity, compose.activity.userPrefs))
         val existingLogs = files.listOfLogs.toSet()
         try {
             runBlocking {
@@ -237,7 +237,8 @@ class SettingsPreferencePersistenceTest {
         try {
             withContext(Dispatchers.Main) {
                 val prefs = UserPrefs(base, failingStore)
-                viewModel = SettingsViewModel(base, prefs, FileHelper(base), messages, org.secu3.android.utils.analytics.UsageAnalytics(base, prefs))
+                val analytics = org.secu3.android.utils.analytics.UsageAnalytics(base, prefs)
+                viewModel = SettingsViewModel(base, prefs, FileHelper(base, analytics), messages, analytics)
                 store.put("fuel-flow-failure", viewModel)
                 viewModel.showDialog(SettingsDialog.FuelFlowPulsesPerLitre)
             }
@@ -309,7 +310,8 @@ class SettingsPreferencePersistenceTest {
         lateinit var viewModel: SettingsViewModel
         try {
             InstrumentationRegistry.getInstrumentation().runOnMainSync {
-                viewModel = SettingsViewModel(context, fixture.prefs, FileHelper(context), UiMessageQueue(), org.secu3.android.utils.analytics.UsageAnalytics(context, fixture.prefs))
+                val analytics = org.secu3.android.utils.analytics.UsageAnalytics(context, fixture.prefs)
+                viewModel = SettingsViewModel(context, fixture.prefs, FileHelper(context, analytics), UiMessageQueue(), analytics)
                 store.put("settings-folder", viewModel)
             }
             val read = Intent.FLAG_GRANT_READ_URI_PERMISSION

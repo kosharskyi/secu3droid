@@ -89,6 +89,7 @@ class Secu3ConnectionManager @Inject constructor(
         if (currentConnection != null) return
         if (!usbConnection.startConnection(device)) return
         usageAnalytics.logConnectionAttempt("usb")
+        usageAnalytics.connectionRunStarted("usb")
         connectionSuccessReported = false
         if (automaticLoggingEnabled == true) secuLogger.startLogging()
         selectConnection(usbConnection)
@@ -122,6 +123,7 @@ class Secu3ConnectionManager @Inject constructor(
             if (currentConnection != null) return@coroutineScope
             callerContext.ensureActive()
             usageAnalytics.logConnectionAttempt("bluetooth")
+            usageAnalytics.connectionRunStarted("bluetooth")
             connectionSuccessReported = false
             if (automaticLoggingEnabled == true) secuLogger.startLogging()
             launch(start = CoroutineStart.UNDISPATCHED) { btConnection.startConnection() }
@@ -206,6 +208,8 @@ class Secu3ConnectionManager @Inject constructor(
         _firmwareInfo.value = event.firmware
         val transport = if (connection === usbConnection) "usb" else "bluetooth"
         val stateChanged = event.state != currentConnectionState
+        if (event.state == Connected) usageAnalytics.connectionBecameConnected()
+        if (event.end == ConnectionEvent.End.RETRYING) usageAnalytics.connectionRetrying()
         when {
             stateChanged && event.state == Connected && !connectionSuccessReported -> {
                 usageAnalytics.logConnectionResult(transport, "success", "connected", "request")
@@ -246,6 +250,7 @@ class Secu3ConnectionManager @Inject constructor(
     }
 
     private fun finishConnection() {
+        usageAnalytics.connectionRunEnded()
         currentConnection = null
         _firmwareInfo.value = null
         secuLogger.stopLogging()

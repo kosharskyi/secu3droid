@@ -26,6 +26,7 @@ package org.secu3.android.utils.analytics
 
 import android.content.Context
 import android.os.Bundle
+import android.os.SystemClock
 import android.util.Log
 import com.google.firebase.analytics.FirebaseAnalytics
 import dagger.hilt.android.qualifiers.ApplicationContext
@@ -55,6 +56,7 @@ class UsageAnalytics @Inject constructor(
     private var sendEvent: (String, Bundle) -> Unit = { event, parameters ->
         FirebaseAnalytics.getInstance(context).logEvent(event, parameters)
     }
+    private var elapsedRealtime: () -> Long = SystemClock::elapsedRealtime
 
     internal constructor(
         context: Context,
@@ -62,10 +64,12 @@ class UsageAnalytics @Inject constructor(
         debugBuild: Boolean,
         updateSdkCollection: (Boolean) -> Unit,
         sendEvent: (String, Bundle) -> Unit,
+        elapsedRealtime: () -> Long = SystemClock::elapsedRealtime,
     ) : this(context, userPrefs) {
         this.debugBuild = debugBuild
         this.updateSdkCollection = updateSdkCollection
         this.sendEvent = sendEvent
+        this.elapsedRealtime = elapsedRealtime
     }
 
     private val scope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
@@ -75,6 +79,11 @@ class UsageAnalytics @Inject constructor(
     private var sdkInitialized = false
     private var pendingConsent: Boolean? = null
     private var started = false
+    private var connectionTransport: String? = null
+    private var connectionConnected = false
+    private var connectionElapsedMilliseconds = 0L
+    private var connectedSinceMilliseconds: Long? = null
+    private var measuredConnectedSegment = false
 
     fun start() {
         if (debugBuild) return
@@ -146,6 +155,40 @@ class UsageAnalytics @Inject constructor(
         "format" to format,
     )
 
+    fun logExportResult(result: String) = log(
+        "log_export_result",
+        "result" to result,
+    )
+
+    fun connectionRunStarted(transport: String) = synchronized(lock) {
+        connectionTransport = transport
+        connectionConnected = false
+        connectionElapsedMilliseconds = 0L
+        connectedSinceMilliseconds = null
+        measuredConnectedSegment = false
+    }
+
+    fun connectionBecameConnected() = synchronized(lock) {
+        if (connectionTransport == null || connectionConnected) return@synchronized
+        connectionConnected = true
+        if (collectionEnabled) startConnectedSegment()
+    }
+
+    fun connectionRetrying() = synchronized(lock) {
+        if (!connectionConnected) return@synchronized
+        closeConnectedSegment()
+        connectionConnected = false
+    }
+
+    fun connectionRunEnded() = synchronized(lock) {
+        val transport = connectionTransport ?: return@synchronized
+        closeConnectedSegment()
+        if (collectionEnabled && measuredConnectedSegment) {
+            logConnectionEndedLocked(transport, connectionElapsedMilliseconds / 1_000L)
+        }
+        clearConnectionTiming()
+    }
+
     private fun log(event: String, vararg parameters: Pair<String, String>) {
         synchronized(lock) {
             if (debugBuild || !collectionEnabled) return
@@ -163,6 +206,9 @@ class UsageAnalytics @Inject constructor(
     private fun applyCollectionEnabled(enabled: Boolean) {
         val target = enabled && !debugBuild
         if (!target) {
+            closeConnectedSegment()
+            connectionElapsedMilliseconds = 0L
+            measuredConnectedSegment = false
             collectionEnabled = false
             if (sdkInitialized) runCatching { updateSdkCollection(false) }
                 .onFailure { Log.e(TAG, "Could not disable Firebase Analytics", it) }
@@ -173,9 +219,41 @@ class UsageAnalytics @Inject constructor(
         try {
             updateSdkCollection(true)
             collectionEnabled = true
+            if (connectionConnected) startConnectedSegment()
         } catch (failure: Exception) {
             collectionEnabled = false
             Log.e(TAG, "Could not enable Firebase Analytics", failure)
+        }
+    }
+
+    private fun startConnectedSegment() {
+        connectedSinceMilliseconds = elapsedRealtime()
+        measuredConnectedSegment = true
+    }
+
+    private fun closeConnectedSegment() {
+        val startedAt = connectedSinceMilliseconds ?: return
+        connectionElapsedMilliseconds += (elapsedRealtime() - startedAt).coerceAtLeast(0L)
+        connectedSinceMilliseconds = null
+    }
+
+    private fun clearConnectionTiming() {
+        connectionTransport = null
+        connectionConnected = false
+        connectionElapsedMilliseconds = 0L
+        connectedSinceMilliseconds = null
+        measuredConnectedSegment = false
+    }
+
+    private fun logConnectionEndedLocked(transport: String, durationSeconds: Long) {
+        val bundle = Bundle().apply {
+            putString("transport", transport)
+            putLong("duration_seconds", durationSeconds)
+        }
+        try {
+            sendEvent("connection_ended", bundle)
+        } catch (failure: Exception) {
+            Log.e(TAG, "Could not send analytics event connection_ended", failure)
         }
     }
 
