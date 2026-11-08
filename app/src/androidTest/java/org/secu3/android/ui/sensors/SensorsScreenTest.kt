@@ -424,15 +424,23 @@ class SensorsScreenTest {
             val indicatorRows = indicatorBounds.take(expected).map { it.top }.distinct().size
             assertEquals("gauges should honor 150dp × font-scale cells: requested=${width.value}dp grid=${(grid.right - grid.left).value}dp fontScale=${fontScale.value} expectedColumns=$expected cardTops=${gaugeBounds.map { it.top.value }}", 1, gaugeRows)
             assertEquals("indicators should honor 150dp × font-scale cells: requested=${width.value}dp grid=${(grid.right - grid.left).value}dp fontScale=${fontScale.value} expectedColumns=$expected cardTops=${indicatorBounds.map { it.top.value }}", 1, indicatorRows)
-            assertEquals((gaugeBounds.first().right - gaugeBounds.first().left).value, (gaugeBounds[expected - 1].right - gaugeBounds[expected - 1].left).value, 1f)
-            assertEquals((indicatorBounds.first().right - indicatorBounds.first().left).value, (indicatorBounds[expected - 1].right - indicatorBounds[expected - 1].left).value, 1f)
-            assertEquals("full gauge row begins in the first cell", grid.left.value + 8f, gaugeBounds.first().left.value, 1f)
-            assertEquals("full gauge row fills its last cell", grid.right.value - 8f, gaugeBounds[expected - 1].right.value, 1f)
-            assertEquals("full indicator row begins in the first cell", grid.left.value + 8f, indicatorBounds.first().left.value, 1f)
-            assertEquals("full indicator row fills its last cell", grid.right.value - 8f, indicatorBounds[expected - 1].right.value, 1f)
+            val cellWidth = (grid.right - grid.left).value / expected
+            val allocatedCardWidth = minOf(minimumColumnWidth, cellWidth)
+            val expectedCardWidth = allocatedCardWidth - 16f
+            val expectedCellInset = (cellWidth - allocatedCardWidth) / 2f + 8f
+            assertEquals("gauge cards keep their baseline width while columns absorb surplus", expectedCardWidth, (gaugeBounds.first().right - gaugeBounds.first().left).value, 1f)
+            assertEquals("indicator cards keep their baseline width while columns absorb surplus", expectedCardWidth, (indicatorBounds.first().right - indicatorBounds.first().left).value, 1f)
+            assertEquals("full gauge row keeps an equal outer inset", grid.left.value + expectedCellInset, gaugeBounds.first().left.value, 1f)
+            assertEquals("full gauge row keeps an equal inset in the last cell", grid.right.value - expectedCellInset, gaugeBounds[expected - 1].right.value, 1f)
+            assertEquals("full indicator row keeps an equal outer inset", grid.left.value + expectedCellInset, indicatorBounds.first().left.value, 1f)
+            assertEquals("full indicator row keeps an equal inset in the last cell", grid.right.value - expectedCellInset, indicatorBounds[expected - 1].right.value, 1f)
+            for (column in 1 until expected) {
+                assertEquals("gauge centers follow equally spaced columns", cellWidth, gaugeBounds[column].left.value - gaugeBounds[column - 1].left.value, 1f)
+                assertEquals("indicator centers follow equally spaced columns", cellWidth, indicatorBounds[column].left.value - indicatorBounds[column - 1].left.value, 1f)
+            }
             if (gauges.size > expected) org.junit.Assert.assertTrue(gaugeBounds[expected].top > gaugeBounds.first().top)
             if (indicators.size > expected) org.junit.Assert.assertTrue(indicatorBounds[expected].top > indicatorBounds.first().top)
-            // An incomplete last row keeps the same cell width as a full row.
+            // An incomplete last row keeps the same card width and first-column alignment.
             assertEquals((gaugeBounds.first().right - gaugeBounds.first().left).value, (gaugeBounds.last().right - gaugeBounds.last().left).value, 1f)
             assertEquals((indicatorBounds.first().right - indicatorBounds.first().left).value, (indicatorBounds.last().right - indicatorBounds.last().left).value, 1f)
             val gaugesInLastRow = gauges.size % expected
@@ -640,10 +648,12 @@ class SensorsScreenTest {
         val gaugeCellWidth = (gaugeGrid.right - gaugeGrid.left).value / 2f
         val indicatorCellWidth = (indicatorGrid.right - indicatorGrid.left).value / 2f
 
-        assertEquals("single gauge occupies the first column", gaugeGrid.left.value + 8f, gauge.left.value, 1f)
-        assertEquals("single gauge keeps the normal padded cell width", gaugeCellWidth - 16f, (gauge.right - gauge.left).value, 1f)
-        assertEquals("single indicator occupies the first column", indicatorGrid.left.value + 8f, indicator.left.value, 1f)
-        assertEquals("single indicator keeps the normal padded cell width", indicatorCellWidth - 16f, (indicator.right - indicator.left).value, 1f)
+        val expectedGaugeInset = (gaugeCellWidth - 150f) / 2f + 8f
+        val expectedIndicatorInset = (indicatorCellWidth - 150f) / 2f + 8f
+        assertEquals("single gauge stays within the first column", gaugeGrid.left.value + expectedGaugeInset, gauge.left.value, 1f)
+        assertEquals("single gauge keeps the baseline padded width", 150f - 16f, (gauge.right - gauge.left).value, 1f)
+        assertEquals("single indicator stays within the first column", indicatorGrid.left.value + expectedIndicatorInset, indicator.left.value, 1f)
+        assertEquals("single indicator keeps the baseline padded width", 150f - 16f, (indicator.right - indicator.left).value, 1f)
     }
 
     @Test fun numericGaugeCanSwitchToDialAndDeleteFromCardMenu() {
@@ -1503,6 +1513,7 @@ class SensorsScreenTest {
             moveBy(Offset(target.center.x - source.center.x, target.center.y - source.center.y))
             up()
         }
+        compose.waitForIdle()
         val movedOrder = listOf(
             compose.onNodeWithTag("gauge-VOLTAGE").fetchSemanticsNode().boundsInRoot.top,
             compose.onNodeWithTag("gauge-RPM").fetchSemanticsNode().boundsInRoot.top,
@@ -1523,8 +1534,16 @@ class SensorsScreenTest {
             compose.onNodeWithTag("gauge-RPM").fetchSemanticsNode().boundsInRoot.top,
         )
         org.junit.Assert.assertTrue("cancel must preserve the prior pending order", orderAfterCancel[0] < orderAfterCancel[1])
-        assertEquals(voltage.top, compose.onNodeWithTag("gauge-VOLTAGE").fetchSemanticsNode().boundsInRoot.top, 1f)
-        assertEquals(rpm.top, compose.onNodeWithTag("gauge-RPM").fetchSemanticsNode().boundsInRoot.top, 1f)
+        val voltageAfterCancel = compose.onNodeWithTag("gauge-VOLTAGE").fetchSemanticsNode().boundsInRoot
+        val rpmAfterCancel = compose.onNodeWithTag("gauge-RPM").fetchSemanticsNode().boundsInRoot
+        assertEquals("cancel keeps the first row at its original top", voltage.top, voltageAfterCancel.top, 1f)
+        assertEquals("cancel keeps the first card in its slot", voltage.left, voltageAfterCancel.left, 1f)
+        assertEquals("cancel keeps the second card in its slot", rpm.left, rpmAfterCancel.left, 1f)
+        val rowGapBeforeCancel = rpm.top - voltage.bottom
+        val rowGapAfterCancel = rpmAfterCancel.top - voltageAfterCancel.bottom
+        assertEquals("row gap matches the card gutters before cancel", with(compose.density) { 16.dp.toPx() }, rowGapBeforeCancel, 1f)
+        assertEquals("cancel leaves no drag offset in the row gap", rowGapBeforeCancel, rowGapAfterCancel, 1f)
+        // The longer packet readings may naturally change the first row's height at the narrower card width.
         compose.onNodeWithTag("gauge-RPM").assertTextContains("4321")
     }
 

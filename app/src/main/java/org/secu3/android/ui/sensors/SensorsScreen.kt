@@ -136,8 +136,9 @@ internal fun SensorsScreen(
         val minimumGaugeColumnWidth = 150.dp * fontScale.coerceAtLeast(1f)
         val renderColumns = (maxWidth / minimumGaugeColumnWidth).toInt().coerceAtLeast(1)
         val gridCellWidth = maxWidth / renderColumns
+        val cardAllocationWidth = minOf(minimumGaugeColumnWidth, gridCellWidth)
         // Gauge cards need this width outside BoxWithConstraints so row intrinsic sizing can measure them.
-        val gaugeContentWidth = (gridCellWidth - CARD_CELL_GUTTER * 2f - CARD_CONTENT_INSET * 2f).coerceAtLeast(0.dp)
+        val gaugeContentWidth = (cardAllocationWidth - CARD_CELL_GUTTER * 2f - CARD_CONTENT_INSET * 2f).coerceAtLeast(0.dp)
         Column(Modifier.fillMaxSize().verticalScroll(rememberScrollState(), enabled = !dragging).padding(bottom = 88.dp)) {
             Column(Modifier.fillMaxWidth().zIndex(if (gaugeReorder.activeKey != null) 2f else 0f).testTag("gauges-grid")) {
                 gaugeReorder.items.chunked(renderColumns).forEach { rowItems ->
@@ -163,7 +164,7 @@ internal fun SensorsScreen(
                                     presentationCatalog,
                                     renderer,
                                     gaugeContentWidth,
-                                    Modifier.fillMaxWidth().fillMaxHeight().padding(CARD_CELL_GUTTER)
+                                    Modifier.width(cardAllocationWidth).fillMaxHeight().padding(CARD_CELL_GUTTER)
                                         .onGloballyPositioned { coordinates ->
                                             val bounds = coordinates.boundsInRoot()
                                             if (gaugeReorder.positions[dragKey] != bounds) gaugeReorder.positions[dragKey] = bounds
@@ -221,11 +222,11 @@ internal fun SensorsScreen(
                             LaunchedEffect(dragKey, previewOffset) {
                                 indicatorReorder.animatePreview(dragKey, previewOffset)
                             }
-                            key(dragKey) { Box(Modifier.width(gridCellWidth).fillMaxHeight().zIndex(if (isDragged) 2f else 0f)) {
+                            key(dragKey) { Box(Modifier.width(gridCellWidth).fillMaxHeight().zIndex(if (isDragged) 2f else 0f), contentAlignment = Alignment.TopCenter) {
                                 IndicatorCard(
                                     item,
                                     presentationCatalog,
-                                    Modifier.fillMaxWidth().fillMaxHeight().padding(CARD_CELL_GUTTER)
+                                    Modifier.width(cardAllocationWidth).fillMaxHeight().padding(CARD_CELL_GUTTER)
                                         .onGloballyPositioned { coordinates ->
                                             val bounds = coordinates.boundsInRoot()
                                             if (indicatorReorder.positions[dragKey] != bounds) indicatorReorder.positions[dragKey] = bounds
