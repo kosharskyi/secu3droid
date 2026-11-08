@@ -45,6 +45,7 @@ internal fun DiagnosticSignalChart(
     label: String,
     samples: List<DiagnosticSample>,
     value: (DiagnosticSample) -> Float,
+    helpText: String,
     modifier: Modifier = Modifier,
 ) {
     val latest = samples.lastOrNull()?.let(value)
@@ -68,8 +69,11 @@ internal fun DiagnosticSignalChart(
             Modifier.fillMaxWidth().padding(12.dp),
             verticalArrangement = Arrangement.spacedBy(8.dp),
         ) {
-            Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
-                Text(label, style = MaterialTheme.typography.titleSmall)
+            Row(Modifier.fillMaxWidth(), verticalAlignment = androidx.compose.ui.Alignment.CenterVertically) {
+                Row(Modifier.weight(1f), verticalAlignment = androidx.compose.ui.Alignment.CenterVertically) {
+                    Text(label, Modifier.weight(1f, fill = false), style = MaterialTheme.typography.titleSmall)
+                    DiagnosticHelpButton(label, helpText, "diagnostic_help_chart_$label")
+                }
                 latest?.let {
                     Text(
                         stringResource(R.string.diag_chart_latest_value, String.format(Locale.US, "%.3f", it)),

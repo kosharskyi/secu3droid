@@ -34,6 +34,7 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.Checkbox
@@ -71,6 +72,11 @@ internal fun DiagnosticsOutputsScreen(
         else R.array.diagnostics_secu3i_output_labels,
     )
     val labelsByOutput = familyOutputs.zip(outputLabels).toMap()
+    val outputHelp = stringArrayResource(
+        if (isSecu3T == true) R.array.diag_help_outputs_t
+        else R.array.diag_help_outputs_i,
+    )
+    val helpByOutput = familyOutputs.zip(outputHelp).toMap()
     val outputs = familyOutputs.filter { it != DiagnosticOutput.TACH_O || state.enableTachO }
     Column(
         modifier = Modifier.fillMaxWidth().verticalScroll(rememberScrollState()).padding(16.dp),
@@ -99,6 +105,7 @@ internal fun DiagnosticsOutputsScreen(
             title = stringResource(R.string.diag_outputs_ignition_group),
             outputs = outputs.take(ignitionCount),
             labelsByOutput = labelsByOutput,
+            helpByOutput = helpByOutput,
             state = state,
             onOutputChanged = onOutputChanged,
         )
@@ -106,6 +113,7 @@ internal fun DiagnosticsOutputsScreen(
             title = stringResource(if (isSecu3T) R.string.diag_outputs_other_group else R.string.diag_outputs_injection_group),
             outputs = outputs.drop(ignitionCount),
             labelsByOutput = labelsByOutput,
+            helpByOutput = helpByOutput,
             state = state,
             onOutputChanged = onOutputChanged,
         )
@@ -117,6 +125,7 @@ private fun OutputGroup(
     title: String,
     outputs: List<DiagnosticOutput>,
     labelsByOutput: Map<DiagnosticOutput, String>,
+    helpByOutput: Map<DiagnosticOutput, String>,
     state: DiagnosticsState,
     onOutputChanged: (DiagnosticOutput, Boolean) -> Unit,
 ) {
@@ -134,6 +143,7 @@ private fun OutputGroup(
                 OutputToggle(
                     output,
                     labelsByOutput.getValue(output),
+                    stringResource(R.string.diag_help_output_common_note, helpByOutput.getValue(output)),
                     state.outputBits,
                     state.canSetOutput(output),
                     isGeneratorOutput = output == state.generatorOutput,
@@ -149,6 +159,7 @@ private fun OutputGroup(
 private fun OutputToggle(
     output: DiagnosticOutput,
     label: String,
+    helpText: String,
     bits: Int,
     enabled: Boolean,
     isGeneratorOutput: Boolean,
@@ -156,23 +167,28 @@ private fun OutputToggle(
 ) {
     val checked = bits and (1 shl output.bit) != 0
     Row(
-        modifier = Modifier.fillMaxWidth().heightIn(min = 64.dp).clickable(enabled = enabled) {
-            val newValue = !checked
-            onOutputChanged(output, newValue)
-        }.padding(horizontal = 14.dp, vertical = 8.dp).testTag("output_row_${output.name}"),
+        modifier = Modifier.fillMaxWidth().heightIn(min = 64.dp).padding(horizontal = 14.dp, vertical = 8.dp),
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.SpaceBetween,
     ) {
-        Column(Modifier.weight(1f)) {
-            Text(label, color = if (enabled) MaterialTheme.colorScheme.onSurface else MaterialTheme.colorScheme.onSurface.copy(alpha = 0.38f))
-            if (isGeneratorOutput) {
-                Text(
-                    text = stringResource(R.string.diag_output_controlled_by_generator),
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    style = MaterialTheme.typography.bodySmall,
-                    modifier = Modifier.testTag("generator_control_caption_${output.name}"),
-                )
+        Row(Modifier.weight(1f).heightIn(min = 48.dp), verticalAlignment = Alignment.CenterVertically) {
+            Column(
+                Modifier.weight(1f, fill = false).widthIn(min = 48.dp).heightIn(min = 48.dp)
+                    .clickable(enabled = enabled) { onOutputChanged(output, !checked) }
+                    .testTag("output_row_${output.name}"),
+                verticalArrangement = Arrangement.Center,
+            ) {
+                Text(label, color = if (enabled) MaterialTheme.colorScheme.onSurface else MaterialTheme.colorScheme.onSurface.copy(alpha = 0.38f))
+                if (isGeneratorOutput) {
+                    Text(
+                        text = stringResource(R.string.diag_output_controlled_by_generator),
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        style = MaterialTheme.typography.bodySmall,
+                        modifier = Modifier.testTag("generator_control_caption_${output.name}"),
+                    )
+                }
             }
+            DiagnosticHelpButton(label, helpText, "diagnostic_help_output_${output.name}")
         }
         Checkbox(
             modifier = Modifier.testTag("output_${output.name}"),

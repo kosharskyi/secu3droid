@@ -39,6 +39,8 @@ import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.onAllNodesWithTag
 import androidx.compose.ui.test.onAllNodesWithText
 import androidx.compose.ui.test.performClick
+import androidx.compose.ui.test.performTouchInput
+import androidx.compose.ui.test.click
 import androidx.compose.runtime.mutableStateOf
 import org.junit.Assert.assertEquals
 import org.junit.Rule
@@ -51,6 +53,35 @@ import androidx.test.platform.app.InstrumentationRegistry
 
 class DiagnosticsOutputsScreenTest {
     @get:Rule val compose = createComposeRule()
+
+    @Test
+    fun outputHelpRemainsAvailableWhileDisabledAndDuringAutoTestWithoutStoppingIt() {
+        var changes = 0
+        var stops = 0
+        compose.setContent {
+            SecuComposeTheme {
+                DiagnosticsOutputsScreen(
+                    isSecu3T = false,
+                    state = DiagnosticsState(isAutoTestingOutputs = true, controlsEnabled = true),
+                    onOutputChanged = { _, _ -> changes++ },
+                    onStopAutoTest = { stops++ },
+                )
+            }
+        }
+        compose.onNodeWithTag("output_DE").assertIsNotEnabled()
+        compose.onNodeWithTag("diagnostic_help_output_DE").performScrollTo().performTouchInput { click() }
+        compose.onNodeWithText("DE_I (PC2)", substring = true).assertIsDisplayed()
+        compose.onAllNodesWithText("BL_I (PC2)", substring = true).assertCountEquals(0)
+        compose.onNodeWithTag("diagnostic_help_close").performClick()
+
+        compose.onNodeWithTag("diagnostic_help_output_BL").performScrollTo().performTouchInput { click() }
+        compose.onNodeWithText("BL_I (PC3)", substring = true).assertIsDisplayed()
+        compose.onNodeWithTag("diagnostic_help_close").performClick()
+        compose.runOnIdle {
+            assertEquals(0, changes)
+            assertEquals(0, stops)
+        }
+    }
 
     @Test
     fun displaysFirmwareSpecificControlsAndHidesUnknownFirmware() {

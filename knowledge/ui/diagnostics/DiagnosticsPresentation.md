@@ -24,6 +24,10 @@ The output checkboxes represent ECU commands. Preserve firmware and readiness ga
 
 Both row and checkbox use the domain state's `canSetOutput` rule. The screen also masks readiness when the observed connection or input is unavailable, even if a previous domain snapshot is still visible.
 
+## Signal help stays outside diagnostic command hit targets
+
+The info buttons are independent siblings of output toggles, channel selection, and numeric editors. Keep them enabled when those controls are unavailable or an output auto-test is running; opening help is UI-only and must not send commands, stop a test, or alter diagnostics state. Dialog text scrolls within a bounded height, and dialog visibility is saveable across configuration changes.
+
 ## Firmware capability labels stay reactive
 
 The route collects the connection manager's nullable firmware state so a reply while diagnostics is open updates input labels and capability presentation. Clearing firmware removes stale capability. Show ADD_IO3 only outside SECU-3T, and treat ADD_IO4 as unavailable unless family and TPIC8101 capability are both known and enabled; a supported value of `0.000 V` is still a real reading.

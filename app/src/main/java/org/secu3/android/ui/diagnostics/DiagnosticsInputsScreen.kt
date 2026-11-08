@@ -107,52 +107,71 @@ fun DiagnosticsInputsScreen(
         DiagnosticGroupSurface(Modifier.fillMaxWidth()) {
             val addIo4Supported = isSecu3T != null && hasTpic8101 == true
             val analogInputs = buildList {
-                add("Voltage" to input?.voltage)
-                add((if (isSecu3T == false) "MAP_I" else "MAP_S") to input?.map)
-                add("TEMP" to input?.temperature)
-                add("ADD_IO1" to input?.addI1)
-                add("ADD_IO2" to input?.addI2)
-                if (isSecu3T != true) add("ADD_IO3" to input?.addI3)
-                add("ADD_IO4" to input?.addI4.takeIf { addIo4Supported })
-                add((if (isSecu3T == false) "TPS" else "CARB") to input?.carb)
-                add("KS_1" to input?.ks1)
-                add("KS_2" to input?.ks2)
+                add(Triple("Voltage", input?.voltage, R.string.diag_help_input_voltage))
+                add(Triple((if (isSecu3T == false) "MAP_I" else "MAP_S"), input?.map, R.string.diag_help_input_map))
+                add(Triple("TEMP", input?.temperature, R.string.diag_help_input_temp))
+                add(Triple("ADD_IO1", input?.addI1, R.string.diag_help_input_add_i1))
+                add(Triple("ADD_IO2", input?.addI2, R.string.diag_help_input_add_i2))
+                if (isSecu3T != true) add(Triple("ADD_IO3", input?.addI3, R.string.diag_help_input_add_i3))
+                add(Triple("ADD_IO4", input?.addI4.takeIf { addIo4Supported }, R.string.diag_help_input_add_i4))
+                add(Triple((if (isSecu3T == false) "TPS" else "CARB"), input?.carb, R.string.diag_help_input_carb))
+                add(Triple("KS_1", input?.ks1, R.string.diag_help_input_ks1))
+                add(Triple("KS_2", input?.ks2, R.string.diag_help_input_ks2))
             }
             val statuses = listOf(
-                "GAS_V" to input?.gasV, "CKPS" to input?.ckps, "REF_S" to input?.refS,
-                "PS" to input?.ps, "BL jmp" to input?.bl, "DE jmp" to input?.de,
+                Triple("GAS_V", input?.gasV, R.string.diag_help_input_gas_v),
+                Triple("CKPS", input?.ckps, R.string.diag_help_input_ckps),
+                Triple("REF_S", input?.refS, R.string.diag_help_input_ref_s),
+                Triple("PS", input?.ps, R.string.diag_help_input_ps),
+                Triple("BL jmp", input?.bl, when (isSecu3T) {
+                    true -> R.string.diag_help_input_bl_t
+                    false -> R.string.diag_help_input_bl_i
+                    null -> R.string.diag_help_input_bl_generic
+                }),
+                Triple("DE jmp", input?.de, when (isSecu3T) {
+                    true -> R.string.diag_help_input_de_t
+                    false -> R.string.diag_help_input_de_i
+                    null -> R.string.diag_help_input_de_generic
+                }),
             )
-            analogInputs.forEach { (label, value) ->
-                AnalogInput(label, value, subdued = label == "ADD_IO4" && !addIo4Supported)
+            analogInputs.forEach { (label, value, helpText) ->
+                AnalogInput(label, value, stringResource(helpText), subdued = label == "ADD_IO4" && !addIo4Supported)
                 HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant)
             }
-            statuses.forEachIndexed { index, (label, value) ->
-                StatusInput(label, value)
+            statuses.forEachIndexed { index, (label, value, helpText) ->
+                StatusInput(label, value, stringResource(helpText))
                 if (index != statuses.lastIndex || isSecu3T == false) HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant)
             }
             if (isSecu3T == false) {
-                StatusInput("COND_I", input?.cond_i)
+                StatusInput("COND_I", input?.cond_i, stringResource(R.string.diag_help_input_cond_i))
                 HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant)
-                StatusInput("EPAS_I", input?.epas_i)
+                StatusInput("EPAS_I", input?.epas_i, stringResource(R.string.diag_help_input_epas_i))
                 HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant)
-                StatusInput("IGN_I", input?.ign_i)
+                StatusInput("IGN_I", input?.ign_i, stringResource(R.string.diag_help_input_ign_i))
                 HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant)
-                listOf("ADD_IO5" to input?.addI5, "ADD_IO6" to input?.addI6, "ADD_IO7" to input?.addI7, "ADD_IO8" to input?.addI8).forEach { (label, value) ->
-                    AnalogInput(label, value)
+                listOf(
+                    Triple("ADD_IO5", input?.addI5, R.string.diag_help_input_add_i5),
+                    Triple("ADD_IO6", input?.addI6, R.string.diag_help_input_add_i6),
+                    Triple("ADD_IO7", input?.addI7, R.string.diag_help_input_add_i7),
+                    Triple("ADD_IO8", input?.addI8, R.string.diag_help_input_add_i8),
+                ).forEach { (label, value, helpText) ->
+                    AnalogInput(label, value, stringResource(helpText))
                     HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant)
                 }
-                StatusInput("GPA4_I", input?.gpa4_i)
+                StatusInput("GPA4_I", input?.gpa4_i, stringResource(R.string.diag_help_input_gpa4_i))
             }
         }
         DiagnosticSignalChart(
             label = stringResource(R.string.diag_chart_ks1_label),
             samples = diagnosticSamples,
             value = DiagnosticSample::ks1,
+            helpText = stringResource(R.string.diag_help_input_ks1),
         )
         DiagnosticSignalChart(
             label = stringResource(R.string.diag_chart_ks2_label),
             samples = diagnosticSamples,
             value = DiagnosticSample::ks2,
+            helpText = stringResource(R.string.diag_help_input_ks2),
         )
         DiagnosticGroupSurface(Modifier.fillMaxWidth()) {
             Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
@@ -162,15 +181,22 @@ fun DiagnosticsInputsScreen(
                 LaunchedEffect(enabled) {
                     if (!enabled) expanded = false
                 }
-                ParameterSelectionRow(
-                    title = outputChannelTitle,
-                    value = channels[chosen],
-                    testTag = "output_channel",
-                    enabled = enabled,
-                    contentDescription = "$outputChannelTitle, ${channels[chosen]}",
-                    stateDescription = channels[chosen],
-                    onClick = { expanded = true },
-                )
+                Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
+                    DiagnosticHelpButton(
+                        outputChannelTitle,
+                        stringResource(R.string.diag_help_generator_channel),
+                        "diagnostic_help_generator_channel",
+                    )
+                    ParameterSelectionRow(
+                        title = outputChannelTitle,
+                        value = channels[chosen],
+                        testTag = "output_channel",
+                        enabled = enabled,
+                        contentDescription = "$outputChannelTitle, ${channels[chosen]}",
+                        stateDescription = channels[chosen],
+                        onClick = { expanded = true },
+                    )
+                }
                 if (expanded && enabled) {
                     ParameterChoiceDialog(
                         title = outputChannelTitle,
@@ -181,17 +207,19 @@ fun DiagnosticsInputsScreen(
                         onSelect = onChannelSelected,
                     )
                 }
-                EditableValueRow(frequencyLabel, "${"%.1f".format(Locale.US, frequency)} Hz", enabled, "frequency_edit", onFrequencyEdit)
-                EditableValueRow(dutyLabel, "${"%.1f".format(Locale.US, duty)} %", enabled, "duty_edit", onDutyEdit)
+                EditableValueRow(frequencyLabel, stringResource(R.string.diag_help_generator_frequency), "generator_frequency", "${"%.1f".format(Locale.US, frequency)} Hz", enabled, "frequency_edit", onFrequencyEdit)
+                EditableValueRow(dutyLabel, stringResource(R.string.diag_help_generator_duty), "generator_duty", "${"%.1f".format(Locale.US, duty)} %", enabled, "duty_edit", onDutyEdit)
             }
         }
     }
 }
 
 @Composable
-private fun EditableValueRow(title: String, value: String, enabled: Boolean, tag: String, onClick: () -> Unit) {
+private fun EditableValueRow(title: String, helpText: String, helpTag: String, value: String, enabled: Boolean, tag: String, onClick: () -> Unit) {
+    Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
+        DiagnosticHelpButton(title, helpText, "diagnostic_help_$helpTag")
     BoxWithConstraints(
-        Modifier.fillMaxWidth()
+        Modifier.weight(1f)
             .heightIn(min = 64.dp)
             .clip(RoundedCornerShape(12.dp))
             .background(MaterialTheme.colorScheme.surfaceContainerLow)
@@ -218,10 +246,11 @@ private fun EditableValueRow(title: String, value: String, enabled: Boolean, tag
             }
         }
     }
+    }
 }
 
 @Composable
-private fun AnalogInput(label: String, value: Float?, subdued: Boolean = false) {
+private fun AnalogInput(label: String, value: Float?, helpText: String, subdued: Boolean = false) {
     val displayValue = value?.let { "%.3f".format(Locale.US, it) } ?: "—"
     val valueColor = if (subdued) MaterialTheme.colorScheme.onSurfaceVariant else MaterialTheme.colorScheme.onSurface
     Row(
@@ -229,7 +258,10 @@ private fun AnalogInput(label: String, value: Float?, subdued: Boolean = false) 
         horizontalArrangement = Arrangement.spacedBy(12.dp),
         verticalAlignment = Alignment.CenterVertically,
     ) {
-        Text(label, Modifier.weight(1f), style = MaterialTheme.typography.bodyMedium, color = valueColor)
+        Row(Modifier.weight(1f), verticalAlignment = Alignment.CenterVertically) {
+            Text(label, Modifier.weight(1f, fill = false), style = MaterialTheme.typography.bodyMedium, color = valueColor)
+            DiagnosticHelpButton(label, helpText, "diagnostic_help_input_$label")
+        }
         Text(
             buildAnnotatedString {
                 withStyle(SpanStyle(fontSize = 22.sp, fontWeight = FontWeight.SemiBold, fontFeatureSettings = "tnum", color = valueColor)) { append(displayValue) }
@@ -242,7 +274,7 @@ private fun AnalogInput(label: String, value: Float?, subdued: Boolean = false) 
 }
 
 @Composable
-private fun StatusInput(label: String, checked: Boolean?) {
+private fun StatusInput(label: String, checked: Boolean?, helpText: String) {
     val palette = LocalSecuPalette.current
     val colors = MaterialTheme.colorScheme
     val stateDescription = when (checked) {
@@ -266,7 +298,10 @@ private fun StatusInput(label: String, checked: Boolean?) {
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.spacedBy(8.dp),
     ) {
-        Text(label, Modifier.weight(1f), style = MaterialTheme.typography.bodyMedium, color = colors.onSurface)
+        Row(Modifier.weight(1f), verticalAlignment = Alignment.CenterVertically) {
+            Text(label, Modifier.weight(1f, fill = false), style = MaterialTheme.typography.bodyMedium, color = colors.onSurface)
+            DiagnosticHelpButton(label, helpText, "diagnostic_help_input_$label")
+        }
         Text(
             stateDescription,
             Modifier.widthIn(max = 120.dp)

@@ -1,0 +1,80 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="diagnostic_help_open">Help for %1$s</string>
+    <string name="diagnostic_help_close">Close</string>
+
+    <string name="diag_help_input_voltage">Board voltage measured at processor pin PA1, after the voltage divider.</string>
+    <string name="diag_help_input_map">Input from the MAP sensor (PA2).</string>
+    <string name="diag_help_input_temp">Coolant temperature (CLT) sensor input (PA0).</string>
+    <string name="diag_help_input_add_i1">Analog input ADD_I1 (PA6).</string>
+    <string name="diag_help_input_add_i2">Analog input ADD_I2 (PA5).</string>
+    <string name="diag_help_input_add_i3">Analog input ADD_I3 (PA4).</string>
+    <string name="diag_help_input_add_i4">Analog input ADD_I4 (PA3).</string>
+    <string name="diag_help_input_add_i5">Analog input ADD_I5 on the MCP3204 expander.</string>
+    <string name="diag_help_input_add_i6">Analog input ADD_I6 on the MCP3204 expander.</string>
+    <string name="diag_help_input_add_i7">Analog input ADD_I7 on the MCP3204 expander.</string>
+    <string name="diag_help_input_add_i8">Analog input ADD_I8 on the MCP3204 expander.</string>
+    <string name="diag_help_input_carb">Input for the throttle limit switch or TPS.</string>
+    <string name="diag_help_input_ks1">Knock signal from input KS_1, processed by the HIP9011 or TPIC8101 chip.</string>
+    <string name="diag_help_input_ks2">Knock signal from input KS_2, processed by the HIP9011 or TPIC8101 chip.</string>
+    <string name="diag_help_input_gas_v">Logical state of GAS_V: 0 means no voltage and 1 means voltage is present. I/O reassignment and inversion settings do not change this diagnostic reading.</string>
+    <string name="diag_help_input_ckps">Crankshaft position (CKP) sensor input (PD6).</string>
+    <string name="diag_help_input_ref_s">CKP reference sensor input (PD2).</string>
+    <string name="diag_help_input_ps">Camshaft position sensor input (PD3).</string>
+    <string name="diag_help_input_bl_generic">Bare, unprotected processor input/output BL (PC3), tested as an input. Used for emergency startup of the built-in bootloader. Connector or jumper location depends on ECU family.</string>
+    <string name="diag_help_input_bl_t">Bare, unprotected processor input/output BL (PC3), tested as an input. On SECU-3T it is brought to board jumper contacts and is used for emergency startup of the built-in bootloader.</string>
+    <string name="diag_help_input_bl_i">Bare, unprotected processor input/output BL (PC3), tested as an input. On SECU-3i it is available at connector input BL_I and is used for emergency startup of the built-in bootloader.</string>
+    <string name="diag_help_input_de_generic">Bare, unprotected processor input/output DE (PC2), tested as an input. Used for emergency EEPROM reset. Connector or jumper location depends on ECU family.</string>
+    <string name="diag_help_input_de_t">Bare, unprotected processor input/output DE (PC2), tested as an input. On SECU-3T it is brought to board jumper contacts and is used for emergency EEPROM reset.</string>
+    <string name="diag_help_input_de_i">Bare, unprotected processor input/output DE (PC2), tested as an input. On SECU-3i it is available at connector input DE_I and is used for emergency EEPROM reset.</string>
+    <string name="diag_help_input_cond_i">Input requesting air-conditioner activation.</string>
+    <string name="diag_help_input_epas_i">Input requesting electric power steering activation.</string>
+    <string name="diag_help_input_ign_i">Ignition-lock voltage input. It controls power to the ECU.</string>
+    <string name="diag_help_input_gpa4_i">GPA4_I digital input.</string>
+
+    <string name="diag_help_generator_channel">The selected SECU-3 output generates test pulses. Select NONE to disable pulse generation.</string>
+    <string name="diag_help_generator_frequency">Number of pulses per second on the selected output. Range: 10–5000 Hz.</string>
+    <string name="diag_help_generator_duty">Share of each pulse cycle for which the signal is active. Range: 0–100%.</string>
+    <string name="diag_help_output_common_note">%1$s I/O reassignment and inversion settings do not change diagnostic output control.</string>
+
+    <string-array name="diag_help_outputs_t">
+        <item>Ignition output 1. Enable it and the transistor conducts to ground. On SECU-3 Lite with built-in coil drivers, the checkbox works in reverse.</item>
+        <item>Ignition output 2. Enable it and the transistor conducts to ground. On SECU-3 Lite with built-in coil drivers, the checkbox works in reverse.</item>
+        <item>Ignition output 3. Enable it and the transistor conducts to ground.</item>
+        <item>Ignition output 4. Enable it and the transistor conducts to ground.</item>
+        <item>IE output. When enabled, its transistor passes current from 12 V to the output. I/O reassignment and inversion settings do not change diagnostic output control.</item>
+        <item>FE output. When enabled, its transistor passes current from 12 V to the output. I/O reassignment and inversion settings do not change diagnostic output control.</item>
+        <item>ECF output for controlling the cooling fan or idle-air valve (PWM).</item>
+        <item>CE output for controlling the Check Engine lamp.</item>
+        <item>Starter-blocking output (starter relay). When enabled, the transistor conducts to ground.</item>
+        <item>ADD_IO1 output for controlling auxiliary devices.</item>
+        <item>ADD_IO2 output for controlling auxiliary devices.</item>
+        <item>Processor pin BL (PC3), brought to a board jumper contact and tested as an output.</item>
+        <item>Processor pin DE (PC2), brought to a board jumper contact and tested as an output.</item>
+    </string-array>
+    <string-array name="diag_help_outputs_i">
+        <item>Ignition output 1. Enable it and the transistor conducts to ground. On SECU-3 Lite with built-in coil drivers, the checkbox works in reverse.</item>
+        <item>Ignition output 2. Enable it and the transistor conducts to ground. On SECU-3 Lite with built-in coil drivers, the checkbox works in reverse.</item>
+        <item>Ignition output 3. Enable it and the transistor conducts to ground.</item>
+        <item>Ignition output 4. Enable it and the transistor conducts to ground.</item>
+        <item>Ignition output 5. Enable it and the transistor conducts to ground.</item>
+        <item>ECF output for controlling the cooling fan or idle-air valve (PWM).</item>
+        <item>Injector 1 output.</item>
+        <item>Injector 2 output.</item>
+        <item>Injector 3 output.</item>
+        <item>Injector 4 output.</item>
+        <item>Injector 5 output.</item>
+        <item>Input/output pin BL_I (PC3), a processor pin without a buffer transistor. It is connected to the stepper controller DIR signal and optionally a transistor gate; the transistor output is available at connector pin SM_AO1.</item>
+        <item>Input/output pin DE_I (PC2), a processor pin without a buffer transistor. It is connected to the stepper controller STEP signal and optionally a transistor gate; the transistor output is available at connector pin SM_AO2.</item>
+        <item>STBL_O starter-relay output. When enabled, the transistor conducts to ground.</item>
+        <item>CEL_O Check Engine lamp output.</item>
+        <item>FPMP_O electric fuel-pump output.</item>
+        <item>PWRR_O main relay output for ECU power.</item>
+        <item>EVAP_O canister purge-valve output.</item>
+        <item>O2SH_O exhaust oxygen-sensor heater output.</item>
+        <item>COND_O air-conditioner clutch output.</item>
+        <item>ADD_O2 auxiliary output for controlling devices.</item>
+        <item>TACH_O output that produces tachometer pulses (PC4, INT/~HOLD).</item>
+        <item>GPA6_O output.</item>
+    </string-array>
+</resources>

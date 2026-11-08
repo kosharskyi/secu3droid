@@ -45,8 +45,11 @@ import org.secu3.android.R
 import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
+import androidx.compose.ui.test.performTouchInput
+import androidx.compose.ui.test.click
 import androidx.compose.ui.test.performScrollTo
 import androidx.compose.ui.test.onAllNodesWithTag
+import androidx.compose.ui.test.onAllNodesWithText
 import androidx.compose.ui.test.assertCountEquals
 import androidx.compose.ui.test.assertIsEnabled
 import androidx.compose.runtime.mutableStateOf
@@ -91,6 +94,75 @@ class DiagnosticsInputsScreenTest {
             "KS_1 voltage chart, 0 to 5 V over the last 10 seconds. Latest reading 0.000 V.",
         )
     }
+
+    @Test fun helpIsFamilyAwareAndIndependentOfDisabledDiagnosticControls() {
+        var firmware by mutableStateOf<Boolean?>(false)
+        var callbacks = 0
+        compose.setContent {
+            Box(Modifier.width(280.dp)) {
+                DiagnosticsInputsScreen(
+                    input = null,
+                    isSecu3T = firmware,
+                    selectedChannel = 0,
+                    frequency = 10f,
+                    duty = 50f,
+                    onChannelSelected = { callbacks++ },
+                    onFrequencyEdit = { callbacks++ },
+                    onDutyEdit = { callbacks++ },
+                    controlsEnabled = false,
+                )
+            }
+        }
+
+        compose.onNodeWithTag("diagnostic_help_input_DE jmp").performScrollTo().performTouchInput { click() }
+        compose.onNodeWithTag("diagnostic_help_dialog").assertIsDisplayed()
+        compose.onNodeWithText("DE_I", substring = true).assertIsDisplayed()
+        compose.onAllNodesWithText("BL_I", substring = true).assertCountEquals(0)
+        compose.onNodeWithTag("diagnostic_help_close").performClick()
+
+        compose.onNodeWithTag("diagnostic_help_input_BL jmp").performScrollTo().performTouchInput { click() }
+        compose.onNodeWithText("BL_I", substring = true).assertIsDisplayed()
+        compose.onNodeWithTag("diagnostic_help_close").performClick()
+
+        compose.runOnIdle { firmware = true }
+        compose.onNodeWithTag("diagnostic_help_input_DE jmp").performScrollTo().performTouchInput { click() }
+        compose.onNodeWithText("jumper contacts", substring = true).assertIsDisplayed()
+        compose.onNodeWithTag("diagnostic_help_close").performClick()
+
+        compose.runOnIdle { firmware = null }
+        compose.onNodeWithTag("diagnostic_help_input_DE jmp").performScrollTo().performTouchInput { click() }
+        compose.onNodeWithText("depends on ECU family", substring = true).assertIsDisplayed()
+        compose.onAllNodesWithText("connector input DE_I", substring = true).assertCountEquals(0)
+        compose.onNodeWithTag("diagnostic_help_close").performClick()
+
+        compose.onNodeWithTag("diagnostic_help_generator_channel").performScrollTo().performTouchInput { click() }
+        compose.onNodeWithText(context.getString(R.string.diag_help_generator_channel)).assertIsDisplayed()
+        compose.onAllNodesWithTag("output_channel_option_1").assertCountEquals(0)
+        compose.onNodeWithTag("diagnostic_help_close").performClick()
+        compose.runOnIdle { assertEquals(0, callbacks) }
+    }
+
+    @Test fun knockInputAndChartHelpUseTheSameTopic() {
+        compose.setContent {
+            DiagnosticsInputsScreen(
+                input = null,
+                isSecu3T = true,
+                selectedChannel = 0,
+                frequency = 10f,
+                duty = 50f,
+                onChannelSelected = {},
+                onFrequencyEdit = {},
+                onDutyEdit = {},
+            )
+        }
+        compose.onNodeWithTag("diagnostic_help_input_KS_1").performScrollTo().performTouchInput { click() }
+        compose.onNodeWithText("HIP9011", substring = true).assertIsDisplayed()
+        compose.onNodeWithTag("diagnostic_help_close").performClick()
+        compose.onNodeWithTag("diagnostic_help_chart_KS_1").performScrollTo().performTouchInput { click() }
+        compose.onNodeWithText("HIP9011", substring = true).assertIsDisplayed()
+        compose.onNodeWithTag("diagnostic_help_close").performClick()
+    }
+
     private val context = InstrumentationRegistry.getInstrumentation().targetContext
 
     @Test fun valuesAndReadOnlyStatusesAreShownAndSecu3iFieldsAreConditional() {
