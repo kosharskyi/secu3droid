@@ -36,7 +36,7 @@ class UserPrefsTest {
             assertEquals(UserPrefs.DEFAULT_FUEL_FLOW_PULSES_PER_LITRE, initial.fuelFlowPulsesPerLitre)
             assertEquals(GaugeType.RPM, initial.dashboardLeftGauge)
             assertEquals(GaugeType.VEHICLE_SPEED, initial.dashboardRightGauge)
-            assertEquals(DashboardGaugeStyle.Default, initial.dashboardGaugeStyle)
+            assertEquals(DashboardGaugeStyle.FilledArc, initial.dashboardGaugeStyle)
             prefs.setShowLogControls(true)
             prefs.setAlwaysWriteLogEnabled(true)
             prefs.setCsvDelimiter("|")
@@ -98,7 +98,7 @@ class UserPrefsTest {
             val withUnknown = fixture.prefs.settings.first()
             assertEquals(GaugeType.RPM, withUnknown.dashboardLeftGauge)
             assertEquals(GaugeType.WBO_AFR_TABL, withUnknown.dashboardRightGauge)
-            assertEquals(DashboardGaugeStyle.Default, withUnknown.dashboardGaugeStyle)
+            assertEquals(DashboardGaugeStyle.FilledArc, withUnknown.dashboardGaugeStyle)
             assertEquals(SensorGaugeStyle.ThinNeedle, withUnknown.sensorGaugeStyle)
             assertEquals("unknown_dashboard_style", fixture.dataStore.data.first()[styleKey])
 

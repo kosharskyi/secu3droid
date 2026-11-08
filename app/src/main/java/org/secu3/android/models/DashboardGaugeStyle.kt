@@ -9,7 +9,7 @@ enum class DashboardGaugeStyle(val preferenceValue: String) {
     TriangularNeedle("triangular_needle");
 
     companion object {
-        val Default = TriangularNeedle
+        val Default = FilledArc
 
         fun fromPreference(value: String?): DashboardGaugeStyle =
             entries.firstOrNull { it.preferenceValue == value } ?: Default

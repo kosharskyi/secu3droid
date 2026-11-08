@@ -24,7 +24,7 @@ The stable `injection_timing_mode` values are `btdc_720`, `atdc_720`, `btdc_360`
 
 ## Dashboard gauge settings use stable values and one snapshot write
 
-`dashboard_left_gauge` and `dashboard_right_gauge` store `GaugeType.name`; missing or unknown names resolve in memory to RPM and vehicle speed respectively without repairing storage. `dashboard_gauge_style` stores one of `classic`, `precise_arc`, `thin_needle`, `filled_arc`, or `triangular_needle`; missing or unknown values resolve in memory to Triangular Needle without repairing storage. Save the two gauge names and Dashboard style in one DataStore edit so observers receive a coherent Dashboard setup. This style setting is independent of `sensor_gauge_style` and does not change the Sensors choices or Room configuration.
+`dashboard_left_gauge` and `dashboard_right_gauge` store `GaugeType.name`; missing or unknown names resolve in memory to RPM and vehicle speed respectively without repairing storage. `dashboard_gauge_style` stores one of `classic`, `precise_arc`, `thin_needle`, `filled_arc`, or `triangular_needle`; missing or unknown values resolve in memory to Filled Arc without repairing storage. Save the two gauge names and Dashboard style in one DataStore edit so observers receive a coherent Dashboard setup. This style setting is independent of `sensor_gauge_style` and does not change the Sensors choices or Room configuration.
 
 ## Fuel consumption calibration is independent of the ECU injector parameter
 
