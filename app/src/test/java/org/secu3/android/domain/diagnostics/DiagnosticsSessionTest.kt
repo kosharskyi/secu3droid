@@ -12,6 +12,7 @@ import kotlinx.coroutines.withTimeout
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertNull
+import org.junit.Assert.assertThrows
 import org.junit.Test
 import org.secu3.android.connection.Connected
 import org.secu3.android.connection.ConnectionState
@@ -251,6 +252,99 @@ class DiagnosticsSessionTest {
         offline.finish()
     }
 
+    @Test
+    fun eachIncomingDiagnosticPacketAddsAnImmutablePairedSample() = runBlocking {
+        val fixture = Fixture(initiallyConnected = true)
+        fixture.session.start(fixture.scope)
+        fixture.await { fixture.commands.contains(Task.Secu3OpComEnterDiagnostics) }
+        val packet = DiagInputPacket(flags = 0, ks1 = 0f, ks2 = 1.25f)
+        fixture.emit(packet)
+        fixture.emit(packet)
+        val snapshot = fixture.session.state.value.diagnosticSamples
+        assertEquals(
+            listOf(
+                DiagnosticSample(0, 0f, 1.25f),
+                DiagnosticSample(0, 0f, 1.25f),
+            ),
+            snapshot,
+        )
+
+        packet.ks1 = 4.5f
+        packet.ks2 = 0f
+        fixture.clockNanos = 5
+        fixture.emit(packet)
+        assertEquals(DiagnosticSample(0, 0f, 1.25f), snapshot.last())
+        assertEquals(DiagnosticSample(5, 4.5f, 0f), fixture.session.state.value.diagnosticSamples.last())
+        assertThrows(UnsupportedOperationException::class.java) {
+            (snapshot as MutableList<DiagnosticSample>).add(DiagnosticSample(6, 0f, 0f))
+        }
+
+        val sampleCount = fixture.session.state.value.diagnosticSamples.size
+        fixture.session.selectChannel(1)
+        fixture.session.editFrequency(100f)
+        fixture.session.editDuty(25f)
+        fixture.session.setOutput(DiagnosticOutput.IGN_OUT1, true)
+        assertEquals(sampleCount, fixture.session.state.value.diagnosticSamples.size)
+        fixture.close()
+    }
+
+    @Test
+    fun diagnosticHistoryPrunesByTenSecondWindowAndMaximumPairCount() = runBlocking {
+        val fixture = Fixture(initiallyConnected = true)
+        fixture.session.start(fixture.scope)
+        fixture.await { fixture.commands.contains(Task.Secu3OpComEnterDiagnostics) }
+        fixture.emit(DiagInputPacket(flags = 0, ks1 = 1f, ks2 = 2f))
+        fixture.clockNanos = DiagnosticsSession.DIAGNOSTIC_SAMPLE_WINDOW_NANOS
+        fixture.emit(DiagInputPacket(flags = 0, ks1 = 3f, ks2 = 4f))
+        assertEquals(2, fixture.session.state.value.diagnosticSamples.size)
+        fixture.clockNanos++
+        fixture.emit(DiagInputPacket(flags = 0, ks1 = 5f, ks2 = 0f))
+        assertEquals(2, fixture.session.state.value.diagnosticSamples.size)
+        assertEquals(DiagnosticsSession.DIAGNOSTIC_SAMPLE_WINDOW_NANOS, fixture.session.state.value.diagnosticSamples.first().timestampNanos)
+
+        repeat(DiagnosticsSession.MAX_DIAGNOSTIC_SAMPLES) { index ->
+            fixture.clockNanos++
+            fixture.emit(DiagInputPacket(flags = 0, ks1 = index.toFloat(), ks2 = 0f))
+        }
+        val retained = fixture.session.state.value.diagnosticSamples
+        assertEquals(DiagnosticsSession.MAX_DIAGNOSTIC_SAMPLES, retained.size)
+        assertEquals(0f, retained.first().ks1)
+        fixture.close()
+    }
+
+    @Test
+    fun diagnosticHistoryClearsOnLeaveLossReconnectAndClose() = runBlocking {
+        val fixture = Fixture(initiallyConnected = true)
+        fixture.session.start(fixture.scope)
+        fixture.await { fixture.commands.contains(Task.Secu3OpComEnterDiagnostics) }
+        fixture.emit(DiagInputPacket(flags = 0, ks1 = 2f, ks2 = 3f))
+        assertEquals(1, fixture.session.state.value.diagnosticSamples.size)
+        fixture.connection.emit(Disconnected)
+        fixture.transportConnected = false
+        fixture.await { fixture.session.state.value.input == null }
+        assertEquals(emptyList<DiagnosticSample>(), fixture.session.state.value.diagnosticSamples)
+
+        fixture.transportConnected = true
+        fixture.connection.emit(Connected)
+        fixture.await { fixture.commands.count { it == Task.Secu3OpComEnterDiagnostics } == 2 }
+        fixture.emit(OpCompNc().apply { opCode = 6 })
+        fixture.await { fixture.commands.count { it == Task.Secu3DiagInput } == 1 }
+        fixture.emit(DiagInputPacket(flags = 0, ks1 = 2f, ks2 = 3f))
+        assertEquals(1, fixture.session.state.value.diagnosticSamples.size)
+        fixture.emit(OpCompNc().apply { opCode = 7 })
+        assertEquals(emptyList<DiagnosticSample>(), fixture.session.state.value.diagnosticSamples)
+        fixture.finish()
+
+        val closing = Fixture(initiallyConnected = true)
+        closing.session.start(closing.scope)
+        closing.await { closing.commands.contains(Task.Secu3OpComEnterDiagnostics) }
+        closing.emit(DiagInputPacket(flags = 0, ks1 = 0f, ks2 = 0f))
+        assertEquals(1, closing.session.state.value.diagnosticSamples.size)
+        closing.session.close()
+        assertEquals(emptyList<DiagnosticSample>(), closing.session.state.value.diagnosticSamples)
+        closing.finish()
+    }
+
     private class Fixture(
         initiallyConnected: Boolean = false,
         private val initialFirmwareFamily: Boolean? = null,
@@ -262,6 +356,7 @@ class DiagnosticsSessionTest {
         val packets = MutableSharedFlow<InputPacket>(extraBufferCapacity = 8)
         val commands = mutableListOf<Task>()
         val outputSnapshots = mutableListOf<OutputSnapshot>()
+        var clockNanos = 0L
         var transportConnected = initiallyConnected
         val scope = CoroutineScope(SupervisorJob() + Dispatchers.Unconfined)
         val session = DiagnosticsSession(
@@ -276,6 +371,7 @@ class DiagnosticsSessionTest {
                 }
             },
             sendPacket = { packet -> outputSnapshots += OutputSnapshot(packet.out, packet.chan, packet.frq, packet.duty) },
+            monotonicNowNanos = { clockNanos },
         )
 
         suspend fun emit(packet: InputPacket) {

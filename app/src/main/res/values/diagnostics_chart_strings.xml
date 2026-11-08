@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="diag_chart_ks1_label">KS_1</string>
+    <string name="diag_chart_ks2_label">KS_2</string>
+    <string name="diag_chart_description">%1$s voltage chart, 0 to 5 V over the last 10 seconds. Latest reading %2$s.</string>
+    <string name="diag_chart_empty_description">%1$s voltage chart, 0 to 5 V over the last 10 seconds. No readings yet.</string>
+    <string name="diag_chart_latest_value">%1$s V</string>
+    <string name="diag_chart_voltage_top">5 V</string>
+    <string name="diag_chart_voltage_bottom">0 V</string>
+    <string name="diag_chart_time_start">−10 s</string>
+    <string name="diag_chart_time_end">0 s</string>
+</resources>

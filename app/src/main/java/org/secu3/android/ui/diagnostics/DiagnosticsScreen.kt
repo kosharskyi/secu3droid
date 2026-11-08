@@ -141,6 +141,7 @@ internal fun DiagnosticsScreen(
                         dutyLabel = stringResource(R.string.test_signal_duty_label),
                         hasTpic8101 = hasTpic8101,
                         controlsEnabled = controlsEnabled,
+                        diagnosticSamples = state.diagnosticSamples.takeIf { controlsEnabled }.orEmpty(),
                         onChannelSelected = onChannelSelected,
                         onFrequencyEdit = {
                             editorInitialValue = state.frequency

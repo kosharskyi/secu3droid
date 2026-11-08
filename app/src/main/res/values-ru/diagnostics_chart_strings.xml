@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="diag_chart_ks1_label">KS_1</string>
+    <string name="diag_chart_ks2_label">KS_2</string>
+    <string name="diag_chart_description">График напряжения %1$s, диапазон от 0 до 5 В за последние 10 секунд. Последнее значение %2$s.</string>
+    <string name="diag_chart_empty_description">График напряжения %1$s, диапазон от 0 до 5 В за последние 10 секунд. Измерений пока нет.</string>
+    <string name="diag_chart_latest_value">%1$s В</string>
+    <string name="diag_chart_voltage_top">5 В</string>
+    <string name="diag_chart_voltage_bottom">0 В</string>
+    <string name="diag_chart_time_start">−10 с</string>
+    <string name="diag_chart_time_end">0 с</string>
+</resources>

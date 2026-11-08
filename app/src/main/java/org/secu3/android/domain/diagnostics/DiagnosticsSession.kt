@@ -26,6 +26,8 @@ import org.secu3.android.models.packets.input.DiagInputPacket
 import org.secu3.android.models.packets.out.DiagOutputPacket
 import org.secu3.android.models.packets.out.OpCompNc
 import org.secu3.android.utils.Task
+import java.util.ArrayDeque
+import java.util.Collections
 import javax.inject.Inject
 
 enum class DiagnosticOutput(val bit: Int) {
@@ -44,6 +46,7 @@ enum class DiagnosticOutput(val bit: Int) {
 
 data class DiagnosticsState(
     val input: DiagInputPacket? = null,
+    val diagnosticSamples: List<DiagnosticSample> = emptyList(),
     val outputBits: Int = 0,
     val channel: Int = 0,
     val frequency: Float = 10f,
@@ -61,6 +64,12 @@ data class DiagnosticsState(
         }
 }
 
+data class DiagnosticSample(
+    val timestampNanos: Long,
+    val ks1: Float,
+    val ks2: Float,
+)
+
 /** Owns the diagnostic protocol session and its ECU output packet. */
 class DiagnosticsSession internal constructor(
     private val connectionStates: Flow<ConnectionState>,
@@ -69,6 +78,7 @@ class DiagnosticsSession internal constructor(
     private val initialFirmwareFamily: () -> Boolean?,
     private val sendTask: (Task) -> Unit,
     private val sendPacket: (DiagOutputPacket) -> Unit,
+    private val monotonicNowNanos: () -> Long = System::nanoTime,
 ) {
     @Inject
     constructor(connectionManager: Secu3ConnectionManager) : this(
@@ -81,6 +91,7 @@ class DiagnosticsSession internal constructor(
     )
 
     private val packet = DiagOutputPacket()
+    private val diagnosticSamples = ArrayDeque<DiagnosticSample>()
     private val _state = MutableStateFlow(DiagnosticsState())
     val state: StateFlow<DiagnosticsState> = _state.asStateFlow()
     private var connectionJob: Job? = null
@@ -185,13 +196,14 @@ class DiagnosticsSession internal constructor(
         closed = true
         connectionAvailable = false
         active = false
+        diagnosticSamples.clear()
         connectionJob?.cancel()
         connectionJob = null
         if (shouldLeave) {
             sendTask(Task.Secu3OpComLeaveDiagnostics)
             sendTask(Task.Secu3ReadSensors)
         }
-        publishReadiness()
+        publishOutputState()
     }
 
     private fun onPacket(packet: InputPacket) {
@@ -208,11 +220,13 @@ class DiagnosticsSession internal constructor(
                 }
                 7 -> {
                     active = false
-                    publishReadiness()
+                    diagnosticSamples.clear()
+                    publishOutputState()
                 }
             }
             is DiagInputPacket -> {
                 active = true
+                recordDiagnosticSample(packet)
                 initializeOutputs(packet.flags != 0)
                 if (!initialStateSent) {
                     initialStateSent = true
@@ -236,6 +250,7 @@ class DiagnosticsSession internal constructor(
         entered = false
         inputRequested = false
         active = false
+        diagnosticSamples.clear()
         val retainedFamily = familyIsSecu3T ?: initialFirmwareFamily()
         familyIsSecu3T = retainedFamily
         packet.out = if (retainedFamily == true) IGNITION_OUTPUT_MASK else 0
@@ -261,6 +276,7 @@ class DiagnosticsSession internal constructor(
     private fun publishOutputState(input: DiagInputPacket? = _state.value.input) {
         _state.value = _state.value.copy(
             input = input,
+            diagnosticSamples = immutableDiagnosticSampleSnapshot(),
             outputBits = packet.out,
             channel = packet.chan,
             frequency = packet.frq,
@@ -271,6 +287,19 @@ class DiagnosticsSession internal constructor(
             controlsEnabled = connectionAvailable && isTransportConnected() && active && input != null,
         )
     }
+
+    private fun recordDiagnosticSample(input: DiagInputPacket) {
+        val now = monotonicNowNanos()
+        diagnosticSamples.addLast(DiagnosticSample(now, input.ks1, input.ks2))
+        val oldestRetained = now - DIAGNOSTIC_SAMPLE_WINDOW_NANOS
+        while (diagnosticSamples.isNotEmpty() && diagnosticSamples.first().timestampNanos < oldestRetained) {
+            diagnosticSamples.removeFirst()
+        }
+        while (diagnosticSamples.size > MAX_DIAGNOSTIC_SAMPLES) diagnosticSamples.removeFirst()
+    }
+
+    private fun immutableDiagnosticSampleSnapshot(): List<DiagnosticSample> =
+        Collections.unmodifiableList(ArrayList(diagnosticSamples))
 
     private fun channels(): List<DiagnosticOutput>? = when (familyIsSecu3T) {
         true -> DiagnosticOutput.secu3TChannels
@@ -290,6 +319,8 @@ class DiagnosticsSession internal constructor(
         const val MAX_FREQUENCY = 5000f
         const val MIN_DUTY = 0f
         const val MAX_DUTY = 100f
+        const val DIAGNOSTIC_SAMPLE_WINDOW_NANOS = 10_000_000_000L
+        const val MAX_DIAGNOSTIC_SAMPLES = 512
         private const val IGNITION_OUTPUT_MASK = 0b11
     }
 }

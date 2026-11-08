@@ -70,6 +70,7 @@ import androidx.compose.ui.unit.sp
 import org.secu3.android.R
 import org.secu3.android.models.packets.input.DiagInputPacket
 import org.secu3.android.domain.diagnostics.DiagnosticOutput
+import org.secu3.android.domain.diagnostics.DiagnosticSample
 import org.secu3.android.ui.compose.LocalSecuPalette
 import org.secu3.android.ui.parameters.compose.ParameterSelectionRow
 import org.secu3.android.ui.parameters.dialogs.ParameterChoice
@@ -92,6 +93,7 @@ fun DiagnosticsInputsScreen(
     dutyLabel: String = "Duty cycle",
     hasTpic8101: Boolean? = null,
     controlsEnabled: Boolean = false,
+    diagnosticSamples: List<DiagnosticSample> = emptyList(),
 ) {
     val enabled = controlsEnabled && isSecu3T != null
     val channelOutputs = if (isSecu3T == true) DiagnosticOutput.secu3TChannels else DiagnosticOutput.secu3IChannels
@@ -142,6 +144,16 @@ fun DiagnosticsInputsScreen(
                 StatusInput("GPA4_I", input?.gpa4_i)
             }
         }
+        DiagnosticSignalChart(
+            label = stringResource(R.string.diag_chart_ks1_label),
+            samples = diagnosticSamples,
+            value = DiagnosticSample::ks1,
+        )
+        DiagnosticSignalChart(
+            label = stringResource(R.string.diag_chart_ks2_label),
+            samples = diagnosticSamples,
+            value = DiagnosticSample::ks2,
+        )
         DiagnosticGroupSurface(Modifier.fillMaxWidth()) {
             Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
                 Text(testSignalTitle, style = MaterialTheme.typography.titleMedium, color = MaterialTheme.colorScheme.primary)

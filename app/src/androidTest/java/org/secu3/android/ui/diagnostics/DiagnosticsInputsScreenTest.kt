@@ -26,6 +26,7 @@ package org.secu3.android.ui.diagnostics
 
 import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.assertIsNotEnabled
+import androidx.compose.ui.test.assertContentDescriptionEquals
 import androidx.compose.ui.test.assert
 import androidx.compose.ui.test.assertTextEquals
 import androidx.compose.ui.test.junit4.v2.createComposeRule
@@ -55,9 +56,41 @@ import org.junit.Assert.assertEquals
 import org.junit.Rule
 import org.junit.Test
 import org.secu3.android.models.packets.input.DiagInputPacket
+import org.secu3.android.domain.diagnostics.DiagnosticSample
 
 class DiagnosticsInputsScreenTest {
     @get:Rule val compose = createComposeRule()
+
+    @Test fun knockSignalChartsShowEmptyAndZeroSamplesAtNarrowWidth() {
+        var samples by mutableStateOf<List<DiagnosticSample>>(emptyList())
+        compose.setContent {
+            Box(Modifier.width(280.dp)) {
+                DiagnosticsInputsScreen(
+                    input = DiagInputPacket(ks1 = 0f, ks2 = 0f),
+                    isSecu3T = true,
+                    selectedChannel = 0,
+                    frequency = 10f,
+                    duty = 50f,
+                    onChannelSelected = {},
+                    onFrequencyEdit = {},
+                    onDutyEdit = {},
+                    diagnosticSamples = samples,
+                )
+            }
+        }
+        compose.onNodeWithTag("diagnostic_chart_KS_1").performScrollTo().assertIsDisplayed()
+        compose.onNodeWithTag("diagnostic_chart_plot_KS_1").performScrollTo().assertIsDisplayed()
+        compose.onNodeWithTag("diagnostic_chart_KS_2").performScrollTo().assertIsDisplayed()
+        compose.onNodeWithTag("diagnostic_chart_KS_1").assertContentDescriptionEquals(
+            "KS_1 voltage chart, 0 to 5 V over the last 10 seconds. No readings yet.",
+        )
+        compose.runOnIdle {
+            samples = listOf(DiagnosticSample(timestampNanos = 1L, ks1 = 0f, ks2 = 0f))
+        }
+        compose.onNodeWithTag("diagnostic_chart_KS_1").assertContentDescriptionEquals(
+            "KS_1 voltage chart, 0 to 5 V over the last 10 seconds. Latest reading 0.000 V.",
+        )
+    }
     private val context = InstrumentationRegistry.getInstrumentation().targetContext
 
     @Test fun valuesAndReadOnlyStatusesAreShownAndSecu3iFieldsAreConditional() {

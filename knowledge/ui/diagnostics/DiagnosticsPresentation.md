@@ -10,6 +10,10 @@ The output list may hide `TACH_O` while its direction option is disabled, but th
 
 Diagnostics inputs receive a nullable packet while firmware data is unavailable. Keep that null state visible as unavailable; zeroes and false bits are legitimate readings once a packet exists. Digital input state uses a compact colored text badge and matching accessibility state description. These are read-only ECU indicators.
 
+## Knock-signal graphs use session samples and clip only their visual scale
+
+The KS_1 and KS_2 charts share paired, timestamped samples owned by `DiagnosticsSession`, so switching tabs or opening additional options does not interrupt history. The visible X range is ten seconds ending at the newest sample; values outside 0–5 V are clipped only while drawing, leaving numeric readings unchanged. Hide the trace whenever the observed connection or fresh input is unavailable, even if a prior state snapshot still contains samples.
+
 ## Output switches remain user-command controls
 
 The output checkboxes represent ECU commands. Preserve firmware and readiness gates, accessibility behavior, and invoke callbacks only from user interaction; do not turn them into passive status indicators.

@@ -18,6 +18,10 @@ Any non-connected event clears the diagnostic input and disables controls, reset
 
 Frequency must be finite and within 10–5000 Hz; duty must be finite and within 0–100%. Channel selection accepts only NONE through the final family channel. Invalid values are ignored without changing state or sending a packet. Re-selecting a valid channel and reapplying a valid generator value still queues the command, matching the existing command behavior.
 
+## Knock-signal samples are copied per received diagnostic packet and reset with the session input
+
+Capture paired KS_1/KS_2 values and a monotonic timestamp for every received `DiagInputPacket`, including repeated equal readings. Copy the primitive values instead of retaining the mutable packet object. Keep at most 512 pairs and prune samples older than ten seconds; expose a fresh unmodifiable list snapshot in state. Clear the series on connection loss, diagnostic leave acknowledgement, and close so reconnect starts a new trace.
+
 ## BL, DE, and TACH output bits require their direction bits
 
 BL uses state/direction bits 11/12, DE uses 13/14, and TACH_O uses 23/24. Enabling a direction resets that output LOW and queues its packet; disabling clears state and direction to Hi-Z. Manual changes are ignored while direction is disabled and generator-selected outputs are rejected. Applying additional options changes BL/DE first and TACH second, sending one snapshot per changed group; unchanged options preserve driven HIGH state.
