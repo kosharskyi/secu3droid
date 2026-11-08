@@ -4,7 +4,7 @@
 
 ## Gauge tick count includes both range endpoints
 
-`GaugePresentation.tickCount` is the number of configured value ticks, evenly spaced from `minValue` through `maxValue`, including both endpoints. `GaugeScale` supplies tick fractions/values/angles to the Sensors renderers, which retain their configured positions across dial styles. Dashboard preserves its original eleven unlabeled decorative marks independently of `tickCount`, while using the same scale range, normalization, and section lookup. Tick labels round to the nearest integer, while tick values and angles retain their original fractional precision. Sensor readout precision is separate and is applied by `SensorPresentationCatalog.formatValue`.
+`GaugePresentation.tickCount` is the number of configured value ticks, evenly spaced from `minValue` through `maxValue`, including both endpoints. `GaugeScale` supplies tick fractions/values/angles to the Sensors renderers, which retain their configured positions across dial styles. Dashboard's Filled Arc and Triangular Needle keep eleven unlabeled decorative marks independently of `tickCount`; its Classic, Precise Arc, and Thin Needle styles use configured ticks. All Dashboard styles share the same scale range, normalization, and section lookup. Tick labels round to the nearest integer, while tick values and angles retain their original fractional precision. Sensor readout precision is separate and is applied by `SensorPresentationCatalog.formatValue`.
 
 ## RPM tick labels are expressed in hundreds
 

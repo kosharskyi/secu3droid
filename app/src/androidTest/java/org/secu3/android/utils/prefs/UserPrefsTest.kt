@@ -13,6 +13,7 @@ import org.junit.Assert.assertTrue
 import org.junit.Test
 import org.secu3.android.R
 import org.secu3.android.models.InjectionTimingMode
+import org.secu3.android.models.DashboardGaugeStyle
 import org.secu3.android.models.SensorGaugeStyle
 import org.secu3.android.models.sensors.GaugeType
 import java.util.UUID
@@ -35,6 +36,7 @@ class UserPrefsTest {
             assertEquals(UserPrefs.DEFAULT_FUEL_FLOW_PULSES_PER_LITRE, initial.fuelFlowPulsesPerLitre)
             assertEquals(GaugeType.RPM, initial.dashboardLeftGauge)
             assertEquals(GaugeType.VEHICLE_SPEED, initial.dashboardRightGauge)
+            assertEquals(DashboardGaugeStyle.Default, initial.dashboardGaugeStyle)
             prefs.setShowLogControls(true)
             prefs.setAlwaysWriteLogEnabled(true)
             prefs.setCsvDelimiter("|")
@@ -80,25 +82,36 @@ class UserPrefsTest {
     }
 
     @Test
-    fun dashboardGaugePairDefaultsUnknownIdsAndPersistsBothSelectionsTogether() = runBlocking {
+    fun dashboardGaugeSettingsDefaultUnknownAndPersistAtomicallyWithoutChangingSensorStyle() = runBlocking {
         val fixture = IsolatedUserPrefs(context, UUID.randomUUID().toString())
         try {
             val leftKey = stringPreferencesKey(UserPrefs.DASHBOARD_LEFT_GAUGE_KEY)
             val rightKey = stringPreferencesKey(UserPrefs.DASHBOARD_RIGHT_GAUGE_KEY)
+            val styleKey = stringPreferencesKey(UserPrefs.DASHBOARD_GAUGE_STYLE_KEY)
+            val sensorStyleKey = stringPreferencesKey(UserPrefs.SENSOR_GAUGE_STYLE_KEY)
             fixture.dataStore.edit {
                 it[leftKey] = "UNKNOWN_SENSOR"
                 it[rightKey] = GaugeType.WBO_AFR_TABL.name
+                it[styleKey] = "unknown_dashboard_style"
+                it[sensorStyleKey] = SensorGaugeStyle.ThinNeedle.preferenceValue
             }
             val withUnknown = fixture.prefs.settings.first()
             assertEquals(GaugeType.RPM, withUnknown.dashboardLeftGauge)
             assertEquals(GaugeType.WBO_AFR_TABL, withUnknown.dashboardRightGauge)
+            assertEquals(DashboardGaugeStyle.Default, withUnknown.dashboardGaugeStyle)
+            assertEquals(SensorGaugeStyle.ThinNeedle, withUnknown.sensorGaugeStyle)
+            assertEquals("unknown_dashboard_style", fixture.dataStore.data.first()[styleKey])
 
-            fixture.prefs.setDashboardGauges(GaugeType.MAP2, GaugeType.CONSUMED_FUEL)
+            fixture.prefs.setDashboardGaugeSettings(GaugeType.MAP2, GaugeType.CONSUMED_FUEL, DashboardGaugeStyle.FilledArc)
             val saved = fixture.prefs.settings.first()
             assertEquals(GaugeType.MAP2, saved.dashboardLeftGauge)
             assertEquals(GaugeType.CONSUMED_FUEL, saved.dashboardRightGauge)
-            assertEquals(GaugeType.MAP2.name, fixture.dataStore.data.first()[leftKey])
-            assertEquals(GaugeType.CONSUMED_FUEL.name, fixture.dataStore.data.first()[rightKey])
+            assertEquals(DashboardGaugeStyle.FilledArc, saved.dashboardGaugeStyle)
+            assertEquals(SensorGaugeStyle.ThinNeedle, saved.sensorGaugeStyle)
+            val persisted = fixture.dataStore.data.first()
+            assertEquals(GaugeType.MAP2.name, persisted[leftKey])
+            assertEquals(GaugeType.CONSUMED_FUEL.name, persisted[rightKey])
+            assertEquals(DashboardGaugeStyle.FilledArc.preferenceValue, persisted[styleKey])
         } finally {
             fixture.close()
         }

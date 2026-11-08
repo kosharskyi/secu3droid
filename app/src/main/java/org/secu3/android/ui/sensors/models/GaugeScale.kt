@@ -15,8 +15,9 @@ internal data class GaugeTick(
 
 /**
  * Shared scale semantics derived only from [GaugeType]. Sensors renderers use these configured tick
- * values, angles, sections, and normalization. Dashboard intentionally retains eleven unlabeled
- * decorative marks from its original design while sharing this scale's range and section semantics.
+ * values, angles, sections, and normalization. Dashboard's FilledArc and TriangularNeedle styles
+ * retain eleven unlabeled decorative marks; the borrowed Classic, PreciseArc, and ThinNeedle styles
+ * use configured ticks while sharing this scale's range and section semantics.
  */
 internal class GaugeScale(
     val type: GaugeType,

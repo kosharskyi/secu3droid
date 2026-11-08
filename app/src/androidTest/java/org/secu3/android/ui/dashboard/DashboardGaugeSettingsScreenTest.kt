@@ -27,6 +27,7 @@ package org.secu3.android.ui.dashboard
 
 import android.content.pm.ActivityInfo
 import android.content.res.Configuration
+import android.graphics.Bitmap
 import android.os.SystemClock
 import android.view.WindowManager
 import androidx.activity.ComponentActivity
@@ -43,6 +44,9 @@ import androidx.compose.ui.test.junit4.StateRestorationTester
 import androidx.compose.ui.test.junit4.v2.createAndroidComposeRule
 import androidx.compose.ui.test.hasTestTag
 import androidx.compose.ui.test.onNodeWithTag
+import androidx.compose.ui.test.onRoot
+import androidx.compose.ui.test.captureToImage
+import androidx.compose.ui.graphics.asAndroidBitmap
 import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.performScrollToNode
 import androidx.compose.ui.test.performTextReplacement
@@ -56,10 +60,13 @@ import org.junit.After
 import org.junit.Before
 import org.junit.Rule
 import org.junit.Test
+import org.secu3.android.R
 import org.secu3.android.models.sensors.GaugeType
+import org.secu3.android.models.DashboardGaugeStyle
 import org.secu3.android.ui.compose.SecuComposeTheme
 import org.secu3.android.ui.sensors.models.SensorPresentationCatalog
 import org.secu3.android.utils.prefs.UserPrefs
+import java.io.File
 
 class DashboardGaugeSettingsScreenTest {
     @get:Rule
@@ -92,14 +99,15 @@ class DashboardGaugeSettingsScreenTest {
 
     @Test
     fun ordinaryRowsShowCurrentChoicesAndResetSavesBothDefaults() {
-        var savedPair: Pair<GaugeType, GaugeType>? = null
+        var saved: Triple<GaugeType, GaugeType, DashboardGaugeStyle>? = null
         setScreen(
             state = DashboardGaugeSettingsUiState(
                 leftGauge = GaugeType.MAF,
                 rightGauge = GaugeType.ADD1,
+                gaugeStyle = DashboardGaugeStyle.FilledArc,
                 settingsLoaded = true,
             ),
-            onSave = { left, right -> savedPair = left to right },
+            onSave = { left, right, style -> saved = Triple(left, right, style) },
         )
 
         composeRule.onNodeWithTag("dashboard-gauge-side-left-row")
@@ -110,9 +118,27 @@ class DashboardGaugeSettingsScreenTest {
         composeRule.onNodeWithTag("dashboard-gauge-save").performClick()
 
         assertEquals(
-            UserPrefs.DEFAULT_DASHBOARD_LEFT_GAUGE to UserPrefs.DEFAULT_DASHBOARD_RIGHT_GAUGE,
-            savedPair,
+            Triple(UserPrefs.DEFAULT_DASHBOARD_LEFT_GAUGE, UserPrefs.DEFAULT_DASHBOARD_RIGHT_GAUGE, DashboardGaugeStyle.Default),
+            saved,
         )
+    }
+
+    @Test
+    fun dashboardStyleDialogOffersFiveChoicesAndSavesDraftSelection() {
+        var savedStyle: DashboardGaugeStyle? = null
+        setScreen(
+            state = DashboardGaugeSettingsUiState(settingsLoaded = true),
+            onSave = { _, _, style -> savedStyle = style },
+        )
+
+        composeRule.onNodeWithTag("dashboard-gauge-style-row").performClick()
+        DashboardGaugeStyle.entries.forEach { style ->
+            composeRule.onNodeWithTag("dashboard-gauge-style-${style.preferenceValue}").assertIsDisplayed()
+        }
+        captureSettingsScreenshot("dashboard-gauge-style-choices.png")
+        composeRule.onNodeWithTag("dashboard-gauge-style-filled_arc").performClick()
+        composeRule.onNodeWithTag("dashboard-gauge-save").performClick()
+        assertEquals(DashboardGaugeStyle.FilledArc, savedStyle)
     }
 
     @Test
@@ -121,16 +147,20 @@ class DashboardGaugeSettingsScreenTest {
         var navigatedUp = false
         setScreen(
             state = DashboardGaugeSettingsUiState(settingsLoaded = true),
-            onSave = { _, _ -> saveCalls++ },
+            onSave = { _, _, _ -> saveCalls++ },
             onNavigateUp = { navigatedUp = true },
         )
 
+        composeRule.onNodeWithTag("dashboard-gauge-style-row").performClick()
+        composeRule.onNodeWithTag("dashboard-gauge-style-filled_arc").performClick()
+        composeRule.waitForIdle()
         composeRule.onNodeWithTag("dashboard-gauge-side-left-row").performClick()
         composeRule.onNodeWithTag("dashboard-gauge-selector").assertIsDisplayed()
         composeRule.onNodeWithTag("dashboard-gauge-selector")
             .performScrollToNode(hasTestTag("dashboard-gauge-option-ADD1"))
         composeRule.onNodeWithTag("dashboard-gauge-option-ADD1").performClick()
-        composeRule.onNodeWithTag("dashboard-gauge-side-left-summary").assertIsDisplayed()
+        composeRule.onNodeWithTag("dashboard-gauge-side-left-row")
+            .assertTextContains(composeRule.activity.getString(catalog.gauge(GaugeType.ADD1).title))
         composeRule.onNodeWithTag("dashboard-gauge-cancel").performClick()
 
         assertEquals(0, saveCalls)
@@ -146,7 +176,7 @@ class DashboardGaugeSettingsScreenTest {
                     DashboardGaugeSettingsScreen(
                         state = state.value,
                         presentationCatalog = catalog,
-                        onSave = { _, _ -> },
+                        onSave = { _, _, _ -> },
                         onNavigateUp = {},
                     )
                 }
@@ -178,23 +208,31 @@ class DashboardGaugeSettingsScreenTest {
 
     @Test
     fun selectorSearchAndDraftSurviveStateRestorationThenSaveAsPair() {
-        var savedPair: Pair<GaugeType, GaugeType>? = null
+        var savedSettings: Triple<GaugeType, GaugeType, DashboardGaugeStyle>? = null
         val restorationTester = StateRestorationTester(composeRule)
         restorationTester.setContent {
             SecuComposeTheme {
                 DashboardGaugeSettingsScreen(
                     state = DashboardGaugeSettingsUiState(settingsLoaded = true),
                     presentationCatalog = catalog,
-                    onSave = { left, right -> savedPair = left to right },
+                    onSave = { left, right, style -> savedSettings = Triple(left, right, style) },
                     onNavigateUp = {},
                 )
             }
         }
 
+        composeRule.waitForIdle()
+        composeRule.onNodeWithTag("dashboard-gauge-settings-screen")
+            .performScrollToNode(hasTestTag("dashboard-gauge-style-row"))
+        composeRule.onNodeWithTag("dashboard-gauge-style-row").performClick()
+        composeRule.onNodeWithTag("dashboard-gauge-style-filled_arc").performClick()
+        composeRule.waitForIdle()
         composeRule.onNodeWithTag("dashboard-gauge-side-left-row").performClick()
         val voltageLabel = composeRule.activity.getString(catalog.gauge(GaugeType.VOLTAGE).title)
         composeRule.onNodeWithTag("dashboard-gauge-search").performTextInput(voltageLabel)
         restorationTester.emulateSavedInstanceStateRestore()
+        composeRule.onNodeWithTag("dashboard-gauge-style-row")
+            .assertTextContains(composeRule.activity.getString(R.string.dashboard_gauge_style_filled_arc))
         composeRule.onNodeWithTag("dashboard-gauge-search").assertIsDisplayed()
         composeRule.onNodeWithTag("dashboard-gauge-search").assertTextContains(voltageLabel)
         composeRule.onNodeWithTag("dashboard-gauge-search").performTextReplacement("")
@@ -208,7 +246,7 @@ class DashboardGaugeSettingsScreenTest {
         composeRule.onNodeWithTag("dashboard-gauge-option-MAF").performClick()
         composeRule.onNodeWithTag("dashboard-gauge-save").performClick()
 
-        assertEquals(GaugeType.VOLTAGE to GaugeType.MAF, savedPair)
+        assertEquals(Triple(GaugeType.VOLTAGE, GaugeType.MAF, DashboardGaugeStyle.FilledArc), savedSettings)
     }
 
     @Test
@@ -221,7 +259,7 @@ class DashboardGaugeSettingsScreenTest {
                         DashboardGaugeSettingsScreen(
                             state = DashboardGaugeSettingsUiState(settingsLoaded = true),
                             presentationCatalog = catalog,
-                            onSave = { _, _ -> },
+                            onSave = { _, _, _ -> },
                             onNavigateUp = {},
                         )
                     }
@@ -263,7 +301,7 @@ class DashboardGaugeSettingsScreenTest {
 
     private fun setScreen(
         state: DashboardGaugeSettingsUiState,
-        onSave: (GaugeType, GaugeType) -> Unit = { _, _ -> },
+        onSave: (GaugeType, GaugeType, DashboardGaugeStyle) -> Unit = { _, _, _ -> },
         onNavigateUp: () -> Unit = {},
     ) {
         composeRule.setContent {
@@ -275,6 +313,16 @@ class DashboardGaugeSettingsScreenTest {
                     onNavigateUp = onNavigateUp,
                 )
             }
+        }
+        composeRule.waitForIdle()
+    }
+
+    private fun captureSettingsScreenshot(fileName: String) {
+        val instrumentation = androidx.test.platform.app.InstrumentationRegistry.getInstrumentation()
+        if (androidx.test.platform.app.InstrumentationRegistry.getArguments().getString("captureDesignScreenshots") != "true") return
+        val bitmap = composeRule.onRoot().captureToImage().asAndroidBitmap()
+        File(instrumentation.targetContext.cacheDir, fileName).outputStream().use { output ->
+            bitmap.compress(Bitmap.CompressFormat.PNG, 100, output)
         }
     }
 }

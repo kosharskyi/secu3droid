@@ -20,6 +20,7 @@ import kotlin.math.roundToInt
 import kotlin.math.sin
 import kotlin.math.sqrt
 import org.secu3.android.models.SensorGaugeStyle
+import org.secu3.android.models.DashboardGaugeStyle
 import org.secu3.android.models.sensors.GaugeType
 import org.secu3.android.ui.sensors.models.GaugeScale
 
@@ -27,6 +28,134 @@ internal data class GaugeRange(val start: Float, val end: Float, val color: Colo
 
 @Singleton
 class GaugeDialRenderer @Inject constructor() {
+    internal fun androidx.compose.ui.graphics.drawscope.DrawScope.drawDashboardGauge(
+        style: DashboardGaugeStyle,
+        scale: GaugeScale,
+        colors: androidx.compose.material3.ColorScheme,
+        sections: List<GaugeRange>,
+        classicSections: List<Pair<Float, Pair<Float, Color>>>,
+        progress: Float?,
+        activeColor: Color,
+        trackColor: Color,
+        classicTickLabels: List<String>,
+        dialMeasure: NewGaugeDialMeasure?,
+    ) {
+        when (style) {
+            DashboardGaugeStyle.Classic -> drawClassicGauge(
+                scale = scale,
+                colors = colors,
+                sections = classicSections,
+                tickLabels = classicTickLabels,
+                normalized = progress,
+            )
+            DashboardGaugeStyle.PreciseArc, DashboardGaugeStyle.ThinNeedle -> {
+                val measure = requireNotNull(dialMeasure)
+                drawGaugeCanvas(
+                    scale = scale,
+                    colors = colors,
+                    sections = sections,
+                    normalized = progress,
+                    style = if (style == DashboardGaugeStyle.PreciseArc) SensorGaugeStyle.PreciseArc else SensorGaugeStyle.ThinNeedle,
+                    faceRadius = with(this) { measure.faceRadius.toPx() },
+                    arcCenterY = with(this) { measure.centerY.toPx() },
+                    labelTextSize = measure.labelTextSizePx,
+                    labels = measure.labels,
+                )
+            }
+            DashboardGaugeStyle.FilledArc -> drawDashboardFilledArc(
+                scale = scale, trackColor = trackColor, tickColor = colors.onSurfaceVariant, activeColor = activeColor, progress = progress,
+            )
+            DashboardGaugeStyle.TriangularNeedle -> drawDashboardTriangle(
+                scale = scale, trackColor = trackColor, tickColor = colors.onSurfaceVariant, activeColor = activeColor,
+                progress = progress ?: 0f, hasValue = progress != null,
+            )
+        }
+    }
+
+    private fun androidx.compose.ui.graphics.drawscope.DrawScope.drawDashboardFilledArc(
+        scale: GaugeScale,
+        trackColor: Color,
+        tickColor: Color,
+        activeColor: Color,
+        progress: Float?,
+    ) {
+        val diameter = minOf(size.width, size.height) * 0.88f
+        val strokeWidth = diameter * 0.055f
+        val topLeft = Offset((size.width - diameter) / 2f, (size.height - diameter) / 2f)
+        val arcSize = androidx.compose.ui.geometry.Size(diameter, diameter)
+        drawArc(trackColor, GaugeScale.START_ANGLE_DEGREES, GaugeScale.SWEEP_ANGLE_DEGREES, false, topLeft, arcSize,
+            style = Stroke(width = strokeWidth, cap = androidx.compose.ui.graphics.StrokeCap.Round))
+        if (progress != null && progress > 0f) drawArc(activeColor, GaugeScale.START_ANGLE_DEGREES, GaugeScale.SWEEP_ANGLE_DEGREES * progress, false, topLeft, arcSize,
+            style = Stroke(width = strokeWidth, cap = androidx.compose.ui.graphics.StrokeCap.Round))
+        drawDashboardDecorativeTicks(
+            scale = scale, diameter = diameter, strokeWidth = strokeWidth,
+            tickColor = tickColor.copy(alpha = 0.38f),
+            progressiveColor = { fraction -> activeColor.takeIf { progress != null && fraction <= progress } },
+        )
+    }
+
+    private fun androidx.compose.ui.graphics.drawscope.DrawScope.drawDashboardTriangle(
+        scale: GaugeScale,
+        trackColor: Color,
+        tickColor: Color,
+        activeColor: Color,
+        progress: Float,
+        hasValue: Boolean,
+    ) {
+        val diameter = minOf(size.width, size.height) * 0.88f
+        val strokeWidth = diameter * 0.055f
+        val topLeft = Offset((size.width - diameter) / 2f, (size.height - diameter) / 2f)
+        val arcSize = androidx.compose.ui.geometry.Size(diameter, diameter)
+        drawArc(trackColor, GaugeScale.START_ANGLE_DEGREES, GaugeScale.SWEEP_ANGLE_DEGREES, false, topLeft, arcSize,
+            style = Stroke(width = strokeWidth, cap = androidx.compose.ui.graphics.StrokeCap.Round))
+        drawDashboardDecorativeTicks(
+            scale = scale, diameter = diameter, strokeWidth = strokeWidth,
+            tickColor = tickColor.copy(alpha = 0.38f), progressiveColor = { null },
+        )
+        if (hasValue) {
+            val center = Offset(size.width / 2f, size.height / 2f)
+            val angle = Math.toRadians(scale.angleAt(progress).toDouble())
+            val directionX = cos(angle).toFloat()
+            val directionY = sin(angle).toFloat()
+            val outerRadius = diameter / 2f
+            val baseCenterX = center.x + directionX * (outerRadius * 0.75f)
+            val baseCenterY = center.y + directionY * (outerRadius * 0.75f)
+            val baseHalfWidth = strokeWidth * 0.72f
+            val baseOffsetX = -directionY * baseHalfWidth
+            val baseOffsetY = directionX * baseHalfWidth
+            val path = androidx.compose.ui.graphics.Path().apply {
+                moveTo(baseCenterX + baseOffsetX, baseCenterY + baseOffsetY)
+                lineTo(center.x + directionX * outerRadius, center.y + directionY * outerRadius)
+                lineTo(baseCenterX - baseOffsetX, baseCenterY - baseOffsetY)
+                close()
+            }
+            drawPath(path, activeColor)
+        }
+    }
+
+    private fun androidx.compose.ui.graphics.drawscope.DrawScope.drawDashboardDecorativeTicks(
+        scale: GaugeScale,
+        diameter: Float,
+        strokeWidth: Float,
+        tickColor: Color,
+        progressiveColor: (Float) -> Color?,
+    ) {
+        val center = Offset(size.width / 2f, size.height / 2f)
+        val outerRadius = diameter / 2f
+        val innerRadius = outerRadius - strokeWidth * 1.9f
+        repeat(11) { index ->
+            val fraction = index / 10f
+            val angle = Math.toRadians(scale.angleAt(fraction).toDouble())
+            drawLine(
+                color = progressiveColor(fraction) ?: tickColor,
+                start = Offset(center.x + cos(angle).toFloat() * innerRadius, center.y + sin(angle).toFloat() * innerRadius),
+                end = Offset(center.x + cos(angle).toFloat() * outerRadius, center.y + sin(angle).toFloat() * outerRadius),
+                strokeWidth = strokeWidth * 0.16f,
+                cap = androidx.compose.ui.graphics.StrokeCap.Round,
+            )
+        }
+    }
+
     internal fun measureNewGaugeDial(
         scale: GaugeScale,
         width: Dp,

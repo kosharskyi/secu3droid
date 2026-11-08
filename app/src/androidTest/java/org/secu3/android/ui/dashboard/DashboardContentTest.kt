@@ -73,6 +73,8 @@ import org.secu3.android.R
 import org.secu3.android.connection.Connected
 import org.secu3.android.connection.ConnectionState
 import org.secu3.android.models.sensors.GaugeType
+import org.secu3.android.models.DashboardGaugeStyle
+import org.secu3.android.ui.sensors.GaugeDialRenderer
 import org.secu3.android.ui.sensors.models.SensorPresentationCatalog
 import org.secu3.android.utils.prefs.UserPrefs
 import org.secu3.android.connection.Disconnected
@@ -87,7 +89,9 @@ class DashboardContentTest {
     private lateinit var dataState: MutableState<DashboardViewData?>
     private lateinit var connectionState: MutableState<ConnectionState?>
     private lateinit var narrowLayoutState: MutableState<Boolean>
+    private lateinit var gaugeStyleState: MutableState<DashboardGaugeStyle>
     private val presentationCatalog = SensorPresentationCatalog()
+    private val gaugeDialRenderer = GaugeDialRenderer()
 
     @Before
     fun enterLandscapeHost() {
@@ -193,7 +197,7 @@ class DashboardContentTest {
     }
 
     @Test
-    fun primaryGaugeProgressAnimatesBothDirectionsRetargetsAndReturnsToZeroOnDisconnect() {
+    fun primaryGaugeNeedlesAnimateBothDirectionsRetargetAndHideWhenUnavailable() {
         composeRule.mainClock.autoAdvance = false
         try {
             dataState = mutableStateOf(null)
@@ -207,7 +211,8 @@ class DashboardContentTest {
             }
             composeRule.mainClock.advanceTimeBy(700)
             composeRule.waitForIdle()
-            val zeroReference = gaugeRing("dashboard-rpm-progress")
+            val zeroRpmNeedle = gaugeRing("dashboard-rpm-progress")
+            val zeroSpeedNeedle = gaugeRing("dashboard-speed-progress")
 
             composeRule.runOnIdle {
                 dataState.value = sampleData().copy(primaryLeft = DashboardGaugeReading(GaugeType.RPM, 5600f), primaryRight = DashboardGaugeReading(GaugeType.VEHICLE_SPEED, 150f))
@@ -216,7 +221,8 @@ class DashboardContentTest {
             }
             composeRule.mainClock.advanceTimeBy(700)
             composeRule.waitForIdle()
-            val restoredEndpoint = gaugeRing("dashboard-rpm-progress")
+            val restoredRpmEndpoint = gaugeRing("dashboard-rpm-progress")
+            val restoredSpeedEndpoint = gaugeRing("dashboard-speed-progress")
 
             composeRule.runOnIdle {
                 dataState.value = sampleData().copy(primaryLeft = DashboardGaugeReading(GaugeType.RPM, 2400f), primaryRight = DashboardGaugeReading(GaugeType.VEHICLE_SPEED, 66f))
@@ -227,8 +233,8 @@ class DashboardContentTest {
             composeRule.onNodeWithText("2400").assertIsDisplayed()
             val initial = gaugeRing("dashboard-rpm-progress")
             val initialSpeed = gaugeRing("dashboard-speed-progress")
-            assertTrue("initial RPM arc has visible active progress", !initial.contentEquals(zeroReference))
-            assertTrue("initial speed arc has visible active progress", !initialSpeed.contentEquals(zeroReference))
+            assertTrue("initial RPM needle has a visible position", !initial.contentEquals(zeroRpmNeedle))
+            assertTrue("initial speed needle has a visible position", !initialSpeed.contentEquals(zeroSpeedNeedle))
 
             composeRule.runOnIdle { dataState.value = sampleData().copy(primaryLeft = DashboardGaugeReading(GaugeType.RPM, 4000f), primaryRight = DashboardGaugeReading(GaugeType.VEHICLE_SPEED, 110f)) }
             composeRule.mainClock.advanceTimeByFrame()
@@ -238,8 +244,8 @@ class DashboardContentTest {
             composeRule.mainClock.advanceTimeBy(60)
             composeRule.waitForIdle()
             val rising = gaugeRing("dashboard-rpm-progress")
-            assertTrue("RPM arc animates upward", !beforeRising.contentEquals(rising))
-            assertTrue("speed arc animates alongside RPM", !initialSpeed.contentEquals(gaugeRing("dashboard-speed-progress")))
+            assertTrue("RPM needle animates upward", !beforeRising.contentEquals(rising))
+            assertTrue("speed needle animates alongside RPM", !initialSpeed.contentEquals(gaugeRing("dashboard-speed-progress")))
 
             composeRule.runOnIdle { dataState.value = sampleData().copy(primaryLeft = DashboardGaugeReading(GaugeType.RPM, 1600f), primaryRight = DashboardGaugeReading(GaugeType.VEHICLE_SPEED, 30f)) }
             composeRule.mainClock.advanceTimeByFrame()
@@ -248,17 +254,18 @@ class DashboardContentTest {
             composeRule.mainClock.advanceTimeBy(60)
             composeRule.waitForIdle()
             val falling = gaugeRing("dashboard-rpm-progress")
-            assertTrue("RPM arc animates downward from its current position", !beforeFalling.contentEquals(falling))
+            assertTrue("RPM needle animates downward from its current position", !beforeFalling.contentEquals(falling))
 
             composeRule.runOnIdle { connectionState.value = Disconnected }
             composeRule.mainClock.advanceTimeByFrame()
             composeRule.waitForIdle()
             composeRule.onAllNodesWithText("—", useUnmergedTree = true).assertCountEquals(2)
-            val retracting = gaugeRing("dashboard-rpm-progress")
+            assertTrue("disconnect immediately hides the RPM needle", zeroRpmNeedle.contentEquals(gaugeRing("dashboard-rpm-progress")))
+            assertTrue("disconnect immediately hides the speed needle", zeroSpeedNeedle.contentEquals(gaugeRing("dashboard-speed-progress")))
             composeRule.mainClock.advanceTimeBy(60)
             composeRule.waitForIdle()
-            val returningToZero = gaugeRing("dashboard-rpm-progress")
-            assertTrue("connection loss animates the arc toward zero", !retracting.contentEquals(returningToZero))
+            assertTrue("unavailable RPM needle stays hidden", zeroRpmNeedle.contentEquals(gaugeRing("dashboard-rpm-progress")))
+            assertTrue("unavailable speed needle stays hidden", zeroSpeedNeedle.contentEquals(gaugeRing("dashboard-speed-progress")))
 
             composeRule.runOnIdle {
                 dataState.value = sampleData().copy(primaryLeft = DashboardGaugeReading(GaugeType.RPM, 5600f), primaryRight = DashboardGaugeReading(GaugeType.VEHICLE_SPEED, 150f))
@@ -268,18 +275,22 @@ class DashboardContentTest {
             composeRule.waitForIdle()
             composeRule.onNodeWithText("5600").assertIsDisplayed()
             val restoring = gaugeRing("dashboard-rpm-progress")
+            val restoringSpeed = gaugeRing("dashboard-speed-progress")
             composeRule.mainClock.advanceTimeBy(60)
             composeRule.waitForIdle()
-            assertTrue("restoration animates from its current progress", !restoring.contentEquals(gaugeRing("dashboard-rpm-progress")))
+            assertTrue("RPM needle animates from its current progress after reconnect", !restoring.contentEquals(gaugeRing("dashboard-rpm-progress")))
+            assertTrue("speed needle animates from its current progress after reconnect", !restoringSpeed.contentEquals(gaugeRing("dashboard-speed-progress")))
             composeRule.mainClock.advanceTimeBy(700)
             composeRule.waitForIdle()
-            assertTrue("restoration reaches the live RPM target", restoredEndpoint.contentEquals(gaugeRing("dashboard-rpm-progress")))
+            assertTrue("RPM needle reaches the live target after reconnect", restoredRpmEndpoint.contentEquals(gaugeRing("dashboard-rpm-progress")))
+            assertTrue("speed needle reaches the live target after reconnect", restoredSpeedEndpoint.contentEquals(gaugeRing("dashboard-speed-progress")))
 
             composeRule.runOnIdle { connectionState.value = Disconnected }
             composeRule.mainClock.advanceTimeByFrame()
             composeRule.mainClock.advanceTimeBy(1200)
             composeRule.waitForIdle()
-            assertTrue("disconnected RPM arc settles at zero", zeroReference.contentEquals(gaugeRing("dashboard-rpm-progress")))
+            assertTrue("disconnected RPM needle stays hidden", zeroRpmNeedle.contentEquals(gaugeRing("dashboard-rpm-progress")))
+            assertTrue("disconnected speed needle stays hidden", zeroSpeedNeedle.contentEquals(gaugeRing("dashboard-speed-progress")))
         } finally {
             composeRule.mainClock.autoAdvance = true
         }
@@ -374,6 +385,7 @@ class DashboardContentTest {
                     connectionState = Connected,
                     dashboardSettings = DashboardUiState(settingsLoaded = true),
                     presentationCatalog = presentationCatalog,
+                    gaugeDialRenderer = gaugeDialRenderer,
                     onOpenGaugeSettings = { openedSettings = true },
                 )
             }
@@ -400,6 +412,7 @@ class DashboardContentTest {
                         settingsLoaded = true,
                     ),
                     presentationCatalog = presentationCatalog,
+                    gaugeDialRenderer = gaugeDialRenderer,
                     onOpenGaugeSettings = {},
                 )
             }
@@ -438,6 +451,75 @@ class DashboardContentTest {
     }
 
     @Test
+    fun everyDashboardStyleRendersLiveValuesAndHidesUnavailableProgress() {
+        dataState = mutableStateOf(sampleData())
+        connectionState = mutableStateOf(Connected)
+        narrowLayoutState = mutableStateOf(false)
+        gaugeStyleState = mutableStateOf(DashboardGaugeStyle.Default)
+        composeRule.setContent {
+            dashboardLayout(dataState.value, connectionState.value, narrowLayoutState.value, gaugeStyleState.value)
+        }
+        DashboardGaugeStyle.entries.forEach { style ->
+            composeRule.runOnIdle { gaugeStyleState.value = style; dataState.value = sampleData(); connectionState.value = Connected }
+            composeRule.waitForIdle()
+            composeRule.onNodeWithTag("dashboard-gauge-value-left").assertIsDisplayed()
+            composeRule.onNodeWithTag("dashboard-gauge-value-left").assertTextEquals("2250")
+            if (style == DashboardGaugeStyle.PreciseArc) {
+                val dialBounds = composeRule.onNodeWithTag("dashboard-rpm-progress").getUnclippedBoundsInRoot()
+                val valueBounds = composeRule.onNodeWithTag("dashboard-gauge-value-left").getUnclippedBoundsInRoot()
+                val unitBounds = composeRule.onNodeWithTag("dashboard-gauge-unit-left").getUnclippedBoundsInRoot()
+                val dialCenterY = (dialBounds.top + dialBounds.bottom) / 2
+                val readoutCenterY = (valueBounds.top + unitBounds.bottom) / 2
+                assertTrue("Precise Arc readout stays at its measured dial center", abs((dialCenterY - readoutCenterY).value) < 20f)
+            }
+            val liveDial = captureGauge("dashboard-rpm-progress")
+            captureDesignScreenshot("dashboard-style-${style.preferenceValue}-light.png")
+            composeRule.onNodeWithContentDescription(context.getString(R.string.dashboard_theme_switch_to_dark)).performClick()
+            captureDesignScreenshot("dashboard-style-${style.preferenceValue}-dark.png")
+
+            composeRule.onNodeWithContentDescription(context.getString(R.string.dashboard_theme_switch_to_light)).performClick()
+            composeRule.runOnIdle { dataState.value = null; connectionState.value = Disconnected }
+            composeRule.waitForIdle()
+            composeRule.onNodeWithTag("dashboard-gauge-value-left").assertTextEquals("—")
+            assertTrue("$style hides its active progress when unavailable", !liveDial.sameAs(captureGauge("dashboard-rpm-progress")))
+
+            composeRule.runOnIdle { dataState.value = sampleData().copy(primaryLeft = DashboardGaugeReading(GaugeType.RPM, 0f)); connectionState.value = Connected }
+            composeRule.waitForIdle()
+            composeRule.onNodeWithTag("dashboard-gauge-value-left").assertTextEquals("0")
+        }
+
+        composeRule.runOnIdle {
+            narrowLayoutState.value = true
+            dataState.value = sampleData()
+            connectionState.value = Connected
+        }
+        DashboardGaugeStyle.entries.forEach { style ->
+            composeRule.runOnIdle { gaugeStyleState.value = style }
+            composeRule.waitForIdle()
+            composeRule.onNodeWithTag("dashboard-gauge-value-left").assertIsDisplayed()
+            val dialBounds = composeRule.onNodeWithTag("dashboard-rpm-progress").getUnclippedBoundsInRoot()
+            val rootBounds = composeRule.onRoot().fetchSemanticsNode().boundsInRoot
+            assertTrue("$style compact dial stays within the viewport", dialBounds.left.value >= rootBounds.left && dialBounds.right.value <= rootBounds.right && dialBounds.top.value >= rootBounds.top && dialBounds.bottom.value <= rootBounds.bottom)
+            val valueBounds = composeRule.onNodeWithTag("dashboard-gauge-value-left").getUnclippedBoundsInRoot()
+            val unitBounds = composeRule.onNodeWithTag("dashboard-gauge-unit-left").getUnclippedBoundsInRoot()
+            val dialCenterY = (dialBounds.top + dialBounds.bottom) / 2
+            val readoutCenterY = (valueBounds.top + unitBounds.bottom) / 2
+            if (style == DashboardGaugeStyle.PreciseArc) {
+                assertTrue("compact Precise Arc readout stays centered in its dial", abs((dialCenterY - readoutCenterY).value) < 24f)
+                captureDesignScreenshot("dashboard-style-precise_arc-compact-light.png")
+            }
+            if (style == DashboardGaugeStyle.ThinNeedle) {
+                assertTrue("compact Thin Needle readout stays below the dial", readoutCenterY > dialCenterY)
+                captureDesignScreenshot("dashboard-style-thin_needle-compact-light.png")
+            }
+            if (style == DashboardGaugeStyle.Classic) assertTrue("compact Classic readout stays below the dial", readoutCenterY > dialCenterY)
+            if (style == DashboardGaugeStyle.FilledArc || style == DashboardGaugeStyle.TriangularNeedle) {
+                assertTrue("$style compact readout stays inside the dial center", abs((dialCenterY - readoutCenterY).value) < 32f)
+            }
+        }
+    }
+
+    @Test
     fun themeButtonHasReservedSpaceBesideScrollableWarnings() {
         showDashboard(
             data = sampleData(temperature = 106f, voltage = 11f, oilTemperature = 140f),
@@ -466,25 +548,26 @@ class DashboardContentTest {
     }
 
     @Composable
-    private fun dashboardTestContent(data: DashboardViewData?, state: ConnectionState?) {
+    private fun dashboardTestContent(data: DashboardViewData?, state: ConnectionState?, style: DashboardGaugeStyle = DashboardGaugeStyle.Default) {
         DashboardContent(
             data = data,
             connectionState = state,
-            dashboardSettings = DashboardUiState(settingsLoaded = true),
+            dashboardSettings = DashboardUiState(gaugeStyle = style, settingsLoaded = true),
             presentationCatalog = presentationCatalog,
+            gaugeDialRenderer = gaugeDialRenderer,
             onOpenGaugeSettings = {}
         )
     }
 
     @Composable
-    private fun dashboardLayout(data: DashboardViewData?, state: ConnectionState?, narrow: Boolean) {
+    private fun dashboardLayout(data: DashboardViewData?, state: ConnectionState?, narrow: Boolean, style: DashboardGaugeStyle = DashboardGaugeStyle.Default) {
         org.secu3.android.ui.compose.SecuComposeTheme(darkTheme = false) {
             if (narrow) {
                 Box(Modifier.width(360.dp).fillMaxHeight()) {
-                    dashboardTestContent(data, state)
+                    dashboardTestContent(data, state, style)
                 }
             } else {
-                dashboardTestContent(data, state)
+                dashboardTestContent(data, state, style)
             }
         }
     }
@@ -550,13 +633,15 @@ class DashboardContentTest {
             composeRule.runOnIdle {
                 dataState.value = data
                 connectionState.value = state
+                gaugeStyleState.value = DashboardGaugeStyle.Default
             }
         } else {
             dataState = mutableStateOf(data)
             connectionState = mutableStateOf(state)
             narrowLayoutState = mutableStateOf(false)
+            gaugeStyleState = mutableStateOf(DashboardGaugeStyle.Default)
             composeRule.setContent {
-                dashboardLayout(dataState.value, connectionState.value, narrowLayoutState.value)
+                dashboardLayout(dataState.value, connectionState.value, narrowLayoutState.value, gaugeStyleState.value)
             }
             contentInstalled = true
         }

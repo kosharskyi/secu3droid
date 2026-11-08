@@ -47,6 +47,7 @@ import kotlinx.coroutines.delay
 import java.io.IOException
 import org.secu3.android.R
 import org.secu3.android.models.InjectionTimingMode
+import org.secu3.android.models.DashboardGaugeStyle
 import org.secu3.android.models.SensorGaugeStyle
 import org.secu3.android.models.sensors.GaugeType
 
@@ -75,6 +76,7 @@ class UserPrefs @Inject constructor(
     private val fuelFlowPulsesPerLitreKey = stringPreferencesKey(FUEL_FLOW_PULSES_PER_LITRE_KEY)
     private val dashboardLeftGaugeKey = stringPreferencesKey(DASHBOARD_LEFT_GAUGE_KEY)
     private val dashboardRightGaugeKey = stringPreferencesKey(DASHBOARD_RIGHT_GAUGE_KEY)
+    private val dashboardGaugeStyleKey = stringPreferencesKey(DASHBOARD_GAUGE_STYLE_KEY)
 
     val settings: Flow<Settings> = dataStore.data
         .map(::readSettings)
@@ -120,6 +122,7 @@ class UserPrefs @Inject constructor(
             ?: DEFAULT_DASHBOARD_LEFT_GAUGE,
         dashboardRightGauge = GaugeType.entries.firstOrNull { it.name == preferences[dashboardRightGaugeKey] }
             ?: DEFAULT_DASHBOARD_RIGHT_GAUGE,
+        dashboardGaugeStyle = DashboardGaugeStyle.fromPreference(preferences[dashboardGaugeStyleKey]),
     )
 
     private fun readAppearanceMode(preferences: Preferences): AppearanceMode {
@@ -160,9 +163,10 @@ class UserPrefs @Inject constructor(
         update { this[fuelFlowPulsesPerLitreKey] = value.toString() }
     }
 
-    suspend fun setDashboardGauges(left: GaugeType, right: GaugeType) = update {
+    suspend fun setDashboardGaugeSettings(left: GaugeType, right: GaugeType, style: DashboardGaugeStyle) = update {
         this[dashboardLeftGaugeKey] = left.name
         this[dashboardRightGaugeKey] = right.name
+        this[dashboardGaugeStyleKey] = style.preferenceValue
     }
 
     fun parsePositiveConnectionRetries(value: String): Int? = value.toIntOrNull()?.takeIf { it > 0 }
@@ -206,6 +210,7 @@ class UserPrefs @Inject constructor(
         val fuelFlowPulsesPerLitre: Int,
         val dashboardLeftGauge: GaugeType,
         val dashboardRightGauge: GaugeType,
+        val dashboardGaugeStyle: DashboardGaugeStyle,
     ) {
         val connectionRetries: Int get() = connectionRetriesText.toIntOrNull()?.takeIf { it > 0 } ?: 5
         val logExportDestination: LogExportDestination
@@ -223,6 +228,7 @@ class UserPrefs @Inject constructor(
         const val FUEL_FLOW_PULSES_PER_LITRE_MAX = 32_000
         const val DASHBOARD_LEFT_GAUGE_KEY = "dashboard_left_gauge"
         const val DASHBOARD_RIGHT_GAUGE_KEY = "dashboard_right_gauge"
+        const val DASHBOARD_GAUGE_STYLE_KEY = "dashboard_gauge_style"
         val DEFAULT_DASHBOARD_LEFT_GAUGE = GaugeType.RPM
         val DEFAULT_DASHBOARD_RIGHT_GAUGE = GaugeType.VEHICLE_SPEED
 

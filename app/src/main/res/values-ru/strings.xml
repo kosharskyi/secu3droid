@@ -391,6 +391,9 @@
     <string name="raw_sensors_frag_add_io8_input_label">Вход ADD_I8</string>
 
     <string name="dashboard_gauges_title">Приборы панели</string>
+    <string name="dashboard_gauge_style">Стиль шкал панели приборов</string>
+    <string name="dashboard_gauge_style_filled_arc">Заполненная дуга</string>
+    <string name="dashboard_gauge_style_triangular_needle">Треугольная стрелка</string>
     <string name="dashboard_gauges_configure">Настроить приборы панели</string>
     <string name="dashboard_gauges_left">Левый прибор</string>
     <string name="dashboard_gauges_right">Правый прибор</string>

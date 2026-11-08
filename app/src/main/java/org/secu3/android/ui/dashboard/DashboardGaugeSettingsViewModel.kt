@@ -37,12 +37,14 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import org.secu3.android.models.sensors.GaugeType
+import org.secu3.android.models.DashboardGaugeStyle
 import org.secu3.android.ui.sensors.models.SensorPresentationCatalog
 import org.secu3.android.utils.prefs.UserPrefs
 
 data class DashboardGaugeSettingsUiState(
     val leftGauge: GaugeType = UserPrefs.DEFAULT_DASHBOARD_LEFT_GAUGE,
     val rightGauge: GaugeType = UserPrefs.DEFAULT_DASHBOARD_RIGHT_GAUGE,
+    val gaugeStyle: DashboardGaugeStyle = DashboardGaugeStyle.Default,
     val settingsLoaded: Boolean = false,
     val settingsReadFailed: Boolean = false,
     val saveStatus: DashboardGaugeSaveStatus = DashboardGaugeSaveStatus.Idle,
@@ -71,6 +73,7 @@ class DashboardGaugeSettingsViewModel @Inject constructor(
                         it.copy(
                             leftGauge = settings.dashboardLeftGauge,
                             rightGauge = settings.dashboardRightGauge,
+                            gaugeStyle = settings.dashboardGaugeStyle,
                             settingsLoaded = true,
                             settingsReadFailed = false,
                         )
@@ -79,16 +82,17 @@ class DashboardGaugeSettingsViewModel @Inject constructor(
         }
     }
 
-    fun saveGaugeSettings(left: GaugeType, right: GaugeType) {
+    fun saveGaugeSettings(left: GaugeType, right: GaugeType, style: DashboardGaugeStyle) {
         if (_uiState.value.saveStatus == DashboardGaugeSaveStatus.Saving) return
         _uiState.update { it.copy(saveStatus = DashboardGaugeSaveStatus.Saving) }
         viewModelScope.launch {
             try {
-                userPrefs.setDashboardGauges(left, right)
+                userPrefs.setDashboardGaugeSettings(left, right, style)
                 _uiState.update {
                     it.copy(
                         leftGauge = left,
                         rightGauge = right,
+                        gaugeStyle = style,
                         settingsLoaded = true,
                         settingsReadFailed = false,
                         saveStatus = DashboardGaugeSaveStatus.Saved,

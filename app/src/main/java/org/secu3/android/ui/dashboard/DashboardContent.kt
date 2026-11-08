@@ -19,6 +19,7 @@ package org.secu3.android.ui.dashboard
 
 import androidx.annotation.StringRes
 import androidx.compose.foundation.Canvas
+import androidx.compose.foundation.text.TextAutoSize
 import androidx.compose.foundation.background
 import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.Arrangement
@@ -28,13 +29,13 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.ExperimentalLayoutApi
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -59,11 +60,7 @@ import androidx.compose.material.icons.filled.Settings
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.geometry.Offset
-import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.StrokeCap
-import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.graphics.lerp
 import androidx.compose.ui.graphics.luminance
 import androidx.compose.ui.res.stringResource
@@ -71,6 +68,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.platform.testTag
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -87,14 +85,15 @@ import org.secu3.android.connection.UsbAwaitingEcu
 import org.secu3.android.connection.UsbReconnecting
 import org.secu3.android.connection.UsbReconnectingAwaitingEcu
 import org.secu3.android.models.InjectionTimingMode
+import org.secu3.android.models.DashboardGaugeStyle
 import org.secu3.android.models.sensors.GaugeType
+import org.secu3.android.ui.sensors.GaugeDialRenderer
+import org.secu3.android.ui.sensors.GaugeRange
 import org.secu3.android.ui.sensors.models.GaugePresentation
 import org.secu3.android.ui.sensors.models.GaugeScale
 import org.secu3.android.ui.sensors.models.SensorPresentationCatalog
-import kotlin.math.PI
-import kotlin.math.cos
 import kotlin.math.min
-import kotlin.math.sin
+import kotlin.math.sqrt
 
 internal const val DASHBOARD_DECORATIVE_TICK_COUNT = 11
 
@@ -104,6 +103,7 @@ fun DashboardContent(
     connectionState: ConnectionState?,
     dashboardSettings: DashboardUiState,
     presentationCatalog: SensorPresentationCatalog,
+    gaugeDialRenderer: GaugeDialRenderer,
     onOpenGaugeSettings: () -> Unit,
 ) {
     var dashboardDarkTheme by rememberSaveable { mutableStateOf<Boolean?>(null) }
@@ -174,6 +174,8 @@ fun DashboardContent(
                                     value = primaryGaugeData?.primaryLeft?.value,
                                     type = dashboardSettings.leftGauge,
                                     presentationCatalog = presentationCatalog,
+                                    style = dashboardSettings.gaugeStyle,
+                                    renderer = gaugeDialRenderer,
                                     injectionTimingMode = dashboardSettings.injectionTimingMode,
                                     modifier = Modifier.weight(1f).fillMaxWidth().testTag("dashboard-rpm-gauge"),
                                     compact = compact,
@@ -186,6 +188,8 @@ fun DashboardContent(
                                     value = primaryGaugeData?.primaryRight?.value,
                                     type = dashboardSettings.rightGauge,
                                     presentationCatalog = presentationCatalog,
+                                    style = dashboardSettings.gaugeStyle,
+                                    renderer = gaugeDialRenderer,
                                     injectionTimingMode = dashboardSettings.injectionTimingMode,
                                     modifier = Modifier.weight(1f).fillMaxWidth().testTag("dashboard-speed-gauge"),
                                     compact = compact,
@@ -205,6 +209,8 @@ fun DashboardContent(
                                     value = primaryGaugeData?.primaryLeft?.value,
                                     type = dashboardSettings.leftGauge,
                                     presentationCatalog = presentationCatalog,
+                                    style = dashboardSettings.gaugeStyle,
+                                    renderer = gaugeDialRenderer,
                                     injectionTimingMode = dashboardSettings.injectionTimingMode,
                                     modifier = Modifier.weight(1f).fillMaxHeight().testTag("dashboard-rpm-gauge"),
                                     compact = compact,
@@ -217,6 +223,8 @@ fun DashboardContent(
                                     value = primaryGaugeData?.primaryRight?.value,
                                     type = dashboardSettings.rightGauge,
                                     presentationCatalog = presentationCatalog,
+                                    style = dashboardSettings.gaugeStyle,
+                                    renderer = gaugeDialRenderer,
                                     injectionTimingMode = dashboardSettings.injectionTimingMode,
                                     modifier = Modifier.weight(1f).fillMaxHeight().testTag("dashboard-speed-gauge"),
                                     compact = compact,
@@ -330,6 +338,7 @@ private fun DashboardPreviewContent(data: DashboardViewData) {
         connectionState = Connected,
         dashboardSettings = DashboardUiState(settingsLoaded = true),
         presentationCatalog = SensorPresentationCatalog(),
+        gaugeDialRenderer = GaugeDialRenderer(),
         onOpenGaugeSettings = {},
     )
 }
@@ -456,6 +465,8 @@ private fun DashboardPrimaryGauge(
     value: Float?,
     type: GaugeType,
     presentationCatalog: SensorPresentationCatalog,
+    style: DashboardGaugeStyle,
+    renderer: GaugeDialRenderer,
     injectionTimingMode: InjectionTimingMode,
     modifier: Modifier,
     compact: Boolean,
@@ -472,6 +483,8 @@ private fun DashboardPrimaryGauge(
         unit = stringResource(presentation.units),
         catalog = presentationCatalog,
         scale = scale,
+        style = style,
+        renderer = renderer,
         modifier = modifier,
         compact = compact,
         progressTag = progressTag,
@@ -486,6 +499,8 @@ private fun ArcGauge(
     unit: String,
     catalog: SensorPresentationCatalog,
     scale: GaugeScale,
+    style: DashboardGaugeStyle,
+    renderer: GaugeDialRenderer,
     modifier: Modifier = Modifier,
     compact: Boolean,
     progressTag: String,
@@ -508,76 +523,68 @@ private fun ArcGauge(
         colors.surfaceVariant
     }
     val formattedValue = validValue?.let { catalog.formatValue(scale.type, it) } ?: "—"
+    val sections = remember(scale, resources, context.theme) {
+        scale.sections.map { GaugeRange(it.start, it.end, Color(resources.getColor(it.color, context.theme))) }
+    }
+    val classicSections = remember(sections) { sections.map { it.start to (it.end to it.color) } }
+    val tickLabels = remember(scale, androidx.compose.ui.platform.LocalConfiguration.current) { scale.ticks.map(scale::format) }
+    val density = LocalDensity.current
+    val readoutBelow = style == DashboardGaugeStyle.Classic || style == DashboardGaugeStyle.ThinNeedle
 
-    Box(modifier = modifier, contentAlignment = Alignment.Center) {
-        Canvas(
-            modifier = Modifier
-                .fillMaxHeight()
-                .aspectRatio(1.22f)
-                .testTag(progressTag)
+    Column(modifier = modifier, horizontalAlignment = Alignment.CenterHorizontally) {
+        BoxWithConstraints(
+            modifier = Modifier.weight(1f).fillMaxWidth(),
+            contentAlignment = Alignment.Center,
         ) {
-            val drawnProgress = animatedProgress()
-            val diameter = min(size.width, size.height) * 0.88f
-            val strokeWidth = diameter * 0.055f
-            val topLeft = Offset((size.width - diameter) / 2f, (size.height - diameter) / 2f)
-            val arcSize = Size(diameter, diameter)
-            drawArc(
-                color = trackColor,
-                startAngle = GaugeScale.START_ANGLE_DEGREES,
-                sweepAngle = GaugeScale.SWEEP_ANGLE_DEGREES,
-                useCenter = false,
-                topLeft = topLeft,
-                size = arcSize,
-                style = Stroke(width = strokeWidth, cap = StrokeCap.Round),
-            )
-            drawArc(
-                color = activeColor,
-                startAngle = GaugeScale.START_ANGLE_DEGREES,
-                sweepAngle = GaugeScale.SWEEP_ANGLE_DEGREES * drawnProgress,
-                useCenter = false,
-                topLeft = topLeft,
-                size = arcSize,
-                style = Stroke(width = strokeWidth, cap = StrokeCap.Round),
-            )
-
-            val center = Offset(size.width / 2f, size.height / 2f)
-            val outerRadius = diameter / 2f
-            val innerRadius = outerRadius - strokeWidth * 1.9f
-            repeat(DASHBOARD_DECORATIVE_TICK_COUNT) { index ->
-                val fraction = index.toFloat() / (DASHBOARD_DECORATIVE_TICK_COUNT - 1).toFloat()
-                val angleRad = (GaugeScale.START_ANGLE_DEGREES + GaugeScale.SWEEP_ANGLE_DEGREES * fraction) *
-                    PI.toFloat() / 180f
-                val tickColor = if (fraction <= drawnProgress) activeColor else colors.onSurfaceVariant.copy(alpha = 0.38f)
-                drawLine(
-                    color = tickColor,
-                    start = Offset(center.x + cos(angleRad) * innerRadius, center.y + sin(angleRad) * innerRadius),
-                    end = Offset(center.x + cos(angleRad) * outerRadius, center.y + sin(angleRad) * outerRadius),
-                    strokeWidth = strokeWidth * 0.16f,
-                    cap = StrokeCap.Round,
-                )
+            val constrainedHeight = maxHeight
+            val constrainedWidth = maxWidth
+            val drawModern = style == DashboardGaugeStyle.PreciseArc || style == DashboardGaugeStyle.ThinNeedle
+            val configuration = androidx.compose.ui.platform.LocalConfiguration.current
+            val (canvasSize, modernMeasure) = remember(scale, constrainedWidth, constrainedHeight, density, configuration, style) {
+                val squareSize = min(constrainedWidth.value, constrainedHeight.value).dp
+                var fittedSize = if (drawModern) minOf(constrainedWidth - 28.dp, constrainedHeight * 0.82f).coerceAtLeast(1.dp) else squareSize
+                var measure = if (drawModern) renderer.measureNewGaugeDial(scale, fittedSize, density) else null
+                while (measure != null && measure.height > constrainedHeight && fittedSize > 64.dp) {
+                    fittedSize -= 1.dp
+                    measure = renderer.measureNewGaugeDial(scale, fittedSize, density)
+                }
+                fittedSize to measure
+            }
+            val canvasHeight = modernMeasure?.height ?: canvasSize
+            val canvasWidth = if (modernMeasure != null) canvasSize + 28.dp else canvasSize
+            Canvas(Modifier.width(canvasWidth).height(canvasHeight).testTag(progressTag)) {
+                with(renderer) {
+                    drawDashboardGauge(
+                        style = style,
+                        scale = scale,
+                        colors = colors,
+                        sections = sections,
+                        classicSections = classicSections,
+                        progress = animatedProgress().takeIf { normalized != null },
+                        activeColor = activeColor,
+                        trackColor = trackColor,
+                        classicTickLabels = tickLabels,
+                        dialMeasure = modernMeasure,
+                    )
+                }
+            }
+            if (!readoutBelow) {
+                if (style == DashboardGaugeStyle.PreciseArc && modernMeasure != null) {
+                    val outerRadius = modernMeasure.faceRadius
+                    val innerReadoutRadius = outerRadius - 10.5.dp - 8.dp
+                    val readoutSize = (innerReadoutRadius * sqrt(2f)).coerceAtLeast(24.dp)
+                    DashboardGaugeReadout(
+                        formattedValue, unit, gaugeSlot, compact,
+                        Modifier.size(readoutSize).align(Alignment.Center)
+                            .offset(y = modernMeasure.centerY - canvasHeight / 2f),
+                        maxFontSize = if (compact) 48.sp else 68.sp,
+                    )
+                } else {
+                    DashboardGaugeReadout(formattedValue, unit, gaugeSlot, compact, Modifier.align(Alignment.Center))
+                }
             }
         }
-
-        Column(
-            horizontalAlignment = Alignment.CenterHorizontally,
-            verticalArrangement = Arrangement.Center,
-        ) {
-            Text(
-                text = formattedValue,
-                color = colors.onSurface,
-                fontSize = if (compact) 48.sp else 68.sp,
-                fontWeight = FontWeight.Bold,
-                textAlign = TextAlign.Center,
-                modifier = Modifier.testTag("dashboard-gauge-value-$gaugeSlot"),
-            )
-            Text(
-                text = unit,
-                color = colors.onSurfaceVariant,
-                fontSize = if (compact) 15.sp else 18.sp,
-                fontWeight = FontWeight.SemiBold,
-                modifier = Modifier.testTag("dashboard-gauge-unit-$gaugeSlot"),
-            )
-        }
+        if (readoutBelow) DashboardGaugeReadout(formattedValue, unit, gaugeSlot, compact, Modifier)
         Text(
             text = title,
             color = colors.onSurfaceVariant,
@@ -586,10 +593,41 @@ private fun ArcGauge(
             textAlign = TextAlign.Center,
             maxLines = 1,
             overflow = TextOverflow.Ellipsis,
-            modifier = Modifier
-                .align(Alignment.BottomCenter)
-                .padding(horizontal = 32.dp, vertical = 4.dp)
+            modifier = Modifier.padding(horizontal = 32.dp, vertical = 4.dp)
                 .testTag("dashboard-gauge-title-$gaugeSlot"),
+        )
+    }
+}
+
+@Composable
+private fun DashboardGaugeReadout(
+    value: String,
+    unit: String,
+    slot: String,
+    compact: Boolean,
+    modifier: Modifier,
+    maxFontSize: androidx.compose.ui.unit.TextUnit = if (compact) 48.sp else 68.sp,
+) {
+    Column(modifier, horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.Center) {
+        Text(
+            text = value,
+            color = MaterialTheme.colorScheme.onSurface,
+            fontSize = maxFontSize,
+            fontWeight = FontWeight.Bold,
+            textAlign = TextAlign.Center,
+            maxLines = 1,
+            autoSize = TextAutoSize.StepBased(minFontSize = 12.sp, maxFontSize = maxFontSize, stepSize = 1.sp),
+            style = MaterialTheme.typography.titleLarge.copy(fontWeight = FontWeight.Bold),
+            modifier = Modifier.testTag("dashboard-gauge-value-$slot"),
+        )
+        Text(
+            text = unit,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+            fontSize = if (compact) 15.sp else 18.sp,
+            fontWeight = FontWeight.SemiBold,
+            maxLines = 1,
+            autoSize = TextAutoSize.StepBased(minFontSize = 11.sp, maxFontSize = 15.sp, stepSize = 1.sp),
+            modifier = Modifier.testTag("dashboard-gauge-unit-$slot"),
         )
     }
 }

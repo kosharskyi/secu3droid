@@ -549,6 +549,9 @@
     <string name="raw_sensors_frag_add_io8_input_label">Input ADD_I8</string>
 
     <string name="dashboard_gauges_title">Dashboard gauges</string>
+    <string name="dashboard_gauge_style">Dashboard gauge style</string>
+    <string name="dashboard_gauge_style_filled_arc">Filled arc</string>
+    <string name="dashboard_gauge_style_triangular_needle">Triangular needle</string>
     <string name="dashboard_gauges_configure">Configure dashboard gauges</string>
     <string name="dashboard_gauges_left">Left gauge</string>
     <string name="dashboard_gauges_right">Right gauge</string>

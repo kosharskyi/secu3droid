@@ -36,9 +36,11 @@ import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import org.secu3.android.connection.Secu3ConnectionManager
 import org.secu3.android.models.InjectionTimingMode
+import org.secu3.android.models.DashboardGaugeStyle
 import org.secu3.android.models.sensors.GaugeType
 import org.secu3.android.ui.common.SensorPacketObserver
 import org.secu3.android.ui.sensors.models.SensorPresentationCatalog
+import org.secu3.android.ui.sensors.GaugeDialRenderer
 import org.secu3.android.utils.Task
 import org.secu3.android.utils.prefs.UserPrefs
 import javax.inject.Inject
@@ -49,6 +51,7 @@ class DashboardViewModel @Inject constructor(
     sensorPacketObserver: SensorPacketObserver,
     private val userPrefs: UserPrefs,
     val presentationCatalog: SensorPresentationCatalog,
+    val gaugeDialRenderer: GaugeDialRenderer,
 ) : ViewModel() {
     private val _uiState = MutableStateFlow(DashboardUiState())
     val uiState: StateFlow<DashboardUiState> = _uiState.asStateFlow()
@@ -77,6 +80,7 @@ class DashboardViewModel @Inject constructor(
                         it.copy(
                             leftGauge = settings.dashboardLeftGauge,
                             rightGauge = settings.dashboardRightGauge,
+                            gaugeStyle = settings.dashboardGaugeStyle,
                             injectionTimingMode = settings.injectionTimingMode,
                             settingsLoaded = true,
                         )
@@ -93,6 +97,7 @@ class DashboardViewModel @Inject constructor(
 data class DashboardUiState(
     val leftGauge: GaugeType = UserPrefs.DEFAULT_DASHBOARD_LEFT_GAUGE,
     val rightGauge: GaugeType = UserPrefs.DEFAULT_DASHBOARD_RIGHT_GAUGE,
+    val gaugeStyle: DashboardGaugeStyle = DashboardGaugeStyle.Default,
     val injectionTimingMode: InjectionTimingMode = InjectionTimingMode.Default,
     val settingsLoaded: Boolean = false,
 )

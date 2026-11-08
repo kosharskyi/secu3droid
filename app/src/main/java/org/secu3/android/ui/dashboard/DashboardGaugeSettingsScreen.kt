@@ -72,7 +72,9 @@ import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.window.DialogProperties
 import kotlinx.coroutines.launch
 import org.secu3.android.R
+import org.secu3.android.models.DashboardGaugeStyle
 import org.secu3.android.models.sensors.GaugeType
+import org.secu3.android.ui.compose.ChoiceDialog
 import org.secu3.android.ui.compose.SecuComposeTheme
 import org.secu3.android.ui.compose.SecuTopAppBar
 import org.secu3.android.ui.compose.SettingsActionRow
@@ -84,13 +86,15 @@ import org.secu3.android.utils.prefs.UserPrefs
 internal fun DashboardGaugeSettingsScreen(
     state: DashboardGaugeSettingsUiState,
     presentationCatalog: SensorPresentationCatalog,
-    onSave: (GaugeType, GaugeType) -> Unit,
+    onSave: (GaugeType, GaugeType, DashboardGaugeStyle) -> Unit,
     onNavigateUp: () -> Unit,
 ) {
     var draftLeftName by rememberSaveable { mutableStateOf(UserPrefs.DEFAULT_DASHBOARD_LEFT_GAUGE.name) }
     var draftRightName by rememberSaveable { mutableStateOf(UserPrefs.DEFAULT_DASHBOARD_RIGHT_GAUGE.name) }
+    var draftGaugeStyleName by rememberSaveable { mutableStateOf(DashboardGaugeStyle.Default.name) }
     var draftAwaitingSettings by rememberSaveable { mutableStateOf(true) }
     var editingLeftGauge by rememberSaveable { mutableStateOf<Boolean?>(null) }
+    var editingGaugeStyle by rememberSaveable { mutableStateOf(false) }
     var searchQuery by rememberSaveable { mutableStateOf("") }
     val selectorScrollState = rememberScrollState()
     val pageScrollState = rememberScrollState()
@@ -101,14 +105,27 @@ internal fun DashboardGaugeSettingsScreen(
     val rightGauge = remember(draftRightName) {
         GaugeType.entries.firstOrNull { it.name == draftRightName } ?: UserPrefs.DEFAULT_DASHBOARD_RIGHT_GAUGE
     }
+    val gaugeStyle = remember(draftGaugeStyleName) {
+        DashboardGaugeStyle.entries.firstOrNull { it.name == draftGaugeStyleName } ?: DashboardGaugeStyle.Default
+    }
+    val styleLabelResource: (DashboardGaugeStyle) -> Int = { style ->
+        when (style) {
+            DashboardGaugeStyle.Classic -> R.string.sensor_gauge_style_current
+            DashboardGaugeStyle.PreciseArc -> R.string.sensor_gauge_style_precise_arc
+            DashboardGaugeStyle.ThinNeedle -> R.string.sensor_gauge_style_thin_needle
+            DashboardGaugeStyle.FilledArc -> R.string.dashboard_gauge_style_filled_arc
+            DashboardGaugeStyle.TriangularNeedle -> R.string.dashboard_gauge_style_triangular_needle
+        }
+    }
     val isSaving = state.saveStatus == DashboardGaugeSaveStatus.Saving
-    val canEdit = state.settingsLoaded && !isSaving
+    val canEdit = state.settingsLoaded && !draftAwaitingSettings && !isSaving
     BackHandler(enabled = isSaving) {}
 
     androidx.compose.runtime.LaunchedEffect(state.settingsLoaded, draftAwaitingSettings) {
         if (state.settingsLoaded && draftAwaitingSettings) {
             draftLeftName = state.leftGauge.name
             draftRightName = state.rightGauge.name
+            draftGaugeStyleName = state.gaugeStyle.name
             draftAwaitingSettings = false
         }
     }
@@ -129,7 +146,7 @@ internal fun DashboardGaugeSettingsScreen(
                 navigationIconModifier = Modifier.testTag("dashboard-gauge-cancel"),
                 actions = {
                     TextButton(
-                        onClick = { if (canEdit) onSave(leftGauge, rightGauge) },
+                        onClick = { if (canEdit) onSave(leftGauge, rightGauge, gaugeStyle) },
                         enabled = canEdit,
                         modifier = Modifier.testTag("dashboard-gauge-save"),
                     ) {
@@ -190,11 +207,19 @@ internal fun DashboardGaugeSettingsScreen(
                 )
                 HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant)
                 SettingsActionRow(
+                    title = stringResource(R.string.dashboard_gauge_style),
+                    summary = stringResource(styleLabelResource(gaugeStyle)),
+                    onClick = { if (canEdit) editingGaugeStyle = true },
+                    testTag = "dashboard-gauge-style",
+                )
+                HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant)
+                SettingsActionRow(
                     title = stringResource(R.string.dashboard_gauges_reset),
                     onClick = {
                         if (canEdit) {
                             draftLeftName = UserPrefs.DEFAULT_DASHBOARD_LEFT_GAUGE.name
                             draftRightName = UserPrefs.DEFAULT_DASHBOARD_RIGHT_GAUGE.name
+                            draftGaugeStyleName = DashboardGaugeStyle.Default.name
                         }
                     },
                     testTag = "dashboard-gauge-reset",
@@ -218,6 +243,25 @@ internal fun DashboardGaugeSettingsScreen(
                 editingLeftGauge = null
             },
             onDismiss = { if (!isSaving) editingLeftGauge = null },
+        )
+    }
+    if (editingGaugeStyle) {
+        ChoiceDialog(
+            title = { Text(stringResource(R.string.dashboard_gauge_style)) },
+            selected = gaugeStyle,
+            choices = DashboardGaugeStyle.entries,
+            label = { style -> stringResource(styleLabelResource(style)) },
+            onSelect = { style ->
+                if (canEdit) {
+                    draftGaugeStyleName = style.name
+                    editingGaugeStyle = false
+                }
+            },
+            onDismiss = { if (!isSaving) editingGaugeStyle = false },
+            confirmButton = { TextButton(onClick = { if (!isSaving) editingGaugeStyle = false }, enabled = !isSaving) { Text(stringResource(R.string.close)) } },
+            optionTestTag = { style -> "dashboard-gauge-style-${style.preferenceValue}" },
+            optionMinHeight = 48.dp,
+            optionHorizontalPadding = 0.dp,
         )
     }
 }
@@ -374,7 +418,7 @@ private fun DashboardGaugeSettingsOrdinaryRowsLandscapePreview() {
         DashboardGaugeSettingsScreen(
             state = DashboardGaugeSettingsUiState(settingsLoaded = true, leftGauge = GaugeType.MAF),
             presentationCatalog = SensorPresentationCatalog(),
-            onSave = { _, _ -> },
+            onSave = { _, _, _ -> },
             onNavigateUp = {},
         )
     }

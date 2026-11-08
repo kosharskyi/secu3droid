@@ -85,6 +85,7 @@ internal fun DashboardRoute(
             connectionState = connection,
             dashboardSettings = dashboardSettings,
             presentationCatalog = viewModel.presentationCatalog,
+            gaugeDialRenderer = viewModel.gaugeDialRenderer,
             onOpenGaugeSettings = onOpenGaugeSettings,
         )
     }
