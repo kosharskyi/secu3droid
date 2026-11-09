@@ -24,12 +24,10 @@
  */
 package org.secu3.android.models
 
-data class CheckEngineError (
-
-    var title: String,
-
-    var isActive: Boolean = false,
-
-    var isSaved: Boolean = false
-
+data class CheckEngineError(
+    val bit: Int,
+    val title: String,
+    val blinkCode: Int,
+    val isActive: Boolean,
+    val isSaved: Boolean,
 )

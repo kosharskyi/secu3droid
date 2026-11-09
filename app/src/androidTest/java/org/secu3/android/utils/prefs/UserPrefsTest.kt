@@ -65,6 +65,27 @@ class UserPrefsTest {
     }
 
     @Test
+    fun savedErrorAutoReadDefaultsToEnabledAndPersistsAnExplicitOffValue() = runBlocking {
+        val name = UUID.randomUUID().toString()
+        val key = booleanPreferencesKey(UserPrefs.AUTO_READ_SAVED_ERRORS_KEY)
+        val fixture = IsolatedUserPrefs(context, name)
+        try {
+            assertTrue(fixture.prefs.settings.first().autoReadSavedErrors)
+            assertNull(fixture.dataStore.data.first()[key])
+            fixture.prefs.setAutoReadSavedErrors(false)
+        } finally {
+            fixture.close()
+        }
+
+        val reopened = IsolatedUserPrefs(context, name)
+        try {
+            assertFalse(reopened.prefs.settings.first().autoReadSavedErrors)
+        } finally {
+            reopened.close()
+        }
+    }
+
+    @Test
     fun fuelFlowCalibrationDefaultsValidatesBoundsAndPersistsInSettingsSnapshot() = runBlocking {
         val fixture = IsolatedUserPrefs(context, UUID.randomUUID().toString())
         try {

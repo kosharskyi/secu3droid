@@ -1,19 +1,21 @@
-## Saved and active masks are independent and arrive in sequence
+## Live and EEPROM reads are independent
 
-An empty screen is valid only after both the saved EEPROM response (`u,0,2`) and active `v` mask arrive, even when either mask is zero. Request saved errors before selecting active mode. Connection setup may deliver firmware information after the first active request, so the session reselects active mode when that packet arrives.
+The active `v` stream starts as soon as the route is resumed, regardless of the auto-read preference or the EEPROM `x` response. The saved-errors preference is read asynchronously, and a stored `false` suppresses only the automatic EEPROM read. The preference controls the next route session, so toggling it while this screen is open does not unexpectedly send a read command.
 
-## Error reads are fenced by route and connection generations
+## Live mode and its display hold last for the route ViewModel
 
-The session observes the manager's non-conflated connection event stream and reads only while the route is resumed and transport is connected. Losing either condition cancels the worker and clears the snapshot. Each replacement session advances a generation so a response or timeout from canceled work cannot update current state; the packet request subscription is established before sending its command.
+Pausing the route or reconnecting clears packet masks, drafts, timers, and write state, while preserving the selected live mode and short-error hold setting for the next active session. Disabling live mode cancels its packet collector, clears its mask, and selects the normal sensors mode. Firmware-info recovery selects `v` only when live mode remains enabled.
 
-## Clear writes require a matching acknowledgement and a fresh readback
+## Editing saved errors preserves unknown ECU bits
 
-Only an opcode-2, data-0 `u` acknowledgement advances the saved-error clear transaction to an EEPROM readback. Keep a single clear in flight because the protocol has no request IDs. A delayed acknowledgement that crosses a user-initiated retry cannot be perfectly correlated with the earlier or later clear. A nonzero readback is still successful because active faults may be recorded again. Timeouts report uncertainty and never retry the write; active-error collection resumes after either timeout.
+Only the known 26 bits can be changed through row controls. Select-all and deselect-all affect those bits and retain any other set bits from the EEPROM mask. A write requires a fresh saved mask, an actual draft change, a matching opcode-2/data-0 acknowledgement, and a subsequent `x` response.
 
-## Active timeout leaves the collector available for late packets
+## Uncertain writes require a fresh read before another write
 
-Only the first active-error packet is timed. After timeout, keep listening so a late `v` packet or firmware-info recovery can complete the screen. Explicit read retry cancels that collector and begins the full saved-then-active sequence while preserving the prior clear outcome.
+After acknowledgement or readback timeout the UI must not resend automatically. The write status remains uncertain if a manual refresh also times out. A successful fresh EEPROM response clears that status and establishes a new editing baseline. Clear-all is a separate confirmed write of a zero mask through the same acknowledgement/readback transaction.
 
-## Snapshot capabilities rely on clearing stale packets when the session stops
+The protocol acknowledgement has no request ID. A very late acknowledgement from a previous user-initiated write cannot be perfectly distinguished from the acknowledgement for a later write, even after the user refreshes and starts a new transaction.
 
-`ErrorsSnapshot` does not store connection or route-resume flags. Its computed clear and retry capabilities are valid because pause and every non-connected event cancel the worker and replace the snapshot with an empty one. Retaining masks across either boundary would expose actions for data from an earlier ECU session.
+## Brief live errors expire from their last active packet
+
+With the hold option enabled, each set bit remains visible for 500 ms from its most recent `v` packet. Expiration uses monotonic time and is scheduled even when no later packet arrives.

@@ -9,308 +9,411 @@
  */
 package org.secu3.android.ui.errors
 
-import androidx.compose.foundation.background
 import androidx.compose.foundation.BorderStroke
-import androidx.compose.foundation.border
-import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.FlowRow
-import androidx.compose.foundation.layout.ExperimentalLayoutApi
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
-import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.selection.toggleable
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.verticalScroll
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Settings
+import androidx.compose.material.icons.outlined.Info
+import androidx.compose.material3.AlertDialog
+import androidx.compose.material3.Button
+import androidx.compose.material3.Checkbox
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
+import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.saveable.rememberSaveable
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.clip
 import androidx.compose.ui.platform.testTag
+import androidx.compose.ui.res.integerArrayResource
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringArrayResource
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.selected
 import androidx.compose.ui.semantics.semantics
-import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
 import org.secu3.android.R
+import org.secu3.android.connection.Connected
 import org.secu3.android.connection.ConnectionState
-import org.secu3.android.domain.errors.ErrorsClearStatus
 import org.secu3.android.domain.errors.ErrorsReadStatus
 import org.secu3.android.domain.errors.ErrorsSnapshot
+import org.secu3.android.domain.errors.ErrorsWriteStatus
 import org.secu3.android.models.CheckEngineError
-import org.secu3.android.ui.compose.SecuComposeTheme
 import org.secu3.android.ui.compose.LocalSecuPalette
 import org.secu3.android.ui.compose.SecuTopAppBar
+import org.secu3.android.ui.compose.SettingsSection
+import org.secu3.android.utils.getBitValue
 
 @Composable
 internal fun ErrorsContent(
     connectionState: ConnectionState?,
     snapshot: ErrorsSnapshot,
-    errorTitles: List<String>,
     onBackClick: () -> Unit,
     onClearClick: () -> Unit,
-    onRetryClick: () -> Unit = {},
+    onLiveChange: (Boolean) -> Unit,
+    onHoldChange: (Boolean) -> Unit,
+    onAutoReadChange: (Boolean) -> Unit,
+    onReadSaved: () -> Unit,
+    onRetryActive: () -> Unit,
+    onEditSaved: () -> Unit,
+    onDraftChange: (Int, Boolean) -> Unit,
+    onSetAllDraft: (Boolean) -> Unit,
+    onDiscardDraft: () -> Unit,
+    onWriteDraft: () -> Unit,
 ) {
-    val errors = if (snapshot.saved != null && snapshot.active != null) errorTitles.mapIndexed { index, title ->
+    val connected = connectionState == Connected
+    var showCatalog by rememberSaveable { mutableStateOf(false) }
+    var showSettings by rememberSaveable { mutableStateOf(false) }
+    var showHelp by rememberSaveable { mutableStateOf(false) }
+    val titles = stringArrayResource(R.array.errors_ecu_errors_names)
+    val blinkCodes = integerArrayResource(R.array.errors_ecu_blink_codes)
+    val activeMask = snapshot.activeMask.takeIf { connected }
+    val savedMask = snapshot.savedMask.takeIf { connected }
+    val draft = snapshot.draftMask.takeIf { connected }
+    val reportedMask = (activeMask ?: 0) or (savedMask ?: 0)
+    val hasUnknownErrors = reportedMask ushr titles.size != 0
+    val errors = titles.mapIndexed { bit, title ->
         CheckEngineError(
+            bit = bit,
             title = title,
-            isActive = snapshot.active.isError(index),
-            isSaved = snapshot.saved.isError(index),
+            blinkCode = blinkCodes[bit],
+            isActive = activeMask?.getBitValue(bit) == 1,
+            isSaved = savedMask?.getBitValue(bit) == 1,
         )
-    } else emptyList()
-    ErrorsScreen(
-        connectionState = connectionState,
-        errors = errors,
-        isLoading = snapshot.saved == null || snapshot.active == null,
-        snapshot = snapshot,
-        onBackClick = onBackClick,
-        onClearClick = onClearClick,
-        onRetryClick = onRetryClick,
-    )
-}
+    }
+    val showAll = showCatalog || draft != null
+    val visibleErrors = if (showAll) errors else errors.filter { it.isActive || it.isSaved }
 
-@Composable
-internal fun ErrorsScreen(
-    connectionState: ConnectionState?,
-    errors: List<CheckEngineError>,
-    isLoading: Boolean,
-    snapshot: ErrorsSnapshot = ErrorsSnapshot(),
-    onBackClick: () -> Unit,
-    onClearClick: () -> Unit,
-    onRetryClick: () -> Unit = {},
-) {
-    val displayedErrors = errors.filter { it.isActive || it.isSaved }
-    val clearStatus = snapshot.clearStatus
-    val readStatus = snapshot.readStatus
-
-    SecuComposeTheme {
-        Surface(
-            modifier = Modifier.fillMaxSize(),
-            color = MaterialTheme.colorScheme.background,
-        ) {
-            Column(
-                modifier = Modifier.fillMaxSize(),
-            ) {
-                SecuTopAppBar(
-                    title = stringResource(R.string.errors_title_ecu),
-                    connectionState = connectionState,
-                    onNavigateUp = onBackClick,
-                    showStatus = true,
-                    actions = {
-                        Box(
-                            modifier = Modifier
-                                .padding(end = 12.dp)
-                                .size(ToolbarIconButtonSize)
-                                .clip(RoundedCornerShape(12.dp))
-                                .background(MaterialTheme.colorScheme.errorContainer)
-                                .border(1.dp, MaterialTheme.colorScheme.error, RoundedCornerShape(12.dp))
-                                .testTag("errors-clear-button")
-                                .clickable(
-                                    enabled = snapshot.canClearErrors && connectionState == org.secu3.android.connection.Connected,
-                                    onClick = onClearClick,
-                                ),
-                            contentAlignment = Alignment.Center,
-                        ) {
-                            Icon(
-                                painter = painterResource(R.drawable.ic_delete_outline_24),
-                                contentDescription = stringResource(R.string.errors_clear_all_short),
-                                tint = MaterialTheme.colorScheme.error,
-                                modifier = Modifier.size(18.dp),
-                            )
-                        }
-                    },
-                )
-                Box(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .heightIn(min = 1.dp)
-                        .background(MaterialTheme.colorScheme.outlineVariant),
-                )
-                if (clearStatus != ErrorsClearStatus.Idle) {
-                    ClearStatusMessage(clearStatus)
-                }
-                if (readStatus != ErrorsReadStatus.Idle) {
-                    ReadFailureState(
-                        status = readStatus,
-                        retryEnabled = snapshot.canRetryRead && connectionState == org.secu3.android.connection.Connected,
-                        onRetryClick = onRetryClick,
-                    )
-                } else if (isLoading) {
-                    LoadingErrorsState(
-                        modifier = Modifier
-                            .fillMaxSize()
-                            .padding(horizontal = 24.dp),
-                    )
-                } else {
-                    LazyColumn(
-                        modifier = Modifier.fillMaxSize(),
-                        contentPadding = androidx.compose.foundation.layout.PaddingValues(
-                            start = 16.dp,
-                            top = 16.dp,
-                            end = 16.dp,
-                            bottom = 24.dp,
-                        ),
-                        verticalArrangement = Arrangement.spacedBy(12.dp),
+    Surface(
+        modifier = Modifier.fillMaxSize(),
+        color = MaterialTheme.colorScheme.background,
+    ) {
+        Column {
+            SecuTopAppBar(
+                title = stringResource(R.string.errors_title_ecu),
+                connectionState = connectionState,
+                showStatus = true,
+                onNavigateUp = onBackClick,
+                actions = {
+                    IconButton(
+                        modifier = Modifier.testTag("errors-clear-button"),
+                        enabled = connected && snapshot.canClearErrors,
+                        onClick = onClearClick,
                     ) {
-                        item(key = "summary") {
-                            ErrorsSummary(errors = errors)
-                        }
-                        if (displayedErrors.isEmpty()) {
-                            item(key = "empty") {
-                                EmptyErrorsState(
-                                    modifier = Modifier
-                                        .fillParentMaxSize()
-                                        .padding(horizontal = 4.dp),
+                        Icon(
+                            painter = painterResource(R.drawable.ic_delete_outline_24),
+                            contentDescription = stringResource(R.string.clear_all_errors),
+                        )
+                    }
+                    IconButton(onClick = { showSettings = true }) {
+                        Icon(Icons.Default.Settings, contentDescription = stringResource(R.string.errors_settings))
+                    }
+                    IconButton(onClick = { showHelp = true }) {
+                        Icon(Icons.Outlined.Info, contentDescription = stringResource(R.string.errors_help))
+                    }
+                },
+            )
+            LazyColumn(
+                modifier = Modifier.weight(1f).testTag("errors-list"),
+                contentPadding = PaddingValues(horizontal = 16.dp, vertical = 12.dp),
+                verticalArrangement = Arrangement.spacedBy(10.dp),
+            ) {
+                if (connected) {
+                    item(key = "controls") {
+                        SettingsSection {
+                            ErrorToggle(
+                                text = stringResource(R.string.errors_live_mode),
+                                checked = snapshot.liveEnabled,
+                                onCheckedChange = onLiveChange,
+                            )
+                            if (snapshot.liveEnabled) {
+                                ReadState(
+                                    status = snapshot.activeReadStatus,
+                                    count = activeMask?.countOneBits(),
+                                    readingText = R.string.errors_active_loading,
+                                    timeoutText = R.string.errors_active_read_timeout,
+                                    countText = R.string.errors_active_count,
                                 )
+                                if (snapshot.activeReadStatus == ErrorsReadStatus.Timeout) {
+                                    TextButton(onClick = onRetryActive, modifier = Modifier.padding(horizontal = 8.dp)) {
+                                        Text(stringResource(R.string.retry))
+                                    }
+                                }
+                            }
+                            ReadState(
+                                status = snapshot.savedReadStatus,
+                                count = savedMask?.countOneBits(),
+                                readingText = R.string.errors_saved_loading,
+                                timeoutText = R.string.errors_saved_read_timeout,
+                                countText = R.string.errors_saved_count,
+                            )
+                            FlowRow(Modifier.padding(horizontal = 8.dp)) {
+                                TextButton(onClick = onReadSaved, enabled = snapshot.canReadSaved) {
+                                    Text(stringResource(R.string.errors_read_saved))
+                                }
+                                if (draft == null) {
+                                    TextButton(onClick = onEditSaved, enabled = snapshot.canEditSaved) {
+                                        Text(stringResource(R.string.errors_edit_saved))
+                                    }
+                                }
+                            }
+                        }
+                    }
+                    if (snapshot.writeStatus != ErrorsWriteStatus.Idle) {
+                        item(key = "write-status") { WriteStatus(snapshot.writeStatus) }
+                    }
+                }
+                item(key = "catalog-controls") {
+                    FlowRow {
+                        if (draft != null) {
+                            TextButton(onClick = { onSetAllDraft(true) }) {
+                                Text(stringResource(R.string.errors_select_all))
+                            }
+                            TextButton(onClick = { onSetAllDraft(false) }) {
+                                Text(stringResource(R.string.errors_deselect_all))
                             }
                         } else {
-                            items(displayedErrors, key = { it.title }) { error ->
-                                ErrorCard(error = error)
+                            TextButton(onClick = { showCatalog = !showCatalog }) {
+                                Text(stringResource(if (showCatalog) R.string.errors_show_reported else R.string.errors_show_all))
                             }
+                        }
+                    }
+                }
+                if (hasUnknownErrors) {
+                    item(key = "unknown") {
+                        Text(
+                            text = stringResource(R.string.errors_unknown_flags),
+                            modifier = Modifier.padding(horizontal = 8.dp),
+                            style = MaterialTheme.typography.bodyMedium,
+                        )
+                    }
+                }
+                if (visibleErrors.isEmpty() && reportedMask == 0 && (activeMask != null || savedMask != null)) {
+                    item(key = "empty") {
+                        Text(
+                            text = stringResource(R.string.errors_no_reported),
+                            modifier = Modifier.padding(horizontal = 8.dp),
+                            style = MaterialTheme.typography.bodyLarge,
+                        )
+                    }
+                }
+                items(visibleErrors, key = { it.bit }) { error ->
+                    ErrorCard(
+                        error = error,
+                        hasActiveData = activeMask != null,
+                        hasSavedData = savedMask != null,
+                        draftChecked = draft?.getBitValue(error.bit)?.let { it == 1 },
+                        onDraftChange = { onDraftChange(error.bit, it) },
+                    )
+                }
+            }
+            if (draft != null) {
+                Surface(color = MaterialTheme.colorScheme.surface) {
+                    FlowRow(
+                        modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 8.dp),
+                        horizontalArrangement = Arrangement.End,
+                    ) {
+                        TextButton(onClick = onDiscardDraft) { Text(stringResource(android.R.string.cancel)) }
+                        Button(onClick = onWriteDraft, enabled = snapshot.canWriteDraft) {
+                            Text(stringResource(R.string.errors_write_saved))
                         }
                     }
                 }
             }
         }
     }
-}
-
-@Composable
-private fun ReadFailureState(status: ErrorsReadStatus, retryEnabled: Boolean, onRetryClick: () -> Unit) {
-    Column(
-        modifier = Modifier.fillMaxSize().padding(24.dp),
-        horizontalAlignment = Alignment.CenterHorizontally,
-        verticalArrangement = Arrangement.Center,
-    ) {
-        Text(
-            text = stringResource(if (status == ErrorsReadStatus.SavedTimeout) R.string.errors_saved_read_timeout else R.string.errors_active_read_timeout),
-            color = MaterialTheme.colorScheme.error,
-            style = MaterialTheme.typography.bodyLarge,
+    if (showSettings) {
+        AlertDialog(
+            onDismissRequest = { showSettings = false },
+            title = { Text(stringResource(R.string.errors_settings)) },
+            text = {
+                Column(Modifier.verticalScroll(rememberScrollState())) {
+                    ErrorToggle(
+                        text = stringResource(R.string.errors_auto_read_saved),
+                        checked = snapshot.autoReadSavedErrors == true,
+                        enabled = snapshot.autoReadSavedErrors != null,
+                        onCheckedChange = onAutoReadChange,
+                    )
+                    ErrorToggle(
+                        text = stringResource(R.string.errors_hold_active),
+                        checked = snapshot.holdActiveErrors,
+                        onCheckedChange = onHoldChange,
+                    )
+                }
+            },
+            confirmButton = {
+                TextButton(onClick = { showSettings = false }) { Text(stringResource(R.string.close)) }
+            },
         )
-        androidx.compose.material3.TextButton(onClick = onRetryClick, enabled = retryEnabled, modifier = Modifier.padding(top = 12.dp)) {
-            Text(stringResource(R.string.retry))
-        }
+    }
+    if (showHelp) {
+        AlertDialog(
+            onDismissRequest = { showHelp = false },
+            title = { Text(stringResource(R.string.errors_help)) },
+            text = {
+                Text(
+                    stringResource(R.string.errors_help_text),
+                    modifier = Modifier.heightIn(max = 360.dp).verticalScroll(rememberScrollState()),
+                )
+            },
+            confirmButton = {
+                TextButton(onClick = { showHelp = false }) { Text(stringResource(R.string.close)) }
+            },
+        )
     }
 }
 
 @Composable
-private fun ClearStatusMessage(status: ErrorsClearStatus) {
-    val (message, color) = when (status) {
-        ErrorsClearStatus.Idle -> return
-        ErrorsClearStatus.Clearing -> R.string.errors_clear_busy to MaterialTheme.colorScheme.primary
-        ErrorsClearStatus.Succeeded -> R.string.errors_clear_success to MaterialTheme.colorScheme.primary
-        ErrorsClearStatus.AckTimeout -> R.string.errors_clear_ack_timeout to MaterialTheme.colorScheme.error
-        ErrorsClearStatus.ReadbackTimeout -> R.string.errors_clear_readback_timeout to MaterialTheme.colorScheme.error
-    }
+private fun ErrorToggle(
+    text: String,
+    checked: Boolean,
+    onCheckedChange: (Boolean) -> Unit,
+    enabled: Boolean = true,
+) {
     Row(
-        modifier = Modifier
-            .fillMaxWidth()
-            .testTag("errors-clear-status")
-            .background(MaterialTheme.colorScheme.surfaceVariant)
-            .padding(horizontal = 16.dp, vertical = 12.dp),
-        horizontalArrangement = Arrangement.spacedBy(10.dp),
+        modifier = Modifier.fillMaxWidth()
+            .heightIn(min = 48.dp)
+            .toggleable(value = checked, enabled = enabled, role = Role.Switch, onValueChange = onCheckedChange)
+            .padding(horizontal = 12.dp, vertical = 6.dp),
+        horizontalArrangement = Arrangement.spacedBy(12.dp),
         verticalAlignment = Alignment.CenterVertically,
     ) {
-        if (status == ErrorsClearStatus.Clearing) {
-            CircularProgressIndicator(modifier = Modifier.size(18.dp), strokeWidth = 2.dp)
-        }
-        Text(text = stringResource(message), color = color, style = MaterialTheme.typography.bodyMedium)
+        Text(text, Modifier.weight(1f), style = MaterialTheme.typography.bodyMedium)
+        Switch(checked = checked, enabled = enabled, onCheckedChange = null)
     }
 }
 
 @Composable
-private fun ErrorsSummary(errors: List<CheckEngineError>) {
-    val activeCount = errors.count { it.isActive }
-    val savedCount = errors.count { it.isSaved }
+private fun ReadState(
+    status: ErrorsReadStatus,
+    count: Int?,
+    readingText: Int,
+    timeoutText: Int,
+    countText: Int,
+) {
+    Column(Modifier.fillMaxWidth().padding(horizontal = 12.dp)) {
+        if (count != null) {
+            Text(stringResource(countText, count), style = MaterialTheme.typography.bodyMedium)
+        }
+        when (status) {
+            ErrorsReadStatus.Idle -> Unit
+            ErrorsReadStatus.Reading -> {
+                Row(
+                    modifier = Modifier.padding(vertical = 6.dp),
+                    horizontalArrangement = Arrangement.spacedBy(8.dp),
+                    verticalAlignment = Alignment.CenterVertically,
+                ) {
+                    CircularProgressIndicator(Modifier.size(16.dp), strokeWidth = 2.dp)
+                    Text(stringResource(readingText), style = MaterialTheme.typography.bodyMedium)
+                }
+            }
+            ErrorsReadStatus.Timeout -> Text(
+                text = stringResource(timeoutText),
+                modifier = Modifier.padding(vertical = 6.dp),
+                color = MaterialTheme.colorScheme.error,
+                style = MaterialTheme.typography.bodyMedium,
+            )
+        }
+    }
+}
 
+@Composable
+private fun WriteStatus(status: ErrorsWriteStatus) {
+    val (message, color) = when (status) {
+        ErrorsWriteStatus.Idle -> return
+        ErrorsWriteStatus.Writing -> R.string.errors_write_busy to MaterialTheme.colorScheme.primary
+        ErrorsWriteStatus.Succeeded -> R.string.errors_write_success to MaterialTheme.colorScheme.primary
+        ErrorsWriteStatus.AckTimeout -> R.string.errors_write_ack_timeout to MaterialTheme.colorScheme.error
+        ErrorsWriteStatus.ReadbackTimeout -> R.string.errors_write_readback_timeout to MaterialTheme.colorScheme.error
+    }
+    Text(
+        text = stringResource(message),
+        color = color,
+        style = MaterialTheme.typography.bodyMedium,
+        modifier = Modifier.padding(horizontal = 8.dp),
+    )
+}
+
+@Composable
+private fun ErrorCard(
+    error: CheckEngineError,
+    hasActiveData: Boolean,
+    hasSavedData: Boolean,
+    draftChecked: Boolean?,
+    onDraftChange: (Boolean) -> Unit,
+) {
     Surface(
-        modifier = Modifier.fillMaxWidth(),
+        modifier = Modifier.fillMaxWidth().testTag("error-card:${error.bit}"),
         shape = RoundedCornerShape(20.dp),
         color = MaterialTheme.colorScheme.surface,
         border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant),
     ) {
-      Row(
-        modifier = Modifier.fillMaxWidth().heightIn(min = 60.dp).padding(horizontal = 16.dp, vertical = 12.dp),
-        verticalAlignment = Alignment.CenterVertically,
-      ) {
-        Box(
-            modifier = Modifier
-                .size(16.dp)
-                .border(1.5.dp, LocalSecuPalette.current.warning, CircleShape),
-            contentAlignment = Alignment.Center,
+        val editModifier = if (draftChecked != null) {
+            Modifier.testTag("error-draft:${error.bit}")
+                .toggleable(draftChecked, role = Role.Checkbox, onValueChange = onDraftChange)
+        } else Modifier
+        Row(
+            modifier = editModifier.padding(16.dp),
+            horizontalArrangement = Arrangement.spacedBy(12.dp),
+            verticalAlignment = Alignment.CenterVertically,
         ) {
-            Text(
-                text = "!",
-                color = LocalSecuPalette.current.warning,
-            fontSize = 12.sp,
-                fontWeight = FontWeight.Bold,
-            )
-        }
-        Spacer(modifier = Modifier.width(10.dp))
-        Text(
-            text = stringResource(R.string.errors_summary, activeCount, savedCount),
-            color = MaterialTheme.colorScheme.onSurfaceVariant,
-            style = MaterialTheme.typography.bodyMedium,
-        )
-      }
-    }
-}
-
-@Composable
-@OptIn(ExperimentalLayoutApi::class)
-private fun ErrorCard(error: CheckEngineError) {
-    Column(
-        modifier = Modifier
-            .fillMaxWidth()
-            .testTag(errorCardTag(error.title))
-            .clip(RoundedCornerShape(20.dp))
-            .background(MaterialTheme.colorScheme.surface)
-            .border(1.dp, MaterialTheme.colorScheme.outlineVariant, RoundedCornerShape(20.dp))
-            .padding(horizontal = 16.dp, vertical = 16.dp),
-    ) {
-        Text(
-            text = error.title,
-            color = MaterialTheme.colorScheme.onSurface,
-            style = MaterialTheme.typography.titleMedium,
-        )
-        FlowRow(
-            modifier = Modifier.padding(top = 16.dp),
-            horizontalArrangement = Arrangement.spacedBy(10.dp),
-            verticalArrangement = Arrangement.spacedBy(8.dp),
-        ) {
-            StateBadge(
-                text = stringResource(R.string.error_state_active),
-                selected = error.isActive,
-                testTag = errorStatusTag(error.title, ErrorStatus.Active),
-                selectedColor = MaterialTheme.colorScheme.onErrorContainer,
-                selectedContainer = MaterialTheme.colorScheme.errorContainer,
-                selectedStroke = MaterialTheme.colorScheme.error,
-            )
-            StateBadge(
-                text = stringResource(R.string.error_state_saved),
-                selected = error.isSaved,
-                testTag = errorStatusTag(error.title, ErrorStatus.Saved),
-                selectedColor = LocalSecuPalette.current.onWarningContainer,
-                selectedContainer = LocalSecuPalette.current.warningContainer,
-                selectedStroke = LocalSecuPalette.current.warning,
-            )
+            Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(6.dp)) {
+                Text(
+                    text = stringResource(R.string.errors_blink_code, error.blinkCode),
+                    style = MaterialTheme.typography.labelMedium,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                )
+                Text(error.title, style = MaterialTheme.typography.titleMedium)
+                if (hasActiveData || hasSavedData) {
+                    FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                        if (hasActiveData) {
+                            StateBadge(
+                                text = stringResource(R.string.error_state_active),
+                                selected = error.isActive,
+                                testTag = "error-active:${error.bit}",
+                                selectedContainer = MaterialTheme.colorScheme.errorContainer,
+                                selectedColor = MaterialTheme.colorScheme.onErrorContainer,
+                            )
+                        }
+                        if (hasSavedData) {
+                            StateBadge(
+                                text = stringResource(R.string.error_state_saved),
+                                selected = error.isSaved,
+                                testTag = "error-saved:${error.bit}",
+                                selectedContainer = LocalSecuPalette.current.warningContainer,
+                                selectedColor = LocalSecuPalette.current.onWarningContainer,
+                            )
+                        }
+                    }
+                }
+            }
+            if (draftChecked != null) {
+                Checkbox(checked = draftChecked, onCheckedChange = null)
+            }
         }
     }
 }
@@ -320,72 +423,15 @@ private fun StateBadge(
     text: String,
     selected: Boolean,
     testTag: String,
-    selectedColor: androidx.compose.ui.graphics.Color,
     selectedContainer: androidx.compose.ui.graphics.Color,
-    selectedStroke: androidx.compose.ui.graphics.Color,
+    selectedColor: androidx.compose.ui.graphics.Color,
 ) {
-    Text(
-        text = text,
-        color = if (selected) selectedColor else MaterialTheme.colorScheme.onSurfaceVariant,
-        fontSize = 12.sp,
-        fontWeight = FontWeight.Bold,
-        modifier = Modifier
-            .testTag(testTag)
-            .semantics {
-                this.selected = selected
-            }
-            .clip(RoundedCornerShape(12.dp))
-            .background(if (selected) selectedContainer else MaterialTheme.colorScheme.surfaceVariant)
-            .border(
-                width = 1.dp,
-                color = if (selected) selectedStroke else MaterialTheme.colorScheme.outlineVariant,
-                shape = RoundedCornerShape(12.dp),
-            )
-            .padding(horizontal = 12.dp, vertical = 7.dp),
-    )
-}
-
-@Composable
-private fun EmptyErrorsState(modifier: Modifier = Modifier) {
-    Box(
-        modifier = modifier,
-        contentAlignment = Alignment.Center,
+    Surface(
+        color = if (selected) selectedContainer else MaterialTheme.colorScheme.surfaceVariant,
+        contentColor = if (selected) selectedColor else MaterialTheme.colorScheme.onSurfaceVariant,
+        shape = RoundedCornerShape(12.dp),
+        modifier = Modifier.testTag(testTag).semantics { this.selected = selected },
     ) {
-        Text(
-            text = stringResource(R.string.errors_empty_state),
-            color = MaterialTheme.colorScheme.onSurfaceVariant,
-            style = MaterialTheme.typography.bodyLarge,
-        )
+        Text(text, Modifier.padding(horizontal = 10.dp, vertical = 5.dp), style = MaterialTheme.typography.labelMedium)
     }
 }
-
-@Composable
-private fun LoadingErrorsState(modifier: Modifier = Modifier) {
-    Column(
-        modifier = modifier,
-        horizontalAlignment = Alignment.CenterHorizontally,
-        verticalArrangement = Arrangement.Center,
-    ) {
-        CircularProgressIndicator(
-            color = LocalSecuPalette.current.warning,
-            trackColor = MaterialTheme.colorScheme.surfaceVariant,
-        )
-        Text(
-            text = stringResource(R.string.errors_loading_state),
-            color = MaterialTheme.colorScheme.onSurfaceVariant,
-            style = MaterialTheme.typography.bodyLarge,
-            modifier = Modifier.padding(top = 16.dp),
-        )
-    }
-}
-
-private val ToolbarIconButtonSize = 48.dp
-
-internal enum class ErrorStatus {
-    Active,
-    Saved,
-}
-
-internal fun errorCardTag(title: String): String = "error-card:$title"
-
-internal fun errorStatusTag(title: String, status: ErrorStatus): String = "error-status:$title:${status.name}"

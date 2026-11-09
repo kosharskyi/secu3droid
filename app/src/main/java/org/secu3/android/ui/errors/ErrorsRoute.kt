@@ -11,24 +11,18 @@ package org.secu3.android.ui.errors
 
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
-import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
-import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.LifecycleEventObserver
-import androidx.lifecycle.repeatOnLifecycle
 import androidx.lifecycle.compose.LocalLifecycleOwner
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavBackStackEntry
 import org.secu3.android.R
+import org.secu3.android.connection.Connected
 import org.secu3.android.ui.MainActivity
 import org.secu3.android.ui.compose.ConfirmationDialog
 import org.secu3.android.ui.compose.SecuComposeTheme
-import kotlinx.coroutines.launch
-import kotlinx.coroutines.flow.collect
 
 @Composable
 internal fun ErrorsRoute(
@@ -43,13 +37,8 @@ internal fun ErrorsRoute(
     )
     val connection by viewModel.connectionState.collectAsStateWithLifecycle(initialValue = null)
     val snapshot by viewModel.errorsSnapshot.collectAsStateWithLifecycle()
+    val confirmation by viewModel.confirmation.collectAsStateWithLifecycle()
     val lifecycle = LocalLifecycleOwner.current.lifecycle
-    var confirmClear by remember(viewModel) { mutableStateOf(viewModel.showClearConfirmation.value) }
-    LaunchedEffect(lifecycle, viewModel) {
-        lifecycle.repeatOnLifecycle(Lifecycle.State.STARTED) {
-            launch { viewModel.showClearConfirmation.collect { confirmClear = it } }
-        }
-    }
     DisposableEffect(lifecycle, viewModel) {
         val observer = LifecycleEventObserver { _, event ->
             when (event) {
@@ -65,24 +54,43 @@ internal fun ErrorsRoute(
             lifecycle.removeObserver(observer)
         }
     }
-    val titles = androidx.compose.ui.res.stringArrayResource(R.array.errors_ecu_errors_names)
-
     SecuComposeTheme {
         ErrorsContent(
             connectionState = connection,
             snapshot = snapshot,
-            errorTitles = titles.toList(),
             onBackClick = onNavigateUp,
-            onClearClick = viewModel::requestClearConfirmation,
-            onRetryClick = viewModel::retryRead,
+            onClearClick = { viewModel.requestConfirmation(ErrorsConfirmation.Clear) },
+            onLiveChange = viewModel::setLiveEnabled,
+            onHoldChange = viewModel::setHoldActiveErrors,
+            onAutoReadChange = viewModel::setAutoReadSavedErrors,
+            onReadSaved = viewModel::readSavedErrors,
+            onRetryActive = viewModel::retryActiveRead,
+            onEditSaved = viewModel::beginEditing,
+            onDraftChange = viewModel::setDraftError,
+            onSetAllDraft = viewModel::setAllDraftErrors,
+            onDiscardDraft = viewModel::discardDraft,
+            onWriteDraft = { viewModel.requestConfirmation(ErrorsConfirmation.Write) },
         )
-        if (confirmClear) {
-            ConfirmationDialog(
-                title = R.string.clear_all_errors,
-                message = R.string.dialog_confirm_clear_errors_message,
-                onConfirm = viewModel::confirmClearErrors,
-                onCancel = viewModel::dismissClearConfirmation,
+        if (connection == Connected) {
+            ErrorsConfirmationDialog(
+                confirmation = confirmation,
+                onConfirm = viewModel::confirmWrite,
+                onDismiss = viewModel::dismissConfirmation,
             )
         }
     }
+}
+
+@Composable
+internal fun ErrorsConfirmationDialog(
+    confirmation: ErrorsConfirmation?,
+    onConfirm: () -> Unit,
+    onDismiss: () -> Unit,
+) {
+    val (title, message) = when (confirmation) {
+        ErrorsConfirmation.Clear -> R.string.clear_all_errors to R.string.dialog_confirm_clear_errors_message
+        ErrorsConfirmation.Write -> R.string.errors_write_saved to R.string.errors_confirm_write
+        null -> return
+    }
+    ConfirmationDialog(title = title, message = message, onConfirm = onConfirm, onCancel = onDismiss)
 }

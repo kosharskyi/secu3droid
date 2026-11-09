@@ -203,6 +203,36 @@
         <item>Accelerator pedal position sensors failure</item>
     </string-array>
 
+    <!-- Check Engine blink codes in protocol bit order. -->
+    <integer-array name="errors_ecu_blink_codes">
+        <item>21</item>
+        <item>13</item>
+        <item>14</item>
+        <item>31</item>
+        <item>32</item>
+        <item>22</item>
+        <item>23</item>
+        <item>24</item>
+        <item>41</item>
+        <item>25</item>
+        <item>26</item>
+        <item>27</item>
+        <item>28</item>
+        <item>51</item>
+        <item>52</item>
+        <item>0</item>
+        <item>53</item>
+        <item>54</item>
+        <item>55</item>
+        <item>56</item>
+        <item>33</item>
+        <item>15</item>
+        <item>34</item>
+        <item>16</item>
+        <item>35</item>
+        <item>29</item>
+    </integer-array>
+
     <string-array name="logical_functions">
         <item>OR</item>
         <item>AND</item>
@@ -621,18 +651,35 @@
     <string name="clear_all_errors">Clear saved errors</string>
     <string name="dialog_confirm_clear_errors_message">Are you sure you want to clear the saved ECU error history? Active faults may be recorded again.</string>
     <string name="errors_title_ecu">ECU Errors</string>
-    <string name="errors_clear_all_short">Clear All</string>
-    <string name="errors_clear_busy">Clearing saved ECU errors…</string>
-    <string name="errors_clear_success">Clear acknowledged; saved error list refreshed.</string>
-    <string name="errors_clear_ack_timeout">ECU did not acknowledge clearing saved errors. The displayed list may be outdated.</string>
-    <string name="errors_clear_readback_timeout">ECU acknowledged the clear, but a fresh saved-error list did not arrive. The displayed list may be outdated.</string>
-    <string name="errors_summary">%1$d active · %2$d saved in ECU memory</string>
-    <string name="errors_loading_state">Reading ECU errors…</string>
     <string name="errors_saved_read_timeout">Saved ECU errors did not arrive.</string>
     <string name="errors_active_read_timeout">Active ECU errors did not arrive.</string>
-    <string name="errors_empty_state">No ECU errors right now.</string>
     <string name="error_state_active">• Active</string>
     <string name="error_state_saved">• Saved</string>
+    <string name="errors_blink_code" translatable="false">BC %1$02d</string>
+    <string name="errors_live_mode">Live errors</string>
+    <string name="errors_hold_active">Keep brief errors visible</string>
+    <string name="errors_auto_read_saved">Read saved errors on opening</string>
+    <string name="errors_settings">Error display settings</string>
+    <string name="errors_active_loading">Reading active errors…</string>
+    <string name="errors_saved_loading">Reading saved errors…</string>
+    <string name="errors_active_count">Active: %1$d</string>
+    <string name="errors_saved_count">Saved in ECU memory: %1$d</string>
+    <string name="errors_read_saved">Refresh saved errors</string>
+    <string name="errors_edit_saved">Edit saved errors</string>
+    <string name="errors_select_all">Select all</string>
+    <string name="errors_deselect_all">Deselect all</string>
+    <string name="errors_show_all">Show all codes</string>
+    <string name="errors_show_reported">Show reported errors</string>
+    <string name="errors_write_saved">Save changes to ECU</string>
+    <string name="errors_confirm_write">Write the selected changes to the saved error history? Active faults may be recorded again.</string>
+    <string name="errors_write_busy">Updating saved ECU errors…</string>
+    <string name="errors_write_success">ECU confirmed the write. The saved list is up to date.</string>
+    <string name="errors_write_ack_timeout">ECU did not confirm the write. Refresh saved errors to check the result.</string>
+    <string name="errors_write_readback_timeout">ECU confirmed the write, but the refreshed list did not arrive. Refresh saved errors to check the result.</string>
+    <string name="errors_unknown_flags">The ECU reported errors outside this catalog.</string>
+    <string name="errors_no_reported">No errors in the data received.</string>
+    <string name="errors_help">Help with ECU errors</string>
+    <string name="errors_help_text">Live errors reflect what the ECU is reporting now. Enable the brief-error option in settings to keep a fault visible for up to 500 ms after it stops being reported.\n\nSaved errors are the history stored in ECU memory. Refresh to read it again, edit individual entries, or clear the history. An active fault can be saved again until its cause is resolved.\n\nBC is the blink code used by the Check Engine lamp.</string>
     <string name="close">Close</string>
     <string name="firmware_information_title">Firmware Information</string>
     <string name="firmware_enabled_capabilities">ENABLED CAPABILITIES</string>

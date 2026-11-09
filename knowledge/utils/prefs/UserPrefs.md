@@ -45,3 +45,7 @@ Keep the persisted key `wakelock` and its false default. It now controls both tr
 ## Usage analytics consent defaults to disabled
 
 `usage_analytics_enabled` is a DataStore setting with a false in-memory default. The Analytics API is initialized only after a successful enabled snapshot; read failures close any collection already initialized in the current process.
+
+## Check Engine waits for the stored auto-read preference before reading EEPROM
+
+An absent `auto_read_saved_errors` key resolves to true to preserve the existing Android behavior. The error session waits for a successful preference read before automatically requesting EEPROM. The live stream and explicit refresh are independent of preference loading.

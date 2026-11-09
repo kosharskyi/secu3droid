@@ -78,6 +78,7 @@ class UserPrefs @Inject constructor(
     private val dashboardLeftGaugeKey = stringPreferencesKey(DASHBOARD_LEFT_GAUGE_KEY)
     private val dashboardRightGaugeKey = stringPreferencesKey(DASHBOARD_RIGHT_GAUGE_KEY)
     private val dashboardGaugeStyleKey = stringPreferencesKey(DASHBOARD_GAUGE_STYLE_KEY)
+    private val autoReadSavedErrorsKey = booleanPreferencesKey(AUTO_READ_SAVED_ERRORS_KEY)
 
     val settings: Flow<Settings> = dataStore.data
         .map(::readSettings)
@@ -125,6 +126,7 @@ class UserPrefs @Inject constructor(
         dashboardRightGauge = GaugeType.entries.firstOrNull { it.name == preferences[dashboardRightGaugeKey] }
             ?: DEFAULT_DASHBOARD_RIGHT_GAUGE,
         dashboardGaugeStyle = DashboardGaugeStyle.fromPreference(preferences[dashboardGaugeStyleKey]),
+        autoReadSavedErrors = preferences[autoReadSavedErrorsKey] ?: true,
     )
 
     private fun readAppearanceMode(preferences: Preferences): AppearanceMode {
@@ -160,6 +162,7 @@ class UserPrefs @Inject constructor(
 
     suspend fun setOldSensorViewEnabled(value: Boolean) = update { this[oldSensorsViewKey] = value }
     suspend fun setSensorGaugeStyle(value: SensorGaugeStyle) = update { this[sensorGaugeStyleKey] = value.preferenceValue }
+    suspend fun setAutoReadSavedErrors(enabled: Boolean) = update { this[autoReadSavedErrorsKey] = enabled }
     suspend fun setInjectionTimingMode(value: InjectionTimingMode) = update { this[injectionTimingModeKey] = value.preferenceValue }
     suspend fun setFuelFlowPulsesPerLitre(value: Int) {
         require(value in FUEL_FLOW_PULSES_PER_LITRE_MIN..FUEL_FLOW_PULSES_PER_LITRE_MAX)
@@ -215,6 +218,7 @@ class UserPrefs @Inject constructor(
         val dashboardLeftGauge: GaugeType,
         val dashboardRightGauge: GaugeType,
         val dashboardGaugeStyle: DashboardGaugeStyle,
+        val autoReadSavedErrors: Boolean,
     ) {
         val connectionRetries: Int get() = connectionRetriesText.toIntOrNull()?.takeIf { it > 0 } ?: 5
         val logExportDestination: LogExportDestination
@@ -234,6 +238,7 @@ class UserPrefs @Inject constructor(
         const val DASHBOARD_LEFT_GAUGE_KEY = "dashboard_left_gauge"
         const val DASHBOARD_RIGHT_GAUGE_KEY = "dashboard_right_gauge"
         const val DASHBOARD_GAUGE_STYLE_KEY = "dashboard_gauge_style"
+        const val AUTO_READ_SAVED_ERRORS_KEY = "auto_read_saved_errors"
         val DEFAULT_DASHBOARD_LEFT_GAUGE = GaugeType.RPM
         val DEFAULT_DASHBOARD_RIGHT_GAUGE = GaugeType.VEHICLE_SPEED
 

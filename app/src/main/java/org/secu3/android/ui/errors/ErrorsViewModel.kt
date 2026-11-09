@@ -33,31 +33,40 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.collect
 import kotlinx.coroutines.launch
+import org.secu3.android.R
+import org.secu3.android.connection.Connected
+import org.secu3.android.connection.Secu3ConnectionManager
 import org.secu3.android.domain.errors.ErrorsSession
 import org.secu3.android.domain.errors.ErrorsSnapshot
-import org.secu3.android.connection.Secu3ConnectionManager
+import org.secu3.android.ui.ERRORS_ROUTE
+import org.secu3.android.ui.messages.UiMessageDuration
+import org.secu3.android.ui.messages.UiMessageQueue
+import org.secu3.android.utils.prefs.UserPrefs
+import java.io.IOException
 import javax.inject.Inject
+
+internal enum class ErrorsConfirmation { Clear, Write }
 
 @HiltViewModel
 class ErrorsViewModel @Inject constructor(
     private val secu3ConnectionManager: Secu3ConnectionManager,
     private val session: ErrorsSession,
+    private val userPrefs: UserPrefs,
+    private val uiMessageQueue: UiMessageQueue,
 ) : ViewModel() {
 
     val connectionState = secu3ConnectionManager.connectionStateFlow
 
     internal val errorsSnapshot: StateFlow<ErrorsSnapshot> = session.snapshot
 
-    private val _showClearConfirmation = MutableStateFlow(false)
-    val showClearConfirmation: StateFlow<Boolean> = _showClearConfirmation.asStateFlow()
+    private val _confirmation = MutableStateFlow<ErrorsConfirmation?>(null)
+    internal val confirmation = _confirmation.asStateFlow()
 
     init {
         session.start(viewModelScope)
         viewModelScope.launch {
             secu3ConnectionManager.connectionStateFlow.collect { state ->
-                if (state != org.secu3.android.connection.Connected) {
-                    _showClearConfirmation.value = false
-                }
+                if (state != Connected) dismissConfirmation()
             }
         }
     }
@@ -65,31 +74,53 @@ class ErrorsViewModel @Inject constructor(
     fun onRouteResumed() = session.onRouteResumed()
 
     fun onRoutePaused() {
-        _showClearConfirmation.value = false
+        dismissConfirmation()
         session.onRoutePaused()
     }
 
-    fun clearErrors() {
-        session.clearErrors()
+    fun setLiveEnabled(enabled: Boolean) = session.setLiveEnabled(enabled)
+    fun setHoldActiveErrors(enabled: Boolean) = session.setHoldActiveErrors(enabled)
+    fun readSavedErrors() = session.readSavedErrors()
+    fun retryActiveRead() = session.retryActiveRead()
+    fun beginEditing() = session.beginEditing()
+    fun setDraftError(bit: Int, selected: Boolean) = session.setDraftError(bit, selected)
+    fun setAllDraftErrors(selected: Boolean) = session.setAllDraftErrors(selected)
+    fun discardDraft() = session.discardDraft()
+
+    fun setAutoReadSavedErrors(enabled: Boolean) {
+        viewModelScope.launch {
+            try {
+                userPrefs.setAutoReadSavedErrors(enabled)
+            } catch (_: IOException) {
+                uiMessageQueue.publish(R.string.preferences_storage_error, UiMessageDuration.LONG, scope = ERRORS_ROUTE)
+            }
+        }
     }
 
-    fun retryRead() {
-        _showClearConfirmation.value = false
-        session.retryRead()
+    internal fun requestConfirmation(action: ErrorsConfirmation) {
+        val snapshot = errorsSnapshot.value
+        val allowed = when (action) {
+            ErrorsConfirmation.Clear -> snapshot.canClearErrors
+            ErrorsConfirmation.Write -> snapshot.canWriteDraft
+        }
+        if (allowed && secu3ConnectionManager.currentConnectionState == Connected) {
+            _confirmation.value = action
+        }
     }
 
-    fun requestClearConfirmation() {
-        _showClearConfirmation.value = errorsSnapshot.value.canClearErrors &&
-            secu3ConnectionManager.currentConnectionState == org.secu3.android.connection.Connected
+    fun dismissConfirmation() {
+        _confirmation.value = null
     }
 
-    fun dismissClearConfirmation() {
-        _showClearConfirmation.value = false
-    }
-
-    fun confirmClearErrors() {
-        _showClearConfirmation.value = false
-        clearErrors()
+    fun confirmWrite() {
+        val action = _confirmation.value
+        dismissConfirmation()
+        if (secu3ConnectionManager.currentConnectionState != Connected) return
+        when (action) {
+            ErrorsConfirmation.Clear -> session.clearErrors()
+            ErrorsConfirmation.Write -> session.writeDraft()
+            null -> Unit
+        }
     }
 
     override fun onCleared() {

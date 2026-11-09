@@ -346,14 +346,14 @@ class ParametersNavigationIntegrationTest {
         navigateNativeHostToHome()
         compose.onNodeWithTag("home-card-errors").performScrollTo().performClick()
         compose.waitForIdle()
-        val clearButton = compose.onNodeWithContentDescription(compose.activity.getString(R.string.errors_clear_all_short))
+        val clearButton = compose.onNodeWithContentDescription(compose.activity.getString(R.string.clear_all_errors))
         clearButton.assertIsNotEnabled()
         clearButton.performClick()
         compose.onAllNodesWithText(compose.activity.getString(R.string.dialog_confirm_clear_errors_message)).assertCountEquals(0)
 
         compose.activityRule.scenario.recreate()
         compose.waitForIdle()
-        compose.onNodeWithContentDescription(compose.activity.getString(R.string.errors_clear_all_short)).assertIsNotEnabled()
+        compose.onNodeWithContentDescription(compose.activity.getString(R.string.clear_all_errors)).assertIsNotEnabled()
         compose.onAllNodesWithText(compose.activity.getString(R.string.dialog_confirm_clear_errors_message)).assertCountEquals(0)
     }
 

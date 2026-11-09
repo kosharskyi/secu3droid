@@ -48,10 +48,14 @@ class PacketTest {
     }
 
     @Test
-    fun savedErrorsClearPacketWritesOnlyAnEmptySavedMask() {
+    fun savedErrorsPacketEncodesClearAndEditedMasks() {
         assertArrayEquals(
             intArrayOf('x'.code, 0, 0, 0, 0),
             CheckEngineSavedErrorsPacket(errors = 0).pack(),
+        )
+        assertArrayEquals(
+            intArrayOf('x'.code, 1, 0, 0, 4),
+            CheckEngineSavedErrorsPacket(errors = 0x01000004).pack(),
         )
     }
 

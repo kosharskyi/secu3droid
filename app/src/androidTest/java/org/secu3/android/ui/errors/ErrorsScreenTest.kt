@@ -1,32 +1,35 @@
 package org.secu3.android.ui.errors
 
+import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.setValue
 import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.assertIsEnabled
 import androidx.compose.ui.test.assertIsNotEnabled
-import androidx.compose.ui.test.assertCountEquals
-import androidx.compose.ui.test.junit4.v2.createComposeRule
-import androidx.compose.ui.test.assertIsNotSelected
+import androidx.compose.ui.test.assertIsOff
+import androidx.compose.ui.test.assertIsOn
 import androidx.compose.ui.test.assertIsSelected
-import androidx.compose.ui.test.onAllNodesWithText
+import androidx.compose.ui.test.hasTestTag
+import androidx.compose.ui.test.junit4.v2.createComposeRule
 import androidx.compose.ui.test.onNodeWithContentDescription
 import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
+import androidx.compose.ui.test.performScrollToNode
 import androidx.test.platform.app.InstrumentationRegistry
-import org.junit.Assert.assertTrue
+import org.junit.Assert.assertEquals
 import org.junit.Rule
 import org.junit.Test
 import org.secu3.android.R
 import org.secu3.android.connection.Connected
-import org.secu3.android.domain.errors.ErrorsClearStatus
+import org.secu3.android.connection.ConnectionState
+import org.secu3.android.connection.Disconnected
 import org.secu3.android.domain.errors.ErrorsReadStatus
+import org.secu3.android.domain.errors.ErrorsSession
 import org.secu3.android.domain.errors.ErrorsSnapshot
-import org.secu3.android.models.CheckEngineError
-import org.secu3.android.models.packets.input.CheckEngineErrorsPacket
-import org.secu3.android.models.packets.out.CheckEngineSavedErrorsPacket
+import org.secu3.android.domain.errors.ErrorsWriteStatus
+import org.secu3.android.ui.compose.SecuComposeTheme
 
 class ErrorsScreenTest {
 
@@ -36,218 +39,244 @@ class ErrorsScreenTest {
     private val context = InstrumentationRegistry.getInstrumentation().targetContext
 
     @Test
-    fun savedOnlyZeroMaskStaysLoadingUntilActiveZeroArrives() {
-        var snapshot by mutableStateOf(ErrorsSnapshot())
+    fun savedErrorsStayVisibleWhenActiveReadingTimesOut() {
+        var retries = 0
         composeTestRule.setContent {
-            ErrorsContent(Connected, snapshot, listOf("Test fault"), {}, {})
-        }
-
-        composeTestRule.onNodeWithText(context.getString(R.string.errors_loading_state)).assertIsDisplayed()
-        composeTestRule.onAllNodesWithText(context.getString(R.string.errors_summary, 0, 0)).assertCountEquals(0)
-        composeTestRule.onAllNodesWithText(context.getString(R.string.errors_empty_state)).assertCountEquals(0)
-
-        composeTestRule.runOnIdle { snapshot = snapshot.copy(saved = CheckEngineSavedErrorsPacket(errors = 0)) }
-        composeTestRule.onNodeWithText(context.getString(R.string.errors_loading_state)).assertIsDisplayed()
-        composeTestRule.onAllNodesWithText(context.getString(R.string.errors_summary, 0, 0)).assertCountEquals(0)
-        composeTestRule.onAllNodesWithText(context.getString(R.string.errors_empty_state)).assertCountEquals(0)
-
-        composeTestRule.runOnIdle { snapshot = snapshot.copy(active = CheckEngineErrorsPacket(errors = 0)) }
-        composeTestRule.onNodeWithText(context.getString(R.string.errors_summary, 0, 0)).assertIsDisplayed()
-        composeTestRule.onNodeWithText(context.getString(R.string.errors_empty_state)).assertIsDisplayed()
-    }
-
-    @Test
-    fun activeOnlyAndNewSessionResetRemainLoadingUntilBothMasksArrive() {
-        var snapshot by mutableStateOf(ErrorsSnapshot())
-        composeTestRule.setContent {
-            ErrorsContent(Connected, snapshot, listOf("Test fault"), {}, {})
-        }
-
-        composeTestRule.runOnIdle { snapshot = snapshot.copy(active = CheckEngineErrorsPacket(errors = 0)) }
-        composeTestRule.onNodeWithText(context.getString(R.string.errors_loading_state)).assertIsDisplayed()
-        composeTestRule.onAllNodesWithText(context.getString(R.string.errors_summary, 0, 0)).assertCountEquals(0)
-
-        composeTestRule.runOnIdle { snapshot = snapshot.copy(saved = CheckEngineSavedErrorsPacket(errors = 0)) }
-        composeTestRule.onNodeWithText(context.getString(R.string.errors_empty_state)).assertIsDisplayed()
-
-        composeTestRule.runOnIdle { snapshot = ErrorsSnapshot() }
-        composeTestRule.onNodeWithText(context.getString(R.string.errors_loading_state)).assertIsDisplayed()
-        composeTestRule.onAllNodesWithText(context.getString(R.string.errors_empty_state)).assertCountEquals(0)
-
-        composeTestRule.runOnIdle {
-            snapshot = ErrorsSnapshot(saved = CheckEngineSavedErrorsPacket(errors = 1))
-        }
-        composeTestRule.onNodeWithText(context.getString(R.string.errors_loading_state)).assertIsDisplayed()
-        composeTestRule.onAllNodesWithText(context.getString(R.string.errors_summary, 0, 0)).assertCountEquals(0)
-        composeTestRule.onAllNodesWithText("Test fault").assertCountEquals(0)
-    }
-
-    @Test
-    fun loadingStateShowsProgressTextAndHidesErrors() {
-        composeTestRule.setContent {
-            ErrorsScreen(
-                connectionState = Connected,
-                errors = listOf(CheckEngineError(title = "CKPS", isActive = true)),
-                isLoading = true,
-                onBackClick = {},
-                onClearClick = {},
+            Content(
+                ErrorsSnapshot(savedMask = 1, activeReadStatus = ErrorsReadStatus.Timeout),
+                onRetryActive = { retries++ },
             )
         }
 
-        composeTestRule.onNodeWithText(context.getString(R.string.errors_loading_state)).assertIsDisplayed()
-        composeTestRule.onAllNodesWithText("CKPS").assertCountEquals(0)
-        composeTestRule.onAllNodesWithText(context.getString(R.string.errors_empty_state)).assertCountEquals(0)
+        text(R.string.errors_active_read_timeout).assertIsDisplayed()
+        text(R.string.retry).performClick()
+        scrollToError(0)
+        composeTestRule.onNodeWithTag("error-saved:0", useUnmergedTree = true).assertIsSelected()
+        composeTestRule.onNodeWithTag("error-active:0", useUnmergedTree = true).assertDoesNotExist()
+        composeTestRule.runOnIdle { assertEquals(1, retries) }
     }
 
     @Test
-    fun readTimeoutShowsRetryAndRetryReturnsToLoading() {
-        var snapshot by mutableStateOf(ErrorsSnapshot(readStatus = ErrorsReadStatus.ActiveTimeout))
-        var clicked = false
+    fun activeErrorsStayVisibleWhenSavedReadingTimesOut() {
+        var refreshes = 0
         composeTestRule.setContent {
-            ErrorsContent(Connected, snapshot, listOf("Test fault"), {}, {}, {
-                clicked = true
-                snapshot = ErrorsSnapshot()
-            })
-        }
-        composeTestRule.onNodeWithText(context.getString(R.string.errors_active_read_timeout)).assertIsDisplayed()
-        composeTestRule.onAllNodesWithText(context.getString(R.string.errors_loading_state)).assertCountEquals(0)
-        composeTestRule.onNodeWithText(context.getString(R.string.retry)).assertIsEnabled().performClick()
-        assertTrue(clicked)
-        composeTestRule.onNodeWithText(context.getString(R.string.errors_loading_state)).assertIsDisplayed()
-        composeTestRule.runOnIdle {
-            snapshot = ErrorsSnapshot(
-                saved = CheckEngineSavedErrorsPacket(errors = 0),
-                active = CheckEngineErrorsPacket(errors = 0),
-            )
-        }
-        composeTestRule.onNodeWithText(context.getString(R.string.errors_empty_state)).assertIsDisplayed()
-    }
-
-    @Test
-    fun readRetryIsDisabledOfflineAndWhileClearIsInFlight() {
-        var snapshot by mutableStateOf(ErrorsSnapshot(readStatus = ErrorsReadStatus.SavedTimeout))
-        var connected by mutableStateOf(false)
-        composeTestRule.setContent {
-            ErrorsContent(if (connected) Connected else null, snapshot, listOf("Test fault"), {}, {}, {})
-        }
-        composeTestRule.onNodeWithText(context.getString(R.string.retry)).assertIsNotEnabled()
-        composeTestRule.runOnIdle {
-            connected = true
-            snapshot = snapshot.copy(clearStatus = ErrorsClearStatus.Clearing)
-        }
-        composeTestRule.onNodeWithText(context.getString(R.string.retry)).assertIsNotEnabled()
-    }
-
-    @Test
-    fun emptyStateShowsWhenThereAreNoActiveOrSavedErrors() {
-        composeTestRule.setContent {
-            ErrorsScreen(
-                connectionState = Connected,
-                errors = listOf(CheckEngineError(title = "Inactive", isActive = false, isSaved = false)),
-                isLoading = false,
-                onBackClick = {},
-                onClearClick = {},
+            Content(
+                ErrorsSnapshot(activeMask = 1, savedReadStatus = ErrorsReadStatus.Timeout),
+                onReadSaved = { refreshes++ },
             )
         }
 
-        composeTestRule.onNodeWithText(context.getString(R.string.errors_summary, 0, 0)).assertIsDisplayed()
-        composeTestRule.onNodeWithText(context.getString(R.string.errors_empty_state)).assertIsDisplayed()
-        composeTestRule.onAllNodesWithText("Inactive").assertCountEquals(0)
-    }
-
-    @Test
-    fun listShowsOnlyActiveOrSavedErrors() {
-        composeTestRule.setContent {
-            ErrorsScreen(
-                connectionState = Connected,
-                errors = listOf(
-                    CheckEngineError(title = "Active", isActive = true, isSaved = false),
-                    CheckEngineError(title = "Saved", isActive = false, isSaved = true),
-                    CheckEngineError(title = "Both", isActive = true, isSaved = true),
-                    CheckEngineError(title = "Inactive", isActive = false, isSaved = false),
-                ),
-                isLoading = false,
-                onBackClick = {},
-                onClearClick = {},
-            )
-        }
-
-        composeTestRule.onNodeWithText(context.getString(R.string.errors_summary, 2, 2)).assertIsDisplayed()
-        composeTestRule.onNodeWithText("Active").assertIsDisplayed()
-        composeTestRule.onNodeWithText("Saved").assertIsDisplayed()
-        composeTestRule.onNodeWithText("Both").assertIsDisplayed()
-        composeTestRule.onAllNodesWithText("Inactive").assertCountEquals(0)
-
-        composeTestRule.onNodeWithTag(errorStatusTag("Active", ErrorStatus.Active)).assertIsSelected()
-        composeTestRule.onNodeWithTag(errorStatusTag("Active", ErrorStatus.Saved)).assertIsNotSelected()
-        composeTestRule.onNodeWithTag(errorStatusTag("Saved", ErrorStatus.Active)).assertIsNotSelected()
-        composeTestRule.onNodeWithTag(errorStatusTag("Saved", ErrorStatus.Saved)).assertIsSelected()
-        composeTestRule.onNodeWithTag(errorStatusTag("Both", ErrorStatus.Active)).assertIsSelected()
-        composeTestRule.onNodeWithTag(errorStatusTag("Both", ErrorStatus.Saved)).assertIsSelected()
-    }
-
-    @Test
-    fun clearButtonInvokesCallback() {
-        var clicked = false
-
-        composeTestRule.setContent {
-            ErrorsScreen(
-                connectionState = Connected,
-                errors = emptyList(),
-                isLoading = false,
-                snapshot = ErrorsSnapshot(saved = CheckEngineSavedErrorsPacket(errors = 0)),
-                onBackClick = {},
-                onClearClick = { clicked = true },
-            )
-        }
-
-        composeTestRule.onNodeWithContentDescription(context.getString(R.string.errors_clear_all_short)).performClick()
-
-        assertTrue(clicked)
-    }
-
-    @Test
-    fun clearingDisablesClearControlAndShowsBusyFeedback() {
-        composeTestRule.setContent {
-            ErrorsScreen(
-                connectionState = Connected,
-                errors = emptyList(),
-                isLoading = false,
-                snapshot = ErrorsSnapshot(clearStatus = ErrorsClearStatus.Clearing),
-                onBackClick = {},
-                onClearClick = {},
-            )
-        }
-
+        text(R.string.errors_saved_read_timeout).assertIsDisplayed()
+        text(R.string.errors_read_saved).performClick()
         composeTestRule.onNodeWithTag("errors-clear-button").assertIsNotEnabled()
-        composeTestRule.onNodeWithText(context.getString(R.string.errors_clear_busy)).assertIsDisplayed()
+        scrollToError(0)
+        composeTestRule.onNodeWithTag("error-active:0", useUnmergedTree = true).assertIsSelected()
+        composeTestRule.onNodeWithTag("error-saved:0", useUnmergedTree = true).assertDoesNotExist()
+        composeTestRule.runOnIdle { assertEquals(1, refreshes) }
     }
 
     @Test
-    fun clearFailureAndSuccessStatusesAreVisibleAndAllowControlledRetry() {
-        var status by androidx.compose.runtime.mutableStateOf(ErrorsClearStatus.AckTimeout)
+    fun zeroMaskIsShownSeparatelyFromReadingTheOtherSource() {
         composeTestRule.setContent {
-            ErrorsScreen(
-                connectionState = Connected,
-                errors = emptyList(),
-                isLoading = false,
-                snapshot = ErrorsSnapshot(
-                    saved = CheckEngineSavedErrorsPacket(errors = 1),
-                    clearStatus = status,
-                ),
-                onBackClick = {},
-                onClearClick = {},
+            Content(ErrorsSnapshot(savedMask = 0, activeReadStatus = ErrorsReadStatus.Reading))
+        }
+
+        text(R.string.errors_active_loading).assertIsDisplayed()
+        composeTestRule.onNodeWithText(context.getString(R.string.errors_saved_count, 0)).assertIsDisplayed()
+        composeTestRule.onNodeWithText(context.getString(R.string.errors_active_count, 0)).assertDoesNotExist()
+        text(R.string.errors_no_reported).assertIsDisplayed()
+    }
+
+    @Test
+    fun flagsOutsideTheCatalogAreCountedAndDoNotShowAnEmptyState() {
+        composeTestRule.setContent {
+            Content(ErrorsSnapshot(savedMask = 1 shl 31))
+        }
+
+        text(R.string.errors_unknown_flags).assertIsDisplayed()
+        composeTestRule.onNodeWithText(context.getString(R.string.errors_saved_count, 1)).assertIsDisplayed()
+        text(R.string.errors_no_reported).assertDoesNotExist()
+    }
+
+    @Test
+    fun showsBothBadgesAndAllowsBrowsingInactiveCodes() {
+        composeTestRule.setContent {
+            Content(ErrorsSnapshot(activeMask = 1, savedMask = 1))
+        }
+
+        scrollToError(0)
+        composeTestRule.onNodeWithText(context.getString(R.string.errors_blink_code, 21)).assertIsDisplayed()
+        composeTestRule.onNodeWithTag("error-active:0", useUnmergedTree = true).assertIsSelected()
+        composeTestRule.onNodeWithTag("error-saved:0", useUnmergedTree = true).assertIsSelected()
+        composeTestRule.onNodeWithTag("error-card:1").assertDoesNotExist()
+        text(R.string.errors_show_all).performClick()
+        scrollToError(25)
+        composeTestRule.onNodeWithText(context.getString(R.string.errors_blink_code, 29)).assertIsDisplayed()
+        assertEquals(ErrorsSession.ERROR_COUNT, context.resources.getStringArray(R.array.errors_ecu_errors_names).size)
+        assertEquals(ErrorsSession.ERROR_COUNT, context.resources.getIntArray(R.array.errors_ecu_blink_codes).size)
+    }
+
+    @Test
+    fun draftKeepsSavedBadgeAndRequiresConfirmationToWrite() {
+        var snapshot by mutableStateOf(ErrorsSnapshot(savedMask = 1))
+        var confirmation by mutableStateOf<ErrorsConfirmation?>(null)
+        var writes = 0
+        composeTestRule.setContent {
+            SecuComposeTheme {
+                Content(
+                    snapshot,
+                    onEdit = { snapshot = snapshot.copy(draftMask = snapshot.savedMask) },
+                    onSetAll = { selected -> snapshot = snapshot.copy(draftMask = if (selected) (1 shl ErrorsSession.ERROR_COUNT) - 1 else 0) },
+                    onDraft = { bit, selected ->
+                        assertEquals(0, bit)
+                        snapshot = snapshot.copy(draftMask = if (selected) 1 else 0)
+                    },
+                    onWrite = { confirmation = ErrorsConfirmation.Write },
+                )
+                ErrorsConfirmationDialog(confirmation, { writes++; confirmation = null }, { confirmation = null })
+            }
+        }
+
+        text(R.string.errors_edit_saved).performClick()
+        text(R.string.errors_write_saved).assertIsNotEnabled()
+        text(R.string.errors_select_all).performClick()
+        text(R.string.errors_deselect_all).performClick()
+        scrollToError(0)
+        val draft = composeTestRule.onNodeWithTag("error-draft:0")
+        draft.assertIsOff()
+        composeTestRule.onNodeWithTag("error-saved:0", useUnmergedTree = true).assertIsSelected()
+        draft.performClick()
+        draft.assertIsOn()
+        text(R.string.errors_write_saved).assertIsNotEnabled()
+        draft.performClick()
+        text(R.string.errors_write_saved).performClick()
+        text(R.string.errors_confirm_write).assertIsDisplayed()
+        composeTestRule.runOnIdle { assertEquals(0, writes) }
+        composeTestRule.onNodeWithText(context.getString(android.R.string.ok)).performClick()
+        composeTestRule.runOnIdle { assertEquals(1, writes) }
+    }
+
+    @Test
+    fun uncertainWriteAllowsRefreshAndDisablesMoreWrites() {
+        composeTestRule.setContent {
+            Content(ErrorsSnapshot(savedMask = 1, writeStatus = ErrorsWriteStatus.AckTimeout))
+        }
+
+        text(R.string.errors_write_ack_timeout).assertIsDisplayed()
+        text(R.string.errors_read_saved).assertIsEnabled()
+        text(R.string.errors_edit_saved).assertIsNotEnabled()
+        composeTestRule.onNodeWithTag("errors-clear-button").assertIsNotEnabled()
+    }
+
+    @Test
+    fun clearingHistoryRequiresItsOwnConfirmation() {
+        var confirmation by mutableStateOf<ErrorsConfirmation?>(null)
+        var clears = 0
+        composeTestRule.setContent {
+            Content(
+                ErrorsSnapshot(savedMask = 1),
+                onClear = { confirmation = ErrorsConfirmation.Clear },
             )
+            ErrorsConfirmationDialog(confirmation, { clears++; confirmation = null }, { confirmation = null })
+        }
+
+        composeTestRule.onNodeWithTag("errors-clear-button").performClick()
+        text(R.string.dialog_confirm_clear_errors_message).assertIsDisplayed()
+        composeTestRule.runOnIdle { assertEquals(0, clears) }
+        composeTestRule.onNodeWithText(context.getString(android.R.string.cancel)).performClick()
+        composeTestRule.runOnIdle { assertEquals(0, clears) }
+        composeTestRule.onNodeWithTag("errors-clear-button").performClick()
+        composeTestRule.onNodeWithText(context.getString(android.R.string.ok)).performClick()
+        composeTestRule.runOnIdle { assertEquals(1, clears) }
+    }
+
+    @Test
+    fun disconnectHidesCurrentDataAndDisablesClear() {
+        var connection: ConnectionState by mutableStateOf(Connected)
+        composeTestRule.setContent {
+            Content(ErrorsSnapshot(activeMask = 1, savedMask = 1), connection)
         }
 
         composeTestRule.onNodeWithTag("errors-clear-button").assertIsEnabled()
-        composeTestRule.onNodeWithText(context.getString(R.string.errors_clear_ack_timeout)).assertIsDisplayed()
+        scrollToError(0)
+        composeTestRule.runOnIdle { connection = Disconnected }
+        composeTestRule.onNodeWithTag("error-card:0").assertDoesNotExist()
+        composeTestRule.onNodeWithTag("errors-clear-button").assertIsNotEnabled()
+    }
 
-        composeTestRule.runOnIdle { status = ErrorsClearStatus.ReadbackTimeout }
-        composeTestRule.onNodeWithTag("errors-clear-button").assertIsEnabled()
-        composeTestRule.onNodeWithText(context.getString(R.string.errors_clear_readback_timeout)).assertIsDisplayed()
+    @Test
+    fun modeAndSettingsControlsForwardIndependentActions() {
+        var live: Boolean? = null
+        var hold: Boolean? = null
+        var autoRead: Boolean? = null
+        composeTestRule.setContent {
+            Content(
+                ErrorsSnapshot(autoReadSavedErrors = true),
+                onLive = { live = it },
+                onHold = { hold = it },
+                onAutoRead = { autoRead = it },
+            )
+        }
 
-        composeTestRule.runOnIdle { status = ErrorsClearStatus.Succeeded }
-        composeTestRule.onNodeWithText(context.getString(R.string.errors_clear_success)).assertIsDisplayed()
+        text(R.string.errors_live_mode).performClick()
+        composeTestRule.onNodeWithContentDescription(context.getString(R.string.errors_settings)).performClick()
+        text(R.string.errors_hold_active).performClick()
+        text(R.string.errors_auto_read_saved).performClick()
+        composeTestRule.runOnIdle {
+            assertEquals(false, live)
+            assertEquals(true, hold)
+            assertEquals(false, autoRead)
+        }
+    }
+
+    @Test
+    fun helpIsAvailableWithoutAnEcuConnection() {
+        composeTestRule.setContent { Content(ErrorsSnapshot(), Disconnected) }
+
+        composeTestRule.onNodeWithContentDescription(context.getString(R.string.errors_help)).performClick()
+        text(R.string.errors_help_text).assertIsDisplayed()
+        text(R.string.close).performClick()
+        text(R.string.errors_help_text).assertDoesNotExist()
+    }
+
+    private fun text(id: Int) = composeTestRule.onNodeWithText(context.getString(id))
+
+    private fun scrollToError(bit: Int) {
+        composeTestRule.onNodeWithTag("errors-list").performScrollToNode(hasTestTag("error-card:$bit"))
+    }
+
+    @Composable
+    private fun Content(
+        snapshot: ErrorsSnapshot,
+        connection: ConnectionState = Connected,
+        onClear: () -> Unit = {},
+        onLive: (Boolean) -> Unit = {},
+        onHold: (Boolean) -> Unit = {},
+        onAutoRead: (Boolean) -> Unit = {},
+        onRetryActive: () -> Unit = {},
+        onReadSaved: () -> Unit = {},
+        onEdit: () -> Unit = {},
+        onSetAll: (Boolean) -> Unit = {},
+        onDraft: (Int, Boolean) -> Unit = { _, _ -> },
+        onWrite: () -> Unit = {},
+    ) {
+        SecuComposeTheme {
+            ErrorsContent(
+                connectionState = connection,
+                snapshot = snapshot,
+                onBackClick = {},
+                onClearClick = onClear,
+                onLiveChange = onLive,
+                onHoldChange = onHold,
+                onAutoReadChange = onAutoRead,
+                onReadSaved = onReadSaved,
+                onRetryActive = onRetryActive,
+                onEditSaved = onEdit,
+                onDraftChange = onDraft,
+                onSetAllDraft = onSetAll,
+                onDiscardDraft = {},
+                onWriteDraft = onWrite,
+            )
+        }
     }
 }
