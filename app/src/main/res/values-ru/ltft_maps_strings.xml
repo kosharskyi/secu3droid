@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="ltft_maps_title">Таблицы LTFT</string>
+    <string name="ltft_maps_disconnected">Подключитесь к ECU, чтобы считать таблицы LTFT.</string>
+    <string name="ltft_maps_unsupported">Для таблиц LTFT нужна прошивка с поддержкой впрыска топлива.</string>
+    <string name="ltft_maps_reading">Чтение таблиц LTFT…</string>
+    <string name="ltft_maps_timeout">ECU не прислал все данные LTFT вовремя.</string>
+    <string name="ltft_maps_table">Таблица %1$d</string>
+    <string name="ltft_maps_axes">Обороты по горизонтали · Нагрузка (%1$s) по вертикали · Коррекция в %%</string>
+    <string name="ltft_maps_waiting_baro">Ожидание барометрического давления для построения оси нагрузки.</string>
+    <string name="ltft_maps_operating_point">Рабочая точка · %1$d %2$s · %3$s %4$s</string>
+</resources>

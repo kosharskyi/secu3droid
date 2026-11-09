@@ -30,6 +30,9 @@ import org.secu3.android.models.packets.input.CheckEngineErrorsPacket
 import org.secu3.android.models.packets.input.DiagInputPacket
 import org.secu3.android.models.packets.input.FirmwareInfoPacket
 import org.secu3.android.models.packets.input.FnNameDatPacket
+import org.secu3.android.models.packets.input.LoadGridPacket
+import org.secu3.android.models.packets.input.LtftMapChunkPacket
+import org.secu3.android.models.packets.input.RpmGridPacket
 import org.secu3.android.models.packets.input.SensorsPacket
 import org.secu3.android.models.packets.base.OutputPacket
 import org.secu3.android.models.packets.out.params.AccelerationParamPacket
@@ -101,6 +104,9 @@ data class ChangeModePacket(
                 Task.Secu3ReadGasDoseParam -> ChangeModePacket(GasDoseParamPacket.DESCRIPTOR)
                 Task.Secu3ReadLtftParam -> ChangeModePacket(LtftParamPacket.DESCRIPTOR)
                 Task.Secu3ReadDbwParam -> ChangeModePacket(DbwParamPacket.DESCRIPTOR)
+                Task.Secu3ReadLtftMap -> ChangeModePacket(LtftMapChunkPacket.DESCRIPTOR)
+                Task.Secu3ReadRpmGrid -> ChangeModePacket(RpmGridPacket.DESCRIPTOR)
+                Task.Secu3ReadLoadGrid -> ChangeModePacket(LoadGridPacket.DESCRIPTOR)
 
                 Task.Secu3ReadFnNameDat -> ChangeModePacket(FnNameDatPacket.DESCRIPTOR)
                 else -> ChangeModePacket(SensorsPacket.DESCRIPTOR)

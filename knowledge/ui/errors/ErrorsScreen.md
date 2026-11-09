@@ -11,3 +11,7 @@ An ECU can return set bits outside this catalog. The totals include them and the
 ## A draft does not change the displayed EEPROM state
 
 During editing, the saved badge still reflects the last ECU read. The checkbox reflects the draft. Leaving the route or losing the connection dismisses both write confirmation actions, so a confirmation cannot follow a draft from a previous session.
+
+## Opening LTFT pauses the error packet session
+
+The LTFT entry is a full-screen destination. The Check Engine entry must drop below resumed state while LTFT owns the ECU's stream context, and resumes its error session when the user returns.

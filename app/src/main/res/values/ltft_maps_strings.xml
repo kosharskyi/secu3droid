@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="ltft_maps_title">LTFT tables</string>
+    <string name="ltft_maps_disconnected">Connect to the ECU to read the LTFT tables.</string>
+    <string name="ltft_maps_unsupported">The LTFT tables require fuel injection support in the firmware.</string>
+    <string name="ltft_maps_reading">Reading LTFT tables…</string>
+    <string name="ltft_maps_timeout">The ECU did not send all LTFT data in time.</string>
+    <string name="ltft_maps_table">Table %1$d</string>
+    <string name="ltft_maps_axes">RPM horizontally · Load (%1$s) vertically · Correction in %%</string>
+    <string name="ltft_maps_waiting_baro">Waiting for barometric pressure to label the load axis.</string>
+    <string name="ltft_maps_operating_point">Operating point · %1$d %2$s · %3$s %4$s</string>
+</resources>

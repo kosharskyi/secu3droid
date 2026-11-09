@@ -50,6 +50,7 @@ import org.secu3.android.ui.compose.SecuComposeTheme
 import org.secu3.android.ui.errors.ErrorsRoute
 import org.secu3.android.ui.firmware.FirmwareRoute
 import org.secu3.android.ui.logger.SecuLogsRoute
+import org.secu3.android.ui.ltft.LtftMapsRoute
 import org.secu3.android.ui.parameters.ParametersRoute
 import org.secu3.android.ui.settings.SettingsRoute
 import org.secu3.android.ui.dashboard.DashboardRoute
@@ -65,6 +66,7 @@ internal const val HOME_ROUTE = "home"
 internal const val PARAMETERS_ROUTE = "parameters"
 internal const val SETTINGS_ROUTE = "settings"
 internal const val ERRORS_ROUTE = "errors"
+internal const val LTFT_MAPS_ROUTE = "ltft-maps"
 internal const val LOGS_ROUTE = "logs"
 internal const val FIRMWARE_ROUTE = "firmware"
 internal const val DASHBOARD_ROUTE = "dashboard"
@@ -119,6 +121,7 @@ internal fun RootNavigation(activity: MainActivity) {
             PARAMETERS_ROUTE -> "parameters"
             SETTINGS_ROUTE -> "settings"
             ERRORS_ROUTE -> "errors"
+            LTFT_MAPS_ROUTE -> "ltft_maps"
             LOGS_ROUTE -> "logs"
             FIRMWARE_ROUTE -> "firmware"
             DASHBOARD_ROUTE -> "dashboard"
@@ -175,7 +178,15 @@ internal fun RootNavigation(activity: MainActivity) {
                 SettingsRoute(entry, activity, onNavigateUp = { navController.popBackStack() })
             }
             composable(ERRORS_ROUTE) { entry ->
-                ErrorsRoute(entry, activity, onNavigateUp = { navController.popBackStack() })
+                ErrorsRoute(
+                    entry,
+                    activity,
+                    onNavigateUp = { navController.popBackStack() },
+                    onOpenLtft = { navController.navigate(LTFT_MAPS_ROUTE) { launchSingleTop = true } },
+                )
+            }
+            composable(LTFT_MAPS_ROUTE) { entry ->
+                LtftMapsRoute(entry, activity, onNavigateUp = { navController.popBackStack() })
             }
             composable(LOGS_ROUTE) { entry ->
                 SecuLogsRoute(entry, activity, onNavigateUp = { navController.popBackStack() })

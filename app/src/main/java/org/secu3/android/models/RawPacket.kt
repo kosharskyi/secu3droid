@@ -32,6 +32,9 @@ import org.secu3.android.models.packets.out.CheckEngineSavedErrorsPacket
 import org.secu3.android.models.packets.input.DiagInputPacket
 import org.secu3.android.models.packets.input.FirmwareInfoPacket
 import org.secu3.android.models.packets.input.FnNameDatPacket
+import org.secu3.android.models.packets.input.LoadGridPacket
+import org.secu3.android.models.packets.input.LtftMapChunkPacket
+import org.secu3.android.models.packets.input.RpmGridPacket
 import org.secu3.android.models.packets.out.OpCompNc
 import org.secu3.android.models.packets.input.SensorsPacket
 import org.secu3.android.models.packets.out.params.AccelerationParamPacket
@@ -99,6 +102,9 @@ data class RawPacket(val data: IntArray)  {
                 DbwParamPacket.DESCRIPTOR -> DbwParamPacket()
 
                 FnNameDatPacket.DESCRIPTOR -> FnNameDatPacket()
+                LtftMapChunkPacket.DESCRIPTOR -> LtftMapChunkPacket()
+                RpmGridPacket.DESCRIPTOR -> RpmGridPacket()
+                LoadGridPacket.DESCRIPTOR -> LoadGridPacket()
                 OpCompNc.DESCRIPTOR -> OpCompNc()
 
                 else -> null
