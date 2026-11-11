@@ -7,6 +7,7 @@ import org.junit.Assert.assertNotNull
 import org.junit.Assert.assertNull
 import org.junit.Assert.assertTrue
 import org.junit.Test
+import java.util.Locale
 
 class LtftVeImageTest {
     private val codec = LtftVeImage()
@@ -42,6 +43,68 @@ class LtftVeImageTest {
     @Test
     fun crcMatchesModbusCrc16GoldenVector() {
         assertEquals(0x4b37, crc16("123456789".toByteArray(Charsets.US_ASCII), 0, 9))
+    }
+
+    @Test
+    fun parseLoadsSparseHexUsingSegmentAddressesAndFillsErasedFlash() {
+        val flash = managerFlash(fill = 0xff.toByte()).apply {
+            this[0] = ':'.code.toByte()
+            placeCrc(this, 129022, 0, 129022)
+        }
+        val records = hexRecords(flash, sparse = true).toMutableList().apply {
+            add(lastIndex, ":0400000300000000F9") // Start segment address, ignored by Manager.
+        }
+        val input = records.joinToString("\n").lowercase().toByteArray(Charsets.US_ASCII)
+
+        val image = codec.parse(input)!!
+        assertTrue(image.isFlash)
+        assertEquals(listOf("Set 1", "Set 2", "Set 3", "Set 4"), image.setNames)
+        assertArrayEquals(flash, image.bytes)
+        assertArrayEquals(flash, codec.parse(flash)!!.bytes) // ':' is also a valid first BIN byte.
+    }
+
+    @Test
+    fun parseRejectsInvalidHexRecordsAndImages() {
+        val flash = managerFlash(fill = 0xff.toByte())
+        val records = hexRecords(flash, sparse = true)
+        fun assertRejected(lines: List<String>) {
+            assertNull(codec.parse(lines.joinToString("\r\n", postfix = "\r\n").toByteArray(Charsets.US_ASCII)))
+        }
+
+        assertRejected(records.toMutableList().apply {
+            this[0] = first().dropLast(1) + if (first().last() == '0') "1" else "0"
+        })
+        assertRejected(records.toMutableList().apply { this[0] = first().replaceRange(1, 3, "11") })
+        assertRejected(records.dropLast(1))
+        assertRejected(records + records.first())
+        assertRejected(records.toMutableList().apply { add(lastIndex, ":01000001FFFF") }) // EOF with a payload.
+        assertRejected(records.toMutableList().apply { add(lastIndex, ":020000021001EB") }) // Unaligned segment.
+        assertRejected(records.toMutableList().apply { add(lastIndex, ":020000041000EA") }) // Unsupported type 04.
+        assertRejected(records.toMutableList().apply {
+            add(lastIndex, ":020000022000DC") // Address base 0x20000.
+            add(lastIndex, hexRecord(0, byteArrayOf(1)))
+        })
+        assertRejected(records.toMutableList().apply { removeAt(lastIndex - 1) }) // Truncated address range.
+        assertRejected(hexRecords(flash.copyOf().apply { this[0] = 1 }, sparse = true)) // Valid HEX, wrong firmware CRC.
+        assertRejected(hexRecords(managerEeprom(), sparse = false)) // EEPROM stays BIN.
+        assertNull(codec.parse(ByteArray(524289).apply { this[0] = ':'.code.toByte() }))
+    }
+
+    @Test
+    fun flashApplyWritesManagerHexWithTheCorrectedFirmwareCrc() {
+        val image = codec.parse(managerFlash())!!
+        val tables = listOf(List(256) { 10.0f }, List(256) { -20.0f })
+        val binary = codec.apply(image, 2, LtftVeImage.Source.Average, tables)
+        val expected = hexRecords(binary, sparse = false).joinToString("\r\n", postfix = "\r\n")
+
+        val hex = codec.apply(image, 2, LtftVeImage.Source.Average, tables, LtftVeImage.Format.Hex)
+
+        assertEquals(expected, String(hex, Charsets.US_ASCII))
+        assertArrayEquals(binary, codec.parse(hex)!!.bytes)
+        assertEquals(973, packed12(binary, 123621, 255))
+        assertTrue(runCatching {
+            codec.apply(codec.parse(managerEeprom())!!, 0, LtftVeImage.Source.Average, tables, LtftVeImage.Format.Hex)
+        }.isFailure)
     }
 
     @Test
@@ -97,7 +160,7 @@ class LtftVeImageTest {
         assertTrue(runCatching { codec.apply(image, 0, LtftVeImage.Source.Ltft1, listOf(emptyList(), emptyList())) }.isFailure)
     }
 
-    private fun managerFlash() = ByteArray(131072).apply {
+    private fun managerFlash(fill: Byte = 0) = ByteArray(131072) { fill }.apply {
         putU16(this, 129020, 16502)
         putU16(this, 112520, 890)
         putU16(this, 112510, 880)
@@ -126,7 +189,24 @@ class LtftVeImageTest {
         before.indices.filter { i -> allowed.none { i in it } }.forEach { i -> assertEquals("byte $i", before[i], after[i]) }
     }
 
+    private fun hexRecords(bytes: ByteArray, sparse: Boolean): List<String> = buildList {
+        for (offset in bytes.indices step 16) {
+            if (offset == 0x10000) add(":020000021000EC")
+            val data = bytes.copyOfRange(offset, offset + 16)
+            if (!sparse || data.any { it != 0xff.toByte() }) add(hexRecord(offset and 0xffff, data))
+        }
+        add(":00000001FF")
+    }
+
+    private fun hexRecord(address: Int, data: ByteArray): String {
+        val checksum = -(data.size + (address shr 8) + (address and 0xff) + data.sumOf { it.toInt() and 0xff }) and 0xff
+        return String.format(Locale.ROOT, ":%02X%04X00", data.size, address) +
+            data.joinToString("") { String.format(Locale.ROOT, "%02X", it.toInt() and 0xff) } +
+            String.format(Locale.ROOT, "%02X", checksum)
+    }
+
     private fun putName(bytes: ByteArray, offset: Int, name: String) {
+        bytes.fill(0, offset, offset + 16)
         name.toByteArray(Charsets.US_ASCII).copyInto(bytes, offset)
     }
 

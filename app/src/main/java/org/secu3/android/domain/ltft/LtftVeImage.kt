@@ -21,13 +21,17 @@ internal class LtftVeImage @Inject constructor() {
 
     enum class Source { Ltft1, Ltft2, Average }
 
+    enum class Format(val extension: String) { Bin("bin"), Hex("hex") }
+
     sealed interface ReadResult {
         data class Opened(val image: Image) : ReadResult
         data object Invalid : ReadResult
         data object Failed : ReadResult
     }
 
-    fun parse(bytes: ByteArray): Image? {
+    fun parse(bytes: ByteArray): Image? = parseBinary(bytes) ?: decodeHex(bytes)?.let(::parseBinary)
+
+    private fun parseBinary(bytes: ByteArray): Image? {
         val flash = bytes.size == FLASH_SIZE
         if (!flash && bytes.size != EEPROM_SIZE) return null
         if (!hasMagic(bytes)) return null
@@ -52,7 +56,14 @@ internal class LtftVeImage @Inject constructor() {
         return Image(flash, names, bytes.copyOf())
     }
 
-    fun apply(image: Image, setIndex: Int, source: Source, tables: List<List<Float>>): ByteArray {
+    fun apply(
+        image: Image,
+        setIndex: Int,
+        source: Source,
+        tables: List<List<Float>>,
+        format: Format = Format.Bin,
+    ): ByteArray {
+        require(image.isFlash || format == Format.Bin) { "EEPROM images use BIN format" }
         require(setIndex in image.setNames.indices) { "Set index is out of range" }
         require(tables.size == 2 && tables.all { it.size == VE_CELL_COUNT }) { "Expected two LTFT tables with 256 cells each" }
         require(tables.all { row -> row.all { it.isFinite() } }) { "LTFT values must be finite" }
@@ -71,7 +82,7 @@ internal class LtftVeImage @Inject constructor() {
         }
         if (image.isFlash) putU16(bytes, FLASH_CRC_OFFSET, crc16(bytes, 0, FLASH_CRC_OFFSET))
         else putU16(bytes, EEPROM_TABLES_CRC_OFFSET, crc16(bytes, EEPROM_TABLES_START, EEPROM_TABLES_CRC_OFFSET - EEPROM_TABLES_START))
-        return bytes
+        return if (format == Format.Hex) encodeHex(bytes) else bytes
     }
 
     suspend fun read(resolver: ContentResolver, uri: Uri): ReadResult {
@@ -88,11 +99,11 @@ internal class LtftVeImage @Inject constructor() {
                         if (count == 0) {
                             val next = stream.read()
                             if (next < 0) break
-                            if (++total > FLASH_SIZE) return@withContext ReadResult.Invalid
+                            if (++total > MAX_HEX_FILE_SIZE) return@withContext ReadResult.Invalid
                             output.write(next)
                         } else {
                             total += count
-                            if (total > FLASH_SIZE) return@withContext ReadResult.Invalid
+                            if (total > MAX_HEX_FILE_SIZE) return@withContext ReadResult.Invalid
                             output.write(buffer, 0, count)
                         }
                     }
@@ -118,10 +129,11 @@ internal class LtftVeImage @Inject constructor() {
         setIndex: Int,
         source: Source,
         tables: List<List<Float>>,
+        format: Format = Format.Bin,
     ): Boolean {
         return withContext(Dispatchers.IO) {
             val modifiedBytes = try {
-                apply(image, setIndex, source, tables)
+                apply(image, setIndex, source, tables, format)
             } catch (_: IllegalArgumentException) {
                 return@withContext false
             }
@@ -150,6 +162,74 @@ internal class LtftVeImage @Inject constructor() {
         } catch (_: Exception) {
             // Best effort only; preserve the original write failure.
         }
+    }
+
+    private fun decodeHex(bytes: ByteArray): ByteArray? {
+        if (bytes.size > MAX_HEX_FILE_SIZE || bytes.firstOrNull() != ':'.code.toByte()) return null
+        val image = ByteArray(FLASH_SIZE) { 0xff.toByte() }
+        var segmentBase = 0
+        var end = 0
+        var eof = false
+        for (line in String(bytes, Charsets.US_ASCII).lineSequence()) {
+            if (line.isEmpty()) continue
+            if (eof || line.first() != ':' || line.length !in 11..521 || line.length % 2 == 0) return null
+            val record = IntArray(line.length / 2)
+            for (i in record.indices) {
+                val high = line[2 * i + 1].digitToIntOrNull(16) ?: return null
+                val low = line[2 * i + 2].digitToIntOrNull(16) ?: return null
+                record[i] = (high shl 4) or low
+            }
+            val count = record[0]
+            if (record.size != count + 5 || record.sum() and 0xff != 0) return null
+            val address = (record[1] shl 8) or record[2]
+            when (record[3]) {
+                0x00 -> {
+                    val start = segmentBase + address
+                    if (start + count > image.size) return null
+                    for (i in 0 until count) image[start + i] = record[4 + i].toByte()
+                    if (count > 0) end = maxOf(end, start + count)
+                }
+                0x01 -> {
+                    if (count != 0 || address != 0) return null
+                    eof = true
+                }
+                0x02 -> {
+                    if (count != 2 || address != 0 || record[5] and 0x0f != 0) return null
+                    segmentBase = ((record[4] shl 8) or record[5]) shl 4
+                }
+                0x03 -> if (count != 4 || address != 0) return null
+                else -> return null
+            }
+        }
+        return image.takeIf { eof && end == it.size }
+    }
+
+    private fun encodeHex(bytes: ByteArray): ByteArray = buildString {
+        for (offset in bytes.indices step HEX_RECORD_BYTES) {
+            // Manager uses an extended segment address of 0x1000 from byte 0x10000.
+            if (offset == 0x10000) append(":020000021000EC\r\n")
+            val addressHigh = offset ushr 8 and 0xff
+            val addressLow = offset and 0xff
+            append(':')
+            appendHexByte(HEX_RECORD_BYTES)
+            appendHexByte(addressHigh)
+            appendHexByte(addressLow)
+            append("00")
+            var sum = HEX_RECORD_BYTES + addressHigh + addressLow
+            for (i in offset until offset + HEX_RECORD_BYTES) {
+                val byte = bytes[i].toInt() and 0xff
+                appendHexByte(byte)
+                sum += byte
+            }
+            appendHexByte(-sum)
+            append("\r\n")
+        }
+        append(":00000001FF\r\n")
+    }.toByteArray(Charsets.US_ASCII)
+
+    private fun StringBuilder.appendHexByte(value: Int) {
+        append(HEX_DIGITS[value ushr 4 and 0x0f])
+        append(HEX_DIGITS[value and 0x0f])
     }
 
     private fun hasMagic(bytes: ByteArray) = bytes.copyOfRange(bytes.size - MAGIC.size, bytes.size).contentEquals(MAGIC)
@@ -196,6 +276,9 @@ internal class LtftVeImage @Inject constructor() {
 
     companion object {
         private const val FLASH_SIZE = 131072
+        private const val MAX_HEX_FILE_SIZE = 524288
+        private const val HEX_RECORD_BYTES = 16
+        private const val HEX_DIGITS = "0123456789ABCDEF"
         private const val EEPROM_SIZE = 4096
         private const val SET_COUNT = 4
         private const val VE_CELL_COUNT = 256

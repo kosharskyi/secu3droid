@@ -29,16 +29,17 @@
     <string name="ltft_maps_reset_readback_failed">ECU подтвердил сброс. Время ожидания чтения таблиц истекло.</string>
     <string name="ltft_maps_read_again">Считать таблицы ещё раз</string>
     <string name="ltft_ve_apply">Применить LTFT к VE</string>
-    <string name="ltft_ve_matching_setup">Используйте файл BIN из Manager для той же конфигурации двигателя. Коррекции применяются к соответствующим ячейкам оборотов и нагрузки.</string>
+    <string name="ltft_ve_matching_setup">Используйте файл из Manager для той же конфигурации двигателя. Коррекции применяются к соответствующим ячейкам оборотов и нагрузки.</string>
     <string name="ltft_ve_source">Источник коррекций</string>
     <string name="ltft_ve_average">Среднее обеих таблиц</string>
     <string name="ltft_ve_flash_set">Набор карт прошивки</string>
     <string name="ltft_ve_eeprom_set">Набор карт EEPROM</string>
     <string name="ltft_ve_set_number">Набор %1$d</string>
     <string name="ltft_ve_named_set">%1$d · %2$s</string>
-    <string name="ltft_ve_save_copy">Сохранить копию BIN</string>
-    <string name="ltft_ve_invalid_file">Выберите совместимый файл BIN для ATmega1284 с корректными контрольными суммами.</string>
-    <string name="ltft_ve_read_error">Не удалось открыть файл BIN.</string>
-    <string name="ltft_ve_write_error">Не удалось сохранить скорректированный файл BIN.</string>
-    <string name="ltft_ve_saved">Копия BIN со скорректированной VE сохранена.</string>
+    <string name="ltft_ve_output_format">Формат сохранения</string>
+    <string name="ltft_ve_save_copy">Сохранить копию</string>
+    <string name="ltft_ve_invalid_file">Выберите прошивку ATmega1284 (BIN, HEX или A90) либо EEPROM в формате BIN с корректными контрольными суммами.</string>
+    <string name="ltft_ve_read_error">Не удалось открыть файл.</string>
+    <string name="ltft_ve_write_error">Не удалось сохранить скорректированный файл.</string>
+    <string name="ltft_ve_saved">Копия со скорректированной VE сохранена.</string>
 </resources>

@@ -54,6 +54,7 @@ internal fun rememberLtftVeFileAction(
             choice = choice,
             onSelectSet = workflow::selectSet,
             onSelectSource = workflow::selectSource,
+            onSelectFormat = workflow::selectFormat,
             onCancel = workflow::cancelSelection,
             onSave = {
                 workflow.beginSave()?.let { name ->
@@ -87,6 +88,7 @@ private fun LtftVeFileDialog(
     choice: LtftVeFileWorkflow.State.Choosing,
     onSelectSet: (Int) -> Unit,
     onSelectSource: (LtftVeImage.Source) -> Unit,
+    onSelectFormat: (LtftVeImage.Format) -> Unit,
     onCancel: () -> Unit,
     onSave: () -> Unit,
 ) {
@@ -122,6 +124,20 @@ private fun LtftVeFileDialog(
                             val title = if (name.isBlank()) stringResource(R.string.ltft_ve_set_number, index + 1)
                             else stringResource(R.string.ltft_ve_named_set, index + 1, name)
                             LtftVeChoice(title, choice.setIndex == index) { onSelectSet(index) }
+                        }
+                    }
+                    Text(
+                        stringResource(R.string.ltft_ve_output_format),
+                        style = MaterialTheme.typography.titleSmall,
+                        modifier = Modifier.padding(top = 12.dp),
+                    )
+                    Column(Modifier.selectableGroup()) {
+                        LtftVeImage.Format.entries.forEach { format ->
+                            val title = when (format) {
+                                LtftVeImage.Format.Bin -> stringResource(R.string.ltft_ve_format_bin)
+                                LtftVeImage.Format.Hex -> stringResource(R.string.ltft_ve_format_hex)
+                            }
+                            LtftVeChoice(title, choice.format == format) { onSelectFormat(format) }
                         }
                     }
                 } else {
@@ -160,6 +176,7 @@ internal class LtftVeFileWorkflow(
             val image: LtftVeImage.Image,
             val setIndex: Int = 0,
             val source: LtftVeImage.Source = LtftVeImage.Source.Ltft1,
+            val format: LtftVeImage.Format = LtftVeImage.Format.Bin,
         ) : State
         data class Saving(val choice: Choosing) : State
     }
@@ -200,6 +217,11 @@ internal class LtftVeFileWorkflow(
         mutableState.value = choice.copy(source = source)
     }
 
+    fun selectFormat(format: LtftVeImage.Format) {
+        val choice = mutableState.value as? State.Choosing ?: return
+        if (choice.image.isFlash) mutableState.value = choice.copy(format = format)
+    }
+
     fun cancelSelection() {
         if (mutableState.value is State.Choosing) mutableState.value = State.Idle
     }
@@ -207,7 +229,7 @@ internal class LtftVeFileWorkflow(
     fun beginSave(): String? {
         val choice = mutableState.value as? State.Choosing ?: return null
         mutableState.value = State.Saving(choice)
-        return if (choice.image.isFlash) "LTFT-VE-FLASH.bin" else "LTFT-VE-EEPROM.bin"
+        return if (choice.image.isFlash) "LTFT-VE-FLASH.${choice.format.extension}" else "LTFT-VE-EEPROM.bin"
     }
 
     fun onSaveResult(resolver: ContentResolver, uri: Uri?) {
@@ -218,7 +240,7 @@ internal class LtftVeFileWorkflow(
             return
         }
         scope.launch {
-            val saved = codec.write(resolver, uri, choice.image, choice.setIndex, choice.source, choice.tables)
+            val saved = codec.write(resolver, uri, choice.image, choice.setIndex, choice.source, choice.tables, choice.format)
             mutableState.value = if (saved) State.Idle else choice
             showMessage(if (saved) R.string.ltft_ve_saved else R.string.ltft_ve_write_error)
         }
