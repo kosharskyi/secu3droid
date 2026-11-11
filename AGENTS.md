@@ -56,7 +56,7 @@ Do not put display-state ownership into a connection manager: no latest-packet c
 
 ## Working Rules For Agents
 
-- Before implementation, present a detailed work plan and wait for the user's explicit approval. Include the problem, proposed approach, affected files and components, behavior changes, shared contracts and consumers, risks, and validation steps. Read-only investigation to prepare the plan is allowed; do not edit project files or delegate implementation before approval.
+- Before implementing a non-trivial task, present a work plan and wait for the user's explicit approval. Include the problem, proposed approach, affected files and components, behavior changes, shared contracts and consumers, risks, and validation steps. For trivial tasks, skip formal planning and get approval for a brief description of the change. Read-only investigation is allowed before approval. Do not edit project files or delegate implementation before approval.
 - Work only within the approved plan. If the solution requires expanding scope or introducing architectural/core changes not covered by that plan, stop and submit a revised plan for approval before proceeding.
 - Treat changes to core modules (including connection handling, packet/protocol infrastructure, persistence, and shared utilities) as project-wide changes. Inspect all consumers and call sites, prefer a common solution that accounts for them, and update affected consumers and tests together. Screen-specific methods or infrastructure are allowed only when the functionality is unnecessary for other consumers or a shared solution would overcomplicate them. Explain that tradeoff in the work plan and obtain approval before implementation.
 - Do not change files outside the requested scope.
@@ -74,17 +74,16 @@ Do not put display-state ownership into a connection manager: no latest-packet c
 
 ## Agent Collaboration Workflow
 
-- Prefer the project agent profile whose role fits the task; use the general-purpose Luna implementation agent only when no profile fits. Keep the existing plan approval requirement in force before implementation.
-- Route clear UI fixes to `luna_compose`, packet parsing/serialization or parameter mapping to `luna_protocol`, and connection/session lifecycle, queues, logging, or file operations to `luna_runtime`. Use `secu_mapper` only when code ownership or data flow is unclear. Use `secu_android_qa` separately only when reproduction or targeted Android validation is needed; it is not an automatic second test pass.
-- Do not launch every role for a task. The lead agent handles planning and architectural choices, assigns one bounded implementation handoff, and joins review for complex, risky, or uncertain changes. Avoid duplicate routine reviews after relevant checks pass.
-- Luna implements the task, reviews her own diff, runs the relevant tests and build checks, and fixes issues discovered during those checks within the task's scope.
-- Do not automatically review all code after every Luna task. For simple changes whose relevant checks passed, use Luna's completion report to close the task.
-- The lead agent joins code review for complex, risky, or architecturally important changes, or when Luna reports uncertainty, failed tests or builds, or parts that could not be verified. Keep the review focused on the relevant changes and risks. Follow any explicit user request for review.
-- After completing a task, Luna provides a short report covering:
-  - What changed.
-  - Which tests and build checks passed.
-  - What could not be verified and why.
-  - Any remaining risks, doubts, or unresolved issues; explicitly state when there are none.
+For non-trivial tasks, the main agent coordinates the workflow and makes final decisions.
+
+1. Ask `planner` to inspect the codebase and propose a minimal plan. Resolve architectural choices and present the plan for the user's approval.
+2. Give `implementer` one bounded handoff with the original requirements and approved plan. The implementer reviews the diff, runs relevant checks, and reports the changes, validation results, deviations, and unresolved issues.
+3. Give `simplicity_reviewer` the resulting diff for independent review using the rules below.
+4. Assign justified blocking findings to `implementer` for fixes within the approved scope. Request revised approval if a fix requires expanding scope.
+
+Skip `planner` for trivial tasks. Handle them directly or use one specialist if their expertise is needed. Use `luna_compose` for targeted UI work, `luna_protocol` for packet parsing, serialization, or parameter mapping, and `luna_runtime` for connection or session lifecycle, queues, logging, or file operations. Use `secu_mapper` only when code ownership or data flow is unclear and `secu_android_qa` only when reproduction or targeted Android validation is needed.
+
+Keep agent handoffs focused and avoid duplicate work or routine review passes. The main agent joins code review for complex, risky, or architecturally important changes, or when validation fails or leaves material uncertainty. Follow explicit user requests for review.
 
 ## Engineering Principles
 
@@ -128,11 +127,7 @@ Handle findings as follows:
   clearly beneficial and low-risk.
 - SUGGESTION: Optional; do not automatically implement.
 
-After addressing BLOCKER findings, allow one
-additional review pass.
-
-Do not enter an indefinite review/fix cycle.
-Do not expand scope to satisfy reviewer preferences.
+Limit independent review to two passes total, including at most one follow-up after blocking findings are addressed. The main agent verifies any remaining fixes and decides how to resolve outstanding findings within the approved scope.
 
 
 ## Project knowledge
