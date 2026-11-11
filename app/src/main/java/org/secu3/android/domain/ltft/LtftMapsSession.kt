@@ -44,7 +44,11 @@ internal sealed interface LtftMapsState {
     data object Disconnected : LtftMapsState
     data object Unsupported : LtftMapsState
     data object Reading : LtftMapsState
-    data object TimedOut : LtftMapsState
+    enum class TimedOut : LtftMapsState {
+        Read,
+        ResetAcknowledgement,
+        ResetReadback,
+    }
 
     data class Ready(
         val tables: List<List<Float>>,
@@ -138,7 +142,7 @@ internal class LtftMapsSession(
 
     fun refresh() {
         if (_writeState.value.isInProgress) return
-        if (_state.value !is LtftMapsState.Ready && _state.value != LtftMapsState.TimedOut) return
+        if (_state.value !is LtftMapsState.Ready && _state.value !is LtftMapsState.TimedOut) return
         cancelRead()
         startRead()
     }
@@ -180,8 +184,10 @@ internal class LtftMapsSession(
                     restoreSensorsIfReading()
                     if (_writeState.value == LtftWriteState.ReadingAfterReset) {
                         _writeState.value = LtftWriteState.ResetReadbackFailed
+                        _state.value = LtftMapsState.TimedOut.ResetReadback
+                    } else {
+                        _state.value = LtftMapsState.TimedOut.Read
                     }
-                    _state.value = LtftMapsState.TimedOut
                 }
             } finally {
                 if (readJob === currentCoroutineContext()[Job]) readJob = null
@@ -308,7 +314,7 @@ internal class LtftMapsSession(
                 if (isCurrent(session)) {
                     if (operation == LtftWriteOperation.Reset) {
                         cancelRead()
-                        _state.value = LtftMapsState.TimedOut
+                        _state.value = LtftMapsState.TimedOut.ResetAcknowledgement
                     }
                     _writeState.value = LtftWriteState.Unconfirmed(operation)
                 }

@@ -2,13 +2,16 @@ package org.secu3.android.ui.ltft
 
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.height
+import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.assertIsNotEnabled
+import androidx.compose.ui.test.assertIsNotSelected
 import androidx.compose.ui.test.assertIsSelected
+import androidx.compose.ui.test.click
 import androidx.compose.ui.test.junit4.v2.createComposeRule
 import androidx.compose.ui.test.onNodeWithContentDescription
 import androidx.compose.ui.test.onNodeWithTag
@@ -42,11 +45,7 @@ class LtftMapsScreenTest {
     @Test
     fun selectsEachTableAndRefreshesTheCurrentRead() {
         var refreshes = 0
-        compose.setContent {
-            SecuComposeTheme {
-                LtftMapsScreen(ready(), Connected, LtftWriteState.Idle, {}, { refreshes++ }, {}, {})
-            }
-        }
+        compose.setContent { TestScreen(onRefresh = { refreshes++ }) }
 
         compose.onNodeWithText(context.getString(R.string.ltft_maps_table, 1)).assertIsSelected()
         compose.onNodeWithText(decimal(12.5f)).assertIsDisplayed()
@@ -54,17 +53,17 @@ class LtftMapsScreenTest {
         compose.onNodeWithText(context.getString(R.string.ltft_maps_table, 2)).assertIsSelected()
         compose.onNodeWithText(decimal(-7.5f)).assertIsDisplayed()
         compose.onNodeWithText(decimal(12.5f)).assertDoesNotExist()
+        cell(15, 0).performClick()
         compose.onNodeWithContentDescription(context.getString(R.string.refresh)).performClick()
+        cell(15, 0).assertIsNotSelected()
         compose.runOnIdle { assertEquals(1, refreshes) }
     }
 
     @Test
     fun axesStayVisibleWhileScrollingTheMap() {
         compose.setContent {
-            SecuComposeTheme {
-                Box(Modifier.height(400.dp)) {
-                    LtftMapsScreen(ready(), Connected, LtftWriteState.Idle, {}, {}, {}, {})
-                }
+            Box(Modifier.height(400.dp)) {
+                TestScreen()
             }
         }
 
@@ -90,9 +89,7 @@ class LtftMapsScreenTest {
             decimal(95f),
             context.getString(R.string.units_pressure_kpa),
         )
-        compose.setContent {
-            SecuComposeTheme { LtftMapsScreen(state, connection, LtftWriteState.Idle, {}, {}, {}, {}) }
-        }
+        compose.setContent { TestScreen(state = state, connection = connection) }
 
         text(R.string.ltft_maps_waiting_baro).assertIsDisplayed()
         compose.onNodeWithContentDescription(pointText).assertDoesNotExist()
@@ -108,17 +105,13 @@ class LtftMapsScreenTest {
     fun showsReadStatesAndOffersRetryOnTimeout() {
         var state by mutableStateOf<LtftMapsState>(LtftMapsState.Unsupported)
         var retries = 0
-        compose.setContent {
-            SecuComposeTheme {
-                LtftMapsScreen(state, Connected, LtftWriteState.Idle, {}, { retries++ }, {}, {})
-            }
-        }
+        compose.setContent { TestScreen(state = state, onRefresh = { retries++ }) }
 
         text(R.string.ltft_maps_unsupported).assertIsDisplayed()
         text(R.string.retry).assertDoesNotExist()
         compose.runOnIdle { state = LtftMapsState.Reading }
         text(R.string.ltft_maps_reading).assertIsDisplayed()
-        compose.runOnIdle { state = LtftMapsState.TimedOut }
+        compose.runOnIdle { state = LtftMapsState.TimedOut.Read }
         text(R.string.ltft_maps_timeout).assertIsDisplayed()
         text(R.string.retry).performClick()
         compose.runOnIdle { assertEquals(1, retries) }
@@ -128,11 +121,7 @@ class LtftMapsScreenTest {
     fun resetRequiresConfirmationAndDisconnectDismissesIt() {
         var connection by mutableStateOf<ConnectionState>(Connected)
         var resets = 0
-        compose.setContent {
-            SecuComposeTheme {
-                LtftMapsScreen(ready(), connection, LtftWriteState.Idle, {}, {}, { resets++ }, {})
-            }
-        }
+        compose.setContent { TestScreen(connection = connection, onReset = { resets++ }) }
         text(R.string.ltft_maps_table, 2).performClick()
         actions().performClick()
         text(R.string.ltft_maps_reset_action).performClick()
@@ -158,12 +147,13 @@ class LtftMapsScreenTest {
         var writeState by mutableStateOf<LtftWriteState>(LtftWriteState.Idle)
         var saves = 0
         compose.setContent {
-            SecuComposeTheme {
-                LtftMapsScreen(ready(), Connected, writeState, {}, {}, {}, {
+            TestScreen(
+                writeState = writeState,
+                onSave = {
                     saves++
                     writeState = LtftWriteState.AwaitingAcknowledgement(LtftWriteOperation.Save)
-                })
-            }
+                },
+            )
         }
         actions().performClick()
         text(R.string.ltft_maps_save_action).performClick()
@@ -184,14 +174,12 @@ class LtftMapsScreenTest {
         var refreshes = 0
         var resets = 0
         compose.setContent {
-            SecuComposeTheme {
-                LtftMapsScreen(state, Connected, writeState, {}, { refreshes++ }, { resets++ }, {})
-            }
+            TestScreen(state = state, writeState = writeState, onRefresh = { refreshes++ }, onReset = { resets++ })
         }
         text(R.string.ltft_maps_reading_after_reset).assertIsDisplayed()
         actions().assertDoesNotExist()
         compose.runOnIdle {
-            state = LtftMapsState.TimedOut
+            state = LtftMapsState.TimedOut.ResetReadback
             writeState = LtftWriteState.ResetReadbackFailed
         }
         text(R.string.ltft_maps_reset_readback_failed).assertIsDisplayed()
@@ -202,6 +190,130 @@ class LtftMapsScreenTest {
             assertEquals(0, resets)
         }
     }
+
+    @Test
+    fun refreshTimeoutShowsTheReadMessageAfterAnUnconfirmedReset() {
+        var state by mutableStateOf<LtftMapsState>(LtftMapsState.TimedOut.ResetAcknowledgement)
+        val writeState = LtftWriteState.Unconfirmed(LtftWriteOperation.Reset)
+        var refreshes = 0
+        compose.setContent { TestScreen(state = state, writeState = writeState, onRefresh = { refreshes++ }) }
+
+        text(R.string.ltft_maps_reset_unconfirmed).assertIsDisplayed()
+        text(R.string.ltft_maps_read_again).performClick()
+        compose.runOnIdle {
+            assertEquals(1, refreshes)
+            state = ready()
+        }
+        text(R.string.ltft_maps_reset_unconfirmed).assertIsDisplayed()
+
+        compose.runOnIdle { state = LtftMapsState.TimedOut.Read }
+        text(R.string.ltft_maps_timeout).assertIsDisplayed()
+        text(R.string.ltft_maps_reset_unconfirmed).assertDoesNotExist()
+        text(R.string.retry).performClick()
+        compose.runOnIdle { assertEquals(2, refreshes) }
+    }
+
+    @Test
+    fun copiesSingleCellsAndRectanglesAndClearsSelectionWhenChangingTables() {
+        var state by mutableStateOf(ready())
+        var copiedRows: IntRange? = null
+        var copiedColumns: IntRange? = null
+        compose.setContent {
+            TestScreen(
+                state = state,
+                onCopy = { _, rows, columns ->
+                    copiedRows = rows
+                    copiedColumns = columns
+                },
+            )
+        }
+
+        cell(14, 1).performTouchInput { click() }
+        cell(14, 1).assertIsSelected()
+        cell(15, 0).assertIsNotSelected()
+        actions().performClick()
+        text(R.string.ltft_maps_copy_selection).performClick()
+        compose.runOnIdle {
+            assertEquals(14..14, copiedRows)
+            assertEquals(1..1, copiedColumns)
+        }
+
+        cell(15, 0).performClick()
+        compose.runOnIdle { state = state.copy(workingPoint = LtftWorkingPoint(500, 95f, 0f, 15f)) }
+        cell(15, 1).assertIsSelected()
+        cell(14, 0).assertIsSelected()
+        cell(15, 2).assertIsNotSelected()
+        actions().performClick()
+        text(R.string.ltft_maps_copy_selection).performClick()
+        compose.runOnIdle {
+            assertEquals(14..15, copiedRows)
+            assertEquals(0..1, copiedColumns)
+        }
+
+        cell(15, 2).performClick()
+        cell(15, 2).assertIsSelected()
+        cell(14, 1).assertIsNotSelected()
+        text(R.string.ltft_maps_table, 2).performClick()
+        cell(15, 2).assertIsNotSelected()
+        actions().performClick()
+        text(R.string.ltft_maps_copy_selection).assertIsNotEnabled()
+    }
+
+    @Test
+    fun exportsTheWholeCurrentTableWithTheChosenDecimalSeparator() {
+        val state = ready()
+        var exportedTable: Int? = null
+        var exportedCorrections: List<Float>? = null
+        var exportedRpm: List<Int>? = null
+        var separator: Char? = null
+        compose.setContent {
+            TestScreen(
+                state = state,
+                onExportCsv = { table, corrections, rpm, decimalSeparator ->
+                    exportedTable = table
+                    exportedCorrections = corrections
+                    exportedRpm = rpm
+                    separator = decimalSeparator
+                },
+            )
+        }
+
+        text(R.string.ltft_maps_table, 2).performClick()
+        cell(15, 0).performClick()
+        actions().performClick()
+        text(R.string.ltft_maps_export_csv).performClick()
+        text(android.R.string.cancel).performClick()
+        compose.runOnIdle { assertEquals(null, exportedTable) }
+
+        actions().performClick()
+        text(R.string.ltft_maps_export_csv).performClick()
+        text(R.string.ltft_maps_decimal_comma).performClick()
+        text(R.string.ltft_maps_export_csv).performClick()
+        compose.runOnIdle {
+            assertEquals(1, exportedTable)
+            assertEquals(state.tables[1], exportedCorrections)
+            assertEquals(state.rpmAxis, exportedRpm)
+            assertEquals(',', separator)
+        }
+    }
+
+    @Composable
+    private fun TestScreen(
+        state: LtftMapsState = ready(),
+        connection: ConnectionState = Connected,
+        writeState: LtftWriteState = LtftWriteState.Idle,
+        onRefresh: () -> Unit = {},
+        onReset: () -> Unit = {},
+        onSave: () -> Unit = {},
+        onCopy: (List<Float>, IntRange, IntRange) -> Unit = { _, _, _ -> },
+        onExportCsv: (Int, List<Float>, List<Int>, Char) -> Unit = { _, _, _, _ -> },
+    ) {
+        SecuComposeTheme {
+            LtftMapsScreen(state, connection, writeState, {}, onRefresh, onReset, onSave, onCopy, onExportCsv)
+        }
+    }
+
+    private fun cell(row: Int, column: Int) = compose.onNodeWithTag("ltft-cell-$row-$column")
 
     private fun actions() = compose.onNodeWithContentDescription(context.getString(R.string.ltft_maps_actions))
 

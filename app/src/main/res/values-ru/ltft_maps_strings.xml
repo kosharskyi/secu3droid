@@ -10,6 +10,12 @@
     <string name="ltft_maps_waiting_baro">Ожидание барометрического давления для построения оси нагрузки.</string>
     <string name="ltft_maps_operating_point">Рабочая точка · %1$d %2$s · %3$s %4$s</string>
     <string name="ltft_maps_actions">Действия с таблицами LTFT</string>
+    <string name="ltft_maps_copy_selection">Копировать выделенные ячейки</string>
+    <string name="ltft_maps_export_csv">Экспортировать CSV</string>
+    <string name="ltft_maps_csv_decimal_separator">Десятичный разделитель в CSV</string>
+    <string name="ltft_maps_decimal_point">Точка (1.5)</string>
+    <string name="ltft_maps_decimal_comma">Запятая (1,5)</string>
+    <string name="ltft_maps_export_error">Не удалось сохранить таблицу LTFT в CSV.</string>
     <string name="ltft_maps_save_action">Сохранить в EEPROM</string>
     <string name="ltft_maps_reset_action">Сбросить обе таблицы</string>
     <string name="ltft_maps_reset_confirmation">Это действие обнулит обе таблицы LTFT в оперативной памяти ECU и в EEPROM. Продолжить?</string>

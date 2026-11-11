@@ -17,3 +17,7 @@ The ECU acknowledges reset (`u 00 CA`) and EEPROM save (`u 00 09`) after the cor
 ## A reset acknowledgement is followed by a fresh read of both maps
 
 The acknowledgement confirms the ECU reset and EEPROM write, while displayed map values remain stale until read again. Keep those outcomes distinct in write state. If readback times out or the route is interrupted, retain the acknowledgement result and allow a manual or resumed read to verify the actual values.
+
+## The timeout describes the current attempt
+
+A manual or resumed read reports its own timeout even if an earlier reset timed out. Successful reads can restore the displayed maps while the reset remains unconfirmed, since reading the maps cannot establish that EEPROM was written.

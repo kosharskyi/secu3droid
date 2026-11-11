@@ -10,6 +10,12 @@
     <string name="ltft_maps_waiting_baro">Waiting for barometric pressure to label the load axis.</string>
     <string name="ltft_maps_operating_point">Operating point · %1$d %2$s · %3$s %4$s</string>
     <string name="ltft_maps_actions">LTFT table actions</string>
+    <string name="ltft_maps_copy_selection">Copy selected cells</string>
+    <string name="ltft_maps_export_csv">Export CSV</string>
+    <string name="ltft_maps_csv_decimal_separator">Decimal separator in CSV</string>
+    <string name="ltft_maps_decimal_point">Point (1.5)</string>
+    <string name="ltft_maps_decimal_comma">Comma (1,5)</string>
+    <string name="ltft_maps_export_error">Could not save the LTFT table as CSV.</string>
     <string name="ltft_maps_save_action">Save to EEPROM</string>
     <string name="ltft_maps_reset_action">Reset both tables</string>
     <string name="ltft_maps_reset_confirmation">This will reset both LTFT tables to zero in the ECU and EEPROM. Do you want to continue?</string>

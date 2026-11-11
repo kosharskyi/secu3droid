@@ -26,11 +26,13 @@ import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.selection.selectable
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.MoreVert
 import androidx.compose.material.icons.filled.Refresh
+import androidx.compose.material3.Button
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
@@ -71,8 +73,10 @@ import org.secu3.android.domain.ltft.LtftMapsState
 import org.secu3.android.domain.ltft.LtftWorkingPoint
 import org.secu3.android.domain.ltft.LtftWriteOperation
 import org.secu3.android.domain.ltft.LtftWriteState
+import org.secu3.android.ui.compose.ChoiceDialog
 import org.secu3.android.ui.compose.ConfirmationDialog
 import org.secu3.android.ui.compose.SecuTopAppBar
+import java.text.DecimalFormatSymbols
 
 @Composable
 internal fun LtftMapsScreen(
@@ -83,9 +87,16 @@ internal fun LtftMapsScreen(
     onRefresh: () -> Unit,
     onReset: () -> Unit,
     onSave: () -> Unit,
+    onCopy: (List<Float>, IntRange, IntRange) -> Unit,
+    onExportCsv: (Int, List<Float>, List<Int>, Char) -> Unit,
 ) {
     val connected = connectionState == Connected
     var selectedTable by rememberSaveable { mutableIntStateOf(0) }
+    val ready = state.takeIf { connected } as? LtftMapsState.Ready
+    var selection by remember(selectedTable, ready?.tables) { mutableStateOf<LtftCellSelection?>(null) }
+    LifecycleResumeEffect(selectedTable, ready?.tables) {
+        onPauseOrDispose { selection = null }
+    }
     val writeMessage = when (writeState) {
         LtftWriteState.Idle -> null
         is LtftWriteState.AwaitingAcknowledgement -> when (writeState.operation) {
@@ -112,11 +123,27 @@ internal fun LtftMapsScreen(
                 showStatus = true,
                 onNavigateUp = onNavigateUp,
                 actions = {
-                    if (connected && state is LtftMapsState.Ready) {
-                        IconButton(onClick = onRefresh, enabled = !writeState.isInProgress) {
+                    if (ready != null) {
+                        IconButton(
+                            onClick = {
+                                selection = null
+                                onRefresh()
+                            },
+                            enabled = !writeState.isInProgress,
+                        ) {
                             Icon(Icons.Default.Refresh, contentDescription = stringResource(R.string.refresh))
                         }
-                        LtftMapActions(enabled = !writeState.isInProgress, onReset = onReset, onSave = onSave)
+                        LtftMapActions(
+                            enabled = !writeState.isInProgress,
+                            onReset = onReset,
+                            onSave = onSave,
+                            onCopy = selection?.let { selected ->
+                                { onCopy(ready.tables[selectedTable], selected.rows, selected.columns) }
+                            },
+                            onExportCsv = { decimalSeparator ->
+                                onExportCsv(selectedTable, ready.tables[selectedTable], ready.rpmAxis, decimalSeparator)
+                            },
+                        )
                     }
                 },
             )
@@ -132,16 +159,20 @@ internal fun LtftMapsScreen(
                     },
                     isReading = true,
                 )
-                LtftMapsState.TimedOut -> {
-                    val resetMessage = when (writeState) {
-                        LtftWriteState.ResetReadbackFailed,
-                        LtftWriteState.Unconfirmed(LtftWriteOperation.Reset) -> writeMessage
-                        else -> null
+                is LtftMapsState.TimedOut -> {
+                    val message = when (visibleState) {
+                        LtftMapsState.TimedOut.Read -> R.string.ltft_maps_timeout
+                        LtftMapsState.TimedOut.ResetAcknowledgement -> R.string.ltft_maps_reset_unconfirmed
+                        LtftMapsState.TimedOut.ResetReadback -> R.string.ltft_maps_reset_readback_failed
                     }
                     LtftMapMessage(
-                        resetMessage ?: R.string.ltft_maps_timeout,
+                        message,
                         onRetry = onRefresh,
-                        retryLabel = if (resetMessage == null) R.string.retry else R.string.ltft_maps_read_again,
+                        retryLabel = if (visibleState == LtftMapsState.TimedOut.Read) {
+                            R.string.retry
+                        } else {
+                            R.string.ltft_maps_read_again
+                        },
                     )
                 }
                 is LtftMapsState.Ready -> Column(
@@ -190,6 +221,16 @@ internal fun LtftMapsScreen(
                         loadUnit = loadUnit,
                         corrections = visibleState.tables[selectedTable],
                         workingPoint = visibleState.workingPoint,
+                        selection = selection,
+                        onSelectCell = { row, column ->
+                            val index = row * LtftMapsSession.AXIS_SIZE + column
+                            val current = selection
+                            selection = if (current != null && current.end == null) {
+                                current.copy(end = index)
+                            } else {
+                                LtftCellSelection(index)
+                            }
+                        },
                         modifier = Modifier.weight(1f),
                     )
                 }
@@ -199,13 +240,21 @@ internal fun LtftMapsScreen(
 }
 
 @Composable
-private fun LtftMapActions(enabled: Boolean, onReset: () -> Unit, onSave: () -> Unit) {
+private fun LtftMapActions(
+    enabled: Boolean,
+    onReset: () -> Unit,
+    onSave: () -> Unit,
+    onCopy: (() -> Unit)?,
+    onExportCsv: (Char) -> Unit,
+) {
     var menuExpanded by remember(enabled) { mutableStateOf(false) }
     var confirmReset by remember(enabled) { mutableStateOf(false) }
+    var showCsvOptions by remember(enabled) { mutableStateOf(false) }
     LifecycleResumeEffect(enabled) {
         onPauseOrDispose {
             menuExpanded = false
             confirmReset = false
+            showCsvOptions = false
         }
     }
 
@@ -214,6 +263,21 @@ private fun LtftMapActions(enabled: Boolean, onReset: () -> Unit, onSave: () -> 
             Icon(Icons.Default.MoreVert, contentDescription = stringResource(R.string.ltft_maps_actions))
         }
         DropdownMenu(expanded = menuExpanded, onDismissRequest = { menuExpanded = false }) {
+            DropdownMenuItem(
+                text = { Text(stringResource(R.string.ltft_maps_copy_selection)) },
+                enabled = onCopy != null,
+                onClick = {
+                    menuExpanded = false
+                    onCopy?.invoke()
+                },
+            )
+            DropdownMenuItem(
+                text = { Text(stringResource(R.string.ltft_maps_export_csv)) },
+                onClick = {
+                    menuExpanded = false
+                    showCsvOptions = true
+                },
+            )
             DropdownMenuItem(
                 text = { Text(stringResource(R.string.ltft_maps_save_action)) },
                 onClick = {
@@ -229,6 +293,28 @@ private fun LtftMapActions(enabled: Boolean, onReset: () -> Unit, onSave: () -> 
                 },
             )
         }
+    }
+
+    if (showCsvOptions) {
+        val locale = LocalConfiguration.current.locales[0]
+        var separator by remember(locale) {
+            mutableStateOf(if (DecimalFormatSymbols.getInstance(locale).decimalSeparator == ',') ',' else '.')
+        }
+        ChoiceDialog(
+            title = { Text(stringResource(R.string.ltft_maps_csv_decimal_separator)) },
+            selected = separator,
+            choices = listOf('.', ','),
+            label = { stringResource(if (it == '.') R.string.ltft_maps_decimal_point else R.string.ltft_maps_decimal_comma) },
+            onSelect = { separator = it },
+            onDismiss = { showCsvOptions = false },
+            confirmButton = {
+                TextButton(onClick = { showCsvOptions = false }) { Text(stringResource(android.R.string.cancel)) }
+                Button(onClick = {
+                    showCsvOptions = false
+                    onExportCsv(separator)
+                }) { Text(stringResource(R.string.ltft_maps_export_csv)) }
+            },
+        )
     }
 
     if (confirmReset) {
@@ -275,6 +361,8 @@ private fun LtftMapTable(
     loadUnit: String,
     corrections: List<Float>,
     workingPoint: LtftWorkingPoint?,
+    selection: LtftCellSelection?,
+    onSelectCell: (Int, Int) -> Unit,
     modifier: Modifier = Modifier,
 ) {
     val horizontal = rememberScrollState()
@@ -306,7 +394,7 @@ private fun LtftMapTable(
                     Modifier.weight(1f).fillMaxHeight().testTag("ltft-map-table")
                         .horizontalScroll(horizontal).verticalScroll(vertical),
                 ) {
-                    LtftMapCells(correctionsText)
+                    LtftMapCells(correctionsText, selection, onSelectCell)
                     if (workingPoint != null) {
                         val markerDescription = stringResource(
                             R.string.ltft_maps_operating_point,
@@ -327,13 +415,25 @@ private fun LtftMapTable(
 }
 
 @Composable
-private fun LtftMapCells(corrections: List<String>) {
+private fun LtftMapCells(
+    corrections: List<String>,
+    selection: LtftCellSelection?,
+    onSelectCell: (Int, Int) -> Unit,
+) {
     val axisSize = LtftMapsSession.AXIS_SIZE
+    val rows = selection?.rows
+    val columns = selection?.columns
     Column {
         for (row in axisSize - 1 downTo 0) {
             Row {
                 repeat(axisSize) { column ->
-                    LtftMapCell(corrections[row * axisSize + column])
+                    val selected = rows?.contains(row) == true && columns?.contains(column) == true
+                    LtftMapCell(
+                        text = corrections[row * axisSize + column],
+                        highlighted = selected,
+                        modifier = Modifier.testTag("ltft-cell-$row-$column")
+                            .selectable(selected = selected, onClick = { onSelectCell(row, column) }),
+                    )
                 }
             }
         }
@@ -341,14 +441,28 @@ private fun LtftMapCells(corrections: List<String>) {
 }
 
 @Composable
-private fun LtftMapCell(text: String, axisLabel: Boolean = false) {
+private fun LtftMapCell(
+    text: String,
+    axisLabel: Boolean = false,
+    highlighted: Boolean = false,
+    modifier: Modifier = Modifier,
+) {
+    val background = when {
+        highlighted -> MaterialTheme.colorScheme.primaryContainer
+        axisLabel -> MaterialTheme.colorScheme.surfaceVariant
+        else -> MaterialTheme.colorScheme.surface
+    }
     Box(
-        modifier = Modifier.width(CellWidth).height(CellHeight)
-            .background(if (axisLabel) MaterialTheme.colorScheme.surfaceVariant else MaterialTheme.colorScheme.surface)
-            .border(0.5.dp, MaterialTheme.colorScheme.outlineVariant),
+        modifier = modifier.width(CellWidth).height(CellHeight)
+            .background(background).border(0.5.dp, MaterialTheme.colorScheme.outlineVariant),
         contentAlignment = Alignment.Center,
     ) {
-        Text(text, style = MaterialTheme.typography.labelMedium, maxLines = 1)
+        Text(
+            text,
+            color = if (highlighted) MaterialTheme.colorScheme.onPrimaryContainer else MaterialTheme.colorScheme.onSurface,
+            style = MaterialTheme.typography.labelMedium,
+            maxLines = 1,
+        )
     }
 }
 
@@ -364,6 +478,15 @@ private fun LtftMapMarker(point: LtftWorkingPoint, modifier: Modifier) {
         drawCircle(outline, radius = 5.dp.toPx(), center = center)
         drawCircle(color, radius = 3.5.dp.toPx(), center = center)
     }
+}
+
+private data class LtftCellSelection(val start: Int, val end: Int? = null) {
+    val rows: IntRange
+        get() = bounds(start / LtftMapsSession.AXIS_SIZE, (end ?: start) / LtftMapsSession.AXIS_SIZE)
+    val columns: IntRange
+        get() = bounds(start % LtftMapsSession.AXIS_SIZE, (end ?: start) % LtftMapsSession.AXIS_SIZE)
+
+    private fun bounds(first: Int, last: Int) = minOf(first, last)..maxOf(first, last)
 }
 
 private val CellWidth = 68.dp

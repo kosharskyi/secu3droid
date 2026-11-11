@@ -112,7 +112,7 @@ class LtftMapsSessionTest {
                 duplicates.cancelAndJoin()
             }
         }
-        awaitState(LtftMapsState.TimedOut)
+        awaitState(LtftMapsState.TimedOut.Read)
 
         session.refresh()
         beginReadingMaps(functions)
@@ -209,7 +209,7 @@ class LtftMapsSessionTest {
         emit(OpCompNc(opData = 0, opCode = 0xCA))
         expect(Task.Secu3ReadRpmGrid)
         awaitWriteState(LtftWriteState.ResetReadbackFailed)
-        awaitState(LtftMapsState.TimedOut)
+        awaitState(LtftMapsState.TimedOut.ResetReadback)
         expect(Task.Secu3ReadSensors)
 
         session.refresh()
@@ -240,7 +240,7 @@ class LtftMapsSessionTest {
     }
 
     @Test
-    fun resetAcknowledgementTimeoutIgnoresLaterSensorPacketsAndAllowsRefresh() = testSession(timeoutMillis = 500) {
+    fun refreshTimeoutAfterUnconfirmedResetReportsTheReadFailure() = testSession(timeoutMillis = 500) {
         connect()
         beginReadingMaps(FunSetParamPacket(loadLower = 20f, loadUpper = 80f))
         mapChunks().forEach { emit(it) }
@@ -249,16 +249,24 @@ class LtftMapsSessionTest {
 
         session.resetMaps()
         expect(Task.Secu3OpComResetLtft)
-        awaitWriteState(LtftWriteState.Unconfirmed(LtftWriteOperation.Reset))
-        assertEquals(LtftMapsState.TimedOut, session.state.value)
+        val unconfirmedReset = LtftWriteState.Unconfirmed(LtftWriteOperation.Reset)
+        awaitWriteState(unconfirmedReset)
+        assertEquals(LtftMapsState.TimedOut.ResetAcknowledgement, session.state.value)
         emit(SensorsPacket(rpm = 900, load = 40f))
-        assertEquals(LtftMapsState.TimedOut, session.state.value)
+        assertEquals(LtftMapsState.TimedOut.ResetAcknowledgement, session.state.value)
 
         session.refresh()
         beginReadingMaps(FunSetParamPacket(loadLower = 20f, loadUpper = 80f))
         mapChunks().forEach { emit(it) }
         expect(Task.Secu3ReadSensors)
         awaitReady()
+        assertEquals(unconfirmedReset, session.writeState.value)
+
+        session.refresh()
+        expect(Task.Secu3ReadRpmGrid)
+        awaitState(LtftMapsState.TimedOut.Read)
+        expect(Task.Secu3ReadSensors)
+        assertEquals(unconfirmedReset, session.writeState.value)
     }
 
     @Test
