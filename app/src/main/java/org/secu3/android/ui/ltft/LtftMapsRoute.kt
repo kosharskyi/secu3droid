@@ -35,6 +35,7 @@ internal fun LtftMapsRoute(entry: NavBackStackEntry, activity: MainActivity, onN
     )
     val connection by viewModel.connectionState.collectAsStateWithLifecycle(initialValue = null)
     val state by viewModel.state.collectAsStateWithLifecycle()
+    val writeState by viewModel.writeState.collectAsStateWithLifecycle()
     val lifecycle = LocalLifecycleOwner.current.lifecycle
     DisposableEffect(lifecycle, viewModel) {
         val observer = LifecycleEventObserver { _, event ->
@@ -55,8 +56,11 @@ internal fun LtftMapsRoute(entry: NavBackStackEntry, activity: MainActivity, onN
     LtftMapsScreen(
         state = state,
         connectionState = connection,
+        writeState = writeState,
         onNavigateUp = onNavigateUp,
         onRefresh = viewModel::refresh,
+        onReset = viewModel::resetMaps,
+        onSave = viewModel::saveMaps,
     )
 }
 
@@ -67,6 +71,7 @@ internal class LtftMapsViewModel @Inject constructor(
 ) : ViewModel() {
     val connectionState = connectionManager.connectionStateFlow
     val state = session.state
+    val writeState = session.writeState
 
     init {
         session.start(viewModelScope)
@@ -75,6 +80,8 @@ internal class LtftMapsViewModel @Inject constructor(
     fun onRouteResumed() = session.onRouteResumed()
     fun onRoutePaused() = session.onRoutePaused()
     fun refresh() = session.refresh()
+    fun resetMaps() = session.resetMaps()
+    fun saveMaps() = session.saveMaps()
 
     override fun onCleared() = session.close()
 }

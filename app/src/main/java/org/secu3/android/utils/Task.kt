@@ -92,6 +92,8 @@ sealed class Task {
     object Secu3OpComEnterDiagnostics : Task()
     object Secu3OpComLeaveDiagnostics : Task()
     object Secu3OpComSaveEeprom : Task()
+    object Secu3OpComResetLtft : Task()
+    object Secu3OpComSaveLtft : Task()
 
 
 
@@ -110,6 +112,8 @@ sealed class Task {
             Secu3OpComEnterDiagnostics -> OpCompNc.getEnterDiagCommand()
             Secu3OpComLeaveDiagnostics -> OpCompNc.getLeaveDiagCommand()
             Secu3OpComSaveEeprom -> OpCompNc.getSaveEepromCommand()
+            Secu3OpComResetLtft -> OpCompNc.getResetLtftCommand()
+            Secu3OpComSaveLtft -> OpCompNc.getSaveLtftCommand()
             Secu3ReadEcuSavedErrors -> OpCompNc.getReadSavedErrorsCommand()
         }
     }

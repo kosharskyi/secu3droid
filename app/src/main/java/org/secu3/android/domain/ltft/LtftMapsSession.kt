@@ -33,6 +33,7 @@ import org.secu3.android.models.packets.input.LoadGridPacket
 import org.secu3.android.models.packets.input.LtftMapChunkPacket
 import org.secu3.android.models.packets.input.RpmGridPacket
 import org.secu3.android.models.packets.input.SensorsPacket
+import org.secu3.android.models.packets.out.OpCompNc
 import org.secu3.android.models.packets.out.params.FunSetParamPacket
 import org.secu3.android.utils.Task
 import java.util.concurrent.TimeoutException
@@ -52,6 +53,23 @@ internal sealed interface LtftMapsState {
         val isLoadPressure: Boolean,
         val workingPoint: LtftWorkingPoint? = null,
     ) : LtftMapsState
+}
+
+internal enum class LtftWriteOperation {
+    Reset,
+    Save,
+}
+
+internal sealed interface LtftWriteState {
+    val isInProgress: Boolean
+        get() = this is AwaitingAcknowledgement || this == ReadingAfterReset
+
+    data object Idle : LtftWriteState
+    data class AwaitingAcknowledgement(val operation: LtftWriteOperation) : LtftWriteState
+    data object ReadingAfterReset : LtftWriteState
+    data class Succeeded(val operation: LtftWriteOperation) : LtftWriteState
+    data class Unconfirmed(val operation: LtftWriteOperation) : LtftWriteState
+    data object ResetReadbackFailed : LtftWriteState
 }
 
 internal data class LtftWorkingPoint(
@@ -82,10 +100,13 @@ internal class LtftMapsSession(
 
     private val _state = MutableStateFlow<LtftMapsState>(LtftMapsState.Disconnected)
     val state = _state.asStateFlow()
+    private val _writeState = MutableStateFlow<LtftWriteState>(LtftWriteState.Idle)
+    val writeState = _writeState.asStateFlow()
 
     private var scope: CoroutineScope? = null
     private var connectionJob: Job? = null
     private var readJob: Job? = null
+    private var writeJob: Job? = null
     private var connected = false
     private var resumed = false
     private var readModeSelected = false
@@ -109,16 +130,22 @@ internal class LtftMapsSession(
         if (!resumed) return
         resumed = false
         val restoreSensors = connected && readModeSelected && isTransportConnected()
+        cancelWriteForLifecycleChange()
         cancelRead()
         if (restoreSensors) sendTask(Task.Secu3ReadSensors)
         _state.value = LtftMapsState.Disconnected
     }
 
     fun refresh() {
+        if (_writeState.value.isInProgress) return
         if (_state.value !is LtftMapsState.Ready && _state.value != LtftMapsState.TimedOut) return
         cancelRead()
         startRead()
     }
+
+    fun resetMaps() = startWrite(LtftWriteOperation.Reset)
+
+    fun saveMaps() = startWrite(LtftWriteOperation.Save)
 
     fun close() {
         onRoutePaused()
@@ -131,6 +158,7 @@ internal class LtftMapsSession(
     private fun onConnectionState(state: ConnectionState) {
         if (state != Connected) {
             connected = false
+            cancelWriteForLifecycleChange(clearResult = true)
             cancelRead()
             _state.value = LtftMapsState.Disconnected
         } else if (!connected) {
@@ -150,6 +178,9 @@ internal class LtftMapsSession(
             } catch (_: TimeoutException) {
                 if (isCurrent(session)) {
                     restoreSensorsIfReading()
+                    if (_writeState.value == LtftWriteState.ReadingAfterReset) {
+                        _writeState.value = LtftWriteState.ResetReadbackFailed
+                    }
                     _state.value = LtftMapsState.TimedOut
                 }
             } finally {
@@ -235,6 +266,74 @@ internal class LtftMapsSession(
             receive = receive,
         )
 
+    private fun startWrite(operation: LtftWriteOperation) {
+        if (!connected || !resumed || !isTransportConnected() || _state.value !is LtftMapsState.Ready) return
+        if (_writeState.value.isInProgress) return
+
+        val scope = scope ?: return
+        val session = generation
+        val job = scope.launch(start = CoroutineStart.LAZY) {
+            try {
+                ecuExchange.request(
+                    timeoutMillis = timeoutMillis,
+                    sendRequest = {
+                        if (isCurrent(session)) {
+                            sendTask(
+                                when (operation) {
+                                    LtftWriteOperation.Reset -> Task.Secu3OpComResetLtft
+                                    LtftWriteOperation.Save -> Task.Secu3OpComSaveLtft
+                                },
+                            )
+                        }
+                    },
+                    receive = { packets ->
+                        packets.filterIsInstance<OpCompNc>().first { packet ->
+                            when (operation) {
+                                LtftWriteOperation.Reset -> packet.isLtftResetAcknowledgement
+                                LtftWriteOperation.Save -> packet.isLtftSaveAcknowledgement
+                            }
+                        }
+                    },
+                )
+
+                if (!isCurrent(session)) return@launch
+                if (operation == LtftWriteOperation.Reset) {
+                    _writeState.value = LtftWriteState.ReadingAfterReset
+                    cancelRead()
+                    startRead()
+                } else {
+                    _writeState.value = LtftWriteState.Succeeded(operation)
+                }
+            } catch (_: TimeoutException) {
+                if (isCurrent(session)) {
+                    if (operation == LtftWriteOperation.Reset) {
+                        cancelRead()
+                        _state.value = LtftMapsState.TimedOut
+                    }
+                    _writeState.value = LtftWriteState.Unconfirmed(operation)
+                }
+            } finally {
+                if (writeJob === currentCoroutineContext()[Job]) writeJob = null
+            }
+        }
+        writeJob = job
+        _writeState.value = LtftWriteState.AwaitingAcknowledgement(operation)
+        job.start()
+    }
+
+    private fun cancelWriteForLifecycleChange(clearResult: Boolean = false) {
+        val operation = (_writeState.value as? LtftWriteState.AwaitingAcknowledgement)?.operation
+        if (clearResult) {
+            _writeState.value = LtftWriteState.Idle
+        } else if (operation != null) {
+            _writeState.value = LtftWriteState.Unconfirmed(operation)
+        } else if (_writeState.value == LtftWriteState.ReadingAfterReset) {
+            _writeState.value = LtftWriteState.ResetReadbackFailed
+        }
+        writeJob?.cancel()
+        writeJob = null
+    }
+
     private suspend fun monitorSensors(session: Long, initial: LtftMapsState.Ready, barometricLower: Float?) {
         var ready = initial
         var barometricUpper: Float? = null
@@ -243,6 +342,11 @@ internal class LtftMapsSession(
             if (isCurrent(session)) {
                 restoreSensorsIfReading()
                 _state.value = initial
+                if (_writeState.value == LtftWriteState.ReadingAfterReset ||
+                    _writeState.value == LtftWriteState.ResetReadbackFailed
+                ) {
+                    _writeState.value = LtftWriteState.Succeeded(LtftWriteOperation.Reset)
+                }
             }
         }
             .filterIsInstance<SensorsPacket>()

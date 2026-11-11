@@ -9,4 +9,17 @@
     <string name="ltft_maps_axes">Обороты по горизонтали · Нагрузка (%1$s) по вертикали · Коррекция в %%</string>
     <string name="ltft_maps_waiting_baro">Ожидание барометрического давления для построения оси нагрузки.</string>
     <string name="ltft_maps_operating_point">Рабочая точка · %1$d %2$s · %3$s %4$s</string>
+    <string name="ltft_maps_actions">Действия с таблицами LTFT</string>
+    <string name="ltft_maps_save_action">Сохранить в EEPROM</string>
+    <string name="ltft_maps_reset_action">Сбросить обе таблицы</string>
+    <string name="ltft_maps_reset_confirmation">Это действие обнулит обе таблицы LTFT в оперативной памяти ECU и в EEPROM. Продолжить?</string>
+    <string name="ltft_maps_reset_pending">Сброс обеих таблиц LTFT…</string>
+    <string name="ltft_maps_save_pending">Сохранение обеих таблиц LTFT в EEPROM…</string>
+    <string name="ltft_maps_reading_after_reset">ECU подтвердил сброс. Чтение обеих таблиц…</string>
+    <string name="ltft_maps_reset_success">Обе таблицы LTFT сброшены.</string>
+    <string name="ltft_maps_save_success">ECU сохранил обе таблицы LTFT в EEPROM.</string>
+    <string name="ltft_maps_reset_unconfirmed">ECU не подтвердил сброс.</string>
+    <string name="ltft_maps_save_unconfirmed">ECU не подтвердил запись в EEPROM.</string>
+    <string name="ltft_maps_reset_readback_failed">ECU подтвердил сброс. Время ожидания чтения таблиц истекло.</string>
+    <string name="ltft_maps_read_again">Считать таблицы ещё раз</string>
 </resources>

@@ -25,6 +25,7 @@ import org.secu3.android.models.packets.input.LoadGridPacket
 import org.secu3.android.models.packets.input.LtftMapChunkPacket
 import org.secu3.android.models.packets.input.RpmGridPacket
 import org.secu3.android.models.packets.input.SensorsPacket
+import org.secu3.android.models.packets.out.OpCompNc
 import org.secu3.android.models.packets.out.params.FunSetParamPacket
 import org.secu3.android.utils.Task
 
@@ -149,6 +150,141 @@ class LtftMapsSessionTest {
     }
 
     @Test
+    fun saveWaitsForMatchingAcknowledgementAndKeepsMapReady() = testSession {
+        connect()
+        beginReadingMaps(FunSetParamPacket(loadLower = 20f, loadUpper = 80f))
+        mapChunks().forEach { emit(it) }
+        expect(Task.Secu3ReadSensors)
+        awaitReady()
+
+        session.saveMaps()
+        expect(Task.Secu3OpComSaveLtft)
+        session.saveMaps()
+        session.refresh()
+        assertNoCommands()
+        emit(OpCompNc(opData = 0, opCode = 2))
+        assertEquals(LtftWriteState.AwaitingAcknowledgement(LtftWriteOperation.Save), session.writeState.value)
+        emit(OpCompNc(opData = 0, opCode = 9))
+
+        awaitWriteState(LtftWriteState.Succeeded(LtftWriteOperation.Save))
+        assertEquals(2, (session.state.value as LtftMapsState.Ready).tables.size)
+        assertNoCommands()
+    }
+
+    @Test
+    fun resetWaitsForAcknowledgementThenRereadsBothMaps() = testSession {
+        connect()
+        beginReadingMaps(FunSetParamPacket(loadLower = 20f, loadUpper = 80f))
+        mapChunks().forEach { emit(it) }
+        expect(Task.Secu3ReadSensors)
+        awaitReady()
+
+        session.resetMaps()
+        expect(Task.Secu3OpComResetLtft)
+        emit(OpCompNc(opData = 0xBB, opCode = 0xCA))
+        assertEquals(LtftWriteState.AwaitingAcknowledgement(LtftWriteOperation.Reset), session.writeState.value)
+        emit(OpCompNc(opData = 0, opCode = 0xCA))
+        assertEquals(LtftWriteState.ReadingAfterReset, session.writeState.value)
+
+        beginReadingMaps(FunSetParamPacket(loadLower = 20f, loadUpper = 80f))
+        val resetMaps = mapChunks().map { it.copy(values = List(it.values.size) { 0f }) }
+        resetMaps.forEach { emit(it) }
+        expect(Task.Secu3ReadSensors)
+        val maps = awaitReady()
+        assertEquals(List(256) { 0f }, maps.tables[0])
+        assertEquals(List(256) { 0f }, maps.tables[1])
+        awaitWriteState(LtftWriteState.Succeeded(LtftWriteOperation.Reset))
+    }
+
+    @Test
+    fun resetAcknowledgementWithReadbackTimeoutCanBeRefreshed() = testSession(timeoutMillis = 500) {
+        connect()
+        beginReadingMaps(FunSetParamPacket(loadLower = 20f, loadUpper = 80f))
+        mapChunks().forEach { emit(it) }
+        expect(Task.Secu3ReadSensors)
+        awaitReady()
+
+        session.resetMaps()
+        expect(Task.Secu3OpComResetLtft)
+        emit(OpCompNc(opData = 0, opCode = 0xCA))
+        expect(Task.Secu3ReadRpmGrid)
+        awaitWriteState(LtftWriteState.ResetReadbackFailed)
+        awaitState(LtftMapsState.TimedOut)
+        expect(Task.Secu3ReadSensors)
+
+        session.refresh()
+        beginReadingMaps(FunSetParamPacket(loadLower = 20f, loadUpper = 80f))
+        mapChunks().forEach { emit(it) }
+        expect(Task.Secu3ReadSensors)
+        awaitReady()
+        awaitWriteState(LtftWriteState.Succeeded(LtftWriteOperation.Reset))
+    }
+
+    @Test
+    fun writeTimeoutIsUnconfirmedAndCanBeRetriedByExplicitAction() = testSession(timeoutMillis = 500) {
+        connect()
+        beginReadingMaps(FunSetParamPacket(loadLower = 20f, loadUpper = 80f))
+        mapChunks().forEach { emit(it) }
+        expect(Task.Secu3ReadSensors)
+        awaitReady()
+
+        session.saveMaps()
+        expect(Task.Secu3OpComSaveLtft)
+        awaitWriteState(LtftWriteState.Unconfirmed(LtftWriteOperation.Save))
+        assertEquals(2, (session.state.value as LtftMapsState.Ready).tables.size)
+
+        session.saveMaps()
+        expect(Task.Secu3OpComSaveLtft)
+        emit(OpCompNc(opData = 0, opCode = 9))
+        awaitWriteState(LtftWriteState.Succeeded(LtftWriteOperation.Save))
+    }
+
+    @Test
+    fun resetAcknowledgementTimeoutIgnoresLaterSensorPacketsAndAllowsRefresh() = testSession(timeoutMillis = 500) {
+        connect()
+        beginReadingMaps(FunSetParamPacket(loadLower = 20f, loadUpper = 80f))
+        mapChunks().forEach { emit(it) }
+        expect(Task.Secu3ReadSensors)
+        awaitReady()
+
+        session.resetMaps()
+        expect(Task.Secu3OpComResetLtft)
+        awaitWriteState(LtftWriteState.Unconfirmed(LtftWriteOperation.Reset))
+        assertEquals(LtftMapsState.TimedOut, session.state.value)
+        emit(SensorsPacket(rpm = 900, load = 40f))
+        assertEquals(LtftMapsState.TimedOut, session.state.value)
+
+        session.refresh()
+        beginReadingMaps(FunSetParamPacket(loadLower = 20f, loadUpper = 80f))
+        mapChunks().forEach { emit(it) }
+        expect(Task.Secu3ReadSensors)
+        awaitReady()
+    }
+
+    @Test
+    fun disconnectClearsWriteResultAndLateAcknowledgementIsIgnoredAfterReconnect() = testSession {
+        connect()
+        beginReadingMaps(FunSetParamPacket(loadLower = 20f, loadUpper = 80f))
+        mapChunks().forEach { emit(it) }
+        expect(Task.Secu3ReadSensors)
+        awaitReady()
+
+        session.saveMaps()
+        expect(Task.Secu3OpComSaveLtft)
+        setConnection(Disconnected)
+        awaitState(LtftMapsState.Disconnected)
+        awaitWriteState(LtftWriteState.Idle)
+
+        setConnection(Connected)
+        beginReadingMaps(FunSetParamPacket(loadLower = 20f, loadUpper = 80f))
+        mapChunks().forEach { emit(it) }
+        expect(Task.Secu3ReadSensors)
+        awaitReady()
+        emit(OpCompNc(opData = 0, opCode = 9))
+        assertEquals(LtftWriteState.Idle, session.writeState.value)
+    }
+
+    @Test
     fun pauseRestoresSensorsAndReconnectDropsPartialDataWithoutSendingIntoNewConnection() = testSession {
         connect()
         expect(Task.Secu3ReadRpmGrid)
@@ -251,6 +387,10 @@ class LtftMapsSessionTest {
 
         suspend fun awaitState(state: LtftMapsState) {
             withTimeout(3_000) { session.state.first { it == state } }
+        }
+
+        suspend fun awaitWriteState(state: LtftWriteState) {
+            withTimeout(3_000) { session.writeState.first { it == state } }
         }
 
         suspend fun awaitReady(predicate: (LtftMapsState.Ready) -> Boolean = { true }): LtftMapsState.Ready =

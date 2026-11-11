@@ -7,6 +7,7 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.test.assertIsDisplayed
+import androidx.compose.ui.test.assertIsNotEnabled
 import androidx.compose.ui.test.assertIsSelected
 import androidx.compose.ui.test.junit4.v2.createComposeRule
 import androidx.compose.ui.test.onNodeWithContentDescription
@@ -27,6 +28,8 @@ import org.secu3.android.connection.ConnectionState
 import org.secu3.android.connection.Disconnected
 import org.secu3.android.domain.ltft.LtftMapsState
 import org.secu3.android.domain.ltft.LtftWorkingPoint
+import org.secu3.android.domain.ltft.LtftWriteOperation
+import org.secu3.android.domain.ltft.LtftWriteState
 import org.secu3.android.ui.compose.SecuComposeTheme
 
 class LtftMapsScreenTest {
@@ -40,7 +43,9 @@ class LtftMapsScreenTest {
     fun selectsEachTableAndRefreshesTheCurrentRead() {
         var refreshes = 0
         compose.setContent {
-            SecuComposeTheme { LtftMapsScreen(ready(), Connected, {}, { refreshes++ }) }
+            SecuComposeTheme {
+                LtftMapsScreen(ready(), Connected, LtftWriteState.Idle, {}, { refreshes++ }, {}, {})
+            }
         }
 
         compose.onNodeWithText(context.getString(R.string.ltft_maps_table, 1)).assertIsSelected()
@@ -57,7 +62,9 @@ class LtftMapsScreenTest {
     fun axesStayVisibleWhileScrollingTheMap() {
         compose.setContent {
             SecuComposeTheme {
-                Box(Modifier.height(400.dp)) { LtftMapsScreen(ready(), Connected, {}, {}) }
+                Box(Modifier.height(400.dp)) {
+                    LtftMapsScreen(ready(), Connected, LtftWriteState.Idle, {}, {}, {}, {})
+                }
             }
         }
 
@@ -84,7 +91,7 @@ class LtftMapsScreenTest {
             context.getString(R.string.units_pressure_kpa),
         )
         compose.setContent {
-            SecuComposeTheme { LtftMapsScreen(state, connection, {}, {}) }
+            SecuComposeTheme { LtftMapsScreen(state, connection, LtftWriteState.Idle, {}, {}, {}, {}) }
         }
 
         text(R.string.ltft_maps_waiting_baro).assertIsDisplayed()
@@ -102,7 +109,9 @@ class LtftMapsScreenTest {
         var state by mutableStateOf<LtftMapsState>(LtftMapsState.Unsupported)
         var retries = 0
         compose.setContent {
-            SecuComposeTheme { LtftMapsScreen(state, Connected, {}, { retries++ }) }
+            SecuComposeTheme {
+                LtftMapsScreen(state, Connected, LtftWriteState.Idle, {}, { retries++ }, {}, {})
+            }
         }
 
         text(R.string.ltft_maps_unsupported).assertIsDisplayed()
@@ -115,7 +124,90 @@ class LtftMapsScreenTest {
         compose.runOnIdle { assertEquals(1, retries) }
     }
 
+    @Test
+    fun resetRequiresConfirmationAndDisconnectDismissesIt() {
+        var connection by mutableStateOf<ConnectionState>(Connected)
+        var resets = 0
+        compose.setContent {
+            SecuComposeTheme {
+                LtftMapsScreen(ready(), connection, LtftWriteState.Idle, {}, {}, { resets++ }, {})
+            }
+        }
+        text(R.string.ltft_maps_table, 2).performClick()
+        actions().performClick()
+        text(R.string.ltft_maps_reset_action).performClick()
+        text(R.string.ltft_maps_reset_confirmation).assertIsDisplayed()
+        text(android.R.string.cancel).performClick()
+        compose.runOnIdle { assertEquals(0, resets) }
+
+        actions().performClick()
+        text(R.string.ltft_maps_reset_action).performClick()
+        compose.runOnIdle { connection = Disconnected }
+        text(R.string.ltft_maps_reset_confirmation).assertDoesNotExist()
+        compose.runOnIdle { connection = Connected }
+        text(R.string.ltft_maps_reset_confirmation).assertDoesNotExist()
+
+        actions().performClick()
+        text(R.string.ltft_maps_reset_action).performClick()
+        text(android.R.string.ok).performClick()
+        compose.runOnIdle { assertEquals(1, resets) }
+    }
+
+    @Test
+    fun saveDisablesRefreshAndOtherActionsWhileWaitingForEcu() {
+        var writeState by mutableStateOf<LtftWriteState>(LtftWriteState.Idle)
+        var saves = 0
+        compose.setContent {
+            SecuComposeTheme {
+                LtftMapsScreen(ready(), Connected, writeState, {}, {}, {}, {
+                    saves++
+                    writeState = LtftWriteState.AwaitingAcknowledgement(LtftWriteOperation.Save)
+                })
+            }
+        }
+        actions().performClick()
+        text(R.string.ltft_maps_save_action).performClick()
+        text(R.string.ltft_maps_save_pending).assertIsDisplayed()
+        actions().assertIsNotEnabled()
+        compose.onNodeWithContentDescription(context.getString(R.string.refresh)).assertIsNotEnabled()
+        compose.runOnIdle {
+            assertEquals(1, saves)
+            writeState = LtftWriteState.Succeeded(LtftWriteOperation.Save)
+        }
+        text(R.string.ltft_maps_save_success).assertIsDisplayed()
+    }
+
+    @Test
+    fun retryAfterAcknowledgedResetOnlyRefreshesTheTables() {
+        var state by mutableStateOf<LtftMapsState>(LtftMapsState.Reading)
+        var writeState by mutableStateOf<LtftWriteState>(LtftWriteState.ReadingAfterReset)
+        var refreshes = 0
+        var resets = 0
+        compose.setContent {
+            SecuComposeTheme {
+                LtftMapsScreen(state, Connected, writeState, {}, { refreshes++ }, { resets++ }, {})
+            }
+        }
+        text(R.string.ltft_maps_reading_after_reset).assertIsDisplayed()
+        actions().assertDoesNotExist()
+        compose.runOnIdle {
+            state = LtftMapsState.TimedOut
+            writeState = LtftWriteState.ResetReadbackFailed
+        }
+        text(R.string.ltft_maps_reset_readback_failed).assertIsDisplayed()
+        text(R.string.ltft_maps_timeout).assertDoesNotExist()
+        text(R.string.ltft_maps_read_again).performClick()
+        compose.runOnIdle {
+            assertEquals(1, refreshes)
+            assertEquals(0, resets)
+        }
+    }
+
+    private fun actions() = compose.onNodeWithContentDescription(context.getString(R.string.ltft_maps_actions))
+
     private fun text(id: Int) = compose.onNodeWithText(context.getString(id))
+
+    private fun text(id: Int, table: Int) = compose.onNodeWithText(context.getString(id, table))
 
     private fun decimal(value: Float) = String.format(context.resources.configuration.locales[0], "%.1f", value)
 

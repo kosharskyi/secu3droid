@@ -9,4 +9,17 @@
     <string name="ltft_maps_axes">RPM horizontally · Load (%1$s) vertically · Correction in %%</string>
     <string name="ltft_maps_waiting_baro">Waiting for barometric pressure to label the load axis.</string>
     <string name="ltft_maps_operating_point">Operating point · %1$d %2$s · %3$s %4$s</string>
+    <string name="ltft_maps_actions">LTFT table actions</string>
+    <string name="ltft_maps_save_action">Save to EEPROM</string>
+    <string name="ltft_maps_reset_action">Reset both tables</string>
+    <string name="ltft_maps_reset_confirmation">This will reset both LTFT tables to zero in the ECU and EEPROM. Do you want to continue?</string>
+    <string name="ltft_maps_reset_pending">Resetting both LTFT tables…</string>
+    <string name="ltft_maps_save_pending">Saving both LTFT tables to EEPROM…</string>
+    <string name="ltft_maps_reading_after_reset">The ECU confirmed the reset. Reading both tables…</string>
+    <string name="ltft_maps_reset_success">Both LTFT tables were reset.</string>
+    <string name="ltft_maps_save_success">The ECU saved both LTFT tables to EEPROM.</string>
+    <string name="ltft_maps_reset_unconfirmed">The ECU did not confirm the reset.</string>
+    <string name="ltft_maps_save_unconfirmed">The ECU did not confirm the EEPROM write.</string>
+    <string name="ltft_maps_reset_readback_failed">The ECU confirmed the reset. Reading the tables timed out.</string>
+    <string name="ltft_maps_read_again">Read tables again</string>
 </resources>

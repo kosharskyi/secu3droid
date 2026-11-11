@@ -29,8 +29,11 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.MoreVert
 import androidx.compose.material.icons.filled.Refresh
 import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.material3.DropdownMenu
+import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
@@ -43,6 +46,7 @@ import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
@@ -52,27 +56,53 @@ import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.semantics.LiveRegionMode
 import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.liveRegion
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
+import androidx.lifecycle.compose.LifecycleResumeEffect
 import org.secu3.android.R
 import org.secu3.android.connection.Connected
 import org.secu3.android.connection.ConnectionState
 import org.secu3.android.domain.ltft.LtftMapsSession
 import org.secu3.android.domain.ltft.LtftMapsState
 import org.secu3.android.domain.ltft.LtftWorkingPoint
+import org.secu3.android.domain.ltft.LtftWriteOperation
+import org.secu3.android.domain.ltft.LtftWriteState
+import org.secu3.android.ui.compose.ConfirmationDialog
 import org.secu3.android.ui.compose.SecuTopAppBar
 
 @Composable
 internal fun LtftMapsScreen(
     state: LtftMapsState,
     connectionState: ConnectionState?,
+    writeState: LtftWriteState,
     onNavigateUp: () -> Unit,
     onRefresh: () -> Unit,
+    onReset: () -> Unit,
+    onSave: () -> Unit,
 ) {
     val connected = connectionState == Connected
     var selectedTable by rememberSaveable { mutableIntStateOf(0) }
+    val writeMessage = when (writeState) {
+        LtftWriteState.Idle -> null
+        is LtftWriteState.AwaitingAcknowledgement -> when (writeState.operation) {
+            LtftWriteOperation.Reset -> R.string.ltft_maps_reset_pending
+            LtftWriteOperation.Save -> R.string.ltft_maps_save_pending
+        }
+        LtftWriteState.ReadingAfterReset -> R.string.ltft_maps_reading_after_reset
+        is LtftWriteState.Succeeded -> when (writeState.operation) {
+            LtftWriteOperation.Reset -> R.string.ltft_maps_reset_success
+            LtftWriteOperation.Save -> R.string.ltft_maps_save_success
+        }
+        is LtftWriteState.Unconfirmed -> when (writeState.operation) {
+            LtftWriteOperation.Reset -> R.string.ltft_maps_reset_unconfirmed
+            LtftWriteOperation.Save -> R.string.ltft_maps_save_unconfirmed
+        }
+        LtftWriteState.ResetReadbackFailed -> R.string.ltft_maps_reset_readback_failed
+    }
 
     Surface(modifier = Modifier.fillMaxSize(), color = MaterialTheme.colorScheme.background) {
         Column(Modifier.fillMaxSize().navigationBarsPadding()) {
@@ -83,9 +113,10 @@ internal fun LtftMapsScreen(
                 onNavigateUp = onNavigateUp,
                 actions = {
                     if (connected && state is LtftMapsState.Ready) {
-                        IconButton(onClick = onRefresh) {
+                        IconButton(onClick = onRefresh, enabled = !writeState.isInProgress) {
                             Icon(Icons.Default.Refresh, contentDescription = stringResource(R.string.refresh))
                         }
+                        LtftMapActions(enabled = !writeState.isInProgress, onReset = onReset, onSave = onSave)
                     }
                 },
             )
@@ -93,12 +124,42 @@ internal fun LtftMapsScreen(
             when (val visibleState = if (connected) state else LtftMapsState.Disconnected) {
                 LtftMapsState.Disconnected -> LtftMapMessage(R.string.ltft_maps_disconnected)
                 LtftMapsState.Unsupported -> LtftMapMessage(R.string.ltft_maps_unsupported)
-                LtftMapsState.Reading -> LtftMapMessage(R.string.ltft_maps_reading, isReading = true)
-                LtftMapsState.TimedOut -> LtftMapMessage(R.string.ltft_maps_timeout, onRetry = onRefresh)
+                LtftMapsState.Reading -> LtftMapMessage(
+                    if (writeState == LtftWriteState.ReadingAfterReset) {
+                        R.string.ltft_maps_reading_after_reset
+                    } else {
+                        R.string.ltft_maps_reading
+                    },
+                    isReading = true,
+                )
+                LtftMapsState.TimedOut -> {
+                    val resetMessage = when (writeState) {
+                        LtftWriteState.ResetReadbackFailed,
+                        LtftWriteState.Unconfirmed(LtftWriteOperation.Reset) -> writeMessage
+                        else -> null
+                    }
+                    LtftMapMessage(
+                        resetMessage ?: R.string.ltft_maps_timeout,
+                        onRetry = onRefresh,
+                        retryLabel = if (resetMessage == null) R.string.retry else R.string.ltft_maps_read_again,
+                    )
+                }
                 is LtftMapsState.Ready -> Column(
                     modifier = Modifier.fillMaxSize().padding(start = 16.dp, end = 16.dp, top = 8.dp, bottom = 12.dp),
                     verticalArrangement = Arrangement.spacedBy(8.dp),
                 ) {
+                    if (writeMessage != null) {
+                        Text(
+                            text = stringResource(writeMessage),
+                            style = MaterialTheme.typography.bodyMedium,
+                            color = if (writeState is LtftWriteState.Unconfirmed) {
+                                MaterialTheme.colorScheme.error
+                            } else {
+                                MaterialTheme.colorScheme.onSurface
+                            },
+                            modifier = Modifier.semantics { liveRegion = LiveRegionMode.Polite },
+                        )
+                    }
                     SingleChoiceSegmentedButtonRow(Modifier.fillMaxWidth()) {
                         repeat(LtftMapsSession.TABLE_COUNT) { table ->
                             SegmentedButton(
@@ -138,16 +199,71 @@ internal fun LtftMapsScreen(
 }
 
 @Composable
-private fun LtftMapMessage(text: Int, isReading: Boolean = false, onRetry: (() -> Unit)? = null) {
+private fun LtftMapActions(enabled: Boolean, onReset: () -> Unit, onSave: () -> Unit) {
+    var menuExpanded by remember(enabled) { mutableStateOf(false) }
+    var confirmReset by remember(enabled) { mutableStateOf(false) }
+    LifecycleResumeEffect(enabled) {
+        onPauseOrDispose {
+            menuExpanded = false
+            confirmReset = false
+        }
+    }
+
+    Box {
+        IconButton(onClick = { menuExpanded = true }, enabled = enabled) {
+            Icon(Icons.Default.MoreVert, contentDescription = stringResource(R.string.ltft_maps_actions))
+        }
+        DropdownMenu(expanded = menuExpanded, onDismissRequest = { menuExpanded = false }) {
+            DropdownMenuItem(
+                text = { Text(stringResource(R.string.ltft_maps_save_action)) },
+                onClick = {
+                    menuExpanded = false
+                    onSave()
+                },
+            )
+            DropdownMenuItem(
+                text = { Text(stringResource(R.string.ltft_maps_reset_action)) },
+                onClick = {
+                    menuExpanded = false
+                    confirmReset = true
+                },
+            )
+        }
+    }
+
+    if (confirmReset) {
+        ConfirmationDialog(
+            title = R.string.ltft_maps_reset_action,
+            message = R.string.ltft_maps_reset_confirmation,
+            onConfirm = {
+                confirmReset = false
+                onReset()
+            },
+            onCancel = { confirmReset = false },
+        )
+    }
+}
+
+@Composable
+private fun LtftMapMessage(
+    text: Int,
+    isReading: Boolean = false,
+    onRetry: (() -> Unit)? = null,
+    retryLabel: Int = R.string.retry,
+) {
     Column(
         modifier = Modifier.fillMaxSize().padding(24.dp),
         verticalArrangement = Arrangement.spacedBy(12.dp, Alignment.CenterVertically),
         horizontalAlignment = Alignment.CenterHorizontally,
     ) {
         if (isReading) CircularProgressIndicator()
-        Text(stringResource(text), textAlign = TextAlign.Center)
+        Text(
+            stringResource(text),
+            textAlign = TextAlign.Center,
+            modifier = Modifier.semantics { liveRegion = LiveRegionMode.Polite },
+        )
         if (onRetry != null) {
-            TextButton(onClick = onRetry) { Text(stringResource(R.string.retry)) }
+            TextButton(onClick = onRetry) { Text(stringResource(retryLabel)) }
         }
     }
 }

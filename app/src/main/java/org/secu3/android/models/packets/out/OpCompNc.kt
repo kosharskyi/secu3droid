@@ -50,6 +50,12 @@ data class OpCompNc(
     val isSavedErrorsWriteAcknowledgement: Boolean
         get() = opCode == CE_SAVE_ERRORS && opData == 0
 
+    val isLtftResetAcknowledgement: Boolean
+        get() = opCode == OPCODE_RESET_LTFT && opData == 0
+
+    val isLtftSaveAcknowledgement: Boolean
+        get() = opCode == OPCODE_SAVE_LTFT && opData == 0
+
     override fun parse(data: IntArray): InputPacket {
         opData = data[2]
         opCode = data[3]
@@ -82,6 +88,8 @@ data class OpCompNc(
 
         fun getSaveEepromCommand() = OpCompNc(0, EEPROM_PARAM_SAVE)
         fun getReadSavedErrorsCommand() = OpCompNc(0, CE_SAVE_ERRORS)
+        fun getResetLtftCommand() = OpCompNc(OPDATA_RESET_LTFT, OPCODE_RESET_LTFT)
+        fun getSaveLtftCommand() = OpCompNc(0, OPCODE_SAVE_LTFT)
 
     }
     

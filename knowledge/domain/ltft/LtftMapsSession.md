@@ -9,3 +9,11 @@ Parameters pauses before the LTFT destination becomes resumed. On completion or 
 ## The firmware grid takes precedence over the barometric limit
 
 Read the dedicated load grid only when FunSet selects it. Otherwise divide the configured lower-to-upper range into 15 intervals. MAP(baro) supplies the upper bound from live sensor data and rebuilds the axis when pressure changes. With no usable pressure sample, keep the map visible without load labels or a marker. Cranking suppresses the marker.
+
+## LTFT write acknowledgements have no transaction identifier
+
+The ECU acknowledges reset (`u 00 CA`) and EEPROM save (`u 00 09`) after the corresponding EEPROM write completes. Match both opcode and zero response data and serialize writes. A delayed acknowledgement after a timeout can be indistinguishable from a response to a later explicit write of the same kind because the protocol has no request identifier.
+
+## A reset acknowledgement is followed by a fresh read of both maps
+
+The acknowledgement confirms the ECU reset and EEPROM write, while displayed map values remain stale until read again. Keep those outcomes distinct in write state. If readback times out or the route is interrupted, retain the acknowledgement result and allow a manual or resumed read to verify the actual values.

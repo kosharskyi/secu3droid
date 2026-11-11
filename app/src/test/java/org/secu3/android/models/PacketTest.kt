@@ -48,6 +48,22 @@ class PacketTest {
     }
 
     @Test
+    fun opCompNc_packsLtftCommandsAndMatchesTheirAcknowledgements() {
+        assertArrayEquals(intArrayOf('u'.code, 0xBB, 0xCA), OpCompNc.getResetLtftCommand().pack())
+        assertArrayEquals(intArrayOf('u'.code, 0, 9), OpCompNc.getSaveLtftCommand().pack())
+        assertTrue(OpCompNc(opData = 0, opCode = 0xCA).isLtftResetAcknowledgement)
+        assertTrue(OpCompNc(opData = 0, opCode = 9).isLtftSaveAcknowledgement)
+        assertFalse(OpCompNc(opData = 0xBB, opCode = 0xCA).isLtftResetAcknowledgement)
+        assertFalse(OpCompNc(opData = 1, opCode = 9).isLtftSaveAcknowledgement)
+    }
+
+    @Test
+    fun ltftWriteTasksPackOperationalCommands() {
+        assertArrayEquals(intArrayOf('u'.code, 0xBB, 0xCA), Task.Secu3OpComResetLtft.getPacket().pack())
+        assertArrayEquals(intArrayOf('u'.code, 0, 9), Task.Secu3OpComSaveLtft.getPacket().pack())
+    }
+
+    @Test
     fun savedErrorsPacketEncodesClearAndEditedMasks() {
         assertArrayEquals(
             intArrayOf('x'.code, 0, 0, 0, 0),
