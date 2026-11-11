@@ -9,3 +9,7 @@ Both EEPROM commands affect both tables. Dismiss an open reset confirmation when
 ## Keep the CSV snapshot outside the ECU session while the document picker is open
 
 Opening the system document picker can pause the route and clear its ECU maps. Serialize the selected table and keep that snapshot in saveable launcher state before opening the picker. The result consumes the pending snapshot once, including on cancellation.
+
+## VE correction uses the two LTFT banks captured before opening a BIN
+
+The open picker can pause the ECU route and returning can trigger a fresh read. Keep the captured banks and original BIN in the route's ViewModel across picker pauses and Activity recreation. Canceling Save As returns to the same set and correction source. A new process starts a new operation.

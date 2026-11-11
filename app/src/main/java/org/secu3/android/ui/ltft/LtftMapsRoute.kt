@@ -40,6 +40,7 @@ import org.secu3.android.R
 import org.secu3.android.connection.Secu3ConnectionManager
 import org.secu3.android.domain.ltft.LtftMapExport
 import org.secu3.android.domain.ltft.LtftMapsSession
+import org.secu3.android.domain.ltft.LtftVeImage
 import org.secu3.android.ui.LTFT_MAPS_ROUTE
 import org.secu3.android.ui.MainActivity
 import org.secu3.android.ui.messages.UiMessageDuration
@@ -61,10 +62,12 @@ internal fun LtftMapsRoute(entry: NavBackStackEntry, activity: MainActivity, onN
     val clipboardScope = rememberCoroutineScope()
     val clipboardLabel = stringResource(R.string.ltft_maps_title)
     val locale = LocalConfiguration.current.locales[0]
+    val resolver = activity.applicationContext.contentResolver
     val launchCsv = rememberLtftCsvLauncher(
-        onDocumentCreated = { uri, csv -> viewModel.writeCsv(activity.applicationContext.contentResolver, uri, csv) },
+        onDocumentCreated = { uri, csv -> viewModel.writeCsv(resolver, uri, csv) },
         onLaunchFailed = viewModel::showExportError,
     )
+    val applyToVe = rememberLtftVeFileAction(viewModel.veFileWorkflow, resolver)
     val lifecycle = LocalLifecycleOwner.current.lifecycle
     DisposableEffect(lifecycle, viewModel) {
         val observer = LifecycleEventObserver { _, event ->
@@ -98,6 +101,7 @@ internal fun LtftMapsRoute(entry: NavBackStackEntry, activity: MainActivity, onN
             val csv = viewModel.formatCsv(corrections, rpmAxis, decimalSeparator)
             launchCsv("LTFT-${table + 1}.csv", csv)
         },
+        onApplyToVe = applyToVe,
     )
 }
 
@@ -130,11 +134,13 @@ internal class LtftMapsViewModel @Inject constructor(
     connectionManager: Secu3ConnectionManager,
     private val session: LtftMapsSession,
     private val export: LtftMapExport,
+    veImage: LtftVeImage,
     private val uiMessageQueue: UiMessageQueue,
 ) : ViewModel() {
     val connectionState = connectionManager.connectionStateFlow
     val state = session.state
     val writeState = session.writeState
+    val veFileWorkflow = LtftVeFileWorkflow(veImage, viewModelScope, ::showFileMessage)
 
     init {
         session.start(viewModelScope)
@@ -159,7 +165,11 @@ internal class LtftMapsViewModel @Inject constructor(
     }
 
     fun showExportError() {
-        uiMessageQueue.publish(R.string.ltft_maps_export_error, UiMessageDuration.LONG, scope = LTFT_MAPS_ROUTE)
+        showFileMessage(R.string.ltft_maps_export_error)
+    }
+
+    private fun showFileMessage(text: Int) {
+        uiMessageQueue.publish(text, UiMessageDuration.LONG, scope = LTFT_MAPS_ROUTE)
     }
 
     override fun onCleared() = session.close()

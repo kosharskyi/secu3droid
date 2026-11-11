@@ -28,4 +28,17 @@
     <string name="ltft_maps_save_unconfirmed">ECU не підтвердив запис в EEPROM.</string>
     <string name="ltft_maps_reset_readback_failed">ECU підтвердив скидання. Час очікування на зчитування таблиць вичерпано.</string>
     <string name="ltft_maps_read_again">Зчитати таблиці ще раз</string>
+    <string name="ltft_ve_apply">Застосувати LTFT до VE</string>
+    <string name="ltft_ve_matching_setup">Використовуйте файл BIN із Manager для тієї самої конфігурації двигуна. Корекції застосовуються до відповідних клітинок обертів і навантаження.</string>
+    <string name="ltft_ve_source">Джерело корекцій</string>
+    <string name="ltft_ve_average">Середнє обох таблиць</string>
+    <string name="ltft_ve_flash_set">Набір карт прошивки</string>
+    <string name="ltft_ve_eeprom_set">Набір карт EEPROM</string>
+    <string name="ltft_ve_set_number">Набір %1$d</string>
+    <string name="ltft_ve_named_set">%1$d · %2$s</string>
+    <string name="ltft_ve_save_copy">Зберегти копію BIN</string>
+    <string name="ltft_ve_invalid_file">Виберіть сумісний файл BIN для ATmega1284 із коректними контрольними сумами.</string>
+    <string name="ltft_ve_read_error">Не вдалося відкрити файл BIN.</string>
+    <string name="ltft_ve_write_error">Не вдалося зберегти скоригований файл BIN.</string>
+    <string name="ltft_ve_saved">Копію BIN зі скоригованою VE збережено.</string>
 </resources>

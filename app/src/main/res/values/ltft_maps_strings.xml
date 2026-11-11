@@ -28,4 +28,17 @@
     <string name="ltft_maps_save_unconfirmed">The ECU did not confirm the EEPROM write.</string>
     <string name="ltft_maps_reset_readback_failed">The ECU confirmed the reset. Reading the tables timed out.</string>
     <string name="ltft_maps_read_again">Read tables again</string>
+    <string name="ltft_ve_apply">Apply LTFT to VE</string>
+    <string name="ltft_ve_matching_setup">Use a Manager BIN file from the same engine setup. Corrections apply to matching RPM and load cells.</string>
+    <string name="ltft_ve_source">Correction source</string>
+    <string name="ltft_ve_average">Average of both tables</string>
+    <string name="ltft_ve_flash_set">Firmware map set</string>
+    <string name="ltft_ve_eeprom_set">EEPROM map set</string>
+    <string name="ltft_ve_set_number">Set %1$d</string>
+    <string name="ltft_ve_named_set">%1$d · %2$s</string>
+    <string name="ltft_ve_save_copy">Save BIN copy</string>
+    <string name="ltft_ve_invalid_file">Choose a compatible ATmega1284 BIN file with valid checksums.</string>
+    <string name="ltft_ve_read_error">Could not open the BIN file.</string>
+    <string name="ltft_ve_write_error">Could not save the corrected BIN file.</string>
+    <string name="ltft_ve_saved">BIN copy with corrected VE saved.</string>
 </resources>

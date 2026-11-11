@@ -37,7 +37,7 @@ class LtftCsvPickerTest {
     @Test
     fun cancellationClearsTheRequestAndRestoredPickerWritesTheOriginalTable() {
         val context = InstrumentationRegistry.getInstrumentation().targetContext
-        val registry = TestPickerRegistry(context)
+        val registry = LtftTestPickerRegistry(context)
         val owner = object : ActivityResultRegistryOwner {
             override val activityResultRegistry = registry
         }
@@ -95,31 +95,31 @@ class LtftCsvPickerTest {
             destination.delete()
         }
     }
+}
 
-    private class TestPickerRegistry(private val context: Context) : ActivityResultRegistry() {
-        private var requestCode = 0
-        var launches = 0
-            private set
-        lateinit var intent: Intent
-            private set
+internal class LtftTestPickerRegistry(private val context: Context) : ActivityResultRegistry() {
+    private var requestCode = 0
+    var launches = 0
+        private set
+    lateinit var intent: Intent
+        private set
 
-        override fun <I, O> onLaunch(
-            requestCode: Int,
-            contract: ActivityResultContract<I, O>,
-            input: I,
-            options: ActivityOptionsCompat?,
-        ) {
-            this.requestCode = requestCode
-            launches++
-            intent = contract.createIntent(context, input)
-        }
+    override fun <I, O> onLaunch(
+        requestCode: Int,
+        contract: ActivityResultContract<I, O>,
+        input: I,
+        options: ActivityOptionsCompat?,
+    ) {
+        this.requestCode = requestCode
+        launches++
+        intent = contract.createIntent(context, input)
+    }
 
-        fun respond(uri: Uri?) {
-            if (uri == null) {
-                dispatchResult(requestCode, Activity.RESULT_CANCELED, null)
-            } else {
-                dispatchResult(requestCode, Activity.RESULT_OK, Intent().setData(uri))
-            }
+    fun respond(uri: Uri?) {
+        if (uri == null) {
+            dispatchResult(requestCode, Activity.RESULT_CANCELED, null)
+        } else {
+            dispatchResult(requestCode, Activity.RESULT_OK, Intent().setData(uri))
         }
     }
 }

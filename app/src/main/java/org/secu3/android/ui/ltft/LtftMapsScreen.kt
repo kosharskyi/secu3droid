@@ -89,6 +89,7 @@ internal fun LtftMapsScreen(
     onSave: () -> Unit,
     onCopy: (List<Float>, IntRange, IntRange) -> Unit,
     onExportCsv: (Int, List<Float>, List<Int>, Char) -> Unit,
+    onApplyToVe: ((List<List<Float>>) -> Unit)? = null,
 ) {
     val connected = connectionState == Connected
     var selectedTable by rememberSaveable { mutableIntStateOf(0) }
@@ -143,6 +144,7 @@ internal fun LtftMapsScreen(
                             onExportCsv = { decimalSeparator ->
                                 onExportCsv(selectedTable, ready.tables[selectedTable], ready.rpmAxis, decimalSeparator)
                             },
+                            onApplyToVe = onApplyToVe?.let { apply -> { apply(ready.tables) } },
                         )
                     }
                 },
@@ -246,6 +248,7 @@ private fun LtftMapActions(
     onSave: () -> Unit,
     onCopy: (() -> Unit)?,
     onExportCsv: (Char) -> Unit,
+    onApplyToVe: (() -> Unit)?,
 ) {
     var menuExpanded by remember(enabled) { mutableStateOf(false) }
     var confirmReset by remember(enabled) { mutableStateOf(false) }
@@ -276,6 +279,14 @@ private fun LtftMapActions(
                 onClick = {
                     menuExpanded = false
                     showCsvOptions = true
+                },
+            )
+            DropdownMenuItem(
+                text = { Text(stringResource(R.string.ltft_ve_apply)) },
+                enabled = onApplyToVe != null,
+                onClick = {
+                    menuExpanded = false
+                    onApplyToVe?.invoke()
                 },
             )
             DropdownMenuItem(
