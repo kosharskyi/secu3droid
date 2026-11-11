@@ -56,6 +56,7 @@ internal fun ParametersRoute(
     entry: NavBackStackEntry,
     activity: MainActivity,
     onNavigateUp: () -> Unit,
+    onOpenLtftMaps: () -> Unit,
 ) {
     val viewModel: ParamsViewModel = viewModel(
         viewModelStoreOwner = entry,
@@ -98,7 +99,11 @@ internal fun ParametersRoute(
             onPageSettled = { index -> pages.getOrNull(index)?.page?.let(viewModel::activatePage) },
             onPageUnsettled = viewModel::deactivatePage,
             pageContent = { index, active, isActiveNow -> pages.getOrNull(index)?.let { page ->
-                ParameterPageContent(page.page, viewModel, capabilities, active, isActiveNow, viewModel::openParameterEditor)
+                ParameterPageContent(
+                    page.page, viewModel, capabilities, active, isActiveNow,
+                    viewModel::openParameterEditor,
+                    onOpenLtftMaps = { if (isActiveNow()) onOpenLtftMaps() },
+                )
             } },
         )
     }

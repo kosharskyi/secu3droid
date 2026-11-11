@@ -27,20 +27,27 @@ package org.secu3.android.ui.parameters.pages.compose
 
 import androidx.compose.foundation.rememberScrollState
 import androidx.annotation.StringRes
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.platform.testTag
+import androidx.compose.ui.unit.dp
 import androidx.compose.ui.res.stringArrayResource
 import androidx.compose.ui.res.stringResource
 import org.secu3.android.R
 import org.secu3.android.domain.parameters.LtftValues
 import org.secu3.android.ui.parameters.compose.ParameterLoadingIndicator
+import org.secu3.android.ui.parameters.compose.ParameterReadError
 import org.secu3.android.ui.parameters.compose.ParameterValueRow
 import org.secu3.android.ui.parameters.compose.ParameterPage
 import org.secu3.android.ui.parameters.compose.ParameterSection
@@ -91,13 +98,30 @@ enum class LtftNumber(
 }
 
 @Composable
-fun LtftScreen(values: LtftValues?, onEdit: (LtftNumber) -> Unit, onMode: (Int) -> Unit) {
+fun LtftScreen(
+    values: LtftValues?,
+    onEdit: (LtftNumber) -> Unit,
+    onMode: (Int) -> Unit,
+    onOpenMaps: (() -> Unit)? = null,
+    mapsEnabled: Boolean = values != null,
+    readFailed: Boolean = false,
+    onRetry: () -> Unit = {},
+) {
     val pageScrollState = rememberScrollState()
-    if (values == null) {
-        ParameterLoadingIndicator("ltft_loading")
+    if (readFailed) {
+        Column(Modifier.fillMaxSize(), horizontalAlignment = Alignment.CenterHorizontally) {
+            LtftMapsButton(onOpenMaps, enabled = mapsEnabled)
+            Box(Modifier.weight(1f)) { ParameterReadError(onRetry = onRetry) }
+        }
+    } else if (values == null) {
+        Column(Modifier.fillMaxSize(), horizontalAlignment = Alignment.CenterHorizontally) {
+            LtftMapsButton(onOpenMaps, enabled = false)
+            Box(Modifier.weight(1f)) { ParameterLoadingIndicator("ltft_loading") }
+        }
     } else {
         val modes = stringArrayResource(R.array.ltft_mode_items)
         ParameterPage(scrollState = pageScrollState) {
+            LtftMapsButton(onOpenMaps, enabled = mapsEnabled)
             ParameterSection {
                 LtftModeSelector(modes, values.mode, onMode)
                 LtftNumber.entries.forEach { number ->
@@ -112,6 +136,18 @@ fun LtftScreen(values: LtftValues?, onEdit: (LtftNumber) -> Unit, onMode: (Int) 
                 }
             }
         }
+    }
+}
+
+@Composable
+private fun LtftMapsButton(onOpenMaps: (() -> Unit)?, enabled: Boolean) {
+    if (onOpenMaps == null) return
+    TextButton(
+        onClick = onOpenMaps,
+        enabled = enabled,
+        modifier = Modifier.padding(horizontal = 8.dp).testTag("ltft-open-maps"),
+    ) {
+        Text(stringResource(R.string.ltft_maps_title))
     }
 }
 

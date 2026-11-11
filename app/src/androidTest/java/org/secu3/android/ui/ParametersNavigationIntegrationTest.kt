@@ -11,7 +11,6 @@ package org.secu3.android.ui
 
 import android.view.KeyEvent
 import android.content.pm.ActivityInfo
-import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.assertIsSelected
 import androidx.compose.ui.test.assertIsNotEnabled
 import androidx.compose.ui.test.assertCountEquals
@@ -326,6 +325,7 @@ class ParametersNavigationIntegrationTest {
         compose.onNodeWithTag("home-card-errors").performScrollTo().performClick()
         compose.waitForIdle()
         assertFullScreenComposeRoute(host, ERRORS_ROUTE, HOME_ROUTE)
+        compose.onAllNodesWithText(compose.activity.getString(R.string.ltft_maps_title)).assertCountEquals(0)
         compose.activityRule.scenario.onActivity { activity ->
             val insets = WindowInsetsControllerCompat(activity.window, activity.window.decorView)
             assertEquals(originalLightStatusBars, insets.isAppearanceLightStatusBars)
@@ -356,18 +356,6 @@ class ParametersNavigationIntegrationTest {
         compose.waitForIdle()
         compose.onNodeWithContentDescription(compose.activity.getString(R.string.clear_all_errors)).assertIsNotEnabled()
         compose.onAllNodesWithText(compose.activity.getString(R.string.dialog_confirm_clear_errors_message)).assertCountEquals(0)
-    }
-
-    @Test fun ltftMapsRoutePausesCheckEngineAndReturnsToIt() {
-        val host = navigateNativeHostToHome()
-        compose.onNodeWithTag("home-card-errors").performScrollTo().performClick()
-        compose.onNodeWithText(compose.activity.getString(R.string.ltft_maps_title)).performClick()
-        compose.waitForIdle()
-        assertFullScreenComposeRoute(host, LTFT_MAPS_ROUTE, ERRORS_ROUTE)
-        compose.onNodeWithText(compose.activity.getString(R.string.ltft_maps_disconnected)).assertIsDisplayed()
-        compose.onNodeWithContentDescription(compose.activity.getString(R.string.back)).performClick()
-        compose.waitForIdle()
-        assertNativeHostRestored(host, ERRORS_ROUTE)
     }
 
     @Test fun firmwareModalKeepsHomeStartedBackClosesOnlySheetAndViewModelIsPerEntry() {

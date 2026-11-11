@@ -73,7 +73,6 @@ internal fun ErrorsContent(
     connectionState: ConnectionState?,
     snapshot: ErrorsSnapshot,
     onBackClick: () -> Unit,
-    onOpenLtft: () -> Unit,
     onClearClick: () -> Unit,
     onLiveChange: (Boolean) -> Unit,
     onHoldChange: (Boolean) -> Unit,
@@ -200,12 +199,6 @@ internal fun ErrorsContent(
                         } else {
                             TextButton(onClick = { showCatalog = !showCatalog }) {
                                 Text(stringResource(if (showCatalog) R.string.errors_show_reported else R.string.errors_show_all))
-                            }
-                            TextButton(
-                                onClick = onOpenLtft,
-                                enabled = snapshot.writeStatus != ErrorsWriteStatus.Writing,
-                            ) {
-                                Text(stringResource(R.string.ltft_maps_title))
                             }
                         }
                     }

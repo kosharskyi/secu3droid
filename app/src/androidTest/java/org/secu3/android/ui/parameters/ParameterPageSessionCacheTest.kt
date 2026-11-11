@@ -4,7 +4,13 @@ import android.Manifest
 import android.os.Build
 import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.Lifecycle
+import androidx.compose.ui.test.assertIsDisplayed
+import androidx.compose.ui.test.assertIsNotEnabled
+import androidx.compose.ui.test.assertIsSelected
+import androidx.compose.ui.test.onAllNodesWithTag
+import androidx.compose.ui.test.onNodeWithContentDescription
 import androidx.compose.ui.test.onNodeWithTag
+import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.performScrollTo
 import androidx.compose.ui.platform.ComposeView
@@ -64,6 +70,7 @@ import org.secu3.android.ui.parameters.pages.compose.AdcNumber
 import org.secu3.android.models.packets.out.ChangeModePacket
 import org.secu3.android.utils.prefs.UserPrefs
 import org.secu3.android.ui.MainActivity
+import org.secu3.android.ui.LTFT_MAPS_ROUTE
 import org.secu3.android.ui.compose.SecuComposeTheme
 import org.secu3.android.ui.PARAMETERS_ROUTE
 import org.secu3.android.ui.parameters.pages.compose.AnglesNumber
@@ -701,6 +708,73 @@ class ParameterPageSessionCacheTest {
                     compose.activityRule.scenario.moveToState(Lifecycle.State.RESUMED)
                 }
             }
+        }
+    }
+
+    @Test fun ltftMapsOpenFromParametersAfterReadAndTimeoutAndResumeTheSameTab() = runBlocking {
+        compose.activityRule.scenario.onActivity { it.openHome() }
+        val usb = installFakeUsb(paramsViewModel(), firmwareOptions = 1 shl 28)
+        val ltftTitle = compose.activity.getString(R.string.params_tab_ltft_title)
+        val mapsButton = compose.onNodeWithTag("ltft-open-maps")
+
+        fun assertCurrentRoute(route: String) {
+            compose.activityRule.scenario.onActivity { activity ->
+                val host = requireNotNull(activity.rootNavigationController)
+                assertEquals(route, host.currentDestination?.route)
+                assertEquals(Lifecycle.State.RESUMED, host.getBackStackEntry(route).lifecycle.currentState)
+                if (route == LTFT_MAPS_ROUTE) {
+                    assertEquals(Lifecycle.State.CREATED, host.getBackStackEntry(PARAMETERS_ROUTE).lifecycle.currentState)
+                }
+            }
+        }
+
+        fun recentStreamModes(): List<Char> = usb.writes.mapNotNull { bytes ->
+            bytes.getOrNull(2)?.toInt()?.toChar()?.takeIf { bytes[1].toInt().toChar() == 'h' }
+        }.takeLast(3)
+
+        suspend fun awaitMode(descriptor: Char, count: Int) {
+            try {
+                usb.awaitReadRequest(descriptor, count)
+            } catch (timeout: TimeoutCancellationException) {
+                val route = compose.runOnUiThread { compose.activity.rootNavigationController?.currentDestination?.route }
+                throw AssertionError("Expected request '$descriptor' #$count on $route; recent modes ${recentStreamModes()}", timeout)
+            }
+        }
+
+        try {
+            compose.onNodeWithTag("home-card-parameters").performClick()
+            compose.onNodeWithText(ltftTitle).performScrollTo().performClick()
+            compose.onNodeWithText(ltftTitle).assertIsSelected()
+            awaitMode('O', 1)
+            mapsButton.assertIsNotEnabled()
+            usb.emit(LtftParamPacket(mode = 0, learnClt = 12.5f))
+            compose.waitUntil(4_000) { compose.onAllNodesWithTag("ltft_lower_clt").fetchSemanticsNodes().isNotEmpty() }
+            mapsButton.performClick()
+            compose.waitForIdle()
+            assertCurrentRoute(LTFT_MAPS_ROUTE)
+            compose.onNodeWithText(compose.activity.getString(R.string.ltft_maps_reading)).assertIsDisplayed()
+            awaitMode('"', 1)
+            assertEquals(listOf('O', 'q', '"'), recentStreamModes())
+
+            compose.onNodeWithContentDescription(compose.activity.getString(R.string.back)).performClick()
+            compose.waitForIdle()
+            assertCurrentRoute(PARAMETERS_ROUTE)
+            compose.onNodeWithText(ltftTitle).assertIsSelected()
+            awaitMode('O', 2)
+            mapsButton.assertIsNotEnabled()
+            assertEquals(listOf('"', 'q', 'O'), recentStreamModes())
+
+            compose.waitUntil(15_000) {
+                compose.onAllNodesWithTag("parameter-read-error").fetchSemanticsNodes().isNotEmpty()
+            }
+            compose.onNodeWithTag("parameter-read-retry").assertIsDisplayed()
+            mapsButton.performClick()
+            compose.waitForIdle()
+            assertCurrentRoute(LTFT_MAPS_ROUTE)
+            awaitMode('"', 2)
+            assertEquals(listOf('O', 'q', '"'), recentStreamModes())
+        } finally {
+            usb.close()
         }
     }
 

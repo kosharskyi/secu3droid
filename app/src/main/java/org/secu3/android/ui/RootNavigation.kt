@@ -172,7 +172,12 @@ internal fun RootNavigation(activity: MainActivity) {
                 )
             }
             composable(PARAMETERS_ROUTE) { entry ->
-                ParametersRoute(entry, activity, onNavigateUp = { navController.popBackStack() })
+                ParametersRoute(
+                    entry,
+                    activity,
+                    onNavigateUp = { navController.popBackStack() },
+                    onOpenLtftMaps = { navController.navigate(LTFT_MAPS_ROUTE) { launchSingleTop = true } },
+                )
             }
             composable(SETTINGS_ROUTE) { entry ->
                 SettingsRoute(entry, activity, onNavigateUp = { navController.popBackStack() })
@@ -182,7 +187,6 @@ internal fun RootNavigation(activity: MainActivity) {
                     entry,
                     activity,
                     onNavigateUp = { navController.popBackStack() },
-                    onOpenLtft = { navController.navigate(LTFT_MAPS_ROUTE) { launchSingleTop = true } },
                 )
             }
             composable(LTFT_MAPS_ROUTE) { entry ->

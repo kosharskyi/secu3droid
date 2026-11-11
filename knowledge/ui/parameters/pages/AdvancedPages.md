@@ -87,6 +87,10 @@ The existing `P0/I0` resource rows are the positive-error coefficients and `P1/I
 
 Desktop enables the full LTFT field group from the firmware FI option, not the selected Off/Petrol/Gas mode. Keep the four mode labels UI-localized and preserve unknown incoming mode codes until a valid explicit choice.
 
+## LTFT maps open after the LTFT parameter attempt resolves
+
+The full-screen LTFT maps destination is linked above the LTFT controls. Keep the button disabled while its parameter read is pending; a successful read or timeout enables it. The timeout state keeps the existing retry action alongside the maps entry. Fence navigation with the pager's current-active check so a stale page cannot open maps during a swipe or lifecycle pause.
+
 ## DBW Home position is receive-only
 
 Keep Home position visible as a passive value. The firmware and desktop read a 16-byte payload, while the editable `P` command contains 14 bytes and omits Home position; refresh obtains the current value through the ordinary parameter read.

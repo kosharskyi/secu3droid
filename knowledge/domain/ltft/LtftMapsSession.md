@@ -4,7 +4,7 @@ The ECU streams both banks without a snapshot ID or end marker. Track all 256 ad
 
 ## The route that selected the read context restores sensors before handing it off
 
-Check Engine pauses before the LTFT destination becomes resumed. On completion or a timeout, return the ECU to sensor streaming. If the route is paused during a read, cancel it and enqueue the sensor context synchronously while that transport is still ready. A connection loss drops the partial maps and never schedules a context change from the canceled read. The next connection starts with new collectors.
+Parameters pauses before the LTFT destination becomes resumed. On completion or a timeout, return the ECU to sensor streaming. If the route is paused during a read, cancel it and enqueue the sensor context synchronously while that transport is still ready. A connection loss drops the partial maps and never schedules a context change from the canceled read. The next connection starts with new collectors.
 
 ## The firmware grid takes precedence over the barometric limit
 

@@ -29,7 +29,6 @@ internal fun ErrorsRoute(
     entry: NavBackStackEntry,
     activity: MainActivity,
     onNavigateUp: () -> Unit,
-    onOpenLtft: () -> Unit,
 ) {
     val viewModel: ErrorsViewModel = viewModel(
         viewModelStoreOwner = entry,
@@ -60,7 +59,6 @@ internal fun ErrorsRoute(
             connectionState = connection,
             snapshot = snapshot,
             onBackClick = onNavigateUp,
-            onOpenLtft = onOpenLtft,
             onClearClick = { viewModel.requestConfirmation(ErrorsConfirmation.Clear) },
             onLiveChange = viewModel::setLiveEnabled,
             onHoldChange = viewModel::setHoldActiveErrors,

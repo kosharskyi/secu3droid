@@ -50,8 +50,9 @@ internal fun ParameterPageContent(
     isActive: Boolean,
     isActiveNow: () -> Boolean,
     onEdit: (ParameterEditRequest) -> Unit,
+    onOpenLtftMaps: (() -> Unit)? = null,
 ) {
-    if (viewModel.failedPage == page) {
+    if (viewModel.failedPage == page && page != ParameterPage.LTFT) {
         ParameterReadError(onRetry = { viewModel.refreshPage(page) })
         return
     }
@@ -318,7 +319,12 @@ internal fun ParameterPageContent(
                         viewModel.editLtftFloat(number, it)
                     }
                 }
-            }, viewModel::selectLtftMode)
+            }, viewModel::selectLtftMode,
+                onOpenMaps = onOpenLtftMaps,
+                mapsEnabled = isActive && (values != null || viewModel.failedPage == ParameterPage.LTFT),
+                readFailed = viewModel.failedPage == ParameterPage.LTFT,
+                onRetry = { viewModel.refreshPage(ParameterPage.LTFT) },
+            )
         }
         ParameterPage.EL_THROTTLE -> {
             val values by viewModel.dbwControl.values.collectAsStateWithLifecycle()

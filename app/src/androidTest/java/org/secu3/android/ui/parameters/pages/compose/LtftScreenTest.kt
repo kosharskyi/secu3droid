@@ -25,6 +25,7 @@
 package org.secu3.android.ui.parameters.pages.compose
 
 import androidx.compose.ui.test.assertIsDisplayed
+import androidx.compose.ui.test.assertIsNotEnabled
 import androidx.compose.ui.test.assertTextEquals
 import androidx.compose.ui.test.assertCountEquals
 import androidx.compose.ui.test.junit4.v2.createAndroidComposeRule
@@ -45,14 +46,19 @@ class LtftScreenTest {
 
     @Test fun loadingAndDataArePassiveUntilTheUserEditsOrSelects() {
         var edits = 0
+        var mapOpens = 0
         val selections = mutableListOf<Int>()
         val state = mutableStateOf<LtftValues?>(null)
         compose.setContent {
             SecuComposeTheme {
-                LtftScreen(state.value, { edits++ }, { selections += it })
+                LtftScreen(
+                    state.value, { edits++ }, { selections += it },
+                    onOpenMaps = { mapOpens++ },
+                )
             }
         }
         compose.onNodeWithTag("ltft_loading").assertIsDisplayed()
+        compose.onNodeWithTag("ltft-open-maps").assertIsNotEnabled()
         compose.runOnIdle { state.value = LtftValues(8, 5f, 5f, 5f, 5f, 5f, 5f, -5f, 5f, 5, 5, 5f, 5f, 5f, 5f) }
         compose.onNodeWithTag("ltft_mode_value", useUnmergedTree = true).assertTextEquals("Unknown (8)")
         compose.onNodeWithTag("ltft_lower_clt").assertIsDisplayed()
@@ -60,13 +66,16 @@ class LtftScreenTest {
         compose.onNodeWithTag("ltft_positive_insensitivity").performScrollTo().assertIsDisplayed()
         compose.runOnIdle {
             assertEquals(0, edits)
+            assertEquals(0, mapOpens)
             assertEquals(emptyList<Int>(), selections)
         }
+        compose.onNodeWithTag("ltft-open-maps").performScrollTo().assertIsDisplayed().performClick()
         compose.onNodeWithTag("ltft_lower_clt").performScrollTo().performClick()
         compose.onNodeWithTag("ltft_mode").performScrollTo().performClick()
         compose.onNodeWithTag("ltft_mode_option_3").performClick()
         compose.runOnIdle {
             assertEquals(1, edits)
+            assertEquals(1, mapOpens)
             assertEquals(listOf(3), selections)
         }
     }

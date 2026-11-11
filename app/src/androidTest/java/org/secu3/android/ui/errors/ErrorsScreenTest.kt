@@ -265,7 +265,6 @@ class ErrorsScreenTest {
                 connectionState = connection,
                 snapshot = snapshot,
                 onBackClick = {},
-                onOpenLtft = {},
                 onClearClick = onClear,
                 onLiveChange = onLive,
                 onHoldChange = onHold,
