@@ -86,6 +86,55 @@ Do not put display-state ownership into a connection manager: no latest-packet c
   - What could not be verified and why.
   - Any remaining risks, doubts, or unresolved issues; explicitly state when there are none.
 
+## Engineering Principles
+
+1. Prefer the simplest solution that fully satisfies the requirements.
+2. Follow existing project conventions before introducing new patterns.
+3. Do not introduce abstractions for a single implementation without a concrete need.
+4. Do not design for hypothetical future requirements.
+5. Avoid unnecessary interfaces, wrappers, factories, managers, and configuration layers.
+6. Minimize the number of files, dependencies, and architectural layers affected.
+7. Do not refactor unrelated code.
+8. Every new abstraction must solve a demonstrated problem.
+9. Prefer deleting unnecessary code over adding more code.
+10. When two solutions are equally correct, choose the one with lower maintenance complexity.
+
+Before implementing, ask:
+- Can this be solved by modifying existing code?
+- Is each new abstraction necessary today?
+- Am I solving a real requirement or an imagined future problem?
+
+
+## Simplicity Review
+
+After completing a non-trivial implementation,
+delegate a review to `simplicity_reviewer`.
+
+Provide:
+- Original task requirements.
+- Approved implementation plan, if available.
+- Implementation diff.
+- Relevant architectural context.
+
+The reviewer must independently assess whether
+the implementation introduces unnecessary complexity.
+
+Do not invoke the reviewer for trivial changes
+unless explicitly requested.
+
+Handle findings as follows:
+- BLOCKER: Address before completing the task.
+- WARNING: Address when the simplification is
+  clearly beneficial and low-risk.
+- SUGGESTION: Optional; do not automatically implement.
+
+After addressing BLOCKER findings, allow one
+additional review pass.
+
+Do not enter an indefinite review/fix cycle.
+Do not expand scope to satisfy reviewer preferences.
+
+
 ## Project knowledge
 
 Technical deep-dive notes go in `knowledge/`, organized to mirror the package structure (e.g. `knowledge/ui/<screen>/<component>.md`, `knowledge/domain/<area>/...`).
