@@ -15,11 +15,16 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.WindowInsets
+import androidx.compose.foundation.layout.WindowInsetsSides
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.heightIn
+import androidx.compose.foundation.layout.only
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.safeDrawing
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.windowInsetsPadding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.rememberScrollState
@@ -31,6 +36,7 @@ import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material.icons.outlined.Info
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
+import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Checkbox
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Icon
@@ -50,7 +56,6 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.integerArrayResource
-import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringArrayResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.Role
@@ -92,6 +97,7 @@ internal fun ErrorsContent(
     val activeMask = snapshot.activeMask.takeIf { connected }
     val savedMask = snapshot.savedMask.takeIf { connected }
     val draft = snapshot.draftMask.takeIf { connected }
+    val showClear = savedMask != null && savedMask != 0
     val reportedMask = (activeMask ?: 0) or (savedMask ?: 0)
     val hasUnknownErrors = reportedMask ushr titles.size != 0
     val showEmpty = reportedMask == 0 && (activeMask != null || savedMask != null)
@@ -117,16 +123,6 @@ internal fun ErrorsContent(
                 showStatus = true,
                 onNavigateUp = onBackClick,
                 actions = {
-                    IconButton(
-                        modifier = Modifier.testTag("errors-clear-button"),
-                        enabled = connected && snapshot.canClearErrors,
-                        onClick = onClearClick,
-                    ) {
-                        Icon(
-                            painter = painterResource(R.drawable.ic_delete_outline_24),
-                            contentDescription = stringResource(R.string.clear_all_errors),
-                        )
-                    }
                     IconButton(onClick = { showSettings = true }) {
                         Icon(Icons.Default.Settings, contentDescription = stringResource(R.string.errors_settings))
                     }
@@ -215,15 +211,32 @@ internal fun ErrorsContent(
                     )
                 }
             }
-            if (draft != null) {
-                Surface(color = MaterialTheme.colorScheme.surface) {
-                    FlowRow(
-                        modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 8.dp),
-                        horizontalArrangement = Arrangement.End,
-                    ) {
+            Surface(color = MaterialTheme.colorScheme.surface) {
+                FlowRow(
+                    modifier = Modifier.fillMaxWidth()
+                        .windowInsetsPadding(
+                            WindowInsets.safeDrawing.only(WindowInsetsSides.Bottom + WindowInsetsSides.Horizontal),
+                        )
+                        .padding(horizontal = 16.dp, vertical = if (draft != null || showClear) 8.dp else 0.dp),
+                    horizontalArrangement = if (draft != null) Arrangement.End else Arrangement.Center,
+                ) {
+                    if (draft != null) {
                         TextButton(onClick = onDiscardDraft) { Text(stringResource(android.R.string.cancel)) }
                         Button(onClick = onWriteDraft, enabled = snapshot.canWriteDraft) {
                             Text(stringResource(R.string.errors_write_saved))
+                        }
+                    } else if (showClear) {
+                        TextButton(
+                            modifier = Modifier.testTag("errors-clear-button"),
+                            enabled = snapshot.canClearErrors,
+                            onClick = onClearClick,
+                            colors = ButtonDefaults.textButtonColors(contentColor = MaterialTheme.colorScheme.error),
+                        ) {
+                            Text(
+                                text = stringResource(R.string.clear_all_errors),
+                                style = MaterialTheme.typography.titleMedium,
+                                textAlign = TextAlign.Center,
+                            )
                         }
                     }
                 }

@@ -18,6 +18,7 @@ import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.performScrollToNode
 import androidx.test.platform.app.InstrumentationRegistry
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertTrue
 import org.junit.Rule
 import org.junit.Test
 import org.secu3.android.R
@@ -67,7 +68,7 @@ class ErrorsScreenTest {
 
         text(R.string.errors_saved_read_timeout).assertIsDisplayed()
         text(R.string.errors_read_saved).performClick()
-        composeTestRule.onNodeWithTag("errors-clear-button").assertIsNotEnabled()
+        composeTestRule.onNodeWithTag("errors-clear-button").assertDoesNotExist()
         scrollToError(0)
         composeTestRule.onNodeWithTag("error-active:0", useUnmergedTree = true).assertIsDisplayed()
         composeTestRule.onNodeWithTag("error-saved:0", useUnmergedTree = true).assertDoesNotExist()
@@ -82,6 +83,7 @@ class ErrorsScreenTest {
 
         text(R.string.errors_active_loading).assertIsDisplayed()
         text(R.string.errors_edit_saved).assertIsNotEnabled()
+        composeTestRule.onNodeWithTag("errors-clear-button").assertDoesNotExist()
         val message = text(R.string.errors_no_reported).assertIsDisplayed().fetchSemanticsNode().boundsInRoot
         val list = composeTestRule.onNodeWithTag("errors-list").fetchSemanticsNode().boundsInRoot
         assertEquals(list.center.x, message.center.x, 1f)
@@ -142,6 +144,8 @@ class ErrorsScreenTest {
         }
 
         text(R.string.errors_edit_saved).performClick()
+        composeTestRule.onNodeWithTag("errors-clear-button").assertDoesNotExist()
+        text(android.R.string.cancel).assertIsDisplayed()
         text(R.string.errors_write_saved).assertIsNotEnabled()
         scrollToError(1)
         composeTestRule.onNodeWithTag("error-draft:1").assertDoesNotExist()
@@ -177,28 +181,44 @@ class ErrorsScreenTest {
 
     @Test
     fun clearingHistoryRequiresItsOwnConfirmation() {
+        var snapshot by mutableStateOf(ErrorsSnapshot(savedMask = 1))
         var confirmation by mutableStateOf<ErrorsConfirmation?>(null)
         var clears = 0
         composeTestRule.setContent {
             Content(
-                ErrorsSnapshot(savedMask = 1),
+                snapshot,
                 onClear = { confirmation = ErrorsConfirmation.Clear },
             )
-            ErrorsConfirmationDialog(confirmation, { clears++; confirmation = null }, { confirmation = null })
+            ErrorsConfirmationDialog(
+                confirmation = confirmation,
+                onConfirm = {
+                    clears++
+                    confirmation = null
+                    snapshot = snapshot.copy(savedMask = 0)
+                },
+                onDismiss = { confirmation = null },
+            )
         }
 
-        composeTestRule.onNodeWithTag("errors-clear-button").performClick()
+        val clear = composeTestRule.onNodeWithTag("errors-clear-button")
+        text(R.string.clear_all_errors).assertIsDisplayed()
+        val listBounds = composeTestRule.onNodeWithTag("errors-list").fetchSemanticsNode().boundsInRoot
+        val clearBounds = clear.fetchSemanticsNode().boundsInRoot
+        assertTrue(clearBounds.top >= listBounds.bottom)
+        assertEquals(listBounds.center.x, clearBounds.center.x, 1f)
+        clear.performClick()
         text(R.string.dialog_confirm_clear_errors_message).assertIsDisplayed()
         composeTestRule.runOnIdle { assertEquals(0, clears) }
         composeTestRule.onNodeWithText(context.getString(android.R.string.cancel)).performClick()
         composeTestRule.runOnIdle { assertEquals(0, clears) }
-        composeTestRule.onNodeWithTag("errors-clear-button").performClick()
+        clear.performClick()
         composeTestRule.onNodeWithText(context.getString(android.R.string.ok)).performClick()
         composeTestRule.runOnIdle { assertEquals(1, clears) }
+        clear.assertDoesNotExist()
     }
 
     @Test
-    fun disconnectHidesCurrentDataAndDisablesClear() {
+    fun disconnectHidesErrorsAndClearButton() {
         var connection: ConnectionState by mutableStateOf(Connected)
         composeTestRule.setContent {
             Content(ErrorsSnapshot(activeMask = 1, savedMask = 1), connection)
@@ -208,7 +228,7 @@ class ErrorsScreenTest {
         scrollToError(0)
         composeTestRule.runOnIdle { connection = Disconnected }
         composeTestRule.onNodeWithTag("error-card:0").assertDoesNotExist()
-        composeTestRule.onNodeWithTag("errors-clear-button").assertIsNotEnabled()
+        composeTestRule.onNodeWithTag("errors-clear-button").assertDoesNotExist()
     }
 
     @Test
