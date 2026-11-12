@@ -672,7 +672,7 @@
     <string name="errors_unknown_flags">The ECU reported errors outside this catalog.</string>
     <string name="errors_no_reported">No errors in the data received.</string>
     <string name="errors_help">Help with ECU errors</string>
-    <string name="errors_help_text">Live errors reflect what the ECU is reporting now. Enable the brief-error option in settings to keep a fault visible for up to 500 ms after it stops being reported.\n\nSaved errors are the history stored in ECU memory. Refresh to read it again, remove individual entries, or clear the history. An active fault can be saved again until its cause is resolved.\n\nBC is the blink code used by the Check Engine lamp.</string>
+    <string name="errors_help_text">Live errors reflect what the ECU is reporting now. Enable the brief-error option in settings to keep a fault visible for up to 500 ms after it stops being reported.\n\nSaved errors are the history stored in ECU memory. Refresh to read it again, remove individual entries, or clear the history. An active fault can be saved again until its cause is resolved.\n\nAt power-on, a closed DE jumper (DE_I connected to ground on SECU-3i) triggers an emergency EEPROM reset. This loads the reserve parameters from the firmware, restores the EEPROM map set from the first firmware set where supported, clears saved errors, and zeroes both LTFT tables where supported.\n\nBC is the blink code used by the Check Engine lamp.</string>
     <string name="close">Close</string>
     <string name="firmware_information_title">Firmware Information</string>
     <string name="firmware_enabled_capabilities">ENABLED CAPABILITIES</string>
