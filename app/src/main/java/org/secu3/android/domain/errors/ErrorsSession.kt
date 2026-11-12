@@ -49,7 +49,6 @@ data class ErrorsSnapshot(
     val activeReadStatus: ErrorsReadStatus = ErrorsReadStatus.Idle,
     val savedReadStatus: ErrorsReadStatus = ErrorsReadStatus.Idle,
     val writeStatus: ErrorsWriteStatus = ErrorsWriteStatus.Idle,
-    val liveEnabled: Boolean = true,
     val holdActiveErrors: Boolean = false,
     val autoReadSavedErrors: Boolean? = null,
 ) {
@@ -60,15 +59,18 @@ data class ErrorsSnapshot(
         get() = savedReadStatus != ErrorsReadStatus.Reading && draftMask == null && writeStatus != ErrorsWriteStatus.Writing
 
     val canEditSaved: Boolean
-        get() = savedMask != null && savedReadStatus == ErrorsReadStatus.Idle && draftMask == null &&
-            canWriteSavedMask
+        get() {
+            val knownErrorsMask = (1 shl ErrorsSession.ERROR_COUNT) - 1
+            return canClearErrors && ((savedMask ?: 0) and knownErrorsMask) != 0
+        }
 
     val canWriteDraft: Boolean
         get() = draftMask != null && draftMask != savedMask && savedMask != null &&
             savedReadStatus == ErrorsReadStatus.Idle && canWriteSavedMask
 
     val canClearErrors: Boolean
-        get() = canEditSaved
+        get() = savedMask != null && savedReadStatus == ErrorsReadStatus.Idle && draftMask == null &&
+            canWriteSavedMask
 }
 
 /** Owns live and EEPROM error reads, editable saved masks, and ECU write transactions. */
@@ -79,7 +81,6 @@ class ErrorsSession internal constructor(
     private val savedReadSettings: Flow<Boolean>,
     private val sendSavedRead: () -> Unit,
     private val sendActiveRead: () -> Unit,
-    private val sendSensorsMode: () -> Unit,
     private val writeSavedErrors: (Int) -> Unit,
     private val ackTimeoutMillis: Long = 10_000,
     private val readbackTimeoutMillis: Long = 10_000,
@@ -99,7 +100,6 @@ class ErrorsSession internal constructor(
         }.map { it.autoReadSavedErrors },
         sendSavedRead = { connectionManager.sendNewTask(Task.Secu3ReadEcuSavedErrors) },
         sendActiveRead = { connectionManager.sendNewTask(Task.Secu3ReadEcuErrors) },
-        sendSensorsMode = { connectionManager.sendNewTask(Task.Secu3ReadSensors) },
         writeSavedErrors = { mask -> connectionManager.sendOutPacket(CheckEngineSavedErrorsPacket(mask)) },
     )
 
@@ -112,7 +112,6 @@ class ErrorsSession internal constructor(
     private var generation = 0L
     private var activeGeneration = 0L
     private var lastAutoReadSetting: Boolean? = null
-    private var liveEnabled = true
     private var holdActiveErrors = false
     private var holdSettingsGeneration = 0L
     private var sessionScope: CoroutineScope? = null
@@ -139,7 +138,6 @@ class ErrorsSession internal constructor(
         if (closed || resumed) return
         resumed = true
         _snapshot.value = ErrorsSnapshot(
-            liveEnabled = liveEnabled,
             holdActiveErrors = holdActiveErrors,
             autoReadSavedErrors = lastAutoReadSetting,
         )
@@ -150,22 +148,6 @@ class ErrorsSession internal constructor(
         if (!resumed && activeJob == null && savedJob == null && writeJob == null) return
         resumed = false
         stopSession()
-    }
-
-    fun setLiveEnabled(enabled: Boolean) {
-        if (!connected || !resumed || closed || _snapshot.value.liveEnabled == enabled) return
-        liveEnabled = enabled
-        _snapshot.value = _snapshot.value.copy(
-            activeMask = null,
-            activeReadStatus = if (enabled) ErrorsReadStatus.Reading else ErrorsReadStatus.Idle,
-            liveEnabled = enabled,
-        )
-        stopActiveRead()
-        if (enabled) {
-            startActiveRead(generation)
-        } else {
-            sendSensorsMode()
-        }
     }
 
     fun setHoldActiveErrors(enabled: Boolean) {
@@ -188,7 +170,7 @@ class ErrorsSession internal constructor(
     }
 
     fun retryActiveRead() {
-        if (!connected || !resumed || closed || !_snapshot.value.liveEnabled ||
+        if (!connected || !resumed || closed ||
             _snapshot.value.activeReadStatus != ErrorsReadStatus.Timeout
         ) return
         _snapshot.value = _snapshot.value.copy(activeReadStatus = ErrorsReadStatus.Reading)
@@ -203,12 +185,11 @@ class ErrorsSession internal constructor(
 
     fun setDraftError(bit: Int, selected: Boolean) {
         if (bit !in 0 until ERROR_COUNT) return
-        updateDraft { draft -> if (selected) draft or (1 shl bit) else draft and (1 shl bit).inv() }
-    }
-
-    fun setAllDraftErrors(selected: Boolean) {
-        val knownErrorsMask = ((1L shl ERROR_COUNT) - 1L).toInt()
-        updateDraft { draft -> if (selected) draft or knownErrorsMask else draft and knownErrorsMask.inv() }
+        val snapshot = _snapshot.value
+        val draft = snapshot.draftMask ?: return
+        val bitMask = 1 shl bit
+        if (writeJob != null || ((snapshot.savedMask ?: 0) and bitMask) == 0) return
+        _snapshot.value = snapshot.copy(draftMask = if (selected) draft or bitMask else draft and bitMask.inv())
     }
 
     fun discardDraft() {
@@ -265,7 +246,7 @@ class ErrorsSession internal constructor(
     private fun startSessionIfEligible() {
         if (sessionScope == null) return
         if (!connected || !resumed || closed) return
-        if (_snapshot.value.liveEnabled && activeJob == null) {
+        if (activeJob == null) {
             _snapshot.value = _snapshot.value.copy(activeReadStatus = ErrorsReadStatus.Reading)
             startActiveRead(generation)
         }
@@ -275,7 +256,7 @@ class ErrorsSession internal constructor(
     }
 
     private fun startActiveRead(session: Long) {
-        if (activeJob != null || !isCurrent(session) || !_snapshot.value.liveEnabled) return
+        if (activeJob != null || !isCurrent(session)) return
         val activeSession = ++activeGeneration
         val operation = sessionScope?.launch(start = CoroutineStart.LAZY) {
             try {
@@ -462,11 +443,6 @@ class ErrorsSession internal constructor(
         if (isCurrent(session)) _snapshot.value = _snapshot.value.copy(writeStatus = status)
     }
 
-    private fun updateDraft(transform: (Int) -> Int) {
-        if (_snapshot.value.draftMask == null || writeJob != null) return
-        _snapshot.value = _snapshot.value.copy(draftMask = transform(requireNotNull(_snapshot.value.draftMask)))
-    }
-
     private fun stopActiveRead() {
         activeGeneration++
         activeJob?.cancel()
@@ -486,7 +462,6 @@ class ErrorsSession internal constructor(
         writeJob?.cancel()
         writeJob = null
         _snapshot.value = ErrorsSnapshot(
-            liveEnabled = liveEnabled,
             holdActiveErrors = holdActiveErrors,
             autoReadSavedErrors = lastAutoReadSetting,
         )
@@ -495,7 +470,7 @@ class ErrorsSession internal constructor(
     private fun isCurrent(session: Long): Boolean = !closed && connected && resumed && generation == session
 
     private fun isActiveCurrent(session: Long, activeSession: Long): Boolean =
-        isCurrent(session) && activeGeneration == activeSession && _snapshot.value.liveEnabled
+        isCurrent(session) && activeGeneration == activeSession
 
     companion object {
         const val ERROR_COUNT = 26

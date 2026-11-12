@@ -656,22 +656,15 @@
     <string name="error_state_active">• Active</string>
     <string name="error_state_saved">• Saved</string>
     <string name="errors_blink_code" translatable="false">BC %1$02d</string>
-    <string name="errors_live_mode">Live errors</string>
     <string name="errors_hold_active">Keep brief errors visible</string>
     <string name="errors_auto_read_saved">Read saved errors on opening</string>
     <string name="errors_settings">Error display settings</string>
     <string name="errors_active_loading">Reading active errors…</string>
     <string name="errors_saved_loading">Reading saved errors…</string>
-    <string name="errors_active_count">Active: %1$d</string>
-    <string name="errors_saved_count">Saved in ECU memory: %1$d</string>
     <string name="errors_read_saved">Refresh saved errors</string>
     <string name="errors_edit_saved">Edit saved errors</string>
-    <string name="errors_select_all">Select all</string>
-    <string name="errors_deselect_all">Deselect all</string>
-    <string name="errors_show_all">Show all codes</string>
-    <string name="errors_show_reported">Show reported errors</string>
     <string name="errors_write_saved">Save changes to ECU</string>
-    <string name="errors_confirm_write">Write the selected changes to the saved error history? Active faults may be recorded again.</string>
+    <string name="errors_confirm_write">Remove the unchecked entries from the ECU error history? Active faults may be recorded again.</string>
     <string name="errors_write_busy">Updating saved ECU errors…</string>
     <string name="errors_write_success">ECU confirmed the write. The saved list is up to date.</string>
     <string name="errors_write_ack_timeout">ECU did not confirm the write. Refresh saved errors to check the result.</string>
@@ -679,7 +672,7 @@
     <string name="errors_unknown_flags">The ECU reported errors outside this catalog.</string>
     <string name="errors_no_reported">No errors in the data received.</string>
     <string name="errors_help">Help with ECU errors</string>
-    <string name="errors_help_text">Live errors reflect what the ECU is reporting now. Enable the brief-error option in settings to keep a fault visible for up to 500 ms after it stops being reported.\n\nSaved errors are the history stored in ECU memory. Refresh to read it again, edit individual entries, or clear the history. An active fault can be saved again until its cause is resolved.\n\nBC is the blink code used by the Check Engine lamp.</string>
+    <string name="errors_help_text">Live errors reflect what the ECU is reporting now. Enable the brief-error option in settings to keep a fault visible for up to 500 ms after it stops being reported.\n\nSaved errors are the history stored in ECU memory. Refresh to read it again, remove individual entries, or clear the history. An active fault can be saved again until its cause is resolved.\n\nBC is the blink code used by the Check Engine lamp.</string>
     <string name="close">Close</string>
     <string name="firmware_information_title">Firmware Information</string>
     <string name="firmware_enabled_capabilities">ENABLED CAPABILITIES</string>

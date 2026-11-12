@@ -1,14 +1,14 @@
 ## Live and EEPROM reads are independent
 
-The active `v` stream starts as soon as the route is resumed, regardless of the auto-read preference or the EEPROM `x` response. The saved-errors preference is read asynchronously, and a stored `false` suppresses only the automatic EEPROM read. The preference controls the next route session, so toggling it while this screen is open does not unexpectedly send a read command.
+The active `v` stream starts whenever the route is resumed and the ECU is connected, regardless of the auto-read preference or the EEPROM `x` response. The saved-errors preference is read asynchronously, and a stored `false` suppresses only the automatic EEPROM read. The preference controls the next route session, so toggling it while this screen is open does not unexpectedly send a read command.
 
-## Live mode and its display hold last for the route ViewModel
+## The display hold setting lasts for the route ViewModel
 
-Pausing the route or reconnecting clears packet masks, drafts, timers, and write state, while preserving the selected live mode and short-error hold setting for the next active session. Disabling live mode cancels its packet collector, clears its mask, and selects the normal sensors mode. Firmware-info recovery selects `v` only when live mode remains enabled.
+Pausing the route or reconnecting clears packet masks, drafts, timers, and write state, while preserving the short-error hold setting for the next active session. Firmware-info recovery reselects `v` while the route is resumed and connected.
 
-## Editing saved errors preserves unknown ECU bits
+## Individual removals only affect known bits already saved by the ECU
 
-Only the known 26 bits can be changed through row controls. Select-all and deselect-all affect those bits and retain any other set bits from the EEPROM mask. A write requires a fresh saved mask, an actual draft change, a matching opcode-2/data-0 acknowledgement, and a subsequent `x` response.
+A draft can remove and restore known bits from the latest EEPROM read. Live errors cannot add bits to the draft, including during the short-error hold. Unknown saved bits can be removed only by clearing the entire history. A write requires a fresh saved mask, an actual draft change for individual removals, a matching opcode-2/data-0 acknowledgement, and a subsequent `x` response.
 
 ## Uncertain writes require a fresh read before another write
 

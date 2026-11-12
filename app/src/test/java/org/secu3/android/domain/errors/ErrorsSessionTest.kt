@@ -94,79 +94,69 @@ class ErrorsSessionTest {
     }
 
     @Test
-    fun liveToggleSelectsSensorsModeAndClearsLiveState() = runBlocking {
+    fun liveReadingRestartsAfterPauseAndReconnectAndRetainsHoldSetting() = runBlocking {
         val fixture = Fixture(this, autoReadSaved = false)
         fixture.startConnected()
         fixture.awaitCommands(listOf("active"))
+        fixture.session.setHoldActiveErrors(true)
         fixture.packets.emit(CheckEngineErrorsPacket(errors = 0x20))
         fixture.awaitSnapshot { it.activeMask == 0x20 }
 
-        fixture.session.setLiveEnabled(false)
-        fixture.awaitCommands(listOf("active", "sensors"))
-        assertFalse(fixture.session.snapshot.value.liveEnabled)
+        fixture.session.onRoutePaused()
+        fixture.awaitSubscriptions(0)
         assertNull(fixture.session.snapshot.value.activeMask)
-        fixture.packets.emit(FirmwareInfoPacket(tag = "late"))
-        assertEquals(listOf("active", "sensors"), fixture.commands)
-
-        fixture.session.setLiveEnabled(true)
-        fixture.awaitCommands(listOf("active", "sensors", "active"))
+        fixture.session.onRouteResumed()
+        fixture.awaitCommands(listOf("active", "active"))
+        assertTrue(fixture.session.snapshot.value.holdActiveErrors)
         fixture.packets.emit(CheckEngineErrorsPacket(errors = 0x40))
         fixture.awaitSnapshot { it.activeMask == 0x40 }
-        fixture.close()
-    }
-
-    @Test
-    fun liveAndHoldPreferencesSurviveRoutePauseAndReconnect() = runBlocking {
-        val fixture = Fixture(this, autoReadSaved = false)
-        fixture.startConnected()
-        fixture.awaitCommands(listOf("active"))
-        fixture.session.setLiveEnabled(false)
-        fixture.awaitCommands(listOf("active", "sensors"))
-        fixture.session.setHoldActiveErrors(true)
-        fixture.session.onRoutePaused()
-        fixture.session.onRouteResumed()
-        assertFalse(fixture.session.snapshot.value.liveEnabled)
-        assertTrue(fixture.session.snapshot.value.holdActiveErrors)
 
         fixture.emitState(ConnectionAttempt(1))
+        fixture.awaitSubscriptions(0)
+        assertNull(fixture.session.snapshot.value.activeMask)
         fixture.emitState(Connected)
-        assertEquals(listOf("active", "sensors"), fixture.commands)
-        assertFalse(fixture.session.snapshot.value.liveEnabled)
+        fixture.awaitCommands(listOf("active", "active", "active"))
         assertTrue(fixture.session.snapshot.value.holdActiveErrors)
         fixture.close()
     }
 
     @Test
-    fun firmwareInformationReassertsLiveModeOnlyWhileLiveIsEnabled() = runBlocking {
+    fun firmwareInformationReassertsLiveModeWhileTheRouteIsResumed() = runBlocking {
         val fixture = Fixture(this, autoReadSaved = false)
         fixture.startConnected()
         fixture.awaitCommands(listOf("active"))
         fixture.packets.emit(FirmwareInfoPacket(tag = "startup"))
         fixture.awaitCommands(listOf("active", "active"))
-        fixture.session.setLiveEnabled(false)
-        fixture.awaitCommands(listOf("active", "active", "sensors"))
+        fixture.session.onRoutePaused()
+        fixture.awaitSubscriptions(0)
         fixture.packets.emit(FirmwareInfoPacket(tag = "later"))
-        assertEquals(listOf("active", "active", "sensors"), fixture.commands)
+        assertEquals(listOf("active", "active"), fixture.commands)
         fixture.close()
     }
 
     @Test
-    fun savedErrorDraftPreservesUnknownBitsAndWritesOnlyAfterUserRequest() = runBlocking {
+    fun savedErrorDraftOnlyRemovesKnownSavedBitsAndWritesOnlyAfterUserRequest() = runBlocking {
         val unknownBit = 1 shl 30
         val fixture = Fixture(this)
         fixture.startConnected()
         fixture.awaitCommands(listOf("active", "saved"))
         fixture.packets.emit(CheckEngineSavedErrorsPacket(errors = unknownBit or 0x3))
-        fixture.awaitSnapshot { it.savedMask == (unknownBit or 0x3) }
-        assertEquals(false, fixture.session.snapshot.value.canWriteDraft)
+        fixture.packets.emit(CheckEngineErrorsPacket(errors = 0x4))
+        fixture.awaitSnapshot { it.savedMask == (unknownBit or 0x3) && it.activeMask == 0x4 }
 
         fixture.session.beginEditing()
+        fixture.session.setDraftError(2, true)
+        fixture.session.setDraftError(3, true)
+        fixture.session.setDraftError(30, false)
+        assertEquals(unknownBit or 0x3, fixture.session.snapshot.value.draftMask)
+        assertFalse(fixture.session.snapshot.value.canWriteDraft)
         fixture.session.setDraftError(1, false)
         assertEquals(unknownBit or 0x1, fixture.session.snapshot.value.draftMask)
         assertTrue(fixture.session.snapshot.value.canWriteDraft)
-        fixture.session.setAllDraftErrors(false)
-        assertEquals(unknownBit, fixture.session.snapshot.value.draftMask)
-        fixture.session.setDraftError(ErrorsSession.ERROR_COUNT, true)
+        fixture.session.setDraftError(1, true)
+        assertFalse(fixture.session.snapshot.value.canWriteDraft)
+        fixture.session.setDraftError(0, false)
+        fixture.session.setDraftError(1, false)
         assertEquals(unknownBit, fixture.session.snapshot.value.draftMask)
         assertFalse(fixture.session.snapshot.value.canReadSaved)
         assertEquals(listOf("active", "saved"), fixture.commands)
@@ -178,6 +168,8 @@ class ErrorsSessionTest {
         fixture.awaitCommands(listOf("active", "saved", "write:${unknownBit}", "saved"))
         fixture.packets.emit(CheckEngineSavedErrorsPacket(errors = unknownBit))
         fixture.awaitSnapshot { it.writeStatus == ErrorsWriteStatus.Succeeded && it.savedMask == unknownBit }
+        assertFalse(fixture.session.snapshot.value.canEditSaved)
+        assertTrue(fixture.session.snapshot.value.canClearErrors)
         fixture.close()
     }
 
@@ -358,7 +350,6 @@ class ErrorsSessionTest {
             savedReadSettings = autoRead,
             sendSavedRead = { commands += "saved"; onSavedRead?.invoke() },
             sendActiveRead = { commands += "active" },
-            sendSensorsMode = { commands += "sensors" },
             writeSavedErrors = { mask -> commands += "write:$mask" },
             ackTimeoutMillis = ackTimeoutMillis,
             readbackTimeoutMillis = readbackTimeoutMillis,

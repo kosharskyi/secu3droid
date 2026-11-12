@@ -9,7 +9,6 @@ import androidx.compose.ui.test.assertIsEnabled
 import androidx.compose.ui.test.assertIsNotEnabled
 import androidx.compose.ui.test.assertIsOff
 import androidx.compose.ui.test.assertIsOn
-import androidx.compose.ui.test.assertIsSelected
 import androidx.compose.ui.test.hasTestTag
 import androidx.compose.ui.test.junit4.v2.createComposeRule
 import androidx.compose.ui.test.onNodeWithContentDescription
@@ -51,7 +50,7 @@ class ErrorsScreenTest {
         text(R.string.errors_active_read_timeout).assertIsDisplayed()
         text(R.string.retry).performClick()
         scrollToError(0)
-        composeTestRule.onNodeWithTag("error-saved:0", useUnmergedTree = true).assertIsSelected()
+        composeTestRule.onNodeWithTag("error-saved:0", useUnmergedTree = true).assertIsDisplayed()
         composeTestRule.onNodeWithTag("error-active:0", useUnmergedTree = true).assertDoesNotExist()
         composeTestRule.runOnIdle { assertEquals(1, retries) }
     }
@@ -70,7 +69,7 @@ class ErrorsScreenTest {
         text(R.string.errors_read_saved).performClick()
         composeTestRule.onNodeWithTag("errors-clear-button").assertIsNotEnabled()
         scrollToError(0)
-        composeTestRule.onNodeWithTag("error-active:0", useUnmergedTree = true).assertIsSelected()
+        composeTestRule.onNodeWithTag("error-active:0", useUnmergedTree = true).assertIsDisplayed()
         composeTestRule.onNodeWithTag("error-saved:0", useUnmergedTree = true).assertDoesNotExist()
         composeTestRule.runOnIdle { assertEquals(1, refreshes) }
     }
@@ -82,43 +81,49 @@ class ErrorsScreenTest {
         }
 
         text(R.string.errors_active_loading).assertIsDisplayed()
-        composeTestRule.onNodeWithText(context.getString(R.string.errors_saved_count, 0)).assertIsDisplayed()
-        composeTestRule.onNodeWithText(context.getString(R.string.errors_active_count, 0)).assertDoesNotExist()
-        text(R.string.errors_no_reported).assertIsDisplayed()
+        text(R.string.errors_edit_saved).assertIsNotEnabled()
+        val message = text(R.string.errors_no_reported).assertIsDisplayed().fetchSemanticsNode().boundsInRoot
+        val list = composeTestRule.onNodeWithTag("errors-list").fetchSemanticsNode().boundsInRoot
+        assertEquals(list.center.x, message.center.x, 1f)
+        assertEquals(list.center.y, message.center.y, 1f)
     }
 
     @Test
-    fun flagsOutsideTheCatalogAreCountedAndDoNotShowAnEmptyState() {
+    fun flagsOutsideTheCatalogShowAMessageInsteadOfAnEmptyState() {
         composeTestRule.setContent {
             Content(ErrorsSnapshot(savedMask = 1 shl 31))
         }
 
         text(R.string.errors_unknown_flags).assertIsDisplayed()
-        composeTestRule.onNodeWithText(context.getString(R.string.errors_saved_count, 1)).assertIsDisplayed()
         text(R.string.errors_no_reported).assertDoesNotExist()
+        text(R.string.errors_edit_saved).assertIsNotEnabled()
+        composeTestRule.onNodeWithTag("errors-clear-button").assertIsEnabled()
     }
 
     @Test
-    fun showsBothBadgesAndAllowsBrowsingInactiveCodes() {
+    fun showsOnlyReportedErrorsAndTheirApplicableBadges() {
         composeTestRule.setContent {
-            Content(ErrorsSnapshot(activeMask = 1, savedMask = 1))
+            Content(ErrorsSnapshot(activeMask = 0b101, savedMask = 0b011))
         }
 
         scrollToError(0)
         composeTestRule.onNodeWithText(context.getString(R.string.errors_blink_code, 21)).assertIsDisplayed()
-        composeTestRule.onNodeWithTag("error-active:0", useUnmergedTree = true).assertIsSelected()
-        composeTestRule.onNodeWithTag("error-saved:0", useUnmergedTree = true).assertIsSelected()
-        composeTestRule.onNodeWithTag("error-card:1").assertDoesNotExist()
-        text(R.string.errors_show_all).performClick()
-        scrollToError(25)
-        composeTestRule.onNodeWithText(context.getString(R.string.errors_blink_code, 29)).assertIsDisplayed()
+        composeTestRule.onNodeWithTag("error-active:0", useUnmergedTree = true).assertIsDisplayed()
+        composeTestRule.onNodeWithTag("error-saved:0", useUnmergedTree = true).assertIsDisplayed()
+        scrollToError(1)
+        composeTestRule.onNodeWithTag("error-saved:1", useUnmergedTree = true).assertIsDisplayed()
+        composeTestRule.onNodeWithTag("error-active:1", useUnmergedTree = true).assertDoesNotExist()
+        scrollToError(2)
+        composeTestRule.onNodeWithTag("error-active:2", useUnmergedTree = true).assertIsDisplayed()
+        composeTestRule.onNodeWithTag("error-saved:2", useUnmergedTree = true).assertDoesNotExist()
+        composeTestRule.onNodeWithTag("error-card:3").assertDoesNotExist()
         assertEquals(ErrorsSession.ERROR_COUNT, context.resources.getStringArray(R.array.errors_ecu_errors_names).size)
         assertEquals(ErrorsSession.ERROR_COUNT, context.resources.getIntArray(R.array.errors_ecu_blink_codes).size)
     }
 
     @Test
-    fun draftKeepsSavedBadgeAndRequiresConfirmationToWrite() {
-        var snapshot by mutableStateOf(ErrorsSnapshot(savedMask = 1))
+    fun draftOnlyEditsSavedErrorsAndRequiresConfirmationToWrite() {
+        var snapshot by mutableStateOf(ErrorsSnapshot(activeMask = 2, savedMask = 1))
         var confirmation by mutableStateOf<ErrorsConfirmation?>(null)
         var writes = 0
         composeTestRule.setContent {
@@ -126,7 +131,6 @@ class ErrorsScreenTest {
                 Content(
                     snapshot,
                     onEdit = { snapshot = snapshot.copy(draftMask = snapshot.savedMask) },
-                    onSetAll = { selected -> snapshot = snapshot.copy(draftMask = if (selected) (1 shl ErrorsSession.ERROR_COUNT) - 1 else 0) },
                     onDraft = { bit, selected ->
                         assertEquals(0, bit)
                         snapshot = snapshot.copy(draftMask = if (selected) 1 else 0)
@@ -139,12 +143,15 @@ class ErrorsScreenTest {
 
         text(R.string.errors_edit_saved).performClick()
         text(R.string.errors_write_saved).assertIsNotEnabled()
-        text(R.string.errors_select_all).performClick()
-        text(R.string.errors_deselect_all).performClick()
+        scrollToError(1)
+        composeTestRule.onNodeWithTag("error-draft:1").assertDoesNotExist()
+        composeTestRule.onNodeWithTag("error-card:2").assertDoesNotExist()
         scrollToError(0)
         val draft = composeTestRule.onNodeWithTag("error-draft:0")
+        draft.assertIsOn()
+        draft.performClick()
         draft.assertIsOff()
-        composeTestRule.onNodeWithTag("error-saved:0", useUnmergedTree = true).assertIsSelected()
+        composeTestRule.onNodeWithTag("error-saved:0", useUnmergedTree = true).assertIsDisplayed()
         draft.performClick()
         draft.assertIsOn()
         text(R.string.errors_write_saved).assertIsNotEnabled()
@@ -205,25 +212,21 @@ class ErrorsScreenTest {
     }
 
     @Test
-    fun modeAndSettingsControlsForwardIndependentActions() {
-        var live: Boolean? = null
+    fun settingsControlsForwardIndependentActions() {
         var hold: Boolean? = null
         var autoRead: Boolean? = null
         composeTestRule.setContent {
             Content(
                 ErrorsSnapshot(autoReadSavedErrors = true),
-                onLive = { live = it },
                 onHold = { hold = it },
                 onAutoRead = { autoRead = it },
             )
         }
 
-        text(R.string.errors_live_mode).performClick()
         composeTestRule.onNodeWithContentDescription(context.getString(R.string.errors_settings)).performClick()
         text(R.string.errors_hold_active).performClick()
         text(R.string.errors_auto_read_saved).performClick()
         composeTestRule.runOnIdle {
-            assertEquals(false, live)
             assertEquals(true, hold)
             assertEquals(false, autoRead)
         }
@@ -250,13 +253,11 @@ class ErrorsScreenTest {
         snapshot: ErrorsSnapshot,
         connection: ConnectionState = Connected,
         onClear: () -> Unit = {},
-        onLive: (Boolean) -> Unit = {},
         onHold: (Boolean) -> Unit = {},
         onAutoRead: (Boolean) -> Unit = {},
         onRetryActive: () -> Unit = {},
         onReadSaved: () -> Unit = {},
         onEdit: () -> Unit = {},
-        onSetAll: (Boolean) -> Unit = {},
         onDraft: (Int, Boolean) -> Unit = { _, _ -> },
         onWrite: () -> Unit = {},
     ) {
@@ -266,14 +267,12 @@ class ErrorsScreenTest {
                 snapshot = snapshot,
                 onBackClick = {},
                 onClearClick = onClear,
-                onLiveChange = onLive,
                 onHoldChange = onHold,
                 onAutoReadChange = onAutoRead,
                 onReadSaved = onReadSaved,
                 onRetryActive = onRetryActive,
                 onEditSaved = onEdit,
                 onDraftChange = onDraft,
-                onSetAllDraft = onSetAll,
                 onDiscardDraft = {},
                 onWriteDraft = onWrite,
             )

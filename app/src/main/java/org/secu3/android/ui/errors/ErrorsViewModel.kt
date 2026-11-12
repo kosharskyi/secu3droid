@@ -78,13 +78,11 @@ class ErrorsViewModel @Inject constructor(
         session.onRoutePaused()
     }
 
-    fun setLiveEnabled(enabled: Boolean) = session.setLiveEnabled(enabled)
     fun setHoldActiveErrors(enabled: Boolean) = session.setHoldActiveErrors(enabled)
     fun readSavedErrors() = session.readSavedErrors()
     fun retryActiveRead() = session.retryActiveRead()
     fun beginEditing() = session.beginEditing()
     fun setDraftError(bit: Int, selected: Boolean) = session.setDraftError(bit, selected)
-    fun setAllDraftErrors(selected: Boolean) = session.setAllDraftErrors(selected)
     fun discardDraft() = session.discardDraft()
 
     fun setAutoReadSavedErrors(enabled: Boolean) {
