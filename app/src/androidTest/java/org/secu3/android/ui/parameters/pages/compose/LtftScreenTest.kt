@@ -25,7 +25,6 @@
 package org.secu3.android.ui.parameters.pages.compose
 
 import androidx.compose.ui.test.assertIsDisplayed
-import androidx.compose.ui.test.assertIsNotEnabled
 import androidx.compose.ui.test.assertTextEquals
 import androidx.compose.ui.test.assertCountEquals
 import androidx.compose.ui.test.junit4.v2.createAndroidComposeRule
@@ -58,7 +57,7 @@ class LtftScreenTest {
             }
         }
         compose.onNodeWithTag("ltft_loading").assertIsDisplayed()
-        compose.onNodeWithTag("ltft-open-maps").assertIsNotEnabled()
+        compose.onNodeWithTag("ltft-open-maps").assertDoesNotExist()
         compose.runOnIdle { state.value = LtftValues(8, 5f, 5f, 5f, 5f, 5f, 5f, -5f, 5f, 5, 5, 5f, 5f, 5f, 5f) }
         compose.onNodeWithTag("ltft_mode_value", useUnmergedTree = true).assertTextEquals("Unknown (8)")
         compose.onNodeWithTag("ltft_lower_clt").assertIsDisplayed()

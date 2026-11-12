@@ -89,7 +89,7 @@ Desktop enables the full LTFT field group from the firmware FI option, not the s
 
 ## LTFT maps open after the LTFT parameter attempt resolves
 
-The full-screen LTFT maps destination is linked above the LTFT controls. Keep the button disabled while its parameter read is pending; a successful read or timeout enables it. The timeout state keeps the existing retry action alongside the maps entry. Fence navigation with the pager's current-active check so a stale page cannot open maps during a swipe or lifecycle pause.
+Show only the centered loading indicator while the LTFT parameter read is pending. A successful read shows the maps button above the LTFT controls. A timeout also offers the maps entry alongside retry because the maps destination reads its own data. Fence navigation with the pager's current-active check so a stale page cannot open maps during a swipe or lifecycle pause.
 
 ## DBW Home position is receive-only
 

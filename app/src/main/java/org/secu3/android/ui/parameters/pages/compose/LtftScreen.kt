@@ -114,10 +114,7 @@ fun LtftScreen(
             Box(Modifier.weight(1f)) { ParameterReadError(onRetry = onRetry) }
         }
     } else if (values == null) {
-        Column(Modifier.fillMaxSize(), horizontalAlignment = Alignment.CenterHorizontally) {
-            LtftMapsButton(onOpenMaps, enabled = false)
-            Box(Modifier.weight(1f)) { ParameterLoadingIndicator("ltft_loading") }
-        }
+        ParameterLoadingIndicator("ltft_loading")
     } else {
         val modes = stringArrayResource(R.array.ltft_mode_items)
         ParameterPage(scrollState = pageScrollState) {

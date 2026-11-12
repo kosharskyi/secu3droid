@@ -5,7 +5,6 @@ import android.os.Build
 import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.Lifecycle
 import androidx.compose.ui.test.assertIsDisplayed
-import androidx.compose.ui.test.assertIsNotEnabled
 import androidx.compose.ui.test.assertIsSelected
 import androidx.compose.ui.test.onAllNodesWithTag
 import androidx.compose.ui.test.onNodeWithContentDescription
@@ -746,7 +745,8 @@ class ParameterPageSessionCacheTest {
             compose.onNodeWithText(ltftTitle).performScrollTo().performClick()
             compose.onNodeWithText(ltftTitle).assertIsSelected()
             awaitMode('O', 1)
-            mapsButton.assertIsNotEnabled()
+            compose.onNodeWithTag("ltft_loading").assertIsDisplayed()
+            mapsButton.assertDoesNotExist()
             usb.emit(LtftParamPacket(mode = 0, learnClt = 12.5f))
             compose.waitUntil(4_000) { compose.onAllNodesWithTag("ltft_lower_clt").fetchSemanticsNodes().isNotEmpty() }
             mapsButton.performClick()
@@ -761,7 +761,8 @@ class ParameterPageSessionCacheTest {
             assertCurrentRoute(PARAMETERS_ROUTE)
             compose.onNodeWithText(ltftTitle).assertIsSelected()
             awaitMode('O', 2)
-            mapsButton.assertIsNotEnabled()
+            compose.onNodeWithTag("ltft_loading").assertIsDisplayed()
+            mapsButton.assertDoesNotExist()
             assertEquals(listOf('"', 'q', 'O'), recentStreamModes())
 
             compose.waitUntil(15_000) {
