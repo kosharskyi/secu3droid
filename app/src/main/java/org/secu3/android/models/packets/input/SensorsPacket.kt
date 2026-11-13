@@ -28,6 +28,7 @@ import org.secu3.android.models.packets.base.Secu3Packet
 import org.secu3.android.models.packets.base.InputPacket
 import org.secu3.android.utils.getBitValue
 import org.secu3.android.utils.setBitValue
+import kotlin.math.roundToInt
 
 data class SensorsPacket(
     var rpm: Int = 0,
@@ -442,7 +443,8 @@ data class SensorsPacket(
         lambda_mx = data.get2Bytes().times(ADC_DISCRETE)
 
         //AFR value from map
-        afrMap = data.get2Bytes().toFloat().div(AFR_MULTIPLIER)
+        val targetAfr = data.get2Bytes().toFloat() / AFR_MULTIPLIER
+        afrMap = (targetAfr * 10f).roundToInt() / 10f
 
         //Corrected MAT
         tchrg = data.get2Bytes().toShort().toFloat().div(TEMPERATURE_MULTIPLIER).coerceIn(-99.9f, 999.0f)

@@ -13,3 +13,7 @@ Fuel tank level, oil pressure and MAF use signed 16-bit wire counts; negative ra
 ## App-side fuel consumption uses the persisted application calibration
 
 The instantaneous flow frequency is converted to L/h and L/100 km with the user preference for pulses per litre (default 16,000; 1,000–32,000). It is separate from the ECU injector `fffConst` parameter and must not be synchronized to that per-vehicle setting automatically. `RawPacket.parse` supplies the current setting to sensor packets for both shared and request-scoped streams, so sensor presentation and logging see the same calculation.
+
+## Target AFR is rounded to tenths before use by consumers
+
+The Secu3Man decoder rounds the AFR map value to the nearest tenth with ties rounded up (`14.25` becomes `14.3`). Apply this on packet decode so the target, both measured-minus-target readings, and new CSV/S3L records use the same value. AFR1 and AFR2 retain their original wire precision.

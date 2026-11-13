@@ -5,8 +5,33 @@ import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue
 import org.junit.Test
 import org.secu3.android.models.packets.input.SensorsPacket
+import org.secu3.android.models.sensors.GaugeType
 
 class SensorsPacketTest {
+    @Test fun targetAfrRoundsToTenthsBeforeCalculatingBothDifferences() {
+        val measuredAfr1 = 1857 // 14.5078125
+        val measuredAfr2 = 1795 // 14.0234375
+        val targets = listOf(1823 to 14.2f, 1824 to 14.3f, 1825 to 14.3f)
+
+        targets.forEach { (rawTarget, expectedTarget) ->
+            val payload = IntArray(116)
+            payload[62] = measuredAfr1 ushr 8
+            payload[63] = measuredAfr1 and 0xFF
+            payload[93] = measuredAfr2 ushr 8
+            payload[94] = measuredAfr2 and 0xFF
+            payload[99] = rawTarget ushr 8
+            payload[100] = rawTarget and 0xFF
+            val packet = RawPacket(intArrayOf('@'.code, 'q'.code) + payload + intArrayOf(0, 0))
+                .parse(null) as SensorsPacket
+
+            assertEquals(measuredAfr1 / 128f, packet.afr, 0f)
+            assertEquals(measuredAfr2 / 128f, packet.afr2, 0f)
+            assertEquals(expectedTarget, GaugeType.WBO_AFR_TABL.getGaugeItem(packet), 0f)
+            assertEquals(measuredAfr1 / 128f - expectedTarget, GaugeType.AFR_DIFF.getGaugeItem(packet), 0f)
+            assertEquals(measuredAfr2 / 128f - expectedTarget, GaugeType.AFR_DIFF2.getGaugeItem(packet), 0f)
+        }
+    }
+
     @Test fun fuelAndOilTemperaturesUseIndependentSignedQuarterDegreeWords() {
         val goldenTemperatures = listOf(
             0xFFFC to -1f,
