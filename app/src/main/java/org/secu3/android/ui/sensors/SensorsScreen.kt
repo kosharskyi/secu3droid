@@ -132,16 +132,16 @@ internal fun SensorsScreen(
     }
 
     BoxWithConstraints(Modifier.fillMaxSize().background(MaterialTheme.colorScheme.background)) {
+        val availableWidth = maxWidth
         val fontScale = androidx.compose.ui.platform.LocalDensity.current.fontScale
         val minimumGaugeColumnWidth = 150.dp * fontScale.coerceAtLeast(1f)
-        val renderColumns = (maxWidth / minimumGaugeColumnWidth).toInt().coerceAtLeast(1)
-        val gridCellWidth = maxWidth / renderColumns
-        val cardAllocationWidth = minOf(minimumGaugeColumnWidth, gridCellWidth)
-        // Gauge cards need this width outside BoxWithConstraints so row intrinsic sizing can measure them.
-        val gaugeContentWidth = (cardAllocationWidth - CARD_CELL_GUTTER * 2f - CARD_CONTENT_INSET * 2f).coerceAtLeast(0.dp)
+        val renderColumns = (availableWidth / minimumGaugeColumnWidth).toInt().coerceAtLeast(1)
         Column(Modifier.fillMaxSize().verticalScroll(rememberScrollState(), enabled = !dragging).padding(bottom = 88.dp)) {
             Column(Modifier.fillMaxWidth().zIndex(if (gaugeReorder.activeKey != null) 2f else 0f).testTag("gauges-grid")) {
                 gaugeReorder.items.chunked(renderColumns).forEach { rowItems ->
+                    val cellWidth = availableWidth / rowItems.size
+                    val dialContentWidth = (minOf(minimumGaugeColumnWidth, cellWidth) - CARD_CELL_GUTTER * 2f - CARD_CONTENT_INSET * 2f)
+                        .coerceAtLeast(0.dp)
                     Row(
                         Modifier.fillMaxWidth().height(IntrinsicSize.Max)
                             .zIndex(if (rowItems.any { gaugeReorder.activeKey == "g:${it.state.gaugeType.name}" }) 1f else 0f),
@@ -156,15 +156,15 @@ internal fun SensorsScreen(
                             LaunchedEffect(dragKey, previewOffset) {
                                 gaugeReorder.animatePreview(dragKey, previewOffset)
                             }
-                            key(dragKey) { Box(Modifier.width(gridCellWidth).fillMaxHeight().zIndex(if (isDragged) 2f else 0f), contentAlignment = Alignment.TopCenter) {
+                            key(dragKey) { Box(Modifier.weight(1f).fillMaxHeight().zIndex(if (isDragged) 2f else 0f), contentAlignment = Alignment.TopCenter) {
                                 GaugeCard(
                                     if (dataAvailable) item else item.copy(value = "—"),
                                     gaugeStyle,
                                     injectionTimingMode,
                                     presentationCatalog,
                                     renderer,
-                                    gaugeContentWidth,
-                                    Modifier.width(cardAllocationWidth).fillMaxHeight().padding(CARD_CELL_GUTTER)
+                                    dialContentWidth,
+                                    Modifier.fillMaxHeight().padding(CARD_CELL_GUTTER)
                                         .onGloballyPositioned { coordinates ->
                                             val bounds = coordinates.boundsInRoot()
                                             if (gaugeReorder.positions[dragKey] != bounds) gaugeReorder.positions[dragKey] = bounds
@@ -222,11 +222,11 @@ internal fun SensorsScreen(
                             LaunchedEffect(dragKey, previewOffset) {
                                 indicatorReorder.animatePreview(dragKey, previewOffset)
                             }
-                            key(dragKey) { Box(Modifier.width(gridCellWidth).fillMaxHeight().zIndex(if (isDragged) 2f else 0f), contentAlignment = Alignment.TopCenter) {
+                            key(dragKey) { Box(Modifier.weight(1f).fillMaxHeight().zIndex(if (isDragged) 2f else 0f), contentAlignment = Alignment.TopCenter) {
                                 IndicatorCard(
                                     item,
                                     presentationCatalog,
-                                    Modifier.width(cardAllocationWidth).fillMaxHeight().padding(CARD_CELL_GUTTER)
+                                    Modifier.fillMaxHeight().padding(CARD_CELL_GUTTER)
                                         .onGloballyPositioned { coordinates ->
                                             val bounds = coordinates.boundsInRoot()
                                             if (indicatorReorder.positions[dragKey] != bounds) indicatorReorder.positions[dragKey] = bounds
@@ -282,7 +282,7 @@ internal fun SensorsScreen(
 }
 
 @Composable
-private fun GaugeCard(item: GaugeItem, gaugeStyle: SensorGaugeStyle, injectionTimingMode: InjectionTimingMode, presentationCatalog: SensorPresentationCatalog, renderer: GaugeDialRenderer, cardContentWidth: Dp, modifier: Modifier, onMenu: () -> Unit) {
+private fun GaugeCard(item: GaugeItem, gaugeStyle: SensorGaugeStyle, injectionTimingMode: InjectionTimingMode, presentationCatalog: SensorPresentationCatalog, renderer: GaugeDialRenderer, dialContentWidth: Dp, modifier: Modifier, onMenu: () -> Unit) {
     val type = item.state.gaugeType
     val value = item.value.toFloatOrNull()?.takeIf(Float::isFinite)
     val presentation = presentationCatalog.gauge(type)
@@ -340,12 +340,12 @@ private fun GaugeCard(item: GaugeItem, gaugeStyle: SensorGaugeStyle, injectionTi
                 val dialLabelOverflow = if (gaugeStyle == SensorGaugeStyle.Current) 0.dp else 14.dp
                 val density = androidx.compose.ui.platform.LocalDensity.current
                 val configuration = androidx.compose.ui.platform.LocalConfiguration.current
-                val dialMeasure = if (gaugeStyle == SensorGaugeStyle.Current) null else remember(type, cardContentWidth, density, dialLabelOverflow, configuration, injectionTimingMode) {
-                    renderer.measureNewGaugeDial(scale, cardContentWidth, density, dialLabelOverflow)
+                val dialMeasure = if (gaugeStyle == SensorGaugeStyle.Current) null else remember(type, dialContentWidth, density, dialLabelOverflow, configuration, injectionTimingMode) {
+                    renderer.measureNewGaugeDial(scale, dialContentWidth, density, dialLabelOverflow)
                 }
-                val bodyHeight = dialMeasure?.height ?: cardContentWidth
+                val bodyHeight = dialMeasure?.height ?: dialContentWidth
                 Box(
-                    Modifier.fillMaxWidth().height(bodyHeight).testTag("gauge-body-${type.name}"),
+                    Modifier.width(dialContentWidth).height(bodyHeight).testTag("gauge-body-${type.name}"),
                     contentAlignment = Alignment.TopCenter,
                 ) {
                     if (gaugeStyle == SensorGaugeStyle.Current) {
@@ -359,7 +359,7 @@ private fun GaugeCard(item: GaugeItem, gaugeStyle: SensorGaugeStyle, injectionTi
                             unit = stringResource(presentation.units),
                             style = gaugeStyle,
                             dialMeasure = requireNotNull(dialMeasure),
-                            modifier = Modifier.requiredWidth(cardContentWidth + dialLabelOverflow * 2f).height(bodyHeight)
+                            modifier = Modifier.requiredWidth(dialContentWidth + dialLabelOverflow * 2f).height(bodyHeight)
                                 .testTag("dial-${type.name}").semantics { contentDescription = dialDescription },
                         )
                     }

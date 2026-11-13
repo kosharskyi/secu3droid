@@ -424,31 +424,24 @@ class SensorsScreenTest {
             val indicatorRows = indicatorBounds.take(expected).map { it.top }.distinct().size
             assertEquals("gauges should honor 150dp × font-scale cells: requested=${width.value}dp grid=${(grid.right - grid.left).value}dp fontScale=${fontScale.value} expectedColumns=$expected cardTops=${gaugeBounds.map { it.top.value }}", 1, gaugeRows)
             assertEquals("indicators should honor 150dp × font-scale cells: requested=${width.value}dp grid=${(grid.right - grid.left).value}dp fontScale=${fontScale.value} expectedColumns=$expected cardTops=${indicatorBounds.map { it.top.value }}", 1, indicatorRows)
-            val cellWidth = (grid.right - grid.left).value / expected
-            val allocatedCardWidth = minOf(minimumColumnWidth, cellWidth)
-            val expectedCardWidth = allocatedCardWidth - 16f
-            val expectedCellInset = (cellWidth - allocatedCardWidth) / 2f + 8f
-            assertEquals("gauge cards keep their baseline width while columns absorb surplus", expectedCardWidth, (gaugeBounds.first().right - gaugeBounds.first().left).value, 1f)
-            assertEquals("indicator cards keep their baseline width while columns absorb surplus", expectedCardWidth, (indicatorBounds.first().right - indicatorBounds.first().left).value, 1f)
-            assertEquals("full gauge row keeps an equal outer inset", grid.left.value + expectedCellInset, gaugeBounds.first().left.value, 1f)
-            assertEquals("full gauge row keeps an equal inset in the last cell", grid.right.value - expectedCellInset, gaugeBounds[expected - 1].right.value, 1f)
-            assertEquals("full indicator row keeps an equal outer inset", grid.left.value + expectedCellInset, indicatorBounds.first().left.value, 1f)
-            assertEquals("full indicator row keeps an equal inset in the last cell", grid.right.value - expectedCellInset, indicatorBounds[expected - 1].right.value, 1f)
-            for (column in 1 until expected) {
-                assertEquals("gauge centers follow equally spaced columns", cellWidth, gaugeBounds[column].left.value - gaugeBounds[column - 1].left.value, 1f)
-                assertEquals("indicator centers follow equally spaced columns", cellWidth, indicatorBounds[column].left.value - indicatorBounds[column - 1].left.value, 1f)
+            for ((kind, bounds) in listOf("gauge" to gaugeBounds, "indicator" to indicatorBounds)) {
+                val rows = bounds.chunked(expected)
+                rows.forEach { row ->
+                    val cardWidth = (grid.right - grid.left).value / row.size - 16f
+                    assertEquals("$kind row keeps the left gutter", grid.left.value + 8f, row.first().left.value, 1f)
+                    assertEquals("$kind row keeps the right gutter", grid.right.value - 8f, row.last().right.value, 1f)
+                    row.forEach { card ->
+                        assertEquals("$kind cards share the row width", cardWidth, (card.right - card.left).value, 1f)
+                        assertEquals("$kind cards align at the top of the row", row.first().top.value, card.top.value, 1f)
+                    }
+                    row.zipWithNext().forEach { (left, right) ->
+                        assertEquals("$kind cards keep their normal gap", 16f, right.left.value - left.right.value, 1f)
+                    }
+                }
+                rows.zipWithNext().forEach { (previous, next) ->
+                    assertTrue("$kind rows follow configured order", next.first().top > previous.first().bottom)
+                }
             }
-            if (gauges.size > expected) org.junit.Assert.assertTrue(gaugeBounds[expected].top > gaugeBounds.first().top)
-            if (indicators.size > expected) org.junit.Assert.assertTrue(indicatorBounds[expected].top > indicatorBounds.first().top)
-            // An incomplete last row keeps the same card width and first-column alignment.
-            assertEquals((gaugeBounds.first().right - gaugeBounds.first().left).value, (gaugeBounds.last().right - gaugeBounds.last().left).value, 1f)
-            assertEquals((indicatorBounds.first().right - indicatorBounds.first().left).value, (indicatorBounds.last().right - indicatorBounds.last().left).value, 1f)
-            val gaugesInLastRow = gauges.size % expected
-            val indicatorsInLastRow = indicators.size % expected
-            val gaugeLastRowStart = if (gaugesInLastRow == 0) gauges.size - expected else gauges.size - gaugesInLastRow
-            val indicatorLastRowStart = if (indicatorsInLastRow == 0) indicators.size - expected else indicators.size - indicatorsInLastRow
-            assertEquals("last gauge row starts below the first column", gaugeBounds.first().left.value, gaugeBounds[gaugeLastRowStart].left.value, 1f)
-            assertEquals("last indicator row starts below the first column", indicatorBounds.first().left.value, indicatorBounds[indicatorLastRowStart].left.value, 1f)
         }
 
         listOf(320, 360, 280, 600, 900).forEach { availableWidth ->
@@ -459,7 +452,7 @@ class SensorsScreenTest {
         assertColumnCount()
     }
 
-    @Test fun partialRowsStartInTheFirstColumnAndRemainDragTargetsForBothGrids() {
+    @Test fun expandedPartialRowsRemainDragTargetsForBothGrids() {
         val gauges = listOf(
             GaugeItem(GaugeState(1, GaugeType.RPM, 0, true), "1200"),
             GaugeItem(GaugeState(2, GaugeType.VOLTAGE, 1, true), "12.4"),
@@ -485,14 +478,14 @@ class SensorsScreenTest {
             }
         }
 
-        fun assertLastRowStartsAtFirstColumn(firstTag: String, lastTag: String) {
-            val first = compose.onNodeWithTag(firstTag).getUnclippedBoundsInRoot()
+        fun assertLastRowFillsGrid(gridTag: String, lastTag: String) {
+            val grid = compose.onNodeWithTag(gridTag).getUnclippedBoundsInRoot()
             val last = compose.onNodeWithTag(lastTag).getUnclippedBoundsInRoot()
-            assertEquals((first.right - first.left).value, (last.right - last.left).value, 1f)
-            assertEquals(first.left.value, last.left.value, 1f)
+            assertEquals(grid.left.value + 8f, last.left.value, 1f)
+            assertEquals(grid.right.value - 8f, last.right.value, 1f)
         }
-        assertLastRowStartsAtFirstColumn("gauge-RPM", "gauge-MAP")
-        assertLastRowStartsAtFirstColumn("indicator-THROTTLE", "indicator-CHECK_ENGINE")
+        assertLastRowFillsGrid("gauges-grid", "gauge-MAP")
+        assertLastRowFillsGrid("indicators-grid", "indicator-CHECK_ENGINE")
 
         fun dragTo(sourceTag: String, targetTag: String) {
             val source = compose.onNodeWithTag(sourceTag).fetchSemanticsNode().boundsInRoot
@@ -517,7 +510,7 @@ class SensorsScreenTest {
         }
         val ukrainianContext = context.createConfigurationContext(ukrainianConfiguration)
         val selectedStyle = mutableStateOf(SensorGaugeStyle.Current)
-        val width = mutableStateOf(500)
+        val width = mutableStateOf(392)
         val fontScale = mutableStateOf(1.3f)
         val gauges = mutableStateOf(listOf(
             GaugeItem(GaugeState(1, GaugeType.RPM, 0, true), "1200"),
@@ -599,7 +592,8 @@ class SensorsScreenTest {
             val shortIndicatorTitle = compose.onNodeWithText(ukrainianContext.getString(presentationCatalog.indicatorTitle(IndicatorType.THROTTLE)), useUnmergedTree = true).getUnclippedBoundsInRoot()
             assertEquals("short indicator title stays vertically centered in its equalized card", (firstIndicator.top.value + firstIndicator.bottom.value) / 2f, (shortIndicatorTitle.top.value + shortIndicatorTitle.bottom.value) / 2f, 1f)
             assertEquals("the indicator row gap stays tied to the outer gutters", 16f, nextIndicatorRow.top.value - wrappedIndicator.bottom.value, 1f)
-            assertEquals("partial indicator row remains in the first column", firstIndicator.left.value, nextIndicatorRow.left.value, 1f)
+            assertEquals("partial indicator row keeps the left gutter", firstIndicator.left.value, nextIndicatorRow.left.value, 1f)
+            assertEquals("partial indicator row expands to the right gutter", wrappedIndicator.right.value, nextIndicatorRow.right.value, 1f)
         }
 
         compose.runOnIdle { fontScale.value = 1f; width.value = 420 }
@@ -613,7 +607,7 @@ class SensorsScreenTest {
 
         compose.runOnIdle {
             fontScale.value = 1.3f
-            width.value = 500
+            width.value = 392
             gauges.value = gauges.value.map { item -> item.copy(state = item.state.copy(isNumericView = true)) }
         }
         compose.waitForIdle()
@@ -623,7 +617,7 @@ class SensorsScreenTest {
         assertTrue("row height shrinks when its dials are all switched to numeric", numericFirst.bottom - numericFirst.top < largestMixedRowHeight.dp)
     }
 
-    @Test fun singleGaugeAndIndicatorStayInFirstColumnAtNormalCellWidth() {
+    @Test fun singleGaugeAndIndicatorFillTheirRows() {
         compose.setContent {
             val density = LocalDensity.current.density
             CompositionLocalProvider(LocalDensity provides Density(density, 1f)) {
@@ -645,15 +639,10 @@ class SensorsScreenTest {
         val indicatorGrid = compose.onNodeWithTag("indicators-grid").getUnclippedBoundsInRoot()
         val gauge = compose.onNodeWithTag("gauge-RPM").getUnclippedBoundsInRoot()
         val indicator = compose.onNodeWithTag("indicator-THROTTLE").getUnclippedBoundsInRoot()
-        val gaugeCellWidth = (gaugeGrid.right - gaugeGrid.left).value / 2f
-        val indicatorCellWidth = (indicatorGrid.right - indicatorGrid.left).value / 2f
-
-        val expectedGaugeInset = (gaugeCellWidth - 150f) / 2f + 8f
-        val expectedIndicatorInset = (indicatorCellWidth - 150f) / 2f + 8f
-        assertEquals("single gauge stays within the first column", gaugeGrid.left.value + expectedGaugeInset, gauge.left.value, 1f)
-        assertEquals("single gauge keeps the baseline padded width", 150f - 16f, (gauge.right - gauge.left).value, 1f)
-        assertEquals("single indicator stays within the first column", indicatorGrid.left.value + expectedIndicatorInset, indicator.left.value, 1f)
-        assertEquals("single indicator keeps the baseline padded width", 150f - 16f, (indicator.right - indicator.left).value, 1f)
+        assertEquals(gaugeGrid.left.value + 8f, gauge.left.value, 1f)
+        assertEquals(gaugeGrid.right.value - 8f, gauge.right.value, 1f)
+        assertEquals(indicatorGrid.left.value + 8f, indicator.left.value, 1f)
+        assertEquals(indicatorGrid.right.value - 8f, indicator.right.value, 1f)
     }
 
     @Test fun numericGaugeCanSwitchToDialAndDeleteFromCardMenu() {
@@ -758,17 +747,19 @@ class SensorsScreenTest {
         val style = mutableStateOf(SensorGaugeStyle.Current)
         val numeric = mutableStateOf(false)
         compose.setContent {
-            SecuComposeTheme {
-                Box(Modifier.width(360.dp)) {
-                    SensorsScreen(
-                        gauges = listOf(GaugeItem(GaugeState(1, GaugeType.RPM, 0, numeric.value), "2840")),
-                        indicators = emptyList(), gaugeChoices = null, indicatorChoices = null,
-                        onAddGaugeRequest = {}, onAddIndicatorRequest = {}, onAddGauge = {}, onAddIndicator = {},
-                        onGaugeChoicesConsumed = {}, onIndicatorChoicesConsumed = {}, onDeleteGauge = {}, onDeleteIndicator = {},
-                        onUpdateGauge = {}, onReorderGauges = {}, onReorderIndicators = {}, gaugeStyle = style.value,
-
-                    presentationCatalog = presentationCatalog, renderer = renderer,
-                )
+            val density = LocalDensity.current.density
+            CompositionLocalProvider(LocalDensity provides Density(density, 1f)) {
+                SecuComposeTheme {
+                    Box(Modifier.requiredWidth(360.dp)) {
+                        SensorsScreen(
+                            gauges = listOf(GaugeItem(GaugeState(1, GaugeType.RPM, 0, numeric.value), "2840")),
+                            indicators = emptyList(), gaugeChoices = null, indicatorChoices = null,
+                            onAddGaugeRequest = {}, onAddIndicatorRequest = {}, onAddGauge = {}, onAddIndicator = {},
+                            onGaugeChoicesConsumed = {}, onIndicatorChoicesConsumed = {}, onDeleteGauge = {}, onDeleteIndicator = {},
+                            onUpdateGauge = {}, onReorderGauges = {}, onReorderIndicators = {}, gaugeStyle = style.value,
+                            presentationCatalog = presentationCatalog, renderer = renderer,
+                        )
+                    }
                 }
             }
         }
@@ -777,6 +768,9 @@ class SensorsScreenTest {
         val classic = cardBounds()
         val classicDial = dialBounds()
         captureDesignScreenshot("dial-classic.png")
+        assertEquals("the lone card fills the row", with(compose.density) { 344.dp.toPx() }, classic.width, 1.5f)
+        assertEquals("the classic dial retains its compact width", with(compose.density) { 102.dp.toPx() }, classicDial.width, 1.5f)
+        assertEquals("the classic dial is centered", classic.center.x, classicDial.center.x, 1.5f)
 
         compose.runOnIdle { style.value = SensorGaugeStyle.PreciseArc }
         compose.waitForIdle()
@@ -788,6 +782,7 @@ class SensorsScreenTest {
         // Explicit cell and card insets round at separate density boundaries on the device.
         assertEquals("precise arc preserves the available label canvas width", classicDial.width, preciseDial.width - labelOverflow, 1.5f)
         org.junit.Assert.assertTrue("precise arc label canvas stays inside the card", preciseDial.left >= precise.left && preciseDial.right <= precise.right)
+        assertEquals("the precise arc is centered", precise.center.x, preciseDial.center.x, 1.5f)
         org.junit.Assert.assertTrue("precise arc allocates only the outside-label inset below the full-size circle", preciseDial.height > classicDial.height)
 
         compose.runOnIdle { style.value = SensorGaugeStyle.ThinNeedle }
@@ -798,6 +793,7 @@ class SensorsScreenTest {
         org.junit.Assert.assertTrue("thin needle keeps the full-size circle and visible footer", thin.height > classic.height)
         assertEquals("thin needle preserves the available label canvas width", classicDial.width, thinDial.width - labelOverflow, 1.5f)
         org.junit.Assert.assertTrue("thin needle label canvas stays inside the card", thinDial.left >= thin.left && thinDial.right <= thin.right)
+        assertEquals("the thin needle dial is centered", thin.center.x, thinDial.center.x, 1.5f)
         assertEquals("thin needle allocates the same outside-label inset", preciseDial.height, thinDial.height, 1f)
 
         compose.runOnIdle { numeric.value = true }
