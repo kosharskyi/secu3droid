@@ -513,7 +513,7 @@ class SensorsScreenTest {
         val width = mutableStateOf(392)
         val fontScale = mutableStateOf(1.3f)
         val gauges = mutableStateOf(listOf(
-            GaugeItem(GaugeState(1, GaugeType.RPM, 0, true), "1200"),
+            GaugeItem(GaugeState(1, GaugeType.RPM, 0, false), "1200"),
             GaugeItem(GaugeState(2, GaugeType.MAP_TURBO, 1, false), "640"),
             GaugeItem(GaugeState(3, GaugeType.MAP, 2, true), "42"),
         ))
@@ -567,23 +567,27 @@ class SensorsScreenTest {
             return requireNotNull(result).lineCount
         }
 
+        val shortGaugeTitle = ukrainianContext.getString(presentationCatalog.gauge(GaugeType.RPM).title)
         val longGaugeTitle = ukrainianContext.getString(presentationCatalog.gauge(GaugeType.MAP_TURBO).title)
         val longIndicatorTitle = ukrainianContext.getString(presentationCatalog.indicatorTitle(IndicatorType.REV_LIM_FUEL_CUT))
+        assertEquals("the neighboring gauge title fits on one line", 1, textLineCount(shortGaugeTitle))
         assertTrue("gauge title should wrap in a narrow cell", textLineCount(longGaugeTitle) > 1)
         assertTrue("indicator title should wrap in a narrow cell", textLineCount(longIndicatorTitle) > 1)
 
-        var largestMixedRowHeight = 0f
+        var largestDialRowHeight = 0f
         for (style in SensorGaugeStyle.entries) {
             compose.runOnIdle { selectedStyle.value = style }
             compose.waitForIdle()
             val firstGauge = compose.onNodeWithTag("gauge-RPM").getUnclippedBoundsInRoot()
             val wrappedGauge = compose.onNodeWithTag("gauge-MAP_TURBO").getUnclippedBoundsInRoot()
             val nextGaugeRow = compose.onNodeWithTag("gauge-MAP").getUnclippedBoundsInRoot()
-            assertEquals("mixed $style gauge row equalizes its card heights", (firstGauge.bottom - firstGauge.top).value, (wrappedGauge.bottom - wrappedGauge.top).value, 1f)
+            assertEquals("$style gauge row equalizes its card heights", (firstGauge.bottom - firstGauge.top).value, (wrappedGauge.bottom - wrappedGauge.top).value, 1f)
+            val firstGaugeBody = compose.onNodeWithTag("gauge-body-RPM", useUnmergedTree = true).getUnclippedBoundsInRoot()
             val gaugeBody = compose.onNodeWithTag("gauge-body-MAP_TURBO", useUnmergedTree = true).getUnclippedBoundsInRoot()
+            assertEquals("$style dials align at the bottom despite different title heights", gaugeBody.bottom.value, firstGaugeBody.bottom.value, 1f)
             assertTrue("gauge dial body remains natural inside its taller card", gaugeBody.bottom - gaugeBody.top < wrappedGauge.bottom - wrappedGauge.top)
             assertEquals("the gauge row gap stays tied to the outer gutters", 16f, nextGaugeRow.top.value - wrappedGauge.bottom.value, 1f)
-            largestMixedRowHeight = maxOf(largestMixedRowHeight, (firstGauge.bottom - firstGauge.top).value)
+            largestDialRowHeight = maxOf(largestDialRowHeight, (firstGauge.bottom - firstGauge.top).value)
 
             val firstIndicator = compose.onNodeWithTag("indicator-THROTTLE").getUnclippedBoundsInRoot()
             val wrappedIndicator = compose.onNodeWithTag("indicator-REV_LIM_FUEL_CUT").getUnclippedBoundsInRoot()
@@ -614,7 +618,7 @@ class SensorsScreenTest {
         val numericFirst = compose.onNodeWithTag("gauge-RPM").getUnclippedBoundsInRoot()
         val numericWrapped = compose.onNodeWithTag("gauge-MAP_TURBO").getUnclippedBoundsInRoot()
         assertEquals("all-numeric gauge cards remain equal", (numericFirst.bottom - numericFirst.top).value, (numericWrapped.bottom - numericWrapped.top).value, 1f)
-        assertTrue("row height shrinks when its dials are all switched to numeric", numericFirst.bottom - numericFirst.top < largestMixedRowHeight.dp)
+        assertTrue("row height shrinks when its dials are all switched to numeric", numericFirst.bottom - numericFirst.top < largestDialRowHeight.dp)
     }
 
     @Test fun singleGaugeAndIndicatorFillTheirRows() {

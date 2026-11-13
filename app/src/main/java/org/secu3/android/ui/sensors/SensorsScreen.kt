@@ -337,6 +337,7 @@ private fun GaugeCard(item: GaugeItem, gaugeStyle: SensorGaugeStyle, injectionTi
                         )
                 }
             } else {
+                Spacer(Modifier.weight(1f))
                 val dialLabelOverflow = if (gaugeStyle == SensorGaugeStyle.Current) 0.dp else 14.dp
                 val density = androidx.compose.ui.platform.LocalDensity.current
                 val configuration = androidx.compose.ui.platform.LocalConfiguration.current

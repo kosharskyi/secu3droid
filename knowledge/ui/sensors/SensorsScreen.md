@@ -14,6 +14,10 @@ Each row uses the tallest card's natural outer height so wrapped titles do not l
 
 The row-wrapping test uses an explicit Ukrainian resource configuration and provides it through both `LocalContext` and `LocalConfiguration`. Its long indicator title must wrap at the fixture width; the default English label may fit and would skip the row-height assertions.
 
+## Dial blocks align at the bottom of equal-height cards
+
+Put the spare row height between the title and the dial. The dial and its value/unit footer keep their natural heights and move together when a neighboring title wraps. The flexible space has zero intrinsic height so it cannot inflate the row's minimum height.
+
 ## Modern dial labels must reserve space along both sides of the arc
 
 Select a symmetric, evenly spaced subset of configured ticks when the available width cannot fit every value. Place each selected label outside the range band using its measured radial text extent, check their text bounds against the canvas and one another, and include their full vertical bounds in the card's natural height. Reject label sets with duplicate rounded integers. Keep labels at 12sp when possible by searching the full radius range before trying 11sp and then 10sp; retain at least five evenly distributed labels so reducing label density never removes just the sides. The 150dp cell minimum leaves 102dp inside the card after its 48dp gutters and padding. At that narrow width a 10sp injector-phase endpoint exceeds the label canvas by 0.03dp at the nominal readout radius, so allow a 0.1dp radius tolerance to absorb this subpixel edge case without reducing the 32sp central readout target.
