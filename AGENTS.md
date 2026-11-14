@@ -16,7 +16,7 @@ The project uses Jetpack Compose for UI, Material3 for Compose components, and N
 
 Business logic must not be implemented in UI layers, including Activities, Compose routes/screens, ViewModels, adapters, and UI-specific state holders or controllers. Business rules, connection/session lifecycle decisions, protocol behavior, persistence/network policies, and domain error classification belong to the domain, data, or core components that own those responsibilities.
 
-UI code may map domain state to presentation (including localized messages and styling), manage UI-only interaction/navigation state, and forward user actions to the owning components. ViewModels expose presentation state and coordinate those calls; they must not reconstruct domain/session history or duplicate business rules to infer outcomes. If presentation needs a distinction missing from a shared contract, extend the owning component's typed state/result and update its consumers and tests within the approved plan.
+UI code may map domain state to presentation (including localized messages and styling), manage UI-only interaction/navigation state, and forward user actions to the owning components. ViewModels expose presentation state and coordinate those calls; they must not reconstruct domain/session history or duplicate business rules to infer outcomes. If presentation needs a distinction missing from a shared contract, extend the owning component's typed state/result and update its consumers and tests within the approved scope.
 
 Connection managers own connection establishment, reconnection, cancellation, transport-resource cleanup, connection status, and the common incoming packet stream. They must not know about screens, routes, ViewModels, or how packets are delivered to or displayed by particular UI consumers.
 
@@ -56,9 +56,9 @@ Do not put display-state ownership into a connection manager: no latest-packet c
 
 ## Working Rules For Agents
 
-- Before implementing a non-trivial task, present a work plan and wait for the user's explicit approval. Include the problem, proposed approach, affected files and components, behavior changes, shared contracts and consumers, risks, and validation steps. For trivial tasks, skip formal planning and get approval for a brief description of the change. Read-only investigation is allowed before approval. Do not edit project files or delegate implementation before approval.
-- Work only within the approved plan. If the solution requires expanding scope or introducing architectural/core changes not covered by that plan, stop and submit a revised plan for approval before proceeding.
-- Treat changes to core modules (including connection handling, packet/protocol infrastructure, persistence, and shared utilities) as project-wide changes. Inspect all consumers and call sites, prefer a common solution that accounts for them, and update affected consumers and tests together. Screen-specific methods or infrastructure are allowed only when the functionality is unnecessary for other consumers or a shared solution would overcomplicate them. Explain that tradeoff in the work plan and obtain approval before implementation.
+- Before implementing a non-trivial task, write and present an implementation specification and wait for the user's explicit approval. Include the problem, scope, expected behavior and edge cases, affected files and components, shared contracts and consumers, risks, acceptance criteria, and validation steps. For trivial tasks, get approval for a brief description of the change. Read-only investigation is allowed before approval. Do not edit project files or delegate implementation before approval.
+- Work only within the approved scope. If the solution requires expanding scope or introducing additional architectural or core changes, revise the specification and obtain approval before proceeding.
+- Treat changes to core modules (including connection handling, packet/protocol infrastructure, persistence, and shared utilities) as project-wide changes. Inspect all consumers and call sites, prefer a common solution that accounts for them, and update affected consumers and tests together. Screen-specific methods or infrastructure are allowed only when the functionality is unnecessary for other consumers or a shared solution would overcomplicate them. Explain that tradeoff in the specification and obtain approval before implementation.
 - Do not change files outside the requested scope.
 - Use Compose for all new UI and Navigation Compose for new destinations and flows. Do not introduce new Fragment/XML destinations or Safe Args usage.
 - Use `androidx.compose.material3` for all Compose UI widgets and theming. Do not add `androidx.compose.material` widget artifacts or Google Material view/XML libraries; existing `androidx.compose.material.icons` artifacts are allowed for icon compatibility.
@@ -76,14 +76,16 @@ Do not put display-state ownership into a connection manager: no latest-packet c
 
 For non-trivial tasks, the main agent coordinates the workflow and makes final decisions.
 
-1. Ask `planner` to inspect the codebase and propose a minimal plan. Resolve architectural choices and present the plan for the user's approval.
-2. Give `implementer` one bounded handoff with the original requirements and approved plan. The implementer reviews the diff, runs relevant checks, and reports the changes, validation results, deviations, and unresolved issues.
-3. Give `simplicity_reviewer` the resulting diff for independent review using the rules below.
-4. Assign justified blocking findings to `implementer` for fixes within the approved scope. Request revised approval if a fix requires expanding scope.
+1. Ask `planner` to inspect the codebase and propose a minimal plan. The main agent resolves architectural choices, writes the implementation specification, and presents it in the chat for the user's approval. Save it as a project file when the user requests a persistent specification.
+2. Give `implementer` one bounded handoff with the original requirements and the approved specification. The specification defines what to implement and how to verify it. The implementer reviews the diff, runs relevant checks, and reports the changes, validation results, deviations, and unresolved issues.
+3. Give `simplicity_reviewer` the approved specification and resulting diff for independent review using the rules below.
+4. Assign justified blocking findings to `implementer` for fixes within the approved scope. If a fix requires expanding scope, update the specification and request approval before proceeding.
 
 Skip `planner` for trivial tasks. Handle them directly or use one specialist if their expertise is needed. Use `luna_compose` for targeted UI work, `luna_protocol` for packet parsing, serialization, or parameter mapping, and `luna_runtime` for connection or session lifecycle, queues, logging, or file operations. Use `secu_mapper` only when code ownership or data flow is unclear and `secu_android_qa` only when reproduction or targeted Android validation is needed.
 
 Keep agent handoffs focused and avoid duplicate work or routine review passes. The main agent joins code review for complex, risky, or architecturally important changes, or when validation fails or leaves material uncertainty. Follow explicit user requests for review.
+
+Subagents return one concise final report. Include the result, relevant validation, and any blockers or deviations. Keep code excerpts and command output to the lines needed to verify a finding or diagnose a failure. Send an interim message only when a decision or action is needed to continue, or when the handoff explicitly requests an update.
 
 ## Engineering Principles
 
@@ -111,7 +113,7 @@ delegate a review to `simplicity_reviewer`.
 
 Provide:
 - Original task requirements.
-- Approved implementation plan, if available.
+- Approved implementation specification, or the approved brief for a trivial task.
 - Implementation diff.
 - Relevant architectural context.
 
