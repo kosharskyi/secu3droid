@@ -36,7 +36,6 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import org.secu3.android.R
 import org.secu3.android.models.SensorGaugeStyle
-import org.secu3.android.models.InjectionTimingMode
 import org.secu3.android.ui.compose.SettingsActionRow
 import org.secu3.android.ui.compose.ChoiceDialog
 import org.secu3.android.ui.compose.SettingsSection
@@ -50,11 +49,8 @@ internal fun SensorsSettingsScreen(
     onNavigateUp: () -> Unit,
     gaugeStyle: SensorGaugeStyle = SensorGaugeStyle.Default,
     onGaugeStyleChange: (SensorGaugeStyle) -> Unit = {},
-    injectionTimingMode: InjectionTimingMode = InjectionTimingMode.Default,
-    onInjectionTimingModeChange: (InjectionTimingMode) -> Unit = {},
 ) {
     var gaugeStyleDialog by remember { mutableStateOf(false) }
-    var injectionTimingDialog by remember { mutableStateOf(false) }
     Column(Modifier.fillMaxSize().background(MaterialTheme.colorScheme.background)) {
         SecuTopAppBar(title = stringResource(R.string.title_activity_settings), onNavigateUp = onNavigateUp, showStatus = false)
         Column(
@@ -82,19 +78,6 @@ internal fun SensorsSettingsScreen(
                     },
                 )
             }
-            SettingsSection {
-                SettingsActionRow(
-                    title = stringResource(R.string.injection_timing_mode),
-                    onClick = { injectionTimingDialog = true },
-                    testTag = "injection-timing-mode",
-                    value = {
-                        Row(verticalAlignment = Alignment.CenterVertically) {
-                            Text(stringResource(injectionTimingMode.labelResource()), Modifier.testTag("injection-timing-mode-value"), style = MaterialTheme.typography.bodyLarge)
-                            Icon(Icons.Default.ExpandMore, contentDescription = null, tint = MaterialTheme.colorScheme.onSurfaceVariant)
-                        }
-                    },
-                )
-            }
         }
     }
     if (gaugeStyleDialog) {
@@ -114,34 +97,10 @@ internal fun SensorsSettingsScreen(
             optionHorizontalPadding = 0.dp,
         )
     }
-    if (injectionTimingDialog) {
-        ChoiceDialog(
-            title = { Text(stringResource(R.string.injection_timing_mode)) },
-            selected = injectionTimingMode,
-            choices = InjectionTimingMode.entries,
-            label = { mode -> stringResource(mode.labelResource()) },
-            onSelect = { mode ->
-                onInjectionTimingModeChange(mode)
-                injectionTimingDialog = false
-            },
-            onDismiss = { injectionTimingDialog = false },
-            confirmButton = { TextButton(onClick = { injectionTimingDialog = false }) { Text(stringResource(R.string.close)) } },
-            optionTestTag = { mode -> "injection-timing-mode-${mode.preferenceValue}" },
-            optionMinHeight = 48.dp,
-            optionHorizontalPadding = 0.dp,
-        )
-    }
 }
 
 private fun SensorGaugeStyle.labelResource(): Int = when (this) {
     SensorGaugeStyle.Current -> R.string.sensor_gauge_style_current
     SensorGaugeStyle.PreciseArc -> R.string.sensor_gauge_style_precise_arc
     SensorGaugeStyle.ThinNeedle -> R.string.sensor_gauge_style_thin_needle
-}
-
-private fun InjectionTimingMode.labelResource(): Int = when (this) {
-    InjectionTimingMode.Btdc720 -> R.string.injection_timing_btdc_720
-    InjectionTimingMode.Atdc720 -> R.string.injection_timing_atdc_720
-    InjectionTimingMode.Btdc360 -> R.string.injection_timing_btdc_360
-    InjectionTimingMode.Atdc360 -> R.string.injection_timing_atdc_360
 }

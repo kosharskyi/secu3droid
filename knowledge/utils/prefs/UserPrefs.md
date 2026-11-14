@@ -18,9 +18,9 @@ Keep the persisted keys `writeLog` and `alwaysWriteLog` and their false defaults
 
 The stable `sensor_gauge_style` values are `current`, `precise_arc`, and `thin_needle`. Missing or unknown values resolve to `precise_arc` in memory without writing a replacement. Explicitly stored `current` and `thin_needle` values remain selected; the older-sensor and per-gauge numeric preferences remain independent.
 
-## Injection timing display stores only a presentation convention
+## Injection timing display stores one shared presentation convention
 
-The stable `injection_timing_mode` values are `btdc_720`, `atdc_720`, `btdc_360`, and `atdc_360`; missing or unknown values read as the `btdc_720` default without repairing storage. Sensors and Dashboard transform selected injection phase readouts for presentation using this preference. ECU timing values and parameter editing remain in their original 0…720 representation.
+The stable `injection_timing_mode` values are `btdc_720`, `atdc_720`, `btdc_360`, and `atdc_360`; missing or unknown values read as the `btdc_720` default without repairing storage. Main Settings owns the selector, and Sensors, Dashboard, and Fuel Injection parameters consume this same snapshot. Parameter edits transform the displayed value back to the desktop ECU representation; unchanged rounded values retain the exact raw packet Float.
 
 ## Dashboard gauge settings use stable values and one snapshot write
 

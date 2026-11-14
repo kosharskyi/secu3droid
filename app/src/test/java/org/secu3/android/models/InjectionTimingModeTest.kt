@@ -24,4 +24,13 @@ class InjectionTimingModeTest {
         assertEquals(0f, InjectionTimingMode.Btdc360.transform(720f), 0f)
         assertEquals(0f, InjectionTimingMode.Atdc360.transform(0f), 0f)
     }
+
+    @Test fun encodesEditedAnglesUsingTheDesktopConventions() {
+        val unsigned = listOf(0f, 180f, 720f)
+        val centered = listOf(-360f, -180f, 0f, 180f, 360f)
+        assertEquals(unsigned, unsigned.map(InjectionTimingMode.Btdc720::toEcuAngle))
+        assertEquals(listOf(720f, 540f, 0f), unsigned.map(InjectionTimingMode.Atdc720::toEcuAngle))
+        assertEquals(listOf(360f, 540f, 720f, 900f, 1080f), centered.map(InjectionTimingMode.Btdc360::toEcuAngle))
+        assertEquals(listOf(1080f, 900f, 720f, 540f, 360f), centered.map(InjectionTimingMode.Atdc360::toEcuAngle))
+    }
 }

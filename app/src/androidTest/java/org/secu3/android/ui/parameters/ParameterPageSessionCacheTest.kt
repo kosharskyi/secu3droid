@@ -6,7 +6,9 @@ import androidx.compose.ui.semantics.SemanticsProperties
 import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.Lifecycle
 import androidx.compose.ui.test.assertIsDisplayed
+import androidx.compose.ui.test.assertIsNotEnabled
 import androidx.compose.ui.test.assertIsSelected
+import androidx.compose.ui.test.assertTextEquals
 import androidx.compose.ui.test.onAllNodesWithTag
 import androidx.compose.ui.test.onNodeWithContentDescription
 import androidx.compose.ui.test.onNodeWithTag
@@ -43,6 +45,7 @@ import org.secu3.android.connection.UsbConnection
 import org.secu3.android.connection.ConnectionTestDriver
 import org.secu3.android.connection.PacketReceiver
 import org.secu3.android.models.RawPacket
+import org.secu3.android.models.InjectionTimingMode
 import org.secu3.android.domain.parameters.ParameterPage
 import org.secu3.android.domain.parameters.ParameterCapabilities
 import org.secu3.android.domain.parameters.LtftValues
@@ -2050,6 +2053,99 @@ class ParameterPageSessionCacheTest {
                 injectionTab.assertIsSelected()
             }
         } finally {
+            usb.close()
+        }
+    }
+
+    @Test fun sharedTimingModeUpdatesAllInjectionEditorsAndEncodesTheEditedAngles() = runBlocking {
+        val prefs = compose.activity.userPrefs
+        val originalMode = prefs.settings.first().injectionTimingMode
+        prefs.setInjectionTimingMode(InjectionTimingMode.Btdc720)
+        compose.activityRule.scenario.onActivity { it.openHome() }
+        val usb = installFakeUsb(paramsViewModel(), firmwareOptions = 1 shl 28)
+        val timingRows = listOf("inj-timing-0", "inj-timing-1", "inj-cranking-0", "inj-cranking-1")
+        val input = compose.onNodeWithTag("numeric_value")
+        val confirm = compose.onNodeWithTag("numeric_confirm")
+        val received = InjctrParPacket(
+            ckpsEngineCyl = 4,
+            timing = floatArrayOf(120.25f, 350.25f),
+            timingCrk = floatArrayOf(530.5f, 810.5f),
+        ).also { it.engineDisp = 2f }
+
+        fun injectionWrites() = usb.writes.filter { it.getOrNull(1)?.toInt() == ';'.code }
+        fun timingWords(frame: ByteArray): List<Int> {
+            val payload = unescapeParameterWrite(frame)
+            return (18..24 step 2).map { (payload[it] shl 8) or payload[it + 1] }
+        }
+        fun assertTimingRow(tag: String, angle: Int) {
+            compose.onNodeWithTag(tag).performScrollTo()
+            compose.onNodeWithTag("$tag-value", useUnmergedTree = true).assertTextEquals("$angle °")
+        }
+        suspend fun awaitTimingRead(count: Int) {
+            try {
+                usb.awaitReadRequest(';', count)
+            } catch (failure: TimeoutCancellationException) {
+                val route = compose.runOnUiThread { compose.activity.rootNavigationController?.currentDestination?.route }
+                throw AssertionError("Expected timing read #$count on $route, got ${usb.readRequestCount(';')}", failure)
+            }
+        }
+
+        try {
+            compose.onNodeWithTag("home-card-parameters").performClick()
+            val tab = compose.onNodeWithText(compose.activity.getString(R.string.params_tab_fuel_injection_title))
+            tab.performScrollTo().performClick()
+            tab.assertIsSelected()
+            awaitTimingRead(1)
+            usb.emitFuelInjection(received)
+            compose.waitUntil(4_000) { compose.onAllNodesWithTag(timingRows.first()).fetchSemanticsNodes().isNotEmpty() }
+            assertTimingRow(timingRows.first(), 120)
+
+            compose.activityRule.scenario.onActivity { it.openSettings() }
+            compose.onNodeWithTag("injection-timing-mode-row").performScrollTo().performClick()
+            val option = "injection-timing-mode-atdc_360"
+            compose.onNodeWithTag(option).performClick()
+            compose.waitUntil(5_000) { compose.onAllNodesWithTag(option).fetchSemanticsNodes().isEmpty() }
+            compose.onNodeWithContentDescription(compose.activity.getString(R.string.back)).performClick()
+            tab.assertIsSelected()
+            awaitTimingRead(2)
+            usb.emitFuelInjection(received)
+            compose.waitUntil(4_000) { compose.onAllNodesWithTag(timingRows.first()).fetchSemanticsNodes().isNotEmpty() }
+
+            val displayedAngles = listOf(-120, -350, 190, -90)
+            timingRows.zip(displayedAngles).forEach { (tag, angle) -> assertTimingRow(tag, angle) }
+            assertTrue(injectionWrites().isEmpty())
+
+            compose.onNodeWithTag(timingRows.first()).performScrollTo().performClick()
+            input.assertTextEquals("-120")
+            confirm.performClick()
+            input.assertDoesNotExist()
+            assertTrue(injectionWrites().isEmpty())
+
+            val expectedWords = mutableListOf(1924, 5604, 8488, 12968)
+            val editedAngles = listOf(-360, -45, 360, 100)
+            val ecuAngles = listOf(1080, 765, 360, 620)
+            for ((index, tag) in timingRows.withIndex()) {
+                compose.onNodeWithTag(tag).performScrollTo().performClick()
+                input.assertTextEquals(displayedAngles[index].toString())
+                if (index == 0) {
+                    input.performTextReplacement("-361")
+                    confirm.assertIsNotEnabled()
+                    input.performTextReplacement("361")
+                    confirm.assertIsNotEnabled()
+                }
+                input.performTextReplacement(editedAngles[index].toString())
+                confirm.performClick()
+                try {
+                    await { injectionWrites().size >= index + 1 }
+                } catch (failure: TimeoutCancellationException) {
+                    throw AssertionError("Expected a timing write for $tag", failure)
+                }
+                expectedWords[index] = ecuAngles[index] * 16
+                assertEquals(expectedWords.toList(), timingWords(injectionWrites()[index]))
+            }
+            assertEquals(4, injectionWrites().size)
+        } finally {
+            prefs.setInjectionTimingMode(originalMode)
             usb.close()
         }
     }

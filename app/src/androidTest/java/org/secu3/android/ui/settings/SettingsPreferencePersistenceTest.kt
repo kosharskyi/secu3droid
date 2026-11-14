@@ -36,6 +36,8 @@ import androidx.compose.ui.test.assertIsOn
 import androidx.compose.ui.test.assertIsOff
 import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.assertTextEquals
+import androidx.compose.ui.test.assertTextContains
+import androidx.compose.ui.test.onAllNodesWithTag
 import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.onNodeWithContentDescription
@@ -52,6 +54,7 @@ import org.junit.Assert.assertEquals
 import org.junit.Rule
 import org.junit.Test
 import org.secu3.android.R
+import org.secu3.android.models.InjectionTimingMode
 import org.secu3.android.ui.MainActivity
 import org.secu3.android.ui.SETTINGS_ROUTE
 import kotlinx.coroutines.flow.first
@@ -220,6 +223,27 @@ class SettingsPreferencePersistenceTest {
             compose.onNodeWithText(saved.toString(), substring = true).assertIsDisplayed()
         } finally {
             runBlocking { compose.activity.userPrefs.setFuelFlowPulsesPerLitre(initial) }
+        }
+    }
+
+    @Test fun injectionTimingConventionPersistsFromInstrumentSettings() {
+        val prefs = compose.activity.userPrefs
+        val original = runBlocking { prefs.settings.first().injectionTimingMode }
+        try {
+            runBlocking { prefs.setInjectionTimingMode(InjectionTimingMode.Btdc360) }
+            compose.onNodeWithContentDescription("Settings icon").performClick()
+            val row = compose.onNodeWithTag("injection-timing-mode-row")
+            row.performScrollTo().assertTextContains(compose.activity.getString(R.string.injection_timing_btdc_360))
+            row.performClick()
+            val option = "injection-timing-mode-atdc_360"
+            compose.onNodeWithTag(option).performClick()
+            compose.waitUntil(5_000) { compose.onAllNodesWithTag(option).fetchSemanticsNodes().isEmpty() }
+            assertEquals(InjectionTimingMode.Atdc360, runBlocking { prefs.settings.first().injectionTimingMode })
+
+            compose.activityRule.scenario.recreate()
+            row.performScrollTo().assertTextContains(compose.activity.getString(R.string.injection_timing_atdc_360))
+        } finally {
+            runBlocking { prefs.setInjectionTimingMode(original) }
         }
     }
 

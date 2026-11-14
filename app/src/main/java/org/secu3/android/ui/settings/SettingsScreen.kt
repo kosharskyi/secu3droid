@@ -40,6 +40,7 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import org.secu3.android.R
+import org.secu3.android.models.InjectionTimingMode
 import org.secu3.android.ui.compose.SettingsActionRow
 import org.secu3.android.ui.compose.ChoiceDialog
 import org.secu3.android.ui.compose.SettingsSection
@@ -59,6 +60,7 @@ data class SettingsUiState(
     val alwaysWriteLog: Boolean = false,
     val appearanceMode: AppearanceMode = AppearanceMode.System,
     val fuelFlowPulsesPerLitre: String = "16000",
+    val injectionTimingMode: InjectionTimingMode = InjectionTimingMode.Default,
     val usageAnalyticsEnabled: Boolean = false,
 )
 
@@ -82,6 +84,7 @@ internal fun SettingsContent(
     onEditFuelFlowPulsesPerLitre: () -> Unit = {},
     onValidateFuelFlowPulsesPerLitre: (String) -> Boolean = { false },
     onSaveFuelFlowPulsesPerLitre: (String) -> Unit = {},
+    onSelectInjectionTimingMode: (InjectionTimingMode) -> Unit = {},
 ) {
     val appearanceLabel: (AppearanceMode) -> Int = { mode ->
         when (mode) {
@@ -194,6 +197,13 @@ internal fun SettingsContent(
                     onClick = onEditFuelFlowPulsesPerLitre,
                     testTag = "settings-fuel-flow-pulses-per-litre",
                 )
+                HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant)
+                SettingsActionRow(
+                    title = stringResource(R.string.injection_timing_mode),
+                    summary = stringResource(state.injectionTimingMode.labelResource()),
+                    onClick = { onSelectDialog(SettingsDialog.InjectionTimingMode) },
+                    testTag = "injection-timing-mode",
+                )
             }
             SettingsSection(title = stringResource(R.string.settings_group_display)) {
                 SettingsToggleRow(
@@ -251,6 +261,18 @@ internal fun SettingsContent(
             onDismiss = onDismissDialog,
             confirmButton = { Button(onClick = onDismissDialog) { Text(stringResource(android.R.string.ok)) } },
             optionTestTag = { mode -> "settings-appearance-${mode.name.lowercase()}" },
+            shape = RoundedCornerShape(24.dp),
+            containerColor = MaterialTheme.colorScheme.surface,
+        )
+        SettingsDialog.InjectionTimingMode -> ChoiceDialog(
+            title = { SettingsDialogTitle(stringResource(R.string.injection_timing_mode)) },
+            selected = state.injectionTimingMode,
+            choices = InjectionTimingMode.entries,
+            label = { mode -> stringResource(mode.labelResource()) },
+            onSelect = onSelectInjectionTimingMode,
+            onDismiss = onDismissDialog,
+            confirmButton = { Button(onClick = onDismissDialog) { Text(stringResource(android.R.string.ok)) } },
+            optionTestTag = { mode -> "injection-timing-mode-${mode.preferenceValue}" },
             shape = RoundedCornerShape(24.dp),
             containerColor = MaterialTheme.colorScheme.surface,
         )
@@ -313,4 +335,11 @@ private fun SettingsDialogTitle(title: String) {
     )
 }
 
-enum class SettingsDialog { Delimiter, Retries, FuelFlowPulsesPerLitre, Appearance, About }
+enum class SettingsDialog { Delimiter, Retries, FuelFlowPulsesPerLitre, Appearance, InjectionTimingMode, About }
+
+private fun InjectionTimingMode.labelResource(): Int = when (this) {
+    InjectionTimingMode.Btdc720 -> R.string.injection_timing_btdc_720
+    InjectionTimingMode.Atdc720 -> R.string.injection_timing_atdc_720
+    InjectionTimingMode.Btdc360 -> R.string.injection_timing_btdc_360
+    InjectionTimingMode.Atdc360 -> R.string.injection_timing_atdc_360
+}

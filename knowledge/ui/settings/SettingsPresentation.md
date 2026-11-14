@@ -18,6 +18,10 @@ The route ignores canceled results and results without a URI. The ViewModel save
 
 The pulse-per-litre value is stored in the same DataStore `Settings` snapshot as the other application preferences (default 16,000; inclusive range 1,000–32,000, matching Manager's `FFFConst`). Its numeric dialog stays open until the preference write succeeds; range parsing and writes belong to `UserPrefs`, while the route only forwards callbacks.
 
+## Injection timing convention is selected in main Instruments settings
+
+The single `injection_timing_mode` preference is owned by the main Settings > Instruments section. Sensors, Dashboard, and Fuel Injection parameter rows all read the same observed `UserPrefs.Settings` value. Keep Sensors Settings limited to its old-view toggle and gauge style; parameter editors must use the mode captured when the editor opens.
+
 ## Numeric settings drafts survive recreation but end with the editor
 
 Connection retry and fuel-flow inputs use saveable Compose state so text, including invalid partial input, survives Activity recreation while that dialog remains open. The draft is not a preference and is written only through a valid confirmation. Dismissing the dialog drops it; reopening initializes from the current settings value. A failed preference write keeps the editor and its draft open.

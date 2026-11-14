@@ -40,6 +40,7 @@ import org.secu3.android.domain.parameters.FuelBankValues
 import org.secu3.android.domain.parameters.FuelInjectionControl
 import org.secu3.android.domain.parameters.FuelInjectionValues
 import org.secu3.android.domain.parameters.ParameterCapabilities
+import org.secu3.android.models.InjectionTimingMode
 import org.secu3.android.ui.parameters.compose.ParameterLoadingIndicator
 import org.secu3.android.ui.parameters.compose.ParameterPage
 import org.secu3.android.ui.parameters.compose.ParameterSection
@@ -68,6 +69,12 @@ enum class FuelInjectionNumber(@StringRes val title: Int, val units: String, val
     DECREASE_RATE(R.string.injctr_par_inj_pw_dec_speed_title, "ms", 2, FuelInjectionControl.RATE_MIN, FuelInjectionControl.RATE_MAX, .01f),
     INCREASE_RATE(R.string.injctr_par_inj_pw_inc_speed_title, "ms", 2, FuelInjectionControl.RATE_MIN, FuelInjectionControl.RATE_MAX, .01f);
 
+    val isTiming: Boolean
+        get() = when (this) {
+            TIMING_0, TIMING_1, CRANKING_0, CRANKING_1 -> true
+            else -> false
+        }
+
     fun value(values: FuelInjectionValues): Float = when (this) {
         ENGINE_DISPLACEMENT -> values.engineDisplacement
         FLOW_0 -> values.banks[0].flow
@@ -91,7 +98,8 @@ enum class FuelInjectionFlag { USE_MAP_0, USE_MAP_1, ADDITIONAL_CORRECTIONS, AIR
 fun FuelInjectionScreen(state: FuelInjectionValues?, configLabels: Map<Int, String>, onEdit: (FuelInjectionNumber) -> Unit,
                         onConfig: (Int, Int) -> Unit, onPulses: (Int, Int) -> Unit,
                         onAngleSpec: (Int, Int) -> Unit, onFlag: (FuelInjectionFlag, Boolean) -> Unit,
-                        capabilities: ParameterCapabilities = ParameterCapabilities.All) {
+                        capabilities: ParameterCapabilities = ParameterCapabilities.All,
+                        injectionTimingMode: InjectionTimingMode = InjectionTimingMode.Default) {
     val pageScrollState = rememberScrollState()
     val data = state ?: run { ParameterLoadingIndicator("fuel_injection_loading"); return }
     val timings = stringArrayResource(R.array.inj_timing_specifies).toList()
@@ -102,10 +110,10 @@ fun FuelInjectionScreen(state: FuelInjectionValues?, configLabels: Map<Int, Stri
         } else {
             ParameterSection(stringResource(R.string.injctr_par_primary_fuel_title)) {
                 NumberRow(FuelInjectionNumber.ENGINE_DISPLACEMENT, data.engineDisplacement, "inj-engine-displacement", enabled = data.canEditDerivedConstants, onEdit = onEdit)
-                BankSection(0, data.banks[0], data.canEditDerivedConstants, configLabels, timings, onEdit, { bank, _ -> choice = bank to 0 }, { bank, _ -> choice = bank to 1 }, { bank, _ -> choice = bank to 2 }, onFlag)
+                BankSection(0, data.banks[0], data.canEditDerivedConstants, configLabels, timings, injectionTimingMode, onEdit, { bank, _ -> choice = bank to 0 }, { bank, _ -> choice = bank to 1 }, { bank, _ -> choice = bank to 2 }, onFlag)
             }
             ParameterSection(stringResource(R.string.injctr_par_params_for_second_fuel_title)) {
-                BankSection(1, data.banks[1], data.canEditDerivedConstants, configLabels, timings, onEdit, { bank, _ -> choice = bank to 0 }, { bank, _ -> choice = bank to 1 }, { bank, _ -> choice = bank to 2 }, onFlag)
+                BankSection(1, data.banks[1], data.canEditDerivedConstants, configLabels, timings, injectionTimingMode, onEdit, { bank, _ -> choice = bank to 0 }, { bank, _ -> choice = bank to 1 }, { bank, _ -> choice = bank to 2 }, onFlag)
             }
             ParameterSection(stringResource(R.string.injctr_par_general_title)) {
                 NumberRow(FuelInjectionNumber.PULSES_PER_LITER, data.pulsesPerLiter, "inj-pulses-per-liter", onEdit = onEdit)
@@ -141,7 +149,7 @@ fun FuelInjectionScreen(state: FuelInjectionValues?, configLabels: Map<Int, Stri
     }
 }
 
-@Composable private fun BankSection(bank: Int, value: FuelBankValues, canEditDerivedConstants: Boolean, labels: Map<Int, String>, timings: List<String>, onEdit: (FuelInjectionNumber) -> Unit,
+@Composable private fun BankSection(bank: Int, value: FuelBankValues, canEditDerivedConstants: Boolean, labels: Map<Int, String>, timings: List<String>, injectionTimingMode: InjectionTimingMode, onEdit: (FuelInjectionNumber) -> Unit,
     onConfig: (Int, Int) -> Unit, onPulses: (Int, Int) -> Unit, onAngle: (Int, Int) -> Unit, onFlag: (FuelInjectionFlag, Boolean) -> Unit) {
     val flowNumber = if (bank == 0) FuelInjectionNumber.FLOW_0 else FuelInjectionNumber.FLOW_1
     val timingNumber = if (bank == 0) FuelInjectionNumber.TIMING_0 else FuelInjectionNumber.TIMING_1
@@ -152,8 +160,8 @@ fun FuelInjectionScreen(state: FuelInjectionValues?, configLabels: Map<Int, Stri
     val configTitle = stringResource(R.string.injctr_par_injector_config_title)
     ChoiceRow(configTitle, labels[value.config] ?: "Unknown configuration (${value.config})", "inj-config-$bank", enabled = canEditDerivedConstants) { onConfig(bank, value.config) }
     ChoiceRow(stringResource(R.string.injctr_par_number_of_squirts_per_cycle_title), value.pulses.toString(), "inj-pulses-$bank", enabled = value.pulseOptions.isNotEmpty() && canEditDerivedConstants) { onPulses(bank, value.pulses) }
-    NumberRow(timingNumber, value.timing, "inj-timing-$bank", enabled = !value.useMap, onEdit = onEdit)
-    NumberRow(crankingNumber, value.cranking, "inj-cranking-$bank", onEdit = onEdit)
+    NumberRow(timingNumber, injectionTimingMode.transform(value.timing), "inj-timing-$bank", enabled = !value.useMap, onEdit = onEdit)
+    NumberRow(crankingNumber, injectionTimingMode.transform(value.cranking), "inj-cranking-$bank", onEdit = onEdit)
     ParameterSwitchRow(stringResource(R.string.injctr_par_use_map_for_inj_timing_title), value.useMap, "inj-use-map-$bank") { onFlag(if (bank == 0) FuelInjectionFlag.USE_MAP_0 else FuelInjectionFlag.USE_MAP_1, it) }
     ChoiceRow(stringResource(R.string.injctr_par_inj_timing_specifies), timings.getOrNull(value.angleSpec) ?: "Code ${value.angleSpec}", "inj-angle-spec-$bank") { onAngle(bank, value.angleSpec) }
     NumberRow(minPulseNumber, value.minPw, "inj-min-pw-$bank", onEdit = onEdit)

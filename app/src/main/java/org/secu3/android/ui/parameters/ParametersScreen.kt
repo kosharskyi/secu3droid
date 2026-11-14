@@ -48,6 +48,7 @@ import org.secu3.android.connection.Reconnecting
 import org.secu3.android.connection.UsbReconnecting
 import org.secu3.android.connection.UsbReconnectingAwaitingEcu
 import org.secu3.android.ui.MainActivity
+import org.secu3.android.models.InjectionTimingMode
 import org.secu3.android.ui.compose.SecuComposeTheme
 import org.secu3.android.ui.compose.SecuTopAppBar
 import org.secu3.android.ui.compose.SecuTabRow
@@ -58,6 +59,7 @@ import org.secu3.android.ui.parameters.settings.ParameterSettingsRoute
 internal fun ParametersRoute(
     entry: NavBackStackEntry,
     activity: MainActivity,
+    injectionTimingMode: InjectionTimingMode,
     onNavigateUp: () -> Unit,
     onOpenLtftMaps: () -> Unit,
     onOpenSettings: () -> Unit,
@@ -108,6 +110,7 @@ internal fun ParametersRoute(
                     page.page, viewModel, capabilities, active, isActiveNow,
                     viewModel::openParameterEditor,
                     onOpenLtftMaps = { if (isActiveNow()) onOpenLtftMaps() },
+                    injectionTimingMode = injectionTimingMode,
                 )
             } },
         )

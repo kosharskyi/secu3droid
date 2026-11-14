@@ -34,6 +34,7 @@ import org.secu3.android.domain.parameters.ParameterCapabilities
 import org.secu3.android.domain.parameters.MiscellaneousControl
 import org.secu3.android.models.packets.out.params.InjctrParPacket
 import org.secu3.android.models.packets.out.params.UniOutParamPacket
+import org.secu3.android.models.InjectionTimingMode
 import org.secu3.android.domain.parameters.ParameterPage
 import org.secu3.android.ui.parameters.pages.*
 import kotlin.math.roundToInt
@@ -51,6 +52,7 @@ internal fun ParameterPageContent(
     isActiveNow: () -> Boolean,
     onEdit: (ParameterEditRequest) -> Unit,
     onOpenLtftMaps: (() -> Unit)? = null,
+    injectionTimingMode: InjectionTimingMode = InjectionTimingMode.Default,
 ) {
     if (viewModel.failedPage == page && page != ParameterPage.LTFT) {
         ParameterReadError(onRetry = { viewModel.refreshPage(page) })
@@ -273,10 +275,18 @@ internal fun ParameterPageContent(
             val values by viewModel.fuelInjectionControl.values.collectAsStateWithLifecycle()
             FuelInjectionScreen(values, InjctrParPacket.InjConfig.entries.associate { it.id to resources.getString(it.strId) }, { number ->
                 values?.let { current ->
-                    if (number.integer) intEdit(number.title, number.value(current).roundToInt(), number.step.toInt(), number.max.toInt(), number.min.toInt()) { viewModel.editFuelInjection(number, it.toFloat()) }
+                    if (number.isTiming) {
+                        val rawValue = number.value(current)
+                        val displayValue = injectionTimingMode.transform(rawValue).roundToInt()
+                        intEdit(number.title, displayValue, 1, injectionTimingMode.maxValue.toInt(), injectionTimingMode.minValue.toInt()) {
+                            if (it != displayValue) {
+                                viewModel.editFuelInjection(number, injectionTimingMode.toEcuAngle(it.toFloat()))
+                            }
+                        }
+                    } else if (number.integer) intEdit(number.title, number.value(current).roundToInt(), number.step.toInt(), number.max.toInt(), number.min.toInt()) { viewModel.editFuelInjection(number, it.toFloat()) }
                     else floatEdit(number.title, number.value(current), number.step, number.max, number.min, number.precision) { viewModel.editFuelInjection(number, it) }
                 }
-            }, viewModel::changeFuelInjectionConfig, viewModel::changeFuelInjectionPulses, viewModel::changeFuelInjectionAngleSpec, viewModel::changeFuelInjectionFlag, capabilities)
+            }, viewModel::changeFuelInjectionConfig, viewModel::changeFuelInjectionPulses, viewModel::changeFuelInjectionAngleSpec, viewModel::changeFuelInjectionFlag, capabilities, injectionTimingMode)
         }
         ParameterPage.LAMBDA_CONTROL -> {
             val values by viewModel.lambdaControl.values.collectAsStateWithLifecycle()

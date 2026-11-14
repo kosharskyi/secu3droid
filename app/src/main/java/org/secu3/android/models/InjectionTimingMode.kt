@@ -32,6 +32,14 @@ enum class InjectionTimingMode(
         return if (transformed == 0f) 0f else transformed
     }
 
+    /** Converts an edited display angle to the ECU packet representation used by desktop. */
+    fun toEcuAngle(display: Float): Float = when (this) {
+        Btdc720 -> display
+        Atdc720 -> 720f - display
+        Btdc360 -> 720f + display
+        Atdc360 -> 720f - display
+    }
+
     companion object {
         val Default: InjectionTimingMode = Btdc720
 

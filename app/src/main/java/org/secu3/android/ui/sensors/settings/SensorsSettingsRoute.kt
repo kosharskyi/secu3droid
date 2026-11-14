@@ -49,10 +49,8 @@ internal fun SensorsSettingsRoute(
         SensorsSettingsScreen(
             oldView = loadedState.oldView,
             gaugeStyle = loadedState.gaugeStyle,
-            injectionTimingMode = loadedState.injectionTimingMode,
             onOldViewChange = viewModel::setOldView,
             onGaugeStyleChange = viewModel::setGaugeStyle,
-            onInjectionTimingModeChange = viewModel::setInjectionTimingMode,
             onNavigateUp = onNavigateUp,
         )
     }

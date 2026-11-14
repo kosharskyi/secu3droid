@@ -44,7 +44,6 @@ import org.junit.Rule
 import org.junit.Test
 import org.secu3.android.R
 import org.secu3.android.models.SensorGaugeStyle
-import org.secu3.android.models.InjectionTimingMode
 
 class SensorsSettingsScreenTest {
     @get:Rule val compose = createComposeRule()
@@ -87,24 +86,14 @@ class SensorsSettingsScreenTest {
             .assertTextEquals(context.getString(R.string.sensor_gauge_style_precise_arc))
     }
 
-    @Test fun injectionTimingSelectionRendersAndReportsTheChosenConvention() {
-        val selected = mutableStateOf(InjectionTimingMode.Default)
+    @Test fun sensorSettingsDoesNotDuplicateTheSharedInjectionTimingSelector() {
         compose.setContent {
             SensorsSettingsScreen(
                 oldView = false,
                 onOldViewChange = {},
                 onNavigateUp = {},
-                injectionTimingMode = selected.value,
-                onInjectionTimingModeChange = { selected.value = it },
             )
         }
-        compose.onNodeWithTag("injection-timing-mode-value", useUnmergedTree = true)
-            .assertTextEquals(context.getString(R.string.injection_timing_btdc_720))
-        compose.onNodeWithTag("injection-timing-mode-row").performScrollTo().performClick()
-        compose.onNodeWithTag("injection-timing-mode-atdc_360").assertIsDisplayed().performClick()
-        compose.runOnIdle { assertEquals(InjectionTimingMode.Atdc360, selected.value) }
-        compose.onAllNodesWithTag("injection-timing-mode-atdc_360").assertCountEquals(0)
-        compose.onNodeWithTag("injection-timing-mode-value", useUnmergedTree = true)
-            .assertTextEquals(context.getString(R.string.injection_timing_atdc_360))
+        compose.onNodeWithText(context.getString(R.string.injection_timing_mode)).assertDoesNotExist()
     }
 }

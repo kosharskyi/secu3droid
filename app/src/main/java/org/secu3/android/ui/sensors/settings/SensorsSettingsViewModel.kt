@@ -14,13 +14,11 @@ import org.secu3.android.R
 import org.secu3.android.ui.messages.UiMessageDuration
 import org.secu3.android.ui.messages.UiMessageQueue
 import org.secu3.android.models.SensorGaugeStyle
-import org.secu3.android.models.InjectionTimingMode
 import org.secu3.android.utils.prefs.UserPrefs
 
 data class SensorsSettingsUiState(
     val oldView: Boolean = false,
     val gaugeStyle: SensorGaugeStyle = SensorGaugeStyle.Default,
-    val injectionTimingMode: InjectionTimingMode = InjectionTimingMode.Default,
 )
 
 @HiltViewModel
@@ -46,10 +44,6 @@ class SensorsSettingsViewModel @Inject constructor(
         persist { userPrefs.setSensorGaugeStyle(style) }
     }
 
-    fun setInjectionTimingMode(mode: InjectionTimingMode) {
-        persist { userPrefs.setInjectionTimingMode(mode) }
-    }
-
     private fun persist(write: suspend () -> Unit) {
         viewModelScope.launch {
             try {
@@ -65,7 +59,6 @@ class SensorsSettingsViewModel @Inject constructor(
     private fun readState(settings: UserPrefs.Settings) = SensorsSettingsUiState(
         oldView = settings.oldSensorViewEnabled,
         gaugeStyle = settings.sensorGaugeStyle,
-        injectionTimingMode = settings.injectionTimingMode,
     )
 
 }

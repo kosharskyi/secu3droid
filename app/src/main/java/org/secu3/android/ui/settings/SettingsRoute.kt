@@ -210,6 +210,7 @@ internal fun SettingsRoute(
             },
             onValidateFuelFlowPulsesPerLitre = viewModel::isValidFuelFlowPulsesPerLitre,
             onSaveFuelFlowPulsesPerLitre = viewModel::saveFuelFlowPulsesPerLitre,
+            onSelectInjectionTimingMode = viewModel::setInjectionTimingMode,
         )
         if (dialog == SettingsDialog.About) {
             Dialog(onDismissRequest = viewModel::dismissDialog) {

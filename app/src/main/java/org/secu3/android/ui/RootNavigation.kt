@@ -178,6 +178,7 @@ internal fun RootNavigation(activity: MainActivity) {
                 ParametersRoute(
                     entry,
                     activity,
+                    injectionTimingMode = settings!!.injectionTimingMode,
                     onNavigateUp = { navController.popBackStack() },
                     onOpenLtftMaps = { navController.navigate(LTFT_MAPS_ROUTE) { launchSingleTop = true } },
                     onOpenSettings = { navController.navigate(PARAMETER_SETTINGS_ROUTE) { launchSingleTop = true } },

@@ -26,6 +26,7 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import org.secu3.android.R
 import org.secu3.android.utils.prefs.AppearanceMode
+import org.secu3.android.models.InjectionTimingMode
 import org.secu3.android.utils.FileHelper
 import org.secu3.android.utils.prefs.UserPrefs
 import org.secu3.android.ui.messages.UiMessageDuration
@@ -97,6 +98,10 @@ class SettingsViewModel @Inject constructor(
         persist(write = { userPrefs.setAppearanceMode(mode) }, onSuccess = ::dismissDialog)
     }
 
+    fun setInjectionTimingMode(mode: InjectionTimingMode) {
+        persist(write = { userPrefs.setInjectionTimingMode(mode) }, onSuccess = ::dismissDialog)
+    }
+
     fun showDialog(dialog: SettingsDialog?) {
         _dialog.value = dialog
     }
@@ -119,6 +124,7 @@ class SettingsViewModel @Inject constructor(
             wakeLock = settings.isWakeLockEnabled,
             appearanceMode = settings.appearanceMode,
             fuelFlowPulsesPerLitre = settings.fuelFlowPulsesPerLitre.toString(),
+            injectionTimingMode = settings.injectionTimingMode,
             usageAnalyticsEnabled = settings.isUsageAnalyticsEnabled,
         )
     }

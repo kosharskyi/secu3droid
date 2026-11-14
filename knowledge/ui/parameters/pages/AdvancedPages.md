@@ -46,9 +46,9 @@ The packet retains the ECU's reciprocal VSS Float so unrelated edits preserve th
 
 The packet keeps one-thirty-second degree Float values for start angle and duration; state and integer editor initial values round only for presentation. An explicit editor commit stores the selected whole degree as a Float.
 
-## Injection timing retains signed sixteenth-degree values while editors show whole degrees
+## Injection timing edits use the shared display convention without quantizing untouched packet words
 
-Both injection timing banks and both cranking timing banks are signed 16-bit values scaled by 1/16 degree. Keep their packet values as Floats through unrelated edits; the integer editor rounds only its initial display value, and an explicit edit stores the chosen whole degree.
+Both injection timing banks and both cranking timing banks are signed 16-bit values scaled by 1/16 degree. The shared `InjectionTimingMode` transforms all four rows for display and supplies the mode-specific whole-degree editor bounds. The editor captures the selected mode when it opens and converts explicit edits back to desktop's ECU representation. If the rounded displayed value is unchanged, retain the exact raw Float, including fractional words and duplicate ±360° endpoints. Unrelated edits also keep the packet values untouched.
 
 ## Injector pulses-per-liter rounds for display without quantizing the packet
 
