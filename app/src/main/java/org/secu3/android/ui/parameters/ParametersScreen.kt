@@ -151,30 +151,32 @@ internal fun ParametersScreen(
     val updatedSettled by rememberUpdatedState(onPageSettled)
     val updatedUnsettled by rememberUpdatedState(onPageUnsettled)
     val updatedConnectionState by rememberUpdatedState(connectionState)
-    LaunchedEffect(lifecycle, pagerState, titles.size) {
+    val updatedPageKeys by rememberUpdatedState(pageKeys)
+    LaunchedEffect(lifecycle, pagerState) {
         lifecycle.repeatOnLifecycle(Lifecycle.State.RESUMED) {
-            var activeIndex: Int? = null
+            var activeKey: Int? = null
             try {
                 snapshotFlow {
                     val index = pagerState.settledPage
-                    Triple(index, pagerState.isScrollInProgress,
-                        pagerSize.width > 0 && pagerSize.height > 0 && updatedConnectionState == Connected &&
-                            pagerState.layoutInfo.visiblePagesInfo.any { it.index == index })
-                }.distinctUntilChanged().collect { (index, scrolling, laidOutVisible) ->
+                    val key = updatedPageKeys.getOrNull(index)
+                    val connected = updatedConnectionState == Connected
+                    val visible = connected && pagerSize.width > 0 && pagerSize.height > 0 &&
+                        pagerState.layoutInfo.visiblePagesInfo.any { it.index == index && it.key == key }
+                    Triple(index, pagerState.isScrollInProgress, key.takeIf { visible })
+                }.distinctUntilChanged().collect { (index, scrolling, visibleKey) ->
                     val next = when {
                         updatedConnectionState != Connected -> null
-                        scrolling -> activeIndex
-                        laidOutVisible -> index.takeIf { it in titles.indices }
-                        else -> null
+                        scrolling -> activeKey
+                        else -> visibleKey
                     }
-                    if (next != activeIndex) {
-                        if (activeIndex != null) updatedUnsettled()
-                        activeIndex = next
-                        if (next != null) updatedSettled(next)
+                    if (next != activeKey) {
+                        if (activeKey != null) updatedUnsettled()
+                        activeKey = next
+                        if (next != null) updatedSettled(index)
                     }
                 }
             } finally {
-                if (activeIndex != null) updatedUnsettled()
+                if (activeKey != null) updatedUnsettled()
             }
         }
     }

@@ -1,6 +1,6 @@
-## Capabilities are immutable snapshots of decoded firmware facts
+## Capabilities combine firmware facts with current DBW confirmation
 
-Construct a new snapshot from the current nullable `FirmwareInfoPacket`; do not retain the mutable packet or rebuild individual rules in UI or ViewModel consumers. Null firmware is intentionally permissive for field availability and editor previews, but optional tabs remain hidden except Choke at its historical base-list position. Lambda channel selection remains false until firmware is known; once known, fuel injection, gas dose, or CARB_AFR support enables channel selection. Lambda STOICH has the narrower rule: only fuel injection or gas dose enables it. CARB_AFR-only firmware supports Lambda channels without enabling STOICH.
+Construct a new snapshot from the current nullable `FirmwareInfoPacket` and the session’s DBW confirmation; do not retain the mutable packet or rebuild individual rules in UI or ViewModel consumers. Null firmware is intentionally permissive for field availability and editor previews, but optional tabs remain hidden except Choke at its historical base-list position. Lambda channel selection remains false until firmware is known; once known, fuel injection, gas dose, or CARB_AFR support enables channel selection. Lambda STOICH has the narrower rule: only fuel injection or gas dose enables it. CARB_AFR-only firmware supports Lambda channels without enabling STOICH.
 
 ## Shared field rules accept only the changing parameter values
 
@@ -10,14 +10,14 @@ The firmware's option bit 2 is shared with the desktop controller's ODDFIRE_ALGO
 
 ## Page labels and order stay in the UI while support stays here
 
-`ParameterPageSpec` owns localized titles and the stable page order; this class decides whether a `ParameterPage` is supported. The ViewModel derives one snapshot from the manager's current firmware flow, and the route passes that same snapshot to page rendering and page-list filtering so an ECU change updates both consistently.
+`ParameterPageSpec` owns localized titles and the stable page order; this class decides whether a `ParameterPage` is supported. The ViewModel derives one snapshot from the manager's current firmware flow and session DBW confirmation, and the route passes that same snapshot to page rendering and page-list filtering so an ECU change updates both consistently.
 ## Functions load thresholds share the UI and command predicates
 
-Lower load is editable only when load-grid mode is off. Upper load also stays disabled for protocol source `1` (MAP barometric correction). The same `ParameterCapabilities` predicates drive the screen styling and `FunctionsControl` stale-command guard; firmware unknown remains permissive for the other Functions field gates.
+Lower load is editable only when load-grid mode is off. Upper load also stays disabled for protocol source `1` (MAP barometric correction). The same `ParameterCapabilities` predicates drive the screen styling and `FunctionsControl` stale-command guard; unknown firmware remains permissive for family-gated pressure controls, while manual APPS1 calibration requires DBW confirmation.
 
 ## ADC channel availability keeps ADD_I4 independent
 
-ADC channels 0–5 are always available, channel 7 (ADD_I4) follows TPIC8101, and channels 6 plus 8–11 follow non-SECU3T DBW capability. This preserves the desktop case where a SECU3T with TPIC8101 can edit ADD_I4 while the other additional inputs remain disabled.
+ADC channels 0–5 are always available, channel 7 (ADD_I4) follows TPIC8101, and channels 6 plus 8–11 follow the non-SECU3T family gate. This preserves the desktop case where a SECU3T with TPIC8101 can edit ADD_I4 while the other additional inputs remain disabled.
 
 ## Lambda base controls allow unknown firmware but gate known unsupported ECUs
 

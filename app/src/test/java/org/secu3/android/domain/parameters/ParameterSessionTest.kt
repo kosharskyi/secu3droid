@@ -10,6 +10,7 @@
 package org.secu3.android.domain.parameters
 
 import kotlinx.coroutines.flow.MutableSharedFlow
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.onSubscription
 import kotlinx.coroutines.flow.onCompletion
 import kotlinx.coroutines.NonCancellable
@@ -34,8 +35,10 @@ import org.secu3.android.connection.ConnectionState
 import org.secu3.android.domain.ecu.EcuExchange
 import org.secu3.android.models.packets.base.InputPacket
 import org.secu3.android.models.packets.base.OutputPacket
+import org.secu3.android.models.packets.input.FirmwareInfoPacket
 import org.secu3.android.models.packets.out.OpCompNc
 import org.secu3.android.models.packets.out.params.AnglesParamPacket
+import org.secu3.android.models.packets.out.params.DbwParamPacket
 import org.secu3.android.models.packets.out.params.StarterParamPacket
 import org.secu3.android.utils.Task
 
@@ -181,6 +184,101 @@ class ParameterSessionTest {
         assertEquals("The read waited for cleanup and began after the write", 1, harness.count(Task.Secu3ReadAnglesParam))
     }
 
+    @Test
+    fun dbwProbeYieldsToPageReadsAndSaveAndRequiresFreshProofAfterReconnect() = runBlocking {
+        val harness = newHarness().apply { firmwareOptions = 0 }
+        harness.start()
+        harness.session.activatePage(ParameterPage.STARTER)
+        harness.awaitLoaded(ParameterPage.STARTER)
+        harness.awaitRequest(Task.Secu3ReadDbwParam)
+        assertFalse(harness.session.isDbwSupported())
+
+        harness.session.activatePage(ParameterPage.ANGLES)
+        harness.awaitLoaded(ParameterPage.ANGLES)
+        harness.awaitRequest(Task.Secu3ReadDbwParam, 2)
+        val firstProbe = harness.requests.indexOf(Task.Secu3ReadDbwParam)
+        assertEquals(
+            listOf(Task.Secu3ReadSensors, Task.Secu3ReadAnglesParam),
+            harness.requests.subList(firstProbe + 1, firstProbe + 3),
+        )
+
+        val probeBeforeSave = harness.requests.lastIndexOf(Task.Secu3ReadDbwParam)
+        harness.session.save()
+        harness.awaitRequest(Task.Secu3OpComSaveEeprom)
+        assertEquals(
+            listOf(Task.Secu3ReadSensors, Task.Secu3OpComSaveEeprom),
+            harness.requests.subList(probeBeforeSave + 1, probeBeforeSave + 3),
+        )
+        harness.packets.emit(OpCompNc(opCode = 1))
+        harness.awaitRequest(Task.Secu3ReadDbwParam, 3)
+        harness.packets.emit(DbwParamPacket())
+        withTimeout(1_000) { harness.session.dbwSupport.first { it == true } }
+        assertTrue(harness.session.isDbwSupported())
+
+        harness.transportConnected = false
+        harness.connectionStates.emit(Disconnected)
+        withTimeout(1_000) { harness.session.dbwSupport.first { it == null } }
+        assertFalse(harness.session.isDbwSupported())
+        harness.transportConnected = true
+        harness.connectionStates.emit(Connected)
+        harness.awaitLoaded(ParameterPage.ANGLES, 2)
+        harness.awaitRequest(Task.Secu3ReadDbwParam, 4)
+        assertFalse(harness.session.isDbwSupported())
+        harness.packets.emit(DbwParamPacket())
+        withTimeout(1_000) { harness.session.dbwSupport.first { it == true } }
+        assertTrue(harness.session.isDbwSupported())
+    }
+
+    @Test
+    fun dbwProbeTimesOutOnceAndLeavesOtherPagesUsable() = runBlocking {
+        val harness = newHarness().apply { firmwareOptions = 0 }
+        harness.start()
+        harness.session.activatePage(ParameterPage.STARTER)
+        harness.awaitLoaded(ParameterPage.STARTER)
+        harness.awaitRequest(Task.Secu3ReadDbwParam)
+        withTimeout(2_000) { harness.session.dbwSupport.first { it == false } }
+        assertFalse(harness.session.isDbwSupported())
+        assertEquals(Task.Secu3ReadSensors, harness.requests.last())
+        harness.session.activatePage(ParameterPage.ANGLES)
+        harness.awaitLoaded(ParameterPage.ANGLES)
+        assertEquals(1, harness.count(Task.Secu3ReadDbwParam))
+        assertFalse(harness.events.any { it is ParameterSessionEvent.PageFailed })
+    }
+
+    @Test
+    fun secu3tNeverRequestsDbw() = runBlocking {
+        val harness = newHarness().apply { firmwareOptions = 1 shl 17 }
+        harness.start()
+        harness.session.activatePage(ParameterPage.STARTER)
+        harness.awaitLoaded(ParameterPage.STARTER)
+        harness.session.activatePage(ParameterPage.EL_THROTTLE)
+        yield()
+        assertFalse(harness.session.isDbwSupported())
+        assertEquals(0, harness.count(Task.Secu3ReadDbwParam))
+    }
+
+    @Test
+    fun confirmedDbwPageCanResumeAfterHostPause() = runBlocking {
+        val harness = newHarness().apply { firmwareOptions = 0 }
+        harness.start()
+        harness.session.activatePage(ParameterPage.STARTER)
+        harness.awaitRequest(Task.Secu3ReadDbwParam)
+        harness.packets.emit(DbwParamPacket())
+        withTimeout(1_000) { harness.session.dbwSupport.first { it == true } }
+        harness.session.activatePage(ParameterPage.EL_THROTTLE)
+        harness.awaitRequest(Task.Secu3ReadDbwParam, 2)
+        harness.packets.emit(DbwParamPacket())
+        harness.awaitLoaded(ParameterPage.EL_THROTTLE)
+
+        harness.session.pause()
+        assertFalse(harness.session.isDbwSupported())
+        harness.session.activatePage(ParameterPage.EL_THROTTLE)
+        harness.awaitRequest(Task.Secu3ReadDbwParam, 3)
+        harness.packets.emit(DbwParamPacket())
+        harness.awaitLoaded(ParameterPage.EL_THROTTLE, 2)
+        assertTrue(harness.session.isDbwSupported())
+    }
+
     private fun newHarness(replyImmediately: Boolean = true, holdReadCleanup: Boolean = false) =
         SessionHarness(replyImmediately, holdReadCleanup).also(activeHarnesses::add)
 
@@ -191,6 +289,7 @@ class ParameterSessionTest {
         val requests = mutableListOf<Task>()
         val events = mutableListOf<ParameterSessionEvent>()
         var transportConnected = true
+        var firmwareOptions: Int? = null
         var repliesEnabled = replyImmediately
         val cleanupStarted = kotlinx.coroutines.CompletableDeferred<Unit>()
         val releaseCleanup = kotlinx.coroutines.CompletableDeferred<Unit>()
@@ -223,7 +322,7 @@ class ParameterSessionTest {
         val session = ParameterSession(
             connectionStates = connectionStates,
             isTransportConnected = { transportConnected },
-            firmware = { null },
+            firmware = { firmwareOptions?.let { FirmwareInfoPacket(options = it) } },
             exchange = exchange,
             sendPacketToEcu = { },
         )

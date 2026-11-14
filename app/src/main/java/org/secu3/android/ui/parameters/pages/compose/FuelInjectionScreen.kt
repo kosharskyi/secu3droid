@@ -117,10 +117,10 @@ fun FuelInjectionScreen(state: FuelInjectionValues?, configLabels: Map<Int, Stri
             }
             ParameterSection(stringResource(R.string.injctr_par_general_title)) {
                 NumberRow(FuelInjectionNumber.PULSES_PER_LITER, data.pulsesPerLiter, "inj-pulses-per-liter", onEdit = onEdit)
-                ParameterSwitchRow(stringResource(R.string.injctr_par_additional_corrections_title), data.additionalCorrections, "inj-additional-corrections", capabilities.dbw) { onFlag(FuelInjectionFlag.ADDITIONAL_CORRECTIONS, it) }
+                ParameterSwitchRow(stringResource(R.string.injctr_par_additional_corrections_title), data.additionalCorrections, "inj-additional-corrections", capabilities.nonSecu3T) { onFlag(FuelInjectionFlag.ADDITIONAL_CORRECTIONS, it) }
                 ParameterSwitchRow(stringResource(R.string.injctr_par_use_air_density_correction_map_title), data.airDensity, "inj-air-density") { onFlag(FuelInjectionFlag.AIR_DENSITY, it) }
-                ParameterSwitchRow(stringResource(R.string.injctr_par_diff_press_for_pw_corr_from_gps_title), data.differentialPressure, "inj-differential-pressure", capabilities.dbw) { onFlag(FuelInjectionFlag.DIFFERENTIAL_PRESSURE, it) }
-                ParameterSwitchRow(stringResource(R.string.injctr_par_switch_between_injectors_rows_title), data.switchRows, "inj-switch-rows", capabilities.dbw) { onFlag(FuelInjectionFlag.SWITCH_ROWS, it) }
+                ParameterSwitchRow(stringResource(R.string.injctr_par_diff_press_for_pw_corr_from_gps_title), data.differentialPressure, "inj-differential-pressure", capabilities.nonSecu3T) { onFlag(FuelInjectionFlag.DIFFERENTIAL_PRESSURE, it) }
+                ParameterSwitchRow(stringResource(R.string.injctr_par_switch_between_injectors_rows_title), data.switchRows, "inj-switch-rows", capabilities.nonSecu3T) { onFlag(FuelInjectionFlag.SWITCH_ROWS, it) }
                 ParameterSwitchRow(stringResource(R.string.injctr_par_full_sequential_after_start_title), data.fullSequentialAfterStart, "inj-full-sequential-after-start") { onFlag(FuelInjectionFlag.FULL_SEQUENTIAL_AFTER_START, it) }
                 NumberRow(FuelInjectionNumber.DECREASE_RATE, data.decreaseRate, "inj-decrease-rate", onEdit = onEdit)
                 NumberRow(FuelInjectionNumber.INCREASE_RATE, data.increaseRate, "inj-increase-rate", onEdit = onEdit)

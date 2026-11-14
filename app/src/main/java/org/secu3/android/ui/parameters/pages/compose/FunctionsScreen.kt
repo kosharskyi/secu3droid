@@ -124,7 +124,8 @@ enum class FunctionsNumber(
     fun enabled(values: FunctionsValues, capabilities: ParameterCapabilities): Boolean = when (this) {
         LOWER -> capabilities.functionsLowerLoadEnabled(values.useLoadGrid)
         UPPER -> capabilities.functionsUpperLoadEnabled(values.useLoadGrid, values.loadSource)
-        GPS_OFFSET, GPS_GRADIENT, FPS_OFFSET, FPS_GRADIENT, APPS_OFFSET, APPS_GRADIENT -> capabilities.dbw
+        GPS_OFFSET, GPS_GRADIENT, FPS_OFFSET, FPS_GRADIENT -> capabilities.nonSecu3T
+        APPS_OFFSET, APPS_GRADIENT -> capabilities.dbw
         else -> true
     }
 
@@ -216,7 +217,7 @@ fun FunctionsScreen(
             var open by remember { mutableStateOf<FunctionsChoices.Selector?>(null) }
             var calibration by remember { mutableStateOf<Pair<PressureSensor, PressureCurveInput>?>(null) }
             val calibrationAvailable = isActive && when (calibration?.first) {
-                PressureSensor.GPS, PressureSensor.FPS -> capabilities.dbw
+                PressureSensor.GPS, PressureSensor.FPS -> capabilities.nonSecu3T
                 else -> true
             }
             LaunchedEffect(calibrationAvailable) {

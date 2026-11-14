@@ -33,7 +33,7 @@ import androidx.compose.runtime.setValue
 import dagger.hilt.android.lifecycle.HiltViewModel
 import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.flow.SharingStarted
-import kotlinx.coroutines.flow.map
+import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.stateIn
 import org.secu3.android.R
 import org.secu3.android.ui.messages.UiMessageDuration
@@ -151,8 +151,9 @@ class ParamsViewModel @Inject constructor(
         private set
 
     val connectionState = secu3ConnectionManager.connectionStateFlow
-    val capabilities = secu3ConnectionManager.firmwareInfo
-        .map(::ParameterCapabilities)
+    val capabilities = combine(secu3ConnectionManager.firmwareInfo, parameterSession.dbwSupport) { firmware, dbw ->
+        ParameterCapabilities(firmware, dbwConfirmed = firmware != null && dbw == true)
+    }
         .stateIn(viewModelScope, SharingStarted.Eagerly, ParameterCapabilities(secu3ConnectionManager.fwInfo))
 
     internal fun parameterPages(capabilities: ParameterCapabilities): List<ParameterPageSpec> =

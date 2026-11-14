@@ -13,9 +13,7 @@ import dagger.hilt.android.scopes.ViewModelScoped
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
-import org.secu3.android.connection.Secu3ConnectionManager
 import org.secu3.android.models.packets.base.OutputPacket
-import org.secu3.android.models.packets.input.FirmwareInfoPacket
 import org.secu3.android.models.packets.out.params.DbwParamPacket
 import javax.inject.Inject
 
@@ -45,12 +43,12 @@ data class DbwValues(
 /** Owns DBW packet edits while preserving the receive-only home position and unknown tail. */
 @ViewModelScoped
 class DbwControl internal constructor(
-    private val firmware: () -> FirmwareInfoPacket?,
+    private val isDbwSupported: () -> Boolean,
     private val sendPacket: (OutputPacket) -> Boolean,
 ) {
     @Inject
-    constructor(connectionManager: Secu3ConnectionManager, parameterSession: ParameterSession) : this(
-        firmware = { connectionManager.fwInfo },
+    constructor(parameterSession: ParameterSession) : this(
+        isDbwSupported = parameterSession::isDbwSupported,
         sendPacket = parameterSession::sendPacket,
     )
 
@@ -83,7 +81,7 @@ class DbwControl internal constructor(
         edit(value.isFinite() && value in min..max, change)
 
     private inline fun edit(valid: Boolean, change: (DbwParamPacket) -> Unit): Boolean {
-        if (!valid || !ParameterCapabilities(firmware()).dbw) return false
+        if (!valid || !isDbwSupported()) return false
         val current = packet ?: return false
         val before = DbwFields(current)
         val admitted = try {

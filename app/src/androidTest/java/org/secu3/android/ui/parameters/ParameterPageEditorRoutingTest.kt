@@ -200,7 +200,7 @@ class ParameterPageEditorRoutingTest {
         )
         vm.functionsControl.reset()
         vm.functionsControl.receive(FunctionParameters(FnNameDatPacket(), packet))
-        renderPage(R.string.params_tab_functions_title, vm)
+        renderPage(R.string.params_tab_functions_title, vm, ParameterCapabilities.All)
 
         FunctionsNumber.entries.forEach { number ->
             compose.onNodeWithTag("functions_${number.name.lowercase()}")

@@ -8,11 +8,11 @@ When the connection is not `Connected`, render the connection status instead of 
 
 ## Conditional pages and field capabilities share one derived snapshot
 
-The ViewModel derives one immutable domain capability snapshot from the manager's nullable firmware flow. The route uses that same snapshot to filter UI-owned page specs and to render all dependent screens. Clearing firmware on session loss must update both together; null retains permissive field previews, hides optional pages except Choke in its base position, and keeps Lambda channel selection disabled.
+The ViewModel derives one immutable domain capability snapshot from the manager's nullable firmware flow and session DBW confirmation. The route uses that same snapshot to filter UI-owned page specs and to render all dependent screens. Clearing firmware on session loss must update both together; null retains permissive field previews, hides optional pages except Choke in its base position, and keeps Lambda channel selection disabled.
 
 ## Pager motion does not end the settled page's read session
 
-Keep the active page activation while a horizontal pager gesture is in progress, including boundary overscroll or a canceled swipe. A vertical child scroll, overscroll, or nested fling can also toggle pager `isScrollInProgress` without changing its settled page, so scrolling is not an activation boundary on either axis. Manual-command predicates still become false during movement. Once the pager settles, activate only if its settled index changed. Status and lifecycle changes stop UI activity; the domain component independently consumes every connection transition and restarts its selected page after recovery, even when Compose does not render an intermediate loss. Do not add a connection/session number as an effect key.
+Keep the active page activation while a horizontal pager gesture is in progress, including boundary overscroll or a canceled swipe. A vertical child scroll, overscroll, or nested fling can also toggle pager `isScrollInProgress` without changing its settled page, so scrolling is not an activation boundary on either axis. Manual-command predicates still become false during movement. Compare stable settled page keys so appending the confirmed DBW page does not deactivate the current page. Status and lifecycle changes stop UI activity; the domain component independently consumes every connection transition and restarts its selected page after recovery, even when Compose does not render an intermediate loss. Do not add a connection/session number as an effect key.
 
 ## Newly offscreen parameter forms wait until pager idle
 

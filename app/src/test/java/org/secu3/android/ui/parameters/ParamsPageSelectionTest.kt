@@ -62,7 +62,7 @@ class ParamsPageSelectionTest {
 
         val carbAfrOnly = FirmwareInfoPacket(options = 1 shl 30)
         assertEquals(
-            supportedBase + listOf(R.string.params_tab_lambda_control_title, R.string.params_tab_el_throttle_title),
+            supportedBase + listOf(R.string.params_tab_lambda_control_title),
             catalog.pages(ParameterCapabilities(carbAfrOnly)).map { it.titleRes },
         )
 
@@ -74,7 +74,7 @@ class ParamsPageSelectionTest {
                 R.string.params_tab_gas_dose_title,
                 R.string.params_tab_el_throttle_title,
             ),
-            catalog.pages(ParameterCapabilities(gasDoseOnly)).map { it.titleRes },
+            catalog.pages(ParameterCapabilities(gasDoseOnly, dbwConfirmed = true)).map { it.titleRes },
         )
     }
 }

@@ -46,7 +46,7 @@ class ParameterCapabilitiesTest {
         assertTrue(injection.supports(ParameterPage.ACCELERATION))
         assertTrue(injection.supports(ParameterPage.LTFT))
         assertFalse(injection.supports(ParameterPage.GAS_DOSE))
-        assertTrue(injection.supports(ParameterPage.EL_THROTTLE))
+        assertFalse(injection.supports(ParameterPage.EL_THROTTLE))
         assertTrue(injection.lambdaChannelSelection)
         assertTrue(injection.lambdaStoich)
 
@@ -56,7 +56,7 @@ class ParameterCapabilitiesTest {
         assertTrue(gasDose.supports(ParameterPage.ACCELERATION))
         assertTrue(gasDose.supports(ParameterPage.GAS_DOSE))
         assertFalse(gasDose.supports(ParameterPage.LTFT))
-        assertTrue(gasDose.supports(ParameterPage.EL_THROTTLE))
+        assertFalse(gasDose.supports(ParameterPage.EL_THROTTLE))
         assertTrue(gasDose.lambdaChannelSelection)
         assertTrue(gasDose.lambdaStoich)
 
@@ -64,7 +64,7 @@ class ParameterCapabilitiesTest {
         assertTrue(carbAfr.supports(ParameterPage.LAMBDA_CONTROL))
         assertTrue(carbAfr.lambdaChannelSelection)
         assertFalse(carbAfr.lambdaStoich)
-        assertTrue(carbAfr.supports(ParameterPage.EL_THROTTLE))
+        assertFalse(carbAfr.supports(ParameterPage.EL_THROTTLE))
 
         val noLambdaSupport = ParameterCapabilities(FirmwareInfoPacket(options = 0))
         assertFalse(noLambdaSupport.supports(ParameterPage.LAMBDA_CONTROL))
@@ -85,7 +85,8 @@ class ParameterCapabilitiesTest {
         assertTrue(unknown.choke)
         assertTrue(unknown.ckps)
         assertTrue(unknown.hallWindow)
-        assertTrue(unknown.dbw)
+        assertFalse(unknown.dbw)
+        assertTrue(unknown.nonSecu3T)
         assertTrue(unknown.oddCylinders)
         assertTrue(unknown.sevenCylinders)
         assertTrue(unknown.supports(ParameterPage.CHOKE_CONTROL))
@@ -97,6 +98,18 @@ class ParameterCapabilitiesTest {
         assertTrue(unknown.mttfEnabled(0f))
         assertTrue(unknown.camReferenceEnabled(2f))
         assertEquals((1..8).toList(), unknown.ckpsCylinderOptions(mergeOutputs = false))
+    }
+
+    @Test fun dbwConfirmationIsIndependentOfFuelAndDoesNotOverrideSecu3T() {
+        val firmware = FirmwareInfoPacket(options = 0)
+        val unconfirmed = ParameterCapabilities(firmware)
+        assertFalse(unconfirmed.dbw)
+        assertTrue(unconfirmed.nonSecu3T)
+        assertTrue(unconfirmed.adcChannelEnabled(6))
+        assertTrue(ParameterCapabilities(firmware, dbwConfirmed = true).supports(ParameterPage.EL_THROTTLE))
+        val secu3t = ParameterCapabilities(FirmwareInfoPacket(options = 1 shl 17), dbwConfirmed = true)
+        assertFalse(secu3t.dbw)
+        assertFalse(secu3t.supports(ParameterPage.EL_THROTTLE))
     }
 
     @Test fun dependentFieldsUseCurrentModeWithFirmwareCapability() {

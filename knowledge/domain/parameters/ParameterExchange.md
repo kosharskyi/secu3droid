@@ -2,6 +2,8 @@
 
 Each parameter read restores `Secu3ReadSensors` in `finally`, including timeout or cancellation. `EcuExchange` owns the shared response subscription ordering and deadline conversion; `ParameterExchange` owns packet matching and parameter-specific recovery.
 
+The DBW probe uses a three-second response window because firmware silently ignores unsupported modes. The firmware's packet-period byte can encode up to 255 ten-millisecond ticks, so the probe allows more than the longest configured interval.
+
 ## Functions needs every name fragment before its settings packet
 
 The names response is complete only after fragments fill every slot indexed from zero. Keep the `-1` placeholder for unseen indexes, accept fragments in any order, restore sensor streaming after the names stage, and only then request FUNSET.

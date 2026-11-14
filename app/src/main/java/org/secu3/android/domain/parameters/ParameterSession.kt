@@ -15,6 +15,8 @@ import kotlinx.coroutines.CoroutineStart
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.collect
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
@@ -88,6 +90,9 @@ class ParameterSession internal constructor(
     private var eventHandler: ((ParameterSessionEvent) -> Unit)? = null
     private var connectionJob: Job? = null
     private var saveJob: Job? = null
+    private var dbwProbeJob: Job? = null
+    private val mutableDbwSupport = MutableStateFlow<Boolean?>(null)
+    internal val dbwSupport = mutableDbwSupport.asStateFlow()
     private var connected = false
     private var paused = false
     private var activePage: ParameterPage? = null
@@ -105,6 +110,8 @@ class ParameterSession internal constructor(
 
     fun activatePage(page: ParameterPage) {
         if (!connected || !isTransportConnected()) return
+        if (page == ParameterPage.EL_THROTTLE && !hasConfirmedDbw()) return
+        if (!readGate.isActive(page)) dbwProbeJob?.cancel()
         if (page != ParameterPage.FUNCTIONS && readGate.isActive(ParameterPage.FUNCTIONS)) deactivatePage()
         paused = false
         activePage = page
@@ -113,6 +120,7 @@ class ParameterSession internal constructor(
     }
 
     fun deactivatePage() {
+        dbwProbeJob?.cancel()
         val functionsWasActive = readGate.isActive(ParameterPage.FUNCTIONS)
         readGate.deactivate()
         if (functionsWasActive) eventHandler?.invoke(ParameterSessionEvent.FunctionsDeactivated)
@@ -137,14 +145,24 @@ class ParameterSession internal constructor(
 
     fun isFunctionsPageActive(): Boolean = canOperate() && readGate.isActive(ParameterPage.FUNCTIONS)
 
+    internal fun isDbwSupported(): Boolean = canOperate() && hasConfirmedDbw()
+
+    private fun hasConfirmedDbw(): Boolean =
+        ParameterCapabilities(firmware(), dbwConfirmed = dbwSupport.value == true).supports(ParameterPage.EL_THROTTLE)
+
     suspend fun readTpsVoltage(): Float? {
         if (!isFunctionsPageActive()) return null
+        dbwProbeJob?.cancel()
         val session = sessionId
-        val voltage = readGate.readOnce(ParameterPage.FUNCTIONS) {
-            if (!isCurrent(session) || !isFunctionsPageActive()) return@readOnce null
-            exchange.readPacket(Task.Secu3ReadFunsetParam, FunSetParamPacket::class.java).tps_raw
+        try {
+            val voltage = readGate.readOnce(ParameterPage.FUNCTIONS) {
+                if (!isCurrent(session) || !isFunctionsPageActive()) return@readOnce null
+                exchange.readPacket(Task.Secu3ReadFunsetParam, FunSetParamPacket::class.java).tps_raw
+            }
+            return voltage?.takeIf { isCurrent(session) && isFunctionsPageActive() }
+        } finally {
+            if (isCurrent(session)) probeDbwAfterLoad(ParameterPage.FUNCTIONS)
         }
-        return voltage?.takeIf { isCurrent(session) && isFunctionsPageActive() }
     }
 
     fun sendPacket(packet: OutputPacket): Boolean {
@@ -159,8 +177,12 @@ class ParameterSession internal constructor(
         val scope = scope ?: return
         if (!canOperate() || saveJob?.isActive == true) return
         val session = sessionId
+        val probe = dbwProbeJob
+        probe?.cancel()
         saveJob = scope.launch {
             try {
+                probe?.join()
+                if (!isCurrent(session) || !canOperate()) return@launch
                 val result = exchange.saveEeprom {
                     if (isCurrent(session)) eventHandler?.invoke(ParameterSessionEvent.SaveStarted)
                 }
@@ -168,7 +190,10 @@ class ParameterSession internal constructor(
             } catch (cancelled: CancellationException) {
                 throw cancelled
             } finally {
-                if (saveJob == coroutineContext[Job]) saveJob = null
+                if (saveJob == coroutineContext[Job]) {
+                    saveJob = null
+                    if (isCurrent(session)) activePage?.let(::probeDbwAfterLoad)
+                }
             }
         }
     }
@@ -180,6 +205,7 @@ class ParameterSession internal constructor(
         activePage = null
         readGate.deactivate()
         loadedPages.clear()
+        mutableDbwSupport.value = null
         writeRevision++
         cancelPendingWork()
         eventHandler?.invoke(ParameterSessionEvent.Invalidated)
@@ -198,6 +224,7 @@ class ParameterSession internal constructor(
             connected = false
             readGate.deactivate()
             loadedPages.clear()
+            mutableDbwSupport.value = null
             writeRevision++
             cancelPendingWork()
             eventHandler?.invoke(ParameterSessionEvent.Invalidated)
@@ -205,6 +232,7 @@ class ParameterSession internal constructor(
     }
 
     private fun cancelPendingWork() {
+        dbwProbeJob?.cancel()
         saveJob?.cancel()
         saveJob = null
         val jobsToCancel = readJobs.values.toList()
@@ -213,8 +241,14 @@ class ParameterSession internal constructor(
     }
 
     private fun loadPage(page: ParameterPage) {
-        if (page in loadedPages || readJobs[page]?.isActive == true) return
+        if (page == ParameterPage.EL_THROTTLE && !isDbwSupported()) return
+        if (page in loadedPages) {
+            probeDbwAfterLoad(page)
+            return
+        }
+        if (readJobs[page]?.isActive == true) return
         val scope = scope ?: return
+        dbwProbeJob?.cancel()
         val session = sessionId
         eventHandler?.invoke(ParameterSessionEvent.PageLoading(page))
         var readRevision = writeRevision
@@ -228,6 +262,7 @@ class ParameterSession internal constructor(
                 if (result == null) return@launch
                 if (writeRevision == readRevision) loadedPages += page
                 eventHandler?.invoke(ParameterSessionEvent.PageLoaded(page, result))
+                probeDbwAfterLoad(page)
             } catch (_: TimeoutException) {
                 if (isCurrent(session)) eventHandler?.invoke(ParameterSessionEvent.PageFailed(page))
             } catch (cancelled: CancellationException) {
@@ -239,6 +274,33 @@ class ParameterSession internal constructor(
             }
         }
         readJobs[page] = job
+    }
+
+    private fun probeDbwAfterLoad(page: ParameterPage) {
+        val scope = scope ?: return
+        if (page !in loadedPages || !canOperate() || !readGate.isActive(page) || firmware()?.isSecu3T != false ||
+            dbwSupport.value != null || dbwProbeJob?.isActive == true || saveJob?.isActive == true
+        ) return
+        val session = sessionId
+        val probe = scope.launch(start = CoroutineStart.LAZY) {
+            try {
+                val confirmed = readGate.readOnce(page) {
+                    if (!isCurrent(session) || !canOperate()) return@readOnce null
+                    exchange.confirmsDbwSupport()
+                }
+                if (confirmed != null && isCurrent(session) && canOperate() && readGate.isActive(page)) {
+                    mutableDbwSupport.value = confirmed
+                }
+            } catch (cancelled: CancellationException) {
+                throw cancelled
+            } catch (_: Exception) {
+                if (isCurrent(session) && canOperate() && readGate.isActive(page)) mutableDbwSupport.value = false
+            } finally {
+                if (dbwProbeJob === coroutineContext[Job]) dbwProbeJob = null
+            }
+        }
+        dbwProbeJob = probe
+        probe.start()
     }
 
     private suspend fun readPage(page: ParameterPage): ParameterReadResult? {
@@ -270,7 +332,7 @@ class ParameterSession internal constructor(
                 if (firmware()?.isGdControlEnabled != true) null
                 else packet(Task.Secu3ReadGasDoseParam, GasDoseParamPacket::class.java)
             }
-            ParameterPage.EL_THROTTLE -> packet(Task.Secu3ReadDbwParam, DbwParamPacket::class.java)
+            ParameterPage.EL_THROTTLE -> if (isDbwSupported()) packet(Task.Secu3ReadDbwParam, DbwParamPacket::class.java) else null
             ParameterPage.FUEL_INJECTION -> {
                 if (firmware()?.isFuelInjectEnabled != true) null
                 else packet(Task.Secu3ReadFuelInjectionParam, InjctrParPacket::class.java)

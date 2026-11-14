@@ -21,3 +21,7 @@ The session's methods and event callbacks run on the ViewModel's main scope. Det
 ## A TPS measurement must not resume on a later page activation
 
 TPS uses the page-read mutex but does not use the retry-on-activation flow or populate the Functions cache. Each reply supplies only the raw voltage. The Functions deactivation and session invalidation events cancel the caller's measurement job and discard its draft, including when a reply is pending or the preview is already visible.
+
+## DBW confirmation is attempted after a page has loaded
+
+The probe shares the page-read mutex because a DBW query changes the stream mode. Page reads, TPS measurement and EEPROM save cancel it before using the stream. A canceled probe can resume once ordinary work completes. A completed probe is kept through host pause and is cleared on disconnect or route closure. A timeout means support is unconfirmed because the firmware silently ignores an unsupported request and the transport can also lose a reply.

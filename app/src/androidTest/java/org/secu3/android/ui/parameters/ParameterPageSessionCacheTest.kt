@@ -12,6 +12,7 @@ import androidx.compose.ui.test.assertIsSelected
 import androidx.compose.ui.test.assertTextEquals
 import androidx.compose.ui.test.click
 import androidx.compose.ui.test.onAllNodesWithTag
+import androidx.compose.ui.test.onAllNodesWithText
 import androidx.compose.ui.test.onNodeWithContentDescription
 import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.onNodeWithText
@@ -421,6 +422,7 @@ class ParameterPageSessionCacheTest {
             val received = FunSetParamPacket(loadSrcCfg = 0, ckpsEngineCyl = 4, injCylDisp = .5f)
             usb.emitFunctions(received)
             await { vm.functionsControl.values.value?.functionNames == listOf("Speed density", "Alpha-N") }
+            confirmDbwProbe(usb, vm)
             delay(150)
 
             val baseline = usb.writes.size
@@ -455,6 +457,7 @@ class ParameterPageSessionCacheTest {
             usb.awaitReadRequest('n', 1)
             usb.emitFunctions(FunSetParamPacket(loadSrcCfg = 0, ckpsEngineCyl = 4, injCylDisp = .5f))
             await { vm.functionsControl.values.value != null }
+            confirmDbwProbe(usb, vm)
             delay(150)
 
             val baseline = usb.writes.size
@@ -498,6 +501,7 @@ class ParameterPageSessionCacheTest {
             )
             usb.emitFunctions(initial)
             await { vm.functionsControl.values.value != null }
+            confirmDbwProbe(usb, vm)
             val baseline = usb.writes.size
 
             val calculator = compose.onNodeWithTag("pressure_calculator_map")
@@ -639,6 +643,7 @@ class ParameterPageSessionCacheTest {
             usb.awaitReadRequest('n', 1)
             usb.emitFunctions(FunSetParamPacket(loadSrcCfg = 0, fnGas = 1, ckpsEngineCyl = 4, injCylDisp = .5f))
             await { vm.functionsControl.values.value != null }
+            confirmDbwProbe(usb, vm)
             val queueField = ParamsViewModel::class.java.getDeclaredField("uiMessageQueue").apply { isAccessible = true }
             val queue = queueField.get(vm) as org.secu3.android.ui.messages.UiMessageQueue
             queue.onActiveScopeChanged(PARAMETERS_ROUTE)
@@ -1040,6 +1045,94 @@ class ParameterPageSessionCacheTest {
         }
     }
 
+    @Test fun dbwTabAppearsOnlyAfterReplyAndKeepsTheCurrentPageSelected(): Unit = runBlocking {
+        compose.activityRule.scenario.onActivity { it.openHome() }
+        val usb = installFakeUsb(paramsViewModel())
+        try {
+            compose.onNodeWithTag("home-card-parameters").performClick()
+            compose.waitForIdle()
+            val starter = compose.onNodeWithText(compose.activity.getString(R.string.params_tab_start_title))
+            val dbwTitle = compose.activity.getString(R.string.params_tab_el_throttle_title)
+            val dbwTab = compose.onNodeWithText(dbwTitle)
+            starter.assertIsSelected()
+            usb.awaitReadRequest('o', 1)
+            dbwTab.assertDoesNotExist()
+            assertEquals(0, usb.readRequestCount('P'))
+            usb.emit(StarterParamPacket(starterOff = 120))
+            usb.awaitReadRequest('P', 1)
+            dbwTab.assertDoesNotExist()
+            starter.assertIsSelected()
+
+            usb.emitDbw(DbwParamPacket(), 43.5f)
+            compose.waitUntil(4_000) { compose.onAllNodesWithText(dbwTitle).fetchSemanticsNodes().isNotEmpty() }
+            starter.assertIsSelected()
+            assertEquals(1, usb.readRequestCount('o'))
+            assertEquals(1, usb.readRequestCount('P'))
+
+            compose.onNodeWithText(compose.activity.getString(R.string.params_tab_functions_title)).performClick()
+            compose.waitForIdle()
+            usb.awaitReadRequest('p', 1)
+            usb.emitFunctionName(0, "Speed density")
+            usb.emitFunctionName(1, "Alpha-N")
+            usb.awaitReadRequest('n', 1)
+            usb.emitFunctions(FunSetParamPacket())
+            compose.onNodeWithTag("functions_apps_offset").performScrollTo().assertIsEnabled()
+        } finally {
+            usb.close()
+        }
+    }
+
+    @Test fun missingDbwReplyHidesTheTabAndDisablesOnlyApps1Calibration(): Unit = runBlocking {
+        compose.activityRule.scenario.onActivity { it.openHome() }
+        val usb = installFakeUsb(paramsViewModel())
+        try {
+            compose.onNodeWithTag("home-card-parameters").performClick()
+            compose.waitForIdle()
+            usb.awaitReadRequest('o', 1)
+            usb.emit(StarterParamPacket(starterOff = 120))
+            usb.awaitReadRequest('P', 1)
+            val sensorModes = usb.readRequestCount('q')
+            compose.waitUntil(6_000) { usb.readRequestCount('q') > sensorModes }
+            val dbwTab = compose.onNodeWithText(compose.activity.getString(R.string.params_tab_el_throttle_title))
+            dbwTab.assertDoesNotExist()
+
+            compose.onNodeWithText(compose.activity.getString(R.string.params_tab_functions_title)).performClick()
+            compose.waitForIdle()
+            usb.awaitReadRequest('p', 1)
+            usb.emitFunctionName(0, "Speed density")
+            usb.emitFunctionName(1, "Alpha-N")
+            usb.awaitReadRequest('n', 1)
+            usb.emitFunctions(FunSetParamPacket(apps1CurveOffset = 1f))
+            compose.onNodeWithTag("functions_apps_offset").performScrollTo().assertIsNotEnabled()
+            compose.onNodeWithTag("functions_gps_offset").performScrollTo().assertIsEnabled()
+            compose.onNodeWithTag("functions_fps_offset").performScrollTo().assertIsEnabled()
+            dbwTab.assertDoesNotExist()
+            assertEquals(1, usb.readRequestCount('P'))
+        } finally {
+            usb.close()
+        }
+    }
+
+    @Test fun secu3tKeepsDbwHiddenWithoutProbing(): Unit = runBlocking {
+        compose.activityRule.scenario.onActivity { it.openHome() }
+        val usb = installFakeUsb(paramsViewModel(), firmwareOptions = 1 shl 17)
+        try {
+            compose.onNodeWithTag("home-card-parameters").performClick()
+            compose.waitForIdle()
+            usb.awaitReadRequest('o', 1)
+            usb.emit(StarterParamPacket(starterOff = 120))
+            compose.onNodeWithText(compose.activity.getString(R.string.params_tab_angles_title)).performClick()
+            compose.waitForIdle()
+            usb.awaitReadRequest('m', 1)
+            usb.emit(AnglesParamPacket(maxAngle = 4f))
+            compose.onNodeWithText(compose.activity.getString(R.string.params_tab_angles_title)).assertIsSelected()
+            compose.onNodeWithText(compose.activity.getString(R.string.params_tab_el_throttle_title)).assertDoesNotExist()
+            assertEquals(0, usb.readRequestCount('P'))
+        } finally {
+            usb.close()
+        }
+    }
+
     @Test fun dbwCommandsWriteTenFieldsWithFamilyGateAndSessionAdmission() = runBlocking {
         val vm = paramsViewModel()
         val queueField = ParamsViewModel::class.java.getDeclaredField("uiMessageQueue").apply { isAccessible = true }
@@ -1049,9 +1142,14 @@ class ParameterPageSessionCacheTest {
         var dbwStep = "install fake USB"
         try {
             val usb = installFakeUsb(vm, firmwareOptions = 0).also { transport = it }
+            dbwStep = "confirm DBW support after reading Starter"
+            activate(vm, R.string.params_tab_start_title)
+            usb.awaitReadRequest('o', 1)
+            usb.emit(StarterParamPacket(starterOff = 120))
+            confirmDbwProbe(usb, vm)
             dbwStep = "wait for initial DBW read"
             activate(vm, R.string.params_tab_el_throttle_title)
-            usb.awaitReadRequest('P', 1)
+            usb.awaitReadRequest('P', 2)
             dbwStep = "receive initial DBW response"
             usb.emitDbw(DbwParamPacket(.1f, .2f, .3f, 40f, 50f, .12f, 6f, 7f, 8f, 9f), 47.5f)
             await { vm.dbwControl.values.value?.homePosition == 47.5f }
@@ -1091,7 +1189,7 @@ class ParameterPageSessionCacheTest {
             val writesBeforeRefresh = usb.writes.size
             val dbwWritesBeforeRefresh = usb.writes.count { it.size > 1 && it[1].toInt().toChar() == 'P' }
             compose.runOnUiThread { vm.refreshPage(ParameterPage.EL_THROTTLE) }
-            usb.awaitReadRequest('P', 2)
+            usb.awaitReadRequest('P', 3)
             await { vm.dbwControl.values.value == null }
             usb.emitDbw(DbwParamPacket(.125f, .25f, .5f, 45.5f, 55.5f, .15f, 6.4f, 7.5f, 12f, 10.5f), 48.5f)
             await { vm.dbwControl.values.value?.homePosition == 48.5f }
@@ -2424,6 +2522,14 @@ class ParameterPageSessionCacheTest {
             })
         }
         compose.waitForIdle()
+    }
+
+    private suspend fun confirmDbwProbe(usb: FakeUsbTransport, vm: ParamsViewModel) {
+        usb.awaitReadRequest('P', 1)
+        val sensorModes = usb.readRequestCount('q')
+        usb.emitDbw(DbwParamPacket(), 0f)
+        await { vm.capabilities.value.dbw }
+        usb.awaitReadRequest('q', sensorModes + 1)
     }
 
     private suspend fun await(predicate: () -> Boolean) {

@@ -139,6 +139,7 @@ class FunctionsControl internal constructor(
     private val firmware: () -> FirmwareInfoPacket?,
     private val isFunctionsPageActive: () -> Boolean = { false },
     private val readTpsVoltage: suspend () -> Float? = { null },
+    private val isDbwSupported: () -> Boolean = { false },
     private val sendPacket: (OutputPacket) -> Boolean,
 ) {
     @Inject
@@ -146,6 +147,7 @@ class FunctionsControl internal constructor(
         firmware = { connectionManager.fwInfo },
         isFunctionsPageActive = parameterSession::isFunctionsPageActive,
         readTpsVoltage = parameterSession::readTpsVoltage,
+        isDbwSupported = parameterSession::isDbwSupported,
         sendPacket = parameterSession::sendPacket,
     )
 
@@ -182,12 +184,12 @@ class FunctionsControl internal constructor(
     fun editTpsCurveGradient(value: Float) = editFloat(value, -100f, 100f) { it.tpsCurveGradient = value }
     fun editMap2CurveOffset(value: Float) = editFloat(value, -5f, 5f) { it.map2CurveOffset = value }
     fun editMap2CurveGradient(value: Float) = editFloat(value, -150f, 150f) { it.map2CurveGradient = value }
-    fun editGpsCurveOffset(value: Float) = editFloat(value, -5f, 5f, { ParameterCapabilities(firmware()).dbw }) { it.gpsCurveOffset = value }
-    fun editGpsCurveGradient(value: Float) = editFloat(value, -150f, 150f, { ParameterCapabilities(firmware()).dbw }) { it.gpsCurveGradient = value }
-    fun editFpsCurveOffset(value: Float) = editFloat(value, -5f, 5f, { ParameterCapabilities(firmware()).dbw }) { it.fpsCurveOffset = value }
-    fun editFpsCurveGradient(value: Float) = editFloat(value, -500f, 500f, { ParameterCapabilities(firmware()).dbw }) { it.fpsCurveGradient = value }
-    fun editApps1CurveOffset(value: Float) = editFloat(value, -5f, 5f, { ParameterCapabilities(firmware()).dbw }) { it.apps1CurveOffset = value }
-    fun editApps1CurveGradient(value: Float) = editFloat(value, -500f, 500f, { ParameterCapabilities(firmware()).dbw }) { it.apps1CurveGradient = value }
+    fun editGpsCurveOffset(value: Float) = editFloat(value, -5f, 5f, { ParameterCapabilities(firmware()).nonSecu3T }) { it.gpsCurveOffset = value }
+    fun editGpsCurveGradient(value: Float) = editFloat(value, -150f, 150f, { ParameterCapabilities(firmware()).nonSecu3T }) { it.gpsCurveGradient = value }
+    fun editFpsCurveOffset(value: Float) = editFloat(value, -5f, 5f, { ParameterCapabilities(firmware()).nonSecu3T }) { it.fpsCurveOffset = value }
+    fun editFpsCurveGradient(value: Float) = editFloat(value, -500f, 500f, { ParameterCapabilities(firmware()).nonSecu3T }) { it.fpsCurveGradient = value }
+    fun editApps1CurveOffset(value: Float) = editFloat(value, -5f, 5f, { isDbwSupported() }) { it.apps1CurveOffset = value }
+    fun editApps1CurveGradient(value: Float) = editFloat(value, -500f, 500f, { isDbwSupported() }) { it.apps1CurveGradient = value }
 
     internal fun startTpsLearning() {
         if (packet == null || !isFunctionsPageActive()) return
@@ -317,7 +319,7 @@ class FunctionsControl internal constructor(
     }
 
     private fun pressureSensorSupported(sensor: PressureSensor): Boolean = when (sensor) {
-        PressureSensor.GPS, PressureSensor.FPS -> ParameterCapabilities(firmware()).dbw
+        PressureSensor.GPS, PressureSensor.FPS -> ParameterCapabilities(firmware()).nonSecu3T
         else -> true
     }
 

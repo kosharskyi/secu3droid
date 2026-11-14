@@ -15,7 +15,6 @@ import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue
 import org.junit.Test
 import org.secu3.android.models.packets.base.OutputPacket
-import org.secu3.android.models.packets.input.FirmwareInfoPacket
 import org.secu3.android.models.packets.out.params.DbwParamPacket
 
 class DbwControlTest {
@@ -23,7 +22,7 @@ class DbwControlTest {
     fun receiveIsPassiveEveryNamedEditMapsToItsFieldAndKeepsHomePosition() {
         val writes = mutableListOf<IntArray>()
         val snapshots = mutableListOf<OutputPacket>()
-        val control = DbwControl({ null }, { packet -> snapshots += packet; writes += packet.pack(); true })
+        val control = DbwControl({ true }, { packet -> snapshots += packet; writes += packet.pack(); true })
         val packet = DbwParamPacket(.1f, .2f, .3f, 40f, 50f, .12f, 6f, 7f, 8f, 9f, 43.21f)
 
         control.receive(packet)
@@ -78,7 +77,7 @@ class DbwControlTest {
     @Test
     fun fixedPointEncodingMatchesDesktopAndOmitsReadOnlyHomePosition() {
         val writes = mutableListOf<IntArray>()
-        val control = DbwControl({ null }, { packet -> writes += packet.pack(); true })
+        val control = DbwControl({ true }, { packet -> writes += packet.pack(); true })
         control.receive(DbwParamPacket(.125f, .25f, .5f, 45.5f, 50f, .12f, 6.25f, 7.5f, 8f, 9.5f, 77f))
         assertTrue(control.editEtcP(.125f))
         assertArrayEquals(
@@ -99,7 +98,7 @@ class DbwControlTest {
         assertEquals(47.5f, received.homePosition_edited, 0f)
 
         var sent: OutputPacket? = null
-        val control = DbwControl({ null }, { sent = it; true })
+        val control = DbwControl({ true }, { sent = it; true })
         control.receive(received)
         assertTrue(control.editEtcI(.375f))
         val repacked = requireNotNull(sent).pack()
@@ -109,12 +108,12 @@ class DbwControlTest {
     }
 
     @Test
-    fun invalidValuesUnsupportedFirmwareAndSessionRefusalDoNotChangeVisibleState() {
-        var firmware: FirmwareInfoPacket? = null
+    fun invalidValuesUnconfirmedDbwAndSessionRefusalDoNotChangeVisibleState() {
+        var dbwSupported = true
         var accept = true
         val writes = mutableListOf<IntArray>()
         val packet = DbwParamPacket(1f, homePosition_edited = 12.5f)
-        val control = DbwControl({ firmware }, { output -> writes += output.pack(); accept })
+        val control = DbwControl({ dbwSupported }, { output -> writes += output.pack(); accept })
         control.receive(packet)
         val initial = control.values.value
 
@@ -124,12 +123,12 @@ class DbwControlTest {
         assertFalse(control.editEtcP(5.001f))
         assertEquals(0, writes.size)
 
-        firmware = FirmwareInfoPacket(options = 1 shl 17) // SECU3T has no DBW controls.
+        dbwSupported = false
         assertFalse(control.editEtcP(2f))
         assertEquals(0, writes.size)
         assertEquals(initial, control.values.value)
 
-        firmware = FirmwareInfoPacket(options = 0)
+        dbwSupported = true
         accept = false
         assertFalse(control.editEtcP(2f))
         assertEquals(1, writes.size)
@@ -138,7 +137,7 @@ class DbwControlTest {
 
         accept = true
         assertTrue(control.editEtcP(2f))
-        firmware = FirmwareInfoPacket(options = 1 shl 17)
+        dbwSupported = false
         assertFalse(control.editEtcI(3f))
         assertEquals(2f, control.values.value?.etcP)
         assertEquals(12.5f, control.values.value?.homePosition)
@@ -151,7 +150,7 @@ class DbwControlTest {
     @Test
     fun everyEditorRejectsNonFiniteAndOutOfRangeValues() {
         var sends = 0
-        val control = DbwControl({ null }, { sends++; true })
+        val control = DbwControl({ true }, { sends++; true })
         control.receive(DbwParamPacket())
         val edits = listOf(
             Triple(control::editEtcP, 0f, 5f),
@@ -179,7 +178,7 @@ class DbwControlTest {
     @Test
     fun unrelatedEditKeepsReceivedValuesOutsideEditorBounds() {
         var sent: OutputPacket? = null
-        val control = DbwControl({ null }, { sent = it; true })
+        val control = DbwControl({ true }, { sent = it; true })
         control.receive(DbwParamPacket(etc_p = 6.25f, pid_period = .3f))
 
         assertTrue(control.editEtcI(1f))

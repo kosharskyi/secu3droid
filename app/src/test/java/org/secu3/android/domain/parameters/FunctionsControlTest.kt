@@ -29,7 +29,7 @@ class FunctionsControlTest {
     @Test
     fun receiveIsPassiveAndAllFourteenNamedEditsUpdateOnlyTheirField() {
         var sends = 0
-        val control = FunctionsControl({ null }) { sends++; true }
+        val control = FunctionsControl(firmware = { null }, isDbwSupported = { true }) { sends++; true }
         val packet = FunSetParamPacket(
             loadLower = 1f, loadUpper = 2f,
             mapCurveOffset = 3f, mapCurveGradient = 4f,
@@ -306,6 +306,32 @@ class FunctionsControlTest {
         assertTrue(control.updateMafEngineDisplacement(2f))
         assertEquals(646431.375f, packet.mafload_const, .01f)
         assertArrayEquals(intArrayOf(0x00, 0x09, 0xDD, 0x1F), packet.pack().sliceArray(28..31))
+    }
+
+    @Test
+    fun apps1EditsRequireConfirmedDbwWhilePressureEditsUseTheEcuFamily() {
+        var dbwSupported = false
+        val frames = mutableListOf<IntArray>()
+        val control = FunctionsControl(
+            firmware = { FirmwareInfoPacket(options = 0) },
+            isDbwSupported = { dbwSupported },
+        ) { frames += it.pack(); true }
+        val packet = FunSetParamPacket()
+        control.receive(parameters(packet))
+
+        assertFalse(control.editApps1CurveOffset(1f))
+        assertFalse(control.editApps1CurveGradient(25f))
+        assertTrue(frames.isEmpty())
+        assertTrue(control.editGpsCurveOffset(1f))
+        assertTrue(control.editFpsCurveGradient(25f))
+
+        dbwSupported = true
+        assertTrue(control.editApps1CurveOffset(1f))
+        assertTrue(control.editApps1CurveGradient(25f))
+        dbwSupported = false
+        assertFalse(control.editApps1CurveOffset(2f))
+        assertEquals(1f, packet.apps1CurveOffset, 0f)
+        assertEquals(4, frames.size)
     }
 
     @Test

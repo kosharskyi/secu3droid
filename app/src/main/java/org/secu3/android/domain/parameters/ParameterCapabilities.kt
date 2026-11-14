@@ -12,7 +12,7 @@ package org.secu3.android.domain.parameters
 import org.secu3.android.models.packets.input.FirmwareInfoPacket
 
 /** Immutable firmware capability snapshot shared by parameter presentation and command guards. */
-class ParameterCapabilities(firmware: FirmwareInfoPacket? = null) {
+class ParameterCapabilities(firmware: FirmwareInfoPacket? = null, dbwConfirmed: Boolean = false) {
     val known = firmware != null
     val fuelInjection = firmware?.isFuelInjectEnabled ?: true
     val gasDose = firmware?.isGdControlEnabled ?: true
@@ -31,14 +31,15 @@ class ParameterCapabilities(firmware: FirmwareInfoPacket? = null) {
     val cogsBtdc = firmware?.let { ckps && it.options.and(1 shl 2) == 0 } ?: true
     val mttf = firmware?.let { !it.isHallSyncEnabled } ?: true
     val oddCylinders = firmware?.let { it.isPhasedIgnitionEnabled || it.isHallSyncEnabled } ?: true
-    val dbw get() = !secu3T
+    val nonSecu3T get() = !secu3T
+    val dbw = nonSecu3T && dbwConfirmed
     val sevenCylinders = firmware?.let { it.options.and(1 shl 2) != 0 } ?: true
     private val carbAfr = firmware?.isCarbAfrEnabled ?: false
 
     val carburetor get() = !known || !fuelInjection
     val fuelOrGasDose get() = fuelInjection || gasDose
     val floodClearThreshold get() = fuelInjection || gasDose || choke
-    val nonSecu3TFuelInjection get() = fuelInjection && dbw
+    val nonSecu3TFuelInjection get() = fuelInjection && nonSecu3T
     val lambdaControl get() = known && (fuelInjection || gasDose || carbAfr)
     /** Base Lambda fields remain editable during firmware discovery, but are gated on known unsupported ECUs. */
     val lambdaBaseEditing get() = !known || lambdaControl
@@ -54,7 +55,7 @@ class ParameterCapabilities(firmware: FirmwareInfoPacket? = null) {
     fun adcChannelEnabled(channel: Int): Boolean = when (channel) {
         in 0..5 -> true
         7 -> extraAnalogInputs
-        in 6..11 -> dbw
+        in 6..11 -> nonSecu3T
         else -> false
     }
 
@@ -87,6 +88,6 @@ class ParameterCapabilities(firmware: FirmwareInfoPacket? = null) {
     }
 
     companion object {
-        val All = ParameterCapabilities(null)
+        val All = ParameterCapabilities(dbwConfirmed = true)
     }
 }

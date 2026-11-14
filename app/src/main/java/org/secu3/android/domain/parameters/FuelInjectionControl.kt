@@ -211,7 +211,7 @@ class FuelInjectionControl internal constructor(
     }
 
     fun setAdditionalCorrections(value: Boolean): Boolean {
-        if (!canControl() || !ParameterCapabilities(firmwareInfo.value).dbw) return false
+        if (!canControl() || !ParameterCapabilities(firmwareInfo.value).nonSecu3T) return false
         val current = packet ?: return false
         current.useAdditionalCorrections = value
         return sendOrdinary(current)
@@ -225,14 +225,14 @@ class FuelInjectionControl internal constructor(
     }
 
     fun setDifferentialPressure(value: Boolean): Boolean {
-        if (!canControl() || !ParameterCapabilities(firmwareInfo.value).dbw) return false
+        if (!canControl() || !ParameterCapabilities(firmwareInfo.value).nonSecu3T) return false
         val current = packet ?: return false
         current.useDifferentialPressure = value
         return sendOrdinary(current)
     }
 
     fun setSwitchRows(value: Boolean): Boolean {
-        if (!canControl() || !ParameterCapabilities(firmwareInfo.value).dbw) return false
+        if (!canControl() || !ParameterCapabilities(firmwareInfo.value).nonSecu3T) return false
         val current = packet ?: return false
         current.switchSecondInjRow = value
         return sendOrdinary(current)

@@ -20,8 +20,10 @@ import org.secu3.android.models.FnName
 import org.secu3.android.models.packets.base.InputPacket
 import org.secu3.android.models.packets.input.FnNameDatPacket
 import org.secu3.android.models.packets.out.OpCompNc
+import org.secu3.android.models.packets.out.params.DbwParamPacket
 import org.secu3.android.models.packets.out.params.FunSetParamPacket
 import org.secu3.android.utils.Task
+import java.util.concurrent.TimeoutException
 import javax.inject.Inject
 import javax.inject.Singleton
 
@@ -58,6 +60,17 @@ class ParameterExchange internal constructor(
     ) { packets ->
         packetType.cast(packets.first { packetType.isInstance(it) })
             ?: error("Received packet was not an instance of ${packetType.simpleName}")
+    }
+
+    internal suspend fun confirmsDbwSupport(): Boolean = try {
+        request(
+            task = Task.Secu3ReadDbwParam,
+            restoreSensors = true,
+            responseTimeoutMillis = minOf(timeoutMillis, DBW_PROBE_TIMEOUT_MILLIS),
+        ) { packets -> packets.filterIsInstance<DbwParamPacket>().first() }
+        true
+    } catch (_: TimeoutException) {
+        false
     }
 
     suspend fun readFunctions(): FunctionParameters {
@@ -103,11 +116,12 @@ class ParameterExchange internal constructor(
         task: Task,
         restoreSensors: Boolean,
         onRequestStarted: () -> Unit = {},
+        responseTimeoutMillis: Long = timeoutMillis,
         receive: suspend (Flow<InputPacket>) -> T,
     ): T {
         try {
             return ecuExchange.request(
-                timeoutMillis = timeoutMillis,
+                timeoutMillis = responseTimeoutMillis,
                 sendRequest = {
                     sendTask(task)
                     onRequestStarted()
@@ -121,5 +135,7 @@ class ParameterExchange internal constructor(
 
     private companion object {
         const val RESPONSE_TIMEOUT_MILLIS = 10_000L
+        // The firmware can send at intervals up to 255 ten-millisecond ticks.
+        const val DBW_PROBE_TIMEOUT_MILLIS = 3_000L
     }
 }
