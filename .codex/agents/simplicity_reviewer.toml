@@ -1,5 +1,6 @@
 name = "simplicity_reviewer"
 description = "Reviews code for overengineering, unnecessary abstractions, speculative design, and unjustified complexity."
+model = "gpt-6.1-terra"
 model_reasoning_effort = "high"
 sandbox_mode = "read-only"
 
