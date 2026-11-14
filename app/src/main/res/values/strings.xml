@@ -704,5 +704,10 @@
     <string name="refresh">Refresh</string>
     <string name="parameter_read_failed">Could not read parameters from the ECU.</string>
     <string name="parameter_save_unconfirmed">Saving parameters was not confirmed by the ECU.</string>
+    <string name="parameter_settings_title">Parameter settings</string>
+    <string name="parameter_primary_fuel_density">Primary fuel density</string>
+    <string name="parameter_secondary_fuel_density">Secondary fuel density</string>
+    <string name="parameter_fuel_density_range">Enter a value from 0.2 to 2.0.</string>
+    <string name="fuel_density_unit">g/cm³</string>
     <string name="retry">Retry</string>
 </resources>

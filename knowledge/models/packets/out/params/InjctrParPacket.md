@@ -21,3 +21,7 @@ Use the packet's cylinder metadata with `validConfigurations()` and `validPulses
 ## Queue Fuel Injection commands as packed snapshots
 
 `snapshot()` captures the current wire bytes for asynchronous sending while keeping this mutable packet as the receive/edit model. Do not retain or enqueue the live packet instance: later edits must not change an already admitted command.
+
+## Derived injector constants are explicit density-aware calculations
+
+Received SD and MAF constants remain untouched by ordinary packet field edits. Call the packet's density-aware recalculation only for displacement/flow changes or for the affected bank after configuration/squirts changes. Keep the SD Float operation order and narrow the MAF Double result to Float before truncation; `mafloadConst` remains independent of fuel density.

@@ -48,6 +48,7 @@ import javax.inject.Named
 import org.secu3.android.utils.prefs.AppPrefs
 import org.secu3.android.utils.prefs.PreferencesMigrations
 import org.secu3.android.utils.prefs.UserPrefs
+import org.secu3.android.utils.prefs.ParameterSettingsPrefs
 import org.secu3.android.db.AppDatabase
 import org.secu3.android.network.ApiManager
 import org.secu3.android.network.ApiService
@@ -88,6 +89,17 @@ object UtilsModule {
         migrations = listOf(migrations.appPrefsMigration()),
         scope = scope,
         produceFile = { context.preferencesDataStoreFile("app_preferences") },
+    )
+
+    @Singleton
+    @Provides
+    @Named(ParameterSettingsPrefs.PARAMETER_SETTINGS_DATASTORE)
+    fun getParameterSettingsDataStore(
+        @ApplicationContext context: Context,
+        @Named(PREFERENCE_DATASTORE_SCOPE) scope: CoroutineScope,
+    ): DataStore<Preferences> = PreferenceDataStoreFactory.create(
+        scope = scope,
+        produceFile = { context.preferencesDataStoreFile("parameter_preferences") },
     )
 
     @Singleton
@@ -135,5 +147,5 @@ object UtilsModule {
         return context.getSystemService(Context.DOWNLOAD_SERVICE) as DownloadManager
     }
 
-    private const val PREFERENCE_DATASTORE_SCOPE = "preferenceDataStoreScope"
+    private const val PREFERENCE_DATASTORE_SCOPE = ParameterSettingsPrefs.PREFERENCE_DATASTORE_SCOPE
 }

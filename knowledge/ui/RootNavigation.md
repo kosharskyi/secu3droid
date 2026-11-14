@@ -55,3 +55,7 @@ The picker is an ordinary Navigation Compose destination above the retained Dash
 ## Screen analytics follows restored navigation entries
 
 Log only fixed route names when a Navigation Compose back-stack entry becomes current. Save the last tracked entry ID so Activity recreation does not duplicate the screen event. An event can be dropped if the app reaches its first route before Analytics observes the saved consent; it must never bypass the consent gate to compensate.
+
+## Parameter settings stays above the retained parameter destination
+
+Open Parameter Settings as a regular destination from the Parameters toolbar and pop it to return to the same pager entry and selected tab. The route remains available while disconnected because it edits local fuel-density preferences only.

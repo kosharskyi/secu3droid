@@ -9,3 +9,7 @@ Fuel Injection values expose timing/cranking timing as signed fractional degrees
 ## Configuration updates set a valid pulse count first
 
 Use `InjctrParPacket.validConfigurations()` and `validPulses(config)` for choices and validation. When changing a bank configuration, retain its current pulse count if the new configuration permits it; otherwise assign the first valid count before updating the configuration so derived constants are recalculated from a valid pair.
+
+## Fuel-derived injector constants wait for a successful density read
+
+`FuelInjectionControl` reads the current atomic density pair from `ParameterSettingsPrefs` at command admission. Engine displacement, injector flow, configuration, and squirts edits are unavailable until the first successful read. Displacement or flow recalculates both banks; configuration or squirts recalculates only its selected bank. If the parameter session refuses a command, restore its changed inputs and derived constants so a later unrelated edit cannot send an unadmitted calculation.

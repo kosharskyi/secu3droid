@@ -2,6 +2,7 @@ package org.secu3.android.ui.parameters
 
 import android.Manifest
 import android.os.Build
+import androidx.compose.ui.semantics.SemanticsProperties
 import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.Lifecycle
 import androidx.compose.ui.test.assertIsDisplayed
@@ -12,6 +13,7 @@ import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.performScrollTo
+import androidx.compose.ui.test.performTextReplacement
 import androidx.compose.ui.platform.ComposeView
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.compose.runtime.getValue
@@ -194,7 +196,7 @@ class ParameterPageSessionCacheTest {
                 val frame = usb.writes[writes - 1]
                 assertEquals('!', frame[0].toInt().toChar())
                 assertEquals('&', frame[1].toInt().toChar())
-                val decoded = unescapeUniversalOutputWrite(frame)
+                val decoded = unescapeParameterWrite(frame)
                 assertArrayEquals(expected + expectedTail, decoded.sliceArray(0 until 69))
                 assertTrue(queue.pending.value.any { it.textRes == R.string.packet_sent })
                 queue.pending.value.forEach { queue.acknowledge(it.id) }
@@ -1972,6 +1974,86 @@ class ParameterPageSessionCacheTest {
         }
     }
 
+    @Test fun parameterDensitySaveUsesBothNewValuesForTheNextInjectionEdit() = runBlocking {
+        compose.activityRule.scenario.onActivity { it.openHome() }
+        val usb = installFakeUsb(paramsViewModel(), firmwareOptions = 1 shl 28)
+        val injectionTab = compose.onNodeWithText(compose.activity.getString(R.string.params_tab_fuel_injection_title))
+        val firstFuel = compose.onNodeWithTag("parameter-primary-fuel-density")
+        val secondFuel = compose.onNodeWithTag("parameter-secondary-fuel-density")
+        val save = compose.onNodeWithTag("parameter-settings-save")
+        val received = InjctrParPacket(
+            config = intArrayOf(0x11, 0x11),
+            flowRate = floatArrayOf(300f, 400f),
+            ckpsEngineCyl = 4,
+            sdIglConst = intArrayOf(123, 456),
+            injMafConst = intArrayOf(789, 1011),
+        ).also { it.engineDisp = 2f }
+
+        fun openSettings() = compose.onNodeWithTag("parameters-settings").performClick()
+        fun injectionWrites() = usb.writes.filter { it.getOrNull(1)?.toInt() == ';'.code }
+        suspend fun awaitInjectionRead(count: Int) {
+            try {
+                usb.awaitReadRequest(';', count)
+            } catch (failure: TimeoutCancellationException) {
+                throw AssertionError("Expected injection read #$count, got ${usb.readRequestCount(';')}", failure)
+            }
+        }
+
+        try {
+            compose.onNodeWithTag("home-card-parameters").performClick()
+            injectionTab.performScrollTo().performClick()
+            injectionTab.assertIsSelected()
+            awaitInjectionRead(1)
+            usb.emitFuelInjection(received)
+            compose.waitUntil(4_000) { compose.onAllNodesWithTag("inj-flow-0").fetchSemanticsNodes().isNotEmpty() }
+            compose.onNodeWithTag("inj-flow-0").assertIsDisplayed()
+            openSettings()
+            compose.waitUntil(4_000) {
+                compose.onAllNodesWithTag("parameter-primary-fuel-density").fetchSemanticsNodes().isNotEmpty()
+            }
+            val originalFirst = firstFuel.fetchSemanticsNode().config[SemanticsProperties.EditableText].text
+            val originalSecond = secondFuel.fetchSemanticsNode().config[SemanticsProperties.EditableText].text
+            firstFuel.performTextReplacement("0,8")
+            secondFuel.performTextReplacement("1.1")
+            save.performScrollTo().performClick()
+            try {
+                compose.waitUntil(4_000) { compose.onAllNodesWithTag("parameters-settings").fetchSemanticsNodes().isNotEmpty() }
+                injectionTab.assertIsSelected()
+                awaitInjectionRead(2)
+                usb.emitFuelInjection(received)
+                assertTrue(injectionWrites().isEmpty())
+
+                compose.waitUntil(4_000) { compose.onAllNodesWithTag("inj-flow-0").fetchSemanticsNodes().isNotEmpty() }
+                compose.onNodeWithTag("inj-flow-0").performScrollTo().performClick()
+                compose.onNodeWithTag("numeric_value").performTextReplacement("500")
+                compose.onNodeWithTag("numeric_confirm").performClick()
+
+                try {
+                    await { injectionWrites().isNotEmpty() }
+                } catch (failure: TimeoutCancellationException) {
+                    throw AssertionError("Expected a Fuel Injection write after confirming flow", failure)
+                }
+                val payload = unescapeParameterWrite(injectionWrites().single())
+                fun wordAt(offset: Int) = payload.slice(offset until offset + 4).fold(0) { word, byte ->
+                    (word shl 8) or byte
+                }
+                assertEquals(81_609, wordAt(9))
+                assertEquals(74_190, wordAt(13))
+                assertEquals(21_972, wordAt(31))
+                assertEquals(19_975, wordAt(35))
+            } finally {
+                openSettings()
+                firstFuel.performTextReplacement(originalFirst)
+                secondFuel.performTextReplacement(originalSecond)
+                save.performScrollTo().performClick()
+                compose.waitUntil(4_000) { compose.onAllNodesWithTag("parameters-settings").fetchSemanticsNodes().isNotEmpty() }
+                injectionTab.assertIsSelected()
+            }
+        } finally {
+            usb.close()
+        }
+    }
+
     @Test fun ckpsCommandsUseCurrentFirmwareAndReportOnlyAdmittedSessionWrites() = runBlocking {
         val vm = paramsViewModel()
         var transport: FakeUsbTransport? = null
@@ -2051,14 +2133,19 @@ class ParameterPageSessionCacheTest {
         val index = (output - 1) * 11
         bytes[index] = bytes[index] and 0x0F or (code shl 4)
     }
-    private fun unescapeUniversalOutputWrite(frame: ByteArray): IntArray {
+    private fun unescapeParameterWrite(frame: ByteArray): IntArray {
         val decoded = ArrayList<Int>(frame.size)
         var index = 2
         while (index < frame.lastIndex) {
             val byte = frame[index++].toInt() and 0xFF
             if (byte == 0x0A && index < frame.lastIndex) {
                 val escape = frame[index++].toInt() and 0xFF
-                decoded += when (escape) { 0x83 -> 0x0D; 0x84 -> 0x0A; else -> escape }
+                decoded += when (escape) {
+                    0x81 -> 0x21
+                    0x83 -> 0x0D
+                    0x84 -> 0x0A
+                    else -> error("Unexpected outgoing escape code $escape")
+                }
             } else decoded += byte
         }
         return decoded.toIntArray()

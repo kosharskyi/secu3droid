@@ -508,5 +508,10 @@
     <string name="refresh">Обновить</string>
     <string name="parameter_read_failed">Не удалось прочитать параметры из ЭБУ.</string>
     <string name="parameter_save_unconfirmed">ЭБУ не подтвердил сохранение параметров.</string>
+    <string name="parameter_settings_title">Настройки параметров</string>
+    <string name="parameter_primary_fuel_density">Плотность основного топлива</string>
+    <string name="parameter_secondary_fuel_density">Плотность дополнительного топлива</string>
+    <string name="parameter_fuel_density_range">Введите значение от 0,2 до 2,0.</string>
+    <string name="fuel_density_unit">г/см³</string>
     <string name="retry">Повторить</string>
 </resources>

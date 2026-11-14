@@ -20,6 +20,8 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Settings
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -50,6 +52,7 @@ import org.secu3.android.ui.compose.SecuComposeTheme
 import org.secu3.android.ui.compose.SecuTopAppBar
 import org.secu3.android.ui.compose.SecuTabRow
 import org.secu3.android.ui.parameters.dialogs.NumericEditDialog
+import org.secu3.android.ui.parameters.settings.ParameterSettingsRoute
 
 @Composable
 internal fun ParametersRoute(
@@ -57,6 +60,7 @@ internal fun ParametersRoute(
     activity: MainActivity,
     onNavigateUp: () -> Unit,
     onOpenLtftMaps: () -> Unit,
+    onOpenSettings: () -> Unit,
 ) {
     val viewModel: ParamsViewModel = viewModel(
         viewModelStoreOwner = entry,
@@ -96,6 +100,7 @@ internal fun ParametersRoute(
             onEditDismiss = viewModel::dismissParameterEditor,
             onBack = onNavigateUp,
             onSave = viewModel::savePacket,
+            onOpenSettings = onOpenSettings,
             onPageSettled = { index -> pages.getOrNull(index)?.page?.let(viewModel::activatePage) },
             onPageUnsettled = viewModel::deactivatePage,
             pageContent = { index, active, isActiveNow -> pages.getOrNull(index)?.let { page ->
@@ -116,6 +121,7 @@ internal fun ParametersScreen(
     connectionState: org.secu3.android.connection.ConnectionState?,
     onBack: () -> Unit,
     onSave: () -> Unit,
+    onOpenSettings: () -> Unit = {},
     onPageSettled: (Int) -> Unit,
     pageContent: @Composable (Int, Boolean, () -> Boolean) -> Unit,
     editorSession: ParameterEditSession? = null,
@@ -176,7 +182,7 @@ internal fun ParametersScreen(
             .windowInsetsPadding(WindowInsets.safeDrawing.only(WindowInsetsSides.Horizontal + WindowInsetsSides.Bottom))
             .background(MaterialTheme.colorScheme.background),
     ) {
-        ParametersToolbar(connectionState, onBack, onSave)
+        ParametersToolbar(connectionState, onBack, onSave, onOpenSettings)
         SecuTabRow(
             titles = titles,
             selectedIndex = clampPageIndex(pagerState.currentPage, titles.size),
@@ -232,13 +238,16 @@ internal fun ParametersScreen(
 }
 
 @Composable
-private fun ParametersToolbar(connectionState: org.secu3.android.connection.ConnectionState?, onBack: () -> Unit, onSave: () -> Unit) {
+private fun ParametersToolbar(connectionState: org.secu3.android.connection.ConnectionState?, onBack: () -> Unit, onSave: () -> Unit, onOpenSettings: () -> Unit) {
     SecuTopAppBar(
         title = stringResource(R.string.title_activity_param),
         connectionState = connectionState,
         onNavigateUp = onBack,
         showStatus = true,
         actions = {
+            IconButton(onClick = onOpenSettings, modifier = Modifier.testTag("parameters-settings")) {
+                Icon(Icons.Default.Settings, contentDescription = stringResource(R.string.parameter_settings_title))
+            }
             IconButton(onClick = onSave, enabled = connectionState == Connected) {
                 Icon(painterResource(R.drawable.ic_save_24), contentDescription = stringResource(R.string.save))
             }

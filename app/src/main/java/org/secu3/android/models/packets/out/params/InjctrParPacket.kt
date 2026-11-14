@@ -123,28 +123,24 @@ data class InjctrParPacket(
         get() = config[0].shr(4)
         set(value) {
             config[0] = config[0].and(0x0F).or(value.shl(4))
-            configChanged(0, config0Pulses)
         }
 
     var config0Pulses: Int
         get() = config[0].and(0xF)
         set(value) {
             config[0] = config[0].and(0xF0).or(value)
-            configChanged(0, value)
         }
 
     var config1: Int
         get() = config[1].shr(4)
         set(value) {
             config[1] = config[1].and(0x0F).or(value.shl(4))
-            configChanged(1, config1Pulses)
         }
 
     var config1Pulses: Int
         get() = config[1].and(0xF)
         set(value) {
             config[1] = config[1].and(0xF0).or(value)
-            configChanged(1, value)
         }
 
     var engineDisp: Float
@@ -152,16 +148,49 @@ data class InjctrParPacket(
         set(value) {
             if (ckpsEngineCyl <= 0 || !value.isFinite() || value <= 0f) return
             cylDisp = value / ckpsEngineCyl
-            recalculateDerivedConstants()
         }
 
     /** Recompute injector and synthetic-load constants when their inputs change. */
-    fun recalculateDerivedConstants() {
-        for (bank in 0..1) configChanged(bank, if (bank == 0) config0Pulses else config1Pulses)
+    fun recalculateDerivedConstants(primaryDensity: Float, secondaryDensity: Float) {
+        configChanged(0, config0Pulses, primaryDensity)
+        configChanged(1, config1Pulses, secondaryDensity)
         if (ckpsEngineCyl > 0 && cylDisp.isFinite() && cylDisp > 0f) {
             mafloadConst = (((101.35 * 64.0 * 128.0 * 120.0) / (64.0 * 0.0012041)) /
                 (cylDisp.toDouble() * 1000.0 * ckpsEngineCyl.toDouble())).toInt()
         }
+    }
+
+    /** Recompute one bank after its configuration or squirts-per-cycle changes. */
+    fun recalculateBankConstants(bank: Int, density: Float) {
+        if (bank !in 0..1) return
+        configChanged(bank, if (bank == 0) config0Pulses else config1Pulses, density)
+    }
+
+    internal data class CalculationSnapshot(
+        val cylinderDisplacement: Float,
+        val flowRates: FloatArray,
+        val configurations: IntArray,
+        val sdConstants: IntArray,
+        val mafConstants: IntArray,
+        val mafLoadConstant: Int,
+    )
+
+    internal fun snapshotCalculation() = CalculationSnapshot(
+        cylinderDisplacement = cylDisp,
+        flowRates = flowRate.copyOf(),
+        configurations = config.copyOf(),
+        sdConstants = sdIglConst.copyOf(),
+        mafConstants = injMafConst.copyOf(),
+        mafLoadConstant = mafloadConst,
+    )
+
+    internal fun restoreCalculation(snapshot: CalculationSnapshot) {
+        cylDisp = snapshot.cylinderDisplacement
+        snapshot.flowRates.copyInto(flowRate)
+        snapshot.configurations.copyInto(config)
+        snapshot.sdConstants.copyInto(sdIglConst)
+        snapshot.mafConstants.copyInto(injMafConst)
+        mafloadConst = snapshot.mafLoadConstant
     }
 
     var angleSpec0: Int
@@ -235,7 +264,7 @@ data class InjctrParPacket(
         }
 
 
-    private fun configChanged(configNum: Int, pulses: Int) {
+    private fun configChanged(configNum: Int, pulses: Int, density: Float) {
 
         // A partially received or unsupported configuration must not corrupt the
         // derived constant. In particular, never divide by zero while the UI is
@@ -248,12 +277,16 @@ data class InjctrParPacket(
 
         val bnkNum = bnkNum(cfg).toFloat()
         val injNum = injNum(cfg).toFloat()
-        val mifr = flowRate[configNum] * fuelDensity[configNum]
+        if (!density.isFinite() || density <= 0f) return
+        val mifr = flowRate[configNum] * density
 
         if (mifr <= 0f || !mifr.isFinite() || injNum <= 0 || bnkNum <= 0) return
-        sdIglConst[configNum] = (((cylDisp * 3.482f * 18750000f) / mifr) * (bnkNum * ckpsEngineCyl.toFloat()) / (injNum * pulses.toFloat())).toInt().coerceAtMost(524288)
-        injMafConst[configNum] = (((120.0 * 18750000.0) / mifr.toDouble() *
-            (bnkNum.toDouble() / (injNum.toDouble() * pulses.toDouble())) / 64.0).toInt()).coerceAtMost(103200 * 4)
+        val bankFactor = (bnkNum * ckpsEngineCyl.toFloat()) / (injNum * pulses.toFloat())
+        sdIglConst[configNum] = (((cylDisp * 3.482f * 18750000f) / mifr) * bankFactor)
+            .toInt().coerceAtMost(524288)
+        val mafConstant = ((120.0 * 18750000.0) / mifr.toDouble() *
+            (bnkNum.toDouble() / (injNum.toDouble() * pulses.toDouble())) / 64.0).toFloat().toInt()
+        injMafConst[configNum] = mafConstant.coerceAtMost(103200 * 4)
     }
 
     fun validConfigurations(): List<Int> = buildList {
@@ -393,13 +426,7 @@ data class InjctrParPacket(
     }
 
     companion object {
-
         internal const val DESCRIPTOR = ';'
-
-        private val fuelDensity = arrayOf(
-            0.710f, //petrol density (0.710 g/cc)
-            0.536f  //LPG density (0.536 g/cc)
-        )
     }
 }
 

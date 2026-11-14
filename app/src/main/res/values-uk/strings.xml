@@ -512,5 +512,10 @@
     <string name="refresh">Оновити</string>
     <string name="parameter_read_failed">Не вдалося прочитати параметри з ЕБУ.</string>
     <string name="parameter_save_unconfirmed">ЕБУ не підтвердив збереження параметрів.</string>
+    <string name="parameter_settings_title">Налаштування параметрів</string>
+    <string name="parameter_primary_fuel_density">Густина основного палива</string>
+    <string name="parameter_secondary_fuel_density">Густина додаткового палива</string>
+    <string name="parameter_fuel_density_range">Введіть значення від 0,2 до 2,0.</string>
+    <string name="fuel_density_unit">г/см³</string>
     <string name="retry">Повторити</string>
 </resources>

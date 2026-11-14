@@ -1,20 +1,24 @@
 package org.secu3.android.domain.parameters
 
 import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
 import org.junit.Assert.*
 import org.junit.Test
 import org.secu3.android.models.packets.base.OutputPacket
 import org.secu3.android.models.packets.input.FirmwareInfoPacket
 import org.secu3.android.models.packets.out.params.InjctrParPacket
+import org.secu3.android.utils.prefs.FuelDensities
 
 class FuelInjectionControlTest {
     private val sends = mutableListOf<OutputPacket>()
     private val firmware = MutableStateFlow<FirmwareInfoPacket?>(FirmwareInfoPacket(options = (1 shl 28)))
+    private val densitySettings = MutableStateFlow(FuelDensities(.710f, .536f))
     private var admitSend = true
-    private val control = FuelInjectionControl(firmware) { packet ->
+    private val control = FuelInjectionControl(firmware, densitySettings) { packet ->
         sends += packet
         admitSend
-    }
+    }.also { it.start(CoroutineScope(Dispatchers.Unconfined)) }
 
     private fun packet() = InjctrParPacket(
         flags = 0x80, config = intArrayOf(0x11, 0x11), flowRate = floatArrayOf(300f, 400f),
@@ -111,17 +115,28 @@ class FuelInjectionControlTest {
         val expected = packet().also {
             it.flowRate[0] = 600f
             it.flowRate[1] = 500f
-            it.recalculateDerivedConstants()
+            it.recalculateDerivedConstants(.710f, .536f)
         }
         control.editFlow(0, 600f)
         control.editFlow(1, 500f)
         assertArrayEquals(expected.sdIglConst, p.sdIglConst)
         assertArrayEquals(expected.injMafConst, p.injMafConst)
         assertEquals(expected.mafloadConst, p.mafloadConst)
+        assertArrayEquals(intArrayOf(76628, 121805), p.sdIglConst)
+        assertArrayEquals(intArrayOf(20631, 32795), p.injMafConst)
+        val sdBeforeUnrelatedEdit = p.sdIglConst.copyOf()
+        val mafBeforeUnrelatedEdit = p.injMafConst.copyOf()
+        control.setAirDensity(true)
+        assertArrayEquals(sdBeforeUnrelatedEdit, p.sdIglConst)
+        assertArrayEquals(mafBeforeUnrelatedEdit, p.injMafConst)
 
+        val bank1Sd = p.sdIglConst[1]
+        val bank1Maf = p.injMafConst[1]
         control.changeConfig(0, 2)
         assertEquals(2, p.config0Pulses)
         assertEquals(2, p.config0)
+        assertEquals(bank1Sd, p.sdIglConst[1])
+        assertEquals(bank1Maf, p.injMafConst[1])
         control.changeConfig(1, 4)
         assertEquals(4, p.config1Pulses)
         assertEquals(4, p.config1)
@@ -132,6 +147,48 @@ class FuelInjectionControlTest {
         control.changePulses(0, 3)
         control.changeAngleSpec(0, 3)
         assertEquals(sentCount, sends.size)
+    }
+
+    @Test fun derivedConstantsUseManagerFloatIntermediatesBeforeTruncation() {
+        val maf = packet()
+        densitySettings.value = FuelDensities(.2144f, .536f)
+        control.receive(maf)
+        assertTrue(control.editFlow(0, 797.87f))
+        assertEquals(51_379, maf.injMafConst[0])
+
+        val sd = packet().also {
+            it.ckpsEngineCyl = 6
+            it.engineDisp = 2.0557f
+            it.config0Pulses = 6
+        }
+        densitySettings.value = FuelDensities(.453f, .536f)
+        control.receive(sd)
+        assertTrue(control.editFlow(0, 195.38f))
+        assertEquals(42_122, sd.sdIglConst[0])
+    }
+
+    @Test fun derivedEditsFailClosedUntilDensityReadAndRejectedAdmissionRestoresThePacket() {
+        val waiting = FuelInjectionControl(firmware, MutableStateFlow<FuelDensities?>(null)) { sends += it; true }
+        val pending = packet()
+        waiting.receive(pending)
+        val originalConstants = pending.sdIglConst.copyOf()
+        assertFalse(waiting.editFlow(0, 500f))
+        assertFalse(waiting.editEngineDisplacement(3f))
+        assertFalse(waiting.changeConfig(0, 2))
+        assertFalse(waiting.changePulses(0, 2))
+        assertTrue(waiting.editTiming(0, 11f))
+        assertArrayEquals(originalConstants, pending.sdIglConst)
+
+        control.receive(pending)
+        admitSend = false
+        val originalFlow = pending.flowRate.copyOf()
+        val originalMaf = pending.injMafConst.copyOf()
+        val originalLoad = pending.mafloadConst
+        assertFalse(control.editFlow(0, 500f))
+        assertArrayEquals(originalFlow, pending.flowRate, 0f)
+        assertArrayEquals(originalConstants, pending.sdIglConst)
+        assertArrayEquals(originalMaf, pending.injMafConst)
+        assertEquals(originalLoad, pending.mafloadConst)
     }
 
     @Test fun firmwareMapAndInputGuardsRejectCommandsAndSendAdmissionIsReturned() {

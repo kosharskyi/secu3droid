@@ -52,6 +52,7 @@ import org.secu3.android.ui.firmware.FirmwareRoute
 import org.secu3.android.ui.logger.SecuLogsRoute
 import org.secu3.android.ui.ltft.LtftMapsRoute
 import org.secu3.android.ui.parameters.ParametersRoute
+import org.secu3.android.ui.parameters.settings.ParameterSettingsRoute
 import org.secu3.android.ui.settings.SettingsRoute
 import org.secu3.android.ui.dashboard.DashboardRoute
 import org.secu3.android.ui.dashboard.DashboardGaugeSettingsRoute
@@ -64,6 +65,7 @@ import org.secu3.android.ui.diagnostics.DiagnosticAdditionalDialogContent
 internal const val START_ROUTE = "start"
 internal const val HOME_ROUTE = "home"
 internal const val PARAMETERS_ROUTE = "parameters"
+internal const val PARAMETER_SETTINGS_ROUTE = "parameter-settings"
 internal const val SETTINGS_ROUTE = "settings"
 internal const val ERRORS_ROUTE = "errors"
 internal const val LTFT_MAPS_ROUTE = "ltft-maps"
@@ -119,6 +121,7 @@ internal fun RootNavigation(activity: MainActivity) {
             START_ROUTE -> "start"
             HOME_ROUTE -> "home"
             PARAMETERS_ROUTE -> "parameters"
+            PARAMETER_SETTINGS_ROUTE -> "parameter_settings"
             SETTINGS_ROUTE -> "settings"
             ERRORS_ROUTE -> "errors"
             LTFT_MAPS_ROUTE -> "ltft_maps"
@@ -177,7 +180,11 @@ internal fun RootNavigation(activity: MainActivity) {
                     activity,
                     onNavigateUp = { navController.popBackStack() },
                     onOpenLtftMaps = { navController.navigate(LTFT_MAPS_ROUTE) { launchSingleTop = true } },
+                    onOpenSettings = { navController.navigate(PARAMETER_SETTINGS_ROUTE) { launchSingleTop = true } },
                 )
+            }
+            composable(PARAMETER_SETTINGS_ROUTE) { entry ->
+                ParameterSettingsRoute(entry, activity, onNavigateUp = { navController.popBackStack() })
             }
             composable(SETTINGS_ROUTE) { entry ->
                 SettingsRoute(entry, activity, onNavigateUp = { navController.popBackStack() })

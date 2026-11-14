@@ -67,15 +67,16 @@ class FuelInjectionMappingTest {
         val packet = InjctrParPacket(flowRate = floatArrayOf(300f, 300f), ckpsEngineCyl = 4, sdIglConst = intArrayOf(0, 0))
         packet.config0Pulses = 2
         packet.engineDisp = 2f
+        packet.recalculateDerivedConstants(.710f, .536f)
         val first = packet.sdIglConst[0]
         assertTrue(first > 0)
         packet.flowRate[0] = 600f
-        packet.recalculateDerivedConstants()
+        packet.recalculateDerivedConstants(.710f, .536f)
         assertTrue(packet.sdIglConst[0] in 1 until first)
         packet.engineDisp = 0f
         assertTrue(packet.sdIglConst[0] in 1 until first)
         packet.flowRate[0] = 50f
-        packet.recalculateDerivedConstants()
+        packet.recalculateDerivedConstants(.710f, .536f)
         assertEquals(524288, packet.sdIglConst[0])
         assertEquals(103200 * 4, packet.injMafConst[0])
         assertEquals((((101.35 * 64 * 128 * 120) / (64 * .0012041)) / (.5 * 1000 * 4)).toInt(), packet.mafloadConst)

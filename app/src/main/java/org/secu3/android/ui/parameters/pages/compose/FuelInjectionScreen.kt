@@ -101,11 +101,11 @@ fun FuelInjectionScreen(state: FuelInjectionValues?, configLabels: Map<Int, Stri
             Text(stringResource(R.string.fuel_injection_unavailable), Modifier.testTag("fuel_injection_disabled").padding(bottom = 8.dp))
         } else {
             ParameterSection(stringResource(R.string.injctr_par_primary_fuel_title)) {
-                NumberRow(FuelInjectionNumber.ENGINE_DISPLACEMENT, data.engineDisplacement, "inj-engine-displacement", onEdit = onEdit)
-                BankSection(0, data.banks[0], configLabels, timings, onEdit, { bank, _ -> choice = bank to 0 }, { bank, _ -> choice = bank to 1 }, { bank, _ -> choice = bank to 2 }, onFlag)
+                NumberRow(FuelInjectionNumber.ENGINE_DISPLACEMENT, data.engineDisplacement, "inj-engine-displacement", enabled = data.canEditDerivedConstants, onEdit = onEdit)
+                BankSection(0, data.banks[0], data.canEditDerivedConstants, configLabels, timings, onEdit, { bank, _ -> choice = bank to 0 }, { bank, _ -> choice = bank to 1 }, { bank, _ -> choice = bank to 2 }, onFlag)
             }
             ParameterSection(stringResource(R.string.injctr_par_params_for_second_fuel_title)) {
-                BankSection(1, data.banks[1], configLabels, timings, onEdit, { bank, _ -> choice = bank to 0 }, { bank, _ -> choice = bank to 1 }, { bank, _ -> choice = bank to 2 }, onFlag)
+                BankSection(1, data.banks[1], data.canEditDerivedConstants, configLabels, timings, onEdit, { bank, _ -> choice = bank to 0 }, { bank, _ -> choice = bank to 1 }, { bank, _ -> choice = bank to 2 }, onFlag)
             }
             ParameterSection(stringResource(R.string.injctr_par_general_title)) {
                 NumberRow(FuelInjectionNumber.PULSES_PER_LITER, data.pulsesPerLiter, "inj-pulses-per-liter", onEdit = onEdit)
@@ -141,17 +141,17 @@ fun FuelInjectionScreen(state: FuelInjectionValues?, configLabels: Map<Int, Stri
     }
 }
 
-@Composable private fun BankSection(bank: Int, value: FuelBankValues, labels: Map<Int, String>, timings: List<String>, onEdit: (FuelInjectionNumber) -> Unit,
+@Composable private fun BankSection(bank: Int, value: FuelBankValues, canEditDerivedConstants: Boolean, labels: Map<Int, String>, timings: List<String>, onEdit: (FuelInjectionNumber) -> Unit,
     onConfig: (Int, Int) -> Unit, onPulses: (Int, Int) -> Unit, onAngle: (Int, Int) -> Unit, onFlag: (FuelInjectionFlag, Boolean) -> Unit) {
     val flowNumber = if (bank == 0) FuelInjectionNumber.FLOW_0 else FuelInjectionNumber.FLOW_1
     val timingNumber = if (bank == 0) FuelInjectionNumber.TIMING_0 else FuelInjectionNumber.TIMING_1
     val crankingNumber = if (bank == 0) FuelInjectionNumber.CRANKING_0 else FuelInjectionNumber.CRANKING_1
     val minPulseNumber = if (bank == 0) FuelInjectionNumber.MIN_PW_0 else FuelInjectionNumber.MIN_PW_1
     val maxPulseNumber = if (bank == 0) FuelInjectionNumber.MAX_PW_0 else FuelInjectionNumber.MAX_PW_1
-    NumberRow(flowNumber, value.flow, "inj-flow-$bank", onEdit = onEdit)
+    NumberRow(flowNumber, value.flow, "inj-flow-$bank", enabled = canEditDerivedConstants, onEdit = onEdit)
     val configTitle = stringResource(R.string.injctr_par_injector_config_title)
-    ChoiceRow(configTitle, labels[value.config] ?: "Unknown configuration (${value.config})", "inj-config-$bank") { onConfig(bank, value.config) }
-    ChoiceRow(stringResource(R.string.injctr_par_number_of_squirts_per_cycle_title), value.pulses.toString(), "inj-pulses-$bank", enabled = value.pulseOptions.isNotEmpty()) { onPulses(bank, value.pulses) }
+    ChoiceRow(configTitle, labels[value.config] ?: "Unknown configuration (${value.config})", "inj-config-$bank", enabled = canEditDerivedConstants) { onConfig(bank, value.config) }
+    ChoiceRow(stringResource(R.string.injctr_par_number_of_squirts_per_cycle_title), value.pulses.toString(), "inj-pulses-$bank", enabled = value.pulseOptions.isNotEmpty() && canEditDerivedConstants) { onPulses(bank, value.pulses) }
     NumberRow(timingNumber, value.timing, "inj-timing-$bank", enabled = !value.useMap, onEdit = onEdit)
     NumberRow(crankingNumber, value.cranking, "inj-cranking-$bank", onEdit = onEdit)
     ParameterSwitchRow(stringResource(R.string.injctr_par_use_map_for_inj_timing_title), value.useMap, "inj-use-map-$bank") { onFlag(if (bank == 0) FuelInjectionFlag.USE_MAP_0 else FuelInjectionFlag.USE_MAP_1, it) }

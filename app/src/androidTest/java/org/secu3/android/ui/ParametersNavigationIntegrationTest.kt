@@ -11,11 +11,15 @@ package org.secu3.android.ui
 
 import android.view.KeyEvent
 import android.content.pm.ActivityInfo
+import androidx.compose.ui.semantics.SemanticsProperties
 import androidx.compose.ui.test.assertIsSelected
+import androidx.compose.ui.test.assertIsEnabled
 import androidx.compose.ui.test.assertIsNotEnabled
 import androidx.compose.ui.test.assertCountEquals
+import androidx.compose.ui.test.onAllNodesWithTag
 import androidx.compose.ui.test.onAllNodesWithText
 import androidx.compose.ui.test.assertTextEquals
+import androidx.compose.ui.test.assertTextContains
 import androidx.compose.ui.test.junit4.v2.createAndroidComposeRule
 import androidx.compose.ui.test.onNodeWithContentDescription
 import androidx.compose.ui.test.onNodeWithTag
@@ -23,8 +27,7 @@ import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.onChild
 import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.performScrollTo
-import androidx.compose.ui.test.performTextClearance
-import androidx.compose.ui.test.performTextInput
+import androidx.compose.ui.test.performTextReplacement
 import androidx.compose.ui.test.onRoot
 import androidx.compose.ui.test.getUnclippedBoundsInRoot
 import androidx.compose.ui.test.performTouchInput
@@ -52,6 +55,60 @@ import org.secu3.android.ui.parameters.ParamsViewModel
 
 class ParametersNavigationIntegrationTest {
     @get:Rule val compose = createAndroidComposeRule<MainActivity>()
+
+    @Test fun parameterSettingsSaveDensityPairOfflineAndReturnToSelectedTab() {
+        navigateNativeHostToHome()
+        compose.onNodeWithTag("home-card-parameters").performClick()
+        compose.waitForIdle()
+        assertOnParametersRoute()
+
+        val anglesTab = compose.onNodeWithText(compose.activity.getString(R.string.params_tab_angles_title))
+        anglesTab.performClick()
+        anglesTab.assertIsSelected()
+        compose.onNodeWithTag("parameters-settings").assertIsEnabled().performClick()
+        val primaryField = compose.onNodeWithTag("parameter-primary-fuel-density")
+        val secondaryField = compose.onNodeWithTag("parameter-secondary-fuel-density")
+        compose.waitUntil(5_000) {
+            compose.onAllNodesWithTag("parameter-primary-fuel-density").fetchSemanticsNodes().isNotEmpty()
+        }
+        val primaryOriginal = primaryField.fetchSemanticsNode().config[SemanticsProperties.EditableText].text
+        val secondaryOriginal = secondaryField.fetchSemanticsNode().config[SemanticsProperties.EditableText].text
+        try {
+            compose.onNodeWithText(compose.activity.getString(R.string.parameter_settings_title)).assertExists()
+            primaryField.performTextReplacement("2.01")
+            compose.onNodeWithTag("parameter-settings-save").assertIsNotEnabled()
+            primaryField.performTextReplacement("0,72")
+            secondaryField.performTextReplacement("0.54")
+            compose.onNodeWithTag("parameter-settings-save").assertIsEnabled().performClick()
+            compose.waitUntil(5_000) { compose.onAllNodesWithTag("parameters-settings").fetchSemanticsNodes().isNotEmpty() }
+            assertOnParametersRoute()
+            anglesTab.assertIsSelected()
+
+            compose.activityRule.scenario.recreate()
+            assertOnParametersRoute()
+            anglesTab.assertIsSelected()
+            compose.onNodeWithTag("parameters-settings").performClick()
+            compose.onNodeWithTag("parameter-primary-fuel-density").assertTextContains("0.72")
+            compose.onNodeWithTag("parameter-secondary-fuel-density").assertTextContains("0.54")
+            compose.onNodeWithContentDescription(compose.activity.getString(R.string.back)).performClick()
+            assertOnParametersRoute()
+            anglesTab.assertIsSelected()
+        } finally {
+            var route: String? = null
+            compose.activityRule.scenario.onActivity { route = it.rootNavigationController?.currentDestination?.route }
+            if (route == PARAMETERS_ROUTE) {
+                compose.onNodeWithTag("parameters-settings").performClick()
+                route = PARAMETER_SETTINGS_ROUTE
+            }
+            if (route == PARAMETER_SETTINGS_ROUTE) {
+                compose.onNodeWithTag("parameter-primary-fuel-density").performTextReplacement(primaryOriginal)
+                compose.onNodeWithTag("parameter-secondary-fuel-density").performTextReplacement(secondaryOriginal)
+                compose.onNodeWithTag("parameter-settings-save").performClick()
+                compose.waitUntil(5_000) { compose.onAllNodesWithTag("parameters-settings").fetchSemanticsNodes().isNotEmpty() }
+                assertOnParametersRoute()
+            }
+        }
+    }
 
     @Test fun parameterTabsFollowFirmwareUpdatesAndResetWhenFirmwareClears() {
         navigateNativeHostToHome()

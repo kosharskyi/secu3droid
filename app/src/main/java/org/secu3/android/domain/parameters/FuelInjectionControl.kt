@@ -13,11 +13,17 @@ import dagger.hilt.android.scopes.ViewModelScoped
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.collect
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Job
+import kotlinx.coroutines.launch
 import org.secu3.android.connection.Secu3ConnectionManager
 import org.secu3.android.models.packets.base.OutputPacket
 import org.secu3.android.models.packets.input.FirmwareInfoPacket
 import org.secu3.android.models.packets.out.params.InjctrParPacket
 import javax.inject.Inject
+import org.secu3.android.utils.prefs.FuelDensities
+import org.secu3.android.utils.prefs.ParameterSettingsPrefs
 
 data class FuelBankValues(
     val flow: Float,
@@ -44,17 +50,24 @@ data class FuelInjectionValues(
     val fullSequentialAfterStart: Boolean,
     val decreaseRate: Float,
     val increaseRate: Float,
+    val canEditDerivedConstants: Boolean = true,
 )
 
 /** Owns Fuel Injection packet edits, firmware guards, and immutable command snapshots. */
 @ViewModelScoped
 class FuelInjectionControl internal constructor(
     private val firmwareInfo: StateFlow<FirmwareInfoPacket?>,
+    private val densities: StateFlow<FuelDensities?>,
     private val sendPacket: (OutputPacket) -> Boolean,
 ) {
     @Inject
-    constructor(connectionManager: Secu3ConnectionManager, parameterSession: ParameterSession) : this(
+    constructor(
+        connectionManager: Secu3ConnectionManager,
+        parameterSession: ParameterSession,
+        parameterSettingsPrefs: ParameterSettingsPrefs,
+    ) : this(
         connectionManager.firmwareInfo,
+        parameterSettingsPrefs.settings,
         parameterSession::sendPacket,
     )
 
@@ -62,6 +75,12 @@ class FuelInjectionControl internal constructor(
     val values: StateFlow<FuelInjectionValues?> = mutableValues.asStateFlow()
 
     private var packet: InjctrParPacket? = null
+    private var settingsJob: Job? = null
+
+    fun start(scope: CoroutineScope) {
+        if (settingsJob?.isActive == true) return
+        settingsJob = scope.launch { densities.collect { publishValues() } }
+    }
 
     fun reset() {
         packet = null
@@ -76,17 +95,22 @@ class FuelInjectionControl internal constructor(
     fun editEngineDisplacement(value: Float): Boolean {
         if (!canControl() || !value.isFinite()) return false
         val current = packet ?: return false
+        val density = densities.value ?: return false
         if (current.ckpsEngineCyl <= 0 || value <= 0f) return false
+        val oldCalculation = current.snapshotCalculation()
         current.engineDisp = value
-        return sendOrdinary(current)
+        current.recalculateDerivedConstants(density.primary, density.secondary)
+        return sendDerived(current, oldCalculation)
     }
 
     fun editFlow(bank: Int, value: Float): Boolean {
         if (!canControl() || bank !in 0..1 || !value.isFinite()) return false
         val current = packet ?: return false
+        val density = densities.value ?: return false
+        val oldCalculation = current.snapshotCalculation()
         current.flowRate[bank] = value
-        current.recalculateDerivedConstants()
-        return sendOrdinary(current)
+        current.recalculateDerivedConstants(density.primary, density.secondary)
+        return sendDerived(current, oldCalculation)
     }
 
     fun editTiming(bank: Int, value: Float): Boolean {
@@ -142,11 +166,13 @@ class FuelInjectionControl internal constructor(
     fun changeConfig(bank: Int, config: Int): Boolean {
         if (!canControl() || bank !in 0..1) return false
         val current = packet ?: return false
+        val density = densities.value ?: return false
         if (config !in current.validConfigurations()) return false
         val pulseChoices = current.validPulses(config)
         if (pulseChoices.isEmpty()) return false
         val oldPulses = if (bank == 0) current.config0Pulses else current.config1Pulses
         val nextPulses = oldPulses.takeIf(pulseChoices::contains) ?: pulseChoices.first()
+        val oldCalculation = current.snapshotCalculation()
         if (bank == 0) {
             current.config0Pulses = nextPulses
             current.config0 = config
@@ -154,16 +180,20 @@ class FuelInjectionControl internal constructor(
             current.config1Pulses = nextPulses
             current.config1 = config
         }
-        return sendOrdinary(current)
+        current.recalculateBankConstants(bank, density.forBank(bank))
+        return sendDerived(current, oldCalculation)
     }
 
     fun changePulses(bank: Int, pulses: Int): Boolean {
         if (!canControl() || bank !in 0..1) return false
         val current = packet ?: return false
+        val density = densities.value ?: return false
         val config = if (bank == 0) current.config0 else current.config1
         if (pulses !in current.validPulses(config)) return false
+        val oldCalculation = current.snapshotCalculation()
         if (bank == 0) current.config0Pulses = pulses else current.config1Pulses = pulses
-        return sendOrdinary(current)
+        current.recalculateBankConstants(bank, density.forBank(bank))
+        return sendDerived(current, oldCalculation)
     }
 
     fun changeAngleSpec(bank: Int, value: Int): Boolean {
@@ -222,6 +252,15 @@ class FuelInjectionControl internal constructor(
         return sendPacket(current.snapshot())
     }
 
+    private fun sendDerived(current: InjctrParPacket, old: InjctrParPacket.CalculationSnapshot): Boolean {
+        if (!sendPacket(current.snapshot())) {
+            current.restoreCalculation(old)
+            return false
+        }
+        publishValues()
+        return true
+    }
+
     private fun publishValues() {
         val current = packet ?: return
         mutableValues.value = FuelInjectionValues(
@@ -250,8 +289,11 @@ class FuelInjectionControl internal constructor(
             fullSequentialAfterStart = current.fullSequentialAfterStart,
             decreaseRate = current.injPwDecSpeed,
             increaseRate = current.injPwIncSpeed,
+            canEditDerivedConstants = densities.value != null,
         )
     }
+
+    private fun FuelDensities.forBank(bank: Int) = if (bank == 0) primary else secondary
 
     companion object {
         // Current editor bounds; command methods separately preserve accepted finite protocol values.

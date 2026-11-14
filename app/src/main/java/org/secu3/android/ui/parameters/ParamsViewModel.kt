@@ -604,6 +604,7 @@ class ParamsViewModel @Inject constructor(
         parameterSession.start(viewModelScope, ::onParameterSessionEvent)
         chokeControl.start(viewModelScope)
         gasDoseControl.start(viewModelScope)
+        fuelInjectionControl.start(viewModelScope)
     }
 
     internal fun activatePage(page: ParameterPage) = parameterSession.activatePage(page)
