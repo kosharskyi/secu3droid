@@ -6,6 +6,8 @@ Both directions use `128 * (64 * 2) * 0.0025`; using `64 * 64` on write amplifie
 
 The MAP, MAP2, TPS, GPS, FPS, and APPS1 calibration offset and gradient words are signed. Use `protocolRoundToInt` for all twelve words so negative half-counts round away from zero, symmetrically with positive ones. Keep each field's existing multiplier and ordering, including the distinct TPS gradient scale.
 
+Pressure calculator validation shares the MAP, MAP2, GPS, and FPS encoding scale with `pack()`. Check the scaled values before rounding because even finite input can overflow during scaling. The calculator rejects a slope that encodes to zero.
+
 ## APPS1 raw is the final known read-only word
 
 FUNSET includes an unsigned 16-bit APPS1 ADC voltage after the APPS1 gradient. It is read-only telemetry used for learning and must not be resent; only bytes after this word are unknown extensions to preserve.

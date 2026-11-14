@@ -62,6 +62,8 @@ import org.secu3.android.domain.parameters.AccelerationControl
 import org.secu3.android.domain.parameters.LtftControl
 import org.secu3.android.domain.parameters.DbwControl
 import org.secu3.android.domain.parameters.FunctionsControl
+import org.secu3.android.domain.parameters.PressureCurveInput
+import org.secu3.android.domain.parameters.PressureSensor
 import org.secu3.android.domain.parameters.AdcCorrectionsControl
 import org.secu3.android.domain.parameters.UniversalOutputsControl
 import org.secu3.android.domain.parameters.UniversalOutputConditions
@@ -583,6 +585,9 @@ class ParamsViewModel @Inject constructor(
 
     internal fun updateFunctionsMafEngineDisplacement(value: Float): Boolean =
         reportFunctionsEdit(functionsControl.updateMafEngineDisplacement(value))
+
+    internal fun applyFunctionsPressureCurve(sensor: PressureSensor, input: PressureCurveInput): Boolean =
+        reportFunctionsEdit(functionsControl.applyPressureCurve(sensor, input))
 
     private fun reportFunctionsEdit(admitted: Boolean): Boolean {
         if (admitted) showUiMessage(R.string.packet_sent, UiMessageDuration.SHORT)

@@ -13,3 +13,7 @@ Numeric enum order alone does not define the complete form. The load-grid switch
 ## Load-axis units and editability depend on the selected source and mode
 
 Lower/upper values use pressure units only for MAP and MAP+TPS sources (`loadSrcCfg < 2`); TPS/MAF sources use percent. Load-grid mode disables both bounds, and MAP/barometric source disables upper even outside grid mode. Keep these rules driven by protocol source codes rather than localized choice labels.
+
+## Calibration drafts belong to the active Functions page
+
+The page may remain composed while the pager switches tabs or the host loses focus. Dismiss the calibration draft when the page becomes inactive or GPS/FPS support is lost. Confirm against the page's live activity check so a stale dialog cannot apply after a transition.

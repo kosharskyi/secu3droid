@@ -6,9 +6,11 @@ import androidx.compose.ui.semantics.SemanticsProperties
 import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.Lifecycle
 import androidx.compose.ui.test.assertIsDisplayed
+import androidx.compose.ui.test.assertIsEnabled
 import androidx.compose.ui.test.assertIsNotEnabled
 import androidx.compose.ui.test.assertIsSelected
 import androidx.compose.ui.test.assertTextEquals
+import androidx.compose.ui.test.click
 import androidx.compose.ui.test.onAllNodesWithTag
 import androidx.compose.ui.test.onNodeWithContentDescription
 import androidx.compose.ui.test.onNodeWithTag
@@ -16,6 +18,7 @@ import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.performScrollTo
 import androidx.compose.ui.test.performTextReplacement
+import androidx.compose.ui.test.performTouchInput
 import androidx.compose.ui.platform.ComposeView
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.compose.runtime.getValue
@@ -473,6 +476,66 @@ class ParameterPageSessionCacheTest {
                 loadSrcCfg = 4, ckpsEngineCyl = 4, injCylDisp = .75f, mafload_const = 430954.25f,
             ).pack()
             assertArrayEquals(expected, command.copyOfRange(1, 1 + expected.size))
+        } finally {
+            usb.close()
+            compose.runOnUiThread { vm.clearPageState() }
+        }
+    }
+
+    @Test fun functionsPressureCalculatorCancelsWithoutWritingAndAppliesBothFieldsTogether() = runBlocking {
+        val vm = paramsViewModel()
+        mountFunctionsPage(R.string.params_tab_functions_title, vm)
+        val usb = installFakeUsb(vm)
+        try {
+            activate(vm, R.string.params_tab_functions_title)
+            usb.awaitReadRequest('p', 1)
+            usb.emitFunctionName(0, "Speed density")
+            usb.emitFunctionName(1, "Alpha-N")
+            usb.awaitReadRequest('n', 1)
+            val initial = FunSetParamPacket(
+                mapCurveGradient = 50f, map2CurveGradient = 40f,
+                gpsCurveGradient = 30f, fpsCurveGradient = 20f, mapselUni = 0xA5, gasVUni = 6,
+            )
+            usb.emitFunctions(initial)
+            await { vm.functionsControl.values.value != null }
+            val baseline = usb.writes.size
+
+            val calculator = compose.onNodeWithTag("pressure_calculator_map")
+            val gradient = compose.onNodeWithTag("pressure_calculator_gradient")
+            val preview = compose.onNodeWithTag("pressure_calculator_preview")
+            val apply = compose.onNodeWithTag("pressure_calculator_apply")
+            listOf("map2", "gps", "fps").forEach { sensor ->
+                compose.onNodeWithTag("pressure_calculator_$sensor").assertExists()
+            }
+            calculator.performScrollTo().performClick()
+            preview.assertExists()
+
+            val mmHg = compose.activity.getString(R.string.pressure_calculator_unit_mmhg)
+            compose.onNodeWithTag("pressure_calculator_gradient_pressure_unit").performScrollTo().performClick()
+            compose.onNodeWithText(mmHg).performClick()
+            apply.assertIsEnabled()
+            val swapSlope = compose.activity.getString(R.string.pressure_calculator_swap_units)
+            compose.onNodeWithContentDescription(swapSlope).performScrollTo().assertIsDisplayed()
+                .performTouchInput { click() }
+            apply.assertIsNotEnabled()
+
+            compose.onNodeWithTag("pressure_calculator_known_gradient").performScrollTo().performClick()
+            apply.assertIsNotEnabled()
+            compose.onNodeWithTag("pressure_calculator_cancel").performClick()
+            preview.assertDoesNotExist()
+            assertEquals(baseline, usb.writes.size)
+
+            calculator.performClick()
+            gradient.performScrollTo().performTextReplacement("25")
+            apply.performClick()
+            usb.awaitWriteCount(baseline + 1)
+            preview.assertDoesNotExist()
+            assertEquals(baseline + 1, usb.writes.size)
+            val frame = usb.writes.last()
+            assertEquals('n'.code, frame[1].toInt() and 0xFF)
+            val expected = initial.pack().drop(1).toIntArray()
+            intArrayOf(0x01, 0x90, 0x02, 0x00).copyInto(expected, 6)
+            assertArrayEquals(expected, unescapeParameterWrite(frame).copyOf(expected.size))
         } finally {
             usb.close()
             compose.runOnUiThread { vm.clearPageState() }

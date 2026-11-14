@@ -305,6 +305,135 @@ class FunctionsControlTest {
         assertArrayEquals(intArrayOf(0x00, 0x09, 0xDD, 0x1F), packet.pack().sliceArray(28..31))
     }
 
+    @Test
+    fun pressureCalibrationAppliesEachPairInOneCommandAndPreservesOtherBytes() {
+        val frames = mutableListOf<IntArray>()
+        val control = FunctionsControl({ null }) { frames += it.pack(); true }
+        val packet = FunSetParamPacket(
+            mapCurveOffset = 1f, mapCurveGradient = 10f,
+            map2CurveOffset = 2f, map2CurveGradient = 20f,
+            gpsCurveOffset = 3f, gpsCurveGradient = 30f,
+            fpsCurveOffset = 4f, fpsCurveGradient = 40f,
+            mapselUni = 0xA5, gasVUni = 6,
+        )
+        val parsed = FunSetParamPacket().parse(
+            receiveFixture(packet, tail = intArrayOf(0xCA, 0xFE)),
+        ) as FunSetParamPacket
+        val expected = parsed.pack()
+        control.receive(parameters(parsed))
+
+        listOf(
+            PressureSensor.MAP to 7, PressureSensor.MAP2 to 11,
+            PressureSensor.GPS to 32, PressureSensor.FPS to 36,
+        ).forEachIndexed { index, (sensor, offset) ->
+            val preview = requireNotNull(control.previewPressureCurve(sensor, pressureInput()))
+            assertEquals(.5f, preview.offsetVolts, .00001f)
+            assertEquals(50f, preview.gradientKpaPerVolt, .00001f)
+            assertEquals(index, frames.size)
+
+            assertTrue(control.applyPressureCurve(sensor, pressureInput()))
+            assertEquals(index + 1, frames.size)
+            intArrayOf(0x00, 0xC8, 0x04, 0x00).copyInto(expected, offset)
+            assertArrayEquals(expected, frames.last())
+        }
+    }
+
+    @Test
+    fun pressureCalibrationUsesNormalizedPointsAndRejectsUnrepresentableValues() {
+        val control = FunctionsControl({ null }) { true }
+        control.receive(parameters(FunSetParamPacket()))
+        val twoPoints = pressureInput().copy(
+            knownGradient = false,
+            pressure1 = "1", pressureUnit1 = PressureUnit.BAR, voltage1 = "1",
+            pressure2 = "40", voltage2 = "3000", voltageUnit2 = VoltageUnit.MILLIVOLTS,
+        )
+        val preview = requireNotNull(control.previewPressureCurve(PressureSensor.MAP, twoPoints))
+        assertEquals(-4.333333f, preview.offsetVolts, .00001f)
+        assertEquals(-30f, preview.gradientKpaPerVolt, .00001f)
+        val reciprocal = pressureInput().copy(
+            gradient = "-20", gradientVoltageUnit = VoltageUnit.MILLIVOLTS, gradientReciprocal = true,
+        )
+        val reciprocalPreview = requireNotNull(control.previewPressureCurve(PressureSensor.MAP, reciprocal))
+        assertEquals(-3.5f, reciprocalPreview.offsetVolts, .00001f)
+        assertEquals(-50f, reciprocalPreview.gradientKpaPerVolt, .00001f)
+        listOf(
+            PressureUnit.PA to "100000",
+            PressureUnit.MMHG to "750.06",
+            PressureUnit.TECHNICAL_ATM to "1.0197",
+            PressureUnit.PSI to "14.504",
+        ).forEach { (unit, pressure) ->
+            val input = pressureInput().copy(pressure1 = pressure, pressureUnit1 = unit)
+            val result = requireNotNull(control.previewPressureCurve(PressureSensor.MAP, input))
+            assertEquals(.5f, result.offsetVolts, .00001f)
+        }
+        listOf(
+            twoPoints.copy(voltage2 = "1000"),
+            twoPoints.copy(voltage2 = "999"),
+            twoPoints.copy(voltage2 = "5501"),
+            twoPoints.copy(pressure2 = "100"),
+            twoPoints.copy(pressure2 = "100.001"),
+            twoPoints.copy(pressure2 = "500", voltage2 = "1001"),
+            twoPoints.copy(voltage1 = "0", pressure2 = "500", voltage2 = "1e-32", voltageUnit2 = VoltageUnit.VOLTS),
+            pressureInput().copy(pressure1 = "500", gradient = "1"),
+            pressureInput().copy(pressure1 = "NaN"),
+            pressureInput().copy(gradient = "0"),
+            pressureInput().copy(gradient = "501"),
+        ).forEach { input ->
+            assertNull(input.toString(), control.previewPressureCurve(PressureSensor.MAP, input))
+        }
+
+        val fps = pressureInput().copy(pressure1 = "10", pressureUnit1 = PressureUnit.BAR)
+        assertNull(control.previewPressureCurve(PressureSensor.MAP, fps))
+        assertNull(control.previewPressureCurve(PressureSensor.MAP2, fps))
+        assertNull(control.previewPressureCurve(PressureSensor.GPS, fps))
+        val fpsPreview = requireNotNull(control.previewPressureCurve(PressureSensor.FPS, fps))
+        assertEquals(18.5f, fpsPreview.offsetVolts, .00001f)
+        assertNull(control.previewPressureCurve(PressureSensor.FPS, fps.copy(pressure1 = "10.001")))
+        val limits = pressureInput().copy(pressure1 = "500", voltage1 = "5.5", gradient = "500")
+        val limitsPreview = requireNotNull(control.previewPressureCurve(PressureSensor.MAP, limits))
+        assertEquals(-4.5f, limitsPreview.offsetVolts, .00001f)
+        val mixedLowerLimit = pressureInput().copy(
+            pressure1 = "50", gradient = "1", gradientPressureUnit = PressureUnit.PA,
+            gradientVoltageUnit = VoltageUnit.MILLIVOLTS,
+        )
+        val lowerPreview = requireNotNull(control.previewPressureCurve(PressureSensor.MAP, mixedLowerLimit))
+        assertEquals(1f, lowerPreview.gradientKpaPerVolt, .00001f)
+    }
+
+    @Test
+    fun pressureCalibrationRechecksFirmwareAndRollsBackBothFieldsOnRefusal() {
+        var firmware: FirmwareInfoPacket? = null
+        val frames = mutableListOf<IntArray>()
+        val control = FunctionsControl({ firmware }) { frames += it.pack(); false }
+        val packet = FunSetParamPacket(gpsCurveOffset = 1f, gpsCurveGradient = 25f)
+        val input = pressureInput().copy(gradient = "200")
+        assertFalse(control.applyPressureCurve(PressureSensor.GPS, input))
+        control.receive(parameters(packet))
+        assertEquals(200f, requireNotNull(control.previewPressureCurve(PressureSensor.GPS, input)).gradientKpaPerVolt, 0f)
+
+        firmware = FirmwareInfoPacket(options = 1 shl 17)
+        assertFalse(control.applyPressureCurve(PressureSensor.GPS, input))
+        assertFalse(control.applyPressureCurve(PressureSensor.FPS, input))
+        assertTrue(frames.isEmpty())
+
+        firmware = null
+        assertFalse(control.applyPressureCurve(PressureSensor.GPS, input))
+        assertArrayEquals(intArrayOf(0xFE, 0x70, 0x10, 0x00), frames.single().sliceArray(32..35))
+        assertEquals(1f, packet.gpsCurveOffset, 0f)
+        assertEquals(25f, packet.gpsCurveGradient, 0f)
+        assertEquals(1f, control.values.value?.gpsCurveOffset)
+        assertEquals(25f, control.values.value?.gpsCurveGradient)
+    }
+
+    private fun pressureInput() = PressureCurveInput(
+        knownGradient = true,
+        pressure1 = "100", pressureUnit1 = PressureUnit.KPA,
+        voltage1 = "1.5", voltageUnit1 = VoltageUnit.VOLTS,
+        gradient = "50", gradientPressureUnit = PressureUnit.KPA, gradientVoltageUnit = VoltageUnit.VOLTS,
+        pressure2 = "100", pressureUnit2 = PressureUnit.KPA,
+        voltage2 = "1.5", voltageUnit2 = VoltageUnit.VOLTS,
+    )
+
     private fun parameters(packet: FunSetParamPacket): FunctionParameters = FunctionParameters(
         names = FnNameDatPacket().apply {
             tablesNumber = 2

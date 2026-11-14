@@ -360,6 +360,25 @@
     <string name="functions_section_sources">Load sources and conditions</string>
     <string name="functions_section_map2">Second MAP sensor</string>
     <string name="functions_section_pressures_apps">Gas, fuel pressure and accelerator sensors</string>
+
+    <string name="pressure_calculator_open">Calibrate %1$s</string>
+    <string name="pressure_calculator_title">%1$s calibration</string>
+    <string name="pressure_calculator_known_gradient">Known slope</string>
+    <string name="pressure_calculator_point">Point %1$d</string>
+    <string name="pressure_calculator_pressure">Pressure</string>
+    <string name="pressure_calculator_voltage">Voltage</string>
+    <string name="pressure_calculator_gradient">Slope</string>
+    <string name="pressure_calculator_swap_units">Swap slope units</string>
+    <string name="pressure_calculator_invalid_known">Check pressure, voltage and slope.</string>
+    <string name="pressure_calculator_invalid_points">Check both points. Point 2 must have a higher voltage than point 1.</string>
+    <string name="pressure_calculator_preview">Offset %1$s %2$s\nSlope %3$s %4$s</string>
+    <string name="pressure_calculator_apply">Apply</string>
+    <string name="pressure_calculator_unit_pa">Pa</string>
+    <string name="pressure_calculator_unit_bar">bar</string>
+    <string name="pressure_calculator_unit_mmhg">mmHg</string>
+    <string name="pressure_calculator_unit_at">at</string>
+    <string name="pressure_calculator_unit_psi">psi</string>
+    <string name="pressure_calculator_unit_mv">mV</string>
     <string name="sec_bluetooth">Bluetooth</string>
     <string name="sec_immobilizer">Immobilizer</string>
     <string name="sec_information">Information</string>

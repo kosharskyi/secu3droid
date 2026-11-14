@@ -9,3 +9,11 @@
 ## MAF confirmation preserves the desktop Float calculation
 
 When MAF is selected on firmware without fuel injection, the existing editor presents total engine displacement. Confirmation updates `injCylDisp` and `mafload_const` in one command, retaining the desktop's Float intermediate before the wire truncates the constant to an integer. The command is refused if source, live firmware, cylinder count, or displacement changed out of bounds while the editor was open.
+
+## Pressure curve calculations commit offset and gradient together
+
+SECU-3 Manager allows the calculator to produce values beyond the narrower limits of the manual offset and slope editors. The calculator checks that both coefficients fit signed FUNSET words and that the rounded slope is nonzero. Apply rechecks current firmware support and submits both fields in the same FUNSET snapshot.
+
+## Compare calibration voltages in volts
+
+SECU-3 Manager compares the entered numbers before converting point units. With mixed V and mV, this can give the wrong order. Android requires the second point's voltage to be higher after conversion. Conversion factors follow the Manager implementation, including its constants for mmHg, technical atmospheres and psi.

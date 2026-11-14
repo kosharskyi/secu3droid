@@ -77,6 +77,9 @@ import org.secu3.android.ui.parameters.dialogs.ParameterChoiceOption
 import org.secu3.android.ui.parameters.*
 import org.secu3.android.R
 import org.secu3.android.domain.parameters.FunctionsValues
+import org.secu3.android.domain.parameters.PressureCurveInput
+import org.secu3.android.domain.parameters.PressureCurvePreview
+import org.secu3.android.domain.parameters.PressureSensor
 
 enum class FunctionsNumber(
     @StringRes val titleRes: Int,
@@ -124,6 +127,15 @@ enum class FunctionsNumber(
         GPS_OFFSET, GPS_GRADIENT, FPS_OFFSET, FPS_GRADIENT, APPS_OFFSET, APPS_GRADIENT -> capabilities.dbw
         else -> true
     }
+
+    internal val pressureSensor: PressureSensor?
+        get() = when (this) {
+            MAP_GRADIENT -> PressureSensor.MAP
+            MAP2_GRADIENT -> PressureSensor.MAP2
+            GPS_GRADIENT -> PressureSensor.GPS
+            FPS_GRADIENT -> PressureSensor.FPS
+            else -> null
+        }
 }
 
 data class FunctionsChoices(val selected: Map<Selector, String?>, val options: Map<Selector, List<Option>>) {
@@ -185,6 +197,10 @@ fun FunctionsScreen(
     onFlag: (Boolean) -> Unit,
     onChoice: (FunctionsChoices.Selector, Int) -> Unit,
     capabilities: ParameterCapabilities = ParameterCapabilities.All,
+    isActive: Boolean = true,
+    onOpenPressureCurve: (PressureSensor) -> PressureCurveInput? = { null },
+    onPreviewPressureCurve: (PressureSensor, PressureCurveInput) -> PressureCurvePreview? = { _, _ -> null },
+    onApplyPressureCurve: (PressureSensor, PressureCurveInput) -> Boolean = { _, _ -> false },
 ) {
     val pageScrollState = rememberScrollState()
     if (values == null) {
@@ -197,6 +213,14 @@ fun FunctionsScreen(
                 stringArrayResource(R.array.ve2_map_func_items).toList(),
             )
             var open by remember { mutableStateOf<FunctionsChoices.Selector?>(null) }
+            var calibration by remember { mutableStateOf<Pair<PressureSensor, PressureCurveInput>?>(null) }
+            val calibrationAvailable = isActive && when (calibration?.first) {
+                PressureSensor.GPS, PressureSensor.FPS -> capabilities.dbw
+                else -> true
+            }
+            LaunchedEffect(calibrationAvailable) {
+                if (!calibrationAvailable) calibration = null
+            }
             ParameterPage(scrollState = pageScrollState) {
                 Surface(
                     modifier = Modifier.fillMaxWidth(),
@@ -235,6 +259,17 @@ fun FunctionsScreen(
                                 testTag = "functions_${n.name.lowercase()}",
                                 enabled = n.enabled(values, capabilities),
                             ) { onEdit(n) }
+                            val sensor = n.pressureSensor
+                            if (sensor != null && n.enabled(values, capabilities)) {
+                                TextButton(
+                                    onClick = {
+                                        onOpenPressureCurve(sensor)?.let { calibration = sensor to it }
+                                    },
+                                    enabled = isActive,
+                                    modifier = Modifier.align(Alignment.End).padding(end = 8.dp)
+                                        .testTag("pressure_calculator_${sensor.name.lowercase()}"),
+                                ) { Text(stringResource(R.string.pressure_calculator_open, sensor.name)) }
+                            }
                             if (n != FunctionsNumber.entries.last()) {
                                 HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant)
                             }
@@ -308,6 +343,17 @@ fun FunctionsScreen(
                             ParameterCancelButton { open = null }
                         },
                     )
+                }
+                if (calibrationAvailable) {
+                    calibration?.let { (sensor, initial) ->
+                        PressureCurveDialog(
+                            sensor = sensor,
+                            initial = initial,
+                            onPreview = { onPreviewPressureCurve(sensor, it) },
+                            onApply = { onApplyPressureCurve(sensor, it) },
+                            onDismiss = { calibration = null },
+                        )
+                    }
                 }
             }
         }

@@ -20,6 +20,28 @@ import org.secu3.android.models.packets.input.FirmwareInfoPacket
 import org.secu3.android.models.packets.out.params.FunSetParamPacket
 import javax.inject.Inject
 
+enum class PressureSensor(val maxPressureKpa: Float) { MAP(500f), MAP2(500f), GPS(500f), FPS(1000f) }
+enum class PressureUnit { PA, KPA, BAR, MMHG, TECHNICAL_ATM, PSI }
+enum class VoltageUnit { VOLTS, MILLIVOLTS }
+
+data class PressureCurveInput(
+    val knownGradient: Boolean,
+    val pressure1: String,
+    val pressureUnit1: PressureUnit,
+    val voltage1: String,
+    val voltageUnit1: VoltageUnit,
+    val gradient: String,
+    val gradientPressureUnit: PressureUnit,
+    val gradientVoltageUnit: VoltageUnit,
+    val pressure2: String,
+    val pressureUnit2: PressureUnit,
+    val voltage2: String,
+    val voltageUnit2: VoltageUnit,
+    val gradientReciprocal: Boolean = false,
+)
+
+data class PressureCurvePreview(val offsetVolts: Float, val gradientKpaPerVolt: Float)
+
 data class FunctionsValues(
     val fnGasoline: Int,
     val fnGas: Int,
@@ -131,6 +153,98 @@ class FunctionsControl internal constructor(
     fun editFpsCurveGradient(value: Float) = editFloat(value, -500f, 500f, { ParameterCapabilities(firmware()).dbw }) { it.fpsCurveGradient = value }
     fun editApps1CurveOffset(value: Float) = editFloat(value, -5f, 5f, { ParameterCapabilities(firmware()).dbw }) { it.apps1CurveOffset = value }
     fun editApps1CurveGradient(value: Float) = editFloat(value, -500f, 500f, { ParameterCapabilities(firmware()).dbw }) { it.apps1CurveGradient = value }
+
+    fun pressureCurveInput(sensor: PressureSensor): PressureCurveInput? {
+        val current = packet ?: return null
+        if (!pressureSensorSupported(sensor)) return null
+        val (offset, gradient) = when (sensor) {
+            PressureSensor.MAP -> current.mapCurveOffset to current.mapCurveGradient
+            PressureSensor.MAP2 -> current.map2CurveOffset to current.map2CurveGradient
+            PressureSensor.GPS -> current.gpsCurveOffset to current.gpsCurveGradient
+            PressureSensor.FPS -> current.fpsCurveOffset to current.fpsCurveGradient
+        }
+        val voltage = 1f
+        val pressure = ((voltage + offset) * gradient).toString()
+        return PressureCurveInput(
+            knownGradient = true,
+            pressure1 = pressure, pressureUnit1 = PressureUnit.KPA,
+            voltage1 = voltage.toString(), voltageUnit1 = VoltageUnit.VOLTS,
+            gradient = gradient.toString(), gradientPressureUnit = PressureUnit.KPA,
+            gradientVoltageUnit = VoltageUnit.VOLTS,
+            pressure2 = pressure, pressureUnit2 = PressureUnit.KPA,
+            voltage2 = voltage.toString(), voltageUnit2 = VoltageUnit.VOLTS,
+        )
+    }
+
+    fun previewPressureCurve(sensor: PressureSensor, input: PressureCurveInput): PressureCurvePreview? {
+        val current = packet ?: return null
+        if (!pressureSensorSupported(sensor)) return null
+        val rawP1 = input.pressure1.toFloatOrNull()?.takeIf(Float::isFinite) ?: return null
+        val rawV1 = input.voltage1.toFloatOrNull()?.takeIf(Float::isFinite) ?: return null
+        val p1 = pressureToPa(rawP1, input.pressureUnit1)
+        val v1 = voltageToVolts(rawV1, input.voltageUnit1)
+        if (!inPressureBounds(p1, sensor) || !inVoltageBounds(v1)) return null
+        val gradientPaPerVolt = if (input.knownGradient) {
+            val userGradient = input.gradient.toFloatOrNull()?.takeIf(Float::isFinite) ?: return null
+            val gradient = if (input.gradientReciprocal) {
+                pressureToPa(1f, input.gradientPressureUnit) / voltageToVolts(userGradient, input.gradientVoltageUnit)
+            } else {
+                pressureToPa(userGradient, input.gradientPressureUnit) / voltageToVolts(1f, input.gradientVoltageUnit)
+            }
+            // A conversion such as 1 Pa/mV can land just below 1000 Pa/V in Float.
+            if (kotlin.math.abs(gradient) !in Math.nextDown(1000f)..Math.nextUp(500000f)) return null
+            gradient
+        } else {
+            val rawP2 = input.pressure2.toFloatOrNull()?.takeIf(Float::isFinite) ?: return null
+            val rawV2 = input.voltage2.toFloatOrNull()?.takeIf(Float::isFinite) ?: return null
+            val p2 = pressureToPa(rawP2, input.pressureUnit2)
+            val v2 = voltageToVolts(rawV2, input.voltageUnit2)
+            if (!inPressureBounds(p2, sensor) || !inVoltageBounds(v2)) return null
+            if (v1 >= v2) return null
+            (p2 - p1) / (v2 - v1)
+        }
+        if (!gradientPaPerVolt.isFinite() || gradientPaPerVolt == 0f) return null
+        val result = PressureCurvePreview(p1 / gradientPaPerVolt - v1, gradientPaPerVolt / 1000f)
+        return result.takeIf { current.canEncodePressureCurve(it.offsetVolts, it.gradientKpaPerVolt) }
+    }
+
+    fun applyPressureCurve(sensor: PressureSensor, input: PressureCurveInput): Boolean {
+        val result = previewPressureCurve(sensor, input) ?: return false
+        return edit({ pressureSensorSupported(sensor) }) {
+            when (sensor) {
+                PressureSensor.MAP -> { it.mapCurveOffset = result.offsetVolts; it.mapCurveGradient = result.gradientKpaPerVolt }
+                PressureSensor.MAP2 -> { it.map2CurveOffset = result.offsetVolts; it.map2CurveGradient = result.gradientKpaPerVolt }
+                PressureSensor.GPS -> { it.gpsCurveOffset = result.offsetVolts; it.gpsCurveGradient = result.gradientKpaPerVolt }
+                PressureSensor.FPS -> { it.fpsCurveOffset = result.offsetVolts; it.fpsCurveGradient = result.gradientKpaPerVolt }
+            }
+        }
+    }
+
+    private fun pressureSensorSupported(sensor: PressureSensor): Boolean = when (sensor) {
+        PressureSensor.GPS, PressureSensor.FPS -> ParameterCapabilities(firmware()).dbw
+        else -> true
+    }
+
+    private fun inPressureBounds(pa: Float, sensor: PressureSensor): Boolean {
+        val kpa = pa / 1000f
+        return kpa.isFinite() && kpa in 0f..sensor.maxPressureKpa
+    }
+
+    private fun inVoltageBounds(volts: Float) = volts.isFinite() && volts in 0f..5.5f
+
+    private fun pressureToPa(value: Float, unit: PressureUnit): Float = when (unit) {
+        PressureUnit.PA -> value
+        PressureUnit.KPA -> (value * 1000.0).toFloat()
+        PressureUnit.BAR -> (value * 100000.0).toFloat()
+        PressureUnit.MMHG -> (value / (7.5006 * .001)).toFloat()
+        PressureUnit.TECHNICAL_ATM -> (value / (10.197 * .000001)).toFloat()
+        PressureUnit.PSI -> (value / (145.04 * .000001)).toFloat()
+    }
+
+    private fun voltageToVolts(value: Float, unit: VoltageUnit): Float = when (unit) {
+        VoltageUnit.VOLTS -> value
+        VoltageUnit.MILLIVOLTS -> (value / 1000.0).toFloat()
+    }
 
     fun setUseLoadGrid(checked: Boolean) = edit(change = { it.useLoadGrid = checked })
 

@@ -130,6 +130,14 @@ internal fun ParameterPageContent(
                     }
                 },
                 capabilities = capabilities,
+                isActive = isActive,
+                onOpenPressureCurve = { sensor ->
+                    if (isActiveNow()) viewModel.functionsControl.pressureCurveInput(sensor) else null
+                },
+                onPreviewPressureCurve = viewModel.functionsControl::previewPressureCurve,
+                onApplyPressureCurve = { sensor, input ->
+                    isActiveNow() && viewModel.applyFunctionsPressureCurve(sensor, input)
+                },
             )
         }
         ParameterPage.TEMPERATURE -> {

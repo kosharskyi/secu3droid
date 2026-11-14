@@ -372,6 +372,25 @@
     <string name="functions_section_sources">Источники нагрузки и условия</string>
     <string name="functions_section_map2">Второй датчик MAP</string>
     <string name="functions_section_pressures_apps">Давление газа и топлива, датчик акселератора</string>
+
+    <string name="pressure_calculator_open">Калибровать %1$s</string>
+    <string name="pressure_calculator_title">Калибровка %1$s</string>
+    <string name="pressure_calculator_known_gradient">Известный наклон</string>
+    <string name="pressure_calculator_point">Точка %1$d</string>
+    <string name="pressure_calculator_pressure">Давление</string>
+    <string name="pressure_calculator_voltage">Напряжение</string>
+    <string name="pressure_calculator_gradient">Наклон</string>
+    <string name="pressure_calculator_swap_units">Поменять единицы наклона местами</string>
+    <string name="pressure_calculator_invalid_known">Проверьте давление, напряжение и наклон.</string>
+    <string name="pressure_calculator_invalid_points">Проверьте обе точки. Напряжение второй точки должно быть выше напряжения первой.</string>
+    <string name="pressure_calculator_preview">Смещение %1$s %2$s\nНаклон %3$s %4$s</string>
+    <string name="pressure_calculator_apply">Применить</string>
+    <string name="pressure_calculator_unit_pa">Па</string>
+    <string name="pressure_calculator_unit_bar">бар</string>
+    <string name="pressure_calculator_unit_mmhg">мм рт. ст.</string>
+    <string name="pressure_calculator_unit_at">ат</string>
+    <string name="pressure_calculator_unit_psi">psi</string>
+    <string name="pressure_calculator_unit_mv">мВ</string>
     <string name="sec_bluetooth">Bluetooth</string>
     <string name="sec_immobilizer">Иммобилайзер</string>
     <string name="sec_information">Информация</string>
