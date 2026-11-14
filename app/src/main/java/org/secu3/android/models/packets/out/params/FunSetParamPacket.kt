@@ -74,20 +74,26 @@ data class FunSetParamPacket(
 
 ): Secu3Packet(), InputPacket, OutputPacket {
 
-    internal fun canEncodePressureCurve(offsetVolts: Float, gradientKpaPerVolt: Float): Boolean {
-        if (!offsetVolts.isFinite() || !gradientKpaPerVolt.isFinite()) return false
-        val offsetEncoding = pressureOffsetEncoding(offsetVolts)
-        val gradientEncoding = pressureGradientEncoding(gradientKpaPerVolt)
+    internal fun canEncodePressureCurve(offsetVolts: Float, gradientKpaPerVolt: Float): Boolean =
+        canEncodeCurve(curveOffsetEncoding(offsetVolts), pressureGradientEncoding(gradientKpaPerVolt))
+
+    internal fun canEncodeTpsCurve(offsetVolts: Float, gradientPercentPerVolt: Float): Boolean =
+        canEncodeCurve(curveOffsetEncoding(offsetVolts), tpsGradientEncoding(gradientPercentPerVolt))
+
+    private fun canEncodeCurve(offsetEncoding: Float, gradientEncoding: Float): Boolean {
         if (!offsetEncoding.isFinite() || !gradientEncoding.isFinite()) return false
         val offsetWord = offsetEncoding.protocolRoundToInt()
         val gradientWord = gradientEncoding.protocolRoundToInt()
         return offsetWord in -32768..32767 && gradientWord in -32768..32767 && gradientWord != 0
     }
 
-    private fun pressureOffsetEncoding(volts: Float): Float = volts / ADC_DISCRETE
+    private fun curveOffsetEncoding(volts: Float): Float = volts / ADC_DISCRETE
 
     private fun pressureGradientEncoding(kpaPerVolt: Float): Float =
         kpaPerVolt * 128f * MAP_MULTIPLIER * ADC_DISCRETE
+
+    private fun tpsGradientEncoding(percentPerVolt: Float): Float =
+        percentPerVolt * 128f * (TPS_MULTIPLIER * 2f) * ADC_DISCRETE
 
     override fun pack(): IntArray {
         var data = intArrayOf(DESCRIPTOR.code)
@@ -96,12 +102,12 @@ data class FunSetParamPacket(
         data += fnGas
         data += loadLower.times(MAP_MULTIPLIER).roundToInt().write2Bytes()
         data += loadUpper.times(MAP_MULTIPLIER).roundToInt().write2Bytes()
-        data += pressureOffsetEncoding(mapCurveOffset).protocolRoundToInt().write2Bytes()
+        data += curveOffsetEncoding(mapCurveOffset).protocolRoundToInt().write2Bytes()
         data += pressureGradientEncoding(mapCurveGradient).protocolRoundToInt().write2Bytes()
-        data += pressureOffsetEncoding(map2CurveOffset).protocolRoundToInt().write2Bytes()
+        data += curveOffsetEncoding(map2CurveOffset).protocolRoundToInt().write2Bytes()
         data += pressureGradientEncoding(map2CurveGradient).protocolRoundToInt().write2Bytes()
-        data += tpsCurveOffset.div(ADC_DISCRETE).protocolRoundToInt().write2Bytes()
-        data += tpsCurveGradient.times(128.0f).times(TPS_MULTIPLIER * 2f).times(ADC_DISCRETE).protocolRoundToInt().write2Bytes()
+        data += curveOffsetEncoding(tpsCurveOffset).protocolRoundToInt().write2Bytes()
+        data += tpsGradientEncoding(tpsCurveGradient).protocolRoundToInt().write2Bytes()
 
         data += loadSrcCfg
         data += mapselUni
@@ -117,10 +123,10 @@ data class FunSetParamPacket(
         data += injCylDisp.times(16384.0f).roundToInt().write2Bytes()
         data += mafload_const.toInt().write4Bytes()
 
-        data += pressureOffsetEncoding(gpsCurveOffset).protocolRoundToInt().write2Bytes()
+        data += curveOffsetEncoding(gpsCurveOffset).protocolRoundToInt().write2Bytes()
         data += pressureGradientEncoding(gpsCurveGradient).protocolRoundToInt().write2Bytes()
 
-        data += pressureOffsetEncoding(fpsCurveOffset).protocolRoundToInt().write2Bytes()
+        data += curveOffsetEncoding(fpsCurveOffset).protocolRoundToInt().write2Bytes()
         data += pressureGradientEncoding(fpsCurveGradient).protocolRoundToInt().write2Bytes()
 
         data += apps1CurveOffset.div(ADC_DISCRETE).protocolRoundToInt().write2Bytes()

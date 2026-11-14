@@ -31,6 +31,7 @@ import org.secu3.android.models.packets.out.params.CarburParamPacket
 import org.secu3.android.models.packets.out.params.ChokeControlParPacket
 import org.secu3.android.models.packets.out.params.CkpsParamPacket
 import org.secu3.android.models.packets.out.params.DbwParamPacket
+import org.secu3.android.models.packets.out.params.FunSetParamPacket
 import org.secu3.android.models.packets.out.params.GasDoseParamPacket
 import org.secu3.android.models.packets.out.params.IdlingParamPacket
 import org.secu3.android.models.packets.out.params.InjctrParPacket
@@ -54,6 +55,7 @@ sealed interface ParameterReadResult {
 
 sealed interface ParameterSessionEvent {
     data object Invalidated : ParameterSessionEvent
+    data object FunctionsDeactivated : ParameterSessionEvent
     data class PageLoading(val page: ParameterPage) : ParameterSessionEvent
     data class PageLoaded(val page: ParameterPage, val result: ParameterReadResult) : ParameterSessionEvent
     data class PageFailed(val page: ParameterPage) : ParameterSessionEvent
@@ -103,6 +105,7 @@ class ParameterSession internal constructor(
 
     fun activatePage(page: ParameterPage) {
         if (!connected || !isTransportConnected()) return
+        if (page != ParameterPage.FUNCTIONS && readGate.isActive(ParameterPage.FUNCTIONS)) deactivatePage()
         paused = false
         activePage = page
         readGate.activate(page)
@@ -110,7 +113,9 @@ class ParameterSession internal constructor(
     }
 
     fun deactivatePage() {
+        val functionsWasActive = readGate.isActive(ParameterPage.FUNCTIONS)
         readGate.deactivate()
+        if (functionsWasActive) eventHandler?.invoke(ParameterSessionEvent.FunctionsDeactivated)
     }
 
     /** A host pause cancels pending work and forces a fresh read when the route resumes. */
@@ -118,7 +123,7 @@ class ParameterSession internal constructor(
         paused = true
         sessionId++
         activePage = null
-        readGate.deactivate()
+        deactivatePage()
         loadedPages.clear()
         writeRevision++
         cancelPendingWork()
@@ -128,6 +133,18 @@ class ParameterSession internal constructor(
         if (!canOperate()) return
         loadedPages.remove(page)
         loadPage(page)
+    }
+
+    fun isFunctionsPageActive(): Boolean = canOperate() && readGate.isActive(ParameterPage.FUNCTIONS)
+
+    suspend fun readTpsVoltage(): Float? {
+        if (!isFunctionsPageActive()) return null
+        val session = sessionId
+        val voltage = readGate.readOnce(ParameterPage.FUNCTIONS) {
+            if (!isCurrent(session) || !isFunctionsPageActive()) return@readOnce null
+            exchange.readPacket(Task.Secu3ReadFunsetParam, FunSetParamPacket::class.java).tps_raw
+        }
+        return voltage?.takeIf { isCurrent(session) && isFunctionsPageActive() }
     }
 
     fun sendPacket(packet: OutputPacket): Boolean {

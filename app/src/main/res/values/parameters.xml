@@ -379,6 +379,19 @@
     <string name="pressure_calculator_unit_at">at</string>
     <string name="pressure_calculator_unit_psi">psi</string>
     <string name="pressure_calculator_unit_mv">mV</string>
+
+    <string name="tps_learning_title">Learn TPS</string>
+    <string name="tps_learning_open_throttle">Fully open the throttle and hold it there.</string>
+    <string name="tps_learning_close_throttle">Fully close the throttle and keep it closed.</string>
+    <string name="tps_learning_measuring">Measuring voltage…</string>
+    <string name="tps_learning_measure">Measure</string>
+    <string name="tps_learning_retry">Retry</string>
+    <string name="tps_learning_read_failed">Could not read the TPS voltage. Hold this position and try again.</string>
+    <string name="tps_learning_samples">Open %1$s %3$s\nClosed %2$s %3$s</string>
+    <string name="tps_learning_coefficients">Offset %1$s %2$s\nSlope %3$s %4$s</string>
+    <string name="tps_learning_span_too_small">The two voltages must differ by more than 0.1 V.</string>
+    <string name="tps_learning_outside_packet_range">The measured voltages produce coefficients outside the range supported by the ECU.</string>
+    <string name="tps_learning_restart">Start again</string>
     <string name="sec_bluetooth">Bluetooth</string>
     <string name="sec_immobilizer">Immobilizer</string>
     <string name="sec_information">Information</string>

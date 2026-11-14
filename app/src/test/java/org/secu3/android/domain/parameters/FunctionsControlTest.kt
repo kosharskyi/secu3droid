@@ -9,6 +9,9 @@
  */
 package org.secu3.android.domain.parameters
 
+import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.runBlocking
+import kotlinx.coroutines.withTimeout
 import org.junit.Assert.assertArrayEquals
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
@@ -433,6 +436,104 @@ class FunctionsControlTest {
         pressure2 = "100", pressureUnit2 = PressureUnit.KPA,
         voltage2 = "1.5", voltageUnit2 = VoltageUnit.VOLTS,
     )
+
+    @Test
+    fun tpsLearningPreviewsBothDirectionsAndSendsOnlyTheIntendedWords() = runBlocking {
+        val samples = ArrayDeque(listOf(4.5f, .5f, .5f, 4.5f))
+        val frames = mutableListOf<IntArray>()
+        var active = false
+        val control = FunctionsControl(
+            firmware = { null },
+            isFunctionsPageActive = { active },
+            readTpsVoltage = { samples.removeFirst() },
+        ) { frames += it.pack(); true }
+        val parsed = FunSetParamPacket().parse(
+            receiveFixture(FunSetParamPacket(mapselUni = 0xA5, gasVUni = 6), tail = intArrayOf(0xCA, 0xFE)),
+        ) as FunSetParamPacket
+        control.receive(parameters(parsed))
+        control.startTpsLearning()
+        assertNull(control.tpsLearning.value)
+        active = true
+        val expected = parsed.pack()
+
+        for ((index, learn) in listOf(
+            TpsLearningState.Review(4.5f, .5f, -.5f, 25f) to intArrayOf(0xFF, 0x38, 0x04, 0x00),
+            TpsLearningState.Review(.5f, 4.5f, -4.5f, -25f) to intArrayOf(0xF8, 0xF8, 0xFC, 0x00),
+        ).withIndex()) {
+            val (review, bytes) = learn
+            control.startTpsLearning()
+            control.captureTpsPosition(this)
+            control.captureTpsPosition(this)
+            awaitTpsState(control, TpsLearningState.Measure(openVoltage = review.openVoltage))
+            assertFalse(control.applyTpsLearning())
+            control.captureTpsPosition(this)
+            awaitTpsState(control, review)
+            assertEquals(index, frames.size)
+            active = false
+            assertFalse(control.applyTpsLearning())
+            active = true
+            assertTrue(control.applyTpsLearning())
+            assertEquals(index + 1, frames.size)
+            bytes.copyInto(expected, 15)
+            assertArrayEquals(expected, frames.last())
+            assertNull(control.tpsLearning.value)
+        }
+    }
+
+    @Test
+    fun tpsLearningRetriesWithoutLosingFirstMeasurementAndRejectsInvalidCalibration() = runBlocking {
+        val samples = listOf(.1f, null, 0f, .12f, 0f).iterator()
+        val control = FunctionsControl(
+            firmware = { null },
+            isFunctionsPageActive = { true },
+            readTpsVoltage = { samples.next() },
+        ) { error("Invalid calibrations must never be sent") }
+        control.receive(parameters(FunSetParamPacket()))
+        control.startTpsLearning()
+        control.captureTpsPosition(this)
+        awaitTpsState(control, TpsLearningState.Measure(openVoltage = .1f))
+        control.captureTpsPosition(this)
+        awaitTpsState(control, TpsLearningState.Measure(.1f, TpsLearningState.Capture.Retry))
+        control.captureTpsPosition(this)
+        awaitTpsState(control, TpsLearningState.Invalid(TpsLearningState.Error.SpanTooSmall))
+        assertFalse(control.applyTpsLearning())
+        control.startTpsLearning()
+        control.captureTpsPosition(this)
+        awaitTpsState(control, TpsLearningState.Measure(openVoltage = .12f))
+        control.captureTpsPosition(this)
+        awaitTpsState(control, TpsLearningState.Invalid(TpsLearningState.Error.OutsidePacketRange))
+        assertFalse(control.applyTpsLearning())
+    }
+
+    @Test
+    fun refusedTpsLearningRestoresBothValuesAndCancellationClearsThePreview() = runBlocking {
+        val samples = ArrayDeque(listOf(4.5f, .5f))
+        val packet = FunSetParamPacket(tpsCurveOffset = 1f, tpsCurveGradient = 10f)
+        val control = FunctionsControl(
+            firmware = { null },
+            isFunctionsPageActive = { true },
+            readTpsVoltage = { samples.removeFirst() },
+        ) { false }
+        control.receive(parameters(packet))
+        control.startTpsLearning()
+        control.captureTpsPosition(this)
+        awaitTpsState(control, TpsLearningState.Measure(openVoltage = 4.5f))
+        control.captureTpsPosition(this)
+        val review = TpsLearningState.Review(4.5f, .5f, -.5f, 25f)
+        awaitTpsState(control, review)
+
+        assertFalse(control.applyTpsLearning())
+        assertEquals(review, control.tpsLearning.value)
+        assertEquals(1f, packet.tpsCurveOffset, 0f)
+        assertEquals(10f, packet.tpsCurveGradient, 0f)
+        control.cancelTpsLearning()
+        assertFalse(control.applyTpsLearning())
+        assertNull(control.tpsLearning.value)
+    }
+
+    private suspend fun awaitTpsState(control: FunctionsControl, expected: TpsLearningState) {
+        withTimeout(3_000) { control.tpsLearning.first { it == expected } }
+    }
 
     private fun parameters(packet: FunSetParamPacket): FunctionParameters = FunctionParameters(
         names = FnNameDatPacket().apply {

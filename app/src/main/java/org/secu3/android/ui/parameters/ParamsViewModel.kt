@@ -589,6 +589,10 @@ class ParamsViewModel @Inject constructor(
     internal fun applyFunctionsPressureCurve(sensor: PressureSensor, input: PressureCurveInput): Boolean =
         reportFunctionsEdit(functionsControl.applyPressureCurve(sensor, input))
 
+    internal fun captureTpsPosition() = functionsControl.captureTpsPosition(viewModelScope)
+
+    internal fun applyTpsLearning() = reportFunctionsEdit(functionsControl.applyTpsLearning())
+
     private fun reportFunctionsEdit(admitted: Boolean): Boolean {
         if (admitted) showUiMessage(R.string.packet_sent, UiMessageDuration.SHORT)
         return admitted
@@ -857,6 +861,7 @@ class ParamsViewModel @Inject constructor(
 
     private fun onParameterSessionEvent(event: ParameterSessionEvent) {
         when (event) {
+            ParameterSessionEvent.FunctionsDeactivated -> functionsControl.cancelTpsLearning()
             ParameterSessionEvent.Invalidated -> {
                 parameterEditSession = null
                 failedPage = null

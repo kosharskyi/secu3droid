@@ -17,3 +17,7 @@ Pause advances the session token, cancels reads and pending save confirmation, a
 ## Read-job bookkeeping is confined to the caller's main scope
 
 The session's methods and event callbacks run on the ViewModel's main scope. Detach the read-job registry before cancellation because a job's `finally` block may run immediately and remove its entry. Late cleanup must remove an entry only if it still belongs to that job, preserving a replacement read.
+
+## A TPS measurement must not resume on a later page activation
+
+TPS uses the page-read mutex but does not use the retry-on-activation flow or populate the Functions cache. Each reply supplies only the raw voltage. The Functions deactivation and session invalidation events cancel the caller's measurement job and discard its draft, including when a reply is pending or the preview is already visible.

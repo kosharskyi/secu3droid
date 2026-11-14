@@ -384,6 +384,19 @@
     <string name="pressure_calculator_unit_at">ат</string>
     <string name="pressure_calculator_unit_psi">psi</string>
     <string name="pressure_calculator_unit_mv">мВ</string>
+
+    <string name="tps_learning_title">Навчання ДПДЗ</string>
+    <string name="tps_learning_open_throttle">Повністю відкрийте дросель і утримуйте його в цьому положенні.</string>
+    <string name="tps_learning_close_throttle">Повністю закрийте дросель і залиште його в цьому положенні.</string>
+    <string name="tps_learning_measuring">Вимірювання напруги…</string>
+    <string name="tps_learning_measure">Виміряти</string>
+    <string name="tps_learning_retry">Повторити</string>
+    <string name="tps_learning_read_failed">Не вдалося зчитати напругу ДПДЗ. Утримуйте дросель у цьому положенні й повторіть вимірювання.</string>
+    <string name="tps_learning_samples">Відкрито %1$s %3$s\nЗакрито %2$s %3$s</string>
+    <string name="tps_learning_coefficients">Зсув %1$s %2$s\nНахил %3$s %4$s</string>
+    <string name="tps_learning_span_too_small">Напруги мають відрізнятися більш ніж на 0,1 В.</string>
+    <string name="tps_learning_outside_packet_range">Виміряні напруги дають коефіцієнти поза діапазоном, який підтримує ЕБУ.</string>
+    <string name="tps_learning_restart">Почати спочатку</string>
     <string name="sec_bluetooth">Bluetooth</string>
     <string name="sec_immobilizer">Іммобілайзер</string>
     <string name="sec_information">Інформація</string>

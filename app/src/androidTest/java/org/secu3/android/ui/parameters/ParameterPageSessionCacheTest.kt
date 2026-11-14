@@ -542,6 +542,92 @@ class ParameterPageSessionCacheTest {
         }
     }
 
+    @Test fun tpsLearningUsesTwoFreshReadsAndWritesTheCoefficientsTogetherAfterConfirmation() = runBlocking {
+        val vm = paramsViewModel()
+        mountFunctionsPage(R.string.params_tab_functions_title, vm)
+        val usb = installFakeUsb(vm)
+        try {
+            activate(vm, R.string.params_tab_functions_title)
+            usb.awaitReadRequest('p', 1)
+            usb.emitFunctionName(0, "Speed density")
+            usb.emitFunctionName(1, "Alpha-N")
+            usb.awaitReadRequest('n', 1)
+            val initial = FunSetParamPacket(tpsCurveOffset = 1f, tpsCurveGradient = 10f, mapselUni = 0xA5)
+            usb.emitFunctions(initial)
+            await { vm.functionsControl.values.value != null }
+            fun functionsWrites() = usb.writes.filter { it.getOrNull(1)?.toInt() == 'n'.code }
+            val writeCount = functionsWrites().size
+            val nameReadCount = usb.readRequestCount('p')
+
+            val open = compose.onNodeWithTag("tps_learning_open").performScrollTo()
+            open.performClick()
+            compose.onNodeWithTag("tps_learning_measure_open").assertIsDisplayed()
+            assertEquals(1, usb.readRequestCount('n'))
+            val confirm = compose.onNodeWithTag("tps_learning_continue")
+            confirm.performClick()
+            usb.awaitReadRequest('n', 2)
+            usb.emitFunctions(FunSetParamPacket(mapselUni = 0x34), tpsRaw = 1800)
+            compose.onNodeWithTag("tps_learning_measure_closed").assertIsDisplayed()
+            confirm.performClick()
+            usb.awaitReadRequest('n', 3)
+            usb.emitFunctions(FunSetParamPacket(mapselUni = 0x12), tpsRaw = 200)
+            compose.onNodeWithTag("tps_learning_review").assertIsDisplayed()
+            assertEquals(nameReadCount, usb.readRequestCount('p'))
+            assertEquals(writeCount, functionsWrites().size)
+
+            confirm.performClick()
+            await { functionsWrites().size == writeCount + 1 }
+            compose.onNodeWithTag("tps_learning_review").assertDoesNotExist()
+            val frame = functionsWrites().last()
+            assertEquals('n'.code, frame[1].toInt() and 0xFF)
+            val expected = initial.pack().drop(1).toIntArray()
+            intArrayOf(0xFF, 0x38, 0x04, 0x00).copyInto(expected, 14)
+            assertArrayEquals(expected, unescapeParameterWrite(frame).copyOf(expected.size))
+            assertEquals(writeCount + 1, functionsWrites().size)
+        } finally {
+            usb.close()
+            compose.runOnUiThread { vm.clearPageState() }
+        }
+    }
+
+    @Test fun tpsLearningIgnoresLateReadAfterLeavingFunctionsAndAllowsStartingAgain() = runBlocking {
+        val vm = paramsViewModel()
+        mountFunctionsPage(R.string.params_tab_functions_title, vm)
+        val usb = installFakeUsb(vm)
+        try {
+            activate(vm, R.string.params_tab_functions_title)
+            usb.awaitReadRequest('p', 1)
+            usb.emitFunctionName(0, "Speed density")
+            usb.emitFunctionName(1, "Alpha-N")
+            usb.awaitReadRequest('n', 1)
+            usb.emitFunctions(FunSetParamPacket())
+            await { vm.functionsControl.values.value != null }
+            val writeCount = usb.writes.count { it.getOrNull(1)?.toInt() == 'n'.code }
+
+            val open = compose.onNodeWithTag("tps_learning_open").performScrollTo()
+            val confirm = compose.onNodeWithTag("tps_learning_continue")
+            open.performClick()
+            confirm.performClick()
+            usb.awaitReadRequest('n', 2)
+            val sensorsReadCount = usb.readRequestCount('q')
+            compose.runOnUiThread { vm.deactivatePage() }
+            usb.awaitReadRequest('q', sensorsReadCount + 1)
+            confirm.assertDoesNotExist()
+            usb.emitFunctions(FunSetParamPacket(), tpsRaw = 1800)
+
+            activate(vm, R.string.params_tab_functions_title)
+            open.performClick()
+            compose.onNodeWithTag("tps_learning_measure_open").assertIsDisplayed()
+            assertEquals(2, usb.readRequestCount('n'))
+            compose.onNodeWithTag("tps_learning_cancel").performClick()
+            confirm.assertDoesNotExist()
+            assertEquals(writeCount, usb.writes.count { it.getOrNull(1)?.toInt() == 'n'.code })
+        } finally {
+            usb.close()
+            compose.runOnUiThread { vm.clearPageState() }
+        }
+    }
+
     @Test fun functionsNamedCommandsUseSessionAdmissionAndLiveCapabilityGates() = runBlocking {
         val vm = paramsViewModel()
         val usb = installFakeUsb(vm, firmwareOptions = 1 shl 28)
@@ -2458,9 +2544,10 @@ class ParameterPageSessionCacheTest {
             driver.emit(RawPacket(input))
         }
 
-        suspend fun emitFunctions(packet: FunSetParamPacket) {
+        suspend fun emitFunctions(packet: FunSetParamPacket, tpsRaw: Int = 0x0190) {
             val writePayload = packet.pack()
-            val input = (intArrayOf('@'.code) + writePayload.copyOfRange(0, 32) + intArrayOf(0x01, 0x90) +
+            val input = (intArrayOf('@'.code) + writePayload.copyOfRange(0, 32) +
+                intArrayOf(tpsRaw ushr 8 and 0xFF, tpsRaw and 0xFF) +
                 writePayload.copyOfRange(32, writePayload.size) + intArrayOf(0x01, 0x90) + intArrayOf(0, 0)).also {
                 it[26] = packet.ckpsEngineCyl
             }

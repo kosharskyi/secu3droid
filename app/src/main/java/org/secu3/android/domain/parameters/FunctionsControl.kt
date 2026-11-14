@@ -10,15 +10,23 @@
 package org.secu3.android.domain.parameters
 
 import dagger.hilt.android.scopes.ViewModelScoped
+import kotlinx.coroutines.CancellationException
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Job
+import kotlinx.coroutines.currentCoroutineContext
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.ensureActive
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.launch
 import org.secu3.android.connection.Secu3ConnectionManager
 import org.secu3.android.models.FnName
 import org.secu3.android.models.packets.base.OutputPacket
 import org.secu3.android.models.packets.input.FirmwareInfoPacket
 import org.secu3.android.models.packets.out.params.FunSetParamPacket
 import javax.inject.Inject
+import kotlin.math.abs
 
 enum class PressureSensor(val maxPressureKpa: Float) { MAP(500f), MAP2(500f), GPS(500f), FPS(1000f) }
 enum class PressureUnit { PA, KPA, BAR, MMHG, TECHNICAL_ATM, PSI }
@@ -41,6 +49,25 @@ data class PressureCurveInput(
 )
 
 data class PressureCurvePreview(val offsetVolts: Float, val gradientKpaPerVolt: Float)
+
+internal sealed interface TpsLearningState {
+    enum class Capture { Ready, Measuring, Retry }
+    enum class Error { SpanTooSmall, OutsidePacketRange }
+
+    data class Measure(
+        val openVoltage: Float? = null,
+        val capture: Capture = Capture.Ready,
+    ) : TpsLearningState
+
+    data class Review(
+        val openVoltage: Float,
+        val closedVoltage: Float,
+        val offsetVolts: Float,
+        val gradientPercentPerVolt: Float,
+    ) : TpsLearningState
+
+    data class Invalid(val reason: Error) : TpsLearningState
+}
 
 data class FunctionsValues(
     val fnGasoline: Int,
@@ -110,20 +137,28 @@ data class FunctionsValues(
 @ViewModelScoped
 class FunctionsControl internal constructor(
     private val firmware: () -> FirmwareInfoPacket?,
+    private val isFunctionsPageActive: () -> Boolean = { false },
+    private val readTpsVoltage: suspend () -> Float? = { null },
     private val sendPacket: (OutputPacket) -> Boolean,
 ) {
     @Inject
     constructor(connectionManager: Secu3ConnectionManager, parameterSession: ParameterSession) : this(
         firmware = { connectionManager.fwInfo },
+        isFunctionsPageActive = parameterSession::isFunctionsPageActive,
+        readTpsVoltage = parameterSession::readTpsVoltage,
         sendPacket = parameterSession::sendPacket,
     )
 
     private val mutableValues = MutableStateFlow<FunctionsValues?>(null)
     val values: StateFlow<FunctionsValues?> = mutableValues.asStateFlow()
+    private val mutableTpsLearning = MutableStateFlow<TpsLearningState?>(null)
+    internal val tpsLearning = mutableTpsLearning.asStateFlow()
+    private var tpsCaptureJob: Job? = null
     private var packet: FunSetParamPacket? = null
     private var names: List<String> = emptyList()
 
     fun reset() {
+        cancelTpsLearning()
         packet = null
         names = emptyList()
         mutableValues.value = null
@@ -153,6 +188,67 @@ class FunctionsControl internal constructor(
     fun editFpsCurveGradient(value: Float) = editFloat(value, -500f, 500f, { ParameterCapabilities(firmware()).dbw }) { it.fpsCurveGradient = value }
     fun editApps1CurveOffset(value: Float) = editFloat(value, -5f, 5f, { ParameterCapabilities(firmware()).dbw }) { it.apps1CurveOffset = value }
     fun editApps1CurveGradient(value: Float) = editFloat(value, -500f, 500f, { ParameterCapabilities(firmware()).dbw }) { it.apps1CurveGradient = value }
+
+    internal fun startTpsLearning() {
+        if (packet == null || !isFunctionsPageActive()) return
+        val current = mutableTpsLearning.value
+        if (current == null || current is TpsLearningState.Invalid) {
+            mutableTpsLearning.value = TpsLearningState.Measure()
+        }
+    }
+
+    internal fun captureTpsPosition(scope: CoroutineScope) {
+        val step = mutableTpsLearning.value as? TpsLearningState.Measure ?: return
+        if (step.capture == TpsLearningState.Capture.Measuring || !isFunctionsPageActive()) return
+        mutableTpsLearning.value = step.copy(capture = TpsLearningState.Capture.Measuring)
+        tpsCaptureJob = scope.launch {
+            delay(TPS_SETTLE_MILLIS)
+            val voltage = try {
+                readTpsVoltage()
+            } catch (cancelled: CancellationException) {
+                throw cancelled
+            } catch (_: Exception) {
+                null
+            }
+            currentCoroutineContext().ensureActive()
+            if (!isFunctionsPageActive()) {
+                mutableTpsLearning.value = null
+                return@launch
+            }
+            mutableTpsLearning.value = when {
+                voltage == null -> step.copy(capture = TpsLearningState.Capture.Retry)
+                step.openVoltage == null -> TpsLearningState.Measure(openVoltage = voltage)
+                else -> calculateTpsLearning(step.openVoltage, voltage)
+            }
+        }
+    }
+
+    internal fun cancelTpsLearning() {
+        tpsCaptureJob?.cancel()
+        tpsCaptureJob = null
+        mutableTpsLearning.value = null
+    }
+
+    internal fun applyTpsLearning(): Boolean {
+        val result = mutableTpsLearning.value as? TpsLearningState.Review ?: return false
+        val admitted = edit({ isFunctionsPageActive() && it.canEncodeTpsCurve(result.offsetVolts, result.gradientPercentPerVolt) }) {
+            it.tpsCurveOffset = result.offsetVolts
+            it.tpsCurveGradient = result.gradientPercentPerVolt
+        }
+        if (admitted) cancelTpsLearning()
+        return admitted
+    }
+
+    private fun calculateTpsLearning(openVolts: Float, closedVolts: Float): TpsLearningState {
+        val difference = openVolts - closedVolts
+        if (abs(difference) <= 0.1f) return TpsLearningState.Invalid(TpsLearningState.Error.SpanTooSmall)
+        val offset = -closedVolts
+        val gradient = 100f / difference
+        if (packet?.canEncodeTpsCurve(offset, gradient) != true) {
+            return TpsLearningState.Invalid(TpsLearningState.Error.OutsidePacketRange)
+        }
+        return TpsLearningState.Review(openVolts, closedVolts, offset, gradient)
+    }
 
     fun pressureCurveInput(sensor: PressureSensor): PressureCurveInput? {
         val current = packet ?: return null
@@ -356,6 +452,7 @@ class FunctionsControl internal constructor(
     }
 
     companion object {
+        private const val TPS_SETTLE_MILLIS = 1_000L
         private const val MAF_LOAD_SOURCE = 4
         private const val DISABLED_OUTPUT = 15
     }

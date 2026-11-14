@@ -31,6 +31,13 @@ internal class ParameterPageReadGate {
         activePage.value = null
     }
 
+    fun isActive(page: ParameterPage): Boolean = activePage.value == page
+
+    suspend fun <T> readOnce(page: ParameterPage, receive: suspend () -> T): T? =
+        readMutex.withLock {
+            if (isActive(page)) receive() else null
+        }
+
     /** Cancels an unfinished read when the page hides, and retries when it becomes active again. */
     @OptIn(ExperimentalCoroutinesApi::class)
     fun <T> read(

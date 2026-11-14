@@ -201,6 +201,7 @@ fun FunctionsScreen(
     onOpenPressureCurve: (PressureSensor) -> PressureCurveInput? = { null },
     onPreviewPressureCurve: (PressureSensor, PressureCurveInput) -> PressureCurvePreview? = { _, _ -> null },
     onApplyPressureCurve: (PressureSensor, PressureCurveInput) -> Boolean = { _, _ -> false },
+    onStartTpsLearning: (() -> Unit)? = null,
 ) {
     val pageScrollState = rememberScrollState()
     if (values == null) {
@@ -269,6 +270,14 @@ fun FunctionsScreen(
                                     modifier = Modifier.align(Alignment.End).padding(end = 8.dp)
                                         .testTag("pressure_calculator_${sensor.name.lowercase()}"),
                                 ) { Text(stringResource(R.string.pressure_calculator_open, sensor.name)) }
+                            }
+                            if (n == FunctionsNumber.TPS_GRADIENT && onStartTpsLearning != null) {
+                                TextButton(
+                                    onClick = onStartTpsLearning,
+                                    enabled = isActive,
+                                    modifier = Modifier.align(Alignment.End).padding(end = 8.dp)
+                                        .testTag("tps_learning_open"),
+                                ) { Text(stringResource(R.string.tps_learning_title)) }
                             }
                             if (n != FunctionsNumber.entries.last()) {
                                 HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant)

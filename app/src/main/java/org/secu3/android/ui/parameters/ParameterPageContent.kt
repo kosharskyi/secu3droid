@@ -104,6 +104,7 @@ internal fun ParameterPageContent(
         }
         ParameterPage.FUNCTIONS -> {
             val values by viewModel.functionsControl.values.collectAsStateWithLifecycle()
+            val tpsLearning by viewModel.functionsControl.tpsLearning.collectAsStateWithLifecycle()
             FunctionsScreen(
                 values = values,
                 onEdit = { number ->
@@ -138,7 +139,19 @@ internal fun ParameterPageContent(
                 onApplyPressureCurve = { sensor, input ->
                     isActiveNow() && viewModel.applyFunctionsPressureCurve(sensor, input)
                 },
+                onStartTpsLearning = { if (isActiveNow()) viewModel.functionsControl.startTpsLearning() },
             )
+            if (isActive) {
+                tpsLearning?.let { state ->
+                    TpsLearningDialog(
+                        state = state,
+                        onCapture = { if (isActiveNow()) viewModel.captureTpsPosition() },
+                        onApply = { if (isActiveNow()) viewModel.applyTpsLearning() },
+                        onRestart = { if (isActiveNow()) viewModel.functionsControl.startTpsLearning() },
+                        onCancel = viewModel.functionsControl::cancelTpsLearning,
+                    )
+                }
+            }
         }
         ParameterPage.TEMPERATURE -> {
             val values by viewModel.temperatureControl.values.collectAsStateWithLifecycle()

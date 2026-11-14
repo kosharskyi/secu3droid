@@ -17,3 +17,7 @@ Lower/upper values use pressure units only for MAP and MAP+TPS sources (`loadSrc
 ## Calibration drafts belong to the active Functions page
 
 The page may remain composed while the pager switches tabs or the host loses focus. Dismiss the calibration draft when the page becomes inactive or GPS/FPS support is lost. Confirm against the page's live activity check so a stale dialog cannot apply after a transition.
+
+## The TPS wizard follows the parameter session
+
+The dialog renders the control's draft while Functions is active. Session events discard that draft even when Compose does not render an intermediate disconnect or keeps an adjacent page composed.
