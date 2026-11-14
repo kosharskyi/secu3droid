@@ -1195,6 +1195,62 @@ class SensorsScreenTest {
         }
     }
 
+    @Test fun draggingGraphAcrossItsMatchingGaugeKeepsBothCardsAndPersistsMixedOrder() {
+        var savedCards: List<GaugeState>? = null
+        val rpm = GaugeType.RPM
+        compose.setContent {
+            SecuComposeTheme {
+                Box(Modifier.requiredWidth(400.dp)) {
+                    SensorsScreen(
+                        gauges = listOf(
+                            GaugeItem(GaugeState(1, rpm, 0, isNumericView = true), "1200"),
+                            GaugeItem(GaugeState(2, rpm, 1, isChart = true), "1200"),
+                        ),
+                        indicators = emptyList(),
+                        gaugeChoices = null,
+                        indicatorChoices = null,
+                        onAddGaugeRequest = {},
+                        onAddIndicatorRequest = {},
+                        onAddGauge = {},
+                        onAddIndicator = {},
+                        onGaugeChoicesConsumed = {},
+                        onIndicatorChoicesConsumed = {},
+                        onDeleteGauge = {},
+                        onDeleteIndicator = {},
+                        onUpdateGauge = {},
+                        onReorderGauges = { savedCards = it },
+                        onReorderIndicators = {},
+                        presentationCatalog = presentationCatalog,
+                        renderer = renderer,
+                        chartSamples = mapOf(rpm to listOf(
+                            org.secu3.android.domain.sensors.SensorChartSample(100L, 1_000f),
+                            org.secu3.android.domain.sensors.SensorChartSample(200L, 1_200f),
+                        )),
+                    )
+                }
+            }
+        }
+        val gauge = compose.onNodeWithTag("gauge-${rpm.name}")
+        val chart = compose.onNodeWithTag("sensor-chart-card-${rpm.name}")
+        val source = chart.fetchSemanticsNode().boundsInRoot
+        val target = gauge.fetchSemanticsNode().boundsInRoot
+        chart.performTouchInput {
+            down(center)
+            advanceEventTime(600)
+            moveBy(Offset(
+                target.left + target.width / 2f - source.left - source.width / 2f,
+                target.top + target.height / 2f - source.top - source.height / 2f,
+            ))
+            up()
+        }
+        compose.runOnIdle {
+            assertEquals(listOf(true, false), savedCards?.map { it.isChart })
+            assertEquals(listOf(0, 1), savedCards?.map { it.idx })
+        }
+        gauge.assertExists()
+        chart.assertExists()
+    }
+
     @Test fun draggingEitherGridDefersUpdatesToBothUntilDrop() {
         val reading = mutableStateOf("100")
         val active = mutableStateOf(false)
@@ -1553,14 +1609,16 @@ class SensorsScreenTest {
         first.gaugeStateDao().insertAll(listOf(
             GaugeState(gaugeType = GaugeType.RPM, idx = 0),
             GaugeState(gaugeType = GaugeType.VOLTAGE, idx = 1),
+            GaugeState(gaugeType = GaugeType.RPM, idx = 2, isChart = true),
         ))
         first.indicatorStateDao().insertAll(listOf(
             IndicatorState(indicatorType = IndicatorType.THROTTLE, idx = 0),
             IndicatorState(indicatorType = IndicatorType.GAS_VALVE, idx = 1),
         ))
         first.gaugeStateDao().updateAll(listOf(
-            first.gaugeStateDao().getByGaugeType(GaugeType.VOLTAGE)!!.copy(idx = 0),
-            first.gaugeStateDao().getByGaugeType(GaugeType.RPM)!!.copy(idx = 1, isNumericView = true),
+            first.gaugeStateDao().getChartByGaugeType(GaugeType.RPM)!!.copy(idx = 0),
+            first.gaugeStateDao().getByGaugeType(GaugeType.VOLTAGE)!!.copy(idx = 1),
+            first.gaugeStateDao().getByGaugeType(GaugeType.RPM)!!.copy(idx = 2, isNumericView = true),
         ))
         first.indicatorStateDao().updateAll(listOf(
             first.indicatorStateDao().getByIndicatorType(IndicatorType.GAS_VALVE)!!.copy(idx = 0),
@@ -1570,7 +1628,12 @@ class SensorsScreenTest {
 
         val reopened = Room.databaseBuilder(context, AppDatabase::class.java, name).build()
         try {
-            assertEquals(listOf(GaugeType.VOLTAGE, GaugeType.RPM), reopened.gaugeStateDao().getAllOrderByIdx().map { it.gaugeType })
+            assertEquals(
+                listOf(GaugeType.RPM to true, GaugeType.VOLTAGE to false, GaugeType.RPM to false),
+                reopened.gaugeStateDao().getAllOrderByIdx().map { it.gaugeType to it.isChart },
+            )
+            assertEquals(2, reopened.gaugeStateDao().getByGaugeType(GaugeType.RPM)?.idx)
+            assertEquals(0, reopened.gaugeStateDao().getChartByGaugeType(GaugeType.RPM)?.idx)
             assertEquals(true, reopened.gaugeStateDao().getByGaugeType(GaugeType.RPM)?.isNumericView)
             assertEquals(listOf(IndicatorType.GAS_VALVE, IndicatorType.THROTTLE), reopened.indicatorStateDao().getAllOrderByIdx().map { it.indicatorType })
         } finally {

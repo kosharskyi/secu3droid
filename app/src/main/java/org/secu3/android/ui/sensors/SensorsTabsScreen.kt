@@ -64,6 +64,7 @@ import org.secu3.android.ui.sensors.models.GaugeItem
 import org.secu3.android.models.sensors.GaugeType
 import org.secu3.android.ui.sensors.models.IndicatorItem
 import org.secu3.android.models.sensors.IndicatorType
+import org.secu3.android.domain.sensors.SensorChartSample
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -95,6 +96,12 @@ internal fun SensorsTabsScreen(
     gaugeStyle: SensorGaugeStyle = SensorGaugeStyle.Default,
     safeDrawingInsets: WindowInsets = WindowInsets.safeDrawing,
     systemBarsInsets: WindowInsets = WindowInsets.systemBars,
+    chartChoices: ChoiceRequest<GaugeType>? = null,
+    chartSamples: Map<GaugeType, List<SensorChartSample>> = emptyMap(),
+    onAddChartRequest: () -> Unit = {},
+    onAddChart: (GaugeType) -> Unit = {},
+    onChartChoicesConsumed: (Long) -> Unit = {},
+    onDeleteChart: (GaugeType) -> Unit = {},
 ) {
     val scaffoldWindowInsets = safeDrawingInsets.only(WindowInsetsSides.Vertical)
         .union(systemBarsInsets.only(WindowInsetsSides.Horizontal))
@@ -174,6 +181,13 @@ internal fun SensorsTabsScreen(
                         injectionTimingMode = injectionTimingMode,
                         presentationCatalog = presentationCatalog,
                         renderer = renderer,
+                        chartChoices = chartChoices,
+                        chartSamples = chartSamples,
+                        onAddChartRequest = onAddChartRequest,
+                        onAddChart = onAddChart,
+                        onChartChoicesConsumed = onChartChoicesConsumed,
+                        onDeleteChart = onDeleteChart,
+                        connectionState = connectionState,
                     )
                     else -> RawSensorsScreen(rawSensors.takeIf { connectionState == Connected }, capabilities = RawSensorCapabilities.from(firmwareInfo))
                 }

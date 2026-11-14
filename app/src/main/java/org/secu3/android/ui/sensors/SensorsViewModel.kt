@@ -26,6 +26,12 @@ import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.Job
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.flow.conflate
+import kotlinx.coroutines.flow.flowOn
+import org.secu3.android.domain.sensors.SensorChartSession
+import org.secu3.android.domain.sensors.SensorChartSample
 import org.secu3.android.connection.Secu3ConnectionManager
 import org.secu3.android.ui.common.SensorPacketObserver
 import org.secu3.android.db.SensorConfigurationRepository
@@ -53,6 +59,7 @@ class SensorsViewModel @Inject constructor(
     private val sensorPacketObserver: SensorPacketObserver,
     private val userPrefs: UserPrefs,
     private val secuLogger: SecuLogger,
+    private val sensorChartSession: SensorChartSession,
     private val repository: SensorConfigurationRepository,
     val presentationCatalog: SensorPresentationCatalog,
     val gaugeDialRenderer: GaugeDialRenderer,
@@ -65,6 +72,10 @@ class SensorsViewModel @Inject constructor(
     private val _state = MutableStateFlow(readUiState())
     val state: StateFlow<SensorsUiState> = _state.asStateFlow()
     private val taskGate = SensorTaskGate(_state.value.selectedPage, secu3ConnectionManager::sendNewTask)
+    private val _chartSamples = MutableStateFlow<Map<GaugeType, List<SensorChartSample>>>(emptyMap())
+    val chartSamples: StateFlow<Map<GaugeType, List<SensorChartSample>>> = _chartSamples.asStateFlow()
+    private val chartTypes = MutableStateFlow<Set<GaugeType>>(emptySet())
+    private var chartCollectionJob: Job? = null
     private val sensorUpdateIntervalMs = 100L
 
     val connectionState = secu3ConnectionManager.connectionStateFlow
@@ -99,10 +110,20 @@ class SensorsViewModel @Inject constructor(
     private var nextChoiceRequestId = 0L
     private val showAddGaugeFlow = MutableStateFlow<ChoiceRequest<GaugeType>?>(null)
     val showAddGauge = showAddGaugeFlow.asStateFlow()
+    private val showAddChartFlow = MutableStateFlow<ChoiceRequest<GaugeType>?>(null)
+    val showAddChart = showAddChartFlow.asStateFlow()
     private val showAddIndicatorFlow = MutableStateFlow<ChoiceRequest<IndicatorType>?>(null)
     val showAddIndicator = showAddIndicatorFlow.asStateFlow()
 
     init {
+        viewModelScope.launch {
+            repository.observeGaugeStates().map { states -> states.filter { it.isChart }.map { it.gaugeType }.toSet() }
+                .distinctUntilChanged()
+                .collect { types ->
+                    chartTypes.value = types
+                    restartChartCollection()
+                }
+        }
         viewModelScope.launch {
             userPrefs.observeSettings { uiMessageQueue.publish(org.secu3.android.R.string.preferences_storage_error, UiMessageDuration.LONG, scope = "sensors") }
                 .collect(::refreshPreferences)
@@ -116,6 +137,11 @@ class SensorsViewModel @Inject constructor(
                 }
             }
         }
+        viewModelScope.launch {
+            secu3ConnectionManager.connectionStateFlow.collect { connection ->
+                if (connection == org.secu3.android.connection.Connected) taskGate.reissueCurrentTask()
+            }
+        }
     }
 
     private fun readUiState() = SensorsUiState(
@@ -124,16 +150,20 @@ class SensorsViewModel @Inject constructor(
     )
 
     fun onRouteResumed() {
+        _routeResumed = true
         _state.update {
             it.copy(
                 loggerStarted = secuLogger.isLoggerStarted,
             )
         }
         taskGate.setResumed(true)
+        restartChartCollection()
     }
 
     fun onRoutePaused() {
+        _routeResumed = false
         taskGate.setResumed(false)
+        stopChartCollection()
     }
 
     fun selectPage(page: Int) {
@@ -142,6 +172,7 @@ class SensorsViewModel @Inject constructor(
         savedStateHandle[KEY_SELECTED_PAGE] = selectedPage
         _state.update { it.copy(selectedPage = selectedPage) }
         taskGate.selectPage(selectedPage)
+        restartChartCollection()
     }
 
     fun setOldViewEnabled(enabled: Boolean) {
@@ -165,10 +196,42 @@ class SensorsViewModel @Inject constructor(
                 showLoggerControls = settings.showLogControls,
             )
         }
+        restartChartCollection()
+    }
+
+    private fun restartChartCollection() {
+        val shouldCollect = _routeResumed && _state.value.selectedPage == 0 &&
+            !_state.value.oldViewEnabled && chartTypes.value.isNotEmpty()
+        if (!shouldCollect) {
+            stopChartCollection()
+            return
+        }
+        if (chartCollectionJob?.isActive == true) return
+        chartCollectionJob = viewModelScope.launch {
+            sensorChartSession.observe()
+                .conflate()
+                .combine(chartTypes) { snapshot, types ->
+                    sensorChartSession.readings(snapshot, types)
+                }
+                .flowOn(Dispatchers.Default)
+                .collect { _chartSamples.value = it }
+        }
+    }
+
+    private var _routeResumed = false
+
+    private fun stopChartCollection() {
+        chartCollectionJob?.cancel()
+        chartCollectionJob = null
+        _chartSamples.value = emptyMap()
     }
 
     fun consumeGaugeChoices(requestId: Long) {
         if (showAddGaugeFlow.value?.requestId == requestId) showAddGaugeFlow.value = null
+    }
+
+    fun consumeChartChoices(requestId: Long) {
+        if (showAddChartFlow.value?.requestId == requestId) showAddChartFlow.value = null
     }
 
     fun consumeIndicatorChoices(requestId: Long) {
@@ -193,8 +256,16 @@ class SensorsViewModel @Inject constructor(
         }
     }
 
+    fun addChartClick() {
+        viewModelScope.launch {
+            showAddChartFlow.value = ChoiceRequest(++nextChoiceRequestId, repository.getAvailableChartTypes())
+        }
+    }
+
     fun addGauge(gauge: GaugeType) { viewModelScope.launch { repository.addGauge(gauge) } }
+    fun addChart(gauge: GaugeType) { viewModelScope.launch { repository.addChart(gauge) } }
     fun deleteGauge(gauge: GaugeType) { viewModelScope.launch { repository.deleteGauge(gauge) } }
+    fun deleteChart(gauge: GaugeType) { viewModelScope.launch { repository.deleteChart(gauge) } }
     fun updateGaugeState(gaugeState: GaugeState) { viewModelScope.launch { repository.updateGauges(listOf(gaugeState)) } }
 
     fun addIndicatorClick() {
@@ -239,6 +310,10 @@ internal class SensorTaskGate(
     fun setResumed(value: Boolean) {
         if (resumed == value) return
         resumed = value
+        if (resumed) sendTask(taskForPage(selectedPage))
+    }
+
+    fun reissueCurrentTask() {
         if (resumed) sendTask(taskForPage(selectedPage))
     }
 

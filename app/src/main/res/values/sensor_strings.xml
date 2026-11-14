@@ -3,4 +3,10 @@
     <string name="sensors_frag_fuel_consumption_hourly_label">Hourly fuel consumption</string>
     <string name="sensors_frag_consumed_fuel_label">Consumed fuel</string>
     <string name="units_l_per_hour">L/h</string>
+    <string name="sensor_chart_waiting">Waiting for sensor data</string>
+    <string name="sensor_chart_description">%1$s readings over the last 10 seconds</string>
+    <string name="sensor_chart_time_start">−10 s</string>
+    <string name="sensor_chart_time_end">0 s</string>
+    <string name="sensor_chart_add">Add graph</string>
+    <string name="sensor_chart_remove">Remove graph</string>
 </resources>

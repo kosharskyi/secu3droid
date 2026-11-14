@@ -36,7 +36,12 @@ class SensorConfigurationRepository @Inject constructor(
     fun observeIndicatorStates(): Flow<List<IndicatorState>> = db.indicatorStateDao().observeAllOrderByIdx()
 
     suspend fun getAvailableGaugeTypes(): List<GaugeType> = withContext(Dispatchers.IO) {
-        val stored = db.gaugeStateDao().getAll().map { it.gaugeType }.toSet()
+        val stored = db.gaugeStateDao().getAllGauges().map { it.gaugeType }.toSet()
+        GaugeType.entries.filterNot { it in stored }
+    }
+
+    suspend fun getAvailableChartTypes(): List<GaugeType> = withContext(Dispatchers.IO) {
+        val stored = db.gaugeStateDao().getAll().filter { it.isChart }.map { it.gaugeType }.toSet()
         GaugeType.entries.filterNot { it in stored }
     }
 
@@ -49,8 +54,19 @@ class SensorConfigurationRepository @Inject constructor(
         }
     }
 
+    suspend fun addChart(gaugeType: GaugeType) = withContext(Dispatchers.IO) {
+        db.withTransaction {
+            val maxIdx = db.gaugeStateDao().getMaxIdx()?.inc() ?: 0
+            db.gaugeStateDao().insertOrIgnore(GaugeState(0, gaugeType, maxIdx, isChart = true))
+        }
+    }
+
     suspend fun deleteGauge(gaugeType: GaugeType) = withContext(Dispatchers.IO) {
         db.gaugeStateDao().deleteGauge(gaugeType)
+    }
+
+    suspend fun deleteChart(gaugeType: GaugeType) = withContext(Dispatchers.IO) {
+        db.gaugeStateDao().deleteChart(gaugeType)
     }
 
     suspend fun getAvailableIndicatorTypes(): List<IndicatorType> = withContext(Dispatchers.IO) {

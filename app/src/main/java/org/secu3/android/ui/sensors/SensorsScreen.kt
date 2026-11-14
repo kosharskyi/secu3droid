@@ -33,6 +33,7 @@ import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.ShowChart
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.SwapHoriz
@@ -76,6 +77,10 @@ import org.secu3.android.ui.sensors.models.IndicatorItem
 import org.secu3.android.models.sensors.IndicatorType
 import org.secu3.android.ui.sensors.SensorsViewModel.ChoiceRequest
 import org.secu3.android.ui.compose.LocalSecuPalette
+import org.secu3.android.domain.sensors.SensorChartSample
+import org.secu3.android.ui.sensors.chart.SensorChartCard
+import org.secu3.android.connection.Connected
+import org.secu3.android.connection.ConnectionState
 
 @Composable
 internal fun SensorsScreen(
@@ -93,9 +98,16 @@ internal fun SensorsScreen(
     presentationCatalog: SensorPresentationCatalog,
     renderer: GaugeDialRenderer,
     injectionTimingMode: InjectionTimingMode = InjectionTimingMode.Default,
+    chartChoices: ChoiceRequest<GaugeType>? = null,
+    chartSamples: Map<GaugeType, List<SensorChartSample>> = emptyMap(),
+    onAddChartRequest: () -> Unit = {},
+    onAddChart: (GaugeType) -> Unit = {},
+    onChartChoicesConsumed: (Long) -> Unit = {},
+    onDeleteChart: (GaugeType) -> Unit = {},
+    connectionState: ConnectionState? = Connected,
 ) {
     val latestReorderingChanged by rememberUpdatedState(onReorderingChanged)
-    val gaugeReorder = remember { SensorGridReorderState(gauges, { item -> "g:${item.state.gaugeType.name}" }) { latestReorderingChanged(it) } }
+    val gaugeReorder = remember { SensorGridReorderState(gauges, GaugeItem::stableKey) { latestReorderingChanged(it) } }
     val indicatorReorder = remember { SensorGridReorderState(indicators, { item -> "i:${item.state.indicatorType.name}" }) { latestReorderingChanged(it) } }
     val dragging = gaugeReorder.isDragging || indicatorReorder.isDragging
     val latestGauges by rememberUpdatedState(gauges)
@@ -104,6 +116,7 @@ internal fun SensorsScreen(
     var menuFor by remember { mutableStateOf<String?>(null) }
     var fabExpanded by remember { mutableStateOf(false) }
     var gaugeDialog by remember { mutableStateOf<List<GaugeType>?>(null) }
+    var chartDialog by remember { mutableStateOf<List<GaugeType>?>(null) }
     var indicatorDialog by remember { mutableStateOf<List<IndicatorType>?>(null) }
     DisposableEffect(Unit) {
         onDispose { if (latestDragging) latestReorderingChanged(false) }
@@ -130,6 +143,9 @@ internal fun SensorsScreen(
     LaunchedEffect(indicatorChoices?.requestId) {
         indicatorChoices?.let { request -> indicatorDialog = request.choices; onIndicatorChoicesConsumed(request.requestId) }
     }
+    LaunchedEffect(chartChoices?.requestId) {
+        chartChoices?.let { request -> chartDialog = request.choices; onChartChoicesConsumed(request.requestId) }
+    }
 
     BoxWithConstraints(Modifier.fillMaxSize().background(MaterialTheme.colorScheme.background)) {
         val availableWidth = maxWidth
@@ -144,11 +160,11 @@ internal fun SensorsScreen(
                         .coerceAtLeast(0.dp)
                     Row(
                         Modifier.fillMaxWidth().height(IntrinsicSize.Max)
-                            .zIndex(if (rowItems.any { gaugeReorder.activeKey == "g:${it.state.gaugeType.name}" }) 1f else 0f),
+                            .zIndex(if (rowItems.any { gaugeReorder.activeKey == it.stableKey }) 1f else 0f),
                         horizontalArrangement = Arrangement.Start,
                     ) {
                         rowItems.forEach { item ->
-                            val dragKey = "g:${item.state.gaugeType.name}"
+                            val dragKey = item.stableKey
                             val isDragged = gaugeReorder.activeKey == dragKey
                             val previewOffset = if (!isDragged && gaugeReorder.activeKey != null) gaugeReorder.previewOffset(dragKey) else Offset.Zero
                             val previewAnimation = remember(dragKey) { gaugeReorder.animation(dragKey) }
@@ -157,14 +173,7 @@ internal fun SensorsScreen(
                                 gaugeReorder.animatePreview(dragKey, previewOffset)
                             }
                             key(dragKey) { Box(Modifier.weight(1f).fillMaxHeight().zIndex(if (isDragged) 2f else 0f), contentAlignment = Alignment.TopCenter) {
-                                GaugeCard(
-                                    if (dataAvailable) item else item.copy(value = "—"),
-                                    gaugeStyle,
-                                    injectionTimingMode,
-                                    presentationCatalog,
-                                    renderer,
-                                    dialContentWidth,
-                                    Modifier.fillMaxHeight().padding(CARD_CELL_GUTTER)
+                                val cardModifier = Modifier.fillMaxHeight().padding(CARD_CELL_GUTTER)
                                         .onGloballyPositioned { coordinates ->
                                             val bounds = coordinates.boundsInRoot()
                                             if (gaugeReorder.positions[dragKey] != bounds) gaugeReorder.positions[dragKey] = bounds
@@ -175,7 +184,21 @@ internal fun SensorsScreen(
                                             } else {
                                                 translationX = animatedPreviewOffset.x; translationY = animatedPreviewOffset.y
                                             }
-                                        }.zIndex(if (isDragged) 1f else 0f).then(gaugeReorder.itemModifier(dragKey)),
+                                        }.zIndex(if (isDragged) 1f else 0f).then(gaugeReorder.itemModifier(dragKey))
+                                if (item.state.isChart) {
+                                    SensorChartCard(
+                                        item = if (dataAvailable) item else item.copy(value = ""),
+                                        samples = chartSamples[item.state.gaugeType].orEmpty(),
+                                        connectionState = connectionState,
+                                        timingMode = injectionTimingMode,
+                                        presentationCatalog = presentationCatalog,
+                                        modifier = cardModifier,
+                                        onMenu = { menuFor = dragKey },
+                                    )
+                                } else GaugeCard(
+                                    if (dataAvailable) item else item.copy(value = "—"),
+                                    gaugeStyle, injectionTimingMode, presentationCatalog, renderer, dialContentWidth,
+                                    cardModifier,
                                     onMenu = { menuFor = dragKey },
                                 )
                                 DropdownMenu(
@@ -185,21 +208,30 @@ internal fun SensorsScreen(
                                     containerColor = MaterialTheme.colorScheme.surfaceContainerHighest,
                                     border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant),
                                 ) {
-                                    DropdownMenuItem(
-                                        text = { Text(stringResource(R.string.switch_view)) },
-                                        leadingIcon = { Icon(Icons.Default.SwapHoriz, null) },
-                                        onClick = {
-                                            menuFor = null
-                                            val updated = item.state.copy(isNumericView = !item.state.isNumericView)
-                                            gaugeReorder.items = gaugeReorder.items.map { current -> if (current.state.gaugeType == updated.gaugeType) current.copy(state = updated) else current }
-                                            onUpdateGauge(updated)
-                                        },
-                                    )
-                                    DropdownMenuItem(
-                                        text = { Text(stringResource(R.string.delete)) },
-                                        leadingIcon = { Icon(Icons.Default.Delete, null) },
-                                        onClick = { menuFor = null; onDeleteGauge(item.state.gaugeType) },
-                                    )
+                                    if (item.state.isChart) {
+                                        DropdownMenuItem(
+                                            text = { Text(stringResource(R.string.sensor_chart_remove)) },
+                                            leadingIcon = { Icon(Icons.Default.Delete, null) },
+                                            modifier = Modifier.testTag("sensor-chart-delete-${item.state.gaugeType.name}"),
+                                            onClick = { menuFor = null; onDeleteChart(item.state.gaugeType) },
+                                        )
+                                    } else {
+                                        DropdownMenuItem(
+                                            text = { Text(stringResource(R.string.switch_view)) },
+                                            leadingIcon = { Icon(Icons.Default.SwapHoriz, null) },
+                                            onClick = {
+                                                menuFor = null
+                                                val updated = item.state.copy(isNumericView = !item.state.isNumericView)
+                                                gaugeReorder.items = gaugeReorder.items.map { current -> if (current.stableKey == item.stableKey) current.copy(state = updated) else current }
+                                                onUpdateGauge(updated)
+                                            },
+                                        )
+                                        DropdownMenuItem(
+                                            text = { Text(stringResource(R.string.delete)) },
+                                            leadingIcon = { Icon(Icons.Default.Delete, null) },
+                                            onClick = { menuFor = null; onDeleteGauge(item.state.gaugeType) },
+                                        )
+                                    }
                                 }
                             } }
                         }
@@ -263,6 +295,7 @@ internal fun SensorsScreen(
         Column(Modifier.align(Alignment.BottomEnd).padding(16.dp), horizontalAlignment = Alignment.End) {
             if (fabExpanded) {
                 SmallFloatingActionButton(onClick = { fabExpanded = false; onAddIndicatorRequest() }, modifier = Modifier.padding(bottom = 8.dp).testTag("sensors-add-indicator"), containerColor = MaterialTheme.colorScheme.primary, contentColor = MaterialTheme.colorScheme.onPrimary) { Icon(painterResource(R.drawable.ic_indicator), stringResource(R.string.sensors_add_indicator)) }
+                SmallFloatingActionButton(onClick = { fabExpanded = false; onAddChartRequest() }, modifier = Modifier.padding(bottom = 8.dp).testTag("sensors-add-chart"), containerColor = MaterialTheme.colorScheme.primary, contentColor = MaterialTheme.colorScheme.onPrimary) { Icon(Icons.AutoMirrored.Filled.ShowChart, stringResource(R.string.sensor_chart_add)) }
                 SmallFloatingActionButton(onClick = { fabExpanded = false; onAddGaugeRequest() }, modifier = Modifier.padding(bottom = 8.dp).testTag("sensors-add-gauge"), containerColor = MaterialTheme.colorScheme.primary, contentColor = MaterialTheme.colorScheme.onPrimary) { Icon(painterResource(R.drawable.ic_gauge), stringResource(R.string.sensors_add_gauge)) }
             }
             FloatingActionButton(onClick = { fabExpanded = !fabExpanded }, modifier = Modifier.testTag("sensors-add"), containerColor = MaterialTheme.colorScheme.primary, contentColor = MaterialTheme.colorScheme.onPrimary) { Icon(Icons.Default.Add, stringResource(R.string.sensors_add)) }
@@ -273,6 +306,11 @@ internal fun SensorsScreen(
         AlertDialog(onDismissRequest = { gaugeDialog = null }, title = { Text(stringResource(R.string.select_gauge_to_add)) },
             text = { Column(Modifier.heightIn(max = 420.dp).verticalScroll(rememberScrollState())) { choices.forEach { type -> TextButton(onClick = { gaugeDialog = null; onAddGauge(type) }) { Text(stringResource(presentationCatalog.gauge(type).title)) } } } },
             confirmButton = { TextButton(onClick = { gaugeDialog = null }) { Text(stringResource(android.R.string.cancel)) } })
+    }
+    chartDialog?.let { choices ->
+        AlertDialog(onDismissRequest = { chartDialog = null }, title = { Text(stringResource(R.string.sensor_chart_add)) },
+            text = { Column(Modifier.heightIn(max = 420.dp).verticalScroll(rememberScrollState())) { choices.forEach { type -> TextButton(onClick = { chartDialog = null; onAddChart(type) }, modifier = Modifier.testTag("sensor-chart-choice-${type.name}")) { Text(stringResource(presentationCatalog.gauge(type).title)) } } } },
+            confirmButton = { TextButton(onClick = { chartDialog = null }) { Text(stringResource(android.R.string.cancel)) } })
     }
     indicatorDialog?.let { choices ->
         AlertDialog(onDismissRequest = { indicatorDialog = null }, title = { Text(stringResource(R.string.select_indicator_to_add)) },

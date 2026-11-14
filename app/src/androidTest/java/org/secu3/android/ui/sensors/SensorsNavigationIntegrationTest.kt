@@ -1,12 +1,14 @@
 package org.secu3.android.ui.sensors
 
 import android.view.KeyEvent
+import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.assertIsSelected
 import androidx.compose.ui.test.assertIsOn
 import androidx.compose.ui.test.assertIsOff
 import androidx.compose.ui.test.assertTextEquals
 import androidx.compose.ui.test.junit4.v2.createAndroidComposeRule
 import androidx.compose.ui.test.onNodeWithContentDescription
+import androidx.compose.ui.test.onAllNodesWithTag
 import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
@@ -21,11 +23,13 @@ import org.junit.Rule
 import org.junit.Test
 import org.secu3.android.R
 import org.secu3.android.models.SensorGaugeStyle
+import org.secu3.android.models.sensors.GaugeType
 import org.secu3.android.ui.MainActivity
 import org.secu3.android.ui.SENSOR_SETTINGS_ROUTE
 import org.secu3.android.ui.SENSORS_ROUTE
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.runBlocking
+import kotlinx.coroutines.withTimeout
 
 class SensorsNavigationIntegrationTest {
     @get:Rule val compose = createAndroidComposeRule<MainActivity>()
@@ -134,6 +138,70 @@ class SensorsNavigationIntegrationTest {
                 .assertTextEquals(context.getString(R.string.sensor_gauge_style_thin_needle))
         } finally {
             runBlocking { prefs.setSensorGaugeStyle(originalStyle) }
+        }
+    }
+
+    @Test fun independentChartCardCanCoexistWithGaugeAndPersistsInTheGrid() {
+        val prefs = compose.activity.userPrefs
+        val originalOldView = runBlocking { prefs.settings.first().oldSensorViewEnabled }
+        var sensorsViewModel: SensorsViewModel? = null
+        var addedGauge = false
+        var addedChart = false
+        var chartType: GaugeType? = null
+        try {
+            runBlocking { prefs.setOldSensorViewEnabled(false) }
+            navigateToHomeAndSensors()
+            sensorsViewModel = currentSensorsViewModel()
+            val initial = runBlocking { withTimeout(5_000) { sensorsViewModel!!.gauges.first() } }
+            val existingGaugeTypes = initial.filterNot { it.state.isChart }.map { it.state.gaugeType }.toSet()
+            val existingChartTypes = initial.filter { it.state.isChart }.map { it.state.gaugeType }.toSet()
+            chartType = existingGaugeTypes.firstOrNull { it !in existingChartTypes } ?: GaugeType.entries.first { it !in existingGaugeTypes }
+            if (chartType !in existingGaugeTypes) {
+                sensorsViewModel!!.addGauge(chartType!!)
+                addedGauge = true
+                runBlocking { withTimeout(5_000) { sensorsViewModel!!.gauges.first { items -> items.any { it.state.gaugeType == chartType && !it.state.isChart } } } }
+            }
+            val chartAlreadyPresent = chartType in existingChartTypes
+            if (!chartAlreadyPresent) {
+                compose.onNodeWithTag("sensors-add").performClick()
+                compose.onNodeWithTag("sensors-add-chart").performClick()
+                compose.onNodeWithTag("sensor-chart-choice-${chartType!!.name}").performScrollTo().performClick()
+                addedChart = true
+            }
+            val chartTag = "sensor-chart-card-${chartType!!.name}"
+            val gaugeTag = "gauge-${chartType!!.name}"
+            compose.waitUntil(5_000) { compose.onAllNodesWithTag(chartTag).fetchSemanticsNodes().isNotEmpty() }
+            compose.onNodeWithTag(gaugeTag).assertExists()
+            compose.onNodeWithTag(chartTag).performScrollTo().assertIsDisplayed()
+
+            compose.activityRule.scenario.recreate()
+            compose.waitForIdle()
+            compose.onNodeWithTag(chartTag).performScrollTo().assertIsDisplayed()
+            compose.onNodeWithTag(gaugeTag).assertExists()
+
+            if (addedChart) {
+                compose.onNodeWithTag(chartTag).performClick()
+                compose.onNodeWithTag("sensor-chart-delete-${chartType!!.name}").performClick()
+                compose.waitUntil(5_000) { compose.onAllNodesWithTag(chartTag).fetchSemanticsNodes().isEmpty() }
+                compose.onNodeWithTag(gaugeTag).assertExists()
+                addedChart = false
+            }
+        } finally {
+            val viewModel = sensorsViewModel
+            val type = chartType
+            if (viewModel != null && type != null) {
+                if (addedChart) viewModel.deleteChart(type)
+                if (addedGauge) viewModel.deleteGauge(type)
+                runBlocking {
+                    withTimeout(5_000) {
+                        viewModel.gauges.first { items ->
+                            (!addedChart || items.none { it.state.gaugeType == type && it.state.isChart }) &&
+                                (!addedGauge || items.none { it.state.gaugeType == type && !it.state.isChart })
+                        }
+                    }
+                }
+            }
+            runBlocking { prefs.setOldSensorViewEnabled(originalOldView) }
         }
     }
 

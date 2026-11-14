@@ -27,16 +27,31 @@ package org.secu3.android.db
 
 import androidx.room.Database
 import androidx.room.RoomDatabase
+import androidx.room.migration.Migration
+import androidx.sqlite.db.SupportSQLiteDatabase
 import org.secu3.android.db.dao.GaugeStateDao
 import org.secu3.android.db.dao.IndicatorStateDao
 import org.secu3.android.db.models.GaugeState
 import org.secu3.android.db.models.IndicatorState
 
-@Database(entities = [GaugeState::class, IndicatorState::class], version = 1)
+@Database(entities = [GaugeState::class, IndicatorState::class], version = 2)
 abstract class AppDatabase : RoomDatabase() {
 
     abstract fun gaugeStateDao(): GaugeStateDao
 
     abstract fun indicatorStateDao(): IndicatorStateDao
+
+    companion object {
+        val MIGRATION_1_2 = object : Migration(1, 2) {
+            override fun migrate(database: SupportSQLiteDatabase) {
+                database.execSQL("DROP INDEX IF EXISTS index_gauge_state_gauge_type")
+                database.execSQL("ALTER TABLE gauge_state ADD COLUMN is_chart INTEGER NOT NULL DEFAULT 0")
+                database.execSQL(
+                    "CREATE UNIQUE INDEX IF NOT EXISTS index_gauge_state_gauge_type_is_chart " +
+                        "ON gauge_state (gauge_type, is_chart)",
+                )
+            }
+        }
+    }
 
 }

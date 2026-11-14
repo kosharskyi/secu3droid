@@ -38,14 +38,20 @@ interface GaugeStateDao : BaseDao<GaugeState> {
     @Query("SELECT * FROM gauge_state")
     suspend fun getAll(): List<GaugeState>
 
+    @Query("SELECT * FROM gauge_state WHERE is_chart = 0")
+    suspend fun getAllGauges(): List<GaugeState>
+
     @Query("SELECT * FROM gauge_state ORDER BY idx")
     suspend fun getAllOrderByIdx(): List<GaugeState>
 
     @Query("SELECT * FROM gauge_state ORDER BY idx")
     fun observeAllOrderByIdx(): Flow<List<GaugeState>>
 
-    @Query("SELECT * FROM gauge_state WHERE gauge_type = :gaugeType")
+    @Query("SELECT * FROM gauge_state WHERE gauge_type = :gaugeType AND is_chart = 0")
     suspend fun getByGaugeType(gaugeType: GaugeType): GaugeState?
+
+    @Query("SELECT * FROM gauge_state WHERE gauge_type = :gaugeType AND is_chart = 1")
+    suspend fun getChartByGaugeType(gaugeType: GaugeType): GaugeState?
 
     @Query("SELECT MAX(idx) FROM gauge_state")
     suspend fun getMaxIdx(): Int?
@@ -55,7 +61,17 @@ interface GaugeStateDao : BaseDao<GaugeState> {
 
     @Transaction
     suspend fun deleteGauge(gaugeType: GaugeType) {
-        val state = getByGaugeType(gaugeType) ?: return
+        deleteCard(gaugeType, false)
+    }
+
+    @Transaction
+    suspend fun deleteChart(gaugeType: GaugeType) {
+        deleteCard(gaugeType, true)
+    }
+
+    private suspend fun deleteCard(gaugeType: GaugeType, isChart: Boolean) {
+        val state = if (isChart) getChartByGaugeType(gaugeType) else getByGaugeType(gaugeType)
+        state ?: return
         delete(state)
         updateIdxGreaterThan(state.idx)
     }

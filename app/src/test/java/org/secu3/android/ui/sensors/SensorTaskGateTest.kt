@@ -24,4 +24,25 @@ class SensorTaskGateTest {
         gate.setResumed(true)
         assertEquals(listOf(Task.Secu3ReadRawSensors, Task.Secu3ReadSensors, Task.Secu3ReadRawSensors), tasks)
     }
+
+    @Test
+    fun connectedTransitionReissuesTheSelectedPageTaskOnlyWhileSensorsIsResumed() {
+        val tasks = mutableListOf<Task>()
+        val gate = SensorTaskGate(initialPage = 1, sendTask = tasks::add)
+
+        gate.reissueCurrentTask()
+        assertEquals(emptyList<Task>(), tasks)
+
+        gate.setResumed(true)
+        gate.reissueCurrentTask()
+        gate.selectPage(0)
+        gate.reissueCurrentTask()
+        gate.setResumed(false)
+        gate.reissueCurrentTask()
+
+        assertEquals(
+            listOf(Task.Secu3ReadRawSensors, Task.Secu3ReadRawSensors, Task.Secu3ReadSensors, Task.Secu3ReadSensors),
+            tasks,
+        )
+    }
 }

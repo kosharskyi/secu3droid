@@ -66,7 +66,8 @@ internal class SensorGridReorderState<T>(
         var dragBounds: Map<String, Rect> = emptyMap()
         detectDragGesturesAfterLongPress(
             onDragStart = {
-                dragBounds = positions.toMap()
+                val currentKeys = items.map(keyOf).toSet()
+                dragBounds = positions.filterKeys { it in currentKeys }
                 val bounds = dragBounds[key]
                 if (bounds != null) {
                     dragPosition = bounds.center
@@ -76,7 +77,7 @@ internal class SensorGridReorderState<T>(
                     target = key
                     baseOrder = items.map(keyOf)
                     previewOrder = baseOrder
-                    basePositions = positions.toMap()
+                    basePositions = dragBounds
                 }
             },
             onDragEnd = { finish(key, false) },

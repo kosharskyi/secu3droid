@@ -5,6 +5,8 @@ import androidx.room.Room
 import androidx.test.platform.app.InstrumentationRegistry
 import kotlinx.coroutines.runBlocking
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertFalse
+import org.junit.Assert.assertTrue
 import org.junit.Test
 import org.secu3.android.db.models.GaugeState
 import org.secu3.android.models.sensors.GaugeType
@@ -25,6 +27,9 @@ class AppDatabaseInitializationTest {
             )
             assertEquals(listOf(0, 1, 2, 3), gauges.map { it.idx })
             assertEquals(listOf(false, false, false, false), gauges.map { it.isNumericView })
+            assertTrue(gauges.none { it.isChart })
+            database.gaugeStateDao().insert(GaugeState(gaugeType = GaugeType.RPM, idx = 4, isChart = true))
+            assertTrue(database.gaugeStateDao().getChartByGaugeType(GaugeType.RPM)?.isChart == true)
 
             val indicators = database.indicatorStateDao().getAllOrderByIdx()
             assertEquals(
@@ -56,19 +61,26 @@ class AppDatabaseInitializationTest {
                     idx = 3,
                     isNumericView = true,
                 ))
+                database.gaugeStateDao().insert(GaugeState(
+                    gaugeType = GaugeType.RPM,
+                    idx = 4,
+                    isChart = true,
+                ))
                 database.indicatorStateDao().deleteIndicator(IndicatorType.THROTTLE)
             }
         }
 
         withOpenedDatabase(openDatabase(name)) { database ->
             runBlocking {
-                val gauges = database.gaugeStateDao().getAllOrderByIdx()
+                val gauges = database.gaugeStateDao().getAllGauges()
                 assertEquals(
                     listOf(GaugeType.RPM, GaugeType.VOLTAGE, GaugeType.TEMPERATURE, GaugeType.OIL_PRESSURE),
                     gauges.map { it.gaugeType },
                 )
                 assertEquals(listOf(0, 1, 2, 3), gauges.map { it.idx })
                 assertEquals(listOf(false, false, false, true), gauges.map { it.isNumericView })
+                assertTrue(database.gaugeStateDao().getChartByGaugeType(GaugeType.RPM)?.isChart == true)
+                assertFalse(database.gaugeStateDao().getByGaugeType(GaugeType.RPM)?.isChart ?: true)
                 assertEquals(9, database.indicatorStateDao().getAll().size)
                 assertEquals(null, database.indicatorStateDao().getByIndicatorType(IndicatorType.THROTTLE))
             }
@@ -112,6 +124,7 @@ class AppDatabaseInitializationTest {
     private fun openDatabase(name: String): AppDatabase =
         Room.databaseBuilder(context, AppDatabase::class.java, name)
             .createFromAsset("database/secu3droid.db")
+            .addMigrations(AppDatabase.MIGRATION_1_2)
             .build()
 
     private fun withDatabase(block: (AppDatabase) -> Unit) = withDatabaseFile { name ->

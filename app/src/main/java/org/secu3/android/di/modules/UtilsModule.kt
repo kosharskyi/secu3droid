@@ -95,6 +95,7 @@ object UtilsModule {
     fun getAppDatabase(@ApplicationContext context: Context): AppDatabase {
         return Room.databaseBuilder(context, AppDatabase::class.java, "secu3droid.db")
             .createFromAsset("database/secu3droid.db")
+            .addMigrations(AppDatabase.MIGRATION_1_2)
             .build()
     }
 

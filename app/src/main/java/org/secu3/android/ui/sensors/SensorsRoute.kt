@@ -13,6 +13,8 @@ import androidx.navigation.NavBackStackEntry
 import org.secu3.android.models.packets.input.AdcRawDatPacket
 import org.secu3.android.models.packets.input.FirmwareInfoPacket
 import org.secu3.android.models.packets.input.SensorsPacket
+import org.secu3.android.models.sensors.GaugeType
+import org.secu3.android.domain.sensors.SensorChartSample
 import org.secu3.android.ui.MainActivity
 import org.secu3.android.ui.compose.SecuComposeTheme
 
@@ -32,6 +34,8 @@ internal fun SensorsRoute(
     val gauges by viewModel.gauges.collectAsStateWithLifecycle(emptyList())
     val indicators by viewModel.indicators.collectAsStateWithLifecycle(emptyList())
     val gaugeChoices by viewModel.showAddGauge.collectAsStateWithLifecycle()
+    val chartChoices by viewModel.showAddChart.collectAsStateWithLifecycle()
+    val chartSamples by viewModel.chartSamples.collectAsStateWithLifecycle()
     val indicatorChoices by viewModel.showAddIndicator.collectAsStateWithLifecycle()
     val sensors: SensorsPacket? by viewModel.sensors.collectAsStateWithLifecycle(initialValue = null)
     val rawSensors: AdcRawDatPacket? by viewModel.rawSensors.collectAsStateWithLifecycle(initialValue = null)
@@ -70,6 +74,7 @@ internal fun SensorsRoute(
             gauges = gauges,
             indicators = indicators,
             gaugeChoices = gaugeChoices,
+            chartChoices = chartChoices,
             indicatorChoices = indicatorChoices,
             sensors = sensors,
             rawSensors = rawSensors,
@@ -80,15 +85,20 @@ internal fun SensorsRoute(
             onNavigateUp = onNavigateUp,
             onSettings = onOpenSettings,
             onAddGaugeRequest = viewModel::addGaugeClick,
+            onAddChartRequest = viewModel::addChartClick,
             onAddIndicatorRequest = viewModel::addIndicatorClick,
             onAddGauge = viewModel::addGauge,
+            onAddChart = viewModel::addChart,
             onAddIndicator = viewModel::addIndicator,
             onGaugeChoicesConsumed = viewModel::consumeGaugeChoices,
+            onChartChoicesConsumed = viewModel::consumeChartChoices,
             onIndicatorChoicesConsumed = viewModel::consumeIndicatorChoices,
             onDeleteGauge = viewModel::deleteGauge,
+            onDeleteChart = viewModel::deleteChart,
             onDeleteIndicator = viewModel::deleteIndicator,
             onUpdateGauge = viewModel::updateGaugeState,
             onReorderGauges = viewModel::gaugesSwiped,
+            chartSamples = chartSamples,
             onReorderIndicators = viewModel::indicatorsSwiped,
             onStartLog = viewModel::startWriteLog,
             onStopLog = viewModel::stopWriteLog,

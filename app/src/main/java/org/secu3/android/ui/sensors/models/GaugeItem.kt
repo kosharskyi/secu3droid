@@ -30,4 +30,7 @@ import org.secu3.android.db.models.GaugeState
 data class GaugeItem(
     val state: GaugeState,
     val value: String
-)
+) {
+    val stableKey: String
+        get() = "${if (state.isChart) "chart" else "gauge"}:${state.gaugeType.name}"
+}

@@ -14,6 +14,7 @@ import kotlinx.coroutines.cancel
 import kotlinx.coroutines.cancelAndJoin
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.onSubscription
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.runBlocking
@@ -49,6 +50,7 @@ import org.secu3.android.utils.logger.SecuLogger
 import org.secu3.android.utils.logger.SensorLogEncoder
 import org.secu3.android.utils.prefs.UserPrefs
 import org.secu3.android.ui.common.SensorPacketObserver
+import org.secu3.android.domain.sensors.SensorChartSession
 import java.util.UUID
 
 @RunWith(AndroidJUnit4::class)
@@ -210,6 +212,7 @@ class SensorConfigurationObservationTest {
                     observer,
                     prefs,
                     logger,
+                    SensorChartSession(connectionStates, { onSubscribed -> packetFlow.onSubscription { onSubscribed() } }, System::nanoTime),
                     repository,
                     org.secu3.android.ui.sensors.models.SensorPresentationCatalog(),
                     GaugeDialRenderer(),

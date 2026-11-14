@@ -65,3 +65,7 @@ Each grid snapshots its measured bounds and base order on drag start. Preview ta
 ## The dial renderer keeps no per-gauge state
 
 The injected renderer receives scale, density, theme colors, and geometry explicitly. Measurement is remembered by the card with width, density, configuration, and timing mode keys, while animated progress is read inside the Canvas draw callback. Sharing the renderer must not share animation or retain stale measurement inputs between cards.
+
+## Graph cards share the gauge grid order
+
+Persist graph cards beside gauge cards in the same ordered Room list. Their stable UI identity includes both card kind and sensor type because one gauge and one graph may show the same sensor. Keep indicators in their separate lower grid. Chart snapshots retain raw packets until the UI projection so adding, removing, or moving a graph does not reset the traces already being collected.
