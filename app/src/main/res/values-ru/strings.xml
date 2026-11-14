@@ -513,5 +513,6 @@
     <string name="parameter_secondary_fuel_density">Плотность дополнительного топлива</string>
     <string name="parameter_fuel_density_range">Введите значение от 0,2 до 2,0.</string>
     <string name="fuel_density_unit">г/см³</string>
+    <string name="parameter_settings_restore_defaults">Восстановить значения по умолчанию</string>
     <string name="retry">Повторить</string>
 </resources>

@@ -709,5 +709,6 @@
     <string name="parameter_secondary_fuel_density">Secondary fuel density</string>
     <string name="parameter_fuel_density_range">Enter a value from 0.2 to 2.0.</string>
     <string name="fuel_density_unit">g/cm³</string>
+    <string name="parameter_settings_restore_defaults">Restore Defaults</string>
     <string name="retry">Retry</string>
 </resources>

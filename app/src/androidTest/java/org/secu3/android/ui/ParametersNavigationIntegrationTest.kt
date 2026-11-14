@@ -90,9 +90,24 @@ class ParametersNavigationIntegrationTest {
             compose.onNodeWithTag("parameters-settings").performClick()
             compose.onNodeWithTag("parameter-primary-fuel-density").assertTextContains("0.72")
             compose.onNodeWithTag("parameter-secondary-fuel-density").assertTextContains("0.54")
+            primaryField.performTextReplacement("2.01")
+            val restoreDefaults = compose.onNodeWithTag("parameter-settings-restore-defaults")
+            restoreDefaults.performScrollTo().performClick()
+            primaryField.assertTextContains("0.71")
+            secondaryField.assertTextContains("0.536")
+            compose.onNodeWithTag("parameter-settings-save").assertIsEnabled()
             compose.onNodeWithContentDescription(compose.activity.getString(R.string.back)).performClick()
             assertOnParametersRoute()
             anglesTab.assertIsSelected()
+            compose.onNodeWithTag("parameters-settings").performClick()
+            primaryField.assertTextContains("0.72")
+            secondaryField.assertTextContains("0.54")
+            restoreDefaults.performScrollTo().performClick()
+            compose.onNodeWithTag("parameter-settings-save").performScrollTo().performClick()
+            compose.waitUntil(5_000) { compose.onAllNodesWithTag("parameters-settings").fetchSemanticsNodes().isNotEmpty() }
+            compose.onNodeWithTag("parameters-settings").performClick()
+            primaryField.assertTextContains("0.71")
+            secondaryField.assertTextContains("0.536")
         } finally {
             var route: String? = null
             compose.activityRule.scenario.onActivity { route = it.rootNavigationController?.currentDestination?.route }

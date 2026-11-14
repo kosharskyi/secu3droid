@@ -28,6 +28,7 @@ import androidx.compose.material3.Button
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
@@ -44,6 +45,7 @@ import androidx.compose.ui.Alignment
 import org.secu3.android.R
 import org.secu3.android.ui.compose.SecuTopAppBar
 import org.secu3.android.utils.prefs.FuelDensities
+import org.secu3.android.utils.prefs.ParameterSettingsPrefs
 
 @Composable
 internal fun ParameterSettingsScreen(
@@ -124,6 +126,16 @@ private fun DensitySettingsForm(
             modifier = Modifier.fillMaxWidth().testTag("parameter-settings-save"),
         ) {
             if (canSave) Text(stringResource(R.string.save)) else CircularProgressIndicator()
+        }
+        TextButton(
+            onClick = {
+                primaryText = ParameterSettingsPrefs.DEFAULT_PRIMARY_DENSITY.toString()
+                secondaryText = ParameterSettingsPrefs.DEFAULT_SECONDARY_DENSITY.toString()
+            },
+            enabled = canSave,
+            modifier = Modifier.fillMaxWidth().testTag("parameter-settings-restore-defaults"),
+        ) {
+            Text(stringResource(R.string.parameter_settings_restore_defaults))
         }
     }
 }
