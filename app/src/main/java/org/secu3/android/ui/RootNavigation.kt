@@ -50,6 +50,7 @@ import org.secu3.android.ui.compose.SecuComposeTheme
 import org.secu3.android.ui.errors.ErrorsRoute
 import org.secu3.android.ui.firmware.FirmwareRoute
 import org.secu3.android.ui.logger.SecuLogsRoute
+import org.secu3.android.ui.logger.settings.LogSettingsRoute
 import org.secu3.android.ui.ltft.LtftMapsRoute
 import org.secu3.android.ui.parameters.ParametersRoute
 import org.secu3.android.ui.parameters.settings.ParameterSettingsRoute
@@ -70,6 +71,7 @@ internal const val SETTINGS_ROUTE = "settings"
 internal const val ERRORS_ROUTE = "errors"
 internal const val LTFT_MAPS_ROUTE = "ltft-maps"
 internal const val LOGS_ROUTE = "logs"
+internal const val LOG_SETTINGS_ROUTE = "log-settings"
 internal const val FIRMWARE_ROUTE = "firmware"
 internal const val DASHBOARD_ROUTE = "dashboard"
 internal const val DASHBOARD_GAUGE_SETTINGS_ROUTE = "dashboard-gauge-settings"
@@ -126,6 +128,7 @@ internal fun RootNavigation(activity: MainActivity) {
             ERRORS_ROUTE -> "errors"
             LTFT_MAPS_ROUTE -> "ltft_maps"
             LOGS_ROUTE -> "logs"
+            LOG_SETTINGS_ROUTE -> "log_settings"
             FIRMWARE_ROUTE -> "firmware"
             DASHBOARD_ROUTE -> "dashboard"
             DASHBOARD_GAUGE_SETTINGS_ROUTE -> "dashboard_gauge_settings"
@@ -201,7 +204,15 @@ internal fun RootNavigation(activity: MainActivity) {
                 LtftMapsRoute(entry, activity, onNavigateUp = { navController.popBackStack() })
             }
             composable(LOGS_ROUTE) { entry ->
-                SecuLogsRoute(entry, activity, onNavigateUp = { navController.popBackStack() })
+                SecuLogsRoute(
+                    entry,
+                    activity,
+                    onNavigateUp = { navController.popBackStack() },
+                    onOpenSettings = { navController.navigate(LOG_SETTINGS_ROUTE) { launchSingleTop = true } },
+                )
+            }
+            composable(LOG_SETTINGS_ROUTE) { entry ->
+                LogSettingsRoute(entry, activity, onNavigateUp = { navController.popBackStack() })
             }
             dialog(FIRMWARE_ROUTE, dialogProperties = DialogProperties(usePlatformDefaultWidth = false)) { entry ->
                 FirmwareRoute(entry, activity, onDismiss = { navController.popBackStack() })

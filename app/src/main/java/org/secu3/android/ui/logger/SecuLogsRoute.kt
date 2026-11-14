@@ -43,6 +43,7 @@ internal fun SecuLogsRoute(
     entry: NavBackStackEntry,
     activity: MainActivity,
     onNavigateUp: () -> Unit,
+    onOpenSettings: () -> Unit,
 ) {
     val viewModel: SecuLogsViewModel = viewModel(
         viewModelStoreOwner = entry,
@@ -82,6 +83,7 @@ internal fun SecuLogsRoute(
             files = state.files,
             snackbarHostState = snackbarHostState,
             onBackClick = onNavigateUp,
+            onOpenSettings = onOpenSettings,
             onShareClick = { file -> activity.startActivity(Intent.createChooser(viewModel.getShareIntent(file), null)) },
             onDownloadClick = { file ->
                 coroutineScope.launch {

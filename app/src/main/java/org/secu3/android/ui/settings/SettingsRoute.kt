@@ -9,7 +9,6 @@
  */
 package org.secu3.android.ui.settings
 
-import android.app.Activity
 import android.Manifest
 import android.content.Intent
 import android.content.pm.PackageManager
@@ -124,12 +123,6 @@ internal fun SettingsRoute(
             }
         }
     }
-    val directoryPicker = rememberLauncherForActivityResult(ActivityResultContracts.StartActivityForResult()) { result ->
-        val data = result.data
-        if (result.resultCode == Activity.RESULT_OK) {
-            data?.data?.let { uri -> viewModel.saveExportFolder(uri, data.flags) }
-        }
-    }
     LaunchedEffect(lifecycle, viewModel) {
         lifecycle.repeatOnLifecycle(Lifecycle.State.STARTED) {
             launch { viewModel.state.collect { state = it } }
@@ -176,17 +169,6 @@ internal fun SettingsRoute(
                         }
                     }
                 } else viewModel.setBooleanPreference(key, value)
-            },
-            onSelectDelimiter = viewModel::setDelimiter,
-            onChooseFolder = {
-                directoryPicker.launch(Intent(Intent.ACTION_OPEN_DOCUMENT_TREE).apply {
-                    addFlags(
-                        Intent.FLAG_GRANT_READ_URI_PERMISSION or
-                            Intent.FLAG_GRANT_WRITE_URI_PERMISSION or
-                            Intent.FLAG_GRANT_PERSISTABLE_URI_PERMISSION or
-                            Intent.FLAG_GRANT_PREFIX_URI_PERMISSION,
-                    )
-                })
             },
             onEditRetries = { viewModel.showDialog(SettingsDialog.Retries) },
             onValidateRetries = viewModel::isValidRetries,

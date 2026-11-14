@@ -44,8 +44,7 @@ import org.secu3.android.network.models.Author
 import org.secu3.android.network.models.GitHubRelease
 import org.secu3.android.network.releases.ReleaseRepository
 import org.secu3.android.ui.messages.UiMessageQueue
-import org.secu3.android.ui.settings.SettingsDialog
-import org.secu3.android.ui.settings.SettingsViewModel
+import org.secu3.android.ui.logger.settings.LogSettingsViewModel
 import org.secu3.android.utils.prefs.AppPrefs
 import org.secu3.android.utils.prefs.IsolatedUserPrefs
 import org.secu3.android.utils.logger.SecuLogger
@@ -64,14 +63,14 @@ class PreferencesFailureTest {
         val prefs = UserPrefs(context, storage)
         val messages = UiMessageQueue()
         val viewModelStore = ViewModelStore()
-        lateinit var viewModel: SettingsViewModel
+        lateinit var viewModel: LogSettingsViewModel
         try {
             prefs.setCsvDelimiter(";")
             instrumentation.runOnMainSync {
                 val analytics = org.secu3.android.utils.analytics.UsageAnalytics(context, prefs)
-                viewModel = SettingsViewModel(context, prefs, FileHelper(context, analytics), messages, analytics)
-                viewModelStore.put("settings", viewModel)
-                viewModel.showDialog(SettingsDialog.Delimiter)
+                viewModel = LogSettingsViewModel(context, prefs, FileHelper(context, analytics), messages)
+                viewModelStore.put("log-settings", viewModel)
+                viewModel.openDelimiter()
             }
             val initial = withTimeout(5_000) { viewModel.state.filterNotNull().first() }
 
@@ -80,14 +79,14 @@ class PreferencesFailureTest {
             withTimeout(5_000) {
                 messages.pending.first { pending -> pending.any { it.textRes == R.string.preferences_storage_error } }
             }
-            assertEquals(SettingsDialog.Delimiter, viewModel.dialog.value)
+            assertTrue(viewModel.showDelimiter.value)
             assertEquals(initial, viewModel.state.value)
             assertEquals(";", prefs.settings.first().csvDelimiter)
 
             storage.failWrites = false
             instrumentation.runOnMainSync { viewModel.setDelimiter(":") }
             withTimeout(5_000) { viewModel.state.filterNotNull().first { it.csvDelimiter == ":" } }
-            withTimeout(5_000) { viewModel.dialog.first { it == null } }
+            withTimeout(5_000) { viewModel.showDelimiter.first { !it } }
             assertEquals(":", prefs.settings.first().csvDelimiter)
         } finally {
             instrumentation.runOnMainSync { viewModelStore.clear() }

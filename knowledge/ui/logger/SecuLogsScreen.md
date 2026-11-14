@@ -13,3 +13,7 @@ The share intent uses the same extension-based MIME helper as all export destina
 ## Permission results consume a restored export only once
 
 The pending export path survives recreation in `SavedStateHandle`. Clear it before starting export or reporting denial, so a repeated permission callback cannot export the file or report the denial twice.
+
+## Logging settings stay above the retained log list
+
+The toolbar action is available without a connection or files. Pop the settings destination to return to the existing Logs entry and retain its list state.

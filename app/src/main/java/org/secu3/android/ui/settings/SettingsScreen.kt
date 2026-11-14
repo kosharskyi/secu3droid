@@ -34,7 +34,6 @@ import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.testTag
-import androidx.compose.ui.res.stringArrayResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.input.KeyboardType
@@ -49,15 +48,9 @@ import org.secu3.android.ui.compose.SecuTopAppBar
 import org.secu3.android.utils.prefs.AppearanceMode
 
 data class SettingsUiState(
-    val showLogControls: Boolean,
-    val writeCsvHeader: Boolean,
-    val csvDelimiter: String,
-    val writeBinaryLog: Boolean,
-    val exportFolder: String,
     val connectionRetries: String,
     val keepScreenOn: Boolean,
     val wakeLock: Boolean,
-    val alwaysWriteLog: Boolean = false,
     val appearanceMode: AppearanceMode = AppearanceMode.System,
     val fuelFlowPulsesPerLitre: String = "16000",
     val injectionTimingMode: InjectionTimingMode = InjectionTimingMode.Default,
@@ -70,8 +63,6 @@ internal fun SettingsContent(
     dialog: SettingsDialog?,
     onNavigateUp: () -> Unit,
     onToggle: (Int, Boolean) -> Unit,
-    onSelectDelimiter: (String) -> Unit,
-    onChooseFolder: () -> Unit,
     onEditRetries: () -> Unit,
     onValidateRetries: (String) -> Boolean,
     onSaveRetries: (String) -> Unit,
@@ -93,9 +84,6 @@ internal fun SettingsContent(
             AppearanceMode.Dark -> R.string.appearance_dark
         }
     }
-    val delimiterValues = stringArrayResource(R.array.csv_delimeters_values)
-    val delimiterLabels = stringArrayResource(R.array.csv_delimeters)
-    val delimiterIndex = delimiterValues.indexOf(state.csvDelimiter).takeIf { it >= 0 } ?: 1
     Scaffold(topBar = {
         SecuTopAppBar(
             title = stringResource(R.string.title_activity_settings),
@@ -113,46 +101,6 @@ internal fun SettingsContent(
                     title = stringResource(R.string.appearance_title),
                     summary = stringResource(appearanceLabel(state.appearanceMode)),
                     onClick = { onSelectDialog(SettingsDialog.Appearance) },
-                )
-            }
-            SettingsSection(title = stringResource(R.string.settings_group_logging)) {
-                SettingsToggleRow(
-                    title = stringResource(R.string.pref_write_log_title),
-                    summary = stringResource(R.string.pref_write_log_summary),
-                    checked = state.showLogControls,
-                    testTag = "settings-toggle-${R.string.pref_write_log_key}",
-                ) { onToggle(R.string.pref_write_log_key, it) }
-                HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant)
-                SettingsToggleRow(
-                    title = stringResource(R.string.pref_always_write_log_title),
-                    summary = stringResource(R.string.pref_always_write_log_summary),
-                    checked = state.alwaysWriteLog,
-                    testTag = "settings-toggle-${R.string.pref_always_write_log_key}",
-                ) { onToggle(R.string.pref_always_write_log_key, it) }
-                HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant)
-                SettingsToggleRow(
-                    title = stringResource(R.string.pref_log_csv_write_title),
-                    checked = state.writeCsvHeader,
-                    testTag = "settings-toggle-${R.string.pref_log_csv_write_title_key}",
-                ) { onToggle(R.string.pref_log_csv_write_title_key, it) }
-                HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant)
-                SettingsActionRow(
-                    title = stringResource(R.string.pref_log_csv_delimeter_title),
-                    summary = delimiterLabels[delimiterIndex],
-                    onClick = { onSelectDialog(SettingsDialog.Delimiter) },
-                )
-                HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant)
-                SettingsToggleRow(
-                    title = stringResource(R.string.pref_write_binary_log_title),
-                    checked = state.writeBinaryLog,
-                    testTag = "settings-toggle-${R.string.pref_write_binary_log_key}",
-                ) { onToggle(R.string.pref_write_binary_log_key, it) }
-                HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant)
-                SettingsActionRow(
-                    title = stringResource(R.string.pref_log_export_directory_title),
-                    summary = state.exportFolder,
-                    onClick = onChooseFolder,
-                    testTag = "settings-export-folder",
                 )
             }
             SettingsSection(title = stringResource(R.string.settings_group_connection)) {
@@ -223,17 +171,6 @@ internal fun SettingsContent(
     }
 
     when (dialog) {
-        SettingsDialog.Delimiter -> ChoiceDialog(
-            title = { SettingsDialogTitle(stringResource(R.string.pref_log_csv_delimeter_title)) },
-            selected = state.csvDelimiter,
-            choices = delimiterValues.toList(),
-            label = { value -> delimiterLabels[delimiterValues.indexOf(value)] },
-            onSelect = onSelectDelimiter,
-            onDismiss = onDismissDialog,
-            confirmButton = { Button(onClick = onDismissDialog) { Text(stringResource(android.R.string.ok)) } },
-            shape = RoundedCornerShape(24.dp),
-            containerColor = MaterialTheme.colorScheme.surface,
-        )
         SettingsDialog.Retries -> RetryDialog(
             initialValue = state.connectionRetries,
             onValidate = onValidateRetries,
@@ -335,7 +272,7 @@ private fun SettingsDialogTitle(title: String) {
     )
 }
 
-enum class SettingsDialog { Delimiter, Retries, FuelFlowPulsesPerLitre, Appearance, InjectionTimingMode, About }
+enum class SettingsDialog { Retries, FuelFlowPulsesPerLitre, Appearance, InjectionTimingMode, About }
 
 private fun InjectionTimingMode.labelResource(): Int = when (this) {
     InjectionTimingMode.Btdc720 -> R.string.injection_timing_btdc_720

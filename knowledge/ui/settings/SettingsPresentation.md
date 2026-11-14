@@ -1,18 +1,10 @@
 ## Preference rows continue to call the owning route
 
-The shared settings rows are presentation-only. Toggle, selection, folder, retry, and About actions must continue through the existing callbacks so preference persistence and route-owned dialogs remain the source of state. Keep resource-key test tags on actual checkbox controls and preserve appearance/delimiter selection callbacks.
-
-## The logger controls toggle affects presentation only
-
-Hiding the controls leaves an active file open. Changes to automatic recording are applied by the connection manager independently of the visibility toggle or arrival of another sensor packet.
+The shared settings rows are presentation-only. Toggle, selection, retry, and About actions must continue through the existing callbacks so preference persistence and route-owned dialogs remain the source of state. Keep resource-key test tags on actual checkbox controls and preserve appearance selection callbacks.
 
 ## Pending preference loading and failed writes must not imply stored defaults
 
-The Settings and Sensors Settings routes wait for their first preference snapshot before exposing editable controls. Keep that readiness separate from the preference defaults owned by `UserPrefs`. Main Settings keeps its appearance and delimiter dialogs open until the write succeeds; the shared choice dialog only reports a selection and never decides when to close. Sensors Settings closes its choice dialog immediately after the selection callback, matching its existing behavior.
-
-## The export picker delegates URI grants before saving the selection
-
-The route ignores canceled results and results without a URI. The ViewModel saves the directory only after `FileHelper` accepts the grant, preserving the previously saved destination if Android rejects it.
+The Settings and Sensors Settings routes wait for their first preference snapshot before exposing editable controls. Keep that readiness separate from the preference defaults owned by `UserPrefs`. Main Settings keeps its appearance dialog open until the write succeeds. The shared choice dialog only reports a selection and never decides when to close. Sensors Settings closes its choice dialog immediately after the selection callback, matching its existing behavior.
 
 ## Fuel consumption calibration is a persisted instrument preference
 

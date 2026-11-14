@@ -39,12 +39,14 @@ class SecuLogsScreenTest {
     }
 
     @Test
-    fun emptyStateShowsWhenThereAreNoLogs() {
+    fun emptyStateShowsAndCanOpenSettingsWhenThereAreNoLogs() {
+        var settingsOpened = false
         composeTestRule.setContent {
             SecuLogsScreen(
                 files = emptyList(),
                 snackbarHostState = SnackbarHostState(),
                 onBackClick = {},
+                onOpenSettings = { settingsOpened = true },
                 onShareClick = {},
                 onDownloadClick = {},
                 pendingDeleteFile = null,
@@ -56,6 +58,9 @@ class SecuLogsScreenTest {
 
         composeTestRule.onNodeWithText(context.getString(R.string.empty_logs_list)).assertIsDisplayed()
         composeTestRule.onAllNodesWithText(context.getString(R.string.save)).assertCountEquals(0)
+        composeTestRule.onNodeWithContentDescription(context.getString(R.string.log_settings_title))
+            .assertIsDisplayed().performClick()
+        composeTestRule.runOnIdle { assertTrue(settingsOpened) }
     }
 
     @Test
@@ -67,6 +72,7 @@ class SecuLogsScreenTest {
                 files = listOf(file),
                 snackbarHostState = SnackbarHostState(),
                 onBackClick = {},
+                onOpenSettings = {},
                 onShareClick = {},
                 onDownloadClick = {},
                 pendingDeleteFile = null,
@@ -92,6 +98,7 @@ class SecuLogsScreenTest {
                 files = listOf(file),
                 snackbarHostState = SnackbarHostState(),
                 onBackClick = {},
+                onOpenSettings = {},
                 onShareClick = {},
                 onDownloadClick = { savedFile = it },
                 pendingDeleteFile = null,
@@ -116,6 +123,7 @@ class SecuLogsScreenTest {
                 files = listOf(file),
                 snackbarHostState = SnackbarHostState(),
                 onBackClick = {},
+                onOpenSettings = {},
                 onShareClick = { sharedFile = it },
                 onDownloadClick = {},
                 pendingDeleteFile = null,
@@ -141,6 +149,7 @@ class SecuLogsScreenTest {
                 files = listOf(file),
                 snackbarHostState = SnackbarHostState(),
                 onBackClick = {},
+                onOpenSettings = {},
                 onShareClick = {},
                 onDownloadClick = {},
                 pendingDeleteFile = pendingDelete.value,
@@ -171,6 +180,7 @@ class SecuLogsScreenTest {
                 files = emptyList(),
                 snackbarHostState = SnackbarHostState(),
                 onBackClick = { clicked = true },
+                onOpenSettings = {},
                 onShareClick = {},
                 onDownloadClick = {},
                 pendingDeleteFile = null,
@@ -205,6 +215,7 @@ class SecuLogsScreenTest {
                             files = listOf(file),
                             snackbarHostState = SnackbarHostState(),
                             onBackClick = {},
+                            onOpenSettings = {},
                             onShareClick = { shares++ },
                             onDownloadClick = { downloads++ },
                             pendingDeleteFile = null,

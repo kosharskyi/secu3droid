@@ -26,12 +26,9 @@ package org.secu3.android.ui.settings
 
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.CompositionLocalProvider
-import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.width
 import androidx.compose.material3.Button
 import androidx.compose.material3.Text
 import androidx.compose.ui.platform.LocalDensity
-import androidx.compose.ui.Modifier
 import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.assertIsOn
 import androidx.compose.ui.test.assertIsOff
@@ -50,7 +47,6 @@ import androidx.compose.ui.test.assertTextEquals
 import androidx.compose.ui.test.onNodeWithContentDescription
 import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.unit.Density
-import androidx.compose.ui.unit.dp
 import androidx.test.platform.app.InstrumentationRegistry
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertTrue
@@ -64,7 +60,7 @@ import org.secu3.android.ui.compose.SecuComposeTheme
 class SettingsScreenTest {
     @get:Rule val compose = createComposeRule()
     private val context = InstrumentationRegistry.getInstrumentation().targetContext
-    private val initial = SettingsUiState(true, false, ";", false, "EngineLogs", "3", true, false)
+    private val initial = SettingsUiState(connectionRetries = "3", keepScreenOn = true, wakeLock = false)
 
     @Test fun appearanceChoiceReportsSelectionAndLeavesDismissalToPreferenceOwner() {
         val current = mutableStateOf(initial)
@@ -77,8 +73,6 @@ class SettingsScreenTest {
                     dialog = dialog.value,
                     onNavigateUp = {},
                     onToggle = { _, _ -> },
-                    onSelectDelimiter = {},
-                    onChooseFolder = {},
                     onEditRetries = {},
                     onValidateRetries = { true },
                     onSaveRetries = {},
@@ -130,85 +124,76 @@ class SettingsScreenTest {
         compose.onNodeWithText(context.getString(android.R.string.ok)).assertIsDisplayed()
     }
 
-    @Test fun allRowsShowPersistedSummariesAndInvokeCallbacks() {
+    @Test fun mainSettingsShowsPersistedSummariesAndInvokesCallbacks() {
         val state = mutableStateOf(initial)
-        val toggled = mutableListOf<Pair<Int, Boolean>>()
-        var folder = false
         var about = false
         var back = false
         compose.setContent {
             SecuComposeTheme {
-                SettingsContent(state.value, null, { back = true }, { key, value ->
-                    toggled += key to value
-                    state.value = when (key) {
-                        R.string.pref_write_log_key -> state.value.copy(showLogControls = value)
-                        R.string.pref_always_write_log_key -> state.value.copy(alwaysWriteLog = value)
-                        R.string.pref_log_csv_write_title_key -> state.value.copy(writeCsvHeader = value)
-                        R.string.pref_write_binary_log_key -> state.value.copy(writeBinaryLog = value)
-                        R.string.pref_keep_screen_key -> state.value.copy(keepScreenOn = value)
-                        R.string.pref_wakelock_key -> state.value.copy(wakeLock = value)
-                        else -> state.value
-                    }
-                }, {},
-                    { folder = true }, {}, { true }, {}, {}, {}, { about = true })
+                SettingsContent(
+                    state = state.value,
+                    dialog = null,
+                    onNavigateUp = { back = true },
+                    onToggle = { key, value ->
+                        state.value = when (key) {
+                            R.string.pref_keep_screen_key -> state.value.copy(keepScreenOn = value)
+                            R.string.pref_wakelock_key -> state.value.copy(wakeLock = value)
+                            else -> state.value
+                        }
+                    },
+                    onEditRetries = {},
+                    onValidateRetries = { true },
+                    onSaveRetries = {},
+                    onSelectDialog = {},
+                    onDismissDialog = {},
+                    onShowAbout = { about = true },
+                )
             }
         }
-        listOf(R.string.pref_write_log_title, R.string.pref_always_write_log_title, R.string.pref_log_csv_write_title, R.string.pref_log_csv_delimeter_title,
-            R.string.pref_write_binary_log_title, R.string.pref_log_export_directory_title, R.string.pref_connection_retries_title,
-            R.string.pref_keep_screen_title, R.string.pref_wakelock_title, R.string.pref_about_title)
-            .forEach { compose.onNodeWithText(context.getString(it)).performScrollTo().assertIsDisplayed() }
-        compose.onNodeWithText("EngineLogs").performScrollTo().assertIsDisplayed()
-        compose.onNodeWithText(context.getString(R.string.pref_connection_retries_summary, "3")).performScrollTo().assertIsDisplayed()
-        val toggles = listOf(
-            R.string.pref_write_log_key to initial.showLogControls,
-            R.string.pref_always_write_log_key to initial.alwaysWriteLog,
-            R.string.pref_log_csv_write_title_key to initial.writeCsvHeader,
-            R.string.pref_write_binary_log_key to initial.writeBinaryLog,
-            R.string.pref_keep_screen_key to initial.keepScreenOn,
-            R.string.pref_wakelock_key to initial.wakeLock,
-        )
-        toggles.forEach { (key, initiallyChecked) ->
-            val toggle = compose.onNodeWithTag("settings-toggle-$key").performScrollTo()
-            if (initiallyChecked) toggle.assertIsOn() else toggle.assertIsOff()
-            val titleResource = when (key) {
-                R.string.pref_write_log_key -> R.string.pref_write_log_title
-                R.string.pref_always_write_log_key -> R.string.pref_always_write_log_title
-                R.string.pref_log_csv_write_title_key -> R.string.pref_log_csv_write_title
-                R.string.pref_write_binary_log_key -> R.string.pref_write_binary_log_title
-                R.string.pref_keep_screen_key -> R.string.pref_keep_screen_title
-                else -> R.string.pref_wakelock_title
-            }
-            compose.onNodeWithText(context.getString(titleResource)).performClick()
-            val updated = compose.onNodeWithTag("settings-toggle-$key").performScrollTo()
-            if (initiallyChecked) updated.assertIsOff() else updated.assertIsOn()
-        }
-        compose.runOnIdle { assertEquals(6, toggled.size) }
-        compose.onNodeWithText(context.getString(R.string.pref_log_export_directory_title)).performScrollTo().performClick()
+
+        compose.onNodeWithText(context.getString(R.string.pref_connection_retries_summary, "3"))
+            .performScrollTo().assertIsDisplayed()
+        val keepScreen = compose.onNodeWithTag("settings-toggle-${R.string.pref_keep_screen_key}")
+        keepScreen.performScrollTo().assertIsOn()
+        compose.onNodeWithText(context.getString(R.string.pref_keep_screen_title)).performClick()
+        keepScreen.assertIsOff()
+
+        val backgroundWork = compose.onNodeWithTag("settings-toggle-${R.string.pref_wakelock_key}")
+        backgroundWork.performScrollTo().assertIsOff()
+        compose.onNodeWithText(context.getString(R.string.pref_wakelock_title)).performClick()
+        backgroundWork.assertIsOn()
+
+        compose.onNodeWithTag("settings-export-folder-row").assertDoesNotExist()
+        compose.onNodeWithTag("settings-toggle-${R.string.pref_write_log_key}").assertDoesNotExist()
         compose.onNodeWithText(context.getString(R.string.pref_about_title)).performScrollTo().performClick()
         compose.onNodeWithContentDescription(context.getString(R.string.back)).performClick()
-        compose.runOnIdle { assertTrue(folder && about && back) }
+        compose.runOnIdle { assertTrue(about && back) }
     }
 
-    @Test fun delimiterSelectionAndRetryValidationConfirmAndCancelWork() {
+    @Test fun retryValidationConfirmAndCancelWork() {
         val current = mutableStateOf(initial)
         val dialog = mutableStateOf<SettingsDialog?>(null)
-        var selected = ""
         var confirmed = ""
         compose.setContent {
             SecuComposeTheme {
-                SettingsContent(current.value, dialog.value, {}, { _, _ -> }, { selected = it; current.value = current.value.copy(csvDelimiter = it); dialog.value = null },
-                    {}, { dialog.value = SettingsDialog.Retries }, { it == "3" || it == "9" }, { confirmed = it; current.value = current.value.copy(connectionRetries = it); dialog.value = null },
-                    { dialog.value = it }, { dialog.value = null }, {})
+                SettingsContent(
+                    state = current.value,
+                    dialog = dialog.value,
+                    onNavigateUp = {},
+                    onToggle = { _, _ -> },
+                    onEditRetries = { dialog.value = SettingsDialog.Retries },
+                    onValidateRetries = { it == "3" || it == "9" },
+                    onSaveRetries = {
+                        confirmed = it
+                        current.value = current.value.copy(connectionRetries = it)
+                        dialog.value = null
+                    },
+                    onSelectDialog = { dialog.value = it },
+                    onDismissDialog = { dialog.value = null },
+                    onShowAbout = {},
+                )
             }
         }
-        compose.onNodeWithText(context.getString(R.string.pref_log_csv_delimeter_title)).performScrollTo().performClick()
-        val colonLabel = context.resources.getStringArray(R.array.csv_delimeters)[2]
-        compose.onNodeWithText(colonLabel).performClick()
-        compose.runOnIdle {
-            assertEquals(":", selected)
-            assertEquals(":", current.value.csvDelimiter)
-        }
-        compose.onNodeWithText(colonLabel, substring = false).assertIsDisplayed()
         compose.onNodeWithText(context.getString(R.string.pref_connection_retries_title)).performScrollTo().performClick()
         compose.onNodeWithText("3").performTextReplacement("0")
         compose.onNodeWithText(context.getString(android.R.string.ok)).assertIsNotEnabled()
@@ -233,8 +218,6 @@ class SettingsScreenTest {
                     dialog = dialog.value,
                     onNavigateUp = {},
                     onToggle = { _, _ -> },
-                    onSelectDelimiter = {},
-                    onChooseFolder = {},
                     onEditRetries = { dialog.value = SettingsDialog.Retries },
                     onValidateRetries = { it.toIntOrNull() in 1..10 },
                     onSaveRetries = { confirmed = it; dialog.value = null },
@@ -275,8 +258,6 @@ class SettingsScreenTest {
                     dialog = dialog.value,
                     onNavigateUp = {},
                     onToggle = { _, _ -> },
-                    onSelectDelimiter = {},
-                    onChooseFolder = {},
                     onEditRetries = {},
                     onValidateRetries = { true },
                     onSaveRetries = {},
@@ -325,8 +306,6 @@ class SettingsScreenTest {
                     dialog = dialog.value,
                     onNavigateUp = {},
                     onToggle = { _, _ -> },
-                    onSelectDelimiter = {},
-                    onChooseFolder = {},
                     onEditRetries = {},
                     onValidateRetries = { true },
                     onSaveRetries = {},
@@ -361,45 +340,5 @@ class SettingsScreenTest {
         compose.onNodeWithTag("settings-fuel-flow-pulses-per-litre-input").assertTextEquals("17000")
         compose.onNodeWithText(context.getString(android.R.string.ok)).performClick()
         compose.runOnIdle { assertEquals("17000", saved) }
-    }
-
-    @Test fun longExportLocationWrapsAndRowActionWorksAtNarrowWidthAndLargeFontInBothThemes() {
-        val darkTheme = mutableStateOf(false)
-        val exportLocation = "content://com.example.documents/tree/" + "engine-log-folder/".repeat(5)
-        val state = initial.copy(exportFolder = exportLocation)
-        var folderSelections = 0
-        compose.setContent {
-            val density = LocalDensity.current
-            CompositionLocalProvider(LocalDensity provides Density(density.density, fontScale = 1.7f)) {
-                SecuComposeTheme(darkTheme = darkTheme.value) {
-                    Box(Modifier.width(280.dp)) {
-                        SettingsContent(
-                            state = state,
-                            dialog = null,
-                            onNavigateUp = {},
-                            onToggle = { _, _ -> },
-                            onSelectDelimiter = {},
-                            onChooseFolder = { folderSelections++ },
-                            onEditRetries = {},
-                            onValidateRetries = { true },
-                            onSaveRetries = {},
-                            onSelectDialog = {},
-                            onDismissDialog = {},
-                            onShowAbout = {},
-                        )
-                    }
-                }
-            }
-        }
-
-        val folderSummary = compose.onNodeWithTag("settings-export-folder-summary", useUnmergedTree = true).performScrollTo().assertIsDisplayed()
-        assertTrue(folderSummary.fetchSemanticsNode().boundsInRoot.height > context.resources.displayMetrics.density * 60f)
-        compose.onNodeWithText(context.getString(R.string.pref_log_export_directory_title)).performScrollTo().performClick()
-        compose.runOnIdle { assertEquals(1, folderSelections) }
-
-        darkTheme.value = true
-        compose.onNodeWithTag("settings-export-folder-summary", useUnmergedTree = true).performScrollTo().assertIsDisplayed()
-        compose.onNodeWithText(context.getString(R.string.pref_log_export_directory_title)).performScrollTo().performClick()
-        compose.runOnIdle { assertEquals(2, folderSelections) }
     }
 }

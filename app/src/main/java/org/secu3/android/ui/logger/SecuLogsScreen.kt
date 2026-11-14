@@ -24,6 +24,8 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.border
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
@@ -59,6 +61,7 @@ internal fun SecuLogsScreen(
     files: List<File>,
     snackbarHostState: SnackbarHostState,
     onBackClick: () -> Unit,
+    onOpenSettings: () -> Unit,
     onShareClick: (File) -> Unit,
     onDownloadClick: (File) -> Unit,
     pendingDeleteFile: File?,
@@ -73,6 +76,11 @@ internal fun SecuLogsScreen(
                 title = stringResource(R.string.logs_title),
                 onNavigateUp = onBackClick,
                 showStatus = false,
+                actions = {
+                    IconButton(onClick = onOpenSettings) {
+                        Icon(Icons.Default.Settings, contentDescription = stringResource(R.string.log_settings_title))
+                    }
+                },
             )
         },
         containerColor = MaterialTheme.colorScheme.background,

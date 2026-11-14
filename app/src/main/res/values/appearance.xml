@@ -7,7 +7,7 @@
     <string name="dashboard_theme_switch_to_dark">Switch to dark theme</string>
     <string name="dashboard_theme_switch_to_light">Switch to light theme</string>
     <string name="appearance_system_summary">Follow the device appearance</string>
-    <string name="settings_group_logging">Logging</string>
+    <string name="log_settings_title">Logging settings</string>
     <string name="settings_group_connection">Connection</string>
     <string name="settings_group_display">Display and power</string>
     <string name="settings_group_instruments">Instruments</string>

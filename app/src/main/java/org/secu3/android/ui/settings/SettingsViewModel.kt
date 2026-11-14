@@ -9,14 +9,9 @@
  */
 package org.secu3.android.ui.settings
 
-import android.content.Context
-import android.net.Uri
-import android.provider.DocumentsContract
-import androidx.core.net.toUri
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import dagger.hilt.android.lifecycle.HiltViewModel
-import dagger.hilt.android.qualifiers.ApplicationContext
 import javax.inject.Inject
 import java.io.IOException
 import kotlinx.coroutines.CancellationException
@@ -27,7 +22,6 @@ import kotlinx.coroutines.flow.asStateFlow
 import org.secu3.android.R
 import org.secu3.android.utils.prefs.AppearanceMode
 import org.secu3.android.models.InjectionTimingMode
-import org.secu3.android.utils.FileHelper
 import org.secu3.android.utils.prefs.UserPrefs
 import org.secu3.android.ui.messages.UiMessageDuration
 import org.secu3.android.ui.messages.UiMessageQueue
@@ -35,9 +29,7 @@ import org.secu3.android.utils.analytics.UsageAnalytics
 
 @HiltViewModel
 class SettingsViewModel @Inject constructor(
-    @ApplicationContext private val context: Context,
     private val userPrefs: UserPrefs,
-    private val fileHelper: FileHelper,
     private val uiMessageQueue: UiMessageQueue,
     private val usageAnalytics: UsageAnalytics,
 ) : ViewModel() {
@@ -56,18 +48,10 @@ class SettingsViewModel @Inject constructor(
     fun setBooleanPreference(keyResource: Int, value: Boolean) {
         persist(write = {
             when (keyResource) {
-                R.string.pref_write_log_key -> userPrefs.setShowLogControls(value)
-                R.string.pref_always_write_log_key -> userPrefs.setAlwaysWriteLogEnabled(value)
-                R.string.pref_log_csv_write_title_key -> userPrefs.setCsvTitleEnabled(value)
-                R.string.pref_write_binary_log_key -> userPrefs.setBinaryLogFormatEnabled(value)
                 R.string.pref_keep_screen_key -> userPrefs.setKeepScreenAliveActive(value)
                 R.string.pref_usage_analytics_key -> usageAnalytics.setUserConsent(value)
             }
         })
-    }
-
-    fun setDelimiter(value: String) {
-        persist(write = { userPrefs.setCsvDelimiter(value) }, onSuccess = ::dismissDialog)
     }
 
     fun saveRetries(value: String) {
@@ -88,12 +72,6 @@ class SettingsViewModel @Inject constructor(
     fun isValidFuelFlowPulsesPerLitre(value: String): Boolean =
         userPrefs.parseFuelFlowPulsesPerLitre(value) != null
 
-    fun saveExportFolder(uri: Uri, resultFlags: Int) {
-        if (fileHelper.retainExportDirectoryPermission(uri, resultFlags)) {
-            persist(write = { userPrefs.setLogExportDirectoryUri(uri.toString()) })
-        }
-    }
-
     fun setAppearanceMode(mode: AppearanceMode) {
         persist(write = { userPrefs.setAppearanceMode(mode) }, onSuccess = ::dismissDialog)
     }
@@ -110,15 +88,8 @@ class SettingsViewModel @Inject constructor(
         _dialog.value = null
     }
 
-    private fun readSettings(settings: UserPrefs.Settings): SettingsUiState {
-        val exportFolder = settings.logExportDirectoryUri
-        return SettingsUiState(
-            showLogControls = settings.showLogControls,
-            alwaysWriteLog = settings.isAlwaysWriteLogEnabled,
-            writeCsvHeader = settings.isCsvTitleEnabled,
-            csvDelimiter = settings.csvDelimiter,
-            writeBinaryLog = settings.isBinaryLogFormatEnabled,
-            exportFolder = exportFolder?.let(::folderSummary) ?: context.getString(R.string.pref_log_export_directory_default),
+    private fun readSettings(settings: UserPrefs.Settings): SettingsUiState =
+        SettingsUiState(
             connectionRetries = settings.connectionRetriesText,
             keepScreenOn = settings.isKeepScreenAliveActive,
             wakeLock = settings.isWakeLockEnabled,
@@ -127,7 +98,6 @@ class SettingsViewModel @Inject constructor(
             injectionTimingMode = settings.injectionTimingMode,
             usageAnalyticsEnabled = settings.isUsageAnalyticsEnabled,
         )
-    }
 
     private fun persist(write: suspend () -> Unit, onSuccess: () -> Unit = {}) {
         viewModelScope.launch {
@@ -141,9 +111,4 @@ class SettingsViewModel @Inject constructor(
             }
         }
     }
-
-    private fun folderSummary(uri: String): String = runCatching {
-        val treeDocumentId = DocumentsContract.getTreeDocumentId(uri.toUri())
-        treeDocumentId.substringAfter(':').ifBlank { treeDocumentId }
-    }.getOrDefault(context.getString(R.string.pref_log_export_directory_default))
 }
