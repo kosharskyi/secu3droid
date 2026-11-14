@@ -74,16 +74,15 @@ Do not put display-state ownership into a connection manager: no latest-packet c
 
 ## Agent Collaboration Workflow
 
-For non-trivial tasks, the main agent coordinates the workflow and makes final decisions.
+The main agent makes final decisions, writes the implementation specification, and presents it for approval. Save it as a project file when the user requests a persistent specification.
 
-1. Ask `planner` to inspect the codebase and propose a minimal plan. The main agent resolves architectural choices, writes the implementation specification, and presents it in the chat for the user's approval. Save it as a project file when the user requests a persistent specification.
-2. Give `implementer` one bounded handoff with the original requirements and the approved specification. The specification defines what to implement and how to verify it. The implementer reviews the diff, runs relevant checks, and reports the changes, validation results, deviations, and unresolved issues.
-3. Give `simplicity_reviewer` the approved specification and resulting diff for independent review using the rules below.
-4. Assign justified blocking findings to `implementer` for fixes within the approved scope. If a fix requires expanding scope, update the specification and request approval before proceeding.
+- **Trivial tasks.** The main agent handles them directly.
+- **Bounded non-trivial tasks.** The main agent handles them directly by default. Delegate one focused piece of work if a specific risk or need for specialized expertise justifies it.
+- **Complex or risky tasks.** Use `planner` only for an unresolved architectural decision. Use `simplicity_reviewer` for changes with material risk, such as changes to shared contracts, ECU protocol, connection lifecycle, or persisted data, or changes that introduce an architectural abstraction. Keep any additional delegation tied to a specific risk or expertise need. Follow explicit user requests for review.
 
-Skip `planner` for trivial tasks. Handle them directly or use one specialist if their expertise is needed. Use `luna_compose` for targeted UI work, `luna_protocol` for packet parsing, serialization, or parameter mapping, and `luna_runtime` for connection or session lifecycle, queues, logging, or file operations. Use `secu_mapper` only when code ownership or data flow is unclear and `secu_android_qa` only when reproduction or targeted Android validation is needed.
+If delegating implementation, choose one executor for the approved change. Use `implementer` for general work, `luna_compose` for targeted UI work, `luna_protocol` for packet parsing, serialization, or parameter mapping, or `luna_runtime` for connection or session lifecycle, queues, logging, or file operations. Give the executor the original requirements and the approved specification. Use `secu_mapper` for unresolved ownership or data flow, `secu_android_qa` for targeted Android reproduction or validation, and `secu_reference` for specific Manager or firmware compatibility questions.
 
-Keep agent handoffs focused and avoid duplicate work or routine review passes. The main agent joins code review for complex, risky, or architecturally important changes, or when validation fails or leaves material uncertainty. Follow explicit user requests for review.
+Give each subagent a distinct question or deliverable. Pass along relevant findings and validation results to avoid repeating work. Whoever implements the change checks the diff and runs relevant validation. The main agent reviews the result when the change is complex, risky, or architecturally important, or when validation fails or leaves material uncertainty.
 
 Subagents return one concise final report. Include the result, relevant validation, and any blockers or deviations. Keep code excerpts and command output to the lines needed to verify a finding or diagnose a failure. Send an interim message only when a decision or action is needed to continue, or when the handoff explicitly requests an update.
 
@@ -108,20 +107,17 @@ Before implementing, ask:
 
 ## Simplicity Review
 
-After completing a non-trivial implementation,
-delegate a review to `simplicity_reviewer`.
+Before completing any implementation, check the diff against the approved scope and the Engineering Principles. Verify that each new abstraction or dependency serves a current requirement and that existing code is reused where appropriate.
 
-Provide:
+Give `simplicity_reviewer` the following when independent review is warranted.
+
 - Original task requirements.
 - Approved implementation specification, or the approved brief for a trivial task.
 - Implementation diff.
-- Relevant architectural context.
+- The specific risk to assess and the relevant architectural context.
 
 The reviewer must independently assess whether
 the implementation introduces unnecessary complexity.
-
-Do not invoke the reviewer for trivial changes
-unless explicitly requested.
 
 Handle findings as follows:
 - BLOCKER: Address before completing the task.
@@ -129,7 +125,7 @@ Handle findings as follows:
   clearly beneficial and low-risk.
 - SUGGESTION: Optional; do not automatically implement.
 
-Limit independent review to two passes total, including at most one follow-up after blocking findings are addressed. The main agent verifies any remaining fixes and decides how to resolve outstanding findings within the approved scope.
+The main agent verifies fixes and decides how to resolve outstanding findings within the approved scope. Request at most one follow-up review, and only if a fix for a blocking finding itself warrants independent review.
 
 
 ## Project knowledge
