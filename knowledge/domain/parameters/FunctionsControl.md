@@ -18,6 +18,6 @@ SECU-3 Manager allows the calculator to produce values beyond the narrower limit
 
 SECU-3 Manager compares the entered numbers before converting point units. With mixed V and mV, this can give the wrong order. Android requires the second point's voltage to be higher after conversion. Conversion factors follow the Manager implementation, including its constants for mmHg, technical atmospheres and psi.
 
-## TPS measurements leave the editable FUNSET snapshot intact
+## TPS and APPS1 measurements leave the editable FUNSET snapshot intact
 
-After each position is confirmed, wait for the Manager's one-second settling interval and read the signed TPS voltage from a fresh FUNSET. The rest of the measurement reply is not loaded into the editor. The signed voltage difference gives the gradient's polarity, and a span slightly above Manager's 0.1 V threshold can still overflow the signed TPS gradient word. Reuse the packet codec's scale to reject that case.
+After each position is confirmed, wait for the Manager's one-second settling interval and read only the selected sensor's voltage from a fresh FUNSET. The rest of the measurement reply is not loaded into the editor. The signed voltage difference gives the gradient's polarity, and a span slightly above Manager's 0.1 V threshold can still overflow a signed gradient word. Reuse the selected sensor's packet scale. APPS1 requires confirmed DBW both during capture and when applying the result.

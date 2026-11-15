@@ -77,6 +77,7 @@ import org.secu3.android.ui.parameters.dialogs.ParameterChoiceOption
 import org.secu3.android.ui.parameters.*
 import org.secu3.android.R
 import org.secu3.android.domain.parameters.FunctionsValues
+import org.secu3.android.domain.parameters.PositionSensor
 import org.secu3.android.domain.parameters.PressureCurveInput
 import org.secu3.android.domain.parameters.PressureCurvePreview
 import org.secu3.android.domain.parameters.PressureSensor
@@ -192,7 +193,7 @@ data class FunctionsChoices(val selected: Map<Selector, String?>, val options: M
 }
 
 @Composable
-fun FunctionsScreen(
+internal fun FunctionsScreen(
     values: FunctionsValues?,
     onEdit: (FunctionsNumber) -> Unit,
     onFlag: (Boolean) -> Unit,
@@ -202,7 +203,7 @@ fun FunctionsScreen(
     onOpenPressureCurve: (PressureSensor) -> PressureCurveInput? = { null },
     onPreviewPressureCurve: (PressureSensor, PressureCurveInput) -> PressureCurvePreview? = { _, _ -> null },
     onApplyPressureCurve: (PressureSensor, PressureCurveInput) -> Boolean = { _, _ -> false },
-    onStartTpsLearning: (() -> Unit)? = null,
+    onStartPositionLearning: ((PositionSensor) -> Unit)? = null,
 ) {
     val pageScrollState = rememberScrollState()
     if (values == null) {
@@ -272,13 +273,18 @@ fun FunctionsScreen(
                                         .testTag("pressure_calculator_${sensor.name.lowercase()}"),
                                 ) { Text(stringResource(R.string.pressure_calculator_open, sensor.name)) }
                             }
-                            if (n == FunctionsNumber.TPS_GRADIENT && onStartTpsLearning != null) {
+                            val positionSensor = when (n) {
+                                FunctionsNumber.TPS_GRADIENT -> PositionSensor.TPS
+                                FunctionsNumber.APPS_GRADIENT -> PositionSensor.APPS1
+                                else -> null
+                            }
+                            if (positionSensor != null && onStartPositionLearning != null && n.enabled(values, capabilities)) {
                                 TextButton(
-                                    onClick = onStartTpsLearning,
+                                    onClick = { onStartPositionLearning(positionSensor) },
                                     enabled = isActive,
                                     modifier = Modifier.align(Alignment.End).padding(end = 8.dp)
-                                        .testTag("tps_learning_open"),
-                                ) { Text(stringResource(R.string.tps_learning_title)) }
+                                        .testTag("${positionSensor.name.lowercase()}_learning_open"),
+                                ) { Text(positionSensor.learningTitle()) }
                             }
                             if (n != FunctionsNumber.entries.last()) {
                                 HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant)

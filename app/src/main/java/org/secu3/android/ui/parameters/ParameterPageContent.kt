@@ -36,6 +36,7 @@ import org.secu3.android.models.packets.out.params.InjctrParPacket
 import org.secu3.android.models.packets.out.params.UniOutParamPacket
 import org.secu3.android.models.InjectionTimingMode
 import org.secu3.android.domain.parameters.ParameterPage
+import org.secu3.android.domain.parameters.PositionSensor
 import org.secu3.android.ui.parameters.pages.*
 import kotlin.math.roundToInt
 import org.secu3.android.ui.parameters.pages.compose.*
@@ -104,7 +105,10 @@ internal fun ParameterPageContent(
         }
         ParameterPage.FUNCTIONS -> {
             val values by viewModel.functionsControl.values.collectAsStateWithLifecycle()
-            val tpsLearning by viewModel.functionsControl.tpsLearning.collectAsStateWithLifecycle()
+            val positionLearning by viewModel.functionsControl.positionLearning.collectAsStateWithLifecycle()
+            LaunchedEffect(capabilities.dbw) {
+                viewModel.functionsControl.discardUnavailableApps1Learning()
+            }
             FunctionsScreen(
                 values = values,
                 onEdit = { number ->
@@ -139,16 +143,16 @@ internal fun ParameterPageContent(
                 onApplyPressureCurve = { sensor, input ->
                     isActiveNow() && viewModel.applyFunctionsPressureCurve(sensor, input)
                 },
-                onStartTpsLearning = { if (isActiveNow()) viewModel.functionsControl.startTpsLearning() },
+                onStartPositionLearning = { if (isActiveNow()) viewModel.functionsControl.startPositionLearning(it) },
             )
             if (isActive) {
-                tpsLearning?.let { state ->
-                    TpsLearningDialog(
+                positionLearning?.takeIf { it.sensor == PositionSensor.TPS || capabilities.dbw }?.let { state ->
+                    PositionLearningDialog(
                         state = state,
-                        onCapture = { if (isActiveNow()) viewModel.captureTpsPosition() },
-                        onApply = { if (isActiveNow()) viewModel.applyTpsLearning() },
-                        onRestart = { if (isActiveNow()) viewModel.functionsControl.startTpsLearning() },
-                        onCancel = viewModel.functionsControl::cancelTpsLearning,
+                        onCapture = { if (isActiveNow()) viewModel.captureSensorPosition() },
+                        onApply = { if (isActiveNow()) viewModel.applyPositionLearning() },
+                        onRestart = { if (isActiveNow()) viewModel.functionsControl.startPositionLearning(state.sensor) },
+                        onCancel = viewModel.functionsControl::cancelPositionLearning,
                     )
                 }
             }

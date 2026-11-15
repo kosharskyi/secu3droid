@@ -80,6 +80,9 @@ data class FunSetParamPacket(
     internal fun canEncodeTpsCurve(offsetVolts: Float, gradientPercentPerVolt: Float): Boolean =
         canEncodeCurve(curveOffsetEncoding(offsetVolts), tpsGradientEncoding(gradientPercentPerVolt))
 
+    internal fun canEncodeApps1Curve(offsetVolts: Float, gradientPercentPerVolt: Float): Boolean =
+        canEncodeCurve(curveOffsetEncoding(offsetVolts), apps1GradientEncoding(gradientPercentPerVolt))
+
     private fun canEncodeCurve(offsetEncoding: Float, gradientEncoding: Float): Boolean {
         if (!offsetEncoding.isFinite() || !gradientEncoding.isFinite()) return false
         val offsetWord = offsetEncoding.protocolRoundToInt()
@@ -94,6 +97,9 @@ data class FunSetParamPacket(
 
     private fun tpsGradientEncoding(percentPerVolt: Float): Float =
         percentPerVolt * 128f * (TPS_MULTIPLIER * 2f) * ADC_DISCRETE
+
+    private fun apps1GradientEncoding(percentPerVolt: Float): Float =
+        percentPerVolt * 128f * (APPS_MULT * 2) * ADC_DISCRETE
 
     override fun pack(): IntArray {
         var data = intArrayOf(DESCRIPTOR.code)
@@ -129,8 +135,8 @@ data class FunSetParamPacket(
         data += curveOffsetEncoding(fpsCurveOffset).protocolRoundToInt().write2Bytes()
         data += pressureGradientEncoding(fpsCurveGradient).protocolRoundToInt().write2Bytes()
 
-        data += apps1CurveOffset.div(ADC_DISCRETE).protocolRoundToInt().write2Bytes()
-        data += apps1CurveGradient.times(128.0f).times(APPS_MULT * 2).times(ADC_DISCRETE).protocolRoundToInt().write2Bytes()
+        data += curveOffsetEncoding(apps1CurveOffset).protocolRoundToInt().write2Bytes()
+        data += apps1GradientEncoding(apps1CurveGradient).protocolRoundToInt().write2Bytes()
 
         data += unhandledParams
 

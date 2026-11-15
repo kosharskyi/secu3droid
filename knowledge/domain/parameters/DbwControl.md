@@ -4,4 +4,4 @@ The ECU reply has 16 payload bytes, while the `P` command writes 14: ten editabl
 
 ## DBW editing requires a reply in the current parameter session
 
-Firmware info has no `ELEC_THROTTLE` bit. The Manager switch is local INI configuration. A decoded DBW reply supplies the Android capability for the current session; both the DBW tab and manual APPS1 calibration commands require it. SECU‑3T is excluded even if a reply was previously seen.
+Firmware info has no `ELEC_THROTTLE` bit. The Manager switch is local INI configuration. A decoded DBW reply supplies the Android capability for the current session; the DBW tab, manual APPS1 calibration commands and the APPS1 learning wizard require it. SECU‑3T is excluded even if a reply was previously seen.

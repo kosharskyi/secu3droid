@@ -471,38 +471,38 @@ class FunctionsControlTest {
         val control = FunctionsControl(
             firmware = { null },
             isFunctionsPageActive = { active },
-            readTpsVoltage = { samples.removeFirst() },
+            readPositionVoltage = { samples.removeFirst() },
         ) { frames += it.pack(); true }
         val parsed = FunSetParamPacket().parse(
             receiveFixture(FunSetParamPacket(mapselUni = 0xA5, gasVUni = 6), tail = intArrayOf(0xCA, 0xFE)),
         ) as FunSetParamPacket
         control.receive(parameters(parsed))
-        control.startTpsLearning()
-        assertNull(control.tpsLearning.value)
+        control.startPositionLearning(PositionSensor.TPS)
+        assertNull(control.positionLearning.value)
         active = true
         val expected = parsed.pack()
 
         for ((index, learn) in listOf(
-            TpsLearningState.Review(4.5f, .5f, -.5f, 25f) to intArrayOf(0xFF, 0x38, 0x04, 0x00),
-            TpsLearningState.Review(.5f, 4.5f, -4.5f, -25f) to intArrayOf(0xF8, 0xF8, 0xFC, 0x00),
+            PositionLearningState.Review(PositionSensor.TPS, 4.5f, .5f, -.5f, 25f) to intArrayOf(0xFF, 0x38, 0x04, 0x00),
+            PositionLearningState.Review(PositionSensor.TPS, .5f, 4.5f, -4.5f, -25f) to intArrayOf(0xF8, 0xF8, 0xFC, 0x00),
         ).withIndex()) {
             val (review, bytes) = learn
-            control.startTpsLearning()
-            control.captureTpsPosition(this)
-            control.captureTpsPosition(this)
-            awaitTpsState(control, TpsLearningState.Measure(openVoltage = review.openVoltage))
-            assertFalse(control.applyTpsLearning())
-            control.captureTpsPosition(this)
-            awaitTpsState(control, review)
+            control.startPositionLearning(PositionSensor.TPS)
+            control.captureSensorPosition(this)
+            control.captureSensorPosition(this)
+            awaitPositionState(control, PositionLearningState.Measure(PositionSensor.TPS, fullVoltage = review.fullVoltage))
+            assertFalse(control.applyPositionLearning())
+            control.captureSensorPosition(this)
+            awaitPositionState(control, review)
             assertEquals(index, frames.size)
             active = false
-            assertFalse(control.applyTpsLearning())
+            assertFalse(control.applyPositionLearning())
             active = true
-            assertTrue(control.applyTpsLearning())
+            assertTrue(control.applyPositionLearning())
             assertEquals(index + 1, frames.size)
             bytes.copyInto(expected, 15)
             assertArrayEquals(expected, frames.last())
-            assertNull(control.tpsLearning.value)
+            assertNull(control.positionLearning.value)
         }
     }
 
@@ -512,23 +512,23 @@ class FunctionsControlTest {
         val control = FunctionsControl(
             firmware = { null },
             isFunctionsPageActive = { true },
-            readTpsVoltage = { samples.next() },
+            readPositionVoltage = { samples.next() },
         ) { error("Invalid calibrations must never be sent") }
         control.receive(parameters(FunSetParamPacket()))
-        control.startTpsLearning()
-        control.captureTpsPosition(this)
-        awaitTpsState(control, TpsLearningState.Measure(openVoltage = .1f))
-        control.captureTpsPosition(this)
-        awaitTpsState(control, TpsLearningState.Measure(.1f, TpsLearningState.Capture.Retry))
-        control.captureTpsPosition(this)
-        awaitTpsState(control, TpsLearningState.Invalid(TpsLearningState.Error.SpanTooSmall))
-        assertFalse(control.applyTpsLearning())
-        control.startTpsLearning()
-        control.captureTpsPosition(this)
-        awaitTpsState(control, TpsLearningState.Measure(openVoltage = .12f))
-        control.captureTpsPosition(this)
-        awaitTpsState(control, TpsLearningState.Invalid(TpsLearningState.Error.OutsidePacketRange))
-        assertFalse(control.applyTpsLearning())
+        control.startPositionLearning(PositionSensor.TPS)
+        control.captureSensorPosition(this)
+        awaitPositionState(control, PositionLearningState.Measure(PositionSensor.TPS, fullVoltage = .1f))
+        control.captureSensorPosition(this)
+        awaitPositionState(control, PositionLearningState.Measure(PositionSensor.TPS, .1f, PositionLearningState.Capture.Retry))
+        control.captureSensorPosition(this)
+        awaitPositionState(control, PositionLearningState.Invalid(PositionSensor.TPS, PositionLearningState.Error.SpanTooSmall))
+        assertFalse(control.applyPositionLearning())
+        control.startPositionLearning(PositionSensor.TPS)
+        control.captureSensorPosition(this)
+        awaitPositionState(control, PositionLearningState.Measure(PositionSensor.TPS, fullVoltage = .12f))
+        control.captureSensorPosition(this)
+        awaitPositionState(control, PositionLearningState.Invalid(PositionSensor.TPS, PositionLearningState.Error.OutsidePacketRange))
+        assertFalse(control.applyPositionLearning())
     }
 
     @Test
@@ -538,27 +538,70 @@ class FunctionsControlTest {
         val control = FunctionsControl(
             firmware = { null },
             isFunctionsPageActive = { true },
-            readTpsVoltage = { samples.removeFirst() },
+            readPositionVoltage = { samples.removeFirst() },
         ) { false }
         control.receive(parameters(packet))
-        control.startTpsLearning()
-        control.captureTpsPosition(this)
-        awaitTpsState(control, TpsLearningState.Measure(openVoltage = 4.5f))
-        control.captureTpsPosition(this)
-        val review = TpsLearningState.Review(4.5f, .5f, -.5f, 25f)
-        awaitTpsState(control, review)
+        control.startPositionLearning(PositionSensor.TPS)
+        control.captureSensorPosition(this)
+        awaitPositionState(control, PositionLearningState.Measure(PositionSensor.TPS, fullVoltage = 4.5f))
+        control.captureSensorPosition(this)
+        val review = PositionLearningState.Review(PositionSensor.TPS, 4.5f, .5f, -.5f, 25f)
+        awaitPositionState(control, review)
 
-        assertFalse(control.applyTpsLearning())
-        assertEquals(review, control.tpsLearning.value)
+        assertFalse(control.applyPositionLearning())
+        assertEquals(review, control.positionLearning.value)
         assertEquals(1f, packet.tpsCurveOffset, 0f)
         assertEquals(10f, packet.tpsCurveGradient, 0f)
-        control.cancelTpsLearning()
-        assertFalse(control.applyTpsLearning())
-        assertNull(control.tpsLearning.value)
+        control.cancelPositionLearning()
+        assertFalse(control.applyPositionLearning())
+        assertNull(control.positionLearning.value)
     }
 
-    private suspend fun awaitTpsState(control: FunctionsControl, expected: TpsLearningState) {
-        withTimeout(3_000) { control.tpsLearning.first { it == expected } }
+    @Test
+    fun apps1LearningRequiresLiveDbwAndOnlyWritesItsOwnCoefficientPair() = runBlocking {
+        var dbwSupported = false
+        val samples = ArrayDeque(listOf(4.5f, .5f))
+        val frames = mutableListOf<IntArray>()
+        val control = FunctionsControl(
+            firmware = { FirmwareInfoPacket(options = 0) },
+            isFunctionsPageActive = { true },
+            readPositionVoltage = { sensor ->
+                assertEquals(PositionSensor.APPS1, sensor)
+                samples.removeFirst()
+            },
+            isDbwSupported = { dbwSupported },
+        ) { frames += it.pack(); true }
+        val packet = FunSetParamPacket(tpsCurveOffset = 1f, tpsCurveGradient = 10f, mapselUni = 0xA5)
+        val expected = packet.pack()
+        control.receive(parameters(packet))
+        control.startPositionLearning(PositionSensor.APPS1)
+        assertNull(control.positionLearning.value)
+
+        dbwSupported = true
+        control.startPositionLearning(PositionSensor.APPS1)
+        control.captureSensorPosition(this)
+        awaitPositionState(control, PositionLearningState.Measure(PositionSensor.APPS1, 4.5f))
+        control.captureSensorPosition(this)
+        awaitPositionState(control, PositionLearningState.Review(PositionSensor.APPS1, 4.5f, .5f, -.5f, 25f))
+        assertTrue(frames.isEmpty())
+
+        dbwSupported = false
+        assertFalse(control.applyPositionLearning())
+        assertTrue(frames.isEmpty())
+        dbwSupported = true
+        assertTrue(control.applyPositionLearning())
+        intArrayOf(0xFF, 0x38, 0x04, 0x00).copyInto(expected, 40)
+        assertArrayEquals(expected, frames.single())
+        assertNull(control.positionLearning.value)
+
+        control.startPositionLearning(PositionSensor.APPS1)
+        dbwSupported = false
+        control.discardUnavailableApps1Learning()
+        assertNull(control.positionLearning.value)
+    }
+
+    private suspend fun awaitPositionState(control: FunctionsControl, expected: PositionLearningState) {
+        withTimeout(3_000) { control.positionLearning.first { it == expected } }
     }
 
     private fun parameters(packet: FunSetParamPacket): FunctionParameters = FunctionParameters(

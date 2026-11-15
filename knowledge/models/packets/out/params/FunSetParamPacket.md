@@ -14,7 +14,7 @@ FUNSET includes an unsigned 16-bit APPS1 ADC voltage after the APPS1 gradient. I
 
 ## TPS raw is signed while APPS1 raw is unsigned
 
-The TPS ADC learning word after the MAF constant is a signed 16-bit voltage count; APPS1 raw at the end is an unsigned 16-bit count. Preserve this difference when decoding high-bit samples.
+The TPS ADC learning word after the MAF constant is a signed 16-bit voltage count; APPS1 raw at the end is an unsigned 16-bit count. Preserve this difference when decoding high-bit samples. APPS1 learning checks signed coefficient words using `APPS_MULT * 2`, the same factor as the outgoing APPS1 gradient.
 
 ## GAS_V_UNI raw code 6 remains distinct from disabled
 

@@ -392,6 +392,12 @@
     <string name="tps_learning_span_too_small">The two voltages must differ by more than 0.1 V.</string>
     <string name="tps_learning_outside_packet_range">The measured voltages produce coefficients outside the range supported by the ECU.</string>
     <string name="tps_learning_restart">Start again</string>
+
+    <string name="apps1_learning_title">Learn APPS1</string>
+    <string name="apps1_learning_press_pedal">Press the accelerator pedal all the way down and hold it there.</string>
+    <string name="apps1_learning_release_pedal">Fully release the accelerator pedal and keep it released.</string>
+    <string name="apps1_learning_read_failed">Could not read the APPS1 voltage. Hold the pedal in this position and try again.</string>
+    <string name="apps1_learning_samples">Pressed %1$s %3$s\nReleased %2$s %3$s</string>
     <string name="sec_bluetooth">Bluetooth</string>
     <string name="sec_immobilizer">Immobilizer</string>
     <string name="sec_information">Information</string>

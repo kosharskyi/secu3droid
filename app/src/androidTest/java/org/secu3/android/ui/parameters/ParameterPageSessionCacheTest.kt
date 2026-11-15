@@ -594,6 +594,58 @@ class ParameterPageSessionCacheTest {
         }
     }
 
+    @Test fun apps1LearningRequiresDbwAndWritesTheLearnedPedalCoefficientsOnlyAfterApply() = runBlocking {
+        val vm = paramsViewModel()
+        mountFunctionsPage(R.string.params_tab_functions_title, vm)
+        val usb = installFakeUsb(vm)
+        try {
+            activate(vm, R.string.params_tab_functions_title)
+            usb.awaitReadRequest('p', 1)
+            usb.emitFunctionName(0, "Speed density")
+            usb.emitFunctionName(1, "Alpha-N")
+            usb.awaitReadRequest('n', 1)
+            val initial = FunSetParamPacket(tpsCurveOffset = 1f, tpsCurveGradient = 10f, mapselUni = 0xA5)
+            usb.emitFunctions(initial)
+            await { vm.functionsControl.values.value != null }
+            val open = compose.onNodeWithTag("apps1_learning_open")
+            open.assertDoesNotExist()
+            confirmDbwProbe(usb, vm)
+
+            fun functionsWrites() = usb.writes.filter { it.getOrNull(1)?.toInt() == 'n'.code }
+            val baseline = functionsWrites().size
+            val measure = compose.onNodeWithTag("apps1_learning_continue")
+            val review = compose.onNodeWithTag("apps1_learning_review")
+            open.performScrollTo().performClick()
+            val pressText = compose.activity.getString(R.string.apps1_learning_press_pedal)
+            compose.onNodeWithText(pressText).assertIsDisplayed()
+            measure.performClick()
+            usb.awaitReadRequest('n', 2)
+            usb.emitFunctions(FunSetParamPacket(mapselUni = 0x34), tpsRaw = 1800, apps1Raw = 200)
+            val releaseText = compose.activity.getString(R.string.apps1_learning_release_pedal)
+            compose.onNodeWithText(releaseText).assertIsDisplayed()
+            measure.performClick()
+            usb.awaitReadRequest('n', 3)
+            usb.emitFunctions(FunSetParamPacket(mapselUni = 0x12), tpsRaw = 200, apps1Raw = 1800)
+            review.assertIsDisplayed()
+            assertEquals(baseline, functionsWrites().size)
+
+            measure.performClick()
+            await { functionsWrites().size == baseline + 1 }
+            review.assertDoesNotExist()
+            val expected = initial.pack().drop(1).toIntArray()
+            intArrayOf(0xF8, 0xF8, 0xFC, 0x00).copyInto(expected, 39)
+            assertArrayEquals(expected, unescapeParameterWrite(functionsWrites().last()).copyOf(expected.size))
+
+            open.performClick()
+            compose.onNodeWithTag("apps1_learning_cancel").performClick()
+            measure.assertDoesNotExist()
+            assertEquals(baseline + 1, functionsWrites().size)
+        } finally {
+            usb.close()
+            compose.runOnUiThread { vm.clearPageState() }
+        }
+    }
+
     @Test fun tpsLearningIgnoresLateReadAfterLeavingFunctionsAndAllowsStartingAgain() = runBlocking {
         val vm = paramsViewModel()
         mountFunctionsPage(R.string.params_tab_functions_title, vm)
@@ -2650,11 +2702,12 @@ class ParameterPageSessionCacheTest {
             driver.emit(RawPacket(input))
         }
 
-        suspend fun emitFunctions(packet: FunSetParamPacket, tpsRaw: Int = 0x0190) {
+        suspend fun emitFunctions(packet: FunSetParamPacket, tpsRaw: Int = 0x0190, apps1Raw: Int = 0x0190) {
             val writePayload = packet.pack()
             val input = (intArrayOf('@'.code) + writePayload.copyOfRange(0, 32) +
                 intArrayOf(tpsRaw ushr 8 and 0xFF, tpsRaw and 0xFF) +
-                writePayload.copyOfRange(32, writePayload.size) + intArrayOf(0x01, 0x90) + intArrayOf(0, 0)).also {
+                writePayload.copyOfRange(32, writePayload.size) +
+                intArrayOf(apps1Raw ushr 8 and 0xFF, apps1Raw and 0xFF) + intArrayOf(0, 0)).also {
                 it[26] = packet.ckpsEngineCyl
             }
             driver.emit(RawPacket(input))

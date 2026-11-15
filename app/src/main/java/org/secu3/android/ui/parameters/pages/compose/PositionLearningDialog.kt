@@ -19,53 +19,61 @@ import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.stringResource
 import org.secu3.android.R
-import org.secu3.android.domain.parameters.TpsLearningState
+import org.secu3.android.domain.parameters.PositionLearningState
+import org.secu3.android.domain.parameters.PositionSensor
 import org.secu3.android.ui.parameters.dialogs.ParameterAlertDialog
 import org.secu3.android.ui.parameters.dialogs.ParameterChoiceList
 
 @Composable
-internal fun TpsLearningDialog(
-    state: TpsLearningState,
+internal fun PositionLearningDialog(
+    state: PositionLearningState,
     onCapture: () -> Unit,
     onApply: () -> Unit,
     onRestart: () -> Unit,
     onCancel: () -> Unit,
 ) {
-    val capture = (state as? TpsLearningState.Measure)?.capture
-    val measuring = capture == TpsLearningState.Capture.Measuring
+    val pedal = state.sensor == PositionSensor.APPS1
+    val tag = "${state.sensor.name.lowercase()}_learning"
+    val capture = (state as? PositionLearningState.Measure)?.capture
+    val measuring = capture == PositionLearningState.Capture.Measuring
     val buttonLabel = when (state) {
-        is TpsLearningState.Measure -> if (capture == TpsLearningState.Capture.Retry) {
+        is PositionLearningState.Measure -> if (capture == PositionLearningState.Capture.Retry) {
             R.string.tps_learning_retry
         } else R.string.tps_learning_measure
-        is TpsLearningState.Review -> R.string.apply
-        is TpsLearningState.Invalid -> R.string.tps_learning_restart
+        is PositionLearningState.Review -> R.string.apply
+        is PositionLearningState.Invalid -> R.string.tps_learning_restart
     }
     ParameterAlertDialog(
         onDismissRequest = onCancel,
-        title = { Text(stringResource(R.string.tps_learning_title)) },
+        title = { Text(state.sensor.learningTitle()) },
         text = {
             ParameterChoiceList {
                 when (state) {
-                    is TpsLearningState.Measure -> {
-                        val opening = state.openVoltage == null
+                    is PositionLearningState.Measure -> {
+                        val full = state.fullVoltage == null
+                        val instruction = when {
+                            pedal && full -> R.string.apps1_learning_press_pedal
+                            pedal -> R.string.apps1_learning_release_pedal
+                            full -> R.string.tps_learning_open_throttle
+                            else -> R.string.tps_learning_close_throttle
+                        }
                         Text(
-                            stringResource(
-                                if (opening) R.string.tps_learning_open_throttle else R.string.tps_learning_close_throttle,
-                            ),
-                            modifier = Modifier.testTag(if (opening) "tps_learning_measure_open" else "tps_learning_measure_closed"),
+                            stringResource(instruction),
+                            modifier = Modifier.testTag(if (full) "${tag}_measure_open" else "${tag}_measure_closed"),
                         )
                         if (measuring) Text(stringResource(R.string.tps_learning_measuring))
-                        if (capture == TpsLearningState.Capture.Retry) {
-                            Text(stringResource(R.string.tps_learning_read_failed), color = MaterialTheme.colorScheme.error)
+                        if (capture == PositionLearningState.Capture.Retry) {
+                            val message = if (pedal) R.string.apps1_learning_read_failed else R.string.tps_learning_read_failed
+                            Text(stringResource(message), color = MaterialTheme.colorScheme.error)
                         }
                     }
-                    is TpsLearningState.Review -> {
+                    is PositionLearningState.Review -> {
                         val locale = LocalConfiguration.current.locales[0]
                         Text(
                             stringResource(
-                                R.string.tps_learning_samples,
-                                String.format(locale, "%.4f", state.openVoltage),
-                                String.format(locale, "%.4f", state.closedVoltage),
+                                if (pedal) R.string.apps1_learning_samples else R.string.tps_learning_samples,
+                                String.format(locale, "%.4f", state.fullVoltage),
+                                String.format(locale, "%.4f", state.restVoltage),
                                 stringResource(R.string.units_volts),
                             ),
                         )
@@ -77,13 +85,13 @@ internal fun TpsLearningDialog(
                                 String.format(locale, "%.3f", state.gradientPercentPerVolt),
                                 stringResource(R.string.units_percent_per_volts),
                             ),
-                            modifier = Modifier.testTag("tps_learning_review"),
+                            modifier = Modifier.testTag("${tag}_review"),
                         )
                     }
-                    is TpsLearningState.Invalid -> {
+                    is PositionLearningState.Invalid -> {
                         val error = when (state.reason) {
-                            TpsLearningState.Error.SpanTooSmall -> R.string.tps_learning_span_too_small
-                            TpsLearningState.Error.OutsidePacketRange -> R.string.tps_learning_outside_packet_range
+                            PositionLearningState.Error.SpanTooSmall -> R.string.tps_learning_span_too_small
+                            PositionLearningState.Error.OutsidePacketRange -> R.string.tps_learning_outside_packet_range
                         }
                         Text(stringResource(error), color = MaterialTheme.colorScheme.error)
                     }
@@ -91,7 +99,7 @@ internal fun TpsLearningDialog(
             }
         },
         dismissButton = {
-            TextButton(onClick = onCancel, modifier = Modifier.testTag("tps_learning_cancel")) {
+            TextButton(onClick = onCancel, modifier = Modifier.testTag("${tag}_cancel")) {
                 Text(stringResource(android.R.string.cancel))
             }
         },
@@ -99,12 +107,20 @@ internal fun TpsLearningDialog(
             Button(
                 enabled = !measuring,
                 onClick = when (state) {
-                    is TpsLearningState.Measure -> onCapture
-                    is TpsLearningState.Review -> onApply
-                    is TpsLearningState.Invalid -> onRestart
+                    is PositionLearningState.Measure -> onCapture
+                    is PositionLearningState.Review -> onApply
+                    is PositionLearningState.Invalid -> onRestart
                 },
-                modifier = Modifier.testTag("tps_learning_continue"),
+                modifier = Modifier.testTag("${tag}_continue"),
             ) { Text(stringResource(buttonLabel)) }
         },
     )
 }
+
+@Composable
+internal fun PositionSensor.learningTitle(): String = stringResource(
+    when (this) {
+        PositionSensor.TPS -> R.string.tps_learning_title
+        PositionSensor.APPS1 -> R.string.apps1_learning_title
+    },
+)

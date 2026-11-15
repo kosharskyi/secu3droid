@@ -150,16 +150,21 @@ class ParameterSession internal constructor(
     private fun hasConfirmedDbw(): Boolean =
         ParameterCapabilities(firmware(), dbwConfirmed = dbwSupport.value == true).supports(ParameterPage.EL_THROTTLE)
 
-    suspend fun readTpsVoltage(): Float? {
-        if (!isFunctionsPageActive()) return null
+    internal suspend fun readPositionVoltage(sensor: PositionSensor): Float? {
+        fun canRead() = isFunctionsPageActive() && (sensor == PositionSensor.TPS || isDbwSupported())
+        if (!canRead()) return null
         dbwProbeJob?.cancel()
         val session = sessionId
         try {
             val voltage = readGate.readOnce(ParameterPage.FUNCTIONS) {
-                if (!isCurrent(session) || !isFunctionsPageActive()) return@readOnce null
-                exchange.readPacket(Task.Secu3ReadFunsetParam, FunSetParamPacket::class.java).tps_raw
+                if (!isCurrent(session) || !canRead()) return@readOnce null
+                val packet = exchange.readPacket(Task.Secu3ReadFunsetParam, FunSetParamPacket::class.java)
+                when (sensor) {
+                    PositionSensor.TPS -> packet.tps_raw
+                    PositionSensor.APPS1 -> packet.apps1Raw
+                }
             }
-            return voltage?.takeIf { isCurrent(session) && isFunctionsPageActive() }
+            return voltage?.takeIf { isCurrent(session) && canRead() }
         } finally {
             if (isCurrent(session)) probeDbwAfterLoad(ParameterPage.FUNCTIONS)
         }

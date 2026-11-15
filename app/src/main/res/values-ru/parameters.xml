@@ -404,6 +404,12 @@
     <string name="tps_learning_span_too_small">Напряжения должны отличаться более чем на 0,1 В.</string>
     <string name="tps_learning_outside_packet_range">Измеренные напряжения дают коэффициенты вне диапазона, который поддерживает ЭБУ.</string>
     <string name="tps_learning_restart">Начать заново</string>
+
+    <string name="apps1_learning_title">Обучение APPS1</string>
+    <string name="apps1_learning_press_pedal">Нажмите педаль акселератора до упора и удерживайте её в этом положении.</string>
+    <string name="apps1_learning_release_pedal">Полностью отпустите педаль акселератора и оставьте её в этом положении.</string>
+    <string name="apps1_learning_read_failed">Не удалось считать напряжение APPS1. Удерживайте педаль в этом положении и повторите измерение.</string>
+    <string name="apps1_learning_samples">Нажато %1$s %3$s\nОтпущено %2$s %3$s</string>
     <string name="sec_bluetooth">Bluetooth</string>
     <string name="sec_immobilizer">Иммобилайзер</string>
     <string name="sec_information">Информация</string>

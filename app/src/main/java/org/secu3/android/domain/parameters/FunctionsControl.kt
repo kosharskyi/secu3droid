@@ -50,23 +50,29 @@ data class PressureCurveInput(
 
 data class PressureCurvePreview(val offsetVolts: Float, val gradientKpaPerVolt: Float)
 
-internal sealed interface TpsLearningState {
+internal enum class PositionSensor { TPS, APPS1 }
+
+internal sealed interface PositionLearningState {
+    val sensor: PositionSensor
+
     enum class Capture { Ready, Measuring, Retry }
     enum class Error { SpanTooSmall, OutsidePacketRange }
 
     data class Measure(
-        val openVoltage: Float? = null,
+        override val sensor: PositionSensor,
+        val fullVoltage: Float? = null,
         val capture: Capture = Capture.Ready,
-    ) : TpsLearningState
+    ) : PositionLearningState
 
     data class Review(
-        val openVoltage: Float,
-        val closedVoltage: Float,
+        override val sensor: PositionSensor,
+        val fullVoltage: Float,
+        val restVoltage: Float,
         val offsetVolts: Float,
         val gradientPercentPerVolt: Float,
-    ) : TpsLearningState
+    ) : PositionLearningState
 
-    data class Invalid(val reason: Error) : TpsLearningState
+    data class Invalid(override val sensor: PositionSensor, val reason: Error) : PositionLearningState
 }
 
 data class FunctionsValues(
@@ -138,7 +144,7 @@ data class FunctionsValues(
 class FunctionsControl internal constructor(
     private val firmware: () -> FirmwareInfoPacket?,
     private val isFunctionsPageActive: () -> Boolean = { false },
-    private val readTpsVoltage: suspend () -> Float? = { null },
+    private val readPositionVoltage: suspend (PositionSensor) -> Float? = { null },
     private val isDbwSupported: () -> Boolean = { false },
     private val sendPacket: (OutputPacket) -> Boolean,
 ) {
@@ -146,21 +152,21 @@ class FunctionsControl internal constructor(
     constructor(connectionManager: Secu3ConnectionManager, parameterSession: ParameterSession) : this(
         firmware = { connectionManager.fwInfo },
         isFunctionsPageActive = parameterSession::isFunctionsPageActive,
-        readTpsVoltage = parameterSession::readTpsVoltage,
+        readPositionVoltage = parameterSession::readPositionVoltage,
         isDbwSupported = parameterSession::isDbwSupported,
         sendPacket = parameterSession::sendPacket,
     )
 
     private val mutableValues = MutableStateFlow<FunctionsValues?>(null)
     val values: StateFlow<FunctionsValues?> = mutableValues.asStateFlow()
-    private val mutableTpsLearning = MutableStateFlow<TpsLearningState?>(null)
-    internal val tpsLearning = mutableTpsLearning.asStateFlow()
-    private var tpsCaptureJob: Job? = null
+    private val mutablePositionLearning = MutableStateFlow<PositionLearningState?>(null)
+    internal val positionLearning = mutablePositionLearning.asStateFlow()
+    private var positionCaptureJob: Job? = null
     private var packet: FunSetParamPacket? = null
     private var names: List<String> = emptyList()
 
     fun reset() {
-        cancelTpsLearning()
+        cancelPositionLearning()
         packet = null
         names = emptyList()
         mutableValues.value = null
@@ -191,65 +197,90 @@ class FunctionsControl internal constructor(
     fun editApps1CurveOffset(value: Float) = editFloat(value, -5f, 5f, { isDbwSupported() }) { it.apps1CurveOffset = value }
     fun editApps1CurveGradient(value: Float) = editFloat(value, -500f, 500f, { isDbwSupported() }) { it.apps1CurveGradient = value }
 
-    internal fun startTpsLearning() {
-        if (packet == null || !isFunctionsPageActive()) return
-        val current = mutableTpsLearning.value
-        if (current == null || current is TpsLearningState.Invalid) {
-            mutableTpsLearning.value = TpsLearningState.Measure()
+    internal fun startPositionLearning(sensor: PositionSensor) {
+        if (packet == null || !canLearnPosition(sensor)) return
+        val current = mutablePositionLearning.value
+        if (current == null || current is PositionLearningState.Invalid || !canLearnPosition(current.sensor)) {
+            cancelPositionLearning()
+            mutablePositionLearning.value = PositionLearningState.Measure(sensor)
         }
     }
 
-    internal fun captureTpsPosition(scope: CoroutineScope) {
-        val step = mutableTpsLearning.value as? TpsLearningState.Measure ?: return
-        if (step.capture == TpsLearningState.Capture.Measuring || !isFunctionsPageActive()) return
-        mutableTpsLearning.value = step.copy(capture = TpsLearningState.Capture.Measuring)
-        tpsCaptureJob = scope.launch {
-            delay(TPS_SETTLE_MILLIS)
+    internal fun captureSensorPosition(scope: CoroutineScope) {
+        val step = mutablePositionLearning.value as? PositionLearningState.Measure ?: return
+        if (step.capture == PositionLearningState.Capture.Measuring || !canLearnPosition(step.sensor)) return
+        mutablePositionLearning.value = step.copy(capture = PositionLearningState.Capture.Measuring)
+        positionCaptureJob = scope.launch {
+            delay(POSITION_SETTLE_MILLIS)
             val voltage = try {
-                readTpsVoltage()
+                if (canLearnPosition(step.sensor)) readPositionVoltage(step.sensor) else null
             } catch (cancelled: CancellationException) {
                 throw cancelled
             } catch (_: Exception) {
                 null
             }
             currentCoroutineContext().ensureActive()
-            if (!isFunctionsPageActive()) {
-                mutableTpsLearning.value = null
+            if (!canLearnPosition(step.sensor)) {
+                mutablePositionLearning.value = null
                 return@launch
             }
-            mutableTpsLearning.value = when {
-                voltage == null -> step.copy(capture = TpsLearningState.Capture.Retry)
-                step.openVoltage == null -> TpsLearningState.Measure(openVoltage = voltage)
-                else -> calculateTpsLearning(step.openVoltage, voltage)
+            mutablePositionLearning.value = when {
+                voltage == null -> step.copy(capture = PositionLearningState.Capture.Retry)
+                step.fullVoltage == null -> PositionLearningState.Measure(step.sensor, fullVoltage = voltage)
+                else -> calculatePositionLearning(step.sensor, step.fullVoltage, voltage)
             }
         }
     }
 
-    internal fun cancelTpsLearning() {
-        tpsCaptureJob?.cancel()
-        tpsCaptureJob = null
-        mutableTpsLearning.value = null
+    internal fun cancelPositionLearning() {
+        positionCaptureJob?.cancel()
+        positionCaptureJob = null
+        mutablePositionLearning.value = null
     }
 
-    internal fun applyTpsLearning(): Boolean {
-        val result = mutableTpsLearning.value as? TpsLearningState.Review ?: return false
-        val admitted = edit({ isFunctionsPageActive() && it.canEncodeTpsCurve(result.offsetVolts, result.gradientPercentPerVolt) }) {
-            it.tpsCurveOffset = result.offsetVolts
-            it.tpsCurveGradient = result.gradientPercentPerVolt
+    internal fun discardUnavailableApps1Learning() {
+        if (positionLearning.value?.sensor == PositionSensor.APPS1 && !isDbwSupported()) cancelPositionLearning()
+    }
+
+    internal fun applyPositionLearning(): Boolean {
+        val result = mutablePositionLearning.value as? PositionLearningState.Review ?: return false
+        val admitted = edit({
+            canLearnPosition(result.sensor) &&
+                it.canEncodePositionCurve(result.sensor, result.offsetVolts, result.gradientPercentPerVolt)
+        }) {
+            when (result.sensor) {
+                PositionSensor.TPS -> {
+                    it.tpsCurveOffset = result.offsetVolts
+                    it.tpsCurveGradient = result.gradientPercentPerVolt
+                }
+                PositionSensor.APPS1 -> {
+                    it.apps1CurveOffset = result.offsetVolts
+                    it.apps1CurveGradient = result.gradientPercentPerVolt
+                }
+            }
         }
-        if (admitted) cancelTpsLearning()
+        if (admitted) cancelPositionLearning()
         return admitted
     }
 
-    private fun calculateTpsLearning(openVolts: Float, closedVolts: Float): TpsLearningState {
-        val difference = openVolts - closedVolts
-        if (abs(difference) <= 0.1f) return TpsLearningState.Invalid(TpsLearningState.Error.SpanTooSmall)
-        val offset = -closedVolts
-        val gradient = 100f / difference
-        if (packet?.canEncodeTpsCurve(offset, gradient) != true) {
-            return TpsLearningState.Invalid(TpsLearningState.Error.OutsidePacketRange)
+    private fun canLearnPosition(sensor: PositionSensor): Boolean =
+        isFunctionsPageActive() && (sensor == PositionSensor.TPS || isDbwSupported())
+
+    private fun FunSetParamPacket.canEncodePositionCurve(sensor: PositionSensor, offset: Float, gradient: Float): Boolean =
+        when (sensor) {
+            PositionSensor.TPS -> canEncodeTpsCurve(offset, gradient)
+            PositionSensor.APPS1 -> canEncodeApps1Curve(offset, gradient)
         }
-        return TpsLearningState.Review(openVolts, closedVolts, offset, gradient)
+
+    private fun calculatePositionLearning(sensor: PositionSensor, fullVolts: Float, restVolts: Float): PositionLearningState {
+        val difference = fullVolts - restVolts
+        if (abs(difference) <= 0.1f) return PositionLearningState.Invalid(sensor, PositionLearningState.Error.SpanTooSmall)
+        val offset = -restVolts
+        val gradient = 100f / difference
+        if (packet?.canEncodePositionCurve(sensor, offset, gradient) != true) {
+            return PositionLearningState.Invalid(sensor, PositionLearningState.Error.OutsidePacketRange)
+        }
+        return PositionLearningState.Review(sensor, fullVolts, restVolts, offset, gradient)
     }
 
     fun pressureCurveInput(sensor: PressureSensor): PressureCurveInput? {
@@ -454,7 +485,7 @@ class FunctionsControl internal constructor(
     }
 
     companion object {
-        private const val TPS_SETTLE_MILLIS = 1_000L
+        private const val POSITION_SETTLE_MILLIS = 1_000L
         private const val MAF_LOAD_SOURCE = 4
         private const val DISABLED_OUTPUT = 15
     }

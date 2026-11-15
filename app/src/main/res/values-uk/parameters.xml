@@ -397,6 +397,12 @@
     <string name="tps_learning_span_too_small">Напруги мають відрізнятися більш ніж на 0,1 В.</string>
     <string name="tps_learning_outside_packet_range">Виміряні напруги дають коефіцієнти поза діапазоном, який підтримує ЕБУ.</string>
     <string name="tps_learning_restart">Почати спочатку</string>
+
+    <string name="apps1_learning_title">Навчання APPS1</string>
+    <string name="apps1_learning_press_pedal">Натисніть педаль акселератора до упору й утримуйте її в цьому положенні.</string>
+    <string name="apps1_learning_release_pedal">Повністю відпустіть педаль акселератора й залиште її в цьому положенні.</string>
+    <string name="apps1_learning_read_failed">Не вдалося зчитати напругу APPS1. Тримайте педаль у цьому положенні й повторіть вимірювання.</string>
+    <string name="apps1_learning_samples">Натиснуто %1$s %3$s\nВідпущено %2$s %3$s</string>
     <string name="sec_bluetooth">Bluetooth</string>
     <string name="sec_immobilizer">Іммобілайзер</string>
     <string name="sec_information">Інформація</string>

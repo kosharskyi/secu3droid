@@ -18,10 +18,10 @@ Pause advances the session token, cancels reads and pending save confirmation, a
 
 The session's methods and event callbacks run on the ViewModel's main scope. Detach the read-job registry before cancellation because a job's `finally` block may run immediately and remove its entry. Late cleanup must remove an entry only if it still belongs to that job, preserving a replacement read.
 
-## A TPS measurement must not resume on a later page activation
+## A position-sensor measurement must not resume on a later page activation
 
-TPS uses the page-read mutex but does not use the retry-on-activation flow or populate the Functions cache. Each reply supplies only the raw voltage. The Functions deactivation and session invalidation events cancel the caller's measurement job and discard its draft, including when a reply is pending or the preview is already visible.
+TPS and APPS1 share the page-read mutex for one-shot measurements without populating the Functions cache. Each reply supplies only the selected sensor's raw voltage. APPS1 checks DBW confirmation while acquiring the read slot and when admitting the reply. The Functions deactivation and session invalidation events cancel the caller's measurement job and discard its draft, including when a reply is pending or the preview is already visible.
 
 ## DBW confirmation is attempted after a page has loaded
 
-The probe shares the page-read mutex because a DBW query changes the stream mode. Page reads, TPS measurement and EEPROM save cancel it before using the stream. A canceled probe can resume once ordinary work completes. A completed probe is kept through host pause and is cleared on disconnect or route closure. A timeout means support is unconfirmed because the firmware silently ignores an unsupported request and the transport can also lose a reply.
+The probe shares the page-read mutex because a DBW query changes the stream mode. Page reads, position-sensor measurements and EEPROM save cancel it before using the stream. A canceled probe can resume once ordinary work completes. A completed probe is kept through host pause and is cleared on disconnect or route closure. A timeout means support is unconfirmed because the firmware silently ignores an unsupported request and the transport can also lose a reply.
