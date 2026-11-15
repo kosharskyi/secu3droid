@@ -21,3 +21,7 @@ Connection retry and fuel-flow inputs use saveable Compose state so text, includ
 ## Analytics consent changes are applied by the collection owner
 
 The Settings ViewModel forwards consent to `UsageAnalytics`, which closes the SDK before persisting revocation and prevents unrelated stale settings emissions from reopening collection during that write. The Settings row only presents the stored snapshot and forwards the toggle.
+
+## The forum link follows the last page as the topic grows
+
+The About link uses `start=2147483647` because phpBB resolves an offset beyond the number of posts to the last page. Keep this offset in each locale so the link continues to reach the latest page as replies are added.

@@ -81,6 +81,8 @@ internal fun AboutContent(
             LinkedText(R.string.about_app_desc, open, onLinkBounds)
             LinkedText(R.string.about_license, open, onLinkBounds)
             LinkedText(R.string.about_sources, open, onLinkBounds)
+            LinkedText(R.string.about_forum, open, onLinkBounds)
+            LinkedText(R.string.about_telegram, open, onLinkBounds)
         }
     }
 }

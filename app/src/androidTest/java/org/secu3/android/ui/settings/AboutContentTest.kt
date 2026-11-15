@@ -55,23 +55,29 @@ class AboutContentTest {
         compose.onNodeWithText(context.getString(R.string.about_sources), substring = true).performScrollTo().assertIsDisplayed()
     }
 
-    @Test fun sourceRepositoryLinkInvokesOpenCallback() {
+    @Test fun repositoryAndCommunityLinksInvokeOpenCallback() {
+        val expectedLinks = mapOf(
+            R.string.about_sources to "https://github.com/kosharskyi/secu3droid",
+            R.string.about_forum to "https://secu-3.org/forum/viewtopic.php?f=8&t=11&start=2147483647",
+            R.string.about_telegram to "https://t.me/+JrqNrXQddPQzOThi",
+        )
         val opened = mutableListOf<String>()
-        val linkCenter = androidx.compose.runtime.mutableStateOf(Offset.Zero)
+        val linkCenters = mutableMapOf<Int, Offset>()
         compose.setContent {
             SecuComposeTheme {
                 AboutContent(
                     open = { opened += it },
-                    onLinkBounds = { resource, bounds ->
-                        if (resource == R.string.about_sources) linkCenter.value = bounds.center
-                    },
+                    onLinkBounds = { resource, bounds -> linkCenters[resource] = bounds.center },
                 )
             }
         }
-        val sourceText = compose.onNodeWithTag("about-linked-text-${R.string.about_sources}")
-        sourceText.performScrollTo()
-        compose.runOnIdle { assertNotEquals(Offset.Zero, linkCenter.value) }
-        sourceText.performTouchInput { click(linkCenter.value) }
-        compose.runOnIdle { assertEquals(listOf("https://github.com/kosharskyi/secu3droid"), opened) }
+        expectedLinks.keys.forEach { resource ->
+            val link = compose.onNodeWithTag("about-linked-text-$resource")
+            link.performScrollTo().assertIsDisplayed()
+            val center = compose.runOnIdle { linkCenters.getValue(resource) }
+            assertNotEquals(Offset.Zero, center)
+            link.performTouchInput { click(center) }
+        }
+        compose.runOnIdle { assertEquals(expectedLinks.values.toList(), opened) }
     }
 }
