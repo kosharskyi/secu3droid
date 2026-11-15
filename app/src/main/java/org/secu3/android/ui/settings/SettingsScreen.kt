@@ -160,7 +160,8 @@ internal fun SettingsContent(
                     checked = state.keepScreenOn,
                     testTag = "settings-toggle-${R.string.pref_keep_screen_key}",
                 ) { onToggle(R.string.pref_keep_screen_key, it) }
-                HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant)
+            }
+            SettingsSection {
                 SettingsActionRow(
                     title = stringResource(R.string.pref_about_title),
                     onClick = onShowAbout,
