@@ -25,58 +25,55 @@
 package org.secu3.android.ui.settings
 
 import androidx.compose.ui.test.assertIsDisplayed
+import androidx.compose.ui.test.getUnclippedBoundsInRoot
 import androidx.compose.ui.test.junit4.v2.createComposeRule
-import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.onNodeWithTag
+import androidx.compose.ui.test.onNodeWithText
+import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.performScrollTo
-import androidx.compose.ui.test.performTouchInput
-import androidx.compose.ui.test.click
-import androidx.compose.ui.geometry.Offset
 import androidx.test.platform.app.InstrumentationRegistry
+import org.junit.Assert.assertEquals
 import org.junit.Rule
 import org.junit.Test
-import org.junit.Assert.assertEquals
-import org.junit.Assert.assertNotEquals
 import org.secu3.android.BuildConfig
 import org.secu3.android.R
 import org.secu3.android.ui.compose.SecuComposeTheme
+import kotlin.math.min
 
-class AboutContentTest {
+class AboutScreenTest {
     @get:Rule val compose = createComposeRule()
     private val context = InstrumentationRegistry.getInstrumentation().targetContext
 
-    @Test fun localizedAboutContentShowsVersionLicenseAndSource() {
+    @Test fun contentUsesTheAvailableWidthUpToItsReadingWidth() {
         compose.setContent {
-            SecuComposeTheme { AboutContent(open = {}) }
+            SecuComposeTheme { AboutScreen(onNavigateUp = {}, onOpenLink = {}) }
         }
-        compose.onNodeWithText(context.getString(R.string.about_title)).performScrollTo().assertIsDisplayed()
-        compose.onNodeWithText("${context.getString(R.string.about_version)} ${BuildConfig.VERSION_NAME}").performScrollTo().assertIsDisplayed()
-        compose.onNodeWithText(context.getString(R.string.about_license), substring = true).performScrollTo().assertIsDisplayed()
-        compose.onNodeWithText(context.getString(R.string.about_sources), substring = true).performScrollTo().assertIsDisplayed()
+        val viewport = compose.onNodeWithTag("about-viewport").getUnclippedBoundsInRoot()
+        val content = compose.onNodeWithTag("about-content").getUnclippedBoundsInRoot()
+        val viewportWidth = (viewport.right - viewport.left).value
+        val contentWidth = (content.right - content.left).value
+        assertEquals(min(640f, viewportWidth - 32f), contentWidth, 1f)
+        assertEquals((content.left - viewport.left).value, (viewport.right - content.right).value, 1f)
+        compose.onNodeWithText(context.getString(R.string.pref_about_title)).assertIsDisplayed()
+        compose.onNodeWithText(context.getString(R.string.about_version, BuildConfig.VERSION_NAME))
+            .assertIsDisplayed()
     }
 
-    @Test fun repositoryAndCommunityLinksInvokeOpenCallback() {
+    @Test fun linkRowsOpenTheirDestinations() {
         val expectedLinks = mapOf(
-            R.string.about_sources to "https://github.com/kosharskyi/secu3droid",
             R.string.about_forum to "https://secu-3.org/forum/viewtopic.php?f=8&t=11&start=2147483647",
             R.string.about_telegram to "https://t.me/+JrqNrXQddPQzOThi",
+            R.string.about_website to "http://secu-3.org",
+            R.string.about_license to "http://www.gnu.org/licenses/gpl-3.0-standalone.html",
+            R.string.about_sources to "https://github.com/kosharskyi/secu3droid",
         )
         val opened = mutableListOf<String>()
-        val linkCenters = mutableMapOf<Int, Offset>()
         compose.setContent {
-            SecuComposeTheme {
-                AboutContent(
-                    open = { opened += it },
-                    onLinkBounds = { resource, bounds -> linkCenters[resource] = bounds.center },
-                )
-            }
+            SecuComposeTheme { AboutScreen(onNavigateUp = {}, onOpenLink = { opened += it }) }
         }
-        expectedLinks.keys.forEach { resource ->
-            val link = compose.onNodeWithTag("about-linked-text-$resource")
-            link.performScrollTo().assertIsDisplayed()
-            val center = compose.runOnIdle { linkCenters.getValue(resource) }
-            assertNotEquals(Offset.Zero, center)
-            link.performTouchInput { click(center) }
+        expectedLinks.keys.forEach { label ->
+            compose.onNodeWithText(context.getString(label))
+                .performScrollTo().assertIsDisplayed().performClick()
         }
         compose.runOnIdle { assertEquals(expectedLinks.values.toList(), opened) }
     }

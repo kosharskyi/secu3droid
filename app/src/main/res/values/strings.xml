@@ -60,7 +60,6 @@
     <string name="pref_keep_screen_title">Keep screen active</string>
     <string name="pref_keep_screen_summary">Disable screen blank while connected to Secu</string>
     <string name="pref_about_title">About</string>
-    <string name="pref_about_summary" />
 
 
     <string name="msg_bluetooth_disabled">Bluetooth is disabled</string>
@@ -81,15 +80,17 @@
     <string name="menu_exit">Exit</string>
     <string name="menu_diagnostics">Diagnostics</string>
     <string name="menu_diagnostics_warning_title">WARNING! Disconnect ignition coils before entering diagnostic mode. Before testing of BL, DE outputs make sure that corresp. jumpers are opened!\nWARNING! Displayed inputs\' values are on the MCU lines, not on the external connector (there are differences).</string>
-    <string name="about_title">About</string>
-    <string name="about_version">Secu3Droid version</string>
+    <string name="about_version">Version %1$s</string>
     <string name="about_copyright_1">Copyright © %d Kosharskyi Vitalii</string>
     <string name="about_copyright_2">Copyright © %d Secu3Droid Project</string>
-    <string name="about_app_desc">Secu3Droid is an application for managing Secu-3 ignition system. Secu-3 is an open source, free engine control unit, see <a href="http://secu-3.org"><b>http://secu-3.org</b></a>"</string>
-    <string name="about_license">It is open source software distributed free of charge under the terms of the <a href="http://www.gnu.org/licenses/gpl-3.0-standalone.html"><b>GNU General Public License</b></a>.</string>
-    <string name="about_sources">The source code is available from Git repository on the project website: https://github.com/kosharskyi/secu3droid</string>
-    <string name="about_forum"><a href="https://secu-3.org/forum/viewtopic.php?f=8&amp;t=11&amp;start=2147483647">Secu3droid forum topic</a></string>
-    <string name="about_telegram"><a href="https://t.me/+JrqNrXQddPQzOThi">Telegram chat</a></string>
+    <string name="about_app_desc">Secu3Droid is a free, open-source app for configuring the SECU-3 engine control unit.</string>
+    <string name="about_community">Community</string>
+    <string name="about_forum">Secu3Droid forum topic</string>
+    <string name="about_telegram">Telegram chat</string>
+    <string name="about_project">Project</string>
+    <string name="about_website">SECU-3 website</string>
+    <string name="about_license">GNU GPL v3 license</string>
+    <string name="about_sources">Source code</string>
 
     <string name="permission_rationale_title">You need to grant permissions to work with the app</string>
     <string name="permission_rationale_message">The app doesn\'t collect your location data. This is restrictions of android to ask location permission with bluetooth</string>

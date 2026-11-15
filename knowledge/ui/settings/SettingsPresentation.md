@@ -1,6 +1,6 @@
 ## Preference rows continue to call the owning route
 
-The shared settings rows are presentation-only. Toggle, selection, retry, and About actions must continue through the existing callbacks so preference persistence and route-owned dialogs remain the source of state. Keep resource-key test tags on actual checkbox controls and preserve appearance selection callbacks.
+The shared settings rows are presentation-only. Toggle, selection, and retry actions must continue through the existing callbacks so preference persistence and route-owned dialogs remain the source of state. Keep resource-key test tags on actual checkbox controls and preserve appearance selection callbacks.
 
 ## Pending preference loading and failed writes must not imply stored defaults
 
@@ -24,4 +24,8 @@ The Settings ViewModel forwards consent to `UsageAnalytics`, which closes the SD
 
 ## The forum link follows the last page as the topic grows
 
-The About link uses `start=2147483647` because phpBB resolves an offset beyond the number of posts to the last page. Keep this offset in each locale so the link continues to reach the latest page as replies are added.
+The About link uses `start=2147483647` because phpBB resolves an offset beyond the number of posts to the last page. All locales use the same destination so the link continues to reach the latest page as replies are added.
+
+## About keeps the Settings entry on the back stack
+
+Pop the About destination to return to the existing Settings entry. It owns the saved scroll position across the round trip and Activity recreation.

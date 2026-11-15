@@ -9,6 +9,7 @@
  */
 package org.secu3.android.ui
 
+import android.content.Intent
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.animation.EnterTransition
 import androidx.compose.animation.ExitTransition
@@ -20,6 +21,7 @@ import androidx.compose.runtime.SideEffect
 import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.window.DialogProperties
+import androidx.core.net.toUri
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.dialog
@@ -54,6 +56,7 @@ import org.secu3.android.ui.logger.settings.LogSettingsRoute
 import org.secu3.android.ui.ltft.LtftMapsRoute
 import org.secu3.android.ui.parameters.ParametersRoute
 import org.secu3.android.ui.parameters.settings.ParameterSettingsRoute
+import org.secu3.android.ui.settings.AboutScreen
 import org.secu3.android.ui.settings.SettingsRoute
 import org.secu3.android.ui.dashboard.DashboardRoute
 import org.secu3.android.ui.dashboard.DashboardGaugeSettingsRoute
@@ -68,6 +71,7 @@ internal const val HOME_ROUTE = "home"
 internal const val PARAMETERS_ROUTE = "parameters"
 internal const val PARAMETER_SETTINGS_ROUTE = "parameter-settings"
 internal const val SETTINGS_ROUTE = "settings"
+internal const val ABOUT_ROUTE = "about"
 internal const val ERRORS_ROUTE = "errors"
 internal const val LTFT_MAPS_ROUTE = "ltft-maps"
 internal const val LOGS_ROUTE = "logs"
@@ -191,7 +195,18 @@ internal fun RootNavigation(activity: MainActivity) {
                 ParameterSettingsRoute(entry, activity, onNavigateUp = { navController.popBackStack() })
             }
             composable(SETTINGS_ROUTE) { entry ->
-                SettingsRoute(entry, activity, onNavigateUp = { navController.popBackStack() })
+                SettingsRoute(
+                    entry,
+                    activity,
+                    onNavigateUp = { navController.popBackStack() },
+                    onOpenAbout = { navController.navigate(ABOUT_ROUTE) { launchSingleTop = true } },
+                )
+            }
+            composable(ABOUT_ROUTE) {
+                AboutScreen(
+                    onNavigateUp = { navController.popBackStack() },
+                    onOpenLink = { url -> activity.startActivity(Intent(Intent.ACTION_VIEW, url.toUri())) },
+                )
             }
             composable(ERRORS_ROUTE) { entry ->
                 ErrorsRoute(

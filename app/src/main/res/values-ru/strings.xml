@@ -35,7 +35,6 @@
     <string name="pref_keep_screen_title">Не выключать экран</string>
     <string name="pref_keep_screen_summary">Экран остается включенным</string>
     <string name="pref_about_title">О программе</string>
-    <string name="pref_about_summary"/>
 
 
     <string name="msg_bluetooth_disabled">Bluetooth отключен</string>
@@ -56,15 +55,17 @@
     <string name="menu_raw_sensors">Сырые значения</string>
     <string name="menu_diagnostics">Диагностика</string>
     <string name="menu_diagnostics_warning_title">ВНИМАНИЕ! Отключите катушки зажигания перед входом в диагностический режим. Перед тестиров. вых. BL, DE убедитесь что перемычки сняты!\nВНИМАНИЕ! Значения входов показываются на выводах МК, а не на внешнем разъеме (есть отличия).</string>
-    <string name="about_title">О программе</string>
-    <string name="about_version">Secu3Droid версия</string>
+    <string name="about_version">Версия %1$s</string>
     <string name="about_copyright_1">Copyright © %d Виталий Кошарский</string>
     <string name="about_copyright_2">Copyright © %d Secu3Droid Project</string>
-    <string name="about_app_desc">Secu3Droid это приложение для настройки системы управления двигателем Secu-3. Secu-3 это бесплатная система управления двигателем с открытыми исходными кодами <a href="http://secu-3.org"><b>http://secu-3.org</b></a>"</string>
-    <string name="about_license">Это программное обеспечение с открытым исходным кодом распространяется бесплатно в соответствиями с условиями <a href="http://www.gnu.org/licenses/gpl-3.0-standalone.html"><b>GNU General Public License</b></a>.</string>
-    <string name="about_sources">Исходный код доступен из Git-репозитория на вебсайте проекта https://github.com/kosharskyi/secu3droid</string>
-    <string name="about_forum"><a href="https://secu-3.org/forum/viewtopic.php?f=8&amp;t=11&amp;start=2147483647">Тема Secu3droid на форуме</a></string>
-    <string name="about_telegram"><a href="https://t.me/+JrqNrXQddPQzOThi">Чат в Telegram</a></string>
+    <string name="about_app_desc">Secu3Droid — бесплатное приложение с открытым исходным кодом для настройки блока управления двигателем SECU-3.</string>
+    <string name="about_community">Сообщество</string>
+    <string name="about_forum">Тема Secu3Droid на форуме</string>
+    <string name="about_telegram">Чат в Telegram</string>
+    <string name="about_project">Проект</string>
+    <string name="about_website">Сайт SECU-3</string>
+    <string name="about_license">Лицензия GNU GPL v3</string>
+    <string name="about_sources">Исходный код</string>
 
     <string name="permission_rationale_title">Необходимо дать разрешения</string>
     <string name="permission_rationale_message">Приложение не собирает и не использует ваши геоданные. Это ограничения операционной системы, запрашивать разрешения на геоданные вместе с блютузом</string>

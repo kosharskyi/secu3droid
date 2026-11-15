@@ -31,6 +31,7 @@ import androidx.compose.ui.test.assertIsOff
 import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.assertTextEquals
 import androidx.compose.ui.test.assertTextContains
+import androidx.compose.ui.test.getUnclippedBoundsInRoot
 import androidx.compose.ui.test.onAllNodesWithTag
 import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.onNodeWithText
@@ -48,6 +49,7 @@ import org.junit.Rule
 import org.junit.Test
 import org.secu3.android.R
 import org.secu3.android.models.InjectionTimingMode
+import org.secu3.android.ui.ABOUT_ROUTE
 import org.secu3.android.ui.MainActivity
 import org.secu3.android.ui.SETTINGS_ROUTE
 import kotlinx.coroutines.flow.first
@@ -115,14 +117,34 @@ class SettingsPreferencePersistenceTest {
         compose.onNodeWithTag("settings-connection-retries-input").assertTextEquals(persisted)
     }
 
-    @Test fun aboutDialogOpensAndDismissesWithBack() {
+    @Test fun aboutRouteRestoresAfterRecreationAndReturnsToTheSameSettingsPosition() {
         compose.onNodeWithContentDescription("Settings icon").performClick()
-        compose.waitForIdle()
-        compose.onNodeWithText(compose.activity.getString(R.string.pref_about_title)).performScrollTo().performClick()
-        compose.onNodeWithTag("settings-about-dialog").assertIsDisplayed()
+        val aboutTitle = compose.onNodeWithText(compose.activity.getString(R.string.pref_about_title))
+        aboutTitle.performScrollTo()
+        val settingsPosition = aboutTitle.getUnclippedBoundsInRoot().top.value
+        aboutTitle.performClick()
+        compose.onNodeWithTag("about-viewport").assertIsDisplayed()
+        compose.runOnIdle {
+            assertEquals(ABOUT_ROUTE, compose.activity.rootNavigationController?.currentDestination?.route)
+        }
+        val sources = compose.onNodeWithText(compose.activity.getString(R.string.about_sources))
+        sources.performScrollTo()
+        val aboutPosition = sources.getUnclippedBoundsInRoot().top.value
+
+        compose.activityRule.scenario.recreate()
+        sources.assertIsDisplayed()
+        assertEquals(aboutPosition, sources.getUnclippedBoundsInRoot().top.value, 1f)
+        compose.onNodeWithContentDescription(compose.activity.getString(R.string.back)).performClick()
+        aboutTitle.assertIsDisplayed()
+        assertEquals(settingsPosition, aboutTitle.getUnclippedBoundsInRoot().top.value, 1f)
+
+        aboutTitle.performClick()
+        compose.onNodeWithTag("about-viewport").assertIsDisplayed()
         InstrumentationRegistry.getInstrumentation().sendKeyDownUpSync(android.view.KeyEvent.KEYCODE_BACK)
-        compose.waitForIdle()
-        compose.onNodeWithTag("settings-about-dialog").assertDoesNotExist()
+        compose.onNodeWithTag("about-viewport").assertDoesNotExist()
+        compose.runOnIdle {
+            assertEquals(SETTINGS_ROUTE, compose.activity.rootNavigationController?.currentDestination?.route)
+        }
     }
 
     @Test fun fuelFlowCalibrationSavesThroughSettingsAndSurvivesActivityRecreation() {

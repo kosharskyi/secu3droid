@@ -35,7 +35,6 @@
     <string name="pref_keep_screen_title">Не вимикати екран</string>
     <string name="pref_keep_screen_summary">Екран залишається ввімкненим</string>
     <string name="pref_about_title">Про програму</string>
-    <string name="pref_about_summary"/>
 
     <string name="msg_bluetooth_disabled">Bluetooth відключений</string>
     <string name="status_connecting">Підключається</string>
@@ -55,15 +54,17 @@
     <string name="menu_raw_sensors">Сирі значення</string>
     <string name="menu_diagnostics">Діагностика</string>
     <string name="menu_diagnostics_warning_title">Вимкніть котушки запалювання перед входом в діагностичний режим, інакше можливе їх пошкодження!</string>
-    <string name="about_title">Про програму</string>
-    <string name="about_version">Secu3Droid версія</string>
+    <string name="about_version">Версія %1$s</string>
     <string name="about_copyright_1">Copyright © %d Віталій Кошарський</string>
     <string name="about_copyright_2">Copyright © %d Secu3Droid Project</string>
-    <string name="about_app_desc">Secu3Droid це застосунок для налаштування системи управління двигуном Secu-3. Secu-3 це безкоштовна система управління двигуном з відкритими вихідними кодами <a href="http://secu-3.org"><b>http://secu-3.org</b></a>"</string>
-    <string name="about_license">Це програмне забезпечення з відкритим вихідним кодом розповсюджується безкоштовно у відповідності з умовами<a href="http://www.gnu.org/licenses/gpl-3.0-standalone.html"><b>GNU General Public License</b></a>.</string>
-    <string name="about_sources">Вихідний код доступний з Git-репозиторію на вебсайті проекту https://github.com/kosharskyi/secu3droid</string>
-    <string name="about_forum"><a href="https://secu-3.org/forum/viewtopic.php?f=8&amp;t=11&amp;start=2147483647">Тема Secu3droid на форумі</a></string>
-    <string name="about_telegram"><a href="https://t.me/+JrqNrXQddPQzOThi">Чат у Telegram</a></string>
+    <string name="about_app_desc">Secu3Droid — безкоштовний застосунок із відкритим кодом для налаштування блока керування двигуном SECU-3.</string>
+    <string name="about_community">Спільнота</string>
+    <string name="about_forum">Тема Secu3Droid на форумі</string>
+    <string name="about_telegram">Чат у Telegram</string>
+    <string name="about_project">Проєкт</string>
+    <string name="about_website">Сайт SECU-3</string>
+    <string name="about_license">Ліцензія GNU GPL v3</string>
+    <string name="about_sources">Вихідний код</string>
 
     <string name="permission_rationale_title">Потрібно надати дозволи</string>
     <string name="permission_rationale_message">Застосунок не збирає і не використовує ваші геодані. Це обмеження операційної системи, запитувати дозволи на геодані разом із блютузом</string>

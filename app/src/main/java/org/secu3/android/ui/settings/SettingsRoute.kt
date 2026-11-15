@@ -12,7 +12,6 @@ package org.secu3.android.ui.settings
 import android.Manifest
 import android.content.Intent
 import android.content.pm.PackageManager
-import androidx.core.net.toUri
 import android.net.Uri
 import android.os.Build
 import android.provider.Settings
@@ -20,8 +19,6 @@ import androidx.core.app.NotificationManagerCompat
 import androidx.core.content.ContextCompat
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
-import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.ui.Alignment
@@ -39,9 +36,6 @@ import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalLifecycleOwner
-import androidx.compose.ui.platform.testTag
-import androidx.compose.ui.unit.dp
-import androidx.compose.ui.window.Dialog
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.LifecycleEventObserver
 import androidx.lifecycle.repeatOnLifecycle
@@ -63,6 +57,7 @@ internal fun SettingsRoute(
     entry: NavBackStackEntry,
     activity: MainActivity,
     onNavigateUp: () -> Unit,
+    onOpenAbout: () -> Unit,
 ) {
     val viewModel: SettingsViewModel = viewModel(
         viewModelStoreOwner = entry,
@@ -175,7 +170,7 @@ internal fun SettingsRoute(
             onSaveRetries = viewModel::saveRetries,
             onSelectDialog = viewModel::showDialog,
             onDismissDialog = viewModel::dismissDialog,
-            onShowAbout = { viewModel.showDialog(SettingsDialog.About) },
+            onShowAbout = onOpenAbout,
             onSelectAppearance = viewModel::setAppearanceMode,
             notificationAccessGranted = notificationAccessGranted,
             onConnectionNotifications = {
@@ -194,13 +189,6 @@ internal fun SettingsRoute(
             onSaveFuelFlowPulsesPerLitre = viewModel::saveFuelFlowPulsesPerLitre,
             onSelectInjectionTimingMode = viewModel::setInjectionTimingMode,
         )
-        if (dialog == SettingsDialog.About) {
-            Dialog(onDismissRequest = viewModel::dismissDialog) {
-                Box(Modifier.fillMaxWidth().widthIn(max = 560.dp).testTag("settings-about-dialog")) {
-                    AboutContent(open = { url -> activity.startActivity(Intent(Intent.ACTION_VIEW, url.toUri())) })
-                }
-            }
-        }
         if (notificationPermissionDialog) {
             AlertDialog(
                 onDismissRequest = { notificationPermissionDialog = false },

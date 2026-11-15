@@ -163,7 +163,6 @@ internal fun SettingsContent(
                 HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant)
                 SettingsActionRow(
                     title = stringResource(R.string.pref_about_title),
-                    summary = stringResource(R.string.pref_about_summary),
                     onClick = onShowAbout,
                 )
             }
@@ -188,7 +187,6 @@ internal fun SettingsContent(
             numericKeyboard = true,
             textFieldTestTag = "settings-fuel-flow-pulses-per-litre-input",
         )
-        SettingsDialog.About -> Unit
         SettingsDialog.Appearance -> ChoiceDialog(
             title = { SettingsDialogTitle(stringResource(R.string.appearance_title)) },
             selected = state.appearanceMode,
@@ -272,7 +270,7 @@ private fun SettingsDialogTitle(title: String) {
     )
 }
 
-enum class SettingsDialog { Retries, FuelFlowPulsesPerLitre, Appearance, InjectionTimingMode, About }
+enum class SettingsDialog { Retries, FuelFlowPulsesPerLitre, Appearance, InjectionTimingMode }
 
 private fun InjectionTimingMode.labelResource(): Int = when (this) {
     InjectionTimingMode.Btdc720 -> R.string.injection_timing_btdc_720
