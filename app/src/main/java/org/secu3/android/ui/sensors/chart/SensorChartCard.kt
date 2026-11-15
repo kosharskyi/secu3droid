@@ -22,8 +22,8 @@ import androidx.compose.ui.graphics.Path
 import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.graphics.StrokeJoin
 import androidx.compose.ui.graphics.drawscope.Stroke
+import androidx.compose.ui.platform.LocalLocale
 import androidx.compose.ui.platform.testTag
-import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
@@ -42,7 +42,6 @@ import org.secu3.android.ui.sensors.models.GaugeItem
 import org.secu3.android.ui.sensors.models.SensorPresentationCatalog
 import kotlin.math.pow
 import java.text.NumberFormat
-import java.util.Locale
 
 @Composable
 internal fun SensorChartCard(
@@ -102,7 +101,7 @@ internal fun SensorChartCard(
                 val headroom = if (span > 0f) span * 0.08f else maxOf(kotlin.math.abs(maximum) * 0.05f, 10f.pow(-presentationCatalog.decimals(type)))
                 val low = minimum - headroom
                 val high = maximum + headroom
-                val locale = LocalConfiguration.current.locales[0] ?: Locale.getDefault()
+                val locale = LocalLocale.current.platformLocale
                 val formatter = remember(locale, type) {
                     NumberFormat.getNumberInstance(locale).apply {
                         isGroupingUsed = false
