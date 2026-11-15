@@ -18,6 +18,7 @@ import org.secu3.android.models.packets.base.OutputPacket
 import org.secu3.android.models.packets.base.protocolRoundToInt
 import org.secu3.android.models.packets.input.FirmwareInfoPacket
 import org.secu3.android.models.packets.out.params.MiscellaneousParamPacket
+import org.secu3.android.models.packets.out.params.MiscellaneousParamPacket.Companion.MIN_EVAP_AIRFLOW_DELTA
 import kotlin.math.abs
 import kotlin.math.roundToInt
 import javax.inject.Inject
@@ -34,8 +35,6 @@ data class MiscellaneousValues(
     val injectorsOffOnPetrol: Boolean,
     val begin: Int,
     val end: Int,
-    val beginBounds: Pair<Int, Int>?,
-    val endBounds: Pair<Int, Int>?,
     val timeout: Float,
     val pwm0: Int,
     val pwm1: Int,
@@ -100,12 +99,20 @@ class MiscellaneousControl internal constructor(
     fun editEvapBegin(value: Int) = edit(
         allowInvalidEvap = true,
         capability = { it.nonSecu3TFuelInjection },
-    ) { packet -> applyEvapPair(packet, value, packet.evapAfEnd) }
+    ) { packet ->
+        require(value in EVAP_BEGIN_RANGE)
+        val end = packet.evapAfEnd.coerceIn(value + MIN_EVAP_AIRFLOW_DELTA, EVAP_MAX)
+        applyEvapPair(packet, value, end)
+    }
 
     fun editEvapEnd(value: Int) = edit(
         allowInvalidEvap = true,
         capability = { it.nonSecu3TFuelInjection },
-    ) { packet -> applyEvapPair(packet, packet.evapAfbegin, value) }
+    ) { packet ->
+        require(value in EVAP_END_RANGE)
+        val begin = packet.evapAfbegin.coerceIn(EVAP_MIN, value - MIN_EVAP_AIRFLOW_DELTA)
+        applyEvapPair(packet, begin, value)
+    }
 
     fun editTimeout(value: Float) = edit { packet ->
         require(value.isFinite() && value in TIMEOUT_MIN..TIMEOUT_MAX)
@@ -170,11 +177,11 @@ class MiscellaneousControl internal constructor(
 
     private fun applyEvapPair(packet: MiscellaneousParamPacket, begin: Int, end: Int) {
         require(begin in EVAP_MIN..EVAP_MAX && end in EVAP_MIN..EVAP_MAX)
-        require(end - begin >= MiscellaneousParamPacket.MIN_EVAP_AIRFLOW_DELTA)
+        require(end - begin >= MIN_EVAP_AIRFLOW_DELTA)
         val wireBegin = begin.div(32f).protocolRoundToInt() * 32
         val maxDelta = EVAP_MAX - maxOf(begin, wireBegin)
-        require(maxDelta >= MiscellaneousParamPacket.MIN_EVAP_AIRFLOW_DELTA)
-        val delta = (end - maxOf(begin, wireBegin)).coerceIn(MiscellaneousParamPacket.MIN_EVAP_AIRFLOW_DELTA, maxDelta)
+        require(maxDelta >= MIN_EVAP_AIRFLOW_DELTA)
+        val delta = (end - maxOf(begin, wireBegin)).coerceIn(MIN_EVAP_AIRFLOW_DELTA, maxDelta)
         val targetSlope = 32f / delta
         require(targetSlope.isFinite())
         val requestedRaw = (targetSlope * 32f * 1048576f).roundToInt()
@@ -189,8 +196,8 @@ class MiscellaneousControl internal constructor(
             val decodedWireDelta = decodedWireEnd - wireBegin
             if (decodedModelEnd in EVAP_MIN..EVAP_MAX &&
                 decodedWireEnd in EVAP_MIN..EVAP_MAX &&
-                decodedModelDelta >= MiscellaneousParamPacket.MIN_EVAP_AIRFLOW_DELTA &&
-                decodedWireDelta >= MiscellaneousParamPacket.MIN_EVAP_AIRFLOW_DELTA
+                decodedModelDelta >= MIN_EVAP_AIRFLOW_DELTA &&
+                decodedWireDelta >= MIN_EVAP_AIRFLOW_DELTA
             ) raw to decodedSlope else null
         }
         val (raw, decodedSlope) = representable.minByOrNull { (candidateRaw, _) -> abs(candidateRaw - requestedRaw) }
@@ -218,8 +225,6 @@ class MiscellaneousControl internal constructor(
 
     private fun publishValues(validationError: Boolean = false) {
         val current = packet ?: return
-        val begin = current.evapAfbegin
-        val end = current.evapAfEnd
         mutableValues.value = MiscellaneousValues(
             baudDivisor = current.uartDivisor,
             period = current.uartPeriodTms,
@@ -230,22 +235,14 @@ class MiscellaneousControl internal constructor(
             pumpOffOnGas = current.offPumpOnGas,
             injectorsOffOnGas = current.offInjOnGas,
             injectorsOffOnPetrol = current.offInjOnPetrol,
-            begin = begin,
-            end = end,
-            beginBounds = evapEditBounds(begin = begin, end = end, editBegin = true),
-            endBounds = evapEditBounds(begin = begin, end = end, editBegin = false),
+            begin = current.evapAfbegin,
+            end = current.evapAfEnd,
             timeout = current.fpTimeoutStrt,
             pwm0 = current.pwmFrq0,
             pwm1 = current.pwmFrq1,
             vss = current.vssPeriodDist,
             hasValidationError = validationError,
         )
-    }
-
-    private fun evapEditBounds(begin: Int, end: Int, editBegin: Boolean): Pair<Int, Int>? {
-        val bounds = if (editBegin) EVAP_MIN to minOf(EVAP_MAX, end - MiscellaneousParamPacket.MIN_EVAP_AIRFLOW_DELTA)
-        else maxOf(EVAP_MIN, begin + MiscellaneousParamPacket.MIN_EVAP_AIRFLOW_DELTA) to EVAP_MAX
-        return bounds.takeIf { it.first <= it.second }
     }
 
     companion object {
@@ -271,5 +268,7 @@ class MiscellaneousControl internal constructor(
         const val TIMEOUT_MAX = 25.5f
         private const val EVAP_MIN = 100
         private const val EVAP_MAX = 2_000_000
+        internal val EVAP_BEGIN_RANGE = EVAP_MIN..(EVAP_MAX - MIN_EVAP_AIRFLOW_DELTA)
+        internal val EVAP_END_RANGE = (EVAP_MIN + MIN_EVAP_AIRFLOW_DELTA)..EVAP_MAX
     }
 }

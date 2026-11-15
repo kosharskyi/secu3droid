@@ -41,7 +41,6 @@ import org.secu3.android.ui.parameters.pages.*
 import kotlin.math.roundToInt
 import org.secu3.android.ui.parameters.pages.compose.*
 import org.secu3.android.ui.parameters.compose.ParameterReadError
-import org.secu3.android.ui.messages.UiMessageDuration
 
 /** Direct Compose rendering for every ViewModel-owned parameter page. */
 @Composable
@@ -241,21 +240,21 @@ internal fun ParameterPageContent(
             val rates = MiscellaneousControl.BAUD_RATES.mapValues { it.value.toString() }
             MiscellaneousScreen(values, rates, { key ->
                 val current = values ?: return@MiscellaneousScreen
-                val parameter = when (key) {
-                    MiscField.PERIOD -> Triple(R.string.miscel_period_title, current.period, MiscellaneousControl.PERIOD_MIN to MiscellaneousControl.PERIOD_MAX)
-                    MiscField.CUTOFF -> Triple(R.string.miscel_ignition_cutoff_rpm_title, current.cutoff, MiscellaneousControl.CUTOFF_MIN to MiscellaneousControl.CUTOFF_MAX)
-                    MiscField.START -> Triple(R.string.miscel_start_rel_to_tdc_title, current.start.roundToInt(), MiscellaneousControl.START_MIN to MiscellaneousControl.START_MAX)
-                    MiscField.DURATION -> Triple(R.string.miscel_hall_output_delay_title, current.duration.roundToInt(), MiscellaneousControl.DURATION_MIN to MiscellaneousControl.DURATION_MAX)
-                    MiscField.BEGIN -> Triple(R.string.miscel_evap_starting_air_flow_title, current.begin, current.beginBounds)
-                    MiscField.END -> Triple(R.string.miscel_evap_ending_air_flow_title, current.end, current.endBounds)
-                    MiscField.PWM0 -> Triple(R.string.miscel_pwmfrq1_title, current.pwm0, MiscellaneousControl.PWM_MIN to MiscellaneousControl.PWM_MAX)
-                    MiscField.PWM1 -> Triple(R.string.miscel_pwmfrq2_title, current.pwm1, MiscellaneousControl.PWM_MIN to MiscellaneousControl.PWM_MAX)
-                    MiscField.VSS -> Triple(R.string.miscel_num_vss_pulsed_per_dist_title, current.vss.roundToInt(), MiscellaneousControl.VSS_MIN to MiscellaneousControl.VSS_MAX)
+                val (title, value, range) = when (key) {
+                    MiscField.PERIOD -> Triple(R.string.miscel_period_title, current.period, MiscellaneousControl.PERIOD_MIN..MiscellaneousControl.PERIOD_MAX)
+                    MiscField.CUTOFF -> Triple(R.string.miscel_ignition_cutoff_rpm_title, current.cutoff, MiscellaneousControl.CUTOFF_MIN..MiscellaneousControl.CUTOFF_MAX)
+                    MiscField.START -> Triple(R.string.miscel_start_rel_to_tdc_title, current.start.roundToInt(), MiscellaneousControl.START_MIN..MiscellaneousControl.START_MAX)
+                    MiscField.DURATION -> Triple(R.string.miscel_hall_output_delay_title, current.duration.roundToInt(), MiscellaneousControl.DURATION_MIN..MiscellaneousControl.DURATION_MAX)
+                    MiscField.BEGIN -> Triple(R.string.miscel_evap_starting_air_flow_title, current.begin, MiscellaneousControl.EVAP_BEGIN_RANGE)
+                    MiscField.END -> Triple(R.string.miscel_evap_ending_air_flow_title, current.end, MiscellaneousControl.EVAP_END_RANGE)
+                    MiscField.PWM0 -> Triple(R.string.miscel_pwmfrq1_title, current.pwm0, MiscellaneousControl.PWM_MIN..MiscellaneousControl.PWM_MAX)
+                    MiscField.PWM1 -> Triple(R.string.miscel_pwmfrq2_title, current.pwm1, MiscellaneousControl.PWM_MIN..MiscellaneousControl.PWM_MAX)
+                    MiscField.VSS -> Triple(R.string.miscel_num_vss_pulsed_per_dist_title, current.vss.roundToInt(), MiscellaneousControl.VSS_MIN..MiscellaneousControl.VSS_MAX)
                     MiscField.TIMEOUT -> error("Float parameter routed through integer editor")
                 }
-                val bounds = parameter.third
-                if (bounds == null || bounds.first > bounds.second) viewModel.showUiMessage(R.string.miscel_evap_invalid_range, UiMessageDuration.LONG)
-                else intEdit(parameter.first, parameter.second.coerceIn(bounds.first, bounds.second), if (key == MiscField.PERIOD) 10 else 1, bounds.second, bounds.first) { viewModel.editMiscellaneous(key, it.toInt()) }
+                intEdit(title, value.coerceIn(range), if (key == MiscField.PERIOD) 10 else 1, range.last, range.first) {
+                    viewModel.editMiscellaneous(key, it)
+                }
             }, { values?.let { current -> floatEdit(R.string.miscel_fuel_pump_working_time_title, current.timeout, MiscellaneousControl.TIMEOUT_MIN, MiscellaneousControl.TIMEOUT_MAX, .1f, 1) { viewModel.editMiscellaneousTimeout(it.toFloat()) } } }, viewModel::selectMiscellaneousBaud, viewModel::toggleMiscellaneous, capabilities = capabilities)
         }
         ParameterPage.CHOKE_CONTROL -> {

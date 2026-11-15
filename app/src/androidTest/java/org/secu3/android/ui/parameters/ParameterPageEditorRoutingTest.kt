@@ -380,7 +380,7 @@ class ParameterPageEditorRoutingTest {
         }
     }
 
-    @Test fun miscellaneousEvapEditorsPreserveDependentBounds() {
+    @Test fun miscellaneousEvapEditorsUseIndependentBounds() {
         val vm = paramsViewModel()
         val control = vm.miscellaneousControl
         control.reset()
@@ -394,7 +394,7 @@ class ParameterPageEditorRoutingTest {
         assertEquals(5_000, begin.value)
         assertEquals(compose.activity.getString(R.string.miscel_evap_starting_air_flow_title), begin.title)
         assertEquals(100, begin.min)
-        assertEquals(158_500, begin.max)
+        assertEquals(1_983_500, begin.max)
         assertEquals(1, begin.step)
         compose.runOnIdle { vm.acceptParameterEditor(beginSession.id, 10_000) }
         assertEquals(10_000, control.values.value?.begin)
@@ -403,7 +403,7 @@ class ParameterPageEditorRoutingTest {
         val endSession = requireNotNull(vm.parameterEditSession)
         val end = endSession.request as ParameterEditRequest.IntValue
         assertEquals(control.values.value?.end, end.value)
-        assertEquals(26_500, end.min)
+        assertEquals(16_600, end.min)
         assertEquals(2_000_000, end.max)
         assertEquals(1, end.step)
         val previousSlope = packet.evapAfslope

@@ -146,12 +146,10 @@ class MiscellaneousControlTest {
     @Test fun evapBoundsAndNearUpperLimitQuantizationKeepModelAndWirePairsSafe() {
         val sent = mutableListOf<OutputPacket>()
         val control = control(sent = sent)
-        val packet = validPacket()
-        control.receive(packet)
-        assertEquals(100 to 55500, control.values.value?.beginBounds)
-        assertEquals(48500 to 2_000_000, control.values.value?.endBounds)
+        assertEquals(100..1_983_500, MiscellaneousControl.EVAP_BEGIN_RANGE)
+        assertEquals(16_600..2_000_000, MiscellaneousControl.EVAP_END_RANGE)
 
-        listOf(1_983_472 to 2_000_000, 1_983_464 to 2_000_000, 1_008 to 17_508, 1_016 to 17_516).forEach { (begin, end) ->
+        listOf(1_983_500 to 2_000_000, 1_983_472 to 2_000_000, 1_983_464 to 2_000_000, 1_008 to 17_508, 1_016 to 17_516).forEach { (begin, end) ->
             val next = validPacket().apply { evapAfbegin = begin; evapAfEnd = end }
             control.receive(next)
             assertTrue(control.editEvapBegin(begin))
@@ -161,6 +159,37 @@ class MiscellaneousControlTest {
             val parsed = MiscellaneousParamPacket().parse(intArrayOf(0x40, 'z'.code) + packed.drop(1).toIntArray()) as MiscellaneousParamPacket
             assertTrue(parsed.evapAfEnd in 100..2_000_000)
             assertTrue(parsed.evapAfEnd - parsed.evapAfbegin >= MiscellaneousParamPacket.MIN_EVAP_AIRFLOW_DELTA)
+        }
+    }
+
+    @Test fun editingEitherEvapThresholdMovesItsNeighborAndWritesOneSafePair() {
+        val sent = mutableListOf<OutputPacket>()
+        val control = control(sent = sent)
+        control.receive(validPacket())
+
+        assertTrue(control.editEvapBegin(64_000))
+        assertEquals(64_000, control.values.value?.begin)
+        assertEquals(80_500, control.values.value?.end)
+        assertArrayEquals(intArrayOf(0x07, 0xD0, 0xFE, 0x33), sent.single().pack().sliceArray(12..15))
+
+        assertTrue(control.editEvapEnd(32_500))
+        assertEquals(16_000, control.values.value?.begin)
+        assertEquals(32_500, control.values.value?.end)
+        assertEquals(2, sent.size)
+        assertArrayEquals(intArrayOf(0x01, 0xF4, 0xFE, 0x33), sent.last().pack().sliceArray(12..15))
+
+        assertTrue(control.editEvapBegin(1_983_500))
+        assertEquals(1_983_500, control.values.value?.begin)
+        assertEquals(2_000_000, control.values.value?.end)
+        assertTrue(control.editEvapEnd(16_600))
+        assertEquals(100, control.values.value?.begin)
+        assertEquals(16_600, control.values.value?.end)
+        assertEquals(4, sent.size)
+        for (command in sent) {
+            val bytes = command.pack()
+            val parsed = MiscellaneousParamPacket().parse(intArrayOf('@'.code) + bytes) as MiscellaneousParamPacket
+            assertTrue(parsed.evapAfEnd - parsed.evapAfbegin >= MiscellaneousParamPacket.MIN_EVAP_AIRFLOW_DELTA)
+            assertTrue(parsed.evapAfEnd <= 2_000_000)
         }
     }
 
@@ -217,7 +246,7 @@ class MiscellaneousControlTest {
         val packet = MiscellaneousParamPacket().parse(input) as MiscellaneousParamPacket
         control.receive(packet)
         val before = packet.pack()
-        assertFalse(control.editEvapEnd(21491))
+        assertFalse(control.editEvapEnd(16_599))
         assertEquals(before.toList(), packet.pack().toList())
         assertTrue(control.values.value?.hasValidationError == true)
         assertTrue(sent.isEmpty())

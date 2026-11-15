@@ -2070,6 +2070,47 @@ class ParameterPageSessionCacheTest {
         }
     }
 
+    @Test fun editingEitherEvapThresholdUpdatesBothRowsAndWritesOnePacket() = runBlocking {
+        compose.activityRule.scenario.onActivity { it.openHome() }
+        val usb = installFakeUsb(paramsViewModel(), firmwareOptions = 1 shl 28)
+        try {
+            compose.onNodeWithTag("home-card-parameters").performClick()
+            compose.waitForIdle()
+            val miscTitle = compose.activity.getString(R.string.params_tab_miscellaneous_title)
+            compose.onNodeWithText(miscTitle).performScrollTo().performClick()
+            compose.onNodeWithText(miscTitle).assertIsSelected()
+            usb.awaitReadRequest('z', 1)
+            usb.emit(MiscellaneousParamPacket(evapAfbegin = 32_000, evapAfslope = 32f / 40_000f))
+
+            val input = compose.onNodeWithTag("numeric_value")
+            val confirm = compose.onNodeWithTag("numeric_confirm")
+            val startValue = compose.onNodeWithTag("misc-begin-value", useUnmergedTree = true)
+            val endValue = compose.onNodeWithTag("misc-end-value", useUnmergedTree = true)
+            fun miscWrites() = usb.writes.filter { it.getOrNull(1)?.toInt() == 'z'.code }
+
+            compose.onNodeWithTag("misc-begin").performScrollTo().performClick()
+            input.performTextReplacement("64000")
+            assertTrue(miscWrites().isEmpty())
+            confirm.performClick()
+            await { miscWrites().size == 1 }
+            startValue.assertTextEquals("64000 RxL")
+            endValue.assertTextEquals("80500 RxL")
+            assertArrayEquals(intArrayOf(0x07, 0xD0, 0xFE, 0x33), unescapeParameterWrite(miscWrites().single()).sliceArray(11..14))
+
+            compose.onNodeWithTag("misc-end").performScrollTo().performClick()
+            input.performTextReplacement("32500")
+            assertEquals(1, miscWrites().size)
+            confirm.performClick()
+            await { miscWrites().size == 2 }
+            startValue.assertTextEquals("16000 RxL")
+            endValue.assertTextEquals("32500 RxL")
+            assertArrayEquals(intArrayOf(0x01, 0xF4, 0xFE, 0x33), unescapeParameterWrite(miscWrites().last()).sliceArray(11..14))
+            assertEquals(2, miscWrites().size)
+        } finally {
+            usb.close()
+        }
+    }
+
     @Test fun miscellaneousCommandsUseCurrentFirmwareAndReportSessionAdmission() = runBlocking {
         val vm = paramsViewModel()
         val transport = installFakeUsb(vm, firmwareOptions = (1 shl 28) or (1 shl 19))
@@ -2084,26 +2125,24 @@ class ParameterPageSessionCacheTest {
                 pwmFrq0 = 100, pwmFrq1 = 200, vssPeriodDist = 1000f,
             ))
             await { vm.miscellaneousControl.values.value != null }
-            val receivedParameterWrites = transport.writes.count { it.size > 2 && it[1].toInt().toChar() == 'z' }
-            assertEquals(0, receivedParameterWrites)
+            fun miscWrites() = transport.writes.filter { it.getOrNull(1)?.toInt() == 'z'.code }
+            assertTrue(miscWrites().isEmpty())
             assertFalse(queue.pending.value.any { it.textRes == R.string.packet_sent })
             compose.activityRule.scenario.moveToState(Lifecycle.State.STARTED)
             InstrumentationRegistry.getInstrumentation().waitForIdleSync()
             queue.onActiveScopeChanged(PARAMETERS_ROUTE)
             queue.pending.value.forEach { queue.acknowledge(it.id) }
-            val baseline = transport.writes.size
 
             compose.runOnUiThread { vm.editMiscellaneous(org.secu3.android.ui.parameters.pages.MiscField.PERIOD, 120) }
-            transport.awaitWriteCount(baseline + 1)
-            assertEquals('z', transport.writes[baseline][1].toInt().toChar())
-            assertTrue(transport.writes[baseline].size > 6)
+            await { miscWrites().isNotEmpty() }
+            assertTrue(miscWrites().single().size > 6)
             assertTrue(queue.pending.value.any { it.textRes == R.string.packet_sent })
 
             queue.pending.value.forEach { queue.acknowledge(it.id) }
             transport.emitFirmware(options = 0)
             await { vm.capabilities.value.known && !vm.capabilities.value.fuelInjection }
             compose.runOnUiThread { vm.toggleMiscellaneous(org.secu3.android.ui.parameters.pages.MiscToggle.GAS, true) }
-            assertEquals(baseline + 1, transport.writes.size)
+            assertEquals(1, miscWrites().size)
             assertFalse(queue.pending.value.any { it.textRes == R.string.packet_sent })
 
             queue.pending.value.forEach { queue.acknowledge(it.id) }
@@ -2111,15 +2150,12 @@ class ParameterPageSessionCacheTest {
                 vm.pausePageSession()
                 vm.editMiscellaneous(org.secu3.android.ui.parameters.pages.MiscField.PERIOD, 130)
             }
-            assertEquals(baseline + 1, transport.writes.size)
+            assertEquals(1, miscWrites().size)
             assertFalse(queue.pending.value.any { it.textRes == R.string.packet_sent })
             compose.runOnUiThread { vm.clearPageState() }
             assertEquals(null, vm.miscellaneousControl.values.value)
             assertFalse(queue.pending.value.any { it.textRes == R.string.packet_sent })
-            assertEquals(
-                receivedParameterWrites + 1,
-                transport.writes.count { it.size > 2 && it[1].toInt().toChar() == 'z' },
-            )
+            assertEquals(1, miscWrites().size)
         } finally {
             try {
                 transport.close()

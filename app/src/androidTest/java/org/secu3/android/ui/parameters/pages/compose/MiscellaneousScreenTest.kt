@@ -40,7 +40,7 @@ import org.secu3.android.ui.parameters.pages.MiscellaneousScreen
 class MiscellaneousScreenTest {
     @get:Rule val compose = createComposeRule()
     private val context get() = androidx.test.platform.app.InstrumentationRegistry.getInstrumentation().targetContext
-    private val initial = MiscellaneousValues(0x0103,20,true,5000,33f / 32f,65f / 32f,true,false,true,5000,175000,100 to 158500,21500 to 2_000_000,2.5f,100,200,400f,false)
+    private val initial = MiscellaneousValues(0x0103,20,true,5000,33f / 32f,65f / 32f,true,false,true,5000,175000,2.5f,100,200,400f,false)
     private val rates = MiscellaneousControl.BAUD_RATES.mapValues { it.value.toString() }
 
     @Test fun loadingScrollAndRecompositionHaveNoCallbacks() {

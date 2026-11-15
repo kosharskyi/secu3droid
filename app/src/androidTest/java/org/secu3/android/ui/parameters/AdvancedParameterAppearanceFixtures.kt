@@ -83,7 +83,7 @@ internal fun advancedParameterAppearanceFixtures(): List<ParameterAppearanceFixt
     return listOf(
         ParameterAppearanceFixture("miscellaneous") {
             MiscellaneousScreen(
-                MiscellaneousValues(0x0015, 100, true, 6000, 10f, 20f, true, false, true, 500, 20000, 100 to 3500, 17000 to 2_000_000, 2.5f, 200, 400, 4f, false),
+                MiscellaneousValues(0x0015, 100, true, 6000, 10f, 20f, true, false, true, 500, 20000, 2.5f, 200, 400, 4f, false),
                 rates = MiscellaneousControl.BAUD_RATES.mapValues { it.value.toString() },
                 intEdit = {},
                 floatEdit = {},

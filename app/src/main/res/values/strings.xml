@@ -28,7 +28,6 @@
 <resources>
     <string name="preferences_storage_error">Could not access saved settings.</string>
     <string name="numeric_edit_invalid_value">Enter a value within the allowed range</string>
-    <string name="miscel_evap_invalid_range">The current EVAP airflow pair cannot be edited safely. Correct the other airflow value first.</string>
     <string name="misc_choose_baud">Choose baud rate</string>
     <string name="misc_invalid_packet">This parameter set cannot be sent safely. Correct the EVAP airflow range first.</string>
     <string name="app_name">Secu3Droid</string>
